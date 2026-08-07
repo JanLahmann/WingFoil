@@ -63,6 +63,8 @@ echoed in session fields 40–42.
 | `turnPeakRate` | 25 | deg/s | at ≥1 sample (Richterich: jibes ~30–40°/s for ~4 s) |
 | `turnContext` | ON_FOIL or ≤3 s after | | turns while swimming don't count |
 | `turnCogSpeedFloor` | 2.0 | m/s | COG geometry read only from steps above this (same COAPS caveat as wind); a capsize below it otherwise reads as a multi-turn spin |
+| `turnMinArc` | 12 | m | **spatial gate**: path length travelled across the COG sweep |
+| `turnMinRadius` | 6 | m | **spatial gate**: effective radius = arc ÷ swept angle in radians |
 | `turnContinueRate` | 5 | deg/s | edge trim: shrink the detected span to the actually-turning part |
 | `entrySpeedWindow` | 3 | s | entry speed = max over window before turn start |
 | `minSpeedLag` | 2 | s | minimum searched to `turnEnd + lag` (the collapse of a botched turn lands just past the COG sweep) |
@@ -81,6 +83,35 @@ echoed in session fields 40–42.
 Entry/minimum speeds come from `speedChannelManeuvers` (positional); the "never dropped off
 foil" half of the success test stays on Doppler so it agrees with flight segmentation.
 Overlapping candidates are non-maximum-suppressed by net angle, widest sweep wins.
+
+### Spatial gate — "real movement around the curve" (Jan)
+
+A COG sweep is not a maneuver. A rider swimming beside the board, or drifting while he sorts
+the wing out, produces heading flips that are indistinguishable from a jibe *in angle terms*
+while covering almost no water. `turnCogSpeedFloor` catches the slowest of these but not all
+— a 2–3 m/s drift clears it. So a candidate must also have **carved an arc**: `turnMinArc`
+metres of path across the sweep **and** an effective radius `arc ÷ |Δheading in rad|` of at
+least `turnMinRadius`. Failures are **dropped**, not flagged: unlike a bear-away they are not
+course changes at all, so they never reach the `rejected` count.
+
+The gate is deliberately *geometric*, not another speed floor. Two sweeps at 4.0 m/s for 3 s
+cover the same 16 m of water; the 180° one pivots inside a 5 m radius (dropped), the 90° one
+carves 10 m (kept). No speed test can separate those.
+
+**Corpus calibration.** Over the 116 candidates in the three reference sessions (2026-08-07
+ciq, 2026-08-05 am, 2026-08-04 pm) the tightest genuine turn measures arc 14.4 m / radius
+8.7 m, and the slowest sweeps 4.06 m/s — there is no low-radius population to cut, so at
+12 m / 6 m the gate removes **nothing**, with 1.2× margin on arc and 1.45× on radius. That
+is intended: it is a guard for future sessions with more swimming, not a correction to these.
+That it *works* was verified by disabling `turnCogSpeedFloor`, which lets the drift rotations
+back in (arc 1.3–11 m, radius 0.9–5 m, sweep speed 0.7–2.2 m/s, nearly all inside a swim):
+the geometric gate removes 18 of the 33 that reappear, and the 15 it keeps are genuine turns
+at 3.5–6.5 m/s that the speed floor had been over-rejecting. Radius is the discriminating
+half — arc alone cannot separate a slow 8 s wallow (16 m) from a tight real turn.
+
+Stricter settings cost real turns and were rejected: 15 m/6 m kills the 2026-08-07 06:32:50
+round-up (14.4 m of arc at 4.8 m/s), 18 m/8 m kills two more 2026-08-04 jibes, and 25 m/6 m
+kills 10 including five ground-truthed jibes.
 
 ## Pumping (accelerometer)
 
@@ -178,6 +209,56 @@ swum. The evidence ladder above reads 9 / 9 / 12, and every turn it moved has a 
 The same code with no accel and no barometer still moves 2026-08-05 am from 15/1/1 to 12/2/3
 and 2026-08-04 pm from 42/7/5 to 35/11/8, so the correction is not an artifact of the one
 session that has extra channels.
+
+### Flight-end outcome — `glide_out` · `touchdown` · `fell_in` · `unknown`
+
+Turn outcomes only explain the losses that happen *in a maneuver*. Sessions also lose the
+foil in a straight line — a gust dies, the foil ventilates, he catches a tip on a reach — and
+those were previously invisible: flight segmentation said "a flight ended" and nothing said
+whether he swam, pumped straight back up, or simply settled onto the board and kept moving.
+**Every** flight end is now classified, with the *same* ladder as the turns (steps 0–4 above,
+`evidence.py` is shared code). Only the leaves differ, because a flight end is already off
+the foil — there is no `flew_through`:
+
+| outcome | test |
+|---|---|
+| `fell_in` | stop > `turnFallStop`, or the barometer says the wrist went under |
+| `touchdown` | the speed reached `turnStopSpeedFloor` at all; `borderline` when the stop exceeds `turnTouchdownMaxStop` |
+| `glide_out` | never reached the stop floor — came off the foil and kept making way (taxi/slog, or a deliberate stop-riding) |
+| `unknown` | the **recording** ended, not the flight: the last sample is the last of a gap-free segment, so there is zero evidence. Flagged `truncated`, excluded from every tally |
+
+Thresholds are the turn ones, re-declared in `FlightEndConfig` so one end can be re-tuned
+without the other. One physical question ("did he stop, and for how long") deserves one set
+of numbers however the loss started.
+
+Three details are load-bearing:
+
+- **A dip must actually break the flight to be a flight end at all.** Exit needs `exitHold`
+  (3 s) below `foilExitSpeed`; shorter touchdowns stay inside the flight and belong to the
+  turn channel. The two channels therefore see genuinely different events and their counts
+  are *not* redundant.
+- **`glide_out` vs `touchdown` is drawn on whether the rider ever stopped, not on a stop
+  duration above zero.** Smart Recording samples at ~2 s and the stop measure needs two
+  consecutive sub-floor samples, so a real 3 s standstill can measure `stopped_s == 0` —
+  2026-08-04 pm has flight ends touching 0.5 m/s that a duration test called glide-outs.
+  `stopped_s` still decides `fell_in`/`borderline`, where 5 s and 3 s are resolvable.
+- **`unknown` is not pedantry.** 2026-08-04 pm segments into 429 gap-free runs and 111 of its
+  130 "flights" end at a segment boundary with the rider still doing 4–5 m/s. Classified on
+  visible evidence they all read `glide_out`, and the session would claim 111 straight-line
+  glide-outs that never happened. Class-(a) CIQ recording is a steady 1 Hz and loses 2 of 23.
+
+**Ownership.** A flight end inside a detected turn's outcome window (`start` →
+`end + outcomeWindow`) is *that turn's* event, already counted there: it is flagged
+`owned_by_turn` and kept out of the straight-line tallies. Without this every jibe ending in
+a swim is counted twice — once as a `fell_in` jibe, once as a fall. Ownership is tested
+against **every** detected turn, bear-aways included: a fall inside a bear-away's window is
+still explained by that course change. The session split that falls out — falls in turns vs
+straight-line falls, same for touchdowns — is the rider-facing summary (`split_outcomes`).
+
+Pump corroboration carries over unchanged: accel promotes `glide_out` → `touchdown` only when
+the speed channels also went marginal. At a flight end that test is near-vacuous (the flight
+ended *because* speed fell below `foilExitSpeed`), and that is intended — a rider who has to
+pump a burst out of it did not glide out by choice.
 
 ## Wind axis estimation (phone)
 

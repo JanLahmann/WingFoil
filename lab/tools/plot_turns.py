@@ -26,6 +26,8 @@ from matplotlib.lines import Line2D                                    # noqa: E
 
 from wingfoil_lab.filters import clean, hybrid_speed                   # noqa: E402
 from wingfoil_lab.flight import segment_flights                        # noqa: E402
+from wingfoil_lab.flightend import (GLIDE_OUT, UNKNOWN, classify_flight_ends,  # noqa: E402
+                                    split_outcomes, summarize_flight_ends)
 from wingfoil_lab.parse import MPS_TO_KN, parse_fit                    # noqa: E402
 from wingfoil_lab.pump import pump_track                               # noqa: E402
 from wingfoil_lab.turns import (FELL_IN, FLEW_THROUGH, JIBE, TACK, TOUCHDOWN,  # noqa: E402
@@ -59,10 +61,23 @@ TURN_STYLE = {
 }
 REJECT_STYLE = ("x", REJECT, REJECT)        # hairline cross: not a maneuver at all
 
+# Straight-line flight ends -- losses that happened outside any maneuver. They share the
+# outcome *colour* with the turns so the state reads the same, but take **hollow square**
+# markers: the fill/shape axis now carries "was this a maneuver or not", which is the one
+# question a reader asks first when a marker sits in the middle of a reach.
+END_STYLE = {
+    GLIDE_OUT: ("s", "none", INK_2),        # came off the foil but kept moving
+    TOUCHDOWN: ("s", "none", WARN),
+    FELL_IN: ("s", "none", BAD),
+}
+
 HEADER = (f"{'#':>3}  {'time':>8}  {'type':<9} {'dir':<9} {'side':<9} "
           f"{'entry':>6} {'min':>6} {'score':>6} {'ok':<4} "
           f"{'outcome':<12} {'bl':<3} {'stop s':>6} {'offfoil':>7} {'win':>4} "
-          f"{'pump':<5} {'wet':<4}")
+          f"{'pump':<5} {'wet':<4} {'arc':>5} {'R':>5}")
+
+END_HEADER = (f"{'#':>3}  {'time':>8}  {'outcome':<10} {'bl':<3} {'stop s':>6} "
+              f"{'offfoil':>7} {'vmin':>5} {'win':>4} {'pump':<5} {'wet':<4} {'owner':<7}")
 
 
 def local_offset(path: Path) -> dt.timedelta:
@@ -84,9 +99,14 @@ def analyze_session(path: Path) -> dict:
     wind = estimate_wind(ct, flights)
     pump = pump_track(track)
     turns = detect_turns(ct, flights, wind, pump=pump)
+    ends = classify_flight_ends(ct, flights, turns, pump=pump)
+    summary = summarize_turns(turns)
+    end_summary = summarize_flight_ends(ends)
     start = track.records["timestamp"].iloc[0] + local_offset(path)
     return {"path": path, "clean": ct, "flights": flights, "wind": wind, "pump": pump,
-            "turns": turns, "summary": summarize_turns(turns), "start": start}
+            "turns": turns, "summary": summary, "start": start,
+            "ends": ends, "end_summary": end_summary,
+            "split": split_outcomes(summary, end_summary)}
 
 
 def print_table(session: dict) -> None:
@@ -110,7 +130,8 @@ def print_table(session: dict) -> None:
               f"{'yes' if turn.borderline else '-':<3} "
               f"{turn.stopped_s:6.1f} {turn.off_foil_s:7.1f} "
               f"{turn.outcome_window_s:4.0f} "
-              f"{'yes' if turn.pumped else '-':<5} {'yes' if turn.submerged else '-':<4}")
+              f"{'yes' if turn.pumped else '-':<5} {'yes' if turn.submerged else '-':<4} "
+              f"{turn.arc_m:5.1f} {turn.radius_m:5.1f}")
     print(f"\n  tacks {summary.tacks} ({summary.tacks_successful} made) · "
           f"jibes {summary.jibes} ({summary.jibes_successful} made) · "
           f"counted {summary.turns_counted} ({summary.turns_successful} made, "
@@ -120,6 +141,40 @@ def print_table(session: dict) -> None:
         print(f"  {name} outcome: flew through {oc.flew_through} · "
               f"touchdown {oc.touchdown} · fell in {oc.fell_in} "
               f"(of {oc.total}; {oc.borderline} borderline)")
+    print_flight_ends(session)
+
+
+def print_flight_ends(session: dict) -> None:
+    """The flight-end table plus the in-turn / straight-line split."""
+    es, split = session["end_summary"], session["split"]
+    print(f"\n  flight ends ({len(session['ends'])} flights)\n")
+    print(END_HEADER)
+    print("  " + "-" * (len(END_HEADER) - 2))
+    for n, end in enumerate(session["ends"], 1):
+        clock = (session["start"] + dt.timedelta(seconds=end.t)).strftime("%H:%M:%S")
+        vmin = "-" if end.min_speed_mps == float("inf") else f"{end.min_speed_mps:5.2f}"
+        print(f"{n:3d}  {clock:>8}  {end.outcome:<10} "
+              f"{'yes' if end.borderline else '-':<3} {end.stopped_s:6.1f} "
+              f"{end.off_foil_s:7.1f} {vmin:>5} {end.window_s:4.0f} "
+              f"{'yes' if end.pumped else '-':<5} {'yes' if end.submerged else '-':<4} "
+              f"{('turn ' + str(end.owned_by_turn + 1)) if end.in_turn else '-':<7}")
+    for label, oc in (("all      ", es.all_ends), ("in turn  ", es.in_turn),
+                      ("straight ", es.straight)):
+        print(f"  {label}: glide out {oc.glide_out} · touchdown {oc.touchdown} · "
+              f"fell in {oc.fell_in} (of {oc.total}; {oc.borderline} borderline)"
+              + (f" · {oc.unknown} truncated by a gap" if oc.unknown else ""))
+    print(f"\n  SESSION SPLIT: falls {split.falls} "
+          f"({split.turn_falls} in turns / {split.straight_falls} straight-line) · "
+          f"touchdowns {split.touchdowns} "
+          f"({split.turn_touchdowns} in turns / {split.straight_touchdowns} straight-line) · "
+          f"glide-outs {split.glide_outs}"
+          + (f" · {split.unknown_ends} evidence-free flight ends"
+             if split.unknown_ends else ""))
+
+
+def _straight_ends(session: dict) -> list:
+    """Flight ends no turn owns and that carry evidence -- the straight-line losses."""
+    return [e for e in session["ends"] if not e.in_turn and e.outcome != UNKNOWN]
 
 
 def _turn_style(turn) -> tuple[str, str, str]:
@@ -151,6 +206,12 @@ def draw_map(ax, session: dict) -> None:
                 solid_capstyle="round", zorder=2)
 
     t = df["t"].to_numpy(float)
+    for end in _straight_ends(session):
+        k = int(np.argmin(np.abs(t - end.t)))
+        marker, face, edge = END_STYLE[end.outcome]
+        ax.plot(df["x"].iloc[k], df["y"].iloc[k], marker=marker, ms=8.5, mew=1.6,
+                mfc=face, mec=edge, zorder=4)
+
     for n, turn in enumerate(session["turns"], 1):
         k = int(np.argmin(np.abs(t - turn.min_t)))
         marker, face, edge = _turn_style(turn)
@@ -198,6 +259,14 @@ def draw_strip(ax, session: dict) -> None:
     ax.legend(loc="upper left", ncol=2, frameon=False, fontsize=7.5,
               labelcolor=INK_2, bbox_to_anchor=(0.0, 1.16), handlelength=1.6)
 
+    speed_kn = hybrid_speed(df) * MPS_TO_KN
+    t_all = df["t"].to_numpy(float)
+    for end in _straight_ends(session):
+        marker, face, edge = END_STYLE[end.outcome]
+        k = int(np.argmin(np.abs(t_all - end.t)))
+        ax.plot(end.t / 60.0, speed_kn[k], marker=marker, ms=7.0, mew=1.5,
+                mfc=face, mec=edge, zorder=4)
+
     for n, turn in enumerate(session["turns"], 1):
         marker, face, edge = _turn_style(turn)
         ax.plot(turn.min_t / 60.0, turn.min_kn, marker=marker, ms=6.5, mew=1.5,
@@ -237,6 +306,13 @@ def _legend(fig, session: dict) -> None:
                label=f"bear-away / round-up, not counted ({session['summary'].rejected})"),
         Line2D([], [], color=WIND, lw=2.0, label="estimated wind axis"),
     ]
+    straight = session["end_summary"].straight
+    end_labels = {GLIDE_OUT: f"straight-line glide-out ({straight.glide_out})",
+                  TOUCHDOWN: f"straight-line touchdown ({straight.touchdown})",
+                  FELL_IN: f"straight-line fall ({straight.fell_in})"}
+    handles += [Line2D([], [], ls="none", marker=END_STYLE[k][0], ms=8.5, mew=1.6,
+                       mfc="none", mec=END_STYLE[k][2], label=end_labels[k])
+                for k in (GLIDE_OUT, TOUCHDOWN, FELL_IN) if getattr(straight, k)]
     fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False,
                fontsize=8, labelcolor=INK_2, bbox_to_anchor=(0.5, 0.005))
 
@@ -264,6 +340,13 @@ def render(session: dict, out: Path) -> Path:
              f"≥ 70 % of entry speed ({summary.success_pct:.0f} %) · "
              f"{summary.rejected} bear-aways rejected · "
              f"wind from {wind.dir_deg:.0f}° (confidence {wind.confidence:.2f})",
+             fontsize=9, color=INK_2, ha="left")
+    split = session["split"]
+    fig.text(0.09, 0.902,
+             f"falls {split.falls} ({split.turn_falls} in turns / "
+             f"{split.straight_falls} straight-line) · "
+             f"touchdowns {split.touchdowns} ({split.turn_touchdowns} / "
+             f"{split.straight_touchdowns}) · glide-outs {split.glide_outs}",
              fontsize=9, color=INK_2, ha="left")
     _legend(fig, session)
     out.parent.mkdir(parents=True, exist_ok=True)
