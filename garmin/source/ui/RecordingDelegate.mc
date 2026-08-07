@@ -23,6 +23,7 @@ class RecordingDelegate extends WatchUi.BehaviorDelegate {
     function onBack() as Boolean {
         var menu = new WatchUi.Menu2({:title => "Session"});
         menu.addItem(new WatchUi.MenuItem("Resume", null, :resume, null));
+        menu.addItem(new WatchUi.MenuItem("Wind", AppSettings.windLabel(), :wind, null));
         menu.addItem(new WatchUi.MenuItem("Save", null, :save, null));
         menu.addItem(new WatchUi.MenuItem("Discard", null, :discard, null));
         WatchUi.pushView(menu, new StopMenuDelegate(), WatchUi.SLIDE_UP);
@@ -69,9 +70,46 @@ class StopMenuDelegate extends WatchUi.Menu2InputDelegate {
             WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
             WatchUi.switchToView(new StartView(), new StartDelegate(),
                 WatchUi.SLIDE_IMMEDIATE);
+        } else if (id == :wind) {
+            WatchUi.pushView(WindMenu.build(), new WindMenuDelegate(), WatchUi.SLIDE_UP);
         } else {
             WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
         }
+    }
+
+    function onBack() as Void {
+        WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+    }
+}
+
+// Wind axis entry on the water: 16 compass points, gloves-friendly. The value the rider
+// picks is the direction the wind blows FROM; it splits future turns into tacks and jibes
+// and is written to session field 39 (docs/fit-schema.md). Turns already detected keep the
+// classification they were given — the watch never re-runs the pass.
+module WindMenu {
+    function build() as WatchUi.Menu2 {
+        var menu = new WatchUi.Menu2({:title => "Wind from"});
+        menu.addItem(new WatchUi.MenuItem("Unset", null, -1, null));
+        for (var i = 0; i < 16; i++) {
+            var deg = i * 45 / 2;   // 22.5 deg steps, integer arithmetic
+            menu.addItem(new WatchUi.MenuItem(AppSettings.COMPASS[i],
+                deg.toString() + "°", deg, null));
+        }
+        return menu;
+    }
+}
+
+class WindMenuDelegate extends WatchUi.Menu2InputDelegate {
+
+    function initialize() {
+        Menu2InputDelegate.initialize();
+    }
+
+    function onSelect(item as WatchUi.MenuItem) as Void {
+        var id = item.getId();
+        AppSettings.storeWindDirection(id instanceof Lang.Number ? id as Number : -1);
+        WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);   // wind menu
+        WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);   // session menu -> back on the water
     }
 
     function onBack() as Void {

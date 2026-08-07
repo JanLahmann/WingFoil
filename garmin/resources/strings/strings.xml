@@ -16,6 +16,8 @@
     <string id="SetAccelLogging">Log accelerometer (pump analysis)</string>
     <string id="SetAlertPb">Vibrate on speed PB</string>
     <string id="SetAlertFlight">Vibrate on longest flight</string>
+    <string id="SetAlertTurn">Vibrate on turn outcome</string>
+    <string id="SetWindDir">Wind direction (deg from, -1 = unset)</string>
 
     <!-- FIT developer-field labels (Garmin Connect rendering) -->
     <string id="FitFoilStateChart">Foil state</string>
@@ -29,4 +31,7 @@
     <string id="FitLongestFlight">Longest flight</string>
     <string id="FitBest2s">Best 2s speed</string>
     <string id="FitUnitCms">cm/s</string>
+    <string id="FitTacks">Tacks</string>
+    <string id="FitJibes">Jibes</string>
+    <string id="FitTurnSuccess">Turn success</string>
 </strings>

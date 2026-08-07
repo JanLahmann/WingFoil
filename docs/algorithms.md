@@ -113,6 +113,44 @@ Stricter settings cost real turns and were rejected: 15 m/6 m kills the 2026-08-
 round-up (14.4 m of arc at 4.8 m/s), 18 m/8 m kills two more 2026-08-04 jibes, and 25 m/6 m
 kills 10 including five ground-truthed jibes.
 
+### Watch approximation (garmin/source/detectors/TurnDetector.mc)
+
+The watch runs the same parameters in one forward pass with bounded work per 1 Hz tick and no
+allocation, so it necessarily differs from the lab pass. The phone recompute is authoritative;
+these are the known divergences, all of them conservative (the watch under-counts rather than
+inventing turns):
+
+- **No non-maximum suppression.** The first sweep that clears the gates opens a candidate and
+  the detector then *follows* the rotation while it keeps turning (`turnContinueRate`, capped
+  at `turnMaxDuration`), so classification still sees the whole sweep. The lab instead scores
+  every candidate and keeps the widest. Two turns inside one 8 s window merge into one.
+- **Edge trim is the scan itself.** Walking back from the newest sample stops at the first
+  step below `turnContinueRate`, which trims both edges greedily. A genuine turn containing a
+  ≤5 °/s lull is split at the lull rather than spanning it.
+- **No re-detection during the outcome window.** A second turn started before the first one's
+  outcome resolves is not detected at all.
+- **Doppler only.** There is no positional speed channel live, so the sharp `min(Doppler,
+  positional)` test degrades to the firmware's ~3–4 s smoothed Doppler: short touchdowns the
+  positional channel would expose can read as fly-throughs on the watch.
+- **The outcome window is the judging window.** The lab follows an off-foil run past the
+  window to `turnOutcomeWindow` (60 s) to measure the stop; the watch measures the stop inside
+  the recovery-gated window only, capped at `turnOutcomeLookahead`. A stop long enough to be a
+  fall still exceeds `turnFallStop` well inside that cap, so the verdict agrees; `stopped_s`
+  itself is not reported by the watch.
+- **Recovery is searched from the sweep end**, not from the speed minimum, and the entry speed
+  is the max over `entrySpeedWindow` of the *Doppler* history.
+- **Submersion is read in the pressure domain.** `turnBaroDrop` (25 m of apparent altitude) is
+  converted once to a ~300 Pa rise in `rawAmbientPressure` against a slow (~50 s) baseline that
+  refuses to adapt while a spike is in progress. Same positive-only semantics.
+- **No pump corroboration** (step 3 of the ladder): the watch cannot promote a fly-through to a
+  touchdown on accel evidence, so it reports slightly more fly-throughs than the phone.
+- **Bear-aways are dropped, not carried.** They increment a `rejected` counter and are not
+  given an outcome, so the watch has no equivalent of the lab's bear-away outcome window.
+- **Wind is manual only** and classification is not retroactive: turns detected before the
+  rider sets the axis stay generic for the rest of the session.
+- **GPS below `Position.QUALITY_USABLE` freezes the detector**, including any open outcome
+  window, matching how the other watch detectors treat a gap.
+
 ## Pumping (accelerometer)
 
 Phone-side twin of the watch `PumpDetector`, and the only consumer of the raw SensorLogging
@@ -298,6 +336,68 @@ Watch (live, conservative): accel magnitude at `getMaxSampleRate()` (~25 Hz) →
 
 Phone metrics: pumps-to-takeoff, time-to-takeoff, cadence, HR cost (HR rise over attempt +30 s,
 only over valid HR spans), attempts/successes, in-flight pump episodes (v2).
+
+## Takeoff analysis (phone) — pumps-to-takeoff · attempts · in-flight pumping
+
+The flight-**start** analogue of *Flight-end outcome*, and the differentiator metric set
+(docs/plan.md §1). Flight segmentation says a flight began; this says what it cost to get
+there, and — the part no summary built from flights alone can ever contain — how often he
+pumped and *did not* get up. Feeds FIT session fields 35–38 and lap fields 12–13.
+
+| param | default | units | notes |
+|---|---|---|---|
+| `takeoffMaxRun` | 30 | s | cap on the pre-flight window searched back from `ON_FOIL` |
+| `takeoffRiseSlack` | 0.3 | m/s | walking back, a sample still belongs to the speed rise while it is no more than this above the slowest sample seen so far (monotone enough to be a takeoff, loose enough for a real water start) |
+| `takeoffRestSpeed` | 1.0 | m/s | walking back, the first sample at or below this *is* the run start — he was sitting on the board. Without it a slack-tolerant walk-back swallows the whole rest, because a flat trace is "non-increasing" too (= `turnStopSpeedFloor`) |
+| `takeoffAttemptWindow` | 10 | s | an attempt stays open this long past its last stroke: `ON_FOIL` inside the window ⇒ that attempt succeeded and its burst is the flight's takeoff run; silence past it ⇒ the attempt failed. Also the silence that separates two attempts |
+| `takeoffMinPreWindow` | 3 | s | less gap-free record than this before a flight start ⇒ the run is not in the data (`truncated`) |
+| `freeTakeoff` | < 3 strokes | | got up on wind alone — a fact about the conditions, not about his pumping, so the two are separated in every average |
+
+Bursts, cadence and `pumpMinStrokes` come from *Pumping (accelerometer)* unchanged; turn
+ownership uses the same window as *Flight-end outcome* (`start` → `end + outcomeWindow`).
+
+**The takeoff run** is the contiguous pre-flight window of rising speed *plus* the pump burst
+that led into it, whichever started earlier — so `pumps_to_takeoff` counts the strokes of the
+effort that actually produced the flight, and `duration_s ≥ speed_rise_s` always. The rise is
+read on the Doppler channel, the one that defined the flight boundary, so run and flight agree
+on where the takeoff ended. The walk-back also stops at a recording gap and at the previous
+flight's end: a run cannot reach back through the flight before it.
+
+`takeoffAttemptWindow` deliberately **replaces the watch's 5 s `attemptSuccessWindow`** rather
+than mirroring it. On 2026-08-07 the qualifying burst ends 0.1–2.5 s before `ON_FOIL` for 20 of
+23 takeoffs, but 6.2 s, 8.0 s and 8.7 s before it for three, where the board kept accelerating
+after he stopped pumping; at 5 s those three lose their run (and one reads as a *free* takeoff
+that was nothing of the sort). 10 s costs nothing and matches the watch's `attemptFailSilence`,
+so one number plays both roles and there is no dead zone in which an attempt is neither.
+
+**Every pumping burst is classified exactly once** — the ownership discipline of the flight
+ends, for the same reason. Bursts less than `takeoffAttemptWindow` apart are first chained into
+one **episode** (one continuous effort: four bursts inside a minute of thrashing are one failed
+attempt, not four), then:
+
+| outcome | test | counted as |
+|---|---|---|
+| `in_flight` | the episode lies wholly inside a flight | `in_flight_strokes` — pumping to hold or extend a glide, never a takeoff |
+| `success` | a flight starts between the first stroke and `takeoffAttemptWindow` after the last | nothing extra: it *is* that flight's takeoff run, already counted as a flight |
+| `recovery` | the episode lies inside a detected turn's outcome window | the turn's `touchdown`, already scored there |
+| `failed` | none of the above | a failed takeoff attempt |
+| `unknown` | the record does not run gap-free for `takeoffAttemptWindow` past the last stroke | nothing — excluded from every tally |
+
+`takeoff_attempts` = flights + failed attempts, `takeoff_successes` = **flights**: a flight
+demonstrably happened, so it succeeded even when its run was truncated; truncation only removes
+it from the pumps/duration averages. Sources without an accelerometer report the speed-only run,
+`None` stroke counts and — because their failures are invisible — a `None` success rate rather
+than a flattering 100 %.
+
+**Corpus (defaults above).** 2026-08-07 ciq: 23 takeoffs, all judged, 14 failed attempts ⇒ 37
+attempts at 62 % success; 9.0 pumps to takeoff on average (median 7, range 4–21), 8.7 s average
+run (median 8.0), 0 free takeoffs, 1341 strokes of which 293 in flight across 36 in-flight
+episodes. The native sessions have no accel and lose most runs to Smart Recording: 2026-08-05 am
+9 of 52 runs judged (6.8 s average), 2026-08-04 pm 23 of 130 (7.6 s) — the same truncation that
+costs 111 of its 130 flight *ends*. **Unvalidated:** the failed-attempt count has no ground
+truth yet (fixtures/README.md logs takeoff attempts per session — 2026-08-07 is still blank),
+and it is the one number here that moves with `takeoffAttemptWindow`: 15 failures at 8 s, 14 at
+10 s, 10 at 12 s, 9 at 15 s (56 %/62 %/70 %/72 % success). Everything else is flat from 10 s up.
 
 ## Divergence check (phone, source class (a) only)
 
