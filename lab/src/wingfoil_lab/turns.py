@@ -17,11 +17,23 @@ A sweep that crosses neither is a bear-away (falling off) or a round-up (luffing
 are real course changes but not maneuvers, and are the false positives a naive
 heading-delta counter reports as jibes. They are returned, flagged `counted = False`, and
 left out of the summary counts.
+
+Every turn also carries an **outcome**, the rider-facing three-way verdict (Jan's spec):
+
+``flew_through``  never left the foil -- the whole turn window plus a short tail stays
+                  inside a flight *and* above `foilExitSpeed`;
+``touchdown``     lost the foil briefly, pumped back up, never came to a stop longer
+                  than `turnTouchdownMaxStop`;
+``fell_in``       came to a full stop (below `turnStopSpeedFloor`) for longer than
+                  `turnFallStop` -- a swim and a water start.
+
+The score%/success pair is kept as the secondary, continuous metric: outcome says *what
+happened*, score says *how much speed the turn cost*.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -39,6 +51,11 @@ ROUND_UP = "round_up"
 UNCLASSIFIED = "turn"          # wind axis missing or too weak (golden schema: "turn")
 COUNTED_TYPES = (TACK, JIBE, UNCLASSIFIED)
 
+FLEW_THROUGH = "flew_through"
+TOUCHDOWN = "touchdown"
+FELL_IN = "fell_in"
+OUTCOMES = (FLEW_THROUGH, TOUCHDOWN, FELL_IN)
+
 
 @dataclass
 class TurnConfig:
@@ -54,6 +71,11 @@ class TurnConfig:
     min_speed_lag_s: float = 2.0          # lab-added: the minimum can land past the exit
     success_pct: float = 70.0             # turnSuccessPct
     foil_exit_speed_kmh: float = 8.0      # flight config's exit speed (success floor)
+    stop_speed_floor_mps: float = 1.0     # turnStopSpeedFloor: below this = "stopped"
+    touchdown_max_stop_s: float = 3.0     # turnTouchdownMaxStop: still a touchdown
+    fall_stop_s: float = 5.0              # turnFallStop: above this = fell in
+    outcome_lookahead_s: float = 5.0      # turnOutcomeLookahead: tail searched for the loss
+    outcome_window_s: float = 60.0        # turnOutcomeWindow: cap on following the recovery
 
 
 @dataclass
@@ -77,6 +99,28 @@ class Turn:
     success: bool                    # score >= turnSuccessPct AND never dropped off foil
     twa_in_deg: float                # TWA entering the turn (nan without wind)
     twa_out_deg: float
+    outcome: str = FLEW_THROUGH      # flew_through | touchdown | fell_in
+    borderline: bool = False         # stop landed in the ambiguous 3-5 s band
+    off_foil_s: float = 0.0          # time not flying, from the loss to the recovery
+    stopped_s: float = 0.0           # longest contiguous spell below turnStopSpeedFloor
+
+
+@dataclass
+class OutcomeCounts:
+    """Three-way outcome tally for one family of turns."""
+
+    flew_through: int = 0
+    touchdown: int = 0
+    fell_in: int = 0
+    borderline: int = 0              # touchdowns whose stop fell in the ambiguous band
+
+    def add(self, turn: "Turn") -> None:
+        setattr(self, turn.outcome, getattr(self, turn.outcome) + 1)
+        self.borderline += int(turn.borderline)
+
+    @property
+    def total(self) -> int:
+        return self.flew_through + self.touchdown + self.fell_in
 
 
 @dataclass
@@ -87,6 +131,9 @@ class TurnSummary:
     tacks_successful: int = 0
     jibes: int = 0
     jibes_successful: int = 0
+    tack_outcomes: OutcomeCounts = field(default_factory=OutcomeCounts)
+    jibe_outcomes: OutcomeCounts = field(default_factory=OutcomeCounts)
+    outcomes: OutcomeCounts = field(default_factory=OutcomeCounts)   # all counted turns
     unclassified: int = 0            # detected turns with no usable wind axis
     turns_counted: int = 0           # tacks + jibes + unclassified (the "attempted" count)
     turns_successful: int = 0
@@ -119,7 +166,9 @@ def detect_turns(clean: CleanTrack, flights: FlightResult,
                     continue
                 turns.append(_build_turn(seg, t, tu, u, rate, i, j, wind, cfg))
     turns.sort(key=lambda x: x.start_t)
-    return _drop_overlaps(turns)
+    turns = _drop_overlaps(turns)
+    _assign_outcomes(turns, clean, flights, cfg)
+    return turns
 
 
 def summarize_turns(turns: list[Turn]) -> TurnSummary:
@@ -132,11 +181,14 @@ def summarize_turns(turns: list[Turn]) -> TurnSummary:
         if t.kind == TACK:
             s.tacks += 1
             s.tacks_successful += int(t.success)
+            s.tack_outcomes.add(t)
         elif t.kind == JIBE:
             s.jibes += 1
             s.jibes_successful += int(t.success)
+            s.jibe_outcomes.add(t)
         else:
             s.unclassified += 1
+        s.outcomes.add(t)
         s.turns_counted += 1
         s.turns_successful += int(t.success)
         s.port += int(t.side == "port")
@@ -144,6 +196,99 @@ def summarize_turns(turns: list[Turn]) -> TurnSummary:
         s.unknown_side += int(t.side == "unknown")
     s.success_pct = 100.0 * s.turns_successful / s.turns_counted if s.turns_counted else 0.0
     return s
+
+
+def _assign_outcomes(turns: list[Turn], clean: CleanTrack, flights: FlightResult,
+                     cfg: TurnConfig) -> None:
+    """Fill `outcome`/`borderline`/`off_foil_s`/`stopped_s` on every turn, in place.
+
+    Runs over the whole cleaned track rather than per segment: a fall that starts before a
+    recording gap is still followed into the samples after it.
+    """
+    df = clean.records
+    if df.empty:
+        return
+    t = df["t"].to_numpy(float)
+    dop = df["doppler_mps"].to_numpy(float)
+    gap = df["gap_before"].to_numpy(bool)
+    stop_v = np.minimum(dop, hybrid_speed(df))
+    flying = _flying_mask(t, dop, flights, cfg)
+    for turn in turns:
+        _outcome(turn, t, gap, stop_v, flying, cfg)
+
+
+def _flying_mask(t: np.ndarray, dop: np.ndarray, flights: FlightResult,
+                 cfg: TurnConfig) -> np.ndarray:
+    """Per sample: inside a flight *and* still above the foil exit speed.
+
+    Flight segmentation alone is too coarse for this job: its exit needs `exitHold` (3 s)
+    of sub-exit speed, so a 1-2 s touchdown -- exactly Jan's middle case -- never breaks
+    the flight. Adding the instantaneous exit-speed test makes those visible while the
+    flight mask still catches the long losses that the speed trace alone would blur.
+    """
+    m = np.zeros(len(t), dtype=bool)
+    for f in flights.flights:
+        m |= (t >= f.start_t) & (t <= f.end_t)
+    return m & (dop > cfg.foil_exit_speed_kmh * KMH_TO_MPS)
+
+
+def _outcome(turn: Turn, t: np.ndarray, gap: np.ndarray, stop_v: np.ndarray,
+             flying: np.ndarray, cfg: TurnConfig) -> None:
+    """Three-way outcome for one turn (see the module docstring).
+
+    The loss of foil is looked for from the turn start to `outcomeLookahead` past the COG
+    sweep -- a botched exit collapses just after the turn geometry ends, the same lag the
+    speed minimum needs. Once lost, the off-foil run is followed until foiling resumes,
+    capped at `outcomeWindow` so a turn taken just before a break does not absorb it.
+    """
+    lost = np.flatnonzero((t >= turn.start_t) & (t <= turn.end_t + cfg.outcome_lookahead_s)
+                          & ~flying)
+    if lost.size == 0:
+        turn.outcome, turn.borderline = FLEW_THROUGH, False
+        turn.off_foil_s = turn.stopped_s = 0.0
+        return
+
+    a = int(lost[0])
+    cap = turn.end_t + cfg.outcome_window_s
+    b = a
+    while b + 1 < len(t) and not flying[b + 1] and t[b + 1] <= cap:
+        b += 1
+    end = min(b + 1, len(t) - 1)                       # first flying sample, if there is one
+
+    turn.off_foil_s = _elapsed(t, gap, a, end)
+    turn.stopped_s = _longest_stop(t, gap, stop_v, a, b, cfg.stop_speed_floor_mps)
+    if turn.stopped_s > cfg.fall_stop_s:
+        turn.outcome, turn.borderline = FELL_IN, False
+    else:
+        turn.outcome = TOUCHDOWN
+        turn.borderline = turn.stopped_s > cfg.touchdown_max_stop_s
+
+
+def _elapsed(t: np.ndarray, gap: np.ndarray, a: int, b: int) -> float:
+    """Recorded time from sample `a` to `b`, skipping intervals that span a gap."""
+    if b <= a:
+        return 0.0
+    dt = np.diff(t[a:b + 1])
+    return float(dt[~gap[a + 1:b + 1]].sum())
+
+
+def _longest_stop(t: np.ndarray, gap: np.ndarray, v: np.ndarray, a: int, b: int,
+                  floor: float) -> float:
+    """Longest contiguous spell below `floor` in [a, b], in recorded seconds.
+
+    An interval counts only when *both* of its end samples are below the floor and no gap
+    separates them -- the same "hold" convention flight segmentation uses, so a stop and a
+    flight exit are measured on the same clock.
+    """
+    below = v[a:b + 1] < floor
+    if below.size < 2:
+        return 0.0
+    ok = below[1:] & below[:-1] & ~gap[a + 1:b + 1]
+    best = run = 0.0
+    for keep, step in zip(ok, np.diff(t[a:b + 1])):
+        run = run + step if keep else 0.0
+        best = max(best, run)
+    return float(best)
 
 
 def _sailing_runs(ok: np.ndarray) -> list[tuple[int, int]]:
