@@ -1,0 +1,19 @@
+{
+  "source": "lab/src/wingfoil_lab",
+  "generator": "web/tools/bundle_lab.py",
+  "note": "Generated \u2014 do not edit by hand. Re-run bundle_lab.py after lab changes.",
+  "files": {
+    "__init__.py": "5b294e6e7ec82498",
+    "evidence.py": "f93521b20109aaa8",
+    "filters.py": "dc85c017f70ebe6b",
+    "flight.py": "621f9422258baa15",
+    "flightend.py": "6b653d3998de0853",
+    "goldens.py": "b9dd93ba6191bb80",
+    "gp3s.py": "c18edc1780d81574",
+    "parse.py": "b4448a1199da5c04",
+    "pump.py": "d76db69a74cb35de",
+    "takeoff.py": "0a203727de6181c0",
+    "turns.py": "701e66e851c9216e",
+    "wind.py": "b30c83224dffc9fd"
+  }
+}
