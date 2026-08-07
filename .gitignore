@@ -1,0 +1,31 @@
+# macOS
+.DS_Store
+
+# Secrets / local config
+.env
+*.local
+
+# Python (lab/)
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+
+# Swift / Xcode (ios/)
+.build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+.swiftpm/
+
+# Connect IQ (garmin/)
+garmin/bin/
+*.prg
+*.prg.debug.xml
+monkey.jungle.local
+
+# Developer key — NEVER commit
+*.der
+developer_key*
