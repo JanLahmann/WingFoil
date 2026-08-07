@@ -58,10 +58,20 @@ class PumpTrack:
         return _pick_peaks(self.t[lo:hi], self.band[lo:hi], self.valid[lo:hi],
                            self.config.stroke_amp_g, self.config.refractory_s)
 
+    def bursts(self, start_t: float, end_t: float) -> list[np.ndarray]:
+        """Stroke times in [start_t, end_t] grouped into bursts, in time order.
+
+        A burst is a run of strokes no more than `pumpStrokeMaxInterval` apart -- one
+        continuous effort. Bursts are reported at every length; callers apply
+        `pumpMinStrokes` themselves (the flight ends only ask "was he pumping", the
+        takeoff analysis also wants to *count* the strokes of the burst it keeps).
+        """
+        return _group_bursts(self.strokes(start_t, end_t),
+                             self.config.stroke_max_interval_s)
+
     def longest_burst(self, start_t: float, end_t: float) -> int:
         """Most strokes in a row with no gap longer than `pumpStrokeMaxInterval`."""
-        return _longest_burst(self.strokes(start_t, end_t),
-                              self.config.stroke_max_interval_s)
+        return max((len(b) for b in self.bursts(start_t, end_t)), default=0)
 
     def is_pumping(self, start_t: float, end_t: float) -> bool:
         """True when [start_t, end_t] holds a burst of at least `pumpMinStrokes`."""
@@ -135,11 +145,9 @@ def _pick_peaks(t: np.ndarray, band: np.ndarray, valid: np.ndarray,
     return np.asarray(out, float)
 
 
-def _longest_burst(strokes: np.ndarray, max_interval_s: float) -> int:
+def _group_bursts(strokes: np.ndarray, max_interval_s: float) -> list[np.ndarray]:
+    """Split stroke times on any interval longer than `max_interval_s`."""
     if strokes.size == 0:
-        return 0
-    best = run = 1
-    for gap in np.diff(strokes):
-        run = run + 1 if gap <= max_interval_s else 1
-        best = max(best, run)
-    return int(best)
+        return []
+    cuts = np.flatnonzero(np.diff(strokes) > max_interval_s) + 1
+    return [b for b in np.split(strokes, cuts) if b.size]
