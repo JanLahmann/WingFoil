@@ -37,6 +37,7 @@ targets:
       - path: WingFoil
         excludes:
           - "Info.plist"          # generated below; not part of the compile sources group
+          - "WingFoil.entitlements"
     dependencies:
       - package: WingFoilKit
         product: WingFoilKit
@@ -54,9 +55,19 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_PREVIEWS: YES
         SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
+    # Apple Health is opt-in and write-only (Settings → Apple Health). The entitlement has
+    # to exist at build time even though nothing is written until the toggle is flipped.
+    entitlements:
+      path: WingFoil/WingFoil.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
     info:
       path: WingFoil/Info.plist
       properties:
+        NSHealthUpdateUsageDescription: >-
+          Adds your wingfoil sessions to the Health app as workouts. WingFoil only writes
+          workouts you already imported; it never reads your health data.
         CFBundleDisplayName: WingFoil
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)

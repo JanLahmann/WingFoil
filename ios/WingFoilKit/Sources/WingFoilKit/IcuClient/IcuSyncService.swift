@@ -37,6 +37,9 @@ public struct IcuSyncService: Sendable {
 
     public func sync(oldest: Date, newest: Date = Date(),
                      progress: (@Sendable (String) -> Void)? = nil) async throws -> IcuSyncSummary {
+        var log = ImportLogRow(source: .icu, container: "intervals.icu")
+        let opened = log
+        try? await ingestor.database.writer.write { db in try opened.insert(db) }
         var summary = IcuSyncSummary()
         progress?("Fetching activity list…")
         let all = try await client.activities(oldest: oldest, newest: newest)
@@ -64,6 +67,17 @@ public struct IcuSyncService: Sendable {
                 summary.failed.append("\(label): \(error)")
             }
         }
+        log.found = summary.watersports
+        log.imported = summary.imported
+        log.duplicates = summary.duplicates
+        // Activities already carrying our intervals.icu id were never re-downloaded.
+        log.skipped = summary.alreadyKnown
+        log.failed = summary.failed.count
+        log.detail = summary.failed.isEmpty ? nil : summary.failed.prefix(20).joined(separator: "\n")
+        log.finishedAt = Date()
+        // A sync that threw leaves its row open (`finishedAt` nil) — that is the record.
+        let finished = log
+        try? await ingestor.database.writer.write { db in try finished.update(db) }
         progress?(summary.shortDescription)
         return summary
     }

@@ -86,6 +86,24 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
 2. **WingFoilKitTests (Swift Testing)** — full pipeline on fixtures vs the same goldens;
    parser fail-soft tests (missing channels, truncated FIT, foreign-app FITs); importer test with
    a synthetic nested GDPR ZIP.
+   Library-depth suites (phase 4, all on real fixture FITs):
+   - `MigrationTests` — a database migrated only `upTo: "v1"` is filled the way the v1 app
+     did (raw rows + archived FITs), then opened as the current `AppDatabase`. Asserts the
+     v2 tables/columns exist, that every v1 row comes out **stale** (`engineVersion` NULL,
+     the same trigger an engine bump uses), that `reanalyzeStale()` re-derives them exactly
+     once and fills `flight`/`turn`/`takeoff_attempt`/`record_effort`/`spot`, and that
+     deleting a session cascades.
+   - `LibraryTests` — the ±60 s/±60 s dedupe key under jitter (45 s ⇒ duplicate, 120 s ⇒
+     new session); spot clustering on synthetic fixes *and* on the corpus (Nago-Torbole vs
+     Rheinstetten), rename-survives-recluster, offline naming fallback; the `record_effort`
+     PB history (all-time max, chronological series, strictly increasing PB step curve,
+     per-spot/per-gear filtering, no duplicate efforts after re-analysis); gear combos
+     (default = last used, one slot per kind, per-gear aggregates); zero-filled week buckets.
+   - `GdprImportTests` — a synthetic Garmin export (ZIP of ZIPs holding two fixture FITs, a
+     gzipped member, JSON noise, `__MACOSX` junk and one unreadable FIT): every session
+     imported exactly once, incremental progress callbacks, `import_log` rows, a **re-run
+     that imports nothing** (the phase-4 acceptance criterion), the depth limit, and
+     streaming-vs-collecting walker agreement.
 3. **Monkey C units (Toybox.Test)** — RingBuffer math; FlightDetector/TurnDetector fed synthetic
    + recorded 1 Hz speed/COG arrays (extracted from fixtures by lab) asserting exact transition
    ticks; PumpDetector fed recorded 25 Hz batches; SpeedRecords vs hand-computed windows.

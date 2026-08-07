@@ -47,6 +47,7 @@ struct LibraryView: View {
                 }
             }
             .sheet(isPresented: $showSettings) { SettingsView() }
+            .sheet(isPresented: $showImporter) { ImportView() }
             #if DEBUG && targetEnvironment(simulator)
             // Headless-driving hooks: `simctl launch` can't tap, so env vars import the
             // fixture corpus and open a session for automated screenshots.
@@ -66,14 +67,6 @@ struct LibraryView: View {
                 if let match { path = [match.id] }
             }
             #endif
-            .fileImporter(isPresented: $showImporter,
-                          allowedContentTypes: [.fitActivity, .zip, .gzip],
-                          allowsMultipleSelection: true) { result in
-                switch result {
-                case .success(let urls): Task { await store.importPicked(urls: urls) }
-                case .failure(let error): store.errorMessage = "Import cancelled: \(error)"
-                }
-            }
             .safeAreaInset(edge: .bottom) { statusBar }
             .alert("Something went wrong",
                    isPresented: Binding(get: { store.errorMessage != nil },
@@ -92,7 +85,7 @@ struct LibraryView: View {
             Text("Import a FIT file or a Garmin export ZIP, or sync your intervals.icu "
                  + "activities. Pull down to sync.")
         } actions: {
-            Button("Import files…") { showImporter = true }
+            Button("Import…") { showImporter = true }
                 .buttonStyle(.borderedProminent)
             Button("Sync intervals.icu") { Task { await store.syncFromIntervals() } }
         }
