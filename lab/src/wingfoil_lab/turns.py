@@ -20,12 +20,40 @@ left out of the summary counts.
 
 Every turn also carries an **outcome**, the rider-facing three-way verdict (Jan's spec):
 
-``flew_through``  never left the foil -- the whole turn window plus a short tail stays
-                  inside a flight *and* above `foilExitSpeed`;
+``flew_through``  never left the foil -- the turn's whole outcome window stays inside a
+                  flight *and* above `foilExitSpeed`, with no pumping;
 ``touchdown``     lost the foil briefly, pumped back up, never came to a stop longer
                   than `turnTouchdownMaxStop`;
 ``fell_in``       came to a full stop (below `turnStopSpeedFloor`) for longer than
                   `turnFallStop` -- a swim and a water start.
+
+The window a turn is judged over is **not a fixed tail**: it runs from the turn start until
+the rider is demonstrably flying again -- back above `turnRecoverPct` of the entry speed
+(never below `foilEntrySpeed`) for `turnRecoverHold` -- capped at `turnOutcomeLookahead`.
+A jibe exited at marginal speed can bleed off for 8-12 s before the foil finally stalls,
+and that mush-out belongs to the jibe; a jibe the rider powers straight out of closes its
+window in a second or two and cannot absorb a later, unrelated touchdown.
+
+Inside that window three channels give evidence, strongest first, each degrading to nothing
+when its channel is missing:
+
+**speed (always)** -- the primary touchdown detector. A sample counts as flying only inside
+a flight and with *both* speed channels above `foilExitSpeed`. The Doppler alone is not
+enough: the firmware smooths it over 3-4 s, so a 1-2 s touchdown is averaged away, while
+the positional channel is a plain 2 s central difference and shows it.
+
+**barometric altitude (when the source has it)** -- a dunked wrist reads absurdly low: 30 cm
+of water is ~30 hPa, which the altimeter renders as a ~250 m drop, and its slew limiter then
+crawls back over minutes. Nothing on a lake moves an altimeter by `turnBaroDrop`, so a
+sample that far below the session's median altitude is proof the rider was in the water: it
+is never flying, and it makes the turn a `fell_in` outright. Positive-only evidence -- most
+falls keep the wrist dry, so its silence means nothing.
+
+**wrist accelerometer (class (a) only)** -- pumping, per `pump.PumpTrack`. Corroborating,
+not primary: the rider pumps a wing for many reasons, so a pump burst turns a fly-through
+into a touchdown only when the speed channels *also* saw the foil go marginal (below
+`foilEntrySpeed`) in the same window. Speed says the foil stopped carrying, accel says the
+rider had to pump it out; neither alone is enough.
 
 The score%/success pair is kept as the secondary, continuous metric: outcome says *what
 happened*, score says *how much speed the turn cost*.
@@ -39,6 +67,7 @@ import numpy as np
 
 from .filters import CleanTrack, hybrid_speed, unwrapped_cog_deg
 from .flight import FlightResult
+from .pump import PumpTrack
 from .wind import WindEstimate
 
 MPS_TO_KN = 1.9438445
@@ -71,11 +100,15 @@ class TurnConfig:
     min_speed_lag_s: float = 2.0          # lab-added: the minimum can land past the exit
     success_pct: float = 70.0             # turnSuccessPct
     foil_exit_speed_kmh: float = 8.0      # flight config's exit speed (success floor)
+    foil_entry_speed_kmh: float = 12.0    # flight config's entry speed (recovery floor)
     stop_speed_floor_mps: float = 1.0     # turnStopSpeedFloor: below this = "stopped"
     touchdown_max_stop_s: float = 3.0     # turnTouchdownMaxStop: still a touchdown
     fall_stop_s: float = 5.0              # turnFallStop: above this = fell in
-    outcome_lookahead_s: float = 5.0      # turnOutcomeLookahead: tail searched for the loss
+    outcome_lookahead_s: float = 12.0     # turnOutcomeLookahead: cap on the tail searched
+    recover_pct: float = 70.0             # turnRecoverPct: of entry speed = flying again
+    recover_hold_s: float = 2.0           # turnRecoverHold: held this long = turn is over
     outcome_window_s: float = 60.0        # turnOutcomeWindow: cap on following the recovery
+    baro_drop_m: float = 25.0             # turnBaroDrop: below median altitude = submerged
 
 
 @dataclass
@@ -103,6 +136,9 @@ class Turn:
     borderline: bool = False         # stop landed in the ambiguous 3-5 s band
     off_foil_s: float = 0.0          # time not flying, from the loss to the recovery
     stopped_s: float = 0.0           # longest contiguous spell below turnStopSpeedFloor
+    pumped: bool = False             # accel: a pump burst inside the outcome window
+    submerged: bool = False          # baro: the wrist went under inside the window
+    outcome_window_s: float = 0.0    # tail past the sweep the outcome was judged over
 
 
 @dataclass
@@ -146,8 +182,13 @@ class TurnSummary:
 
 def detect_turns(clean: CleanTrack, flights: FlightResult,
                  wind: WindEstimate | None = None,
-                 config: TurnConfig | None = None) -> list[Turn]:
-    """Detect, score and classify every turn in a cleaned track, in time order."""
+                 config: TurnConfig | None = None,
+                 pump: PumpTrack | None = None) -> list[Turn]:
+    """Detect, score and classify every turn in a cleaned track, in time order.
+
+    `pump` is optional accelerometer evidence (class-(a) sources); without it the outcome
+    rests on the speed channels alone.
+    """
     cfg = config or TurnConfig()
     turns: list[Turn] = []
     for seg in clean.segments():
@@ -167,7 +208,7 @@ def detect_turns(clean: CleanTrack, flights: FlightResult,
                 turns.append(_build_turn(seg, t, tu, u, rate, i, j, wind, cfg))
     turns.sort(key=lambda x: x.start_t)
     turns = _drop_overlaps(turns)
-    _assign_outcomes(turns, clean, flights, cfg)
+    _assign_outcomes(turns, clean, flights, cfg, pump)
     return turns
 
 
@@ -199,7 +240,7 @@ def summarize_turns(turns: list[Turn]) -> TurnSummary:
 
 
 def _assign_outcomes(turns: list[Turn], clean: CleanTrack, flights: FlightResult,
-                     cfg: TurnConfig) -> None:
+                     cfg: TurnConfig, pump: PumpTrack | None = None) -> None:
     """Fill `outcome`/`borderline`/`off_foil_s`/`stopped_s` on every turn, in place.
 
     Runs over the whole cleaned track rather than per segment: a fall that starts before a
@@ -211,41 +252,66 @@ def _assign_outcomes(turns: list[Turn], clean: CleanTrack, flights: FlightResult
     t = df["t"].to_numpy(float)
     dop = df["doppler_mps"].to_numpy(float)
     gap = df["gap_before"].to_numpy(bool)
-    stop_v = np.minimum(dop, hybrid_speed(df))
-    flying = _flying_mask(t, dop, flights, cfg)
+    speed = np.minimum(dop, hybrid_speed(df))
+    submerged = _submerged_mask(df["alt_m"].to_numpy(float), cfg)
+    flying = _flying_mask(t, speed, submerged, flights, cfg)
     for turn in turns:
-        _outcome(turn, t, gap, stop_v, flying, cfg)
+        _outcome(turn, t, gap, dop, speed, flying, submerged, cfg, pump)
 
 
-def _flying_mask(t: np.ndarray, dop: np.ndarray, flights: FlightResult,
-                 cfg: TurnConfig) -> np.ndarray:
-    """Per sample: inside a flight *and* still above the foil exit speed.
+def _flying_mask(t: np.ndarray, speed: np.ndarray, submerged: np.ndarray,
+                 flights: FlightResult, cfg: TurnConfig) -> np.ndarray:
+    """Per sample: inside a flight, above the foil exit speed, and not underwater.
 
     Flight segmentation alone is too coarse for this job: its exit needs `exitHold` (3 s)
     of sub-exit speed, so a 1-2 s touchdown -- exactly Jan's middle case -- never breaks
-    the flight. Adding the instantaneous exit-speed test makes those visible while the
-    flight mask still catches the long losses that the speed trace alone would blur.
+    the flight. The instantaneous speed test makes those visible while the flight mask
+    still catches the long losses that the speed trace alone would blur.
+
+    `speed` is min(Doppler, positional): both channels over-read a stopped rider (wrist
+    Doppler picks up swim strokes, positional picks up GPS jitter) and only the Doppler
+    under-reacts, being smoothed over 3-4 s -- so the lower of the two is the sharper
+    "is the foil still carrying" test, the same argument the stop measure already makes.
     """
     m = np.zeros(len(t), dtype=bool)
     for f in flights.flights:
         m |= (t >= f.start_t) & (t <= f.end_t)
-    return m & (dop > cfg.foil_exit_speed_kmh * KMH_TO_MPS)
+    return m & (speed > cfg.foil_exit_speed_kmh * KMH_TO_MPS) & ~submerged
 
 
-def _outcome(turn: Turn, t: np.ndarray, gap: np.ndarray, stop_v: np.ndarray,
-             flying: np.ndarray, cfg: TurnConfig) -> None:
+def _submerged_mask(alt: np.ndarray, cfg: TurnConfig) -> np.ndarray:
+    """Per sample: the barometer reads `turnBaroDrop` below the session median = wrist wet.
+
+    All-NaN (no altitude channel) yields all-False, so sources without a barometer simply
+    lose this evidence instead of failing.
+    """
+    ok = np.isfinite(alt)
+    if not ok.any():
+        return np.zeros(len(alt), dtype=bool)
+    return ok & (alt < float(np.median(alt[ok])) - cfg.baro_drop_m)
+
+
+def _outcome(turn: Turn, t: np.ndarray, gap: np.ndarray, dop: np.ndarray,
+             speed: np.ndarray, flying: np.ndarray, submerged: np.ndarray,
+             cfg: TurnConfig, pump: PumpTrack | None = None) -> None:
     """Three-way outcome for one turn (see the module docstring).
 
-    The loss of foil is looked for from the turn start to `outcomeLookahead` past the COG
-    sweep -- a botched exit collapses just after the turn geometry ends, the same lag the
-    speed minimum needs. Once lost, the off-foil run is followed until foiling resumes,
+    The loss of foil is looked for from the turn start to the end of the turn's *outcome
+    window* (`_window_end`). Once lost, the off-foil run is followed until foiling resumes,
     capped at `outcomeWindow` so a turn taken just before a break does not absorb it.
     """
-    lost = np.flatnonzero((t >= turn.start_t) & (t <= turn.end_t + cfg.outcome_lookahead_s)
-                          & ~flying)
+    hi = _window_end(turn, t, gap, dop, cfg)
+    turn.outcome_window_s = float(max(t[hi] - turn.end_t, 0.0))
+    win = (t >= turn.start_t) & (t <= t[hi])
+    turn.pumped = bool(pump is not None and pump.is_pumping(turn.start_t, t[hi]))
+    turn.submerged = bool(submerged[win].any())
+
+    lost = np.flatnonzero(win & ~flying)
     if lost.size == 0:
-        turn.outcome, turn.borderline = FLEW_THROUGH, False
+        turn.borderline = False
         turn.off_foil_s = turn.stopped_s = 0.0
+        marginal = bool((speed[win] < cfg.foil_entry_speed_kmh * KMH_TO_MPS).any())
+        turn.outcome = TOUCHDOWN if (turn.pumped and marginal) else FLEW_THROUGH
         return
 
     a = int(lost[0])
@@ -256,12 +322,48 @@ def _outcome(turn: Turn, t: np.ndarray, gap: np.ndarray, stop_v: np.ndarray,
     end = min(b + 1, len(t) - 1)                       # first flying sample, if there is one
 
     turn.off_foil_s = _elapsed(t, gap, a, end)
-    turn.stopped_s = _longest_stop(t, gap, stop_v, a, b, cfg.stop_speed_floor_mps)
-    if turn.stopped_s > cfg.fall_stop_s:
+    turn.stopped_s = _longest_stop(t, gap, speed, a, b, cfg.stop_speed_floor_mps)
+    if turn.submerged or turn.stopped_s > cfg.fall_stop_s:
         turn.outcome, turn.borderline = FELL_IN, False
     else:
         turn.outcome = TOUCHDOWN
         turn.borderline = turn.stopped_s > cfg.touchdown_max_stop_s
+
+
+def _window_end(turn: Turn, t: np.ndarray, gap: np.ndarray, dop: np.ndarray,
+                cfg: TurnConfig) -> int:
+    """Last sample index the turn is judged over: recovery, a gap, or the lookahead cap.
+
+    *Recovery* is the rider back to cruising -- Doppler at or above `turnRecoverPct` of the
+    turn's entry speed, floored at `foilEntrySpeed` (below that nothing is flying however
+    slowly it entered), held for `turnRecoverHold` with the same both-ends-qualify
+    convention flight entry uses. Searched only past the speed minimum, so the entry itself
+    cannot close the window.
+
+    A **recording gap ends the window** even before recovery: flights hard-break at gaps, so
+    every sample after one reads as "not flying" until a new flight has been established,
+    and following the search across would manufacture a loss out of missing data.
+    """
+    lo = min(int(np.searchsorted(t, turn.start_t, "left")), len(t) - 1)
+    hi, last = lo, -1
+    cap = turn.end_t + cfg.outcome_lookahead_s
+    floor = cfg.foil_entry_speed_kmh * KMH_TO_MPS
+    thr = max(cfg.recover_pct / 100.0 * turn.entry_kn / MPS_TO_KN, floor)
+    held = 0.0
+    for i in range(lo, len(t)):
+        if t[i] > cap or (i > lo and gap[i]):
+            break
+        hi = i
+        if t[i] <= turn.min_t:
+            continue
+        if dop[i] < thr:
+            held, last = 0.0, -1
+            continue
+        held = held + (t[i] - t[last]) if last == i - 1 else 0.0
+        last = i
+        if held >= cfg.recover_hold_s:
+            break
+    return hi
 
 
 def _elapsed(t: np.ndarray, gap: np.ndarray, a: int, b: int) -> float:

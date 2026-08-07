@@ -12,6 +12,7 @@ import pytest
 from wingfoil_lab.filters import clean, clean_from_arrays
 from wingfoil_lab.flight import segment_flights
 from wingfoil_lab.parse import parse_fit
+from wingfoil_lab.pump import pump_track_from_arrays
 from wingfoil_lab.turns import (BEAR_AWAY, COUNTED_TYPES, FELL_IN, FLEW_THROUGH, JIBE,
                                 OUTCOMES, TACK, TOUCHDOWN, UNCLASSIFIED, TurnConfig,
                                 detect_turns, summarize_turns)
@@ -23,17 +24,17 @@ TODAY = FIXTURES / "sessions/ciq/2026-08-07-0754_nago-torbole-windsurfen_ciq.fit
 WIND_N = WindEstimate(dir_deg=0.0, confidence=1.0, source="estimate", axis_deg=0.0)
 
 
-def _track(course_deg, speed_mps, hz=1.0):
+def _track(course_deg, speed_mps, hz=1.0, alt_m=None, t=None):
     """Integrate (course, speed) samples into a CleanTrack (course in compass degrees)."""
     course = np.asarray(course_deg, float)
     v = np.asarray(speed_mps, float)
-    t = np.arange(len(course), dtype=float) / hz
-    dt = 1.0 / hz
+    t = np.arange(len(course), dtype=float) / hz if t is None else np.asarray(t, float)
+    dt = np.concatenate([np.diff(t), [1.0 / hz]])
     dx = np.sin(np.radians(course)) * v * dt
     dy = np.cos(np.radians(course)) * v * dt
     x = np.concatenate([[0.0], np.cumsum(dx)[:-1]])
     y = np.concatenate([[0.0], np.cumsum(dy)[:-1]])
-    return clean_from_arrays(t, v, x=x, y=y)
+    return clean_from_arrays(t, v, x=x, y=y, alt_m=alt_m)
 
 
 def _leg(course, n, speed=6.0):
@@ -255,6 +256,145 @@ def test_outcome_thresholds_are_tunable():
     assert turn.outcome == TOUCHDOWN and turn.stopped_s == 0.0
 
 
+def _mush_out(exit_speed=4.0, decay=0.25, n=16):
+    """A jibe exited above `foilExitSpeed` that then bleeds off to a standstill.
+
+    Nothing here trips the flight machine for many seconds: the exit is still flying and
+    the decay is gradual, which is exactly the failure a fixed short lookahead misses.
+    """
+    tail = np.clip(exit_speed - decay * np.arange(1, n + 1), 0.2, None)
+    return _join(_leg(90.0, 40),
+                 _ramp(90.0, 270.0, 7, np.linspace(6.0, exit_speed, 7)),
+                 ([270.0] * n, list(tail)),
+                 _leg(270.0, 40, speed=0.2))
+
+
+def test_mush_out_after_the_turn_is_the_turns_fault():
+    """The window runs to *recovery*, so a slow collapse 6-12 s out still belongs here."""
+    turn = _detect(*_mush_out())[0]
+    assert turn.outcome == FELL_IN
+    assert turn.outcome_window_s > 5.0            # the old fixed 5 s tail saw none of this
+
+
+def test_a_short_lookahead_would_have_called_the_mush_out_a_fly_through():
+    """Regression guard on `turnOutcomeLookahead`: at the old 5 s the collapse is invisible."""
+    course, speed = _mush_out()
+    assert _detect(course, speed, config=TurnConfig(outcome_lookahead_s=5.0))[0].outcome \
+        == FLEW_THROUGH
+
+
+def test_recovery_closes_the_window_so_a_later_touchdown_is_not_absorbed():
+    """Powered straight out of the jibe, then a fall a minute later: not this turn's."""
+    course, speed = _join(_leg(90.0, 40),
+                          _ramp(90.0, 270.0, 7, np.linspace(6.0, 5.0, 7)),
+                          _leg(270.0, 60),
+                          ([270.0] * 20, [0.3] * 20),
+                          _leg(270.0, 20))
+    turn = _detect(course, speed)[0]
+    assert turn.outcome == FLEW_THROUGH
+    assert turn.outcome_window_s < 5.0            # closed as soon as cruising speed returned
+
+
+def test_the_window_stops_at_a_recording_gap():
+    """Flights hard-break at gaps, so following the search across would invent a loss."""
+    course, speed = _mush_out(exit_speed=4.6, decay=0.1, n=4)
+    t = np.arange(len(course), dtype=float)
+    t[51:] += 30.0                                # 30 s of missing samples right after the exit
+    ct = _track(course, speed, t=t)
+    turn = detect_turns(ct, segment_flights(ct), WIND_N)[0]
+    assert turn.outcome == FLEW_THROUGH
+    assert turn.outcome_window_s <= 4.0
+
+
+def test_positional_channel_catches_a_touchdown_the_doppler_smooths_away():
+    """Doppler held up (firmware smoothing), the track says he stopped: still a touchdown.
+
+    `_jibe_then` puts its dip at index 49; here the *reported* Doppler never dips at all
+    while the ground truth does, which is what 3-4 s of firmware smoothing does to a 3 s
+    touchdown. Only the positional channel can see it.
+    """
+    course, doppler = _jibe_then([3.0] * 3)       # Doppler stays above foilExitSpeed
+    truth = list(doppler)
+    truth[49:52] = [0.5, 0.5, 0.5]                # what the board actually did
+    geometry = _track(course, truth).records
+
+    ct = clean_from_arrays(geometry["t"].to_numpy(float), np.asarray(doppler, float),
+                           x=geometry["x"].to_numpy(float),
+                           y=geometry["y"].to_numpy(float))
+    assert ct.records["doppler_mps"].min() > TurnConfig().foil_exit_speed_kmh / 3.6
+    turn = detect_turns(ct, segment_flights(ct), WIND_N)[0]
+    assert turn.outcome == TOUCHDOWN              # min(Doppler, positional) sees the stop
+
+
+# --- barometric submersion: a wet wrist is proof of a swim ------------------------------
+
+def test_wrist_submersion_makes_a_short_stop_a_fall():
+    """3 s stop = a touchdown on speed alone; the barometer says he was under water."""
+    course, speed = _jibe_then([0.6] * 3)
+    dry = _detect(course, speed)[0]
+    assert dry.outcome == TOUCHDOWN and not dry.submerged
+
+    alt = np.full(len(course), 70.0)
+    alt[49:53] = [-180.0, -230.0, -210.0, -190.0]  # 30 cm of water ~ 30 hPa ~ 250 m "drop"
+    ct = _track(course, speed, alt_m=alt)
+    turn = detect_turns(ct, segment_flights(ct), WIND_N)[0]
+    assert turn.submerged and turn.outcome == FELL_IN
+
+
+def test_submersion_threshold_is_tunable_and_ignores_real_altitude_noise():
+    course, speed = _jibe_then([0.6] * 3)
+    alt = 70.0 + np.random.default_rng(0).normal(0.0, 3.0, len(course))   # baro wander
+    turn = _detect(course, speed, config=TurnConfig())
+    assert not turn[0].submerged
+    ct = _track(course, speed, alt_m=alt)
+    assert not detect_turns(ct, segment_flights(ct), WIND_N)[0].submerged
+
+
+def test_missing_altitude_channel_degrades_to_speed_only():
+    """Native/GPX sources have no usable barometer: same verdict as before, no crash."""
+    course, speed = _jibe_then([0.3] * 11)
+    turn = _detect(course, speed)[0]              # _track leaves alt_m all-NaN
+    assert turn.outcome == FELL_IN and not turn.submerged
+
+
+# --- accelerometer: pumping corroborates, it does not decide -----------------------------
+
+def _pump_stream(t0, t1, hz=25.0, cadence_hz=1.2, amp_g=0.6, quiet=0.0):
+    """(t, |a|) for a wrist that is pumping at `cadence_hz` between t0 and t1."""
+    t = np.arange(0.0, 200.0, 1.0 / hz)
+    mag = np.full_like(t, 1.0) + quiet * np.sin(2 * np.pi * 3.0 * t)
+    on = (t >= t0) & (t <= t1)
+    mag[on] += amp_g * np.sin(2 * np.pi * cadence_hz * t[on])
+    return t, mag
+
+
+def test_pumping_plus_a_marginal_speed_dip_is_a_touchdown():
+    """Speed says the foil went marginal, accel says he pumped it out -- together: touchdown."""
+    course, speed = _jibe_then([2.8] * 4)         # above foilExitSpeed, below foilEntrySpeed
+    assert _detect(course, speed)[0].outcome == FLEW_THROUGH       # speed alone: not enough
+
+    ct = _track(course, speed)
+    pump = pump_track_from_arrays(*_pump_stream(48.0, 56.0))
+    turn = detect_turns(ct, segment_flights(ct), WIND_N, pump=pump)[0]
+    assert turn.pumped and turn.outcome == TOUCHDOWN
+
+
+def test_pumping_alone_never_overturns_a_clean_fly_through():
+    """The rider pumps a wing for many reasons; without a speed dip it stays a fly-through."""
+    ct = _track(*_clean_jibe(min_speed=5.0))
+    pump = pump_track_from_arrays(*_pump_stream(40.0, 60.0))
+    turn = detect_turns(ct, segment_flights(ct), WIND_N, pump=pump)[0]
+    assert turn.pumped and turn.outcome == FLEW_THROUGH
+
+
+def test_a_quiet_wrist_leaves_the_marginal_dip_a_fly_through():
+    course, speed = _jibe_then([2.8] * 4)
+    ct = _track(course, speed)
+    pump = pump_track_from_arrays(*_pump_stream(0.0, 0.0, quiet=0.02))
+    turn = detect_turns(ct, segment_flights(ct), WIND_N, pump=pump)[0]
+    assert not turn.pumped and turn.outcome == FLEW_THROUGH
+
+
 def test_summary_counts_outcomes_per_family():
     # jibe out flying, jibe back with a 10 s stop in the water
     course, speed = _join(_leg(90.0, 40),
@@ -300,7 +440,8 @@ def test_real_session_turns_smoke():
         if turn.outcome == FLEW_THROUGH:
             assert turn.off_foil_s == 0.0 and not turn.borderline
         if turn.outcome == FELL_IN:
-            assert turn.stopped_s > cfg.fall_stop_s and not turn.borderline
+            assert (turn.stopped_s > cfg.fall_stop_s or turn.submerged)
+            assert not turn.borderline
         if turn.borderline:
             assert turn.outcome == TOUCHDOWN
             assert cfg.touchdown_max_stop_s < turn.stopped_s <= cfg.fall_stop_s
@@ -314,10 +455,31 @@ def test_real_session_turns_smoke():
     assert summary.rejected == len(turns) - summary.turns_counted
     assert summary.port + summary.starboard == summary.turns_counted
 
-    # Torbole 2026-08-07: a learning session -- most jibes flown, a real minority swum.
+    # Torbole 2026-08-07 against Jan's own reading of the session: this was a *learning*
+    # day, and roughly two jibes in three cost him the foil -- either pumped back out of it
+    # or swum. All three outcomes are well represented; none of them dominates.
     outcomes = summary.jibe_outcomes
     assert outcomes.total == summary.jibes
-    assert outcomes.flew_through > outcomes.touchdown + outcomes.fell_in
-    assert outcomes.fell_in > 0 and outcomes.touchdown > 0
-    assert outcomes.borderline <= 1                   # the 3-5 s band is all but empty
+    assert min(outcomes.flew_through, outcomes.touchdown, outcomes.fell_in) >= 5
+    assert outcomes.flew_through < outcomes.touchdown + outcomes.fell_in
+    assert outcomes.borderline <= 2                   # the 3-5 s band is all but empty
     assert summary.outcomes.total == summary.turns_counted
+
+
+@pytest.mark.skipif(not TODAY.exists(), reason="ciq fixture missing")
+def test_real_session_pumping_only_adds_touchdowns():
+    """Accel evidence is corroborating: it may promote fly-throughs, never demote a fall."""
+    from wingfoil_lab.pump import pump_track
+
+    track = parse_fit(TODAY)
+    ct = clean(track)
+    flights = segment_flights(ct)
+    wind = estimate_wind(ct, flights)
+    pump = pump_track(track)
+    assert pump is not None                           # class (a): SensorLogging is on
+
+    dry = summarize_turns(detect_turns(ct, flights, wind)).jibe_outcomes
+    wet = summarize_turns(detect_turns(ct, flights, wind, pump=pump)).jibe_outcomes
+    assert wet.fell_in == dry.fell_in
+    assert wet.touchdown > dry.touchdown
+    assert wet.flew_through == dry.flew_through - (wet.touchdown - dry.touchdown)

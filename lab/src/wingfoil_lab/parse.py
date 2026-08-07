@@ -2,6 +2,12 @@
 
 Fail-soft by design: missing channels/dev fields reduce SourceCapabilities, never raise.
 Developer-field names follow docs/fit-schema.md.
+
+Class-(a) files also carry the watch's SensorLogging accelerometer stream in
+`accelerometer_data` messages (batched: one message per ~25 samples, each sample timed by
+`timestamp` + `timestamp_ms` + its `sample_time_offset`). It is returned as a separate
+`RawTrack.accel` frame on the *same* time base as the records, because it is two orders of
+magnitude longer than the 1 Hz record frame and belongs to a different clock.
 """
 
 from __future__ import annotations
@@ -11,6 +17,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import fitdecode
+import numpy as np
 import pandas as pd
 
 SEMICIRCLE = 180.0 / 2**31
@@ -50,6 +57,7 @@ class RawTrack:
     laps: list[dict] = field(default_factory=list)
     session: dict = field(default_factory=dict)
     capabilities: SourceCapabilities = field(default_factory=SourceCapabilities)
+    accel: pd.DataFrame | None = None   # t (s, records' base) + ax/ay/az in g; None if absent
 
 
 _RECORD_KEEP = {
@@ -73,6 +81,7 @@ def parse_fit(path: str | Path) -> RawTrack:
     laps: list[dict] = []
     session: dict = {}
     accel_frames = 0
+    accel_batches: list[tuple] = []
 
     with fitdecode.FitReader(path, check_crc=fitdecode.CrcCheck.WARN) as reader:
         for frame in reader:
@@ -89,12 +98,18 @@ def parse_fit(path: str | Path) -> RawTrack:
                 session = _frame_fields(frame)
             elif frame.name in ("accelerometer_data", "three_d_sensor_calibration"):
                 accel_frames += 1
+                if frame.name == "accelerometer_data":
+                    batch = _accel_batch(_frame_fields(frame))
+                    if batch is not None:
+                        accel_batches.append(batch)
 
     df = pd.DataFrame(records)
     caps = SourceCapabilities()
+    epoch0: float | None = None
     if not df.empty and "timestamp" in df:
         df = df.dropna(subset=["timestamp"]).reset_index(drop=True)
         t0 = df["timestamp"].iloc[0]
+        epoch0 = t0.timestamp()
         df["t"] = (df["timestamp"] - t0).dt.total_seconds()
         # unify speed: prefer enhanced_speed, fall back to speed (both m/s on Garmin)
         if "enhanced_speed" in df or "speed" in df:
@@ -122,7 +137,42 @@ def parse_fit(path: str | Path) -> RawTrack:
     disc = session.get(DEV_SESSION_DISCIPLINE)
     caps.discipline = str(disc) if disc is not None else None
 
-    return RawTrack(path=str(path), records=df, laps=laps, session=session, capabilities=caps)
+    accel = _accel_frame(accel_batches, epoch0)
+    return RawTrack(path=str(path), records=df, laps=laps, session=session, capabilities=caps,
+                    accel=accel)
+
+
+def _accel_batch(fields: dict) -> tuple | None:
+    """One `accelerometer_data` message -> (epoch seconds, ax, ay, az) arrays, or None."""
+    ts = fields.get("timestamp")
+    off = fields.get("sample_time_offset")
+    axes = [fields.get(f"calibrated_accel_{a}") for a in "xyz"]
+    if ts is None or off is None or any(a is None for a in axes):
+        return None
+    n = min(len(off), *(len(a) for a in axes))
+    if n == 0:
+        return None
+    base = ts.timestamp() + float(fields.get("timestamp_ms") or 0) / 1000.0
+    t = base + np.asarray(off[:n], dtype=float) / 1000.0
+    return (t,) + tuple(np.asarray(a[:n], dtype=float) for a in axes)
+
+
+def _accel_frame(batches: list[tuple], epoch0: float | None) -> pd.DataFrame | None:
+    """Concatenate accel batches onto the records' time base, in g, sorted by time.
+
+    Garmin writes `calibrated_accel_*` in milli-g even though the FIT profile names the unit
+    "g"; a resting magnitude near 1000 rather than 1 gives it away, so the scale is sniffed
+    rather than assumed and a device that really emits g still parses correctly.
+    """
+    if not batches or epoch0 is None:
+        return None
+    t = np.concatenate([b[0] for b in batches]) - epoch0
+    ax, ay, az = (np.concatenate([b[i] for b in batches]) for i in (1, 2, 3))
+    order = np.argsort(t, kind="stable")
+    t, ax, ay, az = t[order], ax[order], ay[order], az[order]
+    mag = np.median(np.sqrt(ax * ax + ay * ay + az * az))
+    scale = 1e-3 if mag > 20.0 else 1.0
+    return pd.DataFrame({"t": t, "ax": ax * scale, "ay": ay * scale, "az": az * scale})
 
 
 def summarize(track: RawTrack) -> dict:
