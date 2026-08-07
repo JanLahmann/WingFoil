@@ -62,19 +62,38 @@ echoed in session fields 40–42.
 | `turnMaxDuration` | 8 | s | window for the net change |
 | `turnPeakRate` | 25 | deg/s | at ≥1 sample (Richterich: jibes ~30–40°/s for ~4 s) |
 | `turnContext` | ON_FOIL or ≤3 s after | | turns while swimming don't count |
+| `turnCogSpeedFloor` | 2.0 | m/s | COG geometry read only from steps above this (same COAPS caveat as wind); a capsize below it otherwise reads as a multi-turn spin |
+| `turnContinueRate` | 5 | deg/s | edge trim: shrink the detected span to the actually-turning part |
 | `entrySpeedWindow` | 3 | s | entry speed = max over window before turn start |
+| `minSpeedLag` | 2 | s | minimum searched to `turnEnd + lag` (the collapse of a botched turn lands just past the COG sweep) |
 | `turnSuccessPct` | 70 | % | success ⇒ minSpeed/entrySpeed ≥ this AND speed never ≤ `foilExitSpeed` |
 | classification | | | tack = COG crosses wind axis through upwind; jibe = through downwind; requires wind axis; bear-away/round-up (no axis crossing) excluded from counts |
 | port/starboard | | | side before the turn, from sign of TWA |
+
+Entry/minimum speeds come from `speedChannelManeuvers` (positional); the "never dropped off
+foil" half of the success test stays on Doppler so it agrees with flight segmentation.
+Overlapping candidates are non-maximum-suppressed by net angle, widest sweep wins.
 
 ## Wind axis estimation (phone)
 
 1. Foiling samples only, speed ≥ 2 m/s (COG≠heading below that — COAPS caveat).
 2. Weighted circular histogram of COG (10° bins, weight = distance) → two dominant modes
    (reaches) → axis = bisector.
-3. 180° ambiguity: upwind/downwind speed asymmetry → else Open-Meteo prior → else user value.
-4. Confidence ∈ [0,1] from mode separation & mass; `< 0.5` ⇒ turns labeled `turn`, not tack/jibe,
-   unless user set wind manually (manual always wins).
+3. 180° ambiguity: **no-go zone** — of the two axis ends, the one whose ±45° cone holds
+   (almost) no distance is where the wind comes from; margin = relative cone asymmetry
+   (`fullMargin` 0.4 ⇒ certain, both cones empty ⇒ unresolved) → else Open-Meteo prior →
+   else user value.
+4. Confidence ∈ [0,1] = axis confidence (lobe mass × lobe balance × mode separation) ×
+   ambiguity margin; `< 0.5` ⇒ turns labeled `turn`, not tack/jibe, unless user set wind
+   manually (manual always wins).
+
+The **speed** asymmetry originally specified for step 3 is not used: across the whole
+fixture corpus mean speed rises as the course turns *toward* the wind (a foil loses
+apparent wind deep downwind), i.e. the opposite of the displacement-sailing rule it was
+taken from. It is kept as a diagnostic only. The no-go-zone rule matches Garda's diurnal
+pattern (morning Peler from N, afternoon Ora from S) on every corpus session.
+Degenerate case: exactly opposed lobes (pure beam-reach out-and-back) put the true axis
+perpendicular to the lobes where no bisector can find it — rejected, no estimate.
 
 ## Pump / takeoff detection
 

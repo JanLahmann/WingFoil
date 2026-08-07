@@ -20,6 +20,7 @@ from .parse import RawTrack, SourceCapabilities
 
 M_PER_DEG_LON_EQ = 111320.0  # x = (lon-lon0) * cos(lat0) * this
 M_PER_DEG_LAT = 110540.0     # y = (lat-lat0) * this
+MIN_COG_DISPLACEMENT_M = 0.5  # below this a step carries no usable bearing
 
 _COLUMNS = ["t", "x", "y", "lat", "lon", "doppler_mps", "pos_mps", "dt", "gap_before", "segment"]
 
@@ -142,6 +143,35 @@ def clean_from_arrays(t, doppler_mps, x=None, y=None, config: FilterConfig | Non
                               sample_rate_hz=round(1.0 / med, 3) if med > 0 else 0.0)
     return CleanTrack(path, out[_COLUMNS], caps, cfg,
                       median_dt_s=med, gap_threshold_s=thr, timer_time_s=timer)
+
+
+def unwrapped_cog_deg(x: np.ndarray, y: np.ndarray,
+                      min_disp_m: float = MIN_COG_DISPLACEMENT_M) -> np.ndarray:
+    """Per-interval course over ground (deg, unwrapped), length ``len(x) - 1``.
+
+    Element ``i`` is the bearing of the step leaving sample ``i`` (0 deg = +y = north,
+    clockwise). Steps shorter than ``min_disp_m`` carry only position noise and inherit
+    the last usable bearing. Unwrapped so that turn rates are plain differences; only
+    call it per gap-free segment (a gap would unwrap across missing motion).
+    """
+    dx, dy = np.diff(x), np.diff(y)
+    disp = np.hypot(dx, dy)
+    bear = np.degrees(np.arctan2(dx, dy))
+    bear = np.where(disp >= min_disp_m, bear, np.nan)
+    bear = pd.Series(bear).ffill().bfill().fillna(0.0).to_numpy()
+    return np.degrees(np.unwrap(np.radians(bear)))
+
+
+def hybrid_speed(records: pd.DataFrame) -> np.ndarray:
+    """Maneuver speed channel (docs/algorithms.md ``speedChannelManeuvers``).
+
+    Positional speed where available, Doppler where not: device Doppler is smoothed over
+    ~3-4 s and understates turn minima, so turn entry/minimum speeds are read here while
+    speed records stay on the Doppler channel.
+    """
+    pos = records["pos_mps"].to_numpy(float)
+    dop = records["doppler_mps"].to_numpy(float)
+    return np.where(np.isfinite(pos), pos, dop)
 
 
 def _empty_frame() -> pd.DataFrame:
