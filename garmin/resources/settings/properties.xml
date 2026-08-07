@@ -10,4 +10,7 @@
     <property id="accelLogging" type="boolean">true</property>
     <property id="alertPb" type="boolean">true</property>
     <property id="alertFlight" type="boolean">true</property>
+    <property id="alertTurn" type="boolean">true</property>
+    <!-- wind the turn classifier splits tacks from jibes on; -1 = unset -->
+    <property id="windDirDeg" type="number">-1</property>
 </properties>

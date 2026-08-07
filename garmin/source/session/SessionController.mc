@@ -65,13 +65,19 @@ class SessionController {
         if (state == STATE_RECORDING) {
             var events = engine.tick(info);
             var flightEvent = events & 0x0F;
-            var pbEvents = events >> 4;
+            var pbEvents = (events >> 4) & 0x0F;
+            var turnEvent = (events >> 8) & 0x0F;
 
             if (flightEvent == FlightDetector.EVENT_START
                 || flightEvent == FlightDetector.EVENT_END) {
                 if (_session != null) {
+                    // lap dev fields take the values held when the lap closes
+                    if (_fit != null) {
+                        _fit.setLap(engine.turns);
+                    }
                     _session.addLap();
                 }
+                engine.turns.resetLap();
                 if (flightEvent == FlightDetector.EVENT_END
                     && engine.detector.longestS > _prevLongest) {
                     _prevLongest = engine.detector.longestS;
@@ -81,9 +87,14 @@ class SessionController {
             if (pbEvents != 0 && engine.speedMps >= AppSettings.foilEntryMps) {
                 AlertManager.speedPb();
             }
+            if (turnEvent >= TurnDetector.EVENT_FLEW) {
+                AlertManager.turnOutcome(engine.turns.lastOutcome);
+            }
             if (_fit != null) {
-                _fit.setRecord(engine.detector.state, engine.tickCount());
-                _fit.updateSession(engine.detector, engine.records, engine.timerS);
+                _fit.setRecord(engine.detector.state, engine.tickCount(),
+                    FitFields.markerFor(turnEvent, engine.turns.lastKind));
+                _fit.updateSession(engine.detector, engine.records, engine.timerS,
+                    engine.turns);
             }
         } else {
             // pre-session: surface quality/speed on the start screen
@@ -152,7 +163,7 @@ class SessionController {
             _session.stop();
         }
         if (_fit != null) {
-            _fit.updateSession(engine.detector, engine.records, engine.timerS);
+            _fit.updateSession(engine.detector, engine.records, engine.timerS, engine.turns);
         }
         var ok = _session.save();
         state = STATE_SAVED;

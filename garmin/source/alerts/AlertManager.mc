@@ -36,4 +36,29 @@ module AlertManager {
             _fire([new Attention.VibeProfile(100, 600)]);
         }
     }
+
+    // Turn outcome resolved. Distinct rhythms so the verdict is readable without looking:
+    // flew through = one crisp tick, touchdown = two soft ticks, fell in = three hard ticks.
+    function turnOutcome(outcome as Number) as Void {
+        if (!AppSettings.alertTurn) {
+            return;
+        }
+        if (outcome == TurnDetector.OUTCOME_FLEW) {
+            _fire([new Attention.VibeProfile(75, 120)]);
+        } else if (outcome == TurnDetector.OUTCOME_TOUCHDOWN) {
+            _fire([
+                new Attention.VibeProfile(50, 100),
+                new Attention.VibeProfile(0, 120),
+                new Attention.VibeProfile(50, 100)
+            ]);
+        } else {
+            _fire([
+                new Attention.VibeProfile(100, 150),
+                new Attention.VibeProfile(0, 100),
+                new Attention.VibeProfile(100, 150),
+                new Attention.VibeProfile(0, 100),
+                new Attention.VibeProfile(100, 150)
+            ]);
+        }
+    }
 }

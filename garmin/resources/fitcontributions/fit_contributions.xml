@@ -13,4 +13,10 @@
         dataLabel="@Strings.FitLongestFlight" unitLabel="@Strings.FitUnitSeconds"/>
     <fitField id="26" displayInActivitySummary="true" sortOrder="5" precision="0"
         dataLabel="@Strings.FitBest2s" unitLabel="@Strings.FitUnitCms"/>
+    <fitField id="32" displayInActivitySummary="true" sortOrder="6" precision="0"
+        dataLabel="@Strings.FitTacks" unitLabel="@Strings.FitUnitNone"/>
+    <fitField id="33" displayInActivitySummary="true" sortOrder="7" precision="0"
+        dataLabel="@Strings.FitJibes" unitLabel="@Strings.FitUnitNone"/>
+    <fitField id="34" displayInActivitySummary="true" sortOrder="8" precision="0"
+        dataLabel="@Strings.FitTurnSuccess" unitLabel="@Strings.FitUnitPct"/>
 </fitContributions>
