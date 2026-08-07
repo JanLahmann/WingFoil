@@ -132,6 +132,66 @@ def test_slow_pivot_below_peak_rate_is_not_a_turn():
     assert _detect(course, speed) == []
 
 
+def test_wallow_rotation_is_rejected_by_the_spatial_gate():
+    """A heading flip while drifting: the right angle, but no water covered.
+
+    2.2 m/s clears `turnCogSpeedFloor`, so the speed floor alone lets this through -- it is
+    the geometry that says no: 11 m of arc and a 3.5 m radius, a rider spinning the board
+    round on the spot rather than carving 180 deg of a circle.
+    """
+    course, speed = _join(_leg(90.0, 40, speed=6.0),
+                          ([90.0] * 2, [2.2] * 2),
+                          _ramp(90.0, 270.0, 5, [2.2] * 5),
+                          _leg(270.0, 20, speed=2.2))
+    ct = _track(course, speed)
+    flights = segment_flights(ct)
+
+    ungated = detect_turns(ct, flights, WIND_N,
+                           TurnConfig(min_arc_m=0.0, min_radius_m=0.0))
+    assert len(ungated) == 1                      # angle-only detection finds a "jibe"
+    assert ungated[0].kind == JIBE
+    assert ungated[0].arc_m < 12.0 and ungated[0].radius_m < 6.0
+
+    assert detect_turns(ct, flights, WIND_N) == []   # ...and the gate drops it outright
+
+
+def test_a_real_jibe_arc_survives_the_gate_with_margin():
+    """The shape the gate must never touch: a carved 180 deg at foiling speed."""
+    turn = _detect(*_clean_jibe(min_speed=5.0))[0]
+    cfg = TurnConfig()
+    assert turn.arc_m > 2.0 * cfg.min_arc_m       # ~38 m of water covered
+    assert turn.radius_m > 2.0 * cfg.min_radius_m  # ~12 m radius: a real carve
+    assert turn.chord_m < turn.arc_m              # it curved, it did not go straight
+
+
+def test_the_spatial_gate_is_geometric_not_another_speed_floor():
+    """Identical speed, duration and arc length -- only the tightness differs.
+
+    Both sweeps run 4.0 m/s for 3 s and cover exactly 16 m of water, so no speed test of
+    any kind can separate them. The 180 deg one pivots inside a 5 m radius and is dropped;
+    the 90 deg one carves 10 m and is kept. That is what "moved around the curve" means.
+    """
+    def sweep(to_deg):
+        return _join(_leg(90.0, 40, speed=4.0), _ramp(90.0, to_deg, 4, [4.0] * 4),
+                     _leg(to_deg, 20, speed=4.0))
+
+    loose = TurnConfig(min_arc_m=0.0, min_radius_m=0.0)
+    tight_open = _detect(*sweep(270.0), config=loose)
+    wide_open = _detect(*sweep(180.0), config=loose)
+    assert len(tight_open) == len(wide_open) == 1
+    assert tight_open[0].arc_m == pytest.approx(wide_open[0].arc_m, abs=0.1)
+    assert tight_open[0].radius_m < 6.0 < wide_open[0].radius_m
+
+    assert _detect(*sweep(270.0)) == []               # pivoted on the spot: dropped
+    assert len(_detect(*sweep(180.0))) == 1           # carved a real arc: kept
+
+
+def test_gate_thresholds_are_tunable():
+    course, speed = _clean_jibe(min_speed=5.0)
+    assert _detect(course, speed, config=TurnConfig(min_arc_m=1000.0)) == []
+    assert _detect(course, speed, config=TurnConfig(min_radius_m=100.0)) == []
+
+
 # --- context, channels, classification fallbacks ---------------------------------------
 
 def test_turn_while_not_foiling_is_ignored():
