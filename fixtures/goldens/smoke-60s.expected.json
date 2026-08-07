@@ -1,0 +1,97 @@
+{
+  "engineVersion": "0.1.0",
+  "config": {
+    "foilEntrySpeed": 12.0,
+    "entryHold": 2.0,
+    "foilExitSpeed": 8.0,
+    "exitHold": 3.0,
+    "minFlightDuration": 5.0,
+    "touchdownMergeGap": 0.0,
+    "maxHdop": 5.0,
+    "minSatellites": 5,
+    "maxAccel1Hz": 4.0,
+    "gapMinS": 3.0,
+    "gapFactor": 2.0,
+    "speedChannelRecords": "doppler",
+    "alphaProximity": 50.0,
+    "alphaMaxDistance": 500.0,
+    "alphaCandidatePruneMinPath": 250.0,
+    "alphaCandidatePruneMinCogSpread": 90.0,
+    "minSpeedFilter": null
+  },
+  "capabilities": {
+    "hasDoppler": true,
+    "hasDevFields": false,
+    "hasWatchLaps": false,
+    "hasAccel": false,
+    "hasHR": true,
+    "sampleRateHz": 1.0
+  },
+  "flights": [
+    {
+      "startTs": 21.0,
+      "endTs": 51.0,
+      "distM": 178.9,
+      "maxKn": 11.879,
+      "takeoffPumps": null
+    }
+  ],
+  "turns": [],
+  "records": {
+    "best2sKn": 11.879,
+    "best10sKn": 11.879,
+    "best5x10sKn": 8.261,
+    "best100mKn": 11.879,
+    "best250mKn": 0.0,
+    "best500mKn": 0.0,
+    "bestNmKn": 0.0,
+    "bestHourKn": 0.0,
+    "alpha500Kn": 0.0,
+    "windows": {
+      "best2s": {
+        "startTs": 25.0,
+        "durS": 2.0
+      },
+      "best10s": {
+        "startTs": 25.0,
+        "durS": 10.0
+      },
+      "best5x10s": [
+        {
+          "startTs": 25.0,
+          "durS": 10.0
+        },
+        {
+          "startTs": 35.0,
+          "durS": 10.0
+        },
+        {
+          "startTs": 45.0,
+          "durS": 10.0
+        },
+        {
+          "startTs": 15.0,
+          "durS": 10.0
+        },
+        {
+          "startTs": 0.0,
+          "durS": 10.0
+        }
+      ],
+      "best100m": {
+        "startTs": 21.0,
+        "durS": 16.36
+      }
+    }
+  },
+  "wind": null,
+  "takeoffs": [],
+  "summary": {
+    "foilTimeS": 30.0,
+    "foilPct": 50.85,
+    "flightCount": 1,
+    "longestFlightS": 30.0,
+    "longestFlightM": 178.9,
+    "distanceKm": 0.226
+  }
+}

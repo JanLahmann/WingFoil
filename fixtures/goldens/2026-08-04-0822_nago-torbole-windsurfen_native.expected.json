@@ -1,0 +1,438 @@
+{
+  "engineVersion": "0.1.0",
+  "config": {
+    "foilEntrySpeed": 12.0,
+    "entryHold": 2.0,
+    "foilExitSpeed": 8.0,
+    "exitHold": 3.0,
+    "minFlightDuration": 5.0,
+    "touchdownMergeGap": 0.0,
+    "maxHdop": 5.0,
+    "minSatellites": 5,
+    "maxAccel1Hz": 4.0,
+    "gapMinS": 3.0,
+    "gapFactor": 2.0,
+    "speedChannelRecords": "doppler",
+    "alphaProximity": 50.0,
+    "alphaMaxDistance": 500.0,
+    "alphaCandidatePruneMinPath": 250.0,
+    "alphaCandidatePruneMinCogSpread": 90.0,
+    "minSpeedFilter": null
+  },
+  "capabilities": {
+    "hasDoppler": true,
+    "hasDevFields": false,
+    "hasWatchLaps": false,
+    "hasAccel": false,
+    "hasHR": true,
+    "sampleRateHz": 0.5
+  },
+  "flights": [
+    {
+      "startTs": 751.0,
+      "endTs": 931.0,
+      "distM": 872.7,
+      "maxKn": 11.772,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1007.0,
+      "endTs": 1030.0,
+      "distM": 110.1,
+      "maxKn": 10.592,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1036.0,
+      "endTs": 1069.0,
+      "distM": 158.7,
+      "maxKn": 10.466,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1120.0,
+      "endTs": 1148.0,
+      "distM": 93.4,
+      "maxKn": 9.305,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1190.0,
+      "endTs": 1205.0,
+      "distM": 63.6,
+      "maxKn": 9.268,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1286.0,
+      "endTs": 1291.0,
+      "distM": 23.0,
+      "maxKn": 9.449,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1306.0,
+      "endTs": 1319.0,
+      "distM": 66.5,
+      "maxKn": 10.738,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1324.0,
+      "endTs": 1340.0,
+      "distM": 65.9,
+      "maxKn": 10.085,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1416.0,
+      "endTs": 1424.0,
+      "distM": 36.9,
+      "maxKn": 9.83,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1429.0,
+      "endTs": 1450.0,
+      "distM": 113.2,
+      "maxKn": 11.099,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1456.0,
+      "endTs": 1470.0,
+      "distM": 53.1,
+      "maxKn": 10.157,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1541.0,
+      "endTs": 1571.0,
+      "distM": 147.3,
+      "maxKn": 10.466,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1576.0,
+      "endTs": 1583.0,
+      "distM": 30.4,
+      "maxKn": 9.741,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1588.0,
+      "endTs": 1614.0,
+      "distM": 144.5,
+      "maxKn": 12.406,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1674.0,
+      "endTs": 1688.0,
+      "distM": 68.2,
+      "maxKn": 10.357,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1703.0,
+      "endTs": 1722.0,
+      "distM": 89.9,
+      "maxKn": 9.976,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1727.0,
+      "endTs": 1753.0,
+      "distM": 117.6,
+      "maxKn": 9.595,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1758.0,
+      "endTs": 1799.0,
+      "distM": 176.5,
+      "maxKn": 11.228,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1804.0,
+      "endTs": 1835.0,
+      "distM": 159.6,
+      "maxKn": 10.864,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1918.0,
+      "endTs": 1931.0,
+      "distM": 54.2,
+      "maxKn": 8.778,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1936.0,
+      "endTs": 1946.0,
+      "distM": 47.6,
+      "maxKn": 9.776,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 1953.0,
+      "endTs": 2010.0,
+      "distM": 251.9,
+      "maxKn": 11.027,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 2016.0,
+      "endTs": 2076.0,
+      "distM": 291.5,
+      "maxKn": 11.154,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 2081.0,
+      "endTs": 2174.0,
+      "distM": 438.5,
+      "maxKn": 11.317,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 2179.0,
+      "endTs": 2203.0,
+      "distM": 98.6,
+      "maxKn": 9.884,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 2219.0,
+      "endTs": 2238.0,
+      "distM": 77.2,
+      "maxKn": 9.377,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 2299.0,
+      "endTs": 2310.0,
+      "distM": 49.7,
+      "maxKn": 9.595,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 2318.0,
+      "endTs": 2323.0,
+      "distM": 24.3,
+      "maxKn": 9.958,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 2328.0,
+      "endTs": 2347.0,
+      "distM": 80.2,
+      "maxKn": 10.23,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 2352.0,
+      "endTs": 2390.0,
+      "distM": 183.1,
+      "maxKn": 11.48,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 2455.0,
+      "endTs": 2487.0,
+      "distM": 143.5,
+      "maxKn": 10.067,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 2581.0,
+      "endTs": 2616.0,
+      "distM": 170.9,
+      "maxKn": 10.157,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 2651.0,
+      "endTs": 2681.0,
+      "distM": 116.8,
+      "maxKn": 9.813,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 2710.0,
+      "endTs": 2747.0,
+      "distM": 153.7,
+      "maxKn": 9.612,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 2804.0,
+      "endTs": 2863.0,
+      "distM": 287.1,
+      "maxKn": 11.099,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 2872.0,
+      "endTs": 2892.0,
+      "distM": 91.9,
+      "maxKn": 9.649,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 2921.0,
+      "endTs": 2950.0,
+      "distM": 131.5,
+      "maxKn": 10.901,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 2955.0,
+      "endTs": 3021.0,
+      "distM": 301.9,
+      "maxKn": 11.609,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 3036.0,
+      "endTs": 3044.0,
+      "distM": 34.6,
+      "maxKn": 9.122,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 3049.0,
+      "endTs": 3064.0,
+      "distM": 65.1,
+      "maxKn": 9.432,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 3069.0,
+      "endTs": 3131.0,
+      "distM": 292.6,
+      "maxKn": 11.263,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 3154.0,
+      "endTs": 3183.0,
+      "distM": 128.6,
+      "maxKn": 9.704,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 3195.0,
+      "endTs": 3208.0,
+      "distM": 51.4,
+      "maxKn": 9.884,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 3219.0,
+      "endTs": 3274.0,
+      "distM": 276.0,
+      "maxKn": 11.064,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 3341.0,
+      "endTs": 3408.0,
+      "distM": 282.8,
+      "maxKn": 10.592,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 3543.0,
+      "endTs": 3553.0,
+      "distM": 42.2,
+      "maxKn": 8.85,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 3580.0,
+      "endTs": 3591.0,
+      "distM": 45.4,
+      "maxKn": 8.959,
+      "takeoffPumps": null
+    },
+    {
+      "startTs": 3596.0,
+      "endTs": 3625.0,
+      "distM": 119.2,
+      "maxKn": 10.03,
+      "takeoffPumps": null
+    }
+  ],
+  "turns": [],
+  "records": {
+    "best2sKn": 11.871,
+    "best10sKn": 11.25,
+    "best5x10sKn": 11.011,
+    "best100mKn": 11.092,
+    "best250mKn": 10.384,
+    "best500mKn": 9.735,
+    "bestNmKn": 0.0,
+    "bestHourKn": 0.0,
+    "alpha500Kn": 9.813,
+    "windows": {
+      "best2s": {
+        "startTs": 1611.0,
+        "durS": 2.0
+      },
+      "best10s": {
+        "startTs": 785.0,
+        "durS": 10.0
+      },
+      "best5x10s": [
+        {
+          "startTs": 785.0,
+          "durS": 10.0
+        },
+        {
+          "startTs": 1595.0,
+          "durS": 10.0
+        },
+        {
+          "startTs": 2354.0,
+          "durS": 10.0
+        },
+        {
+          "startTs": 2971.0,
+          "durS": 10.0
+        },
+        {
+          "startTs": 828.0,
+          "durS": 10.0
+        }
+      ],
+      "best100m": {
+        "startTs": 1596.48,
+        "durS": 17.52
+      },
+      "best250m": {
+        "startTs": 752.2,
+        "durS": 46.8
+      },
+      "best500m": {
+        "startTs": 755.16,
+        "durS": 99.84
+      },
+      "alpha500": {
+        "startTs": 821.0,
+        "durS": 69.0
+      }
+    }
+  },
+  "wind": null,
+  "takeoffs": [],
+  "summary": {
+    "foilTimeS": 1506.0,
+    "foilPct": 65.99,
+    "flightCount": 48,
+    "longestFlightS": 180.0,
+    "longestFlightM": 872.7,
+    "distanceKm": 7.968
+  }
+}
