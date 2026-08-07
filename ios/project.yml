@@ -1,0 +1,98 @@
+# XcodeGen project definition — the source of truth for ios/WingFoil.xcodeproj.
+# The .xcodeproj itself is generated and gitignored; regenerate it with:
+#
+#     brew install xcodegen        # once
+#     cd ios && xcodegen generate  # writes WingFoil.xcodeproj + WingFoil/Info.plist
+#
+# Then open ios/WingFoil.xcodeproj in Xcode and run the "WingFoil" scheme.
+
+name: WingFoil
+
+options:
+  bundleIdPrefix: de.lahmann
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+  minimumXcodeGenVersion: "2.42.0"
+
+packages:
+  WingFoilKit:
+    path: WingFoilKit
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    ENABLE_MODULE_VERIFIER: NO
+    SWIFT_EMIT_LOC_STRINGS: YES
+
+targets:
+  WingFoil:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: WingFoil
+        excludes:
+          - "Info.plist"          # generated below; not part of the compile sources group
+    dependencies:
+      - package: WingFoilKit
+        product: WingFoilKit
+    settings:
+      base:
+        PRODUCT_NAME: WingFoil
+        PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1"          # iPhone only
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 685X8YLYSB         # Jan-Rainer Lahmann (personal + program team)
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ENABLE_PREVIEWS: YES
+        SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
+    info:
+      path: WingFoil/Info.plist
+      properties:
+        CFBundleDisplayName: WingFoil
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSRequiresIPhoneOS: true
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen: {}
+        UIApplicationSupportsIndirectInputEvents: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        LSSupportsOpeningDocumentsInPlace: true
+        # FIT has no system UTI; importing it makes .fit files pickable in the Files
+        # importer and lets the share sheet hand recordings to the app.
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: de.lahmann.wingfoil.fit
+            UTTypeDescription: FIT activity file
+            UTTypeConformsTo:
+              - public.data
+              - public.content
+            UTTypeTagSpecification:
+              public.filename-extension:
+                - fit
+              public.mime-type:
+                - application/vnd.ant.fit
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Activity recording
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - de.lahmann.wingfoil.fit
+              - public.zip-archive
+    scheme:
+      environmentVariables:
+        # Flip "enabled" on in Xcode (Edit Scheme → Run → Arguments) to sync without
+        # typing the key into the app. DEBUG builds only.
+        - variable: ICU_API_KEY
+          value: ""
+          isEnabled: false
