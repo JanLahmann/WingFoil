@@ -14,14 +14,16 @@ public enum TrackCleaner {
         // Row hygiene: speed is mandatory (the pipeline runs on the Doppler channel);
         // position is mandatory only when the source has any. Dropped rows become
         // larger dts — and hard gaps once past the threshold.
-        struct Row { var t: Double; var v: Double; var lat: Double?; var lon: Double? }
+        struct Row {
+            var t: Double; var v: Double; var lat: Double?; var lon: Double?; var alt: Double?
+        }
         let hasPos = raw.samples.contains { $0.lat != nil && $0.lon != nil }
         var rows: [Row] = []
         rows.reserveCapacity(raw.samples.count)
         for s in raw.samples {
             guard let v = s.speedMps else { track.droppedNaN += 1; continue }
             if hasPos, s.lat == nil || s.lon == nil { track.droppedNaN += 1; continue }
-            rows.append(Row(t: s.t, v: v, lat: s.lat, lon: s.lon))
+            rows.append(Row(t: s.t, v: v, lat: s.lat, lon: s.lon, alt: s.altitudeM))
         }
         // Stable sort by t, drop duplicate timestamps (keep first).
         rows = rows.enumerated()
@@ -83,7 +85,7 @@ public enum TrackCleaner {
             let dt = i == 0 ? 0 : r.t - rows[i - 1].t
             var c = CleanSample(t: r.t, dt: dt,
                                 gapBefore: i > 0 && dt > track.gapThresholdS,
-                                dopplerMps: r.v)
+                                dopplerMps: r.v, altM: r.alt)
             if hasPos, let la = r.lat, let lo = r.lon {
                 c.x = (lo - lon0) * cosLat0 * 111_320
                 c.y = (la - lat0) * 110_540

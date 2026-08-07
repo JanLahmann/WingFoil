@@ -5,9 +5,16 @@ import Testing
 /// Cross-implementation golden tests (docs/testing.md): for every
 /// `fixtures/goldens/<stem>.expected.json` written by the lab, run the full Swift
 /// pipeline on the matching FIT and assert within tolerances — counts exact,
-/// speeds ± 0.05 kn (alpha ± 0.1), timestamps ± 1 s, foil time ± 2 %.
-/// Goldens are read leniently (JSONSerialization), so extra/experimental keys from
-/// the lab never break decoding; only contracted quantities are asserted.
+/// speeds ± 0.05 kn (alpha ± 0.1), timestamps ± 1 s, angles ± 1°, percentages ± 0.5,
+/// foil time ± 2 %.
+///
+/// The lab (`lab/src/wingfoil_lab/*`) is the authoritative reference; Swift re-derives
+/// everything from the same original FIT and must land on the same verdicts — not just
+/// the same totals, but the same *per-turn* type and outcome, the same flight-end
+/// ownership, and the same takeoff stroke counts.
+///
+/// Goldens are read leniently (JSONSerialization), so extra/experimental keys from the
+/// lab never break decoding; only contracted quantities are asserted.
 @Suite struct GoldenTests {
 
     @Test func goldensMatchWhenPresent() throws {
@@ -42,6 +49,10 @@ import Testing
         var filter = FilterConfig()
         var flight = FlightConfig()
         var recCfg = RecordsConfig()
+        var turnCfg = TurnConfig()
+        var windCfg = WindConfig()
+        var pumpCfg = PumpConfig()
+        var takeoffCfg = TakeoffConfig()
         if let cfg = json["config"] as? [String: Any] {
             if let v = num(cfg["foilEntrySpeed"]) { flight.foilEntrySpeedKmh = v }
             if let v = num(cfg["foilExitSpeed"]) { flight.foilExitSpeedKmh = v }
@@ -53,116 +64,411 @@ import Testing
             if let v = num(cfg["gapFactor"]) { filter.gapFactor = v }
             if let v = num(cfg["alphaProximity"]) { recCfg.alphaProximityM = v }
             if let v = num(cfg["alphaMaxDistance"]) { recCfg.alphaMaxDistanceM = v }
+            if let v = num(cfg["turnMinAngle"]) { turnCfg.minAngleDeg = v }
+            if let v = num(cfg["turnMaxDuration"]) { turnCfg.maxDurationS = v }
+            if let v = num(cfg["turnPeakRate"]) { turnCfg.peakRateDegS = v }
+            if let v = num(cfg["turnMinArc"]) { turnCfg.minArcM = v }
+            if let v = num(cfg["turnMinRadius"]) { turnCfg.minRadiusM = v }
+            if let v = num(cfg["turnBaroDrop"]) { turnCfg.baroDropM = v }
+            if let v = num(cfg["windMinConfidence"]) { windCfg.minConfidence = v }
+            if let v = num(cfg["pumpStrokeAmp"]) { pumpCfg.strokeAmpG = v }
+            if let v = num(cfg["pumpMinStrokes"]) { pumpCfg.minStrokes = Int(v) }
+            if let v = num(cfg["takeoffAttemptWindow"]) { takeoffCfg.attemptWindowS = v }
+            if let v = num(cfg["takeoffMinPreWindow"]) { takeoffCfg.minPreWindowS = v }
         }
         let raw = try FitSessionParser.parse(url: fitURL)
         let analysis = SessionSummarizer.analyze(raw, filterConfig: filter,
-                                                 flightConfig: flight, recordsConfig: recCfg)
+                                                 flightConfig: flight, recordsConfig: recCfg,
+                                                 turnConfig: turnCfg, windConfig: windCfg,
+                                                 pumpConfig: pumpCfg, takeoffConfig: takeoffCfg)
 
-        if let expCaps = json["capabilities"] as? [String: Any] {
-            let caps = AnalysisCapabilities(raw.capabilities)
-            let flags: [(String, Bool)] = [
-                ("hasDoppler", caps.hasDoppler), ("hasDevFields", caps.hasDevFields),
-                ("hasWatchLaps", caps.hasWatchLaps), ("hasAccel", caps.hasAccel),
-                ("hasHR", caps.hasHR),
-            ]
-            for (key, actual) in flags {
-                guard let expected = expCaps[key] as? Bool else { continue }
-                #expect(actual == expected,
-                        "\(stem) capabilities.\(key): \(actual) vs \(expected)")
-            }
-            if let v = num(expCaps["sampleRateHz"]) {
-                #expect(abs(caps.sampleRateHz - v) <= 0.01,
-                        "\(stem) capabilities.sampleRateHz: \(caps.sampleRateHz) vs \(v)")
-            }
+        checkCapabilities(stem, json, analysis, raw)
+        checkFlights(stem, json, analysis)
+        checkRecords(stem, json, analysis)
+        checkWind(stem, json, analysis)
+        checkTurns(stem, json, analysis)
+        checkFlightEnds(stem, json, analysis)
+        checkTakeoffs(stem, json, analysis)
+        checkSummary(stem, json, analysis)
+    }
+
+    // MARK: - Phase 1 (capabilities, flights, records)
+
+    private func checkCapabilities(_ stem: String, _ json: [String: Any],
+                                   _ analysis: SessionAnalysis, _ raw: RawTrack) {
+        guard let expCaps = json["capabilities"] as? [String: Any] else { return }
+        let caps = AnalysisCapabilities(raw.capabilities)
+        let flags: [(String, Bool)] = [
+            ("hasDoppler", caps.hasDoppler), ("hasDevFields", caps.hasDevFields),
+            ("hasWatchLaps", caps.hasWatchLaps), ("hasAccel", caps.hasAccel),
+            ("hasHR", caps.hasHR),
+        ]
+        for (key, actual) in flags {
+            guard let expected = expCaps[key] as? Bool else { continue }
+            #expect(actual == expected, "\(stem) capabilities.\(key): \(actual) vs \(expected)")
         }
-
-        if let expFlights = json["flights"] as? [[String: Any]] {
-            #expect(analysis.flights.count == expFlights.count,
-                    "\(stem): flight count \(analysis.flights.count) != \(expFlights.count)")
-            for (i, pair) in zip(expFlights, analysis.flights).enumerated() {
-                let (exp, act) = pair
-                if let v = num(exp["startTs"]) {
-                    #expect(abs(act.startTs - v) <= 1.0, "\(stem) flights[\(i)].startTs")
-                }
-                if let v = num(exp["endTs"]) {
-                    #expect(abs(act.endTs - v) <= 1.0, "\(stem) flights[\(i)].endTs")
-                }
-                if let v = num(exp["maxKn"]) {
-                    #expect(abs(act.maxKn - v) <= 0.05, "\(stem) flights[\(i)].maxKn")
-                }
-                if let v = num(exp["distM"]) {
-                    #expect(abs(act.distM - v) <= max(0.02 * abs(v), 5),
-                            "\(stem) flights[\(i)].distM")
-                }
-            }
+        if let v = num(expCaps["sampleRateHz"]) {
+            #expect(abs(caps.sampleRateHz - v) <= 0.01,
+                    "\(stem) capabilities.sampleRateHz: \(caps.sampleRateHz) vs \(v)")
         }
+    }
 
-        if let expRecords = json["records"] as? [String: Any] {
-            let keys: [(String, Double, KeyPath<GP3SRecords, Double?>)] = [
-                ("best2sKn", 0.05, \.best2sKn), ("best10sKn", 0.05, \.best10sKn),
-                ("best5x10sKn", 0.05, \.best5x10sKn), ("best100mKn", 0.05, \.best100mKn),
-                ("best250mKn", 0.05, \.best250mKn), ("best500mKn", 0.05, \.best500mKn),
-                ("bestNmKn", 0.05, \.bestNmKn), ("bestHourKn", 0.05, \.bestHourKn),
-                ("alpha500Kn", 0.10, \.alpha500Kn),
-            ]
-            for (key, tol, kp) in keys where expRecords.keys.contains(key) {
-                // Contract (docs/testing.md): a non-qualifying record serializes as 0.0
-                // in goldens and as nil in the Swift model — the two are equivalent.
-                let exp = num(expRecords[key])
-                let act = analysis.records[keyPath: kp]
-                let e = (exp ?? 0) < 0.05 ? nil : exp
-                let a = (act ?? 0) < 0.05 ? nil : act
-                switch (e, a) {
-                case (nil, nil):
-                    break
-                case let (e?, a?):
-                    #expect(abs(a - e) <= tol, "\(stem) records.\(key): \(a) vs \(e)")
-                default:
-                    let es = e.map { "\($0)" } ?? "none"
-                    let as_ = a.map { "\($0)" } ?? "none"
-                    Issue.record("\(stem) records.\(key): expected \(es), got \(as_)")
-                }
+    private func checkFlights(_ stem: String, _ json: [String: Any],
+                              _ analysis: SessionAnalysis) {
+        guard let expFlights = json["flights"] as? [[String: Any]] else { return }
+        #expect(analysis.flights.count == expFlights.count,
+                "\(stem): flight count \(analysis.flights.count) != \(expFlights.count)")
+        for (i, pair) in zip(expFlights, analysis.flights).enumerated() {
+            let (exp, act) = pair
+            if let v = num(exp["startTs"]) {
+                #expect(abs(act.startTs - v) <= 1.0, "\(stem) flights[\(i)].startTs")
             }
+            if let v = num(exp["endTs"]) {
+                #expect(abs(act.endTs - v) <= 1.0, "\(stem) flights[\(i)].endTs")
+            }
+            if let v = num(exp["maxKn"]) {
+                #expect(abs(act.maxKn - v) <= 0.05, "\(stem) flights[\(i)].maxKn")
+            }
+            if let v = num(exp["distM"]) {
+                #expect(abs(act.distM - v) <= max(0.02 * abs(v), 5), "\(stem) flights[\(i)].distM")
+            }
+            // Stroke counts are exact or both absent — a source without accel reports nil.
+            #expect(int(exp["takeoffPumps"]) == act.takeoffPumps,
+                    "\(stem) flights[\(i)].takeoffPumps: \(describe(act.takeoffPumps)) vs \(describe(int(exp["takeoffPumps"])))")
         }
+    }
 
-        if let expTurns = json["turns"] as? [[String: Any]], !expTurns.isEmpty {
-            // P1 engine produces no turns; goldens with turns belong to phase 2.
-            print("GoldenTests: \(stem) has \(expTurns.count) golden turns — "
-                  + "not asserted until the phase-2 turn engine lands.")
-        }
-
-        if let expSummary = json["summary"] as? [String: Any] {
-            if let v = num(expSummary["foilTimeS"]) {
-                #expect(abs(analysis.summary.foilTimeS - v) <= max(0.02 * abs(v), 2),
-                        "\(stem) summary.foilTimeS: \(analysis.summary.foilTimeS) vs \(v)")
-            }
-            if let v = num(expSummary["foilPct"]) {
-                #expect(abs(analysis.summary.foilPct - v) <= 2.0,
-                        "\(stem) summary.foilPct: \(analysis.summary.foilPct) vs \(v)")
-            }
-            if let v = num(expSummary["flightCount"]) {
-                #expect(analysis.summary.flightCount == Int(v),
-                        "\(stem) summary.flightCount: \(analysis.summary.flightCount) vs \(Int(v))")
-            }
-            if let v = num(expSummary["longestFlightS"]) {
-                #expect(abs(analysis.summary.longestFlightS - v) <= 2.0,
-                        "\(stem) summary.longestFlightS")
-            }
-            if let v = num(expSummary["longestFlightM"]) {
-                #expect(abs(analysis.summary.longestFlightM - v) <= max(0.02 * abs(v), 5),
-                        "\(stem) summary.longestFlightM")
-            }
-            if let v = num(expSummary["distanceKm"]) {
-                #expect(abs(analysis.summary.distanceKm - v) <= max(0.02 * abs(v), 0.05),
-                        "\(stem) summary.distanceKm")
+    private func checkRecords(_ stem: String, _ json: [String: Any],
+                              _ analysis: SessionAnalysis) {
+        guard let expRecords = json["records"] as? [String: Any] else { return }
+        let keys: [(String, Double, KeyPath<GP3SRecords, Double?>)] = [
+            ("best2sKn", 0.05, \.best2sKn), ("best10sKn", 0.05, \.best10sKn),
+            ("best5x10sKn", 0.05, \.best5x10sKn), ("best100mKn", 0.05, \.best100mKn),
+            ("best250mKn", 0.05, \.best250mKn), ("best500mKn", 0.05, \.best500mKn),
+            ("bestNmKn", 0.05, \.bestNmKn), ("bestHourKn", 0.05, \.bestHourKn),
+            ("alpha500Kn", 0.10, \.alpha500Kn),
+        ]
+        for (key, tol, kp) in keys where expRecords.keys.contains(key) {
+            // Contract (docs/testing.md): a non-qualifying record serializes as 0.0
+            // in goldens and as nil in the Swift model — the two are equivalent.
+            let exp = num(expRecords[key])
+            let act = analysis.records[keyPath: kp]
+            let e = (exp ?? 0) < 0.05 ? nil : exp
+            let a = (act ?? 0) < 0.05 ? nil : act
+            switch (e, a) {
+            case (nil, nil):
+                break
+            case let (e?, a?):
+                #expect(abs(a - e) <= tol, "\(stem) records.\(key): \(a) vs \(e)")
+            default:
+                let es = e.map { "\($0)" } ?? "none"
+                let as_ = a.map { "\($0)" } ?? "none"
+                Issue.record("\(stem) records.\(key): expected \(es), got \(as_)")
             }
         }
     }
+
+    // MARK: - Phase 2 (wind, turns, flight ends)
+
+    private func checkWind(_ stem: String, _ json: [String: Any], _ analysis: SessionAnalysis) {
+        guard json.keys.contains("wind") else { return }
+        guard let expWind = json["wind"] as? [String: Any] else {
+            #expect(analysis.wind == nil,
+                    "\(stem) wind: golden has no axis, Swift estimated \(describe(analysis.wind?.dirDeg))")
+            return
+        }
+        guard let wind = analysis.wind else {
+            Issue.record("\(stem) wind: golden has an axis, Swift produced none")
+            return
+        }
+        if let v = num(expWind["dirDeg"]) {
+            #expect(abs(angleDelta(wind.dirDeg, v)) <= 1.0,
+                    "\(stem) wind.dirDeg: \(wind.dirDeg) vs \(v)")
+        }
+        if let v = num(expWind["axisDeg"]) {
+            let d = abs(angleDelta(wind.axisDeg * 2, v * 2)) / 2   // the axis is mod 180
+            #expect(d <= 1.0, "\(stem) wind.axisDeg: \(wind.axisDeg) vs \(v)")
+        }
+        if let v = num(expWind["confidence"]) {
+            #expect(abs(wind.confidence - v) <= 0.01,
+                    "\(stem) wind.confidence: \(wind.confidence) vs \(v)")
+        }
+        if let v = num(expWind["axisConfidence"]) {
+            #expect(abs(wind.axisConfidence - v) <= 0.01, "\(stem) wind.axisConfidence")
+        }
+        if let v = num(expWind["ambiguityMargin"]) {
+            #expect(abs(wind.ambiguityMargin - v) <= 0.01, "\(stem) wind.ambiguityMargin")
+        }
+        if let v = num(expWind["separationDeg"]), let actual = wind.separationDeg {
+            #expect(abs(actual - v) <= 1.0, "\(stem) wind.separationDeg: \(actual) vs \(v)")
+        }
+        if let v = expWind["usable"] as? Bool {
+            #expect(wind.usable == v, "\(stem) wind.usable: \(wind.usable) vs \(v)")
+        }
+        if let v = num(expWind["source"] as? NSNumber) { _ = v }
+        if let v = expWind["source"] as? String {
+            #expect(wind.source == v, "\(stem) wind.source")
+        }
+    }
+
+    private func checkTurns(_ stem: String, _ json: [String: Any], _ analysis: SessionAnalysis) {
+        guard let expTurns = json["turns"] as? [[String: Any]] else { return }
+        #expect(analysis.turns.count == expTurns.count,
+                "\(stem): turn count \(analysis.turns.count) != \(expTurns.count)")
+        for (i, pair) in zip(expTurns, analysis.turns).enumerated() {
+            let (exp, act) = pair
+            if let v = exp["type"] as? String {
+                #expect(act.type == v, "\(stem) turns[\(i)].type: \(act.type) vs \(v)")
+            }
+            if let v = exp["outcome"] as? String {
+                #expect(act.outcome == v, "\(stem) turns[\(i)].outcome: \(act.outcome) vs \(v)")
+            }
+            if let v = exp["side"] as? String {
+                #expect(act.side == v, "\(stem) turns[\(i)].side")
+            }
+            if let v = exp["counted"] as? Bool { #expect(act.counted == v, "\(stem) turns[\(i)].counted") }
+            if let v = exp["success"] as? Bool { #expect(act.success == v, "\(stem) turns[\(i)].success") }
+            if let v = exp["borderline"] as? Bool {
+                #expect(act.borderline == v, "\(stem) turns[\(i)].borderline")
+            }
+            if let v = num(exp["ts"]) {
+                #expect(abs(act.ts - v) <= 1.0, "\(stem) turns[\(i)].ts: \(act.ts) vs \(v)")
+            }
+            if let v = num(exp["endTs"]) { #expect(abs(act.endTs - v) <= 1.0, "\(stem) turns[\(i)].endTs") }
+            if let v = num(exp["entryKn"]) {
+                #expect(abs(act.entryKn - v) <= 0.05,
+                        "\(stem) turns[\(i)].entryKn: \(act.entryKn) vs \(v)")
+            }
+            if let v = num(exp["minKn"]) {
+                #expect(abs(act.minKn - v) <= 0.05, "\(stem) turns[\(i)].minKn: \(act.minKn) vs \(v)")
+            }
+            if let v = num(exp["netDeg"]) { #expect(abs(act.netDeg - v) <= 1.0, "\(stem) turns[\(i)].netDeg") }
+            if let v = num(exp["stoppedS"]) {
+                #expect(abs(act.stoppedS - v) <= 1.0, "\(stem) turns[\(i)].stoppedS")
+            }
+            if let v = num(exp["outcomeWindowS"]) {
+                #expect(abs(act.outcomeWindowS - v) <= 1.0, "\(stem) turns[\(i)].outcomeWindowS")
+            }
+        }
+    }
+
+    private func checkFlightEnds(_ stem: String, _ json: [String: Any],
+                                 _ analysis: SessionAnalysis) {
+        guard let expEnds = json["flightEnds"] as? [[String: Any]] else { return }
+        #expect(analysis.flightEnds.count == expEnds.count,
+                "\(stem): flight-end count \(analysis.flightEnds.count) != \(expEnds.count)")
+        for (i, pair) in zip(expEnds, analysis.flightEnds).enumerated() {
+            let (exp, act) = pair
+            if let v = exp["outcome"] as? String {
+                #expect(act.outcome == v, "\(stem) flightEnds[\(i)].outcome: \(act.outcome) vs \(v)")
+            }
+            if let v = exp["truncated"] as? Bool {
+                #expect(act.truncated == v, "\(stem) flightEnds[\(i)].truncated")
+            }
+            #expect(int(exp["ownedByTurn"]) == act.ownedByTurn,
+                    "\(stem) flightEnds[\(i)].ownedByTurn: \(describe(act.ownedByTurn)) vs \(describe(int(exp["ownedByTurn"])))")
+            if let v = num(exp["ts"]) { #expect(abs(act.ts - v) <= 1.0, "\(stem) flightEnds[\(i)].ts") }
+            if let v = num(exp["stoppedS"]) {
+                #expect(abs(act.stoppedS - v) <= 1.0, "\(stem) flightEnds[\(i)].stoppedS")
+            }
+        }
+    }
+
+    // MARK: - Phase 3 (takeoffs)
+
+    private func checkTakeoffs(_ stem: String, _ json: [String: Any],
+                               _ analysis: SessionAnalysis) {
+        guard let expTakeoffs = json["takeoffs"] as? [[String: Any]] else { return }
+        #expect(analysis.takeoffs.count == expTakeoffs.count,
+                "\(stem): takeoff count \(analysis.takeoffs.count) != \(expTakeoffs.count)")
+        for (i, pair) in zip(expTakeoffs, analysis.takeoffs).enumerated() {
+            let (exp, act) = pair
+            #expect(int(exp["pumps"]) == act.pumps,
+                    "\(stem) takeoffs[\(i)].pumps: \(describe(act.pumps)) vs \(describe(int(exp["pumps"])))")
+            if let v = exp["truncated"] as? Bool {
+                #expect(act.truncated == v, "\(stem) takeoffs[\(i)].truncated")
+            }
+            if let v = exp["free"] as? Bool { #expect(act.free == v, "\(stem) takeoffs[\(i)].free") }
+            if let v = num(exp["startTs"]) {
+                #expect(abs(act.startTs - v) <= 1.0, "\(stem) takeoffs[\(i)].startTs")
+            }
+            if let v = num(exp["timeToFoilS"]) {
+                #expect(abs(act.timeToFoilS - v) <= 1.0,
+                        "\(stem) takeoffs[\(i)].timeToFoilS: \(act.timeToFoilS) vs \(v)")
+            }
+            if let v = num(exp["speedRiseS"]) {
+                #expect(abs(act.speedRiseS - v) <= 1.0, "\(stem) takeoffs[\(i)].speedRiseS")
+            }
+            #expect(int(exp["inFlightStrokes"]) == act.inFlightStrokes,
+                    "\(stem) takeoffs[\(i)].inFlightStrokes")
+        }
+    }
+
+    // MARK: - Summaries
+
+    private func checkSummary(_ stem: String, _ json: [String: Any],
+                              _ analysis: SessionAnalysis) {
+        guard let expSummary = json["summary"] as? [String: Any] else { return }
+        if let v = num(expSummary["foilTimeS"]) {
+            #expect(abs(analysis.summary.foilTimeS - v) <= max(0.02 * abs(v), 2),
+                    "\(stem) summary.foilTimeS: \(analysis.summary.foilTimeS) vs \(v)")
+        }
+        if let v = num(expSummary["foilPct"]) {
+            #expect(abs(analysis.summary.foilPct - v) <= 2.0,
+                    "\(stem) summary.foilPct: \(analysis.summary.foilPct) vs \(v)")
+        }
+        if let v = num(expSummary["flightCount"]) {
+            #expect(analysis.summary.flightCount == Int(v), "\(stem) summary.flightCount")
+        }
+        if let v = num(expSummary["longestFlightS"]) {
+            #expect(abs(analysis.summary.longestFlightS - v) <= 2.0, "\(stem) summary.longestFlightS")
+        }
+        if let v = num(expSummary["longestFlightM"]) {
+            #expect(abs(analysis.summary.longestFlightM - v) <= max(0.02 * abs(v), 5),
+                    "\(stem) summary.longestFlightM")
+        }
+        if let v = num(expSummary["distanceKm"]) {
+            #expect(abs(analysis.summary.distanceKm - v) <= max(0.02 * abs(v), 0.05),
+                    "\(stem) summary.distanceKm")
+        }
+
+        if let t = expSummary["turns"] as? [String: Any] {
+            let s = analysis.summary.turns
+            let counts: [(String, Int)] = [
+                ("tacks", s.tacks), ("tacksSuccessful", s.tacksSuccessful),
+                ("jibes", s.jibes), ("jibesSuccessful", s.jibesSuccessful),
+                ("unclassified", s.unclassified), ("turnsCounted", s.turnsCounted),
+                ("turnsSuccessful", s.turnsSuccessful), ("rejected", s.rejected),
+                ("port", s.port), ("starboard", s.starboard), ("unknownSide", s.unknownSide),
+            ]
+            for (key, actual) in counts {
+                guard let v = int(t[key]) else { continue }
+                #expect(actual == v, "\(stem) summary.turns.\(key): \(actual) vs \(v)")
+            }
+            if let v = num(t["successPct"]) {
+                #expect(abs(s.successPct - v) <= 0.5, "\(stem) summary.turns.successPct")
+            }
+            expectOutcomes(stem, "outcomes", t["outcomes"], s.outcomes)
+            expectOutcomes(stem, "tackOutcomes", t["tackOutcomes"], s.tackOutcomes)
+            expectOutcomes(stem, "jibeOutcomes", t["jibeOutcomes"], s.jibeOutcomes)
+        }
+
+        if let e = expSummary["flightEnds"] as? [String: Any] {
+            expectEnds(stem, "all", e["all"], analysis.summary.flightEnds.all)
+            expectEnds(stem, "straight", e["straight"], analysis.summary.flightEnds.straight)
+            expectEnds(stem, "inTurn", e["inTurn"], analysis.summary.flightEnds.inTurn)
+        }
+
+        if let sp = expSummary["outcomeSplit"] as? [String: Any] {
+            let s = analysis.summary.outcomeSplit
+            let counts: [(String, Int)] = [
+                ("turnFalls", s.turnFalls), ("straightFalls", s.straightFalls),
+                ("turnTouchdowns", s.turnTouchdowns),
+                ("straightTouchdowns", s.straightTouchdowns),
+                ("glideOuts", s.glideOuts), ("unknownEnds", s.unknownEnds),
+            ]
+            for (key, actual) in counts {
+                guard let v = int(sp[key]) else { continue }
+                #expect(actual == v, "\(stem) summary.outcomeSplit.\(key): \(actual) vs \(v)")
+            }
+        }
+
+        if let k = expSummary["takeoff"] as? [String: Any] {
+            let s = analysis.summary.takeoff
+            let counts: [(String, Int)] = [
+                ("takeoffAttempts", s.takeoffAttempts), ("takeoffSuccesses", s.takeoffSuccesses),
+                ("failedAttempts", s.failedAttempts), ("unknownAttempts", s.unknownAttempts),
+                ("recoveryEpisodes", s.recoveryEpisodes),
+                ("inFlightEpisodes", s.inFlightEpisodes),
+                ("runsJudged", s.runsJudged), ("runsTruncated", s.runsTruncated),
+                ("freeTakeoffs", s.freeTakeoffs), ("pumpedTakeoffs", s.pumpedTakeoffs),
+            ]
+            for (key, actual) in counts {
+                guard let v = int(k[key]) else { continue }
+                #expect(actual == v, "\(stem) summary.takeoff.\(key): \(actual) vs \(v)")
+            }
+            #expect(int(k["totalPumpStrokes"]) == s.totalPumpStrokes,
+                    "\(stem) summary.takeoff.totalPumpStrokes: \(describe(s.totalPumpStrokes)) vs \(describe(int(k["totalPumpStrokes"])))")
+            #expect(int(k["inFlightPumpStrokes"]) == s.inFlightPumpStrokes,
+                    "\(stem) summary.takeoff.inFlightPumpStrokes")
+            expectOptional(stem, "summary.takeoff.successPct", num(k["successPct"]),
+                           s.successPct, tolerance: 0.5)
+            expectOptional(stem, "summary.takeoff.avgPumpsToTakeoff",
+                           num(k["avgPumpsToTakeoff"]), s.avgPumpsToTakeoff, tolerance: 0.05)
+            expectOptional(stem, "summary.takeoff.medianPumpsToTakeoff",
+                           num(k["medianPumpsToTakeoff"]), s.medianPumpsToTakeoff, tolerance: 0.05)
+            expectOptional(stem, "summary.takeoff.avgPumpsWhenPumped",
+                           num(k["avgPumpsWhenPumped"]), s.avgPumpsWhenPumped, tolerance: 0.05)
+            expectOptional(stem, "summary.takeoff.avgTakeoffS", num(k["avgTakeoffS"]),
+                           s.avgTakeoffS, tolerance: 1.0)
+            expectOptional(stem, "summary.takeoff.medianTakeoffS", num(k["medianTakeoffS"]),
+                           s.medianTakeoffS, tolerance: 1.0)
+        }
+    }
+
+    private func expectOutcomes(_ stem: String, _ name: String, _ expected: Any?,
+                                _ actual: OutcomeCounts) {
+        guard let e = expected as? [String: Any] else { return }
+        let pairs: [(String, Int)] = [("flewThrough", actual.flewThrough),
+                                      ("touchdown", actual.touchdown),
+                                      ("fellIn", actual.fellIn),
+                                      ("borderline", actual.borderline)]
+        for (key, value) in pairs {
+            guard let v = int(e[key]) else { continue }
+            #expect(value == v, "\(stem) summary.turns.\(name).\(key): \(value) vs \(v)")
+        }
+    }
+
+    private func expectEnds(_ stem: String, _ name: String, _ expected: Any?,
+                            _ actual: FlightEndCounts) {
+        guard let e = expected as? [String: Any] else { return }
+        let pairs: [(String, Int)] = [("glideOut", actual.glideOut),
+                                      ("touchdown", actual.touchdown),
+                                      ("fellIn", actual.fellIn),
+                                      ("unknown", actual.unknown),
+                                      ("borderline", actual.borderline)]
+        for (key, value) in pairs {
+            guard let v = int(e[key]) else { continue }
+            #expect(value == v, "\(stem) summary.flightEnds.\(name).\(key): \(value) vs \(v)")
+        }
+    }
+
+    /// nil must match nil; both present must agree within `tolerance`.
+    private func expectOptional(_ stem: String, _ label: String, _ expected: Double?,
+                                _ actual: Double?, tolerance: Double) {
+        switch (expected, actual) {
+        case (nil, nil):
+            break
+        case let (e?, a?):
+            #expect(abs(a - e) <= tolerance, "\(stem) \(label): \(a) vs \(e)")
+        default:
+            Issue.record("\(stem) \(label): expected \(describe(expected)), got \(describe(actual))")
+        }
+    }
+
+    // MARK: - JSON helpers
 
     /// Numeric JSON value (NSNull / non-numbers → nil).
     private func num(_ any: Any?) -> Double? {
         guard let n = any as? NSNumber, !(any is NSNull) else { return nil }
         return n.doubleValue
+    }
+
+    /// "none" for nil, the value otherwise — keeps failure messages single literals
+    /// (swift-testing's `Comment` is not built by `+`).
+    private func describe<T>(_ value: T?) -> String {
+        value.map { "\($0)" } ?? "none"
+    }
+
+    private func int(_ any: Any?) -> Int? {
+        num(any).map { Int($0.rounded()) }
+    }
+
+    /// Smallest signed difference between two bearings, in degrees.
+    private func angleDelta(_ a: Double, _ b: Double) -> Double {
+        var m = (a - b + 180).truncatingRemainder(dividingBy: 360)
+        if m < 0 { m += 360 }
+        return m - 180
     }
 
     // MARK: - Schema shape
@@ -181,20 +487,28 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.1.0")
+        #expect(analysis.engineVersion == "0.2.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)
         let obj = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         #expect(Set(obj.keys) == ["engineVersion", "config", "capabilities", "flights",
-                                  "turns", "records", "wind", "takeoffs", "summary"])
+                                  "turns", "flightEnds", "records", "wind", "takeoffs",
+                                  "summary"])
         #expect(obj["wind"] is NSNull)                       // explicit null, not omitted
-        #expect((obj["turns"] as? [Any])?.isEmpty == true)
-        #expect((obj["takeoffs"] as? [Any])?.isEmpty == true)
+        #expect((obj["turns"] as? [Any])?.isEmpty == true)   // no positions ⇒ no COG ⇒ no turns
 
+        // Every flight gets a takeoff run and a flight end, even without an accel stream;
+        // the stroke counts are then explicitly null rather than a flattering zero.
         let flights = try #require(obj["flights"] as? [[String: Any]])
         #expect(Set(flights[0].keys) == ["startTs", "endTs", "distM", "maxKn", "takeoffPumps"])
         #expect(flights[0]["takeoffPumps"] is NSNull)
+        #expect((obj["takeoffs"] as? [Any])?.count == 1)
+        #expect((obj["flightEnds"] as? [Any])?.count == 1)
+        let takeoff = try #require((obj["takeoffs"] as? [[String: Any]])?.first)
+        #expect(takeoff["pumps"] is NSNull)
+        #expect(takeoff["success"] as? Bool == true)
+        #expect(analysis.summary.takeoff.successPct == nil)  // failures invisible w/o accel
 
         let caps = try #require(obj["capabilities"] as? [String: Any])
         #expect(Set(caps.keys) == ["hasDoppler", "hasDevFields", "hasWatchLaps",
@@ -208,7 +522,8 @@ import Testing
 
         let summary = try #require(obj["summary"] as? [String: Any])
         #expect(Set(summary.keys) == ["foilTimeS", "foilPct", "flightCount",
-                                      "longestFlightS", "longestFlightM", "distanceKm"])
+                                      "longestFlightS", "longestFlightM", "distanceKm",
+                                      "turns", "flightEnds", "outcomeSplit", "takeoff"])
 
         // Round-trip: the model decodes its own encoding losslessly — except
         // `records.totalDistanceM`, which is deliberately not part of the golden

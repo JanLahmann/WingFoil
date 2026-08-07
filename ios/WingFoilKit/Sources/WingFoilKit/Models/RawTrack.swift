@@ -110,6 +110,23 @@ public struct WatchSummary: Sendable, Equatable {
     public init() {}
 }
 
+/// One wrist-accelerometer sample from the CIQ SensorLogging stream (~100 Hz, batched
+/// 25 to an `accelerometer_data` message). `t` is on the *record* time base, so pump
+/// analysis and the speed channels share one clock. Only the magnitude is kept: the
+/// detector is orientation-free by construction (docs/algorithms.md "Pumping"), the
+/// wrist rotates constantly, and 400 k samples of three axes would be dead weight.
+public struct AccelSample: Sendable, Equatable {
+    public var t: Double
+    /// |a| in g (Garmin writes milli-g in a field the profile labels "g" — the parser
+    /// sniffs the scale from the resting magnitude rather than assuming).
+    public var magnitudeG: Double
+
+    public init(t: Double, magnitudeG: Double) {
+        self.t = t
+        self.magnitudeG = magnitudeG
+    }
+}
+
 /// Parsed-but-unanalyzed session: the input to the analysis pipeline.
 public struct RawTrack: Sendable {
     public var sourceURL: URL?
@@ -119,6 +136,8 @@ public struct RawTrack: Sendable {
     public var capabilities = SourceCapabilities()
     /// The watch's own summary, when this is one of our class-(a) recordings.
     public var watchSummary = WatchSummary()
+    /// Wrist accelerometer, time-sorted; empty for every source without the stream.
+    public var accel: [AccelSample] = []
 
     public init() {}
 }

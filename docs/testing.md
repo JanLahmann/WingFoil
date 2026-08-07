@@ -8,30 +8,69 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
 
 ```json
 {
-  "engineVersion": "0.1.0",
+  "engineVersion": "0.2.0",
   "config": { "foilEntrySpeed": 12.0, "...": "params actually used" },
   "capabilities": { "hasDoppler": true, "hasDevFields": false, "hasWatchLaps": false,
                      "hasAccel": false, "hasHR": true, "sampleRateHz": 1 },
   "flights": [ { "startTs": 0, "endTs": 0, "distM": 0.0, "maxKn": 0.0, "takeoffPumps": null } ],
-  "turns":   [ { "ts": 0, "type": "jibe|tack|turn", "entryKn": 0.0, "minKn": 0.0,
-                 "score": 0.0, "side": "port|starboard|unknown" } ],
+  "turns":   [ { "ts": 0, "endTs": 0, "type": "jibe|tack|turn|bear_away|round_up",
+                 "counted": true, "entryKn": 0.0, "minKn": 0.0, "score": 0.0,
+                 "success": false, "side": "port|starboard|unknown",
+                 "direction": "port|starboard", "netDeg": 0.0, "arcM": 0.0, "radiusM": 0.0,
+                 "outcome": "flew_through|touchdown|fell_in", "borderline": false,
+                 "offFoilS": 0.0, "stoppedS": 0.0, "pumped": false, "submerged": false,
+                 "outcomeWindowS": 0.0 } ],
+  "flightEnds": [ { "flightIndex": 0, "ts": 0, "borderline": false,
+                    "outcome": "glide_out|touchdown|fell_in|unknown", "offFoilS": 0.0,
+                    "stoppedS": 0.0, "minKn": null, "pumped": false, "submerged": false,
+                    "windowS": 0.0, "truncated": false, "ownedByTurn": null } ],
   "records": { "best2sKn": 0.0, "best10sKn": 0.0, "best5x10sKn": 0.0, "best100mKn": 0.0,
                "best250mKn": 0.0, "best500mKn": 0.0, "bestNmKn": 0.0, "bestHourKn": 0.0,
                "alpha500Kn": 0.0, "windows": { "best2s": {"startTs": 0, "durS": 2} } },
-  "wind":    { "dirDeg": 0, "confidence": 0.0, "source": "estimate|openmeteo|user" },
-  "takeoffs": [ { "startTs": 0, "pumps": 0, "success": true, "timeToFoilS": 0.0 } ],
+  "wind":    { "dirDeg": 0, "confidence": 0.0, "source": "estimate|openmeteo|user",
+               "axisDeg": 0, "axisConfidence": 0.0, "ambiguityMargin": 0.0,
+               "separationDeg": 0.0, "lobesDeg": [0, 0], "lobeMass": [0.0, 0.0],
+               "speedAsymmetry": 0.0, "distanceM": 0.0, "usable": true },
+  "takeoffs": [ { "startTs": 0, "runStartTs": 0, "pumps": null, "success": true,
+                  "timeToFoilS": 0.0, "speedRiseS": 0.0, "entryKn": 0.0,
+                  "cadenceSpm": null, "inFlightStrokes": null, "free": false,
+                  "truncated": false, "preWindowS": 0.0 } ],
   "summary": { "foilTimeS": 0, "foilPct": 0.0, "flightCount": 0, "longestFlightS": 0,
-               "longestFlightM": 0.0, "distanceKm": 0.0 }
+               "longestFlightM": 0.0, "distanceKm": 0.0,
+               "turns":       { "tacks": 0, "jibes": 0, "unclassified": 0, "rejected": 0,
+                                "turnsCounted": 0, "turnsSuccessful": 0, "successPct": 0.0,
+                                "port": 0, "starboard": 0,
+                                "outcomes": { "flewThrough": 0, "touchdown": 0,
+                                              "fellIn": 0, "borderline": 0 },
+                                "tackOutcomes": {}, "jibeOutcomes": {} },
+               "flightEnds":  { "all": { "glideOut": 0, "touchdown": 0, "fellIn": 0,
+                                         "unknown": 0, "borderline": 0 },
+                                "straight": {}, "inTurn": {} },
+               "outcomeSplit": { "turnFalls": 0, "straightFalls": 0, "turnTouchdowns": 0,
+                                 "straightTouchdowns": 0, "glideOuts": 0, "unknownEnds": 0 },
+               "takeoff":     { "takeoffAttempts": 0, "takeoffSuccesses": 0,
+                                "avgPumpsToTakeoff": null, "totalPumpStrokes": null,
+                                "successPct": null, "failedAttempts": 0, "...": "" } }
 }
 ```
+
+`wind` is `null` when the COG distribution yields no usable axis. Source capabilities
+degrade the schema, they never omit it: without an accelerometer every stroke count
+(`takeoffPumps`, `takeoffs[].pumps`, `totalPumpStrokes`) and `takeoff.successPct` is an
+explicit **null** — "unknown", not zero, and not a flattering 100 %. Without a barometer
+no turn or flight end is ever `submerged`. Smart-Recording truncation leaves flight ends
+`unknown` and takeoff runs `truncated`, both excluded from the tallies.
 
 ## Tolerances (Swift & Python vs goldens)
 
 | quantity | tolerance |
 |---|---|
-| counts (flights, turns, attempts) | exact |
+| counts (flights, turns, attempts, strokes) | exact |
+| verdicts (turn type/outcome, flight-end outcome, ownership) | exact |
 | timestamps | ± 1 s |
-| speeds (records) | ± 0.05 kn (alpha ± 0.1 kn) |
+| speeds (records, turn entry/minimum) | ± 0.05 kn (alpha ± 0.1 kn) |
+| angles (wind direction/axis, turn net sweep) | ± 1° |
+| percentages (turn success, takeoff success) | ± 0.5 |
 | foil time | ± 2 % |
 | watch live vs phone recompute | ± 0.2 kn, counts exact on clean clips |
 

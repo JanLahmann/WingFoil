@@ -40,9 +40,21 @@ public struct CleanSample: Sendable, Equatable {
     /// Cumulative Doppler-integrated distance (m): trapezoid inside segments, zero
     /// increment across gaps. The distance base for all GP3S windows.
     public var cumDistM: Double
+    /// Barometric altitude, carried through unfiltered. On the water its *absolute*
+    /// value is meaningless, but a dunked wrist reads hundreds of metres low
+    /// (`turnBaroDrop`, docs/algorithms.md "Turn outcome" step 2) and that transient
+    /// has to survive to the outcome ladder. nil for sources without the channel.
+    public var altM: Double?
+
+    /// Maneuver speed channel (docs/algorithms.md `speedChannelManeuvers`): positional
+    /// where available, Doppler where not. Device Doppler is smoothed over ~3–4 s and
+    /// understates turn minima, so turn entry/minimum speeds are read here while the
+    /// speed *records* stay on the Doppler channel.
+    public var hybridMps: Double { positionalMps ?? dopplerMps }
 
     public init(t: Double, dt: Double, gapBefore: Bool, x: Double? = nil, y: Double? = nil,
-                dopplerMps: Double = 0, positionalMps: Double? = nil, cumDistM: Double = 0) {
+                dopplerMps: Double = 0, positionalMps: Double? = nil, cumDistM: Double = 0,
+                altM: Double? = nil) {
         self.t = t
         self.dt = dt
         self.gapBefore = gapBefore
@@ -51,6 +63,7 @@ public struct CleanSample: Sendable, Equatable {
         self.dopplerMps = dopplerMps
         self.positionalMps = positionalMps
         self.cumDistM = cumDistM
+        self.altM = altM
     }
 }
 
