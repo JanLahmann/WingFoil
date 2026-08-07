@@ -13,6 +13,8 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 icuSection
+                placesSection
+                healthSection
                 storageSection
                 #if DEBUG
                 debugSection
@@ -78,6 +80,37 @@ struct SettingsView: View {
                      + "keychain and sent as HTTP Basic user \"API_KEY\". Downloads the "
                      + "original FIT of every windsurf/wing activity.")
             }
+        }
+    }
+
+    private var placesSection: some View {
+        Section {
+            NavigationLink {
+                SpotsView()
+            } label: {
+                LabeledContent("Spots", value: "\(store.spots.count)")
+            }
+        } header: {
+            Text("Places")
+        } footer: {
+            Text("Sessions starting within \(Int(SpotClusterer.defaultRadiusM)) m of each "
+                 + "other are one spot. Names come from the map when the network allows; "
+                 + "rename any of them and it sticks.")
+        }
+    }
+
+    private var healthSection: some View {
+        Section {
+            Toggle("Add sessions to Apple Health", isOn: Binding(
+                get: { store.healthWriteEnabled },
+                set: { store.healthWriteEnabled = $0 }))
+        } header: {
+            Text("Apple Health")
+        } footer: {
+            Text("Off by default. Each session is written as a **Surfing** workout — the "
+                 + "closest type Apple Health offers, since it has no wingfoil or windsurf "
+                 + "activity — carrying the discipline, foil share, flights and best 2 s in "
+                 + "its metadata. WingFoil never reads health data.")
         }
     }
 

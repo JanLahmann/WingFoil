@@ -24,8 +24,19 @@ final class SessionStore {
     /// Set when a background job failed; the UI shows it as a dismissible banner.
     var errorMessage: String?
 
+    /// Live counters of a running bulk import (nil when nothing is importing).
+    private(set) var importProgress: ImportSummary?
+    /// Places and kit, cached for the pickers and the aggregate screens.
+    private(set) var spots: [SpotAggregate] = []
+    private(set) var gearAggregates: [GearAggregate] = []
+    /// Bumped whenever the derived tables change, so aggregate screens can re-query.
+    private(set) var libraryGeneration = 0
+
     let ingestor: SessionIngestor
     private let databaseURL: URL?
+
+    /// Aggregate reads (records, trends, gear, spots) all go through here.
+    var library: LibraryStore { ingestor.library }
 
     // MARK: - Setup
 
@@ -58,10 +69,80 @@ final class SessionStore {
     func load() async {
         do {
             sessions = try await ingestor.allSessions()
+            spots = try await library.spots()
+            gearAggregates = try await library.gearAggregates()
+            libraryGeneration += 1
             await refreshStorage()
         } catch {
             errorMessage = "Could not read the library: \(error)"
         }
+    }
+
+    /// Brings every summary row up to the current engine (plan §3.3 lazy re-analysis).
+    /// The aggregate screens depend on it: one stale row silently bends a whole trend
+    /// line, and after a schema migration *every* row is stale.
+    func refreshDerived() async {
+        guard !isBusy else { return }
+        let ingestor = self.ingestor
+        let stale = (try? await ingestor.reanalyzeStale()) ?? 0
+        guard stale > 0 else { return }
+        status = "Re-derived \(stale) session\(stale == 1 ? "" : "s") "
+            + "for engine \(AnalysisEngine.version)"
+        await load()
+        await nameSpots()
+    }
+
+    /// Fills in `Spot N` placeholders from the reverse geocoder. Best effort by design:
+    /// offline or throttled, the placeholders simply stay (and stay renamable).
+    func nameSpots() async {
+        guard spots.contains(where: { $0.spot.autoNamed }) else { return }
+        let library = self.library
+        try? await library.nameAutoSpots(using: SpotNamer.shared.resolver)
+        spots = (try? await library.spots()) ?? spots
+    }
+
+    func renameSpot(_ spot: SpotRow, to name: String) async {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        try? await library.renameSpot(id: spot.id, to: trimmed)
+        await load()
+    }
+
+    func reclusterSpots() async {
+        do {
+            try await library.recluster()
+            await load()
+            status = "Re-clustered into \(spots.count) spot\(spots.count == 1 ? "" : "s")"
+        } catch {
+            errorMessage = "Could not re-cluster spots: \(error)"
+        }
+    }
+
+    func spot(id: String?) -> SpotRow? {
+        guard let id else { return nil }
+        return spots.first { $0.spot.id == id }?.spot
+    }
+
+    // MARK: - Gear
+
+    func saveGear(_ gear: GearRow) async {
+        do {
+            try await library.saveGear(gear)
+            await load()
+        } catch {
+            errorMessage = "Could not save gear: \(error)"
+        }
+    }
+
+    func deleteGear(_ gear: GearRow) async {
+        try? await library.deleteGear(id: gear.id)
+        await load()
+    }
+
+    func assignGear(sessionID: String, kind: GearKind, gearID: String?) async {
+        try? await library.assignGear(sessionId: sessionID, kind: kind, gearId: gearID)
+        libraryGeneration += 1
+        gearAggregates = (try? await library.gearAggregates()) ?? gearAggregates
     }
 
     func session(id: String) -> SessionRow? {
@@ -159,23 +240,50 @@ final class SessionStore {
     }
     #endif
 
+    /// Files picker for the Garmin GDPR "Export Your Data" ZIP — the same code path as a
+    /// hand-picked FIT, just tagged as a bulk backfill so the import log says so.
+    func importBulk(urls: [URL]) async {
+        guard !urls.isEmpty else { return }
+        var payloads: [(name: String, data: Data)] = []
+        for url in urls {
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            if let data = try? Data(contentsOf: url) {
+                payloads.append((url.lastPathComponent, data))
+            } else {
+                errorMessage = "Could not read \(url.lastPathComponent)"
+            }
+        }
+        await runImport(payloads, source: .gdpr)
+    }
+
     private func runImport(_ payloads: [(name: String, data: Data)], source: ImportSource) async {
         guard !payloads.isEmpty, !isBusy else { return }
         isBusy = true
         status = "Importing \(payloads.count) file\(payloads.count == 1 ? "" : "s")…"
-        defer { isBusy = false }
+        importProgress = ImportSummary()
+        defer {
+            isBusy = false
+            importProgress = nil
+        }
 
         let ingestor = self.ingestor
         let sendablePayloads = payloads.map { DiscoveredFit(name: $0.name, data: $0.data) }
+        let relay = ProgressRelay { [weak self] snapshot in
+            Task { @MainActor in self?.importProgress = snapshot }
+        }
         let summary = await Task.detached(priority: .userInitiated) {
             var total = ImportSummary()
             for payload in sendablePayloads {
-                let one = await ingestor.ingestContainer(data: payload.data, name: payload.name,
-                                                         source: source)
-                total.imported += one.imported
-                total.duplicates += one.duplicates
-                total.skipped += one.skipped
-                total.failed.append(contentsOf: one.failed)
+                let base = total
+                let one = await ingestor.ingestContainer(
+                    data: payload.data, name: payload.name, source: source,
+                    progress: { partial in
+                        var merged = base
+                        merged.absorb(partial)
+                        relay.send(merged)
+                    })
+                total.absorb(one)
             }
             return total
         }.value
@@ -183,6 +291,57 @@ final class SessionStore {
         status = summary.shortDescription
         if !summary.failed.isEmpty { errorMessage = summary.failed.joined(separator: "\n") }
         await load()
+        await writeNewSessionsToHealth()
+    }
+
+    /// Bridges the ingestor's `@Sendable` progress closure back to the main actor.
+    private final class ProgressRelay: @unchecked Sendable {
+        private let sink: @Sendable (ImportSummary) -> Void
+
+        init(_ sink: @escaping @Sendable (ImportSummary) -> Void) { self.sink = sink }
+
+        func send(_ summary: ImportSummary) { sink(summary) }
+    }
+
+    // MARK: - Apple Health (opt-in, write-only)
+
+    /// Off by default (plan phase 4: "optional Apple Health write"). Nothing is ever read
+    /// back from HealthKit — Garmin's own sync already owns that direction.
+    var healthWriteEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: "healthWriteEnabled") }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "healthWriteEnabled")
+            if newValue { Task { await enableHealthWriting() } }
+        }
+    }
+
+    private func enableHealthWriting() async {
+        guard await HealthWriter.shared.requestAuthorization() else {
+            errorMessage = "Apple Health did not grant permission to add workouts."
+            UserDefaults.standard.set(false, forKey: "healthWriteEnabled")
+            return
+        }
+        await writeNewSessionsToHealth()
+    }
+
+    /// Writes every session that has not been exported yet. Ids of exported sessions live
+    /// in UserDefaults, so a Health deletion is not silently "re-synced" on every launch.
+    func writeNewSessionsToHealth() async {
+        guard healthWriteEnabled else { return }
+        var exported = Set(UserDefaults.standard.stringArray(forKey: "healthExported") ?? [])
+        let pending = sessions.filter { !exported.contains($0.id) }
+        guard !pending.isEmpty else { return }
+        var written = 0
+        for row in pending {
+            if await HealthWriter.shared.write(row) {
+                exported.insert(row.id)
+                written += 1
+            }
+        }
+        UserDefaults.standard.set(Array(exported), forKey: "healthExported")
+        if written > 0 {
+            status = "Added \(written) workout\(written == 1 ? "" : "s") to Apple Health"
+        }
     }
 
     // MARK: - intervals.icu

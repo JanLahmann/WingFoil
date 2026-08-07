@@ -75,17 +75,47 @@ public enum IcuPayload {
     }
 
     static func zipEntries(_ data: Data) throws -> [(name: String, data: Data)] {
+        var out: [(String, Data)] = []
+        try forEachZipEntry(data) { name, payload in out.append((name, payload)) }
+        return out
+    }
+
+    /// Streaming entry walk: inflates one member at a time and hands it to `body`, which
+    /// is expected to consume it before returning. A Garmin GDPR export is hundreds of
+    /// megabytes of nested ZIPs, and materializing all of it at once is what makes bulk
+    /// import die on device.
+    static func forEachZipEntry(_ data: Data,
+                                _ body: (String, Data) throws -> Void) throws {
         guard let archive = try? Archive(data: data, accessMode: .read, pathEncoding: nil) else {
             throw Error.unreadableZip
         }
-        var out: [(String, Data)] = []
         for entry in archive where entry.type == .file {
             var buffer = Data()
             buffer.reserveCapacity(Int(entry.uncompressedSize))
             _ = try? archive.extract(entry, skipCRC32: true) { buffer.append($0) }
-            if !buffer.isEmpty { out.append((entry.path, buffer)) }
+            if !buffer.isEmpty { try body(entry.path, buffer) }
         }
-        return out
+    }
+
+    /// Central-directory walk: entry paths only, no inflation. Lets a caller decide what
+    /// to extract (and when) instead of paying for the whole archive up front.
+    static func forEachZipEntryPath(_ data: Data, _ body: (String) -> Void) throws {
+        guard let archive = try? Archive(data: data, accessMode: .read, pathEncoding: nil) else {
+            throw Error.unreadableZip
+        }
+        for entry in archive where entry.type == .file { body(entry.path) }
+    }
+
+    /// Inflates exactly one member.
+    static func extractZipEntry(_ data: Data, path: String) throws -> Data? {
+        guard let archive = try? Archive(data: data, accessMode: .read, pathEncoding: nil) else {
+            throw Error.unreadableZip
+        }
+        guard let entry = archive[path] else { return nil }
+        var buffer = Data()
+        buffer.reserveCapacity(Int(entry.uncompressedSize))
+        _ = try? archive.extract(entry, skipCRC32: true) { buffer.append($0) }
+        return buffer
     }
 
     static func hexPrefix(_ data: Data, count: Int = 8) -> String {

@@ -6,7 +6,7 @@ struct WingFoilApp: App {
 
     var body: some Scene {
         WindowGroup {
-            LibraryView()
+            RootView()
                 .environment(store)
                 .task {
                     await store.load()
@@ -15,6 +15,10 @@ struct WingFoilApp: App {
                     if store.sessions.isEmpty && !store.apiKey.isEmpty {
                         await store.syncFromIntervals()
                     }
+                    // A schema migration or an engine bump leaves every summary row
+                    // stale; the aggregate tabs must not read those.
+                    await store.refreshDerived()
+                    await store.nameSpots()
                 }
                 // Share sheet / "Open in WingFoil" hands us a FIT or a ZIP.
                 .onOpenURL { url in

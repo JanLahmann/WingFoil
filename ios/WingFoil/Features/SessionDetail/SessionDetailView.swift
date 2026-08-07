@@ -40,6 +40,8 @@ struct SessionDetailView: View {
                     SpeedChartView(detail: detail, effort: effort)
                     SummaryGrid(detail: detail, selectedEffort: $selectedEffort)
                         .id("summary")
+                    SessionGearCard(sessionID: sessionID)
+                        .id("gear")
                     footer(detail)
                 } else if let failure {
                     ContentUnavailableView("Could not open this session",
