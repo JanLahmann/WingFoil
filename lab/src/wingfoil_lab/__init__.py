@@ -7,7 +7,8 @@ Module map (mirrors the analysis pipeline in docs/plan.md §3.3):
     turns    turn detection + scoring + classification                [phase 2]
     wind     wind-axis estimation                                     [phase 2]
     gp3s     speed records incl. alpha 500                            [phase 1/3]
-    pump     takeoff/pump detection from wrist accel                  [phase 3]
+    pump     pump-stroke detection from wrist accel                   [phase 3]
+    takeoff  takeoff runs, attempts, in-flight pumping                 [phase 3]
     goldens  golden-file writer/loader (schema: docs/testing.md)
 Canonical parameters live in docs/algorithms.md — keep code defaults in sync.
 """
