@@ -1,0 +1,16 @@
+<fitContributions>
+    <!-- ids must match FitFields.mc / docs/fit-schema.md -->
+    <fitField id="0" displayInChart="true" sortOrder="0" precision="0"
+        chartTitle="@Strings.FitFoilStateChart" dataLabel="@Strings.FitFoilStateLabel"
+        unitLabel="@Strings.FitUnitNone" fillColor="#00C2A0"/>
+    <fitField id="21" displayInActivitySummary="true" sortOrder="1" precision="0"
+        dataLabel="@Strings.FitFoilTime" unitLabel="@Strings.FitUnitSeconds"/>
+    <fitField id="22" displayInActivitySummary="true" sortOrder="2" precision="0"
+        dataLabel="@Strings.FitFoilPct" unitLabel="@Strings.FitUnitPct"/>
+    <fitField id="23" displayInActivitySummary="true" sortOrder="3" precision="0"
+        dataLabel="@Strings.FitFlights" unitLabel="@Strings.FitUnitNone"/>
+    <fitField id="24" displayInActivitySummary="true" sortOrder="4" precision="0"
+        dataLabel="@Strings.FitLongestFlight" unitLabel="@Strings.FitUnitSeconds"/>
+    <fitField id="26" displayInActivitySummary="true" sortOrder="5" precision="0"
+        dataLabel="@Strings.FitBest2s" unitLabel="@Strings.FitUnitCms"/>
+</fitContributions>
