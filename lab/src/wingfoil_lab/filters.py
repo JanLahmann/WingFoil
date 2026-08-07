@@ -22,7 +22,8 @@ M_PER_DEG_LON_EQ = 111320.0  # x = (lon-lon0) * cos(lat0) * this
 M_PER_DEG_LAT = 110540.0     # y = (lat-lat0) * this
 MIN_COG_DISPLACEMENT_M = 0.5  # below this a step carries no usable bearing
 
-_COLUMNS = ["t", "x", "y", "lat", "lon", "doppler_mps", "pos_mps", "dt", "gap_before", "segment"]
+_COLUMNS = ["t", "x", "y", "lat", "lon", "alt_m", "doppler_mps", "pos_mps", "dt",
+            "gap_before", "segment"]
 
 
 @dataclass
@@ -98,6 +99,11 @@ def clean(track: RawTrack, config: FilterConfig | None = None) -> CleanTrack:
 
     out = pd.DataFrame({"t": df["t"].to_numpy(float),
                         "doppler_mps": df["speed_mps"].to_numpy(float)})
+    # Barometric altitude is carried through unfiltered: on the water its *absolute* value
+    # is meaningless, but a dunked wrist reads hundreds of metres low (`turnBaroDrop`, step 2
+    # of docs/algorithms.md "Turn outcome"), and that transient must survive to the turns.
+    alt = next((df[c] for c in ("enhanced_altitude", "altitude") if c in df.columns), None)
+    out["alt_m"] = np.nan if alt is None else alt.to_numpy(float)
     if has_pos:
         lat = df["lat"].to_numpy(float)
         lon = df["lon"].to_numpy(float)
@@ -115,7 +121,8 @@ def clean(track: RawTrack, config: FilterConfig | None = None) -> CleanTrack:
                       dropped_spike=dropped_spike)
 
 
-def clean_from_arrays(t, doppler_mps, x=None, y=None, config: FilterConfig | None = None,
+def clean_from_arrays(t, doppler_mps, x=None, y=None, alt_m=None,
+                      config: FilterConfig | None = None,
                       path: str = "<arrays>") -> CleanTrack:
     """Build a CleanTrack straight from arrays (unit tests, Monkey C array extraction).
 
@@ -137,7 +144,8 @@ def clean_from_arrays(t, doppler_mps, x=None, y=None, config: FilterConfig | Non
     thr = max(cfg.gap_min_s, cfg.gap_factor * med) if med > 0 else cfg.gap_min_s
 
     out = pd.DataFrame({"t": t, "doppler_mps": v, "x": x, "y": y,
-                        "lat": np.nan, "lon": np.nan})
+                        "lat": np.nan, "lon": np.nan,
+                        "alt_m": np.nan if alt_m is None else np.asarray(alt_m, float)})
     out, timer = _assemble(out, thr)
     caps = SourceCapabilities(has_speed=True, has_position=True,
                               sample_rate_hz=round(1.0 / med, 3) if med > 0 else 0.0)

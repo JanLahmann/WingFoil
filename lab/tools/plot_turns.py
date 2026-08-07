@@ -27,6 +27,7 @@ from matplotlib.lines import Line2D                                    # noqa: E
 from wingfoil_lab.filters import clean, hybrid_speed                   # noqa: E402
 from wingfoil_lab.flight import segment_flights                        # noqa: E402
 from wingfoil_lab.parse import MPS_TO_KN, parse_fit                    # noqa: E402
+from wingfoil_lab.pump import pump_track                               # noqa: E402
 from wingfoil_lab.turns import (FELL_IN, FLEW_THROUGH, JIBE, TACK, TOUCHDOWN,  # noqa: E402
                                 detect_turns, summarize_turns)
 from wingfoil_lab.wind import estimate_wind                            # noqa: E402
@@ -60,7 +61,8 @@ REJECT_STYLE = ("x", REJECT, REJECT)        # hairline cross: not a maneuver at 
 
 HEADER = (f"{'#':>3}  {'time':>8}  {'type':<9} {'dir':<9} {'side':<9} "
           f"{'entry':>6} {'min':>6} {'score':>6} {'ok':<4} "
-          f"{'outcome':<12} {'bl':<3} {'stop s':>6} {'offfoil':>7}")
+          f"{'outcome':<12} {'bl':<3} {'stop s':>6} {'offfoil':>7} {'win':>4} "
+          f"{'pump':<5} {'wet':<4}")
 
 
 def local_offset(path: Path) -> dt.timedelta:
@@ -80,9 +82,10 @@ def analyze_session(path: Path) -> dict:
     ct = clean(track)
     flights = segment_flights(ct)
     wind = estimate_wind(ct, flights)
-    turns = detect_turns(ct, flights, wind)
+    pump = pump_track(track)
+    turns = detect_turns(ct, flights, wind, pump=pump)
     start = track.records["timestamp"].iloc[0] + local_offset(path)
-    return {"path": path, "clean": ct, "flights": flights, "wind": wind,
+    return {"path": path, "clean": ct, "flights": flights, "wind": wind, "pump": pump,
             "turns": turns, "summary": summarize_turns(turns), "start": start}
 
 
@@ -105,7 +108,9 @@ def print_table(session: dict) -> None:
               f"{turn.entry_kn:6.2f} {turn.min_kn:6.2f} {100 * turn.score:5.1f}% "
               f"{'yes' if turn.success else 'no':<4} {turn.outcome:<12} "
               f"{'yes' if turn.borderline else '-':<3} "
-              f"{turn.stopped_s:6.1f} {turn.off_foil_s:7.1f}")
+              f"{turn.stopped_s:6.1f} {turn.off_foil_s:7.1f} "
+              f"{turn.outcome_window_s:4.0f} "
+              f"{'yes' if turn.pumped else '-':<5} {'yes' if turn.submerged else '-':<4}")
     print(f"\n  tacks {summary.tacks} ({summary.tacks_successful} made) · "
           f"jibes {summary.jibes} ({summary.jibes_successful} made) · "
           f"counted {summary.turns_counted} ({summary.turns_successful} made, "
