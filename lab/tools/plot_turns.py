@@ -27,7 +27,8 @@ from matplotlib.lines import Line2D                                    # noqa: E
 from wingfoil_lab.filters import clean, hybrid_speed                   # noqa: E402
 from wingfoil_lab.flight import segment_flights                        # noqa: E402
 from wingfoil_lab.parse import MPS_TO_KN, parse_fit                    # noqa: E402
-from wingfoil_lab.turns import JIBE, TACK, detect_turns, summarize_turns  # noqa: E402
+from wingfoil_lab.turns import (FELL_IN, FLEW_THROUGH, JIBE, TACK, TOUCHDOWN,  # noqa: E402
+                                detect_turns, summarize_turns)
 from wingfoil_lab.wind import estimate_wind                            # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
@@ -41,12 +42,25 @@ TRACK = "#d6d5d1"        # off-foil track: recessive
 FOIL = "#2a78d6"         # categorical slot 1
 MANEUVER = "#9fc2ea"     # slot 1, tinted: the positional channel behind the Doppler line
 WIND = "#eb6834"         # categorical slot 2
-GOOD = "#0ca30c"         # status: carried through
-BAD = "#d03b3b"          # status: lost it
+GOOD = "#0ca30c"         # status: flew through
+WARN = "#e8a020"         # status: touched down
+BAD = "#d03b3b"          # status: fell in
 REJECT = "#8c8b87"       # not a maneuver
 
+# Outcome -> (marker, facecolor, edgecolor). A green/amber/red status ramp cannot pass an
+# all-pairs CVD check (protan/deutan collapse exactly this hue range -- validator reports
+# dE ~4 green<->red), so **shape carries the state** and color only reinforces it: every
+# outcome has its own marker and its own legend label, never color alone.
+TURN_STYLE = {
+    FLEW_THROUGH: ("o", GOOD, GOOD),        # filled disc: carried the foil through
+    TOUCHDOWN: ("v", WARN, WARN),           # dipped down and came back up
+    FELL_IN: ("X", BAD, BAD),               # heavy cross: went swimming
+}
+REJECT_STYLE = ("x", REJECT, REJECT)        # hairline cross: not a maneuver at all
+
 HEADER = (f"{'#':>3}  {'time':>8}  {'type':<9} {'dir':<9} {'side':<9} "
-          f"{'entry kn':>8} {'min kn':>7} {'score':>6}  {'success':<7}")
+          f"{'entry':>6} {'min':>6} {'score':>6} {'ok':<4} "
+          f"{'outcome':<12} {'bl':<3} {'stop s':>6} {'offfoil':>7}")
 
 
 def local_offset(path: Path) -> dt.timedelta:
@@ -88,22 +102,30 @@ def print_table(session: dict) -> None:
     for n, turn in enumerate(session["turns"], 1):
         clock = (session["start"] + dt.timedelta(seconds=turn.start_t)).strftime("%H:%M:%S")
         print(f"{n:3d}  {clock:>8}  {turn.kind:<9} {turn.direction:<9} {turn.side:<9} "
-              f"{turn.entry_kn:8.2f} {turn.min_kn:7.2f} {100 * turn.score:5.1f}%  "
-              f"{'yes' if turn.success else 'no':<7}")
+              f"{turn.entry_kn:6.2f} {turn.min_kn:6.2f} {100 * turn.score:5.1f}% "
+              f"{'yes' if turn.success else 'no':<4} {turn.outcome:<12} "
+              f"{'yes' if turn.borderline else '-':<3} "
+              f"{turn.stopped_s:6.1f} {turn.off_foil_s:7.1f}")
     print(f"\n  tacks {summary.tacks} ({summary.tacks_successful} made) · "
           f"jibes {summary.jibes} ({summary.jibes_successful} made) · "
           f"counted {summary.turns_counted} ({summary.turns_successful} made, "
           f"{summary.success_pct:.0f} %) · rejected {summary.rejected} · "
           f"port/starboard {summary.port}/{summary.starboard}")
+    for name, oc in (("jibes", summary.jibe_outcomes), ("tacks", summary.tack_outcomes)):
+        print(f"  {name} outcome: flew through {oc.flew_through} · "
+              f"touchdown {oc.touchdown} · fell in {oc.fell_in} "
+              f"(of {oc.total}; {oc.borderline} borderline)")
 
 
 def _turn_style(turn) -> tuple[str, str, str]:
-    """(marker, facecolor, edgecolor) -- shape carries state, color reinforces it."""
+    """(marker, facecolor, edgecolor) -- shape carries the outcome, color reinforces it.
+
+    Bear-aways/round-ups are not maneuvers, so they stay a recessive gray hairline
+    whatever their outcome was.
+    """
     if turn.kind not in (TACK, JIBE):
-        return "x", REJECT, REJECT
-    if turn.success:
-        return "o", GOOD, GOOD
-    return "o", SURFACE, BAD
+        return REJECT_STYLE
+    return TURN_STYLE[turn.outcome]
 
 
 def _label(ax, x, y, n: int, color: str) -> None:
@@ -129,7 +151,7 @@ def draw_map(ax, session: dict) -> None:
         marker, face, edge = _turn_style(turn)
         ax.plot(df["x"].iloc[k], df["y"].iloc[k], marker=marker, ms=7.5, mew=1.6,
                 mfc=face, mec=edge, zorder=5)
-        _label(ax, df["x"].iloc[k], df["y"].iloc[k], n, edge if marker == "o" else REJECT)
+        _label(ax, df["x"].iloc[k], df["y"].iloc[k], n, edge)
 
     wind = session["wind"]
     if wind.dir_deg is not None:
@@ -175,7 +197,7 @@ def draw_strip(ax, session: dict) -> None:
         marker, face, edge = _turn_style(turn)
         ax.plot(turn.min_t / 60.0, turn.min_kn, marker=marker, ms=6.5, mew=1.5,
                 mfc=face, mec=edge, zorder=5)
-        _label(ax, turn.min_t / 60.0, turn.min_kn, n, edge if marker == "o" else REJECT)
+        _label(ax, turn.min_t / 60.0, turn.min_kn, n, edge)
 
     ax.set_xlim(t_min.min(), t_min.max())
     ax.set_ylim(0, None)
@@ -196,16 +218,18 @@ def _chrome(ax) -> None:
 
 
 def _legend(fig, session: dict) -> None:
-    summary = session["summary"]
-    handles = [
-        Line2D([], [], color=TRACK, lw=1.6, label="off foil"),
-        Line2D([], [], color=FOIL, lw=1.8, label="foiling"),
-        Line2D([], [], ls="none", marker="o", ms=7, mfc=GOOD, mec=GOOD,
-               label=f"turn carried through ({summary.turns_successful})"),
-        Line2D([], [], ls="none", marker="o", ms=7, mfc=SURFACE, mec=BAD, mew=1.6,
-               label=f"turn lost ({summary.turns_counted - summary.turns_successful})"),
-        Line2D([], [], ls="none", marker="x", ms=7, mec=REJECT, mew=1.6,
-               label=f"bear-away / round-up, not counted ({summary.rejected})"),
+    oc = session["summary"].outcomes
+    labels = {FLEW_THROUGH: f"flew through ({oc.flew_through})",
+              TOUCHDOWN: f"touched down ({oc.touchdown})",
+              FELL_IN: f"fell in ({oc.fell_in})"}
+    handles = [Line2D([], [], color=TRACK, lw=1.6, label="off foil"),
+               Line2D([], [], color=FOIL, lw=1.8, label="foiling")]
+    handles += [Line2D([], [], ls="none", marker=TURN_STYLE[k][0], ms=7.5, mew=1.6,
+                       mfc=TURN_STYLE[k][1], mec=TURN_STYLE[k][2], label=labels[k])
+                for k in (FLEW_THROUGH, TOUCHDOWN, FELL_IN)]
+    handles += [
+        Line2D([], [], ls="none", marker=REJECT_STYLE[0], ms=7, mec=REJECT, mew=1.6,
+               label=f"bear-away / round-up, not counted ({session['summary'].rejected})"),
         Line2D([], [], color=WIND, lw=2.0, label="estimated wind axis"),
     ]
     fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False,
@@ -223,10 +247,17 @@ def render(session: dict, out: Path) -> Path:
     stamp = session["start"].strftime("%Y-%m-%d %H:%M")
     fig.text(0.09, 0.965, f"Turns & wind axis — {session['path'].stem}", fontsize=13,
              fontweight="bold", color=INK, ha="left")
-    fig.text(0.09, 0.941,
-             f"{stamp} local · {summary.tacks} tacks / {summary.jibes} jibes, "
-             f"{summary.turns_successful} of {summary.turns_counted} carried through "
-             f"({summary.success_pct:.0f} %) · {summary.rejected} bear-aways rejected · "
+    oc = summary.outcomes
+    fig.text(0.09, 0.944,
+             f"{stamp} local · {summary.jibes} jibes / {summary.tacks} tacks · "
+             f"{oc.flew_through} flown through · {oc.touchdown} touchdowns · "
+             f"{oc.fell_in} falls"
+             + (f" · {oc.borderline} borderline" if oc.borderline else ""),
+             fontsize=9, color=INK_2, ha="left")
+    fig.text(0.09, 0.923,
+             f"{summary.turns_successful} of {summary.turns_counted} also kept "
+             f"≥ 70 % of entry speed ({summary.success_pct:.0f} %) · "
+             f"{summary.rejected} bear-aways rejected · "
              f"wind from {wind.dir_deg:.0f}° (confidence {wind.confidence:.2f})",
              fontsize=9, color=INK_2, ha="left")
     _legend(fig, session)

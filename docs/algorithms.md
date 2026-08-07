@@ -67,12 +67,45 @@ echoed in session fields 40–42.
 | `entrySpeedWindow` | 3 | s | entry speed = max over window before turn start |
 | `minSpeedLag` | 2 | s | minimum searched to `turnEnd + lag` (the collapse of a botched turn lands just past the COG sweep) |
 | `turnSuccessPct` | 70 | % | success ⇒ minSpeed/entrySpeed ≥ this AND speed never ≤ `foilExitSpeed` |
+| `turnStopSpeedFloor` | 1.0 | m/s | "stopped": below this the rider is not making way |
+| `turnTouchdownMaxStop` | 3 | s | longest stop still called a touchdown |
+| `turnFallStop` | 5 | s | stop longer than this ⇒ fell in |
+| `turnOutcomeLookahead` | 5 | s | tail past the COG sweep searched for the loss of foil (a botched exit collapses just after the geometry ends) |
+| `turnOutcomeWindow` | 60 | s | cap on following the recovery, so a turn taken before a break does not absorb it |
 | classification | | | tack = COG crosses wind axis through upwind; jibe = through downwind; requires wind axis; bear-away/round-up (no axis crossing) excluded from counts |
 | port/starboard | | | side before the turn, from sign of TWA |
 
 Entry/minimum speeds come from `speedChannelManeuvers` (positional); the "never dropped off
 foil" half of the success test stays on Doppler so it agrees with flight segmentation.
 Overlapping candidates are non-maximum-suppressed by net angle, widest sweep wins.
+
+### Turn outcome (primary, rider-facing) — `flew_through` · `touchdown` · `fell_in`
+
+Score%/success stay as the *secondary*, continuous metric: outcome says what happened,
+score says what the turn cost. Every turn gets an outcome, bear-aways included.
+
+1. **Lost the foil?** From turn start to `turnOutcomeLookahead` past the sweep, a sample
+   counts as flying only when it is inside a flight **and** its Doppler speed is above
+   `foilExitSpeed`. No such sample ⇒ `flew_through`. The extra speed test is load-bearing:
+   flight exit needs `exitHold` (3 s) of sub-exit speed, so a 1–2 s touchdown — exactly the
+   middle case — never breaks the flight and the segments alone would call it a fly-through.
+2. **Stopped how long?** The off-foil run is followed until foiling resumes (capped by
+   `turnOutcomeWindow`) and the longest contiguous spell below `turnStopSpeedFloor` is
+   measured, on `min(Doppler, positional)`. Both channels *over*-read at rest — wrist
+   Doppler picks up swim strokes, positional picks up GPS jitter — and neither under-reads,
+   so the lower of the two is the better stop evidence, and using both bridges single-sample
+   dropouts in either. An interval counts only when both end samples are below the floor and
+   no recording gap separates them, the same "hold" convention flight segmentation uses.
+3. Spell > `turnFallStop` ⇒ `fell_in`; otherwise `touchdown`, flagged `borderline` when the
+   spell exceeds `turnTouchdownMaxStop`.
+
+**The 3–5 s band is kept as two tunables, not collapsed to one threshold.** Over the corpus
+(116 detected turns on 2026-08-07 ciq + 2026-08-05 am + 2026-08-04 pm) the measured stops are
+0 s for every fly-through and 1, 1, 4, 5, 6, 9, 9, 13, 14, 15, 15, 17, 21, 21, 28, 31, 33, 34,
+34 s otherwise: the band holds 2 of 116 turns (1.7 %), so a single threshold anywhere in it
+would score almost identically — but those 2 are genuine ambiguities (a rider drifting at
+~1 m/s for a minute), and `borderline` surfaces them for review instead of silently deciding.
+Collapse the pair only if the flag stays this rare on a larger corpus.
 
 ## Wind axis estimation (phone)
 
