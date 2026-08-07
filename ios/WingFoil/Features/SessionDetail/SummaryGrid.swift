@@ -1,11 +1,14 @@
 import SwiftUI
 import WingFoilKit
 
-/// Foil/flight summary plus the GP3S record set. Records that the session could not
-/// produce (no qualifying run) stay visible with an explicit placeholder rather than
-/// disappearing — the absence is information.
+/// Foil/flight summary, GP3S records, the turn/flight-end outcome split, and the takeoff
+/// & pumping card. Records that the session could not produce (no qualifying run) stay
+/// visible with an explicit placeholder rather than disappearing — the absence is
+/// information, and so is a nil stroke count on a source with no accelerometer.
 struct SummaryGrid: View {
     let detail: SessionDetail
+    /// Which record effort is currently highlighted on the map and chart.
+    @Binding var selectedEffort: String?
 
     private var summary: SessionSummary { detail.analysis.summary }
     private var records: GP3SRecords { detail.analysis.records }
@@ -26,7 +29,24 @@ struct SummaryGrid: View {
                          caption: Fmt.duration(detail.durationS) + " elapsed")
             }
 
-            section("Speed records") {
+            speedRecords
+            turns
+            takeoff
+        }
+    }
+
+    // MARK: - Records
+
+    private var speedRecords: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Speed records").font(.headline)
+                Spacer()
+                if !detail.efforts.isEmpty {
+                    Text("tap to locate").font(.caption2).foregroundStyle(.tertiary)
+                }
+            }
+            LazyVGrid(columns: columns, spacing: 12) {
                 record("Best 2 s", records.best2sKn, window: "best2s")
                 record("Best 10 s", records.best10sKn, window: "best10s")
                 record("5 × 10 s", records.best5x10sKn, window: "best5x10s")
@@ -37,25 +57,120 @@ struct SummaryGrid: View {
         }
     }
 
-    private func section(_ title: String,
-                         @ViewBuilder content: () -> some View) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.headline)
-            LazyVGrid(columns: columns, spacing: 12) { content() }
-        }
-    }
-
     private func record(_ title: String, _ value: Double?, window: String) -> some View {
-        StatCard(title: title,
-                 value: Fmt.kn(value),
-                 caption: value == nil ? "no qualifying run"
-                                       : caption(for: records.windows[window]),
-                 dimmed: value == nil)
+        let locatable = detail.efforts.contains { $0.id == window }
+        return Button {
+            guard locatable else { return }
+            selectedEffort = selectedEffort == window ? nil : window
+        } label: {
+            StatCard(title: title,
+                     value: Fmt.kn(value),
+                     caption: value == nil ? "no qualifying run"
+                                           : caption(for: records.windows[window]),
+                     dimmed: value == nil,
+                     highlighted: selectedEffort == window)
+        }
+        .buttonStyle(.plain)
+        .disabled(!locatable)
     }
 
     private func caption(for window: RecordWindow?) -> String {
         guard let window else { return " " }
         return "at \(Fmt.clock(window.startTs)) · \(Fmt.duration(window.durS))"
+    }
+
+    // MARK: - Turns & flight ends
+
+    @ViewBuilder
+    private var turns: some View {
+        let t = summary.turns
+        let split = summary.outcomeSplit
+        if t.turnsCounted > 0 || t.rejected > 0 || summary.flightEnds.all.total > 0 {
+            section("Turns & losses") {
+                StatCard(title: "Jibes", value: "\(t.jibes)",
+                         caption: outcomeCaption(t.jibeOutcomes))
+                StatCard(title: "Tacks", value: "\(t.tacks)",
+                         caption: outcomeCaption(t.tackOutcomes))
+                if t.unclassified > 0 {
+                    StatCard(title: "Unclassified turns", value: "\(t.unclassified)",
+                             caption: "no usable wind axis")
+                }
+                StatCard(title: "Carried through",
+                         value: Fmt.pct(t.successPct),
+                         caption: "\(t.turnsSuccessful) of \(t.turnsCounted) turns")
+                StatCard(title: "Port / starboard",
+                         value: "\(t.port) / \(t.starboard)",
+                         caption: t.rejected > 0
+                             ? "\(t.rejected) course change\(t.rejected == 1 ? "" : "s") excluded"
+                             : "entered on each tack")
+                StatCard(title: "Falls",
+                         value: "\(split.falls)",
+                         caption: "\(split.turnFalls) in turns · "
+                             + "\(split.straightFalls) straight-line")
+                StatCard(title: "Touchdowns",
+                         value: "\(split.touchdowns)",
+                         caption: "\(split.turnTouchdowns) in turns · "
+                             + "\(split.straightTouchdowns) straight-line")
+                StatCard(title: "Glide-outs", value: "\(split.glideOuts)",
+                         caption: split.unknownEnds > 0
+                             ? "\(split.unknownEnds) flight end\(split.unknownEnds == 1 ? "" : "s") "
+                                 + "unknown (recording cut)"
+                             : "came off and kept moving")
+            }
+        }
+    }
+
+    private func outcomeCaption(_ counts: OutcomeCounts) -> String {
+        guard counts.total > 0 else { return "none detected" }
+        return "\(counts.flewThrough) flew · \(counts.touchdown) touch · \(counts.fellIn) fell"
+    }
+
+    // MARK: - Takeoff & pumping
+
+    @ViewBuilder
+    private var takeoff: some View {
+        let k = summary.takeoff
+        if k.takeoffSuccesses > 0 {
+            section("Takeoff & pumping", anchor: "takeoff") {
+                StatCard(title: "Pumps to takeoff",
+                         value: k.avgPumpsToTakeoff.map { String(format: "%.1f", $0) } ?? "—",
+                         caption: k.avgPumpsToTakeoff == nil
+                             ? "no accelerometer stream"
+                             : "median \(k.medianPumpsToTakeoff.map { String(format: "%.0f", $0) } ?? "—")"
+                                 + " · \(k.freeTakeoffs) free",
+                         dimmed: k.avgPumpsToTakeoff == nil)
+                StatCard(title: "Attempts",
+                         value: "\(k.takeoffAttempts)",
+                         caption: k.failedAttempts > 0
+                             ? "\(k.failedAttempts) failed" : "all got up")
+                StatCard(title: "Success rate",
+                         value: k.successPct.map { Fmt.pct($0) } ?? "—",
+                         caption: k.successPct == nil
+                             ? "failures invisible without accel"
+                             : "\(k.takeoffSuccesses) of \(k.takeoffAttempts)",
+                         dimmed: k.successPct == nil)
+                StatCard(title: "Takeoff run",
+                         value: k.avgTakeoffS.map { String(format: "%.1f s", $0) } ?? "—",
+                         caption: k.runsTruncated > 0
+                             ? "\(k.runsJudged) judged · \(k.runsTruncated) not in the record"
+                             : "average over \(k.runsJudged) runs",
+                         dimmed: k.avgTakeoffS == nil)
+                if let strokes = k.totalPumpStrokes {
+                    StatCard(title: "Pump strokes", value: "\(strokes)",
+                             caption: "\(k.inFlightPumpStrokes ?? 0) in flight · "
+                                 + "\(k.inFlightEpisodes) episodes")
+                }
+            }
+        }
+    }
+
+    private func section(_ title: String, anchor: String? = nil,
+                         @ViewBuilder content: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).font(.headline)
+            LazyVGrid(columns: columns, spacing: 12) { content() }
+        }
+        .id(anchor ?? title)
     }
 }
 
@@ -64,6 +179,7 @@ struct StatCard: View {
     let value: String
     var caption: String = " "
     var dimmed = false
+    var highlighted = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -77,11 +193,15 @@ struct StatCard: View {
             Text(caption)
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
-                .lineLimit(1)
+                .lineLimit(2)
                 .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 12))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.orange, lineWidth: highlighted ? 2 : 0)
+        }
     }
 }

@@ -105,6 +105,11 @@ public enum FitSessionParser {
         let devSessions = alignedDevFields(dev, Mesg.session, count: sessions.count)
         track.watchSummary = watchSummary(devSessions.first ?? [:])
 
+        // The sanitizer strips `accelerometer_data` before the C decoder (it overflows the
+        // decoder's fixed structs), so the SensorLogging stream is read from the *original*
+        // bytes — see FitAccelReader. Rebased onto the record clock.
+        track.accel = FitAccelReader.read(data, recordEpoch: start)
+
         var caps = SourceCapabilities()
         caps.hasSpeed = track.samples.contains { $0.speedMps != nil }
         caps.hasPosition = track.samples.contains { $0.lat != nil }

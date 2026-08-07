@@ -48,13 +48,22 @@ struct LibraryView: View {
             }
             .sheet(isPresented: $showSettings) { SettingsView() }
             #if DEBUG && targetEnvironment(simulator)
-            // Headless-driving hook: `simctl launch` can't tap, so an env var opens
-            // the newest session for automated screenshots.
-            .onChange(of: store.sessions.count) {
-                if ProcessInfo.processInfo.environment["UI_OPEN_SESSION"] == "latest",
-                   path.isEmpty, let first = store.sessions.first {
-                    path = [first.id]
+            // Headless-driving hooks: `simctl launch` can't tap, so env vars import the
+            // fixture corpus and open a session for automated screenshots.
+            // `UI_OPEN_SESSION=latest` takes the newest; any other value is matched
+            // against the archived filename (e.g. `UI_OPEN_SESSION=ciq`).
+            .task {
+                if ProcessInfo.processInfo.environment["UI_IMPORT_FIXTURES"] == "1" {
+                    await store.importFixtures()
                 }
+            }
+            .onChange(of: store.sessions.count) {
+                guard let wanted = ProcessInfo.processInfo.environment["UI_OPEN_SESSION"],
+                      path.isEmpty else { return }
+                let match = wanted == "latest"
+                    ? store.sessions.first
+                    : store.sessions.first { ($0.originalFilename ?? "").contains(wanted) }
+                if let match { path = [match.id] }
             }
             #endif
             .fileImporter(isPresented: $showImporter,
