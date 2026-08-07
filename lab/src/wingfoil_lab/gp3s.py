@@ -11,9 +11,8 @@ import math
 from dataclasses import dataclass, field
 
 import numpy as np
-import pandas as pd
 
-from .filters import CleanTrack
+from .filters import CleanTrack, unwrapped_cog_deg
 
 MPS_TO_KN = 1.9438445
 
@@ -100,18 +99,8 @@ def _segment_arrays(clean: CleanTrack) -> list[dict]:
         c = np.concatenate([[0.0], np.cumsum((v[1:] + v[:-1]) / 2.0 * np.diff(t))])
         x = seg["x"].to_numpy(float)
         y = seg["y"].to_numpy(float)
-        segs.append({"t": t, "c": c, "x": x, "y": y, "u": _unwrapped_cog_deg(x, y)})
+        segs.append({"t": t, "c": c, "x": x, "y": y, "u": unwrapped_cog_deg(x, y)})
     return segs
-
-
-def _unwrapped_cog_deg(x: np.ndarray, y: np.ndarray) -> np.ndarray:
-    """Per-interval COG (deg, unwrapped). Near-zero displacements inherit the last bearing."""
-    dx, dy = np.diff(x), np.diff(y)
-    disp = np.hypot(dx, dy)
-    bear = np.degrees(np.arctan2(dx, dy))
-    bear = np.where(disp >= 0.5, bear, np.nan)
-    bear = pd.Series(bear).ffill().bfill().fillna(0.0).to_numpy()
-    return np.degrees(np.unwrap(np.radians(bear)))
 
 
 def _best_duration_window(segs: list[dict], dur: float,
