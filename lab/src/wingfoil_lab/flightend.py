@@ -169,14 +169,19 @@ class OutcomeSplit:
 def classify_flight_ends(clean: CleanTrack, flights: FlightResult,
                          turns: list[Turn] | None = None,
                          config: FlightEndConfig | None = None,
-                         pump: PumpTrack | None = None) -> list[FlightEnd]:
+                         pump: PumpTrack | None = None,
+                         evidence: OffFoilEvidence | None = None) -> list[FlightEnd]:
     """Classify every flight ending in time order (see the module docstring).
 
     `turns` supplies the ownership rule and may be omitted (then nothing is owned); `pump`
-    is optional accelerometer evidence, as in `turns.detect_turns`.
+    is optional accelerometer evidence, as in `turns.detect_turns`. `evidence` is the same
+    read-only off-foil evidence the turn pass uses and may be handed in by a pipeline that
+    already built it; omitted, it is built here.
     """
     cfg = config or FlightEndConfig()
-    ev = off_foil_evidence(clean, flights, cfg.foil_exit_speed_kmh, cfg.baro_drop_m)
+    ev = evidence
+    if ev is None:
+        ev = off_foil_evidence(clean, flights, cfg.foil_exit_speed_kmh, cfg.baro_drop_m)
     if ev is None:
         return []
     ends = [_classify(i, f.end_t, ev, cfg, pump) for i, f in enumerate(flights.flights)]

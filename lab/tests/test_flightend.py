@@ -10,6 +10,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from wingfoil_lab.evidence import off_foil_evidence
 from wingfoil_lab.filters import clean, clean_from_arrays
 from wingfoil_lab.flight import segment_flights
 from wingfoil_lab.flightend import (FELL_IN, FLIGHT_END_OUTCOMES, GLIDE_OUT, TOUCHDOWN,
@@ -17,6 +18,7 @@ from wingfoil_lab.flightend import (FELL_IN, FLIGHT_END_OUTCOMES, GLIDE_OUT, TOU
                                     split_outcomes, summarize_flight_ends)
 from wingfoil_lab.parse import parse_fit
 from wingfoil_lab.pump import pump_track, pump_track_from_arrays
+from wingfoil_lab.takeoff import analyze_takeoffs
 from wingfoil_lab.turns import detect_turns, summarize_turns
 from wingfoil_lab.wind import WindEstimate, estimate_wind
 
@@ -305,3 +307,26 @@ def test_real_session_flight_ends():
     assert split.falls == split.turn_falls + split.straight_falls
     assert split.straight_falls >= 1        # falls outside a maneuver are real and counted
     assert split.turn_falls >= split.straight_falls
+
+
+def test_shared_off_foil_evidence_matches_building_it_per_consumer():
+    """The pipeline builds the evidence once and hands it to all three outcome passes.
+
+    `evidence.OffFoilEvidence` is read-only, so sharing it must be bit-identical to letting
+    every consumer build its own -- this pins that contract (goldens depend on it).
+    """
+    course, speed = _reach(_fly(40), SETTLE, _fly(6, 0.4), _fly(40), SETTLE, _fly(20, 0.3))
+    ct = _track(course, speed)
+    flights = segment_flights(ct)
+    cfg = FlightEndConfig()
+    ev = off_foil_evidence(ct, flights, cfg.foil_exit_speed_kmh, cfg.baro_drop_m)
+    assert ev is not None
+
+    own_turns = detect_turns(ct, flights, WIND_N)
+    shared_turns = detect_turns(ct, flights, WIND_N, evidence=ev)
+    assert shared_turns == own_turns
+
+    assert (classify_flight_ends(ct, flights, own_turns, evidence=ev)
+            == classify_flight_ends(ct, flights, own_turns))
+    assert (analyze_takeoffs(ct, flights, own_turns, evidence=ev)
+            == analyze_takeoffs(ct, flights, own_turns))

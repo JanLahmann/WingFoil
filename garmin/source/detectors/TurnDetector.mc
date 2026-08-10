@@ -21,6 +21,11 @@ import Toybox.Math;
 // window: lost-the-foil (speed <= foilExit or submerged), longest stop spell below
 // STOP_FLOOR_MPS, barometric submersion. Verdict: submerged or stop > FALL_STOP_S => fell in;
 // else any loss => touchdown; else flew through.
+//
+// The score%/success pair is a *separate*, narrower measurement (turns.py `_build_turn`):
+// the speed minimum over the sweep plus MIN_SPEED_LAG_S only. success = score >= SUCCESS_PCT
+// AND that minimum stayed above foilExit. A turn can therefore be successful and still be
+// classified a touchdown, when the foil was lost later in the recovery-gated window.
 class TurnDetector {
     // enums (not const) so they are class-static: TurnDetector.EVENT_TURN etc.
     enum {
@@ -352,6 +357,15 @@ class TurnDetector {
     }
 
     // Evidence collection, shared by the sweep and the outcome window.
+    //
+    // Two separate measurements live here and must not be confused (they were, once):
+    //   _minSpeed  -- the SCORE channel, minimum over the sweep plus MIN_SPEED_LAG_S only,
+    //                 exactly the [start_t, end_t + minSpeedLag] window turns.py._build_turn
+    //                 scores. It, and nothing else, decides success.
+    //   _lostFoil / _wet / _stopMax -- OUTCOME evidence, collected across the whole
+    //                 recovery-gated window (up to end + LOOKAHEAD_S). A touchdown five
+    //                 seconds after a cleanly-carried jibe is that jibe's outcome, but it is
+    //                 not part of the speed it was scored on.
     hidden function _track(dt as Float, speedMps as Float, submerged as Boolean) as Void {
         if (submerged) {
             _wet = true;
@@ -406,7 +420,9 @@ class TurnDetector {
         if (pct > lapBestScorePct) {
             lapBestScorePct = pct;
         }
-        if (pct >= SUCCESS_PCT && !_lostFoil) {
+        // success is the score pair (turns.py._build_turn), independent of the outcome:
+        // score >= turnSuccessPct AND the foil still carried across the scored window.
+        if (pct >= SUCCESS_PCT && _minSpeed > AppSettings.foilExitMps) {
             successCount++;
         }
         state = ST_IDLE;

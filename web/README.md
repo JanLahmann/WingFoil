@@ -25,6 +25,7 @@ web/
 │   ├── FILES.json              load list for the worker (HTTP has no directory listing)
 │   └── MANIFEST.json           source hashes, for the staleness check
 ├── tools/bundle_lab.py         regenerates lab_bundle/wingfoil_lab
+├── tools/verify_web_entry.py   headless checks: golden parity + no-GPS regression
 └── .nojekyll                   GitHub Pages: serve files verbatim
 ```
 
@@ -101,17 +102,10 @@ python3 tools/bundle_lab.py --check    # exit 1 if the bundle is stale (use this
 Three checks, none of which need a browser:
 
 ```bash
-# 1. the bundle imports and reproduces the goldens exactly
+# 1. web_entry: the bundle reproduces the goldens exactly, and a track with no GPS fixes
+#    still produces a serializable document (analyze_json uses allow_nan=False)
 cd /path/to/WingFoil
-PYTHONPATH=web/lab_bundle lab/.venv/bin/python - <<'PY'
-import json, pathlib, web_entry
-fit  = pathlib.Path("fixtures/sessions/ciq/2026-08-07-0754_nago-torbole-windsurfen_ciq.fit")
-exp  = json.loads(pathlib.Path("fixtures/goldens/2026-08-07-0754_nago-torbole-windsurfen_ciq.expected.json").read_text())
-res  = web_entry.analyze_bytes(fit.read_bytes(), fit.name)
-assert res["golden"] == exp, "web_entry drifted from the golden"
-print("OK:", res["golden"]["summary"]["turns"]["turnsCounted"], "turns,",
-      res["golden"]["summary"]["flightCount"], "flights")
-PY
+lab/.venv/bin/python web/tools/verify_web_entry.py
 
 # 2. JS syntax
 cd web && for f in js/*.js; do node --check "$f" || exit 1; done
@@ -119,6 +113,11 @@ cd web && for f in js/*.js; do node --check "$f" || exit 1; done
 # 3. the lab itself is still green
 cd lab && uv run pytest -q
 ```
+
+`tools/verify_web_entry.py` is the whole of check 1: the golden spot-check that used to be
+a heredoc here, plus the position-less-track regression (a Doppler-only source has an
+all-NaN projection; the view must degrade to `hasPositions: false` rather than emit a NaN
+that takes the entire analysis down).
 
 Expected numbers for that CIQ session: **30 jibes / 0 tacks**, outcomes **9 flew through / 9
 touchdown / 12 fell in**, **23 flights**, 12.764 km, wind from 36°, 60 % on foil.
@@ -139,7 +138,9 @@ touchdown / 12 fell in**, **23 flights**, 12.764 km, wind from 36°, 60 % on foi
 5. **Map.** North-up track; grey off-foil line with blue foiling segments on top; numbered
    markers — green discs / amber triangles / red crosses / grey hairline crosses for
    bear-aways / hollow squares for straight-line flight ends; wind arrow + scale bar.
-   Hovering a marker shows a tooltip. The legend counts must match the tiles.
+   Hovering a marker shows a tooltip. The legend counts must match the tiles. (A file with
+   no GPS fixes at all must show *"No GPS positions in this file"* in the map slot and still
+   render every other section — `tools/verify_web_entry.py` covers this headlessly.)
 6. **Speed strip.** Blue Doppler line over the paler positional line, blue flight bands, the
    same marker numbers as the map. Moving the pointer across it shows a crosshair with the
    time and both speeds.

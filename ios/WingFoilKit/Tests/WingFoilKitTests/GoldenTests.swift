@@ -519,6 +519,12 @@ import Testing
         let windows = try #require(records["windows"] as? [String: Any])
         let w2 = try #require(windows["best2s"] as? [String: Any])
         #expect(Set(w2.keys) == ["startTs", "durS"])
+        // best5x10s is an ARRAY of windows, like the lab writes it; a record that was
+        // never achieved has no key at all rather than a null.
+        let w5 = try #require(windows["best5x10s"] as? [[String: Any]])
+        #expect(w5.count == 5)
+        #expect(Set(w5[0].keys) == ["startTs", "durS"])
+        #expect(windows["alpha500"] == nil, "no positions ⇒ no alpha ⇒ absent key")
 
         let summary = try #require(obj["summary"] as? [String: Any])
         #expect(Set(summary.keys) == ["foilTimeS", "foilPct", "flightCount",
@@ -532,5 +538,67 @@ import Testing
         var expected = analysis
         expected.records.totalDistanceM = 0
         #expect(decoded == expected)
+    }
+
+    /// The other direction of the same contract: a golden the *lab* wrote must decode
+    /// straight into `SessionAnalysis` through Codable — not only through the lenient
+    /// `JSONSerialization` path the comparisons above use — and re-encode to the same
+    /// `records.windows` shape. `best5x10s` is the interesting key: the lab stores the
+    /// array of every disjoint 10 s window it kept.
+    @Test func labGoldensDecodeThroughCodable() throws {
+        let dir = testFixturesDir.appendingPathComponent("goldens")
+        let goldens = ((try? FileManager.default.contentsOfDirectory(
+            at: dir, includingPropertiesForKeys: nil)) ?? [])
+            .filter { $0.lastPathComponent.hasSuffix(".expected.json") }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+        guard !goldens.isEmpty else { return }
+
+        var sawArray = false
+        for url in goldens {
+            let stem = String(url.lastPathComponent.dropLast(".expected.json".count))
+            let data = try Data(contentsOf: url)
+            let raw = try #require(try JSONSerialization.jsonObject(with: data)
+                                   as? [String: Any])
+            let expWindows = (raw["records"] as? [String: Any])?["windows"] as? [String: Any]
+
+            let analysis: SessionAnalysis
+            do {
+                analysis = try JSONDecoder().decode(SessionAnalysis.self, from: data)
+            } catch {
+                Issue.record("golden \(stem): SessionAnalysis is not Codable against it: \(error)")
+                continue
+            }
+
+            // Every window key the lab wrote survives the round trip, with its shape.
+            if let expList = expWindows?["best5x10s"] as? [[String: Any]] {
+                sawArray = true
+                let actual = try #require(analysis.records.windows.best5x10s,
+                                          "\(stem): best5x10s did not decode")
+                #expect(actual.count == expList.count, "\(stem): best5x10s window count")
+                for (i, exp) in expList.enumerated() where i < actual.count {
+                    #expect(abs(actual[i].startTs - (num(exp["startTs"]) ?? -1)) < 1e-9,
+                            "\(stem): best5x10s[\(i)].startTs")
+                    #expect(abs(actual[i].durS - (num(exp["durS"]) ?? -1)) < 1e-9,
+                            "\(stem): best5x10s[\(i)].durS")
+                }
+            }
+            #expect((analysis.records.windows["best2s"] != nil)
+                    == (expWindows?["best2s"] != nil), "\(stem): best2s presence")
+            #expect((analysis.records.windows.alpha500 != nil)
+                    == (expWindows?["alpha500"] != nil), "\(stem): alpha500 presence")
+
+            // Re-encoding reproduces the golden's windows object key for key: single
+            // windows stay objects, best5x10s stays an array, absent stays absent.
+            let reencoded = try JSONEncoder().encode(analysis)
+            let back = try #require(try JSONSerialization.jsonObject(with: reencoded)
+                                    as? [String: Any])
+            let outWindows = try #require((back["records"] as? [String: Any])?["windows"]
+                                          as? [String: Any])
+            #expect(Set(outWindows.keys) == Set(expWindows.map { Array($0.keys) } ?? []),
+                    "\(stem): records.windows keys \(Set(outWindows.keys))")
+            #expect(outWindows["best5x10s"] is [Any] || expWindows?["best5x10s"] == nil,
+                    "\(stem): best5x10s must re-encode as an array")
+        }
+        #expect(sawArray, "no golden carried a records.windows.best5x10s array")
     }
 }

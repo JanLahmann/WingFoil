@@ -92,6 +92,77 @@ function flightDetectorDiscardsShortFlights(logger as Test.Logger) as Boolean {
     return true;
 }
 
+(:test)
+function flightDetectorEntryHoldIsBothEndsQualifying(logger as Test.Logger) as Boolean {
+    // lab/src/wingfoil_lab/flight.py `_flight_spans`: the first qualifying sample opens the
+    // run with the accumulator at ZERO, so a hold of `entryHold` seconds needs
+    // entryHold + 1 qualifying samples at 1 Hz. The dt spanning the last non-qualifying
+    // sample must never count -- otherwise ON_FOIL confirms a sample early and the
+    // backdated flight time contains an interval the rider was not flying.
+    AppSettings.foilEntryMps = 12.0 / 3.6;
+    AppSettings.foilExitMps = 8.0 / 3.6;
+    AppSettings.entryHoldS = 2;
+    AppSettings.exitHoldS = 3;
+    AppSettings.minFlightS = 5;
+
+    var d = new FlightDetector();
+    d.tick(1.0, 1.0, 1.0);          // one slow sample: the interval leaving it never counts
+    Test.assert(d.state == FlightDetector.STATE_OFF);
+
+    d.tick(1.0, 5.0, 5.0);          // qualifying sample 1: opens the run, accumulator 0
+    Test.assertMessage(d.state == FlightDetector.STATE_OFF,
+        "1 qualifying sample is 0 s of hold");
+    d.tick(1.0, 5.0, 5.0);          // qualifying sample 2: entryHold - 1 = 1 s of hold
+    Test.assertMessage(d.state == FlightDetector.STATE_OFF,
+        "entryHold samples is entryHold - 1 s of hold: must NOT confirm here");
+    d.tick(1.0, 5.0, 5.0);          // qualifying sample 3 = entryHold + 1: 2 s of hold
+    Test.assertMessage(d.state == FlightDetector.STATE_ON,
+        "ON_FOIL on the entryHold + 1 -th qualifying sample");
+
+    // backdated to the FIRST qualifying sample: exactly entryHold, not entryHold + 1
+    Test.assertMessage((d.foilTimeS - 2.0).abs() < 0.0001,
+        "backdate = entryHold, got " + d.foilTimeS.format("%.2f"));
+    Test.assertMessage((d.currentFlightS - 2.0).abs() < 0.0001,
+        "flight length = entryHold, got " + d.currentFlightS.format("%.2f"));
+    return true;
+}
+
+(:test)
+function flightDetectorExitHoldIsBothEndsQualifying(logger as Test.Logger) as Boolean {
+    // Same convention on the way out: exitHold + 1 sub-exit samples at 1 Hz, and the end is
+    // backdated to the FIRST sub-exit sample, so the last flying interval stays in the flight.
+    AppSettings.foilEntryMps = 12.0 / 3.6;
+    AppSettings.foilExitMps = 8.0 / 3.6;
+    AppSettings.entryHoldS = 2;
+    AppSettings.exitHoldS = 3;
+    AppSettings.minFlightS = 5;
+
+    var d = new FlightDetector();
+    for (var i = 0; i < 11; i++) {          // 11 qualifying samples: flight spans t0..t10
+        d.tick(1.0, 5.0, 5.0);
+    }
+    Test.assert(d.state == FlightDetector.STATE_ON && d.flightCount == 1);
+    Test.assertMessage((d.currentFlightS - 10.0).abs() < 0.0001,
+        "10 s of flight so far, got " + d.currentFlightS.format("%.2f"));
+
+    var ev = FlightDetector.EVENT_NONE;
+    for (var i = 1; i <= 3; i++) {          // exitHold sub-exit samples: 2 s of hold, still ON
+        ev = d.tick(1.0, 1.0, 1.0);
+        Test.assertMessage(d.state == FlightDetector.STATE_ON,
+            "exitHold sub-exit samples must NOT end the flight (sample " + i.toString() + ")");
+    }
+    ev = d.tick(1.0, 1.0, 1.0);             // exitHold + 1: 3 s of hold -> OFF_FOIL
+    Test.assertMessage(ev == FlightDetector.EVENT_END,
+        "OFF_FOIL on the exitHold + 1 -th sub-exit sample, event " + ev.toString());
+    Test.assert(d.state == FlightDetector.STATE_OFF);
+    // end backdated to the first sub-exit sample: 11 s from the first qualifying sample
+    Test.assertMessage((d.foilTimeS - 11.0).abs() < 0.0001,
+        "foilTime = 11 (t0 -> first sub-exit sample), got " + d.foilTimeS.format("%.2f"));
+    Test.assertMessage((d.longestS - 11.0).abs() < 0.0001,
+        "longest = 11, got " + d.longestS.format("%.2f"));
+    return true;
+}
+
 // ---- TurnDetector (docs/algorithms.md "Turn detection & classification") ----
 // Synthetic 1 Hz arrays, no clock calls: every helper below drives the detector one
 // second at a time with an explicit COG/speed, exactly as MetricsEngine would.
@@ -174,6 +245,37 @@ function turnCollapseIsFellIn(logger as Test.Logger) as Boolean {
     Test.assertMessage(d.turnCount == 1, "one turn");
     Test.assertMessage(ev == TurnDetector.EVENT_FELL, "fell in, event " + ev.toString());
     Test.assertMessage(d.fellCount == 1 && d.touchdownCount == 0, "outcome tally");
+    return true;
+}
+
+(:test)
+function turnSuccessIsScoreOnlyNotOutcome(logger as Test.Logger) as Boolean {
+    // lab/src/wingfoil_lab/turns.py `_build_turn`: success = score >= turnSuccessPct AND the
+    // minimum over [start, end + minSpeedLag] stayed above foilExitSpeed. It is computed from
+    // that window alone -- a loss of foil LATER in the recovery-gated outcome window sets the
+    // outcome to `touchdown` and must not retract the success. The two used to be coupled.
+    turnDefaults();
+    var d = new TurnDetector();
+    // 180 deg jibe at 4.2 m/s with the speed carried all the way through the sweep
+    runStraight(d, 5, 90.0, 4.2);
+    runSweep(d, 90.0, 30.0, 6, 4.2);
+    // 4 s of mush at 3.1 m/s: above foilExit and >= 70 % of the entry speed, so the score
+    // window closes clean, but below the recovery threshold, so the window stays open
+    runStraight(d, 4, 270.0, 3.1);
+    // ... and only THEN, 5 s past the sweep, he touches down
+    runStraight(d, 3, 270.0, 0.5);
+    var ev = runStraight(d, 4, 270.0, 8.0);     // pumps back up: the window closes
+
+    Test.assertMessage(d.turnCount == 1, "one turn, got " + d.turnCount.toString());
+    Test.assertMessage(ev == TurnDetector.EVENT_TOUCHDOWN,
+        "outcome is a touchdown, event " + ev.toString());
+    Test.assertMessage(d.touchdownCount == 1 && d.fellCount == 0 && d.flewCount == 0,
+        "outcome tally");
+    Test.assertMessage(d.lastScorePct >= 70,
+        "score kept through the sweep, got " + d.lastScorePct.toString());
+    Test.assertMessage(d.successCount == 1,
+        "a carried turn stays successful despite the later touchdown, successCount "
+        + d.successCount.toString());
     return true;
 }
 

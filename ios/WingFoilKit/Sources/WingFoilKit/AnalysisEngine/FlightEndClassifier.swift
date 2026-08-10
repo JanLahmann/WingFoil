@@ -124,12 +124,15 @@ public enum FlightEndClassifier {
 
     static let kmhToMps = 1.0 / 3.6
 
+    /// `evidence` lets the caller hand in the whole-track `OffFoilEvidence` the turn
+    /// detector already built; omitted, it is built here.
     public static func classify(_ track: CleanTrack, flights: FlightSegmentation,
                                 turns: [Turn] = [], config: FlightEndConfig = FlightEndConfig(),
-                                pump: PumpTrack? = nil) -> [FlightEnd] {
-        guard let ev = Evidence.build(track, flights: flights,
-                                      exitSpeedKmh: config.foilExitSpeedKmh,
-                                      baroDropM: config.baroDropM) else { return [] }
+                                pump: PumpTrack? = nil,
+                                evidence: OffFoilEvidence? = nil) -> [FlightEnd] {
+        guard let ev = evidence ?? Evidence.build(track, flights: flights,
+                                                  exitSpeedKmh: config.foilExitSpeedKmh,
+                                                  baroDropM: config.baroDropM) else { return [] }
         var ends = flights.flights.enumerated().map {
             classifyOne(index: $0.offset, endT: $0.element.endT, ev: ev, config: config,
                         pump: pump)
@@ -177,11 +180,14 @@ public enum FlightEndClassifier {
                                       holdS: config.recoverHoldS)
         var end = FlightEnd(flightIndex: index, t: endT, outcome: .glideOut,
                             windowS: max(t[hi] - endT, 0))
-        let inWindow = { (k: Int) in t[k] >= endT && t[k] <= t[hi] }
+        // [first sample at or after endT, last sample at or before t[hi]] — the evidence
+        // arrays span the session, so every scan below is bounded to the window.
+        let winLo = searchSortedLeft(t, endT)
+        let win = winLo..<max(winLo, searchSortedRight(t, t[hi]))
         end.pumped = pump?.isPumping(from: endT, to: t[hi]) ?? false
-        end.submerged = t.indices.contains { inWindow($0) && ev.submerged[$0] }
+        end.submerged = win.contains { ev.submerged[$0] }
 
-        if let a = t.indices.first(where: { inWindow($0) && !ev.flying[$0] }) {
+        if let a = win.first(where: { !ev.flying[$0] }) {
             let (b, last) = Evidence.offFoilRun(t: t, flying: ev.flying, a: a,
                                                 capT: endT + config.outcomeWindowS)
             end.offFoilS = Evidence.elapsed(t: t, gap: ev.gap, a: a, b: last)
@@ -197,7 +203,7 @@ public enum FlightEndClassifier {
         } else if (end.minSpeedMps ?? .infinity) < config.stopSpeedFloorMps {
             end.outcome = .touchdown
             end.borderline = end.stoppedS > config.touchdownMaxStopS
-        } else if end.pumped, marginal(ev, inWindow: inWindow, config: config) {
+        } else if end.pumped, marginal(ev, in: win, config: config) {
             // Same corroboration rule as the turns: accel promotes only when the speed
             // channels also went marginal. At a flight end that test is nearly vacuous —
             // and that is intended: a rider who has to pump a burst out of it did not
@@ -212,20 +218,17 @@ public enum FlightEndClassifier {
     /// demand 17 kn back after a 25 kn run. Floored at `foilEntrySpeed`.
     private static func recoverThreshold(_ ev: OffFoilEvidence, endT: Double,
                                          config: FlightEndConfig) -> Double {
+        let lo = searchSortedLeft(ev.t, endT - config.entrySpeedWindowS)
+        let hi = searchSortedRight(ev.t, endT)
         var entry = -Double.infinity
-        for k in ev.t.indices
-        where ev.t[k] >= endT - config.entrySpeedWindowS && ev.t[k] <= endT {
-            entry = max(entry, ev.doppler[k])
-        }
+        for k in lo..<max(lo, hi) { entry = max(entry, ev.doppler[k]) }
         if !entry.isFinite { entry = 0 }
         return max(config.recoverPct / 100 * entry, config.foilEntrySpeedKmh * kmhToMps)
     }
 
-    private static func marginal(_ ev: OffFoilEvidence, inWindow: (Int) -> Bool,
+    private static func marginal(_ ev: OffFoilEvidence, in window: Range<Int>,
                                  config: FlightEndConfig) -> Bool {
-        ev.t.indices.contains {
-            inWindow($0) && ev.speed[$0] < config.foilEntrySpeedKmh * kmhToMps
-        }
+        window.contains { ev.speed[$0] < config.foilEntrySpeedKmh * kmhToMps }
     }
 
     /// Flag each flight end that falls inside a turn's outcome window. A turn's window runs

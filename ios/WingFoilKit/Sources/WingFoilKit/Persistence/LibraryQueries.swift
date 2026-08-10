@@ -351,13 +351,26 @@ public struct LibraryStore: Sendable {
 
     // MARK: - Spots
 
+    /// Every spot with its session count and last visit. One `GROUP BY` pass over the
+    /// sessions rather than a full `SessionRow` fetch per spot — only the two aggregates
+    /// are ever read. `startDate` is stored as a sortable datetime, so `MAX` is the
+    /// chronological last visit; a spot with no sessions still appears, with 0 / nil.
     public func spots() async throws -> [SpotAggregate] {
         try await database.writer.read { db in
-            try SpotRow.order(Column("name")).fetchAll(db).map { spot in
-                let rows = try SessionRow.filter(Column("spotId") == spot.id)
-                    .order(Column("startDate")).fetchAll(db)
-                return SpotAggregate(spot: spot, sessions: rows.count,
-                                     lastVisit: rows.last?.startDate)
+            var counts: [String: Int] = [:]
+            var lastVisits: [String: Date] = [:]
+            let rows = try Row.fetchAll(db, sql: """
+                SELECT spotId, COUNT(*) AS sessions, MAX(startDate) AS lastVisit
+                FROM session WHERE spotId IS NOT NULL GROUP BY spotId
+                """)
+            for row in rows {
+                guard let id: String = row["spotId"] else { continue }
+                counts[id] = row["sessions"]
+                lastVisits[id] = row["lastVisit"]
+            }
+            return try SpotRow.order(Column("name")).fetchAll(db).map { spot in
+                SpotAggregate(spot: spot, sessions: counts[spot.id] ?? 0,
+                              lastVisit: lastVisits[spot.id])
             }
         }
     }

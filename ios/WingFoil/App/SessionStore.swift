@@ -193,7 +193,9 @@ final class SessionStore {
 
     // MARK: - Import
 
-    func importPicked(urls: [URL]) async {
+    /// Reads security-scoped picker URLs and imports them. `source` is only the tag the
+    /// import log carries: a hand-picked FIT and a GDPR bulk export take the same path.
+    func importFiles(urls: [URL], source: ImportSource) async {
         guard !urls.isEmpty else { return }
         var payloads: [(name: String, data: Data)] = []
         for url in urls {
@@ -205,7 +207,11 @@ final class SessionStore {
                 errorMessage = "Could not read \(url.lastPathComponent)"
             }
         }
-        await runImport(payloads, source: .file)
+        await runImport(payloads, source: source)
+    }
+
+    func importPicked(urls: [URL]) async {
+        await importFiles(urls: urls, source: .file)
     }
 
     #if DEBUG
@@ -243,18 +249,7 @@ final class SessionStore {
     /// Files picker for the Garmin GDPR "Export Your Data" ZIP — the same code path as a
     /// hand-picked FIT, just tagged as a bulk backfill so the import log says so.
     func importBulk(urls: [URL]) async {
-        guard !urls.isEmpty else { return }
-        var payloads: [(name: String, data: Data)] = []
-        for url in urls {
-            let scoped = url.startAccessingSecurityScopedResource()
-            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-            if let data = try? Data(contentsOf: url) {
-                payloads.append((url.lastPathComponent, data))
-            } else {
-                errorMessage = "Could not read \(url.lastPathComponent)"
-            }
-        }
-        await runImport(payloads, source: .gdpr)
+        await importFiles(urls: urls, source: .gdpr)
     }
 
     private func runImport(_ payloads: [(name: String, data: Data)], source: ImportSource) async {

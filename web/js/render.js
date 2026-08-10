@@ -183,8 +183,11 @@ function renderSummary(result) {
 function renderMap(host, legendHost, result) {
   host.innerHTML = "";
   const v = result.view, g = result.golden;
-  if (!v.count || !v.bounds) {
-    host.innerHTML = `<p class="note">No usable GPS positions in this file — no track to draw.</p>`;
+  // `hasPositions` is false for Doppler-only sources: the analysis (speed strip, records,
+  // flights, outcomes) is all still there, there is simply no track to plot.
+  if (!v.count || !v.bounds || v.hasPositions === false || v.bounds.x0 === null) {
+    host.innerHTML = `<p class="note">No GPS positions in this file — no track to draw. ` +
+                     `The speed strip and the tables below are unaffected.</p>`;
     legendHost.innerHTML = "";
     return;
   }
@@ -251,7 +254,7 @@ function polylineRuns(v, keep) {
   const flush = () => { if (cur.length > 1) runs.push(cur); cur = []; };
   for (let i = 0; i < v.count; i++) {
     const gap = i > 0 && v.segment[i] !== v.segment[i - 1];
-    const ok = v.x[i] !== null && v.y[i] !== null && keep(v.t[i]);
+    const ok = v.x[i] != null && v.y[i] != null && keep(v.t[i]);   // null or missing
     if (gap || !ok) flush();
     if (ok) cur.push([v.x[i], v.y[i]]);
   }

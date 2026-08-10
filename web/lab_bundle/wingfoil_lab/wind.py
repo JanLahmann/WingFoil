@@ -67,11 +67,14 @@ class WindEstimate:
     speed_asymmetry: float = 0.0          # diagnostic: weighted corr(cos TWA, speed); the
     #                                       corpus runs positive (upwind faster on a foil)
     distance_m: float = 0.0               # foiled distance the estimate is built on
+    min_confidence: float = WindConfig.min_confidence   # the bar this estimate is judged at
+    #                                       (carried from the WindConfig it was built with,
+    #                                        so a caller-supplied threshold is honoured)
 
     @property
     def usable(self) -> bool:
         """Wind is trustworthy enough to label turns tack/jibe."""
-        return self.dir_deg is not None and self.confidence >= WindConfig().min_confidence
+        return self.dir_deg is not None and self.confidence >= self.min_confidence
 
 
 def estimate_wind(clean: CleanTrack, flights: FlightResult,
@@ -86,19 +89,19 @@ def estimate_wind(clean: CleanTrack, flights: FlightResult,
     cog, weight, speed = foiling_courses(clean, flights, cfg)
     total = float(weight.sum())
     if total < cfg.min_distance_m:
-        return WindEstimate(distance_m=total)
+        return WindEstimate(distance_m=total, min_confidence=cfg.min_confidence)
 
     centers, hist = circular_histogram(cog, weight, cfg.bin_deg, cfg.smooth_deg)
     lobes = _dominant_lobes(centers, hist, cfg.min_lobe_separation_deg)
     if lobes is None:
-        return WindEstimate(distance_m=total)
+        return WindEstimate(distance_m=total, min_confidence=cfg.min_confidence)
 
     lobe_deg = tuple(_refine_lobe(cog, weight, c, cfg.lobe_half_width_deg) for c in lobes)
     mass = tuple(_lobe_mass(cog, weight, c, cfg.lobe_half_width_deg) / total for c in lobe_deg)
     sep = abs(_wrap180(lobe_deg[1] - lobe_deg[0]))
     if sep > cfg.max_lobe_separation_deg:
         return WindEstimate(distance_m=total, lobes_deg=lobe_deg, lobe_mass=mass,
-                            separation_deg=sep)
+                            separation_deg=sep, min_confidence=cfg.min_confidence)
 
     bisector = _circular_mean(np.array(lobe_deg), np.ones(2))
     axis_conf = _axis_confidence(mass, sep, cfg)
@@ -110,6 +113,7 @@ def estimate_wind(clean: CleanTrack, flights: FlightResult,
         axis_deg=float(dir_deg % 180.0), lobes_deg=lobe_deg, lobe_mass=mass,
         separation_deg=float(sep), axis_confidence=float(axis_conf),
         ambiguity_margin=float(margin), speed_asymmetry=float(asym), distance_m=total,
+        min_confidence=cfg.min_confidence,
     )
 
 
