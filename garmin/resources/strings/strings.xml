@@ -1,0 +1,37 @@
+<strings>
+    <string id="AppName">WingFoil</string>
+    <string id="AppNameBeta">WingFoil Beta</string>
+
+    <!-- settings titles -->
+    <string id="SetFoilEntry">Foil entry speed (km/h)</string>
+    <string id="SetFoilExit">Foil exit speed (km/h)</string>
+    <string id="SetEntryHold">Entry hold (s)</string>
+    <string id="SetExitHold">Exit hold (s)</string>
+    <string id="SetMinFlight">Min flight duration (s)</string>
+    <string id="SetUseKnots">Show speed in knots</string>
+    <string id="SetSport">Record as sport</string>
+    <string id="SportWindsurf">Windsurf (recommended)</string>
+    <string id="SportKitesurf">Kitesurf</string>
+    <string id="SportGeneric">Generic</string>
+    <string id="SetAccelLogging">Log accelerometer (pump analysis)</string>
+    <string id="SetAlertPb">Vibrate on speed PB</string>
+    <string id="SetAlertFlight">Vibrate on longest flight</string>
+    <string id="SetAlertTurn">Vibrate on turn outcome</string>
+    <string id="SetWindDir">Wind direction (deg from, -1 = unset)</string>
+
+    <!-- FIT developer-field labels (Garmin Connect rendering) -->
+    <string id="FitFoilStateChart">Foil state</string>
+    <string id="FitFoilStateLabel">Foil state</string>
+    <string id="FitUnitNone"> </string>
+    <string id="FitFoilTime">Foil time</string>
+    <string id="FitUnitSeconds">s</string>
+    <string id="FitFoilPct">Foil %</string>
+    <string id="FitUnitPct">%</string>
+    <string id="FitFlights">Flights</string>
+    <string id="FitLongestFlight">Longest flight</string>
+    <string id="FitBest2s">Best 2s speed</string>
+    <string id="FitUnitCms">cm/s</string>
+    <string id="FitTacks">Tacks</string>
+    <string id="FitJibes">Jibes</string>
+    <string id="FitTurnSuccess">Turn success</string>
+</strings>

@@ -1,0 +1,336 @@
+import Foundation
+import GRDB
+
+/// Where a session entered the library. Stored in `session.importSource`; a session that
+/// arrives twice keeps every source it was seen from (`"file+icu"`).
+public enum ImportSource: String, Sendable, CaseIterable {
+    case icu
+    case file
+    case gdpr
+    case airdrop
+    case fixtures
+}
+
+public enum IngestOutcome: Sendable {
+    case imported(SessionRow)
+    /// Already in the library (dedupe key matched); the row carries the merged note.
+    case duplicate(SessionRow)
+    /// Bulk import only: a FIT that is not a watersport session.
+    case skipped(reason: String)
+}
+
+public struct ImportSummary: Sendable, Equatable {
+    /// FITs discovered in the container (imported + duplicates + skipped + failed).
+    public var found = 0
+    public var imported = 0
+    public var duplicates = 0
+    public var skipped = 0
+    public var failed: [String] = []
+    /// Name of the file currently being processed — live progress for the UI.
+    public var current: String?
+
+    public init() {}
+
+    public var isEmpty: Bool { imported == 0 && duplicates == 0 && skipped == 0 && failed.isEmpty }
+
+    public var processed: Int { imported + duplicates + skipped + failed.count }
+
+    public var shortDescription: String {
+        var parts: [String] = ["\(imported) imported"]
+        if duplicates > 0 { parts.append("\(duplicates) duplicate\(duplicates == 1 ? "" : "s")") }
+        if skipped > 0 { parts.append("\(skipped) skipped") }
+        if !failed.isEmpty { parts.append("\(failed.count) failed") }
+        return parts.joined(separator: ", ")
+    }
+
+    /// Merges another container's tally into this one (multi-file picks, live progress).
+    public mutating func absorb(_ other: ImportSummary) {
+        found += other.found
+        imported += other.imported
+        duplicates += other.duplicates
+        skipped += other.skipped
+        failed.append(contentsOf: other.failed)
+    }
+}
+
+/// FIT bytes → analysis → archive + `session` row + the schema-v2 child tables. Dedupe
+/// key per plan §3.3: start within ±60 s **and** duration within ±60 s (the same session
+/// reaches us from intervals.icu, a GDPR bulk ZIP and AirDrop with slightly different
+/// rounding).
+public struct SessionIngestor: Sendable {
+
+    /// Sports we accept during bulk (ZIP) import. Everything else needs our developer
+    /// fields to qualify — Jan's CIQ recordings land as `walking`.
+    public static let watersportSports: Set<String> = [
+        "windsurfing", "kitesurfing", "sailing", "surfing", "stand_up_paddleboarding",
+        "43", "44",
+    ]
+
+    public var database: AppDatabase
+    public var archive: SessionArchive
+    public var filterConfig = FilterConfig()
+    public var flightConfig = FlightConfig()
+    public var recordsConfig = RecordsConfig()
+    public var dedupeToleranceS: TimeInterval = 60
+    public var spotRadiusM: Double = SpotClusterer.defaultRadiusM
+
+    public init(database: AppDatabase, archive: SessionArchive) {
+        self.database = database
+        self.archive = archive
+    }
+
+    public var library: LibraryStore { LibraryStore(database: database) }
+
+    // MARK: - Ingest
+
+    /// Ingests one FIT. `requireWatersport` gates bulk imports (ZIP walking); a file the
+    /// user picked by hand is always accepted.
+    @discardableResult
+    public func ingest(fitData: Data, filename: String?, source: ImportSource,
+                       icuActivityId: String? = nil,
+                       requireWatersport: Bool = false) async throws -> IngestOutcome {
+        let track = try FitSessionParser.parse(data: fitData)
+        let caps = track.capabilities
+        if requireWatersport, !Self.isWatersport(caps) {
+            return .skipped(reason: caps.sport ?? "unknown sport")
+        }
+        guard let startDate = track.startDate, let first = track.samples.first,
+              let last = track.samples.last else {
+            throw FitSessionParser.ParseError.noRecords
+        }
+        let duration = last.t - first.t
+
+        if let existing = try await duplicate(startDate: startDate, durationS: duration,
+                                              icuActivityId: icuActivityId) {
+            let merged = try await note(existing, source: source, icuActivityId: icuActivityId)
+            return .duplicate(merged)
+        }
+
+        let analysis = analyze(track)
+        let id = UUID().uuidString
+        try archive.storeOriginal(fitData, id: id)
+        do {
+            try archive.writeAnalysis(analysis, id: id)
+        } catch {
+            // Analysis JSON is a cache — a write failure must not lose the session.
+        }
+
+        var row = SessionRow(id: id, startDate: startDate, durationS: duration,
+                             sourceClass: caps.sourceClass)
+        row.sport = caps.sport
+        row.discipline = caps.discipline
+        row.originalFilename = filename
+        row.importSource = source.rawValue
+        row.icuActivityId = icuActivityId
+        if let fix = track.samples.first(where: { $0.lat != nil && $0.lon != nil }) {
+            row.startLat = fix.lat
+            row.startLon = fix.lon
+        }
+        row.apply(analysis)
+
+        let inserted = row
+        row.spotId = try await database.writer.write { db -> String? in
+            try inserted.insert(db)
+            try SessionDerivation.write(analysis, session: inserted, db: db)
+            guard let lat = inserted.startLat, let lon = inserted.startLon else { return nil }
+            return try SpotClusterer.assign(sessionId: inserted.id, lat: lat, lon: lon, db: db,
+                                            radiusM: spotRadiusM)
+        }
+        // Fresh sessions inherit the combo the rider last used (editable per session).
+        _ = try? await library.applyDefaultGear(sessionId: row.id)
+        return .imported(row)
+    }
+
+    public static func isWatersport(_ caps: SourceCapabilities) -> Bool {
+        if caps.discipline != nil || caps.hasDevFields { return true }
+        guard let sport = caps.sport?.lowercased() else { return false }
+        return watersportSports.contains(sport)
+    }
+
+    /// Bulk entry point: streams nested ZIPs/gzip and ingests every qualifying FIT, one
+    /// member at a time. Writes an `import_log` row for the run and reports progress
+    /// after every file so the UI can show "n found / imported / duplicates / skipped".
+    @discardableResult
+    public func ingestContainer(data: Data, name: String, source: ImportSource,
+                                progress: (@Sendable (ImportSummary) -> Void)? = nil)
+    async -> ImportSummary {
+        var log = ImportLogRow(source: source, container: name)
+        let opened = log
+        try? await database.writer.write { db in try opened.insert(db) }
+
+        // A hand-picked single FIT keeps its sport whatever it is; anything unpacked from
+        // a real container is gated on sport, so a GDPR export of runs stays out.
+        let gate: Bool
+        if case .fit = ZipWalker.classify(data) { gate = false } else { gate = true }
+        let box = SummaryBox()
+        let walk = await ZipWalker.walk(data: data, name: name) { fit in
+            let short = (fit.name as NSString).lastPathComponent
+            await box.begin(short)
+            progress?(await box.snapshot)
+            do {
+                switch try await ingest(fitData: fit.data, filename: short, source: source,
+                                        requireWatersport: gate) {
+                case .imported: await box.count(\.imported)
+                case .duplicate: await box.count(\.duplicates)
+                case .skipped: await box.count(\.skipped)
+                }
+            } catch {
+                await box.fail("\(short): \(error)")
+            }
+            progress?(await box.snapshot)
+        }
+
+        var summary = await box.snapshot
+        summary.found = walk.fitCount
+        summary.current = nil
+        if walk.unreadable > 0 { summary.failed.append("\(walk.unreadable) unreadable") }
+        if walk.fitCount == 0 && summary.failed.isEmpty {
+            summary.failed.append("\(name): no FIT found")
+        }
+
+        log.absorb(summary)
+        log.finishedAt = Date()
+        let finished = log
+        try? await database.writer.write { db in try finished.update(db) }
+        progress?(summary)
+        return summary
+    }
+
+    /// Mutable tally shared with the streaming walker's sink.
+    private actor SummaryBox {
+        private var summary = ImportSummary()
+
+        var snapshot: ImportSummary { summary }
+
+        func begin(_ name: String) { summary.current = name }
+        func count(_ key: WritableKeyPath<ImportSummary, Int>) { summary[keyPath: key] += 1 }
+        func fail(_ message: String) { summary.failed.append(message) }
+    }
+
+    // MARK: - Analysis access (lazy re-analysis)
+
+    private func analyze(_ track: RawTrack) -> SessionAnalysis {
+        SessionSummarizer.analyze(track, filterConfig: filterConfig, flightConfig: flightConfig,
+                                  recordsConfig: recordsConfig)
+    }
+
+    /// Cached `analysis.json`, recomputed from the archived FIT when missing or stale.
+    public func analysis(for row: SessionRow) async throws -> SessionAnalysis {
+        if let cached = archive.analysis(for: row.id), row.engineVersion == cached.engineVersion {
+            return cached
+        }
+        return try await reanalyze(row)
+    }
+
+    @discardableResult
+    public func reanalyze(_ row: SessionRow) async throws -> SessionAnalysis {
+        let track = try archive.rawTrack(for: row.id)
+        let analysis = analyze(track)
+        try? archive.writeAnalysis(analysis, id: row.id)
+        var updated = row
+        if updated.startLat == nil,
+           let fix = track.samples.first(where: { $0.lat != nil && $0.lon != nil }) {
+            updated.startLat = fix.lat
+            updated.startLon = fix.lon
+        }
+        updated.apply(analysis)
+        let stored = updated
+        try await database.writer.write { db in
+            try stored.update(db)
+            try SessionDerivation.write(analysis, session: stored, db: db)
+            if stored.spotId == nil, let lat = stored.startLat, let lon = stored.startLon {
+                try SpotClusterer.assign(sessionId: stored.id, lat: lat, lon: lon, db: db,
+                                         radiusM: spotRadiusM)
+            }
+        }
+        return analysis
+    }
+
+    /// Re-derives every session whose stored engine version is not the current one
+    /// (plan §3.3, lazy re-analysis on an engine bump). The aggregate screens call this
+    /// before they read, because a stale row would silently skew a whole trend line.
+    /// Returns the number of sessions rebuilt.
+    @discardableResult
+    public func reanalyzeStale(progress: (@Sendable (Int, Int) -> Void)? = nil) async throws -> Int {
+        let stale = try await database.writer.read { db in
+            try SessionRow.filter(sql: "engineVersion IS NULL OR engineVersion <> ?",
+                                  arguments: [AnalysisEngine.version])
+                .order(Column("startDate")).fetchAll(db)
+        }
+        guard !stale.isEmpty else { return 0 }
+        for (index, row) in stale.enumerated() {
+            progress?(index + 1, stale.count)
+            _ = try? await reanalyze(row)
+        }
+        return stale.count
+    }
+
+    public func rawTrack(for row: SessionRow) throws -> RawTrack {
+        try archive.rawTrack(for: row.id)
+    }
+
+    // MARK: - Queries
+
+    public func allSessions() async throws -> [SessionRow] {
+        try await database.writer.read { db in
+            try SessionRow.order(Column("startDate").desc).fetchAll(db)
+        }
+    }
+
+    public func session(id: String) async throws -> SessionRow? {
+        try await database.writer.read { db in try SessionRow.fetchOne(db, key: id) }
+    }
+
+    public func icuActivityIds() async throws -> Set<String> {
+        let ids = try await database.writer.read { db in
+            try String.fetchAll(db, sql: "SELECT icuActivityId FROM session WHERE icuActivityId IS NOT NULL")
+        }
+        return Set(ids)
+    }
+
+    public func delete(_ row: SessionRow) async throws {
+        let id = row.id
+        _ = try await database.writer.write { db in try SessionRow.deleteOne(db, key: id) }
+        archive.delete(id: id)
+    }
+
+    /// Drops every cached analysis; the next open recomputes and rewrites the summary row.
+    public func dropAllAnalyses() {
+        archive.dropAllAnalyses()
+    }
+
+    // MARK: - Internals
+
+    private func duplicate(startDate: Date, durationS: Double,
+                           icuActivityId: String?) async throws -> SessionRow? {
+        let tolerance = dedupeToleranceS
+        let lower = startDate.addingTimeInterval(-tolerance)
+        let upper = startDate.addingTimeInterval(tolerance)
+        return try await database.writer.read { db in
+            if let icuActivityId,
+               let hit = try SessionRow
+                .filter(Column("icuActivityId") == icuActivityId).fetchOne(db) {
+                return hit
+            }
+            let candidates = try SessionRow
+                .filter(Column("startDate") >= lower && Column("startDate") <= upper)
+                .fetchAll(db)
+            return candidates.first { abs($0.durationS - durationS) <= tolerance }
+        }
+    }
+
+    /// Records that an existing session was seen again from another source.
+    private func note(_ row: SessionRow, source: ImportSource,
+                      icuActivityId: String?) async throws -> SessionRow {
+        var updated = row
+        var sources = Set((row.importSource ?? "").split(separator: "+").map(String.init))
+        sources.insert(source.rawValue)
+        updated.importSource = sources.sorted().joined(separator: "+")
+        if updated.icuActivityId == nil { updated.icuActivityId = icuActivityId }
+        guard updated.importSource != row.importSource || updated.icuActivityId != row.icuActivityId
+        else { return row }
+        let stored = updated
+        try await database.writer.write { db in try stored.update(db) }
+        return updated
+    }
+}

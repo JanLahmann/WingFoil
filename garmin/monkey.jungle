@@ -1,0 +1,7 @@
+project.manifest = manifest.xml
+
+# tests/ holds (:test)-annotated code — stripped from normal builds, compiled with --unit-test
+base.sourcePath = source;tests
+
+# Resolution-specific layout overrides land here later, e.g.:
+# fenix8solar47mm.resourcePath = $(fenix8solar47mm.resourcePath);resources-mip

@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<iq:manifest version="3" xmlns:iq="http://www.garmin.com/xml/connectiq">
+    <!--
+      WingFoil — CIQ device app (watch-app). Records wingfoil sessions as FIT sport 43
+      (windsurfing) with developer fields per docs/fit-schema.md.
+      minApiLevel 5.0.0 covers all shipped Fenix 8 firmware (see docs/plan.md §2 CIQ facts).
+    -->
+    <iq:application id="953f7547-c152-42c2-8d33-69fb59ad0bf6" type="watch-app"
+        name="@Strings.AppNameBeta" entry="WingfoilApp" launcherIcon="@Drawables.LauncherIcon"
+        minApiLevel="5.0.0">
+        <iq:products>
+            <iq:product id="fenix843mm"/>
+            <iq:product id="fenix847mm"/>
+            <iq:product id="fenix8solar47mm"/>
+            <iq:product id="fenix8solar51mm"/>
+            <iq:product id="fenix8pro47mm"/>
+        </iq:products>
+        <iq:permissions>
+            <iq:uses-permission id="Fit"/>
+            <iq:uses-permission id="FitContributor"/>
+            <iq:uses-permission id="Positioning"/>
+            <iq:uses-permission id="Sensor"/>
+            <iq:uses-permission id="SensorLogging"/>
+        </iq:permissions>
+        <iq:languages>
+            <iq:language>eng</iq:language>
+            <iq:language>deu</iq:language>
+        </iq:languages>
+        <iq:barrels/>
+    </iq:application>
+</iq:manifest>
