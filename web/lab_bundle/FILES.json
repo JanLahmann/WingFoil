@@ -1,0 +1,15 @@
+[
+  "web_entry.py",
+  "wingfoil_lab/__init__.py",
+  "wingfoil_lab/evidence.py",
+  "wingfoil_lab/filters.py",
+  "wingfoil_lab/flight.py",
+  "wingfoil_lab/flightend.py",
+  "wingfoil_lab/goldens.py",
+  "wingfoil_lab/gp3s.py",
+  "wingfoil_lab/parse.py",
+  "wingfoil_lab/pump.py",
+  "wingfoil_lab/takeoff.py",
+  "wingfoil_lab/turns.py",
+  "wingfoil_lab/wind.py"
+]

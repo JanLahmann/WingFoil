@@ -1,0 +1,42 @@
+<settings>
+    <setting propertyKey="@Properties.foilEntryKmh" title="@Strings.SetFoilEntry">
+        <settingConfig type="numeric" min="6" max="25"/>
+    </setting>
+    <setting propertyKey="@Properties.foilExitKmh" title="@Strings.SetFoilExit">
+        <settingConfig type="numeric" min="4" max="20"/>
+    </setting>
+    <setting propertyKey="@Properties.entryHoldS" title="@Strings.SetEntryHold">
+        <settingConfig type="numeric" min="1" max="10"/>
+    </setting>
+    <setting propertyKey="@Properties.exitHoldS" title="@Strings.SetExitHold">
+        <settingConfig type="numeric" min="1" max="10"/>
+    </setting>
+    <setting propertyKey="@Properties.minFlightS" title="@Strings.SetMinFlight">
+        <settingConfig type="numeric" min="2" max="30"/>
+    </setting>
+    <setting propertyKey="@Properties.useKnots" title="@Strings.SetUseKnots">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.sportChoice" title="@Strings.SetSport">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.SportWindsurf</listEntry>
+            <listEntry value="1">@Strings.SportKitesurf</listEntry>
+            <listEntry value="2">@Strings.SportGeneric</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.accelLogging" title="@Strings.SetAccelLogging">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.alertPb" title="@Strings.SetAlertPb">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.alertFlight" title="@Strings.SetAlertFlight">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.alertTurn" title="@Strings.SetAlertTurn">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.windDirDeg" title="@Strings.SetWindDir">
+        <settingConfig type="numeric" min="-1" max="359"/>
+    </setting>
+</settings>

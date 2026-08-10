@@ -1,0 +1,16 @@
+<properties>
+    <!-- Defaults mirror docs/algorithms.md — change both together. -->
+    <property id="foilEntryKmh" type="float">12.0</property>
+    <property id="foilExitKmh" type="float">8.0</property>
+    <property id="entryHoldS" type="number">2</property>
+    <property id="exitHoldS" type="number">3</property>
+    <property id="minFlightS" type="number">5</property>
+    <property id="useKnots" type="boolean">false</property>
+    <property id="sportChoice" type="number">0</property>
+    <property id="accelLogging" type="boolean">true</property>
+    <property id="alertPb" type="boolean">true</property>
+    <property id="alertFlight" type="boolean">true</property>
+    <property id="alertTurn" type="boolean">true</property>
+    <!-- wind the turn classifier splits tacks from jibes on; -1 = unset -->
+    <property id="windDirDeg" type="number">-1</property>
+</properties>
