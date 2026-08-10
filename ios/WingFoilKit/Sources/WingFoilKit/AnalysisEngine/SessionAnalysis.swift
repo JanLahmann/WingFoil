@@ -497,10 +497,20 @@ public enum SessionSummarizer {
         let records = GP3SCalculator.records(for: clean, config: recordsConfig)
         let wind = WindEstimator.estimate(clean, flights: segmentation, config: windConfig)
         let pump = PumpAnalyzer.track(raw, config: pumpConfig)
+        // The turn ladder and the flight-end ladder read the same three channels of the
+        // same track, so the whole-track evidence is built once here and handed to both.
+        // It is only shared while both configs agree on the two parameters it is built
+        // from — a caller that tunes them apart still gets one build per stage.
+        let evidence = Evidence.build(clean, flights: segmentation,
+                                      exitSpeedKmh: turnConfig.foilExitSpeedKmh,
+                                      baroDropM: turnConfig.baroDropM)
+        let sharable = flightEndConfig.foilExitSpeedKmh == turnConfig.foilExitSpeedKmh
+            && flightEndConfig.baroDropM == turnConfig.baroDropM
         let turns = TurnDetector.detect(clean, flights: segmentation, wind: wind,
-                                        config: turnConfig, pump: pump)
+                                        config: turnConfig, pump: pump, evidence: evidence)
         let ends = FlightEndClassifier.classify(clean, flights: segmentation, turns: turns,
-                                                config: flightEndConfig, pump: pump)
+                                                config: flightEndConfig, pump: pump,
+                                                evidence: sharable ? evidence : nil)
         let takeoffs = TakeoffAnalyzer.analyze(clean, flights: segmentation, turns: turns,
                                                config: takeoffConfig, pump: pump)
 

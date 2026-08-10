@@ -168,9 +168,12 @@ public enum TurnDetector {
     static let mpsToKn = Units.mpsToKn
     static let kmhToMps = 1.0 / 3.6
 
+    /// `evidence` lets the caller hand in the whole-track `OffFoilEvidence` it already
+    /// built (the flight-end classifier needs the same arrays); omitted, it is built here.
     public static func detect(_ track: CleanTrack, flights: FlightSegmentation,
                               wind: WindEstimate? = nil, config: TurnConfig = TurnConfig(),
-                              pump: PumpTrack? = nil) -> [Turn] {
+                              pump: PumpTrack? = nil,
+                              evidence: OffFoilEvidence? = nil) -> [Turn] {
         var turns: [Turn] = []
         for seg in track.segments where seg.count >= 3 {
             let t = seg.map { track.samples[$0].t }
@@ -198,7 +201,8 @@ public enum TurnDetector {
         }
         turns.sort { $0.startT < $1.startT }
         turns = dropOverlaps(turns)
-        assignOutcomes(&turns, track: track, flights: flights, config: config, pump: pump)
+        assignOutcomes(&turns, track: track, flights: flights, config: config, pump: pump,
+                       evidence: evidence)
         return turns
     }
 
@@ -437,30 +441,35 @@ public enum TurnDetector {
 
     static func assignOutcomes(_ turns: inout [Turn], track: CleanTrack,
                                flights: FlightSegmentation, config: TurnConfig,
-                               pump: PumpTrack?) {
-        guard let ev = Evidence.build(track, flights: flights,
-                                      exitSpeedKmh: config.foilExitSpeedKmh,
-                                      baroDropM: config.baroDropM) else { return }
+                               pump: PumpTrack?, evidence: OffFoilEvidence? = nil) {
+        guard let ev = evidence ?? Evidence.build(track, flights: flights,
+                                                  exitSpeedKmh: config.foilExitSpeedKmh,
+                                                  baroDropM: config.baroDropM) else { return }
         for i in turns.indices { outcome(&turns[i], ev: ev, config: config, pump: pump) }
     }
 
     /// Three-way outcome for one turn (docs/algorithms.md "Turn outcome", steps 0–5).
+    ///
+    /// Every scan is bounded to the window's index range by binary search: the evidence
+    /// arrays span the whole session, and an outcome window is a handful of seconds of it.
     static func outcome(_ turn: inout Turn, ev: OffFoilEvidence, config: TurnConfig,
                         pump: PumpTrack?) {
         let t = ev.t
         let hi = windowEnd(turn, ev: ev, config: config)
         let startT = turn.startT, windowEndT = t[hi]
         turn.outcomeWindowS = max(windowEndT - turn.endT, 0)
-        let inWindow = { (k: Int) in t[k] >= startT && t[k] <= windowEndT }
+        // [first sample at or after startT, last sample at or before windowEndT].
+        let lo = searchSortedLeft(t, startT)
+        let win = lo..<max(lo, searchSortedRight(t, windowEndT))
         turn.pumped = pump?.isPumping(from: startT, to: windowEndT) ?? false
-        turn.submerged = t.indices.contains { inWindow($0) && ev.submerged[$0] }
+        turn.submerged = win.contains { ev.submerged[$0] }
 
-        guard let a = t.indices.first(where: { inWindow($0) && !ev.flying[$0] }) else {
+        guard let a = win.first(where: { !ev.flying[$0] }) else {
             turn.borderline = false
             turn.offFoilS = 0
             turn.stoppedS = 0
-            let marginal = t.indices.contains {
-                inWindow($0) && ev.speed[$0] < config.foilEntrySpeedKmh * kmhToMps
+            let marginal = win.contains {
+                ev.speed[$0] < config.foilEntrySpeedKmh * kmhToMps
             }
             turn.outcome = (turn.pumped && marginal) ? .touchdown : .flewThrough
             return

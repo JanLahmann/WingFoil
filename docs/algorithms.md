@@ -68,7 +68,7 @@ echoed in session fields 40–42.
 | `turnContinueRate` | 5 | deg/s | edge trim: shrink the detected span to the actually-turning part |
 | `entrySpeedWindow` | 3 | s | entry speed = max over window before turn start |
 | `minSpeedLag` | 2 | s | minimum searched to `turnEnd + lag` (the collapse of a botched turn lands just past the COG sweep) |
-| `turnSuccessPct` | 70 | % | success ⇒ minSpeed/entrySpeed ≥ this AND speed never ≤ `foilExitSpeed` |
+| `turnSuccessPct` | 70 | % | success ⇒ minSpeed/entrySpeed ≥ this AND speed never ≤ `foilExitSpeed`. Both halves are read over the **scored window only** — `turnStart` … `turnEnd + minSpeedLag` — never over the outcome window: a turn carried cleanly through the sweep stays successful even when the foil is lost later in the recovery tail (that is what the outcome says) |
 | `turnStopSpeedFloor` | 1.0 | m/s | "stopped": below this the rider is not making way |
 | `turnTouchdownMaxStop` | 3 | s | longest stop still called a touchdown |
 | `turnFallStop` | 5 | s | stop longer than this ⇒ fell in |

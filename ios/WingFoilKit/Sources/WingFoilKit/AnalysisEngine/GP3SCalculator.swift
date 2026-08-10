@@ -23,8 +23,61 @@ public struct RecordWindow: Sendable, Codable, Equatable {
     }
 }
 
+/// Window provenance per record kind — the golden `records.windows` object verbatim
+/// (docs/testing.md): one object per record, and for `best5x10s` the **array** of every
+/// disjoint 10 s window the greedy search kept. A record that was never achieved has no
+/// key at all (absent, not null), exactly as the lab writes it.
+public struct RecordWindows: Sendable, Codable, Equatable {
+    public var best2s: RecordWindow?
+    public var best10s: RecordWindow?
+    /// 1–5 disjoint 10 s windows, best first (the lab reports however many it found).
+    public var best5x10s: [RecordWindow]?
+    public var best100m: RecordWindow?
+    public var best250m: RecordWindow?
+    public var best500m: RecordWindow?
+    public var bestNm: RecordWindow?
+    public var bestHour: RecordWindow?
+    public var alpha500: RecordWindow?
+
+    public init() {}
+
+    /// Access by golden record name ("best2s", …, "alpha500"). `best5x10s` yields its
+    /// top window on read and becomes a one-element array on write — the callers that
+    /// draw a record on the map only ever want the single best run.
+    public subscript(key: String) -> RecordWindow? {
+        get {
+            switch key {
+            case "best2s": best2s
+            case "best10s": best10s
+            case "best5x10s": best5x10s?.first
+            case "best100m": best100m
+            case "best250m": best250m
+            case "best500m": best500m
+            case "bestNm": bestNm
+            case "bestHour": bestHour
+            case "alpha500": alpha500
+            default: nil
+            }
+        }
+        set {
+            switch key {
+            case "best2s": best2s = newValue
+            case "best10s": best10s = newValue
+            case "best5x10s": best5x10s = newValue.map { [$0] }
+            case "best100m": best100m = newValue
+            case "best250m": best250m = newValue
+            case "best500m": best500m = newValue
+            case "bestNm": bestNm = newValue
+            case "bestHour": bestHour = newValue
+            case "alpha500": alpha500 = newValue
+            default: break
+            }
+        }
+    }
+}
+
 /// GP3S speed-record set in knots. nil = not achievable in this session (segment
-/// shorter than the window / not enough distance / fewer than 5 disjoint 10 s runs /
+/// shorter than the window / not enough distance / no disjoint 10 s run at all /
 /// no closing alpha window). Matches the golden JSON `records` object (docs/testing.md);
 /// the lab goldens encode "not achieved" as 0.0.
 public struct GP3SRecords: Sendable, Codable, Equatable {
@@ -37,9 +90,8 @@ public struct GP3SRecords: Sendable, Codable, Equatable {
     public var bestNmKn: Double?
     public var bestHourKn: Double?
     public var alpha500Kn: Double?
-    /// Window provenance per record, keyed by record name ("best2s", "alpha500", …).
-    /// For "best5x10s" this is the top window (the lab golden stores all five).
-    public var windows: [String: RecordWindow] = [:]
+    /// Window provenance per record, in the golden schema's shape.
+    public var windows = RecordWindows()
     /// Total Doppler-integrated session distance (m). Not part of the golden `records`
     /// object (the golden carries km in `summary`), so not encoded here.
     public var totalDistanceM: Double = 0
@@ -84,7 +136,7 @@ public enum GP3SCalculator {
 
         if let hit = best5x10(segs) {
             out.best5x10sKn = hit.meanMps * Units.mpsToKn
-            out.windows["best5x10s"] = hit.top
+            out.windows.best5x10s = hit.windows
         }
 
         let distances: [(String, Double)] = [("best100m", 100), ("best250m", 250),
@@ -238,22 +290,23 @@ public enum GP3SCalculator {
     // MARK: - 5 × 10 s
 
     /// Greedy best 5 non-overlapping 10 s windows (each iteration re-searches with the
-    /// chosen zones excluded, adding zone-edge candidates). nil when fewer than 5
-    /// disjoint windows exist — GP3S needs all five (the lab keeps a partial mean;
-    /// observable only on tracks with < 50 s of usable data).
-    static func best5x10(_ segs: [SegArrays]) -> (meanMps: Double, top: RecordWindow)? {
+    /// chosen zones excluded, adding zone-edge candidates). The mean is taken over
+    /// *however many* disjoint windows were found — the lab's rule (`gp3s.py`
+    /// `_best_5x10`: `if vals`), which only differs from "all five" on tracks with
+    /// under 50 s of usable data. nil only when not a single 10 s window fits.
+    static func best5x10(_ segs: [SegArrays]) -> (meanMps: Double, windows: [RecordWindow])? {
         let durS = 10.0
         var chosen: [(Double, Double)] = []
         var vals: [Double] = []
-        var top: RecordWindow?
+        var wins: [RecordWindow] = []
         for _ in 0..<5 {
             guard let hit = bestDurationWindow(segs, durS: durS, exclude: chosen) else { break }
-            if top == nil { top = RecordWindow(startTs: hit.startT, durS: durS) }
             vals.append(hit.mps)
+            wins.append(RecordWindow(startTs: hit.startT, durS: durS))
             chosen.append((hit.startT, hit.startT + durS))
         }
-        guard vals.count == 5, let topWindow = top else { return nil }
-        return (vals.reduce(0, +) / 5, topWindow)
+        guard !vals.isEmpty else { return nil }
+        return (vals.reduce(0, +) / Double(vals.count), wins)
     }
 
     // MARK: - Distance windows (100 / 250 / 500 / 1852 m)

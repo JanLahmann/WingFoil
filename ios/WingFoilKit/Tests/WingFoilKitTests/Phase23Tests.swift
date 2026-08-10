@@ -160,6 +160,40 @@ import Testing
         #expect(some == [false, false, false, true])
     }
 
+    // MARK: - Shared off-foil evidence
+
+    /// The whole-track `OffFoilEvidence` is built once per session and handed to both the
+    /// turn ladder and the flight-end ladder. Sharing it is an efficiency change only:
+    /// every turn and every flight end must come out bit-identical to the version where
+    /// each stage built its own copy.
+    @Test func sharedEvidenceMatchesPerStageBuilds() throws {
+        let url = try #require(allFixtureFITs().first {
+            $0.lastPathComponent.contains("2026-08-05-0827")
+        }, "no 2026-08-05-0827 fixture")
+        let raw = try FitSessionParser.parse(url: url)
+        let clean = TrackCleaner.clean(raw)
+        let flights = FlightSegmenter.segment(clean)
+        let wind = WindEstimator.estimate(clean, flights: flights)
+        let pump = PumpAnalyzer.track(raw)
+        let shared = try #require(Evidence.build(clean, flights: flights,
+                                                 exitSpeedKmh: TurnConfig().foilExitSpeedKmh,
+                                                 baroDropM: TurnConfig().baroDropM))
+
+        let ownTurns = TurnDetector.detect(clean, flights: flights, wind: wind, pump: pump)
+        let sharedTurns = TurnDetector.detect(clean, flights: flights, wind: wind, pump: pump,
+                                              evidence: shared)
+        #expect(!sharedTurns.isEmpty, "the fixture must actually produce turns")
+        #expect(sharedTurns == ownTurns)
+
+        let ownEnds = FlightEndClassifier.classify(clean, flights: flights, turns: ownTurns,
+                                                   pump: pump)
+        let sharedEnds = FlightEndClassifier.classify(clean, flights: flights,
+                                                      turns: sharedTurns, pump: pump,
+                                                      evidence: shared)
+        #expect(!sharedEnds.isEmpty)
+        #expect(sharedEnds == ownEnds)
+    }
+
     // MARK: - Divergence check
 
     @Test func divergenceBannerFiresOnlyPastTheThresholds() {

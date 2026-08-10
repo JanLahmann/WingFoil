@@ -159,15 +159,45 @@ import Testing
         let records = GP3SCalculator.records(for: TrackCleaner.clean(raw))
         #expect(abs(try #require(records.best5x10sKn) - 7.1 * kn) < 1e-9)
         #expect(abs(try #require(records.best10sKn) - 10.0 * kn) < 1e-9)
+        #expect(records.windows.best5x10s?.count == 5)
         // Greedy without the disjointness constraint would report 10.0; with it but
         // without touching-allowed it would report (10+5.25+5.25+5+5)/5 = 6.1.
     }
 
-    @Test func fiveByTenNilWhenTooShort() {
+    /// Fewer than five disjoint windows is a *partial* mean, not "no record" — the lab's
+    /// rule (`gp3s.py` `_best_5x10`: `if vals`), which Swift used to round down to nil.
+    ///
+    /// 45 s of clean data at 10 m/s for t ≤ 10 and 7 m/s after (a 3 m/s² step, under the
+    /// cleaner's 4 m/s² gate, so nothing is dropped). Candidate starts run to
+    /// t_last − 10 = 35, so the greedy search yields exactly four disjoint windows:
+    /// [0,10] = 10.0, then [10,20] = (8.5 + 7×9)/10 = 7.15 (the trapezoid over the step),
+    /// then [20,30] and [30,40] at 7.0. Mean = 31.15 / 4 = 7.7875 m/s.
+    @Test func fiveByTenPartialMeanOverFewerThanFiveWindows() throws {
+        let raw = speedTrack(dt: 1, duration: 45) { t in t <= 10 ? 10.0 : 7.0 }
+        let records = GP3SCalculator.records(for: TrackCleaner.clean(raw))
+        let windows = try #require(records.windows.best5x10s)
+        #expect(windows.count == 4)
+        #expect(windows.map(\.startTs) == [0, 10, 20, 30])
+        #expect(windows.allSatisfy { $0.durS == 10 })
+        #expect(abs(try #require(records.best5x10sKn) - (31.15 / 4) * kn) < 1e-9)
+    }
+
+    /// Three windows fit in 30 s (starts 0/10/20), so even a short session reports a mean.
+    @Test func fiveByTenPartialMeanOnShortTrack() throws {
         let raw = speedTrack(dt: 1, duration: 30) { _ in 5.0 }
         let records = GP3SCalculator.records(for: TrackCleaner.clean(raw))
-        #expect(records.best5x10sKn == nil)
+        #expect(records.windows.best5x10s?.count == 3)
+        #expect(abs(try #require(records.best5x10sKn) - 5.0 * kn) < 1e-9)
         #expect(records.best10sKn != nil)
+    }
+
+    /// Nil only when not one 10 s window fits.
+    @Test func fiveByTenNilWhenNoWindowFits() {
+        let raw = speedTrack(dt: 1, duration: 8) { _ in 5.0 }
+        let records = GP3SCalculator.records(for: TrackCleaner.clean(raw))
+        #expect(records.best5x10sKn == nil)
+        #expect(records.windows.best5x10s == nil)
+        #expect(records.best2sKn != nil)
     }
 
     // MARK: - Gaps & cleaning

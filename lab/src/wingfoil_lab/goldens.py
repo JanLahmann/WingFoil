@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import ENGINE_VERSION, gp3s
+from .evidence import OffFoilEvidence, off_foil_evidence
 from .filters import CleanTrack, FilterConfig, clean
 from .flight import FlightConfig, FlightResult, segment_flights
 from .flightend import (FlightEnd, FlightEndConfig, FlightEndSummary, OutcomeSplit,
@@ -79,9 +80,22 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
     rec = gp3s.records(ct)
     wind = estimate_wind(ct, fr, wcfg)
     pt = pump_track(track, pcfg)
-    turns = detect_turns(ct, fr, wind, tcfg, pt)
-    ends = classify_flight_ends(ct, fr, turns, fecfg, pt)
-    takeoffs = analyze_takeoffs(ct, fr, turns, tocfg, pt)
+
+    # One off-foil evidence object for the whole session: turns, flight ends and takeoffs
+    # all read the same three channels (evidence.py) and none of them mutate it. It is
+    # shared only with the consumers whose thresholds match the ones it was built with --
+    # the defaults are deliberately identical, but a caller may move one config alone.
+    ev = off_foil_evidence(ct, fr, tcfg.foil_exit_speed_kmh, tcfg.baro_drop_m)
+
+    def shared(exit_kmh: float, drop_m: float) -> OffFoilEvidence | None:
+        same = exit_kmh == tcfg.foil_exit_speed_kmh and drop_m == tcfg.baro_drop_m
+        return ev if same else None
+
+    turns = detect_turns(ct, fr, wind, tcfg, pt, evidence=ev)
+    ends = classify_flight_ends(ct, fr, turns, fecfg, pt,
+                                evidence=shared(fecfg.foil_exit_speed_kmh, fecfg.baro_drop_m))
+    takeoffs = analyze_takeoffs(ct, fr, turns, tocfg, pt,
+                                evidence=shared(tocfg.foil_exit_speed_kmh, tocfg.baro_drop_m))
 
     turn_summary = summarize_turns(turns)
     end_summary = summarize_flight_ends(ends)

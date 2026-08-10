@@ -166,6 +166,51 @@ import ZIPFoundation
         #expect(named.spot.autoNamed, "still machine-made: a rename is what clears the flag")
     }
 
+    /// `spots()` is one `GROUP BY` pass instead of a `SessionRow` fetch per spot. It must
+    /// return exactly what the per-row computation returned: same order, same counts, same
+    /// last visit — including a spot nobody has sailed yet and sessions with no spot at all.
+    @Test func spotAggregatesMatchThePerRowComputation() async throws {
+        let harness = try makeHarness()
+        defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
+        let database = harness.store.database
+        let base = Date(timeIntervalSince1970: 1_700_000_000)
+        let places = [SpotRow(id: "garda", name: "Torbole", lat: 45.876, lon: 10.872),
+                      SpotRow(id: "rhein", name: "Rheinstetten", lat: 48.98, lon: 8.32),
+                      SpotRow(id: "empty", name: "Never sailed", lat: 0, lon: 0)]
+        // Deliberately not in chronological order: MAX() must not depend on insert order.
+        let sessions: [(id: String, spot: String?, day: Double)] = [
+            ("s1", "garda", 3), ("s2", "rhein", 1), ("s3", "garda", 9),
+            ("s4", "garda", 5), ("s5", nil, 7),
+        ]
+        try await database.writer.write { db in
+            for spot in places { try spot.insert(db) }
+            for s in sessions {
+                var row = SessionRow(id: s.id, startDate: base.addingTimeInterval(s.day * 86_400),
+                                     durationS: 3600, sourceClass: "test")
+                row.spotId = s.spot
+                try row.insert(db)
+            }
+        }
+
+        // The implementation this replaced, verbatim.
+        let reference: [SpotAggregate] = try await database.writer.read { db in
+            try SpotRow.order(Column("name")).fetchAll(db).map { spot in
+                let rows = try SessionRow.filter(Column("spotId") == spot.id)
+                    .order(Column("startDate")).fetchAll(db)
+                return SpotAggregate(spot: spot, sessions: rows.count,
+                                     lastVisit: rows.last?.startDate)
+            }
+        }
+        let actual = try await harness.store.spots()
+        #expect(actual == reference)
+
+        // And the values themselves, so a shared bug in both paths cannot hide.
+        #expect(actual.map(\.id) == ["empty", "rhein", "garda"])       // ordered by name
+        #expect(actual.map(\.sessions) == [0, 1, 3])
+        #expect(actual.map(\.lastVisit) == [nil, base.addingTimeInterval(86_400),
+                                            base.addingTimeInterval(9 * 86_400)])
+    }
+
     // MARK: - Records / PB history
 
     @Test func recordEffortsCarryThePbHistory() async throws {

@@ -178,15 +178,19 @@ class TakeoffSummary:
 def analyze_takeoffs(clean: CleanTrack, flights: FlightResult,
                      turns: list[Turn] | None = None,
                      config: TakeoffConfig | None = None,
-                     pump: PumpTrack | None = None) -> TakeoffAnalysis:
+                     pump: PumpTrack | None = None,
+                     evidence: OffFoilEvidence | None = None) -> TakeoffAnalysis:
     """Takeoff run per flight plus every classified pump burst (see the module docstring).
 
     `turns` supplies the recovery-pumping exclusion and may be omitted; `pump` is optional
     accelerometer evidence, as in `turns.detect_turns` -- without it the runs are speed-only
-    and no attempt can be judged.
+    and no attempt can be judged. `evidence` is the shared read-only off-foil evidence; a
+    pipeline that already built it hands it in, otherwise it is built here.
     """
     cfg = config or TakeoffConfig()
-    ev = off_foil_evidence(clean, flights, cfg.foil_exit_speed_kmh, cfg.baro_drop_m)
+    ev = evidence
+    if ev is None:
+        ev = off_foil_evidence(clean, flights, cfg.foil_exit_speed_kmh, cfg.baro_drop_m)
     if ev is None:
         return TakeoffAnalysis(has_accel=pump is not None)
     takeoffs = []

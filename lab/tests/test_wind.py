@@ -86,6 +86,29 @@ def test_off_foil_samples_are_excluded():
     assert est.dir_deg is None
 
 
+def test_usable_honours_the_caller_supplied_min_confidence():
+    """`usable` is judged against the config the estimate was built with, not the default.
+
+    The lobes here are deliberately lopsided (one reach sailed three times as far as the
+    other), which drops `axis_confidence` to ~0.66: comfortably usable at the default 0.5,
+    and not usable at all once the caller raises the bar past it.
+    """
+    legs = [(100.0, 120), (-100.0, 40), (170.0, 40), (100.0, 120), (-100.0, 40)]
+    ct = _sail(legs)
+    flights = segment_flights(ct)
+
+    default = estimate_wind(ct, flights)
+    assert default.dir_deg is not None
+    assert 0.5 < default.confidence < 1.0        # strictly between the two bars below
+    assert default.usable
+
+    lenient = estimate_wind(ct, flights, WindConfig(min_confidence=0.5))
+    strict = estimate_wind(ct, flights, WindConfig(min_confidence=0.9))
+    assert lenient.confidence == strict.confidence == default.confidence
+    assert lenient.usable is True
+    assert strict.usable is False                # the bug returned True here
+
+
 def test_circular_histogram_wraps_and_weights():
     cog = np.array([5.0, 355.0, 180.0])
     centers, hist = circular_histogram(cog, np.array([1.0, 1.0, 2.0]), 10.0, 0.0)

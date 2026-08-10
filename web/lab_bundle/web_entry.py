@@ -152,12 +152,21 @@ def _num(v):
 
 
 def _view(a) -> dict:
-    """Geometry for the SVG map + speed strip. Same arrays lab/tools/plot_turns.py plots."""
+    """Geometry for the SVG map + speed strip. Same arrays lab/tools/plot_turns.py plots.
+
+    A track with no GPS fixes at all (Doppler-only sources, or a FIT whose records carry
+    speed but no lat/lon) has an all-NaN projection. There is no map to draw for it, and a
+    NaN would take the whole document down with `json.dumps(allow_nan=False)`, so the
+    positional half of the view is simply dropped: `hasPositions` is false, the `x`/`y`
+    arrays are empty, the map corners of `bounds` are null and the markers carry no
+    coordinates. Everything the speed strip and the tables need is time-series data and
+    stays exactly as it is.
+    """
     df = a.clean.records
     if df.empty:
-        return {"count": 0, "t": [], "x": [], "y": [], "speedKn": [], "dopplerKn": [],
-                "segment": [], "bounds": None, "flights": [], "turnMarkers": [],
-                "endMarkers": [], "stride": 1}
+        return {"count": 0, "hasPositions": False, "t": [], "x": [], "y": [],
+                "speedKn": [], "dopplerKn": [], "segment": [], "bounds": None,
+                "flights": [], "turnMarkers": [], "endMarkers": [], "stride": 1}
 
     t = df["t"].to_numpy(float)
     x = df["x"].to_numpy(float)
@@ -165,6 +174,7 @@ def _view(a) -> dict:
     seg = df["segment"].to_numpy(int)
     hyb = hybrid_speed(df) * MPS_TO_KN
     dop = df["doppler_mps"].to_numpy(float) * MPS_TO_KN
+    has_pos = bool(np.isfinite(x).any() and np.isfinite(y).any())
 
     stride = max(1, int(math.ceil(len(t) / MAX_VIEW_SAMPLES)))
     sl = slice(None, None, stride)
@@ -172,21 +182,36 @@ def _view(a) -> dict:
     return {
         "count": int(len(t[sl])),
         "stride": stride,
+        "hasPositions": has_pos,
         "t": _round_list(t[sl], 1),
-        "x": _round_list(x[sl], 1),
-        "y": _round_list(y[sl], 1),
+        "x": _round_list(x[sl], 1) if has_pos else [],
+        "y": _round_list(y[sl], 1) if has_pos else [],
         "speedKn": _round_list(hyb[sl], 2),
         "dopplerKn": _round_list(dop[sl], 2),
         "segment": [int(v) for v in seg[sl]],
-        "bounds": {"x0": round(float(np.nanmin(x)), 1), "x1": round(float(np.nanmax(x)), 1),
-                   "y0": round(float(np.nanmin(y)), 1), "y1": round(float(np.nanmax(y)), 1),
+        "bounds": {"x0": _extent(np.nanmin, x), "x1": _extent(np.nanmax, x),
+                   "y0": _extent(np.nanmin, y), "y1": _extent(np.nanmax, y),
                    "t0": round(float(t[0]), 1), "t1": round(float(t[-1]), 1),
-                   "knMax": round(float(np.nanmax(np.maximum(hyb, dop))), 2)},
+                   "knMax": _extent(np.nanmax, np.maximum(hyb, dop), 2) or 0.0},
         "flights": [{"startTs": round(f.start_t, 1), "endTs": round(f.end_t, 1)}
                     for f in a.flights.flights],
         "turnMarkers": [_turn_marker(i, turn, t, x, y) for i, turn in enumerate(a.turns)],
         "endMarkers": [_end_marker(i, e, t, x, y) for i, e in enumerate(a.flight_ends)],
     }
+
+
+def _extent(fn, arr, places: int = 1):
+    """`fn` (a nan-aware reducer) over `arr`, or None when the channel is entirely missing."""
+    arr = np.asarray(arr, dtype=float)
+    if not np.isfinite(arr).any():
+        return None
+    return round(float(fn(arr)), places)
+
+
+def _at(arr, k: int, places: int = 1):
+    """Sample `k` of a positional array, or None where there is no fix."""
+    v = float(arr[k])
+    return round(v, places) if math.isfinite(v) else None
 
 
 def _turn_marker(i: int, turn, t, x, y) -> dict:
@@ -196,8 +221,8 @@ def _turn_marker(i: int, turn, t, x, y) -> dict:
         "i": i,
         "n": i + 1,
         "t": round(float(turn.min_t), 1),
-        "x": round(float(x[k]), 1),
-        "y": round(float(y[k]), 1),
+        "x": _at(x, k),
+        "y": _at(y, k),
         "kn": round(float(turn.min_kn), 2),
         "kind": turn.kind,
         "outcome": turn.outcome,
@@ -213,8 +238,8 @@ def _end_marker(i: int, end, t, x, y) -> dict:
         "i": i,
         "flightIndex": end.flight_index,
         "t": round(float(end.t), 1),
-        "x": round(float(x[k]), 1),
-        "y": round(float(y[k]), 1),
+        "x": _at(x, k),
+        "y": _at(y, k),
         "kn": round(float(end.min_speed_mps) * MPS_TO_KN, 2)
               if math.isfinite(end.min_speed_mps) else None,
         "outcome": end.outcome,

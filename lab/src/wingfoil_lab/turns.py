@@ -199,11 +199,14 @@ class TurnSummary:
 def detect_turns(clean: CleanTrack, flights: FlightResult,
                  wind: WindEstimate | None = None,
                  config: TurnConfig | None = None,
-                 pump: PumpTrack | None = None) -> list[Turn]:
+                 pump: PumpTrack | None = None,
+                 evidence: OffFoilEvidence | None = None) -> list[Turn]:
     """Detect, score and classify every turn in a cleaned track, in time order.
 
     `pump` is optional accelerometer evidence (class-(a) sources); without it the outcome
-    rests on the speed channels alone.
+    rests on the speed channels alone. `evidence` lets a pipeline that already built the
+    off-foil evidence for this track hand it in (it is read-only, and the flight-end and
+    takeoff passes ask for the very same arrays); omitted, it is built here.
     """
     cfg = config or TurnConfig()
     turns: list[Turn] = []
@@ -228,7 +231,7 @@ def detect_turns(clean: CleanTrack, flights: FlightResult,
                 turns.append(turn)
     turns.sort(key=lambda x: x.start_t)
     turns = _drop_overlaps(turns)
-    _assign_outcomes(turns, clean, flights, cfg, pump)
+    _assign_outcomes(turns, clean, flights, cfg, pump, evidence)
     return turns
 
 
@@ -260,9 +263,12 @@ def summarize_turns(turns: list[Turn]) -> TurnSummary:
 
 
 def _assign_outcomes(turns: list[Turn], clean: CleanTrack, flights: FlightResult,
-                     cfg: TurnConfig, pump: PumpTrack | None = None) -> None:
+                     cfg: TurnConfig, pump: PumpTrack | None = None,
+                     evidence: OffFoilEvidence | None = None) -> None:
     """Fill `outcome`/`borderline`/`off_foil_s`/`stopped_s` on every turn, in place."""
-    ev = off_foil_evidence(clean, flights, cfg.foil_exit_speed_kmh, cfg.baro_drop_m)
+    ev = evidence
+    if ev is None:
+        ev = off_foil_evidence(clean, flights, cfg.foil_exit_speed_kmh, cfg.baro_drop_m)
     if ev is None:
         return
     for turn in turns:
