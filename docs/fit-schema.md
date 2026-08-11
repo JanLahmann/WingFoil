@@ -10,6 +10,8 @@
 - Field ID convention: **record 0–9 · lap 10–19 · session 20–49**
 - All speeds: `uint16` in **cm/s** (0–655.35 m/s). Convert for display (kn = m/s × 1.9438445).
 - Budgets (CIQ device app): 256 B per message type. Used: record 6 B · lap 11 B · session ~57 B.
+  The **data-field variant** (`garmin/field/`) has a far tighter budget and its own compact
+  session schema — see "Field-variant FIT (class d)" below.
 - Recording activity: `sport = 43 (windsurfing)`, `subSport = 0 (generic)`, session name `"Wingfoil"`.
   The session-level `discipline` string is the authoritative discipline tag, NOT the sport code.
 
@@ -77,9 +79,85 @@ Native lap fields (start time, elapsed, distance, avg/max speed) come free from 
 | 42 | `cfg_min_flight` | uint8 | s | — | |
 | 43 | `app_version` | uint16 | — | — | high byte = app minor version, low byte = SCHEMA_VERSION |
 
+## Field-variant FIT (class d) — written by the **WingFoil Field** data field
+
+`garmin/field/` is a CIQ **data field** that runs inside a *native* activity (Jan's usual
+fenix 8 **Windsurf** profile). Garmin owns the recording, the sport code, the GPS and the
+laps; the data field only computes and contributes developer fields. It shares the detection
+core with the device app through the `WingFoilCore` barrel, so flights and turns mean exactly
+the same thing in both — what differs is the plumbing and the budget.
+
+**Platform budget (measured on `fenix847mm`, not assumed).** A probe build created developer
+fields one at a time until the runtime refused. Two limits apply **per message type**:
+
+| limit | value | evidence |
+|---|---|---|
+| developer data bytes | **32 B** | 8 × uint32 session fields (32 B) accepted, 9th refused |
+| developer field count | **16** | 16 × uint8 (16 B) accepted, 17th refused; 5 × uint32 + 11 × uint8 (31 B) accepted, 17th refused |
+
+The field-count limit is undocumented and bites first for a schema of small fields. Exceeding
+either kills the app (`Out Of Memory Error: New Field out of memory for FIT data`, or from
+inside a loop the unhelpful `System Error: Failed invoking <symbol>`) — it is **not** a
+catchable exception. `garmin/field/source/SessionPack.mc` is the single table that encodes the
+schema, and `sessionSchemaFitsDataFieldBudget` fails the build's tests before the watch can.
+
+### RECORD messages (1 Hz) — 3 fields / 3 bytes
+
+Identical ids, types and meanings to the device app: `foil_state`(0) · `turn_marker`(3) ·
+`tick`(4). `flight_index`(1) and `pump_cadence`(2) are **not** written — there is no lap
+structure to index against and no accelerometer (below).
+
+### SESSION message — 14 fields / **29 bytes** (limit 32 B / 16 fields)
+
+| fieldId | name | type | B | notes |
+|---|---|---|---|---|
+| 21 | `foil_time` | uint32 | 4 | as the device app |
+| 22 | `foil_pct` | uint8 | 1 | of timer time |
+| 23 | `flight_count` | uint16 | 2 | saturates at 65534 |
+| 24 | `longest_flight_s` | uint16 | 2 | |
+| 26 | `best_2s` | uint16 | 2 | cm/s |
+| 27 | `best_10s` | uint16 | 2 | cm/s |
+| 32 | `tack_count` | uint8 | 1 | saturates at 254 |
+| 33 | `jibe_count` | uint8 | 1 | |
+| 34 | `turn_success_pct` | uint8 | 1 | |
+| 39 | `wind_dir_user` | uint16 | 2 | 65535 = unset |
+| 43 | `app_version` | uint16 | 2 | high byte app minor, low byte `SCHEMA_VERSION` |
+| 50 | `turn_outcomes` | uint32 | 4 | **packed**: `flew << 16 \| touchdown << 8 \| fell`, each uint8 saturating at 254 |
+| 53 | `discipline_id` | uint8 | 1 | 1 = wingfoil — the compact form of the app's `discipline`(20) string |
+| 54 | `cfg_pack` | uint32 | 4 | **packed**: `entry_cms << 16 \| minFlight_s << 11 \| exit_cms` (entry 16 b cm/s · minFlight 5 b s · exit 11 b cm/s) — the compact form of `cfg_entry_speed`(40)/`cfg_min_flight`(42)/`cfg_exit_speed`(41) |
+
+Ids **21–43 keep the device app's meaning and type exactly**; 50–59 is a new band reserved for
+field-variant-only fields. 50 and 54 are bit-packed because *fields*, not bytes, are the
+binding constraint. Fields the device app writes and the data field cannot: `discipline`(20)
+as a string (16 B and a scarce slot), `longest_flight_m`(25), `best_5x10s`(28)…`alpha500_lite`
+(31), every takeoff/pump field (35–38) and every LAP field (10–16).
+
+### What a parser needs (source class **d**)
+
+- **Recognition:** `session.sport == 43` **and** `discipline_id == 1` (field 53). The device
+  app's class-(a) marker is the `discipline` *string* (field 20) — a class-d file has the enum
+  instead, never both. Presence of field 54 (`cfg_pack`) is a second, equivalent tell.
+- **No laps of ours.** The native activity's laps are the user's own button presses; they are
+  *not* flight boundaries. Flight segmentation must be re-derived from `foil_state`(0) or from
+  speed. (Class (a): laps alternate flight/off-foil and are hints.)
+- **No accelerometer stream and no pump metrics, ever.** Every `Toybox.Sensor` entry point —
+  `registerSensorDataListener`, `enableSensorEvents`, `getInfo`, `enableSensorType`,
+  `getMaxSampleRate` — is documented in the fenix 8 `api.debug.xml` as *"Will cause an app
+  crash if called from a data field app"*, and `SensorLogging` cannot be attached to a session
+  the app does not own. So takeoff/pump analysis degrades to "unknown" (null, never 0), exactly
+  like source class (b).
+- **Barometric submersion evidence exists**: `Activity.Info.rawAmbientPressure` /
+  `ambientPressure` are available to data fields, so turn outcomes still distinguish
+  touchdown from fell-in.
+- **Unpack** 50 and 54 with the shifts above before comparing them to class-(a) fields; then
+  `turn_outcomes` maps to the same flew/touchdown/fell tallies the phone derives from the
+  record-level `turn_marker` values 4–6, and `cfg_pack` to the same three thresholds.
+
 ## Parsing rules (phone/lab)
 
 - Missing developer fields ⇒ source class (b)/(c); never fail the parse (`SourceCapabilities` fail-soft).
+- Developer fields present but `discipline_id`(53) instead of `discipline`(20) ⇒ source class
+  (d), the data-field variant: no laps of ours, no accel, packed fields 50/54.
 - `session.sport == 43` alone does NOT mean wingfoil — require `discipline == "wingfoil"` to
   distinguish from Jan's real windsurf sessions.
 - Watch lap boundaries are hints; the phone's `FlightSegmenter` output is authoritative.

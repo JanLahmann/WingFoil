@@ -2,6 +2,7 @@ import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.System;
 import Toybox.WatchUi;
+import WingFoilCore;
 
 // Turns-page metrics, file scope so the static width helpers (shared with the layout
 // test) can reach them — class consts are instance-scoped in Monkey C.
@@ -56,7 +57,8 @@ class RecordingView extends WatchUi.View {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var hN = dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT);
-        var hS = dc.getFontHeight(Graphics.FONT_SMALL);
+        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+        var hL = dc.getFontHeight(Graphics.FONT_LARGE);
         var hM = dc.getFontHeight(Graphics.FONT_MEDIUM);
 
         // state ring: green flying, dark gray off-foil
@@ -67,59 +69,68 @@ class RecordingView extends WatchUi.View {
         dc.drawCircle(cx, cy, cx - 7);
         dc.setPenWidth(1);
 
-        // speed number + unit + flight timer, stacked around the vertical center
-        var ySpeed = cy - (hS + hM) / 2;
+        // speed number + tiny unit + big flight timer, stacked around the vertical center
+        var ySpeed = cy - (hT + hL) / 2;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, ySpeed, Graphics.FONT_NUMBER_THAI_HOT,
             AppSettings.speedToDisplay(e.speedMps).format("%.1f"), CV);
-        var yUnit = ySpeed + (hN + hS) / 2;
+        var yUnit = ySpeed + (hN + hT) / 2;
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, yUnit, Graphics.FONT_SMALL, AppSettings.speedLabel(), CV);
-        var yTimer = yUnit + (hS + hM) / 2;
+        dc.drawText(cx, yUnit, Graphics.FONT_XTINY, AppSettings.speedLabel(), CV);
+        var yTimer = yUnit + (hT + hL) / 2;
         if (flying) {
             dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, yTimer, Graphics.FONT_MEDIUM,
+            dc.drawText(cx, yTimer, Graphics.FONT_LARGE,
                 fmtTime(e.detector.currentFlightS), CV);
         } else {
             dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, yTimer, Graphics.FONT_MEDIUM, "--:--", CV);
+            dc.drawText(cx, yTimer, Graphics.FONT_LARGE, "--:--", CV);
         }
 
         var hr = e.hr;
         dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, yTimer + (hM + hS) / 2, Graphics.FONT_SMALL,
+        dc.drawText(cx, yTimer + (hL + hM) / 2, Graphics.FONT_MEDIUM,
             hr != null ? hr.toString() + " bpm" : "-- bpm", CV);
     }
 
-    // Page 2: foil %, then flights / foil time / longest / dist
+    // Page 2: giant foil % on top ("%" makes it self-describing), then a native-style
+    // 2x2 grid of cells: tiny label over a big value. Values are the stars out on the
+    // water; labels only need to be findable.
     hidden function drawSessionPage(dc as Dc, c as SessionController) as Void {
         var e = c.engine;
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var hHot = dc.getFontHeight(Graphics.FONT_NUMBER_HOT);
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
-        var hM = dc.getFontHeight(Graphics.FONT_MEDIUM);
-        var rowH = hM;
+        var hL = dc.getFontHeight(Graphics.FONT_LARGE);
+        var cellH = hT + hL;
 
-        // biased 8 px up: the bottom row sits where the circle narrows
-        var y = cy - 8 - (hHot + hT + 4 * rowH) / 2 + hHot / 2;
+        var y = cy - (hHot + 2 * cellH) / 2 + hHot / 2;
         dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, Graphics.FONT_NUMBER_HOT,
             e.foilPct().format("%.0f") + "%", CV);
-        y += (hHot + hT) / 2;
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, Graphics.FONT_XTINY, "on foil", CV);
 
-        // widest rows first: the circle narrows toward the bottom
-        y += (hT + rowH) / 2;
-        drawRowF(dc, cx, y, "foil", fmtTime(e.detector.foilTimeS), Graphics.FONT_SMALL);
-        y += rowH;
-        drawRowF(dc, cx, y, "longest", fmtTime(e.detector.longestS), Graphics.FONT_SMALL);
-        y += rowH;
-        drawRowF(dc, cx, y, "dist", (e.distM / 1000.0).format("%.1f") + " km",
-            Graphics.FONT_SMALL);
-        y += rowH;
-        drawRowF(dc, cx, y, "flights", e.detector.flightCount.toString(), Graphics.FONT_SMALL);
+        // grid columns pulled toward the center: the circle narrows below
+        var xl = cx - 95;
+        var xr = cx + 95;
+        y += hHot / 2 + hT / 2;
+        drawCell(dc, xl, y, "foil", fmtTime(e.detector.foilTimeS));
+        drawCell(dc, xr, y, "longest", fmtTime(e.detector.longestS));
+        y += cellH;
+        drawCell(dc, xl, y, "km", (e.distM / 1000.0).format("%.1f"));
+        drawCell(dc, xr, y, "flights", e.detector.flightCount.toString());
+    }
+
+    // A native-style field cell: tiny gray label, big white value under it.
+    // y is the label's center line; the value hangs below it.
+    hidden function drawCell(dc as Dc, x as Number, y as Number, label as String,
+            value as String) as Void {
+        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+        var hL = dc.getFontHeight(Graphics.FONT_LARGE);
+        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, y, Graphics.FONT_XTINY, label, CV);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, y + (hT + hL) / 2, Graphics.FONT_LARGE, value, CV);
     }
 
     // Page 3: live speed records, one giant number per block
@@ -128,22 +139,22 @@ class RecordingView extends WatchUi.View {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var hHot = dc.getFontHeight(Graphics.FONT_NUMBER_HOT);
-        var hS = dc.getFontHeight(Graphics.FONT_SMALL);
+        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
         var unit = " " + AppSettings.speedLabel();
 
-        // biased 16 px down: the top label otherwise clips the circle edge;
+        // biased 12 px down: the top label otherwise clips the circle edge;
         // unit only on the lower label to keep the top one narrow
-        var y = cy + 16 - (2 * hHot + 2 * hS) / 2 + hS / 2;
+        var y = cy + 12 - (2 * hHot + 2 * hT) / 2 + hT / 2;
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, Graphics.FONT_SMALL, "best 2s", CV);
-        y += (hS + hHot) / 2;
+        dc.drawText(cx, y, Graphics.FONT_XTINY, "best 2s", CV);
+        y += (hT + hHot) / 2;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, Graphics.FONT_NUMBER_HOT,
             AppSettings.speedToDisplay(r.best2sMps).format("%.1f"), CV);
-        y += (hHot + hS) / 2;
+        y += (hHot + hT) / 2;
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, Graphics.FONT_SMALL, "best 10s" + unit, CV);
-        y += (hS + hHot) / 2;
+        dc.drawText(cx, y, Graphics.FONT_XTINY, "best 10s" + unit, CV);
+        y += (hT + hHot) / 2;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, Graphics.FONT_NUMBER_HOT,
             AppSettings.speedToDisplay(r.best10sMps).format("%.1f"), CV);
@@ -159,7 +170,7 @@ class RecordingView extends WatchUi.View {
         var hHot = dc.getFontHeight(Graphics.FONT_NUMBER_HOT);
         var hL = dc.getFontHeight(Graphics.FONT_LARGE);
         var hS = dc.getFontHeight(Graphics.FONT_SMALL);
-        var windSet = AppSettings.windDirection >= 0;
+        var windSet = AppSettings.cfg.windDirection >= 0;
 
         var y = turnsRowY(cy, hT, hHot, hL, hS, 0);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
@@ -281,13 +292,13 @@ class RecordingView extends WatchUi.View {
         dc.drawText(x + wa + wb + 2 * wSep, y, f, s, LV);
     }
 
-    // Page 5: giant time of day (+ timer and battery)
+    // Page 5: giant time of day, then timer and battery as side-by-side cells
     hidden function drawClockPage(dc as Dc, c as SessionController) as Void {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var hN = dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT);
-        var hM = dc.getFontHeight(Graphics.FONT_MEDIUM);
-        var rowH = hM + 4;
+        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+        var hL = dc.getFontHeight(Graphics.FONT_LARGE);
         var ct = System.getClockTime();
         var hour = ct.hour;
         if (!System.getDeviceSettings().is24Hour) {
@@ -295,15 +306,14 @@ class RecordingView extends WatchUi.View {
             if (hour == 0) { hour = 12; }
         }
 
-        var y = cy - (hN + 2 * rowH) / 2 + hN / 2;
+        var y = cy - (hN + hT + hL) / 2 + hN / 2;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, Graphics.FONT_NUMBER_THAI_HOT,
             hour.format("%d") + ":" + ct.min.format("%02d"), CV);
 
-        y += (hN + rowH) / 2;
-        drawRow(dc, cx, y, "timer", fmtTime(c.engine.timerS));
-        y += rowH;
-        drawRow(dc, cx, y, "batt",
+        y += hN / 2 + hT / 2;
+        drawCell(dc, cx - 95, y, "timer", fmtTime(c.engine.timerS));
+        drawCell(dc, cx + 95, y, "batt",
             System.getSystemStats().battery.format("%.0f") + "%");
     }
 

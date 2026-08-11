@@ -3,6 +3,7 @@ import Toybox.Lang;
 import Toybox.Math;
 import Toybox.Position;
 import Toybox.System;
+import WingFoilCore;
 
 // 1 Hz computation core, driven by position events while recording.
 // Pure compute: returns events; SessionController owns laps/alerts/FIT session writes.
@@ -33,9 +34,11 @@ class MetricsEngine {
     hidden var _baseline as Float = 0.0;
     hidden var _haveBaseline as Boolean = false;
 
+    // Detectors come from the WingFoilCore barrel and read their thresholds from the
+    // Config this app fills from GCM properties (AppSettings.load()).
     function initialize() {
-        detector = new FlightDetector();
-        turns = new TurnDetector();
+        detector = new FlightDetector(AppSettings.cfg);
+        turns = new TurnDetector(AppSettings.cfg);
         records = new SpeedRecords();
     }
 

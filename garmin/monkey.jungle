@@ -3,5 +3,11 @@ project.manifest = manifest.xml
 # tests/ holds (:test)-annotated code — stripped from normal builds, compiled with --unit-test
 base.sourcePath = source;tests
 
+# WingFoilCore = the shared detection core (RingBuffer/SpeedRecords/FlightDetector/
+# TurnDetector/Config), linked as a Monkey Barrel PROJECT dependency (not a packaged
+# .barrel), so editing the core rebuilds both apps with no export step. Its tests/ come
+# along, which is why --unit-test on this jungle still runs the full 16-test suite.
+base.barrelPath = barrel/WingFoilCore/barrel.jungle
+
 # Resolution-specific layout overrides land here later, e.g.:
 # fenix8solar47mm.resourcePath = $(fenix8solar47mm.resourcePath);resources-mip

@@ -1,6 +1,7 @@
 import Toybox.Attention;
 import Toybox.Lang;
 import Toybox.System;
+import WingFoilCore;
 
 // Vibration alerts (primary on-water channel — tones are inaudible in wind).
 // Global 5 s debounce; per-alert enables live in AppSettings.

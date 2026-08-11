@@ -1,0 +1,11 @@
+<properties>
+    <!-- Defaults mirror docs/algorithms.md and the device app — change all together. -->
+    <property id="foilEntryKmh" type="float">12.0</property>
+    <property id="foilExitKmh" type="float">8.0</property>
+    <property id="entryHoldS" type="number">2</property>
+    <property id="exitHoldS" type="number">3</property>
+    <property id="minFlightS" type="number">5</property>
+    <property id="useKnots" type="boolean">false</property>
+    <!-- wind the turn classifier splits tacks from jibes on; -1 = unset -->
+    <property id="windDirDeg" type="number">-1</property>
+</properties>

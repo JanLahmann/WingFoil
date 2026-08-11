@@ -78,12 +78,19 @@ Fenix 8 CIQ app ──FIT(+dev fields, laps, accel)──> Garmin Connect ──
 WingFoil/
 ├── docs/            plan.md · fit-schema.md (dev-field contract) · algorithms.md (canonical
 │                    thresholds all 3 impls follow) · testing.md · decisions.md (ADRs)
-├── garmin/          CIQ device app (Monkey C, type watch-app, minApiLevel 5.0.0)
-│   ├── manifest.xml · monkey.jungle
+├── garmin/          CIQ apps (Monkey C, minApiLevel 5.0.0)
+│   ├── barrel/WingFoilCore/  shared detection core as a Monkey Barrel (Config ·
+│   │                RingBuffer · SpeedRecords · FlightDetector · TurnDetector + its tests),
+│   │                linked by both apps via barrelPath
+│   ├── field/       WingFoil Field — CIQ data field (type datafield, own UUID + beta):
+│   │                runs inside the native Windsurf activity, compact FIT schema
+│   │                (docs/fit-schema.md "class d"), no laps/accel
+│   ├── manifest.xml · monkey.jungle    (the device app, type watch-app)
 │   ├── resources/   settings/ · fitcontributions/fit_contributions.xml · strings/ · layouts/
 │   ├── source/      WingfoilApp.mc · session/SessionController.mc ·
-│   │                metrics/{MetricsEngine,RingBuffer,SpeedRecords,AlphaLite}.mc ·
-│   │                detectors/{FlightDetector,TurnDetector,PumpDetector}.mc ·
+│   │                metrics/{MetricsEngine,AlphaLite}.mc ·
+│   │                (RingBuffer/SpeedRecords/FlightDetector/TurnDetector live in the barrel;
+│   │                 detectors/PumpDetector.mc stays app-only — accel is device-app-only) ·
 │   │                fit/FitFields.mc · ui/{PageSpeed,PageFlight,PageRecords,PageTurnsPump,
 │   │                RecordingDelegate,SummaryView,WindMenu}.mc · alerts/AlertManager.mc ·
 │   │                settings/AppSettings.mc · comm/PhoneLink.mc (phase-5 stub)

@@ -1,0 +1,26 @@
+<settings>
+    <!-- Mirrors the device app's detector settings (garmin/resources/settings/settings.xml).
+         Sport, accelerometer logging and the vibration alerts are absent on purpose: the
+         native activity owns the sport, Sensor.* crashes a data field. -->
+    <setting propertyKey="@Properties.foilEntryKmh" title="@Strings.SetFoilEntry">
+        <settingConfig type="numeric" min="6" max="25"/>
+    </setting>
+    <setting propertyKey="@Properties.foilExitKmh" title="@Strings.SetFoilExit">
+        <settingConfig type="numeric" min="4" max="20"/>
+    </setting>
+    <setting propertyKey="@Properties.entryHoldS" title="@Strings.SetEntryHold">
+        <settingConfig type="numeric" min="1" max="10"/>
+    </setting>
+    <setting propertyKey="@Properties.exitHoldS" title="@Strings.SetExitHold">
+        <settingConfig type="numeric" min="1" max="10"/>
+    </setting>
+    <setting propertyKey="@Properties.minFlightS" title="@Strings.SetMinFlight">
+        <settingConfig type="numeric" min="2" max="30"/>
+    </setting>
+    <setting propertyKey="@Properties.useKnots" title="@Strings.SetUseKnots">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.windDirDeg" title="@Strings.SetWindDir">
+        <settingConfig type="numeric" min="-1" max="359"/>
+    </setting>
+</settings>

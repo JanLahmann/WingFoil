@@ -68,6 +68,11 @@ targets:
         NSHealthUpdateUsageDescription: >-
           Adds your wingfoil sessions to the Health app as workouts. WingFoil only writes
           workouts you already imported; it never reads your health data.
+        # App Store validation requires the share string too whenever HealthKit APIs are
+        # referenced, even though the app never reads health data.
+        NSHealthShareUsageDescription: >-
+          WingFoil does not read any data from the Health app. This permission exists only
+          because the workout-export feature links the HealthKit framework.
         CFBundleDisplayName: WingFoil
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)

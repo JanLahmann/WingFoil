@@ -104,7 +104,11 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      imported exactly once, incremental progress callbacks, `import_log` rows, a **re-run
      that imports nothing** (the phase-4 acceptance criterion), the depth limit, and
      streaming-vs-collecting walker agreement.
-3. **Monkey C units (Toybox.Test)** — RingBuffer math; FlightDetector/TurnDetector fed synthetic
+3. **Monkey C units (Toybox.Test)** — the core suite lives in the `WingFoilCore` barrel
+   (`garmin/barrel/WingFoilCore/tests/`) and is therefore compiled into **both** consumers'
+   `--unit-test` builds: `bin/WingFoilTests.prg` (device app: 16 tests) and
+   `bin/WingFoilFieldTests.prg` (data field: those 16 plus the field's own schema/feed/layout
+   tests). Contents: RingBuffer math; FlightDetector/TurnDetector fed synthetic
    + recorded 1 Hz speed/COG arrays (extracted from fixtures by lab) asserting exact transition
    ticks; PumpDetector fed recorded 25 Hz batches; SpeedRecords vs hand-computed windows.
 4. **Simulator integration smoke** — FIT replay of `fixtures/clips/` (60–180 s cuts around
