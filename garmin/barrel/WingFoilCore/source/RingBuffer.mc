@@ -1,5 +1,7 @@
 import Toybox.Lang;
 
+module WingFoilCore {
+
 // Fixed-size Float ring with maintained running sum -> O(1) windowed mean.
 class RingBuffer {
     hidden var _buf as Array<Float>;
@@ -40,4 +42,6 @@ class RingBuffer {
         _count = 0;
         _sum = 0.0;
     }
+}
+
 }

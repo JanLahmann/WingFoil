@@ -1,0 +1,10 @@
+project.manifest = manifest.xml
+
+# tests/ holds (:test)-annotated code — stripped from normal builds, compiled with --unit-test
+base.sourcePath = source;tests
+
+# The detection core, linked as a Monkey Barrel PROJECT dependency (same barrel.jungle the
+# device app uses), so the field and the app can never drift apart on flight/turn semantics.
+# The barrel carries its own tests/, which is why --unit-test here runs the 16 core tests
+# alongside the field-specific ones.
+base.barrelPath = ../barrel/WingFoilCore/barrel.jungle

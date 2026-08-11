@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<iq:manifest version="3" xmlns:iq="http://www.garmin.com/xml/connectiq">
+    <!--
+      WingFoilCore — the UI-independent detection core shared by the WingFoil device app
+      (garmin/) and the WingFoil Field data field (garmin/field/). Contains RingBuffer,
+      SpeedRecords, FlightDetector, TurnDetector and the Config object the detectors read
+      their thresholds from. No Toybox.Application / WatchUi / ActivityRecording dependency,
+      so the same code links into a 768 KB device app and a 128 KB data field.
+
+      Semantics are the docs/algorithms.md contract; every change here must keep
+      lab/src/wingfoil_lab/{flight,turns}.py and the barrel unit tests in step.
+    -->
+    <iq:barrel id="1c534d23-0c02-4aa0-a7fb-7f852e647461" module="WingFoilCore"
+        version="1.0.0" minApiLevel="5.0.0">
+        <iq:products>
+            <iq:product id="fenix843mm"/>
+            <iq:product id="fenix847mm"/>
+            <iq:product id="fenix8solar47mm"/>
+            <iq:product id="fenix8solar51mm"/>
+            <iq:product id="fenix8pro47mm"/>
+        </iq:products>
+        <!-- pure computation: the barrel itself needs no permissions -->
+        <iq:permissions/>
+        <iq:languages>
+            <iq:language>eng</iq:language>
+            <iq:language>deu</iq:language>
+        </iq:languages>
+        <iq:barrels/>
+        <iq:annotations/>
+    </iq:barrel>
+</iq:manifest>

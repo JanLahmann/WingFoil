@@ -1,6 +1,7 @@
 import Toybox.ActivityRecording;
 import Toybox.FitContributor;
 import Toybox.Lang;
+import WingFoilCore;
 
 // Sole writer of FIT developer fields. Field IDs/types are the docs/fit-schema.md contract —
 // change both together. Scope: record 0+3+4, lap 15-16, session 20-27 + 32-34 + 39-43.
@@ -150,9 +151,9 @@ class FitFields {
         _jibeCount.setData(turns.jibeCount > 254 ? 254 : turns.jibeCount);
         _turnSuccess.setData(turns.successPct());
         // 65535 = unset, per docs/fit-schema.md session field 39
-        _windDir.setData(AppSettings.windDirection < 0 ? 65535 : AppSettings.windDirection);
-        _cfgEntry.setData(_cms(AppSettings.foilEntryMps));
-        _cfgExit.setData(_cms(AppSettings.foilExitMps));
-        _cfgMinFlight.setData(AppSettings.minFlightS);
+        _windDir.setData(AppSettings.cfg.windDirection < 0 ? 65535 : AppSettings.cfg.windDirection);
+        _cfgEntry.setData(_cms(AppSettings.cfg.foilEntryMps));
+        _cfgExit.setData(_cms(AppSettings.cfg.foilExitMps));
+        _cfgMinFlight.setData(AppSettings.cfg.minFlightS);
     }
 }

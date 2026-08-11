@@ -1,0 +1,8 @@
+project.manifest = manifest.xml
+
+# tests/ holds the (:test)-annotated detector suite. It is part of the barrel so that every
+# consumer's --unit-test build runs the SAME core tests against the SAME sources: the device
+# app proves the refactor changed nothing, the data field proves the core still behaves when
+# it is driven from Activity.Info instead of Position events. (:test) code is stripped from
+# normal builds, so shipping it costs the consumers nothing.
+base.sourcePath = source;tests

@@ -1,5 +1,7 @@
 import Toybox.Lang;
 
+module WingFoilCore {
+
 // Live 2 s / 10 s peak speeds from 1 Hz Doppler samples (W1 scope; 5x10s/500m/alpha in phase 3).
 class SpeedRecords {
     enum {
@@ -45,4 +47,6 @@ class SpeedRecords {
         _win2.reset();
         _win10.reset();
     }
+}
+
 }

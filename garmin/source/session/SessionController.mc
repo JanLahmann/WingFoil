@@ -4,6 +4,7 @@ import Toybox.Lang;
 import Toybox.Position;
 import Toybox.SensorLogging;
 import Toybox.WatchUi;
+import WingFoilCore;
 
 // Owns the ActivityRecording.Session, GPS wiring, laps, and save/discard flow.
 // State machine: IDLE -> RECORDING <-> PAUSED -> SAVED (docs/plan.md §3.2).
@@ -84,7 +85,7 @@ class SessionController {
                     AlertManager.longestFlight();
                 }
             }
-            if (pbEvents != 0 && engine.speedMps >= AppSettings.foilEntryMps) {
+            if (pbEvents != 0 && engine.speedMps >= AppSettings.cfg.foilEntryMps) {
                 AlertManager.speedPb();
             }
             if (turnEvent >= TurnDetector.EVENT_FLEW) {

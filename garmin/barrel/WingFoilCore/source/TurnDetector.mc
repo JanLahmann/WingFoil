@@ -1,6 +1,8 @@
 import Toybox.Lang;
 import Toybox.Math;
 
+module WingFoilCore {
+
 // Live turn detection + outcome classification (docs/algorithms.md "Turn detection &
 // classification" / "Turn outcome"). Watch approximation of lab/src/wingfoil_lab/turns.py:
 // one forward pass, bounded work per tick, zero allocation after initialize().
@@ -128,7 +130,12 @@ class TurnDetector {
     hidden var _wet as Boolean = false;
     hidden var _recoverHeld as Float = 0.0;
 
-    function initialize() {
+    // Thresholds live in an injected Config (see FlightDetector) — read live every tick, so
+    // a wind axis set mid-session classifies every turn detected from then on.
+    hidden var _cfg as Config;
+
+    function initialize(cfg as Config) {
+        _cfg = cfg;
         _tArr = new Array<Float>[HIST];
         _uArr = new Array<Float>[HIST];
         _dArr = new Array<Float>[HIST];
@@ -342,8 +349,8 @@ class TurnDetector {
             submerged as Boolean) as Number {
         _track(dt, speedMps, submerged);
         var thr = RECOVER_PCT * _entrySpeed;
-        if (thr < AppSettings.foilEntryMps) {
-            thr = AppSettings.foilEntryMps;     // nothing below foil entry is flying
+        if (thr < _cfg.foilEntryMps) {
+            thr = _cfg.foilEntryMps;     // nothing below foil entry is flying
         }
         if (speedMps >= thr) {
             _recoverHeld += dt;
@@ -375,7 +382,7 @@ class TurnDetector {
                 _minSpeed = speedMps;
             }
         }
-        if (speedMps <= AppSettings.foilExitMps || submerged) {
+        if (speedMps <= _cfg.foilExitMps || submerged) {
             _lostFoil = true;
         }
         // both-ends-qualify convention, same clock flight segmentation uses
@@ -422,7 +429,7 @@ class TurnDetector {
         }
         // success is the score pair (turns.py._build_turn), independent of the outcome:
         // score >= turnSuccessPct AND the foil still carried across the scored window.
-        if (pct >= SUCCESS_PCT && _minSpeed > AppSettings.foilExitMps) {
+        if (pct >= SUCCESS_PCT && _minSpeed > _cfg.foilExitMps) {
             successCount++;
         }
         state = ST_IDLE;
@@ -438,7 +445,7 @@ class TurnDetector {
     // Tack when the TWA sweep crosses head-to-wind, jibe when it crosses dead downwind,
     // rejected when it crosses neither (bear-away / round-up). No wind axis => generic turn.
     hidden function _classify(uIn as Float, uOut as Float) as Number {
-        var wind = AppSettings.windDirection;
+        var wind = _cfg.windDirection;
         if (wind < 0) {
             return KIND_TURN;
         }
@@ -487,4 +494,6 @@ class TurnDetector {
         }
         return d;
     }
+}
+
 }
