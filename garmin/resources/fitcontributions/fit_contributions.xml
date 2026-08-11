@@ -19,4 +19,13 @@
         dataLabel="@Strings.FitJibes" unitLabel="@Strings.FitUnitNone"/>
     <fitField id="34" displayInActivitySummary="true" sortOrder="8" precision="0"
         dataLabel="@Strings.FitTurnSuccess" unitLabel="@Strings.FitUnitPct"/>
+    <fitField id="2" displayInChart="true" sortOrder="9" precision="0"
+        chartTitle="@Strings.FitPumpCadence" dataLabel="@Strings.FitPumpCadence"
+        unitLabel="@Strings.FitUnitSpm" fillColor="#FF6B00"/>
+    <fitField id="35" displayInActivitySummary="true" sortOrder="10" precision="0"
+        dataLabel="@Strings.FitTakeoffAttempts" unitLabel="@Strings.FitUnitNone"/>
+    <fitField id="36" displayInActivitySummary="true" sortOrder="11" precision="0"
+        dataLabel="@Strings.FitTakeoffSuccesses" unitLabel="@Strings.FitUnitNone"/>
+    <fitField id="38" displayInActivitySummary="true" sortOrder="12" precision="0"
+        dataLabel="@Strings.FitPumpStrokes" unitLabel="@Strings.FitUnitNone"/>
 </fitContributions>

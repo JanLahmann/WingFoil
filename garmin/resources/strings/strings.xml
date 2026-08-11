@@ -14,6 +14,8 @@
     <string id="SportKitesurf">Kitesurf</string>
     <string id="SportGeneric">Generic</string>
     <string id="SetAccelLogging">Log accelerometer (pump analysis)</string>
+    <string id="SetPumpDetection">Detect pumping + takeoffs</string>
+    <string id="SetAlertTakeoff">Vibrate on pumped takeoff</string>
     <string id="SetAlertPb">Vibrate on speed PB</string>
     <string id="SetAlertFlight">Vibrate on longest flight</string>
     <string id="SetAlertTurn">Vibrate on turn outcome</string>
@@ -50,6 +52,9 @@
     <string id="MetTurnScore">Last turn score</string>
     <string id="MetClock">Time of day</string>
     <string id="MetBattery">Battery</string>
+    <string id="MetPumpStrokes">Pump strokes</string>
+    <string id="MetTakeoffs">Takeoffs (attempts&gt;made)</string>
+    <string id="MetPumpsToTakeoff">Pumps to takeoff (last)</string>
     <!-- data screens (Feature 1): 6 pages x (layout + 5 metric slots) -->
     <string id="SetPageGroup">Data screens</string>
     <string id="SetPg1Layout">Page 1 layout</string>
@@ -104,4 +109,9 @@
     <string id="FitTacks">Tacks</string>
     <string id="FitJibes">Jibes</string>
     <string id="FitTurnSuccess">Turn success</string>
+    <string id="FitPumpCadence">Pump cadence</string>
+    <string id="FitUnitSpm">spm</string>
+    <string id="FitTakeoffAttempts">Takeoff attempts</string>
+    <string id="FitTakeoffSuccesses">Takeoffs</string>
+    <string id="FitPumpStrokes">Pump strokes</string>
 </strings>

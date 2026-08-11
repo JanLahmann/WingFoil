@@ -15,13 +15,16 @@
 - Recording activity: `sport = 43 (windsurfing)`, `subSport = 0 (generic)`, session name `"Wingfoil"`.
   The session-level `discipline` string is the authoritative discipline tag, NOT the sport code.
 
-## RECORD messages (written at 1 Hz) — 6 bytes
+## RECORD messages (written at 1 Hz) — 6 bytes budgeted, 4 B written
+
+The device app writes `foil_state`(0) · `pump_cadence`(2) · `turn_marker`(3) · `tick`(4).
+`flight_index`(1) is reserved but not written — laps already carry the flight structure.
 
 | fieldId | name | type | units | enum / scale | GC render | notes |
 |---|---|---|---|---|---|---|
 | 0 | `foil_state` | uint8 | — | 0 = off-foil · 1 = pumping/attempt · 2 = flying | chart | drives phase coloring |
 | 1 | `flight_index` | uint16 | count | 0 = not in flight, N = Nth flight (1-based) | — | joins records↔flights |
-| 2 | `pump_cadence` | uint8 | strokes/min | 0 when detector unarmed | chart | live detector value; phone recomputes from accel |
+| 2 | `pump_cadence` | uint8 | strokes/min | 0 when not pumping / detector off | chart | **watch-written**: `PumpDetector` strokes over the trailing 10 s, rewritten every record. The refractory bounds it at 150; 255 is never written. Phone recomputes it from the raw accel stream |
 | 3 | `turn_marker` | uint8 | — | 0 = none · 1 = tack · 2 = jibe · 3 = turn (wind unknown) · 4 = flew_through · 5 = touchdown · 6 = fell_in | — | see below |
 | 4 | `tick` | uint8 | — | rolling 0–254 | — | changes every second → defeats smart-recording collapse; 255 = FIT uint8 invalid sentinel, never written |
 
@@ -69,10 +72,10 @@ Native lap fields (start time, elapsed, distance, avg/max speed) come free from 
 | 32 | `tack_count` | uint8 | count | summary | only ≠0 when wind axis known; saturates at 254 |
 | 33 | `jibe_count` | uint8 | count | summary | |
 | 34 | `turn_success_pct` | uint8 | % | summary | successful / attempted turns (score ≥ `turnSuccessPct` and never off the foil), over *all* counted turns including the generic ones |
-| 35 | `takeoff_attempts` | uint8 | count | summary | |
-| 36 | `takeoff_successes` | uint8 | count | summary | |
-| 37 | `avg_pumps_to_takeoff` | uint8 | strokes ×0.1 | summary | value 87 = 8.7 strokes |
-| 38 | `total_pump_strokes` | uint16 | strokes | — | |
+| 35 | `takeoff_attempts` | uint8 | count | summary | **watch-written** (`PumpDetector`): successes + failed efforts, saturates at 254 |
+| 36 | `takeoff_successes` | uint8 | count | summary | **watch-written**: confirmed flights — every one is a takeoff that took |
+| 37 | `avg_pumps_to_takeoff` | uint8 | strokes ×0.1 | summary | **watch-written**: value 87 = 8.7 strokes, over *all* takeoffs including the free ones; 0 = no takeoff yet |
+| 38 | `total_pump_strokes` | uint16 | strokes | — | **watch-written**: every detected stroke, in flight or not |
 | 39 | `wind_dir_user` | uint16 | deg | — | direction the wind blows **from**, true; 65535 = unset. Set in GCM (`windDirDeg`) or on the watch (BACK → Session → Wind, 16 compass points). The value written is the one in effect at save; the watch classifies only turns detected *after* it was set, so a mid-session change can leave earlier turns generic — the phone re-runs classification over the whole track and is authoritative |
 | 40 | `cfg_entry_speed` | uint16 | cm/s | — | thresholds in effect (phone needs them to reconcile) |
 | 41 | `cfg_exit_speed` | uint16 | cm/s | — | |

@@ -14,10 +14,12 @@ module AppSettings {
     var cfg as WingFoilCore.Config = new WingFoilCore.Config();
 
     var sportChoice as Number = 0;      // 0 windsurf(43), 1 kitesurf(44), 2 generic
-    var accelLogging as Boolean = true;
+    var accelLogging as Boolean = true;     // raw accel into the FIT (phone/lab validation)
+    var pumpDetection as Boolean = true;    // live PumpDetector (a second accel consumer)
     var alertPb as Boolean = true;
     var alertFlight as Boolean = true;
     var alertTurn as Boolean = true;
+    var alertTakeoff as Boolean = true;
     var alertIntervalMin as Number = 0;     // 0 = off
     var alertIntervalKm as Float = 0.0;     // 0 = off
     var autoPause as Boolean = false;
@@ -32,9 +34,11 @@ module AppSettings {
         cfg.useKnots = _bool("useKnots", false);
         sportChoice = _num("sportChoice", 0.0).toNumber();
         accelLogging = _bool("accelLogging", true);
+        pumpDetection = _bool("pumpDetection", true);
         alertPb = _bool("alertPb", true);
         alertFlight = _bool("alertFlight", true);
         alertTurn = _bool("alertTurn", true);
+        alertTakeoff = _bool("alertTakeoff", true);
         alertIntervalMin = _num("alertIntervalMin", 0.0).toNumber();
         alertIntervalKm = _num("alertIntervalKm", 0.0);
         autoPause = _bool("autoPause", false);

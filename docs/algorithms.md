@@ -319,24 +319,55 @@ pattern (morning Peler from N, afternoon Ora from S) on every corpus session.
 Degenerate case: exactly opposed lobes (pure beam-reach out-and-back) put the true axis
 perpendicular to the lobes where no bisector can find it — rejected, no estimate.
 
-## Pump / takeoff detection
+## Pump / takeoff detection (watch, live) — `garmin/source/detectors/PumpDetector.mc`
 
-Watch (live, conservative): accel magnitude at `getMaxSampleRate()` (~25 Hz) → FIR band-pass
-0.5–2.5 Hz → peak pick.
+The watch runs the **same chain on the same numbers** as *Pumping (accelerometer)* above and
+*Takeoff analysis* below — there is no second parameter set and nothing was re-tuned for the
+port. `PumpDetector` consumes `Toybox.Sensor` accelerometer batches on the 25 Hz grid, and
+every threshold (`pumpStrokeAmp` 0.25 g · `pumpRefractory` 0.4 s · `pumpStrokeMaxInterval`
+1.5 s · `pumpMinStrokes` 4 · `takeoffAttemptWindow` 10 s · `freeTakeoff` < 3) is the tuned lab
+default, compiled in rather than exposed in GCM: they were tuned on the corpus, and a rider
+guessing at them would only break the comparison against the phone. What the rider does get is
+two switches: `pumpDetection` (default on) and `alertTakeoff` (default on). The watch's old
+`attemptSuccessWindow` (5 s) is gone — `takeoffAttemptWindow` plays both roles, as
+*Takeoff analysis* already stated.
 
-| param | default | units | notes |
+It lives in the **device app, not the WingFoilCore barrel**: every `Toybox.Sensor` entry point
+crashes a data field (docs/fit-schema.md, source class d), so the shared core must not even
+reference one. It is also the *second* consumer of the accelerometer — `SensorLogging` keeps
+writing the raw stream into the FIT for the phone and the lab (`accelLogging`, default **on**,
+the validation vehicle), while this listener hands the same motion to the live detector. Only
+one sensor-data listener may exist per app, so registration is attempted once per session
+inside a `try`: any refusal leaves the pump counters at zero and raw logging untouched.
+
+Live output: `pump_cadence` (FIT record 2, strokes/min over the last 10 s), FIT session fields
+35–38, three metric-catalog entries (pump strokes · `attempts>made` · last pumps-to-takeoff),
+and one vibe when a pumped effort gets the rider up.
+
+### Watch approximation — where the live detector differs from the lab
+
+The lab sees the whole session at once and may classify a burst after the fact; the watch has
+to answer while the rider is still on the water. The deviations, all deliberate:
+
+| # | lab | watch | why it is acceptable |
 |---|---|---|---|
-| `pumpBandLow` / `pumpBandHigh` | 0.5 / 2.5 | Hz | wing-pump stroke band |
-| `pumpMinProminence` | TBD (lab) | m/s² | tune on wrist-accel corpus first |
-| `pumpRefractory` | 400 | ms | max ~2.5 strokes/s |
-| `pumpArmed` | OFF_FOIL only (watch) | | chop/arm-swing rejection; phone also analyzes in-flight pumping from raw accel |
-| `attemptSuccessWindow` | 5 | s | ON_FOIL within this after last stroke ⇒ attempt succeeded |
-| `attemptFailSilence` | 10 | s | no strokes for this ⇒ attempt failed |
-| `freeTakeoff` | < 3 strokes | | flight with takeoff_pumps < 3 counts as "free" (enough wind) |
+| 1 | zero-phase `mode="same"` convolution | causal FIR, 51 taps, **1 s group delay** | stroke *timestamps* are corrected by the delay, so every window measured against GPS events is right; only the vibe is ~1 s late |
+| 2 | empty grid bins held at the **session mean** | 20 s EMA level, subtracted per sample | the band-pass kills DC anyway and the EMA sits far below `pumpBandLo`; it makes the watch *more* conservative under a slow body lean (0.1 Hz at 1 g: lab 0 bursts, watch 0 strokes) |
+| 3 | box-average onto a uniform grid | the sensor **is** the grid (25 Hz requested); a faster device is decimated onto it, a slower one leaves the detector unavailable rather than mis-banded | fenix 8 delivers exactly 25 Hz |
+| 4 | gaps bookkept, their bins discarded | a late or short batch **restarts the filter**, and nothing is emitted for the 51-sample warmup | same intent: a dropout contributes no strokes rather than a burst of edge artifacts |
+| 5 | episodes classified afterwards, ladder in_flight → success → recovery → unknown → failed | the same ladder, decided **when the burst qualifies**: one that starts while `STATE_ON` is in-flight pumping and never opens an effort; a turn window open during *any* stroke marks the effort as recovery (the lab asks whether the whole episode lies inside the window) | the watch cannot see the future; both approximations only ever *remove* attempts, so the live count is a floor and the phone stays authoritative |
+| 6 | `ON_FOIL` is the exact flight boundary | the `STATE_OFF→STATE_ON` transition, backdated by `entryHoldS` | that is the instant the FlightDetector backdates its own accounting to |
+| 7 | success = a flight starts inside the window | the flight must also be **confirmed** (`minFlight`, up to 5 s later); an effort whose window expires while the rider is ON foil is held pending until the flight is confirmed or collapses | nothing shorter than `minFlight` counts as a flight anywhere else either |
+| 8 | `unknown` episodes are excluded from every tally | a GPS gap drops the open effort silently | identical outcome, same reason |
+| 9 | `pumps_to_takeoff` = strokes in the run (speed rise ∪ lead burst) | strokes in the **effort** alone | the watch has no walk-back over past speed; a takeoff with no qualifying burst reports 0 = free takeoff, which is what the lab reports when the run holds no strokes |
+| 10 | `takeoff_successes` = flights · `takeoff_attempts` = flights + failed efforts | identical, counted live | — |
 
-Phone metrics: pumps-to-takeoff, time-to-takeoff, cadence, HR cost (HR rise over attempt +30 s,
-only over valid HR spans — see *HR cost* below), attempts/successes, in-flight pump episodes
-(v2).
+Expected drift: the watch counts **fewer or equal** attempts, and its stroke total should sit
+within a few percent of the phone's. Anything larger is the divergence check's business
+(below) — filed against the session fixture, since a tuning difference is not a bug.
+
+Phone metrics beyond the watch's: time-to-takeoff, HR cost (HR rise over attempt +30 s, only
+over valid HR spans — see *HR cost* below), in-flight pump episodes (v2).
 
 ## Takeoff analysis (phone) — pumps-to-takeoff · attempts · in-flight pumping
 

@@ -55,9 +55,12 @@ module PageModel {
         M_TURNS = 12,
         M_TURN_SCORE = 13,
         M_CLOCK = 14,
-        M_BATTERY = 15
+        M_BATTERY = 15,
+        M_PUMP_STROKES = 16,
+        M_TAKEOFFS = 17,
+        M_PUMPS_TO_TAKEOFF = 18
     }
-    const M_MAX = 15;
+    const M_MAX = 18;
 
     const MAX_PAGES = 6;
     const SLOTS = 5;
@@ -189,6 +192,9 @@ module PageModel {
         if (id == M_TURN_SCORE) { return "score"; }
         if (id == M_CLOCK) { return "time"; }
         if (id == M_BATTERY) { return "batt"; }
+        if (id == M_PUMP_STROKES) { return "pumps"; }
+        if (id == M_TAKEOFFS) { return "takeoffs"; }
+        if (id == M_PUMPS_TO_TAKEOFF) { return "to foil"; }
         return "";
     }
 
@@ -231,6 +237,17 @@ module PageModel {
         if (id == M_BATTERY) {
             return System.getSystemStats().battery.format("%.0f") + "%";
         }
+        if (id == M_PUMP_STROKES) { return e.pump.strokes.toString(); }
+        if (id == M_TAKEOFFS) {
+            // attempts > successes, e.g. "14>9": how often he pumped and how often he got up.
+            // The digit-only number fonts may drop the separator in a HERO giant slot, the
+            // same trade-off M_TURN_SCORE's "%" already makes.
+            return e.pump.attempts().toString() + ">" + e.pump.successes.toString();
+        }
+        if (id == M_PUMPS_TO_TAKEOFF) {
+            return e.pump.lastPumpsToTakeoff < 0
+                ? "--" : e.pump.lastPumpsToTakeoff.toString();
+        }
         return "";
     }
 
@@ -259,7 +276,9 @@ module PageModel {
         }
         if (id == M_FOIL_PCT || id == M_TURN_SCORE || id == M_BATTERY) { return "100%"; }
         if (id == M_FLIGHTS || id == M_TURNS) { return "999"; }
-        if (id == M_HR) { return "199"; }
+        if (id == M_HR || id == M_PUMPS_TO_TAKEOFF) { return "199"; }
+        if (id == M_PUMP_STROKES) { return "9999"; }
+        if (id == M_TAKEOFFS) { return "99>99"; }
         if (id == M_CLOCK) { return "23:59"; }
         return "199:59";   // every timer: >3 h sessions still read m:ss
     }

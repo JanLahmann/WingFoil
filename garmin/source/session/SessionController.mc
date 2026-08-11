@@ -2,6 +2,7 @@ import Toybox.Activity;
 import Toybox.ActivityRecording;
 import Toybox.Lang;
 import Toybox.Position;
+import Toybox.Sensor;
 import Toybox.SensorLogging;
 import Toybox.System;
 import Toybox.WatchUi;
@@ -24,6 +25,7 @@ class SessionController {
     hidden var _session as ActivityRecording.Session?;
     hidden var _fit as FitFields?;
     hidden var _logger;
+    hidden var _accelOn as Boolean = false;
     hidden var _prevLongest as Float = 0.0;
     hidden var _apLastMs as Number = 0;
     hidden var _timeMark as Number = -1;    // last crossed time-alert boundary (-1 = armed)
@@ -74,6 +76,7 @@ class SessionController {
             var flightEvent = events & 0x0F;
             var pbEvents = (events >> 4) & 0x0F;
             var turnEvent = (events >> 8) & 0x0F;
+            var pumpEvent = (events >> 12) & 0x0F;
 
             if (flightEvent == FlightDetector.EVENT_START
                 || flightEvent == FlightDetector.EVENT_END) {
@@ -97,11 +100,15 @@ class SessionController {
             if (turnEvent >= TurnDetector.EVENT_FLEW) {
                 AlertManager.turnOutcome(engine.turns.lastOutcome);
             }
+            if (pumpEvent == PumpDetector.EVENT_TAKEOFF) {
+                AlertManager.takeoff();
+            }
             if (_fit != null) {
                 _fit.setRecord(engine.detector.state, engine.tickCount(),
-                    FitFields.markerFor(turnEvent, engine.turns.lastKind));
+                    FitFields.markerFor(turnEvent, engine.turns.lastKind),
+                    engine.pump.cadence);
                 _fit.updateSession(engine.detector, engine.records, engine.timerS,
-                    engine.turns);
+                    engine.turns, engine.pump);
             }
             _intervalAlerts();
         } else {
@@ -189,7 +196,70 @@ class SessionController {
         _fit = new FitFields(_session);
         _session.start();
         state = STATE_RECORDING;
+        _startAccel();
         return true;
+    }
+
+    // Live accelerometer for PumpDetector. This is a SECOND consumer of the accelerometer:
+    // the SensorLogger above writes the raw stream into the FIT for the phone/lab, this
+    // listener hands the same motion to the watch's own detector. Only one data listener may
+    // exist per app, so registration is attempted exactly once per session and any refusal
+    // (or a device that cannot reach the 25 Hz grid) simply leaves pump metrics at zero —
+    // raw logging, the validation vehicle, must never be the thing that breaks.
+    hidden function _startAccel() as Void {
+        if (!AppSettings.pumpDetection || !(Toybox has :Sensor)) {
+            return;
+        }
+        // class consts are instance-scoped in Monkey C, hence engine.pump.GRID_HZ
+        var rate = engine.pump.GRID_HZ;
+        try {
+            if (Sensor has :getMaxSampleRateForSensorType) {
+                var m = Sensor.getMaxSampleRateForSensorType(:accelerometer);
+                if (m != null && (m as Number) < rate) {
+                    rate = m as Number;
+                }
+            } else if (Sensor has :getMaxSampleRate) {
+                var g = Sensor.getMaxSampleRate();
+                if (g != null && (g as Number) < rate) {
+                    rate = g as Number;
+                }
+            }
+            Sensor.registerSensorDataListener(method(:onAccelData), {
+                :period => 1,
+                :accelerometer => {:enabled => true, :sampleRate => rate}
+            });
+            engine.pump.start(rate);
+            _accelOn = true;
+        } catch (e) {
+            engine.pump.stop();
+            _accelOn = false;
+        }
+    }
+
+    hidden function _stopAccel() as Void {
+        engine.pump.stop();
+        if (!_accelOn) {
+            return;
+        }
+        _accelOn = false;
+        try {
+            Sensor.unregisterSensorDataListener();
+        } catch (e) {
+        }
+    }
+
+    // One batch of high-rate accelerometer samples (~1 s at 25 Hz). Paused time is a hole in
+    // the stream, not quiet water, so the filter restarts rather than splicing across it.
+    function onAccelData(data as Sensor.SensorData) as Void {
+        if (state != STATE_RECORDING) {
+            engine.pump.resetFilter();
+            return;
+        }
+        var accel = data.accelerometerData;
+        if (accel == null) {
+            return;
+        }
+        engine.pump.onAccelBatch(accel.x, accel.y, accel.z, System.getTimer());
     }
 
     hidden function _sport() as Activity.Sport {
@@ -223,8 +293,10 @@ class SessionController {
         if (state == STATE_RECORDING) {
             _session.stop();
         }
+        _stopAccel();
         if (_fit != null) {
-            _fit.updateSession(engine.detector, engine.records, engine.timerS, engine.turns);
+            _fit.updateSession(engine.detector, engine.records, engine.timerS, engine.turns,
+                engine.pump);
         }
         var ok = _session.save();
         state = STATE_SAVED;
@@ -234,6 +306,7 @@ class SessionController {
     }
 
     function finishDiscard() as Void {
+        _stopAccel();
         if (_session != null) {
             if (state == STATE_RECORDING) {
                 _session.stop();

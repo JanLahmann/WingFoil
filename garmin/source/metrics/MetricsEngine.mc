@@ -26,6 +26,10 @@ class MetricsEngine {
     var turns as TurnDetector;
     var records as SpeedRecords;
     var history as SessionHistory;
+    // App-only: the pump/takeoff detector reads the accelerometer, which a data field may not
+    // touch, so it lives here rather than in the WingFoilCore barrel (docs/fit-schema.md
+    // class d). SessionController owns the sensor listener and feeds it batches.
+    var pump as PumpDetector;
 
     var trackEnabled as Boolean = false;
     var trackLat as Array<Float>?;
@@ -55,9 +59,11 @@ class MetricsEngine {
         turns = new TurnDetector(AppSettings.cfg);
         records = new SpeedRecords();
         history = new SessionHistory();
+        pump = new PumpDetector(AppSettings.cfg);
     }
 
-    // Returns detector event (FlightDetector.EVENT_*) | pbEvents<<4 | turnEvent<<8.
+    // Returns detector event (FlightDetector.EVENT_*) | pbEvents<<4 | turnEvent<<8
+    // | pumpEvent<<12.
     function tick(info as Position.Info) as Number {
         var now = System.getTimer();
         var dt = _lastMs > 0 ? (now - _lastMs) / 1000.0 : 1.0;
@@ -97,6 +103,9 @@ class MetricsEngine {
             // don't feed garbage into detectors/records; windows must restart cleanly
             records.onGap();
             turns.onGap();
+            // an open pumping effort can no longer be judged: the lab calls that `unknown`
+            // and drops it from every tally rather than calling it a failure
+            pump.onGap();
             return 0;
         }
 
@@ -105,6 +114,12 @@ class MetricsEngine {
         var turnEvent = turns.tick(dt, _cogDeg(info), speedMps, distDelta,
             detector.state == FlightDetector.STATE_ON, submerged);
 
+        // Pumping is judged against the flight and turn state of this same sample: a burst
+        // that starts while flying is in-flight pumping, one inside a turn window is the
+        // rider recovering from that turn, and neither is a takeoff attempt.
+        var pumpEvent = pump.tick(now, detector.state == FlightDetector.STATE_ON,
+            turns.state != TurnDetector.ST_IDLE, flightEvent);
+
         history.tick(dt, detector.state == FlightDetector.STATE_ON, speedMps);
         if (turnEvent >= TurnDetector.EVENT_FLEW) {
             history.logTurn(turns.lastOutcome);
@@ -112,7 +127,7 @@ class MetricsEngine {
         if (trackEnabled) {
             _trackTick(info);
         }
-        return flightEvent | (pbEvents << 4) | (turnEvent << 8);
+        return flightEvent | (pbEvents << 4) | (turnEvent << 8) | (pumpEvent << 12);
     }
 
     // Appends a decimated breadcrumb point. When the buffer fills, every other point is
