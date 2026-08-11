@@ -3,6 +3,7 @@ import Toybox.ActivityRecording;
 import Toybox.Lang;
 import Toybox.Position;
 import Toybox.SensorLogging;
+import Toybox.System;
 import Toybox.WatchUi;
 import WingFoilCore;
 
@@ -18,14 +19,19 @@ class SessionController {
 
     var state as Number = STATE_IDLE;
     var engine as MetricsEngine;
+    var autoPause as AutoPause;
 
     hidden var _session as ActivityRecording.Session?;
     hidden var _fit as FitFields?;
     hidden var _logger;
     hidden var _prevLongest as Float = 0.0;
+    hidden var _apLastMs as Number = 0;
+    hidden var _timeMark as Number = -1;    // last crossed time-alert boundary (-1 = armed)
+    hidden var _distMark as Number = -1;
 
     function initialize() {
         engine = new MetricsEngine();
+        autoPause = new AutoPause();
     }
 
     // ---- GPS ----
@@ -97,12 +103,65 @@ class SessionController {
                 _fit.updateSession(engine.detector, engine.records, engine.timerS,
                     engine.turns);
             }
+            _intervalAlerts();
         } else {
-            // pre-session: surface quality/speed on the start screen
+            // pre-session and paused: keep quality/speed live so the start screen shows
+            // acquisition and auto-pause can see the rider move off again
             engine.gpsQuality = info.accuracy != null ? info.accuracy as Number : 0;
             engine.speedMps = info.speed != null ? info.speed as Float : 0.0;
         }
+        _autoPauseTick();
         WatchUi.requestUpdate();
+    }
+
+    // Auto-pause runs off the position callback, not a timer: no fix, no decision.
+    // Settings are copied in each sample so a GCM change takes effect without a restart.
+    hidden function _autoPauseTick() as Void {
+        if (_session == null || state == STATE_SAVED) {
+            return;
+        }
+        autoPause.enabled = AppSettings.autoPause;
+        autoPause.delayS = AppSettings.autoPauseDelayS;
+
+        var now = System.getTimer();
+        var dt = _apLastMs > 0 ? (now - _apLastMs) / 1000.0 : 1.0;
+        _apLastMs = now;
+        if (dt > 3.0) {
+            dt = 3.0;
+        }
+        var ev = autoPause.tick(dt, engine.speedMps, state == STATE_RECORDING);
+        if (ev == AutoPause.EV_PAUSE) {
+            _session.stop();
+            state = STATE_PAUSED;
+        } else if (ev == AutoPause.EV_RESUME) {
+            _session.start();
+            state = STATE_RECORDING;
+        }
+    }
+
+    // Optional time/distance interval buzz. Both are "0 = off"; the mark counters start at -1
+    // so the first sample only arms them — nobody wants a buzz at t=0.
+    hidden function _intervalAlerts() as Void {
+        var stepS = AppSettings.alertIntervalMin * 60;
+        if (stepS > 0) {
+            var mark = engine.timerS.toNumber() / stepS;
+            if (mark != _timeMark) {
+                if (_timeMark >= 0 && mark > _timeMark) {
+                    AlertManager.interval();
+                }
+                _timeMark = mark;
+            }
+        }
+        var stepM = (AppSettings.alertIntervalKm * 1000.0).toNumber();
+        if (stepM > 0) {
+            var dMark = engine.distM.toNumber() / stepM;
+            if (dMark != _distMark) {
+                if (_distMark >= 0 && dMark > _distMark) {
+                    AlertManager.interval();
+                }
+                _distMark = dMark;
+            }
+        }
     }
 
     // ---- session lifecycle ----
@@ -147,6 +206,7 @@ class SessionController {
         if (_session == null) {
             return;
         }
+        autoPause.reset();   // the rider is driving now; don't undo their pause
         if (state == STATE_RECORDING) {
             _session.stop();
             state = STATE_PAUSED;
