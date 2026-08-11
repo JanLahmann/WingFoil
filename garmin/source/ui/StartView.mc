@@ -71,8 +71,8 @@ class StartDelegate extends WatchUi.BehaviorDelegate {
     function onSelect() as Boolean {
         var app = getApp();
         if (app.controller.startSession()) {
-            WatchUi.switchToView(new RecordingView(), new RecordingDelegate(),
-                WatchUi.SLIDE_IMMEDIATE);
+            PageNav.reset();
+            PageNav.show();
         }
         return true;
     }

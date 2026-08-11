@@ -38,6 +38,12 @@ module AlertManager {
         }
     }
 
+    // Time/distance interval reached: one medium buzz, distinct from the PB double and the
+    // longest-flight long buzz.
+    function interval() as Void {
+        _fire([new Attention.VibeProfile(75, 300)]);
+    }
+
     // Turn outcome resolved. Distinct rhythms so the verdict is readable without looking:
     // flew through = one crisp tick, touchdown = two soft ticks, fell in = three hard ticks.
     function turnOutcome(outcome as Number) as Void {

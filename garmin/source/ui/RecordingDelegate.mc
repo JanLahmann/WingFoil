@@ -1,21 +1,47 @@
 import Toybox.Lang;
 import Toybox.WatchUi;
 
+// Where in the page cycle we are. A module, not view state, because the map page is a whole
+// separate View (MapTrackView cannot be painted inside our own onUpdate) — the index has to
+// survive the swap between RecordingView and MapPageView.
+module PageNav {
+    var index as Number = 0;
+
+    function reset() as Void {
+        index = 0;
+    }
+
+    // Switch to whichever view paints the current page.
+    function show() as Void {
+        var view = PageModel.layoutAt(index) == PageModel.LAYOUT_MAP
+            ? new MapPageView() as WatchUi.View : new RecordingView() as WatchUi.View;
+        WatchUi.switchToView(view, new RecordingDelegate(), WatchUi.SLIDE_IMMEDIATE);
+    }
+
+    // Step `dir` pages and put the right view on screen. Ordinary pages just repaint;
+    // stepping on or off the map page swaps the view.
+    function step(dir as Number) as Void {
+        var wasMap = PageModel.layoutAt(index) == PageModel.LAYOUT_MAP;
+        index = PageModel.wrap(index + dir);
+        if (wasMap || PageModel.layoutAt(index) == PageModel.LAYOUT_MAP) {
+            show();
+        } else {
+            WatchUi.requestUpdate();
+        }
+    }
+}
+
 // Button-first input while recording. Stray wet-touch taps are swallowed; page swipes are
 // harmless and left enabled. Destructive actions live behind BACK -> menu.
+// Shared by RecordingView and MapPageView — paging lives in PageNav, not in the view.
 class RecordingDelegate extends WatchUi.BehaviorDelegate {
 
     function initialize() {
         BehaviorDelegate.initialize();
     }
 
-    hidden function view() as RecordingView? {
-        var v = WatchUi.getCurrentView()[0];
-        return v instanceof RecordingView ? v : null;
-    }
-
     function onSelect() as Boolean {
-        getApp().controller.togglePause();
+        getApp().controller.togglePause();   // manual pause also cancels auto-pause ownership
         WatchUi.requestUpdate();
         return true;
     }
@@ -31,18 +57,12 @@ class RecordingDelegate extends WatchUi.BehaviorDelegate {
     }
 
     function onNextPage() as Boolean {
-        var v = view();
-        if (v != null) {
-            v.nextPage(1);
-        }
+        PageNav.step(1);
         return true;
     }
 
     function onPreviousPage() as Boolean {
-        var v = view();
-        if (v != null) {
-            v.nextPage(-1);
-        }
+        PageNav.step(-1);
         return true;
     }
 

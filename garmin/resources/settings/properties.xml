@@ -13,4 +13,48 @@
     <property id="alertTurn" type="boolean">true</property>
     <!-- wind the turn classifier splits tacks from jibes on; -1 = unset -->
     <property id="windDirDeg" type="number">-1</property>
+    <!-- Feature 3: auto-pause + interval alerts -->
+    <property id="autoPause" type="boolean">false</property>
+    <property id="autoPauseDelayS" type="number">5</property>
+    <property id="alertIntervalMin" type="number">0</property>
+    <property id="alertIntervalKm" type="float">0.0</property>
+
+    <!-- Feature 1: data screens. Defaults reproduce the five shipped pages —
+         mirror of PageModel.DEF_LAYOUT / DEF_SLOTS; change both together. -->
+    <property id="pg1Layout" type="number">1</property>
+    <property id="pg1s1" type="number">1</property>
+    <property id="pg1s2" type="number">4</property>
+    <property id="pg1s3" type="number">9</property>
+    <property id="pg1s4" type="number">0</property>
+    <property id="pg1s5" type="number">0</property>
+    <property id="pg2Layout" type="number">2</property>
+    <property id="pg2s1" type="number">2</property>
+    <property id="pg2s2" type="number">5</property>
+    <property id="pg2s3" type="number">6</property>
+    <property id="pg2s4" type="number">7</property>
+    <property id="pg2s5" type="number">3</property>
+    <property id="pg3Layout" type="number">4</property>
+    <property id="pg3s1" type="number">0</property>
+    <property id="pg3s2" type="number">0</property>
+    <property id="pg3s3" type="number">0</property>
+    <property id="pg3s4" type="number">0</property>
+    <property id="pg3s5" type="number">0</property>
+    <property id="pg4Layout" type="number">5</property>
+    <property id="pg4s1" type="number">0</property>
+    <property id="pg4s2" type="number">0</property>
+    <property id="pg4s3" type="number">0</property>
+    <property id="pg4s4" type="number">0</property>
+    <property id="pg4s5" type="number">0</property>
+    <property id="pg5Layout" type="number">6</property>
+    <property id="pg5s1" type="number">8</property>
+    <property id="pg5s2" type="number">0</property>
+    <property id="pg5s3" type="number">0</property>
+    <property id="pg5s4" type="number">0</property>
+    <property id="pg5s5" type="number">0</property>
+    <property id="pg6Layout" type="number">0</property>
+    <property id="pg6s1" type="number">0</property>
+    <property id="pg6s2" type="number">0</property>
+    <property id="pg6s3" type="number">0</property>
+    <property id="pg6s4" type="number">0</property>
+    <property id="pg6s5" type="number">0</property>
 </properties>

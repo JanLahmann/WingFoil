@@ -18,6 +18,10 @@ module AppSettings {
     var alertPb as Boolean = true;
     var alertFlight as Boolean = true;
     var alertTurn as Boolean = true;
+    var alertIntervalMin as Number = 0;     // 0 = off
+    var alertIntervalKm as Float = 0.0;     // 0 = off
+    var autoPause as Boolean = false;
+    var autoPauseDelayS as Number = 5;
 
     function load() as Void {
         cfg.foilEntryMps = _num("foilEntryKmh", 12.0) / 3.6;
@@ -31,6 +35,13 @@ module AppSettings {
         alertPb = _bool("alertPb", true);
         alertFlight = _bool("alertFlight", true);
         alertTurn = _bool("alertTurn", true);
+        alertIntervalMin = _num("alertIntervalMin", 0.0).toNumber();
+        alertIntervalKm = _num("alertIntervalKm", 0.0);
+        autoPause = _bool("autoPause", false);
+        autoPauseDelayS = _num("autoPauseDelayS", 5.0).toNumber();
+        if (autoPauseDelayS < 2) {
+            autoPauseDelayS = 2;
+        }
         cfg.setWindDirection(_num("windDirDeg", -1.0).toNumber());
         // hysteresis sanity: exit must sit below entry
         cfg.sanitize();

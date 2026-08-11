@@ -16,9 +16,23 @@ class MetricsEngine {
     const BARO_EMA = 0.02;              // ~50 s baseline: follows weather, never a dunk
     const RAD2DEG = 57.29578;
 
+    // Breadcrumb for the optional map page: lat/lon in degrees, Float (~1 m on a wingfoil
+    // spot — plenty for a track line). Only filled when a map page is configured, because
+    // 2 x 128 Floats is memory the other five pages have no use for.
+    const TRACK_MAX = 128;
+    const TRACK_BASE_STRIDE = 5;        // one point every ~5 s at 1 Hz
+
     var detector as FlightDetector;
     var turns as TurnDetector;
     var records as SpeedRecords;
+    var history as SessionHistory;
+
+    var trackEnabled as Boolean = false;
+    var trackLat as Array<Float>?;
+    var trackLon as Array<Float>?;
+    var trackN as Number = 0;
+    hidden var _trackStride as Number = TRACK_BASE_STRIDE;
+    hidden var _trackSkip as Number = 0;
 
     // Live state the views render
     var speedMps as Float = 0.0;
@@ -40,6 +54,7 @@ class MetricsEngine {
         detector = new FlightDetector(AppSettings.cfg);
         turns = new TurnDetector(AppSettings.cfg);
         records = new SpeedRecords();
+        history = new SessionHistory();
     }
 
     // Returns detector event (FlightDetector.EVENT_*) | pbEvents<<4 | turnEvent<<8.
@@ -89,7 +104,52 @@ class MetricsEngine {
         var pbEvents = records.tick(speedMps);
         var turnEvent = turns.tick(dt, _cogDeg(info), speedMps, distDelta,
             detector.state == FlightDetector.STATE_ON, submerged);
+
+        history.tick(dt, detector.state == FlightDetector.STATE_ON, speedMps);
+        if (turnEvent >= TurnDetector.EVENT_FLEW) {
+            history.logTurn(turns.lastOutcome);
+        }
+        if (trackEnabled) {
+            _trackTick(info);
+        }
         return flightEvent | (pbEvents << 4) | (turnEvent << 8);
+    }
+
+    // Appends a decimated breadcrumb point. When the buffer fills, every other point is
+    // dropped and the stride doubles, so the whole session stays on the map at half the
+    // resolution rather than the start scrolling off it.
+    hidden function _trackTick(info as Position.Info) as Void {
+        _trackSkip++;
+        if (_trackSkip < _trackStride) {
+            return;
+        }
+        _trackSkip = 0;
+        var loc = info.position;
+        if (loc == null) {
+            return;
+        }
+        var lat = trackLat;
+        var lon = trackLon;
+        if (lat == null || lon == null) {
+            lat = new [TRACK_MAX] as Array<Float>;
+            lon = new [TRACK_MAX] as Array<Float>;
+            trackLat = lat;
+            trackLon = lon;
+        }
+        if (trackN >= TRACK_MAX) {
+            var j = 0;
+            for (var i = 0; i < trackN; i += 2) {
+                lat[j] = lat[i];
+                lon[j] = lon[i];
+                j++;
+            }
+            trackN = j;
+            _trackStride *= 2;
+        }
+        var d = (loc as Position.Location).toDegrees();
+        lat[trackN] = d[0].toFloat();
+        lon[trackN] = d[1].toFloat();
+        trackN++;
     }
 
     // Course over ground in degrees, or null when the fix carries no heading.
