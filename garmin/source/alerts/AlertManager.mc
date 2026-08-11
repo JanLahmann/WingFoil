@@ -44,6 +44,20 @@ module AlertManager {
         _fire([new Attention.VibeProfile(75, 300)]);
     }
 
+    // A pumped takeoff attempt just worked: short-then-long, the "up and away" shape. Only
+    // fires for attempts (>= pumpMinStrokes of real pumping) — a free takeoff in enough wind
+    // is not an achievement the rider needs told about, and buzzing every flight would make
+    // the channel noise.
+    function takeoff() as Void {
+        if (AppSettings.alertTakeoff) {
+            _fire([
+                new Attention.VibeProfile(50, 150),
+                new Attention.VibeProfile(0, 80),
+                new Attention.VibeProfile(100, 350)
+            ]);
+        }
+    }
+
     // Turn outcome resolved. Distinct rhythms so the verdict is readable without looking:
     // flew through = one crisp tick, touchdown = two soft ticks, fell in = three hard ticks.
     function turnOutcome(outcome as Number) as Void {

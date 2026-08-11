@@ -560,6 +560,219 @@ function turnOutcomeLogCapsAndDropsOldest(logger as Test.Logger) as Boolean {
     return true;
 }
 
+// ---- Pump / takeoff detection ----
+// The headless twin of lab/tests/test_pump.py: the same synthetic wrist traces, driven
+// through the real PumpDetector at the real 25 Hz grid. Every expected count below was first
+// produced by the lab implementation on the identical signal (docs/algorithms.md "Watch
+// approximation"), so a divergence here means the port drifted, not that the numbers moved.
+
+// One second of synthetic wrist motion per call, pushed as the ~25-sample batch a
+// SensorData callback delivers, followed by the 1 Hz context tick MetricsEngine makes.
+class PumpRig {
+    var det as PumpDetector;
+    var ms as Number = 100000;      // a System.getTimer()-like clock
+    var flying as Boolean = false;
+    var turnOpen as Boolean = false;
+    var lastEvent as Number = 0;
+
+    hidden var _t as Float = 0.0;   // seconds of signal generated so far
+    hidden var _buf as Array<Float>;
+
+    function initialize() {
+        det = new PumpDetector(new WingFoilCore.Config());
+        det.start(25);
+        _buf = new [25] as Array<Float>;
+    }
+
+    // |a| = 1 g (a still wrist) + amp*sin(2*pi*f*t) + amp2*sin(2*pi*f2*t + phase2)
+    function run(seconds as Number, f as Float, amp as Float,
+            f2 as Float, amp2 as Float, phase2 as Float) as Void {
+        for (var s = 0; s < seconds; s++) {
+            for (var i = 0; i < 25; i++) {
+                var t = _t + i / 25.0;
+                var v = 1.0 + amp * Math.sin(2.0 * Math.PI * f * t);
+                if (amp2 != 0.0) {
+                    v += amp2 * Math.sin(2.0 * Math.PI * f2 * t + phase2);
+                }
+                _buf[i] = v;
+            }
+            _t += 1.0;
+            ms += 1000;
+            det.pushMagBatch(_buf, ms);
+            lastEvent = det.tick(ms, flying, turnOpen, FlightDetector.EVENT_NONE);
+        }
+    }
+
+    function pump(seconds as Number) as Void {
+        run(seconds, 1.2, 0.6, 0.0, 0.0, 0.0);      // a real burst: ~1.2 Hz, 0.6 g
+    }
+
+    function quiet(seconds as Number) as Void {
+        run(seconds, 1.0, 0.0, 0.0, 0.0, 0.0);
+    }
+
+    // The tick on which the FlightDetector confirms a flight (>= minFlight seconds in).
+    function confirmFlight() as Number {
+        ms += 1000;
+        lastEvent = det.tick(ms, flying, turnOpen, FlightDetector.EVENT_START);
+        return lastEvent;
+    }
+}
+
+// A clean takeoff: pump, get up, flight confirmed. One attempt, one success, and the
+// stroke count of the effort becomes pumps-to-takeoff.
+(:test)
+function pumpBurstBecomesATakeoffAttemptAndSucceeds(logger as Test.Logger) as Boolean {
+    var r = new PumpRig();
+    r.quiet(5);
+    Test.assertEqual(r.det.strokes, 0);              // a still wrist is never pumping
+    r.pump(10);                                       // 10 s at 1.2 Hz => ~12 strokes
+
+    Test.assertMessage(r.det.strokes >= 10 && r.det.strokes <= 14,
+        "10 s at 1.2 Hz gave " + r.det.strokes.toString() + " strokes, lab says 12");
+    Test.assertMessage(r.det.minGapMs >= r.det.REFRACTORY_MS,
+        "strokes " + r.det.minGapMs.toString() + " ms apart beat the refractory");
+    Test.assertMessage(r.det.attemptOpen(), "a qualifying burst must open an effort");
+    Test.assertMessage(r.det.cadence >= 40 && r.det.cadence <= 110,
+        "cadence " + r.det.cadence.toString() + " spm off a 72 spm burst");
+
+    // up on the foil, then the flight is confirmed a few seconds later
+    r.flying = true;
+    r.quiet(3);
+    var burst = r.det.strokes;
+    Test.assertEqual(r.confirmFlight(), PumpDetector.EVENT_TAKEOFF);
+
+    Test.assertEqual(r.det.successes, 1);
+    Test.assertEqual(r.det.failed, 0);
+    Test.assertEqual(r.det.attempts(), 1);
+    Test.assertEqual(r.det.successPct(), 100);
+    Test.assertMessage(r.det.lastPumpsToTakeoff >= 8
+        && r.det.lastPumpsToTakeoff <= burst,
+        "pumps to takeoff " + r.det.lastPumpsToTakeoff.toString()
+            + " out of " + burst.toString() + " strokes");
+    Test.assertEqual(r.det.avgPumpsX10(), r.det.lastPumpsToTakeoff * 10);
+    Test.assertMessage(r.det.lastPumpsToTakeoff >= r.det.FREE_TAKEOFF,
+        "a pumped takeoff is not a free one");
+    logger.debug("takeoff: " + burst.toString() + " strokes, "
+        + r.det.lastPumpsToTakeoff.toString() + " of them in the run");
+    return true;
+}
+
+// Chop is faster and a lean is slower than pumping; wing trim is in band but tiny. None of
+// the three may produce a single stroke (lab test_chop_is_rejected / small_wing_trim).
+(:test)
+function chopAndWobbleAreNotPumping(logger as Test.Logger) as Boolean {
+    var r = new PumpRig();
+    r.run(20, 6.0, 0.5, 0.1, 1.0, 0.0);      // 6 Hz chop over a 0.1 Hz body lean
+    Test.assertMessage(r.det.strokes == 0,
+        "chop + lean produced " + r.det.strokes.toString() + " strokes");
+    r.run(20, 1.2, 0.06, 0.0, 0.0, 0.0);     // in band, far below pumpStrokeAmp
+    Test.assertMessage(r.det.strokes == 0,
+        "wing-trim wobble produced " + r.det.strokes.toString() + " strokes");
+    Test.assertEqual(r.det.attempts(), 0);
+    Test.assertEqual(r.det.cadence, 0);
+    logger.debug("chop (6 Hz), lean (0.1 Hz) and a 0.06 g wobble all rejected");
+    return true;
+}
+
+// A double-humped stroke (1.2 Hz + its 2.4 Hz overtone) puts local maxima ~0.2 s apart. The
+// refractory must swallow the second hump: no human pumps at more than 2.5 strokes/s.
+(:test)
+function refractoryDeadTimeIsEnforced(logger as Test.Logger) as Boolean {
+    var r = new PumpRig();
+    r.quiet(3);
+    r.run(20, 1.2, 0.6, 2.4, 0.5, 1.5);
+    Test.assertMessage(r.det.strokes > 12,
+        "a 20 s two-tone burst is pumping, got " + r.det.strokes.toString());
+    Test.assertMessage(r.det.minGapMs >= r.det.REFRACTORY_MS,
+        "two strokes " + r.det.minGapMs.toString() + " ms apart");
+    // the raw peak train carries ~48 candidates (the 2.4 Hz hump); the dead time must eat
+    // most of them, so the surviving cadence stays physically possible
+    Test.assertMessage(r.det.refractoryDrops > 10,
+        "the dead time swallowed only " + r.det.refractoryDrops.toString() + " peaks");
+    Test.assertMessage(r.det.strokes <= 30,
+        "impossible cadence: " + r.det.strokes.toString() + " strokes in 20 s");
+    logger.debug("two-tone burst: " + r.det.strokes.toString() + " strokes kept, "
+        + r.det.refractoryDrops.toString() + " dropped by the dead time, closest pair "
+        + r.det.minGapMs.toString() + " ms");
+    return true;
+}
+
+// Pumping to hold a glide is not a takeoff attempt — it is counted, separately, and never
+// opens an effort (lab: the `in_flight` episode class).
+(:test)
+function inFlightPumpingIsNotATakeoffAttempt(logger as Test.Logger) as Boolean {
+    var r = new PumpRig();
+    r.flying = true;
+    r.quiet(5);
+    r.pump(10);
+    r.quiet(12);                                  // past takeoffAttemptWindow
+    Test.assertMessage(r.det.strokes >= 10, "in-flight strokes must still be counted");
+    Test.assertEqual(r.det.inFlightStrokes, r.det.strokes);
+    Test.assertMessage(!r.det.attemptOpen(), "no effort may be open while flying");
+    Test.assertEqual(r.det.attempts(), 0);
+    Test.assertEqual(r.det.failed, 0);
+    logger.debug("in-flight: " + r.det.strokes.toString()
+        + " strokes, 0 attempts");
+    return true;
+}
+
+// Pumping the foil back after a jibe touchdown belongs to that turn, which already scored
+// it — counting it again as a failed takeoff would double-charge the same mistake.
+(:test)
+function turnRecoveryBurstIsNotAFailedAttempt(logger as Test.Logger) as Boolean {
+    var r = new PumpRig();
+    r.quiet(5);
+    r.turnOpen = true;                            // a TurnDetector outcome window is running
+    r.pump(10);
+    r.turnOpen = false;
+    r.quiet(12);
+    Test.assertMessage(r.det.strokes >= 10, "recovery strokes are still strokes");
+    Test.assertEqual(r.det.recoveryEpisodes, 1);
+    Test.assertEqual(r.det.failed, 0);
+    Test.assertEqual(r.det.attempts(), 0);
+    logger.debug("recovery burst owned by the turn: 0 attempts, "
+        + r.det.strokes.toString() + " strokes");
+    return true;
+}
+
+// The other half of the differentiator: he pumped and did NOT get up. Also the FIT packing —
+// every session field must survive its uint8/uint16 and read 0 when nothing happened.
+(:test)
+function failedAttemptExpiresAndFitPackingIsSane(logger as Test.Logger) as Boolean {
+    var r = new PumpRig();
+    r.quiet(5);
+    r.pump(10);
+    Test.assertMessage(r.det.attemptOpen(), "effort open while pumping");
+    r.quiet(5);
+    Test.assertMessage(r.det.attemptOpen(),
+        "an effort stays open for takeoffAttemptWindow past the last stroke");
+    r.quiet(8);
+    Test.assertMessage(!r.det.attemptOpen(), "10 s of silence closes the effort");
+    Test.assertEqual(r.det.failed, 1);
+    Test.assertEqual(r.det.successes, 0);
+    Test.assertEqual(r.det.attempts(), 1);
+    Test.assertEqual(r.det.successPct(), 0);
+    Test.assertEqual(r.det.avgPumpsX10(), 0);     // no takeoff: nothing to average
+    Test.assertEqual(r.det.cadence, 0);           // silence reads 0 spm, not stale
+
+    // FIT session 35-38 packing (docs/fit-schema.md)
+    Test.assertMessage(r.det.attempts() <= 254 && r.det.successes <= 254,
+        "uint8 session counters");
+    Test.assertMessage(r.det.strokes < 65535, "uint16 total_pump_strokes");
+    // pump_cadence is a uint8 the refractory bounds at 150 spm
+    Test.assertMessage(r.det.cadence <= 254, "uint8 pump_cadence");
+
+    // a GPS gap drops an unjudgeable effort rather than calling it a failure (lab: `unknown`)
+    r.pump(10);
+    Test.assertMessage(r.det.attemptOpen(), "second effort open");
+    r.det.onGap();
+    r.quiet(12);
+    Test.assertEqual(r.det.failed, 1);
+    logger.debug("failed attempt counted once; a gap drops the effort as unknown");
+    return true;
+}
+
 // ---- Renderer smoke test ----
 // The screenshot pass is the ground truth for "does it look right"; this is the part of it
 // that can run headlessly and on every device: actually PAINT every layout, at worst-case

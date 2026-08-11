@@ -8,9 +8,12 @@
     <property id="useKnots" type="boolean">false</property>
     <property id="sportChoice" type="number">0</property>
     <property id="accelLogging" type="boolean">true</property>
+    <!-- Feature 4: live pump/takeoff detection off the same accelerometer -->
+    <property id="pumpDetection" type="boolean">true</property>
     <property id="alertPb" type="boolean">true</property>
     <property id="alertFlight" type="boolean">true</property>
     <property id="alertTurn" type="boolean">true</property>
+    <property id="alertTakeoff" type="boolean">true</property>
     <!-- wind the turn classifier splits tacks from jibes on; -1 = unset -->
     <property id="windDirDeg" type="number">-1</property>
     <!-- Feature 3: auto-pause + interval alerts -->

@@ -4,7 +4,7 @@ import Toybox.Lang;
 import WingFoilCore;
 
 // Sole writer of FIT developer fields. Field IDs/types are the docs/fit-schema.md contract —
-// change both together. Scope: record 0+3+4, lap 15-16, session 20-27 + 32-34 + 39-43.
+// change both together. Scope: record 0+2+3+4, lap 15-16, session 20-27 + 32-38 + 39-43.
 class FitFields {
     const SCHEMA_VERSION = 1;
     const APP_MINOR = 1;
@@ -21,6 +21,7 @@ class FitFields {
     }
 
     hidden var _foilState as FitContributor.Field;
+    hidden var _pumpCadence as FitContributor.Field;
     hidden var _turnMarker as FitContributor.Field;
     hidden var _tick as FitContributor.Field;
     hidden var _lapTurns as FitContributor.Field;
@@ -41,10 +42,16 @@ class FitFields {
     hidden var _cfgExit as FitContributor.Field;
     hidden var _cfgMinFlight as FitContributor.Field;
     hidden var _appVersion as FitContributor.Field;
+    hidden var _takeoffAttempts as FitContributor.Field;
+    hidden var _takeoffSuccesses as FitContributor.Field;
+    hidden var _avgPumps as FitContributor.Field;
+    hidden var _pumpStrokes as FitContributor.Field;
 
     function initialize(session as ActivityRecording.Session) {
         _foilState = session.createField("foil_state", 0, FitContributor.DATA_TYPE_UINT8,
             {:mesgType => FitContributor.MESG_TYPE_RECORD});
+        _pumpCadence = session.createField("pump_cadence", 2, FitContributor.DATA_TYPE_UINT8,
+            {:mesgType => FitContributor.MESG_TYPE_RECORD, :units => "spm"});
         _turnMarker = session.createField("turn_marker", 3, FitContributor.DATA_TYPE_UINT8,
             {:mesgType => FitContributor.MESG_TYPE_RECORD});
         _tick = session.createField("tick", 4, FitContributor.DATA_TYPE_UINT8,
@@ -79,6 +86,14 @@ class FitFields {
         _turnSuccess = session.createField("turn_success_pct", 34,
             FitContributor.DATA_TYPE_UINT8,
             {:mesgType => FitContributor.MESG_TYPE_SESSION, :units => "%"});
+        _takeoffAttempts = session.createField("takeoff_attempts", 35,
+            FitContributor.DATA_TYPE_UINT8, {:mesgType => FitContributor.MESG_TYPE_SESSION});
+        _takeoffSuccesses = session.createField("takeoff_successes", 36,
+            FitContributor.DATA_TYPE_UINT8, {:mesgType => FitContributor.MESG_TYPE_SESSION});
+        _avgPumps = session.createField("avg_pumps_to_takeoff", 37,
+            FitContributor.DATA_TYPE_UINT8, {:mesgType => FitContributor.MESG_TYPE_SESSION});
+        _pumpStrokes = session.createField("total_pump_strokes", 38,
+            FitContributor.DATA_TYPE_UINT16, {:mesgType => FitContributor.MESG_TYPE_SESSION});
         _windDir = session.createField("wind_dir_user", 39, FitContributor.DATA_TYPE_UINT16,
             {:mesgType => FitContributor.MESG_TYPE_SESSION, :units => "deg"});
         _cfgEntry = session.createField("cfg_entry_speed", 40, FitContributor.DATA_TYPE_UINT16,
@@ -93,6 +108,7 @@ class FitFields {
         _discipline.setData("wingfoil");
         _appVersion.setData(APP_MINOR * 256 + SCHEMA_VERSION);
         _foilState.setData(0);
+        _pumpCadence.setData(0);
         _turnMarker.setData(MARK_NONE);
         _tick.setData(0);
         _lapTurns.setData(0);
@@ -116,6 +132,10 @@ class FitFields {
         return MARK_NONE;
     }
 
+    hidden function _u8(v as Number) as Number {
+        return v < 0 ? 0 : (v > 254 ? 254 : v);
+    }
+
     hidden function _cms(mps as Float) as Number {
         var v = (mps * 100.0).toNumber();
         return v < 0 ? 0 : (v > 65535 ? 65535 : v);
@@ -123,8 +143,12 @@ class FitFields {
 
     // Called every engine tick (values persist at last level between writes) — turnMarker is
     // therefore rewritten every second, so a marker marks exactly its own second.
-    function setRecord(foilState as Number, tick as Number, turnMarker as Number) as Void {
+    function setRecord(foilState as Number, tick as Number, turnMarker as Number,
+            pumpCadence as Number) as Void {
         _foilState.setData(foilState);
+        // 0 = not pumping (or no detector); 254 caps a uint8 that can never legitimately
+        // exceed ~150 spm anyway (pumpRefractory bounds it at 150).
+        _pumpCadence.setData(pumpCadence < 0 ? 0 : (pumpCadence > 254 ? 254 : pumpCadence));
         _turnMarker.setData(turnMarker);
         // 0xFF is FIT's uint8 invalid sentinel -- roll 0-254 so no tick decodes as absent.
         _tick.setData(tick % 255);
@@ -138,7 +162,7 @@ class FitFields {
 
     // Called continuously while recording (session msg is written once at save with last values).
     function updateSession(detector as FlightDetector, records as SpeedRecords,
-            timerS as Float, turns as TurnDetector) as Void {
+            timerS as Float, turns as TurnDetector, pump as PumpDetector) as Void {
         _foilTime.setData(detector.foilTimeS.toNumber());
         var pct = timerS > 0 ? (detector.foilTimeS / timerS * 100.0).toNumber() : 0;
         _foilPct.setData(pct > 100 ? 100 : pct);
@@ -150,6 +174,13 @@ class FitFields {
         _tackCount.setData(turns.tackCount > 254 ? 254 : turns.tackCount);
         _jibeCount.setData(turns.jibeCount > 254 ? 254 : turns.jibeCount);
         _turnSuccess.setData(turns.successPct());
+        // Takeoff/pump block (docs/fit-schema.md session 35-38). Every counter is a live
+        // watch value; the phone recomputes all four from the raw accel stream and the
+        // divergence check compares them.
+        _takeoffAttempts.setData(_u8(pump.attempts()));
+        _takeoffSuccesses.setData(_u8(pump.successes));
+        _avgPumps.setData(pump.avgPumpsX10());
+        _pumpStrokes.setData(pump.strokes > 65534 ? 65534 : pump.strokes);
         // 65535 = unset, per docs/fit-schema.md session field 39
         _windDir.setData(AppSettings.cfg.windDirection < 0 ? 65535 : AppSettings.cfg.windDirection);
         _cfgEntry.setData(_cms(AppSettings.cfg.foilEntryMps));
