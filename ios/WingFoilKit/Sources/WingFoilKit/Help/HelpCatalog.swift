@@ -29,29 +29,57 @@ public struct HelpTopic: Sendable, Identifiable, Equatable {
     public let summary: String
     public let body: [String]
     public let items: [Item]
+    /// Outbound links the topic offers (intervals.icu, so far).
+    public let links: [HelpLink]
+    /// An in-app destination the topic can send the reader to. Data rather than a
+    /// hard-coded `if id == …` in the sheet, so the test suite can assert the setup
+    /// topic actually offers its shortcut.
+    public let action: HelpAction?
     /// Topics worth reading next; every id here must resolve (asserted in the tests).
     public let related: [HelpTopicID]
 
     public init(id: HelpTopicID, section: HelpSection, title: String, summary: String,
-                body: [String], items: [Item] = [], related: [HelpTopicID] = []) {
+                body: [String], items: [Item] = [], links: [HelpLink] = [],
+                action: HelpAction? = nil, related: [HelpTopicID] = []) {
         self.id = id
         self.section = section
         self.title = title
         self.summary = summary
         self.body = body
         self.items = items
+        self.links = links
+        self.action = action
         self.related = related
     }
 }
 
+/// A labelled outbound URL. Shared by the help topics and the onboarding card so a link
+/// is written once and rendered by both.
+public struct HelpLink: Sendable, Equatable {
+    public let title: String
+    public let url: URL
+
+    public init(title: String, url: URL) {
+        self.title = title
+        self.url = url
+    }
+}
+
+/// An in-app destination a help topic can offer as a button.
+public enum HelpAction: String, Sendable, Equatable {
+    /// Opens WingFoil's own Settings screen, scrolled to the intervals.icu section.
+    case openIcuSettings
+}
+
 /// Where a topic sits in the Help index.
 public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
-    case foil, records, turns, takeoff, effort, conditions, quality
+    case setup, foil, records, turns, takeoff, effort, conditions, quality
 
     public var id: String { rawValue }
 
     public var title: String {
         switch self {
+        case .setup: "Getting set up"
         case .foil: "On the foil"
         case .records: "Speed records"
         case .turns: "Turns & losses"
@@ -64,6 +92,7 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
 
     public var symbol: String {
         switch self {
+        case .setup: "link"
         case .foil: "figure.wave"
         case .records: "speedometer"
         case .turns: "arrow.triangle.turn.up.right.diamond"
@@ -77,6 +106,7 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
 
 /// Every explainable metric, as an enum so a `?` button cannot point at a missing topic.
 public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
+    case icuSetup, icuTroubleshooting, icuPrivacy
     case foilPct, flights, longestFlight, distance
     case recordSet, best2s, best10s, best5x10s, best500m, bestNm, alpha500, uncertified
     case turnTypes, turnOutcomes, turnSuccess, portStarboard, falls, touchdowns, glideOuts
@@ -93,6 +123,53 @@ public enum HelpCatalog {
     /// Every topic, in reading order. `topics` is the single source; the lookups below
     /// are derived from it, so a topic cannot exist in one and not the other.
     public static let topics: [HelpTopic] = [
+
+        // MARK: Getting set up
+        //
+        // The steps are not written here: they come from `IcuSetupGuide`, which the
+        // empty-library setup card renders too. One wording, two screens.
+
+        HelpTopic(
+            id: .icuSetup, section: .setup, title: "Get set up with intervals.icu",
+            summary: "Four steps, about five minutes, once.",
+            body: [
+                IcuSetupGuide.rationale,
+                "Nothing is uploaded and nothing is changed on either side: WingFoil lists "
+                + "your activities, downloads the original FIT of the watersport ones, and "
+                + "analyses them on the phone.",
+            ],
+            items: IcuSetupGuide.steps.map {
+                .init(term: "\($0.number). \($0.title)", detail: $0.detail)
+            },
+            links: [HelpLink(title: "Open intervals.icu", url: IcuSetupGuide.intervalsURL)],
+            action: .openIcuSettings,
+            related: [.icuTroubleshooting, .icuPrivacy, .sourceClass]),
+
+        HelpTopic(
+            id: .icuTroubleshooting, section: .setup, title: "When the sync does not work",
+            summary: "The four things that actually go wrong, and the fix for each.",
+            body: [
+                "Every failure WingFoil can see is reported as a cause rather than as a "
+                + "stack trace, because the fix is different in each case — a rejected key "
+                + "is your key, an empty list is usually Garmin not being connected yet, and "
+                + "a network error is neither.",
+            ],
+            items: IcuSetupGuide.troubleshooting,
+            links: [HelpLink(title: "Open intervals.icu", url: IcuSetupGuide.intervalsURL)],
+            action: .openIcuSettings,
+            related: [.icuSetup, .icuPrivacy]),
+
+        HelpTopic(
+            id: .icuPrivacy, section: .setup, title: "Where your API key is kept",
+            summary: "In the iOS Keychain, on this phone, and sent only to intervals.icu.",
+            body: [
+                IcuSetupGuide.privacyNote,
+                "The key is a personal read/write token for your intervals.icu account, so "
+                + "treat it like a password: do not paste it into a screenshot or a chat. "
+                + "If you ever do, regenerate it in Developer Settings and paste the new one "
+                + "here — the old key stops working the moment you regenerate.",
+            ],
+            related: [.icuSetup, .icuTroubleshooting]),
 
         // MARK: On the foil
 

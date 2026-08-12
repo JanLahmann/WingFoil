@@ -5,9 +5,8 @@ struct SettingsView: View {
     @Environment(SessionStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 
-    @State private var keyDraft = ""
-    @State private var keyLoaded = false
     @State private var confirmReanalyze = false
+    @State private var setupTopic: HelpTopicID?
 
     var body: some View {
         NavigationStack {
@@ -29,12 +28,8 @@ struct SettingsView: View {
                     Button("Done") { dismiss() }
                 }
             }
-            .task {
-                guard !keyLoaded else { return }
-                keyDraft = store.apiKey
-                keyLoaded = true
-                await store.refreshStorage()
-            }
+            .task { await store.refreshStorage() }
+            .sheet(item: $setupTopic) { HelpTopicSheet(id: $0) }
             .confirmationDialog("Re-run analysis for all sessions?",
                                 isPresented: $confirmReanalyze, titleVisibility: .visible) {
                 Button("Re-analyze \(store.sessions.count) sessions") {
@@ -66,13 +61,10 @@ struct SettingsView: View {
 
     private var icuSection: some View {
         Section {
-            SecureField("Personal API key", text: $keyDraft)
-                .textContentType(.password)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .disabled(store.apiKeyIsInjected)
-            Button("Save key") { store.setApiKey(keyDraft) }
-                .disabled(store.apiKeyIsInjected || keyDraft == store.apiKey)
+            // Typing the key and proving it works is one action, and it is the same view
+            // the first-run setup card embeds — one storage path, one verdict wording.
+            IcuKeyEntry()
+                .padding(.vertical, 4)
             Button {
                 Task { await store.syncFromIntervals() }
             } label: {
@@ -85,16 +77,18 @@ struct SettingsView: View {
             if let last = store.lastSyncDate {
                 LabeledContent("Last sync", value: Fmt.date(last))
             }
+            Button { setupTopic = .icuSetup } label: {
+                Label("How to get a key (4 steps)", systemImage: "list.number")
+            }
+            Button { setupTopic = .icuTroubleshooting } label: {
+                Label("Sync not working?", systemImage: "wrench.and.screwdriver")
+            }
         } header: {
             Text("intervals.icu")
         } footer: {
-            if store.apiKeyIsInjected {
-                Text("Using the ICU_API_KEY scheme environment variable (DEBUG build).")
-            } else {
-                Text("intervals.icu → Settings → Developer → API Key. Stored in the "
-                     + "keychain and sent as HTTP Basic user \"API_KEY\". Downloads the "
-                     + "original FIT of every windsurf/wing activity.")
-            }
+            Text("Downloads the original FIT of every windsurf, wing, kite, surf and SUP "
+                 + "activity in your intervals.icu account, going two years back. "
+                 + "Activities already in the library are never downloaded again.")
         }
     }
 

@@ -408,6 +408,7 @@ final class SessionStore {
         let key = apiKey
         guard !key.isEmpty else {
             status = "Add your intervals.icu API key in Settings"
+            setProblem(IcuProblem(kind: .noKey))
             return
         }
         isBusy = true
@@ -422,13 +423,91 @@ final class SessionStore {
                 return try await service.sync(oldest: oldest)
             }.value
             status = summary.shortDescription
+            // A sync can succeed and still leave the library empty (Garmin not connected
+            // in intervals.icu yet). That is a cause the setup card can name, not a crash.
+            setProblem(IcuDiagnosis.describe(summary))
             if !summary.failed.isEmpty { errorMessage = summary.failed.joined(separator: "\n") }
             lastSyncDate = Date()
         } catch {
+            let problem = IcuDiagnosis.describe(error)
+            setProblem(problem)
             status = nil
-            errorMessage = "intervals.icu sync failed: \(error)"
+            // On an empty library the setup card already carries this cause *and* its fix,
+            // in place. A modal on top of it is the same sentence twice.
+            if !sessions.isEmpty { errorMessage = problem.alertText }
         }
         await load()
+    }
+
+    // MARK: - Onboarding
+
+    /// What an empty library should offer: the four-step setup, the cause of the last
+    /// failure, or nothing at all. The decision itself is a pure function in the kit.
+    var onboardingState: IcuOnboardingState {
+        IcuOnboarding.state(sessionCount: sessions.count,
+                            hasKey: !apiKey.isEmpty,
+                            lastProblem: lastSyncProblem)
+    }
+
+    /// The mapped cause of the last sync or key check, kept across launches so the setup
+    /// card can still say *why* nothing arrived.
+    private(set) var lastSyncProblem: IcuProblem? = SessionStore.loadProblem()
+
+    /// Result of the last "save & check" — the inline line under the key field.
+    private(set) var keyCheck: IcuKeyCheck?
+    private(set) var isCheckingKey = false
+
+    private static let problemKey = "lastIcuProblem.v1"
+
+    private static func loadProblem() -> IcuProblem? {
+        guard let data = UserDefaults.standard.data(forKey: problemKey) else { return nil }
+        return try? JSONDecoder().decode(IcuProblem.self, from: data)
+    }
+
+    private func setProblem(_ problem: IcuProblem?) {
+        lastSyncProblem = problem
+        if let problem, let data = try? JSONEncoder().encode(problem) {
+            UserDefaults.standard.set(data, forKey: Self.problemKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: Self.problemKey)
+        }
+    }
+
+    /// Saves the key and immediately proves whether it works, because "saved" and "works"
+    /// are different facts and only one of them is worth telling the rider.
+    func saveAndCheckApiKey(_ key: String) async {
+        setApiKey(key)
+        await checkApiKey()
+    }
+
+    /// One list call, no downloads. The key itself never leaves the keychain wrapper and
+    /// is never logged — only the *outcome* is ever put on screen.
+    func checkApiKey() async {
+        let key = apiKey
+        guard !key.isEmpty else {
+            keyCheck = .failure(IcuProblem(kind: .noKey))
+            setProblem(nil)                    // no key is a missing step, not a failure
+            return
+        }
+        guard !isCheckingKey else { return }
+        isCheckingKey = true
+        status = "Checking the key with intervals.icu…"
+        let result = await Task.detached(priority: .userInitiated) {
+            await IcuDiagnosis.check(IcuClient(apiKey: key))
+        }.value
+        isCheckingKey = false
+        keyCheck = result
+        switch result {
+        case .success(let report):
+            status = report.message
+            setProblem(report.caveat)
+            // The key works and there is something to fetch: do it now rather than making
+            // the first-run user discover pull-to-refresh.
+            if report.watersports > 0, sessions.isEmpty { await syncFromIntervals() }
+        case .failure(let problem):
+            status = nil
+            setProblem(problem)
+        }
     }
 
     // MARK: - Analysis maintenance
@@ -472,6 +551,7 @@ final class SessionStore {
 
     func setApiKey(_ key: String) {
         let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        keyCheck = nil                          // a new key has not been proven yet
         if trimmed.isEmpty {
             Keychain.remove(Keychain.icuApiKey)
             status = "API key removed"
@@ -496,4 +576,39 @@ final class SessionStore {
         get { UserDefaults.standard.object(forKey: "lastIcuSync") as? Date }
         set { UserDefaults.standard.set(newValue, forKey: "lastIcuSync") }
     }
+
+    #if DEBUG
+    /// Headless-driving hook (same family as `UI_IMPORT_FIXTURES` / `UI_TAB`): `UI_RESET=1`
+    /// puts the app back into its fresh-install state — no key, no sessions, no stored
+    /// sync history — so the first-run screens can be screenshotted without uninstalling.
+    ///
+    /// Simulator only, and it runs *before* the store exists, because the store reads the
+    /// keychain in a property initialiser.
+    static func resetIfRequested() {
+        #if targetEnvironment(simulator)
+        guard ProcessInfo.processInfo.environment["UI_RESET"] == "1" else { return }
+        Keychain.remove(Keychain.icuApiKey)
+        for key in ["lastIcuSync", problemKey, pbSnapshotKey, "healthExported",
+                    "healthWriteEnabled"] {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+        let fm = FileManager.default
+        for url in [try? AppPaths.databaseURL(), try? AppPaths.sessionsRoot()] {
+            if let url { try? fm.removeItem(at: url) }
+        }
+        // `UI_ICU_KEY=…` seeds a key through the real keychain path afterwards, which is
+        // how the "key stored, sync failed" card gets driven without typing.
+        if let seed = ProcessInfo.processInfo.environment["UI_ICU_KEY"], !seed.isEmpty {
+            Keychain.set(seed, for: Keychain.icuApiKey)
+        }
+        // GRDB's WAL and shared memory outlive the main file; a stale WAL would restore
+        // the very rows this hook exists to remove.
+        if let db = try? AppPaths.databaseURL() {
+            for suffix in ["-wal", "-shm"] {
+                try? fm.removeItem(at: URL(fileURLWithPath: db.path + suffix))
+            }
+        }
+        #endif
+    }
+    #endif
 }
