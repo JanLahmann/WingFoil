@@ -1,0 +1,511 @@
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 1; @symbol_importdef<0> = [Toybox,1,7,13]; @symbol_importdef<1> = [Lang,1,14,18]; ]
+import Toybox.Lang;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 3; @symbol_moduledef = [WingFoilCore,3,7,19]; ]
+module WingFoilCore {
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 3; ]
+    <init> {
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 17; @symbol_classdef = [FlightDetector,17,6,20]; ]
+    class FlightDetector {
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 17; ]
+        <init> {
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 29 8 ]
+            symbol [ STATE_OFF %tmp.2 29 26 35 ];
+            %tmp.2 = getv ? :STATE_OFF;
+            putv self :state %tmp.2;
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 17; ]
+        static
+        <init> {
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 19; ]
+        static
+        enum {
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 20; @position = 8; @symbol_enumdec = [STATE_OFF,20,8,17]; ]
+            STATE_OFF = 0,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 21; @position = 8; @symbol_enumdec = [STATE_ON,21,8,16]; ]
+            STATE_ON = 2
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 23; ]
+        static
+        enum {
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 24; @position = 8; @symbol_enumdec = [EVENT_NONE,24,8,18]; ]
+            EVENT_NONE = 0,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 25; @position = 8; @symbol_enumdec = [EVENT_START,25,8,19]; ]
+            EVENT_START = 1,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 26; @position = 8; @symbol_enumdec = [EVENT_END,26,8,17]; ]
+            EVENT_END = 2
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 29; @position = 8; @symbol_vardef = [state,29,8,13]; @symbol_type<0> = [Number,29,17,23]; ]
+        var state as Number;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 30; @position = 8; @symbol_vardef = [flightCount,30,8,19]; @symbol_type<0> = [Number,30,23,29]; ]
+        var flightCount as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 31; @position = 8; @symbol_vardef = [foilTimeS,31,8,17]; @symbol_type<0> = [Float,31,21,26]; ]
+        var foilTimeS as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 32; @position = 8; @symbol_vardef = [longestS,32,8,16]; @symbol_type<0> = [Float,32,20,25]; ]
+        var longestS as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 33; @position = 8; @symbol_vardef = [longestM,33,8,16]; @symbol_type<0> = [Float,33,20,25]; ]
+        var longestM as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 34; @position = 8; @symbol_vardef = [currentFlightS,34,8,22]; @symbol_type<0> = [Float,34,26,31]; ]
+        var currentFlightS as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 35; @position = 8; @symbol_vardef = [currentFlightM,35,8,22]; @symbol_type<0> = [Float,35,26,31]; ]
+        var currentFlightM as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 37; @position = 15; @symbol_vardef = [_entryAccum,37,15,26]; @symbol_type<0> = [Float,37,30,35]; ]
+        protected
+        var _entryAccum as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 38; @position = 15; @symbol_vardef = [_entryRun,38,15,24]; @symbol_type<0> = [Boolean,38,28,35]; ]
+        protected
+        var _entryRun as Boolean = false;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 39; @position = 15; @symbol_vardef = [_exitAccum,39,15,25]; @symbol_type<0> = [Float,39,29,34]; ]
+        protected
+        var _exitAccum as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 40; @position = 15; @symbol_vardef = [_exitRun,40,15,23]; @symbol_type<0> = [Boolean,40,27,34]; ]
+        protected
+        var _exitRun as Boolean = false;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 41; @position = 15; @symbol_vardef = [_exitDistAccum,41,15,29]; @symbol_type<0> = [Float,41,33,38]; ]
+        protected
+        var _exitDistAccum as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 42; @position = 15; @symbol_vardef = [_confirmed,42,15,25]; @symbol_type<0> = [Boolean,42,29,36]; ]
+        protected
+        var _confirmed as Boolean = false;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 47; @position = 15; @symbol_vardef = [_cfg,47,15,19]; @symbol_type<0> = [Config,47,23,29]; ]
+        protected
+        var _cfg as Config;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 49; @symbol_functiondef = [initialize,49,13,23]; @symbol_param<0> = [cfg,49,24,27]; @symbol_param<0>_type<0> = [Config,49,31,37]; ]
+        function initialize(cfg as Config) as Void {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_49_39_51_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 50 8 ]
+            %tmp.1 = lgetv %cfg;
+            symbol [ cfg %tmp.1 50 15 18 ];
+            symbol [ _cfg ? 50 8 12 ];
+            putv self :_cfg %tmp.1;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_49_39_51_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 54; @symbol_functiondef = [tick,54,13,17]; @symbol_param<0> = [dt,54,18,20]; @symbol_param<0>_type<0> = [Float,54,24,29]; @symbol_param<1> = [speedMps,54,31,39]; @symbol_param<1>_type<0> = [Float,54,43,48]; @symbol_param<2> = [distDelta,54,50,59]; @symbol_param<2>_type<0> = [Float,54,63,68]; @symbol_return<0> = [Number,54,73,79]; ]
+        function tick(dt as Float, speedMps as Float, distDelta as Float) as Number {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_54_80_137_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 55 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_55_8_80_8_if_stmt:
+            symbol [ state %tmp.2 55 12 17 ];
+            %tmp.2 = getv ? :state;
+            symbol [ STATE_OFF %tmp.4 55 21 30 ];
+            %tmp.4 = getv ? :STATE_OFF;
+            %tmp.5 = eq %tmp.2 %tmp.4;
+            bf %tmp.5 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_55_8_80_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_55_8_80_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_55_32_80_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 56 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_56_12_78_12_if_stmt:
+            %tmp.6 = lgetv %speedMps;
+            symbol [ speedMps %tmp.6 56 16 24 ];
+            symbol [ _cfg %tmp.8 56 28 32 ];
+            %tmp.8 = getv ? :_cfg;
+            symbol [ foilEntryMps %tmp.9 56 33 45 ];
+            %tmp.9 = getv %tmp.8 :foilEntryMps;
+            %tmp.10 = gte %tmp.6 %tmp.9;
+            bf %tmp.10 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_56_12_78_12_if_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_56_12_78_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_56_47_75_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 57 16 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_57_16_62_16_if_stmt:
+            symbol [ _entryRun %tmp.12 57 20 29 ];
+            %tmp.12 = getv ? :_entryRun;
+            bf %tmp.12 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_57_16_62_16_if_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_57_16_62_16_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_57_31_59_16_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 58 20 ]
+            symbol [ _entryAccum %tmp.13 58 20 31 ];
+            %tmp.13 = getv self :_entryAccum;
+            %tmp.14 = lgetv %dt;
+            symbol [ dt %tmp.14 58 35 37 ];
+            %tmp.15 = add %tmp.13 %tmp.14;
+            symbol [ _entryAccum ? 58 20 31 ];
+            putv self :_entryAccum dup %tmp.15;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_57_31_59_16_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_57_16_62_16_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_57_16_62_16_if_else_false:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_59_23_62_16_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 60 20 ]
+            %tmp.16 = true;
+            symbol [ _entryRun ? 60 20 29 ];
+            putv self :_entryRun %tmp.16;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 61 20 ]
+            %tmp.17 = 0.0;
+            symbol [ _entryAccum ? 61 20 31 ];
+            putv self :_entryAccum %tmp.17;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_59_23_62_16_stop:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_57_16_62_16_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 63 16 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_63_16_74_16_if_stmt:
+            symbol [ _entryAccum %tmp.19 63 20 31 ];
+            %tmp.19 = getv ? :_entryAccum;
+            symbol [ _cfg %tmp.21 63 35 39 ];
+            %tmp.21 = getv ? :_cfg;
+            symbol [ entryHoldS %tmp.22 63 40 50 ];
+            %tmp.22 = getv %tmp.21 :entryHoldS;
+            %tmp.23 = gte %tmp.19 %tmp.22;
+            bf %tmp.23 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_63_16_74_16_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_63_16_74_16_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_63_52_74_16_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 64 20 ]
+            symbol [ STATE_ON %tmp.25 64 28 36 ];
+            %tmp.25 = getv ? :STATE_ON;
+            symbol [ state ? 64 20 25 ];
+            putv self :state %tmp.25;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 65 20 ]
+            %tmp.26 = false;
+            symbol [ _confirmed ? 65 20 30 ];
+            putv self :_confirmed %tmp.26;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 67 20 ]
+            symbol [ _entryAccum %tmp.28 67 37 48 ];
+            %tmp.28 = getv ? :_entryAccum;
+            symbol [ currentFlightS ? 67 20 34 ];
+            putv self :currentFlightS %tmp.28;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 68 20 ]
+            %tmp.29 = 0.0;
+            symbol [ currentFlightM ? 68 20 34 ];
+            putv self :currentFlightM %tmp.29;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 69 20 ]
+            symbol [ foilTimeS %tmp.30 69 20 29 ];
+            %tmp.30 = getv self :foilTimeS;
+            symbol [ _entryAccum %tmp.32 69 33 44 ];
+            %tmp.32 = getv ? :_entryAccum;
+            %tmp.33 = add %tmp.30 %tmp.32;
+            symbol [ foilTimeS ? 69 20 29 ];
+            putv self :foilTimeS dup %tmp.33;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 70 20 ]
+            %tmp.34 = 0.0;
+            symbol [ _entryAccum ? 70 20 31 ];
+            putv self :_entryAccum %tmp.34;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 71 20 ]
+            %tmp.35 = false;
+            symbol [ _entryRun ? 71 20 29 ];
+            putv self :_entryRun %tmp.35;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 72 20 ]
+            %tmp.36 = 0.0;
+            symbol [ _exitAccum ? 72 20 30 ];
+            putv self :_exitAccum %tmp.36;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 73 20 ]
+            %tmp.37 = false;
+            symbol [ _exitRun ? 73 20 28 ];
+            putv self :_exitRun %tmp.37;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_63_52_74_16_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_63_16_74_16_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_63_16_74_16_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_56_47_75_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_56_12_78_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_56_12_78_12_if_else_false:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_75_19_78_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 76 16 ]
+            %tmp.38 = 0.0;
+            symbol [ _entryAccum ? 76 16 27 ];
+            putv self :_entryAccum %tmp.38;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 77 16 ]
+            %tmp.39 = false;
+            symbol [ _entryRun ? 77 16 25 ];
+            putv self :_entryRun %tmp.39;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_75_19_78_12_stop:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_56_12_78_12_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 79 12 ]
+            symbol [ EVENT_NONE %tmp.41 79 19 29 ];
+            %tmp.41 = getv ? :EVENT_NONE;
+            ret %tmp.41;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_55_32_80_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_55_8_80_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_55_8_80_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 83 8 ]
+            symbol [ foilTimeS %tmp.42 83 8 17 ];
+            %tmp.42 = getv self :foilTimeS;
+            %tmp.43 = lgetv %dt;
+            symbol [ dt %tmp.43 83 21 23 ];
+            %tmp.44 = add %tmp.42 %tmp.43;
+            symbol [ foilTimeS ? 83 8 17 ];
+            putv self :foilTimeS dup %tmp.44;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 84 8 ]
+            symbol [ currentFlightS %tmp.45 84 8 22 ];
+            %tmp.45 = getv self :currentFlightS;
+            %tmp.46 = lgetv %dt;
+            symbol [ dt %tmp.46 84 26 28 ];
+            %tmp.47 = add %tmp.45 %tmp.46;
+            symbol [ currentFlightS ? 84 8 22 ];
+            putv self :currentFlightS dup %tmp.47;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 85 8 ]
+            symbol [ currentFlightM %tmp.48 85 8 22 ];
+            %tmp.48 = getv self :currentFlightM;
+            %tmp.49 = lgetv %distDelta;
+            symbol [ distDelta %tmp.49 85 26 35 ];
+            %tmp.50 = add %tmp.48 %tmp.49;
+            symbol [ currentFlightM ? 85 8 22 ];
+            putv self :currentFlightM dup %tmp.50;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 86 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_54_80_137_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_54_80_137_4_stop" ]
+            %event.1 = local;
+            symbol [ event %event.1 86 12 17 ];
+            symbol [ EVENT_NONE %tmp.52 86 20 30 ];
+            %tmp.52 = getv ? :EVENT_NONE;
+            lputv %event.1 %tmp.52;
+            symbol [ event %event.1 86 12 17 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 90 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_8_94_8_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_12_90_63_begin:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_12_90_28_begin:
+            symbol [ _confirmed %tmp.54 90 13 23 ];
+            %tmp.54 = getv ? :_confirmed;
+            %tmp.55 = not %tmp.54;
+            bf %tmp.55 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_8_94_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_27_90_28_true:
+            symbol [ _exitRun %tmp.57 90 28 36 ];
+            %tmp.57 = getv ? :_exitRun;
+            %tmp.58 = not %tmp.57;
+            push %tmp.58;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_27_90_28_end:
+            %tmp.59 = phi [%tmp.55 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_12_90_28_begin] [%tmp.58 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_27_90_28_true] [%tmp.59 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_27_90_28_end];
+            bf %tmp.59 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_8_94_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_40_90_63_true:
+            symbol [ currentFlightS %tmp.61 90 40 54 ];
+            %tmp.61 = getv ? :currentFlightS;
+            symbol [ _cfg %tmp.63 90 58 62 ];
+            %tmp.63 = getv ? :_cfg;
+            symbol [ minFlightS %tmp.64 90 63 73 ];
+            %tmp.64 = getv %tmp.63 :minFlightS;
+            %tmp.65 = gte %tmp.61 %tmp.64;
+            push %tmp.65;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_40_90_63_end:
+            %tmp.66 = phi [%tmp.59 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_12_90_63_begin] [%tmp.65 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_40_90_63_true] [%tmp.66 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_40_90_63_end];
+            bf %tmp.66 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_8_94_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_8_94_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_75_94_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 91 12 ]
+            %tmp.67 = true;
+            symbol [ _confirmed ? 91 12 22 ];
+            putv self :_confirmed %tmp.67;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 92 12 ]
+            symbol [ flightCount %tmp.70 92 12 23 ];
+            %tmp.70 = getv ? :flightCount;
+            %tmp.71 = add %tmp.70 1;
+            symbol [ flightCount ? 92 12 23 ];
+            putv self :flightCount dup %tmp.71;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 93 12 ]
+            symbol [ EVENT_START %tmp.73 93 20 31 ];
+            %tmp.73 = getv ? :EVENT_START;
+            lputv %event.1 %tmp.73;
+            symbol [ event %event.1 93 12 17 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_75_94_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_8_94_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_90_8_94_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 96 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_96_8_135_8_if_stmt:
+            %tmp.74 = lgetv %speedMps;
+            symbol [ speedMps %tmp.74 96 12 20 ];
+            symbol [ _cfg %tmp.76 96 24 28 ];
+            %tmp.76 = getv ? :_cfg;
+            symbol [ foilExitMps %tmp.77 96 29 40 ];
+            %tmp.77 = getv %tmp.76 :foilExitMps;
+            %tmp.78 = lte %tmp.74 %tmp.77;
+            bf %tmp.78 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_96_8_135_8_if_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_96_8_135_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_96_42_131_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 97 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_97_12_104_12_if_stmt:
+            symbol [ _exitRun %tmp.80 97 16 24 ];
+            %tmp.80 = getv ? :_exitRun;
+            bf %tmp.80 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_97_12_104_12_if_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_97_12_104_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_97_26_100_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 98 16 ]
+            symbol [ _exitAccum %tmp.81 98 16 26 ];
+            %tmp.81 = getv self :_exitAccum;
+            %tmp.82 = lgetv %dt;
+            symbol [ dt %tmp.82 98 30 32 ];
+            %tmp.83 = add %tmp.81 %tmp.82;
+            symbol [ _exitAccum ? 98 16 26 ];
+            putv self :_exitAccum dup %tmp.83;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 99 16 ]
+            symbol [ _exitDistAccum %tmp.84 99 16 30 ];
+            %tmp.84 = getv self :_exitDistAccum;
+            %tmp.85 = lgetv %distDelta;
+            symbol [ distDelta %tmp.85 99 34 43 ];
+            %tmp.86 = add %tmp.84 %tmp.85;
+            symbol [ _exitDistAccum ? 99 16 30 ];
+            putv self :_exitDistAccum dup %tmp.86;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_97_26_100_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_97_12_104_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_97_12_104_12_if_else_false:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_100_19_104_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 101 16 ]
+            %tmp.87 = true;
+            symbol [ _exitRun ? 101 16 24 ];
+            putv self :_exitRun %tmp.87;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 102 16 ]
+            %tmp.88 = 0.0;
+            symbol [ _exitAccum ? 102 16 26 ];
+            putv self :_exitAccum %tmp.88;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 103 16 ]
+            %tmp.89 = 0.0;
+            symbol [ _exitDistAccum ? 103 16 30 ];
+            putv self :_exitDistAccum %tmp.89;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_100_19_104_12_stop:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_97_12_104_12_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 105 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_105_12_130_12_if_stmt:
+            symbol [ _exitAccum %tmp.91 105 16 26 ];
+            %tmp.91 = getv ? :_exitAccum;
+            symbol [ _cfg %tmp.93 105 30 34 ];
+            %tmp.93 = getv ? :_cfg;
+            symbol [ exitHoldS %tmp.94 105 35 44 ];
+            %tmp.94 = getv %tmp.93 :exitHoldS;
+            %tmp.95 = gte %tmp.91 %tmp.94;
+            bf %tmp.95 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_105_12_130_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_105_12_130_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_105_46_130_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 107 16 ]
+            symbol [ foilTimeS %tmp.96 107 16 25 ];
+            %tmp.96 = getv self :foilTimeS;
+            symbol [ _exitAccum %tmp.98 107 29 39 ];
+            %tmp.98 = getv ? :_exitAccum;
+            %tmp.99 = sub %tmp.96 %tmp.98;
+            symbol [ foilTimeS ? 107 16 25 ];
+            putv self :foilTimeS dup %tmp.99;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 108 16 ]
+            symbol [ currentFlightS %tmp.100 108 16 30 ];
+            %tmp.100 = getv self :currentFlightS;
+            symbol [ _exitAccum %tmp.102 108 34 44 ];
+            %tmp.102 = getv ? :_exitAccum;
+            %tmp.103 = sub %tmp.100 %tmp.102;
+            symbol [ currentFlightS ? 108 16 30 ];
+            putv self :currentFlightS dup %tmp.103;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 109 16 ]
+            symbol [ currentFlightM %tmp.104 109 16 30 ];
+            %tmp.104 = getv self :currentFlightM;
+            symbol [ _exitDistAccum %tmp.106 109 34 48 ];
+            %tmp.106 = getv ? :_exitDistAccum;
+            %tmp.107 = sub %tmp.104 %tmp.106;
+            symbol [ currentFlightM ? 109 16 30 ];
+            putv self :currentFlightM dup %tmp.107;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 110 16 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_110_16_121_16_if_stmt:
+            symbol [ _confirmed %tmp.109 110 20 30 ];
+            %tmp.109 = getv ? :_confirmed;
+            bf %tmp.109 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_110_16_121_16_if_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_110_16_121_16_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_110_32_118_16_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 111 20 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_111_20_113_20_if_stmt:
+            symbol [ currentFlightS %tmp.111 111 24 38 ];
+            %tmp.111 = getv ? :currentFlightS;
+            symbol [ longestS %tmp.113 111 41 49 ];
+            %tmp.113 = getv ? :longestS;
+            %tmp.114 = gt %tmp.111 %tmp.113;
+            bf %tmp.114 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_111_20_113_20_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_111_20_113_20_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_111_51_113_20_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 112 24 ]
+            symbol [ currentFlightS %tmp.116 112 35 49 ];
+            %tmp.116 = getv ? :currentFlightS;
+            symbol [ longestS ? 112 24 32 ];
+            putv self :longestS %tmp.116;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_111_51_113_20_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_111_20_113_20_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_111_20_113_20_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 114 20 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_114_20_116_20_if_stmt:
+            symbol [ currentFlightM %tmp.118 114 24 38 ];
+            %tmp.118 = getv ? :currentFlightM;
+            symbol [ longestM %tmp.120 114 41 49 ];
+            %tmp.120 = getv ? :longestM;
+            %tmp.121 = gt %tmp.118 %tmp.120;
+            bf %tmp.121 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_114_20_116_20_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_114_20_116_20_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_114_51_116_20_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 115 24 ]
+            symbol [ currentFlightM %tmp.123 115 35 49 ];
+            %tmp.123 = getv ? :currentFlightM;
+            symbol [ longestM ? 115 24 32 ];
+            putv self :longestM %tmp.123;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_114_51_116_20_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_114_20_116_20_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_114_20_116_20_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 117 20 ]
+            symbol [ EVENT_END %tmp.125 117 28 37 ];
+            %tmp.125 = getv ? :EVENT_END;
+            lputv %event.1 %tmp.125;
+            symbol [ event %event.1 117 20 25 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_110_32_118_16_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_110_16_121_16_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_110_16_121_16_if_else_false:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_118_23_121_16_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 120 20 ]
+            symbol [ foilTimeS %tmp.126 120 20 29 ];
+            %tmp.126 = getv self :foilTimeS;
+            symbol [ currentFlightS %tmp.128 120 33 47 ];
+            %tmp.128 = getv ? :currentFlightS;
+            %tmp.129 = sub %tmp.126 %tmp.128;
+            symbol [ foilTimeS ? 120 20 29 ];
+            putv self :foilTimeS dup %tmp.129;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_118_23_121_16_stop:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_110_16_121_16_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 122 16 ]
+            symbol [ STATE_OFF %tmp.131 122 24 33 ];
+            %tmp.131 = getv ? :STATE_OFF;
+            symbol [ state ? 122 16 21 ];
+            putv self :state %tmp.131;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 123 16 ]
+            %tmp.132 = 0.0;
+            symbol [ currentFlightS ? 123 16 30 ];
+            putv self :currentFlightS %tmp.132;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 124 16 ]
+            %tmp.133 = 0.0;
+            symbol [ currentFlightM ? 124 16 30 ];
+            putv self :currentFlightM %tmp.133;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 125 16 ]
+            %tmp.134 = 0.0;
+            symbol [ _entryAccum ? 125 16 27 ];
+            putv self :_entryAccum %tmp.134;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 126 16 ]
+            %tmp.135 = false;
+            symbol [ _entryRun ? 126 16 25 ];
+            putv self :_entryRun %tmp.135;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 127 16 ]
+            %tmp.136 = 0.0;
+            symbol [ _exitAccum ? 127 16 26 ];
+            putv self :_exitAccum %tmp.136;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 128 16 ]
+            %tmp.137 = false;
+            symbol [ _exitRun ? 128 16 24 ];
+            putv self :_exitRun %tmp.137;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 129 16 ]
+            %tmp.138 = 0.0;
+            symbol [ _exitDistAccum ? 129 16 30 ];
+            putv self :_exitDistAccum %tmp.138;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_105_46_130_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_105_12_130_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_105_12_130_12_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_96_42_131_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_96_8_135_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_96_8_135_8_if_else_false:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_131_15_135_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 132 12 ]
+            %tmp.139 = 0.0;
+            symbol [ _exitAccum ? 132 12 22 ];
+            putv self :_exitAccum %tmp.139;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 133 12 ]
+            %tmp.140 = false;
+            symbol [ _exitRun ? 133 12 20 ];
+            putv self :_exitRun %tmp.140;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 134 12 ]
+            %tmp.141 = 0.0;
+            symbol [ _exitDistAccum ? 134 12 26 ];
+            putv self :_exitDistAccum %tmp.141;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_131_15_135_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_96_8_135_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc" 136 8 ]
+            %tmp.142 = lgetv %event.1;
+            symbol [ event %tmp.142 136 15 20 ];
+            ret %tmp.142;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_FlightDetector_mc_54_80_137_4_stop:
+        }
+    }
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/FlightDetector.mc"; @line = 1; ]
+<init> {
+}

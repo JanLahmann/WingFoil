@@ -1,0 +1,3211 @@
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 1; @symbol_importdef<0> = [Toybox,1,7,13]; @symbol_importdef<1> = [Graphics,1,14,22]; ]
+import Toybox.Graphics;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 2; @symbol_importdef<0> = [Toybox,2,7,13]; @symbol_importdef<1> = [Lang,2,14,18]; ]
+import Toybox.Lang;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 3; @symbol_importdef<0> = [Toybox,3,7,13]; @symbol_importdef<1> = [Position,3,14,22]; ]
+import Toybox.Position;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 4; @symbol_importdef<0> = [Toybox,4,7,13]; @symbol_importdef<1> = [Test,4,14,18]; ]
+import Toybox.Test;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 5; @symbol_importdef<0> = [WingFoilCore,5,7,19]; ]
+import WingFoilCore;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 12; @symbol_functiondef = [fieldCfg,12,9,17]; @symbol_return<0> = [WingFoilCore,12,23,35]; @symbol_return<1> = [Config,12,36,42]; ]
+function fieldCfg() as WingFoilCore.Config {
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_12_43_21_0_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 13 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_12_43_21_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_12_43_21_0_stop" ]
+    %cfg.1 = local;
+    symbol [ cfg %cfg.1 13 8 11 ];
+    symbol [ WingFoilCore %tmp.3 13 18 30 ];
+    %tmp.3 = getm $.WingFoilCore;
+    symbol [ Config %tmp.4 13 31 37 ];
+    %tmp.4 = getv function ? %tmp.3 :Config;
+    %tmp.1 = newc %tmp.4 ();
+    lputv %cfg.1 %tmp.1;
+    symbol [ cfg %cfg.1 13 8 11 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 14 4 ]
+    %tmp.5 = lgetv %cfg.1;
+    symbol [ cfg %tmp.5 14 4 7 ];
+    %tmp.6 = 12.0;
+    %tmp.7 = 3.6;
+    %tmp.8 = div %tmp.6 %tmp.7;
+    symbol [ foilEntryMps ? 14 8 20 ];
+    putv %tmp.5 :foilEntryMps %tmp.8;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 15 4 ]
+    %tmp.9 = lgetv %cfg.1;
+    symbol [ cfg %tmp.9 15 4 7 ];
+    %tmp.10 = 8.0;
+    %tmp.11 = 3.6;
+    %tmp.12 = div %tmp.10 %tmp.11;
+    symbol [ foilExitMps ? 15 8 19 ];
+    putv %tmp.9 :foilExitMps %tmp.12;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 16 4 ]
+    %tmp.13 = lgetv %cfg.1;
+    symbol [ cfg %tmp.13 16 4 7 ];
+    %tmp.14 = 2;
+    symbol [ entryHoldS ? 16 8 18 ];
+    putv %tmp.13 :entryHoldS %tmp.14;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 17 4 ]
+    %tmp.15 = lgetv %cfg.1;
+    symbol [ cfg %tmp.15 17 4 7 ];
+    %tmp.16 = 3;
+    symbol [ exitHoldS ? 17 8 17 ];
+    putv %tmp.15 :exitHoldS %tmp.16;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 18 4 ]
+    %tmp.17 = lgetv %cfg.1;
+    symbol [ cfg %tmp.17 18 4 7 ];
+    %tmp.18 = 5;
+    symbol [ minFlightS ? 18 8 18 ];
+    putv %tmp.17 :minFlightS %tmp.18;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 19 4 ]
+    %tmp.19 = lgetv %cfg.1;
+    symbol [ cfg %tmp.19 19 4 7 ];
+    %tmp.20 = -1;
+    symbol [ windDirection ? 19 8 21 ];
+    putv %tmp.19 :windDirection %tmp.20;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 20 4 ]
+    %tmp.21 = lgetv %cfg.1;
+    symbol [ cfg %tmp.21 20 11 14 ];
+    ret %tmp.21;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_12_43_21_0_stop:
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 26; test = true; @symbol_functiondef = [sessionSchemaFitsDataFieldBudget,26,9,41]; @symbol_param<0> = [logger,26,42,48]; @symbol_param<0>_type<0> = [Test,26,52,56]; @symbol_param<0>_type<1> = [Logger,26,57,63]; @symbol_return<0> = [Boolean,26,68,75]; ]
+function sessionSchemaFitsDataFieldBudget(logger as Test.Logger) as Boolean {
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_26_76_60_0_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 30 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_26_76_60_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_26_76_60_0_stop" ]
+    %total.1 = local;
+    symbol [ total %total.1 30 8 13 ];
+    symbol [ SessionPack %tmp.2 30 16 27 ];
+    %tmp.2 = getv ? :SessionPack;
+    symbol [ totalBytes %tmp.3 30 28 38 ];
+    %tmp.3 = getv function %tmp.2 :totalBytes;
+    %tmp.4 = invoke %tmp.2 %tmp.3();
+    lputv %total.1 %tmp.4;
+    symbol [ total %total.1 30 8 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 31 4 ]
+    %tmp.5 = lgetv %logger;
+    symbol [ logger %tmp.5 31 4 10 ];
+    symbol [ debug %tmp.6 31 11 16 ];
+    %tmp.6 = getv function %tmp.5 :debug;
+    %tmp.7 = "session ";
+    %tmp.8 = lgetv %total.1;
+    symbol [ total %tmp.8 31 30 35 ];
+    symbol [ toString %tmp.9 31 36 44 ];
+    %tmp.9 = getv function %tmp.8 :toString;
+    %tmp.10 = invoke %tmp.8 %tmp.9();
+    %tmp.11 = add %tmp.7 %tmp.10;
+    %tmp.12 = " B in ";
+    %tmp.13 = add %tmp.11 %tmp.12;
+    symbol [ SessionPack %tmp.15 32 10 21 ];
+    %tmp.15 = getv ? :SessionPack;
+    symbol [ SLOT_COUNT %tmp.16 32 22 32 ];
+    %tmp.16 = getv %tmp.15 :SLOT_COUNT;
+    symbol [ toString %tmp.17 32 33 41 ];
+    %tmp.17 = getv function %tmp.16 :toString;
+    %tmp.18 = invoke %tmp.16 %tmp.17();
+    %tmp.19 = add %tmp.13 %tmp.18;
+    %tmp.20 = " fields; record ";
+    %tmp.21 = add %tmp.19 %tmp.20;
+    symbol [ SessionPack %tmp.23 33 10 21 ];
+    %tmp.23 = getv ? :SessionPack;
+    symbol [ RECORD_BYTES %tmp.24 33 22 34 ];
+    %tmp.24 = getv %tmp.23 :RECORD_BYTES;
+    symbol [ toString %tmp.25 33 35 43 ];
+    %tmp.25 = getv function %tmp.24 :toString;
+    %tmp.26 = invoke %tmp.24 %tmp.25();
+    %tmp.27 = add %tmp.21 %tmp.26;
+    %tmp.28 = " B in ";
+    %tmp.29 = add %tmp.27 %tmp.28;
+    symbol [ SessionPack %tmp.31 34 10 21 ];
+    %tmp.31 = getv ? :SessionPack;
+    symbol [ RECORD_FIELDS %tmp.32 34 22 35 ];
+    %tmp.32 = getv %tmp.31 :RECORD_FIELDS;
+    symbol [ toString %tmp.33 34 36 44 ];
+    %tmp.33 = getv function %tmp.32 :toString;
+    %tmp.34 = invoke %tmp.32 %tmp.33();
+    %tmp.35 = add %tmp.29 %tmp.34;
+    %tmp.36 = " fields; limits ";
+    %tmp.37 = add %tmp.35 %tmp.36;
+    symbol [ SessionPack %tmp.39 35 10 21 ];
+    %tmp.39 = getv ? :SessionPack;
+    symbol [ LIMIT_BYTES %tmp.40 35 22 33 ];
+    %tmp.40 = getv %tmp.39 :LIMIT_BYTES;
+    symbol [ toString %tmp.41 35 34 42 ];
+    %tmp.41 = getv function %tmp.40 :toString;
+    %tmp.42 = invoke %tmp.40 %tmp.41();
+    %tmp.43 = add %tmp.37 %tmp.42;
+    %tmp.44 = " B / ";
+    %tmp.45 = add %tmp.43 %tmp.44;
+    symbol [ SessionPack %tmp.47 36 10 21 ];
+    %tmp.47 = getv ? :SessionPack;
+    symbol [ LIMIT_FIELDS %tmp.48 36 22 34 ];
+    %tmp.48 = getv %tmp.47 :LIMIT_FIELDS;
+    symbol [ toString %tmp.49 36 35 43 ];
+    %tmp.49 = getv function %tmp.48 :toString;
+    %tmp.50 = invoke %tmp.48 %tmp.49();
+    %tmp.51 = add %tmp.45 %tmp.50;
+    %tmp.52 = " fields";
+    %tmp.53 = add %tmp.51 %tmp.52;
+    invoke %tmp.5 %tmp.6(%tmp.53);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 37 4 ]
+    symbol [ Test %tmp.54 37 4 8 ];
+    %tmp.54 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.55 37 9 22 ];
+    %tmp.55 = getv function %tmp.54 :assertMessage;
+    %tmp.56 = lgetv %total.1;
+    symbol [ total %tmp.56 37 23 28 ];
+    symbol [ SessionPack %tmp.58 37 32 43 ];
+    %tmp.58 = getv ? :SessionPack;
+    symbol [ LIMIT_BYTES %tmp.59 37 44 55 ];
+    %tmp.59 = getv %tmp.58 :LIMIT_BYTES;
+    %tmp.60 = lte %tmp.56 %tmp.59;
+    %tmp.61 = "session message is ";
+    %tmp.62 = lgetv %total.1;
+    symbol [ total %tmp.62 38 32 37 ];
+    symbol [ toString %tmp.63 38 38 46 ];
+    %tmp.63 = getv function %tmp.62 :toString;
+    %tmp.64 = invoke %tmp.62 %tmp.63();
+    %tmp.65 = add %tmp.61 %tmp.64;
+    %tmp.66 = " B, budget is ";
+    %tmp.67 = add %tmp.65 %tmp.66;
+    symbol [ SessionPack %tmp.69 39 10 21 ];
+    %tmp.69 = getv ? :SessionPack;
+    symbol [ LIMIT_BYTES %tmp.70 39 22 33 ];
+    %tmp.70 = getv %tmp.69 :LIMIT_BYTES;
+    symbol [ toString %tmp.71 39 34 42 ];
+    %tmp.71 = getv function %tmp.70 :toString;
+    %tmp.72 = invoke %tmp.70 %tmp.71();
+    %tmp.73 = add %tmp.67 %tmp.72;
+    invoke %tmp.54 %tmp.55(%tmp.60, %tmp.73);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 40 4 ]
+    symbol [ Test %tmp.74 40 4 8 ];
+    %tmp.74 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.75 40 9 22 ];
+    %tmp.75 = getv function %tmp.74 :assertMessage;
+    symbol [ SessionPack %tmp.77 40 23 34 ];
+    %tmp.77 = getv ? :SessionPack;
+    symbol [ SLOT_COUNT %tmp.78 40 35 45 ];
+    %tmp.78 = getv %tmp.77 :SLOT_COUNT;
+    symbol [ SessionPack %tmp.80 40 49 60 ];
+    %tmp.80 = getv ? :SessionPack;
+    symbol [ LIMIT_FIELDS %tmp.81 40 61 73 ];
+    %tmp.81 = getv %tmp.80 :LIMIT_FIELDS;
+    %tmp.82 = lte %tmp.78 %tmp.81;
+    %tmp.83 = "session message has ";
+    symbol [ SessionPack %tmp.85 41 33 44 ];
+    %tmp.85 = getv ? :SessionPack;
+    symbol [ SLOT_COUNT %tmp.86 41 45 55 ];
+    %tmp.86 = getv %tmp.85 :SLOT_COUNT;
+    symbol [ toString %tmp.87 41 56 64 ];
+    %tmp.87 = getv function %tmp.86 :toString;
+    %tmp.88 = invoke %tmp.86 %tmp.87();
+    %tmp.89 = add %tmp.83 %tmp.88;
+    %tmp.90 = " developer fields, the device accepts ";
+    %tmp.91 = add %tmp.89 %tmp.90;
+    symbol [ SessionPack %tmp.93 42 53 64 ];
+    %tmp.93 = getv ? :SessionPack;
+    symbol [ LIMIT_FIELDS %tmp.94 42 65 77 ];
+    %tmp.94 = getv %tmp.93 :LIMIT_FIELDS;
+    symbol [ toString %tmp.95 42 78 86 ];
+    %tmp.95 = getv function %tmp.94 :toString;
+    %tmp.96 = invoke %tmp.94 %tmp.95();
+    %tmp.97 = add %tmp.91 %tmp.96;
+    invoke %tmp.74 %tmp.75(%tmp.82, %tmp.97);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 43 4 ]
+    symbol [ Test %tmp.98 43 4 8 ];
+    %tmp.98 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.99 43 9 22 ];
+    %tmp.99 = getv function %tmp.98 :assertMessage;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_43_23_44_52_begin:
+    symbol [ SessionPack %tmp.101 43 23 34 ];
+    %tmp.101 = getv ? :SessionPack;
+    symbol [ RECORD_BYTES %tmp.102 43 35 47 ];
+    %tmp.102 = getv %tmp.101 :RECORD_BYTES;
+    symbol [ SessionPack %tmp.104 43 51 62 ];
+    %tmp.104 = getv ? :SessionPack;
+    symbol [ LIMIT_BYTES %tmp.105 43 63 74 ];
+    %tmp.105 = getv %tmp.104 :LIMIT_BYTES;
+    %tmp.106 = lte %tmp.102 %tmp.105;
+    %tmp.107 = dup %tmp.106;
+    bf %tmp.107 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_44_11_44_52_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_44_11_44_52_true:
+    symbol [ SessionPack %tmp.109 44 11 22 ];
+    %tmp.109 = getv ? :SessionPack;
+    symbol [ RECORD_FIELDS %tmp.110 44 23 36 ];
+    %tmp.110 = getv %tmp.109 :RECORD_FIELDS;
+    symbol [ SessionPack %tmp.112 44 40 51 ];
+    %tmp.112 = getv ? :SessionPack;
+    symbol [ LIMIT_FIELDS %tmp.113 44 52 64 ];
+    %tmp.113 = getv %tmp.112 :LIMIT_FIELDS;
+    %tmp.114 = lte %tmp.110 %tmp.113;
+    %tmp.115 = and %tmp.106 %tmp.114;
+    push %tmp.115;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_44_11_44_52_end:
+    %tmp.116 = phi [%tmp.107 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_43_23_44_52_begin] [%tmp.115 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_44_11_44_52_true] [%tmp.116 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_44_11_44_52_end];
+    %tmp.117 = "record message over budget";
+    invoke %tmp.98 %tmp.99(%tmp.116, %tmp.117);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 46 4 ]
+    symbol [ Test %tmp.118 46 4 8 ];
+    %tmp.118 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.119 46 9 22 ];
+    %tmp.119 = getv function %tmp.118 :assertMessage;
+    symbol [ SessionPack %tmp.121 46 23 34 ];
+    %tmp.121 = getv ? :SessionPack;
+    symbol [ fits %tmp.122 46 35 39 ];
+    %tmp.122 = getv function %tmp.121 :fits;
+    %tmp.123 = invoke %tmp.121 %tmp.122();
+    %tmp.124 = "fits() agrees";
+    invoke %tmp.118 %tmp.119(%tmp.123, %tmp.124);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 48 4 ]
+    symbol [ Test %tmp.125 48 4 8 ];
+    %tmp.125 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.126 48 9 22 ];
+    %tmp.126 = getv function %tmp.125 :assertMessage;
+    symbol [ SessionPack %tmp.128 48 23 34 ];
+    %tmp.128 = getv ? :SessionPack;
+    symbol [ WIDTHS %tmp.129 48 35 41 ];
+    %tmp.129 = getv %tmp.128 :WIDTHS;
+    symbol [ size %tmp.130 48 42 46 ];
+    %tmp.130 = getv function %tmp.129 :size;
+    %tmp.131 = invoke %tmp.129 %tmp.130();
+    symbol [ SessionPack %tmp.133 48 52 63 ];
+    %tmp.133 = getv ? :SessionPack;
+    symbol [ SLOT_COUNT %tmp.134 48 64 74 ];
+    %tmp.134 = getv %tmp.133 :SLOT_COUNT;
+    %tmp.135 = eq %tmp.131 %tmp.134;
+    %tmp.136 = "a width per slot";
+    invoke %tmp.125 %tmp.126(%tmp.135, %tmp.136);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 50 4 ]
+    symbol [ Test %tmp.137 50 4 8 ];
+    %tmp.137 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.138 50 9 22 ];
+    %tmp.138 = getv function %tmp.137 :assertMessage;
+    symbol [ SessionPack %tmp.140 50 23 34 ];
+    %tmp.140 = getv ? :SessionPack;
+    symbol [ FIELD_IDS %tmp.141 50 35 44 ];
+    %tmp.141 = getv %tmp.140 :FIELD_IDS;
+    symbol [ size %tmp.142 50 45 49 ];
+    %tmp.142 = getv function %tmp.141 :size;
+    %tmp.143 = invoke %tmp.141 %tmp.142();
+    symbol [ SessionPack %tmp.145 50 55 66 ];
+    %tmp.145 = getv ? :SessionPack;
+    symbol [ SLOT_COUNT %tmp.146 50 67 77 ];
+    %tmp.146 = getv %tmp.145 :SLOT_COUNT;
+    %tmp.147 = eq %tmp.143 %tmp.146;
+    %tmp.148 = "a field id per slot";
+    invoke %tmp.137 %tmp.138(%tmp.147, %tmp.148);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 53 4 ]
+    for @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_53_4_58_4_for_test @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_53_4_58_4_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_53_4_58_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_53_4_58_4_for_init:
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_53_4_58_4_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_53_4_58_4_for_end" ]
+    %i.2 = local;
+    symbol [ i %i.2 53 13 14 ];
+    %tmp.149 = 0;
+    lputv %i.2 %tmp.149;
+    symbol [ i %i.2 53 13 14 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_53_4_58_4_for_test:
+    %tmp.150 = lgetv %i.2;
+    symbol [ i %tmp.150 53 20 21 ];
+    symbol [ SessionPack %tmp.152 53 24 35 ];
+    %tmp.152 = getv ? :SessionPack;
+    symbol [ SLOT_COUNT %tmp.153 53 36 46 ];
+    %tmp.153 = getv %tmp.152 :SLOT_COUNT;
+    %tmp.154 = lt %tmp.150 %tmp.153;
+    bf %tmp.154 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_53_4_58_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_53_4_58_4_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_53_53_58_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 54 8 ]
+    for @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_54_8_57_8_for_test @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_54_8_57_8_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_54_8_57_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_54_8_57_8_for_init:
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_54_8_57_8_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_54_8_57_8_for_end" ]
+    %j.3 = local;
+    symbol [ j %j.3 54 17 18 ];
+    %tmp.155 = lgetv %i.2;
+    symbol [ i %tmp.155 54 21 22 ];
+    %tmp.156 = 1;
+    %tmp.157 = add %tmp.155 %tmp.156;
+    lputv %j.3 %tmp.157;
+    symbol [ j %j.3 54 17 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_54_8_57_8_for_test:
+    %tmp.158 = lgetv %j.3;
+    symbol [ j %tmp.158 54 28 29 ];
+    symbol [ SessionPack %tmp.160 54 32 43 ];
+    %tmp.160 = getv ? :SessionPack;
+    symbol [ SLOT_COUNT %tmp.161 54 44 54 ];
+    %tmp.161 = getv %tmp.160 :SLOT_COUNT;
+    %tmp.162 = lt %tmp.158 %tmp.161;
+    bf %tmp.162 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_54_8_57_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_54_8_57_8_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_54_61_57_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 55 12 ]
+    symbol [ Test %tmp.163 55 12 16 ];
+    %tmp.163 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.164 55 17 30 ];
+    %tmp.164 = getv function %tmp.163 :assertMessage;
+    symbol [ SessionPack %tmp.166 55 31 42 ];
+    %tmp.166 = getv ? :SessionPack;
+    symbol [ FIELD_IDS %tmp.167 55 43 52 ];
+    %tmp.167 = getv %tmp.166 :FIELD_IDS;
+    %tmp.168 = lgetv %i.2;
+    symbol [ i %tmp.168 55 53 54 ];
+    %tmp.169 = agetv %tmp.167 %tmp.168;
+    symbol [ SessionPack %tmp.171 55 59 70 ];
+    %tmp.171 = getv ? :SessionPack;
+    symbol [ FIELD_IDS %tmp.172 55 71 80 ];
+    %tmp.172 = getv %tmp.171 :FIELD_IDS;
+    %tmp.173 = lgetv %j.3;
+    symbol [ j %tmp.173 55 81 82 ];
+    %tmp.174 = agetv %tmp.172 %tmp.173;
+    %tmp.175 = ne %tmp.169 %tmp.174;
+    %tmp.176 = "duplicate field id ";
+    symbol [ SessionPack %tmp.178 56 40 51 ];
+    %tmp.178 = getv ? :SessionPack;
+    symbol [ FIELD_IDS %tmp.179 56 52 61 ];
+    %tmp.179 = getv %tmp.178 :FIELD_IDS;
+    %tmp.180 = lgetv %i.2;
+    symbol [ i %tmp.180 56 62 63 ];
+    %tmp.181 = agetv %tmp.179 %tmp.180;
+    symbol [ toString %tmp.182 56 65 73 ];
+    %tmp.182 = getv function %tmp.181 :toString;
+    %tmp.183 = invoke %tmp.181 %tmp.182();
+    %tmp.184 = add %tmp.176 %tmp.183;
+    invoke %tmp.163 %tmp.164(%tmp.175, %tmp.184);
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_54_61_57_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_54_8_57_8_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 54 ]
+    %tmp.187 = lgetv %j.3;
+    symbol [ j %tmp.187 54 56 57 ];
+    %tmp.188 = add %tmp.187 1;
+    lputv %j.3 %tmp.188;
+    symbol [ j %j.3 54 56 57 ];
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_54_8_57_8_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_54_8_57_8_for_end:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_53_53_58_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_53_4_58_4_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 53 ]
+    %tmp.191 = lgetv %i.2;
+    symbol [ i %tmp.191 53 48 49 ];
+    %tmp.192 = add %tmp.191 1;
+    lputv %i.2 %tmp.192;
+    symbol [ i %i.2 53 48 49 ];
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_53_4_58_4_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_53_4_58_4_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 59 4 ]
+    %tmp.193 = true;
+    ret %tmp.193;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_26_76_60_0_stop:
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 63; test = true; @symbol_functiondef = [sessionPackRoundTrips,63,9,30]; @symbol_param<0> = [logger,63,31,37]; @symbol_param<0>_type<0> = [Test,63,41,45]; @symbol_param<0>_type<1> = [Logger,63,46,52]; @symbol_return<0> = [Boolean,63,57,64]; ]
+function sessionPackRoundTrips(logger as Test.Logger) as Boolean {
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_63_65_100_0_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 65 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_63_65_100_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_63_65_100_0_stop" ]
+    %vals.1 = local;
+    symbol [ vals %vals.1 65 8 12 ];
+    symbol [ SessionPack %tmp.3 65 33 44 ];
+    %tmp.3 = getv ? :SessionPack;
+    symbol [ SLOT_COUNT %tmp.4 65 45 55 ];
+    %tmp.4 = getv %tmp.3 :SLOT_COUNT;
+    %tmp.1 = newa Array<Number> %tmp.4;
+    symbol [ Array %tmp.1 65 19 24 ];
+    symbol [ Number %tmp.1 65 25 31 ];
+    lputv %vals.1 %tmp.1;
+    symbol [ vals %vals.1 65 8 12 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 66 4 ]
+    %tmp.5 = lgetv %vals.1;
+    symbol [ vals %tmp.5 66 4 8 ];
+    %tmp.6 = 7263;
+    symbol [ SessionPack %tmp.8 66 9 20 ];
+    %tmp.8 = getv ? :SessionPack;
+    symbol [ SLOT_FOIL_TIME %tmp.9 66 21 35 ];
+    %tmp.9 = getv %tmp.8 :SLOT_FOIL_TIME;
+    aputv %tmp.5 %tmp.9 %tmp.6;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 67 4 ]
+    %tmp.10 = lgetv %vals.1;
+    symbol [ vals %tmp.10 67 4 8 ];
+    %tmp.11 = 63;
+    symbol [ SessionPack %tmp.13 67 9 20 ];
+    %tmp.13 = getv ? :SessionPack;
+    symbol [ SLOT_FOIL_PCT %tmp.14 67 21 34 ];
+    %tmp.14 = getv %tmp.13 :SLOT_FOIL_PCT;
+    aputv %tmp.10 %tmp.14 %tmp.11;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 68 4 ]
+    %tmp.15 = lgetv %vals.1;
+    symbol [ vals %tmp.15 68 4 8 ];
+    %tmp.16 = 412;
+    symbol [ SessionPack %tmp.18 68 9 20 ];
+    %tmp.18 = getv ? :SessionPack;
+    symbol [ SLOT_FLIGHT_COUNT %tmp.19 68 21 38 ];
+    %tmp.19 = getv %tmp.18 :SLOT_FLIGHT_COUNT;
+    aputv %tmp.15 %tmp.19 %tmp.16;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 69 4 ]
+    %tmp.20 = lgetv %vals.1;
+    symbol [ vals %tmp.20 69 4 8 ];
+    %tmp.21 = 1234;
+    symbol [ SessionPack %tmp.23 69 9 20 ];
+    %tmp.23 = getv ? :SessionPack;
+    symbol [ SLOT_LONGEST_S %tmp.24 69 21 35 ];
+    %tmp.24 = getv %tmp.23 :SLOT_LONGEST_S;
+    aputv %tmp.20 %tmp.24 %tmp.21;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 70 4 ]
+    %tmp.25 = lgetv %vals.1;
+    symbol [ vals %tmp.25 70 4 8 ];
+    %tmp.26 = 1543;
+    symbol [ SessionPack %tmp.28 70 9 20 ];
+    %tmp.28 = getv ? :SessionPack;
+    symbol [ SLOT_BEST_2S %tmp.29 70 21 33 ];
+    %tmp.29 = getv %tmp.28 :SLOT_BEST_2S;
+    aputv %tmp.25 %tmp.29 %tmp.26;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 71 4 ]
+    %tmp.30 = lgetv %vals.1;
+    symbol [ vals %tmp.30 71 4 8 ];
+    %tmp.31 = 1401;
+    symbol [ SessionPack %tmp.33 71 9 20 ];
+    %tmp.33 = getv ? :SessionPack;
+    symbol [ SLOT_BEST_10S %tmp.34 71 21 34 ];
+    %tmp.34 = getv %tmp.33 :SLOT_BEST_10S;
+    aputv %tmp.30 %tmp.34 %tmp.31;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 72 4 ]
+    %tmp.35 = lgetv %vals.1;
+    symbol [ vals %tmp.35 72 4 8 ];
+    %tmp.36 = 37;
+    symbol [ SessionPack %tmp.38 72 9 20 ];
+    %tmp.38 = getv ? :SessionPack;
+    symbol [ SLOT_TACKS %tmp.39 72 21 31 ];
+    %tmp.39 = getv %tmp.38 :SLOT_TACKS;
+    aputv %tmp.35 %tmp.39 %tmp.36;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 73 4 ]
+    %tmp.40 = lgetv %vals.1;
+    symbol [ vals %tmp.40 73 4 8 ];
+    %tmp.41 = 122;
+    symbol [ SessionPack %tmp.43 73 9 20 ];
+    %tmp.43 = getv ? :SessionPack;
+    symbol [ SLOT_JIBES %tmp.44 73 21 31 ];
+    %tmp.44 = getv %tmp.43 :SLOT_JIBES;
+    aputv %tmp.40 %tmp.44 %tmp.41;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 74 4 ]
+    %tmp.45 = lgetv %vals.1;
+    symbol [ vals %tmp.45 74 4 8 ];
+    %tmp.46 = 71;
+    symbol [ SessionPack %tmp.48 74 9 20 ];
+    %tmp.48 = getv ? :SessionPack;
+    symbol [ SLOT_TURN_SUCCESS %tmp.49 74 21 38 ];
+    %tmp.49 = getv %tmp.48 :SLOT_TURN_SUCCESS;
+    aputv %tmp.45 %tmp.49 %tmp.46;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 75 4 ]
+    %tmp.50 = lgetv %vals.1;
+    symbol [ vals %tmp.50 75 4 8 ];
+    %tmp.51 = 197;
+    symbol [ SessionPack %tmp.53 75 9 20 ];
+    %tmp.53 = getv ? :SessionPack;
+    symbol [ SLOT_WIND_DIR %tmp.54 75 21 34 ];
+    %tmp.54 = getv %tmp.53 :SLOT_WIND_DIR;
+    aputv %tmp.50 %tmp.54 %tmp.51;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 76 4 ]
+    %tmp.55 = lgetv %vals.1;
+    symbol [ vals %tmp.55 76 4 8 ];
+    %tmp.56 = 257;
+    symbol [ SessionPack %tmp.58 76 9 20 ];
+    %tmp.58 = getv ? :SessionPack;
+    symbol [ SLOT_APP_VERSION %tmp.59 76 21 37 ];
+    %tmp.59 = getv %tmp.58 :SLOT_APP_VERSION;
+    aputv %tmp.55 %tmp.59 %tmp.56;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 77 4 ]
+    %tmp.60 = lgetv %vals.1;
+    symbol [ vals %tmp.60 77 4 8 ];
+    symbol [ SessionPack %tmp.62 77 38 49 ];
+    %tmp.62 = getv ? :SessionPack;
+    symbol [ packOutcomes %tmp.63 77 50 62 ];
+    %tmp.63 = getv function %tmp.62 :packOutcomes;
+    %tmp.64 = 90;
+    %tmp.65 = 44;
+    %tmp.66 = 25;
+    %tmp.67 = invoke %tmp.62 %tmp.63(%tmp.64, %tmp.65, %tmp.66);
+    symbol [ SessionPack %tmp.69 77 9 20 ];
+    %tmp.69 = getv ? :SessionPack;
+    symbol [ SLOT_OUTCOMES %tmp.70 77 21 34 ];
+    %tmp.70 = getv %tmp.69 :SLOT_OUTCOMES;
+    aputv %tmp.60 %tmp.70 %tmp.67;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 78 4 ]
+    %tmp.71 = lgetv %vals.1;
+    symbol [ vals %tmp.71 78 4 8 ];
+    symbol [ SessionPack %tmp.73 78 40 51 ];
+    %tmp.73 = getv ? :SessionPack;
+    symbol [ DISCIPLINE_WINGFOIL %tmp.74 78 52 71 ];
+    %tmp.74 = getv %tmp.73 :DISCIPLINE_WINGFOIL;
+    symbol [ SessionPack %tmp.76 78 9 20 ];
+    %tmp.76 = getv ? :SessionPack;
+    symbol [ SLOT_DISCIPLINE %tmp.77 78 21 36 ];
+    %tmp.77 = getv %tmp.76 :SLOT_DISCIPLINE;
+    aputv %tmp.71 %tmp.77 %tmp.74;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 79 4 ]
+    %tmp.78 = lgetv %vals.1;
+    symbol [ vals %tmp.78 79 4 8 ];
+    symbol [ SessionPack %tmp.80 79 33 44 ];
+    %tmp.80 = getv ? :SessionPack;
+    symbol [ packCfg %tmp.81 79 45 52 ];
+    %tmp.81 = getv function %tmp.80 :packCfg;
+    %tmp.82 = 333;
+    %tmp.83 = 222;
+    %tmp.84 = 5;
+    %tmp.85 = invoke %tmp.80 %tmp.81(%tmp.82, %tmp.83, %tmp.84);
+    symbol [ SessionPack %tmp.87 79 9 20 ];
+    %tmp.87 = getv ? :SessionPack;
+    symbol [ SLOT_CFG %tmp.88 79 21 29 ];
+    %tmp.88 = getv %tmp.87 :SLOT_CFG;
+    aputv %tmp.78 %tmp.88 %tmp.85;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 81 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_63_65_100_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_63_65_100_0_stop" ]
+    %bytes.2 = local;
+    symbol [ bytes %bytes.2 81 8 13 ];
+    symbol [ SessionPack %tmp.90 81 16 27 ];
+    %tmp.90 = getv ? :SessionPack;
+    symbol [ encode %tmp.91 81 28 34 ];
+    %tmp.91 = getv function %tmp.90 :encode;
+    %tmp.92 = lgetv %vals.1;
+    symbol [ vals %tmp.92 81 35 39 ];
+    %tmp.93 = invoke %tmp.90 %tmp.91(%tmp.92);
+    lputv %bytes.2 %tmp.93;
+    symbol [ bytes %bytes.2 81 8 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 82 4 ]
+    symbol [ Test %tmp.94 82 4 8 ];
+    %tmp.94 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.95 82 9 22 ];
+    %tmp.95 = getv function %tmp.94 :assertMessage;
+    %tmp.96 = lgetv %bytes.2;
+    symbol [ bytes %tmp.96 82 23 28 ];
+    symbol [ size %tmp.97 82 29 33 ];
+    %tmp.97 = getv function %tmp.96 :size;
+    %tmp.98 = invoke %tmp.96 %tmp.97();
+    symbol [ SessionPack %tmp.100 82 39 50 ];
+    %tmp.100 = getv ? :SessionPack;
+    symbol [ totalBytes %tmp.101 82 51 61 ];
+    %tmp.101 = getv function %tmp.100 :totalBytes;
+    %tmp.102 = invoke %tmp.100 %tmp.101();
+    %tmp.103 = eq %tmp.98 %tmp.102;
+    %tmp.104 = "encoded ";
+    %tmp.105 = lgetv %bytes.2;
+    symbol [ bytes %tmp.105 83 21 26 ];
+    symbol [ size %tmp.106 83 27 31 ];
+    %tmp.106 = getv function %tmp.105 :size;
+    %tmp.107 = invoke %tmp.105 %tmp.106();
+    symbol [ toString %tmp.108 83 34 42 ];
+    %tmp.108 = getv function %tmp.107 :toString;
+    %tmp.109 = invoke %tmp.107 %tmp.108();
+    %tmp.110 = add %tmp.104 %tmp.109;
+    %tmp.111 = " B, table says ";
+    %tmp.112 = add %tmp.110 %tmp.111;
+    symbol [ SessionPack %tmp.114 84 10 21 ];
+    %tmp.114 = getv ? :SessionPack;
+    symbol [ totalBytes %tmp.115 84 22 32 ];
+    %tmp.115 = getv function %tmp.114 :totalBytes;
+    %tmp.116 = invoke %tmp.114 %tmp.115();
+    symbol [ toString %tmp.117 84 35 43 ];
+    %tmp.117 = getv function %tmp.116 :toString;
+    %tmp.118 = invoke %tmp.116 %tmp.117();
+    %tmp.119 = add %tmp.112 %tmp.118;
+    invoke %tmp.94 %tmp.95(%tmp.103, %tmp.119);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 85 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_63_65_100_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_63_65_100_0_stop" ]
+    %back.3 = local;
+    symbol [ back %back.3 85 8 12 ];
+    symbol [ SessionPack %tmp.121 85 15 26 ];
+    %tmp.121 = getv ? :SessionPack;
+    symbol [ decode %tmp.122 85 27 33 ];
+    %tmp.122 = getv function %tmp.121 :decode;
+    %tmp.123 = lgetv %bytes.2;
+    symbol [ bytes %tmp.123 85 34 39 ];
+    %tmp.124 = invoke %tmp.121 %tmp.122(%tmp.123);
+    lputv %back.3 %tmp.124;
+    symbol [ back %back.3 85 8 12 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 86 4 ]
+    for @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_86_4_89_4_for_test @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_86_4_89_4_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_86_4_89_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_86_4_89_4_for_init:
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_86_4_89_4_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_86_4_89_4_for_end" ]
+    %i.4 = local;
+    symbol [ i %i.4 86 13 14 ];
+    %tmp.125 = 0;
+    lputv %i.4 %tmp.125;
+    symbol [ i %i.4 86 13 14 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_86_4_89_4_for_test:
+    %tmp.126 = lgetv %i.4;
+    symbol [ i %tmp.126 86 20 21 ];
+    symbol [ SessionPack %tmp.128 86 24 35 ];
+    %tmp.128 = getv ? :SessionPack;
+    symbol [ SLOT_COUNT %tmp.129 86 36 46 ];
+    %tmp.129 = getv %tmp.128 :SLOT_COUNT;
+    %tmp.130 = lt %tmp.126 %tmp.129;
+    bf %tmp.130 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_86_4_89_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_86_4_89_4_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_86_53_89_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 87 8 ]
+    symbol [ Test %tmp.131 87 8 12 ];
+    %tmp.131 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.132 87 13 26 ];
+    %tmp.132 = getv function %tmp.131 :assertMessage;
+    %tmp.133 = lgetv %back.3;
+    symbol [ back %tmp.133 87 27 31 ];
+    %tmp.134 = lgetv %i.4;
+    symbol [ i %tmp.134 87 32 33 ];
+    %tmp.135 = agetv %tmp.133 %tmp.134;
+    %tmp.136 = lgetv %vals.1;
+    symbol [ vals %tmp.136 87 38 42 ];
+    %tmp.137 = lgetv %i.4;
+    symbol [ i %tmp.137 87 43 44 ];
+    %tmp.138 = agetv %tmp.136 %tmp.137;
+    %tmp.139 = eq %tmp.135 %tmp.138;
+    %tmp.140 = "slot ";
+    %tmp.141 = lgetv %i.4;
+    symbol [ i %tmp.141 87 57 58 ];
+    symbol [ toString %tmp.142 87 59 67 ];
+    %tmp.142 = getv function %tmp.141 :toString;
+    %tmp.143 = invoke %tmp.141 %tmp.142();
+    %tmp.144 = add %tmp.140 %tmp.143;
+    %tmp.145 = ": wrote ";
+    %tmp.146 = add %tmp.144 %tmp.145;
+    %tmp.147 = lgetv %vals.1;
+    symbol [ vals %tmp.147 88 14 18 ];
+    %tmp.148 = lgetv %i.4;
+    symbol [ i %tmp.148 88 19 20 ];
+    %tmp.149 = agetv %tmp.147 %tmp.148;
+    symbol [ toString %tmp.150 88 22 30 ];
+    %tmp.150 = getv function %tmp.149 :toString;
+    %tmp.151 = invoke %tmp.149 %tmp.150();
+    %tmp.152 = add %tmp.146 %tmp.151;
+    %tmp.153 = ", read ";
+    %tmp.154 = add %tmp.152 %tmp.153;
+    %tmp.155 = lgetv %back.3;
+    symbol [ back %tmp.155 88 47 51 ];
+    %tmp.156 = lgetv %i.4;
+    symbol [ i %tmp.156 88 52 53 ];
+    %tmp.157 = agetv %tmp.155 %tmp.156;
+    symbol [ toString %tmp.158 88 55 63 ];
+    %tmp.158 = getv function %tmp.157 :toString;
+    %tmp.159 = invoke %tmp.157 %tmp.158();
+    %tmp.160 = add %tmp.154 %tmp.159;
+    invoke %tmp.131 %tmp.132(%tmp.139, %tmp.160);
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_86_53_89_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_86_4_89_4_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 86 ]
+    %tmp.163 = lgetv %i.4;
+    symbol [ i %tmp.163 86 48 49 ];
+    %tmp.164 = add %tmp.163 1;
+    lputv %i.4 %tmp.164;
+    symbol [ i %i.4 86 48 49 ];
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_86_4_89_4_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_86_4_89_4_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 91 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_63_65_100_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_63_65_100_0_stop" ]
+    %o.5 = local;
+    symbol [ o %o.5 91 8 9 ];
+    %tmp.165 = lgetv %back.3;
+    symbol [ back %tmp.165 91 12 16 ];
+    symbol [ SessionPack %tmp.167 91 17 28 ];
+    %tmp.167 = getv ? :SessionPack;
+    symbol [ SLOT_OUTCOMES %tmp.168 91 29 42 ];
+    %tmp.168 = getv %tmp.167 :SLOT_OUTCOMES;
+    %tmp.169 = agetv %tmp.165 %tmp.168;
+    lputv %o.5 %tmp.169;
+    symbol [ o %o.5 91 8 9 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 92 4 ]
+    symbol [ Test %tmp.170 92 4 8 ];
+    %tmp.170 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.171 92 9 22 ];
+    %tmp.171 = getv function %tmp.170 :assertMessage;
+    symbol [ SessionPack %tmp.173 92 23 34 ];
+    %tmp.173 = getv ? :SessionPack;
+    symbol [ outcomeFlew %tmp.174 92 35 46 ];
+    %tmp.174 = getv function %tmp.173 :outcomeFlew;
+    %tmp.175 = lgetv %o.5;
+    symbol [ o %tmp.175 92 47 48 ];
+    %tmp.176 = invoke %tmp.173 %tmp.174(%tmp.175);
+    %tmp.177 = 90;
+    %tmp.178 = eq %tmp.176 %tmp.177;
+    %tmp.179 = "flew";
+    invoke %tmp.170 %tmp.171(%tmp.178, %tmp.179);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 93 4 ]
+    symbol [ Test %tmp.180 93 4 8 ];
+    %tmp.180 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.181 93 9 22 ];
+    %tmp.181 = getv function %tmp.180 :assertMessage;
+    symbol [ SessionPack %tmp.183 93 23 34 ];
+    %tmp.183 = getv ? :SessionPack;
+    symbol [ outcomeTouchdown %tmp.184 93 35 51 ];
+    %tmp.184 = getv function %tmp.183 :outcomeTouchdown;
+    %tmp.185 = lgetv %o.5;
+    symbol [ o %tmp.185 93 52 53 ];
+    %tmp.186 = invoke %tmp.183 %tmp.184(%tmp.185);
+    %tmp.187 = 44;
+    %tmp.188 = eq %tmp.186 %tmp.187;
+    %tmp.189 = "touchdown";
+    invoke %tmp.180 %tmp.181(%tmp.188, %tmp.189);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 94 4 ]
+    symbol [ Test %tmp.190 94 4 8 ];
+    %tmp.190 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.191 94 9 22 ];
+    %tmp.191 = getv function %tmp.190 :assertMessage;
+    symbol [ SessionPack %tmp.193 94 23 34 ];
+    %tmp.193 = getv ? :SessionPack;
+    symbol [ outcomeFell %tmp.194 94 35 46 ];
+    %tmp.194 = getv function %tmp.193 :outcomeFell;
+    %tmp.195 = lgetv %o.5;
+    symbol [ o %tmp.195 94 47 48 ];
+    %tmp.196 = invoke %tmp.193 %tmp.194(%tmp.195);
+    %tmp.197 = 25;
+    %tmp.198 = eq %tmp.196 %tmp.197;
+    %tmp.199 = "fell";
+    invoke %tmp.190 %tmp.191(%tmp.198, %tmp.199);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 95 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_63_65_100_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_63_65_100_0_stop" ]
+    %c.6 = local;
+    symbol [ c %c.6 95 8 9 ];
+    %tmp.200 = lgetv %back.3;
+    symbol [ back %tmp.200 95 12 16 ];
+    symbol [ SessionPack %tmp.202 95 17 28 ];
+    %tmp.202 = getv ? :SessionPack;
+    symbol [ SLOT_CFG %tmp.203 95 29 37 ];
+    %tmp.203 = getv %tmp.202 :SLOT_CFG;
+    %tmp.204 = agetv %tmp.200 %tmp.203;
+    lputv %c.6 %tmp.204;
+    symbol [ c %c.6 95 8 9 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 96 4 ]
+    symbol [ Test %tmp.205 96 4 8 ];
+    %tmp.205 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.206 96 9 22 ];
+    %tmp.206 = getv function %tmp.205 :assertMessage;
+    symbol [ SessionPack %tmp.208 96 23 34 ];
+    %tmp.208 = getv ? :SessionPack;
+    symbol [ cfgEntryCms %tmp.209 96 35 46 ];
+    %tmp.209 = getv function %tmp.208 :cfgEntryCms;
+    %tmp.210 = lgetv %c.6;
+    symbol [ c %tmp.210 96 47 48 ];
+    %tmp.211 = invoke %tmp.208 %tmp.209(%tmp.210);
+    %tmp.212 = 333;
+    %tmp.213 = eq %tmp.211 %tmp.212;
+    %tmp.214 = "entry cm/s";
+    invoke %tmp.205 %tmp.206(%tmp.213, %tmp.214);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 97 4 ]
+    symbol [ Test %tmp.215 97 4 8 ];
+    %tmp.215 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.216 97 9 22 ];
+    %tmp.216 = getv function %tmp.215 :assertMessage;
+    symbol [ SessionPack %tmp.218 97 23 34 ];
+    %tmp.218 = getv ? :SessionPack;
+    symbol [ cfgExitCms %tmp.219 97 35 45 ];
+    %tmp.219 = getv function %tmp.218 :cfgExitCms;
+    %tmp.220 = lgetv %c.6;
+    symbol [ c %tmp.220 97 46 47 ];
+    %tmp.221 = invoke %tmp.218 %tmp.219(%tmp.220);
+    %tmp.222 = 222;
+    %tmp.223 = eq %tmp.221 %tmp.222;
+    %tmp.224 = "exit cm/s";
+    invoke %tmp.215 %tmp.216(%tmp.223, %tmp.224);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 98 4 ]
+    symbol [ Test %tmp.225 98 4 8 ];
+    %tmp.225 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.226 98 9 22 ];
+    %tmp.226 = getv function %tmp.225 :assertMessage;
+    symbol [ SessionPack %tmp.228 98 23 34 ];
+    %tmp.228 = getv ? :SessionPack;
+    symbol [ cfgMinFlightS %tmp.229 98 35 48 ];
+    %tmp.229 = getv function %tmp.228 :cfgMinFlightS;
+    %tmp.230 = lgetv %c.6;
+    symbol [ c %tmp.230 98 49 50 ];
+    %tmp.231 = invoke %tmp.228 %tmp.229(%tmp.230);
+    %tmp.232 = 5;
+    %tmp.233 = eq %tmp.231 %tmp.232;
+    %tmp.234 = "min flight s";
+    invoke %tmp.225 %tmp.226(%tmp.233, %tmp.234);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 99 4 ]
+    %tmp.235 = true;
+    ret %tmp.235;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_63_65_100_0_stop:
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 103; test = true; @symbol_functiondef = [sessionPackSaturatesInsteadOfWrapping,103,9,46]; @symbol_param<0> = [logger,103,47,53]; @symbol_param<0>_type<0> = [Test,103,57,61]; @symbol_param<0>_type<1> = [Logger,103,62,68]; @symbol_return<0> = [Boolean,103,73,80]; ]
+function sessionPackSaturatesInsteadOfWrapping(logger as Test.Logger) as Boolean {
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_103_81_135_0_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 106 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_103_81_135_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_103_81_135_0_stop" ]
+    %vals.1 = local;
+    symbol [ vals %vals.1 106 8 12 ];
+    symbol [ SessionPack %tmp.3 106 33 44 ];
+    %tmp.3 = getv ? :SessionPack;
+    symbol [ SLOT_COUNT %tmp.4 106 45 55 ];
+    %tmp.4 = getv %tmp.3 :SLOT_COUNT;
+    %tmp.1 = newa Array<Number> %tmp.4;
+    symbol [ Array %tmp.1 106 19 24 ];
+    symbol [ Number %tmp.1 106 25 31 ];
+    lputv %vals.1 %tmp.1;
+    symbol [ vals %vals.1 106 8 12 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 107 4 ]
+    for @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_107_4_109_4_for_test @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_107_4_109_4_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_107_4_109_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_107_4_109_4_for_init:
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_107_4_109_4_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_107_4_109_4_for_end" ]
+    %i.2 = local;
+    symbol [ i %i.2 107 13 14 ];
+    %tmp.5 = 0;
+    lputv %i.2 %tmp.5;
+    symbol [ i %i.2 107 13 14 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_107_4_109_4_for_test:
+    %tmp.6 = lgetv %i.2;
+    symbol [ i %tmp.6 107 20 21 ];
+    symbol [ SessionPack %tmp.8 107 24 35 ];
+    %tmp.8 = getv ? :SessionPack;
+    symbol [ SLOT_COUNT %tmp.9 107 36 46 ];
+    %tmp.9 = getv %tmp.8 :SLOT_COUNT;
+    %tmp.10 = lt %tmp.6 %tmp.9;
+    bf %tmp.10 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_107_4_109_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_107_4_109_4_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_107_53_109_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 108 8 ]
+    %tmp.11 = lgetv %vals.1;
+    symbol [ vals %tmp.11 108 8 12 ];
+    %tmp.12 = 0;
+    %tmp.13 = lgetv %i.2;
+    symbol [ i %tmp.13 108 13 14 ];
+    aputv %tmp.11 %tmp.13 %tmp.12;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_107_53_109_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_107_4_109_4_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 107 ]
+    %tmp.16 = lgetv %i.2;
+    symbol [ i %tmp.16 107 48 49 ];
+    %tmp.17 = add %tmp.16 1;
+    lputv %i.2 %tmp.17;
+    symbol [ i %i.2 107 48 49 ];
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_107_4_109_4_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_107_4_109_4_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 110 4 ]
+    %tmp.18 = lgetv %vals.1;
+    symbol [ vals %tmp.18 110 4 8 ];
+    %tmp.19 = 9000;
+    symbol [ SessionPack %tmp.21 110 9 20 ];
+    %tmp.21 = getv ? :SessionPack;
+    symbol [ SLOT_JIBES %tmp.22 110 21 31 ];
+    %tmp.22 = getv %tmp.21 :SLOT_JIBES;
+    aputv %tmp.18 %tmp.22 %tmp.19;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 111 4 ]
+    %tmp.23 = lgetv %vals.1;
+    symbol [ vals %tmp.23 111 4 8 ];
+    %tmp.24 = 200000;
+    symbol [ SessionPack %tmp.26 111 9 20 ];
+    %tmp.26 = getv ? :SessionPack;
+    symbol [ SLOT_FLIGHT_COUNT %tmp.27 111 21 38 ];
+    %tmp.27 = getv %tmp.26 :SLOT_FLIGHT_COUNT;
+    aputv %tmp.23 %tmp.27 %tmp.24;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 112 4 ]
+    %tmp.28 = lgetv %vals.1;
+    symbol [ vals %tmp.28 112 4 8 ];
+    %tmp.29 = -5;
+    symbol [ SessionPack %tmp.31 112 9 20 ];
+    %tmp.31 = getv ? :SessionPack;
+    symbol [ SLOT_TURN_SUCCESS %tmp.32 112 21 38 ];
+    %tmp.32 = getv %tmp.31 :SLOT_TURN_SUCCESS;
+    aputv %tmp.28 %tmp.32 %tmp.29;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 113 4 ]
+    %tmp.33 = lgetv %vals.1;
+    symbol [ vals %tmp.33 113 4 8 ];
+    %tmp.34 = 65535;
+    symbol [ SessionPack %tmp.36 113 9 20 ];
+    %tmp.36 = getv ? :SessionPack;
+    symbol [ SLOT_WIND_DIR %tmp.37 113 21 34 ];
+    %tmp.37 = getv %tmp.36 :SLOT_WIND_DIR;
+    aputv %tmp.33 %tmp.37 %tmp.34;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 114 4 ]
+    %tmp.38 = lgetv %vals.1;
+    symbol [ vals %tmp.38 114 4 8 ];
+    symbol [ SessionPack %tmp.40 114 38 49 ];
+    %tmp.40 = getv ? :SessionPack;
+    symbol [ packOutcomes %tmp.41 114 50 62 ];
+    %tmp.41 = getv function %tmp.40 :packOutcomes;
+    %tmp.42 = 300;
+    %tmp.43 = 5;
+    %tmp.44 = -2;
+    %tmp.45 = invoke %tmp.40 %tmp.41(%tmp.42, %tmp.43, %tmp.44);
+    symbol [ SessionPack %tmp.47 114 9 20 ];
+    %tmp.47 = getv ? :SessionPack;
+    symbol [ SLOT_OUTCOMES %tmp.48 114 21 34 ];
+    %tmp.48 = getv %tmp.47 :SLOT_OUTCOMES;
+    aputv %tmp.38 %tmp.48 %tmp.45;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 115 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_103_81_135_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_103_81_135_0_stop" ]
+    %back.3 = local;
+    symbol [ back %back.3 115 8 12 ];
+    symbol [ SessionPack %tmp.50 115 15 26 ];
+    %tmp.50 = getv ? :SessionPack;
+    symbol [ decode %tmp.51 115 27 33 ];
+    %tmp.51 = getv function %tmp.50 :decode;
+    symbol [ SessionPack %tmp.53 115 34 45 ];
+    %tmp.53 = getv ? :SessionPack;
+    symbol [ encode %tmp.54 115 46 52 ];
+    %tmp.54 = getv function %tmp.53 :encode;
+    %tmp.55 = lgetv %vals.1;
+    symbol [ vals %tmp.55 115 53 57 ];
+    %tmp.56 = invoke %tmp.53 %tmp.54(%tmp.55);
+    %tmp.57 = invoke %tmp.50 %tmp.51(%tmp.56);
+    lputv %back.3 %tmp.57;
+    symbol [ back %back.3 115 8 12 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 116 4 ]
+    symbol [ Test %tmp.58 116 4 8 ];
+    %tmp.58 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.59 116 9 22 ];
+    %tmp.59 = getv function %tmp.58 :assertMessage;
+    %tmp.60 = lgetv %back.3;
+    symbol [ back %tmp.60 116 23 27 ];
+    symbol [ SessionPack %tmp.62 116 28 39 ];
+    %tmp.62 = getv ? :SessionPack;
+    symbol [ SLOT_JIBES %tmp.63 116 40 50 ];
+    %tmp.63 = getv %tmp.62 :SLOT_JIBES;
+    %tmp.64 = agetv %tmp.60 %tmp.63;
+    %tmp.65 = 254;
+    %tmp.66 = eq %tmp.64 %tmp.65;
+    %tmp.67 = "uint8 count saturates at 254, got ";
+    %tmp.68 = lgetv %back.3;
+    symbol [ back %tmp.68 117 47 51 ];
+    symbol [ SessionPack %tmp.70 117 52 63 ];
+    %tmp.70 = getv ? :SessionPack;
+    symbol [ SLOT_JIBES %tmp.71 117 64 74 ];
+    %tmp.71 = getv %tmp.70 :SLOT_JIBES;
+    %tmp.72 = agetv %tmp.68 %tmp.71;
+    symbol [ toString %tmp.73 117 76 84 ];
+    %tmp.73 = getv function %tmp.72 :toString;
+    %tmp.74 = invoke %tmp.72 %tmp.73();
+    %tmp.75 = add %tmp.67 %tmp.74;
+    invoke %tmp.58 %tmp.59(%tmp.66, %tmp.75);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 118 4 ]
+    symbol [ Test %tmp.76 118 4 8 ];
+    %tmp.76 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.77 118 9 22 ];
+    %tmp.77 = getv function %tmp.76 :assertMessage;
+    %tmp.78 = lgetv %back.3;
+    symbol [ back %tmp.78 118 23 27 ];
+    symbol [ SessionPack %tmp.80 118 28 39 ];
+    %tmp.80 = getv ? :SessionPack;
+    symbol [ SLOT_FLIGHT_COUNT %tmp.81 118 40 57 ];
+    %tmp.81 = getv %tmp.80 :SLOT_FLIGHT_COUNT;
+    %tmp.82 = agetv %tmp.78 %tmp.81;
+    %tmp.83 = 65534;
+    %tmp.84 = eq %tmp.82 %tmp.83;
+    %tmp.85 = "uint16 count saturates at 65534, got ";
+    %tmp.86 = lgetv %back.3;
+    symbol [ back %tmp.86 120 10 14 ];
+    symbol [ SessionPack %tmp.88 120 15 26 ];
+    %tmp.88 = getv ? :SessionPack;
+    symbol [ SLOT_FLIGHT_COUNT %tmp.89 120 27 44 ];
+    %tmp.89 = getv %tmp.88 :SLOT_FLIGHT_COUNT;
+    %tmp.90 = agetv %tmp.86 %tmp.89;
+    symbol [ toString %tmp.91 120 46 54 ];
+    %tmp.91 = getv function %tmp.90 :toString;
+    %tmp.92 = invoke %tmp.90 %tmp.91();
+    %tmp.93 = add %tmp.85 %tmp.92;
+    invoke %tmp.76 %tmp.77(%tmp.84, %tmp.93);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 121 4 ]
+    symbol [ Test %tmp.94 121 4 8 ];
+    %tmp.94 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.95 121 9 22 ];
+    %tmp.95 = getv function %tmp.94 :assertMessage;
+    %tmp.96 = lgetv %back.3;
+    symbol [ back %tmp.96 121 23 27 ];
+    symbol [ SessionPack %tmp.98 121 28 39 ];
+    %tmp.98 = getv ? :SessionPack;
+    symbol [ SLOT_TURN_SUCCESS %tmp.99 121 40 57 ];
+    %tmp.99 = getv %tmp.98 :SLOT_TURN_SUCCESS;
+    %tmp.100 = agetv %tmp.96 %tmp.99;
+    %tmp.101 = 0;
+    %tmp.102 = eq %tmp.100 %tmp.101;
+    %tmp.103 = "no negatives";
+    invoke %tmp.94 %tmp.95(%tmp.102, %tmp.103);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 122 4 ]
+    symbol [ Test %tmp.104 122 4 8 ];
+    %tmp.104 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.105 122 9 22 ];
+    %tmp.105 = getv function %tmp.104 :assertMessage;
+    %tmp.106 = lgetv %back.3;
+    symbol [ back %tmp.106 122 23 27 ];
+    symbol [ SessionPack %tmp.108 122 28 39 ];
+    %tmp.108 = getv ? :SessionPack;
+    symbol [ SLOT_WIND_DIR %tmp.109 122 40 53 ];
+    %tmp.109 = getv %tmp.108 :SLOT_WIND_DIR;
+    %tmp.110 = agetv %tmp.106 %tmp.109;
+    %tmp.111 = 65535;
+    %tmp.112 = eq %tmp.110 %tmp.111;
+    %tmp.113 = "wind_dir keeps its unset sentinel";
+    invoke %tmp.104 %tmp.105(%tmp.112, %tmp.113);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 125 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_103_81_135_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_103_81_135_0_stop" ]
+    %o.4 = local;
+    symbol [ o %o.4 125 8 9 ];
+    %tmp.114 = lgetv %back.3;
+    symbol [ back %tmp.114 125 12 16 ];
+    symbol [ SessionPack %tmp.116 125 17 28 ];
+    %tmp.116 = getv ? :SessionPack;
+    symbol [ SLOT_OUTCOMES %tmp.117 125 29 42 ];
+    %tmp.117 = getv %tmp.116 :SLOT_OUTCOMES;
+    %tmp.118 = agetv %tmp.114 %tmp.117;
+    lputv %o.4 %tmp.118;
+    symbol [ o %o.4 125 8 9 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 126 4 ]
+    symbol [ Test %tmp.119 126 4 8 ];
+    %tmp.119 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.120 126 9 22 ];
+    %tmp.120 = getv function %tmp.119 :assertMessage;
+    symbol [ SessionPack %tmp.122 126 23 34 ];
+    %tmp.122 = getv ? :SessionPack;
+    symbol [ outcomeFlew %tmp.123 126 35 46 ];
+    %tmp.123 = getv function %tmp.122 :outcomeFlew;
+    %tmp.124 = lgetv %o.4;
+    symbol [ o %tmp.124 126 47 48 ];
+    %tmp.125 = invoke %tmp.122 %tmp.123(%tmp.124);
+    %tmp.126 = 254;
+    %tmp.127 = eq %tmp.125 %tmp.126;
+    %tmp.128 = "packed flew saturates";
+    invoke %tmp.119 %tmp.120(%tmp.127, %tmp.128);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 127 4 ]
+    symbol [ Test %tmp.129 127 4 8 ];
+    %tmp.129 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.130 127 9 22 ];
+    %tmp.130 = getv function %tmp.129 :assertMessage;
+    symbol [ SessionPack %tmp.132 127 23 34 ];
+    %tmp.132 = getv ? :SessionPack;
+    symbol [ outcomeTouchdown %tmp.133 127 35 51 ];
+    %tmp.133 = getv function %tmp.132 :outcomeTouchdown;
+    %tmp.134 = lgetv %o.4;
+    symbol [ o %tmp.134 127 52 53 ];
+    %tmp.135 = invoke %tmp.132 %tmp.133(%tmp.134);
+    %tmp.136 = 5;
+    %tmp.137 = eq %tmp.135 %tmp.136;
+    %tmp.138 = "neighbour intact";
+    invoke %tmp.129 %tmp.130(%tmp.137, %tmp.138);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 128 4 ]
+    symbol [ Test %tmp.139 128 4 8 ];
+    %tmp.139 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.140 128 9 22 ];
+    %tmp.140 = getv function %tmp.139 :assertMessage;
+    symbol [ SessionPack %tmp.142 128 23 34 ];
+    %tmp.142 = getv ? :SessionPack;
+    symbol [ outcomeFell %tmp.143 128 35 46 ];
+    %tmp.143 = getv function %tmp.142 :outcomeFell;
+    %tmp.144 = lgetv %o.4;
+    symbol [ o %tmp.144 128 47 48 ];
+    %tmp.145 = invoke %tmp.142 %tmp.143(%tmp.144);
+    %tmp.146 = 0;
+    %tmp.147 = eq %tmp.145 %tmp.146;
+    %tmp.148 = "packed fell floors at 0";
+    invoke %tmp.139 %tmp.140(%tmp.147, %tmp.148);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 130 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_103_81_135_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_103_81_135_0_stop" ]
+    %c.5 = local;
+    symbol [ c %c.5 130 8 9 ];
+    symbol [ SessionPack %tmp.150 130 12 23 ];
+    %tmp.150 = getv ? :SessionPack;
+    symbol [ packCfg %tmp.151 130 24 31 ];
+    %tmp.151 = getv function %tmp.150 :packCfg;
+    %tmp.152 = 694;
+    %tmp.153 = 9999;
+    %tmp.154 = 99;
+    %tmp.155 = invoke %tmp.150 %tmp.151(%tmp.152, %tmp.153, %tmp.154);
+    lputv %c.5 %tmp.155;
+    symbol [ c %c.5 130 8 9 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 131 4 ]
+    symbol [ Test %tmp.156 131 4 8 ];
+    %tmp.156 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.157 131 9 22 ];
+    %tmp.157 = getv function %tmp.156 :assertMessage;
+    symbol [ SessionPack %tmp.159 131 23 34 ];
+    %tmp.159 = getv ? :SessionPack;
+    symbol [ cfgEntryCms %tmp.160 131 35 46 ];
+    %tmp.160 = getv function %tmp.159 :cfgEntryCms;
+    %tmp.161 = lgetv %c.5;
+    symbol [ c %tmp.161 131 47 48 ];
+    %tmp.162 = invoke %tmp.159 %tmp.160(%tmp.161);
+    %tmp.163 = 694;
+    %tmp.164 = eq %tmp.162 %tmp.163;
+    %tmp.165 = "entry kept";
+    invoke %tmp.156 %tmp.157(%tmp.164, %tmp.165);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 132 4 ]
+    symbol [ Test %tmp.166 132 4 8 ];
+    %tmp.166 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.167 132 9 22 ];
+    %tmp.167 = getv function %tmp.166 :assertMessage;
+    symbol [ SessionPack %tmp.169 132 23 34 ];
+    %tmp.169 = getv ? :SessionPack;
+    symbol [ cfgExitCms %tmp.170 132 35 45 ];
+    %tmp.170 = getv function %tmp.169 :cfgExitCms;
+    %tmp.171 = lgetv %c.5;
+    symbol [ c %tmp.171 132 46 47 ];
+    %tmp.172 = invoke %tmp.169 %tmp.170(%tmp.171);
+    %tmp.173 = 2047;
+    %tmp.174 = eq %tmp.172 %tmp.173;
+    %tmp.175 = "exit clamped to its 11 bits";
+    invoke %tmp.166 %tmp.167(%tmp.174, %tmp.175);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 133 4 ]
+    symbol [ Test %tmp.176 133 4 8 ];
+    %tmp.176 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.177 133 9 22 ];
+    %tmp.177 = getv function %tmp.176 :assertMessage;
+    symbol [ SessionPack %tmp.179 133 23 34 ];
+    %tmp.179 = getv ? :SessionPack;
+    symbol [ cfgMinFlightS %tmp.180 133 35 48 ];
+    %tmp.180 = getv function %tmp.179 :cfgMinFlightS;
+    %tmp.181 = lgetv %c.5;
+    symbol [ c %tmp.181 133 49 50 ];
+    %tmp.182 = invoke %tmp.179 %tmp.180(%tmp.181);
+    %tmp.183 = 31;
+    %tmp.184 = eq %tmp.182 %tmp.183;
+    %tmp.185 = "min flight clamped to 5 bits";
+    invoke %tmp.176 %tmp.177(%tmp.184, %tmp.185);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 134 4 ]
+    %tmp.186 = true;
+    ret %tmp.186;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_103_81_135_0_stop:
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 138; test = true; @symbol_functiondef = [sessionValuesComeFromTheDetectors,138,9,42]; @symbol_param<0> = [logger,138,43,49]; @symbol_param<0>_type<0> = [Test,138,53,57]; @symbol_param<0>_type<1> = [Logger,138,58,64]; @symbol_return<0> = [Boolean,138,69,76]; ]
+function sessionValuesComeFromTheDetectors(logger as Test.Logger) as Boolean {
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_138_77_173_0_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 141 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_138_77_173_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_138_77_173_0_stop" ]
+    %cfg.1 = local;
+    symbol [ cfg %cfg.1 141 8 11 ];
+    %tmp.1 = self;
+    symbol [ fieldCfg %tmp.2 141 14 22 ];
+    %tmp.2 = getv function %tmp.1 :fieldCfg;
+    %tmp.3 = invoke %tmp.1 %tmp.2();
+    lputv %cfg.1 %tmp.3;
+    symbol [ cfg %cfg.1 141 8 11 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 142 4 ]
+    %tmp.4 = lgetv %cfg.1;
+    symbol [ cfg %tmp.4 142 4 7 ];
+    %tmp.5 = 210;
+    symbol [ windDirection ? 142 8 21 ];
+    putv %tmp.4 :windDirection %tmp.5;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 143 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_138_77_173_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_138_77_173_0_stop" ]
+    %e.2 = local;
+    symbol [ e %e.2 143 8 9 ];
+    symbol [ FieldEngine %tmp.9 143 16 27 ];
+    %tmp.9 = getv ? :FieldEngine;
+    %tmp.10 = lgetv %cfg.1;
+    symbol [ cfg %tmp.10 143 28 31 ];
+    %tmp.6 = newc %tmp.9 (%tmp.10);
+    lputv %e.2 %tmp.6;
+    symbol [ e %e.2 143 8 9 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 144 4 ]
+    %tmp.11 = lgetv %e.2;
+    symbol [ e %tmp.11 144 4 5 ];
+    %tmp.12 = 100.0;
+    symbol [ timerS ? 144 6 12 ];
+    putv %tmp.11 :timerS %tmp.12;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 145 4 ]
+    for @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_145_4_147_4_for_test @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_145_4_147_4_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_145_4_147_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_145_4_147_4_for_init:
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_145_4_147_4_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_145_4_147_4_for_end" ]
+    %i.3 = local;
+    symbol [ i %i.3 145 13 14 ];
+    %tmp.13 = 0;
+    lputv %i.3 %tmp.13;
+    symbol [ i %i.3 145 13 14 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_145_4_147_4_for_test:
+    %tmp.14 = lgetv %i.3;
+    symbol [ i %tmp.14 145 20 21 ];
+    %tmp.15 = 30;
+    %tmp.16 = lt %tmp.14 %tmp.15;
+    bf %tmp.16 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_145_4_147_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_145_4_147_4_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_145_33_147_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 146 8 ]
+    %tmp.17 = lgetv %e.2;
+    symbol [ e %tmp.17 146 8 9 ];
+    symbol [ feed %tmp.18 146 10 14 ];
+    %tmp.18 = getv function %tmp.17 :feed;
+    %tmp.19 = 1.0;
+    %tmp.20 = 5.0;
+    %tmp.21 = 90.0;
+    %tmp.22 = 5.0;
+    symbol [ Position %tmp.23 146 36 44 ];
+    %tmp.23 = getm $.Toybox.Position;
+    symbol [ QUALITY_GOOD %tmp.24 146 45 57 ];
+    %tmp.24 = getv %tmp.23 :QUALITY_GOOD;
+    %tmp.25 = null;
+    invoke %tmp.17 %tmp.18(%tmp.19, %tmp.20, %tmp.21, %tmp.22, %tmp.24, %tmp.25);
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_145_33_147_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_145_4_147_4_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 145 ]
+    %tmp.28 = lgetv %i.3;
+    symbol [ i %tmp.28 145 28 29 ];
+    %tmp.29 = add %tmp.28 1;
+    lputv %i.3 %tmp.29;
+    symbol [ i %i.3 145 28 29 ];
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_145_4_147_4_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_145_4_147_4_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 148 4 ]
+    for @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_148_4_150_4_for_test @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_148_4_150_4_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_148_4_150_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_148_4_150_4_for_init:
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_148_4_150_4_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_148_4_150_4_for_end" ]
+    %i.4 = local;
+    symbol [ i %i.4 148 13 14 ];
+    %tmp.30 = 0;
+    lputv %i.4 %tmp.30;
+    symbol [ i %i.4 148 13 14 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_148_4_150_4_for_test:
+    %tmp.31 = lgetv %i.4;
+    symbol [ i %tmp.31 148 20 21 ];
+    %tmp.32 = 6;
+    %tmp.33 = lt %tmp.31 %tmp.32;
+    bf %tmp.33 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_148_4_150_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_148_4_150_4_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_148_32_150_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 149 8 ]
+    %tmp.34 = lgetv %e.2;
+    symbol [ e %tmp.34 149 8 9 ];
+    symbol [ feed %tmp.35 149 10 14 ];
+    %tmp.35 = getv function %tmp.34 :feed;
+    %tmp.36 = 1.0;
+    %tmp.37 = 1.0;
+    %tmp.38 = null;
+    %tmp.39 = 1.0;
+    symbol [ Position %tmp.40 149 36 44 ];
+    %tmp.40 = getm $.Toybox.Position;
+    symbol [ QUALITY_GOOD %tmp.41 149 45 57 ];
+    %tmp.41 = getv %tmp.40 :QUALITY_GOOD;
+    %tmp.42 = null;
+    invoke %tmp.34 %tmp.35(%tmp.36, %tmp.37, %tmp.38, %tmp.39, %tmp.41, %tmp.42);
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_148_32_150_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_148_4_150_4_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 148 ]
+    %tmp.45 = lgetv %i.4;
+    symbol [ i %tmp.45 148 27 28 ];
+    %tmp.46 = add %tmp.45 1;
+    lputv %i.4 %tmp.46;
+    symbol [ i %i.4 148 27 28 ];
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_148_4_150_4_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_148_4_150_4_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 151 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_138_77_173_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_138_77_173_0_stop" ]
+    %vals.5 = local;
+    symbol [ vals %vals.5 151 8 12 ];
+    symbol [ SessionPack %tmp.48 151 15 26 ];
+    %tmp.48 = getv ? :SessionPack;
+    symbol [ fromEngine %tmp.49 151 27 37 ];
+    %tmp.49 = getv function %tmp.48 :fromEngine;
+    %tmp.50 = lgetv %e.2;
+    symbol [ e %tmp.50 151 38 39 ];
+    %tmp.51 = lgetv %cfg.1;
+    symbol [ cfg %tmp.51 151 41 44 ];
+    %tmp.52 = 257;
+    %tmp.53 = invoke %tmp.48 %tmp.49(%tmp.50, %tmp.51, %tmp.52);
+    lputv %vals.5 %tmp.53;
+    symbol [ vals %vals.5 151 8 12 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 152 4 ]
+    symbol [ Test %tmp.54 152 4 8 ];
+    %tmp.54 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.55 152 9 22 ];
+    %tmp.55 = getv function %tmp.54 :assertMessage;
+    %tmp.56 = lgetv %vals.5;
+    symbol [ vals %tmp.56 152 23 27 ];
+    symbol [ SessionPack %tmp.58 152 28 39 ];
+    %tmp.58 = getv ? :SessionPack;
+    symbol [ SLOT_FLIGHT_COUNT %tmp.59 152 40 57 ];
+    %tmp.59 = getv %tmp.58 :SLOT_FLIGHT_COUNT;
+    %tmp.60 = agetv %tmp.56 %tmp.59;
+    %tmp.61 = 1;
+    %tmp.62 = eq %tmp.60 %tmp.61;
+    %tmp.63 = "one flight";
+    invoke %tmp.54 %tmp.55(%tmp.62, %tmp.63);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 153 4 ]
+    symbol [ Test %tmp.64 153 4 8 ];
+    %tmp.64 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.65 153 9 22 ];
+    %tmp.65 = getv function %tmp.64 :assertMessage;
+    %tmp.66 = lgetv %vals.5;
+    symbol [ vals %tmp.66 153 23 27 ];
+    symbol [ SessionPack %tmp.68 153 28 39 ];
+    %tmp.68 = getv ? :SessionPack;
+    symbol [ SLOT_FOIL_TIME %tmp.69 153 40 54 ];
+    %tmp.69 = getv %tmp.68 :SLOT_FOIL_TIME;
+    %tmp.70 = agetv %tmp.66 %tmp.69;
+    %tmp.71 = lgetv %e.2;
+    symbol [ e %tmp.71 153 59 60 ];
+    symbol [ detector %tmp.72 153 61 69 ];
+    %tmp.72 = getv %tmp.71 :detector;
+    symbol [ foilTimeS %tmp.73 153 70 79 ];
+    %tmp.73 = getv %tmp.72 :foilTimeS;
+    symbol [ toNumber %tmp.74 153 80 88 ];
+    %tmp.74 = getv function %tmp.73 :toNumber;
+    %tmp.75 = invoke %tmp.73 %tmp.74();
+    %tmp.76 = eq %tmp.70 %tmp.75;
+    %tmp.77 = "foil time passed through";
+    invoke %tmp.64 %tmp.65(%tmp.76, %tmp.77);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 158 4 ]
+    symbol [ Test %tmp.78 158 4 8 ];
+    %tmp.78 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.79 158 9 22 ];
+    %tmp.79 = getv function %tmp.78 :assertMessage;
+    %tmp.80 = lgetv %vals.5;
+    symbol [ vals %tmp.80 158 23 27 ];
+    symbol [ SessionPack %tmp.82 158 28 39 ];
+    %tmp.82 = getv ? :SessionPack;
+    symbol [ SLOT_FOIL_PCT %tmp.83 158 40 53 ];
+    %tmp.83 = getv %tmp.82 :SLOT_FOIL_PCT;
+    %tmp.84 = agetv %tmp.80 %tmp.83;
+    %tmp.85 = 30;
+    %tmp.86 = eq %tmp.84 %tmp.85;
+    %tmp.87 = "30 % of a 100 s timer, got ";
+    %tmp.88 = lgetv %vals.5;
+    symbol [ vals %tmp.88 159 40 44 ];
+    symbol [ SessionPack %tmp.90 159 45 56 ];
+    %tmp.90 = getv ? :SessionPack;
+    symbol [ SLOT_FOIL_PCT %tmp.91 159 57 70 ];
+    %tmp.91 = getv %tmp.90 :SLOT_FOIL_PCT;
+    %tmp.92 = agetv %tmp.88 %tmp.91;
+    symbol [ toString %tmp.93 159 72 80 ];
+    %tmp.93 = getv function %tmp.92 :toString;
+    %tmp.94 = invoke %tmp.92 %tmp.93();
+    %tmp.95 = add %tmp.87 %tmp.94;
+    invoke %tmp.78 %tmp.79(%tmp.86, %tmp.95);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 160 4 ]
+    symbol [ Test %tmp.96 160 4 8 ];
+    %tmp.96 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.97 160 9 22 ];
+    %tmp.97 = getv function %tmp.96 :assertMessage;
+    %tmp.98 = lgetv %vals.5;
+    symbol [ vals %tmp.98 160 23 27 ];
+    symbol [ SessionPack %tmp.100 160 28 39 ];
+    %tmp.100 = getv ? :SessionPack;
+    symbol [ SLOT_BEST_2S %tmp.101 160 40 52 ];
+    %tmp.101 = getv %tmp.100 :SLOT_BEST_2S;
+    %tmp.102 = agetv %tmp.98 %tmp.101;
+    %tmp.103 = 500;
+    %tmp.104 = eq %tmp.102 %tmp.103;
+    %tmp.105 = "best 2 s = 5.00 m/s";
+    invoke %tmp.96 %tmp.97(%tmp.104, %tmp.105);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 161 4 ]
+    symbol [ Test %tmp.106 161 4 8 ];
+    %tmp.106 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.107 161 9 22 ];
+    %tmp.107 = getv function %tmp.106 :assertMessage;
+    %tmp.108 = lgetv %vals.5;
+    symbol [ vals %tmp.108 161 23 27 ];
+    symbol [ SessionPack %tmp.110 161 28 39 ];
+    %tmp.110 = getv ? :SessionPack;
+    symbol [ SLOT_WIND_DIR %tmp.111 161 40 53 ];
+    %tmp.111 = getv %tmp.110 :SLOT_WIND_DIR;
+    %tmp.112 = agetv %tmp.108 %tmp.111;
+    %tmp.113 = 210;
+    %tmp.114 = eq %tmp.112 %tmp.113;
+    %tmp.115 = "wind axis echoed";
+    invoke %tmp.106 %tmp.107(%tmp.114, %tmp.115);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 162 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_138_77_173_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_138_77_173_0_stop" ]
+    %c.6 = local;
+    symbol [ c %c.6 162 8 9 ];
+    %tmp.116 = lgetv %vals.5;
+    symbol [ vals %tmp.116 162 12 16 ];
+    symbol [ SessionPack %tmp.118 162 17 28 ];
+    %tmp.118 = getv ? :SessionPack;
+    symbol [ SLOT_CFG %tmp.119 162 29 37 ];
+    %tmp.119 = getv %tmp.118 :SLOT_CFG;
+    %tmp.120 = agetv %tmp.116 %tmp.119;
+    lputv %c.6 %tmp.120;
+    symbol [ c %c.6 162 8 9 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 163 4 ]
+    symbol [ Test %tmp.121 163 4 8 ];
+    %tmp.121 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.122 163 9 22 ];
+    %tmp.122 = getv function %tmp.121 :assertMessage;
+    symbol [ SessionPack %tmp.124 163 23 34 ];
+    %tmp.124 = getv ? :SessionPack;
+    symbol [ cfgEntryCms %tmp.125 163 35 46 ];
+    %tmp.125 = getv function %tmp.124 :cfgEntryCms;
+    %tmp.126 = lgetv %c.6;
+    symbol [ c %tmp.126 163 47 48 ];
+    %tmp.127 = invoke %tmp.124 %tmp.125(%tmp.126);
+    %tmp.128 = 333;
+    %tmp.129 = eq %tmp.127 %tmp.128;
+    %tmp.130 = "entry threshold echoed";
+    invoke %tmp.121 %tmp.122(%tmp.129, %tmp.130);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 164 4 ]
+    symbol [ Test %tmp.131 164 4 8 ];
+    %tmp.131 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.132 164 9 22 ];
+    %tmp.132 = getv function %tmp.131 :assertMessage;
+    symbol [ SessionPack %tmp.134 164 23 34 ];
+    %tmp.134 = getv ? :SessionPack;
+    symbol [ cfgExitCms %tmp.135 164 35 45 ];
+    %tmp.135 = getv function %tmp.134 :cfgExitCms;
+    %tmp.136 = lgetv %c.6;
+    symbol [ c %tmp.136 164 46 47 ];
+    %tmp.137 = invoke %tmp.134 %tmp.135(%tmp.136);
+    %tmp.138 = 222;
+    %tmp.139 = eq %tmp.137 %tmp.138;
+    %tmp.140 = "exit threshold echoed";
+    invoke %tmp.131 %tmp.132(%tmp.139, %tmp.140);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 165 4 ]
+    symbol [ Test %tmp.141 165 4 8 ];
+    %tmp.141 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.142 165 9 22 ];
+    %tmp.142 = getv function %tmp.141 :assertMessage;
+    symbol [ SessionPack %tmp.144 165 23 34 ];
+    %tmp.144 = getv ? :SessionPack;
+    symbol [ cfgMinFlightS %tmp.145 165 35 48 ];
+    %tmp.145 = getv function %tmp.144 :cfgMinFlightS;
+    %tmp.146 = lgetv %c.6;
+    symbol [ c %tmp.146 165 49 50 ];
+    %tmp.147 = invoke %tmp.144 %tmp.145(%tmp.146);
+    %tmp.148 = 5;
+    %tmp.149 = eq %tmp.147 %tmp.148;
+    %tmp.150 = "min flight echoed";
+    invoke %tmp.141 %tmp.142(%tmp.149, %tmp.150);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 166 4 ]
+    symbol [ Test %tmp.151 166 4 8 ];
+    %tmp.151 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.152 166 9 22 ];
+    %tmp.152 = getv function %tmp.151 :assertMessage;
+    %tmp.153 = lgetv %vals.5;
+    symbol [ vals %tmp.153 166 23 27 ];
+    symbol [ SessionPack %tmp.155 166 28 39 ];
+    %tmp.155 = getv ? :SessionPack;
+    symbol [ SLOT_DISCIPLINE %tmp.156 166 40 55 ];
+    %tmp.156 = getv %tmp.155 :SLOT_DISCIPLINE;
+    %tmp.157 = agetv %tmp.153 %tmp.156;
+    symbol [ SessionPack %tmp.159 166 60 71 ];
+    %tmp.159 = getv ? :SessionPack;
+    symbol [ DISCIPLINE_WINGFOIL %tmp.160 166 72 91 ];
+    %tmp.160 = getv %tmp.159 :DISCIPLINE_WINGFOIL;
+    %tmp.161 = eq %tmp.157 %tmp.160;
+    %tmp.162 = "discipline marker present — this is what tells a parser the session is ours";
+    invoke %tmp.151 %tmp.152(%tmp.161, %tmp.162);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 169 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_138_77_173_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_138_77_173_0_stop" ]
+    %back.7 = local;
+    symbol [ back %back.7 169 8 12 ];
+    symbol [ SessionPack %tmp.164 169 15 26 ];
+    %tmp.164 = getv ? :SessionPack;
+    symbol [ decode %tmp.165 169 27 33 ];
+    %tmp.165 = getv function %tmp.164 :decode;
+    symbol [ SessionPack %tmp.167 169 34 45 ];
+    %tmp.167 = getv ? :SessionPack;
+    symbol [ encode %tmp.168 169 46 52 ];
+    %tmp.168 = getv function %tmp.167 :encode;
+    %tmp.169 = lgetv %vals.5;
+    symbol [ vals %tmp.169 169 53 57 ];
+    %tmp.170 = invoke %tmp.167 %tmp.168(%tmp.169);
+    %tmp.171 = invoke %tmp.164 %tmp.165(%tmp.170);
+    lputv %back.7 %tmp.171;
+    symbol [ back %back.7 169 8 12 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 170 4 ]
+    symbol [ Test %tmp.172 170 4 8 ];
+    %tmp.172 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.173 170 9 22 ];
+    %tmp.173 = getv function %tmp.172 :assertMessage;
+    %tmp.174 = lgetv %back.7;
+    symbol [ back %tmp.174 170 23 27 ];
+    symbol [ SessionPack %tmp.176 170 28 39 ];
+    %tmp.176 = getv ? :SessionPack;
+    symbol [ SLOT_FOIL_TIME %tmp.177 170 40 54 ];
+    %tmp.177 = getv %tmp.176 :SLOT_FOIL_TIME;
+    %tmp.178 = agetv %tmp.174 %tmp.177;
+    %tmp.179 = lgetv %vals.5;
+    symbol [ vals %tmp.179 170 59 63 ];
+    symbol [ SessionPack %tmp.181 170 64 75 ];
+    %tmp.181 = getv ? :SessionPack;
+    symbol [ SLOT_FOIL_TIME %tmp.182 170 76 90 ];
+    %tmp.182 = getv %tmp.181 :SLOT_FOIL_TIME;
+    %tmp.183 = agetv %tmp.179 %tmp.182;
+    %tmp.184 = eq %tmp.178 %tmp.183;
+    %tmp.185 = "round trip";
+    invoke %tmp.172 %tmp.173(%tmp.184, %tmp.185);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 172 4 ]
+    %tmp.186 = true;
+    ret %tmp.186;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_138_77_173_0_stop:
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 178; test = true; @symbol_functiondef = [feedGatesOnGpsQuality,178,9,30]; @symbol_param<0> = [logger,178,31,37]; @symbol_param<0>_type<0> = [Test,178,41,45]; @symbol_param<0>_type<1> = [Logger,178,46,52]; @symbol_return<0> = [Boolean,178,57,64]; ]
+function feedGatesOnGpsQuality(logger as Test.Logger) as Boolean {
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_178_65_191_0_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 181 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_178_65_191_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_178_65_191_0_stop" ]
+    %e.1 = local;
+    symbol [ e %e.1 181 8 9 ];
+    symbol [ FieldEngine %tmp.4 181 16 27 ];
+    %tmp.4 = getv ? :FieldEngine;
+    %tmp.5 = self;
+    symbol [ fieldCfg %tmp.6 181 28 36 ];
+    %tmp.6 = getv function %tmp.5 :fieldCfg;
+    %tmp.7 = invoke %tmp.5 %tmp.6();
+    %tmp.1 = newc %tmp.4 (%tmp.7);
+    lputv %e.1 %tmp.1;
+    symbol [ e %e.1 181 8 9 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 182 4 ]
+    for @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_182_4_185_4_for_test @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_182_4_185_4_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_182_4_185_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_182_4_185_4_for_init:
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_182_4_185_4_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_182_4_185_4_for_end" ]
+    %i.2 = local;
+    symbol [ i %i.2 182 13 14 ];
+    %tmp.8 = 0;
+    lputv %i.2 %tmp.8;
+    symbol [ i %i.2 182 13 14 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_182_4_185_4_for_test:
+    %tmp.9 = lgetv %i.2;
+    symbol [ i %tmp.9 182 20 21 ];
+    %tmp.10 = 20;
+    %tmp.11 = lt %tmp.9 %tmp.10;
+    bf %tmp.11 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_182_4_185_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_182_4_185_4_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_182_33_185_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 183 8 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_182_33_185_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_182_33_185_4_stop" ]
+    %ev.3 = local;
+    symbol [ ev %ev.3 183 12 14 ];
+    %tmp.12 = lgetv %e.1;
+    symbol [ e %tmp.12 183 17 18 ];
+    symbol [ feed %tmp.13 183 19 23 ];
+    %tmp.13 = getv function %tmp.12 :feed;
+    %tmp.14 = 1.0;
+    %tmp.15 = 5.0;
+    %tmp.16 = 90.0;
+    %tmp.17 = 5.0;
+    symbol [ Position %tmp.18 183 45 53 ];
+    %tmp.18 = getm $.Toybox.Position;
+    symbol [ QUALITY_LAST_KNOWN %tmp.19 183 54 72 ];
+    %tmp.19 = getv %tmp.18 :QUALITY_LAST_KNOWN;
+    %tmp.20 = null;
+    %tmp.21 = invoke %tmp.12 %tmp.13(%tmp.14, %tmp.15, %tmp.16, %tmp.17, %tmp.19, %tmp.20);
+    lputv %ev.3 %tmp.21;
+    symbol [ ev %ev.3 183 12 14 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 184 8 ]
+    symbol [ Test %tmp.22 184 8 12 ];
+    %tmp.22 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.23 184 13 26 ];
+    %tmp.23 = getv function %tmp.22 :assertMessage;
+    %tmp.24 = lgetv %ev.3;
+    symbol [ ev %tmp.24 184 27 29 ];
+    %tmp.25 = 0;
+    %tmp.26 = eq %tmp.24 %tmp.25;
+    %tmp.27 = "no events while the fix is unusable";
+    invoke %tmp.22 %tmp.23(%tmp.26, %tmp.27);
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_182_33_185_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_182_4_185_4_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 182 ]
+    %tmp.30 = lgetv %i.2;
+    symbol [ i %tmp.30 182 28 29 ];
+    %tmp.31 = add %tmp.30 1;
+    lputv %i.2 %tmp.31;
+    symbol [ i %i.2 182 28 29 ];
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_182_4_185_4_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_182_4_185_4_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 186 4 ]
+    symbol [ Test %tmp.32 186 4 8 ];
+    %tmp.32 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.33 186 9 22 ];
+    %tmp.33 = getv function %tmp.32 :assertMessage;
+    %tmp.34 = lgetv %e.1;
+    symbol [ e %tmp.34 186 23 24 ];
+    symbol [ detector %tmp.35 186 25 33 ];
+    %tmp.35 = getv %tmp.34 :detector;
+    symbol [ flightCount %tmp.36 186 34 45 ];
+    %tmp.36 = getv %tmp.35 :flightCount;
+    %tmp.37 = 0;
+    %tmp.38 = eq %tmp.36 %tmp.37;
+    %tmp.39 = "no flight from an unusable fix";
+    invoke %tmp.32 %tmp.33(%tmp.38, %tmp.39);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 187 4 ]
+    symbol [ Test %tmp.40 187 4 8 ];
+    %tmp.40 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.41 187 9 22 ];
+    %tmp.41 = getv function %tmp.40 :assertMessage;
+    %tmp.42 = lgetv %e.1;
+    symbol [ e %tmp.42 187 23 24 ];
+    symbol [ detector %tmp.43 187 25 33 ];
+    %tmp.43 = getv %tmp.42 :detector;
+    symbol [ foilTimeS %tmp.44 187 34 43 ];
+    %tmp.44 = getv %tmp.43 :foilTimeS;
+    %tmp.45 = 0.001;
+    %tmp.46 = lt %tmp.44 %tmp.45;
+    %tmp.47 = "no foil time either";
+    invoke %tmp.40 %tmp.41(%tmp.46, %tmp.47);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 188 4 ]
+    symbol [ Test %tmp.48 188 4 8 ];
+    %tmp.48 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.49 188 9 22 ];
+    %tmp.49 = getv function %tmp.48 :assertMessage;
+    %tmp.50 = lgetv %e.1;
+    symbol [ e %tmp.50 188 23 24 ];
+    symbol [ records %tmp.51 188 25 32 ];
+    %tmp.51 = getv %tmp.50 :records;
+    symbol [ best2sMps %tmp.52 188 33 42 ];
+    %tmp.52 = getv %tmp.51 :best2sMps;
+    %tmp.53 = 0.001;
+    %tmp.54 = lt %tmp.52 %tmp.53;
+    %tmp.55 = "and no speed record";
+    invoke %tmp.48 %tmp.49(%tmp.54, %tmp.55);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 189 4 ]
+    symbol [ Test %tmp.56 189 4 8 ];
+    %tmp.56 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.57 189 9 22 ];
+    %tmp.57 = getv function %tmp.56 :assertMessage;
+    %tmp.58 = lgetv %e.1;
+    symbol [ e %tmp.58 189 23 24 ];
+    symbol [ tickCount %tmp.59 189 25 34 ];
+    %tmp.59 = getv function %tmp.58 :tickCount;
+    %tmp.60 = invoke %tmp.58 %tmp.59();
+    %tmp.61 = 20;
+    %tmp.62 = eq %tmp.60 %tmp.61;
+    %tmp.63 = "the tick counter still advances";
+    invoke %tmp.56 %tmp.57(%tmp.62, %tmp.63);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 190 4 ]
+    %tmp.64 = true;
+    ret %tmp.64;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_178_65_191_0_stop:
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 194; test = true; @symbol_functiondef = [feedDrivesFlightAndRecords,194,9,35]; @symbol_param<0> = [logger,194,36,42]; @symbol_param<0>_type<0> = [Test,194,46,50]; @symbol_param<0>_type<1> = [Logger,194,51,57]; @symbol_return<0> = [Boolean,194,62,69]; ]
+function feedDrivesFlightAndRecords(logger as Test.Logger) as Boolean {
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_194_70_213_0_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 195 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_194_70_213_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_194_70_213_0_stop" ]
+    %e.1 = local;
+    symbol [ e %e.1 195 8 9 ];
+    symbol [ FieldEngine %tmp.4 195 16 27 ];
+    %tmp.4 = getv ? :FieldEngine;
+    %tmp.5 = self;
+    symbol [ fieldCfg %tmp.6 195 28 36 ];
+    %tmp.6 = getv function %tmp.5 :fieldCfg;
+    %tmp.7 = invoke %tmp.5 %tmp.6();
+    %tmp.1 = newc %tmp.4 (%tmp.7);
+    lputv %e.1 %tmp.1;
+    symbol [ e %e.1 195 8 9 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 196 4 ]
+    %tmp.8 = lgetv %e.1;
+    symbol [ e %tmp.8 196 4 5 ];
+    %tmp.9 = 60.0;
+    symbol [ timerS ? 196 6 12 ];
+    putv %tmp.8 :timerS %tmp.9;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 197 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_194_70_213_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_194_70_213_0_stop" ]
+    %sawStart.2 = local;
+    symbol [ sawStart %sawStart.2 197 8 16 ];
+    %tmp.10 = false;
+    lputv %sawStart.2 %tmp.10;
+    symbol [ sawStart %sawStart.2 197 8 16 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 198 4 ]
+    for @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_198_4_203_4_for_test @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_198_4_203_4_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_198_4_203_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_198_4_203_4_for_init:
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_198_4_203_4_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_198_4_203_4_for_end" ]
+    %i.3 = local;
+    symbol [ i %i.3 198 13 14 ];
+    %tmp.11 = 0;
+    lputv %i.3 %tmp.11;
+    symbol [ i %i.3 198 13 14 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_198_4_203_4_for_test:
+    %tmp.12 = lgetv %i.3;
+    symbol [ i %tmp.12 198 20 21 ];
+    %tmp.13 = 30;
+    %tmp.14 = lt %tmp.12 %tmp.13;
+    bf %tmp.14 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_198_4_203_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_198_4_203_4_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_198_33_203_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 199 8 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_198_33_203_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_198_33_203_4_stop" ]
+    %ev.4 = local;
+    symbol [ ev %ev.4 199 12 14 ];
+    %tmp.15 = lgetv %e.1;
+    symbol [ e %tmp.15 199 17 18 ];
+    symbol [ feed %tmp.16 199 19 23 ];
+    %tmp.16 = getv function %tmp.15 :feed;
+    %tmp.17 = 1.0;
+    %tmp.18 = 6.0;
+    %tmp.19 = 90.0;
+    %tmp.20 = 6.0;
+    symbol [ Position %tmp.21 199 45 53 ];
+    %tmp.21 = getm $.Toybox.Position;
+    symbol [ QUALITY_GOOD %tmp.22 199 54 66 ];
+    %tmp.22 = getv %tmp.21 :QUALITY_GOOD;
+    %tmp.23 = null;
+    %tmp.24 = invoke %tmp.15 %tmp.16(%tmp.17, %tmp.18, %tmp.19, %tmp.20, %tmp.22, %tmp.23);
+    lputv %ev.4 %tmp.24;
+    symbol [ ev %ev.4 199 12 14 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 200 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_200_8_202_8_if_stmt:
+    %tmp.25 = lgetv %ev.4;
+    symbol [ ev %tmp.25 200 13 15 ];
+    %tmp.26 = 0x0F;
+    %tmp.27 = bitand %tmp.25 %tmp.26;
+    symbol [ FlightDetector %tmp.29 200 27 41 ];
+    %tmp.29 = getv ? :FlightDetector;
+    symbol [ EVENT_START %tmp.30 200 42 53 ];
+    %tmp.30 = getv %tmp.29 :EVENT_START;
+    %tmp.31 = eq %tmp.27 %tmp.30;
+    bf %tmp.31 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_200_8_202_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_200_8_202_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_200_55_202_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 201 12 ]
+    %tmp.32 = true;
+    lputv %sawStart.2 %tmp.32;
+    symbol [ sawStart %sawStart.2 201 12 20 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_200_55_202_8_stop:
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_200_8_202_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_200_8_202_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_198_33_203_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_198_4_203_4_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 198 ]
+    %tmp.35 = lgetv %i.3;
+    symbol [ i %tmp.35 198 28 29 ];
+    %tmp.36 = add %tmp.35 1;
+    lputv %i.3 %tmp.36;
+    symbol [ i %i.3 198 28 29 ];
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_198_4_203_4_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_198_4_203_4_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 204 4 ]
+    symbol [ Test %tmp.37 204 4 8 ];
+    %tmp.37 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.38 204 9 22 ];
+    %tmp.38 = getv function %tmp.37 :assertMessage;
+    %tmp.39 = lgetv %sawStart.2;
+    symbol [ sawStart %tmp.39 204 23 31 ];
+    %tmp.40 = "flight start event surfaced through the packed word";
+    invoke %tmp.37 %tmp.38(%tmp.39, %tmp.40);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 205 4 ]
+    symbol [ Test %tmp.41 205 4 8 ];
+    %tmp.41 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.42 205 9 22 ];
+    %tmp.42 = getv function %tmp.41 :assertMessage;
+    %tmp.43 = lgetv %e.1;
+    symbol [ e %tmp.43 205 23 24 ];
+    symbol [ flying %tmp.44 205 25 31 ];
+    %tmp.44 = getv function %tmp.43 :flying;
+    %tmp.45 = invoke %tmp.43 %tmp.44();
+    %tmp.46 = "still on the foil";
+    invoke %tmp.41 %tmp.42(%tmp.45, %tmp.46);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 206 4 ]
+    symbol [ Test %tmp.47 206 4 8 ];
+    %tmp.47 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.48 206 9 22 ];
+    %tmp.48 = getv function %tmp.47 :assertMessage;
+    %tmp.49 = lgetv %e.1;
+    symbol [ e %tmp.49 206 23 24 ];
+    symbol [ detector %tmp.50 206 25 33 ];
+    %tmp.50 = getv %tmp.49 :detector;
+    symbol [ flightCount %tmp.51 206 34 45 ];
+    %tmp.51 = getv %tmp.50 :flightCount;
+    %tmp.52 = 1;
+    %tmp.53 = eq %tmp.51 %tmp.52;
+    %tmp.54 = "one flight";
+    invoke %tmp.47 %tmp.48(%tmp.53, %tmp.54);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 207 4 ]
+    symbol [ Test %tmp.55 207 4 8 ];
+    %tmp.55 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.56 207 9 22 ];
+    %tmp.56 = getv function %tmp.55 :assertMessage;
+    %tmp.57 = lgetv %e.1;
+    symbol [ e %tmp.57 207 24 25 ];
+    symbol [ records %tmp.58 207 26 33 ];
+    %tmp.58 = getv %tmp.57 :records;
+    symbol [ best2sMps %tmp.59 207 34 43 ];
+    %tmp.59 = getv %tmp.58 :best2sMps;
+    %tmp.60 = 6.0;
+    %tmp.61 = sub %tmp.59 %tmp.60;
+    symbol [ abs %tmp.62 207 51 54 ];
+    %tmp.62 = getv function %tmp.61 :abs;
+    %tmp.63 = invoke %tmp.61 %tmp.62();
+    %tmp.64 = 0.0001;
+    %tmp.65 = lt %tmp.63 %tmp.64;
+    %tmp.66 = "best 2 s = 6 m/s";
+    invoke %tmp.55 %tmp.56(%tmp.65, %tmp.66);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 208 4 ]
+    symbol [ Test %tmp.67 208 4 8 ];
+    %tmp.67 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.68 208 9 22 ];
+    %tmp.68 = getv function %tmp.67 :assertMessage;
+    %tmp.69 = lgetv %e.1;
+    symbol [ e %tmp.69 208 24 25 ];
+    symbol [ foilPct %tmp.70 208 26 33 ];
+    %tmp.70 = getv function %tmp.69 :foilPct;
+    %tmp.71 = invoke %tmp.69 %tmp.70();
+    %tmp.72 = 50.0;
+    %tmp.73 = sub %tmp.71 %tmp.72;
+    symbol [ abs %tmp.74 208 44 47 ];
+    %tmp.74 = getv function %tmp.73 :abs;
+    %tmp.75 = invoke %tmp.73 %tmp.74();
+    %tmp.76 = 2.0;
+    %tmp.77 = lt %tmp.75 %tmp.76;
+    %tmp.78 = "30 s of foil in a 60 s timer, got ";
+    %tmp.79 = lgetv %e.1;
+    symbol [ e %tmp.79 209 47 48 ];
+    symbol [ foilPct %tmp.80 209 49 56 ];
+    %tmp.80 = getv function %tmp.79 :foilPct;
+    %tmp.81 = invoke %tmp.79 %tmp.80();
+    symbol [ format %tmp.82 209 59 65 ];
+    %tmp.82 = getv function %tmp.81 :format;
+    %tmp.83 = "%.1f";
+    %tmp.84 = invoke %tmp.81 %tmp.82(%tmp.83);
+    %tmp.85 = add %tmp.78 %tmp.84;
+    invoke %tmp.67 %tmp.68(%tmp.77, %tmp.85);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 210 4 ]
+    symbol [ Test %tmp.86 210 4 8 ];
+    %tmp.86 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.87 210 9 22 ];
+    %tmp.87 = getv function %tmp.86 :assertMessage;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_210_23_210_69_begin:
+    %tmp.88 = lgetv %e.1;
+    symbol [ e %tmp.88 210 23 24 ];
+    symbol [ speedMps %tmp.89 210 25 33 ];
+    %tmp.89 = getv %tmp.88 :speedMps;
+    %tmp.90 = 6.0;
+    %tmp.91 = eq %tmp.89 %tmp.90;
+    %tmp.92 = dup %tmp.91;
+    bf %tmp.92 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_210_44_210_69_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_210_44_210_69_true:
+    %tmp.93 = lgetv %e.1;
+    symbol [ e %tmp.93 210 44 45 ];
+    symbol [ gpsQuality %tmp.94 210 46 56 ];
+    %tmp.94 = getv %tmp.93 :gpsQuality;
+    symbol [ Position %tmp.95 210 60 68 ];
+    %tmp.95 = getm $.Toybox.Position;
+    symbol [ QUALITY_GOOD %tmp.96 210 69 81 ];
+    %tmp.96 = getv %tmp.95 :QUALITY_GOOD;
+    %tmp.97 = eq %tmp.94 %tmp.96;
+    %tmp.98 = and %tmp.91 %tmp.97;
+    push %tmp.98;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_210_44_210_69_end:
+    %tmp.99 = phi [%tmp.92 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_210_23_210_69_begin] [%tmp.98 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_210_44_210_69_true] [%tmp.99 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_210_44_210_69_end];
+    %tmp.100 = "live values for the view";
+    invoke %tmp.86 %tmp.87(%tmp.99, %tmp.100);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 212 4 ]
+    %tmp.101 = true;
+    ret %tmp.101;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_194_70_213_0_stop:
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 216; test = true; @symbol_functiondef = [feedDetectsSubmersionFromPressure,216,9,42]; @symbol_param<0> = [logger,216,43,49]; @symbol_param<0>_type<0> = [Test,216,53,57]; @symbol_param<0>_type<1> = [Logger,216,58,64]; @symbol_return<0> = [Boolean,216,69,76]; ]
+function feedDetectsSubmersionFromPressure(logger as Test.Logger) as Boolean {
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_216_77_231_0_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 219 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_216_77_231_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_216_77_231_0_stop" ]
+    %e.1 = local;
+    symbol [ e %e.1 219 8 9 ];
+    symbol [ FieldEngine %tmp.4 219 16 27 ];
+    %tmp.4 = getv ? :FieldEngine;
+    %tmp.5 = self;
+    symbol [ fieldCfg %tmp.6 219 28 36 ];
+    %tmp.6 = getv function %tmp.5 :fieldCfg;
+    %tmp.7 = invoke %tmp.5 %tmp.6();
+    %tmp.1 = newc %tmp.4 (%tmp.7);
+    lputv %e.1 %tmp.1;
+    symbol [ e %e.1 219 8 9 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 220 4 ]
+    %tmp.8 = lgetv %e.1;
+    symbol [ e %tmp.8 220 4 5 ];
+    symbol [ feed %tmp.9 220 6 10 ];
+    %tmp.9 = getv function %tmp.8 :feed;
+    %tmp.10 = 1.0;
+    %tmp.11 = 5.0;
+    %tmp.12 = 90.0;
+    %tmp.13 = 5.0;
+    symbol [ Position %tmp.14 220 32 40 ];
+    %tmp.14 = getm $.Toybox.Position;
+    symbol [ QUALITY_GOOD %tmp.15 220 41 53 ];
+    %tmp.15 = getv %tmp.14 :QUALITY_GOOD;
+    %tmp.16 = 101000.0;
+    invoke %tmp.8 %tmp.9(%tmp.10, %tmp.11, %tmp.12, %tmp.13, %tmp.15, %tmp.16);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 221 4 ]
+    symbol [ Test %tmp.17 221 4 8 ];
+    %tmp.17 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.18 221 9 22 ];
+    %tmp.18 = getv function %tmp.17 :assertMessage;
+    %tmp.19 = lgetv %e.1;
+    symbol [ e %tmp.19 221 24 25 ];
+    symbol [ submerged %tmp.20 221 26 35 ];
+    %tmp.20 = getv %tmp.19 :submerged;
+    %tmp.21 = not %tmp.20;
+    %tmp.22 = "first sample only establishes the baseline";
+    invoke %tmp.17 %tmp.18(%tmp.21, %tmp.22);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 222 4 ]
+    for @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_222_4_225_4_for_test @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_222_4_225_4_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_222_4_225_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_222_4_225_4_for_init:
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_222_4_225_4_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_222_4_225_4_for_end" ]
+    %i.2 = local;
+    symbol [ i %i.2 222 13 14 ];
+    %tmp.23 = 0;
+    lputv %i.2 %tmp.23;
+    symbol [ i %i.2 222 13 14 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_222_4_225_4_for_test:
+    %tmp.24 = lgetv %i.2;
+    symbol [ i %tmp.24 222 20 21 ];
+    %tmp.25 = 5;
+    %tmp.26 = lt %tmp.24 %tmp.25;
+    bf %tmp.26 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_222_4_225_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_222_4_225_4_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_222_32_225_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 223 8 ]
+    %tmp.27 = lgetv %e.1;
+    symbol [ e %tmp.27 223 8 9 ];
+    symbol [ feed %tmp.28 223 10 14 ];
+    %tmp.28 = getv function %tmp.27 :feed;
+    %tmp.29 = 1.0;
+    %tmp.30 = 5.0;
+    %tmp.31 = 90.0;
+    %tmp.32 = 5.0;
+    symbol [ Position %tmp.33 223 36 44 ];
+    %tmp.33 = getm $.Toybox.Position;
+    symbol [ QUALITY_GOOD %tmp.34 223 45 57 ];
+    %tmp.34 = getv %tmp.33 :QUALITY_GOOD;
+    %tmp.35 = 101020.0;
+    invoke %tmp.27 %tmp.28(%tmp.29, %tmp.30, %tmp.31, %tmp.32, %tmp.34, %tmp.35);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 224 8 ]
+    symbol [ Test %tmp.36 224 8 12 ];
+    %tmp.36 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.37 224 13 26 ];
+    %tmp.37 = getv function %tmp.36 :assertMessage;
+    %tmp.38 = lgetv %e.1;
+    symbol [ e %tmp.38 224 28 29 ];
+    symbol [ submerged %tmp.39 224 30 39 ];
+    %tmp.39 = getv %tmp.38 :submerged;
+    %tmp.40 = not %tmp.39;
+    %tmp.41 = "20 Pa of drift is not a dunk";
+    invoke %tmp.36 %tmp.37(%tmp.40, %tmp.41);
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_222_32_225_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_222_4_225_4_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 222 ]
+    %tmp.44 = lgetv %i.2;
+    symbol [ i %tmp.44 222 27 28 ];
+    %tmp.45 = add %tmp.44 1;
+    lputv %i.2 %tmp.45;
+    symbol [ i %i.2 222 27 28 ];
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_222_4_225_4_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_222_4_225_4_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 226 4 ]
+    %tmp.46 = lgetv %e.1;
+    symbol [ e %tmp.46 226 4 5 ];
+    symbol [ feed %tmp.47 226 6 10 ];
+    %tmp.47 = getv function %tmp.46 :feed;
+    %tmp.48 = 1.0;
+    %tmp.49 = 5.0;
+    %tmp.50 = 90.0;
+    %tmp.51 = 5.0;
+    symbol [ Position %tmp.52 226 32 40 ];
+    %tmp.52 = getm $.Toybox.Position;
+    symbol [ QUALITY_GOOD %tmp.53 226 41 53 ];
+    %tmp.53 = getv %tmp.52 :QUALITY_GOOD;
+    %tmp.54 = 101500.0;
+    invoke %tmp.46 %tmp.47(%tmp.48, %tmp.49, %tmp.50, %tmp.51, %tmp.53, %tmp.54);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 227 4 ]
+    symbol [ Test %tmp.55 227 4 8 ];
+    %tmp.55 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.56 227 9 22 ];
+    %tmp.56 = getv function %tmp.55 :assertMessage;
+    %tmp.57 = lgetv %e.1;
+    symbol [ e %tmp.57 227 23 24 ];
+    symbol [ submerged %tmp.58 227 25 34 ];
+    %tmp.58 = getv %tmp.57 :submerged;
+    %tmp.59 = "500 Pa above baseline is a submersion";
+    invoke %tmp.55 %tmp.56(%tmp.58, %tmp.59);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 228 4 ]
+    %tmp.60 = lgetv %e.1;
+    symbol [ e %tmp.60 228 4 5 ];
+    symbol [ feed %tmp.61 228 6 10 ];
+    %tmp.61 = getv function %tmp.60 :feed;
+    %tmp.62 = 1.0;
+    %tmp.63 = 5.0;
+    %tmp.64 = 90.0;
+    %tmp.65 = 5.0;
+    symbol [ Position %tmp.66 228 32 40 ];
+    %tmp.66 = getm $.Toybox.Position;
+    symbol [ QUALITY_GOOD %tmp.67 228 41 53 ];
+    %tmp.67 = getv %tmp.66 :QUALITY_GOOD;
+    %tmp.68 = null;
+    invoke %tmp.60 %tmp.61(%tmp.62, %tmp.63, %tmp.64, %tmp.65, %tmp.67, %tmp.68);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 229 4 ]
+    symbol [ Test %tmp.69 229 4 8 ];
+    %tmp.69 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.70 229 9 22 ];
+    %tmp.70 = getv function %tmp.69 :assertMessage;
+    %tmp.71 = lgetv %e.1;
+    symbol [ e %tmp.71 229 24 25 ];
+    symbol [ submerged %tmp.72 229 26 35 ];
+    %tmp.72 = getv %tmp.71 :submerged;
+    %tmp.73 = not %tmp.72;
+    %tmp.74 = "no pressure channel = no evidence, not a dunk";
+    invoke %tmp.69 %tmp.70(%tmp.73, %tmp.74);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 230 4 ]
+    %tmp.75 = true;
+    ret %tmp.75;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_216_77_231_0_stop:
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 234; test = true; @symbol_functiondef = [resetClearsEverythingForANewActivity,234,9,45]; @symbol_param<0> = [logger,234,46,52]; @symbol_param<0>_type<0> = [Test,234,56,60]; @symbol_param<0>_type<1> = [Logger,234,61,67]; @symbol_return<0> = [Boolean,234,72,79]; ]
+function resetClearsEverythingForANewActivity(logger as Test.Logger) as Boolean {
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_234_80_249_0_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 236 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_234_80_249_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_234_80_249_0_stop" ]
+    %e.1 = local;
+    symbol [ e %e.1 236 8 9 ];
+    symbol [ FieldEngine %tmp.4 236 16 27 ];
+    %tmp.4 = getv ? :FieldEngine;
+    %tmp.5 = self;
+    symbol [ fieldCfg %tmp.6 236 28 36 ];
+    %tmp.6 = getv function %tmp.5 :fieldCfg;
+    %tmp.7 = invoke %tmp.5 %tmp.6();
+    %tmp.1 = newc %tmp.4 (%tmp.7);
+    lputv %e.1 %tmp.1;
+    symbol [ e %e.1 236 8 9 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 237 4 ]
+    for @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_237_4_239_4_for_test @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_237_4_239_4_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_237_4_239_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_237_4_239_4_for_init:
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_237_4_239_4_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_237_4_239_4_for_end" ]
+    %i.2 = local;
+    symbol [ i %i.2 237 13 14 ];
+    %tmp.8 = 0;
+    lputv %i.2 %tmp.8;
+    symbol [ i %i.2 237 13 14 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_237_4_239_4_for_test:
+    %tmp.9 = lgetv %i.2;
+    symbol [ i %tmp.9 237 20 21 ];
+    %tmp.10 = 20;
+    %tmp.11 = lt %tmp.9 %tmp.10;
+    bf %tmp.11 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_237_4_239_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_237_4_239_4_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_237_33_239_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 238 8 ]
+    %tmp.12 = lgetv %e.1;
+    symbol [ e %tmp.12 238 8 9 ];
+    symbol [ feed %tmp.13 238 10 14 ];
+    %tmp.13 = getv function %tmp.12 :feed;
+    %tmp.14 = 1.0;
+    %tmp.15 = 6.0;
+    %tmp.16 = 90.0;
+    %tmp.17 = 6.0;
+    symbol [ Position %tmp.18 238 36 44 ];
+    %tmp.18 = getm $.Toybox.Position;
+    symbol [ QUALITY_GOOD %tmp.19 238 45 57 ];
+    %tmp.19 = getv %tmp.18 :QUALITY_GOOD;
+    %tmp.20 = null;
+    invoke %tmp.12 %tmp.13(%tmp.14, %tmp.15, %tmp.16, %tmp.17, %tmp.19, %tmp.20);
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_237_33_239_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_237_4_239_4_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 237 ]
+    %tmp.23 = lgetv %i.2;
+    symbol [ i %tmp.23 237 28 29 ];
+    %tmp.24 = add %tmp.23 1;
+    lputv %i.2 %tmp.24;
+    symbol [ i %i.2 237 28 29 ];
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_237_4_239_4_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_237_4_239_4_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 240 4 ]
+    symbol [ Test %tmp.25 240 4 8 ];
+    %tmp.25 = getm $.Toybox.Test;
+    symbol [ assert %tmp.26 240 9 15 ];
+    %tmp.26 = getv function %tmp.25 :assert;
+    %tmp.27 = lgetv %e.1;
+    symbol [ e %tmp.27 240 16 17 ];
+    symbol [ detector %tmp.28 240 18 26 ];
+    %tmp.28 = getv %tmp.27 :detector;
+    symbol [ flightCount %tmp.29 240 27 38 ];
+    %tmp.29 = getv %tmp.28 :flightCount;
+    %tmp.30 = 1;
+    %tmp.31 = eq %tmp.29 %tmp.30;
+    invoke %tmp.25 %tmp.26(%tmp.31);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 241 4 ]
+    %tmp.32 = lgetv %e.1;
+    symbol [ e %tmp.32 241 4 5 ];
+    symbol [ reset %tmp.33 241 6 11 ];
+    %tmp.33 = getv function %tmp.32 :reset;
+    invoke %tmp.32 %tmp.33();
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 242 4 ]
+    symbol [ Test %tmp.34 242 4 8 ];
+    %tmp.34 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.35 242 9 22 ];
+    %tmp.35 = getv function %tmp.34 :assertMessage;
+    %tmp.36 = lgetv %e.1;
+    symbol [ e %tmp.36 242 23 24 ];
+    symbol [ detector %tmp.37 242 25 33 ];
+    %tmp.37 = getv %tmp.36 :detector;
+    symbol [ flightCount %tmp.38 242 34 45 ];
+    %tmp.38 = getv %tmp.37 :flightCount;
+    %tmp.39 = 0;
+    %tmp.40 = eq %tmp.38 %tmp.39;
+    %tmp.41 = "flights cleared";
+    invoke %tmp.34 %tmp.35(%tmp.40, %tmp.41);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 243 4 ]
+    symbol [ Test %tmp.42 243 4 8 ];
+    %tmp.42 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.43 243 9 22 ];
+    %tmp.43 = getv function %tmp.42 :assertMessage;
+    %tmp.44 = lgetv %e.1;
+    symbol [ e %tmp.44 243 23 24 ];
+    symbol [ detector %tmp.45 243 25 33 ];
+    %tmp.45 = getv %tmp.44 :detector;
+    symbol [ foilTimeS %tmp.46 243 34 43 ];
+    %tmp.46 = getv %tmp.45 :foilTimeS;
+    %tmp.47 = 0.0;
+    %tmp.48 = eq %tmp.46 %tmp.47;
+    %tmp.49 = "foil time cleared";
+    invoke %tmp.42 %tmp.43(%tmp.48, %tmp.49);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 244 4 ]
+    symbol [ Test %tmp.50 244 4 8 ];
+    %tmp.50 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.51 244 9 22 ];
+    %tmp.51 = getv function %tmp.50 :assertMessage;
+    %tmp.52 = lgetv %e.1;
+    symbol [ e %tmp.52 244 23 24 ];
+    symbol [ records %tmp.53 244 25 32 ];
+    %tmp.53 = getv %tmp.52 :records;
+    symbol [ best2sMps %tmp.54 244 33 42 ];
+    %tmp.54 = getv %tmp.53 :best2sMps;
+    %tmp.55 = 0.0;
+    %tmp.56 = eq %tmp.54 %tmp.55;
+    %tmp.57 = "records cleared";
+    invoke %tmp.50 %tmp.51(%tmp.56, %tmp.57);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 245 4 ]
+    symbol [ Test %tmp.58 245 4 8 ];
+    %tmp.58 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.59 245 9 22 ];
+    %tmp.59 = getv function %tmp.58 :assertMessage;
+    %tmp.60 = lgetv %e.1;
+    symbol [ e %tmp.60 245 23 24 ];
+    symbol [ turns %tmp.61 245 25 30 ];
+    %tmp.61 = getv %tmp.60 :turns;
+    symbol [ turnCount %tmp.62 245 31 40 ];
+    %tmp.62 = getv %tmp.61 :turnCount;
+    %tmp.63 = 0;
+    %tmp.64 = eq %tmp.62 %tmp.63;
+    %tmp.65 = "turns cleared";
+    invoke %tmp.58 %tmp.59(%tmp.64, %tmp.65);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 246 4 ]
+    symbol [ Test %tmp.66 246 4 8 ];
+    %tmp.66 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.67 246 9 22 ];
+    %tmp.67 = getv function %tmp.66 :assertMessage;
+    %tmp.68 = lgetv %e.1;
+    symbol [ e %tmp.68 246 23 24 ];
+    symbol [ tickCount %tmp.69 246 25 34 ];
+    %tmp.69 = getv function %tmp.68 :tickCount;
+    %tmp.70 = invoke %tmp.68 %tmp.69();
+    %tmp.71 = 0;
+    %tmp.72 = eq %tmp.70 %tmp.71;
+    %tmp.73 = "tick counter cleared";
+    invoke %tmp.66 %tmp.67(%tmp.72, %tmp.73);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 247 4 ]
+    symbol [ Test %tmp.74 247 4 8 ];
+    %tmp.74 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.75 247 9 22 ];
+    %tmp.75 = getv function %tmp.74 :assertMessage;
+    %tmp.76 = lgetv %e.1;
+    symbol [ e %tmp.76 247 24 25 ];
+    symbol [ flying %tmp.77 247 26 32 ];
+    %tmp.77 = getv function %tmp.76 :flying;
+    %tmp.78 = invoke %tmp.76 %tmp.77();
+    %tmp.79 = not %tmp.78;
+    %tmp.80 = "not flying";
+    invoke %tmp.74 %tmp.75(%tmp.79, %tmp.80);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 248 4 ]
+    %tmp.81 = true;
+    ret %tmp.81;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_234_80_249_0_stop:
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 252; test = true; @symbol_functiondef = [tickCounterRollsBelowTheFitSentinel,252,9,44]; @symbol_param<0> = [logger,252,45,51]; @symbol_param<0>_type<0> = [Test,252,55,59]; @symbol_param<0>_type<1> = [Logger,252,60,66]; @symbol_return<0> = [Boolean,252,71,78]; ]
+function tickCounterRollsBelowTheFitSentinel(logger as Test.Logger) as Boolean {
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_252_79_261_0_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 254 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_252_79_261_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_252_79_261_0_stop" ]
+    %e.1 = local;
+    symbol [ e %e.1 254 8 9 ];
+    symbol [ FieldEngine %tmp.4 254 16 27 ];
+    %tmp.4 = getv ? :FieldEngine;
+    %tmp.5 = self;
+    symbol [ fieldCfg %tmp.6 254 28 36 ];
+    %tmp.6 = getv function %tmp.5 :fieldCfg;
+    %tmp.7 = invoke %tmp.5 %tmp.6();
+    %tmp.1 = newc %tmp.4 (%tmp.7);
+    lputv %e.1 %tmp.1;
+    symbol [ e %e.1 254 8 9 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 255 4 ]
+    for @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_255_4_257_4_for_test @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_255_4_257_4_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_255_4_257_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_255_4_257_4_for_init:
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_255_4_257_4_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_255_4_257_4_for_end" ]
+    %i.2 = local;
+    symbol [ i %i.2 255 13 14 ];
+    %tmp.8 = 0;
+    lputv %i.2 %tmp.8;
+    symbol [ i %i.2 255 13 14 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_255_4_257_4_for_test:
+    %tmp.9 = lgetv %i.2;
+    symbol [ i %tmp.9 255 20 21 ];
+    %tmp.10 = 300;
+    %tmp.11 = lt %tmp.9 %tmp.10;
+    bf %tmp.11 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_255_4_257_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_255_4_257_4_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_255_34_257_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 256 8 ]
+    %tmp.12 = lgetv %e.1;
+    symbol [ e %tmp.12 256 8 9 ];
+    symbol [ feed %tmp.13 256 10 14 ];
+    %tmp.13 = getv function %tmp.12 :feed;
+    %tmp.14 = 1.0;
+    %tmp.15 = 1.0;
+    %tmp.16 = null;
+    %tmp.17 = 1.0;
+    symbol [ Position %tmp.18 256 36 44 ];
+    %tmp.18 = getm $.Toybox.Position;
+    symbol [ QUALITY_GOOD %tmp.19 256 45 57 ];
+    %tmp.19 = getv %tmp.18 :QUALITY_GOOD;
+    %tmp.20 = null;
+    invoke %tmp.12 %tmp.13(%tmp.14, %tmp.15, %tmp.16, %tmp.17, %tmp.19, %tmp.20);
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_255_34_257_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_255_4_257_4_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 255 ]
+    %tmp.23 = lgetv %i.2;
+    symbol [ i %tmp.23 255 29 30 ];
+    %tmp.24 = add %tmp.23 1;
+    lputv %i.2 %tmp.24;
+    symbol [ i %i.2 255 29 30 ];
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_255_4_257_4_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_255_4_257_4_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 258 4 ]
+    symbol [ Test %tmp.25 258 4 8 ];
+    %tmp.25 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.26 258 9 22 ];
+    %tmp.26 = getv function %tmp.25 :assertMessage;
+    %tmp.27 = lgetv %e.1;
+    symbol [ e %tmp.27 258 23 24 ];
+    symbol [ tickCount %tmp.28 258 25 34 ];
+    %tmp.28 = getv function %tmp.27 :tickCount;
+    %tmp.29 = invoke %tmp.27 %tmp.28();
+    %tmp.30 = 300;
+    %tmp.31 = eq %tmp.29 %tmp.30;
+    %tmp.32 = "raw counter keeps counting";
+    invoke %tmp.25 %tmp.26(%tmp.31, %tmp.32);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 259 4 ]
+    symbol [ Test %tmp.33 259 4 8 ];
+    %tmp.33 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.34 259 9 22 ];
+    %tmp.34 = getv function %tmp.33 :assertMessage;
+    %tmp.35 = lgetv %e.1;
+    symbol [ e %tmp.35 259 23 24 ];
+    symbol [ tickCount %tmp.36 259 25 34 ];
+    %tmp.36 = getv function %tmp.35 :tickCount;
+    %tmp.37 = invoke %tmp.35 %tmp.36();
+    %tmp.38 = 255;
+    %tmp.39 = mod %tmp.37 %tmp.38;
+    %tmp.40 = 45;
+    %tmp.41 = eq %tmp.39 %tmp.40;
+    %tmp.42 = "the value written to FIT wraps 0-254";
+    invoke %tmp.33 %tmp.34(%tmp.41, %tmp.42);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 260 4 ]
+    %tmp.43 = true;
+    ret %tmp.43;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_252_79_261_0_stop:
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 266; test = true; @symbol_functiondef = [layoutClassifiesCellSizes,266,9,34]; @symbol_param<0> = [logger,266,35,41]; @symbol_param<0>_type<0> = [Test,266,45,49]; @symbol_param<0>_type<1> = [Logger,266,50,56]; @symbol_return<0> = [Boolean,266,61,68]; ]
+function layoutClassifiesCellSizes(logger as Test.Logger) as Boolean {
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_266_69_281_0_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 267 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_266_69_281_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_266_69_281_0_stop" ]
+    %w.1 = local;
+    symbol [ w %w.1 267 8 9 ];
+    %tmp.1 = 454;
+    lputv %w.1 %tmp.1;
+    symbol [ w %w.1 267 8 9 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 268 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_266_69_281_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_266_69_281_0_stop" ]
+    %h.2 = local;
+    symbol [ h %h.2 268 8 9 ];
+    %tmp.2 = 454;
+    lputv %h.2 %tmp.2;
+    symbol [ h %h.2 268 8 9 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 269 4 ]
+    symbol [ Test %tmp.3 269 4 8 ];
+    %tmp.3 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.4 269 9 22 ];
+    %tmp.4 = getv function %tmp.3 :assertMessage;
+    symbol [ FieldLayout %tmp.6 269 23 34 ];
+    %tmp.6 = getv ? :FieldLayout;
+    symbol [ classify %tmp.7 269 35 43 ];
+    %tmp.7 = getv function %tmp.6 :classify;
+    %tmp.8 = lgetv %w.1;
+    symbol [ w %tmp.8 269 44 45 ];
+    %tmp.9 = lgetv %h.2;
+    symbol [ h %tmp.9 269 47 48 ];
+    %tmp.10 = lgetv %w.1;
+    symbol [ w %tmp.10 269 50 51 ];
+    %tmp.11 = lgetv %h.2;
+    symbol [ h %tmp.11 269 53 54 ];
+    %tmp.12 = invoke %tmp.6 %tmp.7(%tmp.8, %tmp.9, %tmp.10, %tmp.11);
+    symbol [ FieldLayout %tmp.14 269 59 70 ];
+    %tmp.14 = getv ? :FieldLayout;
+    symbol [ SIZE_FULL %tmp.15 269 71 80 ];
+    %tmp.15 = getv %tmp.14 :SIZE_FULL;
+    %tmp.16 = eq %tmp.12 %tmp.15;
+    %tmp.17 = "1-field page is FULL";
+    invoke %tmp.3 %tmp.4(%tmp.16, %tmp.17);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 271 4 ]
+    symbol [ Test %tmp.18 271 4 8 ];
+    %tmp.18 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.19 271 9 22 ];
+    %tmp.19 = getv function %tmp.18 :assertMessage;
+    symbol [ FieldLayout %tmp.21 271 23 34 ];
+    %tmp.21 = getv ? :FieldLayout;
+    symbol [ classify %tmp.22 271 35 43 ];
+    %tmp.22 = getv function %tmp.21 :classify;
+    %tmp.23 = lgetv %w.1;
+    symbol [ w %tmp.23 271 44 45 ];
+    %tmp.24 = 227;
+    %tmp.25 = lgetv %w.1;
+    symbol [ w %tmp.25 271 52 53 ];
+    %tmp.26 = lgetv %h.2;
+    symbol [ h %tmp.26 271 55 56 ];
+    %tmp.27 = invoke %tmp.21 %tmp.22(%tmp.23, %tmp.24, %tmp.25, %tmp.26);
+    symbol [ FieldLayout %tmp.29 271 61 72 ];
+    %tmp.29 = getv ? :FieldLayout;
+    symbol [ SIZE_WIDE %tmp.30 271 73 82 ];
+    %tmp.30 = getv %tmp.29 :SIZE_WIDE;
+    %tmp.31 = eq %tmp.27 %tmp.30;
+    %tmp.32 = "half screen is WIDE";
+    invoke %tmp.18 %tmp.19(%tmp.31, %tmp.32);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 273 4 ]
+    symbol [ Test %tmp.33 273 4 8 ];
+    %tmp.33 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.34 273 9 22 ];
+    %tmp.34 = getv function %tmp.33 :assertMessage;
+    symbol [ FieldLayout %tmp.36 273 23 34 ];
+    %tmp.36 = getv ? :FieldLayout;
+    symbol [ classify %tmp.37 273 35 43 ];
+    %tmp.37 = getv function %tmp.36 :classify;
+    %tmp.38 = lgetv %w.1;
+    symbol [ w %tmp.38 273 44 45 ];
+    %tmp.39 = 151;
+    %tmp.40 = lgetv %w.1;
+    symbol [ w %tmp.40 273 52 53 ];
+    %tmp.41 = lgetv %h.2;
+    symbol [ h %tmp.41 273 55 56 ];
+    %tmp.42 = invoke %tmp.36 %tmp.37(%tmp.38, %tmp.39, %tmp.40, %tmp.41);
+    symbol [ FieldLayout %tmp.44 273 61 72 ];
+    %tmp.44 = getv ? :FieldLayout;
+    symbol [ SIZE_WIDE %tmp.45 273 73 82 ];
+    %tmp.45 = getv %tmp.44 :SIZE_WIDE;
+    %tmp.46 = eq %tmp.42 %tmp.45;
+    %tmp.47 = "a 3-field row is still WIDE";
+    invoke %tmp.33 %tmp.34(%tmp.46, %tmp.47);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 275 4 ]
+    symbol [ Test %tmp.48 275 4 8 ];
+    %tmp.48 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.49 275 9 22 ];
+    %tmp.49 = getv function %tmp.48 :assertMessage;
+    symbol [ FieldLayout %tmp.51 275 23 34 ];
+    %tmp.51 = getv ? :FieldLayout;
+    symbol [ classify %tmp.52 275 35 43 ];
+    %tmp.52 = getv function %tmp.51 :classify;
+    %tmp.53 = 227;
+    %tmp.54 = 113;
+    %tmp.55 = lgetv %w.1;
+    symbol [ w %tmp.55 275 54 55 ];
+    %tmp.56 = lgetv %h.2;
+    symbol [ h %tmp.56 275 57 58 ];
+    %tmp.57 = invoke %tmp.51 %tmp.52(%tmp.53, %tmp.54, %tmp.55, %tmp.56);
+    symbol [ FieldLayout %tmp.59 275 63 74 ];
+    %tmp.59 = getv ? :FieldLayout;
+    symbol [ SIZE_SMALL %tmp.60 275 75 85 ];
+    %tmp.60 = getv %tmp.59 :SIZE_SMALL;
+    %tmp.61 = eq %tmp.57 %tmp.60;
+    %tmp.62 = "a quarter cell is SMALL";
+    invoke %tmp.48 %tmp.49(%tmp.61, %tmp.62);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 277 4 ]
+    symbol [ Test %tmp.63 277 4 8 ];
+    %tmp.63 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.64 277 9 22 ];
+    %tmp.64 = getv function %tmp.63 :assertMessage;
+    symbol [ FieldLayout %tmp.66 277 23 34 ];
+    %tmp.66 = getv ? :FieldLayout;
+    symbol [ isRoundFull %tmp.67 277 35 46 ];
+    %tmp.67 = getv function %tmp.66 :isRoundFull;
+    %tmp.68 = lgetv %w.1;
+    symbol [ w %tmp.68 277 47 48 ];
+    %tmp.69 = lgetv %h.2;
+    symbol [ h %tmp.69 277 50 51 ];
+    %tmp.70 = lgetv %w.1;
+    symbol [ w %tmp.70 277 53 54 ];
+    %tmp.71 = lgetv %h.2;
+    symbol [ h %tmp.71 277 56 57 ];
+    %tmp.72 = invoke %tmp.66 %tmp.67(%tmp.68, %tmp.69, %tmp.70, %tmp.71);
+    %tmp.73 = "the full round screen is round";
+    invoke %tmp.63 %tmp.64(%tmp.72, %tmp.73);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 278 4 ]
+    symbol [ Test %tmp.74 278 4 8 ];
+    %tmp.74 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.75 278 9 22 ];
+    %tmp.75 = getv function %tmp.74 :assertMessage;
+    symbol [ FieldLayout %tmp.77 278 24 35 ];
+    %tmp.77 = getv ? :FieldLayout;
+    symbol [ isRoundFull %tmp.78 278 36 47 ];
+    %tmp.78 = getv function %tmp.77 :isRoundFull;
+    %tmp.79 = lgetv %w.1;
+    symbol [ w %tmp.79 278 48 49 ];
+    %tmp.80 = 227;
+    %tmp.81 = lgetv %w.1;
+    symbol [ w %tmp.81 278 56 57 ];
+    %tmp.82 = lgetv %h.2;
+    symbol [ h %tmp.82 278 59 60 ];
+    %tmp.83 = invoke %tmp.77 %tmp.78(%tmp.79, %tmp.80, %tmp.81, %tmp.82);
+    %tmp.84 = not %tmp.83;
+    %tmp.85 = "a carved-out cell is a plain rectangle";
+    invoke %tmp.74 %tmp.75(%tmp.84, %tmp.85);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 280 4 ]
+    %tmp.86 = true;
+    ret %tmp.86;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_266_69_281_0_stop:
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 287; test = true; @symbol_functiondef = [layoutRowsNeverClip,287,9,28]; @symbol_param<0> = [logger,287,29,35]; @symbol_param<0>_type<0> = [Test,287,39,43]; @symbol_param<0>_type<1> = [Logger,287,44,50]; @symbol_return<0> = [Boolean,287,55,62]; ]
+function layoutRowsNeverClip(logger as Test.Logger) as Boolean {
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_287_63_340_0_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 291 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_287_63_340_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_287_63_340_0_stop" ]
+    %ref.1 = local;
+    symbol [ ref %ref.1 291 8 11 ];
+    symbol [ Graphics %tmp.1 291 14 22 ];
+    %tmp.1 = getm $.Toybox.Graphics;
+    symbol [ createBufferedBitmap %tmp.2 291 23 43 ];
+    %tmp.2 = getv function %tmp.1 :createBufferedBitmap;
+    %tmp.3 = newd 2;
+    %tmp.5 = const :width;
+    symbol [ width %tmp.5 291 46 51 const ];
+    %tmp.6 = 8;
+    %tmp.7 = dup %tmp.3;
+    %tmp.8 = aputv %tmp.7 %tmp.5 %tmp.6;
+    %tmp.10 = const :height;
+    symbol [ height %tmp.10 291 59 65 const ];
+    %tmp.11 = 8;
+    %tmp.12 = dup %tmp.8;
+    %tmp.13 = aputv %tmp.12 %tmp.10 %tmp.11;
+    %tmp.14 = invoke %tmp.1 %tmp.2(%tmp.13);
+    lputv %ref.1 %tmp.14;
+    symbol [ ref %ref.1 291 8 11 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 292 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_287_63_340_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_287_63_340_0_stop" ]
+    %bmp.2 = local;
+    symbol [ bmp %bmp.2 292 8 11 ];
+    %tmp.15 = lgetv %ref.1;
+    symbol [ ref %tmp.15 292 14 17 ];
+    symbol [ get %tmp.16 292 18 21 ];
+    %tmp.16 = getv function %tmp.15 :get;
+    %tmp.17 = invoke %tmp.15 %tmp.16();
+    lputv %bmp.2 %tmp.17;
+    symbol [ bmp %bmp.2 292 8 11 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 293 4 ]
+    symbol [ Test %tmp.18 293 4 8 ];
+    %tmp.18 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.19 293 9 22 ];
+    %tmp.19 = getv function %tmp.18 :assertMessage;
+    %tmp.20 = lgetv %bmp.2;
+    symbol [ bmp %tmp.20 293 23 26 ];
+    %tmp.21 = null;
+    %tmp.22 = ne %tmp.20 %tmp.21;
+    %tmp.23 = "buffered bitmap";
+    invoke %tmp.18 %tmp.19(%tmp.22, %tmp.23);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 294 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_287_63_340_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_287_63_340_0_stop" ]
+    %dc.3 = local;
+    symbol [ dc %dc.3 294 8 10 ];
+    %tmp.24 = lgetv %bmp.2;
+    symbol [ bmp %tmp.24 294 14 17 ];
+    %tmp.25 = as %tmp.24 Graphics.BufferedBitmap;
+    symbol [ Graphics %tmp.25 294 21 29 ];
+    symbol [ BufferedBitmap %tmp.25 294 30 44 ];
+    symbol [ getDc %tmp.26 294 46 51 ];
+    %tmp.26 = getv function %tmp.25 :getDc;
+    %tmp.27 = invoke %tmp.25 %tmp.26();
+    lputv %dc.3 %tmp.27;
+    symbol [ dc %dc.3 294 8 10 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 296 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_287_63_340_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_287_63_340_0_stop" ]
+    %cells.4 = local;
+    symbol [ cells %cells.4 296 8 13 ];
+    %tmp.28 = newa 4 Array<Array>;
+    symbol [ Array %tmp.28 297 30 35 ];
+    symbol [ Array %tmp.28 297 36 41 ];
+    %tmp.29 = newa 3;
+    %tmp.30 = 454;
+    %tmp.31 = dup %tmp.29;
+    %tmp.32 = aputv %tmp.31 0 %tmp.30;
+    %tmp.33 = 454;
+    %tmp.34 = dup %tmp.32;
+    %tmp.35 = aputv %tmp.34 1 %tmp.33;
+    %tmp.36 = true;
+    %tmp.37 = dup %tmp.35;
+    %tmp.38 = aputv %tmp.37 2 %tmp.36;
+    %tmp.39 = dup %tmp.28;
+    %tmp.40 = aputv %tmp.39 0 %tmp.38;
+    %tmp.41 = newa 3;
+    %tmp.42 = 454;
+    %tmp.43 = dup %tmp.41;
+    %tmp.44 = aputv %tmp.43 0 %tmp.42;
+    %tmp.45 = 227;
+    %tmp.46 = dup %tmp.44;
+    %tmp.47 = aputv %tmp.46 1 %tmp.45;
+    %tmp.48 = false;
+    %tmp.49 = dup %tmp.47;
+    %tmp.50 = aputv %tmp.49 2 %tmp.48;
+    %tmp.51 = dup %tmp.40;
+    %tmp.52 = aputv %tmp.51 1 %tmp.50;
+    %tmp.53 = newa 3;
+    %tmp.54 = 454;
+    %tmp.55 = dup %tmp.53;
+    %tmp.56 = aputv %tmp.55 0 %tmp.54;
+    %tmp.57 = 151;
+    %tmp.58 = dup %tmp.56;
+    %tmp.59 = aputv %tmp.58 1 %tmp.57;
+    %tmp.60 = false;
+    %tmp.61 = dup %tmp.59;
+    %tmp.62 = aputv %tmp.61 2 %tmp.60;
+    %tmp.63 = dup %tmp.52;
+    %tmp.64 = aputv %tmp.63 2 %tmp.62;
+    %tmp.65 = newa 3;
+    %tmp.66 = 227;
+    %tmp.67 = dup %tmp.65;
+    %tmp.68 = aputv %tmp.67 0 %tmp.66;
+    %tmp.69 = 113;
+    %tmp.70 = dup %tmp.68;
+    %tmp.71 = aputv %tmp.70 1 %tmp.69;
+    %tmp.72 = false;
+    %tmp.73 = dup %tmp.71;
+    %tmp.74 = aputv %tmp.73 2 %tmp.72;
+    %tmp.75 = dup %tmp.64;
+    %tmp.76 = aputv %tmp.75 3 %tmp.74;
+    lputv %cells.4 %tmp.76;
+    symbol [ cells %cells.4 296 8 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 298 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_287_63_340_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_287_63_340_0_stop" ]
+    %widest.5 = local;
+    symbol [ widest %widest.5 298 8 14 ];
+    %tmp.77 = newa 5 Array<String>;
+    symbol [ Array %tmp.77 299 31 36 ];
+    symbol [ String %tmp.77 299 37 43 ];
+    %tmp.78 = "88.8 km/h";
+    %tmp.79 = dup %tmp.77;
+    %tmp.80 = aputv %tmp.79 0 %tmp.78;
+    %tmp.81 = "100%";
+    %tmp.82 = dup %tmp.80;
+    %tmp.83 = aputv %tmp.82 1 %tmp.81;
+    %tmp.84 = "99 · 88:88";
+    %tmp.85 = dup %tmp.83;
+    %tmp.86 = aputv %tmp.85 2 %tmp.84;
+    %tmp.87 = "TOUCH 100%";
+    %tmp.88 = dup %tmp.86;
+    %tmp.89 = aputv %tmp.88 3 %tmp.87;
+    %tmp.90 = "99/99 · 99·99·99";
+    %tmp.91 = dup %tmp.89;
+    %tmp.92 = aputv %tmp.91 4 %tmp.90;
+    lputv %widest.5 %tmp.92;
+    symbol [ widest %widest.5 298 8 14 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 300 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_287_63_340_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_287_63_340_0_stop" ]
+    %ladders.6 = local;
+    symbol [ ladders %ladders.6 300 8 15 ];
+    %tmp.93 = newa 5 Array;
+    symbol [ Array %tmp.93 301 59 64 ];
+    symbol [ FieldLayout %tmp.95 300 19 30 ];
+    %tmp.95 = getv ? :FieldLayout;
+    symbol [ TEXT_FONTS %tmp.96 300 31 41 ];
+    %tmp.96 = getv %tmp.95 :TEXT_FONTS;
+    %tmp.97 = dup %tmp.93;
+    %tmp.98 = aputv %tmp.97 0 %tmp.96;
+    symbol [ FieldLayout %tmp.100 300 43 54 ];
+    %tmp.100 = getv ? :FieldLayout;
+    symbol [ NUM_FONTS %tmp.101 300 55 64 ];
+    %tmp.101 = getv %tmp.100 :NUM_FONTS;
+    %tmp.102 = dup %tmp.98;
+    %tmp.103 = aputv %tmp.102 1 %tmp.101;
+    symbol [ FieldLayout %tmp.105 300 66 77 ];
+    %tmp.105 = getv ? :FieldLayout;
+    symbol [ TEXT_FONTS %tmp.106 300 78 88 ];
+    %tmp.106 = getv %tmp.105 :TEXT_FONTS;
+    %tmp.107 = dup %tmp.103;
+    %tmp.108 = aputv %tmp.107 2 %tmp.106;
+    symbol [ FieldLayout %tmp.110 301 8 19 ];
+    %tmp.110 = getv ? :FieldLayout;
+    symbol [ TEXT_FONTS %tmp.111 301 20 30 ];
+    %tmp.111 = getv %tmp.110 :TEXT_FONTS;
+    %tmp.112 = dup %tmp.108;
+    %tmp.113 = aputv %tmp.112 3 %tmp.111;
+    symbol [ FieldLayout %tmp.115 301 32 43 ];
+    %tmp.115 = getv ? :FieldLayout;
+    symbol [ TEXT_FONTS %tmp.116 301 44 54 ];
+    %tmp.116 = getv %tmp.115 :TEXT_FONTS;
+    %tmp.117 = dup %tmp.113;
+    %tmp.118 = aputv %tmp.117 4 %tmp.116;
+    lputv %ladders.6 %tmp.118;
+    symbol [ ladders %ladders.6 300 8 15 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 303 4 ]
+    for @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_4_338_4_for_test @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_4_338_4_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_4_338_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_4_338_4_for_init:
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_4_338_4_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_4_338_4_for_end" ]
+    %c.7 = local;
+    symbol [ c %c.7 303 13 14 ];
+    %tmp.119 = 0;
+    lputv %c.7 %tmp.119;
+    symbol [ c %c.7 303 13 14 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_4_338_4_for_test:
+    %tmp.120 = lgetv %c.7;
+    symbol [ c %tmp.120 303 20 21 ];
+    %tmp.121 = lgetv %cells.4;
+    symbol [ cells %tmp.121 303 24 29 ];
+    symbol [ size %tmp.122 303 30 34 ];
+    %tmp.122 = getv function %tmp.121 :size;
+    %tmp.123 = invoke %tmp.121 %tmp.122();
+    %tmp.124 = lt %tmp.120 %tmp.123;
+    bf %tmp.124 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_4_338_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_4_338_4_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 304 8 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_stop" ]
+    %w.8 = local;
+    symbol [ w %w.8 304 12 13 ];
+    %tmp.125 = lgetv %cells.4;
+    symbol [ cells %tmp.125 304 16 21 ];
+    %tmp.126 = lgetv %c.7;
+    symbol [ c %tmp.126 304 22 23 ];
+    %tmp.127 = agetv %tmp.125 %tmp.126;
+    %tmp.128 = 0;
+    %tmp.129 = agetv %tmp.127 %tmp.128;
+    %tmp.130 = as %tmp.129 Number;
+    symbol [ Number %tmp.130 304 31 37 ];
+    lputv %w.8 %tmp.130;
+    symbol [ w %w.8 304 12 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 305 8 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_stop" ]
+    %h.9 = local;
+    symbol [ h %h.9 305 12 13 ];
+    %tmp.131 = lgetv %cells.4;
+    symbol [ cells %tmp.131 305 16 21 ];
+    %tmp.132 = lgetv %c.7;
+    symbol [ c %tmp.132 305 22 23 ];
+    %tmp.133 = agetv %tmp.131 %tmp.132;
+    %tmp.134 = 1;
+    %tmp.135 = agetv %tmp.133 %tmp.134;
+    %tmp.136 = as %tmp.135 Number;
+    symbol [ Number %tmp.136 305 31 37 ];
+    lputv %h.9 %tmp.136;
+    symbol [ h %h.9 305 12 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 306 8 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_stop" ]
+    %round.10 = local;
+    symbol [ round %round.10 306 12 17 ];
+    %tmp.137 = lgetv %cells.4;
+    symbol [ cells %tmp.137 306 20 25 ];
+    %tmp.138 = lgetv %c.7;
+    symbol [ c %tmp.138 306 26 27 ];
+    %tmp.139 = agetv %tmp.137 %tmp.138;
+    %tmp.140 = 2;
+    %tmp.141 = agetv %tmp.139 %tmp.140;
+    %tmp.142 = as %tmp.141 Boolean;
+    symbol [ Boolean %tmp.142 306 35 42 ];
+    lputv %round.10 %tmp.142;
+    symbol [ round %round.10 306 12 17 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 307 8 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_stop" ]
+    %size.11 = local;
+    symbol [ size %size.11 307 12 16 ];
+    symbol [ FieldLayout %tmp.144 307 19 30 ];
+    %tmp.144 = getv ? :FieldLayout;
+    symbol [ classify %tmp.145 307 31 39 ];
+    %tmp.145 = getv function %tmp.144 :classify;
+    %tmp.146 = lgetv %w.8;
+    symbol [ w %tmp.146 307 40 41 ];
+    %tmp.147 = lgetv %h.9;
+    symbol [ h %tmp.147 307 43 44 ];
+    %tmp.148 = 454;
+    %tmp.149 = 454;
+    %tmp.150 = invoke %tmp.144 %tmp.145(%tmp.146, %tmp.147, %tmp.148, %tmp.149);
+    lputv %size.11 %tmp.150;
+    symbol [ size %size.11 307 12 16 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 308 8 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_stop" ]
+    %rows.12 = local;
+    symbol [ rows %rows.12 308 12 16 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_308_19_309_56_begin:
+    %tmp.151 = lgetv %size.11;
+    symbol [ size %tmp.151 308 19 23 ];
+    symbol [ FieldLayout %tmp.153 308 27 38 ];
+    %tmp.153 = getv ? :FieldLayout;
+    symbol [ SIZE_FULL %tmp.154 308 39 48 ];
+    %tmp.154 = getv %tmp.153 :SIZE_FULL;
+    %tmp.155 = eq %tmp.151 %tmp.154;
+    bf %tmp.155 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_308_19_309_56_else_false;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_308_19_309_56_true:
+    %tmp.156 = 5;
+    push %tmp.156;
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_308_19_309_56_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_308_19_309_56_else_false:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_309_19_309_55_begin:
+    %tmp.157 = lgetv %size.11;
+    symbol [ size %tmp.157 309 19 23 ];
+    symbol [ FieldLayout %tmp.159 309 27 38 ];
+    %tmp.159 = getv ? :FieldLayout;
+    symbol [ SIZE_WIDE %tmp.160 309 39 48 ];
+    %tmp.160 = getv %tmp.159 :SIZE_WIDE;
+    %tmp.161 = eq %tmp.157 %tmp.160;
+    bf %tmp.161 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_309_19_309_55_else_false;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_309_19_309_55_true:
+    %tmp.162 = 3;
+    push %tmp.162;
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_309_19_309_55_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_309_19_309_55_else_false:
+    %tmp.163 = 2;
+    push %tmp.163;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_309_19_309_55_end:
+    %tmp.164 = phi [%tmp.161 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_309_19_309_55_begin] [%tmp.162 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_309_19_309_55_true] [%tmp.163 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_309_19_309_55_else_false] [%tmp.164 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_309_19_309_55_end];
+    push %tmp.164;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_308_19_309_56_end:
+    %tmp.165 = phi [%tmp.155 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_308_19_309_56_begin] [%tmp.156 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_308_19_309_56_true] [%tmp.164 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_308_19_309_56_else_false] [%tmp.165 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_308_19_309_56_end];
+    lputv %rows.12 %tmp.165;
+    symbol [ rows %rows.12 308 12 16 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 311 8 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_stop" ]
+    %texts.13 = local;
+    symbol [ texts %texts.13 311 12 17 ];
+    %tmp.166 = newa 0 Array<String>;
+    symbol [ Array %tmp.166 311 26 31 ];
+    symbol [ String %tmp.166 311 32 38 ];
+    lputv %texts.13 %tmp.166;
+    symbol [ texts %texts.13 311 12 17 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 312 8 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_stop" ]
+    %lad.14 = local;
+    symbol [ lad %lad.14 312 12 15 ];
+    %tmp.167 = newa 0 Array;
+    symbol [ Array %tmp.167 312 24 29 ];
+    lputv %lad.14 %tmp.167;
+    symbol [ lad %lad.14 312 12 15 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 313 8 ]
+    for @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_313_8_317_8_for_test @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_313_8_317_8_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_313_8_317_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_313_8_317_8_for_init:
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_313_8_317_8_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_313_8_317_8_for_end" ]
+    %i.15 = local;
+    symbol [ i %i.15 313 17 18 ];
+    %tmp.168 = 0;
+    lputv %i.15 %tmp.168;
+    symbol [ i %i.15 313 17 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_313_8_317_8_for_test:
+    %tmp.169 = lgetv %i.15;
+    symbol [ i %tmp.169 313 24 25 ];
+    %tmp.170 = lgetv %rows.12;
+    symbol [ rows %tmp.170 313 28 32 ];
+    %tmp.171 = lt %tmp.169 %tmp.170;
+    bf %tmp.171 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_313_8_317_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_313_8_317_8_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_313_39_317_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 314 12 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_313_39_317_8_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_313_39_317_8_stop" ]
+    %k.16 = local;
+    symbol [ k %k.16 314 16 17 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_314_20_314_60_begin:
+    %tmp.172 = lgetv %size.11;
+    symbol [ size %tmp.172 314 20 24 ];
+    symbol [ FieldLayout %tmp.174 314 28 39 ];
+    %tmp.174 = getv ? :FieldLayout;
+    symbol [ SIZE_FULL %tmp.175 314 40 49 ];
+    %tmp.175 = getv %tmp.174 :SIZE_FULL;
+    %tmp.176 = eq %tmp.172 %tmp.175;
+    bf %tmp.176 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_314_20_314_60_else_false;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_314_20_314_60_true:
+    %tmp.177 = lgetv %i.15;
+    symbol [ i %tmp.177 314 52 53 ];
+    push %tmp.177;
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_314_20_314_60_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_314_20_314_60_else_false:
+    %tmp.178 = lgetv %i.15;
+    symbol [ i %tmp.178 314 56 57 ];
+    %tmp.179 = 1;
+    %tmp.180 = add %tmp.178 %tmp.179;
+    push %tmp.180;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_314_20_314_60_end:
+    %tmp.181 = phi [%tmp.176 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_314_20_314_60_begin] [%tmp.177 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_314_20_314_60_true] [%tmp.180 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_314_20_314_60_else_false] [%tmp.181 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_314_20_314_60_end];
+    lputv %k.16 %tmp.181;
+    symbol [ k %k.16 314 16 17 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 315 12 ]
+    %tmp.182 = lgetv %texts.13;
+    symbol [ texts %tmp.182 315 12 17 ];
+    symbol [ add %tmp.183 315 18 21 ];
+    %tmp.183 = getv function %tmp.182 :add;
+    %tmp.184 = lgetv %widest.5;
+    symbol [ widest %tmp.184 315 22 28 ];
+    %tmp.185 = lgetv %k.16;
+    symbol [ k %tmp.185 315 29 30 ];
+    %tmp.186 = agetv %tmp.184 %tmp.185;
+    invoke %tmp.182 %tmp.183(%tmp.186);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 316 12 ]
+    %tmp.187 = lgetv %lad.14;
+    symbol [ lad %tmp.187 316 12 15 ];
+    symbol [ add %tmp.188 316 16 19 ];
+    %tmp.188 = getv function %tmp.187 :add;
+    %tmp.189 = lgetv %ladders.6;
+    symbol [ ladders %tmp.189 316 20 27 ];
+    %tmp.190 = lgetv %k.16;
+    symbol [ k %tmp.190 316 28 29 ];
+    %tmp.191 = agetv %tmp.189 %tmp.190;
+    invoke %tmp.187 %tmp.188(%tmp.191);
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_313_39_317_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_313_8_317_8_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 313 ]
+    %tmp.194 = lgetv %i.15;
+    symbol [ i %tmp.194 313 34 35 ];
+    %tmp.195 = add %tmp.194 1;
+    lputv %i.15 %tmp.195;
+    symbol [ i %i.15 313 34 35 ];
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_313_8_317_8_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_313_8_317_8_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 318 8 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_stop" ]
+    %fonts.17 = local;
+    symbol [ fonts %fonts.17 318 12 17 ];
+    symbol [ FieldLayout %tmp.197 318 20 31 ];
+    %tmp.197 = getv ? :FieldLayout;
+    symbol [ fitRows %tmp.198 318 32 39 ];
+    %tmp.198 = getv function %tmp.197 :fitRows;
+    %tmp.199 = lgetv %dc.3;
+    symbol [ dc %tmp.199 318 40 42 ];
+    %tmp.200 = lgetv %w.8;
+    symbol [ w %tmp.200 318 44 45 ];
+    %tmp.201 = lgetv %h.9;
+    symbol [ h %tmp.201 318 47 48 ];
+    %tmp.202 = lgetv %texts.13;
+    symbol [ texts %tmp.202 318 50 55 ];
+    %tmp.203 = lgetv %lad.14;
+    symbol [ lad %tmp.203 318 57 60 ];
+    %tmp.204 = lgetv %round.10;
+    symbol [ round %tmp.204 318 62 67 ];
+    %tmp.205 = invoke %tmp.197 %tmp.198(%tmp.199, %tmp.200, %tmp.201, %tmp.202, %tmp.203, %tmp.204);
+    lputv %fonts.17 %tmp.205;
+    symbol [ fonts %fonts.17 318 12 17 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 319 8 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_stop" ]
+    %heights.18 = local;
+    symbol [ heights %heights.18 319 12 19 ];
+    symbol [ FieldLayout %tmp.207 319 22 33 ];
+    %tmp.207 = getv ? :FieldLayout;
+    symbol [ heightsOf %tmp.208 319 34 43 ];
+    %tmp.208 = getv function %tmp.207 :heightsOf;
+    %tmp.209 = lgetv %dc.3;
+    symbol [ dc %tmp.209 319 44 46 ];
+    %tmp.210 = lgetv %fonts.17;
+    symbol [ fonts %tmp.210 319 48 53 ];
+    %tmp.211 = invoke %tmp.207 %tmp.208(%tmp.209, %tmp.210);
+    lputv %heights.18 %tmp.211;
+    symbol [ heights %heights.18 319 12 19 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 320 8 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_stop" ]
+    %prevBottom.19 = local;
+    symbol [ prevBottom %prevBottom.19 320 12 22 ];
+    %tmp.212 = -1;
+    lputv %prevBottom.19 %tmp.212;
+    symbol [ prevBottom %prevBottom.19 320 12 22 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 321 8 ]
+    for @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_8_335_8_for_test @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_8_335_8_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_8_335_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_8_335_8_for_init:
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_8_335_8_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_8_335_8_for_end" ]
+    %i.20 = local;
+    symbol [ i %i.20 321 17 18 ];
+    %tmp.213 = 0;
+    lputv %i.20 %tmp.213;
+    symbol [ i %i.20 321 17 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_8_335_8_for_test:
+    %tmp.214 = lgetv %i.20;
+    symbol [ i %tmp.214 321 24 25 ];
+    %tmp.215 = lgetv %rows.12;
+    symbol [ rows %tmp.215 321 28 32 ];
+    %tmp.216 = lt %tmp.214 %tmp.215;
+    bf %tmp.216 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_8_335_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_8_335_8_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_39_335_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 322 12 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_39_335_8_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_39_335_8_stop" ]
+    %y.21 = local;
+    symbol [ y %y.21 322 16 17 ];
+    symbol [ FieldLayout %tmp.218 322 20 31 ];
+    %tmp.218 = getv ? :FieldLayout;
+    symbol [ stackY %tmp.219 322 32 38 ];
+    %tmp.219 = getv function %tmp.218 :stackY;
+    %tmp.220 = lgetv %h.9;
+    symbol [ h %tmp.220 322 39 40 ];
+    %tmp.221 = lgetv %heights.18;
+    symbol [ heights %tmp.221 322 42 49 ];
+    %tmp.222 = lgetv %i.20;
+    symbol [ i %tmp.222 322 51 52 ];
+    %tmp.223 = invoke %tmp.218 %tmp.219(%tmp.220, %tmp.221, %tmp.222);
+    lputv %y.21 %tmp.223;
+    symbol [ y %y.21 322 16 17 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 323 12 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_39_335_8_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_39_335_8_stop" ]
+    %tw.22 = local;
+    symbol [ tw %tw.22 323 16 18 ];
+    %tmp.224 = lgetv %dc.3;
+    symbol [ dc %tmp.224 323 21 23 ];
+    symbol [ getTextWidthInPixels %tmp.225 323 24 44 ];
+    %tmp.225 = getv function %tmp.224 :getTextWidthInPixels;
+    %tmp.226 = lgetv %texts.13;
+    symbol [ texts %tmp.226 323 45 50 ];
+    %tmp.227 = lgetv %i.20;
+    symbol [ i %tmp.227 323 51 52 ];
+    %tmp.228 = agetv %tmp.226 %tmp.227;
+    %tmp.229 = lgetv %fonts.17;
+    symbol [ fonts %tmp.229 323 55 60 ];
+    %tmp.230 = lgetv %i.20;
+    symbol [ i %tmp.230 323 61 62 ];
+    %tmp.231 = agetv %tmp.229 %tmp.230;
+    %tmp.232 = invoke %tmp.224 %tmp.225(%tmp.228, %tmp.231);
+    lputv %tw.22 %tmp.232;
+    symbol [ tw %tw.22 323 16 18 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 324 12 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_39_335_8_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_39_335_8_stop" ]
+    %top.23 = local;
+    symbol [ top %top.23 324 16 19 ];
+    %tmp.233 = lgetv %y.21;
+    symbol [ y %tmp.233 324 22 23 ];
+    %tmp.234 = lgetv %heights.18;
+    symbol [ heights %tmp.234 324 26 33 ];
+    %tmp.235 = lgetv %i.20;
+    symbol [ i %tmp.235 324 34 35 ];
+    %tmp.236 = agetv %tmp.234 %tmp.235;
+    %tmp.237 = 2;
+    %tmp.238 = div %tmp.236 %tmp.237;
+    %tmp.239 = sub %tmp.233 %tmp.238;
+    lputv %top.23 %tmp.239;
+    symbol [ top %top.23 324 16 19 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 325 12 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_39_335_8_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_39_335_8_stop" ]
+    %bottom.24 = local;
+    symbol [ bottom %bottom.24 325 16 22 ];
+    %tmp.240 = lgetv %y.21;
+    symbol [ y %tmp.240 325 25 26 ];
+    %tmp.241 = lgetv %heights.18;
+    symbol [ heights %tmp.241 325 29 36 ];
+    %tmp.242 = lgetv %i.20;
+    symbol [ i %tmp.242 325 37 38 ];
+    %tmp.243 = agetv %tmp.241 %tmp.242;
+    %tmp.244 = 2;
+    %tmp.245 = div %tmp.243 %tmp.244;
+    %tmp.246 = add %tmp.240 %tmp.245;
+    lputv %bottom.24 %tmp.246;
+    symbol [ bottom %bottom.24 325 16 22 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 326 12 ]
+    symbol [ Test %tmp.247 326 12 16 ];
+    %tmp.247 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.248 326 17 30 ];
+    %tmp.248 = getv function %tmp.247 :assertMessage;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_326_31_326_53_begin:
+    %tmp.249 = lgetv %top.23;
+    symbol [ top %tmp.249 326 31 34 ];
+    %tmp.250 = 0;
+    %tmp.251 = gte %tmp.249 %tmp.250;
+    %tmp.252 = dup %tmp.251;
+    bf %tmp.252 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_326_43_326_53_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_326_43_326_53_true:
+    %tmp.253 = lgetv %bottom.24;
+    symbol [ bottom %tmp.253 326 43 49 ];
+    %tmp.254 = lgetv %h.9;
+    symbol [ h %tmp.254 326 53 54 ];
+    %tmp.255 = lte %tmp.253 %tmp.254;
+    %tmp.256 = and %tmp.251 %tmp.255;
+    push %tmp.256;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_326_43_326_53_end:
+    %tmp.257 = phi [%tmp.252 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_326_31_326_53_begin] [%tmp.256 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_326_43_326_53_true] [%tmp.257 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_326_43_326_53_end];
+    %tmp.258 = "cell ";
+    %tmp.259 = lgetv %w.8;
+    symbol [ w %tmp.259 327 26 27 ];
+    symbol [ toString %tmp.260 327 28 36 ];
+    %tmp.260 = getv function %tmp.259 :toString;
+    %tmp.261 = invoke %tmp.259 %tmp.260();
+    %tmp.262 = add %tmp.258 %tmp.261;
+    %tmp.263 = "x";
+    %tmp.264 = add %tmp.262 %tmp.263;
+    %tmp.265 = lgetv %h.9;
+    symbol [ h %tmp.265 327 47 48 ];
+    symbol [ toString %tmp.266 327 49 57 ];
+    %tmp.266 = getv function %tmp.265 :toString;
+    %tmp.267 = invoke %tmp.265 %tmp.266();
+    %tmp.268 = add %tmp.264 %tmp.267;
+    %tmp.269 = " row ";
+    %tmp.270 = add %tmp.268 %tmp.269;
+    %tmp.271 = lgetv %i.20;
+    symbol [ i %tmp.271 327 72 73 ];
+    symbol [ toString %tmp.272 327 74 82 ];
+    %tmp.272 = getv function %tmp.271 :toString;
+    %tmp.273 = invoke %tmp.271 %tmp.272();
+    %tmp.274 = add %tmp.270 %tmp.273;
+    %tmp.275 = " outside the cell (";
+    %tmp.276 = add %tmp.274 %tmp.275;
+    %tmp.277 = lgetv %top.23;
+    symbol [ top %tmp.277 328 42 45 ];
+    symbol [ toString %tmp.278 328 46 54 ];
+    %tmp.278 = getv function %tmp.277 :toString;
+    %tmp.279 = invoke %tmp.277 %tmp.278();
+    %tmp.280 = add %tmp.276 %tmp.279;
+    %tmp.281 = "..";
+    %tmp.282 = add %tmp.280 %tmp.281;
+    %tmp.283 = lgetv %bottom.24;
+    symbol [ bottom %tmp.283 328 66 72 ];
+    symbol [ toString %tmp.284 328 73 81 ];
+    %tmp.284 = getv function %tmp.283 :toString;
+    %tmp.285 = invoke %tmp.283 %tmp.284();
+    %tmp.286 = add %tmp.282 %tmp.285;
+    %tmp.287 = ")";
+    %tmp.288 = add %tmp.286 %tmp.287;
+    invoke %tmp.247 %tmp.248(%tmp.257, %tmp.288);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 329 12 ]
+    symbol [ Test %tmp.289 329 12 16 ];
+    %tmp.289 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.290 329 17 30 ];
+    %tmp.290 = getv function %tmp.289 :assertMessage;
+    %tmp.291 = lgetv %tw.22;
+    symbol [ tw %tmp.291 329 31 33 ];
+    symbol [ FieldLayout %tmp.293 329 37 48 ];
+    %tmp.293 = getv ? :FieldLayout;
+    symbol [ rowWidth %tmp.294 329 49 57 ];
+    %tmp.294 = getv function %tmp.293 :rowWidth;
+    %tmp.295 = lgetv %w.8;
+    symbol [ w %tmp.295 329 58 59 ];
+    %tmp.296 = lgetv %h.9;
+    symbol [ h %tmp.296 329 61 62 ];
+    %tmp.297 = lgetv %y.21;
+    symbol [ y %tmp.297 329 64 65 ];
+    %tmp.298 = lgetv %heights.18;
+    symbol [ heights %tmp.298 329 67 74 ];
+    %tmp.299 = lgetv %i.20;
+    symbol [ i %tmp.299 329 75 76 ];
+    %tmp.300 = agetv %tmp.298 %tmp.299;
+    %tmp.301 = lgetv %round.10;
+    symbol [ round %tmp.301 329 79 84 ];
+    %tmp.302 = invoke %tmp.293 %tmp.294(%tmp.295, %tmp.296, %tmp.297, %tmp.300, %tmp.301);
+    %tmp.303 = lte %tmp.291 %tmp.302;
+    %tmp.304 = "cell ";
+    %tmp.305 = lgetv %w.8;
+    symbol [ w %tmp.305 330 26 27 ];
+    symbol [ toString %tmp.306 330 28 36 ];
+    %tmp.306 = getv function %tmp.305 :toString;
+    %tmp.307 = invoke %tmp.305 %tmp.306();
+    %tmp.308 = add %tmp.304 %tmp.307;
+    %tmp.309 = "x";
+    %tmp.310 = add %tmp.308 %tmp.309;
+    %tmp.311 = lgetv %h.9;
+    symbol [ h %tmp.311 330 47 48 ];
+    symbol [ toString %tmp.312 330 49 57 ];
+    %tmp.312 = getv function %tmp.311 :toString;
+    %tmp.313 = invoke %tmp.311 %tmp.312();
+    %tmp.314 = add %tmp.310 %tmp.313;
+    %tmp.315 = " row ";
+    %tmp.316 = add %tmp.314 %tmp.315;
+    %tmp.317 = lgetv %i.20;
+    symbol [ i %tmp.317 330 72 73 ];
+    symbol [ toString %tmp.318 330 74 82 ];
+    %tmp.318 = getv function %tmp.317 :toString;
+    %tmp.319 = invoke %tmp.317 %tmp.318();
+    %tmp.320 = add %tmp.316 %tmp.319;
+    %tmp.321 = " is ";
+    %tmp.322 = add %tmp.320 %tmp.321;
+    %tmp.323 = lgetv %tw.22;
+    symbol [ tw %tmp.323 331 27 29 ];
+    symbol [ toString %tmp.324 331 30 38 ];
+    %tmp.324 = getv function %tmp.323 :toString;
+    %tmp.325 = invoke %tmp.323 %tmp.324();
+    %tmp.326 = add %tmp.322 %tmp.325;
+    %tmp.327 = " px wide, budget ";
+    %tmp.328 = add %tmp.326 %tmp.327;
+    symbol [ FieldLayout %tmp.330 332 18 29 ];
+    %tmp.330 = getv ? :FieldLayout;
+    symbol [ rowWidth %tmp.331 332 30 38 ];
+    %tmp.331 = getv function %tmp.330 :rowWidth;
+    %tmp.332 = lgetv %w.8;
+    symbol [ w %tmp.332 332 39 40 ];
+    %tmp.333 = lgetv %h.9;
+    symbol [ h %tmp.333 332 42 43 ];
+    %tmp.334 = lgetv %y.21;
+    symbol [ y %tmp.334 332 45 46 ];
+    %tmp.335 = lgetv %heights.18;
+    symbol [ heights %tmp.335 332 48 55 ];
+    %tmp.336 = lgetv %i.20;
+    symbol [ i %tmp.336 332 56 57 ];
+    %tmp.337 = agetv %tmp.335 %tmp.336;
+    %tmp.338 = lgetv %round.10;
+    symbol [ round %tmp.338 332 60 65 ];
+    %tmp.339 = invoke %tmp.330 %tmp.331(%tmp.332, %tmp.333, %tmp.334, %tmp.337, %tmp.338);
+    symbol [ toString %tmp.340 332 67 75 ];
+    %tmp.340 = getv function %tmp.339 :toString;
+    %tmp.341 = invoke %tmp.339 %tmp.340();
+    %tmp.342 = add %tmp.328 %tmp.341;
+    invoke %tmp.289 %tmp.290(%tmp.303, %tmp.342);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 333 12 ]
+    symbol [ Test %tmp.343 333 12 16 ];
+    %tmp.343 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.344 333 17 30 ];
+    %tmp.344 = getv function %tmp.343 :assertMessage;
+    %tmp.345 = lgetv %top.23;
+    symbol [ top %tmp.345 333 31 34 ];
+    %tmp.346 = lgetv %prevBottom.19;
+    symbol [ prevBottom %tmp.346 333 38 48 ];
+    %tmp.347 = gte %tmp.345 %tmp.346;
+    %tmp.348 = "rows must not overlap";
+    invoke %tmp.343 %tmp.344(%tmp.347, %tmp.348);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 334 12 ]
+    %tmp.349 = lgetv %bottom.24;
+    symbol [ bottom %tmp.349 334 25 31 ];
+    lputv %prevBottom.19 %tmp.349;
+    symbol [ prevBottom %prevBottom.19 334 12 22 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_39_335_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_8_335_8_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 321 ]
+    %tmp.352 = lgetv %i.20;
+    symbol [ i %tmp.352 321 34 35 ];
+    %tmp.353 = add %tmp.352 1;
+    lputv %i.20 %tmp.353;
+    symbol [ i %i.20 321 34 35 ];
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_8_335_8_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_321_8_335_8_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 336 8 ]
+    %tmp.354 = lgetv %logger;
+    symbol [ logger %tmp.354 336 8 14 ];
+    symbol [ debug %tmp.355 336 15 20 ];
+    %tmp.355 = getv function %tmp.354 :debug;
+    %tmp.356 = "cell ";
+    %tmp.357 = lgetv %w.8;
+    symbol [ w %tmp.357 336 31 32 ];
+    symbol [ toString %tmp.358 336 33 41 ];
+    %tmp.358 = getv function %tmp.357 :toString;
+    %tmp.359 = invoke %tmp.357 %tmp.358();
+    %tmp.360 = add %tmp.356 %tmp.359;
+    %tmp.361 = "x";
+    %tmp.362 = add %tmp.360 %tmp.361;
+    %tmp.363 = lgetv %h.9;
+    symbol [ h %tmp.363 336 52 53 ];
+    symbol [ toString %tmp.364 336 54 62 ];
+    %tmp.364 = getv function %tmp.363 :toString;
+    %tmp.365 = invoke %tmp.363 %tmp.364();
+    %tmp.366 = add %tmp.362 %tmp.365;
+    %tmp.367 = " -> ";
+    %tmp.368 = add %tmp.366 %tmp.367;
+    %tmp.369 = lgetv %rows.12;
+    symbol [ rows %tmp.369 336 76 80 ];
+    symbol [ toString %tmp.370 336 81 89 ];
+    %tmp.370 = getv function %tmp.369 :toString;
+    %tmp.371 = invoke %tmp.369 %tmp.370();
+    %tmp.372 = add %tmp.368 %tmp.371;
+    %tmp.373 = " rows, heights ";
+    %tmp.374 = add %tmp.372 %tmp.373;
+    %tmp.375 = lgetv %heights.18;
+    symbol [ heights %tmp.375 337 34 41 ];
+    symbol [ toString %tmp.376 337 42 50 ];
+    %tmp.376 = getv function %tmp.375 :toString;
+    %tmp.377 = invoke %tmp.375 %tmp.376();
+    %tmp.378 = add %tmp.374 %tmp.377;
+    invoke %tmp.354 %tmp.355(%tmp.378);
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_43_338_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_4_338_4_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 303 ]
+    %tmp.381 = lgetv %c.7;
+    symbol [ c %tmp.381 303 38 39 ];
+    %tmp.382 = add %tmp.381 1;
+    lputv %c.7 %tmp.382;
+    symbol [ c %c.7 303 38 39 ];
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_4_338_4_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_4_338_4_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 339 4 ]
+    %tmp.383 = true;
+    ret %tmp.383;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_287_63_340_0_stop:
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 1; ]
+<init> {
+}

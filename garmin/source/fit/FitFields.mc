@@ -3,11 +3,17 @@ import Toybox.FitContributor;
 import Toybox.Lang;
 import WingFoilCore;
 
-// Sole writer of FIT developer fields. Field IDs/types are the docs/fit-schema.md contract —
-// change both together. Scope: record 0+2+3+4, lap 15-16, session 20-27 + 32-38 + 39-43.
+// Sole writer of FIT developer fields. WHAT fields exist is `FitSchema`'s table (the
+// docs/fit-schema.md contract); this class only creates them from that table and feeds them
+// values. Scope: record 0+2+3+4, lap 15-16, session 20-23 + 26-27 + 32-34 + 38-39 + 43 +
+// 54-56.
+//
+// Schema v2: the session message packs three groups of small fields into three uint32s
+// (54/55/56) because the runtime accepts only 16 developer fields per message type and v1's
+// 20 crashed the app on START. See FitSchema's header for the whole story.
 class FitFields {
-    const SCHEMA_VERSION = 1;
-    const APP_MINOR = 1;
+    const SCHEMA_VERSION = FitSchema.SCHEMA_VERSION;
+    const APP_MINOR = FitSchema.APP_MINOR;
 
     // record turn_marker enum (docs/fit-schema.md record field 3)
     enum {
@@ -20,99 +26,25 @@ class FitFields {
         MARK_FELL = 6
     }
 
-    hidden var _foilState as FitContributor.Field;
-    hidden var _pumpCadence as FitContributor.Field;
-    hidden var _turnMarker as FitContributor.Field;
-    hidden var _tick as FitContributor.Field;
-    hidden var _lapTurns as FitContributor.Field;
-    hidden var _lapBestScore as FitContributor.Field;
-    hidden var _tackCount as FitContributor.Field;
-    hidden var _jibeCount as FitContributor.Field;
-    hidden var _turnSuccess as FitContributor.Field;
-    hidden var _windDir as FitContributor.Field;
-    hidden var _discipline as FitContributor.Field;
-    hidden var _foilTime as FitContributor.Field;
-    hidden var _foilPct as FitContributor.Field;
-    hidden var _flightCount as FitContributor.Field;
-    hidden var _longestS as FitContributor.Field;
-    hidden var _longestM as FitContributor.Field;
-    hidden var _best2s as FitContributor.Field;
-    hidden var _best10s as FitContributor.Field;
-    hidden var _cfgEntry as FitContributor.Field;
-    hidden var _cfgExit as FitContributor.Field;
-    hidden var _cfgMinFlight as FitContributor.Field;
-    hidden var _appVersion as FitContributor.Field;
-    hidden var _takeoffAttempts as FitContributor.Field;
-    hidden var _takeoffSuccesses as FitContributor.Field;
-    hidden var _avgPumps as FitContributor.Field;
-    hidden var _pumpStrokes as FitContributor.Field;
+    // One entry per FitSchema slot, in slot order. Indexed by the SES_*/REC_*/LAP_* enum, so
+    // a renamed or reordered row cannot silently write to the wrong field.
+    hidden var _f as Array<FitContributor.Field>;
 
     function initialize(session as ActivityRecording.Session) {
-        _foilState = session.createField("foil_state", 0, FitContributor.DATA_TYPE_UINT8,
-            {:mesgType => FitContributor.MESG_TYPE_RECORD});
-        _pumpCadence = session.createField("pump_cadence", 2, FitContributor.DATA_TYPE_UINT8,
-            {:mesgType => FitContributor.MESG_TYPE_RECORD, :units => "spm"});
-        _turnMarker = session.createField("turn_marker", 3, FitContributor.DATA_TYPE_UINT8,
-            {:mesgType => FitContributor.MESG_TYPE_RECORD});
-        _tick = session.createField("tick", 4, FitContributor.DATA_TYPE_UINT8,
-            {:mesgType => FitContributor.MESG_TYPE_RECORD});
+        _f = new Array<FitContributor.Field>[FitSchema.SLOT_COUNT];
+        for (var i = 0; i < FitSchema.SLOT_COUNT; i++) {
+            _f[i] = session.createField(FitSchema.NAMES[i], FitSchema.IDS[i],
+                FitSchema.fitDataType(i), FitSchema.optionsFor(i));
+        }
 
-        _lapTurns = session.createField("turn_count", 15, FitContributor.DATA_TYPE_UINT8,
-            {:mesgType => FitContributor.MESG_TYPE_LAP});
-        _lapBestScore = session.createField("best_turn_score", 16,
-            FitContributor.DATA_TYPE_UINT8,
-            {:mesgType => FitContributor.MESG_TYPE_LAP, :units => "%"});
-
-        _discipline = session.createField("discipline", 20, FitContributor.DATA_TYPE_STRING,
-            {:mesgType => FitContributor.MESG_TYPE_SESSION, :count => 16});
-        _foilTime = session.createField("foil_time", 21, FitContributor.DATA_TYPE_UINT32,
-            {:mesgType => FitContributor.MESG_TYPE_SESSION, :units => "s"});
-        _foilPct = session.createField("foil_pct", 22, FitContributor.DATA_TYPE_UINT8,
-            {:mesgType => FitContributor.MESG_TYPE_SESSION, :units => "%"});
-        _flightCount = session.createField("flight_count", 23, FitContributor.DATA_TYPE_UINT16,
-            {:mesgType => FitContributor.MESG_TYPE_SESSION});
-        _longestS = session.createField("longest_flight_s", 24, FitContributor.DATA_TYPE_UINT16,
-            {:mesgType => FitContributor.MESG_TYPE_SESSION, :units => "s"});
-        _longestM = session.createField("longest_flight_m", 25, FitContributor.DATA_TYPE_UINT32,
-            {:mesgType => FitContributor.MESG_TYPE_SESSION, :units => "m"});
-        _best2s = session.createField("best_2s", 26, FitContributor.DATA_TYPE_UINT16,
-            {:mesgType => FitContributor.MESG_TYPE_SESSION, :units => "cm/s"});
-        _best10s = session.createField("best_10s", 27, FitContributor.DATA_TYPE_UINT16,
-            {:mesgType => FitContributor.MESG_TYPE_SESSION, :units => "cm/s"});
-        _tackCount = session.createField("tack_count", 32, FitContributor.DATA_TYPE_UINT8,
-            {:mesgType => FitContributor.MESG_TYPE_SESSION});
-        _jibeCount = session.createField("jibe_count", 33, FitContributor.DATA_TYPE_UINT8,
-            {:mesgType => FitContributor.MESG_TYPE_SESSION});
-        _turnSuccess = session.createField("turn_success_pct", 34,
-            FitContributor.DATA_TYPE_UINT8,
-            {:mesgType => FitContributor.MESG_TYPE_SESSION, :units => "%"});
-        _takeoffAttempts = session.createField("takeoff_attempts", 35,
-            FitContributor.DATA_TYPE_UINT8, {:mesgType => FitContributor.MESG_TYPE_SESSION});
-        _takeoffSuccesses = session.createField("takeoff_successes", 36,
-            FitContributor.DATA_TYPE_UINT8, {:mesgType => FitContributor.MESG_TYPE_SESSION});
-        _avgPumps = session.createField("avg_pumps_to_takeoff", 37,
-            FitContributor.DATA_TYPE_UINT8, {:mesgType => FitContributor.MESG_TYPE_SESSION});
-        _pumpStrokes = session.createField("total_pump_strokes", 38,
-            FitContributor.DATA_TYPE_UINT16, {:mesgType => FitContributor.MESG_TYPE_SESSION});
-        _windDir = session.createField("wind_dir_user", 39, FitContributor.DATA_TYPE_UINT16,
-            {:mesgType => FitContributor.MESG_TYPE_SESSION, :units => "deg"});
-        _cfgEntry = session.createField("cfg_entry_speed", 40, FitContributor.DATA_TYPE_UINT16,
-            {:mesgType => FitContributor.MESG_TYPE_SESSION, :units => "cm/s"});
-        _cfgExit = session.createField("cfg_exit_speed", 41, FitContributor.DATA_TYPE_UINT16,
-            {:mesgType => FitContributor.MESG_TYPE_SESSION, :units => "cm/s"});
-        _cfgMinFlight = session.createField("cfg_min_flight", 42, FitContributor.DATA_TYPE_UINT8,
-            {:mesgType => FitContributor.MESG_TYPE_SESSION, :units => "s"});
-        _appVersion = session.createField("app_version", 43, FitContributor.DATA_TYPE_UINT16,
-            {:mesgType => FitContributor.MESG_TYPE_SESSION});
-
-        _discipline.setData("wingfoil");
-        _appVersion.setData(APP_MINOR * 256 + SCHEMA_VERSION);
-        _foilState.setData(0);
-        _pumpCadence.setData(0);
-        _turnMarker.setData(MARK_NONE);
-        _tick.setData(0);
-        _lapTurns.setData(0);
-        _lapBestScore.setData(0);
+        _f[FitSchema.SES_DISCIPLINE].setData("wingfoil");
+        _f[FitSchema.SES_APP_VERSION].setData(APP_MINOR * 256 + SCHEMA_VERSION);
+        _f[FitSchema.REC_FOIL_STATE].setData(0);
+        _f[FitSchema.REC_PUMP_CADENCE].setData(0);
+        _f[FitSchema.REC_TURN_MARKER].setData(MARK_NONE);
+        _f[FitSchema.REC_TICK].setData(0);
+        _f[FitSchema.LAP_TURN_COUNT].setData(0);
+        _f[FitSchema.LAP_BEST_TURN_SCORE].setData(0);
     }
 
     // Record marker for a TurnDetector event: kind at confirmation, outcome when resolved.
@@ -145,46 +77,51 @@ class FitFields {
     // therefore rewritten every second, so a marker marks exactly its own second.
     function setRecord(foilState as Number, tick as Number, turnMarker as Number,
             pumpCadence as Number) as Void {
-        _foilState.setData(foilState);
+        _f[FitSchema.REC_FOIL_STATE].setData(foilState);
         // 0 = not pumping (or no detector); 254 caps a uint8 that can never legitimately
         // exceed ~150 spm anyway (pumpRefractory bounds it at 150).
-        _pumpCadence.setData(pumpCadence < 0 ? 0 : (pumpCadence > 254 ? 254 : pumpCadence));
-        _turnMarker.setData(turnMarker);
+        _f[FitSchema.REC_PUMP_CADENCE].setData(_u8(pumpCadence));
+        _f[FitSchema.REC_TURN_MARKER].setData(turnMarker);
         // 0xFF is FIT's uint8 invalid sentinel -- roll 0-254 so no tick decodes as absent.
-        _tick.setData(tick % 255);
+        _f[FitSchema.REC_TICK].setData(tick % 255);
     }
 
     // Called just before addLap(): the lap message takes the values set at that moment.
     function setLap(turns as TurnDetector) as Void {
-        _lapTurns.setData(turns.lapTurnCount > 254 ? 254 : turns.lapTurnCount);
-        _lapBestScore.setData(turns.lapBestScorePct);
+        _f[FitSchema.LAP_TURN_COUNT].setData(_u8(turns.lapTurnCount));
+        _f[FitSchema.LAP_BEST_TURN_SCORE].setData(turns.lapBestScorePct);
     }
 
     // Called continuously while recording (session msg is written once at save with last values).
     function updateSession(detector as FlightDetector, records as SpeedRecords,
             timerS as Float, turns as TurnDetector, pump as PumpDetector) as Void {
-        _foilTime.setData(detector.foilTimeS.toNumber());
+        _f[FitSchema.SES_FOIL_TIME].setData(detector.foilTimeS.toNumber());
         var pct = timerS > 0 ? (detector.foilTimeS / timerS * 100.0).toNumber() : 0;
-        _foilPct.setData(pct > 100 ? 100 : pct);
-        _flightCount.setData(detector.flightCount);
-        _longestS.setData(detector.longestS.toNumber());
-        _longestM.setData(detector.longestM.toNumber());
-        _best2s.setData(_cms(records.best2sMps));
-        _best10s.setData(_cms(records.best10sMps));
-        _tackCount.setData(turns.tackCount > 254 ? 254 : turns.tackCount);
-        _jibeCount.setData(turns.jibeCount > 254 ? 254 : turns.jibeCount);
-        _turnSuccess.setData(turns.successPct());
-        // Takeoff/pump block (docs/fit-schema.md session 35-38). Every counter is a live
-        // watch value; the phone recomputes all four from the raw accel stream and the
-        // divergence check compares them.
-        _takeoffAttempts.setData(_u8(pump.attempts()));
-        _takeoffSuccesses.setData(_u8(pump.successes));
-        _avgPumps.setData(pump.avgPumpsX10());
-        _pumpStrokes.setData(pump.strokes > 65534 ? 65534 : pump.strokes);
+        _f[FitSchema.SES_FOIL_PCT].setData(pct > 100 ? 100 : pct);
+        _f[FitSchema.SES_FLIGHT_COUNT].setData(detector.flightCount);
+        _f[FitSchema.SES_BEST_2S].setData(_cms(records.best2sMps));
+        _f[FitSchema.SES_BEST_10S].setData(_cms(records.best10sMps));
+        _f[FitSchema.SES_TACK_COUNT].setData(_u8(turns.tackCount));
+        _f[FitSchema.SES_JIBE_COUNT].setData(_u8(turns.jibeCount));
+        _f[FitSchema.SES_TURN_SUCCESS].setData(turns.successPct());
+        _f[FitSchema.SES_PUMP_STROKES].setData(pump.strokes > 65534 ? 65534 : pump.strokes);
         // 65535 = unset, per docs/fit-schema.md session field 39
-        _windDir.setData(AppSettings.cfg.windDirection < 0 ? 65535 : AppSettings.cfg.windDirection);
-        _cfgEntry.setData(_cms(AppSettings.cfg.foilEntryMps));
-        _cfgExit.setData(_cms(AppSettings.cfg.foilExitMps));
-        _cfgMinFlight.setData(AppSettings.cfg.minFlightS);
+        _f[FitSchema.SES_WIND_DIR].setData(
+            AppSettings.cfg.windDirection < 0 ? 65535 : AppSettings.cfg.windDirection);
+
+        // ---- the three v2 packed fields (docs/fit-schema.md session 54/55/56) ----
+        // The longest flight, was 24 (s) + 25 (m).
+        _f[FitSchema.SES_LONGEST_PACK].setData(FitSchema.packLongest(
+            detector.longestS.toNumber(), detector.longestM.toNumber()));
+        // Takeoff/pump block, was 35 + 36 + 37. Every counter is a live watch value; the
+        // phone recomputes all of them from the raw accel stream and the divergence check
+        // compares them.
+        _f[FitSchema.SES_TAKEOFF_PACK].setData(FitSchema.packTakeoff(
+            pump.avgPumpsX10(), pump.attempts(), pump.successes));
+        // The thresholds actually in effect, was 40 + 41 + 42. Same encoding as the data
+        // field's SessionPack.packCfg.
+        _f[FitSchema.SES_CFG_PACK].setData(FitSchema.packCfg(
+            _cms(AppSettings.cfg.foilEntryMps), _cms(AppSettings.cfg.foilExitMps),
+            AppSettings.cfg.minFlightS));
     }
 }

@@ -1,0 +1,656 @@
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 1; @symbol_importdef<0> = [Toybox,1,7,13]; @symbol_importdef<1> = [FitContributor,1,14,28]; ]
+import Toybox.FitContributor;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 2; @symbol_importdef<0> = [Toybox,2,7,13]; @symbol_importdef<1> = [Lang,2,14,18]; ]
+import Toybox.Lang;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 3; @symbol_importdef<0> = [Toybox,3,7,13]; @symbol_importdef<1> = [WatchUi,3,14,21]; ]
+import Toybox.WatchUi;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 4; @symbol_importdef<0> = [WingFoilCore,4,7,19]; ]
+import WingFoilCore;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 14; @symbol_classdef = [FieldFit,14,6,14]; ]
+class FieldFit {
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 14; ]
+    <init> {
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 36 17 ]
+        %tmp.1 = newa 14 Array<String>;
+        symbol [ Array %tmp.1 39 23 28 ];
+        symbol [ String %tmp.1 39 29 35 ];
+        %tmp.2 = "foil_time";
+        %tmp.3 = dup %tmp.1;
+        %tmp.4 = aputv %tmp.3 0 %tmp.2;
+        %tmp.5 = "foil_pct";
+        %tmp.6 = dup %tmp.4;
+        %tmp.7 = aputv %tmp.6 1 %tmp.5;
+        %tmp.8 = "flight_count";
+        %tmp.9 = dup %tmp.7;
+        %tmp.10 = aputv %tmp.9 2 %tmp.8;
+        %tmp.11 = "longest_flight_s";
+        %tmp.12 = dup %tmp.10;
+        %tmp.13 = aputv %tmp.12 3 %tmp.11;
+        %tmp.14 = "best_2s";
+        %tmp.15 = dup %tmp.13;
+        %tmp.16 = aputv %tmp.15 4 %tmp.14;
+        %tmp.17 = "best_10s";
+        %tmp.18 = dup %tmp.16;
+        %tmp.19 = aputv %tmp.18 5 %tmp.17;
+        %tmp.20 = "tack_count";
+        %tmp.21 = dup %tmp.19;
+        %tmp.22 = aputv %tmp.21 6 %tmp.20;
+        %tmp.23 = "jibe_count";
+        %tmp.24 = dup %tmp.22;
+        %tmp.25 = aputv %tmp.24 7 %tmp.23;
+        %tmp.26 = "turn_success_pct";
+        %tmp.27 = dup %tmp.25;
+        %tmp.28 = aputv %tmp.27 8 %tmp.26;
+        %tmp.29 = "wind_dir_user";
+        %tmp.30 = dup %tmp.28;
+        %tmp.31 = aputv %tmp.30 9 %tmp.29;
+        %tmp.32 = "app_version";
+        %tmp.33 = dup %tmp.31;
+        %tmp.34 = aputv %tmp.33 10 %tmp.32;
+        %tmp.35 = "turn_outcomes";
+        %tmp.36 = dup %tmp.34;
+        %tmp.37 = aputv %tmp.36 11 %tmp.35;
+        %tmp.38 = "discipline_id";
+        %tmp.39 = dup %tmp.37;
+        %tmp.40 = aputv %tmp.39 12 %tmp.38;
+        %tmp.41 = "cfg_pack";
+        %tmp.42 = dup %tmp.40;
+        %tmp.43 = aputv %tmp.42 13 %tmp.41;
+        putv self :NAMES %tmp.43;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 40 17 ]
+        %tmp.44 = newa 14 Array<String>;
+        symbol [ Array %tmp.44 41 15 20 ];
+        symbol [ String %tmp.44 41 21 27 ];
+        %tmp.45 = "s";
+        %tmp.46 = dup %tmp.44;
+        %tmp.47 = aputv %tmp.46 0 %tmp.45;
+        %tmp.48 = "%";
+        %tmp.49 = dup %tmp.47;
+        %tmp.50 = aputv %tmp.49 1 %tmp.48;
+        %tmp.51 = "";
+        %tmp.52 = dup %tmp.50;
+        %tmp.53 = aputv %tmp.52 2 %tmp.51;
+        %tmp.54 = "s";
+        %tmp.55 = dup %tmp.53;
+        %tmp.56 = aputv %tmp.55 3 %tmp.54;
+        %tmp.57 = "cm/s";
+        %tmp.58 = dup %tmp.56;
+        %tmp.59 = aputv %tmp.58 4 %tmp.57;
+        %tmp.60 = "cm/s";
+        %tmp.61 = dup %tmp.59;
+        %tmp.62 = aputv %tmp.61 5 %tmp.60;
+        %tmp.63 = "";
+        %tmp.64 = dup %tmp.62;
+        %tmp.65 = aputv %tmp.64 6 %tmp.63;
+        %tmp.66 = "";
+        %tmp.67 = dup %tmp.65;
+        %tmp.68 = aputv %tmp.67 7 %tmp.66;
+        %tmp.69 = "%";
+        %tmp.70 = dup %tmp.68;
+        %tmp.71 = aputv %tmp.70 8 %tmp.69;
+        %tmp.72 = "deg";
+        %tmp.73 = dup %tmp.71;
+        %tmp.74 = aputv %tmp.73 9 %tmp.72;
+        %tmp.75 = "";
+        %tmp.76 = dup %tmp.74;
+        %tmp.77 = aputv %tmp.76 10 %tmp.75;
+        %tmp.78 = "";
+        %tmp.79 = dup %tmp.77;
+        %tmp.80 = aputv %tmp.79 11 %tmp.78;
+        %tmp.81 = "";
+        %tmp.82 = dup %tmp.80;
+        %tmp.83 = aputv %tmp.82 12 %tmp.81;
+        %tmp.84 = "";
+        %tmp.85 = dup %tmp.83;
+        %tmp.86 = aputv %tmp.85 13 %tmp.84;
+        putv self :UNITS %tmp.86;
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 14; ]
+    static
+    <init> {
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 15; @position = 10; @symbol_constdef = [SCHEMA_VERSION,15,10,24]; ]
+    const SCHEMA_VERSION = 1;
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 16; @position = 10; @symbol_constdef = [APP_MINOR,16,10,19]; ]
+    const APP_MINOR = 1;
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 20; ]
+    static
+    enum {
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 21; @position = 8; @symbol_enumdec = [MARK_NONE,21,8,17]; ]
+        MARK_NONE = 0,
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 22; @position = 8; @symbol_enumdec = [MARK_TACK,22,8,17]; ]
+        MARK_TACK = 1,
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 23; @position = 8; @symbol_enumdec = [MARK_JIBE,23,8,17]; ]
+        MARK_JIBE = 2,
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 24; @position = 8; @symbol_enumdec = [MARK_TURN,24,8,17]; ]
+        MARK_TURN = 3,
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 25; @position = 8; @symbol_enumdec = [MARK_FLEW,25,8,17]; ]
+        MARK_FLEW = 4,
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 26; @position = 8; @symbol_enumdec = [MARK_TOUCHDOWN,26,8,22]; ]
+        MARK_TOUCHDOWN = 5,
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 27; @position = 8; @symbol_enumdec = [MARK_FELL,27,8,17]; ]
+        MARK_FELL = 6
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 30; @position = 15; @symbol_vardef = [_foilState,30,15,25]; @symbol_type<0> = [FitContributor,30,29,43]; @symbol_type<1> = [Field,30,44,49]; ]
+    protected
+    var _foilState as FitContributor.Field;
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 31; @position = 15; @symbol_vardef = [_turnMarker,31,15,26]; @symbol_type<0> = [FitContributor,31,30,44]; @symbol_type<1> = [Field,31,45,50]; ]
+    protected
+    var _turnMarker as FitContributor.Field;
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 32; @position = 15; @symbol_vardef = [_tick,32,15,20]; @symbol_type<0> = [FitContributor,32,24,38]; @symbol_type<1> = [Field,32,39,44]; ]
+    protected
+    var _tick as FitContributor.Field;
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 33; @position = 15; @symbol_vardef = [_session,33,15,23]; @symbol_type<0> = [Array,33,27,32]; @symbol_type<1> = [FitContributor,33,33,47]; @symbol_type<2> = [Field,33,48,53]; ]
+    protected
+    var _session as Array<FitContributor.Field>;
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 36; @position = 17; @symbol_constdef = [NAMES,36,17,22]; ]
+    protected
+    const NAMES;
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 40; @position = 17; @symbol_constdef = [UNITS,40,17,22]; ]
+    protected
+    const UNITS;
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 43; @symbol_functiondef = [initialize,43,13,23]; @symbol_param<0> = [df,43,24,26]; @symbol_param<0>_type<0> = [WatchUi,43,30,37]; @symbol_param<0>_type<1> = [DataField,43,38,47]; ]
+    function initialize(df as WatchUi.DataField) as Void {
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_43_49_67_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 44 8 ]
+        %tmp.1 = lgetv %df;
+        symbol [ df %tmp.1 44 21 23 ];
+        symbol [ createField %tmp.2 44 24 35 ];
+        %tmp.2 = getv function %tmp.1 :createField;
+        %tmp.3 = "foil_state";
+        %tmp.4 = 0;
+        symbol [ FitContributor %tmp.5 44 53 67 ];
+        %tmp.5 = getm $.Toybox.FitContributor;
+        symbol [ DATA_TYPE_UINT8 %tmp.6 44 68 83 ];
+        %tmp.6 = getv %tmp.5 :DATA_TYPE_UINT8;
+        %tmp.7 = newd 1;
+        %tmp.9 = const :mesgType;
+        symbol [ mesgType %tmp.9 45 14 22 const ];
+        symbol [ FitContributor %tmp.10 45 26 40 ];
+        %tmp.10 = getm $.Toybox.FitContributor;
+        symbol [ MESG_TYPE_RECORD %tmp.11 45 41 57 ];
+        %tmp.11 = getv %tmp.10 :MESG_TYPE_RECORD;
+        %tmp.12 = dup %tmp.7;
+        %tmp.13 = aputv %tmp.12 %tmp.9 %tmp.11;
+        %tmp.14 = invoke %tmp.1 %tmp.2(%tmp.3, %tmp.4, %tmp.6, %tmp.13);
+        symbol [ _foilState ? 44 8 18 ];
+        putv self :_foilState %tmp.14;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 46 8 ]
+        %tmp.15 = lgetv %df;
+        symbol [ df %tmp.15 46 22 24 ];
+        symbol [ createField %tmp.16 46 25 36 ];
+        %tmp.16 = getv function %tmp.15 :createField;
+        %tmp.17 = "turn_marker";
+        %tmp.18 = 3;
+        symbol [ FitContributor %tmp.19 46 55 69 ];
+        %tmp.19 = getm $.Toybox.FitContributor;
+        symbol [ DATA_TYPE_UINT8 %tmp.20 46 70 85 ];
+        %tmp.20 = getv %tmp.19 :DATA_TYPE_UINT8;
+        %tmp.21 = newd 1;
+        %tmp.23 = const :mesgType;
+        symbol [ mesgType %tmp.23 47 14 22 const ];
+        symbol [ FitContributor %tmp.24 47 26 40 ];
+        %tmp.24 = getm $.Toybox.FitContributor;
+        symbol [ MESG_TYPE_RECORD %tmp.25 47 41 57 ];
+        %tmp.25 = getv %tmp.24 :MESG_TYPE_RECORD;
+        %tmp.26 = dup %tmp.21;
+        %tmp.27 = aputv %tmp.26 %tmp.23 %tmp.25;
+        %tmp.28 = invoke %tmp.15 %tmp.16(%tmp.17, %tmp.18, %tmp.20, %tmp.27);
+        symbol [ _turnMarker ? 46 8 19 ];
+        putv self :_turnMarker %tmp.28;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 48 8 ]
+        %tmp.29 = lgetv %df;
+        symbol [ df %tmp.29 48 16 18 ];
+        symbol [ createField %tmp.30 48 19 30 ];
+        %tmp.30 = getv function %tmp.29 :createField;
+        %tmp.31 = "tick";
+        %tmp.32 = 4;
+        symbol [ FitContributor %tmp.33 48 42 56 ];
+        %tmp.33 = getm $.Toybox.FitContributor;
+        symbol [ DATA_TYPE_UINT8 %tmp.34 48 57 72 ];
+        %tmp.34 = getv %tmp.33 :DATA_TYPE_UINT8;
+        %tmp.35 = newd 1;
+        %tmp.37 = const :mesgType;
+        symbol [ mesgType %tmp.37 49 14 22 const ];
+        symbol [ FitContributor %tmp.38 49 26 40 ];
+        %tmp.38 = getm $.Toybox.FitContributor;
+        symbol [ MESG_TYPE_RECORD %tmp.39 49 41 57 ];
+        %tmp.39 = getv %tmp.38 :MESG_TYPE_RECORD;
+        %tmp.40 = dup %tmp.35;
+        %tmp.41 = aputv %tmp.40 %tmp.37 %tmp.39;
+        %tmp.42 = invoke %tmp.29 %tmp.30(%tmp.31, %tmp.32, %tmp.34, %tmp.41);
+        symbol [ _tick ? 48 8 13 ];
+        putv self :_tick %tmp.42;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 51 8 ]
+        symbol [ SessionPack %tmp.45 51 51 62 ];
+        %tmp.45 = getv ? :SessionPack;
+        symbol [ SLOT_COUNT %tmp.46 51 63 73 ];
+        %tmp.46 = getv %tmp.45 :SLOT_COUNT;
+        %tmp.43 = newa Array<FitContributor.Field> %tmp.46;
+        symbol [ Array %tmp.43 51 23 28 ];
+        symbol [ FitContributor %tmp.43 51 29 43 ];
+        symbol [ Field %tmp.43 51 44 49 ];
+        symbol [ _session ? 51 8 16 ];
+        putv self :_session %tmp.43;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 52 8 ]
+        for @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_52_8_59_8_for_test @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_52_8_59_8_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_52_8_59_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_52_8_59_8_for_init:
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_52_8_59_8_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_52_8_59_8_for_end" ]
+        %i.1 = local;
+        symbol [ i %i.1 52 17 18 ];
+        %tmp.47 = 0;
+        lputv %i.1 %tmp.47;
+        symbol [ i %i.1 52 17 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_52_8_59_8_for_test:
+        %tmp.48 = lgetv %i.1;
+        symbol [ i %tmp.48 52 24 25 ];
+        symbol [ SessionPack %tmp.50 52 28 39 ];
+        %tmp.50 = getv ? :SessionPack;
+        symbol [ SLOT_COUNT %tmp.51 52 40 50 ];
+        %tmp.51 = getv %tmp.50 :SLOT_COUNT;
+        %tmp.52 = lt %tmp.48 %tmp.51;
+        bf %tmp.52 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_52_8_59_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_52_8_59_8_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_52_57_59_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 53 12 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_52_57_59_8_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_52_57_59_8_stop" ]
+        %opts.2 = local;
+        symbol [ opts %opts.2 53 16 20 ];
+        %tmp.53 = newd 1;
+        %tmp.55 = const :mesgType;
+        symbol [ mesgType %tmp.55 53 25 33 const ];
+        symbol [ FitContributor %tmp.56 53 37 51 ];
+        %tmp.56 = getm $.Toybox.FitContributor;
+        symbol [ MESG_TYPE_SESSION %tmp.57 53 52 69 ];
+        %tmp.57 = getv %tmp.56 :MESG_TYPE_SESSION;
+        %tmp.58 = dup %tmp.53;
+        %tmp.59 = aputv %tmp.58 %tmp.55 %tmp.57;
+        lputv %opts.2 %tmp.59;
+        symbol [ opts %opts.2 53 16 20 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 54 12 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_54_12_56_12_if_stmt:
+        symbol [ UNITS %tmp.61 54 17 22 ];
+        %tmp.61 = getv ? :UNITS;
+        %tmp.62 = lgetv %i.1;
+        symbol [ i %tmp.62 54 23 24 ];
+        %tmp.63 = agetv %tmp.61 %tmp.62;
+        symbol [ equals %tmp.64 54 26 32 ];
+        %tmp.64 = getv function %tmp.63 :equals;
+        %tmp.65 = "";
+        %tmp.66 = invoke %tmp.63 %tmp.64(%tmp.65);
+        %tmp.67 = not %tmp.66;
+        bf %tmp.67 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_54_12_56_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_54_12_56_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_54_38_56_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 55 16 ]
+        %tmp.68 = lgetv %opts.2;
+        symbol [ opts %tmp.68 55 16 20 ];
+        symbol [ UNITS %tmp.70 55 31 36 ];
+        %tmp.70 = getv ? :UNITS;
+        %tmp.71 = lgetv %i.1;
+        symbol [ i %tmp.71 55 37 38 ];
+        %tmp.72 = agetv %tmp.70 %tmp.71;
+        %tmp.74 = const :units;
+        symbol [ units %tmp.74 55 22 27 const ];
+        aputv %tmp.68 %tmp.74 %tmp.72;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_54_38_56_12_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_54_12_56_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_54_12_56_12_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 57 12 ]
+        symbol [ _session %tmp.75 57 12 20 ];
+        %tmp.75 = getv self :_session;
+        %tmp.76 = lgetv %df;
+        symbol [ df %tmp.76 57 26 28 ];
+        symbol [ createField %tmp.77 57 29 40 ];
+        %tmp.77 = getv function %tmp.76 :createField;
+        symbol [ NAMES %tmp.79 57 41 46 ];
+        %tmp.79 = getv ? :NAMES;
+        %tmp.80 = lgetv %i.1;
+        symbol [ i %tmp.80 57 47 48 ];
+        %tmp.81 = agetv %tmp.79 %tmp.80;
+        symbol [ SessionPack %tmp.83 57 51 62 ];
+        %tmp.83 = getv ? :SessionPack;
+        symbol [ FIELD_IDS %tmp.84 57 63 72 ];
+        %tmp.84 = getv %tmp.83 :FIELD_IDS;
+        %tmp.85 = lgetv %i.1;
+        symbol [ i %tmp.85 57 73 74 ];
+        %tmp.86 = agetv %tmp.84 %tmp.85;
+        %tmp.87 = self;
+        symbol [ _typeOf %tmp.88 57 77 84 ];
+        %tmp.88 = getv function %tmp.87 :_typeOf;
+        %tmp.89 = lgetv %i.1;
+        symbol [ i %tmp.89 57 85 86 ];
+        %tmp.90 = invoke %tmp.87 %tmp.88(%tmp.89);
+        %tmp.91 = lgetv %opts.2;
+        symbol [ opts %tmp.91 58 16 20 ];
+        %tmp.92 = invoke %tmp.76 %tmp.77(%tmp.81, %tmp.86, %tmp.90, %tmp.91);
+        %tmp.93 = lgetv %i.1;
+        symbol [ i %tmp.93 57 21 22 ];
+        aputv %tmp.75 %tmp.93 %tmp.92;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_52_57_59_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_52_8_59_8_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 52 ]
+        %tmp.96 = lgetv %i.1;
+        symbol [ i %tmp.96 52 52 53 ];
+        %tmp.97 = add %tmp.96 1;
+        lputv %i.1 %tmp.97;
+        symbol [ i %i.1 52 52 53 ];
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_52_8_59_8_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_52_8_59_8_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 61 8 ]
+        symbol [ _foilState %tmp.99 61 8 18 ];
+        %tmp.99 = getv ? :_foilState;
+        symbol [ setData %tmp.100 61 19 26 ];
+        %tmp.100 = getv function %tmp.99 :setData;
+        %tmp.101 = 0;
+        invoke %tmp.99 %tmp.100(%tmp.101);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 62 8 ]
+        symbol [ _turnMarker %tmp.103 62 8 19 ];
+        %tmp.103 = getv ? :_turnMarker;
+        symbol [ setData %tmp.104 62 20 27 ];
+        %tmp.104 = getv function %tmp.103 :setData;
+        symbol [ MARK_NONE %tmp.106 62 28 37 ];
+        %tmp.106 = getv ? :MARK_NONE;
+        invoke %tmp.103 %tmp.104(%tmp.106);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 63 8 ]
+        symbol [ _tick %tmp.108 63 8 13 ];
+        %tmp.108 = getv ? :_tick;
+        symbol [ setData %tmp.109 63 14 21 ];
+        %tmp.109 = getv function %tmp.108 :setData;
+        %tmp.110 = 0;
+        invoke %tmp.108 %tmp.109(%tmp.110);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 65 8 ]
+        symbol [ _session %tmp.112 65 8 16 ];
+        %tmp.112 = getv ? :_session;
+        symbol [ SessionPack %tmp.114 65 17 28 ];
+        %tmp.114 = getv ? :SessionPack;
+        symbol [ SLOT_DISCIPLINE %tmp.115 65 29 44 ];
+        %tmp.115 = getv %tmp.114 :SLOT_DISCIPLINE;
+        %tmp.116 = agetv %tmp.112 %tmp.115;
+        symbol [ setData %tmp.117 65 46 53 ];
+        %tmp.117 = getv function %tmp.116 :setData;
+        symbol [ SessionPack %tmp.119 65 54 65 ];
+        %tmp.119 = getv ? :SessionPack;
+        symbol [ DISCIPLINE_WINGFOIL %tmp.120 65 66 85 ];
+        %tmp.120 = getv %tmp.119 :DISCIPLINE_WINGFOIL;
+        invoke %tmp.116 %tmp.117(%tmp.120);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 66 8 ]
+        symbol [ _session %tmp.122 66 8 16 ];
+        %tmp.122 = getv ? :_session;
+        symbol [ SessionPack %tmp.124 66 17 28 ];
+        %tmp.124 = getv ? :SessionPack;
+        symbol [ SLOT_APP_VERSION %tmp.125 66 29 45 ];
+        %tmp.125 = getv %tmp.124 :SLOT_APP_VERSION;
+        %tmp.126 = agetv %tmp.122 %tmp.125;
+        symbol [ setData %tmp.127 66 47 54 ];
+        %tmp.127 = getv function %tmp.126 :setData;
+        %tmp.128 = self;
+        symbol [ appVersion %tmp.129 66 55 65 ];
+        %tmp.129 = getv function %tmp.128 :appVersion;
+        %tmp.130 = invoke %tmp.128 %tmp.129();
+        invoke %tmp.126 %tmp.127(%tmp.130);
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_43_49_67_4_stop:
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 69; @symbol_functiondef = [appVersion,69,13,23]; @symbol_return<0> = [Number,69,29,35]; ]
+    function appVersion() as Number {
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_69_36_71_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 70 8 ]
+        symbol [ APP_MINOR %tmp.2 70 15 24 ];
+        %tmp.2 = getv ? :APP_MINOR;
+        %tmp.3 = 256;
+        %tmp.4 = mul %tmp.2 %tmp.3;
+        symbol [ SCHEMA_VERSION %tmp.6 70 33 47 ];
+        %tmp.6 = getv ? :SCHEMA_VERSION;
+        %tmp.7 = add %tmp.4 %tmp.6;
+        ret %tmp.7;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_69_36_71_4_stop:
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 75; @symbol_functiondef = [_typeOf,75,20,27]; @symbol_param<0> = [slot,75,28,32]; @symbol_param<0>_type<0> = [Number,75,36,42]; @symbol_return<0> = [FitContributor,75,47,61]; @symbol_return<1> = [DataType,75,62,70]; ]
+    protected
+    function _typeOf(slot as Number) as FitContributor.DataType {
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_75_71_81_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 76 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_75_71_81_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_75_71_81_4_stop" ]
+        %w.1 = local;
+        symbol [ w %w.1 76 12 13 ];
+        symbol [ SessionPack %tmp.2 76 16 27 ];
+        %tmp.2 = getv ? :SessionPack;
+        symbol [ WIDTHS %tmp.3 76 28 34 ];
+        %tmp.3 = getv %tmp.2 :WIDTHS;
+        %tmp.4 = lgetv %slot;
+        symbol [ slot %tmp.4 76 35 39 ];
+        %tmp.5 = agetv %tmp.3 %tmp.4;
+        lputv %w.1 %tmp.5;
+        symbol [ w %w.1 76 12 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 77 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_77_8_79_8_if_stmt:
+        %tmp.6 = lgetv %w.1;
+        symbol [ w %tmp.6 77 12 13 ];
+        %tmp.7 = 1;
+        %tmp.8 = eq %tmp.6 %tmp.7;
+        bf %tmp.8 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_77_8_79_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_77_8_79_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_77_20_79_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 78 12 ]
+        symbol [ FitContributor %tmp.9 78 19 33 ];
+        %tmp.9 = getm $.Toybox.FitContributor;
+        symbol [ DATA_TYPE_UINT8 %tmp.10 78 34 49 ];
+        %tmp.10 = getv %tmp.9 :DATA_TYPE_UINT8;
+        ret %tmp.10;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_77_20_79_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_77_8_79_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_77_8_79_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 80 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_80_15_80_73_begin:
+        %tmp.11 = lgetv %w.1;
+        symbol [ w %tmp.11 80 15 16 ];
+        %tmp.12 = 2;
+        %tmp.13 = eq %tmp.11 %tmp.12;
+        bf %tmp.13 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_80_15_80_73_else_false;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_80_15_80_73_true:
+        symbol [ FitContributor %tmp.14 80 24 38 ];
+        %tmp.14 = getm $.Toybox.FitContributor;
+        symbol [ DATA_TYPE_UINT16 %tmp.15 80 39 55 ];
+        %tmp.15 = getv %tmp.14 :DATA_TYPE_UINT16;
+        push %tmp.15;
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_80_15_80_73_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_80_15_80_73_else_false:
+        symbol [ FitContributor %tmp.16 80 58 72 ];
+        %tmp.16 = getm $.Toybox.FitContributor;
+        symbol [ DATA_TYPE_UINT32 %tmp.17 80 73 89 ];
+        %tmp.17 = getv %tmp.16 :DATA_TYPE_UINT32;
+        push %tmp.17;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_80_15_80_73_end:
+        %tmp.18 = phi [%tmp.13 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_80_15_80_73_begin] [%tmp.15 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_80_15_80_73_true] [%tmp.17 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_80_15_80_73_else_false] [%tmp.18 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_80_15_80_73_end];
+        ret %tmp.18;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_75_71_81_4_stop:
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 84; @symbol_functiondef = [markerFor,84,20,29]; @symbol_param<0> = [turnEvent,84,30,39]; @symbol_param<0>_type<0> = [Number,84,43,49]; @symbol_param<1> = [kind,84,51,55]; @symbol_param<1>_type<0> = [Number,84,59,65]; @symbol_return<0> = [Number,84,70,76]; ]
+    static
+    function markerFor(turnEvent as Number, kind as Number) as Number {
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_84_77_98_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 85 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_85_8_87_8_if_stmt:
+        %tmp.1 = lgetv %turnEvent;
+        symbol [ turnEvent %tmp.1 85 12 21 ];
+        symbol [ TurnDetector %tmp.3 85 25 37 ];
+        %tmp.3 = getv ? :TurnDetector;
+        symbol [ EVENT_TURN %tmp.4 85 38 48 ];
+        %tmp.4 = getv %tmp.3 :EVENT_TURN;
+        %tmp.5 = eq %tmp.1 %tmp.4;
+        bf %tmp.5 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_85_8_87_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_85_8_87_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_85_50_87_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 86 12 ]
+        %tmp.6 = lgetv %kind;
+        symbol [ kind %tmp.6 86 19 23 ];
+        ret %tmp.6;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_85_50_87_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_85_8_87_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_85_8_87_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 88 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_88_8_90_8_if_stmt:
+        %tmp.7 = lgetv %turnEvent;
+        symbol [ turnEvent %tmp.7 88 12 21 ];
+        symbol [ TurnDetector %tmp.9 88 25 37 ];
+        %tmp.9 = getv ? :TurnDetector;
+        symbol [ EVENT_FLEW %tmp.10 88 38 48 ];
+        %tmp.10 = getv %tmp.9 :EVENT_FLEW;
+        %tmp.11 = eq %tmp.7 %tmp.10;
+        bf %tmp.11 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_88_8_90_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_88_8_90_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_88_50_90_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 89 12 ]
+        symbol [ MARK_FLEW %tmp.13 89 19 28 ];
+        %tmp.13 = getv ? :MARK_FLEW;
+        ret %tmp.13;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_88_50_90_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_88_8_90_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_88_8_90_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 91 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_91_8_93_8_if_stmt:
+        %tmp.14 = lgetv %turnEvent;
+        symbol [ turnEvent %tmp.14 91 12 21 ];
+        symbol [ TurnDetector %tmp.16 91 25 37 ];
+        %tmp.16 = getv ? :TurnDetector;
+        symbol [ EVENT_TOUCHDOWN %tmp.17 91 38 53 ];
+        %tmp.17 = getv %tmp.16 :EVENT_TOUCHDOWN;
+        %tmp.18 = eq %tmp.14 %tmp.17;
+        bf %tmp.18 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_91_8_93_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_91_8_93_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_91_55_93_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 92 12 ]
+        symbol [ MARK_TOUCHDOWN %tmp.20 92 19 33 ];
+        %tmp.20 = getv ? :MARK_TOUCHDOWN;
+        ret %tmp.20;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_91_55_93_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_91_8_93_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_91_8_93_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 94 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_94_8_96_8_if_stmt:
+        %tmp.21 = lgetv %turnEvent;
+        symbol [ turnEvent %tmp.21 94 12 21 ];
+        symbol [ TurnDetector %tmp.23 94 25 37 ];
+        %tmp.23 = getv ? :TurnDetector;
+        symbol [ EVENT_FELL %tmp.24 94 38 48 ];
+        %tmp.24 = getv %tmp.23 :EVENT_FELL;
+        %tmp.25 = eq %tmp.21 %tmp.24;
+        bf %tmp.25 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_94_8_96_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_94_8_96_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_94_50_96_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 95 12 ]
+        symbol [ MARK_FELL %tmp.27 95 19 28 ];
+        %tmp.27 = getv ? :MARK_FELL;
+        ret %tmp.27;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_94_50_96_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_94_8_96_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_94_8_96_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 97 8 ]
+        symbol [ MARK_NONE %tmp.29 97 15 24 ];
+        %tmp.29 = getv ? :MARK_NONE;
+        ret %tmp.29;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_84_77_98_4_stop:
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 102; @symbol_functiondef = [setRecord,102,13,22]; @symbol_param<0> = [foilState,102,23,32]; @symbol_param<0>_type<0> = [Number,102,36,42]; @symbol_param<1> = [tick,102,44,48]; @symbol_param<1>_type<0> = [Number,102,52,58]; @symbol_param<2> = [turnMarker,102,60,70]; @symbol_param<2>_type<0> = [Number,102,74,80]; ]
+    function setRecord(foilState as Number, tick as Number, turnMarker as Number) as Void {
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_102_90_107_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 103 8 ]
+        symbol [ _foilState %tmp.2 103 8 18 ];
+        %tmp.2 = getv ? :_foilState;
+        symbol [ setData %tmp.3 103 19 26 ];
+        %tmp.3 = getv function %tmp.2 :setData;
+        %tmp.4 = lgetv %foilState;
+        symbol [ foilState %tmp.4 103 27 36 ];
+        invoke %tmp.2 %tmp.3(%tmp.4);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 104 8 ]
+        symbol [ _turnMarker %tmp.6 104 8 19 ];
+        %tmp.6 = getv ? :_turnMarker;
+        symbol [ setData %tmp.7 104 20 27 ];
+        %tmp.7 = getv function %tmp.6 :setData;
+        %tmp.8 = lgetv %turnMarker;
+        symbol [ turnMarker %tmp.8 104 28 38 ];
+        invoke %tmp.6 %tmp.7(%tmp.8);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 106 8 ]
+        symbol [ _tick %tmp.10 106 8 13 ];
+        %tmp.10 = getv ? :_tick;
+        symbol [ setData %tmp.11 106 14 21 ];
+        %tmp.11 = getv function %tmp.10 :setData;
+        %tmp.12 = lgetv %tick;
+        symbol [ tick %tmp.12 106 22 26 ];
+        %tmp.13 = 255;
+        %tmp.14 = mod %tmp.12 %tmp.13;
+        invoke %tmp.10 %tmp.11(%tmp.14);
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_102_90_107_4_stop:
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 111; @symbol_functiondef = [updateSession,111,13,26]; @symbol_param<0> = [engine,111,27,33]; @symbol_param<0>_type<0> = [FieldEngine,111,37,48]; @symbol_param<1> = [cfg,111,50,53]; @symbol_param<1>_type<0> = [WingFoilCore,111,57,69]; @symbol_param<1>_type<1> = [Config,111,70,76]; ]
+    function updateSession(engine as FieldEngine, cfg as WingFoilCore.Config) as Void {
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_111_86_116_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 112 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_111_86_116_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_111_86_116_4_stop" ]
+        %vals.1 = local;
+        symbol [ vals %vals.1 112 12 16 ];
+        symbol [ SessionPack %tmp.2 112 19 30 ];
+        %tmp.2 = getv ? :SessionPack;
+        symbol [ fromEngine %tmp.3 112 31 41 ];
+        %tmp.3 = getv function %tmp.2 :fromEngine;
+        %tmp.4 = lgetv %engine;
+        symbol [ engine %tmp.4 112 42 48 ];
+        %tmp.5 = lgetv %cfg;
+        symbol [ cfg %tmp.5 112 50 53 ];
+        %tmp.6 = self;
+        symbol [ appVersion %tmp.7 112 55 65 ];
+        %tmp.7 = getv function %tmp.6 :appVersion;
+        %tmp.8 = invoke %tmp.6 %tmp.7();
+        %tmp.9 = invoke %tmp.2 %tmp.3(%tmp.4, %tmp.5, %tmp.8);
+        lputv %vals.1 %tmp.9;
+        symbol [ vals %vals.1 112 12 16 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 113 8 ]
+        for @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_113_8_115_8_for_test @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_113_8_115_8_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_113_8_115_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_113_8_115_8_for_init:
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_113_8_115_8_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_113_8_115_8_for_end" ]
+        %i.2 = local;
+        symbol [ i %i.2 113 17 18 ];
+        %tmp.10 = 0;
+        lputv %i.2 %tmp.10;
+        symbol [ i %i.2 113 17 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_113_8_115_8_for_test:
+        %tmp.11 = lgetv %i.2;
+        symbol [ i %tmp.11 113 24 25 ];
+        symbol [ SessionPack %tmp.13 113 28 39 ];
+        %tmp.13 = getv ? :SessionPack;
+        symbol [ SLOT_COUNT %tmp.14 113 40 50 ];
+        %tmp.14 = getv %tmp.13 :SLOT_COUNT;
+        %tmp.15 = lt %tmp.11 %tmp.14;
+        bf %tmp.15 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_113_8_115_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_113_8_115_8_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_113_57_115_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 114 12 ]
+        symbol [ _session %tmp.17 114 12 20 ];
+        %tmp.17 = getv ? :_session;
+        %tmp.18 = lgetv %i.2;
+        symbol [ i %tmp.18 114 21 22 ];
+        %tmp.19 = agetv %tmp.17 %tmp.18;
+        symbol [ setData %tmp.20 114 24 31 ];
+        %tmp.20 = getv function %tmp.19 :setData;
+        %tmp.21 = lgetv %vals.1;
+        symbol [ vals %tmp.21 114 32 36 ];
+        %tmp.22 = lgetv %i.2;
+        symbol [ i %tmp.22 114 37 38 ];
+        %tmp.23 = agetv %tmp.21 %tmp.22;
+        invoke %tmp.19 %tmp.20(%tmp.23);
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_113_57_115_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_113_8_115_8_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc" 113 ]
+        %tmp.26 = lgetv %i.2;
+        symbol [ i %tmp.26 113 52 53 ];
+        %tmp.27 = add %tmp.26 1;
+        lputv %i.2 %tmp.27;
+        symbol [ i %i.2 113 52 53 ];
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_113_8_115_8_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_113_8_115_8_for_end:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldFit_mc_111_86_116_4_stop:
+    }
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldFit.mc"; @line = 1; ]
+<init> {
+}

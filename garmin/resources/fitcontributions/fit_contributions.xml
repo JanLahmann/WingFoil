@@ -1,5 +1,9 @@
 <fitContributions>
-    <!-- ids must match FitFields.mc / docs/fit-schema.md -->
+    <!-- ids must match FitSchema.mc's table / docs/fit-schema.md.
+         Only fields the schema actually creates may appear here. Schema v2 dropped 24
+         (longest_flight_s), 35 (takeoff_attempts) and 36 (takeoff_successes) into the packed
+         uint32s 55/56 to stay under the 16-field-per-message limit; a bit-packed field is a
+         bit pattern, not a number, so it gets no Garmin Connect summary row. -->
     <fitField id="0" displayInChart="true" sortOrder="0" precision="0"
         chartTitle="@Strings.FitFoilStateChart" dataLabel="@Strings.FitFoilStateLabel"
         unitLabel="@Strings.FitUnitNone" fillColor="#00C2A0"/>
@@ -9,23 +13,17 @@
         dataLabel="@Strings.FitFoilPct" unitLabel="@Strings.FitUnitPct"/>
     <fitField id="23" displayInActivitySummary="true" sortOrder="3" precision="0"
         dataLabel="@Strings.FitFlights" unitLabel="@Strings.FitUnitNone"/>
-    <fitField id="24" displayInActivitySummary="true" sortOrder="4" precision="0"
-        dataLabel="@Strings.FitLongestFlight" unitLabel="@Strings.FitUnitSeconds"/>
-    <fitField id="26" displayInActivitySummary="true" sortOrder="5" precision="0"
+    <fitField id="26" displayInActivitySummary="true" sortOrder="4" precision="0"
         dataLabel="@Strings.FitBest2s" unitLabel="@Strings.FitUnitCms"/>
-    <fitField id="32" displayInActivitySummary="true" sortOrder="6" precision="0"
+    <fitField id="32" displayInActivitySummary="true" sortOrder="5" precision="0"
         dataLabel="@Strings.FitTacks" unitLabel="@Strings.FitUnitNone"/>
-    <fitField id="33" displayInActivitySummary="true" sortOrder="7" precision="0"
+    <fitField id="33" displayInActivitySummary="true" sortOrder="6" precision="0"
         dataLabel="@Strings.FitJibes" unitLabel="@Strings.FitUnitNone"/>
-    <fitField id="34" displayInActivitySummary="true" sortOrder="8" precision="0"
+    <fitField id="34" displayInActivitySummary="true" sortOrder="7" precision="0"
         dataLabel="@Strings.FitTurnSuccess" unitLabel="@Strings.FitUnitPct"/>
-    <fitField id="2" displayInChart="true" sortOrder="9" precision="0"
+    <fitField id="2" displayInChart="true" sortOrder="8" precision="0"
         chartTitle="@Strings.FitPumpCadence" dataLabel="@Strings.FitPumpCadence"
         unitLabel="@Strings.FitUnitSpm" fillColor="#FF6B00"/>
-    <fitField id="35" displayInActivitySummary="true" sortOrder="10" precision="0"
-        dataLabel="@Strings.FitTakeoffAttempts" unitLabel="@Strings.FitUnitNone"/>
-    <fitField id="36" displayInActivitySummary="true" sortOrder="11" precision="0"
-        dataLabel="@Strings.FitTakeoffSuccesses" unitLabel="@Strings.FitUnitNone"/>
-    <fitField id="38" displayInActivitySummary="true" sortOrder="12" precision="0"
+    <fitField id="38" displayInActivitySummary="true" sortOrder="9" precision="0"
         dataLabel="@Strings.FitPumpStrokes" unitLabel="@Strings.FitUnitNone"/>
 </fitContributions>

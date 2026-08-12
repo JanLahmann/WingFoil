@@ -7,6 +7,7 @@
   "wingfoil_lab/flightend.py",
   "wingfoil_lab/goldens.py",
   "wingfoil_lab/gp3s.py",
+  "wingfoil_lab/hrcost.py",
   "wingfoil_lab/parse.py",
   "wingfoil_lab/pump.py",
   "wingfoil_lab/takeoff.py",

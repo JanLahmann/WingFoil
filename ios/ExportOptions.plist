@@ -30,6 +30,8 @@
     <dict>
         <key>de.lahmann.wingfoil</key>
         <string>WingFoil App Store</string>
+        <key>de.lahmann.wingfoil.widgets</key>
+        <string>WingFoil Widgets App Store</string>
     </dict>
     <key>uploadSymbols</key>
     <true/>

@@ -1,0 +1,1089 @@
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen"; @line = 1; @symbol_importdef<0> = [Toybox,1,7,13]; @symbol_importdef<1> = [Lang,1,14,18]; ]
+import Toybox.Lang;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen"; @line = 2; @symbol_importdef<0> = [Toybox,2,7,13]; @symbol_importdef<1> = [Test,2,14,18]; ]
+import Toybox.Test;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen"; @line = 5; typecheck = false; languageServer = do_not_complete; @symbol_functiondef = [getTestObject,5,9,22]; @symbol_return<0> = [RunNoEvil,5,28,37]; ]
+function getTestObject() as RunNoEvil {
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_5_38_7_0_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 6 4 ]
+    symbol [ RunNoEvil %tmp.4 6 15 24 ];
+    %tmp.4 = getv ? :RunNoEvil;
+    %tmp.1 = newc %tmp.4 ();
+    ret %tmp.1;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_5_38_7_0_stop:
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen"; @line = 10; typecheck = false; languageServer = do_not_complete; @symbol_classdef = [RunNoEvil,10,6,15]; @symbol_extends<0> = [Test,10,24,28]; @symbol_extends<1> = [Test,10,29,33]; ]
+class RunNoEvil extends Test.Test {
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen"; @line = 10; ]
+    <init> {
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen"; @line = 10; ]
+    static
+    <init> {
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen"; @line = 11; @position = 16; @symbol_vardef = [logger,11,16,22]; @symbol_type<0> = [Logger,11,26,32]; ]
+    private
+    var logger as Logger;
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen"; @line = 12; @position = 16; @symbol_vardef = [idToName,12,16,24]; @symbol_type<0> = [Array,12,28,33]; ]
+    private
+    var idToName as Array;
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen"; @line = 14; @symbol_functiondef = [initialize,14,13,23]; ]
+    function initialize() as Void {
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_14_26_19_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 15 8 ]
+        symbol [ Test %tmp.1 15 8 12 ];
+        %tmp.1 = getm $.Toybox.Test;
+        symbol [ Test %tmp.2 15 13 17 ];
+        %tmp.2 = getv %tmp.1 :Test;
+        symbol [ initialize %tmp.3 15 18 28 ];
+        %tmp.3 = getv function %tmp.2 :initialize;
+        invoke %tmp.2 %tmp.3();
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 16 8 ]
+        symbol [ Test %tmp.6 16 21 25 ];
+        %tmp.6 = getm $.Toybox.Test;
+        symbol [ Logger %tmp.7 16 26 32 ];
+        %tmp.7 = getv function ? %tmp.6 :Logger;
+        %tmp.4 = newc %tmp.7 ();
+        symbol [ logger ? 16 8 14 ];
+        putv self :logger %tmp.4;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 17 8 ]
+        %tmp.9 = 26;
+        %tmp.8 = newa %tmp.9;
+        symbol [ idToName ? 17 8 16 ];
+        putv self :idToName %tmp.8;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 18 8 ]
+        %tmp.10 = self;
+        symbol [ populate_test_entries_0_to_26 %tmp.11 18 8 37 ];
+        %tmp.11 = getv function %tmp.10 :populate_test_entries_0_to_26;
+        invoke %tmp.10 %tmp.11();
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_14_26_19_4_stop:
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen"; @line = 21; @symbol_functiondef = [getIndexOf,21,13,23]; @symbol_param<0> = [name,21,24,28]; @symbol_param<0>_type<0> = [String,21,32,38]; @symbol_return<0> = [Number,21,43,49]; ]
+    function getIndexOf(name as String) as Number {
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_21_50_34_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 22 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_22_8_24_8_if_stmt:
+        symbol [ idToName %tmp.2 22 12 20 ];
+        %tmp.2 = getv ? :idToName;
+        %tmp.4 = const :indexOf;
+        symbol [ indexOf %tmp.4 22 26 33 const ];
+        %tmp.5 = canhazplz %tmp.2 %tmp.4;
+        bf %tmp.5 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_22_8_24_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_22_8_24_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_22_35_24_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 23 12 ]
+        symbol [ idToName %tmp.7 23 19 27 ];
+        %tmp.7 = getv ? :idToName;
+        %tmp.8 = as %tmp.7 { (interface { var indexOf; }) };
+        symbol [ indexOf %tmp.9 23 28 35 ];
+        %tmp.9 = getv function %tmp.8 :indexOf;
+        %tmp.10 = lgetv %name;
+        symbol [ name %tmp.10 23 36 40 ];
+        %tmp.11 = invoke %tmp.8 %tmp.9(%tmp.10);
+        ret %tmp.11;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_22_35_24_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_22_8_24_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_22_8_24_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 26 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_21_50_34_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_21_50_34_4_stop" ]
+        %j.1 = local;
+        symbol [ j %j.1 26 12 13 ];
+        symbol [ idToName %tmp.13 26 16 24 ];
+        %tmp.13 = getv ? :idToName;
+        symbol [ size %tmp.14 26 25 29 ];
+        %tmp.14 = getv function %tmp.13 :size;
+        %tmp.15 = invoke %tmp.13 %tmp.14();
+        lputv %j.1 %tmp.15;
+        symbol [ j %j.1 26 12 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 27 8 ]
+        for @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_27_8_31_8_for_test @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_27_8_31_8_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_27_8_31_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_27_8_31_8_for_init:
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_27_8_31_8_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_27_8_31_8_for_end" ]
+        %i.2 = local;
+        symbol [ i %i.2 27 17 18 ];
+        %tmp.16 = 0;
+        lputv %i.2 %tmp.16;
+        symbol [ i %i.2 27 17 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_27_8_31_8_for_test:
+        %tmp.17 = lgetv %i.2;
+        symbol [ i %tmp.17 27 24 25 ];
+        %tmp.18 = lgetv %j.1;
+        symbol [ j %tmp.18 27 28 29 ];
+        %tmp.19 = lt %tmp.17 %tmp.18;
+        bf %tmp.19 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_27_8_31_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_27_8_31_8_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_27_36_31_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 28 12 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_28_12_30_12_if_stmt:
+        symbol [ idToName %tmp.21 28 16 24 ];
+        %tmp.21 = getv ? :idToName;
+        %tmp.22 = lgetv %i.2;
+        symbol [ i %tmp.22 28 25 26 ];
+        %tmp.23 = agetv %tmp.21 %tmp.22;
+        symbol [ equals %tmp.24 28 28 34 ];
+        %tmp.24 = getv function %tmp.23 :equals;
+        %tmp.25 = lgetv %name;
+        symbol [ name %tmp.25 28 35 39 ];
+        %tmp.26 = invoke %tmp.23 %tmp.24(%tmp.25);
+        bf %tmp.26 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_28_12_30_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_28_12_30_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_28_42_30_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 29 16 ]
+        %tmp.27 = lgetv %i.2;
+        symbol [ i %tmp.27 29 23 24 ];
+        ret %tmp.27;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_28_42_30_12_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_28_12_30_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_28_12_30_12_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_27_36_31_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_27_8_31_8_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 27 ]
+        %tmp.30 = lgetv %i.2;
+        symbol [ i %tmp.30 27 33 34 ];
+        %tmp.31 = add %tmp.30 1;
+        lputv %i.2 %tmp.31;
+        symbol [ i %i.2 27 33 34 ];
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_27_8_31_8_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_27_8_31_8_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 33 8 ]
+        %tmp.32 = -1;
+        ret %tmp.32;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_21_50_34_4_stop:
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen"; @line = 36; @symbol_functiondef = [getTestName,36,13,24]; @symbol_param<0> = [id,36,25,27]; @symbol_param<0>_type<0> = [Number,36,31,37]; @symbol_return<0> = [String,36,42,48]; ]
+    function getTestName(id as Number) as String {
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_36_49_38_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 37 8 ]
+        symbol [ idToName %tmp.2 37 15 23 ];
+        %tmp.2 = getv ? :idToName;
+        %tmp.3 = lgetv %id;
+        symbol [ id %tmp.3 37 24 26 ];
+        %tmp.4 = agetv %tmp.2 %tmp.3;
+        ret %tmp.4;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_36_49_38_4_stop:
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen"; @line = 40; @symbol_functiondef = [getNumberOfTests,40,13,29]; @symbol_return<0> = [Number,40,35,41]; ]
+    function getNumberOfTests() as Number {
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_40_42_42_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 41 8 ]
+        symbol [ idToName %tmp.2 41 15 23 ];
+        %tmp.2 = getv ? :idToName;
+        symbol [ size %tmp.3 41 24 28 ];
+        %tmp.3 = getv function %tmp.2 :size;
+        %tmp.4 = invoke %tmp.2 %tmp.3();
+        ret %tmp.4;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_40_42_42_4_stop:
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen"; @line = 44; @symbol_functiondef = [populate_test_entries_0_to_26,44,13,42]; ]
+    function populate_test_entries_0_to_26() as Void {
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_44_53_71_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 45 8 ]
+        symbol [ idToName %tmp.1 45 8 16 ];
+        %tmp.1 = getv self :idToName;
+        %tmp.2 = "sessionSchemaFitsDataFieldBudget";
+        %tmp.3 = 0;
+        aputv %tmp.1 %tmp.3 %tmp.2;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 46 8 ]
+        symbol [ idToName %tmp.4 46 8 16 ];
+        %tmp.4 = getv self :idToName;
+        %tmp.5 = "sessionPackRoundTrips";
+        %tmp.6 = 1;
+        aputv %tmp.4 %tmp.6 %tmp.5;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 47 8 ]
+        symbol [ idToName %tmp.7 47 8 16 ];
+        %tmp.7 = getv self :idToName;
+        %tmp.8 = "sessionPackSaturatesInsteadOfWrapping";
+        %tmp.9 = 2;
+        aputv %tmp.7 %tmp.9 %tmp.8;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 48 8 ]
+        symbol [ idToName %tmp.10 48 8 16 ];
+        %tmp.10 = getv self :idToName;
+        %tmp.11 = "sessionValuesComeFromTheDetectors";
+        %tmp.12 = 3;
+        aputv %tmp.10 %tmp.12 %tmp.11;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 49 8 ]
+        symbol [ idToName %tmp.13 49 8 16 ];
+        %tmp.13 = getv self :idToName;
+        %tmp.14 = "feedGatesOnGpsQuality";
+        %tmp.15 = 4;
+        aputv %tmp.13 %tmp.15 %tmp.14;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 50 8 ]
+        symbol [ idToName %tmp.16 50 8 16 ];
+        %tmp.16 = getv self :idToName;
+        %tmp.17 = "feedDrivesFlightAndRecords";
+        %tmp.18 = 5;
+        aputv %tmp.16 %tmp.18 %tmp.17;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 51 8 ]
+        symbol [ idToName %tmp.19 51 8 16 ];
+        %tmp.19 = getv self :idToName;
+        %tmp.20 = "feedDetectsSubmersionFromPressure";
+        %tmp.21 = 6;
+        aputv %tmp.19 %tmp.21 %tmp.20;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 52 8 ]
+        symbol [ idToName %tmp.22 52 8 16 ];
+        %tmp.22 = getv self :idToName;
+        %tmp.23 = "resetClearsEverythingForANewActivity";
+        %tmp.24 = 7;
+        aputv %tmp.22 %tmp.24 %tmp.23;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 53 8 ]
+        symbol [ idToName %tmp.25 53 8 16 ];
+        %tmp.25 = getv self :idToName;
+        %tmp.26 = "tickCounterRollsBelowTheFitSentinel";
+        %tmp.27 = 8;
+        aputv %tmp.25 %tmp.27 %tmp.26;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 54 8 ]
+        symbol [ idToName %tmp.28 54 8 16 ];
+        %tmp.28 = getv self :idToName;
+        %tmp.29 = "layoutClassifiesCellSizes";
+        %tmp.30 = 9;
+        aputv %tmp.28 %tmp.30 %tmp.29;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 55 8 ]
+        symbol [ idToName %tmp.31 55 8 16 ];
+        %tmp.31 = getv self :idToName;
+        %tmp.32 = "layoutRowsNeverClip";
+        %tmp.33 = 10;
+        aputv %tmp.31 %tmp.33 %tmp.32;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 56 8 ]
+        symbol [ idToName %tmp.34 56 8 16 ];
+        %tmp.34 = getv self :idToName;
+        %tmp.35 = "WingFoilCore.ringBufferMeanAndEviction";
+        %tmp.36 = 11;
+        aputv %tmp.34 %tmp.36 %tmp.35;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 57 8 ]
+        symbol [ idToName %tmp.37 57 8 16 ];
+        %tmp.37 = getv self :idToName;
+        %tmp.38 = "WingFoilCore.flightDetectorFullCycle";
+        %tmp.39 = 12;
+        aputv %tmp.37 %tmp.39 %tmp.38;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 58 8 ]
+        symbol [ idToName %tmp.40 58 8 16 ];
+        %tmp.40 = getv self :idToName;
+        %tmp.41 = "WingFoilCore.flightDetectorDiscardsShortFlights";
+        %tmp.42 = 13;
+        aputv %tmp.40 %tmp.42 %tmp.41;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 59 8 ]
+        symbol [ idToName %tmp.43 59 8 16 ];
+        %tmp.43 = getv self :idToName;
+        %tmp.44 = "WingFoilCore.flightDetectorEntryHoldIsBothEndsQualifying";
+        %tmp.45 = 14;
+        aputv %tmp.43 %tmp.45 %tmp.44;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 60 8 ]
+        symbol [ idToName %tmp.46 60 8 16 ];
+        %tmp.46 = getv self :idToName;
+        %tmp.47 = "WingFoilCore.flightDetectorExitHoldIsBothEndsQualifying";
+        %tmp.48 = 15;
+        aputv %tmp.46 %tmp.48 %tmp.47;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 61 8 ]
+        symbol [ idToName %tmp.49 61 8 16 ];
+        %tmp.49 = getv self :idToName;
+        %tmp.50 = "WingFoilCore.turnCleanJibeFliesThrough";
+        %tmp.51 = 16;
+        aputv %tmp.49 %tmp.51 %tmp.50;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 62 8 ]
+        symbol [ idToName %tmp.52 62 8 16 ];
+        %tmp.52 = getv self :idToName;
+        %tmp.53 = "WingFoilCore.turnSlowSpellIsTouchdown";
+        %tmp.54 = 17;
+        aputv %tmp.52 %tmp.54 %tmp.53;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 63 8 ]
+        symbol [ idToName %tmp.55 63 8 16 ];
+        %tmp.55 = getv self :idToName;
+        %tmp.56 = "WingFoilCore.turnCollapseIsFellIn";
+        %tmp.57 = 18;
+        aputv %tmp.55 %tmp.57 %tmp.56;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 64 8 ]
+        symbol [ idToName %tmp.58 64 8 16 ];
+        %tmp.58 = getv self :idToName;
+        %tmp.59 = "WingFoilCore.turnSuccessIsScoreOnlyNotOutcome";
+        %tmp.60 = 19;
+        aputv %tmp.58 %tmp.60 %tmp.59;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 65 8 ]
+        symbol [ idToName %tmp.61 65 8 16 ];
+        %tmp.61 = getv self :idToName;
+        %tmp.62 = "WingFoilCore.turnWallowIsNotDetected";
+        %tmp.63 = 20;
+        aputv %tmp.61 %tmp.63 %tmp.62;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 66 8 ]
+        symbol [ idToName %tmp.64 66 8 16 ];
+        %tmp.64 = getv self :idToName;
+        %tmp.65 = "WingFoilCore.turnBearAwayNotCountedAsJibe";
+        %tmp.66 = 21;
+        aputv %tmp.64 %tmp.66 %tmp.65;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 67 8 ]
+        symbol [ idToName %tmp.67 67 8 16 ];
+        %tmp.67 = getv self :idToName;
+        %tmp.68 = "WingFoilCore.turnJibeClassifiedWithWind";
+        %tmp.69 = 22;
+        aputv %tmp.67 %tmp.69 %tmp.68;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 68 8 ]
+        symbol [ idToName %tmp.70 68 8 16 ];
+        %tmp.70 = getv self :idToName;
+        %tmp.71 = "WingFoilCore.turnSubmersionForcesFellIn";
+        %tmp.72 = 23;
+        aputv %tmp.70 %tmp.72 %tmp.71;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 69 8 ]
+        symbol [ idToName %tmp.73 69 8 16 ];
+        %tmp.73 = getv self :idToName;
+        %tmp.74 = "WingFoilCore.turnOffFoilNotCounted";
+        %tmp.75 = 24;
+        aputv %tmp.73 %tmp.75 %tmp.74;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 70 8 ]
+        symbol [ idToName %tmp.76 70 8 16 ];
+        %tmp.76 = getv self :idToName;
+        %tmp.77 = "WingFoilCore.speedRecordsPbEvents";
+        %tmp.78 = 25;
+        aputv %tmp.76 %tmp.78 %tmp.77;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_44_53_71_4_stop:
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen"; @line = 73; @symbol_functiondef = [evaluate_test_entries_0_to_26,73,13,42]; @symbol_param<0> = [id,73,43,45]; @symbol_param<0>_type<0> = [Number,73,49,55]; @symbol_param<1> = [logger,73,57,63]; @symbol_param<1>_type<0> = [Logger,73,67,73]; ]
+    function evaluate_test_entries_0_to_26(id as Number, logger as Logger) {
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_73_75_130_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 74 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_73_75_130_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_73_75_130_4_stop" ]
+        %result.1 = local;
+        symbol [ result %result.1 74 12 18 ];
+        %tmp.1 = false;
+        lputv %result.1 %tmp.1;
+        symbol [ result %result.1 74 12 18 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 75 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_75_8_127_8_if_stmt:
+        %tmp.2 = lgetv %id;
+        symbol [ id %tmp.2 75 12 14 ];
+        %tmp.3 = 0;
+        %tmp.4 = eq %tmp.2 %tmp.3;
+        bf %tmp.4 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_75_8_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_75_8_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_75_21_77_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 76 12 ]
+        symbol [ $ %tmp.5 76 21 22 ];
+        %tmp.5 = getm $;
+        symbol [ sessionSchemaFitsDataFieldBudget %tmp.6 76 23 55 ];
+        %tmp.6 = getv function %tmp.5 :sessionSchemaFitsDataFieldBudget;
+        %tmp.7 = lgetv %logger;
+        symbol [ logger %tmp.7 76 56 62 ];
+        %tmp.8 = invoke %tmp.5 %tmp.6(%tmp.7);
+        lputv %result.1 %tmp.8;
+        symbol [ result %result.1 76 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_75_21_77_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_75_8_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_75_8_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 77 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_77_15_127_8_if_stmt:
+        %tmp.9 = lgetv %id;
+        symbol [ id %tmp.9 77 19 21 ];
+        %tmp.10 = 1;
+        %tmp.11 = eq %tmp.9 %tmp.10;
+        bf %tmp.11 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_77_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_77_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_77_28_79_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 78 12 ]
+        symbol [ $ %tmp.12 78 21 22 ];
+        %tmp.12 = getm $;
+        symbol [ sessionPackRoundTrips %tmp.13 78 23 44 ];
+        %tmp.13 = getv function %tmp.12 :sessionPackRoundTrips;
+        %tmp.14 = lgetv %logger;
+        symbol [ logger %tmp.14 78 45 51 ];
+        %tmp.15 = invoke %tmp.12 %tmp.13(%tmp.14);
+        lputv %result.1 %tmp.15;
+        symbol [ result %result.1 78 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_77_28_79_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_77_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_77_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 79 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_79_15_127_8_if_stmt:
+        %tmp.16 = lgetv %id;
+        symbol [ id %tmp.16 79 19 21 ];
+        %tmp.17 = 2;
+        %tmp.18 = eq %tmp.16 %tmp.17;
+        bf %tmp.18 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_79_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_79_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_79_28_81_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 80 12 ]
+        symbol [ $ %tmp.19 80 21 22 ];
+        %tmp.19 = getm $;
+        symbol [ sessionPackSaturatesInsteadOfWrapping %tmp.20 80 23 60 ];
+        %tmp.20 = getv function %tmp.19 :sessionPackSaturatesInsteadOfWrapping;
+        %tmp.21 = lgetv %logger;
+        symbol [ logger %tmp.21 80 61 67 ];
+        %tmp.22 = invoke %tmp.19 %tmp.20(%tmp.21);
+        lputv %result.1 %tmp.22;
+        symbol [ result %result.1 80 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_79_28_81_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_79_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_79_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 81 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_81_15_127_8_if_stmt:
+        %tmp.23 = lgetv %id;
+        symbol [ id %tmp.23 81 19 21 ];
+        %tmp.24 = 3;
+        %tmp.25 = eq %tmp.23 %tmp.24;
+        bf %tmp.25 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_81_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_81_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_81_28_83_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 82 12 ]
+        symbol [ $ %tmp.26 82 21 22 ];
+        %tmp.26 = getm $;
+        symbol [ sessionValuesComeFromTheDetectors %tmp.27 82 23 56 ];
+        %tmp.27 = getv function %tmp.26 :sessionValuesComeFromTheDetectors;
+        %tmp.28 = lgetv %logger;
+        symbol [ logger %tmp.28 82 57 63 ];
+        %tmp.29 = invoke %tmp.26 %tmp.27(%tmp.28);
+        lputv %result.1 %tmp.29;
+        symbol [ result %result.1 82 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_81_28_83_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_81_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_81_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 83 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_83_15_127_8_if_stmt:
+        %tmp.30 = lgetv %id;
+        symbol [ id %tmp.30 83 19 21 ];
+        %tmp.31 = 4;
+        %tmp.32 = eq %tmp.30 %tmp.31;
+        bf %tmp.32 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_83_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_83_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_83_28_85_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 84 12 ]
+        symbol [ $ %tmp.33 84 21 22 ];
+        %tmp.33 = getm $;
+        symbol [ feedGatesOnGpsQuality %tmp.34 84 23 44 ];
+        %tmp.34 = getv function %tmp.33 :feedGatesOnGpsQuality;
+        %tmp.35 = lgetv %logger;
+        symbol [ logger %tmp.35 84 45 51 ];
+        %tmp.36 = invoke %tmp.33 %tmp.34(%tmp.35);
+        lputv %result.1 %tmp.36;
+        symbol [ result %result.1 84 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_83_28_85_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_83_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_83_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 85 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_85_15_127_8_if_stmt:
+        %tmp.37 = lgetv %id;
+        symbol [ id %tmp.37 85 19 21 ];
+        %tmp.38 = 5;
+        %tmp.39 = eq %tmp.37 %tmp.38;
+        bf %tmp.39 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_85_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_85_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_85_28_87_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 86 12 ]
+        symbol [ $ %tmp.40 86 21 22 ];
+        %tmp.40 = getm $;
+        symbol [ feedDrivesFlightAndRecords %tmp.41 86 23 49 ];
+        %tmp.41 = getv function %tmp.40 :feedDrivesFlightAndRecords;
+        %tmp.42 = lgetv %logger;
+        symbol [ logger %tmp.42 86 50 56 ];
+        %tmp.43 = invoke %tmp.40 %tmp.41(%tmp.42);
+        lputv %result.1 %tmp.43;
+        symbol [ result %result.1 86 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_85_28_87_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_85_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_85_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 87 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_87_15_127_8_if_stmt:
+        %tmp.44 = lgetv %id;
+        symbol [ id %tmp.44 87 19 21 ];
+        %tmp.45 = 6;
+        %tmp.46 = eq %tmp.44 %tmp.45;
+        bf %tmp.46 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_87_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_87_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_87_28_89_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 88 12 ]
+        symbol [ $ %tmp.47 88 21 22 ];
+        %tmp.47 = getm $;
+        symbol [ feedDetectsSubmersionFromPressure %tmp.48 88 23 56 ];
+        %tmp.48 = getv function %tmp.47 :feedDetectsSubmersionFromPressure;
+        %tmp.49 = lgetv %logger;
+        symbol [ logger %tmp.49 88 57 63 ];
+        %tmp.50 = invoke %tmp.47 %tmp.48(%tmp.49);
+        lputv %result.1 %tmp.50;
+        symbol [ result %result.1 88 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_87_28_89_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_87_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_87_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 89 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_89_15_127_8_if_stmt:
+        %tmp.51 = lgetv %id;
+        symbol [ id %tmp.51 89 19 21 ];
+        %tmp.52 = 7;
+        %tmp.53 = eq %tmp.51 %tmp.52;
+        bf %tmp.53 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_89_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_89_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_89_28_91_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 90 12 ]
+        symbol [ $ %tmp.54 90 21 22 ];
+        %tmp.54 = getm $;
+        symbol [ resetClearsEverythingForANewActivity %tmp.55 90 23 59 ];
+        %tmp.55 = getv function %tmp.54 :resetClearsEverythingForANewActivity;
+        %tmp.56 = lgetv %logger;
+        symbol [ logger %tmp.56 90 60 66 ];
+        %tmp.57 = invoke %tmp.54 %tmp.55(%tmp.56);
+        lputv %result.1 %tmp.57;
+        symbol [ result %result.1 90 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_89_28_91_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_89_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_89_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 91 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_91_15_127_8_if_stmt:
+        %tmp.58 = lgetv %id;
+        symbol [ id %tmp.58 91 19 21 ];
+        %tmp.59 = 8;
+        %tmp.60 = eq %tmp.58 %tmp.59;
+        bf %tmp.60 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_91_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_91_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_91_28_93_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 92 12 ]
+        symbol [ $ %tmp.61 92 21 22 ];
+        %tmp.61 = getm $;
+        symbol [ tickCounterRollsBelowTheFitSentinel %tmp.62 92 23 58 ];
+        %tmp.62 = getv function %tmp.61 :tickCounterRollsBelowTheFitSentinel;
+        %tmp.63 = lgetv %logger;
+        symbol [ logger %tmp.63 92 59 65 ];
+        %tmp.64 = invoke %tmp.61 %tmp.62(%tmp.63);
+        lputv %result.1 %tmp.64;
+        symbol [ result %result.1 92 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_91_28_93_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_91_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_91_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 93 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_93_15_127_8_if_stmt:
+        %tmp.65 = lgetv %id;
+        symbol [ id %tmp.65 93 19 21 ];
+        %tmp.66 = 9;
+        %tmp.67 = eq %tmp.65 %tmp.66;
+        bf %tmp.67 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_93_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_93_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_93_28_95_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 94 12 ]
+        symbol [ $ %tmp.68 94 21 22 ];
+        %tmp.68 = getm $;
+        symbol [ layoutClassifiesCellSizes %tmp.69 94 23 48 ];
+        %tmp.69 = getv function %tmp.68 :layoutClassifiesCellSizes;
+        %tmp.70 = lgetv %logger;
+        symbol [ logger %tmp.70 94 49 55 ];
+        %tmp.71 = invoke %tmp.68 %tmp.69(%tmp.70);
+        lputv %result.1 %tmp.71;
+        symbol [ result %result.1 94 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_93_28_95_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_93_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_93_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 95 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_95_15_127_8_if_stmt:
+        %tmp.72 = lgetv %id;
+        symbol [ id %tmp.72 95 19 21 ];
+        %tmp.73 = 10;
+        %tmp.74 = eq %tmp.72 %tmp.73;
+        bf %tmp.74 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_95_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_95_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_95_29_97_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 96 12 ]
+        symbol [ $ %tmp.75 96 21 22 ];
+        %tmp.75 = getm $;
+        symbol [ layoutRowsNeverClip %tmp.76 96 23 42 ];
+        %tmp.76 = getv function %tmp.75 :layoutRowsNeverClip;
+        %tmp.77 = lgetv %logger;
+        symbol [ logger %tmp.77 96 43 49 ];
+        %tmp.78 = invoke %tmp.75 %tmp.76(%tmp.77);
+        lputv %result.1 %tmp.78;
+        symbol [ result %result.1 96 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_95_29_97_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_95_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_95_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 97 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_97_15_127_8_if_stmt:
+        %tmp.79 = lgetv %id;
+        symbol [ id %tmp.79 97 19 21 ];
+        %tmp.80 = 11;
+        %tmp.81 = eq %tmp.79 %tmp.80;
+        bf %tmp.81 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_97_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_97_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_97_29_99_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 98 12 ]
+        symbol [ $ %tmp.82 98 21 22 ];
+        %tmp.82 = getm $;
+        symbol [ WingFoilCore %tmp.83 98 23 35 ];
+        %tmp.83 = getv %tmp.82 :WingFoilCore;
+        symbol [ ringBufferMeanAndEviction %tmp.84 98 36 61 ];
+        %tmp.84 = getv function %tmp.83 :ringBufferMeanAndEviction;
+        %tmp.85 = lgetv %logger;
+        symbol [ logger %tmp.85 98 62 68 ];
+        %tmp.86 = invoke %tmp.83 %tmp.84(%tmp.85);
+        lputv %result.1 %tmp.86;
+        symbol [ result %result.1 98 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_97_29_99_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_97_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_97_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 99 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_99_15_127_8_if_stmt:
+        %tmp.87 = lgetv %id;
+        symbol [ id %tmp.87 99 19 21 ];
+        %tmp.88 = 12;
+        %tmp.89 = eq %tmp.87 %tmp.88;
+        bf %tmp.89 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_99_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_99_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_99_29_101_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 100 12 ]
+        symbol [ $ %tmp.90 100 21 22 ];
+        %tmp.90 = getm $;
+        symbol [ WingFoilCore %tmp.91 100 23 35 ];
+        %tmp.91 = getv %tmp.90 :WingFoilCore;
+        symbol [ flightDetectorFullCycle %tmp.92 100 36 59 ];
+        %tmp.92 = getv function %tmp.91 :flightDetectorFullCycle;
+        %tmp.93 = lgetv %logger;
+        symbol [ logger %tmp.93 100 60 66 ];
+        %tmp.94 = invoke %tmp.91 %tmp.92(%tmp.93);
+        lputv %result.1 %tmp.94;
+        symbol [ result %result.1 100 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_99_29_101_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_99_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_99_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 101 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_101_15_127_8_if_stmt:
+        %tmp.95 = lgetv %id;
+        symbol [ id %tmp.95 101 19 21 ];
+        %tmp.96 = 13;
+        %tmp.97 = eq %tmp.95 %tmp.96;
+        bf %tmp.97 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_101_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_101_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_101_29_103_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 102 12 ]
+        symbol [ $ %tmp.98 102 21 22 ];
+        %tmp.98 = getm $;
+        symbol [ WingFoilCore %tmp.99 102 23 35 ];
+        %tmp.99 = getv %tmp.98 :WingFoilCore;
+        symbol [ flightDetectorDiscardsShortFlights %tmp.100 102 36 70 ];
+        %tmp.100 = getv function %tmp.99 :flightDetectorDiscardsShortFlights;
+        %tmp.101 = lgetv %logger;
+        symbol [ logger %tmp.101 102 71 77 ];
+        %tmp.102 = invoke %tmp.99 %tmp.100(%tmp.101);
+        lputv %result.1 %tmp.102;
+        symbol [ result %result.1 102 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_101_29_103_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_101_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_101_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 103 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_103_15_127_8_if_stmt:
+        %tmp.103 = lgetv %id;
+        symbol [ id %tmp.103 103 19 21 ];
+        %tmp.104 = 14;
+        %tmp.105 = eq %tmp.103 %tmp.104;
+        bf %tmp.105 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_103_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_103_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_103_29_105_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 104 12 ]
+        symbol [ $ %tmp.106 104 21 22 ];
+        %tmp.106 = getm $;
+        symbol [ WingFoilCore %tmp.107 104 23 35 ];
+        %tmp.107 = getv %tmp.106 :WingFoilCore;
+        symbol [ flightDetectorEntryHoldIsBothEndsQualifying %tmp.108 104 36 79 ];
+        %tmp.108 = getv function %tmp.107 :flightDetectorEntryHoldIsBothEndsQualifying;
+        %tmp.109 = lgetv %logger;
+        symbol [ logger %tmp.109 104 80 86 ];
+        %tmp.110 = invoke %tmp.107 %tmp.108(%tmp.109);
+        lputv %result.1 %tmp.110;
+        symbol [ result %result.1 104 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_103_29_105_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_103_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_103_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 105 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_105_15_127_8_if_stmt:
+        %tmp.111 = lgetv %id;
+        symbol [ id %tmp.111 105 19 21 ];
+        %tmp.112 = 15;
+        %tmp.113 = eq %tmp.111 %tmp.112;
+        bf %tmp.113 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_105_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_105_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_105_29_107_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 106 12 ]
+        symbol [ $ %tmp.114 106 21 22 ];
+        %tmp.114 = getm $;
+        symbol [ WingFoilCore %tmp.115 106 23 35 ];
+        %tmp.115 = getv %tmp.114 :WingFoilCore;
+        symbol [ flightDetectorExitHoldIsBothEndsQualifying %tmp.116 106 36 78 ];
+        %tmp.116 = getv function %tmp.115 :flightDetectorExitHoldIsBothEndsQualifying;
+        %tmp.117 = lgetv %logger;
+        symbol [ logger %tmp.117 106 79 85 ];
+        %tmp.118 = invoke %tmp.115 %tmp.116(%tmp.117);
+        lputv %result.1 %tmp.118;
+        symbol [ result %result.1 106 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_105_29_107_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_105_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_105_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 107 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_107_15_127_8_if_stmt:
+        %tmp.119 = lgetv %id;
+        symbol [ id %tmp.119 107 19 21 ];
+        %tmp.120 = 16;
+        %tmp.121 = eq %tmp.119 %tmp.120;
+        bf %tmp.121 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_107_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_107_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_107_29_109_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 108 12 ]
+        symbol [ $ %tmp.122 108 21 22 ];
+        %tmp.122 = getm $;
+        symbol [ WingFoilCore %tmp.123 108 23 35 ];
+        %tmp.123 = getv %tmp.122 :WingFoilCore;
+        symbol [ turnCleanJibeFliesThrough %tmp.124 108 36 61 ];
+        %tmp.124 = getv function %tmp.123 :turnCleanJibeFliesThrough;
+        %tmp.125 = lgetv %logger;
+        symbol [ logger %tmp.125 108 62 68 ];
+        %tmp.126 = invoke %tmp.123 %tmp.124(%tmp.125);
+        lputv %result.1 %tmp.126;
+        symbol [ result %result.1 108 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_107_29_109_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_107_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_107_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 109 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_109_15_127_8_if_stmt:
+        %tmp.127 = lgetv %id;
+        symbol [ id %tmp.127 109 19 21 ];
+        %tmp.128 = 17;
+        %tmp.129 = eq %tmp.127 %tmp.128;
+        bf %tmp.129 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_109_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_109_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_109_29_111_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 110 12 ]
+        symbol [ $ %tmp.130 110 21 22 ];
+        %tmp.130 = getm $;
+        symbol [ WingFoilCore %tmp.131 110 23 35 ];
+        %tmp.131 = getv %tmp.130 :WingFoilCore;
+        symbol [ turnSlowSpellIsTouchdown %tmp.132 110 36 60 ];
+        %tmp.132 = getv function %tmp.131 :turnSlowSpellIsTouchdown;
+        %tmp.133 = lgetv %logger;
+        symbol [ logger %tmp.133 110 61 67 ];
+        %tmp.134 = invoke %tmp.131 %tmp.132(%tmp.133);
+        lputv %result.1 %tmp.134;
+        symbol [ result %result.1 110 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_109_29_111_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_109_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_109_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 111 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_111_15_127_8_if_stmt:
+        %tmp.135 = lgetv %id;
+        symbol [ id %tmp.135 111 19 21 ];
+        %tmp.136 = 18;
+        %tmp.137 = eq %tmp.135 %tmp.136;
+        bf %tmp.137 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_111_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_111_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_111_29_113_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 112 12 ]
+        symbol [ $ %tmp.138 112 21 22 ];
+        %tmp.138 = getm $;
+        symbol [ WingFoilCore %tmp.139 112 23 35 ];
+        %tmp.139 = getv %tmp.138 :WingFoilCore;
+        symbol [ turnCollapseIsFellIn %tmp.140 112 36 56 ];
+        %tmp.140 = getv function %tmp.139 :turnCollapseIsFellIn;
+        %tmp.141 = lgetv %logger;
+        symbol [ logger %tmp.141 112 57 63 ];
+        %tmp.142 = invoke %tmp.139 %tmp.140(%tmp.141);
+        lputv %result.1 %tmp.142;
+        symbol [ result %result.1 112 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_111_29_113_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_111_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_111_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 113 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_113_15_127_8_if_stmt:
+        %tmp.143 = lgetv %id;
+        symbol [ id %tmp.143 113 19 21 ];
+        %tmp.144 = 19;
+        %tmp.145 = eq %tmp.143 %tmp.144;
+        bf %tmp.145 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_113_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_113_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_113_29_115_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 114 12 ]
+        symbol [ $ %tmp.146 114 21 22 ];
+        %tmp.146 = getm $;
+        symbol [ WingFoilCore %tmp.147 114 23 35 ];
+        %tmp.147 = getv %tmp.146 :WingFoilCore;
+        symbol [ turnSuccessIsScoreOnlyNotOutcome %tmp.148 114 36 68 ];
+        %tmp.148 = getv function %tmp.147 :turnSuccessIsScoreOnlyNotOutcome;
+        %tmp.149 = lgetv %logger;
+        symbol [ logger %tmp.149 114 69 75 ];
+        %tmp.150 = invoke %tmp.147 %tmp.148(%tmp.149);
+        lputv %result.1 %tmp.150;
+        symbol [ result %result.1 114 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_113_29_115_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_113_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_113_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 115 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_115_15_127_8_if_stmt:
+        %tmp.151 = lgetv %id;
+        symbol [ id %tmp.151 115 19 21 ];
+        %tmp.152 = 20;
+        %tmp.153 = eq %tmp.151 %tmp.152;
+        bf %tmp.153 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_115_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_115_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_115_29_117_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 116 12 ]
+        symbol [ $ %tmp.154 116 21 22 ];
+        %tmp.154 = getm $;
+        symbol [ WingFoilCore %tmp.155 116 23 35 ];
+        %tmp.155 = getv %tmp.154 :WingFoilCore;
+        symbol [ turnWallowIsNotDetected %tmp.156 116 36 59 ];
+        %tmp.156 = getv function %tmp.155 :turnWallowIsNotDetected;
+        %tmp.157 = lgetv %logger;
+        symbol [ logger %tmp.157 116 60 66 ];
+        %tmp.158 = invoke %tmp.155 %tmp.156(%tmp.157);
+        lputv %result.1 %tmp.158;
+        symbol [ result %result.1 116 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_115_29_117_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_115_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_115_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 117 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_117_15_127_8_if_stmt:
+        %tmp.159 = lgetv %id;
+        symbol [ id %tmp.159 117 19 21 ];
+        %tmp.160 = 21;
+        %tmp.161 = eq %tmp.159 %tmp.160;
+        bf %tmp.161 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_117_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_117_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_117_29_119_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 118 12 ]
+        symbol [ $ %tmp.162 118 21 22 ];
+        %tmp.162 = getm $;
+        symbol [ WingFoilCore %tmp.163 118 23 35 ];
+        %tmp.163 = getv %tmp.162 :WingFoilCore;
+        symbol [ turnBearAwayNotCountedAsJibe %tmp.164 118 36 64 ];
+        %tmp.164 = getv function %tmp.163 :turnBearAwayNotCountedAsJibe;
+        %tmp.165 = lgetv %logger;
+        symbol [ logger %tmp.165 118 65 71 ];
+        %tmp.166 = invoke %tmp.163 %tmp.164(%tmp.165);
+        lputv %result.1 %tmp.166;
+        symbol [ result %result.1 118 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_117_29_119_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_117_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_117_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 119 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_119_15_127_8_if_stmt:
+        %tmp.167 = lgetv %id;
+        symbol [ id %tmp.167 119 19 21 ];
+        %tmp.168 = 22;
+        %tmp.169 = eq %tmp.167 %tmp.168;
+        bf %tmp.169 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_119_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_119_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_119_29_121_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 120 12 ]
+        symbol [ $ %tmp.170 120 21 22 ];
+        %tmp.170 = getm $;
+        symbol [ WingFoilCore %tmp.171 120 23 35 ];
+        %tmp.171 = getv %tmp.170 :WingFoilCore;
+        symbol [ turnJibeClassifiedWithWind %tmp.172 120 36 62 ];
+        %tmp.172 = getv function %tmp.171 :turnJibeClassifiedWithWind;
+        %tmp.173 = lgetv %logger;
+        symbol [ logger %tmp.173 120 63 69 ];
+        %tmp.174 = invoke %tmp.171 %tmp.172(%tmp.173);
+        lputv %result.1 %tmp.174;
+        symbol [ result %result.1 120 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_119_29_121_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_119_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_119_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 121 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_121_15_127_8_if_stmt:
+        %tmp.175 = lgetv %id;
+        symbol [ id %tmp.175 121 19 21 ];
+        %tmp.176 = 23;
+        %tmp.177 = eq %tmp.175 %tmp.176;
+        bf %tmp.177 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_121_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_121_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_121_29_123_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 122 12 ]
+        symbol [ $ %tmp.178 122 21 22 ];
+        %tmp.178 = getm $;
+        symbol [ WingFoilCore %tmp.179 122 23 35 ];
+        %tmp.179 = getv %tmp.178 :WingFoilCore;
+        symbol [ turnSubmersionForcesFellIn %tmp.180 122 36 62 ];
+        %tmp.180 = getv function %tmp.179 :turnSubmersionForcesFellIn;
+        %tmp.181 = lgetv %logger;
+        symbol [ logger %tmp.181 122 63 69 ];
+        %tmp.182 = invoke %tmp.179 %tmp.180(%tmp.181);
+        lputv %result.1 %tmp.182;
+        symbol [ result %result.1 122 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_121_29_123_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_121_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_121_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 123 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_123_15_127_8_if_stmt:
+        %tmp.183 = lgetv %id;
+        symbol [ id %tmp.183 123 19 21 ];
+        %tmp.184 = 24;
+        %tmp.185 = eq %tmp.183 %tmp.184;
+        bf %tmp.185 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_123_15_127_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_123_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_123_29_125_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 124 12 ]
+        symbol [ $ %tmp.186 124 21 22 ];
+        %tmp.186 = getm $;
+        symbol [ WingFoilCore %tmp.187 124 23 35 ];
+        %tmp.187 = getv %tmp.186 :WingFoilCore;
+        symbol [ turnOffFoilNotCounted %tmp.188 124 36 57 ];
+        %tmp.188 = getv function %tmp.187 :turnOffFoilNotCounted;
+        %tmp.189 = lgetv %logger;
+        symbol [ logger %tmp.189 124 58 64 ];
+        %tmp.190 = invoke %tmp.187 %tmp.188(%tmp.189);
+        lputv %result.1 %tmp.190;
+        symbol [ result %result.1 124 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_123_29_125_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_123_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_123_15_127_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 125 15 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_125_15_127_8_if_stmt:
+        %tmp.191 = lgetv %id;
+        symbol [ id %tmp.191 125 19 21 ];
+        %tmp.192 = 25;
+        %tmp.193 = eq %tmp.191 %tmp.192;
+        bf %tmp.193 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_125_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_125_15_127_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_125_29_127_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 126 12 ]
+        symbol [ $ %tmp.194 126 21 22 ];
+        %tmp.194 = getm $;
+        symbol [ WingFoilCore %tmp.195 126 23 35 ];
+        %tmp.195 = getv %tmp.194 :WingFoilCore;
+        symbol [ speedRecordsPbEvents %tmp.196 126 36 56 ];
+        %tmp.196 = getv function %tmp.195 :speedRecordsPbEvents;
+        %tmp.197 = lgetv %logger;
+        symbol [ logger %tmp.197 126 57 63 ];
+        %tmp.198 = invoke %tmp.195 %tmp.196(%tmp.197);
+        lputv %result.1 %tmp.198;
+        symbol [ result %result.1 126 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_125_29_127_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_125_15_127_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_125_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_123_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_121_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_119_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_117_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_115_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_113_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_111_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_109_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_107_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_105_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_103_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_101_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_99_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_97_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_95_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_93_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_91_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_89_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_87_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_85_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_83_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_81_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_79_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_77_15_127_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_75_8_127_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 129 8 ]
+        %tmp.199 = lgetv %result.1;
+        symbol [ result %tmp.199 129 15 21 ];
+        ret %tmp.199;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_73_75_130_4_stop:
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen"; @line = 132; @symbol_functiondef = [runTest,132,13,20]; @symbol_param<0> = [test,132,21,25]; @symbol_param<0>_type<0> = [String,132,29,35]; @symbol_param<0>_type<1> = [Number,132,39,45]; @symbol_return<0> = [Boolean,132,50,57]; ]
+    function runTest(test as String or Number) as Boolean {
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_132_58_149_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 133 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_132_58_149_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_132_58_149_4_stop" ]
+        %id.1 = local;
+        symbol [ id %id.1 133 12 14 ];
+        %tmp.1 = lgetv %test;
+        symbol [ test %tmp.1 133 17 21 ];
+        lputv %id.1 %tmp.1;
+        symbol [ id %id.1 133 12 14 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 134 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_134_8_136_8_if_stmt:
+        %tmp.2 = lgetv %test;
+        symbol [ test %tmp.2 134 12 16 ];
+        symbol [ Lang %tmp.3 134 28 32 ];
+        %tmp.3 = getm $.Toybox.Lang;
+        symbol [ String %tmp.4 134 33 39 ];
+        %tmp.4 = getv %tmp.3 :String;
+        %tmp.5 = isa %tmp.2 %tmp.4;
+        bf %tmp.5 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_134_8_136_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_134_8_136_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_134_41_136_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 135 12 ]
+        %tmp.6 = self;
+        symbol [ getIndexOf %tmp.7 135 17 27 ];
+        %tmp.7 = getv function %tmp.6 :getIndexOf;
+        %tmp.8 = lgetv %test;
+        symbol [ test %tmp.8 135 28 32 ];
+        %tmp.9 = as %tmp.8 { (Lang.String) };
+        %tmp.10 = invoke %tmp.6 %tmp.7(%tmp.9);
+        lputv %id.1 %tmp.10;
+        symbol [ id %id.1 135 12 14 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_134_41_136_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_134_8_136_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_134_8_136_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 138 8 ]
+        %tmp.11 = self;
+        symbol [ assertMessage %tmp.12 138 8 21 ];
+        %tmp.12 = getv function %tmp.11 :assertMessage;
+        %tmp.13 = lgetv %id.1;
+        symbol [ id %tmp.13 138 22 24 ];
+        %tmp.14 = 0;
+        %tmp.15 = gte %tmp.13 %tmp.14;
+        %tmp.16 = "Could not find '";
+        %tmp.17 = lgetv %test;
+        symbol [ test %tmp.17 138 52 56 ];
+        %tmp.18 = add %tmp.16 %tmp.17;
+        %tmp.19 = "'";
+        %tmp.20 = add %tmp.18 %tmp.19;
+        invoke %tmp.11 %tmp.12(%tmp.15, %tmp.20);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 139 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_132_58_149_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_132_58_149_4_stop" ]
+        %result.2 = local;
+        symbol [ result %result.2 139 12 18 ];
+        %tmp.21 = false;
+        lputv %result.2 %tmp.21;
+        symbol [ result %result.2 139 12 18 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 140 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_140_8_142_8_if_stmt:
+        %tmp.22 = lgetv %id.1;
+        symbol [ id %tmp.22 140 12 14 ];
+        %tmp.23 = 26;
+        %tmp.24 = lt %tmp.22 %tmp.23;
+        bf %tmp.24 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_140_8_142_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_140_8_142_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_140_21_142_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 141 12 ]
+        %tmp.25 = self;
+        symbol [ self %tmp.25 141 21 25 ];
+        symbol [ evaluate_test_entries_0_to_26 %tmp.26 141 26 55 ];
+        %tmp.26 = getv function %tmp.25 :evaluate_test_entries_0_to_26;
+        %tmp.27 = lgetv %id.1;
+        symbol [ id %tmp.27 141 56 58 ];
+        symbol [ logger %tmp.29 141 60 66 ];
+        %tmp.29 = getv ? :logger;
+        %tmp.30 = invoke %tmp.25 %tmp.26(%tmp.27, %tmp.29);
+        lputv %result.2 %tmp.30;
+        symbol [ result %result.2 141 12 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_140_21_142_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_140_8_142_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_140_8_142_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 144 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_144_8_146_8_if_stmt:
+        %tmp.31 = lgetv %result.2;
+        symbol [ result %tmp.31 144 12 18 ];
+        symbol [ Boolean %tmp.33 144 30 37 ];
+        %tmp.33 = getv ? :Boolean;
+        %tmp.34 = isa %tmp.31 %tmp.33;
+        bf %tmp.34 @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_144_8_146_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_144_8_146_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_144_39_146_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 145 12 ]
+        %tmp.35 = lgetv %result.2;
+        symbol [ result %tmp.35 145 19 25 ];
+        %tmp.36 = as %tmp.35 { (Boolean) };
+        ret %tmp.36;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_144_39_146_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_144_8_146_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_144_8_146_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen" 148 8 ]
+        %tmp.37 = false;
+        ret %tmp.37;
+_Users_majl_GitHub_WingFoil_garmin_field_bin_gen_006_B4536_00_source_UnitTests_mcgen_132_58_149_4_stop:
+    }
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/bin/gen/006-B4536-00/source/UnitTests.mcgen"; @line = 1; ]
+<init> {
+}

@@ -2,13 +2,15 @@
 
 test_synthetic_roundtrip needs no fixtures (encodes a tiny FIT with fit_tool, parses it back).
 test_real_fixtures runs over whatever is in fixtures/sessions/ and skips when empty.
+The schema v1/v2 tests drive `_unpack_session_v2` on synthetic session dicts — the unpacking
+is pure dict work, and encoding FITs to exercise it would only test fitdecode.
 """
 
 from pathlib import Path
 
 import pytest
 
-from wingfoil_lab.parse import parse_fit, summarize
+from wingfoil_lab.parse import _unpack_session_v2, parse_fit, summarize
 
 FIXTURES = Path(__file__).resolve().parents[2] / "fixtures" / "sessions"
 
@@ -57,6 +59,74 @@ def test_synthetic_roundtrip(tmp_path):
     assert "windsurfing" in (caps.sport or "").lower()
     top_kn = track.records["speed_mps"].max() * 1.9438445
     assert top_kn == pytest.approx(22 / 3.6 * 1.9438445, abs=0.05)
+
+
+V1_SESSION = {
+    "discipline": "wingfoil",
+    "longest_flight_s": 214, "longest_flight_m": 1780,
+    "takeoff_attempts": 31, "takeoff_successes": 24, "avg_pumps_to_takeoff": 87,
+    "cfg_entry_speed": 1200, "cfg_exit_speed": 900, "cfg_min_flight": 3,
+    "app_version": 0x0101,
+}
+
+
+def test_v2_unpacks_all_three_packs():
+    s = {
+        "cfg_pack": (1200 << 16) | (3 << 11) | 900,
+        "takeoff_pack": (87 << 16) | (31 << 8) | 24,
+        "longest_pack": (214 << 16) | 1780,
+    }
+    _unpack_session_v2(s)
+    assert (s["cfg_entry_speed"], s["cfg_exit_speed"], s["cfg_min_flight"]) == (1200, 900, 3)
+    assert (s["takeoff_attempts"], s["takeoff_successes"]) == (31, 24)
+    assert s["avg_pumps_to_takeoff"] == 87              # strokes x0.1, as on the v1 wire
+    assert (s["longest_flight_s"], s["longest_flight_m"]) == (214, 1780)
+
+
+def test_v2_boundary_values():
+    """Every field at the top of its bit range, and the all-zero session."""
+    s = {
+        "cfg_pack": (65535 << 16) | (31 << 11) | 2047,
+        "takeoff_pack": (255 << 16) | (255 << 8) | 255,
+        "longest_pack": (65535 << 16) | 65535,
+    }
+    _unpack_session_v2(s)
+    assert (s["cfg_entry_speed"], s["cfg_exit_speed"], s["cfg_min_flight"]) == (65535, 2047, 31)
+    assert (s["avg_pumps_to_takeoff"], s["takeoff_attempts"], s["takeoff_successes"]) == \
+        (255, 255, 255)
+    assert (s["longest_flight_s"], s["longest_flight_m"]) == (65535, 65535)
+
+    zero = {"cfg_pack": 0, "takeoff_pack": 0, "longest_pack": 0}
+    _unpack_session_v2(zero)
+    assert all(v == 0 for v in zero.values())
+    assert zero["cfg_min_flight"] == 0 and zero["longest_flight_m"] == 0
+
+
+def test_v1_session_is_untouched():
+    s = dict(V1_SESSION)
+    _unpack_session_v2(s)
+    assert s == V1_SESSION
+
+
+def test_packed_wins_over_v1_direct():
+    """If both encodings appear, v2 is the newer and authoritative one."""
+    s = dict(V1_SESSION, cfg_pack=(1400 << 16) | (5 << 11) | 1000,
+             longest_pack=(300 << 16) | 2500)
+    _unpack_session_v2(s)
+    assert (s["cfg_entry_speed"], s["cfg_exit_speed"], s["cfg_min_flight"]) == (1400, 1000, 5)
+    assert (s["longest_flight_s"], s["longest_flight_m"]) == (300, 2500)
+    assert s["takeoff_attempts"] == 31          # no takeoff_pack -> v1 value stands
+
+
+@pytest.mark.parametrize("s", [
+    {},
+    {"cfg_pack": None, "takeoff_pack": None, "longest_pack": None},
+    {"cfg_pack": "1234", "takeoff_pack": 1.5, "longest_pack": [1, 2]},
+])
+def test_fail_soft_on_missing_or_bad_packs(s):
+    before = dict(s)
+    _unpack_session_v2(s)                       # never raises
+    assert s == before                          # and derives nothing it cannot trust
 
 
 def test_real_fixtures():

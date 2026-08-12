@@ -1,0 +1,210 @@
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 1; @symbol_importdef<0> = [Toybox,1,7,13]; @symbol_importdef<1> = [Lang,1,14,18]; ]
+import Toybox.Lang;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 3; @symbol_moduledef = [WingFoilCore,3,7,19]; ]
+module WingFoilCore {
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 3; ]
+    <init> {
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 6; @symbol_classdef = [SpeedRecords,6,6,18]; ]
+    class SpeedRecords {
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 6; ]
+        <init> {
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 6; ]
+        static
+        <init> {
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 7; ]
+        static
+        enum {
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 8; @position = 8; @symbol_enumdec = [PB_NONE,8,8,15]; ]
+            PB_NONE = 0,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 9; @position = 8; @symbol_enumdec = [PB_2S,9,8,13]; ]
+            PB_2S = 1,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 10; @position = 8; @symbol_enumdec = [PB_10S,10,8,14]; ]
+            PB_10S = 2
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 13; @position = 15; @symbol_vardef = [_win2,13,15,20]; @symbol_type<0> = [RingBuffer,13,24,34]; ]
+        protected
+        var _win2 as RingBuffer;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 14; @position = 15; @symbol_vardef = [_win10,14,15,21]; @symbol_type<0> = [RingBuffer,14,25,35]; ]
+        protected
+        var _win10 as RingBuffer;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 15; @position = 8; @symbol_vardef = [best2sMps,15,8,17]; @symbol_type<0> = [Float,15,21,26]; ]
+        var best2sMps as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 16; @position = 8; @symbol_vardef = [best10sMps,16,8,18]; @symbol_type<0> = [Float,16,22,27]; ]
+        var best10sMps as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 18; @symbol_functiondef = [initialize,18,13,23]; ]
+        function initialize() as Void {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_18_26_21_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 19 8 ]
+            symbol [ RingBuffer %tmp.4 19 20 30 ];
+            %tmp.4 = getv ? :RingBuffer;
+            %tmp.5 = 2;
+            %tmp.1 = newc %tmp.4 (%tmp.5);
+            symbol [ _win2 ? 19 8 13 ];
+            putv self :_win2 %tmp.1;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 20 8 ]
+            symbol [ RingBuffer %tmp.9 20 21 31 ];
+            %tmp.9 = getv ? :RingBuffer;
+            %tmp.10 = 10;
+            %tmp.6 = newc %tmp.9 (%tmp.10);
+            symbol [ _win10 ? 20 8 14 ];
+            putv self :_win10 %tmp.6;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_18_26_21_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 24; @symbol_functiondef = [tick,24,13,17]; @symbol_param<0> = [speedMps,24,18,26]; @symbol_param<0>_type<0> = [Float,24,30,35]; @symbol_return<0> = [Number,24,40,46]; ]
+        function tick(speedMps as Float) as Number {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_24_47_43_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 25 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_24_47_43_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_24_47_43_4_stop" ]
+            %events.1 = local;
+            symbol [ events %events.1 25 12 18 ];
+            symbol [ PB_NONE %tmp.2 25 21 28 ];
+            %tmp.2 = getv ? :PB_NONE;
+            lputv %events.1 %tmp.2;
+            symbol [ events %events.1 25 12 18 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 26 8 ]
+            symbol [ _win2 %tmp.4 26 8 13 ];
+            %tmp.4 = getv ? :_win2;
+            symbol [ push %tmp.5 26 14 18 ];
+            %tmp.5 = getv function %tmp.4 :push;
+            %tmp.6 = lgetv %speedMps;
+            symbol [ speedMps %tmp.6 26 19 27 ];
+            invoke %tmp.4 %tmp.5(%tmp.6);
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 27 8 ]
+            symbol [ _win10 %tmp.8 27 8 14 ];
+            %tmp.8 = getv ? :_win10;
+            symbol [ push %tmp.9 27 15 19 ];
+            %tmp.9 = getv function %tmp.8 :push;
+            %tmp.10 = lgetv %speedMps;
+            symbol [ speedMps %tmp.10 27 20 28 ];
+            invoke %tmp.8 %tmp.9(%tmp.10);
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 28 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_28_8_34_8_if_stmt:
+            symbol [ _win2 %tmp.12 28 12 17 ];
+            %tmp.12 = getv ? :_win2;
+            symbol [ isFull %tmp.13 28 18 24 ];
+            %tmp.13 = getv function %tmp.12 :isFull;
+            %tmp.14 = invoke %tmp.12 %tmp.13();
+            bf %tmp.14 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_28_8_34_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_28_8_34_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_28_28_34_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 29 12 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_28_28_34_8_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_28_28_34_8_stop" ]
+            %m.2 = local;
+            symbol [ m %m.2 29 16 17 ];
+            symbol [ _win2 %tmp.16 29 20 25 ];
+            %tmp.16 = getv ? :_win2;
+            symbol [ mean %tmp.17 29 26 30 ];
+            %tmp.17 = getv function %tmp.16 :mean;
+            %tmp.18 = invoke %tmp.16 %tmp.17();
+            lputv %m.2 %tmp.18;
+            symbol [ m %m.2 29 16 17 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 30 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_30_12_33_12_if_stmt:
+            %tmp.19 = lgetv %m.2;
+            symbol [ m %tmp.19 30 16 17 ];
+            symbol [ best2sMps %tmp.21 30 20 29 ];
+            %tmp.21 = getv ? :best2sMps;
+            %tmp.22 = gt %tmp.19 %tmp.21;
+            bf %tmp.22 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_30_12_33_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_30_12_33_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_30_31_33_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 31 16 ]
+            %tmp.23 = lgetv %m.2;
+            symbol [ m %tmp.23 31 28 29 ];
+            symbol [ best2sMps ? 31 16 25 ];
+            putv self :best2sMps %tmp.23;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 32 16 ]
+            %tmp.24 = lgetv %events.1;
+            symbol [ events %tmp.24 32 16 22 ];
+            symbol [ PB_2S %tmp.26 32 26 31 ];
+            %tmp.26 = getv ? :PB_2S;
+            %tmp.27 = bitor %tmp.24 %tmp.26;
+            lputv %events.1 %tmp.27;
+            symbol [ events %events.1 32 16 22 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_30_31_33_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_30_12_33_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_30_12_33_12_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_28_28_34_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_28_8_34_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_28_8_34_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 35 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_35_8_41_8_if_stmt:
+            symbol [ _win10 %tmp.29 35 12 18 ];
+            %tmp.29 = getv ? :_win10;
+            symbol [ isFull %tmp.30 35 19 25 ];
+            %tmp.30 = getv function %tmp.29 :isFull;
+            %tmp.31 = invoke %tmp.29 %tmp.30();
+            bf %tmp.31 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_35_8_41_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_35_8_41_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_35_29_41_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 36 12 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_35_29_41_8_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_35_29_41_8_stop" ]
+            %m.3 = local;
+            symbol [ m %m.3 36 16 17 ];
+            symbol [ _win10 %tmp.33 36 20 26 ];
+            %tmp.33 = getv ? :_win10;
+            symbol [ mean %tmp.34 36 27 31 ];
+            %tmp.34 = getv function %tmp.33 :mean;
+            %tmp.35 = invoke %tmp.33 %tmp.34();
+            lputv %m.3 %tmp.35;
+            symbol [ m %m.3 36 16 17 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 37 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_37_12_40_12_if_stmt:
+            %tmp.36 = lgetv %m.3;
+            symbol [ m %tmp.36 37 16 17 ];
+            symbol [ best10sMps %tmp.38 37 20 30 ];
+            %tmp.38 = getv ? :best10sMps;
+            %tmp.39 = gt %tmp.36 %tmp.38;
+            bf %tmp.39 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_37_12_40_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_37_12_40_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_37_32_40_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 38 16 ]
+            %tmp.40 = lgetv %m.3;
+            symbol [ m %tmp.40 38 29 30 ];
+            symbol [ best10sMps ? 38 16 26 ];
+            putv self :best10sMps %tmp.40;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 39 16 ]
+            %tmp.41 = lgetv %events.1;
+            symbol [ events %tmp.41 39 16 22 ];
+            symbol [ PB_10S %tmp.43 39 26 32 ];
+            %tmp.43 = getv ? :PB_10S;
+            %tmp.44 = bitor %tmp.41 %tmp.43;
+            lputv %events.1 %tmp.44;
+            symbol [ events %events.1 39 16 22 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_37_32_40_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_37_12_40_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_37_12_40_12_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_35_29_41_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_35_8_41_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_35_8_41_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 42 8 ]
+            %tmp.45 = lgetv %events.1;
+            symbol [ events %tmp.45 42 15 21 ];
+            ret %tmp.45;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_24_47_43_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 46; @symbol_functiondef = [onGap,46,13,18]; ]
+        function onGap() as Void {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_46_29_49_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 47 8 ]
+            symbol [ _win2 %tmp.2 47 8 13 ];
+            %tmp.2 = getv ? :_win2;
+            symbol [ reset %tmp.3 47 14 19 ];
+            %tmp.3 = getv function %tmp.2 :reset;
+            invoke %tmp.2 %tmp.3();
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc" 48 8 ]
+            symbol [ _win10 %tmp.5 48 8 14 ];
+            %tmp.5 = getv ? :_win10;
+            symbol [ reset %tmp.6 48 15 20 ];
+            %tmp.6 = getv function %tmp.5 :reset;
+            invoke %tmp.5 %tmp.6();
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_SpeedRecords_mc_46_29_49_4_stop:
+        }
+    }
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/SpeedRecords.mc"; @line = 1; ]
+<init> {
+}

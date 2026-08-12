@@ -1,0 +1,208 @@
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc"; @line = 1; @symbol_importdef<0> = [Toybox,1,7,13]; @symbol_importdef<1> = [Lang,1,14,18]; ]
+import Toybox.Lang;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc"; @line = 3; @symbol_moduledef = [WingFoilCore,3,7,19]; ]
+module WingFoilCore {
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc"; @line = 3; ]
+    <init> {
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc"; @line = 6; @symbol_classdef = [RingBuffer,6,6,16]; ]
+    class RingBuffer {
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc"; @line = 6; ]
+        <init> {
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc"; @line = 6; ]
+        static
+        <init> {
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc"; @line = 7; @position = 15; @symbol_vardef = [_buf,7,15,19]; @symbol_type<0> = [Array,7,23,28]; @symbol_type<1> = [Float,7,29,34]; ]
+        protected
+        var _buf as Array<Float>;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc"; @line = 8; @position = 15; @symbol_vardef = [_size,8,15,20]; @symbol_type<0> = [Number,8,24,30]; ]
+        protected
+        var _size as Number;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc"; @line = 9; @position = 15; @symbol_vardef = [_idx,9,15,19]; @symbol_type<0> = [Number,9,23,29]; ]
+        protected
+        var _idx as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc"; @line = 10; @position = 15; @symbol_vardef = [_count,10,15,21]; @symbol_type<0> = [Number,10,25,31]; ]
+        protected
+        var _count as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc"; @line = 11; @position = 15; @symbol_vardef = [_sum,11,15,19]; @symbol_type<0> = [Float,11,23,28]; ]
+        protected
+        var _sum as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc"; @line = 13; @symbol_functiondef = [initialize,13,13,23]; @symbol_param<0> = [size,13,24,28]; @symbol_param<0>_type<0> = [Number,13,32,38]; ]
+        function initialize(size as Number) as Void {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_13_40_19_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc" 14 8 ]
+            %tmp.1 = lgetv %size;
+            symbol [ size %tmp.1 14 16 20 ];
+            symbol [ _size ? 14 8 13 ];
+            putv self :_size %tmp.1;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc" 15 8 ]
+            %tmp.3 = lgetv %size;
+            symbol [ size %tmp.3 15 32 36 ];
+            %tmp.2 = newa Array<Float> %tmp.3;
+            symbol [ Array %tmp.2 15 19 24 ];
+            symbol [ Float %tmp.2 15 25 30 ];
+            symbol [ _buf ? 15 8 12 ];
+            putv self :_buf %tmp.2;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc" 16 8 ]
+            for @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_16_8_18_8_for_test @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_16_8_18_8_for_incr @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_16_8_18_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_16_8_18_8_for_init:
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_16_8_18_8_for_begin" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_16_8_18_8_for_end" ]
+            %i.1 = local;
+            symbol [ i %i.1 16 17 18 ];
+            %tmp.4 = 0;
+            lputv %i.1 %tmp.4;
+            symbol [ i %i.1 16 17 18 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_16_8_18_8_for_test:
+            %tmp.5 = lgetv %i.1;
+            symbol [ i %tmp.5 16 24 25 ];
+            %tmp.6 = lgetv %size;
+            symbol [ size %tmp.6 16 28 32 ];
+            %tmp.7 = lt %tmp.5 %tmp.6;
+            bf %tmp.7 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_16_8_18_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_16_8_18_8_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_16_39_18_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc" 17 12 ]
+            symbol [ _buf %tmp.8 17 12 16 ];
+            %tmp.8 = getv self :_buf;
+            %tmp.9 = 0.0;
+            %tmp.10 = lgetv %i.1;
+            symbol [ i %tmp.10 17 17 18 ];
+            aputv %tmp.8 %tmp.10 %tmp.9;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_16_39_18_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_16_8_18_8_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc" 16 ]
+            %tmp.13 = lgetv %i.1;
+            symbol [ i %tmp.13 16 34 35 ];
+            %tmp.14 = add %tmp.13 1;
+            lputv %i.1 %tmp.14;
+            symbol [ i %i.1 16 34 35 ];
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_16_8_18_8_for_test;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_16_8_18_8_for_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_13_40_19_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc"; @line = 21; @symbol_functiondef = [push,21,13,17]; @symbol_param<0> = [v,21,18,19]; @symbol_param<0>_type<0> = [Float,21,23,28]; ]
+        function push(v as Float) as Void {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_21_38_30_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc" 22 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_22_8_26_8_if_stmt:
+            symbol [ _count %tmp.2 22 12 18 ];
+            %tmp.2 = getv ? :_count;
+            symbol [ _size %tmp.4 22 22 27 ];
+            %tmp.4 = getv ? :_size;
+            %tmp.5 = eq %tmp.2 %tmp.4;
+            bf %tmp.5 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_22_8_26_8_if_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_22_8_26_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_22_29_24_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc" 23 12 ]
+            symbol [ _sum %tmp.6 23 12 16 ];
+            %tmp.6 = getv self :_sum;
+            symbol [ _buf %tmp.8 23 20 24 ];
+            %tmp.8 = getv ? :_buf;
+            symbol [ _idx %tmp.10 23 25 29 ];
+            %tmp.10 = getv ? :_idx;
+            %tmp.11 = agetv %tmp.8 %tmp.10;
+            %tmp.12 = sub %tmp.6 %tmp.11;
+            symbol [ _sum ? 23 12 16 ];
+            putv self :_sum dup %tmp.12;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_22_29_24_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_22_8_26_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_22_8_26_8_if_else_false:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_24_15_26_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc" 25 12 ]
+            symbol [ _count %tmp.15 25 12 18 ];
+            %tmp.15 = getv ? :_count;
+            %tmp.16 = add %tmp.15 1;
+            symbol [ _count ? 25 12 18 ];
+            putv self :_count dup %tmp.16;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_24_15_26_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_22_8_26_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc" 27 8 ]
+            symbol [ _buf %tmp.17 27 8 12 ];
+            %tmp.17 = getv self :_buf;
+            %tmp.18 = lgetv %v;
+            symbol [ v %tmp.18 27 21 22 ];
+            symbol [ _idx %tmp.20 27 13 17 ];
+            %tmp.20 = getv ? :_idx;
+            aputv %tmp.17 %tmp.20 %tmp.18;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc" 28 8 ]
+            symbol [ _sum %tmp.21 28 8 12 ];
+            %tmp.21 = getv self :_sum;
+            %tmp.22 = lgetv %v;
+            symbol [ v %tmp.22 28 16 17 ];
+            %tmp.23 = add %tmp.21 %tmp.22;
+            symbol [ _sum ? 28 8 12 ];
+            putv self :_sum dup %tmp.23;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc" 29 8 ]
+            symbol [ _idx %tmp.25 29 16 20 ];
+            %tmp.25 = getv ? :_idx;
+            %tmp.26 = 1;
+            %tmp.27 = add %tmp.25 %tmp.26;
+            symbol [ _size %tmp.29 29 28 33 ];
+            %tmp.29 = getv ? :_size;
+            %tmp.30 = mod %tmp.27 %tmp.29;
+            symbol [ _idx ? 29 8 12 ];
+            putv self :_idx %tmp.30;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_21_38_30_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc"; @line = 32; @symbol_functiondef = [isFull,32,13,19]; @symbol_return<0> = [Boolean,32,25,32]; ]
+        function isFull() as Boolean {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_32_33_34_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc" 33 8 ]
+            symbol [ _count %tmp.2 33 15 21 ];
+            %tmp.2 = getv ? :_count;
+            symbol [ _size %tmp.4 33 25 30 ];
+            %tmp.4 = getv ? :_size;
+            %tmp.5 = eq %tmp.2 %tmp.4;
+            ret %tmp.5;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_32_33_34_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc"; @line = 36; @symbol_functiondef = [mean,36,13,17]; @symbol_return<0> = [Float,36,23,28]; ]
+        function mean() as Float {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_36_29_38_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc" 37 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_37_15_37_44_begin:
+            symbol [ _count %tmp.2 37 15 21 ];
+            %tmp.2 = getv ? :_count;
+            %tmp.3 = 0;
+            %tmp.4 = gt %tmp.2 %tmp.3;
+            bf %tmp.4 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_37_15_37_44_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_37_15_37_44_true:
+            symbol [ _sum %tmp.6 37 28 32 ];
+            %tmp.6 = getv ? :_sum;
+            symbol [ _count %tmp.8 37 35 41 ];
+            %tmp.8 = getv ? :_count;
+            %tmp.9 = div %tmp.6 %tmp.8;
+            push %tmp.9;
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_37_15_37_44_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_37_15_37_44_else_false:
+            %tmp.10 = 0.0;
+            push %tmp.10;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_37_15_37_44_end:
+            %tmp.11 = phi [%tmp.4 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_37_15_37_44_begin] [%tmp.9 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_37_15_37_44_true] [%tmp.10 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_37_15_37_44_else_false] [%tmp.11 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_37_15_37_44_end];
+            ret %tmp.11;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_36_29_38_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc"; @line = 40; @symbol_functiondef = [reset,40,13,18]; ]
+        function reset() as Void {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_40_29_44_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc" 41 8 ]
+            %tmp.1 = 0;
+            symbol [ _idx ? 41 8 12 ];
+            putv self :_idx %tmp.1;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc" 42 8 ]
+            %tmp.2 = 0;
+            symbol [ _count ? 42 8 14 ];
+            putv self :_count %tmp.2;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc" 43 8 ]
+            %tmp.3 = 0.0;
+            symbol [ _sum ? 43 8 12 ];
+            putv self :_sum %tmp.3;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_RingBuffer_mc_40_29_44_4_stop:
+        }
+    }
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/RingBuffer.mc"; @line = 1; ]
+<init> {
+}

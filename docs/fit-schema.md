@@ -5,11 +5,30 @@
 `SCHEMA_VERSION` and must be reflected in all three implementations plus
 `garmin/resources/fitcontributions/fit_contributions.xml`.
 
-- `SCHEMA_VERSION`: **1** (carried in session field `app_version`, low byte = schema version)
+> ## ⚠️ HARD LIMIT: 16 developer fields per message type
+>
+> Measured on `fenix847mm`, **undocumented**, and applies to device apps and data fields
+> alike. Exceeding it is **not a catchable exception** — the runtime kills the app with
+> `Out Of Memory Error: New Field out of memory for FIT data`, or, from inside a loop, the
+> unhelpful `System Error: Failed invoking <symbol>`. Shipped beta **0.5.0 crashed on every
+> START** because its session message declared 20 fields; the 17th `createField` killed it.
+>
+> There is a byte budget too (256 B per message type for a device app, **32 B** for a data
+> field), but for any schema built from small fields **the field count binds first**. That is
+> why this schema bit-packs: `cfg_pack`(54), `takeoff_pack`(55), `longest_pack`(56) and the
+> field variant's `turn_outcomes`(50) each spend one scarce slot instead of two or three.
+>
+> Both limits are asserted by unit tests over the single declaring table in each app —
+> `garmin/source/fit/FitSchema.mc` (device app) and `garmin/field/source/SessionPack.mc`
+> (data field). **Never call `createField` outside those tables.** A new field means a new
+> row; if it does not fit, a test fails instead of a watch.
+
+- `SCHEMA_VERSION`: **2** (carried in session field `app_version`, low byte = schema version)
 - Developer data index: 0 (single developer)
 - Field ID convention: **record 0–9 · lap 10–19 · session 20–49**
 - All speeds: `uint16` in **cm/s** (0–655.35 m/s). Convert for display (kn = m/s × 1.9438445).
-- Budgets (CIQ device app): 256 B per message type. Used: record 6 B · lap 11 B · session ~57 B.
+- Budgets (CIQ device app): 256 B **and 16 fields** per message type. Used: record 4 fields /
+  4 B · lap 2 fields / 2 B · session **15 fields / 48 B** (one field of deliberate headroom).
   The **data-field variant** (`garmin/field/`) has a far tighter budget and its own compact
   session schema — see "Field-variant FIT (class d)" below.
 - Recording activity: `sport = 43 (windsurfing)`, `subSport = 0 (generic)`, session name `"Wingfoil"`.
@@ -53,7 +72,13 @@ Native lap fields (start time, elapsed, distance, avg/max speed) come free from 
 | 15 | `turn_count` | uint8 | count | laps | turns confirmed inside this lap (bear-aways excluded) |
 | 16 | `best_turn_score` | uint8 | % | — | best min/entry ratio among turns whose outcome **resolved** in this lap |
 
-## SESSION message (written once at save) — ~57 bytes
+## SESSION message (written once at save) — **schema v2**: 15 fields / 48 bytes
+
+The binding constraint is the **16-field limit** (see the box at the top), not the 256 B
+budget. v2 therefore folds eight small v1 fields into three packed uint32s and keeps one
+field of headroom. Declared in one place: `garmin/source/fit/FitSchema.mc`.
+
+### v2 — what the app writes today
 
 | fieldId | name | type | units | GC render | notes |
 |---|---|---|---|---|---|
@@ -61,8 +86,6 @@ Native lap fields (start time, elapsed, distance, avg/max speed) come free from 
 | 21 | `foil_time` | uint32 | s | summary | |
 | 22 | `foil_pct` | uint8 | % | summary | of timer time |
 | 23 | `flight_count` | uint16 | count | summary | |
-| 24 | `longest_flight_s` | uint16 | s | summary | |
-| 25 | `longest_flight_m` | uint32 | m | summary | |
 | 26 | `best_2s` | uint16 | cm/s | summary | shown in kn |
 | 27 | `best_10s` | uint16 | cm/s | — | |
 | 28 | `best_5x10s` | uint16 | cm/s | summary | mean of best 5 disjoint 10 s windows |
@@ -72,15 +95,52 @@ Native lap fields (start time, elapsed, distance, avg/max speed) come free from 
 | 32 | `tack_count` | uint8 | count | summary | only ≠0 when wind axis known; saturates at 254 |
 | 33 | `jibe_count` | uint8 | count | summary | |
 | 34 | `turn_success_pct` | uint8 | % | summary | successful / attempted turns (score ≥ `turnSuccessPct` and never off the foil), over *all* counted turns including the generic ones |
-| 35 | `takeoff_attempts` | uint8 | count | summary | **watch-written** (`PumpDetector`): successes + failed efforts, saturates at 254 |
-| 36 | `takeoff_successes` | uint8 | count | summary | **watch-written**: confirmed flights — every one is a takeoff that took |
-| 37 | `avg_pumps_to_takeoff` | uint8 | strokes ×0.1 | summary | **watch-written**: value 87 = 8.7 strokes, over *all* takeoffs including the free ones; 0 = no takeoff yet |
 | 38 | `total_pump_strokes` | uint16 | strokes | — | **watch-written**: every detected stroke, in flight or not |
 | 39 | `wind_dir_user` | uint16 | deg | — | direction the wind blows **from**, true; 65535 = unset. Set in GCM (`windDirDeg`) or on the watch (BACK → Session → Wind, 16 compass points). The value written is the one in effect at save; the watch classifies only turns detected *after* it was set, so a mid-session change can leave earlier turns generic — the phone re-runs classification over the whole track and is authoritative |
-| 40 | `cfg_entry_speed` | uint16 | cm/s | — | thresholds in effect (phone needs them to reconcile) |
-| 41 | `cfg_exit_speed` | uint16 | cm/s | — | |
-| 42 | `cfg_min_flight` | uint8 | s | — | |
 | 43 | `app_version` | uint16 | — | — | high byte = app minor version, low byte = SCHEMA_VERSION |
+| 54 | `cfg_pack` | uint32 | — | — | **packed v2**, replaces 40/41/42. `entry_cms << 16 \| minFlight_s << 11 \| exit_cms` (entry 16 b cm/s · minFlight 5 b s 0–31 · exit 11 b cm/s 0–2047). Byte-for-byte the class-(d) encoding, so one unpacker serves both |
+| 55 | `takeoff_pack` | uint32 | — | — | **packed v2**, replaces 35/36/37. `avgPumps_x10 << 16 \| attempts << 8 \| successes`, each a byte the `PumpDetector` saturates at 254 |
+| 56 | `longest_pack` | uint32 | — | — | **packed v2**, replaces 24/25. `seconds << 16 \| metres`, each clamped to 65535 (18 h / 65 km in one flight — unreachable) |
+
+Fields 28–31 (`best_5x10s`, `best_500m`, `best_nm`, `alpha500_lite`) are **reserved, not
+written**: the phone computes them exactly and there is no field slot to spare.
+
+### v1 — historical, for files written by app ≤ 0.5.0
+
+Beta 0.5.0 declared these as separate fields and **never recorded a single session** — the
+20-field session message crashed the app on START (see the box at the top), so in practice
+only pre-0.5.0 corpus files carry them. Parsers must still read them: the whole fixture corpus
+is v1.
+
+| fieldId | name | type | units | v2 replacement |
+|---|---|---|---|---|
+| 24 | `longest_flight_s` | uint16 | s | `longest_pack`(56) bits 31–16 |
+| 25 | `longest_flight_m` | uint32 | m | `longest_pack`(56) bits 15–0 |
+| 35 | `takeoff_attempts` | uint8 | count | `takeoff_pack`(55) bits 15–8 |
+| 36 | `takeoff_successes` | uint8 | count | `takeoff_pack`(55) bits 7–0 |
+| 37 | `avg_pumps_to_takeoff` | uint8 | strokes ×0.1 | `takeoff_pack`(55) bits 23–16 |
+| 40 | `cfg_entry_speed` | uint16 | cm/s | `cfg_pack`(54) bits 31–16 |
+| 41 | `cfg_exit_speed` | uint16 | cm/s | `cfg_pack`(54) bits 10–0 |
+| 42 | `cfg_min_flight` | uint8 | s | `cfg_pack`(54) bits 15–11 |
+
+Semantics are unchanged — `takeoff_attempts` is still successes + failed efforts,
+`avg_pumps_to_takeoff` is still ×0.1 — only the carrier changed.
+
+### The parser compatibility rule (all three implementations)
+
+**Presence decides; `app_version` only corroborates.** Never gate on the schema version
+alone: class-(d) files carry `cfg_pack` under schema v1, and a file may have no `app_version`
+at all.
+
+1. Read the v1 field names as before.
+2. For each packed field **present and integer-valued**, unpack it and write the *same
+   internal names and units* the v1 fields used. A packed field **wins** over a v1 field of
+   the same meaning if both appear.
+3. Never fail on a missing or malformed packed field — fail-soft, like the rest of the parser.
+
+The result is that a v1 file and the equivalent v2 file parse to an **identical** internal
+representation, so nothing downstream of the parser knows the schema changed. This is asserted
+directly on the iOS side (`WatchSummary` is `Equatable`; the v1 and v2 summaries compare equal).
 
 ## Field-variant FIT (class d) — written by the **WingFoil Field** data field
 
@@ -124,7 +184,7 @@ structure to index against and no accelerometer (below).
 | 33 | `jibe_count` | uint8 | 1 | |
 | 34 | `turn_success_pct` | uint8 | 1 | |
 | 39 | `wind_dir_user` | uint16 | 2 | 65535 = unset |
-| 43 | `app_version` | uint16 | 2 | high byte app minor, low byte `SCHEMA_VERSION` |
+| 43 | `app_version` | uint16 | 2 | high byte app minor, low byte `SCHEMA_VERSION` — still **1** here: the class-(d) schema below is unchanged by the device app's v1→v2 packing, and it was already packed. This is exactly why a parser keys off field *presence*, not the version number |
 | 50 | `turn_outcomes` | uint32 | 4 | **packed**: `flew << 16 \| touchdown << 8 \| fell`, each uint8 saturating at 254 |
 | 53 | `discipline_id` | uint8 | 1 | 1 = wingfoil — the compact form of the app's `discipline`(20) string |
 | 54 | `cfg_pack` | uint32 | 4 | **packed**: `entry_cms << 16 \| minFlight_s << 11 \| exit_cms` (entry 16 b cm/s · minFlight 5 b s · exit 11 b cm/s) — the compact form of `cfg_entry_speed`(40)/`cfg_min_flight`(42)/`cfg_exit_speed`(41) |
