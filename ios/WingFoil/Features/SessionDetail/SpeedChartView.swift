@@ -1,16 +1,31 @@
 import Charts
 import SwiftUI
+import WingFoilKit
 
 /// Speed over time in knots: detected flights shaded, the selected GP3S window marked
 /// (record provenance), and every maneuver / straight-line flight end dotted at the
 /// speed it happened, coloured by outcome.
+///
+/// The chart is also one of the two handles on the replay playhead (the map is the other):
+/// touching it anywhere scrubs, and the playhead it draws is the same `Double?` the map dot
+/// and the readout resolve through.
 struct SpeedChartView: View {
     let detail: SessionDetail
     let effort: SessionDetail.RecordEffort?
+    @Binding var playhead: Double?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Speed").font(.headline)
+            HStack(spacing: 6) {
+                Text("Speed").font(.headline)
+                HelpButton(topic: .recordSet, size: .footnote)
+                Spacer()
+                if !detail.timeline.isEmpty {
+                    Text("drag to scrub")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+            }
 
             if detail.speed.isEmpty {
                 Text("No speed channel in this recording.")
@@ -56,6 +71,23 @@ struct SpeedChartView: View {
                         EventMarkerStyle.dot(marker, size: 8)
                     }
             }
+            // Declared last and given an explicit z-index: the outcome dots are dense on a
+            // long session and the playhead has to be readable *through* them.
+            if let playhead, let moment = detail.moment(at: playhead) {
+                RuleMark(x: .value("Playhead", moment.t))
+                    .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 3]))
+                    .foregroundStyle(Color(.label))
+                    .zIndex(10)
+                PointMark(x: .value("Playhead", moment.t),
+                          y: .value("Speed", markerSpeed(at: moment.t)))
+                    .symbol {
+                        Circle()
+                            .fill(Color(.label))
+                            .stroke(Color(.systemBackground), lineWidth: 2)
+                            .frame(width: 13, height: 13)
+                    }
+                    .zIndex(11)
+            }
         }
         .chartYAxisLabel("kn")
         .chartXAxis {
@@ -69,7 +101,30 @@ struct SpeedChartView: View {
             }
         }
         .chartYScale(domain: 0...(max(detail.maxSpeedKn * 1.1, 5)))
+        .chartOverlay { proxy in scrubSurface(proxy) }
         .frame(height: 190)
+    }
+
+    /// A transparent surface over the plot area that turns a touch into a time.
+    /// `minimumDistance: 0` so a tap works as well as a drag — tapping a spike to see what
+    /// it was is the common case, scrubbing is the deliberate one.
+    private func scrubSurface(_ proxy: ChartProxy) -> some View {
+        GeometryReader { geometry in
+            if let plotFrame = proxy.plotFrame {
+                let frame = geometry[plotFrame]
+                Rectangle()
+                    .fill(.clear)
+                    .contentShape(.rect)
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                let x = value.location.x - frame.origin.x
+                                guard let t: Double = proxy.value(atX: x),
+                                      let range = detail.timeRange else { return }
+                                playhead = min(max(t, range.lowerBound), range.upperBound)
+                            })
+            }
+        }
     }
 
     /// The plotted speed nearest the event, so a marker sits on the trace rather than

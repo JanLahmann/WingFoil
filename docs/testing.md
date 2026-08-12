@@ -99,6 +99,19 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      PB history (all-time max, chronological series, strictly increasing PB step curve,
      per-spot/per-gear filtering, no duplicate efforts after re-analysis); gear combos
      (default = last used, one slot per kind, per-gear aggregates); zero-filled week buckets.
+   - `PresentationTests` — the phase-5 UI layer's *logic*, which is exactly the code whose
+     mistakes are invisible in a screenshot. Help-catalogue completeness (every
+     `HelpTopicID` case has written content, no duplicate or dangling topic links, search
+     hits body and item text); the share card's content (always four stat cells, "—" rather
+     than a fabricated 0.00 kn, the uncertified disclaimer); thumbnail geometry (aspect
+     preserved — a straight-line track must land in a band, not stretched over the box; runs
+     split at the phase change and share a vertex; the sparkline bucketed by **max** so a
+     single fast reach survives thinning; each half degrades on its own; a degenerate track
+     stays finite; the on-disk cache round-trips and a version bump invalidates it); PB
+     detection (float noise is not a record, the *first* import celebrates nothing, an
+     uncertified source never celebrates); and the widget snapshot (7-day window, the
+     `foilTimeS`→`foilPct` fallback for pre-v2 rows, encode/decode round-trip, and the
+     invariant that the store never claims the shared container it does not have).
    - `GdprImportTests` — a synthetic Garmin export (ZIP of ZIPs holding two fixture FITs, a
      gzipped member, JSON noise, `__MACOSX` junk and one unreadable FIT): every session
      imported exactly once, incremental progress callbacks, `import_log` rows, a **re-run

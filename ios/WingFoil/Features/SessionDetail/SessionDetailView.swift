@@ -9,6 +9,10 @@ struct SessionDetailView: View {
     @State private var failure: String?
     /// Engine window key of the GP3S effort highlighted on the map and chart.
     @State private var selectedEffort: String? = "best2s"
+    /// Session-clock seconds under the replay playhead; nil = not scrubbing. Shared by the
+    /// scrubber, the chart and the map — that shared binding *is* the map/chart link.
+    @State private var playhead: Double?
+    @State private var showShare = false
 
     private var row: SessionRow? { store.session(id: sessionID) }
 
@@ -29,15 +33,18 @@ struct SessionDetailView: View {
                     if detail.segments.isEmpty {
                         noTrackNote
                     } else {
-                        TrackMapView(detail: detail, effort: effort)
+                        TrackMapView(detail: detail, effort: effort, playhead: $playhead)
                         NavigationLink {
-                            FullScreenMapView(detail: detail, effort: effort)
+                            FullScreenMapView(detail: detail, effort: effort,
+                                              playheadT: playhead)
                         } label: {
                             Label("Open map full screen", systemImage: "map")
                                 .font(.footnote)
                         }
                     }
-                    SpeedChartView(detail: detail, effort: effort)
+                    SpeedChartView(detail: detail, effort: effort, playhead: $playhead)
+                    ReplayScrubber(detail: detail, playhead: $playhead)
+                        .id("replay")
                     SummaryGrid(detail: detail, selectedEffort: $selectedEffort)
                         .id("summary")
                     SessionGearCard(sessionID: sessionID)
@@ -59,16 +66,38 @@ struct SessionDetailView: View {
             // `UI_SCROLL_TO=<anchor>` parks the page on a card section for a screenshot
             // ("summary" for the whole grid, "takeoff" for the pumping card).
             .onChange(of: detail == nil) {
-                guard detail != nil,
-                      let anchor = ProcessInfo.processInfo.environment["UI_SCROLL_TO"]
-                else { return }
-                proxy.scrollTo(anchor, anchor: .top)
+                guard detail != nil else { return }
+                let environment = ProcessInfo.processInfo.environment
+                // `UI_PLAYHEAD=0.0…1.0` parks the replay scrubber at a fraction of the
+                // session, so the linked chart/map markers are in an automated shot.
+                if let fraction = environment["UI_PLAYHEAD"].flatMap(Double.init),
+                   let range = detail?.timeRange {
+                    playhead = range.lowerBound
+                        + (range.upperBound - range.lowerBound) * min(max(fraction, 0), 1)
+                }
+                if environment["UI_SHEET"] == "share" { showShare = true }
+                if let anchor = environment["UI_SCROLL_TO"] {
+                    proxy.scrollTo(anchor, anchor: .top)
+                }
             }
             #endif
             }
         }
         .navigationTitle(row.map(SessionDisplay.title) ?? "Session")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showShare = true } label: {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                }
+                .disabled(row == nil)
+            }
+        }
+        .sheet(isPresented: $showShare) {
+            if let row {
+                ShareComposerView(row: row, detail: detail)
+            }
+        }
         .task(id: sessionID) { await load() }
     }
 
@@ -118,7 +147,10 @@ struct SessionDetailView: View {
             + "sport \(SessionDisplay.sportLabel(detail.row.sport))"
             + (detail.row.importSource.map { " · via \($0)" } ?? "")
         return VStack(alignment: .leading, spacing: 4) {
-            Text(SessionDisplay.sourceClassNote(detail.row.sourceClass))
+            HStack(spacing: 5) {
+                Text(SessionDisplay.sourceClassNote(detail.row.sourceClass))
+                HelpButton(topic: .sourceClass, size: .caption2)
+            }
             Text(provenance)
             if let file = detail.row.originalFilename { Text(file) }
         }
@@ -143,6 +175,7 @@ private struct WindRow: View {
                 Text(text)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                HelpButton(topic: .windAxis)
             }
             .accessibilityElement(children: .combine)
         }
@@ -209,11 +242,14 @@ private struct DivergenceBanner: View {
                         }
                         .font(.caption2.monospacedDigit())
                     }
-                    Text("The phone recompute is authoritative — file this against the "
-                         + "session fixture as a tuning issue.")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                        .padding(.top, 2)
+                    HStack(spacing: 6) {
+                        Text("The phone recompute is authoritative — file this against the "
+                             + "session fixture as a tuning issue.")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                        HelpButton(topic: .divergence)
+                    }
+                    .padding(.top, 2)
                 }
             }
         }

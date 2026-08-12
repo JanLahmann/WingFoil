@@ -12,6 +12,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                helpSection
                 icuSection
                 placesSection
                 healthSection
@@ -48,6 +49,20 @@ struct SettingsView: View {
     }
 
     // MARK: - Sections
+
+    private var helpSection: some View {
+        Section {
+            NavigationLink {
+                HelpIndexPage()
+            } label: {
+                Label("What the numbers mean", systemImage: "questionmark.circle")
+            }
+        } footer: {
+            Text("Plain-language explanations of every metric — foil %, the GP3S record "
+                 + "set, turn outcomes, takeoff attempts, the wind axis and what an "
+                 + "uncertified record means.")
+        }
+    }
 
     private var icuSection: some View {
         Section {

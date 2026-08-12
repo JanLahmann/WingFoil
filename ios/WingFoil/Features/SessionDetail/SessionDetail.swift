@@ -62,10 +62,27 @@ struct SessionDetail: Sendable {
         var points: [Point]
     }
 
+    /// One instant of the session as the replay scrubber reads it: everything the live
+    /// readout shows, on the *sample* clock rather than the chart's bucketed one.
+    ///
+    /// The chart series is bucketed by max (peaks must survive thinning), which makes it
+    /// the wrong thing to scrub: its `kn` is a bucket maximum and it carries no position.
+    /// This is the parallel, evenly-thinned series the playhead actually rides on.
+    struct TimelinePoint: Sendable, Equatable {
+        var t: Double
+        var lat: Double?
+        var lon: Double?
+        var kn: Double
+        var hr: Double?
+        var flying: Bool
+    }
+
     let row: SessionRow
     let analysis: SessionAnalysis
     let segments: [TrackSegment]
     let speed: [SpeedPoint]
+    /// Scrubbable timeline, ascending in `t`.
+    let timeline: [TimelinePoint]
     let flightBands: [Band]
     /// Turn outcomes (solid) and straight-line flight ends (hollow), in time order.
     let markers: [EventMarker]
@@ -97,6 +114,10 @@ struct SessionDetail: Sendable {
     private static let maxTrackPoints = 6000
     /// Chart points; bucketed by max so speed peaks survive the thinning.
     private static let maxChartPoints = 700
+    /// Scrubber resolution. A 2 h ride at 1 Hz is 7 200 samples; 1 500 keeps the playhead
+    /// smooth under a finger (≈5 s per step on the longest sessions) without holding the
+    /// whole record stream alive for a screen that only reads one instant at a time.
+    private static let maxTimelinePoints = 1500
 
     init(row: SessionRow, analysis: SessionAnalysis, track: RawTrack) {
         self.row = row
@@ -134,6 +155,71 @@ struct SessionDetail: Sendable {
 
         speed = Self.buildSpeedSeries(track.samples)
         maxSpeedKn = speed.map(\.kn).max() ?? 0
+        timeline = Self.buildTimeline(track.samples, flights: flights)
+    }
+
+    // MARK: - Replay
+
+    /// Scrubbable span. Empty when the recording has no usable timeline at all.
+    var timeRange: ClosedRange<Double>? {
+        guard let first = timeline.first, let last = timeline.last, last.t > first.t else {
+            return nil
+        }
+        return first.t...last.t
+    }
+
+    /// The instant nearest `t` — what the readout, the chart playhead and the map dot all
+    /// resolve through, so the three can never point at different moments.
+    func moment(at t: Double) -> TimelinePoint? {
+        guard !timeline.isEmpty else { return nil }
+        var lo = 0, hi = timeline.count - 1
+        while hi - lo > 1 {
+            let mid = (lo + hi) / 2
+            if timeline[mid].t <= t { lo = mid } else { hi = mid }
+        }
+        return abs(timeline[lo].t - t) <= abs(timeline[hi].t - t) ? timeline[lo] : timeline[hi]
+    }
+
+    /// The time of the track point nearest a tapped coordinate, or nil when the tap landed
+    /// nowhere near the track. `toleranceM` keeps a tap on open water from yanking the
+    /// playhead to some unrelated corner of the session.
+    func time(nearLat lat: Double, lon: Double, toleranceM: Double) -> Double? {
+        // Equirectangular metres around the tap: over a session-sized box this is exact
+        // enough to rank distances, and it avoids a CoreLocation call per sample.
+        let cosLat = cos(lat * .pi / 180)
+        var bestT: Double?
+        var bestDistanceSq = Double.infinity
+        for point in timeline {
+            guard let pLat = point.lat, let pLon = point.lon else { continue }
+            let dx = (pLon - lon) * cosLat * 111_320
+            let dy = (pLat - lat) * 110_540
+            let distanceSq = dx * dx + dy * dy
+            if distanceSq < bestDistanceSq {
+                bestDistanceSq = distanceSq
+                bestT = point.t
+            }
+        }
+        return bestDistanceSq <= toleranceM * toleranceM ? bestT : nil
+    }
+
+    /// Evenly thinned — *not* bucketed by max. The scrubber shows the speed at an instant,
+    /// so it must report what the recording says at that instant rather than the local
+    /// peak, which would read high everywhere and make a steady reach look gusty.
+    private static func buildTimeline(_ samples: [RecordSample],
+                                      flights: [FlightRecord]) -> [TimelinePoint] {
+        guard !samples.isEmpty else { return [] }
+        let isFlying = flyingLookup(flights)
+        let stride = max(1, (samples.count + maxTimelinePoints - 1) / maxTimelinePoints)
+        var out: [TimelinePoint] = []
+        out.reserveCapacity(samples.count / stride + 1)
+        for (index, sample) in samples.enumerated()
+        where index % stride == 0 || index == samples.count - 1 {
+            out.append(TimelinePoint(t: sample.t, lat: sample.lat, lon: sample.lon,
+                                     kn: (sample.speedMps ?? 0) * Units.mpsToKn,
+                                     hr: sample.heartRate,
+                                     flying: isFlying(sample.t)))
+        }
+        return out
     }
 
     // MARK: - Geometry
