@@ -1,5 +1,6 @@
 project.manifest = manifest-beta.xml
-base.sourcePath = source;tests
+# source-nopepper/ = zero pepper = no invite lock; see monkey.jungle and ADR-012
+base.sourcePath = source;tests;source-nopepper
 base.barrelPath = barrel/WingFoilCore/barrel.jungle
 
 # see monkey.jungle: per-product launcher icons at their native compiler.json sizes

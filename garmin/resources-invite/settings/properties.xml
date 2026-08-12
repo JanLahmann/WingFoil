@@ -1,0 +1,8 @@
+<properties>
+    <!-- Invite build only (monkey-invite.jungle). The unlock key the tester is mailed after
+         sending in the request code from the lock screen; LockGate re-validates it on every
+         onSettingsChanged, so it takes effect without restarting the app. Empty = locked.
+         Deliberately NOT in resources/settings/: the public app must not show a setting
+         whose gate is compiled out. -->
+    <property id="unlockKey" type="string"></property>
+</properties>

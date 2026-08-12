@@ -1,7 +1,11 @@
 project.manifest = manifest.xml
 
 # tests/ holds (:test)-annotated code — stripped from normal builds, compiled with --unit-test
-base.sourcePath = source;tests
+#
+# source-nopepper/ carries the all-zero invite pepper, which is what makes LockGate.enabled()
+# false and the lock screen unreachable in the public app. Only monkey-invite.jungle swaps it
+# for the generated gen/UnlockPepper.mc (docs/decisions.md ADR-012).
+base.sourcePath = source;tests;source-nopepper
 
 # WingFoilCore = the shared detection core (RingBuffer/SpeedRecords/FlightDetector/
 # TurnDetector/Config), linked as a Monkey Barrel PROJECT dependency (not a packaged

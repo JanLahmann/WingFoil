@@ -29,3 +29,11 @@ monkey.jungle.local
 # Developer key — NEVER commit
 *.der
 developer_key*
+
+# Invite-beta pepper — generated from UNLOCK_SECRET in lab/.env by
+# `lab/tools/make_unlock.py --emit-pepper`. Committing it would publish the only secret the
+# unlock gate has (docs/decisions.md ADR-012). Both paths are ignored: gen/ is where the
+# tool writes, source/gen/ would silently arm the gate in the PUBLIC build if anyone ever
+# moved it there.
+garmin/gen/
+garmin/source/gen/

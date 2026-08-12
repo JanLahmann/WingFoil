@@ -1,0 +1,7 @@
+<settings>
+    <!-- 8 characters, but the watch normalizes what it gets (case, dashes, I/L/O), so a
+         generous maxLength beats rejecting a key someone pasted with a space in it. -->
+    <setting propertyKey="@Properties.unlockKey" title="@Strings.SetUnlockKey">
+        <settingConfig type="alphaNumeric" maxLength="16"/>
+    </setting>
+</settings>
