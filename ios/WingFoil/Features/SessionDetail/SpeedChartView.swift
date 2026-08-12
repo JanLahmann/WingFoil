@@ -13,6 +13,12 @@ struct SpeedChartView: View {
     let detail: SessionDetail
     let effort: SessionDetail.RecordEffort?
     @Binding var playhead: Double?
+    /// The legend chips filter the chart too — the map and the chart are two readings of
+    /// one session, and an outcome dot present in one but missing from the other would
+    /// make the pair unreadable.
+    let visibility: MapLayerVisibility
+
+    private var showsEffort: Bool { effort != nil && visibility.isVisible(.effort) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -33,8 +39,10 @@ struct SpeedChartView: View {
             } else {
                 chart
                 HStack(spacing: 14) {
-                    swatch(color: .teal.opacity(0.35), label: "flights")
-                    if let effort {
+                    if visibility.isVisible(.flying) {
+                        swatch(color: .teal.opacity(0.35), label: "flights")
+                    }
+                    if let effort, showsEffort {
                         swatch(color: .orange.opacity(0.6), label: effort.label.lowercased())
                     }
                     Spacer()
@@ -48,12 +56,16 @@ struct SpeedChartView: View {
 
     private var chart: some View {
         Chart {
-            ForEach(detail.flightBands) { band in
-                RectangleMark(xStart: .value("Flight start", band.start),
-                              xEnd: .value("Flight end", band.end))
-                    .foregroundStyle(Color.teal.opacity(0.16))
+            // The flight shading is the chart's rendering of the "flying" category, so it
+            // answers to the same chip the map's teal track does.
+            if visibility.isVisible(.flying) {
+                ForEach(detail.flightBands) { band in
+                    RectangleMark(xStart: .value("Flight start", band.start),
+                                  xEnd: .value("Flight end", band.end))
+                        .foregroundStyle(Color.teal.opacity(0.16))
+                }
             }
-            if let effort {
+            if let effort, showsEffort {
                 RectangleMark(xStart: .value("Best start", effort.band.start),
                               xEnd: .value("Best end", effort.band.end))
                     .foregroundStyle(Color.orange.opacity(0.55))
@@ -64,7 +76,7 @@ struct SpeedChartView: View {
                     .lineStyle(StrokeStyle(lineWidth: 1.4))
                     .foregroundStyle(Color.accentColor)
             }
-            ForEach(detail.markers) { marker in
+            ForEach(detail.visibleMarkers(visibility)) { marker in
                 PointMark(x: .value("Time", marker.t),
                           y: .value("Speed", markerSpeed(at: marker.t)))
                     .symbol {

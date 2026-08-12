@@ -13,6 +13,10 @@ struct SessionDetailView: View {
     /// scrubber, the chart and the map — that shared binding *is* the map/chart link.
     @State private var playhead: Double?
     @State private var showShare = false
+    #if DEBUG && targetEnvironment(simulator)
+    /// Screenshot hook only (`UI_FULLSCREEN_MAP=1`): `simctl` cannot tap the link.
+    @State private var showFullScreenMap = false
+    #endif
 
     private var row: SessionRow? { store.session(id: sessionID) }
 
@@ -33,7 +37,8 @@ struct SessionDetailView: View {
                     if detail.segments.isEmpty {
                         noTrackNote
                     } else {
-                        TrackMapView(detail: detail, effort: effort, playhead: $playhead)
+                        TrackMapView(detail: detail, effort: effort, playhead: $playhead,
+                                     visibility: store.mapLayers)
                         NavigationLink {
                             FullScreenMapView(detail: detail, effort: effort,
                                               playheadT: playhead)
@@ -42,7 +47,8 @@ struct SessionDetailView: View {
                                 .font(.footnote)
                         }
                     }
-                    SpeedChartView(detail: detail, effort: effort, playhead: $playhead)
+                    SpeedChartView(detail: detail, effort: effort, playhead: $playhead,
+                                   visibility: store.mapLayers)
                     ReplayScrubber(detail: detail, playhead: $playhead)
                         .id("replay")
                     SummaryGrid(detail: detail, selectedEffort: $selectedEffort)
@@ -76,6 +82,9 @@ struct SessionDetailView: View {
                         + (range.upperBound - range.lowerBound) * min(max(fraction, 0), 1)
                 }
                 if environment["UI_SHEET"] == "share" { showShare = true }
+                // `UI_FULLSCREEN_MAP=1` pushes the big map, where the legend chips are the
+                // same controls over the same shared model.
+                if environment["UI_FULLSCREEN_MAP"] == "1" { showFullScreenMap = true }
                 if let anchor = environment["UI_SCROLL_TO"] {
                     proxy.scrollTo(anchor, anchor: .top)
                 }
@@ -85,6 +94,13 @@ struct SessionDetailView: View {
         }
         .navigationTitle(row.map(SessionDisplay.title) ?? "Session")
         .navigationBarTitleDisplayMode(.inline)
+        #if DEBUG && targetEnvironment(simulator)
+        .navigationDestination(isPresented: $showFullScreenMap) {
+            if let detail {
+                FullScreenMapView(detail: detail, effort: effort, playheadT: playhead)
+            }
+        }
+        #endif
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showShare = true } label: {

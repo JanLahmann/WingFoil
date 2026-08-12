@@ -36,6 +36,17 @@ final class SessionStore {
     /// by the Records screen, which is where the celebration belongs.
     private(set) var celebration: [NewPersonalBest] = []
 
+    /// Which map/chart overlay categories the legend chips are showing. One setting for
+    /// the whole app rather than one per session: "I never want to see course changes" is
+    /// a statement about the rider, not about a particular ride. Persisted on every
+    /// change, so a relaunch comes back the way the map was left.
+    var mapLayers: MapLayerVisibility = SessionStore.initialMapLayers() {
+        didSet {
+            guard mapLayers != oldValue else { return }
+            MapLayerVisibilityStore.save(mapLayers, to: .standard)
+        }
+    }
+
     let ingestor: SessionIngestor
     /// Lazy track thumbnails for the library rows.
     let thumbnails: ThumbnailStore
@@ -360,6 +371,33 @@ final class SessionStore {
         func send(_ summary: ImportSummary) { sink(summary) }
     }
 
+    // MARK: - Map legend
+
+    /// Tapping a legend chip. Kept on the store rather than in a view's `@State` because
+    /// the inline map, the full-screen map and the speed chart are three views of the same
+    /// answer — a chip that only convinced the view it lives in would be a bug.
+    func toggleMapLayer(_ layer: MapLayer) { mapLayers.toggle(layer) }
+
+    func showAllMapLayers() { mapLayers.showAll() }
+
+    private static func initialMapLayers() -> MapLayerVisibility {
+        var stored = MapLayerVisibilityStore.load(from: .standard)
+        #if DEBUG && targetEnvironment(simulator)
+        // Screenshot hook, same family as `UI_TAB` / `UI_OPEN_SESSION`: `simctl` cannot tap
+        // a chip, so `UI_HIDE_LAYERS=fellIn,courseChange` starts the app with those chips
+        // off. It deliberately runs *after* the load and is never written back — the
+        // override stages a screenshot, it does not edit the rider's preference.
+        if let list = ProcessInfo.processInfo.environment["UI_HIDE_LAYERS"] {
+            for token in list.split(separator: ",") {
+                guard let layer = MapLayer(rawValue: token.trimmingCharacters(in: .whitespaces))
+                else { continue }
+                stored.setVisible(false, for: layer)
+            }
+        }
+        #endif
+        return stored
+    }
+
     // MARK: - Apple Health (opt-in, write-only)
 
     /// Off by default (plan phase 4: "optional Apple Health write"). Nothing is ever read
@@ -589,7 +627,7 @@ final class SessionStore {
         guard ProcessInfo.processInfo.environment["UI_RESET"] == "1" else { return }
         Keychain.remove(Keychain.icuApiKey)
         for key in ["lastIcuSync", problemKey, pbSnapshotKey, "healthExported",
-                    "healthWriteEnabled"] {
+                    "healthWriteEnabled", MapLayerVisibilityStore.defaultsKey] {
             UserDefaults.standard.removeObject(forKey: key)
         }
         let fm = FileManager.default

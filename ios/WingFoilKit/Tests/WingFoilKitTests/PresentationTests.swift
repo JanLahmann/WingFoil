@@ -397,4 +397,141 @@ import Testing
         #expect(shared == WidgetSnapshotStore.appGroupAvailable)
         if shared { #expect(WidgetSnapshotStore.sharedDefaults != nil) }
     }
+
+    // MARK: - Map legend visibility
+
+    /// A scratch domain per test: the visibility set is a *user* preference, so its store
+    /// talks to `UserDefaults`, and a shared suite would let one test see another's state.
+    private func scratchDefaults() throws -> UserDefaults {
+        let suite = "wingfoil.tests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defaults.removePersistentDomain(forName: suite)
+        return defaults
+    }
+
+    /// The default has to be "show everything": a rider who never touched a chip must not
+    /// discover that the app decided to hide half the session for them.
+    @Test func mapLayersDefaultToEverythingVisible() {
+        let visibility = MapLayerVisibility()
+        #expect(visibility.isEverythingVisible)
+        #expect(visibility.hiddenLayers.isEmpty)
+        for layer in MapLayer.allCases {
+            #expect(visibility.isVisible(layer), "\(layer.rawValue) starts hidden")
+        }
+        #expect(visibility.lineStyle(flying: true) == .flying)
+        #expect(visibility.lineStyle(flying: false) == .offFoil)
+    }
+
+    @Test func togglingALayerFlipsOnlyThatLayer() {
+        var visibility = MapLayerVisibility()
+        visibility.toggle(.fellIn)
+        #expect(!visibility.isVisible(.fellIn))
+        #expect(!visibility.isEverythingVisible)
+        #expect(visibility.hiddenLayers == [.fellIn])
+        for layer in MapLayer.allCases where layer != .fellIn {
+            #expect(visibility.isVisible(layer), "\(layer.rawValue) was collateral damage")
+        }
+        visibility.toggle(.fellIn)
+        #expect(visibility.isVisible(.fellIn))
+        #expect(visibility.isEverythingVisible)
+    }
+
+    @Test func showAllClearsEveryHiddenLayer() {
+        var visibility = MapLayerVisibility(hidden: [.fellIn, .courseChange, .flying])
+        #expect(!visibility.isEverythingVisible)
+        visibility.showAll()
+        #expect(visibility.isEverythingVisible)
+        #expect(visibility.lineStyle(flying: true) == .flying)
+    }
+
+    /// The edge case that makes the line chips different from the marker chips: hiding
+    /// "flying" drops the *tint*, never the route. A rider who cannot see where they went
+    /// has lost the map, which is not what tapping a legend chip should ever mean.
+    @Test func hidingALineCategoryFallsBackToTheNeutralRoute() {
+        var visibility = MapLayerVisibility()
+        visibility.setVisible(false, for: .flying)
+        #expect(visibility.lineStyle(flying: true) == .neutral)
+        #expect(visibility.lineStyle(flying: false) == .offFoil,
+                "hiding one phase must not restyle the other")
+
+        visibility.setVisible(false, for: .offFoil)
+        #expect(visibility.lineStyle(flying: true) == .neutral)
+        #expect(visibility.lineStyle(flying: false) == .neutral)
+
+        visibility.setVisible(true, for: .flying)
+        #expect(visibility.lineStyle(flying: true) == .flying)
+    }
+
+    /// Line categories restyle, marker categories disappear — the split the legend draws
+    /// as two rows has to hold in the model too.
+    @Test func everyLayerIsEitherALineOrAMarker() {
+        let lines = MapLayer.allCases.filter(\.isLine)
+        let markers = MapLayer.allCases.filter(\.isMarker)
+        #expect(Set(lines) == [.flying, .offFoil, .effort])
+        #expect(Set(markers) == [.flewThrough, .touchdown, .fellIn, .courseChange])
+        #expect(lines.count + markers.count == MapLayer.allCases.count)
+        let labels = MapLayer.allCases.map(\.label)
+        #expect(Set(labels).count == labels.count, "two chips would read the same")
+        let nouns = MapLayer.allCases.map(\.accessibilityNoun)
+        #expect(Set(nouns).count == nouns.count, "two toggles would be spoken the same")
+        #expect(nouns.allSatisfy { !$0.isEmpty })
+    }
+
+    /// Survives a relaunch — the whole point of storing it.
+    @Test func visibilityRoundTripsThroughUserDefaults() throws {
+        let defaults = try scratchDefaults()
+        #expect(MapLayerVisibilityStore.load(from: defaults).isEverythingVisible,
+                "an untouched install shows everything")
+
+        var visibility = MapLayerVisibility()
+        visibility.toggle(.fellIn)
+        visibility.toggle(.courseChange)
+        MapLayerVisibilityStore.save(visibility, to: defaults)
+
+        let reloaded = MapLayerVisibilityStore.load(from: defaults)
+        #expect(reloaded == visibility)
+        #expect(reloaded.hiddenLayers == [.fellIn, .courseChange])
+        #expect(reloaded.isVisible(.touchdown))
+
+        // Turning them back on has to persist too, or the map would come back blank.
+        visibility.showAll()
+        MapLayerVisibilityStore.save(visibility, to: defaults)
+        #expect(MapLayerVisibilityStore.load(from: defaults).isEverythingVisible)
+    }
+
+    /// An unreadable preference must not leave the rider with a half-blank map and no way
+    /// to reason about it; the same leniency covers a layer a future build added.
+    @Test func unreadableOrUnknownStoredLayersDegradeToVisible() throws {
+        let defaults = try scratchDefaults()
+        defaults.set(Data("not json".utf8), forKey: MapLayerVisibilityStore.defaultsKey)
+        #expect(MapLayerVisibilityStore.load(from: defaults).isEverythingVisible)
+
+        defaults.set(Data(#"["fellIn","windShadow"]"#.utf8),
+                     forKey: MapLayerVisibilityStore.defaultsKey)
+        let decoded = MapLayerVisibilityStore.load(from: defaults)
+        #expect(decoded.hiddenLayers == [.fellIn], "an unknown layer is dropped, not fatal")
+    }
+
+    @Test func visibilityEncodesAsSortedRawValues() throws {
+        let data = try JSONEncoder().encode(MapLayerVisibility(hidden: [.touchdown, .flying]))
+        #expect(String(decoding: data, as: UTF8.self) == #"["flying","touchdown"]"#)
+        #expect(try JSONDecoder().decode(MapLayerVisibility.self, from: data)
+            .hiddenLayers == [.flying, .touchdown])
+    }
+
+    /// A chip for something this session does not contain is not a control — there is
+    /// nothing to hide — so the legend renders it inert.
+    @Test func chipsWithoutInstancesAreNotToggleable() {
+        var tally = MapLayerTally()
+        tally.add(.flying, 4)
+        tally.add(.touchdown)
+        tally.add(.touchdown)
+
+        #expect(tally.count(.touchdown) == 2)
+        #expect(tally.isToggleable(.touchdown))
+        #expect(tally.isToggleable(.flying))
+        #expect(tally.count(.fellIn) == 0)
+        #expect(!tally.isToggleable(.fellIn), "a session with no swims has no swim toggle")
+        #expect(!MapLayerTally().isToggleable(.flying))
+    }
 }
