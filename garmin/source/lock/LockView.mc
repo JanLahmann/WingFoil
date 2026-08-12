@@ -47,13 +47,22 @@ class LockView extends WatchUi.View {
             Graphics.FONT_XTINY] as Array<Graphics.FontType>;
     }
 
-    // Largest font that renders the 8-character code inside the chord at its row. Vector
-    // fonts first (the bitmap FONT_LARGE tops out well short of what the row can hold), the
-    // bitmap ladder as the fallback for devices or firmware without them.
+    // Largest font that renders the 8-character code inside the chord at its row.
+    //
+    // The bitmap ladder is the FLOOR, not just the no-vector-fonts fallback. On the fenix 8
+    // family the vector faces beat it comfortably, but on the fenix 7 family (240-280 px) the
+    // widest vector size that fits an 8-character code is 42 px, which is SHORTER than that
+    // variant's FONT_LARGE — taking the vector font there would have shrunk the one string a
+    // tester has to transcribe. So: measure the ladder first, then only accept a vector size
+    // that is genuinely taller.
     static function codeFont(dc as Dc, code as String) as Graphics.FontType {
         var radius = RecordingView.fitRadius(dc);
         var dy = (rowY(dc.getHeight(), ROW_CODE) - dc.getHeight() / 2).abs();
+        var l = ladder();
+        var best = RecordingView.fitFont(dc, l, 0, code,
+            RecordingView.rowBudget(radius, dy, dc.getFontHeight(l[0])) * CODE_FIT_PCT / 100);
         if (Graphics has :getVectorFont) {
+            var floor = dc.getFontHeight(best);
             for (var size = VEC_MAX; size >= VEC_MIN; size -= VEC_STEP) {
                 var vf = Graphics.getVectorFont({:face => VEC_FACES, :size => size});
                 if (vf == null) {
@@ -63,15 +72,16 @@ class LockView extends WatchUi.View {
                 // row has one job and can afford the margin, and it keeps the fitter and
                 // lockScreenFitsRoundDisplay measuring the same box.
                 var h = dc.getFontHeight(vf);
+                if (h <= floor) {
+                    break;      // the ladder already wins, and only gets better from here
+                }
                 if (dc.getTextWidthInPixels(code, vf)
                         <= RecordingView.rowBudget(radius, dy, h) * CODE_FIT_PCT / 100) {
                     return vf;
                 }
             }
         }
-        var l = ladder();
-        return RecordingView.fitFont(dc, l, 0, code,
-            RecordingView.rowBudget(radius, dy, dc.getFontHeight(l[0])) * CODE_FIT_PCT / 100);
+        return best;
     }
 
     function onUpdate(dc as Dc) as Void {
