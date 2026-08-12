@@ -144,6 +144,19 @@ module PageModel {
         return _slot[_order[wrap(i)]][s];
     }
 
+    // Does the i-th visible page carry metric `id` in any slot? Drives the foil-% bezel arc,
+    // which is a property of the PAGE, not of one cell. Allocation-free: it walks the row that
+    // is already there.
+    function pageHasMetric(i as Number, id as Number) as Boolean {
+        var row = _slot[_order[wrap(i)]];
+        for (var s = 0; s < SLOTS; s++) {
+            if (row[s] == id) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function wrap(i as Number) as Number {
         var n = _order.size();
         var k = i % n;
@@ -196,6 +209,27 @@ module PageModel {
         if (id == M_TAKEOFFS) { return "takeoffs"; }
         if (id == M_PUMPS_TO_TAKEOFF) { return "to foil"; }
         return "";
+    }
+
+    // The symbol a cell shows beside (or, with showLabels off, instead of) its label.
+    // Metrics that measure the same thing share a glyph on purpose — the label, when it is on,
+    // is what separates "foil" from "longest"; the glyph says which FAMILY the number is from,
+    // which is all the eye needs at 25 kn.
+    function glyph(id as Number) as Number {
+        if (id == M_SPEED || id == M_BEST_2S || id == M_BEST_10S) { return Glyphs.G_BOLT; }
+        if (id == M_FOIL_PCT || id == M_FLIGHTS) { return Glyphs.G_WING; }
+        if (id == M_FLIGHT_TIMER || id == M_FOIL_TIME || id == M_LONGEST || id == M_TIMER
+            || id == M_CLOCK) {
+            return Glyphs.G_WATCH;
+        }
+        if (id == M_DISTANCE) { return Glyphs.G_RULER; }
+        if (id == M_HR) { return Glyphs.G_HEART; }
+        if (id == M_TURNS || id == M_TURN_SCORE) { return Glyphs.G_TURN; }
+        if (id == M_PUMP_STROKES || id == M_TAKEOFFS || id == M_PUMPS_TO_TAKEOFF) {
+            return Glyphs.G_PUMP;
+        }
+        if (id == M_BATTERY) { return Glyphs.G_BATTERY; }
+        return Glyphs.G_NONE;
     }
 
     // Bare value, safe for the digit-only number fonts wherever a layout uses one.

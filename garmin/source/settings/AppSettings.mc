@@ -24,6 +24,10 @@ module AppSettings {
     var alertIntervalKm as Float = 0.0;     // 0 = off
     var autoPause as Boolean = false;
     var autoPauseDelayS as Number = 5;
+    // Cells draw a glyph for the metric family; this decides whether the XTINY word stays
+    // beside it. Off = glyph only, which buys the value row its width back on the tight
+    // bottom row of a 2x2 grid.
+    var showLabels as Boolean = true;
 
     function load() as Void {
         cfg.foilEntryMps = _num("foilEntryKmh", 12.0) / 3.6;
@@ -43,6 +47,7 @@ module AppSettings {
         alertIntervalKm = _num("alertIntervalKm", 0.0);
         autoPause = _bool("autoPause", false);
         autoPauseDelayS = _num("autoPauseDelayS", 5.0).toNumber();
+        showLabels = _bool("showLabels", true);
         if (autoPauseDelayS < 2) {
             autoPauseDelayS = 2;
         }

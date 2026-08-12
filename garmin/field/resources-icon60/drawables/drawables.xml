@@ -1,0 +1,6 @@
+<drawables>
+    <!-- Launcher icon at the 60x60 the device's compiler.json asks for. Overrides the
+         65x65 in resources/ for the products mapped to this path in the jungle; without a
+         native-size source the compiler rescales and warns. -->
+    <bitmap id="LauncherIcon" filename="launcher_icon.png"/>
+</drawables>

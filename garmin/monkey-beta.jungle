@@ -1,3 +1,8 @@
 project.manifest = manifest-beta.xml
 base.sourcePath = source;tests
 base.barrelPath = barrel/WingFoilCore/barrel.jungle
+
+# see monkey.jungle: per-product launcher icons at their native compiler.json sizes
+fenix843mm.resourcePath = $(fenix843mm.resourcePath);resources-icon60
+fenix8solar47mm.resourcePath = $(fenix8solar47mm.resourcePath);resources-icon40
+fenix8solar51mm.resourcePath = $(fenix8solar51mm.resourcePath);resources-icon40

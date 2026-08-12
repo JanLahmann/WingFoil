@@ -8,3 +8,10 @@ base.sourcePath = source;tests
 # The barrel carries its own tests/, which is why --unit-test here runs the 16 core tests
 # alongside the field-specific ones.
 base.barrelPath = ../barrel/WingFoilCore/barrel.jungle
+
+# Launcher icons at each product's NATIVE size (compiler.json launcherIcon): 65x65 lives in
+# resources/, 60x60 and 40x40 in the qualifier directories below. Same story as the device
+# app's monkey.jungle — without them monkeyc rescales and warns.
+fenix843mm.resourcePath = $(fenix843mm.resourcePath);resources-icon60
+fenix8solar47mm.resourcePath = $(fenix8solar47mm.resourcePath);resources-icon40
+fenix8solar51mm.resourcePath = $(fenix8solar51mm.resourcePath);resources-icon40

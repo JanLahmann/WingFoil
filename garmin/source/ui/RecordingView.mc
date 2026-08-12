@@ -17,6 +17,21 @@ const TURNS_TALLY_SEP = " · ";
 const CELL_DX_MAX = 105;
 const CELL_GUTTER = 10;
 
+// Gap between a cell's glyph and the word beside it.
+const GLYPH_GAP = 4;
+
+// Foil-% bezel arc: pen width, and how far the arc's CENTRE line sits inside the glass.
+// 5 + a pen of 6 puts the outer edge 2 px in — the same FIT_MARGIN the text respects.
+const BEZEL_PEN = 6;
+const BEZEL_INSET = 5;
+
+// The flight-state ring on a HERO page. It normally owns the bezel; when the page also asks
+// for the foil-% arc it steps inside so the two rings nest instead of painting over each other.
+const RING_INSET = 7;
+const RING_PEN = 10;
+const RING_INSET_NESTED = 16;
+const RING_PEN_NESTED = 6;
+
 // Safety margin inside the glass, in pixels, used by every fit. 2 px is deliberately tight:
 // the shipped Clock page puts "23:59" in FONT_NUMBER_THAI_HOT within a few pixels of the
 // bezel and it reads well, so anything more forgiving would shrink screens that are fine.
@@ -57,14 +72,22 @@ class RecordingView extends WatchUi.View {
         View.initialize();
     }
 
+    // The celebration is a whole-screen overlay, so leaving the page keeps nothing on screen.
+    function onHide() as Void {
+        PbFlash.stop();
+    }
+
     function onUpdate(dc as Dc) as Void {
         var c = getApp().controller;
         var i = PageNav.index;
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
         dc.clear();
+        // A page that shows foil % anywhere gets it a second time as an arc round the glass —
+        // the one number the rider glances at without reading.
+        var foilArc = PageModel.pageHasMetric(i, PageModel.M_FOIL_PCT);
         var layout = PageModel.layoutAt(i);
         if (layout == PageModel.LAYOUT_HERO) {
-            drawHeroPage(dc, c, i);
+            drawHeroPage(dc, c, i, foilArc);
         } else if (layout == PageModel.LAYOUT_GRID4) {
             drawGridPage(dc, c, i);
         } else if (layout == PageModel.LAYOUT_CELLS2) {
@@ -80,13 +103,74 @@ class RecordingView extends WatchUi.View {
         } else {
             // LAYOUT_MAP lives in MapPageView and never reaches here; anything else is a
             // property the firmware handed us out of range — fall back to something readable.
-            drawHeroPage(dc, c, i);
+            drawHeroPage(dc, c, i, foilArc);
+        }
+        if (foilArc) {
+            drawFoilBezel(dc, c);
+        }
+        // The celebration paints over the page, so it goes on before the PAUSED banner and
+        // never after: a rider who pauses mid-flash must still see that he is paused, which is
+        // why the banner carries its own opaque background rather than trusting the backdrop.
+        if (PbFlash.active()) {
+            drawPbFlash(dc);
         }
         if (c.state == SessionController.STATE_PAUSED) {
-            dc.setColor(Graphics.COLOR_YELLOW, Graphics.COLOR_TRANSPARENT);
+            dc.setColor(Graphics.COLOR_YELLOW, Graphics.COLOR_BLACK);
             dc.drawText(dc.getWidth() / 2, 18, Graphics.FONT_SMALL, "PAUSED",
                 Graphics.TEXT_JUSTIFY_CENTER);
         }
+    }
+
+    // ---- foil-% bezel arc ----
+    // 12 o'clock, clockwise, green over a dark-gray track, hugging the inside of the bezel.
+    // Garmin's arc angles run COUNTER-clockwise from 3 o'clock, so 12 o'clock is 90 deg and
+    // sweeping clockwise subtracts. Two primitive calls and integer maths: nothing allocates.
+    hidden function drawFoilBezel(dc as Dc, c as SessionController) as Void {
+        var cx = dc.getWidth() / 2;
+        var cy = dc.getHeight() / 2;
+        var r = cx - BEZEL_INSET - BEZEL_PEN / 2;
+        dc.setPenWidth(BEZEL_PEN);
+        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawCircle(cx, cy, r);
+        var pct = c.engine.foilPct().toNumber();
+        if (pct > 0) {
+            dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
+            if (pct >= 100) {
+                dc.drawCircle(cx, cy, r);
+            } else {
+                dc.drawArc(cx, cy, r, Graphics.ARC_CLOCKWISE, 90, bezelEndDeg(pct));
+            }
+        }
+        dc.setPenWidth(1);
+    }
+
+    // End angle of a `pct` sweep that starts at 12 o'clock and runs clockwise, normalised
+    // into 0..359. Shared with the layout test.
+    static function bezelEndDeg(pct as Number) as Number {
+        var end = 90 - pct * 360 / 100;
+        while (end < 0) {
+            end += 360;
+        }
+        return end % 360;
+    }
+
+    // ---- PB celebration ----
+    // The whole screen goes green for ~700 ms with the new best on it. Frame parity picks the
+    // shade, which is what turns a flash into a pulse (see PbFlash).
+    hidden function drawPbFlash(dc as Dc) as Void {
+        var cx = dc.getWidth() / 2;
+        var cy = dc.getHeight() / 2;
+        var col = PbFlash.color();
+        dc.setColor(col, col);
+        dc.clear();
+        var hHot = dc.getFontHeight(Graphics.FONT_NUMBER_HOT);
+        var hS = dc.getFontHeight(Graphics.FONT_SMALL);
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, cy - (hHot + hS) / 2 + hS / 2, Graphics.FONT_SMALL, "NEW PB", CV);
+        dc.drawText(cx, cy - (hHot + hS) / 2 + hS + hHot / 2, Graphics.FONT_NUMBER_HOT,
+            AppSettings.speedToDisplay(PbFlash.best2sMps).format("%.1f"), CV);
+        dc.drawText(cx, cy + (hHot + hS) / 2 + hS / 2, Graphics.FONT_SMALL,
+            AppSettings.speedLabel(), CV);
     }
 
     const CV = Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER;
@@ -147,7 +231,8 @@ class RecordingView extends WatchUi.View {
     // ---- HERO: one giant number, its unit line, and up to two rows under it ----
     // The default page 1 (speed / flight timer / HR) is exactly this. The foil-state ring is
     // part of the hero style: on the water the colour, not the number, is what you read first.
-    hidden function drawHeroPage(dc as Dc, c as SessionController, page as Number) as Void {
+    hidden function drawHeroPage(dc as Dc, c as SessionController, page as Number,
+            foilArc as Boolean) as Void {
         var e = c.engine;
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
@@ -157,12 +242,13 @@ class RecordingView extends WatchUi.View {
         var hL = dc.getFontHeight(Graphics.FONT_LARGE);
         var hM = dc.getFontHeight(Graphics.FONT_MEDIUM);
 
-        // state ring: green flying, dark gray off-foil
+        // state ring: green flying, dark gray off-foil. It steps inside when the page also
+        // carries the foil-% arc, so the bezel holds exactly one ring at a time.
         var flying = e.detector.state == FlightDetector.STATE_ON;
-        dc.setPenWidth(10);
+        dc.setPenWidth(foilArc ? RING_PEN_NESTED : RING_PEN);
         dc.setColor(flying ? Graphics.COLOR_GREEN : Graphics.COLOR_DK_GRAY,
             Graphics.COLOR_TRANSPARENT);
-        dc.drawCircle(cx, cy, cx - 7);
+        dc.drawCircle(cx, cy, cx - (foilArc ? RING_INSET_NESTED : RING_INSET));
         dc.setPenWidth(1);
 
         // sub-rows compact upward, so leaving slot 2 empty does not leave a hole
@@ -296,12 +382,43 @@ class RecordingView extends WatchUi.View {
         if (id == PageModel.M_NONE) {
             return;
         }
-        var label = PageModel.label(id);
+        drawCellLabel(dc, x, y, id);
         var value = PageModel.value(id, c);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, y, Graphics.FONT_XTINY, label, CV);
         dc.setColor(PageModel.color(id, c), Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, yv, fitFont(dc, TEXT_FONTS, 0, value, maxW), value, CV);
+    }
+
+    // A cell's label row: the metric's glyph, then — when showLabels is on — the word beside
+    // it, the pair centred on the cell's column as one block. With labels off the glyph alone
+    // carries the meaning, which is the whole point of drawing them.
+    hidden function drawCellLabel(dc as Dc, x as Number, y as Number, id as Number) as Void {
+        var g = PageModel.glyph(id);
+        var s = Glyphs.size(dc);
+        var label = AppSettings.showLabels ? PageModel.label(id) : "";
+        var left = x - cellLabelWidth(dc, id, s, label) / 2;
+        if (g != Glyphs.G_NONE) {
+            Glyphs.draw(dc, g, left + s / 2, y, s, Graphics.COLOR_LT_GRAY);
+            left += s + (label.length() > 0 ? GLYPH_GAP : 0);
+        }
+        if (label.length() > 0) {
+            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(left, y, Graphics.FONT_XTINY, label,
+                Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+        }
+    }
+
+    // Width of that block. Shared with the layout test, which measures the label row against
+    // the chord exactly as it measures the value row.
+    static function cellLabelWidth(dc as Dc, id as Number, s as Number,
+            label as String) as Number {
+        var w = 0;
+        if (PageModel.glyph(id) != Glyphs.G_NONE) {
+            w = s;
+            if (label.length() > 0) {
+                w += GLYPH_GAP;
+            }
+        }
+        return w + dc.getTextWidthInPixels(label, Graphics.FONT_XTINY);
     }
 
     // ---- RECORDS: live speed records, one giant number per block ----
@@ -357,31 +474,39 @@ class RecordingView extends WatchUi.View {
             dc.drawText(cx, y, Graphics.FONT_NUMBER_HOT, t.turnCount.toString(), CV);
         }
 
-        // last outcome: the word in its colour, then the score, centred as one phrase.
-        // Anchoring each half at the centre line instead puts "TOUCH 100%" 412 px wide on
-        // a 384 px chord at that depth — the round glass eats both ends.
+        // last outcome: the SYMBOL in its colour, then the score, centred as one phrase.
+        // A check / triangle / cross is read before the eye has finished focusing, where
+        // "TOUCH" has to be spelled out; the score stays FONT_LARGE beside it because the
+        // number is the part that actually differs between two touchdowns.
+        // Anchoring each half at the centre line instead put the old "TOUCH 100%" 412 px wide
+        // on a 384 px chord at that depth — the round glass ate both ends.
         y = turnsRowY(cy, hT, hHot, hL, hS, 2);
-        var word = outcomeWord(t.lastOutcome);
+        var sym = outcomeSymbol(t.lastOutcome);
+        var symW = outcomeSymSize(dc);
         var col = outcomeColor(t.lastOutcome);
         var score = t.lastOutcome == TurnDetector.OUTCOME_NONE
             ? "--" : t.lastScorePct.toString() + "%";
         var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
-        var x = cx - outcomeWidth(dc, word, score) / 2;
-        dc.setColor(col, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, y, Graphics.FONT_LARGE, word, LV);
+        var x = cx - outcomeWidth(dc, symW, score) / 2;
+        Glyphs.drawOutcome(dc, sym, x + symW / 2, y, symW, col);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x + dc.getTextWidthInPixels(word, Graphics.FONT_LARGE) + TURNS_WORD_GAP,
-            y, Graphics.FONT_LARGE, score, LV);
+        dc.drawText(x + symW + TURNS_WORD_GAP, y, Graphics.FONT_LARGE, score, LV);
 
-        // tally: flew · touchdown · swim, in the same colours as the words above
+        // tally: flew · touchdown · swim, in the same colours as the symbol above
         drawTally(dc, cx, turnsRowY(cy, hT, hHot, hL, hS, 3), t);
     }
 
-    static function outcomeWord(outcome as Number) as String {
-        if (outcome == TurnDetector.OUTCOME_FLEW) { return "FLEW"; }
-        if (outcome == TurnDetector.OUTCOME_TOUCHDOWN) { return "TOUCH"; }
-        if (outcome == TurnDetector.OUTCOME_FELL) { return "SWIM"; }
-        return "--";
+    static function outcomeSymbol(outcome as Number) as Number {
+        if (outcome == TurnDetector.OUTCOME_FLEW) { return Glyphs.O_CHECK; }
+        if (outcome == TurnDetector.OUTCOME_TOUCHDOWN) { return Glyphs.O_TRIANGLE; }
+        if (outcome == TurnDetector.OUTCOME_FELL) { return Glyphs.O_CROSS; }
+        return Glyphs.O_DASH;
+    }
+
+    // The outcome symbol's box: the ink height of the score beside it, so the two read as one
+    // line whatever the variant's font metrics are.
+    static function outcomeSymSize(dc as Dc) as Number {
+        return inkH(dc, Graphics.FONT_LARGE);
     }
 
     static function outcomeColor(outcome as Number) as Number {
@@ -408,10 +533,9 @@ class RecordingView extends WatchUi.View {
         return row == 2 ? y : y + (hL + hS) / 2;
     }
 
-    // Total width of the "<word> <score>" block.
-    static function outcomeWidth(dc as Dc, word as String, score as String) as Number {
-        return dc.getTextWidthInPixels(word, Graphics.FONT_LARGE) + TURNS_WORD_GAP
-            + dc.getTextWidthInPixels(score, Graphics.FONT_LARGE);
+    // Total width of the "<symbol> <score>" block.
+    static function outcomeWidth(dc as Dc, symW as Number, score as String) as Number {
+        return symW + TURNS_WORD_GAP + dc.getTextWidthInPixels(score, Graphics.FONT_LARGE);
     }
 
     // Total width of the "<n> / <n>" block. Shared with the layout test, which asserts the

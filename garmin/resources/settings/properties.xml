@@ -21,6 +21,9 @@
     <property id="autoPauseDelayS" type="number">5</property>
     <property id="alertIntervalMin" type="number">0</property>
     <property id="alertIntervalKm" type="float">0.0</property>
+    <!-- Feature 5 (UI polish): cell glyphs carry the metric family; this keeps or drops the
+         word beside them. -->
+    <property id="showLabels" type="boolean">true</property>
 
     <!-- Feature 1: data screens. Defaults reproduce the five shipped pages —
          mirror of PageModel.DEF_LAYOUT / DEF_SLOTS; change both together. -->
