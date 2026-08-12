@@ -13,9 +13,11 @@ struct LibraryView: View {
     var body: some View {
         @Bindable var store = store
         NavigationStack(path: $path) {
+            ScrollViewReader { proxy in
             List {
                 if store.sessions.isEmpty {
                     emptyState
+                        .id("setup")
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                 } else {
@@ -63,6 +65,12 @@ struct LibraryView: View {
             .sheet(item: $helpTopic) { HelpTopicSheet(id: $0) }
             // The setup topic offers "Open WingFoil Settings"; only this screen knows how
             // to get there, so it hands the action down rather than Help guessing.
+            // Help's example topic offers "Load the example session"; only a screen with
+            // the store can honour it, so it is handed down the same way Settings is.
+            .environment(\.loadExampleSession) {
+                showHelp = false
+                Task { await store.loadExampleSession() }
+            }
             .environment(\.openIcuSettings) {
                 // One sheet at a time: let Help finish dismissing before Settings arrives,
                 // or iOS drops the second presentation on the floor.
@@ -82,6 +90,11 @@ struct LibraryView: View {
                 if ProcessInfo.processInfo.environment["UI_IMPORT_FIXTURES"] == "1" {
                     await store.importFixtures()
                 }
+                // `UI_LOAD_EXAMPLE=1` taps the setup card's example button for us, which
+                // is the only way to photograph the loaded state (simctl cannot tap).
+                if ProcessInfo.processInfo.environment["UI_LOAD_EXAMPLE"] == "1" {
+                    await store.loadExampleSession()
+                }
                 // `UI_SHEET=help` parks the app on the Help index for a screenshot;
                 // `UI_HELP_TOPIC=icuSetup` opens one topic straight away.
                 if let raw = ProcessInfo.processInfo.environment["UI_HELP_TOPIC"],
@@ -92,6 +105,14 @@ struct LibraryView: View {
                 case "help": showHelp = true
                 case "settings": showSettings = true
                 default: break
+                }
+                // `UI_SCROLL_TO=setup` parks the (very tall) onboarding card on its
+                // bottom edge, which is the only way to photograph the example-session
+                // offer that lives under the key field — same hook family as the session
+                // detail page's, same reason: simctl cannot scroll.
+                if let anchor = ProcessInfo.processInfo.environment["UI_SCROLL_TO"] {
+                    try? await Task.sleep(for: .milliseconds(600))
+                    withAnimation(.none) { proxy.scrollTo(anchor, anchor: .bottom) }
                 }
             }
             .onChange(of: store.sessions.count) {
@@ -110,6 +131,7 @@ struct LibraryView: View {
                 Button("OK", role: .cancel) { store.errorMessage = nil }
             } message: {
                 Text(store.errorMessage ?? "")
+            }
             }
         }
     }

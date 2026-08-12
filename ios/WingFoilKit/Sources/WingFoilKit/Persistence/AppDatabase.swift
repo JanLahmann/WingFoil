@@ -32,7 +32,7 @@ public struct AppDatabase: Sendable {
 
     /// Every migration this build knows, oldest first — the migration test asserts a v1
     /// database moves through all of them.
-    public static let migrationNames = ["v1", "v2"]
+    public static let migrationNames = ["v1", "v2", "v3"]
 
     /// Public so a caller (and the migration test) can migrate a writer only part of the
     /// way — `migrator.migrate(writer, upTo: "v1")` reproduces a shipped v1 library.
@@ -69,6 +69,16 @@ public struct AppDatabase: Sendable {
             // Force lazy re-analysis of everything imported under v1 so the new columns
             // and the child tables get filled from the archived FITs.
             try db.execute(sql: "UPDATE session SET engineVersion = NULL")
+        }
+
+        // v3: the bundled example session (`ExampleSession`). One flag, because "this row
+        // is not the rider's data" is a fact about provenance that every aggregate has to
+        // honour — Records and Trends filter on it in `LibraryStore.clause`. No
+        // re-analysis is triggered: nothing derived changes, only who the row belongs to.
+        migrator.registerMigration("v3") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "isExample", .boolean).notNull().defaults(to: false)
+            }
         }
         return migrator
     }
@@ -314,6 +324,13 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     public var spotId: String?
     public var hasAccel: Bool?
     public var hasHR: Bool?
+
+    // MARK: schema v3
+    /// True only for the FIT bundled with the app (`ExampleSession`). Such a row is shown
+    /// in the library — badged, openable, deletable — but is excluded from every aggregate
+    /// that claims to describe the rider: Records, Trends, the gear rollups and the
+    /// home-screen widget. It is somebody else's session on loan.
+    public var isExample = false
 
     public init(id: String = UUID().uuidString, startDate: Date, durationS: Double, sourceClass: String) {
         self.id = id

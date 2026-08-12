@@ -9,6 +9,9 @@ public enum ImportSource: String, Sendable, CaseIterable {
     case gdpr
     case airdrop
     case fixtures
+    /// The FIT bundled with the app (`ExampleSession`). The only source that sets
+    /// `SessionRow.isExample`, and the only one a later real import can override.
+    case example
 }
 
 public enum IngestOutcome: Sendable {
@@ -122,6 +125,7 @@ public struct SessionIngestor: Sendable {
         row.originalFilename = filename
         row.importSource = source.rawValue
         row.icuActivityId = icuActivityId
+        row.isExample = source == .example
         if let fix = track.samples.first(where: { $0.lat != nil && $0.lon != nil }) {
             row.startLat = fix.lat
             row.startLon = fix.lon
@@ -136,8 +140,11 @@ public struct SessionIngestor: Sendable {
             return try SpotClusterer.assign(sessionId: inserted.id, lat: lat, lon: lon, db: db,
                                             radiusM: spotRadiusM)
         }
-        // Fresh sessions inherit the combo the rider last used (editable per session).
-        _ = try? await library.applyDefaultGear(sessionId: row.id)
+        // Fresh sessions inherit the combo the rider last used (editable per session) —
+        // except the example, which was not ridden on the rider's kit.
+        if !row.isExample {
+            _ = try? await library.applyDefaultGear(sessionId: row.id)
+        }
         return .imported(row)
     }
 
@@ -320,6 +327,12 @@ public struct SessionIngestor: Sendable {
     }
 
     /// Records that an existing session was seen again from another source.
+    ///
+    /// The example session is a *real* recording, so a rider who owns it will eventually
+    /// import it for real and land on the ±60 s dedupe key. When that happens the real
+    /// import wins: the row stops being an example and rejoins Records and Trends. The
+    /// reverse never happens — loading the example over an already-real row leaves the
+    /// flag off, so nobody's own session is demoted by tapping a button.
     private func note(_ row: SessionRow, source: ImportSource,
                       icuActivityId: String?) async throws -> SessionRow {
         var updated = row
@@ -327,7 +340,10 @@ public struct SessionIngestor: Sendable {
         sources.insert(source.rawValue)
         updated.importSource = sources.sorted().joined(separator: "+")
         if updated.icuActivityId == nil { updated.icuActivityId = icuActivityId }
-        guard updated.importSource != row.importSource || updated.icuActivityId != row.icuActivityId
+        if source != .example { updated.isExample = false }
+        guard updated.importSource != row.importSource
+                || updated.icuActivityId != row.icuActivityId
+                || updated.isExample != row.isExample
         else { return row }
         let stored = updated
         try await database.writer.write { db in try stored.update(db) }

@@ -131,6 +131,7 @@ struct SessionDetailView: View {
         if let row {
             VStack(alignment: .leading, spacing: 6) {
                 Text(Fmt.date(row.startDate)).font(.title3.weight(.semibold))
+                if row.isExample { exampleNote }
                 HStack(spacing: 8) {
                     Text(SessionDisplay.badge(row))
                         .font(.caption.weight(.semibold))
@@ -146,6 +147,21 @@ struct SessionDetailView: View {
                 if let detail { WindRow(detail: detail) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// Said once, at the top, where the reader starts: this page is a demonstration.
+    /// Without it the numbers below are indistinguishable from the rider's own — which is
+    /// exactly the confusion the badge exists to prevent.
+    private var exampleNote: some View {
+        HStack(spacing: 8) {
+            ExampleBadge(font: .caption)
+            Text("Bundled demo session — \(ExampleSession.place). Not counted in your "
+                 + "records or trends.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            HelpButton(topic: .exampleSession, size: .caption2)
         }
     }
 

@@ -21,6 +21,9 @@ struct SessionRowView: View {
                         .font(.headline)
                         .lineLimit(1)
                     Spacer(minLength: 8)
+                    if let example = SessionDisplay.exampleBadge(row) {
+                        ExampleBadge(text: example, font: .caption2)
+                    }
                     Text(SessionDisplay.badge(row))
                         .font(.caption2.weight(.semibold))
                         .padding(.horizontal, 7)

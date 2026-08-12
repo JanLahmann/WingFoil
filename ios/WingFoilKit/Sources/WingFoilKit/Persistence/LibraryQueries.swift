@@ -133,9 +133,14 @@ public struct LibraryStore: Sendable {
 
     /// `WHERE` fragment + arguments shared by every filtered query. `alias` is the
     /// session table's alias in the caller's statement.
+    ///
+    /// The example session is excluded unconditionally, in this one place, because it is
+    /// the one place every aggregate goes through: Records, Trends, the week histogram.
+    /// A borrowed session must never appear in a number that claims to be about the rider,
+    /// and "remember to filter it" in six call sites is not a plan.
     static func clause(_ filter: LibraryFilter, alias: String) -> (join: String, where: String,
                                                                    args: StatementArguments) {
-        var conditions: [String] = []
+        var conditions: [String] = ["\(alias).isExample = 0"]
         var args = StatementArguments()
         var join = ""
         if let gearId = filter.gearId {
@@ -249,7 +254,7 @@ public struct LibraryStore: Sendable {
             return try gear.map { item in
                 let rows = try SessionRow.fetchAll(db, sql: """
                     SELECT s.* FROM session s JOIN session_gear sg ON sg.sessionId = s.id
-                    WHERE sg.gearId = ? ORDER BY s.startDate
+                    WHERE sg.gearId = ? AND s.isExample = 0 ORDER BY s.startDate
                     """, arguments: [item.id])
                 return Self.aggregate(item, rows: rows)
             }

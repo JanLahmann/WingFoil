@@ -64,9 +64,10 @@ import Testing
         let privacy = HelpCatalog.topic(.icuPrivacy)
         #expect(privacy.body.contains(IcuSetupGuide.privacyNote))
 
-        // The setup section is reachable from the index and holds exactly these three.
+        // The setup section is reachable from the index and holds exactly these four —
+        // the example session sits second, right after the path it is an alternative to.
         #expect(HelpCatalog.topics(in: .setup).map(\.id)
-                == [.icuSetup, .icuTroubleshooting, .icuPrivacy])
+                == [.icuSetup, .exampleSession, .icuTroubleshooting, .icuPrivacy])
     }
 
     @Test func setupTopicIsSearchable() {

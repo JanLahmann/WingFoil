@@ -31,6 +31,8 @@ struct IcuSetupCard: View {
 
             IcuKeyEntry()
 
+            exampleOffer
+
             footer
         }
         .padding(18)
@@ -104,6 +106,40 @@ struct IcuSetupCard: View {
                             .font(.caption.weight(.semibold))
                     }
                 }
+            }
+        }
+    }
+
+    /// The way out of the chicken-and-egg problem: four setup steps are a lot to walk
+    /// before you know whether the app is worth it. One tap loads a real session instead,
+    /// and every screen fills with data that is honestly labelled as somebody else's.
+    private var exampleOffer: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Rectangle().fill(.quaternary).frame(height: 1)
+                Text("or")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Rectangle().fill(.quaternary).frame(height: 1)
+            }
+
+            Button {
+                Task { await store.loadExampleSession() }
+            } label: {
+                Label("Load an example session first", systemImage: "sparkles")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(store.isBusy)
+
+            HStack(alignment: .top, spacing: 6) {
+                Text(ExampleSession.blurb + " It is badged EXAMPLE, stays out of your "
+                     + "records, and a swipe deletes it.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                HelpButton(topic: .exampleSession, size: .caption2)
             }
         }
     }

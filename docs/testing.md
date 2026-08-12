@@ -123,6 +123,18 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      imported exactly once, incremental progress callbacks, `import_log` rows, a **re-run
      that imports nothing** (the phase-4 acceptance criterion), the depth limit, and
      streaming-vs-collecting walker agreement.
+   - `ExampleSessionTests` — the session bundled with the app so a fresh install has
+     something to explore (`ExampleSession`, kit resource `Resources/ExampleSession.fit`).
+     Three obligations, all asserted against the **bundled bytes** rather than the repo
+     copy, because what ships is what matters: the scrub (no `serial_number` field
+     survives; the strings `Lahmann` / `AirPods` and the watch serial in both byte orders
+     are absent from the raw file; it still parses as class (a)); the analysis (it still
+     yields ≥ 20 flights, ≥ 25 jibes, > 10 kn best-2 s, HR, accel-derived pump strokes, a
+     wind estimate and a GPS start fix, with `flight`/`turn`/`record_effort` filled); and
+     the `isExample` flag (set on import, round-tripped through SQLite, deletable, and
+     invisible to `records()`, `trend()`, `sessions()`, `weeks()` and the gear rollups
+     while a real session next to it still reaches all of them). Plus the v3 migration
+     (column added, pre-v3 rows default to *not* an example) and the written copy.
    - `OnboardingTests` — the intervals.icu first run, which by definition is walked once
      per install and never again: `IcuSetupGuide` is four numbered, written steps (the Help
      topic and the empty-library setup card render the *same* array, asserted, so the
@@ -145,6 +157,9 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    without reinstalling. `UI_IMPORT_FIXTURES=1`, `UI_OPEN_SESSION=latest|<name>`,
    `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings` and
    `UI_HELP_TOPIC=<HelpTopicID>` park the app on a given screen, since `simctl` cannot tap.
+   `UI_LOAD_EXAMPLE=1` taps the setup card's "Load an example session first" button, and
+   `UI_SCROLL_TO=setup` parks the (screen-and-a-half tall) onboarding card on its bottom
+   edge — the only way to photograph that button, which lives below the key field.
    `UI_SCROLL_TO=<anchor>`, `UI_PLAYHEAD=0.0…1.0`, `UI_FULLSCREEN_MAP=1` and
    `UI_HIDE_LAYERS=<MapLayer,…>` stage the session detail page: the last one starts with
    those legend chips switched off (e.g. `fellIn,courseChange`), which is the only way to
@@ -165,6 +180,62 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    UI and `fitContributions` rendering in Garmin Connect. Do early.
 6. **Watch-vs-phone divergence banner** — standing field-regression alarm on every class-(a)
    import (thresholds in `algorithms.md`).
+
+## The bundled example session
+
+A fresh install has an empty library, an empty Records screen and no reason to trust any of
+it. So one real recording ships inside the app —
+`ios/WingFoilKit/Sources/WingFoilKit/Resources/ExampleSession.fit`, a **kit** resource
+rather than an app resource so `Bundle.module` reaches it from both the shipping app and
+the test suite (no `project.yml` change is needed; Xcode embeds the SPM resource bundle).
+
+**Source and scrub.** It is Jan's 2026-08-07 Nago-Torbole CIQ session, donated with the HR
+stream, run through `lab/tools/scrub_fit.py`:
+
+```
+cd lab
+uv run python tools/scrub_fit.py \
+    ../fixtures/sessions/ciq/2026-08-07-0754_nago-torbole-windsurfen_ciq.fit \
+    ../ios/WingFoilKit/Sources/WingFoilKit/Resources/ExampleSession.fit
+```
+
+The tool does **not** re-encode — no encoder in the lab round-trips 14 developer fields, a
+`developer_data_id`, 16 588 batched `accelerometer_data` messages and a dozen Garmin-private
+global message numbers. It walks the FIT record stream itself (definition messages, normal
+and compressed-timestamp data records, developer field blocks), drops selected messages,
+overwrites selected fields in place with their base type's *invalid* pattern, and recomputes
+`data_size`, the header CRC and the file CRC. Every surviving byte came from the original.
+
+| what | action | why |
+|---|---|---|
+| `file_id.serial_number`, `device_info.serial_number` (×5) | → 0 (uint32z invalid) | unique watch id |
+| `user_profile` (global 3) | dropped | name, weight, height, gender, language |
+| global 147 | dropped | paired-accessory BLE address + its name |
+| global 79, global 140 | dropped | Garmin-private lifetime totals / physiological metrics |
+| GPS, HR, developer fields, laps, session, 100 Hz accel | **kept** | that is the whole point |
+
+Verification is built into the tool (`--verify`, default): it re-runs the full lab analysis
+on both files and asserts the golden JSON is **identical**. It is — so the scrub is provably
+invisible to the engine. Size 6 184 873 → 6 184 526 bytes; under the 8 MB bundle budget, so
+the accelerometer stream stays and the phone's pump recompute works on the example.
+(`--drop-accel` produces the stripped variant if that ever changes; the summary then keeps
+the watch's packed pump/takeoff fields and `SourceCapabilities` reports `hasAccel: false`.)
+
+**Provenance flag.** Sessions imported from it carry `session.isExample` (schema v3) and
+`importSource = "example"`. They are shown in the library — badged `EXAMPLE`, openable,
+deletable — and excluded from every aggregate that speaks for the rider: `LibraryStore`
+filters them in `clause()` (Records, Trends, week buckets) and in the gear rollups, the
+widget snapshot drops them, and they are never given the default gear combo nor written to
+Apple Health.
+
+**Dedupe decision.** The example is a *real* recording, so its owner will one day import it
+for real and land on the ±60 s dedupe key. That resolves **in favour of the real import**:
+`SessionIngestor.note` clears `isExample`, merges the sources (`"example+icu"`) and the row
+rejoins Records and Trends — the alternative would permanently exclude the rider's own
+session because a demo got there first. The reverse never fires: loading the example when
+that ride is already in the library returns `.duplicate` and leaves the real row alone.
+Note that the *archived* FIT stays whichever arrived first; since the analysis output is
+byte-identical, the only difference is the scrubbed ids.
 
 ## On-water protocol (Jan, < 5 min per session)
 

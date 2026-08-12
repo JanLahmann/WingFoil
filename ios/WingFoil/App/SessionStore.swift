@@ -140,7 +140,9 @@ final class SessionStore {
     /// group entitlement it lands in the app's own container instead, and the widget shows
     /// its placeholder (see `WidgetSnapshotStore`).
     private func publishWidgetSnapshot() async {
-        let rows = sessions
+        // The example is on loan, not ridden: it must not become "your last session" on
+        // the home screen, nor count towards this week's foil time.
+        let rows = sessions.filter { !$0.isExample }
         let snapshot = WidgetSnapshot.make(sessions: rows) { SessionDisplay.title($0) }
         await Task.detached(priority: .utility) {
             WidgetSnapshotStore.write(snapshot)
@@ -317,6 +319,46 @@ final class SessionStore {
         #endif
     }
     #endif
+
+    // MARK: - Example session
+
+    /// True once the bundled example is in the library — the setup card and Help both ask,
+    /// so neither offers to load something that is already there.
+    var hasExampleSession: Bool { sessions.contains { $0.isExample } }
+
+    /// Imports the FIT bundled with the app (`ExampleSession`) through the ordinary path.
+    ///
+    /// Deliberately *not* `runImport`: an example must not celebrate a personal best and
+    /// must not be pushed to Apple Health, because it is not the rider's session. Both of
+    /// those are also true structurally — `library.records()` filters examples out — but a
+    /// second import path that cannot reach them is cheaper than remembering why.
+    func loadExampleSession() async {
+        guard !isBusy else { return }
+        isBusy = true
+        status = "Loading the example session…"
+        defer { isBusy = false }
+
+        let ingestor = self.ingestor
+        do {
+            let outcome = try await Task.detached(priority: .userInitiated) {
+                try await ingestor.importExample()
+            }.value
+            switch outcome {
+            case .imported:
+                status = "Example session loaded — open it to look around"
+            case .duplicate(let row):
+                // The example is a real recording, so the rider may already own it.
+                status = row.isExample
+                    ? "The example session is already in your library"
+                    : "You already have this session — your own import kept"
+            case .skipped:
+                status = nil
+            }
+            await load()
+        } catch {
+            errorMessage = "Could not load the example session: \(error)"
+        }
+    }
 
     /// Files picker for the Garmin GDPR "Export Your Data" ZIP — the same code path as a
     /// hand-picked FIT, just tagged as a bulk backfill so the import log says so.

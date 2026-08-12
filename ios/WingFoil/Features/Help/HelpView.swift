@@ -100,6 +100,7 @@ struct HelpTopicSheet: View {
     let id: HelpTopicID
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openIcuSettings) private var openSettings
+    @Environment(\.loadExampleSession) private var loadExample
     @State private var next: HelpTopicID?
 
     private var topic: HelpTopic { HelpCatalog.topic(id) }
@@ -154,6 +155,18 @@ struct HelpTopicSheet: View {
                                         .font(.callout.weight(.semibold))
                                 }
                             }
+                            // Same rule as above: the button appears only where somebody
+                            // can honour it, and reading about the example is the moment
+                            // you want to actually see it.
+                            if topic.action == .loadExampleSession, let load = loadExample {
+                                Button {
+                                    load()
+                                    dismiss()
+                                } label: {
+                                    Label("Load the example session", systemImage: "sparkles")
+                                        .font(.callout.weight(.semibold))
+                                }
+                            }
                         }
                         .padding(.top, 2)
                     }
@@ -202,10 +215,22 @@ private struct OpenIcuSettingsKey: EnvironmentKey {
     static let defaultValue: (@MainActor () -> Void)? = nil
 }
 
+/// "Show me that example", handed down by the screen that owns the session store. Nil in
+/// any context that cannot import, so the topic reads as prose rather than offering a
+/// button that does nothing.
+private struct LoadExampleSessionKey: EnvironmentKey {
+    static let defaultValue: (@MainActor () -> Void)? = nil
+}
+
 extension EnvironmentValues {
     var openIcuSettings: (@MainActor () -> Void)? {
         get { self[OpenIcuSettingsKey.self] }
         set { self[OpenIcuSettingsKey.self] = newValue }
+    }
+
+    var loadExampleSession: (@MainActor () -> Void)? {
+        get { self[LoadExampleSessionKey.self] }
+        set { self[LoadExampleSessionKey.self] = newValue }
     }
 }
 

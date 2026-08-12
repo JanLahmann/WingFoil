@@ -19,7 +19,13 @@ let package = Package(
                 "FitFileParser",
                 .product(name: "GRDB", package: "GRDB.swift"),
                 .product(name: "ZIPFoundation", package: "ZIPFoundation"),
-            ]
+            ],
+            // The bundled example session (see ExampleSession.swift). It lives in the kit
+            // rather than in the app target so `Bundle.module` reaches it from *both* the
+            // shipping app and the test suite — the scrub-verification test asserts on the
+            // very bytes that get installed. `.copy` rather than `.process`: a FIT is
+            // opaque to Xcode's resource pipeline and must arrive byte-for-byte.
+            resources: [.copy("Resources/ExampleSession.fit")]
         ),
         .testTarget(name: "WingFoilKitTests", dependencies: ["WingFoilKit"]),
     ]
