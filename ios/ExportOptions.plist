@@ -12,6 +12,20 @@
     <string>manual</string>
     <key>signingCertificate</key>
     <string>Apple Distribution</string>
+    <!--
+      Manual signing needs one profile per embedded bundle id. The WidgetKit extension
+      (de.lahmann.wingfoil.widgets) is embedded in the app as of the widgets change, so
+      exporting this archive needs a profile for it too.
+
+      Until that profile exists in the developer portal, export with automatic signing
+      (Xcode Organizer → Distribute App, or signingStyle=automatic here), which creates it.
+      Once it exists, uncomment the second entry below and manual export works again:
+
+          <key>de.lahmann.wingfoil.widgets</key>
+          <string>WingFoil Widgets App Store</string>
+
+      See docs/decisions.md, "Widgets and the app group".
+    -->
     <key>provisioningProfiles</key>
     <dict>
         <key>de.lahmann.wingfoil</key>

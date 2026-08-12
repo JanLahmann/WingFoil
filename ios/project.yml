@@ -41,6 +41,8 @@ targets:
     dependencies:
       - package: WingFoilKit
         product: WingFoilKit
+      - target: WingFoilWidgets
+        embed: true
     settings:
       base:
         PRODUCT_NAME: WingFoil
@@ -78,7 +80,12 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSRequiresIPhoneOS: true
         ITSAppUsesNonExemptEncryption: false
-        UILaunchScreen: {}
+        # Storyboard-free launch screen: the tile mark centred on the brand navy, so the
+        # cold-start frame is the app's own colour instead of a white flash.
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: LaunchMark
+          UIImageRespectsSafeAreaInsets: true
         UIApplicationSupportsIndirectInputEvents: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
@@ -112,3 +119,51 @@ targets:
         - variable: ICU_API_KEY
           value: ""
           isEnabled: false
+
+  # Home-screen widgets: last session + this week's foil time.
+  #
+  # NO APP GROUP ENTITLEMENT. The manual "WingFoil App Store" provisioning profile does
+  # not carry `group.de.lahmann.wingfoil`, and requesting an entitlement a profile does
+  # not grant fails the archive — which would break the TestFlight path for a widget.
+  # `WidgetSnapshotStore` therefore probes the shared container at runtime and falls back
+  # to the app's own container, where the widget cannot see it: with today's profile the
+  # widget installs and renders its "finish setting up" state.
+  #
+  # To turn the widget on for real (docs/decisions.md):
+  #   1. Add the App Groups capability with `group.de.lahmann.wingfoil` to BOTH app ids
+  #      in the developer portal, and regenerate "WingFoil App Store" plus a new profile
+  #      for `de.lahmann.wingfoil.widgets`.
+  #   2. Add `com.apple.security.application-groups` to both `entitlements` blocks here.
+  #   3. Add the widget's bundle id to ios/ExportOptions.plist.
+  # No code change is needed — the store starts finding the shared suite on its own.
+  WingFoilWidgets:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: WingFoilWidgets
+      # The snapshot *format* is shared source rather than a linked library: the widget
+      # would otherwise pull GRDB, the FIT parser and ZIPFoundation into a 30 MB-limited
+      # extension in order to decode a few hundred bytes of JSON.
+      - path: WingFoilKit/Sources/WingFoilKit/Presentation/WidgetSnapshot.swift
+        group: Shared
+    settings:
+      base:
+        PRODUCT_NAME: WingFoilWidgets
+        PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.widgets
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 685X8YLYSB
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+        SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
+    info:
+      path: WingFoilWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: WingFoil
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension

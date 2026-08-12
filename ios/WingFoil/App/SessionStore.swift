@@ -32,7 +32,13 @@ final class SessionStore {
     /// Bumped whenever the derived tables change, so aggregate screens can re-query.
     private(set) var libraryGeneration = 0
 
+    /// All-time records that were beaten by the most recent import. Consumed (and cleared)
+    /// by the Records screen, which is where the celebration belongs.
+    private(set) var celebration: [NewPersonalBest] = []
+
     let ingestor: SessionIngestor
+    /// Lazy track thumbnails for the library rows.
+    let thumbnails: ThumbnailStore
     private let databaseURL: URL?
 
     /// Aggregate reads (records, trends, gear, spots) all go through here.
@@ -60,7 +66,10 @@ final class SessionStore {
         let archiveRoot = (try? AppPaths.sessionsRoot())
             ?? URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("Sessions")
         databaseURL = url
-        ingestor = SessionIngestor(database: database!, archive: SessionArchive(root: archiveRoot))
+        let ingestor = SessionIngestor(database: database!,
+                                       archive: SessionArchive(root: archiveRoot))
+        self.ingestor = ingestor
+        thumbnails = ThumbnailStore(ingestor: ingestor)
         errorMessage = problem
     }
 
@@ -73,9 +82,59 @@ final class SessionStore {
             gearAggregates = try await library.gearAggregates()
             libraryGeneration += 1
             await refreshStorage()
+            await publishWidgetSnapshot()
+            // Seed the baseline once, so the first import after installing does not
+            // "beat" an empty library nine times over.
+            if storedPersonalBests == nil { await refreshPersonalBests(celebrate: false) }
         } catch {
             errorMessage = "Could not read the library: \(error)"
         }
+    }
+
+    // MARK: - Personal bests
+
+    private static let pbSnapshotKey = "personalBestSnapshot.v1"
+
+    private var storedPersonalBests: PersonalBestSnapshot? {
+        guard let data = UserDefaults.standard.data(forKey: Self.pbSnapshotKey) else { return nil }
+        return try? JSONDecoder().decode(PersonalBestSnapshot.self, from: data)
+    }
+
+    private func storePersonalBests(_ snapshot: PersonalBestSnapshot) {
+        guard let data = try? JSONEncoder().encode(snapshot) else { return }
+        UserDefaults.standard.set(data, forKey: Self.pbSnapshotKey)
+    }
+
+    /// Re-reads the all-time records and, when asked, reports what the import just beat.
+    ///
+    /// `celebrate` is false everywhere except right after an import: the snapshot has to be
+    /// kept current as sessions are deleted or re-analyzed too, and a *drop* in a record is
+    /// obviously not a personal best.
+    private func refreshPersonalBests(celebrate: Bool) async {
+        guard let records = try? await library.records() else { return }
+        let previous = storedPersonalBests
+        if celebrate, let previous {
+            let found = PersonalBestDetector.improvements(previous: previous, current: records)
+            if !found.isEmpty { celebration = found }
+        }
+        storePersonalBests(PersonalBestSnapshot(records: records))
+    }
+
+    /// Called by the Records screen once it has shown the burst.
+    func clearCelebration() { celebration = [] }
+
+    // MARK: - Widgets
+
+    /// Publishes the home-screen widget snapshot. Best effort by design: without the app
+    /// group entitlement it lands in the app's own container instead, and the widget shows
+    /// its placeholder (see `WidgetSnapshotStore`).
+    private func publishWidgetSnapshot() async {
+        let rows = sessions
+        let snapshot = WidgetSnapshot.make(sessions: rows) { SessionDisplay.title($0) }
+        await Task.detached(priority: .utility) {
+            WidgetSnapshotStore.write(snapshot)
+            WidgetRefresher.reloadTimelines()
+        }.value
     }
 
     /// Brings every summary row up to the current engine (plan §3.3 lazy re-analysis).
@@ -152,7 +211,9 @@ final class SessionStore {
     func delete(_ row: SessionRow) async {
         do {
             try await ingestor.delete(row)
+            thumbnails.invalidate(row.id)
             await load()
+            await refreshPersonalBests(celebrate: false)
         } catch {
             errorMessage = "Delete failed: \(error)"
         }
@@ -286,6 +347,7 @@ final class SessionStore {
         status = summary.shortDescription
         if !summary.failed.isEmpty { errorMessage = summary.failed.joined(separator: "\n") }
         await load()
+        await refreshPersonalBests(celebrate: true)
         await writeNewSessionsToHealth()
     }
 
@@ -386,7 +448,11 @@ final class SessionStore {
         }.value
         status = "Re-analyzed \(rows.count) session\(rows.count == 1 ? "" : "s") "
             + "with engine \(AnalysisEngine.version)"
+        // Which parts of a track were flown can change with the engine, so the cached
+        // outlines are stale by construction.
+        for row in rows { thumbnails.invalidate(row.id) }
         await load()
+        await refreshPersonalBests(celebrate: false)
     }
 
     // MARK: - Credentials

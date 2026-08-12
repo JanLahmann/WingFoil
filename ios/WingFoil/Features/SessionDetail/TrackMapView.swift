@@ -5,19 +5,32 @@ import SwiftUI
 /// Track drawn as segmented polylines coloured by phase (flying vs everything else), with
 /// the maneuver/flight-end outcomes marked and one GP3S effort highlighted. The inline map
 /// is non-interactive so the detail page scrolls; the full-screen version is interactive.
+///
+/// The map is the second handle on the replay playhead: tapping near the track moves it,
+/// and the dot it draws is the same instant the chart and the readout show.
 struct TrackMapView: View {
     let detail: SessionDetail
     /// The GP3S effort whose window is glowing on the track, if any.
     let effort: SessionDetail.RecordEffort?
+    @Binding var playhead: Double?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Map(initialPosition: .region(detail.region), interactionModes: []) {
-                TrackContent(detail: detail, effort: effort)
+            MapReader { proxy in
+                Map(initialPosition: .region(detail.region), interactionModes: []) {
+                    TrackContent(detail: detail, effort: effort,
+                                 playhead: playhead.flatMap(detail.moment))
+                }
+                .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
+                .frame(height: 260)
+                .clipShape(.rect(cornerRadius: 14))
+                // Interaction is off so the page scrolls, which leaves the tap free to
+                // mean exactly one thing: "show me this point".
+                .onTapGesture { location in
+                    guard let coordinate = proxy.convert(location, from: .local) else { return }
+                    scrub(to: coordinate)
+                }
             }
-            .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
-            .frame(height: 260)
-            .clipShape(.rect(cornerRadius: 14))
             legend
             if !detail.markers.isEmpty {
                 EventMarkerStyle.legend()
@@ -25,6 +38,23 @@ struct TrackMapView: View {
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
+            if !detail.timeline.isEmpty {
+                Text("Tap the track to move the replay playhead.")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    /// A tap that lands nowhere near the track is ignored rather than snapping the playhead
+    /// to some unrelated corner of the session. The tolerance scales with how much water
+    /// the map is showing, so it is roughly a fingertip at any zoom.
+    private func scrub(to coordinate: CLLocationCoordinate2D) {
+        let spanM = detail.region.span.latitudeDelta * 110_540
+        let tolerance = max(25, spanM * 0.06)
+        if let t = detail.time(nearLat: coordinate.latitude, lon: coordinate.longitude,
+                               toleranceM: tolerance) {
+            playhead = t
         }
     }
 
@@ -52,10 +82,12 @@ struct TrackMapView: View {
 struct FullScreenMapView: View {
     let detail: SessionDetail
     let effort: SessionDetail.RecordEffort?
+    var playheadT: Double?
 
     var body: some View {
         Map(initialPosition: .region(detail.region)) {
-            TrackContent(detail: detail, effort: effort)
+            TrackContent(detail: detail, effort: effort,
+                         playhead: playheadT.flatMap(detail.moment))
         }
         .mapStyle(.standard(elevation: .flat))
         .navigationTitle(SessionDisplay.title(detail.row))
@@ -68,6 +100,7 @@ struct FullScreenMapView: View {
 private struct TrackContent: MapContent {
     let detail: SessionDetail
     let effort: SessionDetail.RecordEffort?
+    let playhead: SessionDetail.TimelinePoint?
 
     var body: some MapContent {
         ForEach(detail.segments) { segment in
@@ -91,6 +124,15 @@ private struct TrackContent: MapContent {
             }
             .annotationTitles(.hidden)
         }
+        // Drawn last so it sits above the outcome dots — it is the thing being moved.
+        if let playhead, let lat = playhead.lat, let lon = playhead.lon {
+            Annotation("", coordinate: Self.coordinate(lat, lon), anchor: .center) {
+                PlayheadDot(flying: playhead.flying)
+                    .accessibilityLabel(String(format: "Replay position, %.1f knots",
+                                               playhead.kn))
+            }
+            .annotationTitles(.hidden)
+        }
     }
 
     private static func coordinate(_ point: SessionDetail.Point) -> CLLocationCoordinate2D {
@@ -99,6 +141,24 @@ private struct TrackContent: MapContent {
 
     private static func coordinate(_ lat: Double, _ lon: Double) -> CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: lat, longitude: lon)
+    }
+}
+
+/// The replay marker: deliberately unlike the outcome dots (bigger, white-ringed, with a
+/// halo) so it reads as "where you are now" rather than "something happened here".
+private struct PlayheadDot: View {
+    let flying: Bool
+
+    var body: some View {
+        let tint = flying ? Color.teal : Color.secondary
+        ZStack {
+            Circle().fill(tint.opacity(0.28)).frame(width: 28, height: 28)
+            Circle()
+                .fill(tint)
+                .stroke(.white, lineWidth: 2.5)
+                .frame(width: 15, height: 15)
+        }
+        .shadow(radius: 2)
     }
 }
 

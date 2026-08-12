@@ -6,6 +6,7 @@ struct LibraryView: View {
     @Environment(SessionStore.self) private var store
     @State private var showImporter = false
     @State private var showSettings = false
+    @State private var showHelp = false
     @State private var path: [String] = []
 
     var body: some View {
@@ -35,7 +36,14 @@ struct LibraryView: View {
             .refreshable { await store.syncFromIntervals() }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button { showSettings = true } label: {
+                    Menu {
+                        Button { showSettings = true } label: {
+                            Label("Settings", systemImage: "gearshape")
+                        }
+                        Button { showHelp = true } label: {
+                            Label("What the numbers mean", systemImage: "questionmark.circle")
+                        }
+                    } label: {
                         Label("Settings", systemImage: "gearshape")
                     }
                 }
@@ -48,6 +56,7 @@ struct LibraryView: View {
             }
             .sheet(isPresented: $showSettings) { SettingsView() }
             .sheet(isPresented: $showImporter) { ImportView() }
+            .sheet(isPresented: $showHelp) { HelpView() }
             #if DEBUG && targetEnvironment(simulator)
             // Headless-driving hooks: `simctl launch` can't tap, so env vars import the
             // fixture corpus and open a session for automated screenshots.
@@ -56,6 +65,10 @@ struct LibraryView: View {
             .task {
                 if ProcessInfo.processInfo.environment["UI_IMPORT_FIXTURES"] == "1" {
                     await store.importFixtures()
+                }
+                // `UI_SHEET=help` parks the app on the Help index for a screenshot.
+                if ProcessInfo.processInfo.environment["UI_SHEET"] == "help" {
+                    showHelp = true
                 }
             }
             .onChange(of: store.sessions.count) {

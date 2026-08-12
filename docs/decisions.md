@@ -2,6 +2,48 @@
 
 Newest first. One paragraph each: context → decision → consequence.
 
+## ADR-011 · Widgets ship without an app group, and say so
+The WidgetKit extension (`de.lahmann.wingfoil.widgets`, embedded in the app) needs the app's
+data, and a widget process cannot open the GRDB library — different container, 30 MB memory
+limit. The app therefore publishes a small denormalized `WidgetSnapshot` (last session +
+this week's foil time) after every library change, and the widget only decodes it. The
+transport **would** be `UserDefaults(suiteName: "group.de.lahmann.wingfoil")`, but the
+existing manual "WingFoil App Store" provisioning profile does not carry that group, and
+requesting an entitlement a profile does not grant fails the archive — which would break
+Jan's TestFlight path for a home-screen widget. Decision: no app-group entitlement in
+either target; `WidgetSnapshotStore` probes for the shared container at runtime with
+`FileManager.containerURL(forSecurityApplicationGroupIdentifier:)` — the *only* honest
+test, since `UserDefaults(suiteName:)` returns a usable-looking object without the
+entitlement and a write/read round-trip through it succeeds against a plist that lives
+inside the app's own container and is invisible to the widget. Consequence: with today's
+profile the widget installs, archives and renders a "finish setting up" state; the app
+always writes a local copy so its own read-back never depends on the entitlement. Turning
+the widget on for real is **configuration, not code** — add the App Groups capability to
+both app ids, regenerate the profiles, add `com.apple.security.application-groups` to both
+`entitlements` blocks in `ios/project.yml`, and add the widget's bundle id to
+`ios/ExportOptions.plist` (which currently carries only the app, so a *manual* export of an
+archive containing the extension needs that entry, or an automatic-signing export).
+Second consequence: the snapshot *format* is compiled into the widget as shared source
+(`WidgetSnapshot.swift`) rather than by linking `WingFoilKit`, so an extension whose job is
+to decode a few hundred bytes of JSON does not carry GRDB, the FIT parser and ZIPFoundation;
+the half that reads library rows lives in `WidgetSnapshot+Library.swift`, which only the app
+compiles.
+
+## ADR-010 · Metric explanations are kit data, not view code
+Every number the app shows needs a plain-language explanation, and the explanations have to
+be reachable from the card that shows the number — a glossary nobody opens is not
+documentation. `HelpCatalog` lives in `WingFoilKit` as pure data keyed by a `HelpTopicID`
+**enum**, so a card's `?` button cannot link to a topic that does not exist (compile-time),
+and one test asserts the other half: that no case ships without written content. Wording is
+derived from `docs/algorithms.md`, and where it quotes a threshold it says it is a default
+rather than a law. Consequence: adding a metric to the UI forces a `HelpTopicID` case, which
+fails the test until it is actually written — the glossary cannot silently rot behind the
+app. Same reasoning put the share-card content (`ShareCardStats`), the list-row thumbnail
+geometry (`TrackThumbnail`), PB detection and the widget snapshot in the kit: they are the
+parts of a UI change whose mistakes are invisible in a screenshot — a card that prints
+"0.00 kn" where it means "unknown", a thumbnail that silently stretches, a confetti burst on
+the first import.
+
 ## ADR-009 · Data-field companion **in addition to** the device app, sharing a barrel
 ADR-002 chose a device app and that stands — it is the only way to control recording, laps and
 the accelerometer. But it forces an either/or on the water: launching it means *not* using the

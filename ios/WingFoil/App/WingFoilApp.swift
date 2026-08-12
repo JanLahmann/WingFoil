@@ -8,6 +8,9 @@ struct WingFoilApp: App {
         WindowGroup {
             RootView()
                 .environment(store)
+                // Owned by the store rather than by the list, so a thumbnail cache built
+                // while scrolling survives a tab switch.
+                .environment(store.thumbnails)
                 .task {
                     await store.load()
                     // First launch with a configured key: fill the empty library
