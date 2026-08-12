@@ -117,6 +117,28 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      imported exactly once, incremental progress callbacks, `import_log` rows, a **re-run
      that imports nothing** (the phase-4 acceptance criterion), the depth limit, and
      streaming-vs-collecting walker agreement.
+   - `OnboardingTests` — the intervals.icu first run, which by definition is walked once
+     per install and never again: `IcuSetupGuide` is four numbered, written steps (the Help
+     topic and the empty-library setup card render the *same* array, asserted, so the
+     manual and the wizard cannot drift); the failure→cause mapping behind every message
+     the card can show (401/403 ⇒ "regenerate the key", `URLError`/transport ⇒ network and
+     explicitly *not* the key, other HTTP ⇒ status only — **the response body never reaches
+     the screen**, and no message, hint or crumb may contain the key itself); a sync that
+     returned nothing ⇒ "connect Garmin in intervals.icu" rather than silence; the key
+     check against a stubbed transport (counts activities *and* watersports, and a valid
+     key with no watersports reports the caveat instead of claiming success); and
+     `IcuOnboarding.state` (empty + no key ⇒ setup card, key + stored problem ⇒ that cause,
+     key + nothing yet ⇒ waiting, any session at all ⇒ never onboarding), with the problem
+     round-tripping through JSON so the card still names the cause after a relaunch.
+
+   iOS screenshot hooks (DEBUG **and** simulator only, passed as `SIMCTL_CHILD_…`
+   environment variables to `xcrun simctl launch`): `UI_RESET=1` restores the fresh-install
+   state — keychain key, sync history, PB snapshot, database and FIT archive all removed —
+   and `UI_ICU_KEY=…` seeds a key through the real keychain path afterwards, so the
+   first-run setup card and the "key stored, sync rejected" card can both be captured
+   without reinstalling. `UI_IMPORT_FIXTURES=1`, `UI_OPEN_SESSION=latest|<name>`,
+   `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings` and
+   `UI_HELP_TOPIC=<HelpTopicID>` park the app on a given screen, since `simctl` cannot tap.
 3. **Monkey C units (Toybox.Test)** — the core suite lives in the `WingFoilCore` barrel
    (`garmin/barrel/WingFoilCore/tests/`) and is therefore compiled into **both** consumers'
    `--unit-test` builds: `bin/WingFoilTests.prg` (device app: 16 tests) and

@@ -2,7 +2,15 @@ import SwiftUI
 
 @main
 struct WingFoilApp: App {
-    @State private var store = SessionStore()
+    @State private var store: SessionStore
+
+    init() {
+        #if DEBUG
+        // `UI_RESET=1` (simulator only) has to run before the store reads the keychain.
+        SessionStore.resetIfRequested()
+        #endif
+        _store = State(initialValue: SessionStore())
+    }
 
     var body: some Scene {
         WindowGroup {

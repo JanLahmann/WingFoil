@@ -73,7 +73,11 @@ private struct HelpIndexList: View {
         .searchable(text: $query, prompt: "Search the metrics")
         .sheet(item: $selected) { HelpTopicSheet(id: $0) }
         .task {
-            if let initialTopic, selected == nil { selected = initialTopic }
+            // Deep link from a `?` or from the setup card: the topic sheet has to wait for
+            // the index's own presentation to finish, or UIKit drops the second one.
+            guard let initialTopic, selected == nil else { return }
+            try? await Task.sleep(for: .milliseconds(450))
+            if selected == nil { selected = initialTopic }
         }
     }
 
@@ -95,6 +99,7 @@ private struct HelpIndexList: View {
 struct HelpTopicSheet: View {
     let id: HelpTopicID
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openIcuSettings) private var openSettings
     @State private var next: HelpTopicID?
 
     private var topic: HelpTopic { HelpCatalog.topic(id) }
@@ -131,6 +136,28 @@ struct HelpTopicSheet: View {
                         .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 14))
                     }
 
+                    if !topic.links.isEmpty || topic.action != nil {
+                        VStack(alignment: .leading, spacing: 10) {
+                            ForEach(topic.links, id: \.url) { link in
+                                Link(destination: link.url) {
+                                    Label(link.title, systemImage: "arrow.up.right.square")
+                                        .font(.callout.weight(.semibold))
+                                }
+                            }
+                            // Only the screen that owns the Settings sheet can open it, so
+                            // the button appears exactly where that action was handed down.
+                            if topic.action == .openIcuSettings, let open = openSettings {
+                                Button {
+                                    open()
+                                } label: {
+                                    Label("Open WingFoil Settings", systemImage: "gearshape")
+                                        .font(.callout.weight(.semibold))
+                                }
+                            }
+                        }
+                        .padding(.top, 2)
+                    }
+
                     if !topic.related.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("See also")
@@ -165,6 +192,20 @@ struct HelpTopicSheet: View {
             // back to the metric they started from.
             .sheet(item: $next) { HelpTopicSheet(id: $0) }
         }
+    }
+}
+
+/// "Take me to the setting this describes", handed down by whichever screen owns the
+/// Settings sheet. Nil where nobody can honour it, so the button simply does not appear
+/// rather than appearing and doing nothing.
+private struct OpenIcuSettingsKey: EnvironmentKey {
+    static let defaultValue: (@MainActor () -> Void)? = nil
+}
+
+extension EnvironmentValues {
+    var openIcuSettings: (@MainActor () -> Void)? {
+        get { self[OpenIcuSettingsKey.self] }
+        set { self[OpenIcuSettingsKey.self] = newValue }
     }
 }
 

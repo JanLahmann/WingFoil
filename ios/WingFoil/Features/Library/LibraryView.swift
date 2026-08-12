@@ -7,6 +7,7 @@ struct LibraryView: View {
     @State private var showImporter = false
     @State private var showSettings = false
     @State private var showHelp = false
+    @State private var helpTopic: HelpTopicID?
     @State private var path: [String] = []
 
     var body: some View {
@@ -57,6 +58,21 @@ struct LibraryView: View {
             .sheet(isPresented: $showSettings) { SettingsView() }
             .sheet(isPresented: $showImporter) { ImportView() }
             .sheet(isPresented: $showHelp) { HelpView() }
+            // A named topic opens as itself rather than as "the index, then the topic":
+            // one sheet, one animation, and it is what the deep link actually meant.
+            .sheet(item: $helpTopic) { HelpTopicSheet(id: $0) }
+            // The setup topic offers "Open WingFoil Settings"; only this screen knows how
+            // to get there, so it hands the action down rather than Help guessing.
+            .environment(\.openIcuSettings) {
+                // One sheet at a time: let Help finish dismissing before Settings arrives,
+                // or iOS drops the second presentation on the floor.
+                showHelp = false
+                showImporter = false
+                Task {
+                    try? await Task.sleep(for: .milliseconds(400))
+                    showSettings = true
+                }
+            }
             #if DEBUG && targetEnvironment(simulator)
             // Headless-driving hooks: `simctl launch` can't tap, so env vars import the
             // fixture corpus and open a session for automated screenshots.
@@ -66,9 +82,16 @@ struct LibraryView: View {
                 if ProcessInfo.processInfo.environment["UI_IMPORT_FIXTURES"] == "1" {
                     await store.importFixtures()
                 }
-                // `UI_SHEET=help` parks the app on the Help index for a screenshot.
-                if ProcessInfo.processInfo.environment["UI_SHEET"] == "help" {
-                    showHelp = true
+                // `UI_SHEET=help` parks the app on the Help index for a screenshot;
+                // `UI_HELP_TOPIC=icuSetup` opens one topic straight away.
+                if let raw = ProcessInfo.processInfo.environment["UI_HELP_TOPIC"],
+                   let topic = HelpTopicID(rawValue: raw) {
+                    helpTopic = topic
+                }
+                switch ProcessInfo.processInfo.environment["UI_SHEET"] {
+                case "help": showHelp = true
+                case "settings": showSettings = true
+                default: break
                 }
             }
             .onChange(of: store.sessions.count) {
@@ -91,16 +114,25 @@ struct LibraryView: View {
         }
     }
 
+    /// An empty library is either a first run (walk the intervals.icu setup inline) or a
+    /// configured one that has nothing yet (say why, if we know why).
+    @ViewBuilder
     private var emptyState: some View {
-        ContentUnavailableView {
-            Label("No sessions yet", systemImage: "water.waves")
-        } description: {
-            Text("Import a FIT file or a Garmin export ZIP, or sync your intervals.icu "
-                 + "activities. Pull down to sync.")
-        } actions: {
-            Button("Import…") { showImporter = true }
-                .buttonStyle(.borderedProminent)
-            Button("Sync intervals.icu") { Task { await store.syncFromIntervals() } }
+        switch store.onboardingState {
+        case .setup, .problem:
+            IcuSetupCard(state: store.onboardingState) { showImporter = true }
+                .padding(.top, 8)
+        case .waiting, .ready:
+            ContentUnavailableView {
+                Label("No sessions yet", systemImage: "water.waves")
+            } description: {
+                Text("Import a FIT file or a Garmin export ZIP, or sync your intervals.icu "
+                     + "activities. Pull down to sync.")
+            } actions: {
+                Button("Import…") { showImporter = true }
+                    .buttonStyle(.borderedProminent)
+                Button("Sync intervals.icu") { Task { await store.syncFromIntervals() } }
+            }
         }
     }
 
