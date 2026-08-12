@@ -69,6 +69,9 @@ public struct HelpLink: Sendable, Equatable {
 public enum HelpAction: String, Sendable, Equatable {
     /// Opens WingFoil's own Settings screen, scrolled to the intervals.icu section.
     case openIcuSettings
+    /// Imports the bundled example session (`ExampleSession`) — the same button the
+    /// empty-library setup card offers, so Help is not a dead end for a first-time reader.
+    case loadExampleSession
 }
 
 /// Where a topic sits in the Help index.
@@ -106,7 +109,7 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
 
 /// Every explainable metric, as an enum so a `?` button cannot point at a missing topic.
 public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
-    case icuSetup, icuTroubleshooting, icuPrivacy
+    case icuSetup, exampleSession, icuTroubleshooting, icuPrivacy
     case foilPct, flights, longestFlight, distance
     case recordSet, best2s, best10s, best5x10s, best500m, bestNm, alpha500, uncertified
     case turnTypes, turnOutcomes, turnSuccess, portStarboard, falls, touchdowns, glideOuts
@@ -143,7 +146,31 @@ public enum HelpCatalog {
             },
             links: [HelpLink(title: "Open intervals.icu", url: IcuSetupGuide.intervalsURL)],
             action: .openIcuSettings,
-            related: [.icuTroubleshooting, .icuPrivacy, .sourceClass]),
+            related: [.exampleSession, .icuTroubleshooting, .icuPrivacy, .sourceClass]),
+
+        HelpTopic(
+            id: .exampleSession, section: .setup, title: "Look around with the example session",
+            summary: "One real session ships with the app — load it before you connect anything.",
+            body: [
+                "Nothing in WingFoil makes sense on an empty library, and the first thing a "
+                + "new install has is an empty library. So one real recording travels inside "
+                + "the app: \(ExampleSession.blurb)",
+                "It comes from \(ExampleSession.place) and was recorded with the WingFoil "
+                + "Connect IQ app on a fenix, which makes it a class-(a) source — every "
+                + "screen has something to show, including the ones that need the "
+                + "accelerometer, the developer fields and the heart-rate stream.",
+                "It is not your data, and WingFoil treats it that way: an example session "
+                + "is badged EXAMPLE in the list and at the top of its own page, and it is "
+                + "left out of Records, Trends and the gear rollups so it can never inflate "
+                + "a personal best or bend a trend line. Delete it with a swipe whenever you "
+                + "like — this screen and the setup card will both offer it again.",
+                "Every identifier was removed before it was bundled: the watch serial "
+                + "number is zeroed, and the rider profile, the paired-accessory record and "
+                + "the watch's lifetime totals are gone. What is left is the ride — track, "
+                + "speed, heart rate, laps and all of the app's own recorded fields.",
+            ],
+            action: .loadExampleSession,
+            related: [.icuSetup, .sourceClass, .uncertified]),
 
         HelpTopic(
             id: .icuTroubleshooting, section: .setup, title: "When the sync does not work",

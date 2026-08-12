@@ -51,6 +51,13 @@ enum SessionDisplay {
         row.discipline?.isEmpty == false ? .teal : .blue
     }
 
+    /// The word on the "this is not your session" capsule, or nil for a real import.
+    /// Deliberately a separate badge from the discipline one: the reader has to be able to
+    /// see *both* "wingfoil" and "borrowed" at a glance (docs/testing.md, example session).
+    static func exampleBadge(_ row: SessionRow) -> String? {
+        row.isExample ? "EXAMPLE" : nil
+    }
+
     /// a = our CIQ FIT (everything) · b = native Doppler FIT · c = degraded source.
     static func sourceClassNote(_ sourceClass: String) -> String {
         switch sourceClass {
@@ -58,6 +65,25 @@ enum SessionDisplay {
         case "b": "Class b — device FIT with Doppler speed"
         default: "Class c — degraded source, records are uncertified"
         }
+    }
+}
+
+/// The "this session is on loan" capsule. Amber and upper-case rather than another tinted
+/// discipline pill, because it is not a category — it is a disclaimer, and it has to read
+/// as one at thumbnail size in a list of the rider's own sessions.
+struct ExampleBadge: View {
+    var text = "EXAMPLE"
+    var font: Font = .caption2
+
+    var body: some View {
+        Text(text)
+            .font(font.weight(.bold))
+            .tracking(0.5)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(Color.orange.opacity(0.18), in: .capsule)
+            .foregroundStyle(Color.orange)
+            .accessibilityLabel("Example session, not your data")
     }
 }
 
