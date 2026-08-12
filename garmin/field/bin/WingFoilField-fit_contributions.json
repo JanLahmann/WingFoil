@@ -1,0 +1,120 @@
+{
+  "datafields" : [ {
+    "id" : 0,
+    "chart-visible" : true,
+    "activity-visible" : false,
+    "lap-visible" : false,
+    "chart-title-key" : "FitFoilStateChart",
+    "label-key" : "FitFoilStateLabel",
+    "unit-label-key" : "FitUnitNone",
+    "sort-order" : 0,
+    "precision" : 0,
+    "fill-color" : "rgba(0, 194, 160, 1.0)"
+  }, {
+    "id" : 21,
+    "chart-visible" : false,
+    "activity-visible" : true,
+    "lap-visible" : false,
+    "chart-title-key" : null,
+    "label-key" : "FitFoilTime",
+    "unit-label-key" : "FitUnitSeconds",
+    "sort-order" : 1,
+    "precision" : 0,
+    "fill-color" : null
+  }, {
+    "id" : 22,
+    "chart-visible" : false,
+    "activity-visible" : true,
+    "lap-visible" : false,
+    "chart-title-key" : null,
+    "label-key" : "FitFoilPct",
+    "unit-label-key" : "FitUnitPct",
+    "sort-order" : 2,
+    "precision" : 0,
+    "fill-color" : null
+  }, {
+    "id" : 23,
+    "chart-visible" : false,
+    "activity-visible" : true,
+    "lap-visible" : false,
+    "chart-title-key" : null,
+    "label-key" : "FitFlights",
+    "unit-label-key" : "FitUnitNone",
+    "sort-order" : 3,
+    "precision" : 0,
+    "fill-color" : null
+  }, {
+    "id" : 24,
+    "chart-visible" : false,
+    "activity-visible" : true,
+    "lap-visible" : false,
+    "chart-title-key" : null,
+    "label-key" : "FitLongestFlight",
+    "unit-label-key" : "FitUnitSeconds",
+    "sort-order" : 4,
+    "precision" : 0,
+    "fill-color" : null
+  }, {
+    "id" : 26,
+    "chart-visible" : false,
+    "activity-visible" : true,
+    "lap-visible" : false,
+    "chart-title-key" : null,
+    "label-key" : "FitBest2s",
+    "unit-label-key" : "FitUnitCms",
+    "sort-order" : 5,
+    "precision" : 0,
+    "fill-color" : null
+  }, {
+    "id" : 32,
+    "chart-visible" : false,
+    "activity-visible" : true,
+    "lap-visible" : false,
+    "chart-title-key" : null,
+    "label-key" : "FitTacks",
+    "unit-label-key" : "FitUnitNone",
+    "sort-order" : 6,
+    "precision" : 0,
+    "fill-color" : null
+  }, {
+    "id" : 33,
+    "chart-visible" : false,
+    "activity-visible" : true,
+    "lap-visible" : false,
+    "chart-title-key" : null,
+    "label-key" : "FitJibes",
+    "unit-label-key" : "FitUnitNone",
+    "sort-order" : 7,
+    "precision" : 0,
+    "fill-color" : null
+  }, {
+    "id" : 34,
+    "chart-visible" : false,
+    "activity-visible" : true,
+    "lap-visible" : false,
+    "chart-title-key" : null,
+    "label-key" : "FitTurnSuccess",
+    "unit-label-key" : "FitUnitPct",
+    "sort-order" : 8,
+    "precision" : 0,
+    "fill-color" : null
+  } ],
+  "strings" : {
+    "default" : {
+      "FitFoilStateChart" : "Foil state",
+      "FitFoilStateLabel" : "Foil state",
+      "FitUnitNone" : " ",
+      "FitFoilTime" : "Foil time",
+      "FitUnitSeconds" : "s",
+      "FitFoilPct" : "Foil %",
+      "FitUnitPct" : "%",
+      "FitFlights" : "Flights",
+      "FitLongestFlight" : "Longest flight",
+      "FitBest2s" : "Best 2s speed",
+      "FitUnitCms" : "cm/s",
+      "FitTacks" : "Tacks",
+      "FitJibes" : "Jibes",
+      "FitTurnSuccess" : "Turn success"
+    }
+  }
+}

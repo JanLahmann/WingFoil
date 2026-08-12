@@ -1,0 +1,866 @@
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 1; @symbol_importdef<0> = [Toybox,1,7,13]; @symbol_importdef<1> = [Graphics,1,14,22]; ]
+import Toybox.Graphics;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 2; @symbol_importdef<0> = [Toybox,2,7,13]; @symbol_importdef<1> = [Lang,2,14,18]; ]
+import Toybox.Lang;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 3; @symbol_importdef<0> = [Toybox,3,7,13]; @symbol_importdef<1> = [Math,3,14,18]; ]
+import Toybox.Math;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 15; @symbol_moduledef = [FieldLayout,15,7,18]; ]
+module FieldLayout {
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 15; ]
+    <init> {
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 26 10 ]
+        %tmp.1 = newa 9 Array<Graphics.FontType>;
+        symbol [ Array %tmp.1 29 32 37 ];
+        symbol [ Graphics %tmp.1 29 38 46 ];
+        symbol [ FontType %tmp.1 29 47 55 ];
+        symbol [ Graphics %tmp.2 26 23 31 ];
+        %tmp.2 = getm $.Toybox.Graphics;
+        symbol [ FONT_NUMBER_THAI_HOT %tmp.3 26 32 52 ];
+        %tmp.3 = getv %tmp.2 :FONT_NUMBER_THAI_HOT;
+        %tmp.4 = dup %tmp.1;
+        %tmp.5 = aputv %tmp.4 0 %tmp.3;
+        symbol [ Graphics %tmp.6 26 54 62 ];
+        %tmp.6 = getm $.Toybox.Graphics;
+        symbol [ FONT_NUMBER_HOT %tmp.7 26 63 78 ];
+        %tmp.7 = getv %tmp.6 :FONT_NUMBER_HOT;
+        %tmp.8 = dup %tmp.5;
+        %tmp.9 = aputv %tmp.8 1 %tmp.7;
+        symbol [ Graphics %tmp.10 27 8 16 ];
+        %tmp.10 = getm $.Toybox.Graphics;
+        symbol [ FONT_NUMBER_MEDIUM %tmp.11 27 17 35 ];
+        %tmp.11 = getv %tmp.10 :FONT_NUMBER_MEDIUM;
+        %tmp.12 = dup %tmp.9;
+        %tmp.13 = aputv %tmp.12 2 %tmp.11;
+        symbol [ Graphics %tmp.14 27 37 45 ];
+        %tmp.14 = getm $.Toybox.Graphics;
+        symbol [ FONT_NUMBER_MILD %tmp.15 27 46 62 ];
+        %tmp.15 = getv %tmp.14 :FONT_NUMBER_MILD;
+        %tmp.16 = dup %tmp.13;
+        %tmp.17 = aputv %tmp.16 3 %tmp.15;
+        symbol [ Graphics %tmp.18 27 64 72 ];
+        %tmp.18 = getm $.Toybox.Graphics;
+        symbol [ FONT_LARGE %tmp.19 27 73 83 ];
+        %tmp.19 = getv %tmp.18 :FONT_LARGE;
+        %tmp.20 = dup %tmp.17;
+        %tmp.21 = aputv %tmp.20 4 %tmp.19;
+        symbol [ Graphics %tmp.22 28 8 16 ];
+        %tmp.22 = getm $.Toybox.Graphics;
+        symbol [ FONT_MEDIUM %tmp.23 28 17 28 ];
+        %tmp.23 = getv %tmp.22 :FONT_MEDIUM;
+        %tmp.24 = dup %tmp.21;
+        %tmp.25 = aputv %tmp.24 5 %tmp.23;
+        symbol [ Graphics %tmp.26 28 30 38 ];
+        %tmp.26 = getm $.Toybox.Graphics;
+        symbol [ FONT_SMALL %tmp.27 28 39 49 ];
+        %tmp.27 = getv %tmp.26 :FONT_SMALL;
+        %tmp.28 = dup %tmp.25;
+        %tmp.29 = aputv %tmp.28 6 %tmp.27;
+        symbol [ Graphics %tmp.30 28 51 59 ];
+        %tmp.30 = getm $.Toybox.Graphics;
+        symbol [ FONT_TINY %tmp.31 28 60 69 ];
+        %tmp.31 = getv %tmp.30 :FONT_TINY;
+        %tmp.32 = dup %tmp.29;
+        %tmp.33 = aputv %tmp.32 7 %tmp.31;
+        symbol [ Graphics %tmp.34 29 8 16 ];
+        %tmp.34 = getm $.Toybox.Graphics;
+        symbol [ FONT_XTINY %tmp.35 29 17 27 ];
+        %tmp.35 = getv %tmp.34 :FONT_XTINY;
+        %tmp.36 = dup %tmp.33;
+        %tmp.37 = aputv %tmp.36 8 %tmp.35;
+        putv self :NUM_FONTS %tmp.37;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 30 10 ]
+        %tmp.38 = newa 5 Array<Graphics.FontType>;
+        symbol [ Array %tmp.38 31 52 57 ];
+        symbol [ Graphics %tmp.38 31 58 66 ];
+        symbol [ FontType %tmp.38 31 67 75 ];
+        symbol [ Graphics %tmp.39 30 24 32 ];
+        %tmp.39 = getm $.Toybox.Graphics;
+        symbol [ FONT_LARGE %tmp.40 30 33 43 ];
+        %tmp.40 = getv %tmp.39 :FONT_LARGE;
+        %tmp.41 = dup %tmp.38;
+        %tmp.42 = aputv %tmp.41 0 %tmp.40;
+        symbol [ Graphics %tmp.43 30 45 53 ];
+        %tmp.43 = getm $.Toybox.Graphics;
+        symbol [ FONT_MEDIUM %tmp.44 30 54 65 ];
+        %tmp.44 = getv %tmp.43 :FONT_MEDIUM;
+        %tmp.45 = dup %tmp.42;
+        %tmp.46 = aputv %tmp.45 1 %tmp.44;
+        symbol [ Graphics %tmp.47 30 67 75 ];
+        %tmp.47 = getm $.Toybox.Graphics;
+        symbol [ FONT_SMALL %tmp.48 30 76 86 ];
+        %tmp.48 = getv %tmp.47 :FONT_SMALL;
+        %tmp.49 = dup %tmp.46;
+        %tmp.50 = aputv %tmp.49 2 %tmp.48;
+        symbol [ Graphics %tmp.51 31 8 16 ];
+        %tmp.51 = getm $.Toybox.Graphics;
+        symbol [ FONT_TINY %tmp.52 31 17 26 ];
+        %tmp.52 = getv %tmp.51 :FONT_TINY;
+        %tmp.53 = dup %tmp.50;
+        %tmp.54 = aputv %tmp.53 3 %tmp.52;
+        symbol [ Graphics %tmp.55 31 28 36 ];
+        %tmp.55 = getm $.Toybox.Graphics;
+        symbol [ FONT_XTINY %tmp.56 31 37 47 ];
+        %tmp.56 = getv %tmp.55 :FONT_XTINY;
+        %tmp.57 = dup %tmp.54;
+        %tmp.58 = aputv %tmp.57 4 %tmp.56;
+        putv self :TEXT_FONTS %tmp.58;
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 16; ]
+    enum {
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 17; @position = 8; @symbol_enumdec = [SIZE_SMALL,17,8,18]; ]
+        SIZE_SMALL = 0,
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 18; @position = 8; @symbol_enumdec = [SIZE_WIDE,18,8,17]; ]
+        SIZE_WIDE = 1,
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 19; @position = 8; @symbol_enumdec = [SIZE_FULL,19,8,17]; ]
+        SIZE_FULL = 2
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 23; @position = 10; @symbol_constdef = [MARGIN,23,10,16]; ]
+    const MARGIN = 4;
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 26; @position = 10; @symbol_constdef = [NUM_FONTS,26,10,19]; ]
+    const NUM_FONTS;
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 30; @position = 10; @symbol_constdef = [TEXT_FONTS,30,10,20]; ]
+    const TEXT_FONTS;
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 35; @symbol_functiondef = [classify,35,13,21]; @symbol_param<0> = [w,35,22,23]; @symbol_param<0>_type<0> = [Number,35,27,33]; @symbol_param<1> = [h,35,35,36]; @symbol_param<1>_type<0> = [Number,35,40,46]; @symbol_param<2> = [screenW,35,48,55]; @symbol_param<2>_type<0> = [Number,35,59,65]; @symbol_param<3> = [screenH,36,12,19]; @symbol_param<3>_type<0> = [Number,36,23,29]; @symbol_return<0> = [Number,36,34,40]; ]
+    function classify(w as Number, h as Number, screenW as Number, screenH as Number) as Number {
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_36_41_44_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 37 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_37_8_39_8_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_37_12_37_60_begin:
+        %tmp.1 = lgetv %h;
+        symbol [ h %tmp.1 37 12 13 ];
+        %tmp.2 = 100;
+        %tmp.3 = mul %tmp.1 %tmp.2;
+        %tmp.4 = lgetv %screenH;
+        symbol [ screenH %tmp.4 37 23 30 ];
+        %tmp.5 = 60;
+        %tmp.6 = mul %tmp.4 %tmp.5;
+        %tmp.7 = gte %tmp.3 %tmp.6;
+        bf %tmp.7 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_37_8_39_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_37_39_37_60_true:
+        %tmp.8 = lgetv %w;
+        symbol [ w %tmp.8 37 39 40 ];
+        %tmp.9 = 100;
+        %tmp.10 = mul %tmp.8 %tmp.9;
+        %tmp.11 = lgetv %screenW;
+        symbol [ screenW %tmp.11 37 50 57 ];
+        %tmp.12 = 80;
+        %tmp.13 = mul %tmp.11 %tmp.12;
+        %tmp.14 = gte %tmp.10 %tmp.13;
+        push %tmp.14;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_37_39_37_60_end:
+        %tmp.15 = phi [%tmp.7 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_37_12_37_60_begin] [%tmp.14 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_37_39_37_60_true] [%tmp.15 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_37_39_37_60_end];
+        bf %tmp.15 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_37_8_39_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_37_8_39_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_37_64_39_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 38 12 ]
+        symbol [ SIZE_FULL %tmp.17 38 19 28 ];
+        %tmp.17 = getv ? :SIZE_FULL;
+        ret %tmp.17;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_37_64_39_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_37_8_39_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_37_8_39_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 40 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_40_8_42_8_if_stmt:
+        %tmp.18 = lgetv %h;
+        symbol [ h %tmp.18 40 12 13 ];
+        %tmp.19 = 100;
+        %tmp.20 = mul %tmp.18 %tmp.19;
+        %tmp.21 = lgetv %screenH;
+        symbol [ screenH %tmp.21 40 23 30 ];
+        %tmp.22 = 30;
+        %tmp.23 = mul %tmp.21 %tmp.22;
+        %tmp.24 = gte %tmp.20 %tmp.23;
+        bf %tmp.24 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_40_8_42_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_40_8_42_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_40_37_42_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 41 12 ]
+        symbol [ SIZE_WIDE %tmp.26 41 19 28 ];
+        %tmp.26 = getv ? :SIZE_WIDE;
+        ret %tmp.26;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_40_37_42_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_40_8_42_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_40_8_42_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 43 8 ]
+        symbol [ SIZE_SMALL %tmp.28 43 15 25 ];
+        %tmp.28 = getv ? :SIZE_SMALL;
+        ret %tmp.28;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_36_41_44_4_stop:
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 48; @symbol_functiondef = [isRoundFull,48,13,24]; @symbol_param<0> = [w,48,25,26]; @symbol_param<0>_type<0> = [Number,48,30,36]; @symbol_param<1> = [h,48,38,39]; @symbol_param<1>_type<0> = [Number,48,43,49]; @symbol_param<2> = [screenW,48,51,58]; @symbol_param<2>_type<0> = [Number,48,62,68]; @symbol_param<3> = [screenH,49,12,19]; @symbol_param<3>_type<0> = [Number,49,23,29]; @symbol_return<0> = [Boolean,49,34,41]; ]
+    function isRoundFull(w as Number, h as Number, screenW as Number, screenH as Number) as Boolean {
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_49_42_51_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 50 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_50_15_50_73_begin:
+        %tmp.1 = lgetv %screenW;
+        symbol [ screenW %tmp.1 50 15 22 ];
+        %tmp.2 = lgetv %screenH;
+        symbol [ screenH %tmp.2 50 26 33 ];
+        %tmp.3 = eq %tmp.1 %tmp.2;
+        %tmp.4 = dup %tmp.3;
+        bf %tmp.4 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_50_37_50_73_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_50_37_50_73_true:
+        %tmp.5 = self;
+        symbol [ classify %tmp.6 50 37 45 ];
+        %tmp.6 = getv function %tmp.5 :classify;
+        %tmp.7 = lgetv %w;
+        symbol [ w %tmp.7 50 46 47 ];
+        %tmp.8 = lgetv %h;
+        symbol [ h %tmp.8 50 49 50 ];
+        %tmp.9 = lgetv %screenW;
+        symbol [ screenW %tmp.9 50 52 59 ];
+        %tmp.10 = lgetv %screenH;
+        symbol [ screenH %tmp.10 50 61 68 ];
+        %tmp.11 = invoke %tmp.5 %tmp.6(%tmp.7, %tmp.8, %tmp.9, %tmp.10);
+        symbol [ SIZE_FULL %tmp.13 50 73 82 ];
+        %tmp.13 = getv ? :SIZE_FULL;
+        %tmp.14 = eq %tmp.11 %tmp.13;
+        %tmp.15 = and %tmp.3 %tmp.14;
+        push %tmp.15;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_50_37_50_73_end:
+        %tmp.16 = phi [%tmp.4 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_50_15_50_73_begin] [%tmp.15 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_50_37_50_73_true] [%tmp.16 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_50_37_50_73_end];
+        ret %tmp.16;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_49_42_51_4_stop:
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 56; @symbol_functiondef = [rowWidth,56,13,21]; @symbol_param<0> = [w,56,22,23]; @symbol_param<0>_type<0> = [Number,56,27,33]; @symbol_param<1> = [h,56,35,36]; @symbol_param<1>_type<0> = [Number,56,40,46]; @symbol_param<2> = [y,56,48,49]; @symbol_param<2>_type<0> = [Number,56,53,59]; @symbol_param<3> = [rowH,56,61,65]; @symbol_param<3>_type<0> = [Number,56,69,75]; @symbol_param<4> = [round,57,12,17]; @symbol_param<4>_type<0> = [Boolean,57,21,28]; @symbol_return<0> = [Number,57,33,39]; ]
+    function rowWidth(w as Number, h as Number, y as Number, rowH as Number, round as Boolean) as Number {
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_57_40_67_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 58 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_58_8_60_8_if_stmt:
+        %tmp.1 = lgetv %round;
+        symbol [ round %tmp.1 58 13 18 ];
+        %tmp.2 = not %tmp.1;
+        bf %tmp.2 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_58_8_60_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_58_8_60_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_58_20_60_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 59 12 ]
+        %tmp.3 = lgetv %w;
+        symbol [ w %tmp.3 59 19 20 ];
+        %tmp.4 = 2;
+        symbol [ MARGIN %tmp.6 59 27 33 ];
+        %tmp.6 = getv ? :MARGIN;
+        %tmp.7 = mul %tmp.4 %tmp.6;
+        %tmp.8 = sub %tmp.3 %tmp.7;
+        ret %tmp.8;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_58_20_60_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_58_8_60_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_58_8_60_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 61 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_57_40_67_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_57_40_67_4_stop" ]
+        %r.1 = local;
+        symbol [ r %r.1 61 12 13 ];
+        %tmp.9 = lgetv %w;
+        symbol [ w %tmp.9 61 16 17 ];
+        %tmp.10 = 2.0;
+        %tmp.11 = div %tmp.9 %tmp.10;
+        symbol [ MARGIN %tmp.13 61 26 32 ];
+        %tmp.13 = getv ? :MARGIN;
+        %tmp.14 = sub %tmp.11 %tmp.13;
+        lputv %r.1 %tmp.14;
+        symbol [ r %r.1 61 12 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 62 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_57_40_67_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_57_40_67_4_stop" ]
+        %dy.2 = local;
+        symbol [ dy %dy.2 62 12 14 ];
+        %tmp.15 = lgetv %y;
+        symbol [ y %tmp.15 62 18 19 ];
+        %tmp.16 = lgetv %h;
+        symbol [ h %tmp.16 62 22 23 ];
+        %tmp.17 = 2.0;
+        %tmp.18 = div %tmp.16 %tmp.17;
+        %tmp.19 = sub %tmp.15 %tmp.18;
+        symbol [ abs %tmp.20 62 31 34 ];
+        %tmp.20 = getv function %tmp.19 :abs;
+        %tmp.21 = invoke %tmp.19 %tmp.20();
+        %tmp.22 = lgetv %rowH;
+        symbol [ rowH %tmp.22 62 39 43 ];
+        %tmp.23 = 2.0;
+        %tmp.24 = div %tmp.22 %tmp.23;
+        %tmp.25 = add %tmp.21 %tmp.24;
+        lputv %dy.2 %tmp.25;
+        symbol [ dy %dy.2 62 12 14 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 63 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_63_8_65_8_if_stmt:
+        %tmp.26 = lgetv %dy.2;
+        symbol [ dy %tmp.26 63 12 14 ];
+        %tmp.27 = lgetv %r.1;
+        symbol [ r %tmp.27 63 18 19 ];
+        %tmp.28 = gte %tmp.26 %tmp.27;
+        bf %tmp.28 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_63_8_65_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_63_8_65_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_63_21_65_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 64 12 ]
+        %tmp.29 = 0;
+        ret %tmp.29;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_63_21_65_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_63_8_65_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_63_8_65_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 66 8 ]
+        %tmp.30 = 2.0;
+        symbol [ Math %tmp.31 66 22 26 ];
+        %tmp.31 = getm $.Toybox.Math;
+        symbol [ sqrt %tmp.32 66 27 31 ];
+        %tmp.32 = getv function %tmp.31 :sqrt;
+        %tmp.33 = lgetv %r.1;
+        symbol [ r %tmp.33 66 32 33 ];
+        %tmp.34 = lgetv %r.1;
+        symbol [ r %tmp.34 66 36 37 ];
+        %tmp.35 = mul %tmp.33 %tmp.34;
+        %tmp.36 = lgetv %dy.2;
+        symbol [ dy %tmp.36 66 40 42 ];
+        %tmp.37 = lgetv %dy.2;
+        symbol [ dy %tmp.37 66 45 47 ];
+        %tmp.38 = mul %tmp.36 %tmp.37;
+        %tmp.39 = sub %tmp.35 %tmp.38;
+        %tmp.40 = invoke %tmp.31 %tmp.32(%tmp.39);
+        %tmp.41 = mul %tmp.30 %tmp.40;
+        symbol [ toNumber %tmp.42 66 50 58 ];
+        %tmp.42 = getv function %tmp.41 :toNumber;
+        %tmp.43 = invoke %tmp.41 %tmp.42();
+        ret %tmp.43;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_57_40_67_4_stop:
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 70; @symbol_functiondef = [stackY,70,13,19]; @symbol_param<0> = [h,70,20,21]; @symbol_param<0>_type<0> = [Number,70,25,31]; @symbol_param<1> = [heights,70,33,40]; @symbol_param<1>_type<0> = [Array,70,44,49]; @symbol_param<1>_type<1> = [Number,70,50,56]; @symbol_param<2> = [row,70,59,62]; @symbol_param<2>_type<0> = [Number,70,66,72]; @symbol_return<0> = [Number,70,77,83]; ]
+    function stackY(h as Number, heights as Array<Number>, row as Number) as Number {
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_70_84_80_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 71 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_70_84_80_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_70_84_80_4_stop" ]
+        %total.1 = local;
+        symbol [ total %total.1 71 12 17 ];
+        %tmp.1 = 0;
+        lputv %total.1 %tmp.1;
+        symbol [ total %total.1 71 12 17 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 72 8 ]
+        for @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_72_8_74_8_for_test @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_72_8_74_8_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_72_8_74_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_72_8_74_8_for_init:
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_72_8_74_8_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_72_8_74_8_for_end" ]
+        %i.2 = local;
+        symbol [ i %i.2 72 17 18 ];
+        %tmp.2 = 0;
+        lputv %i.2 %tmp.2;
+        symbol [ i %i.2 72 17 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_72_8_74_8_for_test:
+        %tmp.3 = lgetv %i.2;
+        symbol [ i %tmp.3 72 24 25 ];
+        %tmp.4 = lgetv %heights;
+        symbol [ heights %tmp.4 72 28 35 ];
+        symbol [ size %tmp.5 72 36 40 ];
+        %tmp.5 = getv function %tmp.4 :size;
+        %tmp.6 = invoke %tmp.4 %tmp.5();
+        %tmp.7 = lt %tmp.3 %tmp.6;
+        bf %tmp.7 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_72_8_74_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_72_8_74_8_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_72_49_74_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 73 12 ]
+        %tmp.8 = lgetv %total.1;
+        symbol [ total %tmp.8 73 12 17 ];
+        %tmp.9 = lgetv %heights;
+        symbol [ heights %tmp.9 73 21 28 ];
+        %tmp.10 = lgetv %i.2;
+        symbol [ i %tmp.10 73 29 30 ];
+        %tmp.11 = agetv %tmp.9 %tmp.10;
+        %tmp.12 = add %tmp.8 %tmp.11;
+        lputv %total.1 %tmp.12;
+        symbol [ total %total.1 73 12 17 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_72_49_74_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_72_8_74_8_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 72 ]
+        %tmp.15 = lgetv %i.2;
+        symbol [ i %tmp.15 72 44 45 ];
+        %tmp.16 = add %tmp.15 1;
+        lputv %i.2 %tmp.16;
+        symbol [ i %i.2 72 44 45 ];
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_72_8_74_8_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_72_8_74_8_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 75 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_70_84_80_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_70_84_80_4_stop" ]
+        %y.3 = local;
+        symbol [ y %y.3 75 12 13 ];
+        %tmp.17 = lgetv %h;
+        symbol [ h %tmp.17 75 17 18 ];
+        %tmp.18 = lgetv %total.1;
+        symbol [ total %tmp.18 75 21 26 ];
+        %tmp.19 = sub %tmp.17 %tmp.18;
+        %tmp.20 = 2;
+        %tmp.21 = div %tmp.19 %tmp.20;
+        lputv %y.3 %tmp.21;
+        symbol [ y %y.3 75 12 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 76 8 ]
+        for @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_76_8_78_8_for_test @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_76_8_78_8_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_76_8_78_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_76_8_78_8_for_init:
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_76_8_78_8_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_76_8_78_8_for_end" ]
+        %i.4 = local;
+        symbol [ i %i.4 76 17 18 ];
+        %tmp.22 = 0;
+        lputv %i.4 %tmp.22;
+        symbol [ i %i.4 76 17 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_76_8_78_8_for_test:
+        %tmp.23 = lgetv %i.4;
+        symbol [ i %tmp.23 76 24 25 ];
+        %tmp.24 = lgetv %row;
+        symbol [ row %tmp.24 76 28 31 ];
+        %tmp.25 = lt %tmp.23 %tmp.24;
+        bf %tmp.25 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_76_8_78_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_76_8_78_8_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_76_38_78_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 77 12 ]
+        %tmp.26 = lgetv %y.3;
+        symbol [ y %tmp.26 77 12 13 ];
+        %tmp.27 = lgetv %heights;
+        symbol [ heights %tmp.27 77 17 24 ];
+        %tmp.28 = lgetv %i.4;
+        symbol [ i %tmp.28 77 25 26 ];
+        %tmp.29 = agetv %tmp.27 %tmp.28;
+        %tmp.30 = add %tmp.26 %tmp.29;
+        lputv %y.3 %tmp.30;
+        symbol [ y %y.3 77 12 13 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_76_38_78_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_76_8_78_8_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 76 ]
+        %tmp.33 = lgetv %i.4;
+        symbol [ i %tmp.33 76 33 34 ];
+        %tmp.34 = add %tmp.33 1;
+        lputv %i.4 %tmp.34;
+        symbol [ i %i.4 76 33 34 ];
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_76_8_78_8_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_76_8_78_8_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 79 8 ]
+        %tmp.35 = lgetv %y.3;
+        symbol [ y %tmp.35 79 15 16 ];
+        %tmp.36 = lgetv %heights;
+        symbol [ heights %tmp.36 79 19 26 ];
+        %tmp.37 = lgetv %row;
+        symbol [ row %tmp.37 79 27 30 ];
+        %tmp.38 = agetv %tmp.36 %tmp.37;
+        %tmp.39 = 2;
+        %tmp.40 = div %tmp.38 %tmp.39;
+        %tmp.41 = add %tmp.35 %tmp.40;
+        ret %tmp.41;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_70_84_80_4_stop:
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 84; @symbol_functiondef = [fitFont,84,13,20]; @symbol_param<0> = [dc,84,21,23]; @symbol_param<0>_type<0> = [Graphics,84,27,35]; @symbol_param<0>_type<1> = [Dc,84,36,38]; @symbol_param<1> = [text,84,40,44]; @symbol_param<1>_type<0> = [String,84,48,54]; @symbol_param<2> = [maxW,84,56,60]; @symbol_param<2>_type<0> = [Number,84,64,70]; @symbol_param<3> = [maxH,84,72,76]; @symbol_param<3>_type<0> = [Number,84,80,86]; @symbol_param<4> = [fonts,85,12,17]; @symbol_param<4>_type<0> = [Array,85,21,26]; @symbol_param<4>_type<1> = [Graphics,85,27,35]; @symbol_param<4>_type<2> = [FontType,85,36,44]; @symbol_return<0> = [Graphics,85,50,58]; @symbol_return<1> = [FontType,85,59,67]; ]
+    function fitFont(dc as Graphics.Dc, text as String, maxW as Number, maxH as Number, fonts as Array<Graphics.FontType>) as Graphics.FontType {
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_85_68_93_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 86 8 ]
+        for @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_86_8_91_8_for_test @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_86_8_91_8_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_86_8_91_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_86_8_91_8_for_init:
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_86_8_91_8_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_86_8_91_8_for_end" ]
+        %i.1 = local;
+        symbol [ i %i.1 86 17 18 ];
+        %tmp.1 = 0;
+        lputv %i.1 %tmp.1;
+        symbol [ i %i.1 86 17 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_86_8_91_8_for_test:
+        %tmp.2 = lgetv %i.1;
+        symbol [ i %tmp.2 86 24 25 ];
+        %tmp.3 = lgetv %fonts;
+        symbol [ fonts %tmp.3 86 28 33 ];
+        symbol [ size %tmp.4 86 34 38 ];
+        %tmp.4 = getv function %tmp.3 :size;
+        %tmp.5 = invoke %tmp.3 %tmp.4();
+        %tmp.6 = lt %tmp.2 %tmp.5;
+        bf %tmp.6 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_86_8_91_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_86_8_91_8_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_86_47_91_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 87 12 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_86_47_91_8_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_86_47_91_8_stop" ]
+        %f.2 = local;
+        symbol [ f %f.2 87 16 17 ];
+        %tmp.7 = lgetv %fonts;
+        symbol [ fonts %tmp.7 87 20 25 ];
+        %tmp.8 = lgetv %i.1;
+        symbol [ i %tmp.8 87 26 27 ];
+        %tmp.9 = agetv %tmp.7 %tmp.8;
+        lputv %f.2 %tmp.9;
+        symbol [ f %f.2 87 16 17 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 88 12 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_88_12_90_12_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_88_16_88_83_begin:
+        %tmp.10 = lgetv %dc;
+        symbol [ dc %tmp.10 88 16 18 ];
+        symbol [ getFontHeight %tmp.11 88 19 32 ];
+        %tmp.11 = getv function %tmp.10 :getFontHeight;
+        %tmp.12 = lgetv %f.2;
+        symbol [ f %tmp.12 88 33 34 ];
+        %tmp.13 = invoke %tmp.10 %tmp.11(%tmp.12);
+        %tmp.14 = lgetv %maxH;
+        symbol [ maxH %tmp.14 88 39 43 ];
+        %tmp.15 = lte %tmp.13 %tmp.14;
+        bf %tmp.15 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_88_12_90_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_88_47_88_83_true:
+        %tmp.16 = lgetv %dc;
+        symbol [ dc %tmp.16 88 47 49 ];
+        symbol [ getTextWidthInPixels %tmp.17 88 50 70 ];
+        %tmp.17 = getv function %tmp.16 :getTextWidthInPixels;
+        %tmp.18 = lgetv %text;
+        symbol [ text %tmp.18 88 71 75 ];
+        %tmp.19 = lgetv %f.2;
+        symbol [ f %tmp.19 88 77 78 ];
+        %tmp.20 = invoke %tmp.16 %tmp.17(%tmp.18, %tmp.19);
+        %tmp.21 = lgetv %maxW;
+        symbol [ maxW %tmp.21 88 83 87 ];
+        %tmp.22 = lte %tmp.20 %tmp.21;
+        push %tmp.22;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_88_47_88_83_end:
+        %tmp.23 = phi [%tmp.15 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_88_16_88_83_begin] [%tmp.22 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_88_47_88_83_true] [%tmp.23 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_88_47_88_83_end];
+        bf %tmp.23 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_88_12_90_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_88_12_90_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_88_89_90_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 89 16 ]
+        %tmp.24 = lgetv %f.2;
+        symbol [ f %tmp.24 89 23 24 ];
+        ret %tmp.24;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_88_89_90_12_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_88_12_90_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_88_12_90_12_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_86_47_91_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_86_8_91_8_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 86 ]
+        %tmp.27 = lgetv %i.1;
+        symbol [ i %tmp.27 86 42 43 ];
+        %tmp.28 = add %tmp.27 1;
+        lputv %i.1 %tmp.28;
+        symbol [ i %i.1 86 42 43 ];
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_86_8_91_8_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_86_8_91_8_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 92 8 ]
+        %tmp.29 = lgetv %fonts;
+        symbol [ fonts %tmp.29 92 15 20 ];
+        %tmp.30 = lgetv %fonts;
+        symbol [ fonts %tmp.30 92 21 26 ];
+        symbol [ size %tmp.31 92 27 31 ];
+        %tmp.31 = getv function %tmp.30 :size;
+        %tmp.32 = invoke %tmp.30 %tmp.31();
+        %tmp.33 = 1;
+        %tmp.34 = sub %tmp.32 %tmp.33;
+        %tmp.35 = agetv %tmp.29 %tmp.34;
+        ret %tmp.35;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_85_68_93_4_stop:
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 101; @symbol_functiondef = [fitRows,101,13,20]; @symbol_param<0> = [dc,101,21,23]; @symbol_param<0>_type<0> = [Graphics,101,27,35]; @symbol_param<0>_type<1> = [Dc,101,36,38]; @symbol_param<1> = [w,101,40,41]; @symbol_param<1>_type<0> = [Number,101,45,51]; @symbol_param<2> = [h,101,53,54]; @symbol_param<2>_type<0> = [Number,101,58,64]; @symbol_param<3> = [texts,101,66,71]; @symbol_param<3>_type<0> = [Array,101,75,80]; @symbol_param<3>_type<1> = [String,101,81,87]; @symbol_param<4> = [ladders,102,12,19]; @symbol_param<4>_type<0> = [Array,102,23,28]; @symbol_param<5> = [round,102,30,35]; @symbol_param<5>_type<0> = [Boolean,102,39,46]; @symbol_return<0> = [Array,102,51,56]; @symbol_return<1> = [Graphics,102,57,65]; @symbol_return<2> = [FontType,102,66,74]; ]
+    function fitRows(dc as Graphics.Dc, w as Number, h as Number, texts as Array<String>, ladders as Array, round as Boolean) as Array<Graphics.FontType> {
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_102_76_122_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 103 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_102_76_122_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_102_76_122_4_stop" ]
+        %n.1 = local;
+        symbol [ n %n.1 103 12 13 ];
+        %tmp.1 = lgetv %texts;
+        symbol [ texts %tmp.1 103 16 21 ];
+        symbol [ size %tmp.2 103 22 26 ];
+        %tmp.2 = getv function %tmp.1 :size;
+        %tmp.3 = invoke %tmp.1 %tmp.2();
+        lputv %n.1 %tmp.3;
+        symbol [ n %n.1 103 12 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 104 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_102_76_122_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_102_76_122_4_stop" ]
+        %chosen.2 = local;
+        symbol [ chosen %chosen.2 104 12 18 ];
+        %tmp.5 = lgetv %n.1;
+        symbol [ n %tmp.5 104 50 51 ];
+        %tmp.4 = newa Array<Graphics.FontType> %tmp.5;
+        symbol [ Array %tmp.4 104 25 30 ];
+        symbol [ Graphics %tmp.4 104 31 39 ];
+        symbol [ FontType %tmp.4 104 40 48 ];
+        lputv %chosen.2 %tmp.4;
+        symbol [ chosen %chosen.2 104 12 18 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 105 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_102_76_122_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_102_76_122_4_stop" ]
+        %heights.3 = local;
+        symbol [ heights %heights.3 105 12 19 ];
+        %tmp.7 = lgetv %n.1;
+        symbol [ n %tmp.7 105 40 41 ];
+        %tmp.6 = newa Array<Number> %tmp.7;
+        symbol [ Array %tmp.6 105 26 31 ];
+        symbol [ Number %tmp.6 105 32 38 ];
+        lputv %heights.3 %tmp.6;
+        symbol [ heights %heights.3 105 12 19 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 107 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_102_76_122_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_102_76_122_4_stop" ]
+        %budget.4 = local;
+        symbol [ budget %budget.4 107 12 18 ];
+        %tmp.8 = lgetv %h;
+        symbol [ h %tmp.8 107 22 23 ];
+        %tmp.9 = 2;
+        symbol [ MARGIN %tmp.11 107 30 36 ];
+        %tmp.11 = getv ? :MARGIN;
+        %tmp.12 = mul %tmp.9 %tmp.11;
+        %tmp.13 = sub %tmp.8 %tmp.12;
+        %tmp.14 = lgetv %n.1;
+        symbol [ n %tmp.14 107 40 41 ];
+        %tmp.15 = div %tmp.13 %tmp.14;
+        lputv %budget.4 %tmp.15;
+        symbol [ budget %budget.4 107 12 18 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 108 8 ]
+        for @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_108_8_112_8_for_test @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_108_8_112_8_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_108_8_112_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_108_8_112_8_for_init:
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_108_8_112_8_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_108_8_112_8_for_end" ]
+        %i.5 = local;
+        symbol [ i %i.5 108 17 18 ];
+        %tmp.16 = 0;
+        lputv %i.5 %tmp.16;
+        symbol [ i %i.5 108 17 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_108_8_112_8_for_test:
+        %tmp.17 = lgetv %i.5;
+        symbol [ i %tmp.17 108 24 25 ];
+        %tmp.18 = lgetv %n.1;
+        symbol [ n %tmp.18 108 28 29 ];
+        %tmp.19 = lt %tmp.17 %tmp.18;
+        bf %tmp.19 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_108_8_112_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_108_8_112_8_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_108_36_112_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 109 12 ]
+        %tmp.20 = lgetv %chosen.2;
+        symbol [ chosen %tmp.20 109 12 18 ];
+        %tmp.21 = self;
+        symbol [ fitFont %tmp.22 109 24 31 ];
+        %tmp.22 = getv function %tmp.21 :fitFont;
+        %tmp.23 = lgetv %dc;
+        symbol [ dc %tmp.23 109 32 34 ];
+        %tmp.24 = lgetv %texts;
+        symbol [ texts %tmp.24 109 36 41 ];
+        %tmp.25 = lgetv %i.5;
+        symbol [ i %tmp.25 109 42 43 ];
+        %tmp.26 = agetv %tmp.24 %tmp.25;
+        %tmp.27 = lgetv %w;
+        symbol [ w %tmp.27 109 46 47 ];
+        %tmp.28 = 2;
+        symbol [ MARGIN %tmp.30 109 54 60 ];
+        %tmp.30 = getv ? :MARGIN;
+        %tmp.31 = mul %tmp.28 %tmp.30;
+        %tmp.32 = sub %tmp.27 %tmp.31;
+        %tmp.33 = lgetv %budget.4;
+        symbol [ budget %tmp.33 109 62 68 ];
+        %tmp.34 = lgetv %ladders;
+        symbol [ ladders %tmp.34 110 16 23 ];
+        %tmp.35 = lgetv %i.5;
+        symbol [ i %tmp.35 110 24 25 ];
+        %tmp.36 = agetv %tmp.34 %tmp.35;
+        %tmp.37 = as %tmp.36 Array<Graphics.FontType>;
+        symbol [ Array %tmp.37 110 30 35 ];
+        symbol [ Graphics %tmp.37 110 36 44 ];
+        symbol [ FontType %tmp.37 110 45 53 ];
+        %tmp.38 = invoke %tmp.21 %tmp.22(%tmp.23, %tmp.26, %tmp.32, %tmp.33, %tmp.37);
+        %tmp.39 = lgetv %i.5;
+        symbol [ i %tmp.39 109 19 20 ];
+        aputv %tmp.20 %tmp.39 %tmp.38;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 111 12 ]
+        %tmp.40 = lgetv %heights.3;
+        symbol [ heights %tmp.40 111 12 19 ];
+        %tmp.41 = lgetv %dc;
+        symbol [ dc %tmp.41 111 25 27 ];
+        symbol [ getFontHeight %tmp.42 111 28 41 ];
+        %tmp.42 = getv function %tmp.41 :getFontHeight;
+        %tmp.43 = lgetv %chosen.2;
+        symbol [ chosen %tmp.43 111 42 48 ];
+        %tmp.44 = lgetv %i.5;
+        symbol [ i %tmp.44 111 49 50 ];
+        %tmp.45 = agetv %tmp.43 %tmp.44;
+        %tmp.46 = invoke %tmp.41 %tmp.42(%tmp.45);
+        %tmp.47 = lgetv %i.5;
+        symbol [ i %tmp.47 111 20 21 ];
+        aputv %tmp.40 %tmp.47 %tmp.46;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_108_36_112_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_108_8_112_8_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 108 ]
+        %tmp.50 = lgetv %i.5;
+        symbol [ i %tmp.50 108 31 32 ];
+        %tmp.51 = add %tmp.50 1;
+        lputv %i.5 %tmp.51;
+        symbol [ i %i.5 108 31 32 ];
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_108_8_112_8_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_108_8_112_8_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 114 8 ]
+        for @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_8_120_8_for_test @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_8_120_8_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_8_120_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_8_120_8_for_init:
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_8_120_8_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_8_120_8_for_end" ]
+        %i.6 = local;
+        symbol [ i %i.6 114 17 18 ];
+        %tmp.52 = 0;
+        lputv %i.6 %tmp.52;
+        symbol [ i %i.6 114 17 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_8_120_8_for_test:
+        %tmp.53 = lgetv %i.6;
+        symbol [ i %tmp.53 114 24 25 ];
+        %tmp.54 = lgetv %n.1;
+        symbol [ n %tmp.54 114 28 29 ];
+        %tmp.55 = lt %tmp.53 %tmp.54;
+        bf %tmp.55 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_8_120_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_8_120_8_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_36_120_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 115 12 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_36_120_8_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_36_120_8_stop" ]
+        %y.7 = local;
+        symbol [ y %y.7 115 16 17 ];
+        %tmp.56 = self;
+        symbol [ stackY %tmp.57 115 20 26 ];
+        %tmp.57 = getv function %tmp.56 :stackY;
+        %tmp.58 = lgetv %h;
+        symbol [ h %tmp.58 115 27 28 ];
+        %tmp.59 = lgetv %heights.3;
+        symbol [ heights %tmp.59 115 30 37 ];
+        %tmp.60 = lgetv %i.6;
+        symbol [ i %tmp.60 115 39 40 ];
+        %tmp.61 = invoke %tmp.56 %tmp.57(%tmp.58, %tmp.59, %tmp.60);
+        lputv %y.7 %tmp.61;
+        symbol [ y %y.7 115 16 17 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 116 12 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_36_120_8_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_36_120_8_stop" ]
+        %maxW.8 = local;
+        symbol [ maxW %maxW.8 116 16 20 ];
+        %tmp.62 = self;
+        symbol [ rowWidth %tmp.63 116 23 31 ];
+        %tmp.63 = getv function %tmp.62 :rowWidth;
+        %tmp.64 = lgetv %w;
+        symbol [ w %tmp.64 116 32 33 ];
+        %tmp.65 = lgetv %h;
+        symbol [ h %tmp.65 116 35 36 ];
+        %tmp.66 = lgetv %y.7;
+        symbol [ y %tmp.66 116 38 39 ];
+        %tmp.67 = lgetv %heights.3;
+        symbol [ heights %tmp.67 116 41 48 ];
+        %tmp.68 = lgetv %i.6;
+        symbol [ i %tmp.68 116 49 50 ];
+        %tmp.69 = agetv %tmp.67 %tmp.68;
+        %tmp.70 = lgetv %round;
+        symbol [ round %tmp.70 116 53 58 ];
+        %tmp.71 = invoke %tmp.62 %tmp.63(%tmp.64, %tmp.65, %tmp.66, %tmp.69, %tmp.70);
+        lputv %maxW.8 %tmp.71;
+        symbol [ maxW %maxW.8 116 16 20 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 117 12 ]
+        %tmp.72 = lgetv %chosen.2;
+        symbol [ chosen %tmp.72 117 12 18 ];
+        %tmp.73 = self;
+        symbol [ fitFont %tmp.74 117 24 31 ];
+        %tmp.74 = getv function %tmp.73 :fitFont;
+        %tmp.75 = lgetv %dc;
+        symbol [ dc %tmp.75 117 32 34 ];
+        %tmp.76 = lgetv %texts;
+        symbol [ texts %tmp.76 117 36 41 ];
+        %tmp.77 = lgetv %i.6;
+        symbol [ i %tmp.77 117 42 43 ];
+        %tmp.78 = agetv %tmp.76 %tmp.77;
+        %tmp.79 = lgetv %maxW.8;
+        symbol [ maxW %tmp.79 117 46 50 ];
+        %tmp.80 = lgetv %heights.3;
+        symbol [ heights %tmp.80 117 52 59 ];
+        %tmp.81 = lgetv %i.6;
+        symbol [ i %tmp.81 117 60 61 ];
+        %tmp.82 = agetv %tmp.80 %tmp.81;
+        %tmp.83 = lgetv %ladders;
+        symbol [ ladders %tmp.83 118 16 23 ];
+        %tmp.84 = lgetv %i.6;
+        symbol [ i %tmp.84 118 24 25 ];
+        %tmp.85 = agetv %tmp.83 %tmp.84;
+        %tmp.86 = as %tmp.85 Array<Graphics.FontType>;
+        symbol [ Array %tmp.86 118 30 35 ];
+        symbol [ Graphics %tmp.86 118 36 44 ];
+        symbol [ FontType %tmp.86 118 45 53 ];
+        %tmp.87 = invoke %tmp.73 %tmp.74(%tmp.75, %tmp.78, %tmp.79, %tmp.82, %tmp.86);
+        %tmp.88 = lgetv %i.6;
+        symbol [ i %tmp.88 117 19 20 ];
+        aputv %tmp.72 %tmp.88 %tmp.87;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 119 12 ]
+        %tmp.89 = lgetv %heights.3;
+        symbol [ heights %tmp.89 119 12 19 ];
+        %tmp.90 = lgetv %dc;
+        symbol [ dc %tmp.90 119 25 27 ];
+        symbol [ getFontHeight %tmp.91 119 28 41 ];
+        %tmp.91 = getv function %tmp.90 :getFontHeight;
+        %tmp.92 = lgetv %chosen.2;
+        symbol [ chosen %tmp.92 119 42 48 ];
+        %tmp.93 = lgetv %i.6;
+        symbol [ i %tmp.93 119 49 50 ];
+        %tmp.94 = agetv %tmp.92 %tmp.93;
+        %tmp.95 = invoke %tmp.90 %tmp.91(%tmp.94);
+        %tmp.96 = lgetv %i.6;
+        symbol [ i %tmp.96 119 20 21 ];
+        aputv %tmp.89 %tmp.96 %tmp.95;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_36_120_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_8_120_8_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 114 ]
+        %tmp.99 = lgetv %i.6;
+        symbol [ i %tmp.99 114 31 32 ];
+        %tmp.100 = add %tmp.99 1;
+        lputv %i.6 %tmp.100;
+        symbol [ i %i.6 114 31 32 ];
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_8_120_8_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_114_8_120_8_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 121 8 ]
+        %tmp.101 = lgetv %chosen.2;
+        symbol [ chosen %tmp.101 121 15 21 ];
+        ret %tmp.101;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_102_76_122_4_stop:
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 124; @symbol_functiondef = [heightsOf,124,13,22]; @symbol_param<0> = [dc,124,23,25]; @symbol_param<0>_type<0> = [Graphics,124,29,37]; @symbol_param<0>_type<1> = [Dc,124,38,40]; @symbol_param<1> = [fonts,124,42,47]; @symbol_param<1>_type<0> = [Array,124,51,56]; @symbol_param<1>_type<1> = [Graphics,124,57,65]; @symbol_param<1>_type<2> = [FontType,124,66,74]; @symbol_return<0> = [Array,124,80,85]; @symbol_return<1> = [Number,124,86,92]; ]
+    function heightsOf(dc as Graphics.Dc, fonts as Array<Graphics.FontType>) as Array<Number> {
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_124_94_130_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 125 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_124_94_130_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_124_94_130_4_stop" ]
+        %out.1 = local;
+        symbol [ out %out.1 125 12 15 ];
+        %tmp.2 = lgetv %fonts;
+        symbol [ fonts %tmp.2 125 36 41 ];
+        symbol [ size %tmp.3 125 42 46 ];
+        %tmp.3 = getv function %tmp.2 :size;
+        %tmp.4 = invoke %tmp.2 %tmp.3();
+        %tmp.1 = newa Array<Number> %tmp.4;
+        symbol [ Array %tmp.1 125 22 27 ];
+        symbol [ Number %tmp.1 125 28 34 ];
+        lputv %out.1 %tmp.1;
+        symbol [ out %out.1 125 12 15 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 126 8 ]
+        for @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_126_8_128_8_for_test @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_126_8_128_8_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_126_8_128_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_126_8_128_8_for_init:
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_126_8_128_8_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_126_8_128_8_for_end" ]
+        %i.2 = local;
+        symbol [ i %i.2 126 17 18 ];
+        %tmp.5 = 0;
+        lputv %i.2 %tmp.5;
+        symbol [ i %i.2 126 17 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_126_8_128_8_for_test:
+        %tmp.6 = lgetv %i.2;
+        symbol [ i %tmp.6 126 24 25 ];
+        %tmp.7 = lgetv %fonts;
+        symbol [ fonts %tmp.7 126 28 33 ];
+        symbol [ size %tmp.8 126 34 38 ];
+        %tmp.8 = getv function %tmp.7 :size;
+        %tmp.9 = invoke %tmp.7 %tmp.8();
+        %tmp.10 = lt %tmp.6 %tmp.9;
+        bf %tmp.10 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_126_8_128_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_126_8_128_8_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_126_47_128_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 127 12 ]
+        %tmp.11 = lgetv %out.1;
+        symbol [ out %tmp.11 127 12 15 ];
+        %tmp.12 = lgetv %dc;
+        symbol [ dc %tmp.12 127 21 23 ];
+        symbol [ getFontHeight %tmp.13 127 24 37 ];
+        %tmp.13 = getv function %tmp.12 :getFontHeight;
+        %tmp.14 = lgetv %fonts;
+        symbol [ fonts %tmp.14 127 38 43 ];
+        %tmp.15 = lgetv %i.2;
+        symbol [ i %tmp.15 127 44 45 ];
+        %tmp.16 = agetv %tmp.14 %tmp.15;
+        %tmp.17 = invoke %tmp.12 %tmp.13(%tmp.16);
+        %tmp.18 = lgetv %i.2;
+        symbol [ i %tmp.18 127 16 17 ];
+        aputv %tmp.11 %tmp.18 %tmp.17;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_126_47_128_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_126_8_128_8_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 126 ]
+        %tmp.21 = lgetv %i.2;
+        symbol [ i %tmp.21 126 42 43 ];
+        %tmp.22 = add %tmp.21 1;
+        lputv %i.2 %tmp.22;
+        symbol [ i %i.2 126 42 43 ];
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_126_8_128_8_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_126_8_128_8_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc" 129 8 ]
+        %tmp.23 = lgetv %out.1;
+        symbol [ out %tmp.23 129 15 18 ];
+        ret %tmp.23;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldLayout_mc_124_94_130_4_stop:
+    }
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldLayout.mc"; @line = 1; ]
+<init> {
+}

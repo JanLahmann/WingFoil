@@ -9,6 +9,7 @@ Module map (mirrors the analysis pipeline in docs/plan.md §3.3):
     gp3s     speed records incl. alpha 500                            [phase 1/3]
     pump     pump-stroke detection from wrist accel                   [phase 3]
     takeoff  takeoff runs, attempts, in-flight pumping                 [phase 3]
+    hrcost   HR cost of pumping: per takeoff, fatigue, recovery        [phase 3, exploratory]
     goldens  golden-file writer/loader (schema: docs/testing.md)
 Canonical parameters live in docs/algorithms.md — keep code defaults in sync.
 """

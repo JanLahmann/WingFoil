@@ -42,6 +42,113 @@ function testDc() as Graphics.Dc {
     return (bmp as Graphics.BufferedBitmap).getDc();
 }
 
+// ---- FIT developer-field schema ----
+// The regression net for the beta-0.5.0 crash: 20 SESSION developer fields, a hard limit of
+// 16, and no catchable error — the 17th createField killed the app on START. FitSchema's
+// table is now the only place fields are declared, and these tests fail the build before a
+// row that breaks a limit can reach a watch.
+
+(:test)
+function fitSchemaFitsDeviceBudgets(logger as Test.Logger) as Boolean {
+    for (var m = 0; m < FitSchema.MSG_COUNT; m++) {
+        var fields = FitSchema.fieldCount(m);
+        var bytes = FitSchema.byteCount(m);
+        logger.debug("msg " + m.toString() + ": " + fields.toString() + " fields, "
+            + bytes.toString() + " B");
+        // The hard one. Over it the runtime does not throw — it kills the app with
+        // "System Error: Failed invoking <symbol>".
+        Test.assertMessage(fields <= FitSchema.LIMIT_FIELDS,
+            "message type " + m.toString() + " declares " + fields.toString()
+            + " developer fields, the device accepts " + FitSchema.LIMIT_FIELDS.toString());
+        Test.assertMessage(bytes <= FitSchema.LIMIT_BYTES,
+            "message type " + m.toString() + " is " + bytes.toString() + " B, budget is "
+            + FitSchema.LIMIT_BYTES.toString());
+    }
+    // Self-imposed headroom, so the next row added trips a test with room to spare.
+    var ses = FitSchema.fieldCount(FitSchema.MSG_SESSION);
+    Test.assertMessage(ses <= FitSchema.SESSION_FIELD_TARGET,
+        "session declares " + ses.toString() + " fields, target is "
+        + FitSchema.SESSION_FIELD_TARGET.toString() + " (limit "
+        + FitSchema.LIMIT_FIELDS.toString() + ")");
+    // The 1 Hz record message is a battery/storage budget too (docs/fit-schema.md).
+    Test.assertMessage(FitSchema.byteCount(FitSchema.MSG_RECORD)
+        <= FitSchema.RECORD_BYTES_TARGET, "record message over its 6 B/s target");
+    Test.assertMessage(FitSchema.fits(), "fits() agrees with the assertions above");
+
+    // The table must be complete and consistent, or a row could describe one field and
+    // create another.
+    Test.assertMessage(FitSchema.MSGS.size() == FitSchema.SLOT_COUNT, "an msg per slot");
+    Test.assertMessage(FitSchema.IDS.size() == FitSchema.SLOT_COUNT, "an id per slot");
+    Test.assertMessage(FitSchema.NAMES.size() == FitSchema.SLOT_COUNT, "a name per slot");
+    Test.assertMessage(FitSchema.TYPES.size() == FitSchema.SLOT_COUNT, "a type per slot");
+    Test.assertMessage(FitSchema.WIDTHS.size() == FitSchema.SLOT_COUNT, "a width per slot");
+    Test.assertMessage(FitSchema.UNITS.size() == FitSchema.SLOT_COUNT, "a unit per slot");
+
+    // Ids are unique *within* a message type (the same id in two message types is legal and
+    // intentional), and the declared width must match the declared base type.
+    for (var i = 0; i < FitSchema.SLOT_COUNT; i++) {
+        var t = FitSchema.TYPES[i];
+        var w = FitSchema.WIDTHS[i];
+        var want = t == FitSchema.T_UINT8 ? 1
+            : (t == FitSchema.T_UINT16 ? 2 : (t == FitSchema.T_UINT32 ? 4 : w));
+        Test.assertMessage(w == want, FitSchema.NAMES[i] + " width " + w.toString()
+            + " does not match its base type");
+        for (var j = i + 1; j < FitSchema.SLOT_COUNT; j++) {
+            Test.assertMessage(FitSchema.MSGS[i] != FitSchema.MSGS[j]
+                || FitSchema.IDS[i] != FitSchema.IDS[j],
+                "duplicate field id " + FitSchema.IDS[i].toString() + " in message type "
+                + FitSchema.MSGS[i].toString());
+        }
+    }
+    return true;
+}
+
+(:test)
+function fitSchemaPackedFieldsRoundTrip(logger as Test.Logger) as Boolean {
+    // 54 cfg_pack — must be byte-for-byte the data field's SessionPack.packCfg, since a
+    // parser unpacks class (a) and class (d) files with the same shifts.
+    var cfg = FitSchema.packCfg(1200, 800, 5);
+    Test.assertMessage(FitSchema.cfgEntryCms(cfg) == 1200, "entry survives");
+    Test.assertMessage(FitSchema.cfgExitCms(cfg) == 800, "exit survives");
+    Test.assertMessage(FitSchema.cfgMinFlightS(cfg) == 5, "minFlight survives");
+    Test.assertMessage(cfg == SessionPackEncoding(1200, 800, 5),
+        "cfg_pack differs from the documented encoding");
+    // Clamped, not wrapped: an out-of-range value must not bleed into a neighbouring field.
+    var wide = FitSchema.packCfg(99999, 9999, 99);
+    Test.assertMessage(FitSchema.cfgEntryCms(wide) == 65535, "entry clamps");
+    Test.assertMessage(FitSchema.cfgExitCms(wide) == 2047, "exit clamps");
+    Test.assertMessage(FitSchema.cfgMinFlightS(wide) == 31, "minFlight clamps");
+
+    // 55 takeoff_pack — avgPumpsX10 | attempts | successes
+    var to = FitSchema.packTakeoff(87, 12, 9);
+    Test.assertMessage(FitSchema.takeoffAvgPumpsX10(to) == 87, "avg pumps survives");
+    Test.assertMessage(FitSchema.takeoffAttempts(to) == 12, "attempts survives");
+    Test.assertMessage(FitSchema.takeoffSuccesses(to) == 9, "successes survives");
+    var toWide = FitSchema.packTakeoff(400, 300, 300);
+    Test.assertMessage(FitSchema.takeoffAvgPumpsX10(toWide) == 255, "avg pumps clamps");
+    Test.assertMessage(FitSchema.takeoffAttempts(toWide) == 255, "attempts clamps");
+    Test.assertMessage(FitSchema.takeoffSuccesses(toWide) == 255, "successes clamps");
+
+    // 56 longest_pack — seconds | metres
+    var lp = FitSchema.packLongest(423, 5120);
+    Test.assertMessage(FitSchema.longestS(lp) == 423, "longest seconds survives");
+    Test.assertMessage(FitSchema.longestM(lp) == 5120, "longest metres survives");
+    var lpWide = FitSchema.packLongest(70000, 70000);
+    Test.assertMessage(FitSchema.longestS(lpWide) == 65535, "longest seconds clamps");
+    Test.assertMessage(FitSchema.longestM(lpWide) == 65535, "longest metres clamps");
+
+    // Negatives floor at 0 rather than sign-extending across the whole word.
+    Test.assertMessage(FitSchema.packLongest(-1, -1) == 0, "negatives floor at 0");
+    return true;
+}
+
+// The docs/fit-schema.md cfg_pack layout written out longhand, independent of FitSchema's
+// implementation — if someone "optimises" the shifts, this disagrees.
+function SessionPackEncoding(entryCms as Number, exitCms as Number,
+        minFlightS as Number) as Number {
+    return entryCms * 65536 + minFlightS * 2048 + exitCms;
+}
+
 (:test)
 function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var dc = testDc();

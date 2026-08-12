@@ -156,9 +156,11 @@ public enum FitSessionParser {
         return fields
     }
 
-    /// docs/fit-schema.md session 20–43. Speeds are uint16 cm/s on the wire; the schema
-    /// declares no FIT scale for them, so the conversions live here.
-    private static func watchSummary(_ d: [String: FitDevValue]) -> WatchSummary {
+    /// docs/fit-schema.md session 20–43 (v1) and 54–56 (v2 packed). Speeds are uint16 cm/s
+    /// on the wire; the schema declares no FIT scale for them, so the conversions live here.
+    /// Internal rather than private so the tests can build a summary from a synthetic
+    /// developer-field dictionary without synthesizing FIT bytes.
+    static func watchSummary(_ d: [String: FitDevValue]) -> WatchSummary {
         var s = WatchSummary()
         guard !d.isEmpty else { return s }
         func mps(_ key: String) -> Double? { d[key]?.double.map { $0 / 100.0 } }
@@ -187,8 +189,64 @@ public enum FitSessionParser {
         s.cfgExitSpeedMps = mps("cfg_exit_speed")
         s.cfgMinFlightS = d["cfg_min_flight"]?.double
         s.appVersion = d["app_version"]?.int
+        // …then let any packed field override its v1 counterpart. Presence decides, the
+        // schema version is only corroboration: the data-field variant (class d) writes
+        // `cfg_pack` under schema v1, and a file may carry no `app_version` at all.
+        for pack in Self.sessionPacks { pack.unpack(d, into: &s) }
         return s
     }
+
+    // MARK: - v2 packed session fields
+
+    /// One session developer field that folds several v1 fields into a single uint32.
+    ///
+    /// Schema v2 exists because the device hard-limits developer fields to **16 per message
+    /// type** — undocumented, and not a catchable exception: the 17th `createField` killed
+    /// the app on START. v1's 20 session fields therefore never ran; v2 packs the three
+    /// groups of small fields into 54/55/56 (garmin/source/fit/FitSchema.mc,
+    /// docs/fit-schema.md). Unpacking here, at the parser boundary, keeps every v2 summary
+    /// bit-identical to the v1 one, so nothing downstream knows the schema changed.
+    private struct PackedSessionField: Sendable {
+        struct Part: Sendable {
+            let shift: UInt32
+            let mask: UInt32
+            /// Applied to the extracted integer, in the same units the v1 field used.
+            let assign: @Sendable (inout WatchSummary, Double) -> Void
+        }
+        let name: String
+        let parts: [Part]
+
+        /// Fail-soft, like the rest of the parser: absent, non-numeric or non-integral
+        /// values leave the summary untouched rather than throwing or writing garbage.
+        func unpack(_ d: [String: FitDevValue], into s: inout WatchSummary) {
+            guard let raw = d[name]?.double,
+                  raw >= 0, raw <= Double(UInt32.max), raw == raw.rounded()
+            else { return }
+            let bits = UInt32(raw)
+            for part in parts { part.assign(&s, Double((bits >> part.shift) & part.mask)) }
+        }
+    }
+
+    /// docs/fit-schema.md session 54–56, mirroring `FitSchema.packCfg/packTakeoff/packLongest`.
+    private static let sessionPacks: [PackedSessionField] = [
+        // 54 entry_cms << 16 | min_flight_s << 11 | exit_cms — also written by class (d).
+        PackedSessionField(name: "cfg_pack", parts: [
+            .init(shift: 16, mask: 0xFFFF, assign: { $0.cfgEntrySpeedMps = $1 / 100.0 }),
+            .init(shift: 11, mask: 0x1F, assign: { $0.cfgMinFlightS = $1 }),
+            .init(shift: 0, mask: 0x7FF, assign: { $0.cfgExitSpeedMps = $1 / 100.0 }),
+        ]),
+        // 55 avg_pumps_x10 << 16 | attempts << 8 | successes
+        PackedSessionField(name: "takeoff_pack", parts: [
+            .init(shift: 16, mask: 0xFF, assign: { $0.avgPumpsToTakeoff = $1 / 10.0 }),
+            .init(shift: 8, mask: 0xFF, assign: { $0.takeoffAttempts = Int($1) }),
+            .init(shift: 0, mask: 0xFF, assign: { $0.takeoffSuccesses = Int($1) }),
+        ]),
+        // 56 seconds << 16 | metres
+        PackedSessionField(name: "longest_pack", parts: [
+            .init(shift: 16, mask: 0xFFFF, assign: { $0.longestFlightS = $1 }),
+            .init(shift: 0, mask: 0xFFFF, assign: { $0.longestFlightM = $1 }),
+        ]),
+    ]
 }
 
 extension Double {

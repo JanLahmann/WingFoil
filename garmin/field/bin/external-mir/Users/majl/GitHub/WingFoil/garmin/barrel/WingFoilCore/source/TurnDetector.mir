@@ -1,0 +1,2577 @@
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 1; @symbol_importdef<0> = [Toybox,1,7,13]; @symbol_importdef<1> = [Lang,1,14,18]; ]
+import Toybox.Lang;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 2; @symbol_importdef<0> = [Toybox,2,7,13]; @symbol_importdef<1> = [Math,2,14,18]; ]
+import Toybox.Math;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 4; @symbol_moduledef = [WingFoilCore,4,7,19]; ]
+module WingFoilCore {
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 4; ]
+    <init> {
+    }
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 31; @symbol_classdef = [TurnDetector,31,6,18]; ]
+    class TurnDetector {
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 31; ]
+        <init> {
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 83 8 ]
+            symbol [ ST_IDLE %tmp.2 83 26 33 ];
+            %tmp.2 = getv ? :ST_IDLE;
+            putv self :state %tmp.2;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 94 8 ]
+            symbol [ KIND_NONE %tmp.4 94 29 38 ];
+            %tmp.4 = getv ? :KIND_NONE;
+            putv self :lastKind %tmp.4;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 95 8 ]
+            symbol [ OUTCOME_NONE %tmp.6 95 32 44 ];
+            %tmp.6 = getv ? :OUTCOME_NONE;
+            putv self :lastOutcome %tmp.6;
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 31; ]
+        static
+        <init> {
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 33; ]
+        static
+        enum {
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 34; @position = 8; @symbol_enumdec = [EVENT_NONE,34,8,18]; ]
+            EVENT_NONE = 0,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 35; @position = 8; @symbol_enumdec = [EVENT_TURN,35,8,18]; ]
+            EVENT_TURN = 1,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 36; @position = 8; @symbol_enumdec = [EVENT_FLEW,36,8,18]; ]
+            EVENT_FLEW = 2,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 37; @position = 8; @symbol_enumdec = [EVENT_TOUCHDOWN,37,8,23]; ]
+            EVENT_TOUCHDOWN = 3,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 38; @position = 8; @symbol_enumdec = [EVENT_FELL,38,8,18]; ]
+            EVENT_FELL = 4
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 40; ]
+        static
+        enum {
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 41; @position = 8; @symbol_enumdec = [KIND_NONE,41,8,17]; ]
+            KIND_NONE = 0,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 42; @position = 8; @symbol_enumdec = [KIND_TACK,42,8,17]; ]
+            KIND_TACK = 1,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 43; @position = 8; @symbol_enumdec = [KIND_JIBE,43,8,17]; ]
+            KIND_JIBE = 2,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 44; @position = 8; @symbol_enumdec = [KIND_TURN,44,8,17]; ]
+            KIND_TURN = 3,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 45; @position = 8; @symbol_enumdec = [KIND_REJECT,45,8,19]; ]
+            KIND_REJECT = 4
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 47; ]
+        static
+        enum {
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 48; @position = 8; @symbol_enumdec = [OUTCOME_NONE,48,8,20]; ]
+            OUTCOME_NONE = 0,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 49; @position = 8; @symbol_enumdec = [OUTCOME_FLEW,49,8,20]; ]
+            OUTCOME_FLEW = 1,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 50; @position = 8; @symbol_enumdec = [OUTCOME_TOUCHDOWN,50,8,25]; ]
+            OUTCOME_TOUCHDOWN = 2,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 51; @position = 8; @symbol_enumdec = [OUTCOME_FELL,51,8,20]; ]
+            OUTCOME_FELL = 3
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 53; ]
+        static
+        enum {
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 54; @position = 8; @symbol_enumdec = [ST_IDLE,54,8,15]; ]
+            ST_IDLE = 0,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 55; @position = 8; @symbol_enumdec = [ST_SWEEP,55,8,16]; ]
+            ST_SWEEP = 1,
+            [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 56; @position = 8; @symbol_enumdec = [ST_OUTCOME,56,8,18]; ]
+            ST_OUTCOME = 2
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 60; @position = 10; @symbol_constdef = [MIN_ANGLE_DEG,60,10,23]; ]
+        const MIN_ANGLE_DEG = 60.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 61; @position = 10; @symbol_constdef = [MAX_DURATION_S,61,10,24]; ]
+        const MAX_DURATION_S = 8.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 62; @position = 10; @symbol_constdef = [PEAK_RATE_DEG_S,62,10,25]; ]
+        const PEAK_RATE_DEG_S = 25.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 63; @position = 10; @symbol_constdef = [CONTINUE_RATE_DEG_S,63,10,29]; ]
+        const CONTINUE_RATE_DEG_S = 5.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 64; @position = 10; @symbol_constdef = [COG_SPEED_FLOOR,64,10,25]; ]
+        const COG_SPEED_FLOOR = 2.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 65; @position = 10; @symbol_constdef = [MIN_ARC_M,65,10,19]; ]
+        const MIN_ARC_M = 12.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 66; @position = 10; @symbol_constdef = [MIN_RADIUS_M,66,10,22]; ]
+        const MIN_RADIUS_M = 6.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 67; @position = 10; @symbol_constdef = [CONTEXT_AFTER_S,67,10,25]; ]
+        const CONTEXT_AFTER_S = 3.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 68; @position = 10; @symbol_constdef = [ENTRY_WINDOW_S,68,10,24]; ]
+        const ENTRY_WINDOW_S = 3.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 69; @position = 10; @symbol_constdef = [MIN_SPEED_LAG_S,69,10,25]; ]
+        const MIN_SPEED_LAG_S = 2.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 70; @position = 10; @symbol_constdef = [STOP_FLOOR_MPS,70,10,24]; ]
+        const STOP_FLOOR_MPS = 1.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 71; @position = 10; @symbol_constdef = [TOUCHDOWN_MAX_STOP_S,71,10,30]; ]
+        const TOUCHDOWN_MAX_STOP_S = 3.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 72; @position = 10; @symbol_constdef = [FALL_STOP_S,72,10,21]; ]
+        const FALL_STOP_S = 5.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 73; @position = 10; @symbol_constdef = [LOOKAHEAD_S,73,10,21]; ]
+        const LOOKAHEAD_S = 12.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 74; @position = 10; @symbol_constdef = [RECOVER_PCT,74,10,21]; ]
+        const RECOVER_PCT = 0.70;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 75; @position = 10; @symbol_constdef = [RECOVER_HOLD_S,75,10,24]; ]
+        const RECOVER_HOLD_S = 2.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 76; @position = 10; @symbol_constdef = [SUCCESS_PCT,76,10,21]; ]
+        const SUCCESS_PCT = 70;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 77; @position = 10; @symbol_constdef = [DEG2RAD,77,10,17]; ]
+        const DEG2RAD = 0.017453292;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 78; @position = 10; @symbol_constdef = [NO_CROSS,78,10,18]; ]
+        const NO_CROSS = 1.0e9;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 81; @position = 10; @symbol_constdef = [HIST,81,10,14]; ]
+        const HIST = 14;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 83; @position = 8; @symbol_vardef = [state,83,8,13]; @symbol_type<0> = [Number,83,17,23]; ]
+        var state as Number;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 86; @position = 8; @symbol_vardef = [turnCount,86,8,17]; @symbol_type<0> = [Number,86,21,27]; ]
+        var turnCount as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 87; @position = 8; @symbol_vardef = [tackCount,87,8,17]; @symbol_type<0> = [Number,87,21,27]; ]
+        var tackCount as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 88; @position = 8; @symbol_vardef = [jibeCount,88,8,17]; @symbol_type<0> = [Number,88,21,27]; ]
+        var jibeCount as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 89; @position = 8; @symbol_vardef = [rejectedCount,89,8,21]; @symbol_type<0> = [Number,89,25,31]; ]
+        var rejectedCount as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 90; @position = 8; @symbol_vardef = [flewCount,90,8,17]; @symbol_type<0> = [Number,90,21,27]; ]
+        var flewCount as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 91; @position = 8; @symbol_vardef = [touchdownCount,91,8,22]; @symbol_type<0> = [Number,91,26,32]; ]
+        var touchdownCount as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 92; @position = 8; @symbol_vardef = [fellCount,92,8,17]; @symbol_type<0> = [Number,92,21,27]; ]
+        var fellCount as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 93; @position = 8; @symbol_vardef = [successCount,93,8,20]; @symbol_type<0> = [Number,93,24,30]; ]
+        var successCount as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 94; @position = 8; @symbol_vardef = [lastKind,94,8,16]; @symbol_type<0> = [Number,94,20,26]; ]
+        var lastKind as Number;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 95; @position = 8; @symbol_vardef = [lastOutcome,95,8,19]; @symbol_type<0> = [Number,95,23,29]; ]
+        var lastOutcome as Number;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 96; @position = 8; @symbol_vardef = [lastScorePct,96,8,20]; @symbol_type<0> = [Number,96,24,30]; ]
+        var lastScorePct as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 97; @position = 8; @symbol_vardef = [bestScorePct,97,8,20]; @symbol_type<0> = [Number,97,24,30]; ]
+        var bestScorePct as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 98; @position = 8; @symbol_vardef = [borderlineCount,98,8,23]; @symbol_type<0> = [Number,98,27,33]; ]
+        var borderlineCount as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 101; @position = 8; @symbol_vardef = [lapTurnCount,101,8,20]; @symbol_type<0> = [Number,101,24,30]; ]
+        var lapTurnCount as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 102; @position = 8; @symbol_vardef = [lapBestScorePct,102,8,23]; @symbol_type<0> = [Number,102,27,33]; ]
+        var lapBestScorePct as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 104; @position = 15; @symbol_vardef = [_tArr,104,15,20]; @symbol_type<0> = [Array,104,24,29]; @symbol_type<1> = [Float,104,30,35]; ]
+        protected
+        var _tArr as Array<Float>;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 105; @position = 15; @symbol_vardef = [_uArr,105,15,20]; @symbol_type<0> = [Array,105,24,29]; @symbol_type<1> = [Float,105,30,35]; ]
+        protected
+        var _uArr as Array<Float>;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 106; @position = 15; @symbol_vardef = [_dArr,106,15,20]; @symbol_type<0> = [Array,106,24,29]; @symbol_type<1> = [Float,106,30,35]; ]
+        protected
+        var _dArr as Array<Float>;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 107; @position = 15; @symbol_vardef = [_vArr,107,15,20]; @symbol_type<0> = [Array,107,24,29]; @symbol_type<1> = [Float,107,30,35]; ]
+        protected
+        var _vArr as Array<Float>;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 108; @position = 15; @symbol_vardef = [_idx,108,15,19]; @symbol_type<0> = [Number,108,23,29]; ]
+        protected
+        var _idx as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 109; @position = 15; @symbol_vardef = [_count,109,15,21]; @symbol_type<0> = [Number,109,25,31]; ]
+        protected
+        var _count as Number = 0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 111; @position = 15; @symbol_vardef = [_clockS,111,15,22]; @symbol_type<0> = [Float,111,26,31]; ]
+        protected
+        var _clockS as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 112; @position = 15; @symbol_vardef = [_distM,112,15,21]; @symbol_type<0> = [Float,112,25,30]; ]
+        protected
+        var _distM as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 113; @position = 15; @symbol_vardef = [_lastFlyingS,113,15,27]; @symbol_type<0> = [Float,113,31,36]; ]
+        protected
+        var _lastFlyingS as Float = -1000.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 114; @position = 15; @symbol_vardef = [_lastSpeed,114,15,25]; @symbol_type<0> = [Float,114,29,34]; ]
+        protected
+        var _lastSpeed as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 116; @position = 15; @symbol_vardef = [_haveCog,116,15,23]; @symbol_type<0> = [Boolean,116,27,34]; ]
+        protected
+        var _haveCog as Boolean = false;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 117; @position = 15; @symbol_vardef = [_rawCog,117,15,22]; @symbol_type<0> = [Float,117,26,31]; ]
+        protected
+        var _rawCog as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 118; @position = 15; @symbol_vardef = [_u,118,15,17]; @symbol_type<0> = [Float,118,21,26]; ]
+        protected
+        var _u as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 121; @position = 15; @symbol_vardef = [_startT,121,15,22]; @symbol_type<0> = [Float,121,26,31]; ]
+        protected
+        var _startT as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 122; @position = 15; @symbol_vardef = [_startU,122,15,22]; @symbol_type<0> = [Float,122,26,31]; ]
+        protected
+        var _startU as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 123; @position = 15; @symbol_vardef = [_endT,123,15,20]; @symbol_type<0> = [Float,123,24,29]; ]
+        protected
+        var _endT as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 124; @position = 15; @symbol_vardef = [_endU,124,15,20]; @symbol_type<0> = [Float,124,24,29]; ]
+        protected
+        var _endU as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 125; @position = 15; @symbol_vardef = [_entrySpeed,125,15,26]; @symbol_type<0> = [Float,125,30,35]; ]
+        protected
+        var _entrySpeed as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 126; @position = 15; @symbol_vardef = [_minSpeed,126,15,24]; @symbol_type<0> = [Float,126,28,33]; ]
+        protected
+        var _minSpeed as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 127; @position = 15; @symbol_vardef = [_stopRun,127,15,23]; @symbol_type<0> = [Float,127,27,32]; ]
+        protected
+        var _stopRun as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 128; @position = 15; @symbol_vardef = [_stopMax,128,15,23]; @symbol_type<0> = [Float,128,27,32]; ]
+        protected
+        var _stopMax as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 129; @position = 15; @symbol_vardef = [_lostFoil,129,15,24]; @symbol_type<0> = [Boolean,129,28,35]; ]
+        protected
+        var _lostFoil as Boolean = false;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 130; @position = 15; @symbol_vardef = [_wet,130,15,19]; @symbol_type<0> = [Boolean,130,23,30]; ]
+        protected
+        var _wet as Boolean = false;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 131; @position = 15; @symbol_vardef = [_recoverHeld,131,15,27]; @symbol_type<0> = [Float,131,31,36]; ]
+        protected
+        var _recoverHeld as Float = 0.0;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 135; @position = 15; @symbol_vardef = [_cfg,135,15,19]; @symbol_type<0> = [Config,135,23,29]; ]
+        protected
+        var _cfg as Config;
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 137; @symbol_functiondef = [initialize,137,13,23]; @symbol_param<0> = [cfg,137,24,27]; @symbol_param<0>_type<0> = [Config,137,31,37]; ]
+        function initialize(cfg as Config) as Void {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_137_39_149_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 138 8 ]
+            %tmp.1 = lgetv %cfg;
+            symbol [ cfg %tmp.1 138 15 18 ];
+            symbol [ _cfg ? 138 8 12 ];
+            putv self :_cfg %tmp.1;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 139 8 ]
+            symbol [ HIST %tmp.4 139 33 37 ];
+            %tmp.4 = getv ? :HIST;
+            %tmp.2 = newa Array<Float> %tmp.4;
+            symbol [ Array %tmp.2 139 20 25 ];
+            symbol [ Float %tmp.2 139 26 31 ];
+            symbol [ _tArr ? 139 8 13 ];
+            putv self :_tArr %tmp.2;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 140 8 ]
+            symbol [ HIST %tmp.7 140 33 37 ];
+            %tmp.7 = getv ? :HIST;
+            %tmp.5 = newa Array<Float> %tmp.7;
+            symbol [ Array %tmp.5 140 20 25 ];
+            symbol [ Float %tmp.5 140 26 31 ];
+            symbol [ _uArr ? 140 8 13 ];
+            putv self :_uArr %tmp.5;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 141 8 ]
+            symbol [ HIST %tmp.10 141 33 37 ];
+            %tmp.10 = getv ? :HIST;
+            %tmp.8 = newa Array<Float> %tmp.10;
+            symbol [ Array %tmp.8 141 20 25 ];
+            symbol [ Float %tmp.8 141 26 31 ];
+            symbol [ _dArr ? 141 8 13 ];
+            putv self :_dArr %tmp.8;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 142 8 ]
+            symbol [ HIST %tmp.13 142 33 37 ];
+            %tmp.13 = getv ? :HIST;
+            %tmp.11 = newa Array<Float> %tmp.13;
+            symbol [ Array %tmp.11 142 20 25 ];
+            symbol [ Float %tmp.11 142 26 31 ];
+            symbol [ _vArr ? 142 8 13 ];
+            putv self :_vArr %tmp.11;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 143 8 ]
+            for @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_143_8_148_8_for_test @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_143_8_148_8_for_incr @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_143_8_148_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_143_8_148_8_for_init:
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_143_8_148_8_for_begin" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_143_8_148_8_for_end" ]
+            %i.1 = local;
+            symbol [ i %i.1 143 17 18 ];
+            %tmp.14 = 0;
+            lputv %i.1 %tmp.14;
+            symbol [ i %i.1 143 17 18 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_143_8_148_8_for_test:
+            %tmp.15 = lgetv %i.1;
+            symbol [ i %tmp.15 143 24 25 ];
+            symbol [ HIST %tmp.17 143 28 32 ];
+            %tmp.17 = getv ? :HIST;
+            %tmp.18 = lt %tmp.15 %tmp.17;
+            bf %tmp.18 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_143_8_148_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_143_8_148_8_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_143_39_148_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 144 12 ]
+            symbol [ _tArr %tmp.19 144 12 17 ];
+            %tmp.19 = getv self :_tArr;
+            %tmp.20 = 0.0;
+            %tmp.21 = lgetv %i.1;
+            symbol [ i %tmp.21 144 18 19 ];
+            aputv %tmp.19 %tmp.21 %tmp.20;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 145 12 ]
+            symbol [ _uArr %tmp.22 145 12 17 ];
+            %tmp.22 = getv self :_uArr;
+            %tmp.23 = 0.0;
+            %tmp.24 = lgetv %i.1;
+            symbol [ i %tmp.24 145 18 19 ];
+            aputv %tmp.22 %tmp.24 %tmp.23;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 146 12 ]
+            symbol [ _dArr %tmp.25 146 12 17 ];
+            %tmp.25 = getv self :_dArr;
+            %tmp.26 = 0.0;
+            %tmp.27 = lgetv %i.1;
+            symbol [ i %tmp.27 146 18 19 ];
+            aputv %tmp.25 %tmp.27 %tmp.26;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 147 12 ]
+            symbol [ _vArr %tmp.28 147 12 17 ];
+            %tmp.28 = getv self :_vArr;
+            %tmp.29 = 0.0;
+            %tmp.30 = lgetv %i.1;
+            symbol [ i %tmp.30 147 18 19 ];
+            aputv %tmp.28 %tmp.30 %tmp.29;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_143_39_148_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_143_8_148_8_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 143 ]
+            %tmp.33 = lgetv %i.1;
+            symbol [ i %tmp.33 143 34 35 ];
+            %tmp.34 = add %tmp.33 1;
+            lputv %i.1 %tmp.34;
+            symbol [ i %i.1 143 34 35 ];
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_143_8_148_8_for_test;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_143_8_148_8_for_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_137_39_149_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 153; @symbol_functiondef = [tick,153,13,17]; @symbol_param<0> = [dt,153,18,20]; @symbol_param<0>_type<0> = [Float,153,24,29]; @symbol_param<1> = [cogDeg,153,31,37]; @symbol_param<1>_type<0> = [Float,153,41,46]; @symbol_param<2> = [speedMps,153,49,57]; @symbol_param<2>_type<0> = [Float,153,61,66]; @symbol_param<3> = [distDelta,153,68,77]; @symbol_param<3>_type<0> = [Float,153,81,86]; @symbol_param<4> = [flying,154,12,18]; @symbol_param<4>_type<0> = [Boolean,154,22,29]; @symbol_param<5> = [submerged,154,31,40]; @symbol_param<5>_type<0> = [Boolean,154,44,51]; @symbol_return<0> = [Number,154,56,62]; ]
+        function tick(dt as Float, cogDeg as Float or Null, speedMps as Float, distDelta as Float, flying as Boolean, submerged as Boolean) as Number {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_154_63_174_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 155 8 ]
+            symbol [ _clockS %tmp.1 155 8 15 ];
+            %tmp.1 = getv self :_clockS;
+            %tmp.2 = lgetv %dt;
+            symbol [ dt %tmp.2 155 19 21 ];
+            %tmp.3 = add %tmp.1 %tmp.2;
+            symbol [ _clockS ? 155 8 15 ];
+            putv self :_clockS dup %tmp.3;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 156 8 ]
+            symbol [ _distM %tmp.4 156 8 14 ];
+            %tmp.4 = getv self :_distM;
+            %tmp.5 = lgetv %distDelta;
+            symbol [ distDelta %tmp.5 156 18 27 ];
+            %tmp.6 = add %tmp.4 %tmp.5;
+            symbol [ _distM ? 156 8 14 ];
+            putv self :_distM dup %tmp.6;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 157 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_157_8_159_8_if_stmt:
+            %tmp.7 = lgetv %flying;
+            symbol [ flying %tmp.7 157 12 18 ];
+            bf %tmp.7 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_157_8_159_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_157_8_159_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_157_20_159_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 158 12 ]
+            symbol [ _clockS %tmp.9 158 27 34 ];
+            %tmp.9 = getv ? :_clockS;
+            symbol [ _lastFlyingS ? 158 12 24 ];
+            putv self :_lastFlyingS %tmp.9;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_157_20_159_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_157_8_159_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_157_8_159_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 161 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_154_63_174_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_154_63_174_4_stop" ]
+            %u.1 = local;
+            symbol [ u %u.1 161 12 13 ];
+            %tmp.10 = self;
+            symbol [ _unwrap %tmp.11 161 16 23 ];
+            %tmp.11 = getv function %tmp.10 :_unwrap;
+            %tmp.12 = lgetv %cogDeg;
+            symbol [ cogDeg %tmp.12 161 24 30 ];
+            %tmp.13 = lgetv %speedMps;
+            symbol [ speedMps %tmp.13 161 32 40 ];
+            %tmp.14 = invoke %tmp.10 %tmp.11(%tmp.12, %tmp.13);
+            lputv %u.1 %tmp.14;
+            symbol [ u %u.1 161 12 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 162 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_154_63_174_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_154_63_174_4_stop" ]
+            %event.2 = local;
+            symbol [ event %event.2 162 12 17 ];
+            symbol [ EVENT_NONE %tmp.16 162 20 30 ];
+            %tmp.16 = getv ? :EVENT_NONE;
+            lputv %event.2 %tmp.16;
+            symbol [ event %event.2 162 12 17 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 163 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_163_8_171_8_if_stmt:
+            symbol [ state %tmp.18 163 12 17 ];
+            %tmp.18 = getv ? :state;
+            symbol [ ST_IDLE %tmp.20 163 21 28 ];
+            %tmp.20 = getv ? :ST_IDLE;
+            %tmp.21 = eq %tmp.18 %tmp.20;
+            bf %tmp.21 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_163_8_171_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_163_8_171_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_163_30_167_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 164 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_164_12_166_12_if_stmt:
+            %tmp.22 = lgetv %u.1;
+            symbol [ u %tmp.22 164 16 17 ];
+            %tmp.23 = null;
+            %tmp.24 = ne %tmp.22 %tmp.23;
+            bf %tmp.24 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_164_12_166_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_164_12_166_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_164_27_166_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 165 16 ]
+            %tmp.25 = self;
+            symbol [ _scan %tmp.26 165 24 29 ];
+            %tmp.26 = getv function %tmp.25 :_scan;
+            %tmp.27 = lgetv %u.1;
+            symbol [ u %tmp.27 165 30 31 ];
+            %tmp.28 = as %tmp.27 { (!Null) };
+            %tmp.29 = as %tmp.28 Float;
+            symbol [ Float %tmp.29 165 35 40 ];
+            %tmp.30 = lgetv %speedMps;
+            symbol [ speedMps %tmp.30 165 42 50 ];
+            %tmp.31 = lgetv %flying;
+            symbol [ flying %tmp.31 165 52 58 ];
+            %tmp.32 = invoke %tmp.25 %tmp.26(%tmp.29, %tmp.30, %tmp.31);
+            lputv %event.2 %tmp.32;
+            symbol [ event %event.2 165 16 21 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_164_27_166_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_164_12_166_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_164_12_166_12_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_163_30_167_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_163_8_171_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_163_8_171_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 167 15 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_167_15_171_8_if_stmt:
+            symbol [ state %tmp.34 167 19 24 ];
+            %tmp.34 = getv ? :state;
+            symbol [ ST_SWEEP %tmp.36 167 28 36 ];
+            %tmp.36 = getv ? :ST_SWEEP;
+            %tmp.37 = eq %tmp.34 %tmp.36;
+            bf %tmp.37 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_167_15_171_8_if_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_167_15_171_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_167_38_169_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 168 12 ]
+            %tmp.38 = self;
+            symbol [ _sweep %tmp.39 168 20 26 ];
+            %tmp.39 = getv function %tmp.38 :_sweep;
+            %tmp.40 = lgetv %dt;
+            symbol [ dt %tmp.40 168 27 29 ];
+            %tmp.41 = lgetv %u.1;
+            symbol [ u %tmp.41 168 31 32 ];
+            %tmp.42 = lgetv %speedMps;
+            symbol [ speedMps %tmp.42 168 34 42 ];
+            %tmp.43 = lgetv %submerged;
+            symbol [ submerged %tmp.43 168 44 53 ];
+            %tmp.44 = invoke %tmp.38 %tmp.39(%tmp.40, %tmp.41, %tmp.42, %tmp.43);
+            lputv %event.2 %tmp.44;
+            symbol [ event %event.2 168 12 17 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_167_38_169_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_167_15_171_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_167_15_171_8_if_else_false:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_169_15_171_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 170 12 ]
+            %tmp.45 = self;
+            symbol [ _outcomeTick %tmp.46 170 20 32 ];
+            %tmp.46 = getv function %tmp.45 :_outcomeTick;
+            %tmp.47 = lgetv %dt;
+            symbol [ dt %tmp.47 170 33 35 ];
+            %tmp.48 = lgetv %speedMps;
+            symbol [ speedMps %tmp.48 170 37 45 ];
+            %tmp.49 = lgetv %submerged;
+            symbol [ submerged %tmp.49 170 47 56 ];
+            %tmp.50 = invoke %tmp.45 %tmp.46(%tmp.47, %tmp.48, %tmp.49);
+            lputv %event.2 %tmp.50;
+            symbol [ event %event.2 170 12 17 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_169_15_171_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_167_15_171_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_163_8_171_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 172 8 ]
+            %tmp.51 = lgetv %speedMps;
+            symbol [ speedMps %tmp.51 172 21 29 ];
+            symbol [ _lastSpeed ? 172 8 18 ];
+            putv self :_lastSpeed %tmp.51;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 173 8 ]
+            %tmp.52 = lgetv %event.2;
+            symbol [ event %tmp.52 173 15 20 ];
+            ret %tmp.52;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_154_63_174_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 177; @symbol_functiondef = [onGap,177,13,18]; ]
+        function onGap() as Void {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_177_29_182_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 178 8 ]
+            %tmp.1 = false;
+            symbol [ _haveCog ? 178 8 16 ];
+            putv self :_haveCog %tmp.1;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 179 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_179_8_181_8_if_stmt:
+            symbol [ state %tmp.3 179 12 17 ];
+            %tmp.3 = getv ? :state;
+            symbol [ ST_IDLE %tmp.5 179 21 28 ];
+            %tmp.5 = getv ? :ST_IDLE;
+            %tmp.6 = eq %tmp.3 %tmp.5;
+            bf %tmp.6 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_179_8_181_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_179_8_181_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_179_30_181_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 180 12 ]
+            %tmp.7 = 0;
+            symbol [ _count ? 180 12 18 ];
+            putv self :_count %tmp.7;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_179_30_181_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_179_8_181_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_179_8_181_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_177_29_182_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 184; @symbol_functiondef = [resetLap,184,13,21]; ]
+        function resetLap() as Void {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_184_32_187_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 185 8 ]
+            %tmp.1 = 0;
+            symbol [ lapTurnCount ? 185 8 20 ];
+            putv self :lapTurnCount %tmp.1;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 186 8 ]
+            %tmp.2 = 0;
+            symbol [ lapBestScorePct ? 186 8 23 ];
+            putv self :lapBestScorePct %tmp.2;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_184_32_187_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 189; @symbol_functiondef = [successPct,189,13,23]; @symbol_return<0> = [Number,189,29,35]; ]
+        function successPct() as Number {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_189_36_191_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 190 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_190_15_190_66_begin:
+            symbol [ turnCount %tmp.2 190 15 24 ];
+            %tmp.2 = getv ? :turnCount;
+            %tmp.3 = 0;
+            %tmp.4 = gt %tmp.2 %tmp.3;
+            bf %tmp.4 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_190_15_190_66_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_190_15_190_66_true:
+            symbol [ successCount %tmp.6 190 32 44 ];
+            %tmp.6 = getv ? :successCount;
+            %tmp.7 = 100;
+            %tmp.8 = mul %tmp.6 %tmp.7;
+            symbol [ turnCount %tmp.10 190 53 62 ];
+            %tmp.10 = getv ? :turnCount;
+            %tmp.11 = div %tmp.8 %tmp.10;
+            push %tmp.11;
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_190_15_190_66_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_190_15_190_66_else_false:
+            %tmp.12 = 0;
+            push %tmp.12;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_190_15_190_66_end:
+            %tmp.13 = phi [%tmp.4 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_190_15_190_66_begin] [%tmp.11 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_190_15_190_66_true] [%tmp.12 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_190_15_190_66_else_false] [%tmp.13 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_190_15_190_66_end];
+            ret %tmp.13;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_189_36_191_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 197; @symbol_functiondef = [_unwrap,197,20,27]; @symbol_param<0> = [cogDeg,197,28,34]; @symbol_param<0>_type<0> = [Float,197,38,43]; @symbol_param<1> = [speedMps,197,46,54]; @symbol_param<1>_type<0> = [Float,197,58,63]; @symbol_return<0> = [Float,197,68,73]; ]
+        protected
+        function _unwrap(cogDeg as Float or Null, speedMps as Float) as Float or Null {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_197_75_218_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 198 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_198_8_204_8_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_198_12_198_41_begin:
+            %tmp.1 = lgetv %cogDeg;
+            symbol [ cogDeg %tmp.1 198 12 18 ];
+            %tmp.2 = null;
+            %tmp.3 = eq %tmp.1 %tmp.2;
+            bt %tmp.3 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_198_8_204_8_if_true;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_198_30_198_41_false:
+            %tmp.4 = lgetv %speedMps;
+            symbol [ speedMps %tmp.4 198 30 38 ];
+            symbol [ COG_SPEED_FLOOR %tmp.6 198 41 56 ];
+            %tmp.6 = getv ? :COG_SPEED_FLOOR;
+            %tmp.7 = lt %tmp.4 %tmp.6;
+            push %tmp.7;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_198_30_198_41_end:
+            %tmp.8 = phi [%tmp.3 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_198_12_198_41_begin] [%tmp.7 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_198_30_198_41_false] [%tmp.8 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_198_30_198_41_end];
+            bf %tmp.8 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_198_8_204_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_198_8_204_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_198_58_204_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 199 12 ]
+            %tmp.9 = false;
+            symbol [ _haveCog ? 199 12 20 ];
+            putv self :_haveCog %tmp.9;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 200 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_200_12_202_12_if_stmt:
+            symbol [ state %tmp.11 200 16 21 ];
+            %tmp.11 = getv ? :state;
+            symbol [ ST_IDLE %tmp.13 200 25 32 ];
+            %tmp.13 = getv ? :ST_IDLE;
+            %tmp.14 = eq %tmp.11 %tmp.13;
+            bf %tmp.14 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_200_12_202_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_200_12_202_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_200_34_202_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 201 16 ]
+            %tmp.15 = 0;
+            symbol [ _count ? 201 16 22 ];
+            putv self :_count %tmp.15;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_200_34_202_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_200_12_202_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_200_12_202_12_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 203 12 ]
+            %tmp.16 = null;
+            ret %tmp.16;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_198_58_204_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_198_8_204_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_198_8_204_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 205 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_197_75_218_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_197_75_218_4_stop" ]
+            %c.1 = local;
+            symbol [ c %c.1 205 12 13 ];
+            %tmp.17 = lgetv %cogDeg;
+            symbol [ cogDeg %tmp.17 205 16 22 ];
+            %tmp.18 = as %tmp.17 Float;
+            symbol [ Float %tmp.18 205 26 31 ];
+            lputv %c.1 %tmp.18;
+            symbol [ c %c.1 205 12 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 206 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_206_8_214_8_if_stmt:
+            symbol [ _haveCog %tmp.20 206 13 21 ];
+            %tmp.20 = getv ? :_haveCog;
+            %tmp.21 = not %tmp.20;
+            bf %tmp.21 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_206_8_214_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_206_8_214_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_206_23_214_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 207 12 ]
+            %tmp.22 = true;
+            symbol [ _haveCog ? 207 12 20 ];
+            putv self :_haveCog %tmp.22;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 208 12 ]
+            %tmp.23 = lgetv %c.1;
+            symbol [ c %tmp.23 208 22 23 ];
+            symbol [ _rawCog ? 208 12 19 ];
+            putv self :_rawCog %tmp.23;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 209 12 ]
+            %tmp.24 = lgetv %c.1;
+            symbol [ c %tmp.24 209 17 18 ];
+            symbol [ _u ? 209 12 14 ];
+            putv self :_u %tmp.24;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 210 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_210_12_212_12_if_stmt:
+            symbol [ state %tmp.26 210 16 21 ];
+            %tmp.26 = getv ? :state;
+            symbol [ ST_IDLE %tmp.28 210 25 32 ];
+            %tmp.28 = getv ? :ST_IDLE;
+            %tmp.29 = eq %tmp.26 %tmp.28;
+            bf %tmp.29 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_210_12_212_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_210_12_212_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_210_34_212_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 211 16 ]
+            %tmp.30 = 0;
+            symbol [ _count ? 211 16 22 ];
+            putv self :_count %tmp.30;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_210_34_212_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_210_12_212_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_210_12_212_12_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 213 12 ]
+            symbol [ _u %tmp.32 213 19 21 ];
+            %tmp.32 = getv ? :_u;
+            ret %tmp.32;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_206_23_214_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_206_8_214_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_206_8_214_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 215 8 ]
+            symbol [ _u %tmp.33 215 8 10 ];
+            %tmp.33 = getv self :_u;
+            %tmp.34 = self;
+            symbol [ _wrap180 %tmp.35 215 14 22 ];
+            %tmp.35 = getv function %tmp.34 :_wrap180;
+            %tmp.36 = lgetv %c.1;
+            symbol [ c %tmp.36 215 23 24 ];
+            symbol [ _rawCog %tmp.38 215 27 34 ];
+            %tmp.38 = getv ? :_rawCog;
+            %tmp.39 = sub %tmp.36 %tmp.38;
+            %tmp.40 = invoke %tmp.34 %tmp.35(%tmp.39);
+            %tmp.41 = add %tmp.33 %tmp.40;
+            symbol [ _u ? 215 8 10 ];
+            putv self :_u dup %tmp.41;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 216 8 ]
+            %tmp.42 = lgetv %c.1;
+            symbol [ c %tmp.42 216 18 19 ];
+            symbol [ _rawCog ? 216 8 15 ];
+            putv self :_rawCog %tmp.42;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 217 8 ]
+            symbol [ _u %tmp.44 217 15 17 ];
+            %tmp.44 = getv ? :_u;
+            ret %tmp.44;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_197_75_218_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 220; @symbol_functiondef = [_push,220,20,25]; @symbol_param<0> = [u,220,26,27]; @symbol_param<0>_type<0> = [Float,220,31,36]; @symbol_param<1> = [speedMps,220,38,46]; @symbol_param<1>_type<0> = [Float,220,50,55]; ]
+        protected
+        function _push(u as Float, speedMps as Float) as Void {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_220_65_229_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 221 8 ]
+            symbol [ _idx %tmp.2 221 16 20 ];
+            %tmp.2 = getv ? :_idx;
+            %tmp.3 = 1;
+            %tmp.4 = add %tmp.2 %tmp.3;
+            symbol [ HIST %tmp.6 221 28 32 ];
+            %tmp.6 = getv ? :HIST;
+            %tmp.7 = mod %tmp.4 %tmp.6;
+            symbol [ _idx ? 221 8 12 ];
+            putv self :_idx %tmp.7;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 222 8 ]
+            symbol [ _tArr %tmp.8 222 8 13 ];
+            %tmp.8 = getv self :_tArr;
+            symbol [ _clockS %tmp.10 222 22 29 ];
+            %tmp.10 = getv ? :_clockS;
+            symbol [ _idx %tmp.12 222 14 18 ];
+            %tmp.12 = getv ? :_idx;
+            aputv %tmp.8 %tmp.12 %tmp.10;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 223 8 ]
+            symbol [ _uArr %tmp.13 223 8 13 ];
+            %tmp.13 = getv self :_uArr;
+            %tmp.14 = lgetv %u;
+            symbol [ u %tmp.14 223 22 23 ];
+            symbol [ _idx %tmp.16 223 14 18 ];
+            %tmp.16 = getv ? :_idx;
+            aputv %tmp.13 %tmp.16 %tmp.14;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 224 8 ]
+            symbol [ _dArr %tmp.17 224 8 13 ];
+            %tmp.17 = getv self :_dArr;
+            symbol [ _distM %tmp.19 224 22 28 ];
+            %tmp.19 = getv ? :_distM;
+            symbol [ _idx %tmp.21 224 14 18 ];
+            %tmp.21 = getv ? :_idx;
+            aputv %tmp.17 %tmp.21 %tmp.19;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 225 8 ]
+            symbol [ _vArr %tmp.22 225 8 13 ];
+            %tmp.22 = getv self :_vArr;
+            %tmp.23 = lgetv %speedMps;
+            symbol [ speedMps %tmp.23 225 22 30 ];
+            symbol [ _idx %tmp.25 225 14 18 ];
+            %tmp.25 = getv ? :_idx;
+            aputv %tmp.22 %tmp.25 %tmp.23;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 226 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_226_8_228_8_if_stmt:
+            symbol [ _count %tmp.27 226 12 18 ];
+            %tmp.27 = getv ? :_count;
+            symbol [ HIST %tmp.29 226 21 25 ];
+            %tmp.29 = getv ? :HIST;
+            %tmp.30 = lt %tmp.27 %tmp.29;
+            bf %tmp.30 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_226_8_228_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_226_8_228_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_226_27_228_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 227 12 ]
+            symbol [ _count %tmp.33 227 12 18 ];
+            %tmp.33 = getv ? :_count;
+            %tmp.34 = add %tmp.33 1;
+            symbol [ _count ? 227 12 18 ];
+            putv self :_count dup %tmp.34;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_226_27_228_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_226_8_228_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_226_8_228_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_220_65_229_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 232; @symbol_functiondef = [_scan,232,20,25]; @symbol_param<0> = [u,232,26,27]; @symbol_param<0>_type<0> = [Float,232,31,36]; @symbol_param<1> = [speedMps,232,38,46]; @symbol_param<1>_type<0> = [Float,232,50,55]; @symbol_param<2> = [flying,232,57,63]; @symbol_param<2>_type<0> = [Boolean,232,67,74]; @symbol_return<0> = [Number,232,79,85]; ]
+        protected
+        function _scan(u as Float, speedMps as Float, flying as Boolean) as Number {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_232_86_277_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 233 8 ]
+            %tmp.1 = self;
+            symbol [ _push %tmp.2 233 8 13 ];
+            %tmp.2 = getv function %tmp.1 :_push;
+            %tmp.3 = lgetv %u;
+            symbol [ u %tmp.3 233 14 15 ];
+            %tmp.4 = lgetv %speedMps;
+            symbol [ speedMps %tmp.4 233 17 25 ];
+            invoke %tmp.1 %tmp.2(%tmp.3, %tmp.4);
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 234 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_234_8_236_8_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_234_12_234_48_begin:
+            %tmp.5 = lgetv %flying;
+            symbol [ flying %tmp.5 234 13 19 ];
+            %tmp.6 = not %tmp.5;
+            bf %tmp.6 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_234_8_236_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_234_23_234_48_true:
+            symbol [ _clockS %tmp.8 234 23 30 ];
+            %tmp.8 = getv ? :_clockS;
+            symbol [ _lastFlyingS %tmp.10 234 33 45 ];
+            %tmp.10 = getv ? :_lastFlyingS;
+            %tmp.11 = sub %tmp.8 %tmp.10;
+            symbol [ CONTEXT_AFTER_S %tmp.13 234 48 63 ];
+            %tmp.13 = getv ? :CONTEXT_AFTER_S;
+            %tmp.14 = gt %tmp.11 %tmp.13;
+            push %tmp.14;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_234_23_234_48_end:
+            %tmp.15 = phi [%tmp.6 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_234_12_234_48_begin] [%tmp.14 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_234_23_234_48_true] [%tmp.15 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_234_23_234_48_end];
+            bf %tmp.15 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_234_8_236_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_234_8_236_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_234_65_236_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 235 12 ]
+            symbol [ EVENT_NONE %tmp.17 235 19 29 ];
+            %tmp.17 = getv ? :EVENT_NONE;
+            ret %tmp.17;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_234_65_236_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_234_8_236_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_234_8_236_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 237 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_232_86_277_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_232_86_277_4_stop" ]
+            %bestNet.1 = local;
+            symbol [ bestNet %bestNet.1 237 12 19 ];
+            %tmp.18 = 0.0;
+            lputv %bestNet.1 %tmp.18;
+            symbol [ bestNet %bestNet.1 237 12 19 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 238 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_232_86_277_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_232_86_277_4_stop" ]
+            %bestSlot.2 = local;
+            symbol [ bestSlot %bestSlot.2 238 12 20 ];
+            %tmp.19 = -1;
+            lputv %bestSlot.2 %tmp.19;
+            symbol [ bestSlot %bestSlot.2 238 12 20 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 239 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_232_86_277_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_232_86_277_4_stop" ]
+            %maxRate.3 = local;
+            symbol [ maxRate %maxRate.3 239 12 19 ];
+            %tmp.20 = 0.0;
+            lputv %maxRate.3 %tmp.20;
+            symbol [ maxRate %maxRate.3 239 12 19 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 240 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_232_86_277_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_232_86_277_4_stop" ]
+            %k.4 = local;
+            symbol [ k %k.4 240 12 13 ];
+            symbol [ _idx %tmp.22 240 16 20 ];
+            %tmp.22 = getv ? :_idx;
+            lputv %k.4 %tmp.22;
+            symbol [ k %k.4 240 12 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 241 8 ]
+            for @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_8_271_8_for_test @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_8_271_8_for_incr @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_8_271_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_8_271_8_for_init:
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_8_271_8_for_begin" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_8_271_8_for_end" ]
+            %back.5 = local;
+            symbol [ back %back.5 241 17 21 ];
+            %tmp.23 = 1;
+            lputv %back.5 %tmp.23;
+            symbol [ back %back.5 241 17 21 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_8_271_8_for_test:
+            %tmp.24 = lgetv %back.5;
+            symbol [ back %tmp.24 241 27 31 ];
+            symbol [ _count %tmp.26 241 34 40 ];
+            %tmp.26 = getv ? :_count;
+            %tmp.27 = lt %tmp.24 %tmp.26;
+            bf %tmp.27 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_8_271_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_8_271_8_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_50_271_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 242 12 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_50_271_8_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_50_271_8_stop" ]
+            %prev.6 = local;
+            symbol [ prev %prev.6 242 16 20 ];
+            %tmp.28 = lgetv %k.4;
+            symbol [ k %tmp.28 242 24 25 ];
+            %tmp.29 = 1;
+            %tmp.30 = sub %tmp.28 %tmp.29;
+            symbol [ HIST %tmp.32 242 32 36 ];
+            %tmp.32 = getv ? :HIST;
+            %tmp.33 = add %tmp.30 %tmp.32;
+            symbol [ HIST %tmp.35 242 40 44 ];
+            %tmp.35 = getv ? :HIST;
+            %tmp.36 = mod %tmp.33 %tmp.35;
+            lputv %prev.6 %tmp.36;
+            symbol [ prev %prev.6 242 16 20 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 243 12 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_50_271_8_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_50_271_8_stop" ]
+            %step.7 = local;
+            symbol [ step %step.7 243 16 20 ];
+            symbol [ _tArr %tmp.38 243 23 28 ];
+            %tmp.38 = getv ? :_tArr;
+            %tmp.39 = lgetv %k.4;
+            symbol [ k %tmp.39 243 29 30 ];
+            %tmp.40 = agetv %tmp.38 %tmp.39;
+            symbol [ _tArr %tmp.42 243 34 39 ];
+            %tmp.42 = getv ? :_tArr;
+            %tmp.43 = lgetv %prev.6;
+            symbol [ prev %tmp.43 243 40 44 ];
+            %tmp.44 = agetv %tmp.42 %tmp.43;
+            %tmp.45 = sub %tmp.40 %tmp.44;
+            lputv %step.7 %tmp.45;
+            symbol [ step %step.7 243 16 20 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 244 12 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_50_271_8_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_50_271_8_stop" ]
+            %r.8 = local;
+            symbol [ r %r.8 244 16 17 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_244_20_244_75_begin:
+            %tmp.46 = lgetv %step.7;
+            symbol [ step %tmp.46 244 20 24 ];
+            %tmp.47 = 0.0;
+            %tmp.48 = gt %tmp.46 %tmp.47;
+            bf %tmp.48 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_244_20_244_75_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_244_20_244_75_true:
+            symbol [ _uArr %tmp.50 244 35 40 ];
+            %tmp.50 = getv ? :_uArr;
+            %tmp.51 = lgetv %k.4;
+            symbol [ k %tmp.51 244 41 42 ];
+            %tmp.52 = agetv %tmp.50 %tmp.51;
+            symbol [ _uArr %tmp.54 244 46 51 ];
+            %tmp.54 = getv ? :_uArr;
+            %tmp.55 = lgetv %prev.6;
+            symbol [ prev %tmp.55 244 52 56 ];
+            %tmp.56 = agetv %tmp.54 %tmp.55;
+            %tmp.57 = sub %tmp.52 %tmp.56;
+            %tmp.58 = lgetv %step.7;
+            symbol [ step %tmp.58 244 61 65 ];
+            %tmp.59 = div %tmp.57 %tmp.58;
+            symbol [ abs %tmp.60 244 67 70 ];
+            %tmp.60 = getv function %tmp.59 :abs;
+            %tmp.61 = invoke %tmp.59 %tmp.60();
+            push %tmp.61;
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_244_20_244_75_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_244_20_244_75_else_false:
+            %tmp.62 = 0.0;
+            push %tmp.62;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_244_20_244_75_end:
+            %tmp.63 = phi [%tmp.48 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_244_20_244_75_begin] [%tmp.61 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_244_20_244_75_true] [%tmp.62 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_244_20_244_75_else_false] [%tmp.63 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_244_20_244_75_end];
+            lputv %r.8 %tmp.63;
+            symbol [ r %r.8 244 16 17 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 248 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_248_12_250_12_if_stmt:
+            %tmp.64 = lgetv %r.8;
+            symbol [ r %tmp.64 248 16 17 ];
+            symbol [ CONTINUE_RATE_DEG_S %tmp.66 248 20 39 ];
+            %tmp.66 = getv ? :CONTINUE_RATE_DEG_S;
+            %tmp.67 = lt %tmp.64 %tmp.66;
+            bf %tmp.67 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_248_12_250_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_248_12_250_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_248_41_250_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 249 16 ]
+            goto break @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_8_271_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_248_41_250_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_248_12_250_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_248_12_250_12_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 251 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_251_12_253_12_if_stmt:
+            %tmp.68 = lgetv %r.8;
+            symbol [ r %tmp.68 251 16 17 ];
+            %tmp.69 = lgetv %maxRate.3;
+            symbol [ maxRate %tmp.69 251 20 27 ];
+            %tmp.70 = gt %tmp.68 %tmp.69;
+            bf %tmp.70 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_251_12_253_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_251_12_253_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_251_29_253_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 252 16 ]
+            %tmp.71 = lgetv %r.8;
+            symbol [ r %tmp.71 252 26 27 ];
+            lputv %maxRate.3 %tmp.71;
+            symbol [ maxRate %maxRate.3 252 16 23 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_251_29_253_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_251_12_253_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_251_12_253_12_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 254 12 ]
+            %tmp.72 = lgetv %prev.6;
+            symbol [ prev %tmp.72 254 16 20 ];
+            lputv %k.4 %tmp.72;
+            symbol [ k %k.4 254 12 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 255 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_255_12_257_12_if_stmt:
+            symbol [ _clockS %tmp.74 255 16 23 ];
+            %tmp.74 = getv ? :_clockS;
+            symbol [ _tArr %tmp.76 255 26 31 ];
+            %tmp.76 = getv ? :_tArr;
+            %tmp.77 = lgetv %k.4;
+            symbol [ k %tmp.77 255 32 33 ];
+            %tmp.78 = agetv %tmp.76 %tmp.77;
+            %tmp.79 = sub %tmp.74 %tmp.78;
+            symbol [ MAX_DURATION_S %tmp.81 255 37 51 ];
+            %tmp.81 = getv ? :MAX_DURATION_S;
+            %tmp.82 = gt %tmp.79 %tmp.81;
+            bf %tmp.82 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_255_12_257_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_255_12_257_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_255_53_257_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 256 16 ]
+            goto break @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_8_271_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_255_53_257_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_255_12_257_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_255_12_257_12_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 258 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_258_12_260_12_if_stmt:
+            %tmp.83 = lgetv %maxRate.3;
+            symbol [ maxRate %tmp.83 258 16 23 ];
+            symbol [ PEAK_RATE_DEG_S %tmp.85 258 26 41 ];
+            %tmp.85 = getv ? :PEAK_RATE_DEG_S;
+            %tmp.86 = lt %tmp.83 %tmp.85;
+            bf %tmp.86 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_258_12_260_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_258_12_260_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_258_43_260_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 259 16 ]
+            goto break @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_8_271_8_for_incr;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_258_43_260_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_258_12_260_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_258_12_260_12_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 261 12 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_50_271_8_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_50_271_8_stop" ]
+            %net.9 = local;
+            symbol [ net %net.9 261 16 19 ];
+            %tmp.87 = lgetv %u;
+            symbol [ u %tmp.87 261 23 24 ];
+            symbol [ _uArr %tmp.89 261 27 32 ];
+            %tmp.89 = getv ? :_uArr;
+            %tmp.90 = lgetv %k.4;
+            symbol [ k %tmp.90 261 33 34 ];
+            %tmp.91 = agetv %tmp.89 %tmp.90;
+            %tmp.92 = sub %tmp.87 %tmp.91;
+            symbol [ abs %tmp.93 261 37 40 ];
+            %tmp.93 = getv function %tmp.92 :abs;
+            %tmp.94 = invoke %tmp.92 %tmp.93();
+            lputv %net.9 %tmp.94;
+            symbol [ net %net.9 261 16 19 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 262 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_262_12_264_12_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_262_16_262_46_begin:
+            %tmp.95 = lgetv %net.9;
+            symbol [ net %tmp.95 262 16 19 ];
+            symbol [ MIN_ANGLE_DEG %tmp.97 262 22 35 ];
+            %tmp.97 = getv ? :MIN_ANGLE_DEG;
+            %tmp.98 = lt %tmp.95 %tmp.97;
+            bt %tmp.98 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_262_12_264_12_if_true;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_262_39_262_46_false:
+            %tmp.99 = lgetv %net.9;
+            symbol [ net %tmp.99 262 39 42 ];
+            %tmp.100 = lgetv %bestNet.1;
+            symbol [ bestNet %tmp.100 262 46 53 ];
+            %tmp.101 = lte %tmp.99 %tmp.100;
+            push %tmp.101;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_262_39_262_46_end:
+            %tmp.102 = phi [%tmp.98 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_262_16_262_46_begin] [%tmp.101 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_262_39_262_46_false] [%tmp.102 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_262_39_262_46_end];
+            bf %tmp.102 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_262_12_264_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_262_12_264_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_262_55_264_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 263 16 ]
+            goto break @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_8_271_8_for_incr;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_262_55_264_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_262_12_264_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_262_12_264_12_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 265 12 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_50_271_8_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_50_271_8_stop" ]
+            %arc.10 = local;
+            symbol [ arc %arc.10 265 16 19 ];
+            symbol [ _distM %tmp.104 265 22 28 ];
+            %tmp.104 = getv ? :_distM;
+            symbol [ _dArr %tmp.106 265 31 36 ];
+            %tmp.106 = getv ? :_dArr;
+            %tmp.107 = lgetv %k.4;
+            symbol [ k %tmp.107 265 37 38 ];
+            %tmp.108 = agetv %tmp.106 %tmp.107;
+            %tmp.109 = sub %tmp.104 %tmp.108;
+            lputv %arc.10 %tmp.109;
+            symbol [ arc %arc.10 265 16 19 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 266 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_266_12_268_12_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_266_16_266_59_begin:
+            %tmp.110 = lgetv %arc.10;
+            symbol [ arc %tmp.110 266 16 19 ];
+            symbol [ MIN_ARC_M %tmp.112 266 22 31 ];
+            %tmp.112 = getv ? :MIN_ARC_M;
+            %tmp.113 = lt %tmp.110 %tmp.112;
+            bt %tmp.113 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_266_12_268_12_if_true;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_266_35_266_59_false:
+            %tmp.114 = lgetv %arc.10;
+            symbol [ arc %tmp.114 266 35 38 ];
+            %tmp.115 = lgetv %net.9;
+            symbol [ net %tmp.115 266 42 45 ];
+            symbol [ DEG2RAD %tmp.117 266 48 55 ];
+            %tmp.117 = getv ? :DEG2RAD;
+            %tmp.118 = mul %tmp.115 %tmp.117;
+            %tmp.119 = div %tmp.114 %tmp.118;
+            symbol [ MIN_RADIUS_M %tmp.121 266 59 71 ];
+            %tmp.121 = getv ? :MIN_RADIUS_M;
+            %tmp.122 = lt %tmp.119 %tmp.121;
+            push %tmp.122;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_266_35_266_59_end:
+            %tmp.123 = phi [%tmp.113 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_266_16_266_59_begin] [%tmp.122 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_266_35_266_59_false] [%tmp.123 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_266_35_266_59_end];
+            bf %tmp.123 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_266_12_268_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_266_12_268_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_266_73_268_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 267 16 ]
+            goto break @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_8_271_8_for_incr;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_266_73_268_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_266_12_268_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_266_12_268_12_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 269 12 ]
+            %tmp.124 = lgetv %net.9;
+            symbol [ net %tmp.124 269 22 25 ];
+            lputv %bestNet.1 %tmp.124;
+            symbol [ bestNet %bestNet.1 269 12 19 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 270 12 ]
+            %tmp.125 = lgetv %k.4;
+            symbol [ k %tmp.125 270 23 24 ];
+            lputv %bestSlot.2 %tmp.125;
+            symbol [ bestSlot %bestSlot.2 270 12 20 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_50_271_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_8_271_8_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 241 ]
+            %tmp.128 = lgetv %back.5;
+            symbol [ back %tmp.128 241 42 46 ];
+            %tmp.129 = add %tmp.128 1;
+            lputv %back.5 %tmp.129;
+            symbol [ back %back.5 241 42 46 ];
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_8_271_8_for_test;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_241_8_271_8_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 272 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_272_8_274_8_if_stmt:
+            %tmp.130 = lgetv %bestSlot.2;
+            symbol [ bestSlot %tmp.130 272 12 20 ];
+            %tmp.131 = 0;
+            %tmp.132 = lt %tmp.130 %tmp.131;
+            bf %tmp.132 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_272_8_274_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_272_8_274_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_272_26_274_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 273 12 ]
+            symbol [ EVENT_NONE %tmp.134 273 19 29 ];
+            %tmp.134 = getv ? :EVENT_NONE;
+            ret %tmp.134;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_272_26_274_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_272_8_274_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_272_8_274_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 275 8 ]
+            %tmp.135 = self;
+            symbol [ _openSweep %tmp.136 275 8 18 ];
+            %tmp.136 = getv function %tmp.135 :_openSweep;
+            %tmp.137 = lgetv %bestSlot.2;
+            symbol [ bestSlot %tmp.137 275 19 27 ];
+            %tmp.138 = lgetv %u;
+            symbol [ u %tmp.138 275 29 30 ];
+            %tmp.139 = lgetv %speedMps;
+            symbol [ speedMps %tmp.139 275 32 40 ];
+            invoke %tmp.135 %tmp.136(%tmp.137, %tmp.138, %tmp.139);
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 276 8 ]
+            symbol [ EVENT_NONE %tmp.141 276 15 25 ];
+            %tmp.141 = getv ? :EVENT_NONE;
+            ret %tmp.141;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_232_86_277_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 279; @symbol_functiondef = [_openSweep,279,20,30]; @symbol_param<0> = [slot,279,31,35]; @symbol_param<0>_type<0> = [Number,279,39,45]; @symbol_param<1> = [u,279,47,48]; @symbol_param<1>_type<0> = [Float,279,52,57]; @symbol_param<2> = [speedMps,279,59,67]; @symbol_param<2>_type<0> = [Float,279,71,76]; ]
+        protected
+        function _openSweep(slot as Number, u as Float, speedMps as Float) as Void {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_279_86_314_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 280 8 ]
+            symbol [ _tArr %tmp.2 280 18 23 ];
+            %tmp.2 = getv ? :_tArr;
+            %tmp.3 = lgetv %slot;
+            symbol [ slot %tmp.3 280 24 28 ];
+            %tmp.4 = agetv %tmp.2 %tmp.3;
+            symbol [ _startT ? 280 8 15 ];
+            putv self :_startT %tmp.4;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 281 8 ]
+            symbol [ _uArr %tmp.6 281 18 23 ];
+            %tmp.6 = getv ? :_uArr;
+            %tmp.7 = lgetv %slot;
+            symbol [ slot %tmp.7 281 24 28 ];
+            %tmp.8 = agetv %tmp.6 %tmp.7;
+            symbol [ _startU ? 281 8 15 ];
+            putv self :_startU %tmp.8;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 282 8 ]
+            symbol [ _clockS %tmp.10 282 16 23 ];
+            %tmp.10 = getv ? :_clockS;
+            symbol [ _endT ? 282 8 13 ];
+            putv self :_endT %tmp.10;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 283 8 ]
+            %tmp.11 = lgetv %u;
+            symbol [ u %tmp.11 283 16 17 ];
+            symbol [ _endU ? 283 8 13 ];
+            putv self :_endU %tmp.11;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 286 8 ]
+            symbol [ _vArr %tmp.13 286 22 27 ];
+            %tmp.13 = getv ? :_vArr;
+            %tmp.14 = lgetv %slot;
+            symbol [ slot %tmp.14 286 28 32 ];
+            %tmp.15 = agetv %tmp.13 %tmp.14;
+            symbol [ _entrySpeed ? 286 8 19 ];
+            putv self :_entrySpeed %tmp.15;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 287 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_279_86_314_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_279_86_314_4_stop" ]
+            %k.1 = local;
+            symbol [ k %k.1 287 12 13 ];
+            %tmp.16 = lgetv %slot;
+            symbol [ slot %tmp.16 287 16 20 ];
+            lputv %k.1 %tmp.16;
+            symbol [ k %k.1 287 12 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 288 8 ]
+            for @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_288_8_296_8_for_test @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_288_8_296_8_for_incr @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_288_8_296_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_288_8_296_8_for_init:
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_288_8_296_8_for_begin" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_288_8_296_8_for_end" ]
+            %back.2 = local;
+            symbol [ back %back.2 288 17 21 ];
+            %tmp.17 = 0;
+            lputv %back.2 %tmp.17;
+            symbol [ back %back.2 288 17 21 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_288_8_296_8_for_test:
+            %tmp.18 = lgetv %back.2;
+            symbol [ back %tmp.18 288 27 31 ];
+            symbol [ _count %tmp.20 288 34 40 ];
+            %tmp.20 = getv ? :_count;
+            %tmp.21 = lt %tmp.18 %tmp.20;
+            bf %tmp.21 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_288_8_296_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_288_8_296_8_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_288_50_296_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 289 12 ]
+            %tmp.22 = lgetv %k.1;
+            symbol [ k %tmp.22 289 17 18 ];
+            %tmp.23 = 1;
+            %tmp.24 = sub %tmp.22 %tmp.23;
+            symbol [ HIST %tmp.26 289 25 29 ];
+            %tmp.26 = getv ? :HIST;
+            %tmp.27 = add %tmp.24 %tmp.26;
+            symbol [ HIST %tmp.29 289 33 37 ];
+            %tmp.29 = getv ? :HIST;
+            %tmp.30 = mod %tmp.27 %tmp.29;
+            lputv %k.1 %tmp.30;
+            symbol [ k %k.1 289 12 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 290 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_290_12_292_12_if_stmt:
+            symbol [ _startT %tmp.32 290 16 23 ];
+            %tmp.32 = getv ? :_startT;
+            symbol [ _tArr %tmp.34 290 26 31 ];
+            %tmp.34 = getv ? :_tArr;
+            %tmp.35 = lgetv %k.1;
+            symbol [ k %tmp.35 290 32 33 ];
+            %tmp.36 = agetv %tmp.34 %tmp.35;
+            %tmp.37 = sub %tmp.32 %tmp.36;
+            symbol [ ENTRY_WINDOW_S %tmp.39 290 37 51 ];
+            %tmp.39 = getv ? :ENTRY_WINDOW_S;
+            %tmp.40 = gt %tmp.37 %tmp.39;
+            bf %tmp.40 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_290_12_292_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_290_12_292_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_290_53_292_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 291 16 ]
+            goto break @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_288_8_296_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_290_53_292_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_290_12_292_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_290_12_292_12_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 293 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_293_12_295_12_if_stmt:
+            symbol [ _vArr %tmp.42 293 16 21 ];
+            %tmp.42 = getv ? :_vArr;
+            %tmp.43 = lgetv %k.1;
+            symbol [ k %tmp.43 293 22 23 ];
+            %tmp.44 = agetv %tmp.42 %tmp.43;
+            symbol [ _entrySpeed %tmp.46 293 27 38 ];
+            %tmp.46 = getv ? :_entrySpeed;
+            %tmp.47 = gt %tmp.44 %tmp.46;
+            bf %tmp.47 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_293_12_295_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_293_12_295_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_293_40_295_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 294 16 ]
+            symbol [ _vArr %tmp.49 294 30 35 ];
+            %tmp.49 = getv ? :_vArr;
+            %tmp.50 = lgetv %k.1;
+            symbol [ k %tmp.50 294 36 37 ];
+            %tmp.51 = agetv %tmp.49 %tmp.50;
+            symbol [ _entrySpeed ? 294 16 27 ];
+            putv self :_entrySpeed %tmp.51;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_293_40_295_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_293_12_295_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_293_12_295_12_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_288_50_296_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_288_8_296_8_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 288 ]
+            %tmp.54 = lgetv %back.2;
+            symbol [ back %tmp.54 288 42 46 ];
+            %tmp.55 = add %tmp.54 1;
+            lputv %back.2 %tmp.55;
+            symbol [ back %back.2 288 42 46 ];
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_288_8_296_8_for_test;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_288_8_296_8_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 298 8 ]
+            %tmp.56 = lgetv %speedMps;
+            symbol [ speedMps %tmp.56 298 20 28 ];
+            symbol [ _minSpeed ? 298 8 17 ];
+            putv self :_minSpeed %tmp.56;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 299 8 ]
+            symbol [ _idx %tmp.58 299 12 16 ];
+            %tmp.58 = getv ? :_idx;
+            lputv %k.1 %tmp.58;
+            symbol [ k %k.1 299 8 9 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 300 8 ]
+            while @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_300_8_305_8_while_test @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_300_8_305_8_while_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_300_8_305_8_while_test:
+            %tmp.59 = lgetv %k.1;
+            symbol [ k %tmp.59 300 15 16 ];
+            %tmp.60 = lgetv %slot;
+            symbol [ slot %tmp.60 300 20 24 ];
+            %tmp.61 = ne %tmp.59 %tmp.60;
+            bf %tmp.61 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_300_8_305_8_while_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_300_8_305_8_while_begin:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_300_26_305_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 301 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_301_12_303_12_if_stmt:
+            symbol [ _vArr %tmp.63 301 16 21 ];
+            %tmp.63 = getv ? :_vArr;
+            %tmp.64 = lgetv %k.1;
+            symbol [ k %tmp.64 301 22 23 ];
+            %tmp.65 = agetv %tmp.63 %tmp.64;
+            symbol [ _minSpeed %tmp.67 301 27 36 ];
+            %tmp.67 = getv ? :_minSpeed;
+            %tmp.68 = lt %tmp.65 %tmp.67;
+            bf %tmp.68 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_301_12_303_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_301_12_303_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_301_38_303_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 302 16 ]
+            symbol [ _vArr %tmp.70 302 28 33 ];
+            %tmp.70 = getv ? :_vArr;
+            %tmp.71 = lgetv %k.1;
+            symbol [ k %tmp.71 302 34 35 ];
+            %tmp.72 = agetv %tmp.70 %tmp.71;
+            symbol [ _minSpeed ? 302 16 25 ];
+            putv self :_minSpeed %tmp.72;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_301_38_303_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_301_12_303_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_301_12_303_12_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 304 12 ]
+            %tmp.73 = lgetv %k.1;
+            symbol [ k %tmp.73 304 17 18 ];
+            %tmp.74 = 1;
+            %tmp.75 = sub %tmp.73 %tmp.74;
+            symbol [ HIST %tmp.77 304 25 29 ];
+            %tmp.77 = getv ? :HIST;
+            %tmp.78 = add %tmp.75 %tmp.77;
+            symbol [ HIST %tmp.80 304 33 37 ];
+            %tmp.80 = getv ? :HIST;
+            %tmp.81 = mod %tmp.78 %tmp.80;
+            lputv %k.1 %tmp.81;
+            symbol [ k %k.1 304 12 13 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_300_26_305_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_300_8_305_8_while_test;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_300_8_305_8_while_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 307 8 ]
+            %tmp.82 = 0.0;
+            symbol [ _stopRun ? 307 8 16 ];
+            putv self :_stopRun %tmp.82;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 308 8 ]
+            %tmp.83 = 0.0;
+            symbol [ _stopMax ? 308 8 16 ];
+            putv self :_stopMax %tmp.83;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 309 8 ]
+            %tmp.84 = false;
+            symbol [ _lostFoil ? 309 8 17 ];
+            putv self :_lostFoil %tmp.84;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 310 8 ]
+            %tmp.85 = false;
+            symbol [ _wet ? 310 8 12 ];
+            putv self :_wet %tmp.85;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 311 8 ]
+            %tmp.86 = 0.0;
+            symbol [ _recoverHeld ? 311 8 20 ];
+            putv self :_recoverHeld %tmp.86;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 312 8 ]
+            %tmp.87 = 0;
+            symbol [ _count ? 312 8 14 ];
+            putv self :_count %tmp.87;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 313 8 ]
+            symbol [ ST_SWEEP %tmp.89 313 16 24 ];
+            %tmp.89 = getv ? :ST_SWEEP;
+            symbol [ state ? 313 8 13 ];
+            putv self :state %tmp.89;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_279_86_314_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 317; @symbol_functiondef = [_sweep,317,20,26]; @symbol_param<0> = [dt,317,27,29]; @symbol_param<0>_type<0> = [Float,317,33,38]; @symbol_param<1> = [u,317,40,41]; @symbol_param<1>_type<0> = [Float,317,45,50]; @symbol_param<2> = [speedMps,317,53,61]; @symbol_param<2>_type<0> = [Float,317,65,70]; @symbol_param<3> = [submerged,318,12,21]; @symbol_param<3>_type<0> = [Boolean,318,25,32]; @symbol_return<0> = [Number,318,37,43]; ]
+        protected
+        function _sweep(dt as Float, u as Float or Null, speedMps as Float, submerged as Boolean) as Number {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_318_44_346_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 319 8 ]
+            %tmp.1 = self;
+            symbol [ _track %tmp.2 319 8 14 ];
+            %tmp.2 = getv function %tmp.1 :_track;
+            %tmp.3 = lgetv %dt;
+            symbol [ dt %tmp.3 319 15 17 ];
+            %tmp.4 = lgetv %speedMps;
+            symbol [ speedMps %tmp.4 319 19 27 ];
+            %tmp.5 = lgetv %submerged;
+            symbol [ submerged %tmp.5 319 29 38 ];
+            invoke %tmp.1 %tmp.2(%tmp.3, %tmp.4, %tmp.5);
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 320 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_320_8_328_8_if_stmt:
+            %tmp.6 = lgetv %u;
+            symbol [ u %tmp.6 320 12 13 ];
+            %tmp.7 = null;
+            %tmp.8 = ne %tmp.6 %tmp.7;
+            bf %tmp.8 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_320_8_328_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_320_8_328_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_320_23_328_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 321 12 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_320_23_328_8_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_320_23_328_8_stop" ]
+            %step.1 = local;
+            symbol [ step %step.1 321 16 20 ];
+            symbol [ _clockS %tmp.10 321 23 30 ];
+            %tmp.10 = getv ? :_clockS;
+            symbol [ _endT %tmp.12 321 33 38 ];
+            %tmp.12 = getv ? :_endT;
+            %tmp.13 = sub %tmp.10 %tmp.12;
+            lputv %step.1 %tmp.13;
+            symbol [ step %step.1 321 16 20 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 322 12 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_320_23_328_8_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_320_23_328_8_stop" ]
+            %rate.2 = local;
+            symbol [ rate %rate.2 322 16 20 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_322_23_322_68_begin:
+            %tmp.14 = lgetv %step.1;
+            symbol [ step %tmp.14 322 23 27 ];
+            %tmp.15 = 0.0;
+            %tmp.16 = gt %tmp.14 %tmp.15;
+            bf %tmp.16 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_322_23_322_68_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_322_23_322_68_true:
+            %tmp.17 = lgetv %u;
+            symbol [ u %tmp.17 322 38 39 ];
+            %tmp.18 = as %tmp.17 { (!Null) };
+            %tmp.19 = as %tmp.18 Float;
+            symbol [ Float %tmp.19 322 43 48 ];
+            symbol [ _endU %tmp.21 322 52 57 ];
+            %tmp.21 = getv ? :_endU;
+            %tmp.22 = sub %tmp.19 %tmp.21;
+            %tmp.23 = lgetv %step.1;
+            symbol [ step %tmp.23 322 61 65 ];
+            %tmp.24 = div %tmp.22 %tmp.23;
+            push %tmp.24;
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_322_23_322_68_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_322_23_322_68_else_false:
+            %tmp.25 = 0.0;
+            push %tmp.25;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_322_23_322_68_end:
+            %tmp.26 = phi [%tmp.16 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_322_23_322_68_begin] [%tmp.24 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_322_23_322_68_true] [%tmp.25 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_322_23_322_68_else_false] [%tmp.26 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_322_23_322_68_end];
+            lputv %rate.2 %tmp.26;
+            symbol [ rate %rate.2 322 16 20 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 323 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_323_12_327_12_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_323_16_323_74_begin:
+            %tmp.27 = lgetv %rate.2;
+            symbol [ rate %tmp.27 323 16 20 ];
+            symbol [ abs %tmp.28 323 21 24 ];
+            %tmp.28 = getv function %tmp.27 :abs;
+            %tmp.29 = invoke %tmp.27 %tmp.28();
+            symbol [ CONTINUE_RATE_DEG_S %tmp.31 323 30 49 ];
+            %tmp.31 = getv ? :CONTINUE_RATE_DEG_S;
+            %tmp.32 = gte %tmp.29 %tmp.31;
+            bf %tmp.32 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_323_12_327_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_323_53_323_74_true:
+            symbol [ _clockS %tmp.34 323 53 60 ];
+            %tmp.34 = getv ? :_clockS;
+            symbol [ _startT %tmp.36 323 63 70 ];
+            %tmp.36 = getv ? :_startT;
+            %tmp.37 = sub %tmp.34 %tmp.36;
+            symbol [ MAX_DURATION_S %tmp.39 323 74 88 ];
+            %tmp.39 = getv ? :MAX_DURATION_S;
+            %tmp.40 = lte %tmp.37 %tmp.39;
+            push %tmp.40;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_323_53_323_74_end:
+            %tmp.41 = phi [%tmp.32 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_323_16_323_74_begin] [%tmp.40 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_323_53_323_74_true] [%tmp.41 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_323_53_323_74_end];
+            bf %tmp.41 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_323_12_327_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_323_12_327_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_323_90_327_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 324 16 ]
+            %tmp.42 = lgetv %u;
+            symbol [ u %tmp.42 324 24 25 ];
+            %tmp.43 = as %tmp.42 { (!Null) };
+            %tmp.44 = as %tmp.43 Float;
+            symbol [ Float %tmp.44 324 29 34 ];
+            symbol [ _endU ? 324 16 21 ];
+            putv self :_endU %tmp.44;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 325 16 ]
+            symbol [ _clockS %tmp.46 325 24 31 ];
+            %tmp.46 = getv ? :_clockS;
+            symbol [ _endT ? 325 16 21 ];
+            putv self :_endT %tmp.46;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 326 16 ]
+            symbol [ EVENT_NONE %tmp.48 326 23 33 ];
+            %tmp.48 = getv ? :EVENT_NONE;
+            ret %tmp.48;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_323_90_327_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_323_12_327_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_323_12_327_12_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_320_23_328_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_320_8_328_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_320_8_328_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 329 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_318_44_346_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_318_44_346_4_stop" ]
+            %kind.3 = local;
+            symbol [ kind %kind.3 329 12 16 ];
+            %tmp.49 = self;
+            symbol [ _classify %tmp.50 329 19 28 ];
+            %tmp.50 = getv function %tmp.49 :_classify;
+            symbol [ _startU %tmp.52 329 29 36 ];
+            %tmp.52 = getv ? :_startU;
+            symbol [ _endU %tmp.54 329 38 43 ];
+            %tmp.54 = getv ? :_endU;
+            %tmp.55 = invoke %tmp.49 %tmp.50(%tmp.52, %tmp.54);
+            lputv %kind.3 %tmp.55;
+            symbol [ kind %kind.3 329 12 16 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 330 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_330_8_335_8_if_stmt:
+            %tmp.56 = lgetv %kind.3;
+            symbol [ kind %tmp.56 330 12 16 ];
+            symbol [ KIND_REJECT %tmp.58 330 20 31 ];
+            %tmp.58 = getv ? :KIND_REJECT;
+            %tmp.59 = eq %tmp.56 %tmp.58;
+            bf %tmp.59 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_330_8_335_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_330_8_335_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_330_33_335_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 331 12 ]
+            symbol [ rejectedCount %tmp.62 331 12 25 ];
+            %tmp.62 = getv ? :rejectedCount;
+            %tmp.63 = add %tmp.62 1;
+            symbol [ rejectedCount ? 331 12 25 ];
+            putv self :rejectedCount dup %tmp.63;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 332 12 ]
+            symbol [ ST_IDLE %tmp.65 332 20 27 ];
+            %tmp.65 = getv ? :ST_IDLE;
+            symbol [ state ? 332 12 17 ];
+            putv self :state %tmp.65;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 333 12 ]
+            %tmp.66 = 0;
+            symbol [ _count ? 333 12 18 ];
+            putv self :_count %tmp.66;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 334 12 ]
+            symbol [ EVENT_NONE %tmp.68 334 19 29 ];
+            %tmp.68 = getv ? :EVENT_NONE;
+            ret %tmp.68;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_330_33_335_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_330_8_335_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_330_8_335_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 336 8 ]
+            %tmp.69 = lgetv %kind.3;
+            symbol [ kind %tmp.69 336 19 23 ];
+            symbol [ lastKind ? 336 8 16 ];
+            putv self :lastKind %tmp.69;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 337 8 ]
+            symbol [ turnCount %tmp.72 337 8 17 ];
+            %tmp.72 = getv ? :turnCount;
+            %tmp.73 = add %tmp.72 1;
+            symbol [ turnCount ? 337 8 17 ];
+            putv self :turnCount dup %tmp.73;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 338 8 ]
+            symbol [ lapTurnCount %tmp.76 338 8 20 ];
+            %tmp.76 = getv ? :lapTurnCount;
+            %tmp.77 = add %tmp.76 1;
+            symbol [ lapTurnCount ? 338 8 20 ];
+            putv self :lapTurnCount dup %tmp.77;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 339 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_339_8_343_8_if_stmt:
+            %tmp.78 = lgetv %kind.3;
+            symbol [ kind %tmp.78 339 12 16 ];
+            symbol [ KIND_TACK %tmp.80 339 20 29 ];
+            %tmp.80 = getv ? :KIND_TACK;
+            %tmp.81 = eq %tmp.78 %tmp.80;
+            bf %tmp.81 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_339_8_343_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_339_8_343_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_339_31_341_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 340 12 ]
+            symbol [ tackCount %tmp.84 340 12 21 ];
+            %tmp.84 = getv ? :tackCount;
+            %tmp.85 = add %tmp.84 1;
+            symbol [ tackCount ? 340 12 21 ];
+            putv self :tackCount dup %tmp.85;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_339_31_341_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_339_8_343_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_339_8_343_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 341 15 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_341_15_343_8_if_stmt:
+            %tmp.86 = lgetv %kind.3;
+            symbol [ kind %tmp.86 341 19 23 ];
+            symbol [ KIND_JIBE %tmp.88 341 27 36 ];
+            %tmp.88 = getv ? :KIND_JIBE;
+            %tmp.89 = eq %tmp.86 %tmp.88;
+            bf %tmp.89 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_341_15_343_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_341_15_343_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_341_38_343_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 342 12 ]
+            symbol [ jibeCount %tmp.92 342 12 21 ];
+            %tmp.92 = getv ? :jibeCount;
+            %tmp.93 = add %tmp.92 1;
+            symbol [ jibeCount ? 342 12 21 ];
+            putv self :jibeCount dup %tmp.93;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_341_38_343_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_341_15_343_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_341_15_343_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_339_8_343_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 344 8 ]
+            symbol [ ST_OUTCOME %tmp.95 344 16 26 ];
+            %tmp.95 = getv ? :ST_OUTCOME;
+            symbol [ state ? 344 8 13 ];
+            putv self :state %tmp.95;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 345 8 ]
+            symbol [ EVENT_TURN %tmp.97 345 15 25 ];
+            %tmp.97 = getv ? :EVENT_TURN;
+            ret %tmp.97;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_318_44_346_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 348; @symbol_functiondef = [_outcomeTick,348,20,32]; @symbol_param<0> = [dt,348,33,35]; @symbol_param<0>_type<0> = [Float,348,39,44]; @symbol_param<1> = [speedMps,348,46,54]; @symbol_param<1>_type<0> = [Float,348,58,63]; @symbol_param<2> = [submerged,349,12,21]; @symbol_param<2>_type<0> = [Boolean,349,25,32]; @symbol_return<0> = [Number,349,37,43]; ]
+        protected
+        function _outcomeTick(dt as Float, speedMps as Float, submerged as Boolean) as Number {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_349_44_364_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 350 8 ]
+            %tmp.1 = self;
+            symbol [ _track %tmp.2 350 8 14 ];
+            %tmp.2 = getv function %tmp.1 :_track;
+            %tmp.3 = lgetv %dt;
+            symbol [ dt %tmp.3 350 15 17 ];
+            %tmp.4 = lgetv %speedMps;
+            symbol [ speedMps %tmp.4 350 19 27 ];
+            %tmp.5 = lgetv %submerged;
+            symbol [ submerged %tmp.5 350 29 38 ];
+            invoke %tmp.1 %tmp.2(%tmp.3, %tmp.4, %tmp.5);
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 351 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_349_44_364_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_349_44_364_4_stop" ]
+            %thr.1 = local;
+            symbol [ thr %thr.1 351 12 15 ];
+            symbol [ RECOVER_PCT %tmp.7 351 18 29 ];
+            %tmp.7 = getv ? :RECOVER_PCT;
+            symbol [ _entrySpeed %tmp.9 351 32 43 ];
+            %tmp.9 = getv ? :_entrySpeed;
+            %tmp.10 = mul %tmp.7 %tmp.9;
+            lputv %thr.1 %tmp.10;
+            symbol [ thr %thr.1 351 12 15 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 352 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_352_8_354_8_if_stmt:
+            %tmp.11 = lgetv %thr.1;
+            symbol [ thr %tmp.11 352 12 15 ];
+            symbol [ _cfg %tmp.13 352 18 22 ];
+            %tmp.13 = getv ? :_cfg;
+            symbol [ foilEntryMps %tmp.14 352 23 35 ];
+            %tmp.14 = getv %tmp.13 :foilEntryMps;
+            %tmp.15 = lt %tmp.11 %tmp.14;
+            bf %tmp.15 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_352_8_354_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_352_8_354_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_352_37_354_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 353 12 ]
+            symbol [ _cfg %tmp.17 353 18 22 ];
+            %tmp.17 = getv ? :_cfg;
+            symbol [ foilEntryMps %tmp.18 353 23 35 ];
+            %tmp.18 = getv %tmp.17 :foilEntryMps;
+            lputv %thr.1 %tmp.18;
+            symbol [ thr %thr.1 353 12 15 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_352_37_354_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_352_8_354_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_352_8_354_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 355 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_355_8_359_8_if_stmt:
+            %tmp.19 = lgetv %speedMps;
+            symbol [ speedMps %tmp.19 355 12 20 ];
+            %tmp.20 = lgetv %thr.1;
+            symbol [ thr %tmp.20 355 24 27 ];
+            %tmp.21 = gte %tmp.19 %tmp.20;
+            bf %tmp.21 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_355_8_359_8_if_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_355_8_359_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_355_29_357_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 356 12 ]
+            symbol [ _recoverHeld %tmp.22 356 12 24 ];
+            %tmp.22 = getv self :_recoverHeld;
+            %tmp.23 = lgetv %dt;
+            symbol [ dt %tmp.23 356 28 30 ];
+            %tmp.24 = add %tmp.22 %tmp.23;
+            symbol [ _recoverHeld ? 356 12 24 ];
+            putv self :_recoverHeld dup %tmp.24;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_355_29_357_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_355_8_359_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_355_8_359_8_if_else_false:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_357_15_359_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 358 12 ]
+            %tmp.25 = 0.0;
+            symbol [ _recoverHeld ? 358 12 24 ];
+            putv self :_recoverHeld %tmp.25;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_357_15_359_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_355_8_359_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 360 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_360_8_362_8_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_360_12_360_63_begin:
+            symbol [ _recoverHeld %tmp.27 360 12 24 ];
+            %tmp.27 = getv ? :_recoverHeld;
+            symbol [ RECOVER_HOLD_S %tmp.29 360 27 41 ];
+            %tmp.29 = getv ? :RECOVER_HOLD_S;
+            %tmp.30 = lt %tmp.27 %tmp.29;
+            bf %tmp.30 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_360_8_362_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_360_45_360_63_true:
+            symbol [ _clockS %tmp.32 360 45 52 ];
+            %tmp.32 = getv ? :_clockS;
+            symbol [ _endT %tmp.34 360 55 60 ];
+            %tmp.34 = getv ? :_endT;
+            symbol [ LOOKAHEAD_S %tmp.36 360 63 74 ];
+            %tmp.36 = getv ? :LOOKAHEAD_S;
+            %tmp.37 = add %tmp.34 %tmp.36;
+            %tmp.38 = lt %tmp.32 %tmp.37;
+            push %tmp.38;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_360_45_360_63_end:
+            %tmp.39 = phi [%tmp.30 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_360_12_360_63_begin] [%tmp.38 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_360_45_360_63_true] [%tmp.39 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_360_45_360_63_end];
+            bf %tmp.39 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_360_8_362_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_360_8_362_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_360_76_362_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 361 12 ]
+            symbol [ EVENT_NONE %tmp.41 361 19 29 ];
+            %tmp.41 = getv ? :EVENT_NONE;
+            ret %tmp.41;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_360_76_362_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_360_8_362_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_360_8_362_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 363 8 ]
+            %tmp.42 = self;
+            symbol [ _resolve %tmp.43 363 15 23 ];
+            %tmp.43 = getv function %tmp.42 :_resolve;
+            %tmp.44 = invoke %tmp.42 %tmp.43();
+            ret %tmp.44;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_349_44_364_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 376; @symbol_functiondef = [_track,376,20,26]; @symbol_param<0> = [dt,376,27,29]; @symbol_param<0>_type<0> = [Float,376,33,38]; @symbol_param<1> = [speedMps,376,40,48]; @symbol_param<1>_type<0> = [Float,376,52,57]; @symbol_param<2> = [submerged,376,59,68]; @symbol_param<2>_type<0> = [Boolean,376,72,79]; ]
+        protected
+        function _track(dt as Float, speedMps as Float, submerged as Boolean) as Void {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_376_89_397_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 377 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_377_8_379_8_if_stmt:
+            %tmp.1 = lgetv %submerged;
+            symbol [ submerged %tmp.1 377 12 21 ];
+            bf %tmp.1 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_377_8_379_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_377_8_379_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_377_23_379_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 378 12 ]
+            %tmp.2 = true;
+            symbol [ _wet ? 378 12 16 ];
+            putv self :_wet %tmp.2;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_377_23_379_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_377_8_379_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_377_8_379_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 380 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_380_8_384_8_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_380_12_380_54_begin:
+            symbol [ state %tmp.4 380 12 17 ];
+            %tmp.4 = getv ? :state;
+            symbol [ ST_OUTCOME %tmp.6 380 21 31 ];
+            %tmp.6 = getv ? :ST_OUTCOME;
+            %tmp.7 = ne %tmp.4 %tmp.6;
+            bt %tmp.7 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_380_8_384_8_if_true;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_380_35_380_54_false:
+            symbol [ _clockS %tmp.9 380 35 42 ];
+            %tmp.9 = getv ? :_clockS;
+            symbol [ _endT %tmp.11 380 46 51 ];
+            %tmp.11 = getv ? :_endT;
+            symbol [ MIN_SPEED_LAG_S %tmp.13 380 54 69 ];
+            %tmp.13 = getv ? :MIN_SPEED_LAG_S;
+            %tmp.14 = add %tmp.11 %tmp.13;
+            %tmp.15 = lte %tmp.9 %tmp.14;
+            push %tmp.15;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_380_35_380_54_end:
+            %tmp.16 = phi [%tmp.7 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_380_12_380_54_begin] [%tmp.15 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_380_35_380_54_false] [%tmp.16 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_380_35_380_54_end];
+            bf %tmp.16 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_380_8_384_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_380_8_384_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_380_71_384_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 381 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_381_12_383_12_if_stmt:
+            %tmp.17 = lgetv %speedMps;
+            symbol [ speedMps %tmp.17 381 16 24 ];
+            symbol [ _minSpeed %tmp.19 381 27 36 ];
+            %tmp.19 = getv ? :_minSpeed;
+            %tmp.20 = lt %tmp.17 %tmp.19;
+            bf %tmp.20 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_381_12_383_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_381_12_383_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_381_38_383_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 382 16 ]
+            %tmp.21 = lgetv %speedMps;
+            symbol [ speedMps %tmp.21 382 28 36 ];
+            symbol [ _minSpeed ? 382 16 25 ];
+            putv self :_minSpeed %tmp.21;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_381_38_383_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_381_12_383_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_381_12_383_12_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_380_71_384_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_380_8_384_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_380_8_384_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 385 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_385_8_387_8_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_385_12_385_44_begin:
+            %tmp.22 = lgetv %speedMps;
+            symbol [ speedMps %tmp.22 385 12 20 ];
+            symbol [ _cfg %tmp.24 385 24 28 ];
+            %tmp.24 = getv ? :_cfg;
+            symbol [ foilExitMps %tmp.25 385 29 40 ];
+            %tmp.25 = getv %tmp.24 :foilExitMps;
+            %tmp.26 = lte %tmp.22 %tmp.25;
+            bt %tmp.26 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_385_8_387_8_if_true;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_385_44_385_44_false:
+            %tmp.27 = lgetv %submerged;
+            symbol [ submerged %tmp.27 385 44 53 ];
+            push %tmp.27;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_385_44_385_44_end:
+            %tmp.28 = phi [%tmp.26 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_385_12_385_44_begin] [%tmp.27 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_385_44_385_44_false] [%tmp.28 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_385_44_385_44_end];
+            bf %tmp.28 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_385_8_387_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_385_8_387_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_385_55_387_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 386 12 ]
+            %tmp.29 = true;
+            symbol [ _lostFoil ? 386 12 21 ];
+            putv self :_lostFoil %tmp.29;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_385_55_387_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_385_8_387_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_385_8_387_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 389 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_389_8_396_8_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_389_12_389_54_begin:
+            %tmp.30 = lgetv %speedMps;
+            symbol [ speedMps %tmp.30 389 12 20 ];
+            symbol [ STOP_FLOOR_MPS %tmp.32 389 23 37 ];
+            %tmp.32 = getv ? :STOP_FLOOR_MPS;
+            %tmp.33 = lt %tmp.30 %tmp.32;
+            bf %tmp.33 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_389_8_396_8_if_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_389_41_389_54_true:
+            symbol [ _lastSpeed %tmp.35 389 41 51 ];
+            %tmp.35 = getv ? :_lastSpeed;
+            symbol [ STOP_FLOOR_MPS %tmp.37 389 54 68 ];
+            %tmp.37 = getv ? :STOP_FLOOR_MPS;
+            %tmp.38 = lt %tmp.35 %tmp.37;
+            push %tmp.38;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_389_41_389_54_end:
+            %tmp.39 = phi [%tmp.33 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_389_12_389_54_begin] [%tmp.38 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_389_41_389_54_true] [%tmp.39 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_389_41_389_54_end];
+            bf %tmp.39 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_389_8_396_8_if_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_389_8_396_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_389_70_394_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 390 12 ]
+            symbol [ _stopRun %tmp.40 390 12 20 ];
+            %tmp.40 = getv self :_stopRun;
+            %tmp.41 = lgetv %dt;
+            symbol [ dt %tmp.41 390 24 26 ];
+            %tmp.42 = add %tmp.40 %tmp.41;
+            symbol [ _stopRun ? 390 12 20 ];
+            putv self :_stopRun dup %tmp.42;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 391 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_391_12_393_12_if_stmt:
+            symbol [ _stopRun %tmp.44 391 16 24 ];
+            %tmp.44 = getv ? :_stopRun;
+            symbol [ _stopMax %tmp.46 391 27 35 ];
+            %tmp.46 = getv ? :_stopMax;
+            %tmp.47 = gt %tmp.44 %tmp.46;
+            bf %tmp.47 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_391_12_393_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_391_12_393_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_391_37_393_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 392 16 ]
+            symbol [ _stopRun %tmp.49 392 27 35 ];
+            %tmp.49 = getv ? :_stopRun;
+            symbol [ _stopMax ? 392 16 24 ];
+            putv self :_stopMax %tmp.49;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_391_37_393_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_391_12_393_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_391_12_393_12_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_389_70_394_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_389_8_396_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_389_8_396_8_if_else_false:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_394_15_396_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 395 12 ]
+            %tmp.50 = 0.0;
+            symbol [ _stopRun ? 395 12 20 ];
+            putv self :_stopRun %tmp.50;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_394_15_396_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_389_8_396_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_376_89_397_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 399; @symbol_functiondef = [_resolve,399,20,28]; @symbol_return<0> = [Number,399,34,40]; ]
+        protected
+        function _resolve() as Number {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_399_41_441_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 400 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_399_41_441_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_399_41_441_4_stop" ]
+            %outcome.1 = local;
+            symbol [ outcome %outcome.1 400 12 19 ];
+            symbol [ OUTCOME_FLEW %tmp.2 400 22 34 ];
+            %tmp.2 = getv ? :OUTCOME_FLEW;
+            lputv %outcome.1 %tmp.2;
+            symbol [ outcome %outcome.1 400 12 19 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 401 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_401_8_412_8_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_401_12_401_31_begin:
+            symbol [ _wet %tmp.4 401 12 16 ];
+            %tmp.4 = getv ? :_wet;
+            bt %tmp.4 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_401_8_412_8_if_true;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_401_20_401_31_false:
+            symbol [ _stopMax %tmp.6 401 20 28 ];
+            %tmp.6 = getv ? :_stopMax;
+            symbol [ FALL_STOP_S %tmp.8 401 31 42 ];
+            %tmp.8 = getv ? :FALL_STOP_S;
+            %tmp.9 = gt %tmp.6 %tmp.8;
+            push %tmp.9;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_401_20_401_31_end:
+            %tmp.10 = phi [%tmp.4 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_401_12_401_31_begin] [%tmp.9 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_401_20_401_31_false] [%tmp.10 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_401_20_401_31_end];
+            bf %tmp.10 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_401_8_412_8_if_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_401_8_412_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_401_44_404_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 402 12 ]
+            symbol [ OUTCOME_FELL %tmp.12 402 22 34 ];
+            %tmp.12 = getv ? :OUTCOME_FELL;
+            lputv %outcome.1 %tmp.12;
+            symbol [ outcome %outcome.1 402 12 19 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 403 12 ]
+            symbol [ fellCount %tmp.15 403 12 21 ];
+            %tmp.15 = getv ? :fellCount;
+            %tmp.16 = add %tmp.15 1;
+            symbol [ fellCount ? 403 12 21 ];
+            putv self :fellCount dup %tmp.16;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_401_44_404_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_401_8_412_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_401_8_412_8_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 404 15 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_404_15_412_8_if_stmt:
+            symbol [ _lostFoil %tmp.18 404 19 28 ];
+            %tmp.18 = getv ? :_lostFoil;
+            bf %tmp.18 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_404_15_412_8_if_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_404_15_412_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_404_30_410_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 405 12 ]
+            symbol [ OUTCOME_TOUCHDOWN %tmp.20 405 22 39 ];
+            %tmp.20 = getv ? :OUTCOME_TOUCHDOWN;
+            lputv %outcome.1 %tmp.20;
+            symbol [ outcome %outcome.1 405 12 19 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 406 12 ]
+            symbol [ touchdownCount %tmp.23 406 12 26 ];
+            %tmp.23 = getv ? :touchdownCount;
+            %tmp.24 = add %tmp.23 1;
+            symbol [ touchdownCount ? 406 12 26 ];
+            putv self :touchdownCount dup %tmp.24;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 407 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_407_12_409_12_if_stmt:
+            symbol [ _stopMax %tmp.26 407 16 24 ];
+            %tmp.26 = getv ? :_stopMax;
+            symbol [ TOUCHDOWN_MAX_STOP_S %tmp.28 407 27 47 ];
+            %tmp.28 = getv ? :TOUCHDOWN_MAX_STOP_S;
+            %tmp.29 = gt %tmp.26 %tmp.28;
+            bf %tmp.29 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_407_12_409_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_407_12_409_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_407_49_409_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 408 16 ]
+            symbol [ borderlineCount %tmp.32 408 16 31 ];
+            %tmp.32 = getv ? :borderlineCount;
+            %tmp.33 = add %tmp.32 1;
+            symbol [ borderlineCount ? 408 16 31 ];
+            putv self :borderlineCount dup %tmp.33;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_407_49_409_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_407_12_409_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_407_12_409_12_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_404_30_410_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_404_15_412_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_404_15_412_8_if_else_false:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_410_15_412_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 411 12 ]
+            symbol [ flewCount %tmp.36 411 12 21 ];
+            %tmp.36 = getv ? :flewCount;
+            %tmp.37 = add %tmp.36 1;
+            symbol [ flewCount ? 411 12 21 ];
+            putv self :flewCount dup %tmp.37;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_410_15_412_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_404_15_412_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_401_8_412_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 413 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_399_41_441_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_399_41_441_4_stop" ]
+            %pct.2 = local;
+            symbol [ pct %pct.2 413 12 15 ];
+            %tmp.38 = 0;
+            lputv %pct.2 %tmp.38;
+            symbol [ pct %pct.2 413 12 15 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 414 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_414_8_421_8_if_stmt:
+            symbol [ _entrySpeed %tmp.40 414 12 23 ];
+            %tmp.40 = getv ? :_entrySpeed;
+            %tmp.41 = 0.0;
+            %tmp.42 = gt %tmp.40 %tmp.41;
+            bf %tmp.42 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_414_8_421_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_414_8_421_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_414_31_421_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 415 12 ]
+            symbol [ _minSpeed %tmp.44 415 19 28 ];
+            %tmp.44 = getv ? :_minSpeed;
+            symbol [ _entrySpeed %tmp.46 415 31 42 ];
+            %tmp.46 = getv ? :_entrySpeed;
+            %tmp.47 = div %tmp.44 %tmp.46;
+            %tmp.48 = 100.0;
+            %tmp.49 = mul %tmp.47 %tmp.48;
+            symbol [ toNumber %tmp.50 415 52 60 ];
+            %tmp.50 = getv function %tmp.49 :toNumber;
+            %tmp.51 = invoke %tmp.49 %tmp.50();
+            lputv %pct.2 %tmp.51;
+            symbol [ pct %pct.2 415 12 15 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 416 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_416_12_420_12_if_stmt:
+            %tmp.52 = lgetv %pct.2;
+            symbol [ pct %tmp.52 416 16 19 ];
+            %tmp.53 = 100;
+            %tmp.54 = gt %tmp.52 %tmp.53;
+            bf %tmp.54 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_416_12_420_12_if_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_416_12_420_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_416_27_418_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 417 16 ]
+            %tmp.55 = 100;
+            lputv %pct.2 %tmp.55;
+            symbol [ pct %pct.2 417 16 19 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_416_27_418_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_416_12_420_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_416_12_420_12_if_false:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 418 19 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_418_19_420_12_if_stmt:
+            %tmp.56 = lgetv %pct.2;
+            symbol [ pct %tmp.56 418 23 26 ];
+            %tmp.57 = 0;
+            %tmp.58 = lt %tmp.56 %tmp.57;
+            bf %tmp.58 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_418_19_420_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_418_19_420_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_418_32_420_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 419 16 ]
+            %tmp.59 = 0;
+            lputv %pct.2 %tmp.59;
+            symbol [ pct %pct.2 419 16 19 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_418_32_420_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_418_19_420_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_418_19_420_12_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_416_12_420_12_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_414_31_421_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_414_8_421_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_414_8_421_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 422 8 ]
+            %tmp.60 = lgetv %outcome.1;
+            symbol [ outcome %tmp.60 422 22 29 ];
+            symbol [ lastOutcome ? 422 8 19 ];
+            putv self :lastOutcome %tmp.60;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 423 8 ]
+            %tmp.61 = lgetv %pct.2;
+            symbol [ pct %tmp.61 423 23 26 ];
+            symbol [ lastScorePct ? 423 8 20 ];
+            putv self :lastScorePct %tmp.61;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 424 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_424_8_426_8_if_stmt:
+            %tmp.62 = lgetv %pct.2;
+            symbol [ pct %tmp.62 424 12 15 ];
+            symbol [ bestScorePct %tmp.64 424 18 30 ];
+            %tmp.64 = getv ? :bestScorePct;
+            %tmp.65 = gt %tmp.62 %tmp.64;
+            bf %tmp.65 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_424_8_426_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_424_8_426_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_424_32_426_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 425 12 ]
+            %tmp.66 = lgetv %pct.2;
+            symbol [ pct %tmp.66 425 27 30 ];
+            symbol [ bestScorePct ? 425 12 24 ];
+            putv self :bestScorePct %tmp.66;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_424_32_426_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_424_8_426_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_424_8_426_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 427 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_427_8_429_8_if_stmt:
+            %tmp.67 = lgetv %pct.2;
+            symbol [ pct %tmp.67 427 12 15 ];
+            symbol [ lapBestScorePct %tmp.69 427 18 33 ];
+            %tmp.69 = getv ? :lapBestScorePct;
+            %tmp.70 = gt %tmp.67 %tmp.69;
+            bf %tmp.70 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_427_8_429_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_427_8_429_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_427_35_429_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 428 12 ]
+            %tmp.71 = lgetv %pct.2;
+            symbol [ pct %tmp.71 428 30 33 ];
+            symbol [ lapBestScorePct ? 428 12 27 ];
+            putv self :lapBestScorePct %tmp.71;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_427_35_429_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_427_8_429_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_427_8_429_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 432 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_432_8_434_8_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_432_12_432_51_begin:
+            %tmp.72 = lgetv %pct.2;
+            symbol [ pct %tmp.72 432 12 15 ];
+            symbol [ SUCCESS_PCT %tmp.74 432 19 30 ];
+            %tmp.74 = getv ? :SUCCESS_PCT;
+            %tmp.75 = gte %tmp.72 %tmp.74;
+            bf %tmp.75 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_432_8_434_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_432_34_432_51_true:
+            symbol [ _minSpeed %tmp.77 432 34 43 ];
+            %tmp.77 = getv ? :_minSpeed;
+            symbol [ _cfg %tmp.79 432 46 50 ];
+            %tmp.79 = getv ? :_cfg;
+            symbol [ foilExitMps %tmp.80 432 51 62 ];
+            %tmp.80 = getv %tmp.79 :foilExitMps;
+            %tmp.81 = gt %tmp.77 %tmp.80;
+            push %tmp.81;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_432_34_432_51_end:
+            %tmp.82 = phi [%tmp.75 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_432_12_432_51_begin] [%tmp.81 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_432_34_432_51_true] [%tmp.82 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_432_34_432_51_end];
+            bf %tmp.82 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_432_8_434_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_432_8_434_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_432_64_434_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 433 12 ]
+            symbol [ successCount %tmp.85 433 12 24 ];
+            %tmp.85 = getv ? :successCount;
+            %tmp.86 = add %tmp.85 1;
+            symbol [ successCount ? 433 12 24 ];
+            putv self :successCount dup %tmp.86;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_432_64_434_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_432_8_434_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_432_8_434_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 435 8 ]
+            symbol [ ST_IDLE %tmp.88 435 16 23 ];
+            %tmp.88 = getv ? :ST_IDLE;
+            symbol [ state ? 435 8 13 ];
+            putv self :state %tmp.88;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 436 8 ]
+            %tmp.89 = 0;
+            symbol [ _count ? 436 8 14 ];
+            putv self :_count %tmp.89;
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 437 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_437_8_439_8_if_stmt:
+            %tmp.90 = lgetv %outcome.1;
+            symbol [ outcome %tmp.90 437 12 19 ];
+            symbol [ OUTCOME_FELL %tmp.92 437 23 35 ];
+            %tmp.92 = getv ? :OUTCOME_FELL;
+            %tmp.93 = eq %tmp.90 %tmp.92;
+            bf %tmp.93 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_437_8_439_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_437_8_439_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_437_37_439_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 438 12 ]
+            symbol [ EVENT_FELL %tmp.95 438 19 29 ];
+            %tmp.95 = getv ? :EVENT_FELL;
+            ret %tmp.95;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_437_37_439_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_437_8_439_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_437_8_439_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 440 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_440_15_440_64_begin:
+            %tmp.96 = lgetv %outcome.1;
+            symbol [ outcome %tmp.96 440 15 22 ];
+            symbol [ OUTCOME_TOUCHDOWN %tmp.98 440 26 43 ];
+            %tmp.98 = getv ? :OUTCOME_TOUCHDOWN;
+            %tmp.99 = eq %tmp.96 %tmp.98;
+            bf %tmp.99 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_440_15_440_64_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_440_15_440_64_true:
+            symbol [ EVENT_TOUCHDOWN %tmp.101 440 46 61 ];
+            %tmp.101 = getv ? :EVENT_TOUCHDOWN;
+            push %tmp.101;
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_440_15_440_64_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_440_15_440_64_else_false:
+            symbol [ EVENT_FLEW %tmp.103 440 64 74 ];
+            %tmp.103 = getv ? :EVENT_FLEW;
+            push %tmp.103;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_440_15_440_64_end:
+            %tmp.104 = phi [%tmp.99 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_440_15_440_64_begin] [%tmp.101 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_440_15_440_64_true] [%tmp.103 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_440_15_440_64_else_false] [%tmp.104 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_440_15_440_64_end];
+            ret %tmp.104;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_399_41_441_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 447; @symbol_functiondef = [_classify,447,20,29]; @symbol_param<0> = [uIn,447,30,33]; @symbol_param<0>_type<0> = [Float,447,37,42]; @symbol_param<1> = [uOut,447,44,48]; @symbol_param<1>_type<0> = [Float,447,52,57]; @symbol_return<0> = [Number,447,62,68]; ]
+        protected
+        function _classify(uIn as Float, uOut as Float) as Number {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 448 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_stop" ]
+            %wind.1 = local;
+            symbol [ wind %wind.1 448 12 16 ];
+            symbol [ _cfg %tmp.2 448 19 23 ];
+            %tmp.2 = getv ? :_cfg;
+            symbol [ windDirection %tmp.3 448 24 37 ];
+            %tmp.3 = getv %tmp.2 :windDirection;
+            lputv %wind.1 %tmp.3;
+            symbol [ wind %wind.1 448 12 16 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 449 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_449_8_451_8_if_stmt:
+            %tmp.4 = lgetv %wind.1;
+            symbol [ wind %tmp.4 449 12 16 ];
+            %tmp.5 = 0;
+            %tmp.6 = lt %tmp.4 %tmp.5;
+            bf %tmp.6 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_449_8_451_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_449_8_451_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_449_22_451_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 450 12 ]
+            symbol [ KIND_TURN %tmp.8 450 19 28 ];
+            %tmp.8 = getv ? :KIND_TURN;
+            ret %tmp.8;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_449_22_451_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_449_8_451_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_449_8_451_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 452 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_stop" ]
+            %twaIn.2 = local;
+            symbol [ twaIn %twaIn.2 452 12 17 ];
+            %tmp.9 = self;
+            symbol [ _wrap180 %tmp.10 452 20 28 ];
+            %tmp.10 = getv function %tmp.9 :_wrap180;
+            %tmp.11 = lgetv %uIn;
+            symbol [ uIn %tmp.11 452 29 32 ];
+            %tmp.12 = lgetv %wind.1;
+            symbol [ wind %tmp.12 452 35 39 ];
+            %tmp.13 = sub %tmp.11 %tmp.12;
+            %tmp.14 = invoke %tmp.9 %tmp.10(%tmp.13);
+            lputv %twaIn.2 %tmp.14;
+            symbol [ twaIn %twaIn.2 452 12 17 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 453 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_stop" ]
+            %twaOut.3 = local;
+            symbol [ twaOut %twaOut.3 453 12 18 ];
+            %tmp.15 = lgetv %twaIn.2;
+            symbol [ twaIn %tmp.15 453 21 26 ];
+            %tmp.16 = lgetv %uOut;
+            symbol [ uOut %tmp.16 453 30 34 ];
+            %tmp.17 = lgetv %uIn;
+            symbol [ uIn %tmp.17 453 37 40 ];
+            %tmp.18 = sub %tmp.16 %tmp.17;
+            %tmp.19 = add %tmp.15 %tmp.18;
+            lputv %twaOut.3 %tmp.19;
+            symbol [ twaOut %twaOut.3 453 12 18 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 454 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_stop" ]
+            %lo.4 = local;
+            symbol [ lo %lo.4 454 12 14 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_454_17_454_42_begin:
+            %tmp.20 = lgetv %twaIn.2;
+            symbol [ twaIn %tmp.20 454 17 22 ];
+            %tmp.21 = lgetv %twaOut.3;
+            symbol [ twaOut %tmp.21 454 25 31 ];
+            %tmp.22 = lt %tmp.20 %tmp.21;
+            bf %tmp.22 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_454_17_454_42_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_454_17_454_42_true:
+            %tmp.23 = lgetv %twaIn.2;
+            symbol [ twaIn %tmp.23 454 34 39 ];
+            push %tmp.23;
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_454_17_454_42_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_454_17_454_42_else_false:
+            %tmp.24 = lgetv %twaOut.3;
+            symbol [ twaOut %tmp.24 454 42 48 ];
+            push %tmp.24;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_454_17_454_42_end:
+            %tmp.25 = phi [%tmp.22 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_454_17_454_42_begin] [%tmp.23 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_454_17_454_42_true] [%tmp.24 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_454_17_454_42_else_false] [%tmp.25 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_454_17_454_42_end];
+            lputv %lo.4 %tmp.25;
+            symbol [ lo %lo.4 454 12 14 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 455 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_stop" ]
+            %hi.5 = local;
+            symbol [ hi %hi.5 455 12 14 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_455_17_455_43_begin:
+            %tmp.26 = lgetv %twaIn.2;
+            symbol [ twaIn %tmp.26 455 17 22 ];
+            %tmp.27 = lgetv %twaOut.3;
+            symbol [ twaOut %tmp.27 455 25 31 ];
+            %tmp.28 = lt %tmp.26 %tmp.27;
+            bf %tmp.28 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_455_17_455_43_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_455_17_455_43_true:
+            %tmp.29 = lgetv %twaOut.3;
+            symbol [ twaOut %tmp.29 455 34 40 ];
+            push %tmp.29;
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_455_17_455_43_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_455_17_455_43_else_false:
+            %tmp.30 = lgetv %twaIn.2;
+            symbol [ twaIn %tmp.30 455 43 48 ];
+            push %tmp.30;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_455_17_455_43_end:
+            %tmp.31 = phi [%tmp.28 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_455_17_455_43_begin] [%tmp.29 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_455_17_455_43_true] [%tmp.30 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_455_17_455_43_else_false] [%tmp.31 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_455_17_455_43_end];
+            lputv %hi.5 %tmp.31;
+            symbol [ hi %hi.5 455 12 14 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 456 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_stop" ]
+            %mid.6 = local;
+            symbol [ mid %mid.6 456 12 15 ];
+            %tmp.32 = 0.5;
+            %tmp.33 = lgetv %lo.4;
+            symbol [ lo %tmp.33 456 25 27 ];
+            %tmp.34 = lgetv %hi.5;
+            symbol [ hi %tmp.34 456 30 32 ];
+            %tmp.35 = add %tmp.33 %tmp.34;
+            %tmp.36 = mul %tmp.32 %tmp.35;
+            lputv %mid.6 %tmp.36;
+            symbol [ mid %mid.6 456 12 15 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 457 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_stop" ]
+            %head.7 = local;
+            symbol [ head %head.7 457 12 16 ];
+            %tmp.37 = self;
+            symbol [ _crossing %tmp.38 457 19 28 ];
+            %tmp.38 = getv function %tmp.37 :_crossing;
+            %tmp.39 = lgetv %lo.4;
+            symbol [ lo %tmp.39 457 29 31 ];
+            %tmp.40 = lgetv %hi.5;
+            symbol [ hi %tmp.40 457 33 35 ];
+            %tmp.41 = 0.0;
+            %tmp.42 = lgetv %mid.6;
+            symbol [ mid %tmp.42 457 42 45 ];
+            %tmp.43 = invoke %tmp.37 %tmp.38(%tmp.39, %tmp.40, %tmp.41, %tmp.42);
+            lputv %head.7 %tmp.43;
+            symbol [ head %head.7 457 12 16 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 458 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_stop" ]
+            %down.8 = local;
+            symbol [ down %down.8 458 12 16 ];
+            %tmp.44 = self;
+            symbol [ _crossing %tmp.45 458 19 28 ];
+            %tmp.45 = getv function %tmp.44 :_crossing;
+            %tmp.46 = lgetv %lo.4;
+            symbol [ lo %tmp.46 458 29 31 ];
+            %tmp.47 = lgetv %hi.5;
+            symbol [ hi %tmp.47 458 33 35 ];
+            %tmp.48 = 180.0;
+            %tmp.49 = lgetv %mid.6;
+            symbol [ mid %tmp.49 458 44 47 ];
+            %tmp.50 = invoke %tmp.44 %tmp.45(%tmp.46, %tmp.47, %tmp.48, %tmp.49);
+            lputv %down.8 %tmp.50;
+            symbol [ down %down.8 458 12 16 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 459 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_459_8_461_8_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_459_12_459_40_begin:
+            %tmp.51 = lgetv %head.7;
+            symbol [ head %tmp.51 459 12 16 ];
+            symbol [ NO_CROSS %tmp.53 459 20 28 ];
+            %tmp.53 = getv ? :NO_CROSS;
+            %tmp.54 = eq %tmp.51 %tmp.53;
+            bf %tmp.54 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_459_8_461_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_459_32_459_40_true:
+            %tmp.55 = lgetv %down.8;
+            symbol [ down %tmp.55 459 32 36 ];
+            symbol [ NO_CROSS %tmp.57 459 40 48 ];
+            %tmp.57 = getv ? :NO_CROSS;
+            %tmp.58 = eq %tmp.55 %tmp.57;
+            push %tmp.58;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_459_32_459_40_end:
+            %tmp.59 = phi [%tmp.54 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_459_12_459_40_begin] [%tmp.58 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_459_32_459_40_true] [%tmp.59 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_459_32_459_40_end];
+            bf %tmp.59 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_459_8_461_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_459_8_461_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_459_50_461_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 460 12 ]
+            symbol [ KIND_REJECT %tmp.61 460 19 30 ];
+            %tmp.61 = getv ? :KIND_REJECT;
+            ret %tmp.61;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_459_50_461_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_459_8_461_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_459_8_461_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 462 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_462_8_464_8_if_stmt:
+            %tmp.62 = lgetv %down.8;
+            symbol [ down %tmp.62 462 12 16 ];
+            symbol [ NO_CROSS %tmp.64 462 20 28 ];
+            %tmp.64 = getv ? :NO_CROSS;
+            %tmp.65 = eq %tmp.62 %tmp.64;
+            bf %tmp.65 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_462_8_464_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_462_8_464_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_462_30_464_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 463 12 ]
+            symbol [ KIND_TACK %tmp.67 463 19 28 ];
+            %tmp.67 = getv ? :KIND_TACK;
+            ret %tmp.67;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_462_30_464_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_462_8_464_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_462_8_464_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 465 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_465_8_467_8_if_stmt:
+            %tmp.68 = lgetv %head.7;
+            symbol [ head %tmp.68 465 12 16 ];
+            symbol [ NO_CROSS %tmp.70 465 20 28 ];
+            %tmp.70 = getv ? :NO_CROSS;
+            %tmp.71 = eq %tmp.68 %tmp.70;
+            bf %tmp.71 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_465_8_467_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_465_8_467_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_465_30_467_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 466 12 ]
+            symbol [ KIND_JIBE %tmp.73 466 19 28 ];
+            %tmp.73 = getv ? :KIND_JIBE;
+            ret %tmp.73;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_465_30_467_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_465_8_467_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_465_8_467_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 468 8 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_468_15_468_70_begin:
+            %tmp.74 = lgetv %head.7;
+            symbol [ head %tmp.74 468 16 20 ];
+            %tmp.75 = lgetv %mid.6;
+            symbol [ mid %tmp.75 468 23 26 ];
+            %tmp.76 = sub %tmp.74 %tmp.75;
+            symbol [ abs %tmp.77 468 28 31 ];
+            %tmp.77 = getv function %tmp.76 :abs;
+            %tmp.78 = invoke %tmp.76 %tmp.77();
+            %tmp.79 = lgetv %down.8;
+            symbol [ down %tmp.79 468 38 42 ];
+            %tmp.80 = lgetv %mid.6;
+            symbol [ mid %tmp.80 468 45 48 ];
+            %tmp.81 = sub %tmp.79 %tmp.80;
+            symbol [ abs %tmp.82 468 50 53 ];
+            %tmp.82 = getv function %tmp.81 :abs;
+            %tmp.83 = invoke %tmp.81 %tmp.82();
+            %tmp.84 = lte %tmp.78 %tmp.83;
+            bf %tmp.84 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_468_15_468_70_else_false;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_468_15_468_70_true:
+            symbol [ KIND_TACK %tmp.86 468 58 67 ];
+            %tmp.86 = getv ? :KIND_TACK;
+            push %tmp.86;
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_468_15_468_70_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_468_15_468_70_else_false:
+            symbol [ KIND_JIBE %tmp.88 468 70 79 ];
+            %tmp.88 = getv ? :KIND_JIBE;
+            push %tmp.88;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_468_15_468_70_end:
+            %tmp.89 = phi [%tmp.84 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_468_15_468_70_begin] [%tmp.86 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_468_15_468_70_true] [%tmp.88 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_468_15_468_70_else_false] [%tmp.89 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_468_15_468_70_end];
+            ret %tmp.89;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_447_69_469_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 473; @symbol_functiondef = [_crossing,473,20,29]; @symbol_param<0> = [lo,473,30,32]; @symbol_param<0>_type<0> = [Float,473,36,41]; @symbol_param<1> = [hi,473,43,45]; @symbol_param<1>_type<0> = [Float,473,49,54]; @symbol_param<2> = [offset,473,56,62]; @symbol_param<2>_type<0> = [Float,473,66,71]; @symbol_param<3> = [mid,474,12,15]; @symbol_param<3>_type<0> = [Float,474,19,24]; @symbol_return<0> = [Float,474,29,34]; ]
+        protected
+        function _crossing(lo as Float, hi as Float, offset as Float, mid as Float) as Float {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_474_35_485_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 475 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_474_35_485_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_474_35_485_4_stop" ]
+            %k0.1 = local;
+            symbol [ k0 %k0.1 475 12 14 ];
+            symbol [ Math %tmp.1 475 17 21 ];
+            %tmp.1 = getm $.Toybox.Math;
+            symbol [ floor %tmp.2 475 22 27 ];
+            %tmp.2 = getv function %tmp.1 :floor;
+            %tmp.3 = lgetv %lo;
+            symbol [ lo %tmp.3 475 29 31 ];
+            %tmp.4 = lgetv %offset;
+            symbol [ offset %tmp.4 475 34 40 ];
+            %tmp.5 = sub %tmp.3 %tmp.4;
+            %tmp.6 = 360.0;
+            %tmp.7 = div %tmp.5 %tmp.6;
+            %tmp.8 = invoke %tmp.1 %tmp.2(%tmp.7);
+            lputv %k0.1 %tmp.8;
+            symbol [ k0 %k0.1 475 12 14 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 476 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_474_35_485_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_474_35_485_4_stop" ]
+            %best.2 = local;
+            symbol [ best %best.2 476 12 16 ];
+            symbol [ NO_CROSS %tmp.10 476 19 27 ];
+            %tmp.10 = getv ? :NO_CROSS;
+            lputv %best.2 %tmp.10;
+            symbol [ best %best.2 476 12 16 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 477 8 ]
+            for @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_477_8_483_8_for_test @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_477_8_483_8_for_incr @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_477_8_483_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_477_8_483_8_for_init:
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_477_8_483_8_for_begin" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_477_8_483_8_for_end" ]
+            %i.3 = local;
+            symbol [ i %i.3 477 17 18 ];
+            %tmp.11 = 0;
+            lputv %i.3 %tmp.11;
+            symbol [ i %i.3 477 17 18 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_477_8_483_8_for_test:
+            %tmp.12 = lgetv %i.3;
+            symbol [ i %tmp.12 477 24 25 ];
+            %tmp.13 = 3;
+            %tmp.14 = lt %tmp.12 %tmp.13;
+            bf %tmp.14 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_477_8_483_8_for_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_477_8_483_8_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_477_36_483_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 478 12 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_477_36_483_8_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_477_36_483_8_stop" ]
+            %v.4 = local;
+            symbol [ v %v.4 478 16 17 ];
+            %tmp.15 = lgetv %offset;
+            symbol [ offset %tmp.15 478 20 26 ];
+            %tmp.16 = 360.0;
+            %tmp.17 = lgetv %k0.1;
+            symbol [ k0 %tmp.17 478 38 40 ];
+            %tmp.18 = lgetv %i.3;
+            symbol [ i %tmp.18 478 43 44 ];
+            %tmp.19 = add %tmp.17 %tmp.18;
+            %tmp.20 = mul %tmp.16 %tmp.19;
+            %tmp.21 = add %tmp.15 %tmp.20;
+            lputv %v.4 %tmp.21;
+            symbol [ v %v.4 478 16 17 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 479 12 ]
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_479_12_482_12_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_479_16_480_76_begin:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_479_16_479_32_begin:
+            %tmp.22 = lgetv %v.4;
+            symbol [ v %tmp.22 479 16 17 ];
+            %tmp.23 = lgetv %lo;
+            symbol [ lo %tmp.23 479 21 23 ];
+            %tmp.24 = gte %tmp.22 %tmp.23;
+            bf %tmp.24 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_479_12_482_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_479_27_479_32_true:
+            %tmp.25 = lgetv %v.4;
+            symbol [ v %tmp.25 479 27 28 ];
+            %tmp.26 = lgetv %hi;
+            symbol [ hi %tmp.26 479 32 34 ];
+            %tmp.27 = lte %tmp.25 %tmp.26;
+            push %tmp.27;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_479_27_479_32_end:
+            %tmp.28 = phi [%tmp.24 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_479_16_479_32_begin] [%tmp.27 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_479_27_479_32_true] [%tmp.28 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_479_27_479_32_end];
+            bf %tmp.28 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_479_12_482_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_480_19_480_76_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_480_20_480_75_begin:
+            %tmp.29 = lgetv %best.2;
+            symbol [ best %tmp.29 480 20 24 ];
+            symbol [ NO_CROSS %tmp.31 480 28 36 ];
+            %tmp.31 = getv ? :NO_CROSS;
+            %tmp.32 = eq %tmp.29 %tmp.31;
+            bt %tmp.32 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_479_12_482_12_if_true;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_480_40_480_75_false:
+            %tmp.33 = lgetv %v.4;
+            symbol [ v %tmp.33 480 41 42 ];
+            %tmp.34 = lgetv %mid;
+            symbol [ mid %tmp.34 480 45 48 ];
+            %tmp.35 = sub %tmp.33 %tmp.34;
+            symbol [ abs %tmp.36 480 50 53 ];
+            %tmp.36 = getv function %tmp.35 :abs;
+            %tmp.37 = invoke %tmp.35 %tmp.36();
+            %tmp.38 = lgetv %best.2;
+            symbol [ best %tmp.38 480 59 63 ];
+            %tmp.39 = lgetv %mid;
+            symbol [ mid %tmp.39 480 66 69 ];
+            %tmp.40 = sub %tmp.38 %tmp.39;
+            symbol [ abs %tmp.41 480 71 74 ];
+            %tmp.41 = getv function %tmp.40 :abs;
+            %tmp.42 = invoke %tmp.40 %tmp.41();
+            %tmp.43 = lt %tmp.37 %tmp.42;
+            push %tmp.43;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_480_40_480_75_end:
+            %tmp.44 = phi [%tmp.32 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_480_20_480_75_begin] [%tmp.43 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_480_40_480_75_false] [%tmp.44 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_480_40_480_75_end];
+            push %tmp.44;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_480_19_480_76_end:
+            %tmp.45 = phi [%tmp.28 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_479_16_480_76_begin] [%tmp.44 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_480_19_480_76_true] [%tmp.45 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_480_19_480_76_end];
+            bf %tmp.45 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_479_12_482_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_479_12_482_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_480_79_482_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 481 16 ]
+            %tmp.46 = lgetv %v.4;
+            symbol [ v %tmp.46 481 23 24 ];
+            lputv %best.2 %tmp.46;
+            symbol [ best %best.2 481 16 20 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_480_79_482_12_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_479_12_482_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_479_12_482_12_if_end:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_477_36_483_8_stop:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_477_8_483_8_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 477 ]
+            %tmp.49 = lgetv %i.3;
+            symbol [ i %tmp.49 477 31 32 ];
+            %tmp.50 = add %tmp.49 1;
+            lputv %i.3 %tmp.50;
+            symbol [ i %i.3 477 31 32 ];
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_477_8_483_8_for_test;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_477_8_483_8_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 484 8 ]
+            %tmp.51 = lgetv %best.2;
+            symbol [ best %tmp.51 484 15 19 ];
+            ret %tmp.51;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_474_35_485_4_stop:
+        }
+        [ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 487; @symbol_functiondef = [_wrap180,487,20,28]; @symbol_param<0> = [deg,487,29,32]; @symbol_param<0>_type<0> = [Float,487,36,41]; @symbol_return<0> = [Float,487,46,51]; ]
+        protected
+        function _wrap180(deg as Float) as Float {
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_487_52_496_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 488 8 ]
+            [ "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_487_52_496_4_start" "_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_487_52_496_4_stop" ]
+            %d.1 = local;
+            symbol [ d %d.1 488 12 13 ];
+            %tmp.1 = lgetv %deg;
+            symbol [ deg %tmp.1 488 16 19 ];
+            lputv %d.1 %tmp.1;
+            symbol [ d %d.1 488 12 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 489 8 ]
+            while @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_489_8_491_8_while_test @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_489_8_491_8_while_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_489_8_491_8_while_test:
+            %tmp.2 = lgetv %d.1;
+            symbol [ d %tmp.2 489 15 16 ];
+            %tmp.3 = 180.0;
+            %tmp.4 = gt %tmp.2 %tmp.3;
+            bf %tmp.4 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_489_8_491_8_while_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_489_8_491_8_while_begin:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_489_26_491_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 490 12 ]
+            %tmp.5 = lgetv %d.1;
+            symbol [ d %tmp.5 490 12 13 ];
+            %tmp.6 = 360.0;
+            %tmp.7 = sub %tmp.5 %tmp.6;
+            lputv %d.1 %tmp.7;
+            symbol [ d %d.1 490 12 13 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_489_26_491_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_489_8_491_8_while_test;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_489_8_491_8_while_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 492 8 ]
+            while @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_492_8_494_8_while_test @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_492_8_494_8_while_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_492_8_494_8_while_test:
+            %tmp.8 = lgetv %d.1;
+            symbol [ d %tmp.8 492 15 16 ];
+            %tmp.9 = -180.0;
+            %tmp.10 = lt %tmp.8 %tmp.9;
+            bf %tmp.10 @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_492_8_494_8_while_end;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_492_8_494_8_while_begin:
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_492_27_494_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 493 12 ]
+            %tmp.11 = lgetv %d.1;
+            symbol [ d %tmp.11 493 12 13 ];
+            %tmp.12 = 360.0;
+            %tmp.13 = add %tmp.11 %tmp.12;
+            lputv %d.1 %tmp.13;
+            symbol [ d %d.1 493 12 13 ];
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_492_27_494_8_stop:
+            goto @_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_492_8_494_8_while_test;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_492_8_494_8_while_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc" 495 8 ]
+            %tmp.14 = lgetv %d.1;
+            symbol [ d %tmp.14 495 15 16 ];
+            ret %tmp.14;
+_Users_majl_GitHub_WingFoil_garmin_barrel_WingFoilCore_source_TurnDetector_mc_487_52_496_4_stop:
+        }
+    }
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/barrel/WingFoilCore/source/TurnDetector.mc"; @line = 1; ]
+<init> {
+}

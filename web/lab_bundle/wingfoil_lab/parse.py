@@ -1,7 +1,9 @@
 """Parse FIT activity files into a RawTrack (records DataFrame + laps + session + capabilities).
 
 Fail-soft by design: missing channels/dev fields reduce SourceCapabilities, never raise.
-Developer-field names follow docs/fit-schema.md.
+Developer-field names follow docs/fit-schema.md. Both schema versions are accepted: v2's
+packed session fields are expanded into the v1 names here, at the parser boundary, so the
+rest of the lab only ever sees one representation (`_unpack_session_v2`).
 
 Class-(a) files also carry the watch's SensorLogging accelerometer stream in
 `accelerometer_data` messages (batched: one message per ~25 samples, each sample timed by
@@ -27,6 +29,43 @@ MPS_TO_KN = 1.9438445
 DEV_RECORD_FIELDS = {"foil_state", "flight_index", "pump_cadence", "turn_marker", "tick"}
 DEV_SESSION_DISCIPLINE = "discipline"
 
+# Schema v2 folds eight small session fields into three uint32s, because the device allows
+# **16 developer fields per message type** and v1's 20 killed the app on START — uncatchably
+# (docs/fit-schema.md; beta 0.5.0). Layouts: packed field -> (v1 name, shift, mask), high bits
+# first. `cfg_pack` is also what the class-(d) data field writes, so unpacking is keyed on
+# presence, never on the schema version.
+_SESSION_PACKS = {
+    "cfg_pack": (                                # 54, was 40/41/42
+        ("cfg_entry_speed", 16, 0xFFFF),         # cm/s
+        ("cfg_min_flight", 11, 0x1F),            # s
+        ("cfg_exit_speed", 0, 0x7FF),            # cm/s
+    ),
+    "takeoff_pack": (                            # 55, was 35/36/37
+        ("avg_pumps_to_takeoff", 16, 0xFF),      # strokes x0.1, as in v1
+        ("takeoff_attempts", 8, 0xFF),
+        ("takeoff_successes", 0, 0xFF),
+    ),
+    "longest_pack": (                            # 56, was 24/25
+        ("longest_flight_s", 16, 0xFFFF),        # s
+        ("longest_flight_m", 0, 0xFFFF),         # m
+    ),
+}
+
+
+def _unpack_session_v2(session: dict) -> None:
+    """Expand v2's packed session fields into their v1 names and units, in place.
+
+    A packed field wins over a v1 direct field of the same name (v2 is the authoritative
+    encoding); anything absent or non-integer is skipped rather than raised on. After this
+    the session dict looks identical for v1 and v2 files, so nothing downstream knows.
+    """
+    for packed_name, layout in _SESSION_PACKS.items():
+        packed = session.get(packed_name)
+        if not isinstance(packed, int) or isinstance(packed, bool):
+            continue
+        for name, shift, mask in layout:
+            session[name] = (packed >> shift) & mask
+
 
 @dataclass
 class SourceCapabilities:
@@ -40,6 +79,7 @@ class SourceCapabilities:
     discipline: str | None = None    # from session dev field, e.g. "wingfoil"
     sport: str | None = None         # FIT session sport name, e.g. "windsurfing"
     sub_sport: str | None = None
+    schema_version: int | None = None   # low byte of session `app_version`; None if absent
 
     @property
     def source_class(self) -> str:
@@ -103,6 +143,8 @@ def parse_fit(path: str | Path) -> RawTrack:
                     if batch is not None:
                         accel_batches.append(batch)
 
+    _unpack_session_v2(session)
+
     df = pd.DataFrame(records)
     caps = SourceCapabilities()
     epoch0: float | None = None
@@ -136,6 +178,8 @@ def parse_fit(path: str | Path) -> RawTrack:
     caps.sub_sport = str(sub) if sub is not None else None
     disc = session.get(DEV_SESSION_DISCIPLINE)
     caps.discipline = str(disc) if disc is not None else None
+    app_ver = session.get("app_version")
+    caps.schema_version = int(app_ver) & 0xFF if isinstance(app_ver, (int, float)) else None
 
     accel = _accel_frame(accel_batches, epoch0)
     return RawTrack(path=str(path), records=df, laps=laps, session=session, capabilities=caps,

@@ -1,0 +1,150 @@
+import Toybox.Lang;
+import Toybox.Test;
+
+(:typecheck(false) :languageServer(do_not_complete))
+function getTestObject() as RunNoEvil {
+    return new RunNoEvil();
+}
+
+(:typecheck(false) :languageServer(do_not_complete))
+class RunNoEvil extends Test.Test {
+    private var logger as Logger;
+    private var idToName as Array;
+
+    function initialize() {
+        Test.Test.initialize();
+        logger = new Test.Logger();
+        idToName = new [26];
+        populate_test_entries_0_to_26();
+    }
+
+    function getIndexOf(name as String) as Number {
+        if (idToName has :indexOf) {
+            return idToName.indexOf(name);
+        }
+
+        var j = idToName.size();
+        for (var i = 0; i < j; ++i) {
+            if (idToName[i].equals(name)) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    function getTestName(id as Number) as String {
+        return idToName[id];
+    }
+
+    function getNumberOfTests() as Number {
+        return idToName.size();
+    }
+
+    function populate_test_entries_0_to_26() as Void {
+        idToName[0] = "sessionSchemaFitsDataFieldBudget";
+        idToName[1] = "sessionPackRoundTrips";
+        idToName[2] = "sessionPackSaturatesInsteadOfWrapping";
+        idToName[3] = "sessionValuesComeFromTheDetectors";
+        idToName[4] = "feedGatesOnGpsQuality";
+        idToName[5] = "feedDrivesFlightAndRecords";
+        idToName[6] = "feedDetectsSubmersionFromPressure";
+        idToName[7] = "resetClearsEverythingForANewActivity";
+        idToName[8] = "tickCounterRollsBelowTheFitSentinel";
+        idToName[9] = "layoutClassifiesCellSizes";
+        idToName[10] = "layoutRowsNeverClip";
+        idToName[11] = "WingFoilCore.ringBufferMeanAndEviction";
+        idToName[12] = "WingFoilCore.flightDetectorFullCycle";
+        idToName[13] = "WingFoilCore.flightDetectorDiscardsShortFlights";
+        idToName[14] = "WingFoilCore.flightDetectorEntryHoldIsBothEndsQualifying";
+        idToName[15] = "WingFoilCore.flightDetectorExitHoldIsBothEndsQualifying";
+        idToName[16] = "WingFoilCore.turnCleanJibeFliesThrough";
+        idToName[17] = "WingFoilCore.turnSlowSpellIsTouchdown";
+        idToName[18] = "WingFoilCore.turnCollapseIsFellIn";
+        idToName[19] = "WingFoilCore.turnSuccessIsScoreOnlyNotOutcome";
+        idToName[20] = "WingFoilCore.turnWallowIsNotDetected";
+        idToName[21] = "WingFoilCore.turnBearAwayNotCountedAsJibe";
+        idToName[22] = "WingFoilCore.turnJibeClassifiedWithWind";
+        idToName[23] = "WingFoilCore.turnSubmersionForcesFellIn";
+        idToName[24] = "WingFoilCore.turnOffFoilNotCounted";
+        idToName[25] = "WingFoilCore.speedRecordsPbEvents";
+    }
+
+    function evaluate_test_entries_0_to_26(id as Number, logger as Logger) {
+        var result = false;
+        if (id == 0) {
+            result = $.sessionSchemaFitsDataFieldBudget(logger);
+        } else if (id == 1) {
+            result = $.sessionPackRoundTrips(logger);
+        } else if (id == 2) {
+            result = $.sessionPackSaturatesInsteadOfWrapping(logger);
+        } else if (id == 3) {
+            result = $.sessionValuesComeFromTheDetectors(logger);
+        } else if (id == 4) {
+            result = $.feedGatesOnGpsQuality(logger);
+        } else if (id == 5) {
+            result = $.feedDrivesFlightAndRecords(logger);
+        } else if (id == 6) {
+            result = $.feedDetectsSubmersionFromPressure(logger);
+        } else if (id == 7) {
+            result = $.resetClearsEverythingForANewActivity(logger);
+        } else if (id == 8) {
+            result = $.tickCounterRollsBelowTheFitSentinel(logger);
+        } else if (id == 9) {
+            result = $.layoutClassifiesCellSizes(logger);
+        } else if (id == 10) {
+            result = $.layoutRowsNeverClip(logger);
+        } else if (id == 11) {
+            result = $.WingFoilCore.ringBufferMeanAndEviction(logger);
+        } else if (id == 12) {
+            result = $.WingFoilCore.flightDetectorFullCycle(logger);
+        } else if (id == 13) {
+            result = $.WingFoilCore.flightDetectorDiscardsShortFlights(logger);
+        } else if (id == 14) {
+            result = $.WingFoilCore.flightDetectorEntryHoldIsBothEndsQualifying(logger);
+        } else if (id == 15) {
+            result = $.WingFoilCore.flightDetectorExitHoldIsBothEndsQualifying(logger);
+        } else if (id == 16) {
+            result = $.WingFoilCore.turnCleanJibeFliesThrough(logger);
+        } else if (id == 17) {
+            result = $.WingFoilCore.turnSlowSpellIsTouchdown(logger);
+        } else if (id == 18) {
+            result = $.WingFoilCore.turnCollapseIsFellIn(logger);
+        } else if (id == 19) {
+            result = $.WingFoilCore.turnSuccessIsScoreOnlyNotOutcome(logger);
+        } else if (id == 20) {
+            result = $.WingFoilCore.turnWallowIsNotDetected(logger);
+        } else if (id == 21) {
+            result = $.WingFoilCore.turnBearAwayNotCountedAsJibe(logger);
+        } else if (id == 22) {
+            result = $.WingFoilCore.turnJibeClassifiedWithWind(logger);
+        } else if (id == 23) {
+            result = $.WingFoilCore.turnSubmersionForcesFellIn(logger);
+        } else if (id == 24) {
+            result = $.WingFoilCore.turnOffFoilNotCounted(logger);
+        } else if (id == 25) {
+            result = $.WingFoilCore.speedRecordsPbEvents(logger);
+        }
+
+        return result;
+    }
+
+    function runTest(test as String or Number) as Boolean {
+        var id = test;
+        if (test instanceof Lang.String) {
+            id = getIndexOf(test);
+        }
+
+        assertMessage(id >= 0, "Could not find '" + test + "'");
+        var result = false;
+        if (id < 26) {
+            result = self.evaluate_test_entries_0_to_26(id, logger);
+        }
+
+        if (result instanceof Boolean) {
+            return result;
+        }
+
+        return false;
+    }
+}
