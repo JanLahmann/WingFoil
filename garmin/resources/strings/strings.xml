@@ -1,6 +1,7 @@
 <strings>
     <string id="AppName">WingFoil</string>
     <string id="AppNameBeta">WingFoil Beta</string>
+    <string id="AppNameInvite">WingFoil - Invite Beta</string>
 
     <!-- settings titles -->
     <string id="SetFoilEntry">Foil entry speed (km/h)</string>

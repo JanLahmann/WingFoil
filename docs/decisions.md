@@ -2,6 +2,44 @@
 
 Newest first. One paragraph each: context → decision → consequence.
 
+## ADR-012 · Invite testers get a **public** listing with an obfuscation-grade lock
+A Connect IQ "beta app" listing is visible only to the developer account, so the one thing it
+cannot do is reach a tester. The only channel to a friend's watch is a **public** store
+listing — which anyone can install. Decision: a third build channel, `manifest-invite.xml` +
+`monkey-invite.jungle` (own UUID, "WingFoil - Invite Beta"), identical code to the public app
+except that it starts locked. `LockGate` derives an 8-character **request code** from
+`System.getDeviceSettings().uniqueIdentifier` (present on fenix847mm per the SDK 9.2
+`api.debug.xml`; per-app, per-device, stable across uninstall, and null-guarded by a
+first-run random id in `Storage`), the lock screen shows it, Jan runs
+`lab/tools/make_unlock.py <code>` and mails back an 8-character **unlock key**, the tester
+types it into the app's Garmin Connect settings, `onSettingsChanged` re-validates and the
+app opens for good on that watch. Codes are Crockford base32 (no I/L/O/U) because they are
+read off round glass and typed on a phone; the watch folds the look-alikes back anyway.
+The honest part: the check is `key == B32_40(FNV1a64(pepper || request_code))`, computed the
+same way on both sides, so the 8-byte **pepper** compiled into the invite build is the entire
+secret and anyone who unpacks the `.prg` can mint keys. That is not a shortcut, it is the
+shape of the problem — offline per-device verification means the watch must hold whatever it
+verifies against, and an HMAC secret would be no less extractable (and CIQ has no crypto
+primitives to compute one with anyway). Truncated-HMAC key generation was the first design
+and was dropped for exactly this reason: it would have looked cryptographic while being
+unverifiable on-watch, and the two sides would have had to disagree. So the gate is a
+"please don't", sized for a handful of invited testers on a free hobby app, and this ADR
+says so rather than the code implying otherwise.
+Mechanics that keep the secret out of git: `UNLOCK_SECRET` lives in the gitignored `lab/.env`;
+`make_unlock.py --emit-pepper` derives the pepper and writes `garmin/gen/UnlockPepper.mc`,
+which `.gitignore` covers (`garmin/gen/` **and** `garmin/source/gen/`, so the file cannot be
+moved under the shared source path by accident). Exactly one directory supplies module
+`UnlockPepper` per build: `garmin/source-nopepper/` (all zeros ⇒ `LockGate.enabled()` false
+⇒ the public app and the beta build never reach the lock screen, verified by a unit test and
+by their settings JSON not carrying `unlockKey`) or `garmin/gen/` (invite only). Building the
+invite jungle without the generated file fails loudly on an undefined `UnlockPepper` rather
+than silently shipping an open lock. Consequence: three channels to keep straight
+(public / beta / invite), one gitignored generated file to re-emit on a fresh clone — from
+the same secret, so keys already issued keep working — and a per-tester step for Jan that is
+two lines of mail. Parity between the Python and Monkey C implementations is held by three
+shared test vectors hard-coded in both suites; the 64-bit FNV state is carried as two 32-bit
+halves on both sides so nothing depends on Monkey C's undocumented `Long` overflow behaviour.
+
 ## ADR-011 · Widgets ship without an app group, and say so
 The WidgetKit extension (`de.lahmann.wingfoil.widgets`, embedded in the app) needs the app's
 data, and a widget process cannot open the GRDB library — different container, 30 MB memory

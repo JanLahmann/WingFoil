@@ -1185,3 +1185,161 @@ function everyLayoutRendersHeadless(logger as Test.Logger) as Boolean {
         + " layouts populated + empty, plus the 5 default pages and the PAUSED banner");
     return true;
 }
+
+// ---- Invite-beta unlock gate (docs/decisions.md ADR-012) ----
+// The gate is worthless if the watch and lab/tools/make_unlock.py ever disagree about the
+// arithmetic — Jan would mail a key that does not open the app, on a build he cannot debug
+// remotely. These vectors are the contract: the SAME table is hard-coded in the keygen's
+// `--check`, so a change to either implementation reddens one of the two suites.
+
+const UNLOCK_VEC_PEPPER = [0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef];
+const UNLOCK_VEC_IDS = ["wingfoil", "ac915d426451c88e8ea691fa412f9af9c21b4d12", ""];
+const UNLOCK_VEC_CODES = ["PTMDBDNY", "N3J986JP", "SFS9SS44"];
+const UNLOCK_VEC_KEYS = ["MWTSPKVB", "MJFJ4PD4", "1PT5WKZK"];
+
+(:test)
+function unlockKeyMatchesKeygenVectors(logger as Test.Logger) as Boolean {
+    for (var i = 0; i < UNLOCK_VEC_IDS.size(); i++) {
+        var code = LockGate.requestCodeFor(UNLOCK_VEC_IDS[i]);
+        var key = LockGate.keyFor(UNLOCK_VEC_PEPPER, code);
+        logger.debug("id=\"" + UNLOCK_VEC_IDS[i] + "\" code=" + code + " key=" + key);
+        Test.assertMessage(code.equals(UNLOCK_VEC_CODES[i]),
+            "request code " + code + " != keygen " + UNLOCK_VEC_CODES[i]);
+        Test.assertMessage(key.equals(UNLOCK_VEC_KEYS[i]),
+            "unlock key " + key + " != keygen " + UNLOCK_VEC_KEYS[i]);
+    }
+    // The 64-bit FNV state is carried in two 32-bit halves precisely so no multiply can
+    // overflow; if a device ever wrapped or saturated differently, these two would drift.
+    var h = LockGate.fnv1a64([] as Array<Number>);
+    Test.assertMessage(h[0] == 0xcbf29ce4l && h[1] == 0x84222325l, "FNV offset basis");
+    h = LockGate.fnv1a64([0] as Array<Number>);
+    Test.assertMessage(h[0] == 0xaf63bd4cl && h[1] == 0x8601b7dfl,
+        "FNV of one zero byte drifted: " + h[0].format("%08x") + h[1].format("%08x"));
+    return true;
+}
+
+(:test)
+function unlockGateIsOffWithoutAPepper(logger as Test.Logger) as Boolean {
+    // This binary is built from monkey.jungle, i.e. the source-nopepper stub. The public
+    // app must never reach the lock screen, and this is the assertion that says so.
+    var p = UnlockPepper.bytes();
+    Test.assertMessage(p.size() == 8, "pepper is 8 bytes");
+    Test.assertMessage(LockGate.isZero(p), "public build must ship a ZERO pepper");
+    Test.assertMessage(!LockGate.enabled(), "gate must be disabled in the public build");
+    Test.assertMessage(LockGate.refresh(), "a disabled gate reports unlocked");
+    logger.debug("zero pepper -> gate bypassed");
+    return true;
+}
+
+(:test)
+function unlockAcceptsOnlyItsOwnKey(logger as Test.Logger) as Boolean {
+    var code = UNLOCK_VEC_CODES[0];
+    var key = UNLOCK_VEC_KEYS[0];
+    Test.assertMessage(LockGate.matches(UNLOCK_VEC_PEPPER, code, key), "correct key unlocks");
+
+    // Wrong in every way that matters.
+    Test.assertMessage(!LockGate.matches(UNLOCK_VEC_PEPPER, code, "ZZZZZZZZ"), "junk stays locked");
+    Test.assertMessage(!LockGate.matches(UNLOCK_VEC_PEPPER, code, ""), "empty stays locked");
+    Test.assertMessage(!LockGate.matches(UNLOCK_VEC_PEPPER, code, UNLOCK_VEC_KEYS[1]),
+        "another tester's key stays locked");
+    Test.assertMessage(!LockGate.matches(UNLOCK_VEC_PEPPER, UNLOCK_VEC_CODES[1], key),
+        "a key is bound to ONE request code");
+    // The gate itself: the zero pepper the public build carries must not mint this key.
+    Test.assertMessage(!LockGate.matches(UnlockPepper.bytes(), code, key),
+        "a different pepper must produce a different key");
+
+    // ...and forgiving about how it was typed, because the tester is copying an 8-character
+    // code out of a mail into a phone keyboard.
+    Test.assertMessage(LockGate.matches(UNLOCK_VEC_PEPPER, code, key.toLower()), "lower case");
+    Test.assertMessage(LockGate.matches(UNLOCK_VEC_PEPPER, code, " " + key + " "), "spaces");
+    Test.assertMessage(LockGate.matches(UNLOCK_VEC_PEPPER, code,
+        key.substring(0, 4) + "-" + key.substring(4, 8)), "dash");
+    // Crockford folding: the alphabet has no I/L/O, so those can only be mistyped 1/1/0.
+    Test.assertEqual(LockGate.normalize("i0lo"), "1010");
+    Test.assertEqual(LockGate.normalize(" ptm-dbdny "), "PTMDBDNY");
+    // And the request code the lock screen shows can never contain the ambiguous letters.
+    Test.assertMessage(LockGate.ALPHABET.find("I") == null
+        && LockGate.ALPHABET.find("L") == null
+        && LockGate.ALPHABET.find("O") == null
+        && LockGate.ALPHABET.find("U") == null, "alphabet must drop I/L/O/U");
+    logger.debug("code " + code + " opens only for " + key);
+    return true;
+}
+
+(:test)
+function unlockRequestCodeIsStable(logger as Test.Logger) as Boolean {
+    // Same device, same code, forever — the whole scheme rests on this. A tester who
+    // reinstalls must not need a new key.
+    var id = "ac915d426451c88e8ea691fa412f9af9c21b4d12";
+    var a = LockGate.requestCodeFor(id);
+    var b = LockGate.requestCodeFor(id);
+    Test.assertEqual(a, b);
+    Test.assertMessage(a.length() == LockGate.CODE_LEN, "8 characters");
+    for (var i = 0; i < a.length(); i++) {
+        Test.assertMessage(LockGate.ALPHABET.find(a.substring(i, i + 1)) != null,
+            "code character outside the alphabet: " + a);
+    }
+    // Different devices, different codes (a one-character change is enough).
+    Test.assertMessage(!a.equals(LockGate.requestCodeFor(id + "0")), "id change moves the code");
+    Test.assertMessage(!a.equals(LockGate.requestCodeFor("b" + id.substring(1, id.length()))),
+        "first-character change moves the code");
+    // The live device path must produce a code of the same shape (its id is whatever the
+    // simulator reports, so only the shape is assertable).
+    var live = LockGate.requestCode();
+    Test.assertEqual(live.length(), LockGate.CODE_LEN);
+    Test.assertEqual(live, LockGate.requestCode());
+    logger.debug("this device: " + live);
+    return true;
+}
+
+// The lock screen is the ONE screen a tester sees before anything works, and its one job is
+// to render 8 characters legibly on round glass. Same measurement as the recording pages.
+(:test)
+function lockScreenFitsRoundDisplay(logger as Test.Logger) as Boolean {
+    var dc = testDc();
+    var h = SCREEN;
+    var cy = h / 2;
+    var radius = h / 2.0 - BEZEL;
+    var code = "WWWWWWWW";     // widest 8 characters the alphabet can produce
+
+    var fonts = [Graphics.FONT_SMALL, Graphics.FONT_XTINY, LockView.codeFont(dc, code),
+        Graphics.FONT_XTINY, Graphics.FONT_XTINY, Graphics.FONT_XTINY];
+    var texts = ["WingFoil", "INVITE BETA", code, "key not valid", "key goes in Garmin",
+        "Connect app settings"];
+
+    var prevY = -1;
+    var prevH = 0;
+    for (var i = 0; i < texts.size(); i++) {
+        var fh = dc.getFontHeight(fonts[i]);
+        var y = LockView.rowY(h, i);
+        var w = dc.getTextWidthInPixels(texts[i], fonts[i]);
+        var r = cornerRadius(w, fh, y, cy);
+        logger.debug("row " + i.toString() + " y=" + y.toString() + " " + w.toString() + "x"
+            + fh.toString() + " corner " + r.format("%.0f"));
+        Test.assertMessage(r <= radius,
+            "lock row " + i.toString() + " corner " + r.format("%.0f") + " > " + radius);
+        if (prevY >= 0) {
+            Test.assertMessage(y - prevY >= (prevH + fh) / 2,
+                "lock rows " + (i - 1).toString() + "/" + i.toString() + " collide");
+        }
+        prevY = y;
+        prevH = fh;
+    }
+
+    // "LARGE" is the requirement, not an accident of the fitter: the code must come out at
+    // least as tall as FONT_LARGE, i.e. the vector font (or the top of the bitmap ladder)
+    // was actually reachable in that row.
+    var codeH = dc.getFontHeight(fonts[2]);
+    Test.assertMessage(codeH >= dc.getFontHeight(Graphics.FONT_LARGE),
+        "request code font is only " + codeH.toString() + "px");
+    // ...and the real code must be no wider than the worst case just measured.
+    Test.assertMessage(
+        dc.getTextWidthInPixels(LockGate.requestCode(), fonts[2])
+            <= dc.getTextWidthInPixels(code, fonts[2]), "WWWWWWWW is the widest case");
+
+    // It renders, in both states, without throwing.
+    var view = new LockView();
+    view.onUpdate(dc);
+    logger.debug("lock screen code font height " + codeH.toString() + "px");
+    return true;
+}

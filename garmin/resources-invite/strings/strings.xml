@@ -1,0 +1,4 @@
+<strings>
+    <!-- Invite build only; merged on top of resources/strings/strings.xml. -->
+    <string id="SetUnlockKey">Unlock key (from the invite mail)</string>
+</strings>
