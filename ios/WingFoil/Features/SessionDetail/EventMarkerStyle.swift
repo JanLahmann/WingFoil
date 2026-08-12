@@ -1,4 +1,5 @@
 import SwiftUI
+import WingFoilKit
 
 /// One palette for the outcome markers so the map, the chart and the legend can never
 /// drift apart. Colour carries the verdict (docs/algorithms.md "Turn outcome" /
@@ -26,23 +27,19 @@ enum EventMarkerStyle {
             .shadow(radius: 1)
     }
 
-    static func legend() -> some View {
-        HStack(spacing: 12) {
-            item(.flew, "flew through")
-            item(.touchdown, "touchdown")
-            item(.fell, "fell in")
-            item(.course, "course change")
-            Spacer()
-        }
-        .font(.caption2)
-        .foregroundStyle(.secondary)
-    }
+}
 
-    private static func item(_ tone: SessionDetail.EventMarker.Tone,
-                             _ label: String) -> some View {
-        HStack(spacing: 4) {
-            Circle().fill(color(tone)).frame(width: 8, height: 8)
-            Text(label)
+extension SessionDetail.EventMarker {
+
+    /// The legend chip this marker answers to. Both channels of an outcome share one
+    /// chip — the rider hides "touchdowns", not "solid touchdowns" — so the hollow
+    /// straight-line variant disappears with its solid maneuver twin.
+    var layer: MapLayer {
+        switch tone {
+        case .flew: return .flewThrough
+        case .touchdown: return .touchdown
+        case .fell: return .fellIn
+        case .course: return .courseChange
         }
     }
 }

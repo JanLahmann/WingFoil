@@ -109,7 +109,13 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      single fast reach survives thinning; each half degrades on its own; a degenerate track
      stays finite; the on-disk cache round-trips and a version bump invalidates it); PB
      detection (float noise is not a record, the *first* import celebrates nothing, an
-     uncertified source never celebrates); and the widget snapshot (7-day window, the
+     uncertified source never celebrates); the tappable map legend's visibility model
+     (everything visible by default and after an unreadable or unknown stored value;
+     toggling one chip touches only that category; the round trip through `UserDefaults`,
+     including turning categories back **on**; a hidden *line* category degrades to the
+     neutral route rather than erasing the track, while the other phase keeps its tint; a
+     category with no instances in the session is not a toggle); and the widget snapshot
+     (7-day window, the
      `foilTimeS`→`foilPct` fallback for pre-v2 rows, encode/decode round-trip, and the
      invariant that the store never claims the shared container it does not have).
    - `GdprImportTests` — a synthetic Garmin export (ZIP of ZIPs holding two fixture FITs, a
@@ -139,6 +145,11 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    without reinstalling. `UI_IMPORT_FIXTURES=1`, `UI_OPEN_SESSION=latest|<name>`,
    `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings` and
    `UI_HELP_TOPIC=<HelpTopicID>` park the app on a given screen, since `simctl` cannot tap.
+   `UI_SCROLL_TO=<anchor>`, `UI_PLAYHEAD=0.0…1.0`, `UI_FULLSCREEN_MAP=1` and
+   `UI_HIDE_LAYERS=<MapLayer,…>` stage the session detail page: the last one starts with
+   those legend chips switched off (e.g. `fellIn,courseChange`), which is the only way to
+   photograph a filtered map without a finger. It is applied *after* the stored preference
+   and never written back — the override stages a screenshot, it does not edit the setting.
 3. **Monkey C units (Toybox.Test)** — the core suite lives in the `WingFoilCore` barrel
    (`garmin/barrel/WingFoilCore/tests/`) and is therefore compiled into **both** consumers'
    `--unit-test` builds: `bin/WingFoilTests.prg` (device app: 16 tests) and
