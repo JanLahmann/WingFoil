@@ -54,7 +54,10 @@ var TEXT_FONTS as Array<Graphics.FontType> = [
     Graphics.FONT_TINY, Graphics.FONT_XTINY
 ];
 
-// Timeline page bands (see drawTimelinePage).
+// Timeline page bands (see drawTimelinePage). The two tall ones were authored for the fenix 8
+// family, whose smallest glass is TL_REF_PX; RecordingView.stripH/sparkH keep them exactly as
+// written at or above that width and scale them down below it.
+const TL_REF_PX = 416;
 const TL_STRIP_H = 44;
 const TL_SPARK_H = 96;
 const TL_DOT_R = 6;
@@ -469,7 +472,9 @@ class RecordingView extends WatchUi.View {
         y = turnsRowY(cy, hT, hHot, hL, hS, 1);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         if (windSet) {
-            drawSplitCount(dc, cx, y, t.tackCount.toString(), t.jibeCount.toString());
+            drawSplitCount(dc, cx, y, t.tackCount.toString(), t.jibeCount.toString(),
+                splitCountFont(dc, t.tackCount.toString(), t.jibeCount.toString(),
+                    splitCountBudget(dc, y, cy, hHot)));
         } else {
             dc.drawText(cx, y, Graphics.FONT_NUMBER_HOT, t.turnCount.toString(), CV);
         }
@@ -538,12 +543,36 @@ class RecordingView extends WatchUi.View {
         return symW + TURNS_WORD_GAP + dc.getTextWidthInPixels(score, Graphics.FONT_LARGE);
     }
 
-    // Total width of the "<n> / <n>" block. Shared with the layout test, which asserts the
-    // block still fits the circle at its row.
-    static function splitCountWidth(dc as Dc, left as String, right as String) as Number {
-        return dc.getTextWidthInPixels(left, Graphics.FONT_NUMBER_HOT)
-            + dc.getTextWidthInPixels(right, Graphics.FONT_NUMBER_HOT)
+    // Total width of the "<n> / <n>" block in `font`. Shared with the layout test, which
+    // asserts the block still fits the circle at its row.
+    static function splitCountWidth(dc as Dc, left as String, right as String,
+            font as Graphics.FontType) as Number {
+        return dc.getTextWidthInPixels(left, font) + dc.getTextWidthInPixels(right, font)
             + dc.getTextWidthInPixels("/", Graphics.FONT_MEDIUM) + 2 * TURNS_SPLIT_GAP;
+    }
+
+    // Width the split-count row may use. Unlike the other fitted rows this one measures the
+    // FULL line height rather than the ink: it is the largest block on the page, it sits on
+    // the centre line where two digits reach furthest, and turnsRowY has already reserved
+    // that much height for it. Shared with the layout test so both agree on the box.
+    static function splitCountBudget(dc as Dc, y as Number, cy as Number,
+            hHot as Number) as Number {
+        return rowBudget(fitRadius(dc), y - cy, hHot);
+    }
+
+    // The number font the split count can afford. Two counts plus a separator and two 16 px
+    // gaps is the widest block the Turns page draws, and FONT_NUMBER_HOT overshoots the chord
+    // on the fenix 7 family (260 px: 127 px corner against a 126 px radius), so it walks down
+    // the same NUMBER_FONTS ladder every other giant number uses. Starts at NUMBER_HOT — the
+    // row is stacked on that height, so nothing above it would fit anyway.
+    static function splitCountFont(dc as Dc, left as String, right as String,
+            maxW as Number) as Graphics.FontType {
+        for (var i = 1; i < NUMBER_FONTS.size() - 1; i++) {
+            if (splitCountWidth(dc, left, right, NUMBER_FONTS[i]) <= maxW) {
+                return NUMBER_FONTS[i];
+            }
+        }
+        return NUMBER_FONTS[NUMBER_FONTS.size() - 1];
     }
 
     static function tallyWidth(dc as Dc, a as String, b as String, c as String) as Number {
@@ -554,11 +583,10 @@ class RecordingView extends WatchUi.View {
 
     // Two giant counts with a separator, centred as one block.
     hidden function drawSplitCount(dc as Dc, cx as Number, y as Number, left as String,
-            right as String) as Void {
-        var f = Graphics.FONT_NUMBER_HOT;
+            right as String, f as Graphics.FontType) as Void {
         var wl = dc.getTextWidthInPixels(left, f);
         var ws = dc.getTextWidthInPixels("/", Graphics.FONT_MEDIUM);
-        var x = cx - splitCountWidth(dc, left, right) / 2;
+        var x = cx - splitCountWidth(dc, left, right, f) / 2;
         var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
         dc.drawText(x, y, f, left, LV);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
@@ -602,14 +630,17 @@ class RecordingView extends WatchUi.View {
         var cy = dc.getHeight() / 2;
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
         var radius = cx - TL_MARGIN;
+        var strip = stripH(dc);
+        var spark = sparkH(dc);
 
         // band 1: foil-fraction bars
-        var top = timelineRowY(cy, hT, 1);
-        var halfW = bandHalfWidth(radius, top, top + TL_STRIP_H, cy);
+        var top = timelineRowY(cy, hT, strip, spark, 1);
+        var halfW = bandHalfWidth(radius, top, top + strip, cy);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, timelineRowY(cy, hT, 0), Graphics.FONT_XTINY, "on foil", CV);
+        dc.drawText(cx, timelineRowY(cy, hT, strip, spark, 0), Graphics.FONT_XTINY,
+            "on foil", CV);
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawLine(cx - halfW, top + TL_STRIP_H, cx + halfW, top + TL_STRIP_H);
+        dc.drawLine(cx - halfW, top + strip, cx + halfW, top + strip);
         var n = h.slotCount;
         if (n > 0) {
             var w = 2 * halfW;
@@ -619,18 +650,18 @@ class RecordingView extends WatchUi.View {
             }
             dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
             for (var i = 0; i < n; i++) {
-                var bh = h.foilPct[i] * TL_STRIP_H / 100;
+                var bh = h.foilPct[i] * strip / 100;
                 if (bh > 0) {
-                    dc.fillRectangle(cx - halfW + i * w / n, top + TL_STRIP_H - bh, barW, bh);
+                    dc.fillRectangle(cx - halfW + i * w / n, top + strip - bh, barW, bh);
                 }
             }
         }
 
         // band 2: max-speed sparkline + best-2s reference
-        top = timelineRowY(cy, hT, 3);
-        halfW = bandHalfWidth(radius, top, top + TL_SPARK_H, cy);
+        top = timelineRowY(cy, hT, strip, spark, 3);
+        halfW = bandHalfWidth(radius, top, top + spark, cy);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, timelineRowY(cy, hT, 2), Graphics.FONT_XTINY,
+        dc.drawText(cx, timelineRowY(cy, hT, strip, spark, 2), Graphics.FONT_XTINY,
             "speed " + AppSettings.speedLabel(), CV);
         var peak = h.peakCms();
         var ref = (c.engine.records.best2sMps * 100.0).toNumber();
@@ -641,7 +672,7 @@ class RecordingView extends WatchUi.View {
             peak = 100;
         }
         if (ref > 0) {
-            var yRef = top + TL_SPARK_H - ref * TL_SPARK_H / peak;
+            var yRef = top + spark - ref * spark / peak;
             dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
             dc.drawLine(cx - halfW, yRef, cx + halfW, yRef);
         }
@@ -649,10 +680,10 @@ class RecordingView extends WatchUi.View {
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
             dc.setPenWidth(2);
             var px = cx - halfW;
-            var py = top + TL_SPARK_H - h.maxCms[0] * TL_SPARK_H / peak;
+            var py = top + spark - h.maxCms[0] * spark / peak;
             for (var i = 1; i < n; i++) {
                 var qx = cx - halfW + i * 2 * halfW / (n - 1);
-                var qy = top + TL_SPARK_H - h.maxCms[i] * TL_SPARK_H / peak;
+                var qy = top + spark - h.maxCms[i] * spark / peak;
                 dc.drawLine(px, py, qx, qy);
                 px = qx;
                 py = qy;
@@ -661,10 +692,10 @@ class RecordingView extends WatchUi.View {
         }
 
         // band 3: turn outcomes, newest on the right
-        var yDots = timelineRowY(cy, hT, 5);
+        var yDots = timelineRowY(cy, hT, strip, spark, 5);
         halfW = bandHalfWidth(radius, yDots - TL_DOT_R, yDots + TL_DOT_R, cy);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, timelineRowY(cy, hT, 4), Graphics.FONT_XTINY, "turns", CV);
+        dc.drawText(cx, timelineRowY(cy, hT, strip, spark, 4), Graphics.FONT_XTINY, "turns", CV);
         var shown = dotsShown(h.turnCount, 2 * halfW);
         var pitch = 2 * TL_DOT_R + TL_DOT_GAP;
         var x0 = cx - (shown * pitch - TL_DOT_GAP) / 2 + TL_DOT_R;
@@ -675,18 +706,37 @@ class RecordingView extends WatchUi.View {
         }
     }
 
+    // Band heights for THIS glass. TL_STRIP_H / TL_SPARK_H were authored for the fenix 8
+    // family (416-454 px) and every member of it keeps them verbatim. Taken literally on a
+    // 240 px fenix 7S the three bands plus their labels fill 86 % of the height, which drives
+    // every band down to a depth where the chord has collapsed — the dot row was left 88 px of
+    // usable width, against 202 px once the bands scale.
+    static function bandH(dc as Dc, authored as Number) as Number {
+        var h = dc.getHeight();
+        return h >= TL_REF_PX ? authored : h * authored / TL_REF_PX;
+    }
+
+    static function stripH(dc as Dc) as Number {
+        return bandH(dc, TL_STRIP_H);
+    }
+
+    static function sparkH(dc as Dc) as Number {
+        return bandH(dc, TL_SPARK_H);
+    }
+
     // Timeline rows: 0 foil label · 1 strip TOP · 2 speed label · 3 sparkline TOP ·
-    // 4 turns label · 5 dot-row centre. Stacked from font heights + the band constants, so
+    // 4 turns label · 5 dot-row centre. Stacked from font heights + the band heights, so
     // the bands can never collide on any variant.
-    static function timelineRowY(cy as Number, hT as Number, row as Number) as Number {
-        var total = 3 * hT + TL_STRIP_H + TL_SPARK_H + 2 * TL_DOT_R;
+    static function timelineRowY(cy as Number, hT as Number, strip as Number,
+            spark as Number, row as Number) as Number {
+        var total = 3 * hT + strip + spark + 2 * TL_DOT_R;
         var y = cy - total / 2;
         if (row == 0) { return y + hT / 2; }
         if (row == 1) { return y + hT; }
-        if (row == 2) { return y + hT + TL_STRIP_H + hT / 2; }
-        if (row == 3) { return y + 2 * hT + TL_STRIP_H; }
-        if (row == 4) { return y + 2 * hT + TL_STRIP_H + TL_SPARK_H + hT / 2; }
-        return y + 3 * hT + TL_STRIP_H + TL_SPARK_H + TL_DOT_R;
+        if (row == 2) { return y + hT + strip + hT / 2; }
+        if (row == 3) { return y + 2 * hT + strip; }
+        if (row == 4) { return y + 2 * hT + strip + spark + hT / 2; }
+        return y + 3 * hT + strip + spark + TL_DOT_R;
     }
 
     // Half the chord available to a band spanning yTop..yBot — the deeper edge decides.

@@ -1,6 +1,7 @@
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
+import Toybox.System;
 import Toybox.Test;
 import WingFoilCore;
 
@@ -17,7 +18,15 @@ import WingFoilCore;
 // are the headless twin of eyeballing a screenshot, and unlike a screenshot they run on every
 // device.
 
-const SCREEN = 454;                 // fenix 8 47 mm; the widest variant we ship
+// The canvas every layout test measures on: THIS device's glass, not a fixed size. It used to
+// be a const 454 (fenix 8 47 mm), which quietly made the suite meaningless on any smaller
+// variant — a 240 px fenix 7S renders its rows into a 240 px chord but was asserted against a
+// 454 px one, so nothing could ever fail. Reading it from the device is what makes
+// "they run on every device" above actually true; the fenix 7 family (240/260/280 px MIP) is
+// the reason it matters.
+function screenPx() as Number {
+    return System.getDeviceSettings().screenWidth;
+}
 const BEZEL = 4.0;                  // margin the glass eats
 
 // The furthest corner of a w x h text box centred at (cx, y), as a radius from the centre.
@@ -36,7 +45,7 @@ function cornerRadiusAt(cx as Number, x as Number, w as Number, h as Number, y a
 }
 
 function testDc() as Graphics.Dc {
-    var ref = Graphics.createBufferedBitmap({:width => SCREEN, :height => SCREEN});
+    var ref = Graphics.createBufferedBitmap({:width => screenPx(), :height => screenPx()});
     var bmp = ref.get();
     Test.assertMessage(bmp != null, "buffered bitmap");
     return (bmp as Graphics.BufferedBitmap).getDc();
@@ -152,8 +161,8 @@ function SessionPackEncoding(entryCms as Number, exitCms as Number,
 (:test)
 function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var dc = testDc();
-    var cy = SCREEN / 2;
-    var radius = SCREEN / 2.0 - BEZEL;
+    var cy = screenPx() / 2;
+    var radius = screenPx() / 2.0 - BEZEL;
 
     var hT = dc.getFontHeight(Graphics.FONT_XTINY);
     var hHot = dc.getFontHeight(Graphics.FONT_NUMBER_HOT);
@@ -166,10 +175,20 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
         RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 0), cy);
     Test.assertMessage(r <= radius, "header corner " + r.format("%.0f") + " > " + radius);
 
-    // row 1: two 2-digit counts and the separator
-    r = cornerRadius(RecordingView.splitCountWidth(dc, "99", "99"), hHot,
-        RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 1), cy);
-    Test.assertMessage(r <= radius, "counts corner " + r.format("%.0f") + " > " + radius);
+    // row 1: two 2-digit counts and the separator, in whatever number font the row's chord
+    // affords (FONT_NUMBER_HOT on fenix 8, a rung lower on the narrower fenix 7 glass). The
+    // height stays hHot because that is the space turnsRowY reserves either way. This is the
+    // one row on the page that is FITTED, so — like every other fitted row in this suite — it
+    // is asserted against fitRadius, the margin the fitter itself works to.
+    var y1 = RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 1);
+    var splitFont = RecordingView.splitCountFont(dc, "99", "99",
+        RecordingView.splitCountBudget(dc, y1, cy, hHot));
+    r = cornerRadius(RecordingView.splitCountWidth(dc, "99", "99", splitFont), hHot, y1, cy);
+    Test.assertMessage(r <= RecordingView.fitRadius(dc),
+        "counts corner " + r.format("%.0f") + " > " + RecordingView.fitRadius(dc).toString());
+    logger.debug("split count font height " + dc.getFontHeight(splitFont).toString()
+        + " (NUMBER_HOT is " + hHot.toString() + "), corner " + r.format("%.0f") + " of "
+        + RecordingView.fitRadius(dc).toString());
 
     // row 2: the outcome SYMBOL next to the longest score. The symbol is a fixed box, so
     // unlike the words it replaced ("TOUCH" vs "--") this row's width no longer depends on
@@ -194,7 +213,6 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
 
     // and the rows must not collide
     var y0 = RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 0);
-    var y1 = RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 1);
     var y2 = RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 2);
     var y3 = RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 3);
     Test.assertMessage(y1 - y0 >= (hT + hHot) / 2, "header/counts gap");
@@ -213,7 +231,7 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
 (:test)
 function heroPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var dc = testDc();
-    var cy = SCREEN / 2;
+    var cy = screenPx() / 2;
     var radius = RecordingView.fitRadius(dc);
     var limit = radius.toFloat();
     var hN = dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT);
@@ -276,8 +294,8 @@ function heroPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
 (:test)
 function gridAndCellsPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
     var dc = testDc();
-    var cx = SCREEN / 2;
-    var cy = SCREEN / 2;
+    var cx = screenPx() / 2;
+    var cy = screenPx() / 2;
     var radius = RecordingView.fitRadius(dc);
     var limit = radius.toFloat();
     var hG = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
@@ -365,7 +383,7 @@ function gridAndCellsPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
 (:test)
 function clockPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var dc = testDc();
-    var cy = SCREEN / 2;
+    var cy = screenPx() / 2;
     var radius = RecordingView.fitRadius(dc);
     var limit = radius.toFloat();
     var hN = dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT);
@@ -399,30 +417,37 @@ function clockPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
 (:test)
 function timelinePageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var dc = testDc();
-    var cx = SCREEN / 2;
-    var cy = SCREEN / 2;
-    var radius = SCREEN / 2 - TL_MARGIN;
-    var limit = SCREEN / 2.0 - BEZEL;
+    var cx = screenPx() / 2;
+    var cy = screenPx() / 2;
+    var radius = screenPx() / 2 - TL_MARGIN;
+    var limit = screenPx() / 2.0 - BEZEL;
     var hT = dc.getFontHeight(Graphics.FONT_XTINY);
 
-    // bands, in draw order, must stack without overlapping and stay inside the glass
-    var yStripTop = RecordingView.timelineRowY(cy, hT, 1);
-    var ySparkTop = RecordingView.timelineRowY(cy, hT, 3);
-    var yDots = RecordingView.timelineRowY(cy, hT, 5);
-    Test.assertMessage(ySparkTop >= yStripTop + TL_STRIP_H + hT, "strip/spark overlap");
-    Test.assertMessage(yDots - TL_DOT_R >= ySparkTop + TL_SPARK_H + hT, "spark/dots overlap");
+    // bands, in draw order, must stack without overlapping and stay inside the glass.
+    // Band heights come from the device, not from the 454 px reference: a fenix 7S stacks
+    // 23 + 50 where a fenix 8 stacks 44 + 96.
+    var strip = RecordingView.stripH(dc);
+    var spark = RecordingView.sparkH(dc);
+    var yStripTop = RecordingView.timelineRowY(cy, hT, strip, spark, 1);
+    var ySparkTop = RecordingView.timelineRowY(cy, hT, strip, spark, 3);
+    var yDots = RecordingView.timelineRowY(cy, hT, strip, spark, 5);
+    Test.assertMessage(ySparkTop >= yStripTop + strip + hT, "strip/spark overlap");
+    Test.assertMessage(yDots - TL_DOT_R >= ySparkTop + spark + hT, "spark/dots overlap");
 
-    var hwStrip = RecordingView.bandHalfWidth(radius, yStripTop, yStripTop + TL_STRIP_H, cy);
-    var hwSpark = RecordingView.bandHalfWidth(radius, ySparkTop, ySparkTop + TL_SPARK_H, cy);
+    var hwStrip = RecordingView.bandHalfWidth(radius, yStripTop, yStripTop + strip, cy);
+    var hwSpark = RecordingView.bandHalfWidth(radius, ySparkTop, ySparkTop + spark, cy);
     var hwDots = RecordingView.bandHalfWidth(radius, yDots - TL_DOT_R, yDots + TL_DOT_R, cy);
-    Test.assertMessage(hwStrip > 100 && hwSpark > 100 && hwDots > 100,
+    // "wide enough to be worth drawing", as a fraction of the glass rather than an absolute:
+    // 22 % of the width is what the old 100 px floor meant on a 454 px fenix 8.
+    var narrow = screenPx() * 22 / 100;
+    Test.assertMessage(hwStrip > narrow && hwSpark > narrow && hwDots > narrow,
         "timeline bands too narrow: " + hwStrip.toString() + "/" + hwSpark.toString()
-            + "/" + hwDots.toString());
+            + "/" + hwDots.toString() + " (floor " + narrow.toString() + ")");
 
     // deepest corner of each band
-    var r = cornerRadiusAt(cx, cx, 2 * hwStrip, TL_STRIP_H, yStripTop + TL_STRIP_H / 2, cy);
+    var r = cornerRadiusAt(cx, cx, 2 * hwStrip, strip, yStripTop + strip / 2, cy);
     Test.assertMessage(r <= limit, "strip corner " + r.format("%.0f") + " > " + limit);
-    r = cornerRadiusAt(cx, cx, 2 * hwSpark, TL_SPARK_H, ySparkTop + TL_SPARK_H / 2, cy);
+    r = cornerRadiusAt(cx, cx, 2 * hwSpark, spark, ySparkTop + spark / 2, cy);
     Test.assertMessage(r <= limit, "spark corner " + r.format("%.0f") + " > " + limit);
 
     // 64 dots never all fit; the row shows the newest that do and stays inside the chord
@@ -437,9 +462,19 @@ function timelinePageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     Test.assertMessage(RecordingView.dotsShown(3, 2 * hwDots) == 3, "few dots all shown");
     Test.assertMessage(RecordingView.dotsShown(64, 0) == 0, "no room, no dots");
 
-    // 256 slots must each get at least one pixel column
-    Test.assertMessage(2 * hwStrip >= 256, "strip too narrow for 256 slots: "
-        + (2 * hwStrip).toString());
+    // 256 slots must each get at least one pixel column wherever the glass is wide enough to
+    // hold them. A 240-280 px fenix 7 physically cannot, and drawTimelinePage degrades by
+    // mapping several slots onto the same column (barW clamped to 1) rather than dropping
+    // them — so there the requirement is only that the strip still spans most of the glass.
+    if (2 * hwStrip >= 256) {
+        Test.assertMessage(true, "");
+    } else {
+        Test.assertMessage(2 * hwStrip >= screenPx() * 60 / 100,
+            "strip only " + (2 * hwStrip).toString() + "px of a "
+                + screenPx().toString() + "px glass");
+        logger.debug("glass too narrow for 256 slots — " + (2 * hwStrip).toString()
+            + "px strip shares columns");
+    }
     logger.debug("timeline strip " + (2 * hwStrip).toString() + "px spark "
         + (2 * hwSpark).toString() + "px dots " + shown.toString() + " of 64");
     return true;
@@ -554,7 +589,7 @@ function pbFlashPulsesThenClears(logger as Test.Logger) as Boolean {
     // the overlay's three rows are stacked from font heights and must clear the glass at
     // the fastest speed the display can produce
     var dc = testDc();
-    var cy = SCREEN / 2;
+    var cy = screenPx() / 2;
     var limit = RecordingView.fitRadius(dc).toFloat();
     var hHot = dc.getFontHeight(Graphics.FONT_NUMBER_HOT);
     var hS = dc.getFontHeight(Graphics.FONT_SMALL);
@@ -1090,7 +1125,7 @@ function failedAttemptExpiresAndFitPackingIsSane(logger as Test.Logger) as Boole
 // drawn into an offscreen Dc.
 (:test)
 function everyLayoutRendersHeadless(logger as Test.Logger) as Boolean {
-    var ref = Graphics.createBufferedBitmap({:width => SCREEN, :height => SCREEN});
+    var ref = Graphics.createBufferedBitmap({:width => screenPx(), :height => screenPx()});
     var bmp = ref.get();
     Test.assertMessage(bmp != null, "buffered bitmap");
     var dc = (bmp as Graphics.BufferedBitmap).getDc();
@@ -1297,7 +1332,7 @@ function unlockRequestCodeIsStable(logger as Test.Logger) as Boolean {
 (:test)
 function lockScreenFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var dc = testDc();
-    var h = SCREEN;
+    var h = screenPx();
     var cy = h / 2;
     var radius = h / 2.0 - BEZEL;
     var code = "WWWWWWWW";     // widest 8 characters the alphabet can produce
@@ -1326,12 +1361,25 @@ function lockScreenFitsRoundDisplay(logger as Test.Logger) as Boolean {
         prevH = fh;
     }
 
-    // "LARGE" is the requirement, not an accident of the fitter: the code must come out at
-    // least as tall as FONT_LARGE, i.e. the vector font (or the top of the bitmap ladder)
-    // was actually reachable in that row.
+    // "As big as this row can hold" is the requirement, not an accident of the fitter. The
+    // bitmap ladder's best fit is the floor the vector path must beat — on the fenix 7 family
+    // the widest vector size that fits an 8-character code is SHORTER than that variant's
+    // FONT_LARGE, so a fitter that preferred vectors unconditionally would have shrunk the one
+    // string a tester has to transcribe. (Not "at least FONT_LARGE": on the 416 px fenix 8
+    // 43 mm, FONT_LARGE itself overflows this row by a hair and FONT_MEDIUM is the ladder's
+    // honest answer.)
+    var lad = LockView.ladder();
+    var codeDy = (LockView.rowY(h, LockView.ROW_CODE) - h / 2).abs();
+    var bitmapBest = RecordingView.fitFont(dc, lad, 0, code,
+        RecordingView.rowBudget(RecordingView.fitRadius(dc), codeDy,
+            dc.getFontHeight(lad[0])) * LockView.CODE_FIT_PCT / 100);
     var codeH = dc.getFontHeight(fonts[2]);
-    Test.assertMessage(codeH >= dc.getFontHeight(Graphics.FONT_LARGE),
-        "request code font is only " + codeH.toString() + "px");
+    Test.assertMessage(codeH >= dc.getFontHeight(bitmapBest),
+        "request code font is only " + codeH.toString() + "px, the bitmap ladder offers "
+            + dc.getFontHeight(bitmapBest).toString());
+    // ...and it must never collapse to body text.
+    Test.assertMessage(codeH > dc.getFontHeight(Graphics.FONT_SMALL),
+        "request code font " + codeH.toString() + "px is no bigger than FONT_SMALL");
     // ...and the real code must be no wider than the worst case just measured.
     Test.assertMessage(
         dc.getTextWidthInPixels(LockGate.requestCode(), fonts[2])

@@ -16,6 +16,18 @@
             <iq:product id="fenix8solar47mm"/>
             <iq:product id="fenix8solar51mm"/>
             <iq:product id="fenix8pro47mm"/>
+            <!-- fenix 7 family (CIQ 5.2.0, MIP 240/260/280 px) — added for the invite beta
+                 so fenix 7 testers can join; same 786 KB app memory and 100 Hz accel as
+                 fenix 8. Base fenix7/7s/7x have no multiband GNSS, which SessionController's
+                 `has`-guarded GPS fallback already handles. -->
+            <iq:product id="fenix7"/>
+            <iq:product id="fenix7s"/>
+            <iq:product id="fenix7x"/>
+            <iq:product id="fenix7pro"/>
+            <iq:product id="fenix7pronowifi"/>
+            <iq:product id="fenix7spro"/>
+            <iq:product id="fenix7xpro"/>
+            <iq:product id="fenix7xpronowifi"/>
         </iq:products>
         <iq:permissions>
             <iq:uses-permission id="Fit"/>

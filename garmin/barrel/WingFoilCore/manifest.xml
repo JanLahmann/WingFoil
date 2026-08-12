@@ -18,6 +18,17 @@
             <iq:product id="fenix8solar47mm"/>
             <iq:product id="fenix8solar51mm"/>
             <iq:product id="fenix8pro47mm"/>
+            <!-- fenix 7 family: the barrel product list has to be a SUPERSET of every
+                 consumer's, or monkeyc refuses the link ("barrel does not support device").
+                 Pure computation, so nothing here is device-specific. -->
+            <iq:product id="fenix7"/>
+            <iq:product id="fenix7s"/>
+            <iq:product id="fenix7x"/>
+            <iq:product id="fenix7pro"/>
+            <iq:product id="fenix7pronowifi"/>
+            <iq:product id="fenix7spro"/>
+            <iq:product id="fenix7xpro"/>
+            <iq:product id="fenix7xpronowifi"/>
         </iq:products>
         <!-- pure computation: the barrel itself needs no permissions -->
         <iq:permissions/>
