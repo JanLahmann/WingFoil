@@ -96,6 +96,11 @@ class SessionController {
             }
             if (pbEvents != 0 && engine.speedMps >= AppSettings.cfg.foilEntryMps) {
                 AlertManager.speedPb();
+                // best-2s only: the 10 s record creeps up behind it and would make the
+                // celebration routine rather than an event.
+                if ((pbEvents & SpeedRecords.PB_2S) != 0) {
+                    PbFlash.fire(engine.records.best2sMps);
+                }
             }
             if (turnEvent >= TurnDetector.EVENT_FLEW) {
                 AlertManager.turnOutcome(engine.turns.lastOutcome);
@@ -290,6 +295,7 @@ class SessionController {
         if (_session == null) {
             return false;
         }
+        PbFlash.stop();
         if (state == STATE_RECORDING) {
             _session.stop();
         }
@@ -306,6 +312,7 @@ class SessionController {
     }
 
     function finishDiscard() as Void {
+        PbFlash.stop();
         _stopAccel();
         if (_session != null) {
             if (state == STATE_RECORDING) {

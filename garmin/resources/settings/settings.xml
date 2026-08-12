@@ -17,6 +17,9 @@
     <setting propertyKey="@Properties.useKnots" title="@Strings.SetUseKnots">
         <settingConfig type="boolean"/>
     </setting>
+    <setting propertyKey="@Properties.showLabels" title="@Strings.SetShowLabels">
+        <settingConfig type="boolean"/>
+    </setting>
     <setting propertyKey="@Properties.sportChoice" title="@Strings.SetSport">
         <settingConfig type="list">
             <listEntry value="0">@Strings.SportWindsurf</listEntry>

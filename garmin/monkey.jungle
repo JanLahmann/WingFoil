@@ -11,3 +11,11 @@ base.barrelPath = barrel/WingFoilCore/barrel.jungle
 
 # Resolution-specific layout overrides land here later, e.g.:
 # fenix8solar47mm.resourcePath = $(fenix8solar47mm.resourcePath);resources-mip
+
+# Launcher icons at each product's NATIVE size (compiler.json launcherIcon):
+# fenix847mm / fenix8pro47mm want 65x65 (that is what resources/ holds), fenix843mm 60x60 and
+# both Solar variants 40x40. Without these overrides monkeyc rescales the 65x65 and warns on
+# every build; the qualifier directories carry nothing but the correctly sized bitmap.
+fenix843mm.resourcePath = $(fenix843mm.resourcePath);resources-icon60
+fenix8solar47mm.resourcePath = $(fenix8solar47mm.resourcePath);resources-icon40
+fenix8solar51mm.resourcePath = $(fenix8solar51mm.resourcePath);resources-icon40

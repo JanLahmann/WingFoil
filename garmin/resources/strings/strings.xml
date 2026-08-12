@@ -9,6 +9,7 @@
     <string id="SetExitHold">Exit hold (s)</string>
     <string id="SetMinFlight">Min flight duration (s)</string>
     <string id="SetUseKnots">Show speed in knots</string>
+    <string id="SetShowLabels">Show cell labels (off = glyph only)</string>
     <string id="SetSport">Record as sport</string>
     <string id="SportWindsurf">Windsurf (recommended)</string>
     <string id="SportKitesurf">Kitesurf</string>

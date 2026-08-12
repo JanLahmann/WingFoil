@@ -64,10 +64,21 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
         RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 1), cy);
     Test.assertMessage(r <= radius, "counts corner " + r.format("%.0f") + " > " + radius);
 
-    // row 2: longest outcome word next to the longest score
-    r = cornerRadius(RecordingView.outcomeWidth(dc, "TOUCH", "100%"), hL,
+    // row 2: the outcome SYMBOL next to the longest score. The symbol is a fixed box, so
+    // unlike the words it replaced ("TOUCH" vs "--") this row's width no longer depends on
+    // which outcome happens to be showing.
+    var symW = RecordingView.outcomeSymSize(dc);
+    Test.assertMessage(symW >= 14 && symW <= hL,
+        "outcome symbol " + symW.toString() + "px out of band");
+    r = cornerRadius(RecordingView.outcomeWidth(dc, symW, "100%"), hL,
         RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 2), cy);
     Test.assertMessage(r <= radius, "outcome corner " + r.format("%.0f") + " > " + radius);
+    // every outcome maps to a symbol, and the three real ones are all different
+    Test.assertEqual(RecordingView.outcomeSymbol(TurnDetector.OUTCOME_FLEW), Glyphs.O_CHECK);
+    Test.assertEqual(RecordingView.outcomeSymbol(TurnDetector.OUTCOME_TOUCHDOWN),
+        Glyphs.O_TRIANGLE);
+    Test.assertEqual(RecordingView.outcomeSymbol(TurnDetector.OUTCOME_FELL), Glyphs.O_CROSS);
+    Test.assertEqual(RecordingView.outcomeSymbol(TurnDetector.OUTCOME_NONE), Glyphs.O_DASH);
 
     // row 3: three 2-digit tallies
     r = cornerRadius(RecordingView.tallyWidth(dc, "99", "99", "99"), hS,
@@ -168,6 +179,10 @@ function gridAndCellsPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
     var inkL = RecordingView.inkH(dc, Graphics.FONT_LARGE);
     var inkT = RecordingView.inkH(dc, Graphics.FONT_XTINY);
     var narrowest = 9999;
+    // the label row is now a glyph plus (optionally) the word, so it is measured as one block
+    // and its height is whichever of the two is taller
+    var gs = Glyphs.size(dc);
+    var inkLbl = inkT > gs ? inkT : gs;
 
     for (var m = 1; m <= PageModel.M_MAX; m++) {
         var v = PageModel.worstValue(m);
@@ -188,10 +203,20 @@ function gridAndCellsPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
             var vf = RecordingView.fitFont(dc, TEXT_FONTS, 0, v, 2 * col[1]);
             if (2 * col[1] < narrowest) { narrowest = 2 * col[1]; }
 
-            r = cornerRadiusAt(cx, cx + col[0], dc.getTextWidthInPixels(lbl,
-                Graphics.FONT_XTINY), inkT, yl, cy);
+            r = cornerRadiusAt(cx, cx + col[0],
+                RecordingView.cellLabelWidth(dc, m, gs, lbl), inkLbl, yl, cy);
             Test.assertMessage(r <= limit, "grid label m" + m.toString() + " row"
                 + row.toString() + " r=" + r.format("%.0f") + " > " + limit);
+            // glyph-only mode must never be WIDER than the labelled one
+            Test.assertMessage(RecordingView.cellLabelWidth(dc, m, gs, "")
+                <= RecordingView.cellLabelWidth(dc, m, gs, lbl),
+                "glyph-only label wider than the labelled one, m" + m.toString());
+            // ... and the label block must stay inside its own column, or the two cells
+            // would run into each other long before the glass clipped them
+            Test.assertMessage(RecordingView.cellLabelWidth(dc, m, gs, lbl) <= 2 * col[1],
+                "grid label m" + m.toString() + " row" + row.toString() + " is "
+                    + RecordingView.cellLabelWidth(dc, m, gs, lbl).toString()
+                    + "px in a " + (2 * col[1]).toString() + "px column");
             r = cornerRadiusAt(cx, cx + col[0], dc.getTextWidthInPixels(v, vf), inkL, yv, cy);
             Test.assertMessage(r <= limit, "grid value m" + m.toString() + " row"
                 + row.toString() + " r=" + r.format("%.0f") + " > " + limit);
@@ -325,6 +350,181 @@ function numberFontGlyphCoverage(logger as Test.Logger) as Boolean {
         + " ':'=" + dc.getTextWidthInPixels(":", f).toString()
         + " '.'=" + dc.getTextWidthInPixels(".", f).toString()
         + " '-'=" + dc.getTextWidthInPixels("-", f).toString());
+    return true;
+}
+
+// ---- Glyphs, bezel arc, celebration ----
+
+// Every metric that lands in a cell must have a glyph, every glyph must be one the renderer
+// knows how to draw, and drawing all of them must not throw on the device's real Dc.
+(:test)
+function everyMetricHasADrawableGlyph(logger as Test.Logger) as Boolean {
+    var dc = testDc();
+    var s = Glyphs.size(dc);
+    Test.assertMessage(s >= Glyphs.MIN_PX && s <= Glyphs.MAX_PX,
+        "glyph size " + s.toString() + " outside the " + Glyphs.MIN_PX.toString() + "-"
+            + Glyphs.MAX_PX.toString() + " band");
+
+    var seen = 0;
+    for (var m = 1; m <= PageModel.M_MAX; m++) {
+        var g = PageModel.glyph(m);
+        Test.assertMessage(g != Glyphs.G_NONE,
+            "metric " + m.toString() + " has no glyph");
+        Test.assertMessage(g >= Glyphs.G_WING && g <= Glyphs.G_BATTERY,
+            "metric " + m.toString() + " maps to unknown glyph " + g.toString());
+        if (g > seen) { seen = g; }
+        // painting it must be safe at the smallest and largest size the band allows
+        Glyphs.draw(dc, g, 40, 40, Glyphs.MIN_PX, Graphics.COLOR_LT_GRAY);
+        Glyphs.draw(dc, g, 80, 40, Glyphs.MAX_PX, Graphics.COLOR_LT_GRAY);
+    }
+    Test.assertEqual(PageModel.glyph(PageModel.M_NONE), Glyphs.G_NONE);
+    Test.assertEqual(seen, Glyphs.G_BATTERY);   // no glyph in the catalog is dead code
+
+    // and the outcome symbols, including the triangle's polygon scratch reused twice
+    for (var o = Glyphs.O_DASH; o <= Glyphs.O_CROSS; o++) {
+        Glyphs.drawOutcome(dc, o, 60, 100, 24, Graphics.COLOR_GREEN);
+        Glyphs.drawOutcome(dc, o, 60, 140, 18, Graphics.COLOR_RED);
+    }
+    logger.debug("glyphs: " + Glyphs.G_BATTERY.toString() + " metric symbols + 4 outcomes at "
+        + s.toString() + "px");
+    return true;
+}
+
+// The foil-% bezel arc: 12 o'clock start, clockwise sweep, and only on pages that ask for it.
+(:test)
+function foilBezelArcSweepsClockwiseFromTwelve(logger as Test.Logger) as Boolean {
+    // Garmin angles run counter-clockwise from 3 o'clock, so a clockwise sweep SUBTRACTS
+    Test.assertEqual(RecordingView.bezelEndDeg(0), 90);        // no sweep: still at 12
+    Test.assertEqual(RecordingView.bezelEndDeg(25), 0);        // quarter: 3 o'clock
+    Test.assertEqual(RecordingView.bezelEndDeg(50), 270);      // half: 6 o'clock
+    Test.assertEqual(RecordingView.bezelEndDeg(75), 180);      // three quarters: 9 o'clock
+    // never negative, never out of range, for any percentage the engine can produce
+    for (var p = 0; p <= 100; p++) {
+        var d = RecordingView.bezelEndDeg(p);
+        Test.assertMessage(d >= 0 && d < 360, "bezel end " + d.toString() + " at " + p.toString());
+    }
+
+    // the arc rides inside the glass, clear of the text margin
+    var dc = testDc();
+    var r = dc.getWidth() / 2 - BEZEL_INSET - BEZEL_PEN / 2;
+    Test.assertMessage(r + BEZEL_PEN / 2 <= dc.getWidth() / 2 - FIT_MARGIN,
+        "bezel arc outer edge crosses the fit margin");
+
+    // it is a property of the page, not of a cell: the shipped Session grid has foil %
+    PageModel.build({});
+    Test.assertMessage(PageModel.pageHasMetric(1, PageModel.M_FOIL_PCT),
+        "default grid page must carry the foil arc");
+    Test.assertMessage(!PageModel.pageHasMetric(0, PageModel.M_FOIL_PCT),
+        "default speed hero has no foil % and so no arc");
+    Test.assertMessage(!PageModel.pageHasMetric(2, PageModel.M_FOIL_PCT), "records page");
+    logger.debug("bezel arc r=" + r.toString() + "px, pen " + BEZEL_PEN.toString());
+    return true;
+}
+
+// The PB celebration walks a fixed number of frames and clears itself.
+(:test)
+function pbFlashPulsesThenClears(logger as Test.Logger) as Boolean {
+    Test.assertMessage(!PbFlash.active(), "idle at rest");
+    PbFlash.fire(12.5);
+    Test.assertMessage(PbFlash.active(), "a PB starts the flash");
+    Test.assertEqual(PbFlash.best2sMps, 12.5);
+    Test.assertEqual(PbFlash.color(), Graphics.COLOR_GREEN);
+
+    // the shade alternates — that is what makes it a pulse rather than a green card
+    PbFlash.tick();
+    Test.assertEqual(PbFlash.color(), Graphics.COLOR_DK_GREEN);
+    PbFlash.tick();
+    Test.assertEqual(PbFlash.color(), Graphics.COLOR_GREEN);
+
+    // and it always runs out, even if nothing ever calls stop()
+    for (var i = 0; i < PbFlash.FRAMES; i++) {
+        PbFlash.tick();
+    }
+    Test.assertMessage(!PbFlash.active(), "the flash must clear itself");
+    PbFlash.tick();                          // ticking an idle flash is harmless
+    Test.assertMessage(!PbFlash.active(), "idle stays idle");
+
+    // the overlay's three rows are stacked from font heights and must clear the glass at
+    // the fastest speed the display can produce
+    var dc = testDc();
+    var cy = SCREEN / 2;
+    var limit = RecordingView.fitRadius(dc).toFloat();
+    var hHot = dc.getFontHeight(Graphics.FONT_NUMBER_HOT);
+    var hS = dc.getFontHeight(Graphics.FONT_SMALL);
+    var r = cornerRadius(dc.getTextWidthInPixels("99.9", Graphics.FONT_NUMBER_HOT),
+        RecordingView.inkH(dc, Graphics.FONT_NUMBER_HOT),
+        cy - (hHot + hS) / 2 + hS + hHot / 2, cy);
+    Test.assertMessage(r <= limit, "PB number corner " + r.format("%.0f") + " > " + limit);
+    r = cornerRadius(dc.getTextWidthInPixels("NEW PB", Graphics.FONT_SMALL),
+        RecordingView.inkH(dc, Graphics.FONT_SMALL), cy - (hHot + hS) / 2 + hS / 2, cy);
+    Test.assertMessage(r <= limit, "PB header corner " + r.format("%.0f") + " > " + limit);
+    r = cornerRadius(dc.getTextWidthInPixels("km/h", Graphics.FONT_SMALL),
+        RecordingView.inkH(dc, Graphics.FONT_SMALL), cy + (hHot + hS) / 2 + hS / 2, cy);
+    Test.assertMessage(r <= limit, "PB unit corner " + r.format("%.0f") + " > " + limit);
+
+    PbFlash.fire(13.0);
+    PbFlash.stop();
+    Test.assertMessage(!PbFlash.active(), "stop() clears it");
+    Test.assertMessage(PbFlash.FRAMES * PbFlash.FRAME_MS >= 500
+        && PbFlash.FRAMES * PbFlash.FRAME_MS <= 1000,
+        "celebration length " + (PbFlash.FRAMES * PbFlash.FRAME_MS).toString() + " ms");
+    logger.debug("PB flash: " + PbFlash.FRAMES.toString() + " frames x "
+        + PbFlash.FRAME_MS.toString() + " ms");
+    return true;
+}
+
+// ---- Map trail tinting ----
+// One MapPolyline per run of equal foil state, with the run count bounded so a chopped-up
+// session cannot ask the map for a hundred lines.
+(:test)
+function trackTintBoundsTheNumberOfPolylines(logger as Test.Logger) as Boolean {
+    // a clean two-flight track: off, flying, off, flying, off
+    var fly = new [40] as Array<Boolean>;
+    for (var i = 0; i < 40; i++) {
+        fly[i] = (i / 8) % 2 == 1;
+    }
+    Test.assertEqual(TrackTint.minRunFor(fly, 40), 1);       // 5 runs, no merging needed
+    Test.assertEqual(TrackTint.runCount(fly, 40, 1), 5);
+    Test.assertEqual(TrackTint.runEnd(fly, 40, 0, 1), 8);
+    Test.assertEqual(TrackTint.runEnd(fly, 40, 8, 1), 16);
+    Test.assertEqual(TrackTint.runEnd(fly, 40, 32, 1), 40);  // the last run ends at n
+
+    // the pathological case the bound exists for: state flips on every single point
+    var noisy = new [128] as Array<Boolean>;
+    for (var i = 0; i < 128; i++) {
+        noisy[i] = i % 2 == 0;
+    }
+    Test.assertEqual(TrackTint.runCount(noisy, 128, 1), 128);
+    var minRun = TrackTint.minRunFor(noisy, 128);
+    Test.assertMessage(minRun > 1, "flicker must be merged away");
+    var runs = TrackTint.runCount(noisy, 128, minRun);
+    Test.assertMessage(runs <= TrackTint.MAX_RUNS,
+        runs.toString() + " runs > the " + TrackTint.MAX_RUNS.toString() + " cap");
+
+    // merging absorbs a short flicker into the run around it rather than splitting it
+    var blip = new [10] as Array<Boolean>;
+    for (var i = 0; i < 10; i++) {
+        blip[i] = true;
+    }
+    blip[5] = false;
+    Test.assertEqual(TrackTint.runCount(blip, 10, 1), 3);
+    Test.assertEqual(TrackTint.runCount(blip, 10, 2), 1);
+    Test.assertEqual(TrackTint.runEnd(blip, 10, 0, 2), 10);
+
+    // every run must be non-empty and they must tile the track exactly, at any minRun
+    for (var m = 1; m <= 8; m++) {
+        var i = 0;
+        var guard = 0;
+        while (i < 128 && guard < 200) {
+            var end = TrackTint.runEnd(noisy, 128, i, m);
+            Test.assertMessage(end > i, "empty run at " + i.toString());
+            i = end;
+            guard++;
+        }
+        Test.assertEqual(i, 128);
+    }
+    logger.debug("track tint: 128 alternating points collapse to " + runs.toString()
+        + " polylines at minRun " + minRun.toString());
     return true;
 }
 
@@ -833,6 +1033,33 @@ function everyLayoutRendersHeadless(logger as Test.Logger) as Boolean {
     PageNav.index = 0;
     view.onUpdate(dc);
     c.state = was;
+
+    // labels off: every cell falls back to its glyph alone
+    var labels = AppSettings.showLabels;
+    AppSettings.showLabels = false;
+    for (var i = 0; i < PageModel.count(); i++) {
+        PageNav.index = i;
+        view.onUpdate(dc);
+    }
+    AppSettings.showLabels = labels;
+
+    // a HERO page carrying foil % draws BOTH rings — the state ring steps inside the arc
+    PageModel.build({"pg1Layout" => PageModel.LAYOUT_HERO, "pg1s1" => PageModel.M_FOIL_PCT,
+        "pg1s2" => PageModel.M_SPEED, "pg1s3" => PageModel.M_HR,
+        "pg2Layout" => 0, "pg3Layout" => 0, "pg4Layout" => 0, "pg5Layout" => 0,
+        "pg6Layout" => 0});
+    PageNav.index = 0;
+    Test.assertMessage(PageModel.pageHasMetric(0, PageModel.M_FOIL_PCT), "hero foil arc");
+    view.onUpdate(dc);
+
+    // the celebration paints over the page, and PAUSED must survive it
+    PbFlash.fire(13.7);
+    view.onUpdate(dc);
+    c.state = SessionController.STATE_PAUSED;
+    view.onUpdate(dc);
+    c.state = was;
+    PbFlash.stop();
+    PageModel.build({});
 
     // an empty session must render too — zero history, no records, no turns
     var fresh = new MetricsEngine();

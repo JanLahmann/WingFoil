@@ -34,6 +34,9 @@ class MetricsEngine {
     var trackEnabled as Boolean = false;
     var trackLat as Array<Float>?;
     var trackLon as Array<Float>?;
+    // Foil state at each breadcrumb point, so the map page can tint the trail. One Boolean per
+    // point rides along with the two Floats it belongs to and is decimated with them.
+    var trackFly as Array<Boolean>?;
     var trackN as Number = 0;
     hidden var _trackStride as Number = TRACK_BASE_STRIDE;
     hidden var _trackSkip as Number = 0;
@@ -125,7 +128,7 @@ class MetricsEngine {
             history.logTurn(turns.lastOutcome);
         }
         if (trackEnabled) {
-            _trackTick(info);
+            _trackTick(info, detector.state == FlightDetector.STATE_ON);
         }
         return flightEvent | (pbEvents << 4) | (turnEvent << 8) | (pumpEvent << 12);
     }
@@ -133,7 +136,7 @@ class MetricsEngine {
     // Appends a decimated breadcrumb point. When the buffer fills, every other point is
     // dropped and the stride doubles, so the whole session stays on the map at half the
     // resolution rather than the start scrolling off it.
-    hidden function _trackTick(info as Position.Info) as Void {
+    hidden function _trackTick(info as Position.Info, flying as Boolean) as Void {
         _trackSkip++;
         if (_trackSkip < _trackStride) {
             return;
@@ -145,17 +148,21 @@ class MetricsEngine {
         }
         var lat = trackLat;
         var lon = trackLon;
-        if (lat == null || lon == null) {
+        var fly = trackFly;
+        if (lat == null || lon == null || fly == null) {
             lat = new [TRACK_MAX] as Array<Float>;
             lon = new [TRACK_MAX] as Array<Float>;
+            fly = new [TRACK_MAX] as Array<Boolean>;
             trackLat = lat;
             trackLon = lon;
+            trackFly = fly;
         }
         if (trackN >= TRACK_MAX) {
             var j = 0;
             for (var i = 0; i < trackN; i += 2) {
                 lat[j] = lat[i];
                 lon[j] = lon[i];
+                fly[j] = fly[i];
                 j++;
             }
             trackN = j;
@@ -164,6 +171,7 @@ class MetricsEngine {
         var d = (loc as Position.Location).toDegrees();
         lat[trackN] = d[0].toFloat();
         lon[trackN] = d[1].toFloat();
+        fly[trackN] = flying;
         trackN++;
     }
 
