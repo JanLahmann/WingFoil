@@ -53,6 +53,9 @@ struct SessionDetailView: View {
                         .id("replay")
                     SummaryGrid(detail: detail, selectedEffort: $selectedEffort)
                         .id("summary")
+                    // Right after the takeoff & pumping section it comments on, and silent
+                    // (no card at all) on a session whose heart rate measured nothing.
+                    HrCostCardView(detail: detail)
                     SessionGearCard(sessionID: sessionID)
                         .id("gear")
                     footer(detail)
@@ -70,7 +73,8 @@ struct SessionDetailView: View {
             #if DEBUG && targetEnvironment(simulator)
             // Headless-driving hook (see LibraryView): `simctl launch` cannot scroll, so
             // `UI_SCROLL_TO=<anchor>` parks the page on a card section for a screenshot
-            // ("summary" for the whole grid, "takeoff" for the pumping card).
+            // ("summary" for the whole grid, "takeoff" for the pumping card, "hr" for the
+            // HR-cost card, "gear" for the gear card, "replay" for the scrubber).
             .onChange(of: detail == nil) {
                 guard detail != nil else { return }
                 let environment = ProcessInfo.processInfo.environment

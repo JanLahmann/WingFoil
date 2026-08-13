@@ -35,6 +35,22 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
                   "timeToFoilS": 0.0, "speedRiseS": 0.0, "entryKn": 0.0,
                   "cadenceSpm": null, "inFlightStrokes": null, "free": false,
                   "truncated": false, "preWindowS": 0.0 } ],
+  "hr":      { "hasHR": true,
+               "takeoffEvents": [ { "kind": "takeoff|swim", "index": 0, "ts": 0,
+                                    "approximate": false, "strokes": null,
+                                    "baselineBpm": null, "peakBpm": null, "costBpm": null,
+                                    "peakLagS": null, "baselineCoverage": 0.0,
+                                    "peakCoverage": 0.0, "recoveryHalfS": null,
+                                    "recoveryCensored": false } ],
+               "swimEvents": [],
+               "bins": [ { "startTs": 0, "endTs": 0, "attempts": 0, "successes": 0,
+                           "failed": 0, "successPct": null, "avgCostBpm": null,
+                           "medianCostBpm": null, "costValid": 0, "costTotal": 0,
+                           "avgBaselineBpm": null, "avgPumps": null, "meanBpm": null } ],
+               "summary": { "usablePct": null, "avgTakeoffCostBpm": null,
+                            "takeoffCostValid": 0, "takeoffCostTotal": 0,
+                            "pumpCruise": { "pumpingBpm": null, "cruisingBpm": null,
+                                            "deltaBpm": null, "...": "" }, "...": "" } },
   "summary": { "foilTimeS": 0, "foilPct": 0.0, "flightCount": 0, "longestFlightS": 0,
                "longestFlightM": 0.0, "distanceKm": 0.0,
                "turns":       { "tacks": 0, "jibes": 0, "unclassified": 0, "rejected": 0,
@@ -59,7 +75,14 @@ degrade the schema, they never omit it: without an accelerometer every stroke co
 (`takeoffPumps`, `takeoffs[].pumps`, `totalPumpStrokes`) and `takeoff.successPct` is an
 explicit **null** — "unknown", not zero, and not a flattering 100 %. Without a barometer
 no turn or flight end is ever `submerged`. Smart-Recording truncation leaves flight ends
-`unknown` and takeoff runs `truncated`, both excluded from the tallies.
+`unknown` and takeoff runs `truncated`, both excluded from the tallies. The `hr` block
+(docs/algorithms.md "HR cost") is written for **every** source: a session with no heart-rate
+channel gets `hasHR: false` beside empty lists and null averages, never a missing block —
+"this source had no HR" and "this golden predates the block" must not look the same. Inside
+it, an unmeasurable window is null throughout (`baselineBpm`, `costBpm`, `avgTakeoffCostBpm`,
+`bpmPerStroke`, …) and never 0.0, which would read as "this attempt was free"; the
+`<name>Valid`/`<name>Total` pair beside each average is the `n valid / n total` that says how
+much of the session it actually speaks for.
 
 ## Tolerances (Swift & Python vs goldens)
 
@@ -70,7 +93,9 @@ no turn or flight end is ever `submerged`. Smart-Recording truncation leaves fli
 | timestamps | ± 1 s |
 | speeds (records, turn entry/minimum) | ± 0.05 kn (alpha ± 0.1 kn) |
 | angles (wind direction/axis, turn net sweep) | ± 1° |
-| percentages (turn success, takeoff success) | ± 0.5 |
+| percentages (turn success, takeoff success, HR coverage/usable share) | ± 0.5 |
+| heart rates and coverage shares (HR cost, baseline, peak, pumping/cruising) | ± 0.05 bpm |
+| bpm per stroke (a ratio of two of the above) | ± 0.005 |
 | foil time | ± 2 % |
 | watch live vs phone recompute | ± 0.2 kn, counts exact on clean clips |
 
@@ -160,7 +185,8 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    `UI_LOAD_EXAMPLE=1` taps the setup card's "Load an example session first" button, and
    `UI_SCROLL_TO=setup` parks the (screen-and-a-half tall) onboarding card on its bottom
    edge — the only way to photograph that button, which lives below the key field.
-   `UI_SCROLL_TO=<anchor>`, `UI_PLAYHEAD=0.0…1.0`, `UI_FULLSCREEN_MAP=1` and
+   `UI_SCROLL_TO=<anchor>` (`replay`, `summary`, `takeoff`, `hr` for the HR-cost card,
+   `gear`), `UI_PLAYHEAD=0.0…1.0`, `UI_FULLSCREEN_MAP=1` and
    `UI_HIDE_LAYERS=<MapLayer,…>` stage the session detail page: the last one starts with
    those legend chips switched off (e.g. `fellIn,courseChange`), which is the only way to
    photograph a filtered map without a finger. It is applied *after* the stored preference

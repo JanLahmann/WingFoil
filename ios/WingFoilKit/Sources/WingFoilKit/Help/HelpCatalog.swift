@@ -526,9 +526,16 @@ public enum HelpCatalog {
                 + "10 seconds. Below 60 % coverage no number is produced at all. A wrist sensor "
                 + "under a wetsuit sleeve in cold water drops out and sticks, and a made-up "
                 + "average is worse than a missing one.",
-                "This analysis currently lives in the lab tooling while its definitions settle; "
-                + "the app records whether a session carries a usable heart-rate channel so the "
-                + "sessions it can be run on are known.",
+                "The fatigue chart slices the session into 20-minute bins and shows what each "
+                + "one's takeoffs cost, with the share of attempts that got up underneath. "
+                + "Bins where the sensor gave nothing usable are shaded rather than drawn as "
+                + "a zero-height bar.",
+                "Read the cost bars together with the baseline note under the chart. A rise "
+                + "measured against a baseline that has drifted upward gets smaller as you "
+                + "tire, because there is less headroom left to rise into — a shrinking late "
+                + "cost is not evidence that the takeoffs got easier.",
+                "The card does not appear at all on a session whose recording has no usable "
+                + "heart rate. Nothing here is estimated when the sensor was silent.",
             ],
             related: [.takeoffAttempts, .pumpsToTakeoff, .sourceClass]),
 
