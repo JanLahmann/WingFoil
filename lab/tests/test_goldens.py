@@ -5,12 +5,14 @@ from pathlib import Path
 
 import pytest
 
-from wingfoil_lab.goldens import analyze, build_golden, golden_path, load_golden, write_golden
+from wingfoil_lab.goldens import (_hr_json, analyze, build_golden, golden_path, load_golden,
+                                  write_golden)
+from wingfoil_lab.hrcost import HrAnalysis
 
 SMOKE = Path(__file__).resolve().parents[2] / "fixtures" / "synthetic" / "smoke-60s.fit"
 
 TOP_KEYS = ["engineVersion", "config", "capabilities", "flights", "turns", "flightEnds",
-            "records", "wind", "takeoffs", "summary"]
+            "records", "wind", "takeoffs", "hr", "summary"]
 CAP_KEYS = {"hasDoppler", "hasDevFields", "hasWatchLaps", "hasAccel", "hasHR", "sampleRateHz"}
 RECORD_KEYS = {"best2sKn", "best10sKn", "best5x10sKn", "best100mKn", "best250mKn",
                "best500mKn", "bestNmKn", "bestHourKn", "alpha500Kn", "windows"}
@@ -27,6 +29,23 @@ TAKEOFF_SUMMARY_KEYS = {"takeoffAttempts", "takeoffSuccesses", "avgPumpsToTakeof
                         "runsJudged", "runsTruncated", "freeTakeoffs", "pumpedTakeoffs",
                         "medianPumpsToTakeoff", "avgPumpsWhenPumped", "avgTakeoffS",
                         "medianTakeoffS"}
+HR_KEYS = {"hasHR", "takeoffEvents", "swimEvents", "bins", "summary"}
+HR_EVENT_KEYS = {"kind", "index", "ts", "approximate", "strokes", "baselineBpm", "peakBpm",
+                 "costBpm", "peakLagS", "baselineCoverage", "peakCoverage", "recoveryHalfS",
+                 "recoveryCensored"}
+HR_BIN_KEYS = {"startTs", "endTs", "attempts", "successes", "failed", "successPct",
+               "avgCostBpm", "medianCostBpm", "costValid", "costTotal", "avgBaselineBpm",
+               "avgPumps", "meanBpm"}
+HR_SUMMARY_KEYS = {"usablePct", "avgTakeoffCostBpm", "medianTakeoffCostBpm", "takeoffCostValid",
+                   "takeoffCostTotal", "approximateTakeoffs", "medianPeakLagS",
+                   "bpmPerStroke", "medianBpmPerStroke", "bpmPerStrokeValid",
+                   "bpmPerStrokeTotal", "pumpCruise", "medianTakeoffRecoveryS",
+                   "takeoffRecoveryValid", "takeoffRecoveryTotal", "medianSwimRecoveryS",
+                   "swimRecoveryValid", "swimRecoveryTotal", "avgSwimCostBpm",
+                   "swimCostValid", "swimCostTotal"}
+HR_PUMP_CRUISE_KEYS = {"pumpingBpm", "cruisingBpm", "deltaBpm", "pumpingSpans",
+                       "cruisingSpans", "pumpingCoveredS", "pumpingSpanS",
+                       "cruisingCoveredS", "cruisingSpanS"}
 
 
 @pytest.fixture(scope="module")
@@ -60,6 +79,15 @@ def test_schema_shape(smoke_golden):
     assert g["config"]["turnMinRadius"] == 6.0
     assert g["config"]["pumpMinStrokes"] == 4
     assert g["config"]["takeoffAttemptWindow"] == 10.0
+    assert g["config"]["hrCostPeakWindow"] == 30.0
+    assert g["config"]["hrMinCoverage"] == 0.6
+    assert set(g["hr"].keys()) == HR_KEYS
+    assert set(g["hr"]["summary"].keys()) == HR_SUMMARY_KEYS
+    assert set(g["hr"]["summary"]["pumpCruise"].keys()) == HR_PUMP_CRUISE_KEYS
+    for e in g["hr"]["takeoffEvents"] + g["hr"]["swimEvents"]:
+        assert set(e.keys()) == HR_EVENT_KEYS
+    for b in g["hr"]["bins"]:
+        assert set(b.keys()) == HR_BIN_KEYS
     for f in g["flights"]:
         assert set(f.keys()) == {"startTs", "endTs", "distM", "maxKn", "takeoffPumps"}
         assert f["takeoffPumps"] is None          # no accel stream in the synthetic
@@ -81,6 +109,19 @@ def test_smoke_content(smoke_golden):
     w = g["records"]["windows"]
     assert "best2s" in w and w["best2s"]["durS"] == 2
     assert "bestHour" not in w and "bestNm" not in w
+
+
+def test_a_source_without_hr_still_gets_the_block():
+    """`hasHR: false` is written, never a missing key: "this source had no heart rate" and
+    "this golden predates the HR block" must not look the same to a reader or to Swift."""
+    block = _hr_json(HrAnalysis())
+    assert set(block.keys()) == HR_KEYS
+    assert block["hasHR"] is False
+    assert block["summary"]["usablePct"] is None
+    assert block["takeoffEvents"] == [] and block["swimEvents"] == [] and block["bins"] == []
+    assert set(block["summary"].keys()) == HR_SUMMARY_KEYS
+    assert block["summary"]["avgTakeoffCostBpm"] is None
+    assert block["summary"]["takeoffCostValid"] == 0
 
 
 def test_roundtrip(tmp_path, smoke_golden):

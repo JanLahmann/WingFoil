@@ -424,17 +424,21 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
     public var records: GP3SRecords
     public var wind: WindEstimate?
     public var takeoffs: [TakeoffRecord]
+    /// The HR-cost block (docs/algorithms.md "HR cost"). Optional only so a stored
+    /// `analysis.json` written before the block existed still decodes; a fresh analysis
+    /// always fills it, with `hasHR: false` when the source carries no heart rate.
+    public var hr: HrAnalysis?
     public var summary: SessionSummary
 
     enum CodingKeys: String, CodingKey {
         case engineVersion, config, capabilities, flights, turns, flightEnds
-        case records, wind, takeoffs, summary
+        case records, wind, takeoffs, hr, summary
     }
 
     public init(engineVersion: String, config: AnalysisConfig, capabilities: AnalysisCapabilities,
                 flights: [FlightRecord], turns: [TurnRecord], flightEnds: [FlightEndRecord],
                 records: GP3SRecords, wind: WindEstimate?, takeoffs: [TakeoffRecord],
-                summary: SessionSummary) {
+                hr: HrAnalysis? = nil, summary: SessionSummary) {
         self.engineVersion = engineVersion
         self.config = config
         self.capabilities = capabilities
@@ -444,6 +448,7 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
         self.records = records
         self.wind = wind
         self.takeoffs = takeoffs
+        self.hr = hr
         self.summary = summary
     }
 
@@ -458,6 +463,7 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
         records = try c.decode(GP3SRecords.self, forKey: .records)
         wind = try c.decodeIfPresent(WindEstimate.self, forKey: .wind)
         takeoffs = try c.decode([TakeoffRecord].self, forKey: .takeoffs)
+        hr = try c.decodeIfPresent(HrAnalysis.self, forKey: .hr)
         summary = try c.decode(SessionSummary.self, forKey: .summary)
     }
 
@@ -472,6 +478,7 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
         try c.encode(records, forKey: .records)
         try c.encode(wind, forKey: .wind)          // explicit null per schema
         try c.encode(takeoffs, forKey: .takeoffs)
+        try c.encode(hr, forKey: .hr)              // explicit null per schema
         try c.encode(summary, forKey: .summary)
     }
 }
@@ -480,9 +487,10 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
 public enum SessionSummarizer {
 
     /// One-shot pipeline (docs/plan.md §3.3): clean → flights → records → wind → turns →
-    /// flight ends → takeoffs → summarize. Every stage degrades with the source: no accel
-    /// ⇒ nil stroke counts and no pump corroboration, no barometer ⇒ no submersion
-    /// evidence, Smart-Recording truncation ⇒ `unknown` outcomes excluded from tallies.
+    /// flight ends → takeoffs → HR cost → summarize. Every stage degrades with the source:
+    /// no accel ⇒ nil stroke counts and no pump corroboration, no barometer ⇒ no submersion
+    /// evidence, no heart rate ⇒ `hr.hasHR: false`, Smart-Recording truncation ⇒ `unknown`
+    /// outcomes excluded from tallies.
     public static func analyze(_ raw: RawTrack,
                                filterConfig: FilterConfig = FilterConfig(),
                                flightConfig: FlightConfig = FlightConfig(),
@@ -491,7 +499,8 @@ public enum SessionSummarizer {
                                windConfig: WindConfig = WindConfig(),
                                flightEndConfig: FlightEndConfig = FlightEndConfig(),
                                pumpConfig: PumpConfig = PumpConfig(),
-                               takeoffConfig: TakeoffConfig = TakeoffConfig()) -> SessionAnalysis {
+                               takeoffConfig: TakeoffConfig = TakeoffConfig(),
+                               hrConfig: HrConfig = HrConfig()) -> SessionAnalysis {
         let clean = TrackCleaner.clean(raw, config: filterConfig)
         let segmentation = FlightSegmenter.segment(clean, config: flightConfig)
         let records = GP3SCalculator.records(for: clean, config: recordsConfig)
@@ -513,6 +522,10 @@ public enum SessionSummarizer {
                                                 evidence: sharable ? evidence : nil)
         let takeoffs = TakeoffAnalyzer.analyze(clean, flights: segmentation, turns: turns,
                                                config: takeoffConfig, pump: pump)
+        // HR is the one channel read from the *raw* samples rather than the cleaned track,
+        // and it joins to three earlier phases at once (runs, ends, turns) — so it runs last.
+        let hr = HrCost.analyze(raw, flights: segmentation, takeoffs: takeoffs,
+                                flightEnds: ends, pump: pump, turns: turns, config: hrConfig)
 
         let turnSummary = TurnDetector.summarize(turns)
         let endSummary = FlightEndClassifier.summarize(ends)
@@ -548,6 +561,7 @@ public enum SessionSummarizer {
             records: records,
             wind: wind,
             takeoffs: takeoffs.takeoffs.map(TakeoffRecord.init),
+            hr: hr,
             summary: summary)
     }
 }

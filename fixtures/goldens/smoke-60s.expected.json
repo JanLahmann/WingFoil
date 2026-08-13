@@ -62,7 +62,18 @@
     "takeoffRestSpeed": 1.0,
     "takeoffAttemptWindow": 10.0,
     "takeoffMinPreWindow": 3.0,
-    "freeTakeoff": 3
+    "freeTakeoff": 3,
+    "hrCostPeakWindow": 30.0,
+    "hrBaselineWindow": 10.0,
+    "hrMinCoverage": 0.6,
+    "hrFlatlineMax": 60.0,
+    "hrMinBpm": 30.0,
+    "hrMaxBpm": 220.0,
+    "hrLag": 10.0,
+    "hrRecoveryWindow": 120.0,
+    "hrMinRise": 5.0,
+    "hrBinMinutes": 20.0,
+    "hrMaxSampleGap": 10.0
   },
   "capabilities": {
     "hasDoppler": true,
@@ -162,6 +173,77 @@
       "preWindowS": 21.0
     }
   ],
+  "hr": {
+    "hasHR": true,
+    "takeoffEvents": [
+      {
+        "kind": "takeoff",
+        "index": 0,
+        "ts": 0.0,
+        "approximate": true,
+        "strokes": null,
+        "baselineBpm": null,
+        "peakBpm": null,
+        "costBpm": null,
+        "peakLagS": null,
+        "baselineCoverage": 0.0,
+        "peakCoverage": 1.0,
+        "recoveryHalfS": null,
+        "recoveryCensored": false
+      }
+    ],
+    "swimEvents": [],
+    "bins": [
+      {
+        "startTs": 0.0,
+        "endTs": 59.0,
+        "attempts": 1,
+        "successes": 1,
+        "failed": 0,
+        "successPct": 100.0,
+        "avgCostBpm": null,
+        "medianCostBpm": null,
+        "costValid": 0,
+        "costTotal": 1,
+        "avgBaselineBpm": null,
+        "avgPumps": null,
+        "meanBpm": 124.5
+      }
+    ],
+    "summary": {
+      "usablePct": 100.0,
+      "avgTakeoffCostBpm": null,
+      "medianTakeoffCostBpm": null,
+      "takeoffCostValid": 0,
+      "takeoffCostTotal": 1,
+      "approximateTakeoffs": 0,
+      "medianPeakLagS": null,
+      "bpmPerStroke": null,
+      "medianBpmPerStroke": null,
+      "bpmPerStrokeValid": 0,
+      "bpmPerStrokeTotal": 1,
+      "pumpCruise": {
+        "pumpingBpm": null,
+        "cruisingBpm": 124.643,
+        "deltaBpm": null,
+        "pumpingSpans": 0,
+        "cruisingSpans": 1,
+        "pumpingCoveredS": 0.0,
+        "pumpingSpanS": 0.0,
+        "cruisingCoveredS": 28.0,
+        "cruisingSpanS": 30.0
+      },
+      "medianTakeoffRecoveryS": null,
+      "takeoffRecoveryValid": 0,
+      "takeoffRecoveryTotal": 0,
+      "medianSwimRecoveryS": null,
+      "swimRecoveryValid": 0,
+      "swimRecoveryTotal": 0,
+      "avgSwimCostBpm": null,
+      "swimCostValid": 0,
+      "swimCostTotal": 0
+    }
+  },
   "summary": {
     "foilTimeS": 30.0,
     "foilPct": 50.85,
