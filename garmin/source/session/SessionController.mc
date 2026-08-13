@@ -5,6 +5,7 @@ import Toybox.Position;
 import Toybox.Sensor;
 import Toybox.SensorLogging;
 import Toybox.System;
+import Toybox.Time;
 import Toybox.WatchUi;
 import WingFoilCore;
 
@@ -21,6 +22,14 @@ class SessionController {
     var state as Number = STATE_IDLE;
     var engine as MetricsEngine;
     var autoPause as AutoPause;
+
+    // The phone-card dedupe key (see PhoneLink's KEY_START/KEY_DUR comment). These two are
+    // the only session-identity numbers the watch owns, and they must keep meaning exactly
+    // what the FIT means: startEpochS is stamped at Session.start(), elapsedS is wall-clock
+    // start-to-save INCLUDING pauses (FIT total_elapsed_time), which is why it comes from
+    // Activity.Info.elapsedTime and not from engine.timerS.
+    var startEpochS as Number = 0;
+    var elapsedS as Number = 0;
 
     hidden var _session as ActivityRecording.Session?;
     hidden var _fit as FitFields?;
@@ -121,6 +130,10 @@ class SessionController {
             // acquisition and auto-pause can see the rider move off again
             engine.gpsQuality = info.accuracy != null ? info.accuracy as Number : 0;
             engine.speedMps = info.speed != null ? info.speed as Float : 0.0;
+            // Off the water is exactly where a card left over from an offline save gets its
+            // second chance: the rider walks back up the beach to the phone and the link
+            // returns. Edge-triggered, so this is one Boolean compare per fix.
+            PhoneLink.pollLink();
         }
         _autoPauseTick();
         WatchUi.requestUpdate();
@@ -200,6 +213,10 @@ class SessionController {
         _session = ActivityRecording.createSession(opts);
         _fit = new FitFields(_session);
         _session.start();
+        // Stamped here, beside the call the FIT stamps its session start_time from: any other
+        // moment (view construction, GPS lock) would drift the phone's dedupe key off the FIT.
+        startEpochS = Time.now().value();
+        elapsedS = 0;
         state = STATE_RECORDING;
         _startAccel();
         return true;
@@ -304,11 +321,32 @@ class SessionController {
             _fit.updateSession(engine.detector, engine.records, engine.timerS, engine.turns,
                 engine.pump);
         }
+        _captureElapsed();
         var ok = _session.save();
         state = STATE_SAVED;
         _session = null;
         stopGps();
+        // The instant card. Runs after save() so the numbers it carries are the ones that went
+        // into the FIT; failing (phone in the car) is normal and costs nothing — PhoneLink
+        // keeps the payload and retries.
+        PhoneLink.sendSummary(self);
         return ok;
+    }
+
+    // FIT total_elapsed_time in whole seconds — wall clock from start to save, paused time
+    // included. Activity.Info gives it directly; the wall-clock difference is the fallback for
+    // a device or sim run that reports no elapsedTime, and means the same thing.
+    hidden function _captureElapsed() as Void {
+        var actInfo = Activity.getActivityInfo();
+        if (actInfo != null && actInfo.elapsedTime != null) {
+            elapsedS = ((actInfo.elapsedTime as Number) / 1000.0).toNumber();
+        }
+        if (elapsedS <= 0 && startEpochS > 0) {
+            elapsedS = Time.now().value() - startEpochS;
+        }
+        if (elapsedS < 0) {
+            elapsedS = 0;
+        }
     }
 
     function finishDiscard() as Void {

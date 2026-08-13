@@ -24,6 +24,8 @@
     <!-- Feature 5 (UI polish): cell glyphs carry the metric family; this keeps or drops the
          word beside them. -->
     <property id="showLabels" type="boolean">true</property>
+    <!-- Phase 5: BLE summary card to the paired iPhone app after a save. -->
+    <property id="phonePush" type="boolean">true</property>
 
     <!-- Feature 1: data screens. Defaults reproduce the five shipped pages —
          mirror of PageModel.DEF_LAYOUT / DEF_SLOTS; change both together. -->

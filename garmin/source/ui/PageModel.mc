@@ -58,9 +58,10 @@ module PageModel {
         M_BATTERY = 15,
         M_PUMP_STROKES = 16,
         M_TAKEOFFS = 17,
-        M_PUMPS_TO_TAKEOFF = 18
+        M_PUMPS_TO_TAKEOFF = 18,
+        M_TAKEOFF_COST = 19
     }
-    const M_MAX = 18;
+    const M_MAX = 19;
 
     const MAX_PAGES = 6;
     const SLOTS = 5;
@@ -208,6 +209,7 @@ module PageModel {
         if (id == M_PUMP_STROKES) { return "pumps"; }
         if (id == M_TAKEOFFS) { return "takeoffs"; }
         if (id == M_PUMPS_TO_TAKEOFF) { return "to foil"; }
+        if (id == M_TAKEOFF_COST) { return "hr cost"; }
         return "";
     }
 
@@ -223,7 +225,9 @@ module PageModel {
             return Glyphs.G_WATCH;
         }
         if (id == M_DISTANCE) { return Glyphs.G_RULER; }
-        if (id == M_HR) { return Glyphs.G_HEART; }
+        // the takeoff cost is a heartbeat number before it is a pumping one: what the eye is
+        // being told is "this is your heart", and the label says which of the two it is
+        if (id == M_HR || id == M_TAKEOFF_COST) { return Glyphs.G_HEART; }
         if (id == M_TURNS || id == M_TURN_SCORE) { return Glyphs.G_TURN; }
         if (id == M_PUMP_STROKES || id == M_TAKEOFFS || id == M_PUMPS_TO_TAKEOFF) {
             return Glyphs.G_PUMP;
@@ -282,13 +286,19 @@ module PageModel {
             return e.pump.lastPumpsToTakeoff < 0
                 ? "--" : e.pump.lastPumpsToTakeoff.toString();
         }
+        if (id == M_TAKEOFF_COST) {
+            // "--" until a takeoff has been priced: no accelerometer, a wrist the optical
+            // sensor lost, or a rise too small to charge for all read the same, and all of
+            // them mean "not measured" rather than "it cost nothing".
+            return e.hrCost.lastCostBpm < 0 ? "--" : e.hrCost.lastCostBpm.toString();
+        }
         return "";
     }
 
     // Appended in HERO sub-rows only (they carry no label of their own). Cells put the unit
     // in the label instead, which is what keeps a 2x2 grid inside the round glass.
     function suffix(id as Number) as String {
-        return id == M_HR ? " bpm" : "";
+        return id == M_HR || id == M_TAKEOFF_COST ? " bpm" : "";
     }
 
     function color(id as Number, c as SessionController) as Number {
@@ -296,7 +306,7 @@ module PageModel {
             return c.engine.detector.state == FlightDetector.STATE_ON
                 ? Graphics.COLOR_GREEN : Graphics.COLOR_DK_GRAY;
         }
-        if (id == M_HR) { return Graphics.COLOR_RED; }
+        if (id == M_HR || id == M_TAKEOFF_COST) { return Graphics.COLOR_RED; }
         if (id == M_FOIL_PCT) { return Graphics.COLOR_GREEN; }
         return Graphics.COLOR_WHITE;
     }
@@ -310,7 +320,9 @@ module PageModel {
         }
         if (id == M_FOIL_PCT || id == M_TURN_SCORE || id == M_BATTERY) { return "100%"; }
         if (id == M_FLIGHTS || id == M_TURNS) { return "999"; }
-        if (id == M_HR || id == M_PUMPS_TO_TAKEOFF) { return "199"; }
+        // the cost is a difference inside the 30-220 bpm plausibility band, so three digits is
+        // its honest ceiling even though a real takeoff costs 7
+        if (id == M_HR || id == M_PUMPS_TO_TAKEOFF || id == M_TAKEOFF_COST) { return "199"; }
         if (id == M_PUMP_STROKES) { return "9999"; }
         if (id == M_TAKEOFFS) { return "99>99"; }
         if (id == M_CLOCK) { return "23:59"; }

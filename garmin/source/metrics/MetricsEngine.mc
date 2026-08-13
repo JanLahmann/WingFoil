@@ -30,6 +30,10 @@ class MetricsEngine {
     // touch, so it lives here rather than in the WingFoilCore barrel (docs/fit-schema.md
     // class d). SessionController owns the sensor listener and feeds it batches.
     var pump as PumpDetector;
+    // The HR price of the last takeoff. Rides with the pump detector because it is anchored on
+    // the effort the pump detector opens: no accelerometer (rawAccelLogging off) means no
+    // efforts, which means this simply never produces a number — which is the honest answer.
+    var hrCost as HrCostTracker;
 
     var trackEnabled as Boolean = false;
     var trackLat as Array<Float>?;
@@ -64,6 +68,7 @@ class MetricsEngine {
         records = new SpeedRecords();
         history = new SessionHistory();
         pump = new PumpDetector(AppSettings.cfg);
+        hrCost = new HrCostTracker();
     }
 
     // Returns detector event (FlightDetector.EVENT_*) | pbEvents<<4 | turnEvent<<8
@@ -125,6 +130,9 @@ class MetricsEngine {
         // rider recovering from that turn, and neither is a takeoff attempt.
         var pumpEvent = pump.tick(now, detector.state == FlightDetector.STATE_ON,
             turns.state != TurnDetector.ST_IDLE, flightEvent);
+        // Priced against the effort the detector just reported, on this same heart rate: the
+        // window opens when he starts pumping and stays open 30 s, takeoff or not.
+        hrCost.tick(dt, hr, pump.attemptOpen(), pumpEvent == PumpDetector.EVENT_TAKEOFF);
 
         history.tick(dt, detector.state == FlightDetector.STATE_ON, speedMps);
         if (turnEvent >= TurnDetector.EVENT_FLEW) {
