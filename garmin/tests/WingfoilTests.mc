@@ -206,10 +206,33 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     Test.assertEqual(RecordingView.outcomeSymbol(TurnDetector.OUTCOME_FELL), Glyphs.O_CROSS);
     Test.assertEqual(RecordingView.outcomeSymbol(TurnDetector.OUTCOME_NONE), Glyphs.O_DASH);
 
-    // row 3: three 2-digit tallies
-    r = cornerRadius(RecordingView.tallyWidth(dc, "99", "99", "99"), hS,
-        RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 3), cy);
-    Test.assertMessage(r <= radius, "tally corner " + r.format("%.0f") + " > " + radius);
+    // row 3: three 2-digit tallies plus the session success rate that shares the row. The
+    // widest this row ever gets is 3 x 2 digits and "100% ok", which is what it is asserted
+    // at — it is the row most likely to run off a narrow fenix 7 glass.
+    var y3ok = RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 3);
+    var okBudget = RecordingView.rowBudget(RecordingView.fitRadius(dc), y3ok - cy,
+        RecordingView.inkH(dc, Graphics.FONT_SMALL));
+    var tallyF = RecordingView.tallyFont(dc, "99", "99", "99", "100% ok", okBudget);
+    r = cornerRadius(RecordingView.tallyWidth(dc, "99", "99", "99", "100% ok", tallyF),
+        RecordingView.inkH(dc, tallyF), y3ok, cy);
+    Test.assertMessage(r <= RecordingView.fitRadius(dc),
+        "tally corner " + r.format("%.0f") + " > " + RecordingView.fitRadius(dc).toString());
+    // the ordinary case — one-digit tallies — must still get the font the row always had
+    Test.assertEqual(RecordingView.tallyFont(dc, "9", "9", "9", "50% ok", okBudget),
+        Graphics.FONT_SMALL);
+    logger.debug("tally worst case at font height "
+        + dc.getFontHeight(tallyF).toString() + " (SMALL is " + hS.toString() + ")");
+
+    // the rate is a share of TURNS, not of outcomes, and it stays empty until there is one
+    Test.assertEqual(RecordingView.okText(0, 0), "");
+    Test.assertEqual(RecordingView.okText(2, 1), "50% ok");
+    Test.assertEqual(RecordingView.okText(3, 3), "100% ok");
+    Test.assertEqual(RecordingView.okText(30, 19), "63% ok");
+    // ... and before the first turn the row is exactly the tally it always was
+    Test.assertMessage(
+        RecordingView.tallyWidth(dc, "9", "9", "9", "50% ok", Graphics.FONT_SMALL)
+            > RecordingView.tallyWidth(dc, "9", "9", "9", "", Graphics.FONT_SMALL),
+        "rate takes no room");
 
     // and the rows must not collide
     var y0 = RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 0);
@@ -480,6 +503,70 @@ function timelinePageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     return true;
 }
 
+// One START-page text row: it must fit the glass at the font the page will pick, and it must
+// still be the nominal font — a shrink means the layout gave the row less room than it needs.
+function assertStartRow(dc as Graphics.Dc, text as String, y as Number, cy as Number,
+        radius as Number, from as Number, ink as Number) as Void {
+    var f = RecordingView.fitFont(dc, TEXT_FONTS, from, text,
+        RecordingView.rowBudget(radius, y - cy, ink));
+    var r = cornerRadius(dc.getTextWidthInPixels(text, f), ink, y, cy);
+    Test.assertMessage(r <= radius.toFloat(),
+        "start row '" + text + "' r=" + r.format("%.0f") + " > " + radius.toString());
+    Test.assertEqual(f, TEXT_FONTS[from]);
+}
+
+// START page: title, GPS dot row, GPS state, hint. It is the first thing every tester sees,
+// and it was the last page still laid out in absolute pixels — offsets authored on a 454 px
+// AMOLED that overflowed a 240 px fenix 7S. Same measurement as the recording pages.
+(:test)
+function startPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
+    var dc = testDc();
+    var cx = screenPx() / 2;
+    var cy = screenPx() / 2;
+    var radius = RecordingView.fitRadius(dc);
+    var limit = radius.toFloat();
+    var titleFont = TEXT_FONTS[START_TITLE_FONT];
+    var bodyFont = TEXT_FONTS[START_BODY_FONT];
+    var hTitle = dc.getFontHeight(titleFont);
+    var hBody = dc.getFontHeight(bodyFont);
+    var inkTitle = RecordingView.inkH(dc, titleFont);
+    var inkBody = RecordingView.inkH(dc, bodyFont);
+    var r = StartView.dotRadius(dc);
+    var step = StartView.dotStep(r);
+    var hDots = 2 * r;
+
+    var yTitle = StartView.rowY(cy, hTitle, hDots, hBody, 0);
+    var yDots = StartView.rowY(cy, hTitle, hDots, hBody, 1);
+    var yState = StartView.rowY(cy, hTitle, hDots, hBody, 2);
+    var yHint = StartView.rowY(cy, hTitle, hDots, hBody, 3);
+
+    // rows in order, no overlap
+    Test.assertMessage(yDots - yTitle >= (hTitle + hDots) / 2, "title/dots overlap");
+    Test.assertMessage(yState - yDots >= (hDots + hBody) / 2, "dots/state overlap");
+    Test.assertMessage(yHint - yState >= hBody, "state/hint overlap");
+
+    // the block is centred: equal air above the title and below the hint
+    Test.assertMessage((((cy - (yTitle - hTitle / 2)) - ((yHint + hBody / 2) - cy)).abs() <= 1),
+        "start block off centre: " + (cy - (yTitle - hTitle / 2)).toString() + " vs "
+            + ((yHint + hBody / 2) - cy).toString());
+
+    // every row inside the glass, at the font the page will actually pick
+    assertStartRow(dc, START_TITLE, yTitle, cy, radius, START_TITLE_FONT, inkTitle);
+    assertStartRow(dc, "GPS ready", yState, cy, radius, START_BODY_FONT, inkBody);
+    assertStartRow(dc, START_HINT, yHint, cy, radius, START_BODY_FONT, inkBody);
+
+    // the four dots, measured at the outermost one
+    var xOuter = cx + (3 * step) / 2;
+    var cr = cornerRadiusAt(cx, xOuter, hDots, hDots, yDots, cy);
+    Test.assertMessage(cr <= limit, "start dots r=" + cr.format("%.0f") + " > " + limit);
+    Test.assertMessage(step >= 2 * r + 2, "dots touch: step " + step.toString()
+        + " for r " + r.toString());
+    logger.debug("start: dots r" + r.toString() + " step " + step.toString()
+        + ", rows " + yTitle.toString() + "/" + yDots.toString() + "/" + yState.toString()
+        + "/" + yHint.toString() + " on " + screenPx().toString() + "px");
+    return true;
+}
+
 // The digit-only number fonts are a documented trap: this logs which non-digit glyphs the
 // device actually has, so a page that leans on one ("42%") is a deliberate choice, not a
 // surprise. Informational — it asserts only that plain digits render.
@@ -676,8 +763,8 @@ function trackTintBoundsTheNumberOfPolylines(logger as Test.Logger) as Boolean {
 (:test)
 function pageModelDefaultsMatchShippedPages(logger as Test.Logger) as Boolean {
     PageModel.build({});
-    Test.assertMessage(PageModel.count() == 5,
-        "expected 5 default pages, got " + PageModel.count().toString());
+    Test.assertMessage(PageModel.count() == 6,
+        "expected 6 default pages, got " + PageModel.count().toString());
 
     Test.assertEqual(PageModel.layoutAt(0), PageModel.LAYOUT_HERO);
     Test.assertEqual(PageModel.slotAt(0, 0), PageModel.M_SPEED);
@@ -696,6 +783,10 @@ function pageModelDefaultsMatchShippedPages(logger as Test.Logger) as Boolean {
     Test.assertEqual(PageModel.layoutAt(4), PageModel.LAYOUT_CLOCK);
     Test.assertEqual(PageModel.slotAt(4, 0), PageModel.M_TIMER);
 
+    // TIMELINE ships ON (page 6): it is the page that shows the session as a story, and a
+    // tester who has to find it in Garmin Connect never sees it.
+    Test.assertEqual(PageModel.layoutAt(5), PageModel.LAYOUT_TIMELINE);
+
     // the cell labels the shipped Session page used, straight from the catalog
     Test.assertEqual(PageModel.label(PageModel.M_FOIL_TIME), "foil");
     Test.assertEqual(PageModel.label(PageModel.M_LONGEST), "longest");
@@ -705,10 +796,10 @@ function pageModelDefaultsMatchShippedPages(logger as Test.Logger) as Boolean {
     Test.assertEqual(PageModel.suffix(PageModel.M_HR), " bpm");
 
     // wrapping is total: no index can escape the page set
-    Test.assertEqual(PageModel.wrap(-1), 4);
-    Test.assertEqual(PageModel.wrap(5), 0);
+    Test.assertEqual(PageModel.wrap(-1), 5);
+    Test.assertEqual(PageModel.wrap(6), 0);
     Test.assertMessage(!PageModel.mapPage, "map off by default");
-    logger.debug("defaults: 5 pages, hero/grid4/records/turns/clock");
+    logger.debug("defaults: 6 pages, hero/grid4/records/turns/clock/timeline");
     return true;
 }
 

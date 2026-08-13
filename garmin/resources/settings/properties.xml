@@ -57,7 +57,7 @@
     <property id="pg5s3" type="number">0</property>
     <property id="pg5s4" type="number">0</property>
     <property id="pg5s5" type="number">0</property>
-    <property id="pg6Layout" type="number">0</property>
+    <property id="pg6Layout" type="number">8</property>
     <property id="pg6s1" type="number">0</property>
     <property id="pg6s2" type="number">0</property>
     <property id="pg6s3" type="number">0</property>

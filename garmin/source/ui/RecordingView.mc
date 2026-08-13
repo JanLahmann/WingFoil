@@ -10,6 +10,9 @@ import WingFoilCore;
 const TURNS_SPLIT_GAP = 16;
 const TURNS_WORD_GAP = 12;
 const TURNS_TALLY_SEP = " · ";
+// Space between the coloured flew/touchdown/swim tally and the session success rate that
+// shares its row. Wider than the tally's own separator so the two read as two groups.
+const TURNS_OK_GAP = 14;
 
 // Cell geometry. The column offset is NOT a constant: the round display narrows fast below
 // the equator, so each cell row splits the chord available at its own depth and only falls
@@ -498,7 +501,7 @@ class RecordingView extends WatchUi.View {
         dc.drawText(x + symW + TURNS_WORD_GAP, y, Graphics.FONT_LARGE, score, LV);
 
         // tally: flew · touchdown · swim, in the same colours as the symbol above
-        drawTally(dc, cx, turnsRowY(cy, hT, hHot, hL, hS, 3), t);
+        drawTally(dc, cx, turnsRowY(cy, hT, hHot, hL, hS, 3), cy, fitRadius(dc), t);
     }
 
     static function outcomeSymbol(outcome as Number) as Number {
@@ -575,10 +578,39 @@ class RecordingView extends WatchUi.View {
         return NUMBER_FONTS[NUMBER_FONTS.size() - 1];
     }
 
-    static function tallyWidth(dc as Dc, a as String, b as String, c as String) as Number {
-        var f = Graphics.FONT_SMALL;
-        return dc.getTextWidthInPixels(a, f) + dc.getTextWidthInPixels(b, f)
+    static function tallyWidth(dc as Dc, a as String, b as String, c as String,
+            ok as String, f as Graphics.FontType) as Number {
+        var w = dc.getTextWidthInPixels(a, f) + dc.getTextWidthInPixels(b, f)
             + dc.getTextWidthInPixels(c, f) + 2 * dc.getTextWidthInPixels(TURNS_TALLY_SEP, f);
+        if (!ok.equals("")) {
+            w += TURNS_OK_GAP + dc.getTextWidthInPixels(ok, f);
+        }
+        return w;
+    }
+
+    // Largest text font the tally row fits in at its own depth. Adding the success rate to
+    // this row pushed the worst case (three 2-digit tallies and "100% ok") 37 px past the
+    // 454 px chord, so the row is fitted rather than fixed at FONT_SMALL — the same trade
+    // every other crowded row on these pages makes. TEXT_FONTS[2] is FONT_SMALL, so the
+    // fitter starts where the row used to be and only ever gets smaller.
+    static function tallyFont(dc as Dc, a as String, b as String, c as String, ok as String,
+            budget as Number) as Graphics.FontType {
+        for (var i = 2; i < TEXT_FONTS.size() - 1; i++) {
+            if (tallyWidth(dc, a, b, c, ok, TEXT_FONTS[i]) <= budget) {
+                return TEXT_FONTS[i];
+            }
+        }
+        return TEXT_FONTS[TEXT_FONTS.size() - 1];
+    }
+
+    // The session-level number that belongs on this row: the share of turns that scored
+    // turnSuccessPct or better AND stayed on the foil across the scored window. Empty until
+    // there is a turn to divide by — "0% ok" before the first jibe reads like a verdict.
+    static function okText(turns as Number, successes as Number) as String {
+        if (turns <= 0) {
+            return "";
+        }
+        return (successes * 100 / turns).toString() + "% ok";
     }
 
     // Two giant counts with a separator, centred as one block.
@@ -596,17 +628,20 @@ class RecordingView extends WatchUi.View {
     }
 
     // "flew · touch · swim" counts, colour-coded, centred as one block.
-    hidden function drawTally(dc as Dc, cx as Number, y as Number,
-            t as TurnDetector) as Void {
-        var f = Graphics.FONT_SMALL;
+    hidden function drawTally(dc as Dc, cx as Number, y as Number, cy as Number,
+            radius as Number, t as TurnDetector) as Void {
         var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
         var a = t.flewCount.toString();
         var b = t.touchdownCount.toString();
         var s = t.fellCount.toString();
+        var ok = okText(t.turnCount, t.successCount);
+        var f = tallyFont(dc, a, b, s, ok,
+            rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_SMALL)));
         var wSep = dc.getTextWidthInPixels(TURNS_TALLY_SEP, f);
         var wa = dc.getTextWidthInPixels(a, f);
         var wb = dc.getTextWidthInPixels(b, f);
-        var x = cx - tallyWidth(dc, a, b, s) / 2;
+        var ws = dc.getTextWidthInPixels(s, f);
+        var x = cx - tallyWidth(dc, a, b, s, ok, f) / 2;
         dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, f, a, LV);
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
@@ -617,6 +652,12 @@ class RecordingView extends WatchUi.View {
         dc.drawText(x + wa + wSep + wb, y, f, TURNS_TALLY_SEP, LV);
         dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x + wa + wb + 2 * wSep, y, f, s, LV);
+        // ... and the session's own verdict at the end of the same row, in neutral grey so
+        // the three coloured tallies stay the thing the eye lands on.
+        if (!ok.equals("")) {
+            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(x + wa + wb + ws + 2 * wSep + TURNS_OK_GAP, y, f, ok, LV);
+        }
     }
 
     // ---- TIMELINE: the session as a story ----
