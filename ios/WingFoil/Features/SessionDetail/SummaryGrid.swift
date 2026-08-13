@@ -199,6 +199,10 @@ struct StatCard: View {
     var highlighted = false
     /// When set, a small `?` sits beside the title and opens that topic.
     var help: HelpTopicID?
+    /// Tints the caption away from tertiary. Used by the HR card to mark a number that is
+    /// real but rests on too few measurable attempts to lean on — which is a different
+    /// state from `dimmed` (no number at all), so it needs its own signal.
+    var captionColor: Color?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -215,7 +219,7 @@ struct StatCard: View {
                 .foregroundStyle(dimmed ? .secondary : .primary)
             Text(caption)
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(captionColor ?? Color(.tertiaryLabel))
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
         }

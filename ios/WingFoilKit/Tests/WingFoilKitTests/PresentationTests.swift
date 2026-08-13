@@ -534,4 +534,233 @@ import Testing
         #expect(!tally.isToggleable(.fellIn), "a session with no swims has no swim toggle")
         #expect(!MapLayerTally().isToggleable(.flying))
     }
+
+    // MARK: - HR-cost card
+    //
+    // The card is the only thing between a sensor with known failure modes and a screen
+    // that looks authoritative, so its missing-value and thin-coverage paths are tested as
+    // hard as its happy one.
+
+    /// The example session's own figures (fixtures/goldens, 2026-08-07 ciq `hr.summary`).
+    private func exampleSummary() -> HrSummary {
+        var s = HrSummary()
+        s.hasHR = true
+        s.usablePct = 75.55
+        s.avgTakeoffCostBpm = 6.891
+        s.medianTakeoffCostBpm = 7.0
+        s.takeoffCostCoverage = HrCoverage(valid: 23, total: 23)
+        s.medianPeakLagS = 20.49
+        s.bpmPerStroke = 0.762
+        s.medianBpmPerStroke = 0.75
+        s.bpmPerStrokeCoverage = HrCoverage(valid: 23, total: 23)
+        s.pumpCruise.pumpingBpm = 101.597
+        s.pumpCruise.cruisingBpm = 95.983
+        s.pumpCruise.deltaBpm = 5.614
+        s.pumpCruise.pumpingSpans = 88
+        s.pumpCruise.cruisingSpans = 36
+        s.pumpCruise.pumpingCoveredS = 455.64
+        s.pumpCruise.pumpingSpanS = 455.64
+        s.pumpCruise.cruisingCoveredS = 1557.14
+        s.pumpCruise.cruisingSpanS = 1557.14
+        s.medianTakeoffRecoveryS = 12
+        s.takeoffRecoveryCoverage = HrCoverage(valid: 14, total: 15)
+        s.medianSwimRecoveryS = 17.5
+        s.swimRecoveryCoverage = HrCoverage(valid: 4, total: 7)
+        return s
+    }
+
+    private func analysis(_ summary: HrSummary, bins: [FatigueBin] = []) -> HrAnalysis {
+        HrAnalysis(hasHR: summary.hasHR, takeoffEvents: [], swimEvents: [], bins: bins,
+                   summary: summary)
+    }
+
+    private func bin(_ startMin: Double, _ endMin: Double, attempts: Int, successes: Int,
+                     cost: Double?, baseline: Double?, valid: Int, total: Int) -> FatigueBin {
+        var b = FatigueBin(startT: startMin * 60, endT: endMin * 60)
+        b.attempts = attempts
+        b.successes = successes
+        b.failed = attempts - successes
+        if attempts > 0 { b.successPct = 100 * Double(successes) / Double(attempts) }
+        b.medianCostBpm = cost
+        b.avgCostBpm = cost
+        b.avgBaselineBpm = baseline
+        b.costCoverage = HrCoverage(valid: valid, total: total)
+        return b
+    }
+
+    /// No HR channel ⇒ no card at all. A card of em-dashes reads as "measured, and it was
+    /// nothing"; the absence of the card is the honest rendering of an absent sensor.
+    @Test func hrCardIsAbsentWithoutAUsableHeartRate() {
+        #expect(HrCostCard.make(nil) == nil)
+        #expect(HrCostCard.make(HrAnalysis()) == nil, "hasHR false ⇒ nothing to show")
+
+        // Samples existed but nothing survived the guards: still nothing to show.
+        var empty = HrSummary()
+        empty.hasHR = true
+        empty.usablePct = 4
+        #expect(HrCostCard.make(analysis(empty)) == nil)
+    }
+
+    /// The headline never appears without the denominator it was averaged over.
+    @Test func hrCardHeadlineCarriesItsCoverage() throws {
+        let card = try #require(HrCostCard.make(analysis(exampleSummary())))
+        #expect(card.headlineValue == "+7 bpm")
+        #expect(!card.headlineMissing)
+        #expect(card.headlineCaption == "median takeoff cost · 23 of 23 takeoffs")
+        #expect(card.warning == nil, "76 % usable and 23/23 measured is not a thin session")
+        #expect(card.footnote == "HR usable 76% of the session · peak 20 s after the effort")
+    }
+
+    /// A native recording anchors on the flight start instead of the first pump stroke —
+    /// a weaker claim, so it is said on the headline rather than left to the help screen.
+    @Test func hrCardSaysWhenAnchorsWereApproximate() throws {
+        var s = exampleSummary()
+        s.approximateTakeoffs = 52
+        s.takeoffCostCoverage = HrCoverage(valid: 52, total: 52)
+        let card = try #require(HrCostCard.make(analysis(s)))
+        #expect(card.headlineCaption
+            == "median takeoff cost · 52 of 52 takeoffs · 52 anchored on the flight start")
+    }
+
+    /// Every secondary number that could not be measured says why, and none of them
+    /// silently becomes a zero.
+    @Test func hrCardNamesTheReasonForEveryMissingValue() throws {
+        var s = HrSummary()
+        s.hasHR = true
+        // One measurable thing so the card exists at all; everything else is absent.
+        s.medianTakeoffCostBpm = 3
+        s.takeoffCostCoverage = HrCoverage(valid: 1, total: 1)
+        let card = try #require(HrCostCard.make(analysis(s)))
+
+        #expect(card.stats.map(\.key)
+            == ["bpmPerStroke", "pumpCruise", "takeoffRecovery", "swimRecovery"])
+        #expect(card.stats.allSatisfy { $0.missing })
+        #expect(card.stats.allSatisfy { $0.value == "—" })
+        #expect(card.stats.allSatisfy { !$0.value.contains("0") }, "never 0 for unmeasured")
+        #expect(card.stats.allSatisfy { !$0.caption.isEmpty }, "a dash without a reason")
+        #expect(card.stats[0].caption == "no takeoffs to rate")
+        #expect(card.stats[1].caption == "no pump bursts on this source")
+        #expect(card.stats[2].caption == "no takeoff raised HR enough to recover from")
+        #expect(card.baselineNote == nil, "no bins, nothing to say about drift")
+        #expect(card.binCaption == nil)
+    }
+
+    /// The two ways a recovery can be missing are different facts and read differently.
+    @Test func hrCardSeparatesNoRiseFromNoDecay() throws {
+        var s = exampleSummary()
+        s.medianTakeoffRecoveryS = nil
+        s.takeoffRecoveryCoverage = HrCoverage(valid: 0, total: 9)   // rose, never came back
+        s.medianSwimRecoveryS = nil
+        s.swimRecoveryCoverage = HrCoverage(valid: 0, total: 0)      // never rose at all
+        let card = try #require(HrCostCard.make(analysis(s)))
+        #expect(card.stats[2].caption == "HR never fell halfway back within 2 min")
+        #expect(card.stats[3].caption == "no swim raised HR enough to recover from")
+    }
+
+    /// The happy-path secondary numbers, including the one decimal the pumping/cruising
+    /// delta keeps because rounding 5.6 to 6 would drop the only digit that moves.
+    @Test func hrCardSecondaryStatsQuoteTheirDenominators() throws {
+        let card = try #require(HrCostCard.make(analysis(exampleSummary())))
+        #expect(card.stats[0].value == "0.76 bpm")
+        #expect(card.stats[0].caption == "median 0.75 · 23 of 23 takeoffs")
+        #expect(card.stats[1].value == "+5.6 bpm")
+        #expect(card.stats[1].caption == "102 vs 96 bpm on the foil")
+        #expect(card.stats[2].value == "12 s")
+        #expect(card.stats[2].caption == "halfway back · 14 of 15 rises")
+        #expect(card.stats[3].value == "18 s")
+        #expect(card.stats[3].caption == "halfway back · 4 of 7 swims")
+        #expect(card.stats.prefix(3).allSatisfy { !$0.thin })
+        // 4 of 7 is below `thinCoveragePct`: the number is real, and the reader is told not
+        // to lean on it. This is the example session's own figure.
+        #expect(card.stats[3].thin)
+    }
+
+    /// A patchy sensor is announced before the numbers are read, not after.
+    @Test func hrCardWarnsWhenTheSessionIsMostlyMissing() throws {
+        var s = exampleSummary()
+        s.usablePct = 38
+        s.takeoffCostCoverage = HrCoverage(valid: 3, total: 40)
+        s.takeoffRecoveryCoverage = HrCoverage(valid: 2, total: 9)
+        let card = try #require(HrCostCard.make(analysis(s)))
+        let warning = try #require(card.warning)
+        #expect(warning.contains("only 38% of the session"))
+        #expect(warning.contains("only 3 of 40 takeoffs could be measured"))
+        #expect(card.stats[2].thin, "2 of 9 recoveries is a number to distrust")
+        #expect(!card.stats[0].thin, "23 of 23 stroke ratios is not")
+    }
+
+    /// Time-weighted means carry a *seconds* denominator, so the card states it in the one
+    /// unit that is honest for them.
+    @Test func hrCardReportsPumpCruiseCoverageInTime() throws {
+        var s = exampleSummary()
+        s.pumpCruise.pumpingCoveredS = 200
+        s.pumpCruise.pumpingSpanS = 455.64
+        let card = try #require(HrCostCard.make(analysis(s)))
+        #expect(card.stats[1].caption == "102 vs 96 bpm on the foil · 44% covered")
+        #expect(card.stats[1].thin)
+    }
+
+    @Test func hrBpmFormatterSignsRisesAndKeepsAMeasuredZero() {
+        #expect(HrCostCard.bpm(7) == "+7 bpm")
+        #expect(HrCostCard.bpm(-9) == "-9 bpm", "a negative cost is reported, not clamped")
+        #expect(HrCostCard.bpm(0) == "0 bpm", "measured zero is not a missing value")
+        #expect(HrCostCard.bpm(-0.4) == "0 bpm", "never the -0 bpm that %+.0f would print")
+        #expect(HrCostCard.bpm(0.6) == "+1 bpm")
+        #expect(HrCostCard.bpm(5.614, decimals: 1) == "+5.6 bpm")
+        #expect(HrCostCard.bpm(-0.02, decimals: 1) == "0 bpm")
+    }
+
+    @Test func hrCoverageTextIsNilWithoutADenominator() {
+        #expect(HrCostCard.coverageText(HrCoverage(valid: 0, total: 0), noun: "takeoff") == nil)
+        #expect(HrCostCard.coverageText(HrCoverage(valid: 1, total: 1), noun: "takeoff")
+            == "1 of 1 takeoff")
+        #expect(HrCostCard.coverageText(HrCoverage(valid: 0, total: 4), noun: "swim")
+            == "0 of 4 swims")
+        #expect(HrCostCard.coverageText(HrCoverage(valid: 3, total: 4), noun: nil) == "3 of 4")
+    }
+
+    /// The fatigue bins are the engine's, edges and all — including the short final one —
+    /// and a bin nothing could be measured in keeps a nil cost rather than a zero bar.
+    @Test func hrCardBinsKeepTheEngineEdgesAndAbsentCosts() throws {
+        let bins = [bin(0, 20, attempts: 11, successes: 7, cost: 10.5, baseline: 89.2,
+                        valid: 7, total: 7),
+                    bin(20, 40, attempts: 0, successes: 0, cost: nil, baseline: nil,
+                        valid: 0, total: 0),
+                    bin(40, 91.55, attempts: 3, successes: 1, cost: -9, baseline: 103,
+                        valid: 1, total: 3)]
+        let card = try #require(HrCostCard.make(analysis(exampleSummary(), bins: bins)))
+        #expect(card.bins.map(\.label) == ["0–20 min", "20–40 min", "40–92 min"])
+        #expect(card.bins.map(\.startS) == [0, 1200, 2400])
+        #expect(card.bins[2].endS == 5493)
+        #expect(card.bins[0].successPct == 100 * 7.0 / 11)
+        #expect(card.bins[1].successPct == nil, "no attempts is not 0 % success")
+        #expect(card.bins[1].costBpm == nil, "no usable HR is not a zero-cost bin")
+        #expect(card.bins[1].coverage == nil)
+        #expect(card.bins[2].coverage == "1 of 3")
+        #expect(card.bins[2].costBpm == -9)
+        #expect(card.binCaption?.contains("20-minute bins") == true)
+        #expect(card.bins[1].accessibilityText == "20–40 min, cost not measurable")
+        #expect(card.bins[2].accessibilityText
+            == "40–92 min, cost -9 bpm, 33% of 3 attempts, from 103 bpm")
+    }
+
+    /// The sentence that stops a falling cost curve being read as "it got easier".
+    @Test func hrCardExplainsBaselineDrift() throws {
+        func note(_ first: Double, _ last: Double) -> String? {
+            HrCostCard.baselineNote(HrCostCard.bins(
+                [bin(0, 20, attempts: 4, successes: 3, cost: 8, baseline: first,
+                     valid: 3, total: 3),
+                 bin(20, 40, attempts: 4, successes: 3, cost: 2, baseline: last,
+                     valid: 3, total: 3)]))
+        }
+        #expect(note(89, 103)?.contains("89 → 103 bpm") == true)
+        #expect(note(89, 103)?.contains("missing headroom") == true)
+        #expect(note(103, 95)?.contains("began from a lower heart rate") == true)
+        #expect(note(89, 91)?.contains("steady 89 → 91 bpm") == true)
+        // One bin with a baseline is not a drift; two are needed to compare.
+        #expect(HrCostCard.baselineNote(HrCostCard.bins(
+            [bin(0, 20, attempts: 1, successes: 1, cost: 8, baseline: 89, valid: 1, total: 1),
+             bin(20, 40, attempts: 0, successes: 0, cost: nil, baseline: nil,
+                 valid: 0, total: 0)])) == nil)
+    }
 }
