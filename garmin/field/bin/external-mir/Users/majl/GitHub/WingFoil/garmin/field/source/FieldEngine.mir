@@ -10,6 +10,11 @@ import WingFoilCore;
 class FieldEngine {
     [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 20; ]
     <init> {
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 43 15 ]
+        symbol [ Odometer %tmp.4 43 38 46 ];
+        %tmp.4 = getv ? :Odometer;
+        %tmp.1 = newc %tmp.4 ();
+        putv self :_odo %tmp.1;
     }
     [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 20; ]
     static
@@ -45,904 +50,953 @@ class FieldEngine {
     [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 41; @position = 15; @symbol_vardef = [_lastTimerMs,41,15,27]; @symbol_type<0> = [Number,41,31,37]; ]
     protected
     var _lastTimerMs as Number = -1;
-    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 42; @position = 15; @symbol_vardef = [_lastDist,42,15,24]; @symbol_type<0> = [Float,42,28,33]; ]
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 43; @position = 15; @symbol_vardef = [_odo,43,15,19]; @symbol_type<0> = [Odometer,43,23,31]; ]
     protected
-    var _lastDist as Float = 0.0;
-    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 43; @position = 15; @symbol_vardef = [_tickCount,43,15,25]; @symbol_type<0> = [Number,43,29,35]; ]
+    var _odo as Odometer;
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 44; @position = 15; @symbol_vardef = [_tickCount,44,15,25]; @symbol_type<0> = [Number,44,29,35]; ]
     protected
     var _tickCount as Number = 0;
-    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 44; @position = 15; @symbol_vardef = [_baseline,44,15,24]; @symbol_type<0> = [Float,44,28,33]; ]
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 45; @position = 15; @symbol_vardef = [_baseline,45,15,24]; @symbol_type<0> = [Float,45,28,33]; ]
     protected
     var _baseline as Float = 0.0;
-    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 45; @position = 15; @symbol_vardef = [_haveBaseline,45,15,28]; @symbol_type<0> = [Boolean,45,32,39]; ]
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 46; @position = 15; @symbol_vardef = [_haveBaseline,46,15,28]; @symbol_type<0> = [Boolean,46,32,39]; ]
     protected
     var _haveBaseline as Boolean = false;
-    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 47; @symbol_functiondef = [initialize,47,13,23]; @symbol_param<0> = [cfg,47,24,27]; @symbol_param<0>_type<0> = [WingFoilCore,47,31,43]; @symbol_param<0>_type<1> = [Config,47,44,50]; ]
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 48; @symbol_functiondef = [initialize,48,13,23]; @symbol_param<0> = [cfg,48,24,27]; @symbol_param<0>_type<0> = [WingFoilCore,48,31,43]; @symbol_param<0>_type<1> = [Config,48,44,50]; ]
     function initialize(cfg as WingFoilCore.Config) as Void {
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_47_52_52_4_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 48 8 ]
-        %tmp.1 = lgetv %cfg;
-        symbol [ cfg %tmp.1 48 15 18 ];
-        symbol [ _cfg ? 48 8 12 ];
-        putv self :_cfg %tmp.1;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_48_52_53_4_start:
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 49 8 ]
-        symbol [ FlightDetector %tmp.5 49 23 37 ];
+        %tmp.1 = lgetv %cfg;
+        symbol [ cfg %tmp.1 49 15 18 ];
+        symbol [ _cfg ? 49 8 12 ];
+        putv self :_cfg %tmp.1;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 50 8 ]
+        symbol [ FlightDetector %tmp.5 50 23 37 ];
         %tmp.5 = getv ? :FlightDetector;
         %tmp.6 = lgetv %cfg;
-        symbol [ cfg %tmp.6 49 38 41 ];
+        symbol [ cfg %tmp.6 50 38 41 ];
         %tmp.2 = newc %tmp.5 (%tmp.6);
-        symbol [ detector ? 49 8 16 ];
+        symbol [ detector ? 50 8 16 ];
         putv self :detector %tmp.2;
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 50 8 ]
-        symbol [ TurnDetector %tmp.10 50 20 32 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 51 8 ]
+        symbol [ TurnDetector %tmp.10 51 20 32 ];
         %tmp.10 = getv ? :TurnDetector;
         %tmp.11 = lgetv %cfg;
-        symbol [ cfg %tmp.11 50 33 36 ];
+        symbol [ cfg %tmp.11 51 33 36 ];
         %tmp.7 = newc %tmp.10 (%tmp.11);
-        symbol [ turns ? 50 8 13 ];
+        symbol [ turns ? 51 8 13 ];
         putv self :turns %tmp.7;
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 51 8 ]
-        symbol [ SpeedRecords %tmp.15 51 22 34 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 52 8 ]
+        symbol [ SpeedRecords %tmp.15 52 22 34 ];
         %tmp.15 = getv ? :SpeedRecords;
         %tmp.12 = newc %tmp.15 ();
-        symbol [ records ? 51 8 15 ];
+        symbol [ records ? 52 8 15 ];
         putv self :records %tmp.12;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_47_52_52_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_48_52_53_4_stop:
     }
-    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 55; @symbol_functiondef = [reset,55,13,18]; ]
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 56; @symbol_functiondef = [reset,56,13,18]; ]
     function reset() as Void {
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_55_29_68_4_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 56 8 ]
-        symbol [ FlightDetector %tmp.4 56 23 37 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_56_29_69_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 57 8 ]
+        symbol [ FlightDetector %tmp.4 57 23 37 ];
         %tmp.4 = getv ? :FlightDetector;
-        symbol [ _cfg %tmp.6 56 38 42 ];
+        symbol [ _cfg %tmp.6 57 38 42 ];
         %tmp.6 = getv ? :_cfg;
         %tmp.1 = newc %tmp.4 (%tmp.6);
-        symbol [ detector ? 56 8 16 ];
+        symbol [ detector ? 57 8 16 ];
         putv self :detector %tmp.1;
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 57 8 ]
-        symbol [ TurnDetector %tmp.10 57 20 32 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 58 8 ]
+        symbol [ TurnDetector %tmp.10 58 20 32 ];
         %tmp.10 = getv ? :TurnDetector;
-        symbol [ _cfg %tmp.12 57 33 37 ];
+        symbol [ _cfg %tmp.12 58 33 37 ];
         %tmp.12 = getv ? :_cfg;
         %tmp.7 = newc %tmp.10 (%tmp.12);
-        symbol [ turns ? 57 8 13 ];
+        symbol [ turns ? 58 8 13 ];
         putv self :turns %tmp.7;
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 58 8 ]
-        symbol [ SpeedRecords %tmp.16 58 22 34 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 59 8 ]
+        symbol [ SpeedRecords %tmp.16 59 22 34 ];
         %tmp.16 = getv ? :SpeedRecords;
         %tmp.13 = newc %tmp.16 ();
-        symbol [ records ? 58 8 15 ];
+        symbol [ records ? 59 8 15 ];
         putv self :records %tmp.13;
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 59 8 ]
-        %tmp.17 = 0.0;
-        symbol [ speedMps ? 59 8 16 ];
-        putv self :speedMps %tmp.17;
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 60 8 ]
-        %tmp.18 = 0;
-        symbol [ gpsQuality ? 60 8 18 ];
-        putv self :gpsQuality %tmp.18;
+        %tmp.17 = 0.0;
+        symbol [ speedMps ? 60 8 16 ];
+        putv self :speedMps %tmp.17;
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 61 8 ]
-        %tmp.19 = 0.0;
-        symbol [ distM ? 61 8 13 ];
-        putv self :distM %tmp.19;
+        %tmp.18 = 0;
+        symbol [ gpsQuality ? 61 8 18 ];
+        putv self :gpsQuality %tmp.18;
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 62 8 ]
-        %tmp.20 = 0.0;
-        symbol [ timerS ? 62 8 14 ];
-        putv self :timerS %tmp.20;
+        %tmp.19 = 0.0;
+        symbol [ distM ? 62 8 13 ];
+        putv self :distM %tmp.19;
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 63 8 ]
-        %tmp.21 = false;
-        symbol [ submerged ? 63 8 17 ];
-        putv self :submerged %tmp.21;
+        %tmp.20 = 0.0;
+        symbol [ timerS ? 63 8 14 ];
+        putv self :timerS %tmp.20;
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 64 8 ]
-        %tmp.22 = -1;
-        symbol [ _lastTimerMs ? 64 8 20 ];
-        putv self :_lastTimerMs %tmp.22;
+        %tmp.21 = false;
+        symbol [ submerged ? 64 8 17 ];
+        putv self :submerged %tmp.21;
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 65 8 ]
-        %tmp.23 = 0.0;
-        symbol [ _lastDist ? 65 8 17 ];
-        putv self :_lastDist %tmp.23;
+        %tmp.22 = -1;
+        symbol [ _lastTimerMs ? 65 8 20 ];
+        putv self :_lastTimerMs %tmp.22;
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 66 8 ]
-        %tmp.24 = 0;
-        symbol [ _tickCount ? 66 8 18 ];
-        putv self :_tickCount %tmp.24;
+        symbol [ Odometer %tmp.26 66 19 27 ];
+        %tmp.26 = getv ? :Odometer;
+        %tmp.23 = newc %tmp.26 ();
+        symbol [ _odo ? 66 8 12 ];
+        putv self :_odo %tmp.23;
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 67 8 ]
-        %tmp.25 = false;
-        symbol [ _haveBaseline ? 67 8 21 ];
-        putv self :_haveBaseline %tmp.25;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_55_29_68_4_stop:
+        %tmp.27 = 0;
+        symbol [ _tickCount ? 67 8 18 ];
+        putv self :_tickCount %tmp.27;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 68 8 ]
+        %tmp.28 = false;
+        symbol [ _haveBaseline ? 68 8 21 ];
+        putv self :_haveBaseline %tmp.28;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_56_29_69_4_stop:
     }
-    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 75; @symbol_functiondef = [onCompute,75,13,22]; @symbol_param<0> = [info,75,23,27]; @symbol_param<0>_type<0> = [Activity,75,31,39]; @symbol_param<0>_type<1> = [Info,75,40,44]; @symbol_return<0> = [Number,75,49,55]; ]
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 76; @symbol_functiondef = [onCompute,76,13,22]; @symbol_param<0> = [info,76,23,27]; @symbol_param<0>_type<0> = [Activity,76,31,39]; @symbol_param<0>_type<1> = [Info,76,40,44]; @symbol_return<0> = [Number,76,49,55]; ]
     function onCompute(info as Activity.Info) as Number {
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 76 8 ]
-        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_stop" ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 77 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_stop" ]
         %st.1 = local;
-        symbol [ st %st.1 76 12 14 ];
+        symbol [ st %st.1 77 12 14 ];
         %tmp.1 = lgetv %info;
-        symbol [ info %tmp.1 76 17 21 ];
-        symbol [ timerState %tmp.2 76 22 32 ];
+        symbol [ info %tmp.1 77 17 21 ];
+        symbol [ timerState %tmp.2 77 22 32 ];
         %tmp.2 = getv %tmp.1 :timerState;
         lputv %st.1 %tmp.2;
-        symbol [ st %st.1 76 12 14 ];
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 77 8 ]
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_77_18_77_64_begin:
+        symbol [ st %st.1 77 12 14 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 78 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_78_18_78_64_begin:
         %tmp.3 = lgetv %st.1;
-        symbol [ st %tmp.3 77 19 21 ];
+        symbol [ st %tmp.3 78 19 21 ];
         %tmp.4 = null;
         %tmp.5 = ne %tmp.3 %tmp.4;
         %tmp.6 = dup %tmp.5;
-        bf %tmp.6 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_77_34_77_64_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_77_34_77_64_true:
+        bf %tmp.6 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_78_34_78_64_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_78_34_78_64_true:
         %tmp.7 = lgetv %st.1;
-        symbol [ st %tmp.7 77 35 37 ];
+        symbol [ st %tmp.7 78 35 37 ];
         %tmp.8 = as %tmp.7 { (!Null) };
-        symbol [ Activity %tmp.9 77 41 49 ];
+        symbol [ Activity %tmp.9 78 41 49 ];
         %tmp.9 = getm $.Toybox.Activity;
-        symbol [ TIMER_STATE_ON %tmp.10 77 50 64 ];
+        symbol [ TIMER_STATE_ON %tmp.10 78 50 64 ];
         %tmp.10 = getv %tmp.9 :TIMER_STATE_ON;
         %tmp.11 = eq %tmp.8 %tmp.10;
         %tmp.12 = and %tmp.5 %tmp.11;
         push %tmp.12;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_77_34_77_64_end:
-        %tmp.13 = phi [%tmp.6 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_77_18_77_64_begin] [%tmp.12 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_77_34_77_64_true] [%tmp.13 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_77_34_77_64_end];
-        symbol [ running ? 77 8 15 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_78_34_78_64_end:
+        %tmp.13 = phi [%tmp.6 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_78_18_78_64_begin] [%tmp.12 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_78_34_78_64_true] [%tmp.13 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_78_34_78_64_end];
+        symbol [ running ? 78 8 15 ];
         putv self :running %tmp.13;
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 79 8 ]
-        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_stop" ]
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 80 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_stop" ]
         %tms.2 = local;
-        symbol [ tms %tms.2 79 12 15 ];
+        symbol [ tms %tms.2 80 12 15 ];
         %tmp.14 = lgetv %info;
-        symbol [ info %tmp.14 79 18 22 ];
-        symbol [ timerTime %tmp.15 79 23 32 ];
+        symbol [ info %tmp.14 80 18 22 ];
+        symbol [ timerTime %tmp.15 80 23 32 ];
         %tmp.15 = getv %tmp.14 :timerTime;
         lputv %tms.2 %tmp.15;
-        symbol [ tms %tms.2 79 12 15 ];
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 80 8 ]
-        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_stop" ]
+        symbol [ tms %tms.2 80 12 15 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 81 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_stop" ]
         %dt.3 = local;
-        symbol [ dt %dt.3 80 12 14 ];
+        symbol [ dt %dt.3 81 12 14 ];
         %tmp.16 = 1.0;
         lputv %dt.3 %tmp.16;
-        symbol [ dt %dt.3 80 12 14 ];
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 81 8 ]
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_81_8_88_8_if_stmt:
+        symbol [ dt %dt.3 81 12 14 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 82 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_82_8_89_8_if_stmt:
         %tmp.17 = lgetv %tms.2;
-        symbol [ tms %tmp.17 81 12 15 ];
+        symbol [ tms %tmp.17 82 12 15 ];
         %tmp.18 = null;
         %tmp.19 = ne %tmp.17 %tmp.18;
-        bf %tmp.19 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_81_8_88_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_81_8_88_8_if_true:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_81_25_88_8_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 82 12 ]
-        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_81_25_88_8_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_81_25_88_8_stop" ]
+        bf %tmp.19 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_82_8_89_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_82_8_89_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_82_25_89_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 83 12 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_82_25_89_8_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_82_25_89_8_stop" ]
         %ms.4 = local;
-        symbol [ ms %ms.4 82 16 18 ];
+        symbol [ ms %ms.4 83 16 18 ];
         %tmp.20 = lgetv %tms.2;
-        symbol [ tms %tmp.20 82 21 24 ];
+        symbol [ tms %tmp.20 83 21 24 ];
         %tmp.21 = as %tmp.20 { (!Null) };
         %tmp.22 = as %tmp.21 Number;
-        symbol [ Number %tmp.22 82 28 34 ];
+        symbol [ Number %tmp.22 83 28 34 ];
         lputv %ms.4 %tmp.22;
-        symbol [ ms %ms.4 82 16 18 ];
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 83 12 ]
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_83_12_85_12_if_stmt:
-        symbol [ _lastTimerMs %tmp.24 83 16 28 ];
+        symbol [ ms %ms.4 83 16 18 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 84 12 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_84_12_86_12_if_stmt:
+        symbol [ _lastTimerMs %tmp.24 84 16 28 ];
         %tmp.24 = getv ? :_lastTimerMs;
         %tmp.25 = 0;
         %tmp.26 = gte %tmp.24 %tmp.25;
-        bf %tmp.26 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_83_12_85_12_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_83_12_85_12_if_true:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_83_35_85_12_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 84 16 ]
+        bf %tmp.26 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_84_12_86_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_84_12_86_12_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_84_35_86_12_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 85 16 ]
         %tmp.27 = lgetv %ms.4;
-        symbol [ ms %tmp.27 84 22 24 ];
-        symbol [ _lastTimerMs %tmp.29 84 27 39 ];
+        symbol [ ms %tmp.27 85 22 24 ];
+        symbol [ _lastTimerMs %tmp.29 85 27 39 ];
         %tmp.29 = getv ? :_lastTimerMs;
         %tmp.30 = sub %tmp.27 %tmp.29;
         %tmp.31 = 1000.0;
         %tmp.32 = div %tmp.30 %tmp.31;
         lputv %dt.3 %tmp.32;
-        symbol [ dt %dt.3 84 16 18 ];
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_83_35_85_12_stop:
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_83_12_85_12_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_83_12_85_12_if_end:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 86 12 ]
-        %tmp.33 = lgetv %ms.4;
-        symbol [ ms %tmp.33 86 27 29 ];
-        symbol [ _lastTimerMs ? 86 12 24 ];
-        putv self :_lastTimerMs %tmp.33;
+        symbol [ dt %dt.3 85 16 18 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_84_35_86_12_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_84_12_86_12_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_84_12_86_12_if_end:
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 87 12 ]
+        %tmp.33 = lgetv %ms.4;
+        symbol [ ms %tmp.33 87 27 29 ];
+        symbol [ _lastTimerMs ? 87 12 24 ];
+        putv self :_lastTimerMs %tmp.33;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 88 12 ]
         %tmp.34 = lgetv %ms.4;
-        symbol [ ms %tmp.34 87 21 23 ];
+        symbol [ ms %tmp.34 88 21 23 ];
         %tmp.35 = 1000.0;
         %tmp.36 = div %tmp.34 %tmp.35;
-        symbol [ timerS ? 87 12 18 ];
+        symbol [ timerS ? 88 12 18 ];
         putv self :timerS %tmp.36;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_81_25_88_8_stop:
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_81_8_88_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_81_8_88_8_if_end:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 89 8 ]
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_89_8_91_8_if_stmt:
-        symbol [ running %tmp.38 89 13 20 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_82_25_89_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_82_8_89_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_82_8_89_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 90 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_90_8_92_8_if_stmt:
+        symbol [ running %tmp.38 90 13 20 ];
         %tmp.38 = getv ? :running;
         %tmp.39 = not %tmp.38;
-        bf %tmp.39 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_89_8_91_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_89_8_91_8_if_true:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_89_22_91_8_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 90 12 ]
+        bf %tmp.39 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_90_8_92_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_90_8_92_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_90_22_92_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 91 12 ]
         %tmp.40 = 0;
         ret %tmp.40;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_89_22_91_8_stop:
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_89_8_91_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_89_8_91_8_if_end:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 92 8 ]
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_92_8_94_8_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_90_22_92_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_90_8_92_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_90_8_92_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 93 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_93_8_95_8_if_stmt:
         %tmp.41 = lgetv %dt.3;
-        symbol [ dt %tmp.41 92 12 14 ];
+        symbol [ dt %tmp.41 93 12 14 ];
         %tmp.42 = 0.2;
         %tmp.43 = lt %tmp.41 %tmp.42;
-        bf %tmp.43 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_92_8_94_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_92_8_94_8_if_true:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_92_22_94_8_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 93 12 ]
+        bf %tmp.43 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_93_8_95_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_93_8_95_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_93_22_95_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 94 12 ]
         %tmp.44 = 0;
         ret %tmp.44;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_92_22_94_8_stop:
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_92_8_94_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_92_8_94_8_if_end:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 95 8 ]
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_95_8_97_8_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_93_22_95_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_93_8_95_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_93_8_95_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 96 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_96_8_98_8_if_stmt:
         %tmp.45 = lgetv %dt.3;
-        symbol [ dt %tmp.45 95 12 14 ];
+        symbol [ dt %tmp.45 96 12 14 ];
         %tmp.46 = 3.0;
         %tmp.47 = gt %tmp.45 %tmp.46;
-        bf %tmp.47 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_95_8_97_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_95_8_97_8_if_true:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_95_22_97_8_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 96 12 ]
+        bf %tmp.47 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_96_8_98_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_96_8_98_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_96_22_98_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 97 12 ]
         %tmp.48 = 3.0;
         lputv %dt.3 %tmp.48;
-        symbol [ dt %dt.3 96 12 14 ];
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_95_22_97_8_stop:
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_95_8_97_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_95_8_97_8_if_end:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 99 8 ]
-        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_stop" ]
+        symbol [ dt %dt.3 97 12 14 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_96_22_98_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_96_8_98_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_96_8_98_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 100 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_stop" ]
         %sp.5 = local;
-        symbol [ sp %sp.5 99 12 14 ];
+        symbol [ sp %sp.5 100 12 14 ];
         %tmp.49 = lgetv %info;
-        symbol [ info %tmp.49 99 17 21 ];
-        symbol [ currentSpeed %tmp.50 99 22 34 ];
+        symbol [ info %tmp.49 100 17 21 ];
+        symbol [ currentSpeed %tmp.50 100 22 34 ];
         %tmp.50 = getv %tmp.49 :currentSpeed;
         lputv %sp.5 %tmp.50;
-        symbol [ sp %sp.5 99 12 14 ];
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 100 8 ]
-        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_stop" ]
+        symbol [ sp %sp.5 100 12 14 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 101 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_stop" ]
         %speed.6 = local;
-        symbol [ speed %speed.6 100 12 17 ];
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_100_20_100_47_begin:
+        symbol [ speed %speed.6 101 12 17 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_101_20_101_47_begin:
         %tmp.51 = lgetv %sp.5;
-        symbol [ sp %tmp.51 100 20 22 ];
+        symbol [ sp %tmp.51 101 20 22 ];
         %tmp.52 = null;
         %tmp.53 = ne %tmp.51 %tmp.52;
-        bf %tmp.53 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_100_20_100_47_else_false;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_100_20_100_47_true:
+        bf %tmp.53 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_101_20_101_47_else_false;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_101_20_101_47_true:
         %tmp.54 = lgetv %sp.5;
-        symbol [ sp %tmp.54 100 33 35 ];
+        symbol [ sp %tmp.54 101 33 35 ];
         %tmp.55 = as %tmp.54 { (!Null) };
         %tmp.56 = as %tmp.55 Float;
-        symbol [ Float %tmp.56 100 39 44 ];
+        symbol [ Float %tmp.56 101 39 44 ];
         push %tmp.56;
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_100_20_100_47_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_100_20_100_47_else_false:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_101_20_101_47_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_101_20_101_47_else_false:
         %tmp.57 = 0.0;
         push %tmp.57;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_100_20_100_47_end:
-        %tmp.58 = phi [%tmp.53 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_100_20_100_47_begin] [%tmp.56 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_100_20_100_47_true] [%tmp.57 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_100_20_100_47_else_false] [%tmp.58 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_100_20_100_47_end];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_101_20_101_47_end:
+        %tmp.58 = phi [%tmp.53 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_101_20_101_47_begin] [%tmp.56 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_101_20_101_47_true] [%tmp.57 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_101_20_101_47_else_false] [%tmp.58 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_101_20_101_47_end];
         lputv %speed.6 %tmp.58;
-        symbol [ speed %speed.6 100 12 17 ];
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 102 8 ]
-        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_stop" ]
-        %distDelta.7 = local;
-        symbol [ distDelta %distDelta.7 102 12 21 ];
-        %tmp.59 = lgetv %speed.6;
-        symbol [ speed %tmp.59 102 24 29 ];
-        %tmp.60 = lgetv %dt.3;
-        symbol [ dt %tmp.60 102 32 34 ];
-        %tmp.61 = mul %tmp.59 %tmp.60;
-        lputv %distDelta.7 %tmp.61;
-        symbol [ distDelta %distDelta.7 102 12 21 ];
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 103 8 ]
-        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_stop" ]
-        %ed.8 = local;
-        symbol [ ed %ed.8 103 12 14 ];
-        %tmp.62 = lgetv %info;
-        symbol [ info %tmp.62 103 17 21 ];
-        symbol [ elapsedDistance %tmp.63 103 22 37 ];
-        %tmp.63 = getv %tmp.62 :elapsedDistance;
-        lputv %ed.8 %tmp.63;
-        symbol [ ed %ed.8 103 12 14 ];
+        symbol [ speed %speed.6 101 12 17 ];
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 104 8 ]
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_104_8_111_8_if_stmt:
-        %tmp.64 = lgetv %ed.8;
-        symbol [ ed %tmp.64 104 12 14 ];
-        %tmp.65 = null;
-        %tmp.66 = ne %tmp.64 %tmp.65;
-        bf %tmp.66 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_104_8_111_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_104_8_111_8_if_true:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_104_24_111_8_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 105 12 ]
-        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_104_24_111_8_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_104_24_111_8_stop" ]
-        %d.9 = local;
-        symbol [ d %d.9 105 16 17 ];
-        %tmp.67 = lgetv %ed.8;
-        symbol [ ed %tmp.67 105 20 22 ];
-        %tmp.68 = as %tmp.67 { (!Null) };
-        %tmp.69 = as %tmp.68 Float;
-        symbol [ Float %tmp.69 105 26 31 ];
-        lputv %d.9 %tmp.69;
-        symbol [ d %d.9 105 16 17 ];
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_stop" ]
+        %sane.7 = local;
+        symbol [ sane %sane.7 104 12 16 ];
+        symbol [ WingFoilCore %tmp.59 104 19 31 ];
+        %tmp.59 = getm $.WingFoilCore;
+        symbol [ speedPlausible %tmp.60 104 32 46 ];
+        %tmp.60 = getv function %tmp.59 :speedPlausible;
+        %tmp.61 = lgetv %speed.6;
+        symbol [ speed %tmp.61 104 47 52 ];
+        %tmp.62 = invoke %tmp.59 %tmp.60(%tmp.61);
+        lputv %sane.7 %tmp.62;
+        symbol [ sane %sane.7 104 12 16 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 105 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_105_8_107_8_if_stmt:
+        %tmp.63 = lgetv %sane.7;
+        symbol [ sane %tmp.63 105 13 17 ];
+        %tmp.64 = not %tmp.63;
+        bf %tmp.64 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_105_8_107_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_105_8_107_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_105_19_107_8_start:
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 106 12 ]
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_106_12_108_12_if_stmt:
-        %tmp.70 = lgetv %d.9;
-        symbol [ d %tmp.70 106 16 17 ];
-        symbol [ _lastDist %tmp.72 106 21 30 ];
-        %tmp.72 = getv ? :_lastDist;
-        %tmp.73 = gte %tmp.70 %tmp.72;
-        bf %tmp.73 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_106_12_108_12_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_106_12_108_12_if_true:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_106_32_108_12_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 107 16 ]
-        %tmp.74 = lgetv %d.9;
-        symbol [ d %tmp.74 107 28 29 ];
-        symbol [ _lastDist %tmp.76 107 32 41 ];
-        %tmp.76 = getv ? :_lastDist;
-        %tmp.77 = sub %tmp.74 %tmp.76;
-        lputv %distDelta.7 %tmp.77;
-        symbol [ distDelta %distDelta.7 107 16 25 ];
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_106_32_108_12_stop:
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_106_12_108_12_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_106_12_108_12_if_end:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 109 12 ]
-        %tmp.78 = lgetv %d.9;
-        symbol [ d %tmp.78 109 24 25 ];
-        symbol [ _lastDist ? 109 12 21 ];
-        putv self :_lastDist %tmp.78;
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 110 12 ]
-        %tmp.79 = lgetv %d.9;
-        symbol [ d %tmp.79 110 20 21 ];
-        symbol [ distM ? 110 12 17 ];
-        putv self :distM %tmp.79;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_104_24_111_8_stop:
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_104_8_111_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_104_8_111_8_if_end:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 113 8 ]
-        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_stop" ]
-        %quality.10 = local;
-        symbol [ quality %quality.10 113 12 19 ];
-        %tmp.80 = lgetv %info;
-        symbol [ info %tmp.80 113 22 26 ];
-        symbol [ currentLocationAccuracy %tmp.81 113 27 50 ];
-        %tmp.81 = getv %tmp.80 :currentLocationAccuracy;
-        lputv %quality.10 %tmp.81;
-        symbol [ quality %quality.10 113 12 19 ];
+        %tmp.65 = 0.0;
+        lputv %speed.6 %tmp.65;
+        symbol [ speed %speed.6 106 12 17 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_105_19_107_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_105_8_107_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_105_8_107_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 109 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_stop" ]
+        %distDelta.8 = local;
+        symbol [ distDelta %distDelta.8 109 12 21 ];
+        %tmp.66 = lgetv %speed.6;
+        symbol [ speed %tmp.66 109 24 29 ];
+        %tmp.67 = lgetv %dt.3;
+        symbol [ dt %tmp.67 109 32 34 ];
+        %tmp.68 = mul %tmp.66 %tmp.67;
+        lputv %distDelta.8 %tmp.68;
+        symbol [ distDelta %distDelta.8 109 12 21 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 110 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_stop" ]
+        %ed.9 = local;
+        symbol [ ed %ed.9 110 12 14 ];
+        %tmp.69 = lgetv %info;
+        symbol [ info %tmp.69 110 17 21 ];
+        symbol [ elapsedDistance %tmp.70 110 22 37 ];
+        %tmp.70 = getv %tmp.69 :elapsedDistance;
+        lputv %ed.9 %tmp.70;
+        symbol [ ed %ed.9 110 12 14 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 111 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_111_8_113_8_if_stmt:
+        %tmp.71 = lgetv %ed.9;
+        symbol [ ed %tmp.71 111 12 14 ];
+        %tmp.72 = null;
+        %tmp.73 = ne %tmp.71 %tmp.72;
+        bf %tmp.73 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_111_8_113_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_111_8_113_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_111_24_113_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 112 12 ]
+        symbol [ _odo %tmp.75 112 24 28 ];
+        %tmp.75 = getv ? :_odo;
+        symbol [ step %tmp.76 112 29 33 ];
+        %tmp.76 = getv function %tmp.75 :step;
+        %tmp.77 = lgetv %ed.9;
+        symbol [ ed %tmp.77 112 34 36 ];
+        %tmp.78 = as %tmp.77 { (!Null) };
+        %tmp.79 = as %tmp.78 Float;
+        symbol [ Float %tmp.79 112 40 45 ];
+        %tmp.80 = lgetv %distDelta.8;
+        symbol [ distDelta %tmp.80 112 47 56 ];
+        %tmp.81 = lgetv %dt.3;
+        symbol [ dt %tmp.81 112 58 60 ];
+        %tmp.82 = invoke %tmp.75 %tmp.76(%tmp.79, %tmp.80, %tmp.81);
+        lputv %distDelta.8 %tmp.82;
+        symbol [ distDelta %distDelta.8 112 12 21 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_111_24_113_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_111_8_113_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_111_8_113_8_if_end:
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 114 8 ]
-        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_stop" ]
-        %q.11 = local;
-        symbol [ q %q.11 114 12 13 ];
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_114_16_114_54_begin:
-        %tmp.82 = lgetv %quality.10;
-        symbol [ quality %tmp.82 114 16 23 ];
-        %tmp.83 = null;
-        %tmp.84 = ne %tmp.82 %tmp.83;
-        bf %tmp.84 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_114_16_114_54_else_false;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_114_16_114_54_true:
-        %tmp.85 = lgetv %quality.10;
-        symbol [ quality %tmp.85 114 34 41 ];
-        %tmp.86 = as %tmp.85 { (!Null) };
-        %tmp.87 = as %tmp.86 Number;
-        symbol [ Number %tmp.87 114 45 51 ];
-        push %tmp.87;
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_114_16_114_54_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_114_16_114_54_else_false:
-        %tmp.88 = 0;
-        push %tmp.88;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_114_16_114_54_end:
-        %tmp.89 = phi [%tmp.84 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_114_16_114_54_begin] [%tmp.87 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_114_16_114_54_true] [%tmp.88 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_114_16_114_54_else_false] [%tmp.89 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_114_16_114_54_end];
-        lputv %q.11 %tmp.89;
-        symbol [ q %q.11 114 12 13 ];
+        symbol [ distM %tmp.83 114 8 13 ];
+        %tmp.83 = getv self :distM;
+        %tmp.84 = lgetv %distDelta.8;
+        symbol [ distDelta %tmp.84 114 17 26 ];
+        %tmp.85 = add %tmp.83 %tmp.84;
+        symbol [ distM ? 114 8 13 ];
+        putv self :distM dup %tmp.85;
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 116 8 ]
-        %tmp.90 = self;
-        symbol [ feed %tmp.91 116 15 19 ];
-        %tmp.91 = getv function %tmp.90 :feed;
-        %tmp.92 = lgetv %dt.3;
-        symbol [ dt %tmp.92 116 20 22 ];
-        %tmp.93 = lgetv %speed.6;
-        symbol [ speed %tmp.93 116 24 29 ];
-        %tmp.94 = self;
-        symbol [ _cogDeg %tmp.95 116 31 38 ];
-        %tmp.95 = getv function %tmp.94 :_cogDeg;
-        %tmp.96 = lgetv %info;
-        symbol [ info %tmp.96 116 39 43 ];
-        %tmp.97 = invoke %tmp.94 %tmp.95(%tmp.96);
-        %tmp.98 = lgetv %distDelta.7;
-        symbol [ distDelta %tmp.98 116 46 55 ];
-        %tmp.99 = lgetv %q.11;
-        symbol [ q %tmp.99 116 57 58 ];
-        %tmp.100 = self;
-        symbol [ _pressure %tmp.101 116 60 69 ];
-        %tmp.101 = getv function %tmp.100 :_pressure;
-        %tmp.102 = lgetv %info;
-        symbol [ info %tmp.102 116 70 74 ];
-        %tmp.103 = invoke %tmp.100 %tmp.101(%tmp.102);
-        %tmp.104 = invoke %tmp.90 %tmp.91(%tmp.92, %tmp.93, %tmp.97, %tmp.98, %tmp.99, %tmp.103);
-        ret %tmp.104;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_75_56_117_4_stop:
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_stop" ]
+        %quality.10 = local;
+        symbol [ quality %quality.10 116 12 19 ];
+        %tmp.86 = lgetv %info;
+        symbol [ info %tmp.86 116 22 26 ];
+        symbol [ currentLocationAccuracy %tmp.87 116 27 50 ];
+        %tmp.87 = getv %tmp.86 :currentLocationAccuracy;
+        lputv %quality.10 %tmp.87;
+        symbol [ quality %quality.10 116 12 19 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 117 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_stop" ]
+        %q.11 = local;
+        symbol [ q %q.11 117 12 13 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_117_16_117_62_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_117_16_117_35_begin:
+        %tmp.88 = lgetv %sane.7;
+        symbol [ sane %tmp.88 117 16 20 ];
+        bf %tmp.88 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_117_16_117_62_else_false;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_117_24_117_35_true:
+        %tmp.89 = lgetv %quality.10;
+        symbol [ quality %tmp.89 117 24 31 ];
+        %tmp.90 = null;
+        %tmp.91 = ne %tmp.89 %tmp.90;
+        push %tmp.91;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_117_24_117_35_end:
+        %tmp.92 = phi [%tmp.88 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_117_16_117_35_begin] [%tmp.91 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_117_24_117_35_true] [%tmp.92 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_117_24_117_35_end];
+        bf %tmp.92 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_117_16_117_62_else_false;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_117_16_117_62_true:
+        %tmp.93 = lgetv %quality.10;
+        symbol [ quality %tmp.93 117 42 49 ];
+        %tmp.94 = as %tmp.93 { (!Null) };
+        %tmp.95 = as %tmp.94 Number;
+        symbol [ Number %tmp.95 117 53 59 ];
+        push %tmp.95;
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_117_16_117_62_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_117_16_117_62_else_false:
+        %tmp.96 = 0;
+        push %tmp.96;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_117_16_117_62_end:
+        %tmp.97 = phi [%tmp.92 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_117_16_117_62_begin] [%tmp.95 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_117_16_117_62_true] [%tmp.96 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_117_16_117_62_else_false] [%tmp.97 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_117_16_117_62_end];
+        lputv %q.11 %tmp.97;
+        symbol [ q %q.11 117 12 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 119 8 ]
+        %tmp.98 = self;
+        symbol [ feed %tmp.99 119 15 19 ];
+        %tmp.99 = getv function %tmp.98 :feed;
+        %tmp.100 = lgetv %dt.3;
+        symbol [ dt %tmp.100 119 20 22 ];
+        %tmp.101 = lgetv %speed.6;
+        symbol [ speed %tmp.101 119 24 29 ];
+        %tmp.102 = self;
+        symbol [ _cogDeg %tmp.103 119 31 38 ];
+        %tmp.103 = getv function %tmp.102 :_cogDeg;
+        %tmp.104 = lgetv %info;
+        symbol [ info %tmp.104 119 39 43 ];
+        %tmp.105 = invoke %tmp.102 %tmp.103(%tmp.104);
+        %tmp.106 = lgetv %distDelta.8;
+        symbol [ distDelta %tmp.106 119 46 55 ];
+        %tmp.107 = lgetv %q.11;
+        symbol [ q %tmp.107 119 57 58 ];
+        %tmp.108 = self;
+        symbol [ _pressure %tmp.109 119 60 69 ];
+        %tmp.109 = getv function %tmp.108 :_pressure;
+        %tmp.110 = lgetv %info;
+        symbol [ info %tmp.110 119 70 74 ];
+        %tmp.111 = invoke %tmp.108 %tmp.109(%tmp.110);
+        %tmp.112 = invoke %tmp.98 %tmp.99(%tmp.100, %tmp.101, %tmp.105, %tmp.106, %tmp.107, %tmp.111);
+        ret %tmp.112;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_76_56_120_4_stop:
     }
-    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 121; @symbol_functiondef = [feed,121,13,17]; @symbol_param<0> = [dt,121,18,20]; @symbol_param<0>_type<0> = [Float,121,24,29]; @symbol_param<1> = [speed,121,31,36]; @symbol_param<1>_type<0> = [Float,121,40,45]; @symbol_param<2> = [cogDeg,121,47,53]; @symbol_param<2>_type<0> = [Float,121,57,62]; @symbol_param<3> = [distDelta,121,65,74]; @symbol_param<3>_type<0> = [Float,121,78,83]; @symbol_param<4> = [quality,122,12,19]; @symbol_param<4>_type<0> = [Number,122,23,29]; @symbol_param<5> = [pressurePa,122,31,41]; @symbol_param<5>_type<0> = [Float,122,45,50]; @symbol_return<0> = [Number,122,56,62]; ]
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 124; @symbol_functiondef = [feed,124,13,17]; @symbol_param<0> = [dt,124,18,20]; @symbol_param<0>_type<0> = [Float,124,24,29]; @symbol_param<1> = [speed,124,31,36]; @symbol_param<1>_type<0> = [Float,124,40,45]; @symbol_param<2> = [cogDeg,124,47,53]; @symbol_param<2>_type<0> = [Float,124,57,62]; @symbol_param<3> = [distDelta,124,65,74]; @symbol_param<3>_type<0> = [Float,124,78,83]; @symbol_param<4> = [quality,125,12,19]; @symbol_param<4>_type<0> = [Number,125,23,29]; @symbol_param<5> = [pressurePa,125,31,41]; @symbol_param<5>_type<0> = [Float,125,45,50]; @symbol_return<0> = [Number,125,56,62]; ]
     function feed(dt as Float, speed as Float, cogDeg as Float or Null, distDelta as Float, quality as Number, pressurePa as Float or Null) as Number {
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_122_63_140_4_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 123 8 ]
-        %tmp.1 = lgetv %speed;
-        symbol [ speed %tmp.1 123 19 24 ];
-        symbol [ speedMps ? 123 8 16 ];
-        putv self :speedMps %tmp.1;
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 124 8 ]
-        %tmp.2 = lgetv %quality;
-        symbol [ quality %tmp.2 124 21 28 ];
-        symbol [ gpsQuality ? 124 8 18 ];
-        putv self :gpsQuality %tmp.2;
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 125 8 ]
-        %tmp.3 = self;
-        symbol [ _updateSubmersion %tmp.4 125 8 25 ];
-        %tmp.4 = getv function %tmp.3 :_updateSubmersion;
-        %tmp.5 = lgetv %pressurePa;
-        symbol [ pressurePa %tmp.5 125 26 36 ];
-        invoke %tmp.3 %tmp.4(%tmp.5);
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 126 8 ]
-        symbol [ _tickCount %tmp.8 126 8 18 ];
-        %tmp.8 = getv ? :_tickCount;
-        %tmp.9 = add %tmp.8 1;
-        symbol [ _tickCount ? 126 8 18 ];
-        putv self :_tickCount dup %tmp.9;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_125_63_150_4_start:
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 128 8 ]
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_128_8_133_8_if_stmt:
-        %tmp.10 = lgetv %quality;
-        symbol [ quality %tmp.10 128 12 19 ];
-        symbol [ Position %tmp.11 128 22 30 ];
-        %tmp.11 = getm $.Toybox.Position;
-        symbol [ QUALITY_USABLE %tmp.12 128 31 45 ];
-        %tmp.12 = getv %tmp.11 :QUALITY_USABLE;
-        %tmp.13 = lt %tmp.10 %tmp.12;
-        bf %tmp.13 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_128_8_133_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_128_8_133_8_if_true:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_128_47_133_8_start:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_128_8_132_8_if_stmt:
+        symbol [ WingFoilCore %tmp.1 128 13 25 ];
+        %tmp.1 = getm $.WingFoilCore;
+        symbol [ speedPlausible %tmp.2 128 26 40 ];
+        %tmp.2 = getv function %tmp.1 :speedPlausible;
+        %tmp.3 = lgetv %speed;
+        symbol [ speed %tmp.3 128 41 46 ];
+        %tmp.4 = invoke %tmp.1 %tmp.2(%tmp.3);
+        %tmp.5 = not %tmp.4;
+        bf %tmp.5 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_128_8_132_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_128_8_132_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_128_49_132_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 129 12 ]
+        %tmp.6 = 0.0;
+        lputv %speed %tmp.6;
+        symbol [ speed %speed 129 12 17 ];
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 130 12 ]
-        symbol [ records %tmp.15 130 12 19 ];
-        %tmp.15 = getv ? :records;
-        symbol [ onGap %tmp.16 130 20 25 ];
-        %tmp.16 = getv function %tmp.15 :onGap;
-        invoke %tmp.15 %tmp.16();
+        %tmp.7 = 0.0;
+        lputv %distDelta %tmp.7;
+        symbol [ distDelta %distDelta 130 12 21 ];
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 131 12 ]
-        symbol [ turns %tmp.18 131 12 17 ];
-        %tmp.18 = getv ? :turns;
-        symbol [ onGap %tmp.19 131 18 23 ];
-        %tmp.19 = getv function %tmp.18 :onGap;
-        invoke %tmp.18 %tmp.19();
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 132 12 ]
-        %tmp.20 = 0;
-        ret %tmp.20;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_128_47_133_8_stop:
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_128_8_133_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_128_8_133_8_if_end:
+        %tmp.8 = 0;
+        lputv %quality %tmp.8;
+        symbol [ quality %quality 131 12 19 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_128_49_132_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_128_8_132_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_128_8_132_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 133 8 ]
+        %tmp.9 = lgetv %speed;
+        symbol [ speed %tmp.9 133 19 24 ];
+        symbol [ speedMps ? 133 8 16 ];
+        putv self :speedMps %tmp.9;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 134 8 ]
+        %tmp.10 = lgetv %quality;
+        symbol [ quality %tmp.10 134 21 28 ];
+        symbol [ gpsQuality ? 134 8 18 ];
+        putv self :gpsQuality %tmp.10;
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 135 8 ]
-        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_122_63_140_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_122_63_140_4_stop" ]
-        %flightEvent.1 = local;
-        symbol [ flightEvent %flightEvent.1 135 12 23 ];
-        symbol [ detector %tmp.22 135 26 34 ];
-        %tmp.22 = getv ? :detector;
-        symbol [ tick %tmp.23 135 35 39 ];
-        %tmp.23 = getv function %tmp.22 :tick;
-        %tmp.24 = lgetv %dt;
-        symbol [ dt %tmp.24 135 40 42 ];
-        %tmp.25 = lgetv %speed;
-        symbol [ speed %tmp.25 135 44 49 ];
-        %tmp.26 = lgetv %distDelta;
-        symbol [ distDelta %tmp.26 135 51 60 ];
-        %tmp.27 = invoke %tmp.22 %tmp.23(%tmp.24, %tmp.25, %tmp.26);
-        lputv %flightEvent.1 %tmp.27;
-        symbol [ flightEvent %flightEvent.1 135 12 23 ];
+        %tmp.11 = self;
+        symbol [ _updateSubmersion %tmp.12 135 8 25 ];
+        %tmp.12 = getv function %tmp.11 :_updateSubmersion;
+        %tmp.13 = lgetv %pressurePa;
+        symbol [ pressurePa %tmp.13 135 26 36 ];
+        invoke %tmp.11 %tmp.12(%tmp.13);
 [ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 136 8 ]
-        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_122_63_140_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_122_63_140_4_stop" ]
+        symbol [ _tickCount %tmp.16 136 8 18 ];
+        %tmp.16 = getv ? :_tickCount;
+        %tmp.17 = add %tmp.16 1;
+        symbol [ _tickCount ? 136 8 18 ];
+        putv self :_tickCount dup %tmp.17;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 138 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_138_8_143_8_if_stmt:
+        %tmp.18 = lgetv %quality;
+        symbol [ quality %tmp.18 138 12 19 ];
+        symbol [ Position %tmp.19 138 22 30 ];
+        %tmp.19 = getm $.Toybox.Position;
+        symbol [ QUALITY_USABLE %tmp.20 138 31 45 ];
+        %tmp.20 = getv %tmp.19 :QUALITY_USABLE;
+        %tmp.21 = lt %tmp.18 %tmp.20;
+        bf %tmp.21 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_138_8_143_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_138_8_143_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_138_47_143_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 140 12 ]
+        symbol [ records %tmp.23 140 12 19 ];
+        %tmp.23 = getv ? :records;
+        symbol [ onGap %tmp.24 140 20 25 ];
+        %tmp.24 = getv function %tmp.23 :onGap;
+        invoke %tmp.23 %tmp.24();
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 141 12 ]
+        symbol [ turns %tmp.26 141 12 17 ];
+        %tmp.26 = getv ? :turns;
+        symbol [ onGap %tmp.27 141 18 23 ];
+        %tmp.27 = getv function %tmp.26 :onGap;
+        invoke %tmp.26 %tmp.27();
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 142 12 ]
+        %tmp.28 = 0;
+        ret %tmp.28;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_138_47_143_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_138_8_143_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_138_8_143_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 145 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_125_63_150_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_125_63_150_4_stop" ]
+        %flightEvent.1 = local;
+        symbol [ flightEvent %flightEvent.1 145 12 23 ];
+        symbol [ detector %tmp.30 145 26 34 ];
+        %tmp.30 = getv ? :detector;
+        symbol [ tick %tmp.31 145 35 39 ];
+        %tmp.31 = getv function %tmp.30 :tick;
+        %tmp.32 = lgetv %dt;
+        symbol [ dt %tmp.32 145 40 42 ];
+        %tmp.33 = lgetv %speed;
+        symbol [ speed %tmp.33 145 44 49 ];
+        %tmp.34 = lgetv %distDelta;
+        symbol [ distDelta %tmp.34 145 51 60 ];
+        %tmp.35 = invoke %tmp.30 %tmp.31(%tmp.32, %tmp.33, %tmp.34);
+        lputv %flightEvent.1 %tmp.35;
+        symbol [ flightEvent %flightEvent.1 145 12 23 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 146 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_125_63_150_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_125_63_150_4_stop" ]
         %pbEvents.2 = local;
-        symbol [ pbEvents %pbEvents.2 136 12 20 ];
-        symbol [ records %tmp.29 136 23 30 ];
-        %tmp.29 = getv ? :records;
-        symbol [ tick %tmp.30 136 31 35 ];
-        %tmp.30 = getv function %tmp.29 :tick;
-        %tmp.31 = lgetv %speed;
-        symbol [ speed %tmp.31 136 36 41 ];
-        %tmp.32 = invoke %tmp.29 %tmp.30(%tmp.31);
-        lputv %pbEvents.2 %tmp.32;
-        symbol [ pbEvents %pbEvents.2 136 12 20 ];
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 137 8 ]
-        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_122_63_140_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_122_63_140_4_stop" ]
+        symbol [ pbEvents %pbEvents.2 146 12 20 ];
+        symbol [ records %tmp.37 146 23 30 ];
+        %tmp.37 = getv ? :records;
+        symbol [ tick %tmp.38 146 31 35 ];
+        %tmp.38 = getv function %tmp.37 :tick;
+        %tmp.39 = lgetv %speed;
+        symbol [ speed %tmp.39 146 36 41 ];
+        %tmp.40 = invoke %tmp.37 %tmp.38(%tmp.39);
+        lputv %pbEvents.2 %tmp.40;
+        symbol [ pbEvents %pbEvents.2 146 12 20 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 147 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_125_63_150_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_125_63_150_4_stop" ]
         %turnEvent.3 = local;
-        symbol [ turnEvent %turnEvent.3 137 12 21 ];
-        symbol [ turns %tmp.34 137 24 29 ];
-        %tmp.34 = getv ? :turns;
-        symbol [ tick %tmp.35 137 30 34 ];
-        %tmp.35 = getv function %tmp.34 :tick;
-        %tmp.36 = lgetv %dt;
-        symbol [ dt %tmp.36 137 35 37 ];
-        %tmp.37 = lgetv %cogDeg;
-        symbol [ cogDeg %tmp.37 137 39 45 ];
-        %tmp.38 = lgetv %speed;
-        symbol [ speed %tmp.38 137 47 52 ];
-        %tmp.39 = lgetv %distDelta;
-        symbol [ distDelta %tmp.39 137 54 63 ];
-        symbol [ detector %tmp.41 138 12 20 ];
-        %tmp.41 = getv ? :detector;
-        symbol [ state %tmp.42 138 21 26 ];
-        %tmp.42 = getv %tmp.41 :state;
-        symbol [ FlightDetector %tmp.44 138 30 44 ];
-        %tmp.44 = getv ? :FlightDetector;
-        symbol [ STATE_ON %tmp.45 138 45 53 ];
-        %tmp.45 = getv %tmp.44 :STATE_ON;
-        %tmp.46 = eq %tmp.42 %tmp.45;
-        symbol [ submerged %tmp.48 138 55 64 ];
-        %tmp.48 = getv ? :submerged;
-        %tmp.49 = invoke %tmp.34 %tmp.35(%tmp.36, %tmp.37, %tmp.38, %tmp.39, %tmp.46, %tmp.48);
-        lputv %turnEvent.3 %tmp.49;
-        symbol [ turnEvent %turnEvent.3 137 12 21 ];
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 139 8 ]
-        %tmp.50 = lgetv %flightEvent.1;
-        symbol [ flightEvent %tmp.50 139 15 26 ];
-        %tmp.51 = lgetv %pbEvents.2;
-        symbol [ pbEvents %tmp.51 139 30 38 ];
-        %tmp.52 = 4;
-        %tmp.53 = shl %tmp.51 %tmp.52;
-        %tmp.54 = bitor %tmp.50 %tmp.53;
-        %tmp.55 = lgetv %turnEvent.3;
-        symbol [ turnEvent %tmp.55 139 48 57 ];
-        %tmp.56 = 8;
-        %tmp.57 = shl %tmp.55 %tmp.56;
-        %tmp.58 = bitor %tmp.54 %tmp.57;
-        ret %tmp.58;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_122_63_140_4_stop:
+        symbol [ turnEvent %turnEvent.3 147 12 21 ];
+        symbol [ turns %tmp.42 147 24 29 ];
+        %tmp.42 = getv ? :turns;
+        symbol [ tick %tmp.43 147 30 34 ];
+        %tmp.43 = getv function %tmp.42 :tick;
+        %tmp.44 = lgetv %dt;
+        symbol [ dt %tmp.44 147 35 37 ];
+        %tmp.45 = lgetv %cogDeg;
+        symbol [ cogDeg %tmp.45 147 39 45 ];
+        %tmp.46 = lgetv %speed;
+        symbol [ speed %tmp.46 147 47 52 ];
+        %tmp.47 = lgetv %distDelta;
+        symbol [ distDelta %tmp.47 147 54 63 ];
+        symbol [ detector %tmp.49 148 12 20 ];
+        %tmp.49 = getv ? :detector;
+        symbol [ state %tmp.50 148 21 26 ];
+        %tmp.50 = getv %tmp.49 :state;
+        symbol [ FlightDetector %tmp.52 148 30 44 ];
+        %tmp.52 = getv ? :FlightDetector;
+        symbol [ STATE_ON %tmp.53 148 45 53 ];
+        %tmp.53 = getv %tmp.52 :STATE_ON;
+        %tmp.54 = eq %tmp.50 %tmp.53;
+        symbol [ submerged %tmp.56 148 55 64 ];
+        %tmp.56 = getv ? :submerged;
+        %tmp.57 = invoke %tmp.42 %tmp.43(%tmp.44, %tmp.45, %tmp.46, %tmp.47, %tmp.54, %tmp.56);
+        lputv %turnEvent.3 %tmp.57;
+        symbol [ turnEvent %turnEvent.3 147 12 21 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 149 8 ]
+        %tmp.58 = lgetv %flightEvent.1;
+        symbol [ flightEvent %tmp.58 149 15 26 ];
+        %tmp.59 = lgetv %pbEvents.2;
+        symbol [ pbEvents %tmp.59 149 30 38 ];
+        %tmp.60 = 4;
+        %tmp.61 = shl %tmp.59 %tmp.60;
+        %tmp.62 = bitor %tmp.58 %tmp.61;
+        %tmp.63 = lgetv %turnEvent.3;
+        symbol [ turnEvent %tmp.63 149 48 57 ];
+        %tmp.64 = 8;
+        %tmp.65 = shl %tmp.63 %tmp.64;
+        %tmp.66 = bitor %tmp.62 %tmp.65;
+        ret %tmp.66;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_125_63_150_4_stop:
     }
-    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 142; @symbol_functiondef = [tickCount,142,13,22]; @symbol_return<0> = [Number,142,28,34]; ]
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 152; @symbol_functiondef = [tickCount,152,13,22]; @symbol_return<0> = [Number,152,28,34]; ]
     function tickCount() as Number {
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_142_35_144_4_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 143 8 ]
-        symbol [ _tickCount %tmp.2 143 15 25 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_152_35_154_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 153 8 ]
+        symbol [ _tickCount %tmp.2 153 15 25 ];
         %tmp.2 = getv ? :_tickCount;
         ret %tmp.2;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_142_35_144_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_152_35_154_4_stop:
     }
-    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 146; @symbol_functiondef = [foilPct,146,13,20]; @symbol_return<0> = [Float,146,26,31]; ]
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 156; @symbol_functiondef = [foilPct,156,13,20]; @symbol_return<0> = [Float,156,26,31]; ]
     function foilPct() as Float {
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_146_32_148_4_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 147 8 ]
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_147_15_147_66_begin:
-        symbol [ timerS %tmp.2 147 15 21 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_156_32_158_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 157 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_157_15_157_66_begin:
+        symbol [ timerS %tmp.2 157 15 21 ];
         %tmp.2 = getv ? :timerS;
         %tmp.3 = 0;
         %tmp.4 = gt %tmp.2 %tmp.3;
-        bf %tmp.4 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_147_15_147_66_else_false;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_147_15_147_66_true:
-        symbol [ detector %tmp.6 147 28 36 ];
+        bf %tmp.4 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_157_15_157_66_else_false;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_157_15_157_66_true:
+        symbol [ detector %tmp.6 157 28 36 ];
         %tmp.6 = getv ? :detector;
-        symbol [ foilTimeS %tmp.7 147 37 46 ];
+        symbol [ foilTimeS %tmp.7 157 37 46 ];
         %tmp.7 = getv %tmp.6 :foilTimeS;
-        symbol [ timerS %tmp.9 147 49 55 ];
+        symbol [ timerS %tmp.9 157 49 55 ];
         %tmp.9 = getv ? :timerS;
         %tmp.10 = div %tmp.7 %tmp.9;
         %tmp.11 = 100.0;
         %tmp.12 = mul %tmp.10 %tmp.11;
         push %tmp.12;
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_147_15_147_66_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_147_15_147_66_else_false:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_157_15_157_66_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_157_15_157_66_else_false:
         %tmp.13 = 0.0;
         push %tmp.13;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_147_15_147_66_end:
-        %tmp.14 = phi [%tmp.4 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_147_15_147_66_begin] [%tmp.12 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_147_15_147_66_true] [%tmp.13 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_147_15_147_66_else_false] [%tmp.14 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_147_15_147_66_end];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_157_15_157_66_end:
+        %tmp.14 = phi [%tmp.4 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_157_15_157_66_begin] [%tmp.12 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_157_15_157_66_true] [%tmp.13 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_157_15_157_66_else_false] [%tmp.14 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_157_15_157_66_end];
         ret %tmp.14;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_146_32_148_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_156_32_158_4_stop:
     }
-    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 150; @symbol_functiondef = [flying,150,13,19]; @symbol_return<0> = [Boolean,150,25,32]; ]
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 160; @symbol_functiondef = [flying,160,13,19]; @symbol_return<0> = [Boolean,160,25,32]; ]
     function flying() as Boolean {
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_150_33_152_4_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 151 8 ]
-        symbol [ detector %tmp.2 151 15 23 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_160_33_162_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 161 8 ]
+        symbol [ detector %tmp.2 161 15 23 ];
         %tmp.2 = getv ? :detector;
-        symbol [ state %tmp.3 151 24 29 ];
+        symbol [ state %tmp.3 161 24 29 ];
         %tmp.3 = getv %tmp.2 :state;
-        symbol [ FlightDetector %tmp.5 151 33 47 ];
+        symbol [ FlightDetector %tmp.5 161 33 47 ];
         %tmp.5 = getv ? :FlightDetector;
-        symbol [ STATE_ON %tmp.6 151 48 56 ];
+        symbol [ STATE_ON %tmp.6 161 48 56 ];
         %tmp.6 = getv %tmp.5 :STATE_ON;
         %tmp.7 = eq %tmp.3 %tmp.6;
         ret %tmp.7;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_150_33_152_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_160_33_162_4_stop:
     }
-    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 157; @symbol_functiondef = [_cogDeg,157,20,27]; @symbol_param<0> = [info,157,28,32]; @symbol_param<0>_type<0> = [Activity,157,36,44]; @symbol_param<0>_type<1> = [Info,157,45,49]; @symbol_return<0> = [Float,157,54,59]; ]
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 167; @symbol_functiondef = [_cogDeg,167,20,27]; @symbol_param<0> = [info,167,28,32]; @symbol_param<0>_type<0> = [Activity,167,36,44]; @symbol_param<0>_type<1> = [Info,167,45,49]; @symbol_return<0> = [Float,167,54,59]; ]
     protected
     function _cogDeg(info as Activity.Info) as Float or Null {
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_157_61_169_4_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 158 8 ]
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_158_8_160_8_if_stmt:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_158_12_158_48_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_167_61_179_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 168 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_168_8_170_8_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_168_12_168_48_begin:
         %tmp.1 = lgetv %info;
-        symbol [ info %tmp.1 158 14 18 ];
+        symbol [ info %tmp.1 168 14 18 ];
         %tmp.3 = const :track;
-        symbol [ track %tmp.3 158 24 29 const ];
+        symbol [ track %tmp.3 168 24 29 const ];
         %tmp.4 = canhazplz %tmp.1 %tmp.3;
         %tmp.5 = not %tmp.4;
-        bt %tmp.5 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_158_8_160_8_if_true;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_158_34_158_48_false:
+        bt %tmp.5 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_168_8_170_8_if_true;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_168_34_168_48_false:
         %tmp.6 = lgetv %info;
-        symbol [ info %tmp.6 158 34 38 ];
+        symbol [ info %tmp.6 168 34 38 ];
         %tmp.7 = as %tmp.6 { (interface { var track; }) };
-        symbol [ track %tmp.8 158 39 44 ];
+        symbol [ track %tmp.8 168 39 44 ];
         %tmp.8 = getv %tmp.7 :track;
         %tmp.9 = null;
         %tmp.10 = eq %tmp.8 %tmp.9;
         push %tmp.10;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_158_34_158_48_end:
-        %tmp.11 = phi [%tmp.5 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_158_12_158_48_begin] [%tmp.10 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_158_34_158_48_false] [%tmp.11 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_158_34_158_48_end];
-        bf %tmp.11 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_158_8_160_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_158_8_160_8_if_true:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_158_54_160_8_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 159 12 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_168_34_168_48_end:
+        %tmp.11 = phi [%tmp.5 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_168_12_168_48_begin] [%tmp.10 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_168_34_168_48_false] [%tmp.11 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_168_34_168_48_end];
+        bf %tmp.11 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_168_8_170_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_168_8_170_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_168_54_170_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 169 12 ]
         %tmp.12 = null;
         ret %tmp.12;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_158_54_160_8_stop:
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_158_8_160_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_158_8_160_8_if_end:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 161 8 ]
-        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_157_61_169_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_157_61_169_4_stop" ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_168_54_170_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_168_8_170_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_168_8_170_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 171 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_167_61_179_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_167_61_179_4_stop" ]
         %deg.1 = local;
-        symbol [ deg %deg.1 161 12 15 ];
+        symbol [ deg %deg.1 171 12 15 ];
         %tmp.13 = lgetv %info;
-        symbol [ info %tmp.13 161 19 23 ];
-        symbol [ track %tmp.14 161 24 29 ];
+        symbol [ info %tmp.13 171 19 23 ];
+        symbol [ track %tmp.14 171 24 29 ];
         %tmp.14 = getv %tmp.13 :track;
         %tmp.15 = as %tmp.14 Float;
-        symbol [ Float %tmp.15 161 33 38 ];
-        symbol [ RAD2DEG %tmp.17 161 42 49 ];
+        symbol [ Float %tmp.15 171 33 38 ];
+        symbol [ RAD2DEG %tmp.17 171 42 49 ];
         %tmp.17 = getv ? :RAD2DEG;
         %tmp.18 = mul %tmp.15 %tmp.17;
         lputv %deg.1 %tmp.18;
-        symbol [ deg %deg.1 161 12 15 ];
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 162 8 ]
-        while @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_162_8_164_8_while_test @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_162_8_164_8_while_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_162_8_164_8_while_test:
+        symbol [ deg %deg.1 171 12 15 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 172 8 ]
+        while @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_8_174_8_while_test @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_8_174_8_while_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_8_174_8_while_test:
         %tmp.19 = lgetv %deg.1;
-        symbol [ deg %tmp.19 162 15 18 ];
+        symbol [ deg %tmp.19 172 15 18 ];
         %tmp.20 = 0.0;
         %tmp.21 = lt %tmp.19 %tmp.20;
-        bf %tmp.21 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_162_8_164_8_while_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_162_8_164_8_while_begin:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_162_26_164_8_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 163 12 ]
+        bf %tmp.21 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_8_174_8_while_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_8_174_8_while_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_26_174_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 173 12 ]
         %tmp.22 = lgetv %deg.1;
-        symbol [ deg %tmp.22 163 12 15 ];
+        symbol [ deg %tmp.22 173 12 15 ];
         %tmp.23 = 360.0;
         %tmp.24 = add %tmp.22 %tmp.23;
         lputv %deg.1 %tmp.24;
-        symbol [ deg %deg.1 163 12 15 ];
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_162_26_164_8_stop:
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_162_8_164_8_while_test;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_162_8_164_8_while_end:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 165 8 ]
-        while @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_165_8_167_8_while_test @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_165_8_167_8_while_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_165_8_167_8_while_test:
+        symbol [ deg %deg.1 173 12 15 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_26_174_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_8_174_8_while_test;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_8_174_8_while_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 175 8 ]
+        while @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_8_177_8_while_test @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_8_177_8_while_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_8_177_8_while_test:
         %tmp.25 = lgetv %deg.1;
-        symbol [ deg %tmp.25 165 15 18 ];
+        symbol [ deg %tmp.25 175 15 18 ];
         %tmp.26 = 360.0;
         %tmp.27 = gte %tmp.25 %tmp.26;
-        bf %tmp.27 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_165_8_167_8_while_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_165_8_167_8_while_begin:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_165_29_167_8_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 166 12 ]
+        bf %tmp.27 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_8_177_8_while_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_8_177_8_while_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_29_177_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 176 12 ]
         %tmp.28 = lgetv %deg.1;
-        symbol [ deg %tmp.28 166 12 15 ];
+        symbol [ deg %tmp.28 176 12 15 ];
         %tmp.29 = 360.0;
         %tmp.30 = sub %tmp.28 %tmp.29;
         lputv %deg.1 %tmp.30;
-        symbol [ deg %deg.1 166 12 15 ];
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_165_29_167_8_stop:
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_165_8_167_8_while_test;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_165_8_167_8_while_end:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 168 8 ]
+        symbol [ deg %deg.1 176 12 15 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_29_177_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_8_177_8_while_test;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_8_177_8_while_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 178 8 ]
         %tmp.31 = lgetv %deg.1;
-        symbol [ deg %tmp.31 168 15 18 ];
+        symbol [ deg %tmp.31 178 15 18 ];
         ret %tmp.31;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_157_61_169_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_167_61_179_4_stop:
     }
-    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 171; @symbol_functiondef = [_pressure,171,20,29]; @symbol_param<0> = [info,171,30,34]; @symbol_param<0>_type<0> = [Activity,171,38,46]; @symbol_param<0>_type<1> = [Info,171,47,51]; @symbol_return<0> = [Float,171,56,61]; ]
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 181; @symbol_functiondef = [_pressure,181,20,29]; @symbol_param<0> = [info,181,30,34]; @symbol_param<0>_type<0> = [Activity,181,38,46]; @symbol_param<0>_type<1> = [Info,181,47,51]; @symbol_return<0> = [Float,181,56,61]; ]
     protected
     function _pressure(info as Activity.Info) as Float or Null {
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_171_63_179_4_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 172 8 ]
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_8_174_8_if_stmt:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_12_172_71_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_181_63_189_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 182 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_8_184_8_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_12_182_71_begin:
         %tmp.1 = lgetv %info;
-        symbol [ info %tmp.1 172 12 16 ];
+        symbol [ info %tmp.1 182 12 16 ];
         %tmp.3 = const :rawAmbientPressure;
-        symbol [ rawAmbientPressure %tmp.3 172 22 40 const ];
+        symbol [ rawAmbientPressure %tmp.3 182 22 40 const ];
         %tmp.4 = canhazplz %tmp.1 %tmp.3;
-        bf %tmp.4 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_8_174_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_44_172_71_true:
+        bf %tmp.4 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_8_184_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_44_182_71_true:
         %tmp.5 = lgetv %info;
-        symbol [ info %tmp.5 172 44 48 ];
+        symbol [ info %tmp.5 182 44 48 ];
         %tmp.6 = as %tmp.5 { (interface { var rawAmbientPressure; }) };
-        symbol [ rawAmbientPressure %tmp.7 172 49 67 ];
+        symbol [ rawAmbientPressure %tmp.7 182 49 67 ];
         %tmp.7 = getv %tmp.6 :rawAmbientPressure;
         %tmp.8 = null;
         %tmp.9 = ne %tmp.7 %tmp.8;
         push %tmp.9;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_44_172_71_end:
-        %tmp.10 = phi [%tmp.4 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_12_172_71_begin] [%tmp.9 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_44_172_71_true] [%tmp.10 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_44_172_71_end];
-        bf %tmp.10 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_8_174_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_8_174_8_if_true:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_77_174_8_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 173 12 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_44_182_71_end:
+        %tmp.10 = phi [%tmp.4 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_12_182_71_begin] [%tmp.9 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_44_182_71_true] [%tmp.10 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_44_182_71_end];
+        bf %tmp.10 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_8_184_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_8_184_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_77_184_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 183 12 ]
         %tmp.11 = lgetv %info;
-        symbol [ info %tmp.11 173 20 24 ];
+        symbol [ info %tmp.11 183 20 24 ];
         %tmp.12 = as %tmp.11 { (interface { var rawAmbientPressure; }) };
-        symbol [ rawAmbientPressure %tmp.13 173 25 43 ];
+        symbol [ rawAmbientPressure %tmp.13 183 25 43 ];
         %tmp.13 = getv %tmp.12 :rawAmbientPressure;
         %tmp.14 = as %tmp.13 Numeric;
-        symbol [ Numeric %tmp.14 173 47 54 ];
-        symbol [ toFloat %tmp.15 173 56 63 ];
+        symbol [ Numeric %tmp.14 183 47 54 ];
+        symbol [ toFloat %tmp.15 183 56 63 ];
         %tmp.15 = getv function %tmp.14 :toFloat;
         %tmp.16 = invoke %tmp.14 %tmp.15();
         ret %tmp.16;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_77_174_8_stop:
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_8_174_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_172_8_174_8_if_end:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 175 8 ]
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_8_177_8_if_stmt:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_12_175_65_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_77_184_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_8_184_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_8_184_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 185 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_185_8_187_8_if_stmt:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_185_12_185_65_begin:
         %tmp.17 = lgetv %info;
-        symbol [ info %tmp.17 175 12 16 ];
+        symbol [ info %tmp.17 185 12 16 ];
         %tmp.19 = const :ambientPressure;
-        symbol [ ambientPressure %tmp.19 175 22 37 const ];
+        symbol [ ambientPressure %tmp.19 185 22 37 const ];
         %tmp.20 = canhazplz %tmp.17 %tmp.19;
-        bf %tmp.20 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_8_177_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_41_175_65_true:
+        bf %tmp.20 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_185_8_187_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_185_41_185_65_true:
         %tmp.21 = lgetv %info;
-        symbol [ info %tmp.21 175 41 45 ];
+        symbol [ info %tmp.21 185 41 45 ];
         %tmp.22 = as %tmp.21 { (interface { var ambientPressure; }) };
-        symbol [ ambientPressure %tmp.23 175 46 61 ];
+        symbol [ ambientPressure %tmp.23 185 46 61 ];
         %tmp.23 = getv %tmp.22 :ambientPressure;
         %tmp.24 = null;
         %tmp.25 = ne %tmp.23 %tmp.24;
         push %tmp.25;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_41_175_65_end:
-        %tmp.26 = phi [%tmp.20 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_12_175_65_begin] [%tmp.25 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_41_175_65_true] [%tmp.26 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_41_175_65_end];
-        bf %tmp.26 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_8_177_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_8_177_8_if_true:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_71_177_8_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 176 12 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_185_41_185_65_end:
+        %tmp.26 = phi [%tmp.20 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_185_12_185_65_begin] [%tmp.25 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_185_41_185_65_true] [%tmp.26 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_185_41_185_65_end];
+        bf %tmp.26 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_185_8_187_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_185_8_187_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_185_71_187_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 186 12 ]
         %tmp.27 = lgetv %info;
-        symbol [ info %tmp.27 176 20 24 ];
+        symbol [ info %tmp.27 186 20 24 ];
         %tmp.28 = as %tmp.27 { (interface { var ambientPressure; }) };
-        symbol [ ambientPressure %tmp.29 176 25 40 ];
+        symbol [ ambientPressure %tmp.29 186 25 40 ];
         %tmp.29 = getv %tmp.28 :ambientPressure;
         %tmp.30 = as %tmp.29 Numeric;
-        symbol [ Numeric %tmp.30 176 44 51 ];
-        symbol [ toFloat %tmp.31 176 53 60 ];
+        symbol [ Numeric %tmp.30 186 44 51 ];
+        symbol [ toFloat %tmp.31 186 53 60 ];
         %tmp.31 = getv function %tmp.30 :toFloat;
         %tmp.32 = invoke %tmp.30 %tmp.31();
         ret %tmp.32;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_71_177_8_stop:
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_8_177_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_175_8_177_8_if_end:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 178 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_185_71_187_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_185_8_187_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_185_8_187_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 188 8 ]
         %tmp.33 = null;
         ret %tmp.33;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_171_63_179_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_181_63_189_4_stop:
     }
-    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 182; @symbol_functiondef = [_updateSubmersion,182,20,37]; @symbol_param<0> = [pa,182,38,40]; @symbol_param<0>_type<0> = [Float,182,44,49]; ]
+    [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 192; @symbol_functiondef = [_updateSubmersion,192,20,37]; @symbol_param<0> = [pa,192,38,40]; @symbol_param<0>_type<0> = [Float,192,44,49]; ]
     protected
     function _updateSubmersion(pa as Float or Null) as Void {
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_60_199_4_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 183 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_192_60_209_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 193 8 ]
         %tmp.1 = false;
-        symbol [ submerged ? 183 8 17 ];
+        symbol [ submerged ? 193 8 17 ];
         putv self :submerged %tmp.1;
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 184 8 ]
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_184_8_186_8_if_stmt:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 194 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_194_8_196_8_if_stmt:
         %tmp.2 = lgetv %pa;
-        symbol [ pa %tmp.2 184 12 14 ];
+        symbol [ pa %tmp.2 194 12 14 ];
         %tmp.3 = null;
         %tmp.4 = eq %tmp.2 %tmp.3;
-        bf %tmp.4 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_184_8_186_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_184_8_186_8_if_true:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_184_24_186_8_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 185 12 ]
+        bf %tmp.4 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_194_8_196_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_194_8_196_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_194_24_196_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 195 12 ]
         ret ?;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_184_24_186_8_stop:
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_184_8_186_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_184_8_186_8_if_end:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 187 8 ]
-        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_60_199_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_60_199_4_stop" ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_194_24_196_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_194_8_196_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_194_8_196_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 197 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_192_60_209_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_192_60_209_4_stop" ]
         %p.1 = local;
-        symbol [ p %p.1 187 12 13 ];
+        symbol [ p %p.1 197 12 13 ];
         %tmp.5 = lgetv %pa;
-        symbol [ pa %tmp.5 187 16 18 ];
+        symbol [ pa %tmp.5 197 16 18 ];
         %tmp.6 = as %tmp.5 Float;
-        symbol [ Float %tmp.6 187 22 27 ];
+        symbol [ Float %tmp.6 197 22 27 ];
         lputv %p.1 %tmp.6;
-        symbol [ p %p.1 187 12 13 ];
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 188 8 ]
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_188_8_192_8_if_stmt:
-        symbol [ _haveBaseline %tmp.8 188 13 26 ];
+        symbol [ p %p.1 197 12 13 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 198 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_198_8_202_8_if_stmt:
+        symbol [ _haveBaseline %tmp.8 198 13 26 ];
         %tmp.8 = getv ? :_haveBaseline;
         %tmp.9 = not %tmp.8;
-        bf %tmp.9 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_188_8_192_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_188_8_192_8_if_true:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_188_28_192_8_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 189 12 ]
+        bf %tmp.9 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_198_8_202_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_198_8_202_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_198_28_202_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 199 12 ]
         %tmp.10 = true;
-        symbol [ _haveBaseline ? 189 12 25 ];
+        symbol [ _haveBaseline ? 199 12 25 ];
         putv self :_haveBaseline %tmp.10;
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 190 12 ]
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 200 12 ]
         %tmp.11 = lgetv %p.1;
-        symbol [ p %tmp.11 190 24 25 ];
-        symbol [ _baseline ? 190 12 21 ];
+        symbol [ p %tmp.11 200 24 25 ];
+        symbol [ _baseline ? 200 12 21 ];
         putv self :_baseline %tmp.11;
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 191 12 ]
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 201 12 ]
         ret ?;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_188_28_192_8_stop:
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_188_8_192_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_188_8_192_8_if_end:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 193 8 ]
-        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_60_199_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_60_199_4_stop" ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_198_28_202_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_198_8_202_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_198_8_202_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 203 8 ]
+        [ "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_192_60_209_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_192_60_209_4_stop" ]
         %rise.2 = local;
-        symbol [ rise %rise.2 193 12 16 ];
+        symbol [ rise %rise.2 203 12 16 ];
         %tmp.12 = lgetv %p.1;
-        symbol [ p %tmp.12 193 19 20 ];
-        symbol [ _baseline %tmp.14 193 23 32 ];
+        symbol [ p %tmp.12 203 19 20 ];
+        symbol [ _baseline %tmp.14 203 23 32 ];
         %tmp.14 = getv ? :_baseline;
         %tmp.15 = sub %tmp.12 %tmp.14;
         lputv %rise.2 %tmp.15;
-        symbol [ rise %rise.2 193 12 16 ];
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 194 8 ]
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_194_8_197_8_if_stmt:
+        symbol [ rise %rise.2 203 12 16 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 204 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_204_8_207_8_if_stmt:
         %tmp.16 = lgetv %rise.2;
-        symbol [ rise %tmp.16 194 12 16 ];
-        symbol [ SUBMERSION_PA %tmp.18 194 19 32 ];
+        symbol [ rise %tmp.16 204 12 16 ];
+        symbol [ SUBMERSION_PA %tmp.18 204 19 32 ];
         %tmp.18 = getv ? :SUBMERSION_PA;
         %tmp.19 = gt %tmp.16 %tmp.18;
-        bf %tmp.19 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_194_8_197_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_194_8_197_8_if_true:
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_194_34_197_8_start:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 195 12 ]
+        bf %tmp.19 @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_204_8_207_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_204_8_207_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_204_34_207_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 205 12 ]
         %tmp.20 = true;
-        symbol [ submerged ? 195 12 21 ];
+        symbol [ submerged ? 205 12 21 ];
         putv self :submerged %tmp.20;
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 196 12 ]
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 206 12 ]
         ret ?;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_194_34_197_8_stop:
-        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_194_8_197_8_if_end;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_194_8_197_8_if_end:
-[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 198 8 ]
-        symbol [ _baseline %tmp.21 198 8 17 ];
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_204_34_207_8_stop:
+        goto @_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_204_8_207_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_204_8_207_8_if_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc" 208 8 ]
+        symbol [ _baseline %tmp.21 208 8 17 ];
         %tmp.21 = getv self :_baseline;
-        symbol [ BARO_EMA %tmp.23 198 21 29 ];
+        symbol [ BARO_EMA %tmp.23 208 21 29 ];
         %tmp.23 = getv ? :BARO_EMA;
         %tmp.24 = lgetv %rise.2;
-        symbol [ rise %tmp.24 198 32 36 ];
+        symbol [ rise %tmp.24 208 32 36 ];
         %tmp.25 = mul %tmp.23 %tmp.24;
         %tmp.26 = add %tmp.21 %tmp.25;
-        symbol [ _baseline ? 198 8 17 ];
+        symbol [ _baseline ? 208 8 17 ];
         putv self :_baseline dup %tmp.26;
-_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_182_60_199_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_source_FieldEngine_mc_192_60_209_4_stop:
     }
 }
 [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/source/FieldEngine.mc"; @line = 1; ]

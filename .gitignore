@@ -22,6 +22,7 @@ xcuserdata/
 
 # Connect IQ (garmin/)
 garmin/bin/
+garmin/field/bin/
 *.prg
 *.prg.debug.xml
 monkey.jungle.local

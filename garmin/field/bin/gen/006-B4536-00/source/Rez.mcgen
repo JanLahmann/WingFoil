@@ -10,28 +10,30 @@ module Rez {
     } // Drawables
 
     module Strings {
-        (:initialized) var FitFoilPct as ResourceId;
         (:initialized) var SetUseKnots as ResourceId;
-        (:initialized) var FitUnitCms as ResourceId;
         (:initialized) var FitLongestFlight as ResourceId;
-        (:initialized) var SetFoilEntry as ResourceId;
         (:initialized) var SetFoilExit as ResourceId;
-        (:initialized) var FitFoilStateLabel as ResourceId;
         (:initialized) var FitTacks as ResourceId;
         (:initialized) var AppName as ResourceId;
-        (:initialized) var SetExitHold as ResourceId;
         (:initialized) var SetMinFlight as ResourceId;
-        (:initialized) var FitTurnSuccess as ResourceId;
-        (:initialized) var FitFlights as ResourceId;
-        (:initialized) var FitUnitSeconds as ResourceId;
         (:initialized) var AppNameBeta as ResourceId;
-        (:initialized) var FitJibes as ResourceId;
         (:initialized) var SetEntryHold as ResourceId;
         (:initialized) var FitFoilStateChart as ResourceId;
+        (:initialized) var SetUnlockKey as ResourceId;
+        (:initialized) var FitUnitPct as ResourceId;
+        (:initialized) var FitFoilPct as ResourceId;
+        (:initialized) var FitUnitCms as ResourceId;
+        (:initialized) var SetFoilEntry as ResourceId;
+        (:initialized) var FitFoilStateLabel as ResourceId;
+        (:initialized) var SetExitHold as ResourceId;
+        (:initialized) var FitTurnSuccess as ResourceId;
+        (:initialized) var AppNameInvite as ResourceId;
+        (:initialized) var FitFlights as ResourceId;
+        (:initialized) var FitUnitSeconds as ResourceId;
+        (:initialized) var FitJibes as ResourceId;
         (:initialized) var SetWindDir as ResourceId;
         (:initialized) var FitUnitNone as ResourceId;
         (:initialized) var FitFoilTime as ResourceId;
-        (:initialized) var FitUnitPct as ResourceId;
         (:initialized) var FitBest2s as ResourceId;
     } // Strings
 

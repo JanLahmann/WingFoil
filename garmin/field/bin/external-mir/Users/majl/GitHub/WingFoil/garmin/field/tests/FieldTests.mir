@@ -3206,6 +3206,708 @@ _Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_303_4_338_4_for_end
     ret %tmp.383;
 _Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_287_63_340_0_stop:
 }
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 348; @position = 6; @symbol_constdef = [UNLOCK_VEC_PEPPER,348,6,23]; ]
+const UNLOCK_VEC_PEPPER;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 349; @position = 6; @symbol_constdef = [UNLOCK_VEC_IDS,349,6,20]; ]
+const UNLOCK_VEC_IDS;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 350; @position = 6; @symbol_constdef = [UNLOCK_VEC_CODES,350,6,22]; ]
+const UNLOCK_VEC_CODES;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 351; @position = 6; @symbol_constdef = [UNLOCK_VEC_KEYS,351,6,21]; ]
+const UNLOCK_VEC_KEYS;
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 354; test = true; @symbol_functiondef = [fieldUnlockGateIsOffWithoutAPepper,354,9,43]; @symbol_param<0> = [logger,354,44,50]; @symbol_param<0>_type<0> = [Test,354,54,58]; @symbol_param<0>_type<1> = [Logger,354,59,65]; @symbol_return<0> = [Boolean,354,70,77]; ]
+function fieldUnlockGateIsOffWithoutAPepper(logger as Test.Logger) as Boolean {
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_354_78_366_0_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 358 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_354_78_366_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_354_78_366_0_stop" ]
+    %p.1 = local;
+    symbol [ p %p.1 358 8 9 ];
+    symbol [ UnlockPepper %tmp.2 358 12 24 ];
+    %tmp.2 = getv ? :UnlockPepper;
+    symbol [ bytes %tmp.3 358 25 30 ];
+    %tmp.3 = getv function %tmp.2 :bytes;
+    %tmp.4 = invoke %tmp.2 %tmp.3();
+    lputv %p.1 %tmp.4;
+    symbol [ p %p.1 358 8 9 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 359 4 ]
+    symbol [ Test %tmp.5 359 4 8 ];
+    %tmp.5 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.6 359 9 22 ];
+    %tmp.6 = getv function %tmp.5 :assertMessage;
+    %tmp.7 = lgetv %p.1;
+    symbol [ p %tmp.7 359 23 24 ];
+    symbol [ size %tmp.8 359 25 29 ];
+    %tmp.8 = getv function %tmp.7 :size;
+    %tmp.9 = invoke %tmp.7 %tmp.8();
+    %tmp.10 = 8;
+    %tmp.11 = eq %tmp.9 %tmp.10;
+    %tmp.12 = "pepper is 8 bytes";
+    invoke %tmp.5 %tmp.6(%tmp.11, %tmp.12);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 360 4 ]
+    symbol [ Test %tmp.13 360 4 8 ];
+    %tmp.13 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.14 360 9 22 ];
+    %tmp.14 = getv function %tmp.13 :assertMessage;
+    symbol [ LockGate %tmp.16 360 23 31 ];
+    %tmp.16 = getv ? :LockGate;
+    symbol [ isZero %tmp.17 360 32 38 ];
+    %tmp.17 = getv function %tmp.16 :isZero;
+    %tmp.18 = lgetv %p.1;
+    symbol [ p %tmp.18 360 39 40 ];
+    %tmp.19 = invoke %tmp.16 %tmp.17(%tmp.18);
+    %tmp.20 = "the ordinary field must ship a ZERO pepper";
+    invoke %tmp.13 %tmp.14(%tmp.19, %tmp.20);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 361 4 ]
+    symbol [ Test %tmp.21 361 4 8 ];
+    %tmp.21 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.22 361 9 22 ];
+    %tmp.22 = getv function %tmp.21 :assertMessage;
+    symbol [ LockGate %tmp.24 361 24 32 ];
+    %tmp.24 = getv ? :LockGate;
+    symbol [ enabled %tmp.25 361 33 40 ];
+    %tmp.25 = getv function %tmp.24 :enabled;
+    %tmp.26 = invoke %tmp.24 %tmp.25();
+    %tmp.27 = not %tmp.26;
+    %tmp.28 = "gate must be disabled in the ordinary field";
+    invoke %tmp.21 %tmp.22(%tmp.27, %tmp.28);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 362 4 ]
+    symbol [ Test %tmp.29 362 4 8 ];
+    %tmp.29 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.30 362 9 22 ];
+    %tmp.30 = getv function %tmp.29 :assertMessage;
+    symbol [ LockGate %tmp.32 362 23 31 ];
+    %tmp.32 = getv ? :LockGate;
+    symbol [ refresh %tmp.33 362 32 39 ];
+    %tmp.33 = getv function %tmp.32 :refresh;
+    %tmp.34 = invoke %tmp.32 %tmp.33();
+    %tmp.35 = "a disabled gate reports unlocked";
+    invoke %tmp.29 %tmp.30(%tmp.34, %tmp.35);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 363 4 ]
+    symbol [ Test %tmp.36 363 4 8 ];
+    %tmp.36 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.37 363 9 22 ];
+    %tmp.37 = getv function %tmp.36 :assertMessage;
+    symbol [ WingFoilDataField %tmp.39 363 23 40 ];
+    %tmp.39 = getv ? :WingFoilDataField;
+    symbol [ unlocked %tmp.40 363 41 49 ];
+    %tmp.40 = getv function %tmp.39 :unlocked;
+    %tmp.41 = invoke %tmp.39 %tmp.40();
+    %tmp.42 = "so the field computes and draws";
+    invoke %tmp.36 %tmp.37(%tmp.41, %tmp.42);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 364 4 ]
+    %tmp.43 = lgetv %logger;
+    symbol [ logger %tmp.43 364 4 10 ];
+    symbol [ debug %tmp.44 364 11 16 ];
+    %tmp.44 = getv function %tmp.43 :debug;
+    %tmp.45 = "zero pepper -> gate bypassed";
+    invoke %tmp.43 %tmp.44(%tmp.45);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 365 4 ]
+    %tmp.46 = true;
+    ret %tmp.46;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_354_78_366_0_stop:
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 369; test = true; @symbol_functiondef = [fieldUnlockKeyMatchesKeygenVectors,369,9,43]; @symbol_param<0> = [logger,369,44,50]; @symbol_param<0>_type<0> = [Test,369,54,58]; @symbol_param<0>_type<1> = [Logger,369,59,65]; @symbol_return<0> = [Boolean,369,70,77]; ]
+function fieldUnlockKeyMatchesKeygenVectors(logger as Test.Logger) as Boolean {
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_369_78_391_0_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 372 4 ]
+    for @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_4_382_4_for_test @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_4_382_4_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_4_382_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_4_382_4_for_init:
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_4_382_4_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_4_382_4_for_end" ]
+    %i.1 = local;
+    symbol [ i %i.1 372 13 14 ];
+    %tmp.1 = 0;
+    lputv %i.1 %tmp.1;
+    symbol [ i %i.1 372 13 14 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_4_382_4_for_test:
+    %tmp.2 = lgetv %i.1;
+    symbol [ i %tmp.2 372 20 21 ];
+    symbol [ UNLOCK_VEC_IDS %tmp.4 372 24 38 ];
+    %tmp.4 = getv ? :UNLOCK_VEC_IDS;
+    symbol [ size %tmp.5 372 39 43 ];
+    %tmp.5 = getv function %tmp.4 :size;
+    %tmp.6 = invoke %tmp.4 %tmp.5();
+    %tmp.7 = lt %tmp.2 %tmp.6;
+    bf %tmp.7 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_4_382_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_4_382_4_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_52_382_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 373 8 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_52_382_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_52_382_4_stop" ]
+    %code.2 = local;
+    symbol [ code %code.2 373 12 16 ];
+    symbol [ LockGate %tmp.9 373 19 27 ];
+    %tmp.9 = getv ? :LockGate;
+    symbol [ requestCodeFor %tmp.10 373 28 42 ];
+    %tmp.10 = getv function %tmp.9 :requestCodeFor;
+    symbol [ UNLOCK_VEC_IDS %tmp.12 373 43 57 ];
+    %tmp.12 = getv ? :UNLOCK_VEC_IDS;
+    %tmp.13 = lgetv %i.1;
+    symbol [ i %tmp.13 373 58 59 ];
+    %tmp.14 = agetv %tmp.12 %tmp.13;
+    %tmp.15 = invoke %tmp.9 %tmp.10(%tmp.14);
+    lputv %code.2 %tmp.15;
+    symbol [ code %code.2 373 12 16 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 374 8 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_52_382_4_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_52_382_4_stop" ]
+    %key.3 = local;
+    symbol [ key %key.3 374 12 15 ];
+    symbol [ LockGate %tmp.17 374 18 26 ];
+    %tmp.17 = getv ? :LockGate;
+    symbol [ keyFor %tmp.18 374 27 33 ];
+    %tmp.18 = getv function %tmp.17 :keyFor;
+    symbol [ UNLOCK_VEC_PEPPER %tmp.20 374 34 51 ];
+    %tmp.20 = getv ? :UNLOCK_VEC_PEPPER;
+    %tmp.21 = lgetv %code.2;
+    symbol [ code %tmp.21 374 53 57 ];
+    %tmp.22 = invoke %tmp.17 %tmp.18(%tmp.20, %tmp.21);
+    lputv %key.3 %tmp.22;
+    symbol [ key %key.3 374 12 15 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 375 8 ]
+    %tmp.23 = lgetv %logger;
+    symbol [ logger %tmp.23 375 8 14 ];
+    symbol [ debug %tmp.24 375 15 20 ];
+    %tmp.24 = getv function %tmp.23 :debug;
+    %tmp.25 = "id=\"";
+    symbol [ UNLOCK_VEC_IDS %tmp.27 375 31 45 ];
+    %tmp.27 = getv ? :UNLOCK_VEC_IDS;
+    %tmp.28 = lgetv %i.1;
+    symbol [ i %tmp.28 375 46 47 ];
+    %tmp.29 = agetv %tmp.27 %tmp.28;
+    %tmp.30 = add %tmp.25 %tmp.29;
+    %tmp.31 = "\" code=";
+    %tmp.32 = add %tmp.30 %tmp.31;
+    %tmp.33 = lgetv %code.2;
+    symbol [ code %tmp.33 375 64 68 ];
+    %tmp.34 = add %tmp.32 %tmp.33;
+    %tmp.35 = " key=";
+    %tmp.36 = add %tmp.34 %tmp.35;
+    %tmp.37 = lgetv %key.3;
+    symbol [ key %tmp.37 375 81 84 ];
+    %tmp.38 = add %tmp.36 %tmp.37;
+    invoke %tmp.23 %tmp.24(%tmp.38);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 376 8 ]
+    symbol [ Test %tmp.39 376 8 12 ];
+    %tmp.39 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.40 376 13 26 ];
+    %tmp.40 = getv function %tmp.39 :assertMessage;
+    %tmp.41 = lgetv %code.2;
+    symbol [ code %tmp.41 376 27 31 ];
+    symbol [ equals %tmp.42 376 32 38 ];
+    %tmp.42 = getv function %tmp.41 :equals;
+    symbol [ UNLOCK_VEC_CODES %tmp.44 376 39 55 ];
+    %tmp.44 = getv ? :UNLOCK_VEC_CODES;
+    %tmp.45 = lgetv %i.1;
+    symbol [ i %tmp.45 376 56 57 ];
+    %tmp.46 = agetv %tmp.44 %tmp.45;
+    %tmp.47 = invoke %tmp.41 %tmp.42(%tmp.46);
+    %tmp.48 = "request code ";
+    %tmp.49 = lgetv %code.2;
+    symbol [ code %tmp.49 377 30 34 ];
+    %tmp.50 = add %tmp.48 %tmp.49;
+    %tmp.51 = " != keygen ";
+    %tmp.52 = add %tmp.50 %tmp.51;
+    symbol [ UNLOCK_VEC_CODES %tmp.54 377 53 69 ];
+    %tmp.54 = getv ? :UNLOCK_VEC_CODES;
+    %tmp.55 = lgetv %i.1;
+    symbol [ i %tmp.55 377 70 71 ];
+    %tmp.56 = agetv %tmp.54 %tmp.55;
+    %tmp.57 = add %tmp.52 %tmp.56;
+    invoke %tmp.39 %tmp.40(%tmp.47, %tmp.57);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 378 8 ]
+    symbol [ Test %tmp.58 378 8 12 ];
+    %tmp.58 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.59 378 13 26 ];
+    %tmp.59 = getv function %tmp.58 :assertMessage;
+    %tmp.60 = lgetv %key.3;
+    symbol [ key %tmp.60 378 27 30 ];
+    symbol [ equals %tmp.61 378 31 37 ];
+    %tmp.61 = getv function %tmp.60 :equals;
+    symbol [ UNLOCK_VEC_KEYS %tmp.63 378 38 53 ];
+    %tmp.63 = getv ? :UNLOCK_VEC_KEYS;
+    %tmp.64 = lgetv %i.1;
+    symbol [ i %tmp.64 378 54 55 ];
+    %tmp.65 = agetv %tmp.63 %tmp.64;
+    %tmp.66 = invoke %tmp.60 %tmp.61(%tmp.65);
+    %tmp.67 = "unlock key ";
+    %tmp.68 = lgetv %key.3;
+    symbol [ key %tmp.68 379 28 31 ];
+    %tmp.69 = add %tmp.67 %tmp.68;
+    %tmp.70 = " != keygen ";
+    %tmp.71 = add %tmp.69 %tmp.70;
+    symbol [ UNLOCK_VEC_KEYS %tmp.73 379 50 65 ];
+    %tmp.73 = getv ? :UNLOCK_VEC_KEYS;
+    %tmp.74 = lgetv %i.1;
+    symbol [ i %tmp.74 379 66 67 ];
+    %tmp.75 = agetv %tmp.73 %tmp.74;
+    %tmp.76 = add %tmp.71 %tmp.75;
+    invoke %tmp.58 %tmp.59(%tmp.66, %tmp.76);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 380 8 ]
+    symbol [ Test %tmp.77 380 8 12 ];
+    %tmp.77 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.78 380 13 26 ];
+    %tmp.78 = getv function %tmp.77 :assertMessage;
+    symbol [ LockGate %tmp.80 380 27 35 ];
+    %tmp.80 = getv ? :LockGate;
+    symbol [ matches %tmp.81 380 36 43 ];
+    %tmp.81 = getv function %tmp.80 :matches;
+    symbol [ UNLOCK_VEC_PEPPER %tmp.83 380 44 61 ];
+    %tmp.83 = getv ? :UNLOCK_VEC_PEPPER;
+    %tmp.84 = lgetv %code.2;
+    symbol [ code %tmp.84 380 63 67 ];
+    %tmp.85 = lgetv %key.3;
+    symbol [ key %tmp.85 380 69 72 ];
+    symbol [ toLower %tmp.86 380 73 80 ];
+    %tmp.86 = getv function %tmp.85 :toLower;
+    %tmp.87 = invoke %tmp.85 %tmp.86();
+    %tmp.88 = invoke %tmp.80 %tmp.81(%tmp.83, %tmp.84, %tmp.87);
+    %tmp.89 = "and the watch reads back what a tester typed";
+    invoke %tmp.77 %tmp.78(%tmp.88, %tmp.89);
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_52_382_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_4_382_4_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 372 ]
+    %tmp.92 = lgetv %i.1;
+    symbol [ i %tmp.92 372 47 48 ];
+    %tmp.93 = add %tmp.92 1;
+    lputv %i.1 %tmp.93;
+    symbol [ i %i.1 372 47 48 ];
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_4_382_4_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_372_4_382_4_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 385 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_369_78_391_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_369_78_391_0_stop" ]
+    %h.4 = local;
+    symbol [ h %h.4 385 8 9 ];
+    symbol [ LockGate %tmp.95 385 12 20 ];
+    %tmp.95 = getv ? :LockGate;
+    symbol [ fnv1a64 %tmp.96 385 21 28 ];
+    %tmp.96 = getv function %tmp.95 :fnv1a64;
+    %tmp.97 = newa 0 Array<Number>;
+    symbol [ Array %tmp.97 385 35 40 ];
+    symbol [ Number %tmp.97 385 41 47 ];
+    %tmp.98 = invoke %tmp.95 %tmp.96(%tmp.97);
+    lputv %h.4 %tmp.98;
+    symbol [ h %h.4 385 8 9 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 386 4 ]
+    symbol [ Test %tmp.99 386 4 8 ];
+    %tmp.99 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.100 386 9 22 ];
+    %tmp.100 = getv function %tmp.99 :assertMessage;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_386_23_386_54_begin:
+    %tmp.101 = lgetv %h.4;
+    symbol [ h %tmp.101 386 23 24 ];
+    %tmp.102 = 0;
+    %tmp.103 = agetv %tmp.101 %tmp.102;
+    %tmp.104 = 0xcbf29ce4l;
+    %tmp.105 = eq %tmp.103 %tmp.104;
+    %tmp.106 = dup %tmp.105;
+    bf %tmp.106 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_386_46_386_54_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_386_46_386_54_true:
+    %tmp.107 = lgetv %h.4;
+    symbol [ h %tmp.107 386 46 47 ];
+    %tmp.108 = 1;
+    %tmp.109 = agetv %tmp.107 %tmp.108;
+    %tmp.110 = 0x84222325l;
+    %tmp.111 = eq %tmp.109 %tmp.110;
+    %tmp.112 = and %tmp.105 %tmp.111;
+    push %tmp.112;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_386_46_386_54_end:
+    %tmp.113 = phi [%tmp.106 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_386_23_386_54_begin] [%tmp.112 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_386_46_386_54_true] [%tmp.113 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_386_46_386_54_end];
+    %tmp.114 = "FNV offset basis";
+    invoke %tmp.99 %tmp.100(%tmp.113, %tmp.114);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 387 4 ]
+    symbol [ LockGate %tmp.116 387 8 16 ];
+    %tmp.116 = getv ? :LockGate;
+    symbol [ fnv1a64 %tmp.117 387 17 24 ];
+    %tmp.117 = getv function %tmp.116 :fnv1a64;
+    %tmp.118 = newa 1 Array<Number>;
+    symbol [ Array %tmp.118 387 32 37 ];
+    symbol [ Number %tmp.118 387 38 44 ];
+    %tmp.119 = 0;
+    %tmp.120 = dup %tmp.118;
+    %tmp.121 = aputv %tmp.120 0 %tmp.119;
+    %tmp.122 = invoke %tmp.116 %tmp.117(%tmp.121);
+    lputv %h.4 %tmp.122;
+    symbol [ h %h.4 387 4 5 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 388 4 ]
+    symbol [ Test %tmp.123 388 4 8 ];
+    %tmp.123 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.124 388 9 22 ];
+    %tmp.124 = getv function %tmp.123 :assertMessage;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_388_23_388_54_begin:
+    %tmp.125 = lgetv %h.4;
+    symbol [ h %tmp.125 388 23 24 ];
+    %tmp.126 = 0;
+    %tmp.127 = agetv %tmp.125 %tmp.126;
+    %tmp.128 = 0xaf63bd4cl;
+    %tmp.129 = eq %tmp.127 %tmp.128;
+    %tmp.130 = dup %tmp.129;
+    bf %tmp.130 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_388_46_388_54_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_388_46_388_54_true:
+    %tmp.131 = lgetv %h.4;
+    symbol [ h %tmp.131 388 46 47 ];
+    %tmp.132 = 1;
+    %tmp.133 = agetv %tmp.131 %tmp.132;
+    %tmp.134 = 0x8601b7dfl;
+    %tmp.135 = eq %tmp.133 %tmp.134;
+    %tmp.136 = and %tmp.129 %tmp.135;
+    push %tmp.136;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_388_46_388_54_end:
+    %tmp.137 = phi [%tmp.130 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_388_23_388_54_begin] [%tmp.136 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_388_46_388_54_true] [%tmp.137 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_388_46_388_54_end];
+    %tmp.138 = "FNV of one zero byte drifted: ";
+    %tmp.139 = lgetv %h.4;
+    symbol [ h %tmp.139 389 43 44 ];
+    %tmp.140 = 0;
+    %tmp.141 = agetv %tmp.139 %tmp.140;
+    symbol [ format %tmp.142 389 48 54 ];
+    %tmp.142 = getv function %tmp.141 :format;
+    %tmp.143 = "%08x";
+    %tmp.144 = invoke %tmp.141 %tmp.142(%tmp.143);
+    %tmp.145 = add %tmp.138 %tmp.144;
+    %tmp.146 = lgetv %h.4;
+    symbol [ h %tmp.146 389 65 66 ];
+    %tmp.147 = 1;
+    %tmp.148 = agetv %tmp.146 %tmp.147;
+    symbol [ format %tmp.149 389 70 76 ];
+    %tmp.149 = getv function %tmp.148 :format;
+    %tmp.150 = "%08x";
+    %tmp.151 = invoke %tmp.148 %tmp.149(%tmp.150);
+    %tmp.152 = add %tmp.145 %tmp.151;
+    invoke %tmp.123 %tmp.124(%tmp.137, %tmp.152);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 390 4 ]
+    %tmp.153 = true;
+    ret %tmp.153;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_369_78_391_0_stop:
+}
+[ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 394; test = true; @symbol_functiondef = [lockedFieldContributesNothing,394,9,38]; @symbol_param<0> = [logger,394,39,45]; @symbol_param<0>_type<0> = [Test,394,49,53]; @symbol_param<0>_type<1> = [Logger,394,54,60]; @symbol_return<0> = [Boolean,394,65,72]; ]
+function lockedFieldContributesNothing(logger as Test.Logger) as Boolean {
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_394_73_429_0_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 402 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_394_73_429_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_394_73_429_0_stop" ]
+    %was.1 = local;
+    symbol [ was %was.1 402 8 11 ];
+    symbol [ LockGate %tmp.2 402 14 22 ];
+    %tmp.2 = getv ? :LockGate;
+    symbol [ _unlocked %tmp.3 402 23 32 ];
+    %tmp.3 = getv %tmp.2 :_unlocked;
+    lputv %was.1 %tmp.3;
+    symbol [ was %was.1 402 8 11 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 403 4 ]
+    symbol [ LockGate %tmp.4 403 4 12 ];
+    %tmp.4 = getv self :LockGate;
+    %tmp.5 = false;
+    symbol [ _unlocked ? 403 13 22 ];
+    putv %tmp.4 :_unlocked %tmp.5;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 404 4 ]
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_394_73_429_0_start" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_394_73_429_0_stop" ]
+    %e.2 = local;
+    symbol [ e %e.2 404 8 9 ];
+    symbol [ FieldEngine %tmp.9 404 16 27 ];
+    %tmp.9 = getv ? :FieldEngine;
+    %tmp.10 = self;
+    symbol [ fieldCfg %tmp.11 404 28 36 ];
+    %tmp.11 = getv function %tmp.10 :fieldCfg;
+    %tmp.12 = invoke %tmp.10 %tmp.11();
+    %tmp.6 = newc %tmp.9 (%tmp.12);
+    lputv %e.2 %tmp.6;
+    symbol [ e %e.2 404 8 9 ];
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 405 4 ]
+    %tmp.13 = lgetv %e.2;
+    symbol [ e %tmp.13 405 4 5 ];
+    %tmp.14 = 60.0;
+    symbol [ timerS ? 405 6 12 ];
+    putv %tmp.13 :timerS %tmp.14;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 406 4 ]
+    for @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_406_4_410_4_for_test @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_406_4_410_4_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_406_4_410_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_406_4_410_4_for_init:
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_406_4_410_4_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_406_4_410_4_for_end" ]
+    %i.3 = local;
+    symbol [ i %i.3 406 13 14 ];
+    %tmp.15 = 0;
+    lputv %i.3 %tmp.15;
+    symbol [ i %i.3 406 13 14 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_406_4_410_4_for_test:
+    %tmp.16 = lgetv %i.3;
+    symbol [ i %tmp.16 406 20 21 ];
+    %tmp.17 = 30;
+    %tmp.18 = lt %tmp.16 %tmp.17;
+    bf %tmp.18 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_406_4_410_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_406_4_410_4_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_406_33_410_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 407 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_407_8_409_8_if_stmt:
+    symbol [ WingFoilDataField %tmp.20 407 12 29 ];
+    %tmp.20 = getv ? :WingFoilDataField;
+    symbol [ unlocked %tmp.21 407 30 38 ];
+    %tmp.21 = getv function %tmp.20 :unlocked;
+    %tmp.22 = invoke %tmp.20 %tmp.21();
+    bf %tmp.22 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_407_8_409_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_407_8_409_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_407_42_409_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 408 12 ]
+    %tmp.23 = lgetv %e.2;
+    symbol [ e %tmp.23 408 12 13 ];
+    symbol [ feed %tmp.24 408 14 18 ];
+    %tmp.24 = getv function %tmp.23 :feed;
+    %tmp.25 = 1.0;
+    %tmp.26 = 6.0;
+    %tmp.27 = 90.0;
+    %tmp.28 = 6.0;
+    symbol [ Position %tmp.29 408 40 48 ];
+    %tmp.29 = getm $.Toybox.Position;
+    symbol [ QUALITY_GOOD %tmp.30 408 49 61 ];
+    %tmp.30 = getv %tmp.29 :QUALITY_GOOD;
+    %tmp.31 = null;
+    invoke %tmp.23 %tmp.24(%tmp.25, %tmp.26, %tmp.27, %tmp.28, %tmp.30, %tmp.31);
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_407_42_409_8_stop:
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_407_8_409_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_407_8_409_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_406_33_410_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_406_4_410_4_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 406 ]
+    %tmp.34 = lgetv %i.3;
+    symbol [ i %tmp.34 406 28 29 ];
+    %tmp.35 = add %tmp.34 1;
+    lputv %i.3 %tmp.35;
+    symbol [ i %i.3 406 28 29 ];
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_406_4_410_4_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_406_4_410_4_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 411 4 ]
+    symbol [ Test %tmp.36 411 4 8 ];
+    %tmp.36 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.37 411 9 22 ];
+    %tmp.37 = getv function %tmp.36 :assertMessage;
+    %tmp.38 = lgetv %e.2;
+    symbol [ e %tmp.38 411 23 24 ];
+    symbol [ detector %tmp.39 411 25 33 ];
+    %tmp.39 = getv %tmp.38 :detector;
+    symbol [ flightCount %tmp.40 411 34 45 ];
+    %tmp.40 = getv %tmp.39 :flightCount;
+    %tmp.41 = 0;
+    %tmp.42 = eq %tmp.40 %tmp.41;
+    %tmp.43 = "no flight while locked";
+    invoke %tmp.36 %tmp.37(%tmp.42, %tmp.43);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 412 4 ]
+    symbol [ Test %tmp.44 412 4 8 ];
+    %tmp.44 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.45 412 9 22 ];
+    %tmp.45 = getv function %tmp.44 :assertMessage;
+    %tmp.46 = lgetv %e.2;
+    symbol [ e %tmp.46 412 23 24 ];
+    symbol [ detector %tmp.47 412 25 33 ];
+    %tmp.47 = getv %tmp.46 :detector;
+    symbol [ foilTimeS %tmp.48 412 34 43 ];
+    %tmp.48 = getv %tmp.47 :foilTimeS;
+    %tmp.49 = 0.001;
+    %tmp.50 = lt %tmp.48 %tmp.49;
+    %tmp.51 = "no foil time while locked";
+    invoke %tmp.44 %tmp.45(%tmp.50, %tmp.51);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 413 4 ]
+    symbol [ Test %tmp.52 413 4 8 ];
+    %tmp.52 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.53 413 9 22 ];
+    %tmp.53 = getv function %tmp.52 :assertMessage;
+    %tmp.54 = lgetv %e.2;
+    symbol [ e %tmp.54 413 23 24 ];
+    symbol [ detector %tmp.55 413 25 33 ];
+    %tmp.55 = getv %tmp.54 :detector;
+    symbol [ currentFlightM %tmp.56 413 34 48 ];
+    %tmp.56 = getv %tmp.55 :currentFlightM;
+    %tmp.57 = 0.001;
+    %tmp.58 = lt %tmp.56 %tmp.57;
+    %tmp.59 = "no distance while locked";
+    invoke %tmp.52 %tmp.53(%tmp.58, %tmp.59);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 414 4 ]
+    symbol [ Test %tmp.60 414 4 8 ];
+    %tmp.60 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.61 414 9 22 ];
+    %tmp.61 = getv function %tmp.60 :assertMessage;
+    %tmp.62 = lgetv %e.2;
+    symbol [ e %tmp.62 414 23 24 ];
+    symbol [ records %tmp.63 414 25 32 ];
+    %tmp.63 = getv %tmp.62 :records;
+    symbol [ best2sMps %tmp.64 414 33 42 ];
+    %tmp.64 = getv %tmp.63 :best2sMps;
+    %tmp.65 = 0.001;
+    %tmp.66 = lt %tmp.64 %tmp.65;
+    %tmp.67 = "no speed record while locked";
+    invoke %tmp.60 %tmp.61(%tmp.66, %tmp.67);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 415 4 ]
+    symbol [ Test %tmp.68 415 4 8 ];
+    %tmp.68 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.69 415 9 22 ];
+    %tmp.69 = getv function %tmp.68 :assertMessage;
+    %tmp.70 = lgetv %e.2;
+    symbol [ e %tmp.70 415 23 24 ];
+    symbol [ tickCount %tmp.71 415 25 34 ];
+    %tmp.71 = getv function %tmp.70 :tickCount;
+    %tmp.72 = invoke %tmp.70 %tmp.71();
+    %tmp.73 = 0;
+    %tmp.74 = eq %tmp.72 %tmp.73;
+    %tmp.75 = "not even a tick";
+    invoke %tmp.68 %tmp.69(%tmp.74, %tmp.75);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 419 4 ]
+    symbol [ LockGate %tmp.76 419 4 12 ];
+    %tmp.76 = getv self :LockGate;
+    %tmp.77 = true;
+    symbol [ _unlocked ? 419 13 22 ];
+    putv %tmp.76 :_unlocked %tmp.77;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 420 4 ]
+    for @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_420_4_424_4_for_test @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_420_4_424_4_for_incr @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_420_4_424_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_420_4_424_4_for_init:
+    [ "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_420_4_424_4_for_begin" "_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_420_4_424_4_for_end" ]
+    %i.4 = local;
+    symbol [ i %i.4 420 13 14 ];
+    %tmp.78 = 0;
+    lputv %i.4 %tmp.78;
+    symbol [ i %i.4 420 13 14 ];
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_420_4_424_4_for_test:
+    %tmp.79 = lgetv %i.4;
+    symbol [ i %tmp.79 420 20 21 ];
+    %tmp.80 = 30;
+    %tmp.81 = lt %tmp.79 %tmp.80;
+    bf %tmp.81 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_420_4_424_4_for_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_420_4_424_4_for_begin:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_420_33_424_4_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 421 8 ]
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_421_8_423_8_if_stmt:
+    symbol [ WingFoilDataField %tmp.83 421 12 29 ];
+    %tmp.83 = getv ? :WingFoilDataField;
+    symbol [ unlocked %tmp.84 421 30 38 ];
+    %tmp.84 = getv function %tmp.83 :unlocked;
+    %tmp.85 = invoke %tmp.83 %tmp.84();
+    bf %tmp.85 @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_421_8_423_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_421_8_423_8_if_true:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_421_42_423_8_start:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 422 12 ]
+    %tmp.86 = lgetv %e.2;
+    symbol [ e %tmp.86 422 12 13 ];
+    symbol [ feed %tmp.87 422 14 18 ];
+    %tmp.87 = getv function %tmp.86 :feed;
+    %tmp.88 = 1.0;
+    %tmp.89 = 6.0;
+    %tmp.90 = 90.0;
+    %tmp.91 = 6.0;
+    symbol [ Position %tmp.92 422 40 48 ];
+    %tmp.92 = getm $.Toybox.Position;
+    symbol [ QUALITY_GOOD %tmp.93 422 49 61 ];
+    %tmp.93 = getv %tmp.92 :QUALITY_GOOD;
+    %tmp.94 = null;
+    invoke %tmp.86 %tmp.87(%tmp.88, %tmp.89, %tmp.90, %tmp.91, %tmp.93, %tmp.94);
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_421_42_423_8_stop:
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_421_8_423_8_if_end;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_421_8_423_8_if_end:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_420_33_424_4_stop:
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_420_4_424_4_for_incr:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 420 ]
+    %tmp.97 = lgetv %i.4;
+    symbol [ i %tmp.97 420 28 29 ];
+    %tmp.98 = add %tmp.97 1;
+    lputv %i.4 %tmp.98;
+    symbol [ i %i.4 420 28 29 ];
+    goto @_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_420_4_424_4_for_test;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_420_4_424_4_for_end:
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 425 4 ]
+    symbol [ Test %tmp.99 425 4 8 ];
+    %tmp.99 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.100 425 9 22 ];
+    %tmp.100 = getv function %tmp.99 :assertMessage;
+    %tmp.101 = lgetv %e.2;
+    symbol [ e %tmp.101 425 23 24 ];
+    symbol [ detector %tmp.102 425 25 33 ];
+    %tmp.102 = getv %tmp.101 :detector;
+    symbol [ flightCount %tmp.103 425 34 45 ];
+    %tmp.103 = getv %tmp.102 :flightCount;
+    %tmp.104 = 1;
+    %tmp.105 = eq %tmp.103 %tmp.104;
+    %tmp.106 = "unlocking starts the engine";
+    invoke %tmp.99 %tmp.100(%tmp.105, %tmp.106);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 426 4 ]
+    symbol [ Test %tmp.107 426 4 8 ];
+    %tmp.107 = getm $.Toybox.Test;
+    symbol [ assertMessage %tmp.108 426 9 22 ];
+    %tmp.108 = getv function %tmp.107 :assertMessage;
+    %tmp.109 = lgetv %e.2;
+    symbol [ e %tmp.109 426 23 24 ];
+    symbol [ detector %tmp.110 426 25 33 ];
+    %tmp.110 = getv %tmp.109 :detector;
+    symbol [ foilTimeS %tmp.111 426 34 43 ];
+    %tmp.111 = getv %tmp.110 :foilTimeS;
+    %tmp.112 = 20.0;
+    %tmp.113 = gt %tmp.111 %tmp.112;
+    %tmp.114 = "and the foil time with it";
+    invoke %tmp.107 %tmp.108(%tmp.113, %tmp.114);
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 427 4 ]
+    symbol [ LockGate %tmp.115 427 4 12 ];
+    %tmp.115 = getv self :LockGate;
+    %tmp.116 = lgetv %was.1;
+    symbol [ was %tmp.116 427 25 28 ];
+    symbol [ _unlocked ? 427 13 22 ];
+    putv %tmp.115 :_unlocked %tmp.116;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 428 4 ]
+    %tmp.117 = true;
+    ret %tmp.117;
+_Users_majl_GitHub_WingFoil_garmin_field_tests_FieldTests_mc_394_73_429_0_stop:
+}
 [ @file = "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc"; @line = 1; ]
 <init> {
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 348 6 ]
+    %tmp.118 = newa 8;
+    %tmp.119 = 0x01;
+    %tmp.120 = dup %tmp.118;
+    %tmp.121 = aputv %tmp.120 0 %tmp.119;
+    %tmp.122 = 0x23;
+    %tmp.123 = dup %tmp.121;
+    %tmp.124 = aputv %tmp.123 1 %tmp.122;
+    %tmp.125 = 0x45;
+    %tmp.126 = dup %tmp.124;
+    %tmp.127 = aputv %tmp.126 2 %tmp.125;
+    %tmp.128 = 0x67;
+    %tmp.129 = dup %tmp.127;
+    %tmp.130 = aputv %tmp.129 3 %tmp.128;
+    %tmp.131 = 0x89;
+    %tmp.132 = dup %tmp.130;
+    %tmp.133 = aputv %tmp.132 4 %tmp.131;
+    %tmp.134 = 0xab;
+    %tmp.135 = dup %tmp.133;
+    %tmp.136 = aputv %tmp.135 5 %tmp.134;
+    %tmp.137 = 0xcd;
+    %tmp.138 = dup %tmp.136;
+    %tmp.139 = aputv %tmp.138 6 %tmp.137;
+    %tmp.140 = 0xef;
+    %tmp.141 = dup %tmp.139;
+    %tmp.142 = aputv %tmp.141 7 %tmp.140;
+    putv self :UNLOCK_VEC_PEPPER %tmp.142;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 349 6 ]
+    %tmp.143 = newa 3;
+    %tmp.144 = "wingfoil";
+    %tmp.145 = dup %tmp.143;
+    %tmp.146 = aputv %tmp.145 0 %tmp.144;
+    %tmp.147 = "ac915d426451c88e8ea691fa412f9af9c21b4d12";
+    %tmp.148 = dup %tmp.146;
+    %tmp.149 = aputv %tmp.148 1 %tmp.147;
+    %tmp.150 = "";
+    %tmp.151 = dup %tmp.149;
+    %tmp.152 = aputv %tmp.151 2 %tmp.150;
+    putv self :UNLOCK_VEC_IDS %tmp.152;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 350 6 ]
+    %tmp.153 = newa 3;
+    %tmp.154 = "PTMDBDNY";
+    %tmp.155 = dup %tmp.153;
+    %tmp.156 = aputv %tmp.155 0 %tmp.154;
+    %tmp.157 = "N3J986JP";
+    %tmp.158 = dup %tmp.156;
+    %tmp.159 = aputv %tmp.158 1 %tmp.157;
+    %tmp.160 = "SFS9SS44";
+    %tmp.161 = dup %tmp.159;
+    %tmp.162 = aputv %tmp.161 2 %tmp.160;
+    putv self :UNLOCK_VEC_CODES %tmp.162;
+[ "/Users/majl/GitHub/WingFoil/garmin/field/tests/FieldTests.mc" 351 6 ]
+    %tmp.163 = newa 3;
+    %tmp.164 = "MWTSPKVB";
+    %tmp.165 = dup %tmp.163;
+    %tmp.166 = aputv %tmp.165 0 %tmp.164;
+    %tmp.167 = "MJFJ4PD4";
+    %tmp.168 = dup %tmp.166;
+    %tmp.169 = aputv %tmp.168 1 %tmp.167;
+    %tmp.170 = "1PT5WKZK";
+    %tmp.171 = dup %tmp.169;
+    %tmp.172 = aputv %tmp.171 2 %tmp.170;
+    putv self :UNLOCK_VEC_KEYS %tmp.172;
 }
