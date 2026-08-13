@@ -24,6 +24,7 @@ struct SessionRowView: View {
                     if let example = SessionDisplay.exampleBadge(row) {
                         ExampleBadge(text: example, font: .caption2)
                     }
+                    if row.isProvisional { ProvisionalBadge() }
                     Text(SessionDisplay.badge(row))
                         .font(.caption2.weight(.semibold))
                         .padding(.horizontal, 7)
@@ -35,6 +36,12 @@ struct SessionRowView: View {
                 Text("\(Fmt.date(row.startDate)) · \(Fmt.duration(row.durationS))")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+
+                if let note = SessionDisplay.provisionalNote(row) {
+                    Text(note)
+                        .font(.caption2)
+                        .foregroundStyle(Color.blue)
+                }
 
                 HStack(spacing: 12) {
                     metric("figure.wave", Fmt.pct(row.foilPct), "foil")

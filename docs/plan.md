@@ -93,16 +93,20 @@ WingFoil/
 │   │                 detectors/PumpDetector.mc stays app-only — accel is device-app-only) ·
 │   │                fit/FitFields.mc · ui/{PageSpeed,PageFlight,PageRecords,PageTurnsPump,
 │   │                RecordingDelegate,SummaryView,WindMenu}.mc · alerts/AlertManager.mc ·
-│   │                settings/AppSettings.mc · comm/PhoneLink.mc (phase-5 stub)
+│   │                settings/AppSettings.mc · comm/PhoneLink.mc (phase-5 companion link)
 │   └── tests/       Toybox.Test units
 ├── ios/
-│   ├── WingFoil.xcodeproj + WingFoil/ (thin SwiftUI app target: Features/{Library,
-│   │   SessionDetail,Records,Trends,Gear,Spots,Import,Settings})
+│   ├── WingFoil.xcodeproj (xcodegen from project.yml — edit THAT, not the pbxproj)
+│   ├── WingFoil/    thin SwiftUI app target: Features/{Library,SessionDetail,Records,Trends,
+│   │                Gear,Spots,Import,Settings,Companion} · Companion/ (the repo's ONLY
+│   │                `import ConnectIQ` — see ADR-013)
 │   └── WingFoilKit/ local SPM package: Models · FitImport (FitFileParser) · GPXImport (CoreGPX)
-│                    · AnalysisEngine (pure Swift) · IcuClient · WindKit · Persistence (GRDB)
+│                    · AnalysisEngine (pure Swift, incl. HrCost) · IcuClient · WindKit
+│                    · Persistence (GRDB) · Presentation · Companion (SDK-free wire contract)
 │                    · Tests (golden-file tests vs ../../fixtures)
 ├── lab/             Python (uv): src/wingfoil_lab/{parse,filters,flight,turns,wind,gp3s,pump,
-│                    goldens}.py · tools/{clip_fit,compare_speedreader}.py · notebooks/ · tests/
+│                    goldens,hrcost,jump}.py · tools/{clip_fit,make_goldens,make_unlock,
+│                    scrub_fit,hr_report,jump_report}.py · notebooks/ · tests/
 └── fixtures/        sessions/{windsurf-native,ciq,other-apps,gpx,accel}/ · clips/ (60–180 s
                      simulator-replay cuts) · goldens/*.expected.json · speedreader/ exports ·
                      README.md (provenance + Jan's per-session ground-truth table)
@@ -112,7 +116,7 @@ WingFoil/
 
 **Modules:** `SessionController` (state machine IDLE→GPS_WAIT→RECORDING⇄PAUSED→SAVING→SUMMARY; owns session, laps, SensorLogger) · `MetricsEngine` (1 Hz tick from position callback; gates samples on `Position.Quality`; feeds buffers/detectors/FIT/UI) · `RingBuffer` (O(1) windowed sums: 2 s, 10 s, ~900-sample cumDist, ~180-sample local-XY) · `SpeedRecords` (live best 2s/10s/5×10s greedy top-5, 500 m/NM two-pointer) · `AlphaLite` (approximate alpha-500: armed for 120 s after a ≥90° turn, per-second two-pointer proximity ≤50 m test; displayed `~`-prefixed) · `FlightDetector` (hysteresis: entry ≥ `foilEntrySpeed` for `entryHold` s → ON; exit ≤ `foilExitSpeed` for `exitHold` s → OFF; < `minFlight` s discarded; emits laps) · `TurnDetector` (unwrapped 1 Hz COG: net ≥60° within ≤8 s, peak ≥25°/s, only on/near foil; score = minSpeed/entrySpeed; success = score ≥70% AND stayed above exit speed; tack/jibe only when wind axis known) · `PumpDetector` (25 Hz accel magnitude → FIR band-pass ~0.5–2.5 Hz → peak pick w/ prominence + 400 ms refractory; **live counter armed only while OFF_FOIL** for chop rejection — in-flight pumping analyzed later on the phone from the raw accel stream; attempt = strokes until ON_FOIL within 5 s (success) or 10 s silence/speed collapse (fail)) · `FitFields` (sole `setData` caller) · `AlertManager` (vibe profiles, 5 s debounce) · `AppSettings` (hot-reload via `onSettingsChanged`).
 
-**Live on watch:** speed/distance/HR/GPS-quality, foil state + foil time/% + flight count/timer/longest, best 2s/10s/5×10s/500 m (+NM flag-gated), turn count + last score (+T/J when wind set), pump strokes + attempts/successes, ~alpha. **Deferred to phone:** exact alpha/1 h/full GP3S filtering, wind estimation + turn re-classification + port/starboard, turn minima on hybrid speed, full pump/takeoff analysis from raw accel + HR cost.
+**Live on watch:** speed/distance/HR/GPS-quality, foil state + foil time/% + flight count/timer/longest, best 2s/10s/5×10s/500 m (+NM flag-gated), turn count + last score (+T/J when wind set), pump strokes + attempts/successes, ~alpha, **takeoff HR cost** (last takeoff, +bpm — published when the 30 s peak window closes, not at takeoff, because optical HR trails the effort by ~20 s; absent rather than 0 when HR is missing or the rise is under 5 bpm). **Deferred to phone:** exact alpha/1 h/full GP3S filtering, wind estimation + turn re-classification + port/starboard, turn minima on hybrid speed, full pump/takeoff analysis from raw accel, and the full HR-cost model (per-takeoff events, fatigue bins, pumping-vs-cruising, recovery half-times, each with its coverage).
 
 **FIT developer-field schema** (contract in `docs/fit-schema.md`; speeds uint16 cm/s):
 - **RECORD (6 B/s):** `foil_state`(0: uint8 enum off/pumping/flying, chart) · `flight_index`(1: uint16) · `pump_cadence`(2: uint8 spm, chart) · `turn_marker`(3: uint8 enum) · `tick`(4: uint8 rolling — forces 1 Hz records if smart recording interferes).
@@ -134,7 +138,7 @@ WingFoil/
 
 Alerts via vibration: 2s PB, longest flight, turn success/fail, takeoff success, optional time/distance interval. Summary view after save.
 
-**Settings (GCM):** `foilEntrySpeed` 12 km/h · `foilExitSpeed` 8 · `entryHold` 2 s · `exitHold` 3 s · `minFlightDuration` 5 s · `speedUnit` km/h|kn · `sport` 43|44|other · `windDirection` · `gnssMode` · `turnSuccessPct` 70 · `pumpDetection` on · `rawAccelLogging` on · per-alert toggles · `alertIntervalMin`/`alertIntervalKm` (0 = off) · `autoPause` (off) + `autoPauseDelayS` 5 s · `showLabels` (on — off leaves cells showing the glyph alone) · the 36 data-screen keys above. Recording: 1 s, multiband, never SatIQ; document watch "Data Recording = Every Second".
+**Settings (GCM):** `foilEntrySpeed` 12 km/h · `foilExitSpeed` 8 · `entryHold` 2 s · `exitHold` 3 s · `minFlightDuration` 5 s · `speedUnit` km/h|kn · `sport` 43|44|other · `windDirection` · `gnssMode` · `turnSuccessPct` 70 · `pumpDetection` on · `rawAccelLogging` on · per-alert toggles · `alertIntervalMin`/`alertIntervalKm` (0 = off) · `autoPause` (off) + `autoPauseDelayS` 5 s · `showLabels` (on — off leaves cells showing the glyph alone) · `phonePush` (on — the phase-5 summary to the companion app) · the 36 data-screen keys above. Recording: 1 s, multiband, never SatIQ; document watch "Data Recording = Every Second".
 
 **Auto-pause** (`source/session/AutoPause.mc`, off by default): speed under 1.0 m/s for `autoPauseDelayS` → `session.stop()` + PAUSED banner; the first sample at or above 1.0 m/s resumes. It only ever undoes a pause it caused — a manual pause calls `reset()` and stays put.
 
@@ -144,7 +148,7 @@ Alerts via vibration: 2s PB, longest flight, turn success/fail, takeoff success,
 - **Analysis pipeline** (pure functions, golden-tested): parse (FIT/GPX → RawTrack + `SourceCapabilities`) → clean (GP3S gates where channels exist, local-meter projection, hybrid speed channels, gap marking) → segment flights (same semantics as watch; watch laps = hints, phone wins) → detect turns → estimate wind (histogram + prior + user override) → classify turns (tack/jibe, bear-away rejection, port/starboard) → GP3S records (with window provenance for map highlighting) → takeoff/pump analysis (incl. in-flight pumping; degrades by source) → summarize (+watch-vs-phone divergence report).
 - **Input classes:** (a) our CIQ FITs = everything; (b) native Windsurf FITs (Jan's 9) = all but pump (speed-pattern-only/omitted); (c) GPX = degraded, records badged "uncertified".
 - **Features:** Library (rows carry a cached track thumbnail + speed sparkline + outcome tally) · Session Detail (MapKit track colored by phase/speed, record-window glow, Swift Charts speed timeline w/ flight bands + turn markers + pump subchart, divergence banner, **replay scrubber** whose playhead is shared by chart and map so tapping either moves both, **share card** composer) · Records (all-time/per-spot/per-gear, kn; medal by record freshness, confetti + haptic on a new all-time PB) · Trends (foil %, longest flight, turn success, pumps-to-takeoff, port/starboard) · Gear · Spots (auto-cluster + wind roses) · Import (icu polling w/ Keychain key; Files/share-sheet FIT/GPX/ZIP; GDPR nested-ZIP backfill with sport sniff + dedupe + progress) · Wind (Open-Meteo enrich + estimator reconcile) · **Help** (plain-language explanation of every metric, deep-linked from a `?` on the card that shows it) · **Widgets** (last session + weekly foil time; see ADR-011 on the app group) · Settings (thresholds mirroring `docs/algorithms.md`, re-analyze button, attribution).
-- **Phase 5 companion link (bounded):** watch→phone one-shot summary ≤10 KB (instant card, reconciled by dedupe key when FIT arrives) + phone→watch wind push. All Info.plist/GCM traps as documented.
+- **Phase 5 companion link (BUILT, BLE hop unverified — ADR-013):** watch→phone one-shot summary, measured **192 B / 21 keys** against a 1 KB budget (the ≤10 KB ceiling was never the target); a newest-wins pending slot when the phone is unreachable; the card lands as a **provisional** session row that the FIT later replaces in place, through the ingestor's existing ±60 s dedupe rule; phone→watch wind push is a **manual** action for now. SDK (`connectiq-companion-app-sdk-ios` 1.8.0, SPM binary target) lives in the app target only, behind `CompanionLink` in WingFoilKit, so the kit builds and tests with no framework present. Two fenix 7 traps documented in `PhoneLink.mc`: `registerForPhoneAppMessageErrors` bricks those devices despite `has` returning true, and a `Lang.Method` bound to a module wedges the same call.
 
 ### 3.4 Algorithm strategy
 
@@ -157,7 +161,7 @@ Tune in Python on real data → port to Swift (authoritative) → approximate in
 - **Phase 2 — Turns & wind (needs P1/L1):** L turn+wind tuning on labeled sessions; P stages 4–6 + Open-Meteo + turn UI; W TurnDetector, wind menu, transition alerts, Page 4. *Accept: counts within ±1 of Jan's logs on 3+ sessions; wind axis ±20°; scores match feel.*
 - **Phase 3 — Records complete + takeoff/pump (needs phase-1 accel fixtures):** L pump detection on wrist-accel corpus; P full GP3S (alpha/NM/1 h) + takeoff analysis + UI; W PumpDetector live, 5×10s/500 m/NM/AlphaLite, Page 3, remaining session fields. *Accept: pumps-to-takeoff ±2 strokes on ≥80% of verified attempts; alpha/500 m within tolerance of Speedreader; watch live within ±0.2 kn of phone.*
 - **Phase 4 — Library depth (needs P1, independent of W):** gear, spots, trends, PB history, GDPR bulk backfill, divergence banner, optional Apple Health write. *Accept: full-history backfill clean, zero duplicates; all-time PBs across source classes.*
-- **Phase 5 — Companion link (needs W1+P1 stable):** instant summary card + wind push. *Accept: card <60 s after save, numbers match later full analysis; wind set on phone shows on watch.*
+- **Phase 5 — Companion link — BUILT, acceptance PENDING on hardware:** instant summary card + wind push. Everything either side of the BLE hop is unit-tested (watch 54/54, kit 181); the hop itself needs a paired watch, GCM and a real iPhone. *Accept (still to prove on the water): card <60 s after save, numbers match the later full analysis, wind set on the phone shows on the watch, and `Activity.Info.elapsedTime` equals the FIT's `total_elapsed_time` on a session WITH a pause — the dedupe key rests on that.*
 - **Phase 6 — Store-readiness (optional):** Beta App → store listing, intervals.icu OAuth2, MIP-variant QA, DE localization, pricing decision.
 
 ## 5. Verification

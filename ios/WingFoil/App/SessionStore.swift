@@ -614,6 +614,102 @@ final class SessionStore {
         await refreshPersonalBests(celebrate: false)
     }
 
+    // MARK: - Companion link (phase 5)
+
+    /// The watch link. Concrete rather than `any CompanionLink` because the app is also
+    /// the only place that does the two things the protocol deliberately leaves out —
+    /// sending the rider to Garmin Connect to pick a watch, and reading the answer back
+    /// off a URL. Everything else goes through the protocol, which is what keeps the
+    /// payload rules testable in WingFoilKit with no framework in sight.
+    let companion = ConnectIQCompanionLink()
+    private(set) var companionState: CompanionLinkState = .noDevice
+    /// When the last card arrived. The settings row shows it, because "it says ready" and
+    /// "something has actually come through" are different facts.
+    var lastCardAt: Date? {
+        get { UserDefaults.standard.object(forKey: "lastCompanionCard") as? Date }
+        set { UserDefaults.standard.set(newValue, forKey: "lastCompanionCard") }
+    }
+
+    /// The wind the rider last pushed, remembered so the next push starts where the last
+    /// one left off (the wind at a spot rarely changes by 180° between sessions).
+    var windToSend: Int {
+        get {
+            let stored = UserDefaults.standard.object(forKey: "windToSend") as? Int
+            return stored ?? 225
+        }
+        set { UserDefaults.standard.set(newValue, forKey: "windToSend") }
+    }
+
+    /// Runs for the life of the app: one `for await` over every card the watch sends.
+    /// Cards are already validated when they get here — an invalid one never leaves the
+    /// adapter — so the only thing that can fail is the database.
+    func watchForCompanionCards() async {
+        refreshCompanionState()
+        for await card in companion.summaries() {
+            await receive(card)
+        }
+    }
+
+    private func receive(_ card: CompanionSummary) async {
+        do {
+            switch try await ingestor.ingest(card: card) {
+            case .provisional:
+                status = "Session received from your watch — the recording follows later"
+            case .refreshed:
+                status = "Updated from your watch"
+            case .alreadyAnalysed:
+                // The FIT beat the card. Nothing changed that is worth a line of status.
+                break
+            }
+            lastCardAt = Date()
+            await load()
+        } catch {
+            errorMessage = "Could not store the session your watch sent: \(error)"
+        }
+    }
+
+    func refreshCompanionState() {
+        companion.refresh()
+        companionState = companion.state
+    }
+
+    /// Hands over to Garmin Connect; the answer comes back through `handleCompanionURL`.
+    func chooseWatch() {
+        companion.chooseDevice()
+    }
+
+    func forgetWatch() {
+        companion.forgetDevice()
+        companionState = companion.state
+    }
+
+    /// True when the URL was Garmin Connect returning the rider's device choice — so the
+    /// app entry point knows not to try importing it as a FIT.
+    func handleCompanionURL(_ url: URL) -> Bool {
+        guard companion.handle(url: url) else { return false }
+        companionState = companion.state
+        status = companionState.headline
+        return true
+    }
+
+    /// Manual by decision (docs/decisions.md ADR-013): an automatic push needs this app
+    /// awake at the moment a session starts, and a wind axis that lands mid-session
+    /// relabels every turn before it. Automatic can come once the link is proven on water.
+    func sendWindToWatch(_ degreesFrom: Int) async {
+        do {
+            try await companion.sendWind(degreesFrom: degreesFrom)
+            windToSend = degreesFrom
+            status = degreesFrom == CompanionWind.clear
+                ? "Wind direction cleared on the watch"
+                : "Sent \(degreesFrom)° to the watch"
+        } catch let error as CompanionLinkError {
+            errorMessage = error.riderMessage
+        } catch {
+            errorMessage = "Could not send the wind direction: \(error)"
+        }
+        refreshCompanionState()
+    }
+
     // MARK: - Credentials
 
     /// Keychain-backed, mirrored into observable state so SwiftUI tracks changes. In DEBUG

@@ -270,7 +270,7 @@ import Testing
     }
 
     @Test func migrationListNamesEveryRegisteredMigration() throws {
-        #expect(AppDatabase.migrationNames == ["v1", "v2", "v3"])
+        #expect(AppDatabase.migrationNames == ["v1", "v2", "v3", "v4"])
         let queue = try DatabaseQueue()
         _ = try AppDatabase(queue)
         let applied = try queue.read { db in try AppDatabase.migrator.appliedMigrations(db) }

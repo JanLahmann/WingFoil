@@ -31,8 +31,15 @@ struct WingFoilApp: App {
                     await store.refreshDerived()
                     await store.nameSpots()
                 }
-                // Share sheet / "Open in WingFoil" hands us a FIT or a ZIP.
+                // The watch's session cards, for as long as the app is alive. A separate
+                // task from the load above because it never finishes: it is a stream, not
+                // a step, and it must not delay the library appearing.
+                .task { await store.watchForCompanionCards() }
+                // Two kinds of URL land here: Garmin Connect returning the watch the rider
+                // picked, and the share sheet handing us a FIT or a ZIP. The companion
+                // link answers only on its own scheme, so it gets first refusal.
                 .onOpenURL { url in
+                    guard !store.handleCompanionURL(url) else { return }
                     Task { await store.importPicked(urls: [url]) }
                 }
         }

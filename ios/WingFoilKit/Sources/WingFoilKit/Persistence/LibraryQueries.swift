@@ -138,9 +138,16 @@ public struct LibraryStore: Sendable {
     /// the one place every aggregate goes through: Records, Trends, the week histogram.
     /// A borrowed session must never appear in a number that claims to be about the rider,
     /// and "remember to filter it" in six call sites is not a plan.
+    ///
+    /// A provisional session — the watch's BLE card, its FIT not synced yet — is excluded
+    /// for a different reason and by the same mechanism: its numbers are the *watch's*
+    /// arithmetic, not this engine's, and a trend line that mixes the two is a line about
+    /// nothing. It has no `record_effort` rows either, so it could never hold a record.
+    /// The exclusion is temporary by construction: when the FIT lands, `SessionIngestor`
+    /// fills the same row with real analysis and clears the flag.
     static func clause(_ filter: LibraryFilter, alias: String) -> (join: String, where: String,
                                                                    args: StatementArguments) {
-        var conditions: [String] = ["\(alias).isExample = 0"]
+        var conditions: [String] = ["\(alias).isExample = 0", "\(alias).isProvisional = 0"]
         var args = StatementArguments()
         var join = ""
         if let gearId = filter.gearId {
@@ -254,7 +261,8 @@ public struct LibraryStore: Sendable {
             return try gear.map { item in
                 let rows = try SessionRow.fetchAll(db, sql: """
                     SELECT s.* FROM session s JOIN session_gear sg ON sg.sessionId = s.id
-                    WHERE sg.gearId = ? AND s.isExample = 0 ORDER BY s.startDate
+                    WHERE sg.gearId = ? AND s.isExample = 0 AND s.isProvisional = 0
+                    ORDER BY s.startDate
                     """, arguments: [item.id])
                 return Self.aggregate(item, rows: rows)
             }

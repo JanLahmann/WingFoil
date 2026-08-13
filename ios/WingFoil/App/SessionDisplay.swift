@@ -58,6 +58,14 @@ enum SessionDisplay {
         row.isExample ? "EXAMPLE" : nil
     }
 
+    /// The line under a row that arrived over Bluetooth and has no recording yet. Said in
+    /// full words rather than hinted at with a colour, because "these numbers came from
+    /// the watch and will be replaced" is not something a rider can be expected to infer
+    /// from a badge — and the numbers on the row look exactly like any other session's.
+    static func provisionalNote(_ row: SessionRow) -> String? {
+        row.isProvisional ? "From your watch — the recording has not synced yet" : nil
+    }
+
     /// a = our CIQ FIT (everything) · b = native Doppler FIT · c = degraded source.
     static func sourceClassNote(_ sourceClass: String) -> String {
         switch sourceClass {
@@ -84,6 +92,21 @@ struct ExampleBadge: View {
             .background(Color.orange.opacity(0.18), in: .capsule)
             .foregroundStyle(Color.orange)
             .accessibilityLabel("Example session, not your data")
+    }
+}
+
+/// The "waiting for the recording" capsule. Blue and lower-key than the example badge:
+/// this session IS the rider's, so it is not a disclaimer, it is a progress note.
+struct ProvisionalBadge: View {
+    var body: some View {
+        Label("WATCH", systemImage: "antenna.radiowaves.left.and.right")
+            .font(.caption2.weight(.bold))
+            .tracking(0.5)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(Color.blue.opacity(0.16), in: .capsule)
+            .foregroundStyle(Color.blue)
+            .accessibilityLabel("Sent by your watch, recording not synced yet")
     }
 }
 
