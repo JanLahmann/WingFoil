@@ -67,7 +67,7 @@ module PageModel {
 
     // ---- the shipped five pages, as data ----
     var DEF_LAYOUT as Array<Number> = [
-        LAYOUT_HERO, LAYOUT_GRID4, LAYOUT_RECORDS, LAYOUT_TURNS, LAYOUT_CLOCK, LAYOUT_OFF
+        LAYOUT_HERO, LAYOUT_GRID4, LAYOUT_RECORDS, LAYOUT_TURNS, LAYOUT_CLOCK, LAYOUT_TIMELINE
     ];
     var DEF_SLOTS as Array<Array<Number> > = [
         [M_SPEED, M_FLIGHT_TIMER, M_HR, M_NONE, M_NONE],
