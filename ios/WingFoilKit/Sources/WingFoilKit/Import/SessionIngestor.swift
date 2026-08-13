@@ -12,6 +12,9 @@ public enum ImportSource: String, Sendable, CaseIterable {
     /// The FIT bundled with the app (`ExampleSession`). The only source that sets
     /// `SessionRow.isExample`, and the only one a later real import can override.
     case example
+    /// The watch's BLE card (phase 5, `CompanionSummary`). The only source that carries
+    /// no FIT, so the only one that can leave a row `isProvisional`.
+    case watch
 }
 
 public enum IngestOutcome: Sendable {
@@ -103,14 +106,20 @@ public struct SessionIngestor: Sendable {
         }
         let duration = last.t - first.t
 
-        if let existing = try await duplicate(startDate: startDate, durationS: duration,
-                                              icuActivityId: icuActivityId) {
+        let existing = try await duplicate(startDate: startDate, durationS: duration,
+                                          icuActivityId: icuActivityId)
+        if let existing, !existing.isProvisional {
             let merged = try await note(existing, source: source, icuActivityId: icuActivityId)
             return .duplicate(merged)
         }
 
+        // A provisional row is the watch's card holding this session's place until the FIT
+        // syncs (phase 5). This IS that FIT, so it takes over the SAME row — same id, real
+        // analysis, flag cleared — instead of appearing beside it. Replacing rather than
+        // inserting keeps the gear the rider already picked, keeps anything holding the id
+        // valid, and means the library never shows one session twice.
         let analysis = analyze(track)
-        let id = UUID().uuidString
+        let id = existing?.id ?? UUID().uuidString
         try archive.storeOriginal(fitData, id: id)
         do {
             try archive.writeAnalysis(analysis, id: id)
@@ -123,8 +132,10 @@ public struct SessionIngestor: Sendable {
         row.sport = caps.sport
         row.discipline = caps.discipline
         row.originalFilename = filename
-        row.importSource = source.rawValue
-        row.icuActivityId = icuActivityId
+        // The card's "watch" tag survives the upgrade: the row really did reach the
+        // library over BLE first, and that is worth being able to see afterwards.
+        row.importSource = Self.merge(sources: existing?.importSource, adding: source)
+        row.icuActivityId = icuActivityId ?? existing?.icuActivityId
         row.isExample = source == .example
         if let fix = track.samples.first(where: { $0.lat != nil && $0.lon != nil }) {
             row.startLat = fix.lat
@@ -134,7 +145,9 @@ public struct SessionIngestor: Sendable {
 
         let inserted = row
         row.spotId = try await database.writer.write { db -> String? in
-            try inserted.insert(db)
+            // `save`, not `insert`: on the provisional path the row already exists and
+            // this call is the moment the card's numbers are overwritten by real ones.
+            try inserted.save(db)
             try SessionDerivation.write(analysis, session: inserted, db: db)
             guard let lat = inserted.startLat, let lon = inserted.startLon else { return nil }
             return try SpotClusterer.assign(sessionId: inserted.id, lat: lat, lon: lon, db: db,
@@ -260,8 +273,12 @@ public struct SessionIngestor: Sendable {
     @discardableResult
     public func reanalyzeStale(progress: (@Sendable (Int, Int) -> Void)? = nil) async throws -> Int {
         let stale = try await database.writer.read { db in
-            try SessionRow.filter(sql: "engineVersion IS NULL OR engineVersion <> ?",
-                                  arguments: [AnalysisEngine.version])
+            // Provisional rows are excluded because there is nothing to re-derive from:
+            // a card carries no track, so re-analysis would fail on every pass for ever
+            // and the app would announce "re-derived 1 session" at every single launch.
+            try SessionRow.filter(sql: """
+                isProvisional = 0 AND (engineVersion IS NULL OR engineVersion <> ?)
+                """, arguments: [AnalysisEngine.version])
                 .order(Column("startDate")).fetchAll(db)
         }
         guard !stale.isEmpty else { return 0 }
@@ -274,6 +291,15 @@ public struct SessionIngestor: Sendable {
 
     public func rawTrack(for row: SessionRow) throws -> RawTrack {
         try archive.rawTrack(for: row.id)
+    }
+
+    /// `"file"` + `.icu` → `"file+icu"`. Sorted and de-duplicated, so a session that
+    /// arrived four ways still reads as one stable string.
+    static func merge(sources existing: String?, adding source: ImportSource) -> String {
+        var sources = Set((existing ?? "").split(separator: "+").map(String.init))
+        sources.remove("")
+        sources.insert(source.rawValue)
+        return sources.sorted().joined(separator: "+")
     }
 
     // MARK: - Queries
@@ -308,8 +334,14 @@ public struct SessionIngestor: Sendable {
 
     // MARK: - Internals
 
-    private func duplicate(startDate: Date, durationS: Double,
-                           icuActivityId: String?) async throws -> SessionRow? {
+    /// THE dedupe rule: start within ±60 s **and** duration within ±60 s (plan §3.3).
+    ///
+    /// Internal rather than private because the watch's BLE card goes through this exact
+    /// call (`ingest(card:)`). A card and its FIT describe the same minutes of the same
+    /// afternoon, so if the two ever used different rules the rider would see the session
+    /// twice — and neither side can tell a duplicate from two back-to-back sessions.
+    func duplicate(startDate: Date, durationS: Double,
+                   icuActivityId: String? = nil) async throws -> SessionRow? {
         let tolerance = dedupeToleranceS
         let lower = startDate.addingTimeInterval(-tolerance)
         let upper = startDate.addingTimeInterval(tolerance)
@@ -333,12 +365,10 @@ public struct SessionIngestor: Sendable {
     /// import wins: the row stops being an example and rejoins Records and Trends. The
     /// reverse never happens — loading the example over an already-real row leaves the
     /// flag off, so nobody's own session is demoted by tapping a button.
-    private func note(_ row: SessionRow, source: ImportSource,
-                      icuActivityId: String?) async throws -> SessionRow {
+    func note(_ row: SessionRow, source: ImportSource,
+              icuActivityId: String?) async throws -> SessionRow {
         var updated = row
-        var sources = Set((row.importSource ?? "").split(separator: "+").map(String.init))
-        sources.insert(source.rawValue)
-        updated.importSource = sources.sorted().joined(separator: "+")
+        updated.importSource = Self.merge(sources: row.importSource, adding: source)
         if updated.icuActivityId == nil { updated.icuActivityId = icuActivityId }
         if source != .example { updated.isExample = false }
         guard updated.importSource != row.importSource

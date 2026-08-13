@@ -2,6 +2,46 @@
 
 Newest first. One paragraph each: context → decision → consequence.
 
+## ADR-013 · The companion link carries a **card**, not data — and reuses the import dedupe rule
+Phase 5 asks for a session summary on the phone before the FIT has finished its trip through
+Garmin Connect. The channel for that is `Communications.transmit` to a companion app over BLE,
+which is shared with the whole Garmin ecosystem and is documented by Garmin itself as a place
+to send as little as possible. Decision: the payload is a **notification, never a source of
+truth** — integers only, short keys, and only the numbers the card actually shows (measured:
+**192 bytes, 21 keys** for a 2-hour session against a 1 KB budget). The FIT still arrives
+later and the phone still re-derives everything from it; the card is replaced by real analysis
+when it does.
+Reconciliation is the part that could have gone wrong twice. The dedupe key is **session start
+epoch + elapsed seconds, meaning exactly what the FIT's session start and `total_elapsed_time`
+mean**, so the card goes through the SAME `SessionIngestor` rule that already dedupes imports
+(±60 s on both), instead of a second mechanism that would drift from the first. The card lands
+as a **provisional** row (schema v4 `isProvisional`); the FIT replaces it in place, same row id,
+sources merged. A provisional row whose FIT never arrives stays — it is a real session the rider
+did, and its absence from Garmin Connect is information too. Provisional rows are excluded from
+the library aggregates and from `reanalyzeStale`, which would otherwise announce a re-derive on
+every launch for ever.
+When the phone is unreachable — the normal case, not the error case — the watch keeps **one
+pending slot, newest wins**. Three sessions recorded away from the phone should produce the
+newest card on reconnect, not three stale ones replayed in order.
+The SDK boundary: `connectiq-companion-app-sdk-ios` 1.8.0 is an SPM **binary** target (ObjC
+xcframework) and it goes into the **app target only**, behind a `CompanionLink` protocol
+declared in WingFoilKit. WingFoilKit never imports it, so the package keeps building and
+testing on any machine with no framework and no watch in the room, and the wire contract stays
+unit-testable (17 tests) against a fake.
+Two fenix 7 platform traps found the hard way, both now in `PhoneLink.mc`'s header because
+neither is discoverable from the docs: **`registerForPhoneAppMessageErrors` bricks the fenix 7
+family** — the app does not start, with no exception and no log — and `Communications has
+:registerForPhoneAppMessageErrors` returns **true** there, so a capability guard does not save
+you. It is not called at all; the failure that matters (a summary that did not land) arrives
+through `ConnectionListener.onError`, which is what preserves the pending slot. And a
+`Lang.Method` bound to a **module** rather than a class wedges the same call: compiles clean,
+works on fenix 8, hangs on fenix 7.
+Consequence to be honest about: **the BLE hop itself is unverified.** Everything either side of
+`transmit` is unit-tested; the hop needs a paired watch, GCM and a real iPhone. So does the
+assumption underneath the dedupe key — that `Activity.Info.elapsedTime` equals the FIT's
+`total_elapsed_time` — which needs one real session **with a pause** compared against its synced
+FIT before the key can be trusted.
+
 ## ADR-012 · Invite testers get a **public** listing with an obfuscation-grade lock
 A Connect IQ "beta app" listing is visible only to the developer account, so the one thing it
 cannot do is reach a tester. The only channel to a friend's watch is a **public** store

@@ -32,7 +32,7 @@ public struct AppDatabase: Sendable {
 
     /// Every migration this build knows, oldest first — the migration test asserts a v1
     /// database moves through all of them.
-    public static let migrationNames = ["v1", "v2", "v3"]
+    public static let migrationNames = ["v1", "v2", "v3", "v4"]
 
     /// Public so a caller (and the migration test) can migrate a writer only part of the
     /// way — `migrator.migrate(writer, upTo: "v1")` reproduces a shipped v1 library.
@@ -78,6 +78,21 @@ public struct AppDatabase: Sendable {
         migrator.registerMigration("v3") { db in
             try db.alter(table: "session") { t in
                 t.add(column: "isExample", .boolean).notNull().defaults(to: false)
+            }
+        }
+
+        // v4: the companion card (phase 5). A session the watch told us about over BLE
+        // exists in the library minutes after the rider leaves the water, an hour before
+        // its FIT syncs — so it needs a row, and the row needs to say that its numbers
+        // came from the watch's own arithmetic rather than from this app's engine.
+        // Same shape as `isExample` and for the same reason: provenance is a fact about
+        // the row that every aggregate has to honour, so it is one column in one place
+        // (`LibraryStore.clause`) rather than a rule six call sites must remember.
+        // No re-analysis is triggered — there is nothing to re-analyse until the FIT
+        // lands, and when it does `SessionIngestor.ingest` upgrades the row in place.
+        migrator.registerMigration("v4") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "isProvisional", .boolean).notNull().defaults(to: false)
             }
         }
         return migrator
@@ -331,6 +346,15 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// that claims to describe the rider: Records, Trends, the gear rollups and the
     /// home-screen widget. It is somebody else's session on loan.
     public var isExample = false
+
+    // MARK: schema v4
+    /// True for a row built from the watch's BLE card while its FIT has not arrived yet
+    /// (`CompanionSummary`). Such a row is real — the rider did that session — and it
+    /// stays in the library for ever if the FIT never syncs, badged so nobody mistakes
+    /// the watch's numbers for analysed ones. It is excluded from the aggregates until
+    /// the FIT lands, at which point `SessionIngestor` fills the same row with real
+    /// analysis, clears this flag, and the session rejoins Records and Trends.
+    public var isProvisional = false
 
     public init(id: String = UUID().uuidString, startDate: Date, durationS: Double, sourceClass: String) {
         self.id = id

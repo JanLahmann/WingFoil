@@ -19,6 +19,16 @@ options:
 packages:
   WingFoilKit:
     path: WingFoilKit
+  # Garmin's companion SDK: a binary xcframework (ObjC, device+simulator) that talks to
+  # Garmin Connect Mobile, which is the only process allowed near the watch's BLE link.
+  #
+  # It is a dependency of the APP TARGET ONLY, never of WingFoilKit — see
+  # WingFoilKit/Sources/WingFoilKit/Companion/CompanionLink.swift. The kit stays buildable
+  # and testable on a machine with no framework and no watch; only the thin adapter that
+  # actually calls `ConnectIQ.sharedInstance()` lives behind the app's import.
+  ConnectIQ:
+    url: https://github.com/garmin/connectiq-companion-app-sdk-ios
+    from: 1.8.0
 
 settings:
   base:
@@ -41,11 +51,17 @@ targets:
     dependencies:
       - package: WingFoilKit
         product: WingFoilKit
+      - package: ConnectIQ
+        product: ConnectIQ
       - target: WingFoilWidgets
         embed: true
     settings:
       base:
         PRODUCT_NAME: WingFoil
+        # Required by the ConnectIQ xcframework: it is Objective-C and its categories are
+        # invisible to the linker without it, which shows up as a runtime selector crash
+        # rather than a build error.
+        OTHER_LDFLAGS: "-ObjC"
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
@@ -75,10 +91,36 @@ targets:
         NSHealthShareUsageDescription: >-
           WingFoil does not read any data from the Health app. This permission exists only
           because the workout-export feature links the HealthKit framework.
+        # Read by the ConnectIQ SDK itself when it hands control to Garmin Connect
+        # Mobile — GCM shows this name to the rider. It must exist, or device selection
+        # comes back empty with no error anywhere.
         CFBundleDisplayName: WingFoil
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSRequiresIPhoneOS: true
+        # --- phase 5, companion link (docs/decisions.md ADR-013) ---
+        # Without this entry `canOpenURL` returns false for Garmin Connect Mobile even
+        # when it is installed, and the SDK concludes there is no path to the watch.
+        LSApplicationQueriesSchemes:
+          - gcm-ciq
+        # The way back from GCM: the rider picks a watch there, GCM reopens us on this
+        # scheme, and `ConnectIQ.parseDeviceSelectionResponse` reads the devices out of
+        # the URL. Nothing else in the app answers on it.
+        CFBundleURLTypes:
+          - CFBundleURLName: de.lahmann.wingfoil.ciq
+            CFBundleTypeRole: Editor
+            CFBundleURLSchemes:
+              - wingfoil-ciq
+        # iOS demands both strings from any app whose process touches Bluetooth, and the
+        # SDK does on our behalf. Real sentences, not placeholders: TestFlight review
+        # rejects the build otherwise, and the rider deserves to know why we are asking.
+        NSBluetoothAlwaysUsageDescription: >-
+          WingFoil uses Bluetooth to receive a session summary from your Garmin watch the
+          moment you stop recording, and to send the wind direction back to it. All of it
+          goes through the Garmin Connect app; WingFoil never pairs with anything itself.
+        NSBluetoothPeripheralUsageDescription: >-
+          WingFoil uses Bluetooth to exchange session summaries and wind direction with
+          your Garmin watch through the Garmin Connect app.
         ITSAppUsesNonExemptEncryption: false
         # Storyboard-free launch screen: the tile mark centred on the brand navy, so the
         # cold-start frame is the app's own colour instead of a white flash.

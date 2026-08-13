@@ -13,6 +13,7 @@ struct SettingsView: View {
             Form {
                 helpSection
                 icuSection
+                WatchLinkSection()
                 placesSection
                 healthSection
                 storageSection
