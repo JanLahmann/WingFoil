@@ -19,7 +19,17 @@ from wingfoil_lab.goldens import analyze, build_golden, golden_path, write_golde
 REPO = Path(__file__).resolve().parents[2]
 
 HEADER = (f"{'file':<52} {'cls':>3} {'hz':>4} {'foil%':>6} {'fl':>4} {'long_s':>7} "
-          f"{'2s':>6} {'10s':>6} {'5x10s':>6} {'500m':>6} {'alpha':>6} {'km':>7}")
+          f"{'2s':>6} {'10s':>6} {'5x10s':>6} {'500m':>6} {'alpha':>6} {'km':>7} "
+          f"{'hr_cost':>8} {'hr_n':>7}")
+
+
+def _hr_cells(hr: dict) -> tuple[str, str]:
+    """avg takeoff cost and its `valid/total`, or dashes when the source carries no HR."""
+    if not hr["hasHR"]:
+        return "-", "-"
+    s = hr["summary"]
+    cost = "-" if s["avgTakeoffCostBpm"] is None else f"{s['avgTakeoffCostBpm']:.1f}"
+    return cost, f"{s['takeoffCostValid']}/{s['takeoffCostTotal']}"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -48,11 +58,13 @@ def main(argv: list[str] | None = None) -> int:
             write_golden(g, golden_path(fit, out_dir))
             written += 1
         s, r = g["summary"], g["records"]
+        hr_cost, hr_n = _hr_cells(g["hr"])
         print(f"{fit.stem:<52} {a.track.capabilities.source_class:>3} "
               f"{g['capabilities']['sampleRateHz']:>4.1f} {s['foilPct']:>6.1f} "
               f"{s['flightCount']:>4d} {s['longestFlightS']:>7.1f} "
               f"{r['best2sKn']:>6.2f} {r['best10sKn']:>6.2f} {r['best5x10sKn']:>6.2f} "
-              f"{r['best500mKn']:>6.2f} {r['alpha500Kn']:>6.2f} {s['distanceKm']:>7.2f}")
+              f"{r['best500mKn']:>6.2f} {r['alpha500Kn']:>6.2f} {s['distanceKm']:>7.2f} "
+              f"{hr_cost:>8} {hr_n:>7}")
     print("-" * len(HEADER))
     print(f"{written} goldens written to {out_dir}" if not args.dry_run
           else f"dry run: {len(fits)} fixtures analyzed, nothing written")

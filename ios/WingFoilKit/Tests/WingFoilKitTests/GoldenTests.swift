@@ -53,6 +53,7 @@ import Testing
         var windCfg = WindConfig()
         var pumpCfg = PumpConfig()
         var takeoffCfg = TakeoffConfig()
+        var hrCfg = HrConfig()
         if let cfg = json["config"] as? [String: Any] {
             if let v = num(cfg["foilEntrySpeed"]) { flight.foilEntrySpeedKmh = v }
             if let v = num(cfg["foilExitSpeed"]) { flight.foilExitSpeedKmh = v }
@@ -75,12 +76,24 @@ import Testing
             if let v = num(cfg["pumpMinStrokes"]) { pumpCfg.minStrokes = Int(v) }
             if let v = num(cfg["takeoffAttemptWindow"]) { takeoffCfg.attemptWindowS = v }
             if let v = num(cfg["takeoffMinPreWindow"]) { takeoffCfg.minPreWindowS = v }
+            if let v = num(cfg["hrCostPeakWindow"]) { hrCfg.peakWindowS = v }
+            if let v = num(cfg["hrBaselineWindow"]) { hrCfg.baselineWindowS = v }
+            if let v = num(cfg["hrMinCoverage"]) { hrCfg.minCoverageShare = v }
+            if let v = num(cfg["hrFlatlineMax"]) { hrCfg.flatlineMaxS = v }
+            if let v = num(cfg["hrMinBpm"]) { hrCfg.minBpm = v }
+            if let v = num(cfg["hrMaxBpm"]) { hrCfg.maxBpm = v }
+            if let v = num(cfg["hrLag"]) { hrCfg.lagS = v }
+            if let v = num(cfg["hrRecoveryWindow"]) { hrCfg.recoveryWindowS = v }
+            if let v = num(cfg["hrMinRise"]) { hrCfg.minRiseBpm = v }
+            if let v = num(cfg["hrBinMinutes"]) { hrCfg.binMinutes = v }
+            if let v = num(cfg["hrMaxSampleGap"]) { hrCfg.maxSampleGapS = v }
         }
         let raw = try FitSessionParser.parse(url: fitURL)
         let analysis = SessionSummarizer.analyze(raw, filterConfig: filter,
                                                  flightConfig: flight, recordsConfig: recCfg,
                                                  turnConfig: turnCfg, windConfig: windCfg,
-                                                 pumpConfig: pumpCfg, takeoffConfig: takeoffCfg)
+                                                 pumpConfig: pumpCfg, takeoffConfig: takeoffCfg,
+                                                 hrConfig: hrCfg)
 
         checkCapabilities(stem, json, analysis, raw)
         checkFlights(stem, json, analysis)
@@ -89,6 +102,7 @@ import Testing
         checkTurns(stem, json, analysis)
         checkFlightEnds(stem, json, analysis)
         checkTakeoffs(stem, json, analysis)
+        checkHr(stem, json, analysis)
         checkSummary(stem, json, analysis)
     }
 
@@ -304,6 +318,177 @@ import Testing
         }
     }
 
+    // MARK: - Phase 3.5 (HR cost)
+
+    /// Tolerances (docs/testing.md "Tolerances"): counts and verdicts **exact**
+    /// (`hasHR`, every `n valid / n total`, `approximate`, `strokes`, `recoveryCensored`);
+    /// timestamps and durations ± 1 s (anchors, peak lag, half-recovery, bin edges);
+    /// percentages ± 0.5 (`successPct`, `usablePct`).
+    ///
+    /// The table has no row for heart rates, so bpm and the coverage *shares* are held to
+    /// the **speeds** row's ± 0.05 — and that is generous rather than tight: nothing between
+    /// the FIT and these numbers resamples, filters or integrates, so both implementations
+    /// read the same stored bpm values off the same sample times. A drift beyond a rounding
+    /// artefact would mean the two ports disagree about which samples are *usable*, which is
+    /// the whole contract of this block.
+    private func checkHr(_ stem: String, _ json: [String: Any], _ analysis: SessionAnalysis) {
+        guard let expHr = json["hr"] as? [String: Any] else { return }
+        guard let hr = analysis.hr else {
+            Issue.record("\(stem) hr: golden carries the block, Swift produced none")
+            return
+        }
+        if let v = expHr["hasHR"] as? Bool {
+            #expect(hr.hasHR == v, "\(stem) hr.hasHR: \(hr.hasHR) vs \(v)")
+        }
+        checkHrEvents(stem, "takeoffEvents", expHr["takeoffEvents"], hr.takeoffEvents)
+        checkHrEvents(stem, "swimEvents", expHr["swimEvents"], hr.swimEvents)
+        checkHrBins(stem, expHr["bins"], hr.bins)
+        checkHrSummary(stem, expHr["summary"], hr.summary)
+    }
+
+    private func checkHrEvents(_ stem: String, _ name: String, _ expected: Any?,
+                               _ actual: [HrEvent]) {
+        guard let exp = expected as? [[String: Any]] else { return }
+        #expect(actual.count == exp.count,
+                "\(stem) hr.\(name): count \(actual.count) != \(exp.count)")
+        for (i, pair) in zip(exp, actual).enumerated() {
+            let (e, a) = pair
+            let at = "\(stem) hr.\(name)[\(i)]"
+            if let v = e["kind"] as? String { #expect(a.kind.rawValue == v, "\(at).kind") }
+            if let v = int(e["index"]) { #expect(a.index == v, "\(at).index: \(a.index) vs \(v)") }
+            if let v = num(e["ts"]) { #expect(abs(a.t - v) <= 1.0, "\(at).ts: \(a.t) vs \(v)") }
+            if let v = e["approximate"] as? Bool {
+                #expect(a.approximate == v, "\(at).approximate: \(a.approximate) vs \(v)")
+            }
+            if let v = e["recoveryCensored"] as? Bool {
+                #expect(a.recoveryCensored == v, "\(at).recoveryCensored")
+            }
+            // A missing stroke count and a zero are different facts; so are a missing bpm
+            // and a zero bpm. Both must be nil on the same side of the port.
+            #expect(int(e["strokes"]) == a.strokes,
+                    "\(at).strokes: \(describe(a.strokes)) vs \(describe(int(e["strokes"])))")
+            expectOptional(stem, "hr.\(name)[\(i)].baselineBpm", num(e["baselineBpm"]),
+                           a.baselineBpm, tolerance: 0.05)
+            expectOptional(stem, "hr.\(name)[\(i)].peakBpm", num(e["peakBpm"]),
+                           a.peakBpm, tolerance: 0.05)
+            expectOptional(stem, "hr.\(name)[\(i)].costBpm", num(e["costBpm"]),
+                           a.costBpm, tolerance: 0.05)
+            expectOptional(stem, "hr.\(name)[\(i)].peakLagS", num(e["peakLagS"]),
+                           a.peakLagS, tolerance: 1.0)
+            expectOptional(stem, "hr.\(name)[\(i)].recoveryHalfS", num(e["recoveryHalfS"]),
+                           a.recoveryHalfS, tolerance: 1.0)
+            if let v = num(e["baselineCoverage"]) {
+                #expect(abs(a.baselineCoverage - v) <= 0.05,
+                        "\(at).baselineCoverage: \(a.baselineCoverage) vs \(v)")
+            }
+            if let v = num(e["peakCoverage"]) {
+                #expect(abs(a.peakCoverage - v) <= 0.05,
+                        "\(at).peakCoverage: \(a.peakCoverage) vs \(v)")
+            }
+        }
+    }
+
+    private func checkHrBins(_ stem: String, _ expected: Any?, _ actual: [FatigueBin]) {
+        guard let exp = expected as? [[String: Any]] else { return }
+        #expect(actual.count == exp.count,
+                "\(stem) hr.bins: count \(actual.count) != \(exp.count)")
+        for (i, pair) in zip(exp, actual).enumerated() {
+            let (e, a) = pair
+            let at = "\(stem) hr.bins[\(i)]"
+            let counts: [(String, Int)] = [("attempts", a.attempts), ("successes", a.successes),
+                                           ("failed", a.failed),
+                                           ("costValid", a.costCoverage.valid),
+                                           ("costTotal", a.costCoverage.total)]
+            for (key, value) in counts {
+                guard let v = int(e[key]) else { continue }
+                #expect(value == v, "\(at).\(key): \(value) vs \(v)")
+            }
+            if let v = num(e["startTs"]) { #expect(abs(a.startT - v) <= 1.0, "\(at).startTs") }
+            if let v = num(e["endTs"]) { #expect(abs(a.endT - v) <= 1.0, "\(at).endTs") }
+            expectOptional(stem, "hr.bins[\(i)].successPct", num(e["successPct"]),
+                           a.successPct, tolerance: 0.5)
+            expectOptional(stem, "hr.bins[\(i)].avgCostBpm", num(e["avgCostBpm"]),
+                           a.avgCostBpm, tolerance: 0.05)
+            expectOptional(stem, "hr.bins[\(i)].medianCostBpm", num(e["medianCostBpm"]),
+                           a.medianCostBpm, tolerance: 0.05)
+            expectOptional(stem, "hr.bins[\(i)].avgBaselineBpm", num(e["avgBaselineBpm"]),
+                           a.avgBaselineBpm, tolerance: 0.05)
+            expectOptional(stem, "hr.bins[\(i)].avgPumps", num(e["avgPumps"]),
+                           a.avgPumps, tolerance: 0.05)
+            expectOptional(stem, "hr.bins[\(i)].meanBpm", num(e["meanBpm"]),
+                           a.meanBpm, tolerance: 0.05)
+        }
+    }
+
+    private func checkHrSummary(_ stem: String, _ expected: Any?, _ s: HrSummary) {
+        guard let e = expected as? [String: Any] else { return }
+        let counts: [(String, Int)] = [
+            ("takeoffCostValid", s.takeoffCostCoverage.valid),
+            ("takeoffCostTotal", s.takeoffCostCoverage.total),
+            ("approximateTakeoffs", s.approximateTakeoffs),
+            ("bpmPerStrokeValid", s.bpmPerStrokeCoverage.valid),
+            ("bpmPerStrokeTotal", s.bpmPerStrokeCoverage.total),
+            ("takeoffRecoveryValid", s.takeoffRecoveryCoverage.valid),
+            ("takeoffRecoveryTotal", s.takeoffRecoveryCoverage.total),
+            ("swimRecoveryValid", s.swimRecoveryCoverage.valid),
+            ("swimRecoveryTotal", s.swimRecoveryCoverage.total),
+            ("swimCostValid", s.swimCostCoverage.valid),
+            ("swimCostTotal", s.swimCostCoverage.total),
+        ]
+        for (key, value) in counts {
+            guard let v = int(e[key]) else { continue }
+            #expect(value == v, "\(stem) hr.summary.\(key): \(value) vs \(v)")
+        }
+        let bpm: [(String, Double?, Double?)] = [
+            ("avgTakeoffCostBpm", num(e["avgTakeoffCostBpm"]), s.avgTakeoffCostBpm),
+            ("medianTakeoffCostBpm", num(e["medianTakeoffCostBpm"]), s.medianTakeoffCostBpm),
+            ("avgSwimCostBpm", num(e["avgSwimCostBpm"]), s.avgSwimCostBpm),
+        ]
+        for (key, expected, actual) in bpm {
+            expectOptional(stem, "hr.summary.\(key)", expected, actual, tolerance: 0.05)
+        }
+        expectOptional(stem, "hr.summary.usablePct", num(e["usablePct"]), s.usablePct,
+                       tolerance: 0.5)
+        expectOptional(stem, "hr.summary.medianPeakLagS", num(e["medianPeakLagS"]),
+                       s.medianPeakLagS, tolerance: 1.0)
+        expectOptional(stem, "hr.summary.medianTakeoffRecoveryS",
+                       num(e["medianTakeoffRecoveryS"]), s.medianTakeoffRecoveryS,
+                       tolerance: 1.0)
+        expectOptional(stem, "hr.summary.medianSwimRecoveryS", num(e["medianSwimRecoveryS"]),
+                       s.medianSwimRecoveryS, tolerance: 1.0)
+        // bpm per stroke is a ratio of two already-checked quantities, so it is held one
+        // decimal tighter than the bpm it divides.
+        expectOptional(stem, "hr.summary.bpmPerStroke", num(e["bpmPerStroke"]),
+                       s.bpmPerStroke, tolerance: 0.005)
+        expectOptional(stem, "hr.summary.medianBpmPerStroke", num(e["medianBpmPerStroke"]),
+                       s.medianBpmPerStroke, tolerance: 0.005)
+
+        guard let pc = e["pumpCruise"] as? [String: Any] else { return }
+        let p = s.pumpCruise
+        for (key, value) in [("pumpingSpans", p.pumpingSpans),
+                             ("cruisingSpans", p.cruisingSpans)] {
+            guard let v = int(pc[key]) else { continue }
+            #expect(value == v, "\(stem) hr.summary.pumpCruise.\(key): \(value) vs \(v)")
+        }
+        expectOptional(stem, "hr.summary.pumpCruise.pumpingBpm", num(pc["pumpingBpm"]),
+                       p.pumpingBpm, tolerance: 0.05)
+        expectOptional(stem, "hr.summary.pumpCruise.cruisingBpm", num(pc["cruisingBpm"]),
+                       p.cruisingBpm, tolerance: 0.05)
+        expectOptional(stem, "hr.summary.pumpCruise.deltaBpm", num(pc["deltaBpm"]),
+                       p.deltaBpm, tolerance: 0.05)
+        let seconds: [(String, Double?, Double)] = [
+            ("pumpingCoveredS", num(pc["pumpingCoveredS"]), p.pumpingCoveredS),
+            ("pumpingSpanS", num(pc["pumpingSpanS"]), p.pumpingSpanS),
+            ("cruisingCoveredS", num(pc["cruisingCoveredS"]), p.cruisingCoveredS),
+            ("cruisingSpanS", num(pc["cruisingSpanS"]), p.cruisingSpanS),
+        ]
+        for (key, expected, actual) in seconds {
+            guard let v = expected else { continue }
+            #expect(abs(actual - v) <= 1.0,
+                    "\(stem) hr.summary.pumpCruise.\(key): \(actual) vs \(v)")
+        }
+    }
+
     // MARK: - Summaries
 
     private func checkSummary(_ stem: String, _ json: [String: Any],
@@ -494,9 +679,27 @@ import Testing
         let obj = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         #expect(Set(obj.keys) == ["engineVersion", "config", "capabilities", "flights",
                                   "turns", "flightEnds", "records", "wind", "takeoffs",
-                                  "summary"])
+                                  "hr", "summary"])
         #expect(obj["wind"] is NSNull)                       // explicit null, not omitted
         #expect((obj["turns"] as? [Any])?.isEmpty == true)   // no positions ⇒ no COG ⇒ no turns
+
+        // This synthetic carries no heart rate at all. The block is still written, with
+        // `hasHR: false` — "this source had no HR" must not look like "this analysis
+        // predates the HR block", and no average inside it may be a flattering zero.
+        let hr = try #require(obj["hr"] as? [String: Any])
+        #expect(Set(hr.keys) == ["hasHR", "takeoffEvents", "swimEvents", "bins", "summary"])
+        #expect(hr["hasHR"] as? Bool == false)
+        #expect((hr["takeoffEvents"] as? [Any])?.isEmpty == true)
+        #expect((hr["swimEvents"] as? [Any])?.isEmpty == true)
+        #expect((hr["bins"] as? [Any])?.isEmpty == true)
+        let hrSummary = try #require(hr["summary"] as? [String: Any])
+        #expect(hrSummary["usablePct"] is NSNull)
+        #expect(hrSummary["avgTakeoffCostBpm"] is NSNull)
+        #expect(int(hrSummary["takeoffCostTotal"]) == 0)
+        let pumpCruise = try #require(hrSummary["pumpCruise"] as? [String: Any])
+        #expect(pumpCruise["pumpingBpm"] is NSNull)
+        #expect(pumpCruise["deltaBpm"] is NSNull)
+        #expect(analysis.hr?.summary.hasHR == false)
 
         // Every flight gets a takeoff run and a flight end, even without an accel stream;
         // the stroke counts are then explicitly null rather than a flattering zero.

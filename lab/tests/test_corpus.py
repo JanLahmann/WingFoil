@@ -81,6 +81,10 @@ def test_golden_self_consistency(gpath):
         assert kn["pumps"] == ko["pumps"] and kn["truncated"] == ko["truncated"]
         assert abs(kn["timeToFoilS"] - ko["timeToFoilS"]) <= 1.0
 
+    # HR cost: the whole block is deterministic off the raw records, so it must reproduce
+    # exactly -- there is no resampling or filtering between the FIT and these numbers.
+    assert new["hr"] == gold["hr"]
+
     # flights: timestamps +-1 s, speeds +-0.05 kn
     for fn, fo in zip(new["flights"], gold["flights"]):
         assert abs(fn["startTs"] - fo["startTs"]) <= 1.0
@@ -143,3 +147,31 @@ def test_golden_sanity(gpath):
     if g["flights"]:
         assert s["longestFlightS"] == pytest.approx(
             max(f["endTs"] - f["startTs"] for f in g["flights"]), abs=0.2)
+
+    # HR: one event per flight start, and no aggregate without the count behind it. A
+    # missing HR number must be null everywhere -- never 0.0, which reads as "free".
+    hr, hs = g["hr"], g["hr"]["summary"]
+    if not hr["hasHR"]:
+        assert hr["takeoffEvents"] == [] and hr["bins"] == [] and hs["takeoffCostTotal"] == 0
+    else:
+        assert len(hr["takeoffEvents"]) == len(g["flights"])
+        assert hs["takeoffCostTotal"] == len(hr["takeoffEvents"])
+        assert hs["swimCostTotal"] == len(hr["swimEvents"])
+        assert hs["takeoffCostValid"] <= hs["takeoffCostTotal"]
+        assert (hs["avgTakeoffCostBpm"] is None) == (hs["takeoffCostValid"] == 0)
+        assert (hs["takeoffCostValid"] > 0) or hs["medianTakeoffCostBpm"] is None
+        assert sum(b["successes"] for b in hr["bins"]) == len(g["flights"])
+        if not g["capabilities"]["hasAccel"]:
+            assert hs["bpmPerStroke"] is None and hs["bpmPerStrokeValid"] == 0
+            assert hs["pumpCruise"]["pumpingBpm"] is None
+            assert all(e["approximate"] for e in hr["takeoffEvents"])
+        for e in hr["takeoffEvents"] + hr["swimEvents"]:
+            assert 0.0 <= e["baselineCoverage"] <= 1.0
+            assert 0.0 <= e["peakCoverage"] <= 1.0
+            assert (e["costBpm"] is None) == (e["baselineBpm"] is None)
+            if e["costBpm"] is not None:
+                assert e["costBpm"] == pytest.approx(e["peakBpm"] - e["baselineBpm"], abs=1e-6)
+                assert 30.0 <= e["peakBpm"] <= 220.0
+            if e["recoveryHalfS"] is not None:
+                assert 0.0 < e["recoveryHalfS"] <= g["config"]["hrRecoveryWindow"]
+                assert e["recoveryCensored"] is False

@@ -455,9 +455,11 @@ Jan's question: *"my HR goes up when I pump."* `lab/src/wingfoil_lab/hrcost.py` 
 versions of it — per-takeoff cost, pumping vs cruising, fatigue over the session, and recovery
 — from the FIT `heart_rate` channel joined to the takeoff runs, the flight ends and the turns.
 
-**Exploratory (phase 3.5).** Not in the golden schema and not counted by `ENGINE_VERSION` yet:
-these numbers move with the definitions below, and freezing them before the Swift port would
-freeze the wrong ones. `tools/hr_report.py` reproduces everything in this section.
+**Frozen (phase 3.5).** Ported to `ios/WingFoilKit/…/AnalysisEngine/HrCost.swift` and carried
+by the golden schema as the `hr` block (docs/testing.md), so every number below is now a
+cross-implementation parity obligation like the rest. Adding the block moved no pre-existing
+golden number, so `ENGINE_VERSION` stayed at 0.2.0 — but it now covers these numbers too, and
+the next change to a definition here bumps it. `tools/hr_report.py` reproduces this section.
 
 | param | default | units | notes |
 |---|---|---|---|
