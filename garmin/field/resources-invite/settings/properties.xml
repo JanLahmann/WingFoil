@@ -1,0 +1,8 @@
+<properties>
+    <!-- Invite build only (monkey-invite.jungle). The unlock key the tester is mailed after
+         sending in the request code the locked field draws in its cell; LockGate re-validates
+         it on every onSettingsChanged, so it takes effect without restarting the activity.
+         Empty = locked. Deliberately NOT in resources/settings/: the public field must not
+         show a setting whose gate is compiled out. -->
+    <property id="unlockKey" type="string"></property>
+</properties>

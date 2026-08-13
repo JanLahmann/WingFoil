@@ -16,6 +16,10 @@ import WingFoilCore;
 // The last turn's outcome is a colour-coded word — FLEW green, TOUCH orange, SWIM red — the
 // same vocabulary as the device app's Turns page, because it is the one thing you want to
 // read at a glance while sailing away from the maneuver you just made.
+//
+// In the invite build (docs/decisions.md ADR-012) all of that is replaced by the lock state
+// until the tester enters their key. The device app can switch to a whole LockView for this;
+// a data field owns one view and one cell, so the lock lives here as a fourth layout.
 class WingFoilDataField extends WatchUi.DataField {
     hidden var _engine as FieldEngine;
     hidden var _fit as FieldFit?;
@@ -24,6 +28,11 @@ class WingFoilDataField extends WatchUi.DataField {
 
     function initialize() {
         DataField.initialize();
+        // Belt to WingFoilFieldApp.onStart's braces. The gate answers "locked" until someone
+        // calls refresh(), so an ordering where the view is built before onStart runs would
+        // put a lock screen on the ORDINARY field — the one build that must never show one.
+        // With the zero pepper this costs one array scan and settles the question here.
+        LockGate.refresh();
         _engine = new FieldEngine(FieldSettings.cfg);
         var s = System.getDeviceSettings();
         _screenW = s.screenWidth;
@@ -45,9 +54,28 @@ class WingFoilDataField extends WatchUi.DataField {
         _engine.reset();        // a new activity: every counter starts over
     }
 
+    // ---- the invite gate ----
+
+    // The one check compute() and onUpdate() share. Static and free of Dc and Activity.Info
+    // so the unit suite can drive the locked path with nothing but a FieldEngine.
+    //
+    // Deliberately NOT `!LockGate.enabled() || LockGate.isUnlocked()`: the gate reports
+    // unlocked by itself as soon as refresh() sees a zero pepper, so the short-circuit would
+    // buy nothing and would make the locked path untestable in a zero-pepper test binary.
+    static function unlocked() as Boolean {
+        return LockGate.isUnlocked();
+    }
+
     // ---- 1 Hz compute ----
 
     function compute(info as Activity.Info) as Void {
+        // A locked field is INERT, not merely blank: no engine tick and no FitContributor
+        // write, so the recorded activity carries no wingfoil fields at all. A half-computed
+        // FIT from a tester who never entered their key would be worse than none — it would
+        // look like real data in Garmin Connect and in the lab parser.
+        if (!unlocked()) {
+            return;
+        }
         var events = _engine.onCompute(info);
         if (_fit == null) {
             return;
@@ -70,6 +98,10 @@ class WingFoilDataField extends WatchUi.DataField {
 
         var size = FieldLayout.classify(w, h, _screenW, _screenH);
         var round = FieldLayout.isRoundFull(w, h, _screenW, _screenH);
+        if (!unlocked()) {
+            drawLocked(dc, w, h, bg, size, round);
+            return;
+        }
         if (size == FieldLayout.SIZE_FULL) {
             drawFull(dc, w, h, bg, round);
         } else if (size == FieldLayout.SIZE_WIDE) {
@@ -124,6 +156,40 @@ class WingFoilDataField extends WatchUi.DataField {
         drawRow(dc, w, h, heights, fonts, 2, flightText(), fg(bg));
         drawRow(dc, w, h, heights, fonts, 3, outcomeText(), outcomeColor(bg));
         drawRow(dc, w, h, heights, fonts, 4, tallyText(), fg(bg));
+    }
+
+    // Invite build, no key yet. The request code is the only thing the tester has to
+    // transcribe and mail back, so it is the row that must survive the smallest cell: in a
+    // 3- or 4-field cell the word LOCKED is dropped and the code gets the whole box. The
+    // rows go through the same fitRows() ladder as every other layout — a data field has no
+    // idea how big its cell is, and a hard-coded font would clip on the 240 px fenix 7.
+    hidden function drawLocked(dc as Dc, w as Number, h as Number, bg as Graphics.ColorType,
+            size as Number, round as Boolean) as Void {
+        var texts = [] as Array<String>;
+        var colors = [] as Array<Graphics.ColorType>;
+        if (size != FieldLayout.SIZE_SMALL) {
+            texts.add("LOCKED");
+            colors.add(Graphics.COLOR_ORANGE);
+        }
+        texts.add(LockGate.requestCode());
+        colors.add(fg(bg));
+        // A key that was typed but did not open the gate must SAY so; silence would read as
+        // "nothing happened" and the tester would keep retyping the same wrong key.
+        if (LockGate.rejected()) {
+            texts.add("KEY?");
+            colors.add(Graphics.COLOR_RED);
+        }
+        // Every string here is its own worst case (the code is always 8 characters, the rest
+        // are literals), so the fit needs no widest-case placeholders.
+        var ladders = [] as Array;
+        for (var i = 0; i < texts.size(); i++) {
+            ladders.add(FieldLayout.TEXT_FONTS);
+        }
+        var fonts = FieldLayout.fitRows(dc, w, h, texts, ladders, round);
+        var heights = FieldLayout.heightsOf(dc, fonts);
+        for (var i = 0; i < texts.size(); i++) {
+            drawRow(dc, w, h, heights, fonts, i, texts[i], colors[i]);
+        }
     }
 
     hidden function drawRow(dc as Dc, w as Number, h as Number, heights as Array<Number>,

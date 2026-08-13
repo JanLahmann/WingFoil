@@ -338,3 +338,92 @@ function layoutRowsNeverClip(logger as Test.Logger) as Boolean {
     }
     return true;
 }
+
+// ---- Invite-beta unlock gate (docs/decisions.md ADR-012) ----
+// The field compiles garmin/source/lock/LockGate.mc verbatim, so the arithmetic below is the
+// device app's arithmetic. These vectors are copied CHARACTER FOR CHARACTER from
+// garmin/tests/WingfoilTests.mc, which shares them with lab/tools/make_unlock.py --check:
+// three implementations, one table, and any drift reddens at least one suite.
+
+const UNLOCK_VEC_PEPPER = [0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef];
+const UNLOCK_VEC_IDS = ["wingfoil", "ac915d426451c88e8ea691fa412f9af9c21b4d12", ""];
+const UNLOCK_VEC_CODES = ["PTMDBDNY", "N3J986JP", "SFS9SS44"];
+const UNLOCK_VEC_KEYS = ["MWTSPKVB", "MJFJ4PD4", "1PT5WKZK"];
+
+(:test)
+function fieldUnlockGateIsOffWithoutAPepper(logger as Test.Logger) as Boolean {
+    // This binary is built from field/monkey.jungle, i.e. the ../source-nopepper stub. The
+    // private-beta field must never show a lock screen or stop contributing to the FIT, and
+    // this is the assertion that says the invite channel cannot leak into it.
+    var p = UnlockPepper.bytes();
+    Test.assertMessage(p.size() == 8, "pepper is 8 bytes");
+    Test.assertMessage(LockGate.isZero(p), "the ordinary field must ship a ZERO pepper");
+    Test.assertMessage(!LockGate.enabled(), "gate must be disabled in the ordinary field");
+    Test.assertMessage(LockGate.refresh(), "a disabled gate reports unlocked");
+    Test.assertMessage(WingFoilDataField.unlocked(), "so the field computes and draws");
+    logger.debug("zero pepper -> gate bypassed");
+    return true;
+}
+
+(:test)
+function fieldUnlockKeyMatchesKeygenVectors(logger as Test.Logger) as Boolean {
+    // If the field and the app ever disagreed here, Jan would mail a tester a key minted for
+    // the device app that the data field refuses — on a build he cannot debug remotely.
+    for (var i = 0; i < UNLOCK_VEC_IDS.size(); i++) {
+        var code = LockGate.requestCodeFor(UNLOCK_VEC_IDS[i]);
+        var key = LockGate.keyFor(UNLOCK_VEC_PEPPER, code);
+        logger.debug("id=\"" + UNLOCK_VEC_IDS[i] + "\" code=" + code + " key=" + key);
+        Test.assertMessage(code.equals(UNLOCK_VEC_CODES[i]),
+            "request code " + code + " != keygen " + UNLOCK_VEC_CODES[i]);
+        Test.assertMessage(key.equals(UNLOCK_VEC_KEYS[i]),
+            "unlock key " + key + " != keygen " + UNLOCK_VEC_KEYS[i]);
+        Test.assertMessage(LockGate.matches(UNLOCK_VEC_PEPPER, code, key.toLower()),
+            "and the watch reads back what a tester typed");
+    }
+    // The 64-bit FNV state is carried in two 32-bit halves precisely so no multiply can
+    // overflow; if a device ever wrapped or saturated differently, these two would drift.
+    var h = LockGate.fnv1a64([] as Array<Number>);
+    Test.assertMessage(h[0] == 0xcbf29ce4l && h[1] == 0x84222325l, "FNV offset basis");
+    h = LockGate.fnv1a64([0] as Array<Number>);
+    Test.assertMessage(h[0] == 0xaf63bd4cl && h[1] == 0x8601b7dfl,
+        "FNV of one zero byte drifted: " + h[0].format("%08x") + h[1].format("%08x"));
+    return true;
+}
+
+(:test)
+function lockedFieldContributesNothing(logger as Test.Logger) as Boolean {
+    // The promise the invite channel makes: a field nobody unlocked records NOTHING. Not a
+    // zeroed session, not a partial one — the compute() path never runs, so the activity's
+    // FIT carries no developer fields at all.
+    //
+    // The gate state is forced rather than peppered, because this binary carries the zero
+    // pepper on purpose (see fieldUnlockGateIsOffWithoutAPepper) and there is no other way to
+    // reach the locked branch from here.
+    var was = LockGate._unlocked;
+    LockGate._unlocked = false;
+    var e = new FieldEngine(fieldCfg());
+    e.timerS = 60.0;
+    for (var i = 0; i < 30; i++) {
+        if (WingFoilDataField.unlocked()) {     // the guard compute() runs, verbatim
+            e.feed(1.0, 6.0, 90.0, 6.0, Position.QUALITY_GOOD, null);
+        }
+    }
+    Test.assertMessage(e.detector.flightCount == 0, "no flight while locked");
+    Test.assertMessage(e.detector.foilTimeS < 0.001, "no foil time while locked");
+    Test.assertMessage(e.detector.currentFlightM < 0.001, "no distance while locked");
+    Test.assertMessage(e.records.best2sMps < 0.001, "no speed record while locked");
+    Test.assertMessage(e.tickCount() == 0, "not even a tick");
+
+    // ...and the same 30 samples DO accumulate once the key lands, or the assertions above
+    // would also pass on an engine that simply never worked.
+    LockGate._unlocked = true;
+    for (var i = 0; i < 30; i++) {
+        if (WingFoilDataField.unlocked()) {
+            e.feed(1.0, 6.0, 90.0, 6.0, Position.QUALITY_GOOD, null);
+        }
+    }
+    Test.assertMessage(e.detector.flightCount == 1, "unlocking starts the engine");
+    Test.assertMessage(e.detector.foilTimeS > 20.0, "and the foil time with it");
+    LockGate._unlocked = was;
+    return true;
+}
