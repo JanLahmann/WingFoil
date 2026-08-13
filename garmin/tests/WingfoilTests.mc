@@ -1,3 +1,4 @@
+import Toybox.Communications;
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
@@ -1206,6 +1207,129 @@ function failedAttemptExpiresAndFitPackingIsSane(logger as Test.Logger) as Boole
     return true;
 }
 
+// ---- Takeoff HR cost ----
+// The watch slice of lab/src/wingfoil_lab/hrcost.py (docs/algorithms.md "HR cost"). The
+// tracker is driven here at the 1 Hz it sees on the water, with the heart rates an optical
+// sensor under a wetsuit sleeve actually produces — including the ones it does not produce.
+
+// `seconds` of 1 Hz samples at one heart rate and one effort state. `hr` null = the sensor
+// has lost the wrist, which on the water is a normal minute, not an error.
+function hrCostHold(t as HrCostTracker, seconds as Number, hr as Number?,
+        effortOpen as Boolean) as Void {
+    for (var i = 0; i < seconds; i++) {
+        t.tick(1.0, hr, effortOpen, false);
+    }
+}
+
+// A clean takeoff, priced. The load-bearing part is the timing: the number appears when the
+// 30 s window closes, not when he gets up, because that is where the heart rate the pumping
+// produced actually shows up.
+(:test)
+function hrCostPricesATakeoffWhenThePeakHasArrived(logger as Test.Logger) as Boolean {
+    // the constants are the lab's, mirrored not re-invented
+    Test.assertEqual(HR_COST_PEAK_WINDOW_S, 30.0);
+    Test.assertEqual(HR_COST_MIN_RISE_BPM, 5);
+    Test.assertEqual(HR_COST_MIN_BPM, 30);
+    Test.assertEqual(HR_COST_MAX_BPM, 220);
+
+    var t = new HrCostTracker();
+    Test.assertEqual(t.lastCostBpm, -1);
+    hrCostHold(t, 20, 96, false);                // drifting about, not pumping
+    Test.assertEqual(t.lastCostBpm, -1);
+    Test.assertMessage(!t.windowOpen(), "no effort, no window");
+
+    t.tick(1.0, 100, true, false);               // first stroke: the anchor, at 100 bpm
+    Test.assertMessage(t.windowOpen(), "the start of the effort anchors the window");
+    hrCostHold(t, 7, 104, true);
+    t.tick(1.0, 108, true, true);                // 9 s in: up, flight confirmed
+    Test.assertMessage(t.lastCostBpm < 0, "nothing published while the heart is still rising");
+
+    hrCostHold(t, 10, 118, false);               // the peak lands ~20 s after the anchor
+    hrCostHold(t, 9, 112, false);                // and comes back down
+    Test.assertMessage(t.windowOpen(), "the window runs the full 30 s past the anchor");
+    Test.assertEqual(t.lastCostBpm, -1);
+    hrCostHold(t, 2, 110, false);                // 30 s: the window closes
+    Test.assertMessage(!t.windowOpen(), "the window closes on its own");
+    Test.assertEqual(t.lastCostBpm, 118 - 100);
+
+    // the next takeoff replaces the last: this metric is "the one you just did", not a session
+    hrCostHold(t, 60, 108, false);
+    Test.assertEqual(t.lastCostBpm, 18);
+    t.tick(1.0, 105, true, false);
+    hrCostHold(t, 4, 112, true);
+    t.tick(1.0, 116, true, true);
+    hrCostHold(t, 30, 130, false);
+    Test.assertEqual(t.lastCostBpm, 130 - 105);
+
+    // and the catalog dashes it until there is one, the way every unavailable metric does
+    var c = getApp().controller;
+    var saved = c.engine;
+    c.engine = new MetricsEngine();
+    Test.assertEqual(PageModel.value(PageModel.M_TAKEOFF_COST, c), "--");
+    c.engine.hrCost.lastCostBpm = 12;
+    Test.assertEqual(PageModel.value(PageModel.M_TAKEOFF_COST, c), "12");
+    Test.assertEqual(PageModel.suffix(PageModel.M_TAKEOFF_COST), " bpm");
+    Test.assertEqual(PageModel.label(PageModel.M_TAKEOFF_COST), "hr cost");
+    c.engine = saved;
+    logger.debug("takeoff cost: 18 bpm at the window close, then 25 for the next takeoff");
+    return true;
+}
+
+// Every way the number must NOT appear. A confident wrong figure is worse than a dash, and
+// on a wrist in cold water the wrong figure is the likelier one.
+(:test)
+function hrCostRefusesToGuess(logger as Test.Logger) as Boolean {
+    var t = new HrCostTracker();
+
+    // a rise under hrMinRise is sensor noise wearing a takeoff's clothes
+    t.tick(1.0, 100, true, false);
+    hrCostHold(t, 4, 101, true);
+    t.tick(1.0, 102, true, true);
+    hrCostHold(t, 40, 103, false);
+    Test.assertMessage(!t.windowOpen(), "the window closed");
+    Test.assertEqual(t.lastCostBpm, -1);
+
+    // a FAILED attempt: he pumped, his heart paid for it, he never got up. No takeoff, no
+    // takeoff cost — the effort is the phone's `failed` episode, counted nowhere here.
+    t.tick(1.0, 100, true, false);
+    hrCostHold(t, 15, 130, true);
+    hrCostHold(t, 20, 130, false);
+    Test.assertEqual(t.lastCostBpm, -1);
+
+    // the sensor drops out mid-window. What survives still carries a peak, and a hole can
+    // only hide a HIGHER one, so the cost is biased low — never high.
+    t.tick(1.0, 100, true, false);
+    hrCostHold(t, 3, 104, true);
+    t.tick(1.0, 106, true, true);
+    hrCostHold(t, 8, null, false);
+    hrCostHold(t, 8, 121, false);
+    hrCostHold(t, 10, null, false);
+    Test.assertEqual(t.lastCostBpm, 121 - 100);
+
+    // ...and what the sensor emits instead of nothing must never become the peak: 240 is not
+    // a heart and 12 is a wrist that has stopped reading one.
+    t.tick(1.0, 100, true, false);
+    hrCostHold(t, 3, 104, true);
+    t.tick(1.0, 108, true, true);
+    hrCostHold(t, 5, 240, false);
+    hrCostHold(t, 5, 12, false);
+    hrCostHold(t, 20, 111, false);
+    Test.assertEqual(t.lastCostBpm, 111 - 100);
+
+    // no heart rate AT the anchor: there is no baseline to subtract from anything, so the
+    // attempt is unmeasurable however cleanly it goes.
+    var u = new HrCostTracker();
+    u.tick(1.0, null, true, false);
+    Test.assertMessage(!u.windowOpen(), "no baseline, no window");
+    hrCostHold(u, 4, 140, true);
+    u.tick(1.0, 150, true, true);
+    hrCostHold(u, 40, 150, false);
+    Test.assertEqual(u.lastCostBpm, -1);
+    logger.debug("small rise, failed attempt, dropout, garbage bpm and a missing anchor all "
+        + "leave the metric at a dash");
+    return true;
+}
+
 // ---- Renderer smoke test ----
 // The screenshot pass is the ground truth for "does it look right"; this is the part of it
 // that can run headlessly and on every device: actually PAINT every layout, at worst-case
@@ -1482,3 +1606,286 @@ function lockScreenFitsRoundDisplay(logger as Test.Logger) as Boolean {
     logger.debug("lock screen code font height " + codeH.toString() + "px");
     return true;
 }
+
+// ---- Phase-5 companion link (source/comm/PhoneLink.mc) ----
+// The BLE hop itself cannot be exercised here: transmit needs a paired phone running the
+// companion app, which no simulator provides. Everything ABOVE the radio can be, and is —
+// PhoneLink.radio is a one-method seam these tests replace with a stand-in that succeeds or
+// fails on command, so the branches that decide whether a rider's card survives an offline
+// save are covered without a single real byte going out.
+
+// Stands in for the radio. Records what it was handed and drives the listener the way a real
+// send would: onComplete when the phone acknowledged, onError when it never arrived.
+class FakeRadio extends PhoneLink.Radio {
+    var succeed as Boolean = true;
+    var sent as Number = 0;
+    var lastPayload as Dictionary?;
+
+    function initialize(ok as Boolean) {
+        PhoneLink.Radio.initialize();
+        succeed = ok;
+    }
+
+    function send(payload as Dictionary, listener as Communications.ConnectionListener) as Void {
+        sent++;
+        lastPayload = payload;
+        if (succeed) {
+            listener.onComplete();
+        } else {
+            listener.onError();
+        }
+    }
+}
+
+// A controller carrying a realistic full session: two hours on Lake Garda, ~70% foiling,
+// 38 km, a pile of turns. This is the payload the size budget is judged on — a fresh
+// controller full of zeros would prove nothing about the encoding.
+function fullSessionController() as SessionController {
+    var c = new SessionController();
+    c.startEpochS = 1786000000;          // ten-digit UNIX epoch, the worst case for width
+    c.elapsedS = 7412;
+    var e = c.engine;
+    e.detector.foilTimeS = 5183.4;
+    e.detector.flightCount = 47;
+    e.detector.longestS = 412.7;
+    e.detector.longestM = 4830.2;
+    e.distM = 38412.5;
+    e.records.best2sMps = 12.75;
+    e.records.best10sMps = 11.5;
+    e.turns.turnCount = 96;
+    e.turns.tackCount = 41;
+    e.turns.jibeCount = 52;
+    e.turns.flewCount = 63;
+    e.turns.touchdownCount = 21;
+    e.turns.fellCount = 12;
+    e.pump.successes = 39;
+    e.pump.failed = 17;
+    return c;
+}
+
+// Every key present, every value a Number, version tag first. The phone decodes this blind:
+// a missing key is a blank on the card, a Float is a parse the other side may not survive,
+// and a payload whose schema cannot be read before the rest is a payload that must be
+// guessed at.
+(:test)
+function phoneLinkPayloadShape(logger as Test.Logger) as Boolean {
+    var c = fullSessionController();
+    var p = PhoneLink.summary(c);
+
+    var expected = [PhoneLink.KEY_VERSION, PhoneLink.KEY_START, PhoneLink.KEY_DUR,
+        PhoneLink.KEY_FOIL_TIME, PhoneLink.KEY_FOIL_PCT, PhoneLink.KEY_FLIGHTS,
+        PhoneLink.KEY_LONGEST_S, PhoneLink.KEY_LONGEST_M, PhoneLink.KEY_DIST_M,
+        PhoneLink.KEY_BEST_2S, PhoneLink.KEY_BEST_10S, PhoneLink.KEY_TURNS,
+        PhoneLink.KEY_TACKS, PhoneLink.KEY_JIBES, PhoneLink.KEY_FLEW,
+        PhoneLink.KEY_TOUCHDOWN, PhoneLink.KEY_FELL, PhoneLink.KEY_TAKEOFF_ATT,
+        PhoneLink.KEY_TAKEOFF_OK, PhoneLink.KEY_WIND, PhoneLink.KEY_APP];
+    for (var i = 0; i < expected.size(); i++) {
+        Test.assertMessage(p.hasKey(expected[i]), "payload is missing key " + expected[i]);
+    }
+    Test.assertMessage(p.size() == expected.size(),
+        "payload carries " + p.size().toString() + " keys, the card wants "
+        + expected.size().toString() + " — a new key needs a test and a phone that reads it");
+
+    var keys = p.keys();
+    for (var i = 0; i < keys.size(); i++) {
+        var v = p[keys[i]];
+        Test.assertMessage(v instanceof Lang.Number,
+            "key " + keys[i] + " is not a Number — no floats, no strings on this channel");
+    }
+    // The schema tag, so a reader can refuse a payload it does not understand before it has
+    // interpreted a single number.
+    //
+    // It is NOT asserted to be the first key, because on this platform no sender can put it
+    // there: Monkey C Dictionary.keys() returns hash order, not insertion order (this test
+    // originally asserted keys[0] and got "ds"), and the payload arrives on iOS as an
+    // unordered dictionary anyway. Key order is not a wire property either side can observe,
+    // so what is enforced instead is what the phone actually does — look the version up by
+    // key, before anything else, and find exactly one candidate.
+    Test.assertMessage(p.hasKey(PhoneLink.KEY_VERSION), "no schema version in the payload");
+    Test.assertEqual(p[PhoneLink.KEY_VERSION], PhoneLink.SCHEMA);
+    for (var i = 0; i < keys.size(); i++) {
+        var k = keys[i] as String;
+        Test.assertMessage(k.length() >= 1 && k.length() <= 2,
+            "key " + k + " is longer than the two characters this channel budgets for");
+        Test.assertMessage(k.equals(PhoneLink.KEY_VERSION) || k.length() == 2,
+            "key " + k + " is one character, which is the schema tag's reserved shape");
+    }
+
+    // The dedupe key means what the FIT means: start_time and total_elapsed_time, unmangled.
+    Test.assertEqual(p[PhoneLink.KEY_START], 1786000000);
+    Test.assertEqual(p[PhoneLink.KEY_DUR], 7412);
+
+    // Units, on the numbers where getting them wrong is invisible on the watch and obvious
+    // on the phone: cm/s for speeds, whole seconds and metres, percent as 0-100.
+    Test.assertEqual(p[PhoneLink.KEY_BEST_2S], 1275);
+    Test.assertEqual(p[PhoneLink.KEY_BEST_10S], 1150);
+    Test.assertEqual(p[PhoneLink.KEY_FOIL_TIME], 5183);
+    Test.assertEqual(p[PhoneLink.KEY_LONGEST_S], 412);
+    Test.assertEqual(p[PhoneLink.KEY_LONGEST_M], 4830);
+    Test.assertEqual(p[PhoneLink.KEY_DIST_M], 38412);
+    Test.assertEqual(p[PhoneLink.KEY_FOIL_PCT], 69);        // 5183.4 / 7412
+    Test.assertEqual(p[PhoneLink.KEY_TAKEOFF_ATT], 56);     // successes + failed
+    Test.assertEqual(p[PhoneLink.KEY_TAKEOFF_OK], 39);
+    Test.assertEqual(p[PhoneLink.KEY_FLEW], 63);
+    Test.assertEqual(p[PhoneLink.KEY_TOUCHDOWN], 21);
+    Test.assertEqual(p[PhoneLink.KEY_FELL], 12);
+    Test.assertEqual(p[PhoneLink.KEY_APP],
+        FitSchema.APP_MINOR * 256 + FitSchema.SCHEMA_VERSION);
+
+    // A percentage cannot exceed 100 however the two clocks disagree, and a zero-length
+    // session must not divide by it.
+    c.elapsedS = 0;
+    Test.assertEqual(PhoneLink.summary(c)[PhoneLink.KEY_FOIL_PCT], 0);
+    c.elapsedS = 10;
+    Test.assertEqual(PhoneLink.summary(c)[PhoneLink.KEY_FOIL_PCT], 100);
+    logger.debug("payload: " + p.size().toString()
+        + " keys, all Numbers, schema tag findable by key");
+    return true;
+}
+
+// The size budget, measured on the payload above rather than on a guess. transmit is a
+// notification channel; the plan's 10 KB is what the radio tolerates, not what a summary
+// should cost. Anything that pushes this over 1 KB is a new transport, not a bigger message.
+(:test)
+function phoneLinkPayloadFitsBudget(logger as Test.Logger) as Boolean {
+    var p = PhoneLink.summary(fullSessionController());
+    var bytes = PhoneLink.estimateBytes(p);
+    logger.debug("realistic full session: " + p.size().toString() + " keys, "
+        + bytes.toString() + " B encoded (budget " + PhoneLink.BUDGET_BYTES.toString() + ")");
+    Test.assertMessage(bytes <= PhoneLink.BUDGET_BYTES,
+        "payload is " + bytes.toString() + " B, budget is "
+        + PhoneLink.BUDGET_BYTES.toString());
+    // Headroom, so the key that breaks the budget trips this with room to fix it.
+    Test.assertMessage(bytes <= PhoneLink.BUDGET_BYTES / 2,
+        "payload is " + bytes.toString() + " B, over half the budget already");
+    return true;
+}
+
+// One slot, newest wins. Three sessions with the phone in the car must leave the NEWEST card
+// waiting, not a queue that replays the stale ones first.
+(:test)
+function phoneLinkPendingIsNewestWins(logger as Test.Logger) as Boolean {
+    var saved = PhoneLink.radio;
+    var fake = new FakeRadio(false);            // nothing gets through
+    PhoneLink.radio = fake;
+    PhoneLink.clearPending();
+    AppSettings.phonePush = true;
+
+    var c = fullSessionController();
+    Test.assertMessage(PhoneLink.pending() == null, "starts empty");
+
+    c.startEpochS = 1000;
+    PhoneLink.sendSummary(c);
+    c.startEpochS = 2000;
+    PhoneLink.sendSummary(c);
+    c.startEpochS = 3000;
+    PhoneLink.sendSummary(c);
+
+    var p = PhoneLink.pending();
+    Test.assertMessage(p != null, "three offline saves left nothing to send");
+    Test.assertEqual((p as Dictionary)[PhoneLink.KEY_START], 3000);
+    logger.debug("3 offline saves -> 1 pending card, start=3000");
+
+    // The setting is a real off switch: no stash, no radio.
+    PhoneLink.clearPending();
+    AppSettings.phonePush = false;
+    var before = fake.sent;
+    Test.assertMessage(!PhoneLink.sendSummary(c), "push disabled must report not-sent");
+    Test.assertMessage(PhoneLink.pending() == null, "push disabled must not stash");
+    Test.assertEqual(fake.sent, before);
+
+    AppSettings.phonePush = true;
+    PhoneLink.clearPending();
+    PhoneLink.radio = saved;
+    return true;
+}
+
+// The branch the rider's card lives or dies on. A failed send is the ROUTINE case — phone in
+// the car, app not running — so it must leave the slot exactly as it was; a successful one
+// must clear it, or the next app start re-sends a card the phone already has.
+(:test)
+function phoneLinkFailedSendKeepsTheSlot(logger as Test.Logger) as Boolean {
+    var saved = PhoneLink.radio;
+    AppSettings.phonePush = true;
+    var c = fullSessionController();
+    c.startEpochS = 4242;
+
+    // fail
+    var bad = new FakeRadio(false);
+    PhoneLink.radio = bad;
+    PhoneLink.clearPending();
+    PhoneLink.sendSummary(c);
+    Test.assertEqual(bad.sent, 1);
+    var p = PhoneLink.pending();
+    Test.assertMessage(p != null, "a failed send threw the card away");
+    Test.assertEqual((p as Dictionary)[PhoneLink.KEY_START], 4242);
+    Test.assertMessage(!PhoneLink.lastSendOk, "a failed send did not record the failure");
+
+    // retry on the connected edge / at app start, still failing: still there
+    PhoneLink.send();
+    Test.assertEqual(bad.sent, 2);
+    Test.assertMessage(PhoneLink.pending() != null, "a failed retry threw the card away");
+
+    // ...and now the phone answers
+    var good = new FakeRadio(true);
+    PhoneLink.radio = good;
+    Test.assertMessage(PhoneLink.send(), "send() reported no attempt with a slot pending");
+    Test.assertEqual(good.sent, 1);
+    Test.assertEqual((good.lastPayload as Dictionary)[PhoneLink.KEY_START], 4242);
+    Test.assertMessage(PhoneLink.pending() == null, "a delivered card stayed pending");
+    Test.assertMessage(PhoneLink.lastSendOk, "a delivered card did not record success");
+
+    // an empty slot never touches the radio
+    Test.assertMessage(!PhoneLink.send(), "send() with nothing pending claimed an attempt");
+    Test.assertEqual(good.sent, 1);
+
+    logger.debug("fail -> slot kept (2 attempts), success -> slot cleared");
+    PhoneLink.radio = saved;
+    return true;
+}
+
+// The inbound wind push. This is untrusted input from another process on another device, and
+// a bad wind axis does not fail loudly — it silently relabels every tack as a jibe for the
+// rest of the session. So: integer degrees 0..359, or -1 to clear, and nothing else.
+(:test)
+function phoneLinkWindPushValidatesHard(logger as Test.Logger) as Boolean {
+    var before = AppSettings.cfg.windDirection;
+
+    AppSettings.storeWindDirection(90);
+    Test.assertMessage(PhoneLink.applyWind(0), "0 deg (north) is a legal bearing");
+    Test.assertEqual(AppSettings.cfg.windDirection, 0);
+
+    Test.assertMessage(PhoneLink.applyWind(359), "359 deg is a legal bearing");
+    Test.assertEqual(AppSettings.cfg.windDirection, 359);
+
+    Test.assertMessage(PhoneLink.applyWind(-1), "-1 clears the wind axis");
+    Test.assertEqual(AppSettings.cfg.windDirection, -1);
+
+    // Rejections leave the axis untouched — a bad push must not clear a good value either.
+    AppSettings.storeWindDirection(225);
+    var bad = [360, -2, 1000, -100000, "SW", "225", 225.0, true, null];
+    for (var i = 0; i < bad.size(); i++) {
+        Test.assertMessage(!PhoneLink.applyWind(bad[i]),
+            "accepted a wind push it had no business trusting: index " + i.toString());
+        Test.assertMessage(AppSettings.cfg.windDirection == 225,
+            "a rejected wind push moved the axis: index " + i.toString());
+    }
+
+    // The whole inbound path, dictionary and all: junk in, nothing moved.
+    Test.assertMessage(!PhoneLink.applyMessage(null), "a null message body was believed");
+    Test.assertMessage(!PhoneLink.applyMessage("wind please"), "a String body was believed");
+    Test.assertMessage(!PhoneLink.applyMessage({"zz" => 12}), "a foreign key was believed");
+    Test.assertMessage(!PhoneLink.applyMessage({PhoneLink.KEY_IN_WIND => 400}),
+        "400 deg was believed");
+    Test.assertEqual(AppSettings.cfg.windDirection, 225);
+    // ...and a well-formed push lands through the same path the wind menu uses.
+    Test.assertMessage(PhoneLink.applyMessage({PhoneLink.KEY_IN_WIND => 315}),
+        "a well-formed wind push was refused");
+    Test.assertEqual(AppSettings.cfg.windDirection, 315);
+    Test.assertEqual(AppSettings.windLabel(), "NW");
+
+    AppSettings.storeWindDirection(before);
+    logger.debug("wind push: 0/359/-1 accepted, 360/-2/float/string/bool/null rejected");
+    return true;
+}
+

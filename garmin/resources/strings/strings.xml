@@ -22,6 +22,7 @@
     <string id="SetAlertFlight">Vibrate on longest flight</string>
     <string id="SetAlertTurn">Vibrate on turn outcome</string>
     <string id="SetWindDir">Wind direction (deg from, -1 = unset)</string>
+    <string id="SetPhonePush">Send summary to phone app</string>
 
     <string id="SetAutoPause">Auto-pause when stopped</string>
     <string id="SetAutoPauseDelay">Auto-pause delay (s)</string>
@@ -57,6 +58,7 @@
     <string id="MetPumpStrokes">Pump strokes</string>
     <string id="MetTakeoffs">Takeoffs (attempts&gt;made)</string>
     <string id="MetPumpsToTakeoff">Pumps to takeoff (last)</string>
+    <string id="MetTakeoffCost">Takeoff HR cost (last)</string>
     <!-- data screens (Feature 1): 6 pages x (layout + 5 metric slots) -->
     <string id="SetPageGroup">Data screens</string>
     <string id="SetPg1Layout">Page 1 layout</string>

@@ -12,6 +12,11 @@ class WingfoilApp extends Application.AppBase {
 
     function onStart(state as Dictionary?) as Void {
         _applySettings();
+        // Phase-5 companion link. Registering costs nothing when no phone is paired, and the
+        // retry is the whole point of the pending slot: the app opening is the first moment
+        // after an offline save at which a card from a previous session can still get through.
+        PhoneLink.register();
+        PhoneLink.send();
     }
 
     function onStop(state as Dictionary?) as Void {
@@ -27,6 +32,9 @@ class WingfoilApp extends Application.AppBase {
             unlockedNow();
             return;
         }
+        // A GCM settings edit is proof a phone was talking to this watch a second ago, which
+        // makes it the cheapest reliable "the link is up" signal a watch-app gets.
+        PhoneLink.send();
         WatchUi.requestUpdate();
     }
 

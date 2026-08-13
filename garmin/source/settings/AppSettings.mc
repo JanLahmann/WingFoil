@@ -24,6 +24,10 @@ module AppSettings {
     var alertIntervalKm as Float = 0.0;     // 0 = off
     var autoPause as Boolean = false;
     var autoPauseDelayS as Number = 5;
+    // Phase-5 companion link: push a summary card to the paired iPhone app after a save.
+    // Default on — the push is a few hundred bytes once per session and the FIT arrives
+    // regardless, so the only reason to turn it off is not wanting the phone app at all.
+    var phonePush as Boolean = true;
     // Cells draw a glyph for the metric family; this decides whether the XTINY word stays
     // beside it. Off = glyph only, which buys the value row its width back on the tight
     // bottom row of a 2x2 grid.
@@ -48,6 +52,7 @@ module AppSettings {
         autoPause = _bool("autoPause", false);
         autoPauseDelayS = _num("autoPauseDelayS", 5.0).toNumber();
         showLabels = _bool("showLabels", true);
+        phonePush = _bool("phonePush", true);
         if (autoPauseDelayS < 2) {
             autoPauseDelayS = 2;
         }
