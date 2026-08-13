@@ -14,8 +14,9 @@ class RunNoEvil extends Test.Test {
     function initialize() {
         Test.Test.initialize();
         logger = new Test.Logger();
-        idToName = new [26];
-        populate_test_entries_0_to_26();
+        idToName = new [31];
+        populate_test_entries_0_to_30();
+        populate_test_entries_30_to_31();
     }
 
     function getIndexOf(name as String) as Number {
@@ -41,7 +42,7 @@ class RunNoEvil extends Test.Test {
         return idToName.size();
     }
 
-    function populate_test_entries_0_to_26() as Void {
+    function populate_test_entries_0_to_30() as Void {
         idToName[0] = "sessionSchemaFitsDataFieldBudget";
         idToName[1] = "sessionPackRoundTrips";
         idToName[2] = "sessionPackSaturatesInsteadOfWrapping";
@@ -53,24 +54,28 @@ class RunNoEvil extends Test.Test {
         idToName[8] = "tickCounterRollsBelowTheFitSentinel";
         idToName[9] = "layoutClassifiesCellSizes";
         idToName[10] = "layoutRowsNeverClip";
-        idToName[11] = "WingFoilCore.ringBufferMeanAndEviction";
-        idToName[12] = "WingFoilCore.flightDetectorFullCycle";
-        idToName[13] = "WingFoilCore.flightDetectorDiscardsShortFlights";
-        idToName[14] = "WingFoilCore.flightDetectorEntryHoldIsBothEndsQualifying";
-        idToName[15] = "WingFoilCore.flightDetectorExitHoldIsBothEndsQualifying";
-        idToName[16] = "WingFoilCore.turnCleanJibeFliesThrough";
-        idToName[17] = "WingFoilCore.turnSlowSpellIsTouchdown";
-        idToName[18] = "WingFoilCore.turnCollapseIsFellIn";
-        idToName[19] = "WingFoilCore.turnSuccessIsScoreOnlyNotOutcome";
-        idToName[20] = "WingFoilCore.turnWallowIsNotDetected";
-        idToName[21] = "WingFoilCore.turnBearAwayNotCountedAsJibe";
-        idToName[22] = "WingFoilCore.turnJibeClassifiedWithWind";
-        idToName[23] = "WingFoilCore.turnSubmersionForcesFellIn";
-        idToName[24] = "WingFoilCore.turnOffFoilNotCounted";
-        idToName[25] = "WingFoilCore.speedRecordsPbEvents";
+        idToName[11] = "fieldUnlockGateIsOffWithoutAPepper";
+        idToName[12] = "fieldUnlockKeyMatchesKeygenVectors";
+        idToName[13] = "lockedFieldContributesNothing";
+        idToName[14] = "WingFoilCore.ringBufferMeanAndEviction";
+        idToName[15] = "WingFoilCore.flightDetectorFullCycle";
+        idToName[16] = "WingFoilCore.flightDetectorDiscardsShortFlights";
+        idToName[17] = "WingFoilCore.flightDetectorEntryHoldIsBothEndsQualifying";
+        idToName[18] = "WingFoilCore.flightDetectorExitHoldIsBothEndsQualifying";
+        idToName[19] = "WingFoilCore.turnCleanJibeFliesThrough";
+        idToName[20] = "WingFoilCore.turnSlowSpellIsTouchdown";
+        idToName[21] = "WingFoilCore.turnCollapseIsFellIn";
+        idToName[22] = "WingFoilCore.turnSuccessIsScoreOnlyNotOutcome";
+        idToName[23] = "WingFoilCore.turnWallowIsNotDetected";
+        idToName[24] = "WingFoilCore.turnBearAwayNotCountedAsJibe";
+        idToName[25] = "WingFoilCore.turnJibeClassifiedWithWind";
+        idToName[26] = "WingFoilCore.turnSubmersionForcesFellIn";
+        idToName[27] = "WingFoilCore.turnOffFoilNotCounted";
+        idToName[28] = "WingFoilCore.speedRecordsPbEvents";
+        idToName[29] = "WingFoilCore.odometerRejectsTeleports";
     }
 
-    function evaluate_test_entries_0_to_26(id as Number, logger as Logger) {
+    function evaluate_test_entries_0_to_30(id as Number, logger as Logger) {
         var result = false;
         if (id == 0) {
             result = $.sessionSchemaFitsDataFieldBudget(logger);
@@ -95,35 +100,56 @@ class RunNoEvil extends Test.Test {
         } else if (id == 10) {
             result = $.layoutRowsNeverClip(logger);
         } else if (id == 11) {
-            result = $.WingFoilCore.ringBufferMeanAndEviction(logger);
+            result = $.fieldUnlockGateIsOffWithoutAPepper(logger);
         } else if (id == 12) {
-            result = $.WingFoilCore.flightDetectorFullCycle(logger);
+            result = $.fieldUnlockKeyMatchesKeygenVectors(logger);
         } else if (id == 13) {
-            result = $.WingFoilCore.flightDetectorDiscardsShortFlights(logger);
+            result = $.lockedFieldContributesNothing(logger);
         } else if (id == 14) {
-            result = $.WingFoilCore.flightDetectorEntryHoldIsBothEndsQualifying(logger);
+            result = $.WingFoilCore.ringBufferMeanAndEviction(logger);
         } else if (id == 15) {
-            result = $.WingFoilCore.flightDetectorExitHoldIsBothEndsQualifying(logger);
+            result = $.WingFoilCore.flightDetectorFullCycle(logger);
         } else if (id == 16) {
-            result = $.WingFoilCore.turnCleanJibeFliesThrough(logger);
+            result = $.WingFoilCore.flightDetectorDiscardsShortFlights(logger);
         } else if (id == 17) {
-            result = $.WingFoilCore.turnSlowSpellIsTouchdown(logger);
+            result = $.WingFoilCore.flightDetectorEntryHoldIsBothEndsQualifying(logger);
         } else if (id == 18) {
-            result = $.WingFoilCore.turnCollapseIsFellIn(logger);
+            result = $.WingFoilCore.flightDetectorExitHoldIsBothEndsQualifying(logger);
         } else if (id == 19) {
-            result = $.WingFoilCore.turnSuccessIsScoreOnlyNotOutcome(logger);
+            result = $.WingFoilCore.turnCleanJibeFliesThrough(logger);
         } else if (id == 20) {
-            result = $.WingFoilCore.turnWallowIsNotDetected(logger);
+            result = $.WingFoilCore.turnSlowSpellIsTouchdown(logger);
         } else if (id == 21) {
-            result = $.WingFoilCore.turnBearAwayNotCountedAsJibe(logger);
+            result = $.WingFoilCore.turnCollapseIsFellIn(logger);
         } else if (id == 22) {
-            result = $.WingFoilCore.turnJibeClassifiedWithWind(logger);
+            result = $.WingFoilCore.turnSuccessIsScoreOnlyNotOutcome(logger);
         } else if (id == 23) {
-            result = $.WingFoilCore.turnSubmersionForcesFellIn(logger);
+            result = $.WingFoilCore.turnWallowIsNotDetected(logger);
         } else if (id == 24) {
-            result = $.WingFoilCore.turnOffFoilNotCounted(logger);
+            result = $.WingFoilCore.turnBearAwayNotCountedAsJibe(logger);
         } else if (id == 25) {
+            result = $.WingFoilCore.turnJibeClassifiedWithWind(logger);
+        } else if (id == 26) {
+            result = $.WingFoilCore.turnSubmersionForcesFellIn(logger);
+        } else if (id == 27) {
+            result = $.WingFoilCore.turnOffFoilNotCounted(logger);
+        } else if (id == 28) {
             result = $.WingFoilCore.speedRecordsPbEvents(logger);
+        } else if (id == 29) {
+            result = $.WingFoilCore.odometerRejectsTeleports(logger);
+        }
+
+        return result;
+    }
+
+    function populate_test_entries_30_to_31() as Void {
+        idToName[30] = "WingFoilCore.implausibleSpeedIsNotARecord";
+    }
+
+    function evaluate_test_entries_30_to_31(id as Number, logger as Logger) {
+        var result = false;
+        if (id == 30) {
+            result = $.WingFoilCore.implausibleSpeedIsNotARecord(logger);
         }
 
         return result;
@@ -137,8 +163,12 @@ class RunNoEvil extends Test.Test {
 
         assertMessage(id >= 0, "Could not find '" + test + "'");
         var result = false;
-        if (id < 26) {
-            result = self.evaluate_test_entries_0_to_26(id, logger);
+        if (id < 30) {
+            result = self.evaluate_test_entries_0_to_30(id, logger);
+        }
+
+        else if (id < 31) {
+            result = self.evaluate_test_entries_30_to_31(id, logger);
         }
 
         if (result instanceof Boolean) {
