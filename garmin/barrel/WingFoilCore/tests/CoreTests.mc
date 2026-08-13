@@ -361,4 +361,74 @@ function speedRecordsPbEvents(logger as Test.Logger) as Boolean {
     return true;
 }
 
+// ---- Odometer teleport guard ----
+
+// The session page read 37 986 km in the simulator: distance was the firmware odometer
+// reading itself, and FIT replay opens at the simulator's default location before jumping to
+// the clip's, so one tick booked a continent. A watch does the same in miniature every time a
+// fix returns far from where it was lost.
+(:test)
+function odometerRejectsTeleports(logger as Test.Logger) as Boolean {
+    // an ordinary tick: the odometer step is what counts, not the Doppler estimate
+    Test.assertEqual(Odometer.gate(8.4, 8.2, 1.0), 8.4);
+    // a slow tick with a stationary rider still counts the metre the odometer moved
+    Test.assertEqual(Odometer.gate(1.0, 0.0, 1.0), 1.0);
+    // firmware smoothing may run ahead of Doppler for a tick; up to 3x is still believed
+    Test.assertEqual(Odometer.gate(24.0, 8.0, 1.0), 24.0);
+    // ... beyond that the tick falls back to the Doppler integral
+    Test.assertEqual(Odometer.gate(35.0, 8.0, 1.0), 8.0);
+    // the teleport itself: a whole continent in one second becomes one second of riding
+    Test.assertEqual(Odometer.gate(8000000.0, 8.2, 1.0), 8.2);
+    // a backwards odometer (activity reset, lap rollover) never subtracts distance
+    Test.assertEqual(Odometer.gate(-500.0, 8.2, 1.0), 8.2);
+    // no speed and no movement adds nothing at all
+    Test.assertEqual(Odometer.gate(0.0, 0.0, 1.0), 0.0);
+    // the cap scales with the tick, so a 3 s gap is not judged as a 1 s one
+    Test.assertEqual(Odometer.gate(28.0, 0.0, 3.0), 28.0);
+    Test.assertEqual(Odometer.gate(28.0, 0.0, 1.0), 0.0);
+
+    // ... and through the stateful path: joining a clip cut out of a longer session, whose
+    // odometer already reads 9.5 km, must not count those 9.5 km as ours.
+    var odo = new Odometer();
+    Test.assertEqual(odo.step(9469.6, 8.2, 1.0), 8.2);        // first reading: origin only
+    var total = 0.0;
+    total += odo.step(9477.9, 8.3, 1.0);                       // 8.3 m of real riding
+    total += odo.step(4000000.0, 8.1, 1.0);                    // teleport -> Doppler
+    total += odo.step(4000008.0, 8.0, 1.0);                    // continues from the new origin
+    Test.assertMessage((total - 24.4).abs() < 0.01,
+        "odometer total " + total.toString() + " m, expected 24.4");
+    logger.debug("odometer: teleports fall back to Doppler, normal steps pass through");
+    return true;
+}
+
+// ---- Speed plausibility ----
+
+// One impossible sample is enough to ruin a session: SpeedRecords latches the best value it
+// ever saw and distance integrates it. FIT replay produced 1.4e7 m/s, which showed as a
+// 50 675 121 km/h best-2 s and 14 934 km of distance on the store screenshots.
+(:test)
+function implausibleSpeedIsNotARecord(logger as Test.Logger) as Boolean {
+    Test.assert(speedPlausible(0.0));
+    Test.assert(speedPlausible(9.4));                  // a very fast wing run
+    Test.assert(speedPlausible(MAX_SPEED_MPS));        // the boundary is still believed
+    Test.assert(!speedPlausible(MAX_SPEED_MPS + 0.1));
+    Test.assert(!speedPlausible(14076422.0));          // the sample the simulator produced
+    Test.assert(!speedPlausible(-1.0));                // a negative speed is not a speed
+
+    // and it must not survive into a record: the gap path is the one a bad sample takes
+    var r = new SpeedRecords();
+    for (var i = 0; i < 5; i++) {
+        r.tick(9.0);
+    }
+    var before = r.best2sMps;
+    r.onGap();                                          // what the engines call for a bad sample
+    for (var i = 0; i < 5; i++) {
+        r.tick(9.0);
+    }
+    Test.assertMessage((r.best2sMps - before).abs() < 0.001,
+        "best2s moved across a gap: " + before.toString() + " -> " + r.best2sMps.toString());
+    logger.debug("speed gate: band is 0.." + MAX_SPEED_MPS.toString() + " m/s");
+    return true;
+}
+
 }

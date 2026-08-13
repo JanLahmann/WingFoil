@@ -38,6 +38,24 @@ echoed in session fields 40–42.
 | `speedChannelRecords` | doppler | FIT `speed`/`enhanced_speed` (device Doppler) for all speed records |
 | `speedChannelManeuvers` | hybrid | positional speed (local-meter projection) for turn minima — Doppler is ~3–4 s smoothed |
 | watch gate | `Position.Quality ≥ USABLE` | below ⇒ sample not fed to detectors/records; timers freeze; FIT keeps raw |
+| `odoMaxStep` | 3 × Doppler distance + 10 m/s × dt | watch odometer guard, see below |
+| `maxSpeedMps` | 40.0 m/s (144 km/h) | watch plausibility band; outright sailing record is 33.7 m/s |
+
+**An implausible speed sample is treated exactly like an unusable fix**
+(`garmin/barrel/WingFoilCore/source/Sanity.mc`): speed forced to 0, no distance, and
+`onGap()` on records/turns/pump so no window straddles it. One bad sample otherwise survives
+the whole session, because records latch the best value ever seen and distance integrates.
+Symptom that found it: the simulator emits `speed = 20 037 508 m/s` — the Web-Mercator
+half-circumference — when FIT playback hiccups, which latched a **50 675 121 km/h** best-2 s.
+
+**Watch distance is a sum of validated odometer steps, never the odometer reading**
+(`garmin/barrel/WingFoilCore/source/Odometer.mc`, shared by the device app and the data field).
+`Activity.Info.elapsedDistance` is a reading, and it teleports: a fix recovered far from where
+it was lost books the whole gap into one tick. A step above `odoMaxStep` is replaced by the
+Doppler integral over the same tick, which is bounded by construction; the first reading of a
+session only sets the origin, so joining an odometer that already reads 9 km adds nothing.
+Symptom that found it: the simulator's FIT replay opens at the default location and jumps to
+the clip's, which showed **37 986 km** on the session page.
 
 ## Speed records (GP3S set)
 
