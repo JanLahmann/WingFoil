@@ -50,7 +50,8 @@ class MetricsEngine {
     var submerged as Boolean = false;
 
     hidden var _lastMs as Number = 0;
-    hidden var _lastDist as Float = 0.0;
+    // Distance comes through the barrel's teleport guard, never straight off elapsedDistance.
+    hidden var _odo as Odometer = new Odometer();
     hidden var _tickCount as Number = 0;
     hidden var _baseline as Float = 0.0;
     hidden var _haveBaseline as Boolean = false;
@@ -81,6 +82,12 @@ class MetricsEngine {
         gpsQuality = info.accuracy != null ? info.accuracy as Number : 0;
         var sp = info.speed;
         speedMps = sp != null ? sp : 0.0;
+        // An impossible speed is garbage, whatever the fix claims about its quality, and it
+        // must not reach the records (which latch) or the distance (which integrates).
+        var sane = WingFoilCore.speedPlausible(speedMps);
+        if (!sane) {
+            speedMps = 0.0;
+        }
 
         var actInfo = Activity.getActivityInfo();
         var distDelta = speedMps * dt;
@@ -89,20 +96,16 @@ class MetricsEngine {
                 timerS = actInfo.timerTime / 1000.0;
             }
             if (actInfo.elapsedDistance != null) {
-                var d = actInfo.elapsedDistance as Float;
-                if (d >= _lastDist) {
-                    distDelta = d - _lastDist;
-                }
-                _lastDist = d;
-                distM = d;
+                distDelta = _odo.step(actInfo.elapsedDistance as Float, distDelta, dt);
             }
             hr = actInfo.currentHeartRate;
         }
+        distM += distDelta;
         _updateSubmersion(actInfo);
 
         _tickCount++;
 
-        if (gpsQuality < Position.QUALITY_USABLE) {
+        if (!sane || gpsQuality < Position.QUALITY_USABLE) {
             // don't feed garbage into detectors/records; windows must restart cleanly
             records.onGap();
             turns.onGap();

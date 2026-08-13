@@ -39,7 +39,8 @@ class FieldEngine {
 
     hidden var _cfg as WingFoilCore.Config;
     hidden var _lastTimerMs as Number = -1;
-    hidden var _lastDist as Float = 0.0;
+    // Distance comes through the barrel's teleport guard, never straight off elapsedDistance.
+    hidden var _odo as Odometer = new Odometer();
     hidden var _tickCount as Number = 0;
     hidden var _baseline as Float = 0.0;
     hidden var _haveBaseline as Boolean = false;
@@ -62,7 +63,7 @@ class FieldEngine {
         timerS = 0.0;
         submerged = false;
         _lastTimerMs = -1;
-        _lastDist = 0.0;
+        _odo = new Odometer();
         _tickCount = 0;
         _haveBaseline = false;
     }
@@ -98,20 +99,22 @@ class FieldEngine {
 
         var sp = info.currentSpeed;
         var speed = sp != null ? sp as Float : 0.0;
+        // Sanity first: an impossible speed must not become distance either, and the odometer
+        // step it would have justified is exactly the step worth rejecting.
+        var sane = WingFoilCore.speedPlausible(speed);
+        if (!sane) {
+            speed = 0.0;
+        }
 
         var distDelta = speed * dt;
         var ed = info.elapsedDistance;
         if (ed != null) {
-            var d = ed as Float;
-            if (d >= _lastDist) {
-                distDelta = d - _lastDist;
-            }
-            _lastDist = d;
-            distM = d;
+            distDelta = _odo.step(ed as Float, distDelta, dt);
         }
+        distM += distDelta;
 
         var quality = info.currentLocationAccuracy;
-        var q = quality != null ? quality as Number : 0;
+        var q = sane && quality != null ? quality as Number : 0;
 
         return feed(dt, speed, _cogDeg(info), distDelta, q, _pressure(info));
     }
@@ -120,6 +123,13 @@ class FieldEngine {
     // drive this directly with synthetic 1 Hz arrays.
     function feed(dt as Float, speed as Float, cogDeg as Float?, distDelta as Float,
             quality as Number, pressurePa as Float?) as Number {
+        // An impossible speed is garbage, whatever the fix claims about its quality: drop the
+        // whole sample down the gap path rather than let it latch a record.
+        if (!WingFoilCore.speedPlausible(speed)) {
+            speed = 0.0;
+            distDelta = 0.0;
+            quality = 0;
+        }
         speedMps = speed;
         gpsQuality = quality;
         _updateSubmersion(pressurePa);
