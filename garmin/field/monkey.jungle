@@ -1,7 +1,17 @@
 project.manifest = manifest.xml
 
 # tests/ holds (:test)-annotated code — stripped from normal builds, compiled with --unit-test
-base.sourcePath = source;tests
+#
+# ../source/lock/LockGate.mc is the device app's unlock gate, compiled in VERBATIM so app and
+# field can never drift apart on the key arithmetic (docs/decisions.md ADR-012). Only the gate,
+# not the whole ../source/lock directory: LockView.mc next to it is the device app's lock
+# SCREEN and reaches into RecordingView and getApp(), neither of which exists here — a data
+# field has no views of its own to switch to, so it draws its lock state inside onUpdate().
+#
+# ../source-nopepper/ carries the all-zero pepper, which is what makes LockGate.enabled()
+# false and the lock unreachable in this (private-beta) field. Only monkey-invite.jungle swaps
+# it for the generated ../gen/UnlockPepper.mc.
+base.sourcePath = source;tests;../source/lock/LockGate.mc;../source-nopepper
 
 # The detection core, linked as a Monkey Barrel PROJECT dependency (same barrel.jungle the
 # device app uses), so the field and the app can never drift apart on flight/turn semantics.

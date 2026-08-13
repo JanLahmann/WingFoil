@@ -1,0 +1,7 @@
+<strings>
+    <!-- Invite build only; merged on top of resources/strings/strings.xml. The name carries
+         its own channel, because a tester will have this and the private beta side by side in
+         the data-field picker and has to be able to tell them apart. -->
+    <string id="AppNameInvite">WingFoil Field - Invite Beta</string>
+    <string id="SetUnlockKey">Unlock key (from the invite mail)</string>
+</strings>
