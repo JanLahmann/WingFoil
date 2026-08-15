@@ -25,9 +25,14 @@ module AppSettings {
     var autoPause as Boolean = false;
     var autoPauseDelayS as Number = 5;
     // Phase-5 companion link: push a summary card to the paired iPhone app after a save.
-    // Default on — the push is a few hundred bytes once per session and the FIT arrives
-    // regardless, so the only reason to turn it off is not wanting the phone app at all.
-    var phonePush as Boolean = true;
+    // Default OFF until the BLE hop has been proven on real hardware. The push costs a few
+    // hundred bytes once per session and the FIT arrives regardless, so the feature earns its
+    // default-on the moment it works — but `Communications.transmit` has never run against a
+    // real phone from this code, and the fenix 7 family has already shown (see PhoneLink.mc)
+    // that an unexercised Communications call can take the whole app down with no error at
+    // all. Testers should not be the ones to discover that. Flip it on in Garmin Connect to
+    // test the link deliberately.
+    var phonePush as Boolean = false;
     // Cells draw a glyph for the metric family; this decides whether the XTINY word stays
     // beside it. Off = glyph only, which buys the value row its width back on the tight
     // bottom row of a 2x2 grid.
@@ -52,7 +57,7 @@ module AppSettings {
         autoPause = _bool("autoPause", false);
         autoPauseDelayS = _num("autoPauseDelayS", 5.0).toNumber();
         showLabels = _bool("showLabels", true);
-        phonePush = _bool("phonePush", true);
+        phonePush = _bool("phonePush", false);
         if (autoPauseDelayS < 2) {
             autoPauseDelayS = 2;
         }
