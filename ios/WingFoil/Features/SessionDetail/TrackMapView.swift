@@ -18,17 +18,29 @@ struct TrackMapView: View {
     /// here so the drawing stays a pure function of it.
     let visibility: MapLayerVisibility
 
+    /// Direction chevrons for the camera as it stands. State rather than a computed value:
+    /// the spacing is measured in screen points, so it is a function of the camera and has
+    /// to be rebuilt when the camera moves (see `DirectionField`).
+    @State private var direction = DirectionField()
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             MapReader { proxy in
-                Map(initialPosition: .region(detail.region), interactionModes: []) {
+                Map(initialPosition: .region(detail.initialRegion), interactionModes: []) {
                     TrackContent(detail: detail, effort: effort,
                                  visibility: visibility,
-                                 playhead: playhead.flatMap(detail.moment))
+                                 playhead: playhead.flatMap(detail.moment),
+                                 direction: direction)
                 }
                 .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
                 .frame(height: 260)
                 .clipShape(.rect(cornerRadius: 14))
+                .onMapCameraChange(frequency: .onEnd) { context in
+                    direction.camera(moved: context, detail: detail)
+                }
+                .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
+                    direction.resized(to: size, detail: detail)
+                }
                 // Interaction is off so the page scrolls, which leaves the tap free to
                 // mean exactly one thing: "show me this point".
                 .onTapGesture { location in
@@ -68,12 +80,24 @@ struct FullScreenMapView: View {
     /// shared model itself to redraw when a chip is tapped *on this screen*.
     @Environment(SessionStore.self) private var store
 
+    @State private var direction = DirectionField()
+
     var body: some View {
-        Map(initialPosition: .region(detail.region)) {
+        Map(initialPosition: .region(detail.initialRegion)) {
             TrackContent(detail: detail, effort: effort, visibility: store.mapLayers,
-                         playhead: playheadT.flatMap(detail.moment))
+                         playhead: playheadT.flatMap(detail.moment),
+                         direction: direction)
         }
         .mapStyle(.standard(elevation: .flat))
+        // The big map pans, zooms *and rotates*, and all three change the answer: how far
+        // apart the chevrons should be, which of them are on screen, and which way "north"
+        // points on the glyph.
+        .onMapCameraChange(frequency: .onEnd) { context in
+            direction.camera(moved: context, detail: detail)
+        }
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
+            direction.resized(to: size, detail: detail)
+        }
         .navigationTitle(SessionDisplay.title(detail.row))
         .navigationBarTitleDisplayMode(.inline)
         .ignoresSafeArea(edges: .bottom)
@@ -96,6 +120,7 @@ private struct TrackContent: MapContent {
     let effort: SessionDetail.RecordEffort?
     let visibility: MapLayerVisibility
     let playhead: SessionDetail.TimelinePoint?
+    let direction: DirectionField
 
     var body: some MapContent {
         ForEach(detail.segments) { segment in
@@ -113,6 +138,18 @@ private struct TrackContent: MapContent {
                     .stroke(EventMarkerStyle.pumping.opacity(0.75),
                             style: StrokeStyle(lineWidth: 6, lineCap: .round,
                                                lineJoin: .round))
+            }
+        }
+        // Above the route, below everything that marks an *event*: the chevrons are meant to
+        // be read as a property of the line — which way it goes — not as things that happened.
+        if visibility.isVisible(.direction) {
+            ForEach(direction.chevrons) { chevron in
+                Annotation("", coordinate: Self.coordinate(chevron.lat, chevron.lon),
+                           anchor: .center) {
+                    DirectionChevron(bearingDeg: chevron.bearingDeg - direction.headingDeg,
+                                     style: visibility.lineStyle(flying: chevron.flying))
+                }
+                .annotationTitles(.hidden)
             }
         }
         // The record effort glows over the phase colouring: provenance the engine already
@@ -189,6 +226,90 @@ private struct TrackContent: MapContent {
     }
 }
 
+/// One direction mark. Small, semi-transparent and tinted like the water under it, because
+/// it has to lose every contest with the event dots: an arrow is texture on the line, and a
+/// touchdown is news.
+///
+/// Rotation is course *minus the camera's heading*, so it keeps pointing where he was going
+/// after the rider spins the big map. Hidden from VoiceOver on purpose — a hundred elements
+/// reading "chevron" is noise, and the legend chip is where the layer is named.
+private struct DirectionChevron: View {
+    let bearingDeg: Double
+    let style: TrackLineStyle
+
+    var body: some View {
+        Image(systemName: "chevron.up")
+            // Semibold at 8pt rather than bold at 9: at bold the run of arrows read as a
+            // second dotted line competing with the track, which is precisely the thing a
+            // direction hint must not do.
+            .font(.system(size: 8, weight: .semibold))
+            .foregroundStyle(tint)
+            .rotationEffect(.degrees(bearingDeg))
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
+private extension DirectionChevron {
+    /// Mixed towards the label colour rather than simply tinted: a teal arrow drawn on the
+    /// teal flying track would be invisible, and this stays phase-coloured while separating
+    /// from the line in both light and dark mode.
+    var tint: Color {
+        switch style {
+        case .flying: return Color.teal.mix(with: Color(.label), by: 0.55).opacity(0.62)
+        case .offFoil: return Color(.label).opacity(0.38)
+        case .neutral: return Color(.label).opacity(0.22)
+        }
+    }
+}
+
+/// The chevron set as it stands for the current camera, and the heading it was built for.
+///
+/// Kept as a value the two maps each own a copy of: the spacing is in screen points, so the
+/// answer depends on the camera and the view size, and both change independently on the
+/// full-screen map. Rebuilding is a walk over the track — cheap enough to do on every camera
+/// *end*, which is why the frequency is `.onEnd` rather than continuous.
+struct DirectionField {
+    private(set) var chevrons: [TrackDirection.Chevron] = []
+    private(set) var headingDeg: Double = 0
+    private var region: MKCoordinateRegion?
+    private var size: CGSize = .zero
+
+    mutating func camera(moved context: MapCameraUpdateContext, detail: SessionDetail) {
+        region = context.region
+        headingDeg = context.camera.heading
+        rebuild(detail)
+    }
+
+    mutating func resized(to size: CGSize, detail: SessionDetail) {
+        guard size != self.size else { return }
+        self.size = size
+        // The inline map never moves its camera, so a layout pass is the only moment it ever
+        // gets to build its chevrons.
+        if region == nil { region = detail.initialRegion }
+        rebuild(detail)
+    }
+
+    private mutating func rebuild(_ detail: SessionDetail) {
+        guard let region, size.width > 0, size.height > 0 else {
+            chevrons = []
+            return
+        }
+        let span = region.span
+        let scale = TrackDirection.metresPerPoint(latSpan: span.latitudeDelta,
+                                                  lonSpan: span.longitudeDelta,
+                                                  centerLat: region.center.latitude,
+                                                  widthPoints: size.width,
+                                                  heightPoints: size.height)
+        let box = TrackDirection.Box(centerLat: region.center.latitude,
+                                     centerLon: region.center.longitude,
+                                     latSpan: span.latitudeDelta,
+                                     lonSpan: span.longitudeDelta)
+        chevrons = TrackDirection.chevrons(along: detail.directionPoints,
+                                           metresPerPoint: scale, within: box)
+    }
+}
+
 /// The replay marker: deliberately unlike the outcome dots (bigger, white-ringed, with a
 /// halo) so it reads as "where you are now" rather than "something happened here".
 private struct PlayheadDot: View {
@@ -218,5 +339,35 @@ extension SessionDetail {
         return MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: bounds.centerLat, longitude: bounds.centerLon),
             span: MKCoordinateSpan(latitudeDelta: bounds.latSpan, longitudeDelta: bounds.lonSpan))
+    }
+
+    /// The camera both maps open on. Identical to `region` in a shipping build; the debug
+    /// hook exists because the chevron spacing is a function of the zoom, and `simctl` has
+    /// no fingers to pinch a second scale into existence.
+    var initialRegion: MKCoordinateRegion {
+        #if DEBUG && targetEnvironment(simulator)
+        // `UI_MAP_ZOOM=<factor>` tightens the camera by that factor around the same centre.
+        if let factor = ProcessInfo.processInfo.environment["UI_MAP_ZOOM"]
+            .flatMap(Double.init), factor > 1 {
+            let region = self.region
+            return MKCoordinateRegion(
+                center: region.center,
+                span: MKCoordinateSpan(latitudeDelta: region.span.latitudeDelta / factor,
+                                       longitudeDelta: region.span.longitudeDelta / factor))
+        }
+        #endif
+        return region
+    }
+
+    /// The track as one polyline with the phase carried per point — the input the chevron
+    /// decimation walks. Flattened rather than fed segment by segment: spacing has to be
+    /// continuous across a takeoff, or every short off-foil run would collect its own
+    /// cluster of arrows.
+    var directionPoints: [TrackDirection.Point] {
+        segments.flatMap { segment in
+            segment.points.map {
+                TrackDirection.Point(lat: $0.lat, lon: $0.lon, flying: segment.flying)
+            }
+        }
     }
 }

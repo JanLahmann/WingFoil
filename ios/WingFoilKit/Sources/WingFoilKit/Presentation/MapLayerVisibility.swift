@@ -27,6 +27,10 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
     case takeoff
     /// The wrist went under: the barometer's submersion evidence on a turn or a flight end.
     case splash
+    /// Which way he was riding: chevrons along the track, oriented to the course. A marker
+    /// category rather than a line one — hiding it removes the arrows and leaves the route
+    /// exactly as it was, because the arrows are not the route.
+    case direction
 
     public var id: String { rawValue }
 
@@ -36,7 +40,8 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
     public var isLine: Bool {
         switch self {
         case .flying, .offFoil, .effort, .pumping: return true
-        case .flewThrough, .touchdown, .fellIn, .courseChange, .takeoff, .splash: return false
+        case .flewThrough, .touchdown, .fellIn, .courseChange, .takeoff, .splash, .direction:
+            return false
         }
     }
 
@@ -56,6 +61,7 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
         case .courseChange: return "course change"
         case .takeoff: return "takeoff"
         case .splash: return "splash"
+        case .direction: return "direction"
         }
     }
 
@@ -72,6 +78,7 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
         case .courseChange: return "course change markers"
         case .takeoff: return "takeoff and failed attempt markers"
         case .splash: return "splash markers"
+        case .direction: return "direction of travel chevrons"
         }
     }
 }

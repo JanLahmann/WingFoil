@@ -48,6 +48,9 @@ struct MapLegendView: View {
 
     private var caption: String {
         var text = "Tap a chip to hide or show it on the map and chart."
+        if !detail.segments.isEmpty {
+            text += " Chevrons point the way you were riding."
+        }
         if !detail.markers.isEmpty {
             text += " Solid = maneuver outcome · hollow = straight-line flight end."
         }
@@ -78,6 +81,10 @@ struct MapLegendView: View {
             chip(.flying, swatch: .line(.teal))
             chip(.offFoil, swatch: .line(.secondary))
             chip(.pumping, swatch: .line(EventMarkerStyle.pumping))
+            // Sits with the line chips rather than the marker ones because that is what it
+            // is about — the route, not the events on it — even though hiding it removes
+            // the arrows outright the way a marker layer does.
+            chip(.direction, swatch: .glyph("chevron.up", .secondary))
             if let effort {
                 chip(.effort, swatch: .line(.orange), label: effort.label.lowercased())
             }
@@ -283,6 +290,10 @@ extension SessionDetail {
     func layerTally(effort: RecordEffort?) -> MapLayerTally {
         var tally = MapLayerTally()
         for segment in segments { tally.add(segment.flying ? .flying : .offFoil) }
+        // Counted per run of track, not per chevron: how many arrows the camera decides to
+        // draw is a question about the *camera*, and the chip has to be live or inert
+        // before anything has been laid out.
+        tally.add(.direction, segments.count)
         for marker in markers { tally.add(marker.layer) }
         tally.add(.pumping, pumpSpans.count)
         tally.add(.takeoff, takeoffMarks.count)

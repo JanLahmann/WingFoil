@@ -197,18 +197,27 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    edge — the only way to photograph that button, which lives below the key field.
    On the Trends tab `UI_SCROLL_TO=sideSuccess` parks the screen on the port/starboard
    turn-success chart. On the session page,
-   `UI_SCROLL_TO=<anchor>` (`replay`, `summary`, `turns` for the turn cards and the
-   drill-in row, `takeoff`, `hr` for the HR-cost card, `gear`), `UI_PLAYHEAD=0.0…1.0`,
+   `UI_SCROLL_TO=<anchor>` (`chart` for the speed chart, `replay`, `summary`, `turns` for
+   the turn cards and the drill-in row, `takeoff`, `hr` for the HR-cost card, `gear`),
+   `UI_PLAYHEAD=0.0…1.0`,
    `UI_FULLSCREEN_MAP=1` and `UI_HIDE_LAYERS=<MapLayer,…>` stage the session detail page:
    the last one starts with those legend chips switched off (e.g. `fellIn,courseChange`,
-   or one of the layers added later — `pumping`, `takeoff`, `splash`), which is the only
-   way to photograph a filtered map without a finger. It is applied *after* the stored
+   or one of the layers added later — `pumping`, `takeoff`, `splash`, `direction`), which
+   is the only way to photograph a filtered map without a finger. It is applied *after* the stored
    preference and never written back — the override stages a screenshot, it does not edit
    the setting. `UI_RECORD=<window key>` (`best10s`, `best250m`, `bestNm`, …) preselects a
    non-default GP3S window so the map glow and the chart shading can be photographed on
    something other than the best 2 s. `UI_OPEN_TURNS=1` pushes the turns drill-in page and
    `UI_TURN_FILTER=<jibes|tacks|both>,<port|starboard|both>` engages its two segmented
    filters (e.g. `jibes,starboard`), which `simctl` likewise cannot tap.
+   Two more exist because the zoom features are *gestures*, and `simctl` has no fingers to
+   pinch with. `UI_CHART_ZOOM=<factor>` opens the speed chart already zoomed by that factor
+   (e.g. `8`), centred on `UI_PLAYHEAD` when one is set — pair the two to photograph a
+   deliberately busy stretch with its markers legible, rather than whatever happens to sit
+   mid-session. `UI_MAP_ZOOM=<factor>` tightens both maps' opening camera by that factor
+   about the same centre; it is the only way to check the direction chevrons at a second
+   scale, since their spacing is measured in screen points and therefore *changes* with the
+   camera. Both are staging-only, transient, and never written back to any preference.
 3. **Monkey C units (Toybox.Test)** — the core suite lives in the `WingFoilCore` barrel
    (`garmin/barrel/WingFoilCore/tests/`) and is therefore compiled into **both** consumers'
    `--unit-test` builds: `bin/WingFoilTests.prg` (device app: 16 tests) and
