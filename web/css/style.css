@@ -77,7 +77,34 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--ink-2); }
   padding: 6px 9px; border: 1px solid var(--line); border-radius: 999px;
 }
 
-main { max-width: 1120px; margin: 0 auto; padding: 22px 20px 40px; display: grid; gap: 18px; }
+main { max-width: 1120px; margin: 0 auto; padding: 22px 20px 40px; }
+/* One <div> per view; only one is ever un-hidden. Each keeps the panel rhythm. */
+main > div { display: grid; gap: 18px; }
+main > div[hidden], [hidden] { display: none !important; }
+
+/* ------------------------------------------------------------------- view tabs */
+
+.views { display: flex; gap: 2px; background: var(--surface-2); border-radius: 8px; padding: 3px; }
+.views button {
+  background: transparent; color: var(--ink-3); border: 0; padding: 7px 12px;
+  border-radius: 6px; display: inline-flex; align-items: center; gap: 7px;
+}
+.views button:hover { color: var(--ink-2); }
+.views button[aria-current=page] { background: var(--surface-0); color: var(--ink); }
+.views .count {
+  font: 600 10.5px/1 var(--mono); color: var(--ink-3);
+  background: var(--surface-2); border-radius: 999px; padding: 3px 6px;
+}
+.views button[aria-current=page] .count { background: var(--surface-2); color: var(--ink-2); }
+
+/* --------------------------------------------------------------- update banner */
+
+.update-banner {
+  display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap;
+  padding: 11px 20px; background: #14293f; border-bottom: 1px solid #2a5a91;
+  color: #d9e8fb; font-size: 13.5px;
+}
+.update-actions { display: flex; gap: 8px; }
 
 /* ---------------------------------------------------------------- controls */
 
@@ -226,6 +253,38 @@ td.dim { color: var(--ink-3); }
   border-left: 2px solid var(--line); padding: 8px 0 8px 12px;
   color: var(--ink-3); font-size: 13px;
 }
+
+/* ----------------------------------------------------------------- the library */
+
+.head-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+
+button.small-btn { font-size: 12px; padding: 5px 9px; }
+button.ghost.danger { color: #ee8b8b; }
+button.ghost.danger:hover { background: #2a1414; border-color: #6b2626; color: #ffb4b4; }
+
+.lib-table td { padding-top: 9px; padding-bottom: 9px; }
+.lib-table th:nth-child(2), .lib-table td:nth-child(2) { width: 99%; }
+.lib-spot { display: block; }
+.lib-file { display: block; font: 11.5px var(--mono); color: var(--ink-3); }
+.lib-row-actions { display: flex; gap: 6px; white-space: nowrap; }
+
+.highlight-note {
+  border-left-color: var(--ink); color: var(--ink-2);
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+}
+
+/* ------------------------------------------------------------------ the trends */
+
+.sub-head {
+  font-size: 12.5px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ink-3); margin: 26px 0 4px;
+}
+#trend-totals { margin-bottom: 6px; }
+.trend-chart { margin-top: 16px; }
+.trend-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.trend-unit { font: 12px var(--sans); color: var(--ink-3); }
+.trend-head h4 { margin: 0; font: 600 13px/1.3 var(--sans); color: var(--ink-2); }
+#records-table tbody tr { cursor: default; }
 
 /* --------------------------------------------------------------------- icu */
 

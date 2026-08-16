@@ -9,6 +9,14 @@ Engine 0.2.0 fills the phases the 0.1.0 schema left as documented empties — `t
 phase-2/3 output the original schema predates). Source capabilities still degrade the
 same way the modules do: no accel ⇒ `pumps`/stroke counts null, no barometer ⇒ no
 submersion evidence, Smart-Recording truncation ⇒ `unknown` outcomes excluded from tallies.
+
+Engine 0.3.0 adds `pumpEpisodes`. `takeoff.py` has classified every pumping effort since
+0.2.0, but only the *tallies* of that classification reached the file, so the failed
+attempts existed as a number and nowhere else — a consumer could say "14 of them" and not
+say *when*, which is exactly what a map needs. The episodes are now serialized whole, in
+detection order, every outcome: presentation decides what to draw, the schema carries the
+evidence. Adding the key moves no pre-existing number, but it is still a schema change and
+`ENGINE_VERSION` is what tells a stored analysis to re-derive itself.
 """
 
 from __future__ import annotations
@@ -25,9 +33,11 @@ from .flight import FlightConfig, FlightResult, segment_flights
 from .flightend import (FlightEnd, FlightEndConfig, FlightEndSummary, OutcomeSplit,
                         classify_flight_ends, split_outcomes, summarize_flight_ends)
 from .gp3s import GP3SRecords, RecordWindow
+from .hrcost import (Coverage, FatigueBin, HrAnalysis, HrConfig, HrEvent, HrSummary,
+                     PumpCruiseHr, analyze_hr)
 from .parse import RawTrack, parse_fit
 from .pump import PumpConfig, PumpTrack, pump_track
-from .takeoff import (Takeoff, TakeoffAnalysis, TakeoffConfig, TakeoffSummary,
+from .takeoff import (PumpEpisode, Takeoff, TakeoffAnalysis, TakeoffConfig, TakeoffSummary,
                       analyze_takeoffs, summarize_takeoffs)
 from .turns import (OutcomeCounts, Turn, TurnConfig, TurnSummary, detect_turns,
                     summarize_turns)
@@ -51,11 +61,13 @@ class Analysis:
     takeoffs: TakeoffAnalysis
     takeoff_summary: TakeoffSummary
     pump: PumpTrack | None
+    hr: HrAnalysis
     wind_config: WindConfig
     turn_config: TurnConfig
     flight_end_config: FlightEndConfig
     pump_config: PumpConfig
     takeoff_config: TakeoffConfig
+    hr_config: HrConfig
 
 
 def analyze(path: str | Path, filter_config: FilterConfig | None = None,
@@ -64,8 +76,10 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
             turn_config: TurnConfig | None = None,
             flight_end_config: FlightEndConfig | None = None,
             pump_config: PumpConfig | None = None,
-            takeoff_config: TakeoffConfig | None = None) -> Analysis:
-    """Full pipeline: parse -> clean -> flights -> records -> wind -> turns -> ends -> takeoffs."""
+            takeoff_config: TakeoffConfig | None = None,
+            hr_config: HrConfig | None = None) -> Analysis:
+    """Full pipeline: parse -> clean -> flights -> records -> wind -> turns -> ends ->
+    takeoffs -> HR cost."""
     fcfg = filter_config or FilterConfig()
     flcfg = flight_config or FlightConfig()
     wcfg = wind_config or WindConfig()
@@ -73,6 +87,7 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
     fecfg = flight_end_config or FlightEndConfig()
     pcfg = pump_config or PumpConfig()
     tocfg = takeoff_config or TakeoffConfig()
+    hcfg = hr_config or HrConfig()
 
     track = parse_fit(path)
     ct = clean(track, fcfg)
@@ -97,6 +112,10 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
     takeoffs = analyze_takeoffs(ct, fr, turns, tocfg, pt,
                                 evidence=shared(tocfg.foil_exit_speed_kmh, tocfg.baro_drop_m))
 
+    # HR is the one channel read from the *raw* records rather than the cleaned track, and
+    # it joins to three earlier phases at once (runs, ends, turns) -- so it runs last.
+    hr = analyze_hr(track, fr, takeoffs, ends, pt, turns, hcfg)
+
     turn_summary = summarize_turns(turns)
     end_summary = summarize_flight_ends(ends)
     return Analysis(
@@ -105,9 +124,9 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
         wind=wind, turns=turns, turn_summary=turn_summary,
         flight_ends=ends, flight_end_summary=end_summary,
         outcome_split=split_outcomes(turn_summary, end_summary),
-        takeoffs=takeoffs, takeoff_summary=summarize_takeoffs(takeoffs), pump=pt,
+        takeoffs=takeoffs, takeoff_summary=summarize_takeoffs(takeoffs), pump=pt, hr=hr,
         wind_config=wcfg, turn_config=tcfg, flight_end_config=fecfg,
-        pump_config=pcfg, takeoff_config=tocfg,
+        pump_config=pcfg, takeoff_config=tocfg, hr_config=hcfg,
     )
 
 
@@ -150,6 +169,8 @@ def build_golden(a: Analysis) -> dict:
         },
         "wind": _wind_json(a.wind),
         "takeoffs": [_takeoff_json(k) for k in a.takeoffs.takeoffs],
+        "pumpEpisodes": [_episode_json(e) for e in a.takeoffs.episodes],
+        "hr": _hr_json(a.hr),
         "summary": {
             "foilTimeS": round(fr.foil_time_s, 1),
             "foilPct": round(fr.foil_pct, 2),
@@ -185,6 +206,7 @@ def _config_dict(a: Analysis) -> dict:
     """Params actually used, docs/algorithms.md names (camelCase)."""
     fcfg, flcfg = a.filter_config, a.flight_config
     w, t, p, k = a.wind_config, a.turn_config, a.pump_config, a.takeoff_config
+    h = a.hr_config
     return {
         "foilEntrySpeed": flcfg.foil_entry_speed_kmh,
         "entryHold": flcfg.entry_hold_s,
@@ -253,6 +275,18 @@ def _config_dict(a: Analysis) -> dict:
         "takeoffAttemptWindow": k.attempt_window_s,
         "takeoffMinPreWindow": k.min_pre_window_s,
         "freeTakeoff": k.free_takeoff_strokes,
+        # HR cost
+        "hrCostPeakWindow": h.peak_window_s,
+        "hrBaselineWindow": h.baseline_window_s,
+        "hrMinCoverage": h.min_coverage,
+        "hrFlatlineMax": h.flatline_max_s,
+        "hrMinBpm": h.min_bpm,
+        "hrMaxBpm": h.max_bpm,
+        "hrLag": h.lag_s,
+        "hrRecoveryWindow": h.recovery_window_s,
+        "hrMinRise": h.min_rise_bpm,
+        "hrBinMinutes": h.bin_minutes,
+        "hrMaxSampleGap": h.max_sample_gap_s,
     }
 
 
@@ -322,6 +356,128 @@ def _takeoff_json(k: Takeoff) -> dict:
         "truncated": bool(k.truncated),
         "preWindowS": round(k.pre_window_s, 2),
     }
+
+
+def _episode_json(e: PumpEpisode) -> dict:
+    """One classified pumping effort (docs/algorithms.md "Takeoff analysis", the outcome
+    ladder). Written for **every** outcome, not just `failed`.
+
+    The summary already counts these five buckets; what it cannot carry is *when*. A failed
+    attempt with a timestamp can be placed on a map, drawn on the speed chart and matched to
+    a heart-rate window; the same attempt as a tally can only be apologized for. Filtering to
+    the outcomes a given screen cares about is presentation's job — the file's job is to say
+    what the classifier saw, once, in detection order.
+
+    `durationS` is deliberately absent: it is `endTs - startTs`, and one fact spelled twice
+    is one fact that can drift.
+    """
+    return {
+        "startTs": round(e.start_t, 2),           # first stroke
+        "endTs": round(e.end_t, 2),               # last stroke
+        "strokes": e.strokes,
+        "outcome": e.outcome,                     # success|failed|recovery|in_flight|unknown
+        "bursts": e.bursts,
+        "flightIndex": e.flight_index,            # the flight it produced, or happened in
+        "turnIndex": e.turn_index,                # the turn whose recovery it is
+        "lookaheadS": round(e.lookahead_s, 2),    # gap-free record past the last stroke
+    }
+
+
+def _hr_json(h: HrAnalysis) -> dict:
+    """The HR-cost block (docs/algorithms.md "HR cost").
+
+    Always written, never omitted: a source with no heart-rate channel is a *fact* about
+    that source, and `hasHR: false` beside empty lists says it. Omitting the block would
+    make "this session had no HR" indistinguishable from "this golden predates the block".
+    """
+    return {
+        "hasHR": bool(h.summary.has_hr),
+        "takeoffEvents": [_hr_event_json(e) for e in h.takeoff_events],
+        "swimEvents": [_hr_event_json(e) for e in h.swim_events],
+        "bins": [_hr_bin_json(b) for b in h.bins],
+        "summary": _hr_summary_json(h.summary),
+    }
+
+
+def _hr_event_json(e: HrEvent) -> dict:
+    """One anchored measurement. Every bpm field is null rather than 0 when the window
+    failed its coverage test -- the coverages beside them say how badly."""
+    return {
+        "kind": e.kind,
+        "index": e.index,
+        "ts": round(e.t, 2),
+        "approximate": bool(e.approximate),
+        "strokes": e.strokes,
+        "baselineBpm": _round(e.baseline_bpm, 3),
+        "peakBpm": _round(e.peak_bpm, 3),
+        "costBpm": _round(e.cost_bpm, 3),
+        "peakLagS": _round(e.peak_lag_s, 2),
+        "baselineCoverage": round(e.baseline_coverage, 4),
+        "peakCoverage": round(e.peak_coverage, 4),
+        "recoveryHalfS": _round(e.recovery_half_s, 2),
+        "recoveryCensored": bool(e.recovery_censored),
+    }
+
+
+def _hr_bin_json(b: FatigueBin) -> dict:
+    return {
+        "startTs": round(b.start_t, 2),
+        "endTs": round(b.end_t, 2),
+        "attempts": b.attempts,
+        "successes": b.successes,
+        "failed": b.failed,
+        "successPct": _round(b.success_pct, 2),
+        "avgCostBpm": _round(b.avg_cost_bpm, 3),
+        "medianCostBpm": _round(b.median_cost_bpm, 3),
+        "costValid": b.cost_coverage.valid,
+        "costTotal": b.cost_coverage.total,
+        "avgBaselineBpm": _round(b.avg_baseline_bpm, 3),
+        "avgPumps": _round(b.avg_pumps, 3),
+        "meanBpm": _round(b.mean_bpm, 3),
+    }
+
+
+def _hr_summary_json(s: HrSummary) -> dict:
+    """Session tallies. `Coverage` is flattened to a `<name>Valid`/`<name>Total` pair --
+    no average here may be read without the count behind it. `has_hr` is deliberately not
+    repeated: the block already carries it, and one fact spelled twice is one fact that
+    can drift."""
+    return {
+        "usablePct": _round(s.usable_pct, 2),
+        "avgTakeoffCostBpm": _round(s.avg_takeoff_cost_bpm, 3),
+        "medianTakeoffCostBpm": _round(s.median_takeoff_cost_bpm, 3),
+        **_coverage_json("takeoffCost", s.takeoff_cost_coverage),
+        "approximateTakeoffs": s.approximate_takeoffs,
+        "medianPeakLagS": _round(s.median_peak_lag_s, 2),
+        "bpmPerStroke": _round(s.bpm_per_stroke, 4),
+        "medianBpmPerStroke": _round(s.median_bpm_per_stroke, 4),
+        **_coverage_json("bpmPerStroke", s.bpm_per_stroke_coverage),
+        "pumpCruise": _pump_cruise_json(s.pump_cruise),
+        "medianTakeoffRecoveryS": _round(s.median_takeoff_recovery_s, 2),
+        **_coverage_json("takeoffRecovery", s.takeoff_recovery_coverage),
+        "medianSwimRecoveryS": _round(s.median_swim_recovery_s, 2),
+        **_coverage_json("swimRecovery", s.swim_recovery_coverage),
+        "avgSwimCostBpm": _round(s.avg_swim_cost_bpm, 3),
+        **_coverage_json("swimCost", s.swim_cost_coverage),
+    }
+
+
+def _pump_cruise_json(p: PumpCruiseHr) -> dict:
+    return {
+        "pumpingBpm": _round(p.pumping_bpm, 3),
+        "cruisingBpm": _round(p.cruising_bpm, 3),
+        "deltaBpm": _round(p.delta_bpm, 3),
+        "pumpingSpans": p.pumping_spans,
+        "cruisingSpans": p.cruising_spans,
+        "pumpingCoveredS": round(p.pumping_covered_s, 2),
+        "pumpingSpanS": round(p.pumping_span_s, 2),
+        "cruisingCoveredS": round(p.cruising_covered_s, 2),
+        "cruisingSpanS": round(p.cruising_span_s, 2),
+    }
+
+
+def _coverage_json(name: str, c: Coverage) -> dict:
+    return {f"{name}Valid": c.valid, f"{name}Total": c.total}
 
 
 def _wind_json(w: WindEstimate) -> dict | None:

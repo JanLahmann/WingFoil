@@ -11,7 +11,8 @@ Re-run this whenever anything under `lab/src/wingfoil_lab/` changes. The generat
 `lab_bundle/MANIFEST.json` records the source hashes; `--check` verifies the bundle is
 current without writing anything (exit 1 = stale).
 
-`lab_bundle/web_entry.py` is hand-written glue and is never touched by this script.
+The hand-written glue modules (`web_entry.py`, `library.py`) are never touched by this
+script — it only lists them in `FILES.json` so the worker knows to mount them.
 """
 
 from __future__ import annotations
@@ -28,6 +29,10 @@ REPO = WEB.parent
 SRC = REPO / "lab" / "src" / "wingfoil_lab"
 DEST = WEB / "lab_bundle" / "wingfoil_lab"
 MANIFEST = WEB / "lab_bundle" / "MANIFEST.json"
+
+# Hand-written, not generated: the browser-only Python that sits on top of the lab.
+# Listed here so `FILES.json` (the worker's mount list) stays complete.
+GLUE = ["web_entry.py", "library.py"]
 
 
 def _sources() -> list[Path]:
@@ -81,7 +86,11 @@ def bundle() -> int:
         print(f"  {n}")
     # The loader needs an explicit file list (no directory listing over HTTP).
     listing = WEB / "lab_bundle" / "FILES.json"
-    listing.write_text(json.dumps(["web_entry.py"] + [f"wingfoil_lab/{n}" for n in names],
+    for g in GLUE:
+        if not (WEB / "lab_bundle" / g).exists():
+            print(f"missing hand-written glue: lab_bundle/{g}", file=sys.stderr)
+            return 1
+    listing.write_text(json.dumps(GLUE + [f"wingfoil_lab/{n}" for n in names],
                                   indent=2) + "\n")
     print(f"wrote {listing.relative_to(REPO)} and {MANIFEST.relative_to(REPO)}")
     return 0
