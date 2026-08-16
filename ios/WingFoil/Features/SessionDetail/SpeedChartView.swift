@@ -42,6 +42,9 @@ struct SpeedChartView: View {
                     if visibility.isVisible(.flying) {
                         swatch(color: .teal.opacity(0.35), label: "flights")
                     }
+                    if !detail.pumpSpans.isEmpty, visibility.isVisible(.pumping) {
+                        swatch(color: EventMarkerStyle.pumping.opacity(0.45), label: "pumping")
+                    }
                     if let effort, showsEffort {
                         swatch(color: .orange.opacity(0.6), label: effort.label.lowercased())
                     }
@@ -65,6 +68,16 @@ struct SpeedChartView: View {
                         .foregroundStyle(Color.teal.opacity(0.16))
                 }
             }
+            // Pumping is a span, so the chart draws it the way it draws flights: a band,
+            // not a dot. On the speed trace it is the ramp *into* every takeoff, which is
+            // exactly where the reader wants it.
+            if visibility.isVisible(.pumping) {
+                ForEach(detail.pumpSpans) { span in
+                    RectangleMark(xStart: .value("Pump start", span.band.start),
+                                  xEnd: .value("Pump end", span.band.end))
+                        .foregroundStyle(EventMarkerStyle.pumping.opacity(0.28))
+                }
+            }
             if let effort, showsEffort {
                 RectangleMark(xStart: .value("Best start", effort.band.start),
                               xEnd: .value("Best end", effort.band.end))
@@ -82,6 +95,22 @@ struct SpeedChartView: View {
                     .symbol {
                         EventMarkerStyle.dot(marker, size: 8)
                     }
+            }
+            // The chip filters the chart as well as the map: a takeoff visible on one and
+            // missing from the other would make the pair unreadable.
+            if visibility.isVisible(.takeoff) {
+                ForEach(detail.takeoffMarks) { mark in
+                    PointMark(x: .value("Time", mark.t),
+                              y: .value("Speed", markerSpeed(at: mark.t)))
+                        .symbol { EventMarkerStyle.takeoffMark(mark, size: 10) }
+                }
+            }
+            if visibility.isVisible(.splash) {
+                ForEach(detail.splashMarks) { mark in
+                    PointMark(x: .value("Time", mark.t),
+                              y: .value("Speed", markerSpeed(at: mark.t)))
+                        .symbol { EventMarkerStyle.splashMark(size: 9) }
+                }
             }
             // Declared last and given an explicit z-index: the outcome dots are dense on a
             // long session and the playhead has to be readable *through* them.

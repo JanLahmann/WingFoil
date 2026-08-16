@@ -7,8 +7,9 @@ struct SessionDetailView: View {
 
     @State private var detail: SessionDetail?
     @State private var failure: String?
-    /// Engine window key of the GP3S effort highlighted on the map and chart.
-    @State private var selectedEffort: String? = "best2s"
+    /// Engine window key of the GP3S effort highlighted on the map and chart. Transient by
+    /// design (`RecordWindowSelection`): every session opens on the 2 s peak.
+    @State private var selectedEffort: String? = RecordWindowSelection.defaultKey
     /// Session-clock seconds under the replay playhead; nil = not scrubbing. Shared by the
     /// scrubber, the chart and the map — that shared binding *is* the map/chart link.
     @State private var playhead: Double?
@@ -16,6 +17,8 @@ struct SessionDetailView: View {
     #if DEBUG && targetEnvironment(simulator)
     /// Screenshot hook only (`UI_FULLSCREEN_MAP=1`): `simctl` cannot tap the link.
     @State private var showFullScreenMap = false
+    /// The same, for the turns drill-in (`UI_OPEN_TURNS=1`).
+    @State private var showTurns = false
     #endif
 
     private var row: SessionRow? { store.session(id: sessionID) }
@@ -73,8 +76,9 @@ struct SessionDetailView: View {
             #if DEBUG && targetEnvironment(simulator)
             // Headless-driving hook (see LibraryView): `simctl launch` cannot scroll, so
             // `UI_SCROLL_TO=<anchor>` parks the page on a card section for a screenshot
-            // ("summary" for the whole grid, "takeoff" for the pumping card, "hr" for the
-            // HR-cost card, "gear" for the gear card, "replay" for the scrubber).
+            // ("summary" for the whole grid, "turns" for the turn cards and the drill-in
+            // row, "takeoff" for the pumping card, "hr" for the HR-cost card, "gear" for
+            // the gear card, "replay" for the scrubber).
             .onChange(of: detail == nil) {
                 guard detail != nil else { return }
                 let environment = ProcessInfo.processInfo.environment
@@ -86,9 +90,19 @@ struct SessionDetailView: View {
                         + (range.upperBound - range.lowerBound) * min(max(fraction, 0), 1)
                 }
                 if environment["UI_SHEET"] == "share" { showShare = true }
+                // `UI_RECORD=best10s` picks a *non-default* record window, which is the
+                // only way to photograph the picker's whole point — the glow on a window
+                // other than the 2 s peak — since `simctl` cannot tap a card.
+                if let key = environment["UI_RECORD"] {
+                    selectedEffort = detail?.efforts.contains { $0.id == key } == true
+                        ? key : nil
+                }
                 // `UI_FULLSCREEN_MAP=1` pushes the big map, where the legend chips are the
                 // same controls over the same shared model.
                 if environment["UI_FULLSCREEN_MAP"] == "1" { showFullScreenMap = true }
+                // `UI_OPEN_TURNS=1` pushes the turns page; `UI_TURN_FILTER` (read there)
+                // engages the two segmented filters for the shot.
+                if environment["UI_OPEN_TURNS"] == "1" { showTurns = true }
                 if let anchor = environment["UI_SCROLL_TO"] {
                     proxy.scrollTo(anchor, anchor: .top)
                 }
@@ -103,6 +117,9 @@ struct SessionDetailView: View {
             if let detail {
                 FullScreenMapView(detail: detail, effort: effort, playheadT: playhead)
             }
+        }
+        .navigationDestination(isPresented: $showTurns) {
+            if let detail { TurnsAnalysisView(detail: detail) }
         }
         #endif
         .toolbar {

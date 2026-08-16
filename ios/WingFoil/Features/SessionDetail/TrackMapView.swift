@@ -105,12 +105,42 @@ private struct TrackContent: MapContent {
                         style: StrokeStyle(lineWidth: Self.width(style),
                                            lineCap: .round, lineJoin: .round))
         }
+        // Under the effort glow and under the markers: a pump run is context for the
+        // takeoff that ends it, not a thing to read on its own.
+        if visibility.isVisible(.pumping) {
+            ForEach(detail.pumpSpans) { span in
+                MapPolyline(coordinates: span.points.map(Self.coordinate))
+                    .stroke(EventMarkerStyle.pumping.opacity(0.75),
+                            style: StrokeStyle(lineWidth: 6, lineCap: .round,
+                                               lineJoin: .round))
+            }
+        }
         // The record effort glows over the phase colouring: provenance the engine already
         // computed (`records.windows`), so the rider can see *where* the best run happened.
         if let effort, effort.points.count >= 2, visibility.isVisible(.effort) {
             MapPolyline(coordinates: effort.points.map(Self.coordinate))
                 .stroke(Color.orange,
                         style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))
+        }
+        if visibility.isVisible(.takeoff) {
+            ForEach(detail.takeoffMarks) { mark in
+                Annotation("", coordinate: Self.coordinate(mark.lat, mark.lon),
+                           anchor: .center) {
+                    EventMarkerStyle.takeoffMark(mark)
+                        .accessibilityLabel("\(mark.title), \(mark.detail)")
+                }
+                .annotationTitles(.hidden)
+            }
+        }
+        if visibility.isVisible(.splash) {
+            ForEach(detail.splashMarks) { mark in
+                Annotation("", coordinate: Self.coordinate(mark.lat, mark.lon),
+                           anchor: .center) {
+                    EventMarkerStyle.splashMark()
+                        .accessibilityLabel("\(mark.title), \(mark.detail)")
+                }
+                .annotationTitles(.hidden)
+            }
         }
         ForEach(detail.visibleMarkers(visibility)) { marker in
             Annotation("", coordinate: Self.coordinate(marker.lat, marker.lon),

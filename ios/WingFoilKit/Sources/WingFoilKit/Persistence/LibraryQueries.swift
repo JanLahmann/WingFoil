@@ -68,10 +68,18 @@ public struct TrendPoint: Sendable, Identifiable, Equatable {
     public var avgPumpsToTakeoff: Double?
     public var portSharePct: Double?
     public var best2sKn: Double?
+    /// Turn outcomes split by the tack the turn was *entered* on. Zero-valued (and so
+    /// nil-reporting) when the session has no per-turn rows — an old row imported before
+    /// the child tables existed, or a session with no counted turns at all.
+    public var turnSides = TurnSideSplit()
 
     public var id: String { sessionId }
 
-    public init(_ row: SessionRow) {
+    /// Port entry success, nil when he never entered a turn on port that session.
+    public var portFlewThroughPct: Double? { turnSides.portSuccessPct }
+    public var starboardFlewThroughPct: Double? { turnSides.starboardSuccessPct }
+
+    public init(_ row: SessionRow, turnSides: TurnSideSplit = TurnSideSplit()) {
         sessionId = row.id
         date = row.startDate
         durationS = row.durationS
@@ -84,6 +92,7 @@ public struct TrendPoint: Sendable, Identifiable, Equatable {
         avgPumpsToTakeoff = row.avgPumpsToTakeoff
         portSharePct = row.portSharePct
         best2sKn = row.best2sKn
+        self.turnSides = turnSides
     }
 }
 
@@ -206,7 +215,41 @@ public struct LibraryStore: Sendable {
     // MARK: - Trends
 
     public func trend(_ filter: LibraryFilter = LibraryFilter()) async throws -> [TrendPoint] {
-        try await sessions(filter).map(TrendPoint.init)
+        try await database.writer.read { db in
+            let splits = try Self.turnSideSplits(filter, db: db)
+            return try Self.sessions(filter, db: db).map {
+                TrendPoint($0, turnSides: splits[$0.id] ?? TurnSideSplit())
+            }
+        }
+    }
+
+    /// Per-session turn outcomes by entry tack, for the port/starboard success series.
+    ///
+    /// It has to come from the `turn` child table: the denormalized session columns count
+    /// port and starboard turns but not how each side *ended*, and the engine's
+    /// `TurnSummary` does not carry per-side outcomes either (adding them would move a
+    /// golden). Uncounted turns — bear-aways and round-ups — are excluded in the SQL, the
+    /// same rule every other turn number in the app follows.
+    static func turnSideSplits(_ filter: LibraryFilter,
+                               db: Database) throws -> [String: TurnSideSplit] {
+        let (join, whereSQL, args) = clause(filter, alias: "s")
+        // `clause` always emits a WHERE (the example/provisional exclusions are
+        // unconditional), so appending a condition is safe.
+        let rows = try Row.fetchAll(db, sql: """
+            SELECT t.sessionId AS sessionId, t.side AS side, t.outcome AS outcome
+            FROM turn t JOIN session s ON s.id = t.sessionId\(join)\(whereSQL)
+              AND t.counted = 1
+            """, arguments: args)
+        var out: [String: TurnSideSplit] = [:]
+        for row in rows {
+            let sessionId: String = row["sessionId"]
+            let side: String = row["side"]
+            let outcome: String = row["outcome"]
+            var split = out[sessionId] ?? TurnSideSplit()
+            split.add(side: side, flewThrough: TurnOutcomeKind(outcome) == .flewThrough)
+            out[sessionId] = split
+        }
+        return out
     }
 
     /// Sessions per week over the filtered range, zero-filled between the first and the
