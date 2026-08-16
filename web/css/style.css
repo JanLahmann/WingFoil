@@ -258,10 +258,81 @@ input:focus-visible, button:focus-visible, .btn:focus-visible, .dropzone:focus-v
 .figure { background: var(--surface-1); border-radius: 8px; overflow: hidden; }
 .figure svg { display: block; width: 100%; height: auto; }
 .figure svg text { font-family: var(--sans); }
+/* The two interactive figures. `pan-y` keeps the page scrollable with a vertical swipe
+   over them, while horizontal drags (scrub) and two-finger gestures (pinch-zoom the time
+   axis) reach the handlers instead of the browser. */
+.figure svg.scrubbable { touch-action: pan-y; cursor: crosshair; }
 
-.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; }
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; }
 .legend .item { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-2); }
 .legend .item svg { width: 16px; height: 16px; flex: none; overflow: visible; }
+.legend .muted-item { color: var(--ink-3); }
+.legend-note {
+  flex: 1 1 100%; font-size: 12px; line-height: 1.5; color: var(--ink-3); margin: 2px 0 0;
+}
+
+/* --- legend chips: the map/chart filter.
+   Three states, deliberately distinguishable without colour vision (the iOS legend makes
+   the same split): ON = filled capsule; OFF = dimmed, struck-through label, dashed
+   outline; ABSENT = no capsule at all and not a button, because there is nothing to
+   toggle — the vocabulary still reads. */
+.legend .chip {
+  border-radius: 999px; padding: 5px 10px; gap: 6px;
+  border: 1px solid transparent; background: var(--surface-2); color: var(--ink-2);
+  font: 500 12.5px/1.25 var(--sans);
+}
+.legend button.chip { cursor: pointer; }
+.legend .chip .n {
+  font: 600 10.5px/1 var(--mono); color: var(--ink-3);
+  background: var(--surface-0); border-radius: 999px; padding: 3px 5px;
+}
+.legend .chip.off {
+  background: transparent; border: 1px dashed var(--line); opacity: .62;
+}
+.legend .chip.off span:not(.n) { text-decoration: line-through; }
+.legend .chip.off svg { opacity: .55; }
+.legend .chip.off-empty {
+  background: transparent; padding: 5px 0; opacity: .45; color: var(--ink-3);
+}
+.legend button.chip:hover { background: var(--surface-0); color: var(--ink); }
+.legend .zoom-state { gap: 10px; color: var(--ink-2); }
+
+/* --- the playhead readout: one line, tabular, above the speed strip. */
+.readout {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 18px;
+  padding: 9px 12px; margin-bottom: 10px; border-radius: 8px;
+  background: var(--surface-2); border: 1px solid var(--line-soft);
+}
+.readout .ro { display: flex; align-items: baseline; gap: 5px; }
+.readout .ro b { font: 650 17px/1.1 var(--sans); font-variant-numeric: tabular-nums; }
+.readout .ro small { font-size: 11px; color: var(--ink-3); }
+.readout .phase {
+  font: 600 11px/1 var(--sans); text-transform: uppercase; letter-spacing: .06em;
+  padding: 5px 9px; border-radius: 999px; color: var(--ink-3); background: var(--surface-0);
+}
+.readout .phase.flying { color: #9ec8f5; background: #14293f; }
+.readout #clear-playhead { margin-left: auto; }
+
+/* --- marker popover: the facts of one event, verbatim from the analysis document. */
+.popover {
+  position: fixed; z-index: 45; min-width: 210px;
+  max-width: min(300px, calc(100vw - 24px));
+  background: #0b0b0bf2; border: 1px solid var(--line); border-radius: 9px;
+  box-shadow: 0 10px 30px #000000a8; font: 12.5px/1.5 var(--sans); color: var(--ink);
+}
+.pop-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 9px 8px 9px 12px; border-bottom: 1px solid var(--line-soft);
+}
+.pop-close {
+  background: transparent; border: 0; color: var(--ink-3); font-size: 17px; line-height: 1;
+  padding: 4px 8px; border-radius: 6px;
+}
+.pop-close:hover { color: var(--ink); background: var(--surface-2); }
+.pop-rows { padding: 6px 12px 10px; display: grid; gap: 4px; }
+.pop-rows > div { display: flex; justify-content: space-between; gap: 14px; }
+.pop-rows span:first-child { color: var(--ink-3); }
+.pop-rows span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 
 /* ------------------------------------------------------------------ tables */
 
@@ -428,7 +499,14 @@ footer {
   .tile { padding: 11px 12px; }
   .tile .v { font-size: 19px; }
 
-  .legend { gap: 6px 14px; }
+  .legend { gap: 8px 10px; }
+  /* The chips are the map's filter, so they are real touch targets like every other
+     control — 44 px tall, wrapping into as many rows as it takes. */
+  .legend button.chip { min-height: var(--tap); padding: 8px 12px; font-size: 13px; }
+  .legend .chip.off-empty { padding: 6px 0; }
+  .readout { padding: 10px 12px; gap: 8px 14px; }
+  .readout .ro b { font-size: 16px; }
+  .readout #clear-playhead { margin-left: 0; flex: 1 1 100%; }
   .kv { grid-template-columns: 1fr; gap: 8px; }
 
   .update-banner { padding: 10px var(--pad-x-r) 10px var(--pad-x-l); }

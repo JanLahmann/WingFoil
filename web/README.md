@@ -22,7 +22,11 @@ web/
 ├── js/app.js                   file intake, view routing, save-to-library, SW updates
 ├── js/rpc.js                   the one channel to the worker (request/response by id)
 ├── js/worker.js                Pyodide worker — loads the runtime + the lab, runs the pipeline
-├── js/render.js                summary tiles, inline-SVG map & speed strip, tables
+├── js/render.js                summary tiles and tables; calls the figures
+├── js/session.js               the interactive session view: track map + speed strip, the
+│                               playhead they share, layer chips, zoom, marker popovers
+├── js/viz.js                   drawing primitives both figure files share: palette, SVG
+│                               helpers, the marker vocabulary, formatters, tooltip
 ├── js/store.js                 OPFS storage, with an IndexedDB fallback
 ├── js/library.js               library view: rows, open, delete, per-session + zip export
 ├── js/trends.js                records table + inline-SVG trend charts
@@ -49,6 +53,14 @@ orchestrates and renders JSON.
 Concretely: if you want a number the UI does not yet show, it goes into
 `lab_bundle/library.py` and comes out through `js/rpc.js`. The only arithmetic in the JS is
 SVG coordinate placement and adding up file sizes for the storage indicator.
+
+This holds for the interactive session view too, which is where it is easiest to break. The
+playhead, the layer chips, the time-axis zoom and the marker popovers in `js/session.js` do
+no analysis: a popover's rows are fields of the analysis document read out verbatim, the
+scrubber's readout is the values of the sample nearest the playhead, and the only numeric
+work is placing shapes, the binary search from a time to that sample, and the interpolation
+that slides the map dot between two fixes. If an interaction needs a number the document
+does not carry, the number goes into `lab_bundle/`.
 
 ## Privacy
 
@@ -198,15 +210,16 @@ One Python call (`library.aggregate`) over the stored digests produces the whole
   elapsed time, which would under-report it by ~19 points), and the turn rate is successes
   over turns.
 
-Charts are inline SVG in `js/trends.js`, drawn with the primitives `js/render.js` already
-exports — same surface, same grid ink, series-1 blue and its tint, direct end-labels instead
+Charts are inline SVG in `js/trends.js`, drawn with the primitives `js/viz.js` exports —
+same surface, same grid ink, series-1 blue and its tint, direct end-labels instead
 of a colour key, and a dashed second line so the port/starboard split survives a
 colour-vision check without a second hue.
 
 ## Phone layout
 
 The app is used on the beach, on a phone, so 390 × 844 is a first-class target rather than a
-narrow-window afterthought. Four rules, all of them in `css/style.css` and `js/render.js`:
+narrow-window afterthought. Four rules, all of them in `css/style.css`, `js/session.js` and
+`js/viz.js`:
 
 **1. The page never scrolls sideways.** Wide content scrolls inside its own box or restacks;
 `body { overflow-x: hidden }` is the guard rail, not the mechanism. `main > div` uses
@@ -215,9 +228,9 @@ narrow-window afterthought. Four rules, all of them in `css/style.css` and `js/r
 
 **2. Figures are drawn at their container's real width.** Every inline SVG is `width: 100%`
 over a `viewBox`, so the viewBox width *is* the scale factor. A 1100-unit chart in a 350 px
-column renders its 10.5 px axis labels at 3.3 px. So `render.figureWidth(host)` measures the
+column renders its 10.5 px axis labels at 3.3 px. So `viz.figureWidth(host)` measures the
 slot and the figure is drawn at that many user units — scale 1, type at its stated size, on
-a phone and on a desktop alike. Below 640 units `render.isNarrow()` also switches the
+a phone and on a desktop alike. Below 640 units `viz.isNarrow()` also switches the
 geometry: smaller gutters, fewer ticks, no rotated axis titles (there is no room beside a
 34-unit gutter), bare units instead, and the trend charts' direct end-labels move from the
 right gutter to above the plot. Because the figures now depend on their width, `app.js`
@@ -230,7 +243,8 @@ page. The library rows and the records table are *browsed* one row at a time, so
 reading its label from `data-th` — written by the same code that writes the `<th>`, so the
 two cannot drift.
 
-**4. Touch, not hover.** Every button is ≥ 44 px tall below 760 px, `@media (hover: none)`
+**4. Touch, not hover.** Every button is ≥ 44 px tall below 760 px — the legend chips
+included, since they are the map's filter and not decoration — `@media (hover: none)`
 neutralises the hover styles so they do not stick after a tap, and inputs are 16 px because
 Safari zooms the whole page when a focused field is smaller. The file picker is a real
 `<label for>` over the input, not a button calling `input.click()` — **iPhone Safari has no
@@ -323,15 +337,31 @@ groups (**153 assertions**, all green at the time of writing — 30 / 8 / 28 / 4
 4. **Check the numbers** against the golden above: 23 flights, 60 % on foil, 12.76 km,
    Turns 30, Outcomes 9/9/12, wind 36°, best 2 s 11.36 kn. Badges: `wingfoil`,
    `CIQ dev fields`, `accel`, `HR`.
-5. **Map.** North-up track; grey off-foil line with blue foiling segments on top; numbered
-   markers — green discs / amber triangles / red crosses / grey hairline crosses for
-   bear-aways / hollow squares for straight-line flight ends; wind arrow + scale bar.
-   Hovering a marker shows a tooltip. The legend counts must match the tiles. (A file with
-   no GPS fixes at all must show *"No GPS positions in this file"* in the map slot and still
-   render every other section — `tools/verify_web_entry.py` covers this headlessly.)
-6. **Speed strip.** Blue Doppler line over the paler positional line, blue flight bands, the
-   same marker numbers as the map. Moving the pointer across it shows a crosshair with the
-   time and both speeds.
+5. **Map.** North-up track; grey off-foil line with blue foiling segments on top; small
+   chevrons showing which way he went; numbered markers — green discs / amber triangles /
+   red crosses / grey hairline crosses for bear-aways / hollow squares for straight-line
+   flight ends / blue takeoff arrows / red hollow u-turns for failed attempts / cyan drops
+   where the barometer saw the wrist go under; wind arrow + scale bar. Hovering a marker
+   shows a tooltip, tapping one opens a popover of that event's facts. The legend counts
+   must match the tiles. (A file with no GPS fixes at all must show *"No GPS positions in
+   this file"* in the map slot and still render every other section —
+   `tools/verify_web_entry.py` covers this headlessly.)
+6. **Speed strip.** Blue Doppler line over the paler positional line, blue flight bands,
+   purple pumping bands, the same marker numbers as the map. Moving the pointer across it
+   shows a crosshair with the time and both speeds.
+6b. **The interactions** (`js/session.js`), which is what the two figures are *for*:
+   - **Scrub.** Drag the speed strip: a dashed rule follows the pointer, a dot slides along
+     the track at the same instant, and the readout above the strip names that instant once
+     — clock time, elapsed, both speeds, flying or off foil. Drag on or near the track
+     instead: the same three move together. A press well away from the track does nothing
+     rather than yanking the playhead somewhere unrelated.
+   - **Layer chips.** Every chip hides its category on the map *and* in the chart. A chip
+     with nothing to show stays as a subdued caption, not a dead button. "Show all" returns.
+   - **Zoom.** Wheel or trackpad over the plot (or a two-finger pinch on a touch screen)
+     zooms the time axis about the pointer; markers and bands outside the window are not
+     drawn; the axis switches to m:ss; "Reset zoom" or a double-click restores it. Scrubbing
+     still works while zoomed.
+   - Everything above is transient: it belongs to the document on screen and is not saved.
 7. **Tables.** 34 turn rows (30 counted + 4 rejected), 23 flight-end rows. Turn #1 at
    08:03:36 local, jibe, fell in.
 8. **Takeoffs.** With the CIQ file: attempts 37, successes 23 (62 %), avg pumps 9.0, total
@@ -382,7 +412,9 @@ groups (**153 assertions**, all green at the time of writing — 30 / 8 / 28 / 4
   very first analysis on a cold cache takes ~25 s end to end for a 90-minute session.
 - The intervals.icu integration will normally be blocked by CORS. That is not fixable from a
   zero-server app; the panel detects it and explains the manual export path.
-- No pan/zoom on the map — it is a fixed, aspect-correct plot, like `lab/tools/plot_turns.py`.
+- No pan/zoom on the **map** — it is a fixed, aspect-correct plot, like
+  `lab/tools/plot_turns.py`. The *speed strip* does zoom its time axis (wheel or pinch), and
+  the map answers by moving the shared playhead rather than by changing scale.
 - **The library is device-local and unsynced.** Two browsers, two libraries. There is nowhere
   for a zero-server app to sync to, and inventing one would break the privacy promise. The
   zip export is the migration path.
