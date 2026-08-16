@@ -136,7 +136,8 @@
       <div class="panel-head">
         <h2>Track</h2>
         <p class="muted small">Local-metre projection, north up. Shape carries the outcome; colour
-          reinforces it. Drag the track to move the playhead; tap a marker for its facts.</p>
+          reinforces it. Tap the track to move the playhead; tap a marker for its facts.
+          Pinch, scroll or double-tap to zoom in; zoomed, a drag pans.</p>
       </div>
       <div class="figure" id="map-figure"></div>
       <div class="legend" id="map-legend"></div>
@@ -146,12 +147,21 @@
       <div class="panel-head">
         <h2>Speed</h2>
         <p class="muted small">Doppler drives the flight state; the positional channel scores the
-          turns. Numbers match the map. Drag to scrub, wheel or pinch to zoom the time axis.</p>
+          turns. Numbers match the map. Drag to scrub; wheel, pinch or double-tap to zoom the
+          time axis.</p>
       </div>
-      <!-- The playhead readout: filled in by js/session.js while a playhead is set, and
-           the one place the map dot and the chart rule are guaranteed to agree. -->
-      <div class="readout" id="strip-readout" hidden></div>
       <div class="figure" id="strip-figure"></div>
+      <!-- The playhead readout: filled in by js/session.js while a playhead is set, and
+           the one place the map dot and the chart rule are guaranteed to agree.
+
+           It sits *below* the figures, and that is load-bearing rather than a taste.
+           It appears the instant the first finger lands, and above the strip its arrival
+           pushed the figure down by its own height — on a phone, 151 px, with the Clear
+           button landing exactly where the finger already was. The second finger of a
+           pinch then came down on a button instead of the chart, and a single tap fired
+           Clear on its way up, so the playhead it had just set vanished again. Below the
+           figures nothing it does can move the thing being touched. -->
+      <div class="readout" id="strip-readout" hidden></div>
       <div class="legend" id="strip-legend"></div>
     </section>
 
