@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.2.0",
+  "engineVersion": "0.3.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -1725,6 +1725,748 @@
       "free": false,
       "truncated": false,
       "preWindowS": 845.0
+    }
+  ],
+  "pumpEpisodes": [
+    {
+      "startTs": 487.27,
+      "endTs": 502.39,
+      "strokes": 25,
+      "outcome": "success",
+      "bursts": 1,
+      "flightIndex": 0,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 561.95,
+      "endTs": 564.67,
+      "strokes": 5,
+      "outcome": "failed",
+      "bursts": 1,
+      "flightIndex": null,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 605.15,
+      "endTs": 616.91,
+      "strokes": 18,
+      "outcome": "success",
+      "bursts": 1,
+      "flightIndex": 1,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 681.59,
+      "endTs": 688.79,
+      "strokes": 8,
+      "outcome": "success",
+      "bursts": 2,
+      "flightIndex": 2,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 695.35,
+      "endTs": 713.11,
+      "strokes": 27,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 2,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 718.27,
+      "endTs": 721.03,
+      "strokes": 4,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 2,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 777.19,
+      "endTs": 782.03,
+      "strokes": 7,
+      "outcome": "failed",
+      "bursts": 1,
+      "flightIndex": null,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 793.51,
+      "endTs": 798.19,
+      "strokes": 9,
+      "outcome": "success",
+      "bursts": 1,
+      "flightIndex": 3,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 804.83,
+      "endTs": 807.71,
+      "strokes": 5,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 3,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 809.75,
+      "endTs": 813.27,
+      "strokes": 5,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 3,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 815.39,
+      "endTs": 818.35,
+      "strokes": 4,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 3,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 820.39,
+      "endTs": 825.27,
+      "strokes": 6,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 3,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 866.31,
+      "endTs": 882.39,
+      "strokes": 10,
+      "outcome": "failed",
+      "bursts": 2,
+      "flightIndex": null,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 905.91,
+      "endTs": 908.43,
+      "strokes": 4,
+      "outcome": "failed",
+      "bursts": 1,
+      "flightIndex": null,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 918.75,
+      "endTs": 926.63,
+      "strokes": 12,
+      "outcome": "success",
+      "bursts": 2,
+      "flightIndex": 4,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 933.31,
+      "endTs": 935.91,
+      "strokes": 5,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 4,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 995.47,
+      "endTs": 1005.47,
+      "strokes": 12,
+      "outcome": "success",
+      "bursts": 2,
+      "flightIndex": 5,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 1029.67,
+      "endTs": 1034.91,
+      "strokes": 6,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 5,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 1044.99,
+      "endTs": 1049.11,
+      "strokes": 6,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 5,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 1076.19,
+      "endTs": 1090.23,
+      "strokes": 22,
+      "outcome": "success",
+      "bursts": 1,
+      "flightIndex": 6,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 1103.67,
+      "endTs": 1106.39,
+      "strokes": 4,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 6,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 1140.91,
+      "endTs": 1150.27,
+      "strokes": 16,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 6,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 1209.99,
+      "endTs": 1223.03,
+      "strokes": 20,
+      "outcome": "success",
+      "bursts": 1,
+      "flightIndex": 7,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 1255.79,
+      "endTs": 1261.35,
+      "strokes": 7,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 7,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 2125.35,
+      "endTs": 2130.23,
+      "strokes": 7,
+      "outcome": "success",
+      "bursts": 1,
+      "flightIndex": 8,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 2145.83,
+      "endTs": 2148.95,
+      "strokes": 4,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 8,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 2212.27,
+      "endTs": 2217.11,
+      "strokes": 9,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 8,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 2342.51,
+      "endTs": 2345.51,
+      "strokes": 6,
+      "outcome": "success",
+      "bursts": 1,
+      "flightIndex": 9,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 2384.71,
+      "endTs": 2396.83,
+      "strokes": 9,
+      "outcome": "failed",
+      "bursts": 2,
+      "flightIndex": null,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 2408.35,
+      "endTs": 2411.75,
+      "strokes": 7,
+      "outcome": "success",
+      "bursts": 1,
+      "flightIndex": 10,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 2482.79,
+      "endTs": 2487.71,
+      "strokes": 6,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 10,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 2518.67,
+      "endTs": 2523.23,
+      "strokes": 5,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 10,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 2535.87,
+      "endTs": 2540.83,
+      "strokes": 5,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 10,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 2552.35,
+      "endTs": 2555.75,
+      "strokes": 4,
+      "outcome": "unknown",
+      "bursts": 1,
+      "flightIndex": null,
+      "turnIndex": null,
+      "lookaheadS": 0.25
+    },
+    {
+      "startTs": 2570.63,
+      "endTs": 2574.43,
+      "strokes": 5,
+      "outcome": "failed",
+      "bursts": 1,
+      "flightIndex": null,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 2590.27,
+      "endTs": 2593.79,
+      "strokes": 7,
+      "outcome": "success",
+      "bursts": 1,
+      "flightIndex": 11,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 2695.51,
+      "endTs": 2706.47,
+      "strokes": 8,
+      "outcome": "success",
+      "bursts": 2,
+      "flightIndex": 12,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 2848.39,
+      "endTs": 2852.95,
+      "strokes": 5,
+      "outcome": "success",
+      "bursts": 1,
+      "flightIndex": 13,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 2963.55,
+      "endTs": 2966.63,
+      "strokes": 4,
+      "outcome": "failed",
+      "bursts": 1,
+      "flightIndex": null,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 2993.23,
+      "endTs": 2996.23,
+      "strokes": 6,
+      "outcome": "success",
+      "bursts": 1,
+      "flightIndex": 14,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 3079.59,
+      "endTs": 3084.19,
+      "strokes": 9,
+      "outcome": "success",
+      "bursts": 1,
+      "flightIndex": 15,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 3225.95,
+      "endTs": 3241.99,
+      "strokes": 18,
+      "outcome": "success",
+      "bursts": 2,
+      "flightIndex": 16,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 3261.75,
+      "endTs": 3264.35,
+      "strokes": 4,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 16,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 3275.55,
+      "endTs": 3282.39,
+      "strokes": 8,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 16,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 3285.79,
+      "endTs": 3292.07,
+      "strokes": 8,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 16,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 3326.95,
+      "endTs": 3330.23,
+      "strokes": 4,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 16,
+      "turnIndex": null,
+      "lookaheadS": 2.77
+    },
+    {
+      "startTs": 3336.11,
+      "endTs": 3339.11,
+      "strokes": 5,
+      "outcome": "failed",
+      "bursts": 1,
+      "flightIndex": null,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 3360.67,
+      "endTs": 3378.59,
+      "strokes": 22,
+      "outcome": "success",
+      "bursts": 3,
+      "flightIndex": 17,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 3444.51,
+      "endTs": 3449.59,
+      "strokes": 6,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 17,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 3565.67,
+      "endTs": 3568.95,
+      "strokes": 4,
+      "outcome": "failed",
+      "bursts": 1,
+      "flightIndex": null,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 3582.95,
+      "endTs": 3593.39,
+      "strokes": 12,
+      "outcome": "success",
+      "bursts": 2,
+      "flightIndex": 18,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 3676.75,
+      "endTs": 3680.79,
+      "strokes": 7,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 18,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 3821.63,
+      "endTs": 3824.31,
+      "strokes": 4,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 18,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 3974.43,
+      "endTs": 3990.39,
+      "strokes": 16,
+      "outcome": "failed",
+      "bursts": 3,
+      "flightIndex": null,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 4001.63,
+      "endTs": 4013.55,
+      "strokes": 20,
+      "outcome": "success",
+      "bursts": 1,
+      "flightIndex": 19,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 4098.87,
+      "endTs": 4104.35,
+      "strokes": 9,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 19,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 4209.55,
+      "endTs": 4211.83,
+      "strokes": 5,
+      "outcome": "success",
+      "bursts": 1,
+      "flightIndex": 20,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 4309.39,
+      "endTs": 4311.63,
+      "strokes": 4,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 20,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 4339.55,
+      "endTs": 4348.19,
+      "strokes": 13,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 20,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 4421.79,
+      "endTs": 4432.63,
+      "strokes": 15,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 20,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 4434.99,
+      "endTs": 4438.67,
+      "strokes": 6,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 20,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 4501.19,
+      "endTs": 4520.75,
+      "strokes": 24,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 20,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 4572.55,
+      "endTs": 4576.31,
+      "strokes": 4,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 20,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 4577.87,
+      "endTs": 4585.39,
+      "strokes": 10,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 20,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 4645.79,
+      "endTs": 4653.23,
+      "strokes": 12,
+      "outcome": "failed",
+      "bursts": 1,
+      "flightIndex": null,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 4721.71,
+      "endTs": 4730.35,
+      "strokes": 14,
+      "outcome": "failed",
+      "bursts": 1,
+      "flightIndex": null,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 4771.99,
+      "endTs": 4778.95,
+      "strokes": 11,
+      "outcome": "success",
+      "bursts": 1,
+      "flightIndex": 21,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 4786.83,
+      "endTs": 4789.31,
+      "strokes": 4,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 21,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 4790.83,
+      "endTs": 4804.43,
+      "strokes": 16,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 21,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 4904.07,
+      "endTs": 4931.99,
+      "strokes": 29,
+      "outcome": "failed",
+      "bursts": 3,
+      "flightIndex": null,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 4957.79,
+      "endTs": 4959.99,
+      "strokes": 4,
+      "outcome": "failed",
+      "bursts": 1,
+      "flightIndex": null,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 5005.07,
+      "endTs": 5008.63,
+      "strokes": 6,
+      "outcome": "success",
+      "bursts": 1,
+      "flightIndex": 22,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 5016.83,
+      "endTs": 5018.55,
+      "strokes": 4,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 22,
+      "turnIndex": null,
+      "lookaheadS": 10.0
+    },
+    {
+      "startTs": 5021.11,
+      "endTs": 5023.67,
+      "strokes": 4,
+      "outcome": "in_flight",
+      "bursts": 1,
+      "flightIndex": 22,
+      "turnIndex": null,
+      "lookaheadS": 10.0
     }
   ],
   "hr": {

@@ -102,6 +102,7 @@ import Testing
         checkTurns(stem, json, analysis)
         checkFlightEnds(stem, json, analysis)
         checkTakeoffs(stem, json, analysis)
+        checkPumpEpisodes(stem, json, analysis)
         checkHr(stem, json, analysis)
         checkSummary(stem, json, analysis)
     }
@@ -316,6 +317,62 @@ import Testing
             #expect(int(exp["inFlightStrokes"]) == act.inFlightStrokes,
                     "\(stem) takeoffs[\(i)].inFlightStrokes")
         }
+    }
+
+    /// The `pumpEpisodes` block (engine 0.3.0): every classified pumping effort, in
+    /// detection order. Counts and verdicts are **exact** — strokes, bursts, outcome and
+    /// both cross-reference indices — because they are the classifier's decisions, not
+    /// measurements; the instants get the table's ± 1 s timestamp tolerance.
+    ///
+    /// The list order is itself part of the contract: iOS positions a failed-attempt marker
+    /// by looking `startTs` up in the track, so two implementations that agreed on the set
+    /// but not the sequence would still put markers in different places.
+    private func checkPumpEpisodes(_ stem: String, _ json: [String: Any],
+                                   _ analysis: SessionAnalysis) {
+        guard let expEpisodes = json["pumpEpisodes"] as? [[String: Any]] else { return }
+        #expect(analysis.pumpEpisodes.count == expEpisodes.count,
+                "\(stem): pumpEpisode count \(analysis.pumpEpisodes.count) != \(expEpisodes.count)")
+        for (i, pair) in zip(expEpisodes, analysis.pumpEpisodes).enumerated() {
+            let (exp, act) = pair
+            if let v = exp["outcome"] as? String {
+                #expect(act.outcome.rawValue == v,
+                        "\(stem) pumpEpisodes[\(i)].outcome: \(act.outcome.rawValue) vs \(v)")
+            }
+            if let v = int(exp["strokes"]) {
+                #expect(act.strokes == v, "\(stem) pumpEpisodes[\(i)].strokes: \(act.strokes) vs \(v)")
+            }
+            if let v = int(exp["bursts"]) {
+                #expect(act.bursts == v, "\(stem) pumpEpisodes[\(i)].bursts: \(act.bursts) vs \(v)")
+            }
+            #expect(int(exp["flightIndex"]) == act.flightIndex,
+                    "\(stem) pumpEpisodes[\(i)].flightIndex: \(describe(act.flightIndex)) vs \(describe(int(exp["flightIndex"])))")
+            #expect(int(exp["turnIndex"]) == act.turnIndex,
+                    "\(stem) pumpEpisodes[\(i)].turnIndex: \(describe(act.turnIndex)) vs \(describe(int(exp["turnIndex"])))")
+            if let v = num(exp["startTs"]) {
+                #expect(abs(act.startTs - v) <= 1.0,
+                        "\(stem) pumpEpisodes[\(i)].startTs: \(act.startTs) vs \(v)")
+            }
+            if let v = num(exp["endTs"]) {
+                #expect(abs(act.endTs - v) <= 1.0,
+                        "\(stem) pumpEpisodes[\(i)].endTs: \(act.endTs) vs \(v)")
+            }
+            if let v = num(exp["lookaheadS"]) {
+                #expect(abs(act.lookaheadS - v) <= 1.0,
+                        "\(stem) pumpEpisodes[\(i)].lookaheadS: \(act.lookaheadS) vs \(v)")
+            }
+        }
+
+        // The block and the tallies beside it are two readings of the same classification;
+        // if they ever disagree, one of them is lying about the session.
+        let failed = analysis.pumpEpisodes.filter { $0.outcome == .failed }.count
+        #expect(failed == analysis.summary.takeoff.failedAttempts,
+                "\(stem): \(failed) failed episodes vs failedAttempts \(analysis.summary.takeoff.failedAttempts)")
+        let succeeded = analysis.pumpEpisodes.filter { $0.outcome == .success }.count
+        #expect(succeeded == (json["pumpEpisodes"] as? [[String: Any]] ?? [])
+                    .filter { ($0["outcome"] as? String) == "success" }.count,
+                "\(stem): success-episode count")
+        #expect(analysis.pumpEpisodes.map(\.startTs) == analysis.pumpEpisodes
+                    .map(\.startTs).sorted(), "\(stem): pumpEpisodes must be in time order")
     }
 
     // MARK: - Phase 3.5 (HR cost)
@@ -672,14 +729,14 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.2.0")
+        #expect(analysis.engineVersion == "0.3.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)
         let obj = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         #expect(Set(obj.keys) == ["engineVersion", "config", "capabilities", "flights",
                                   "turns", "flightEnds", "records", "wind", "takeoffs",
-                                  "hr", "summary"])
+                                  "pumpEpisodes", "hr", "summary"])
         #expect(obj["wind"] is NSNull)                       // explicit null, not omitted
         #expect((obj["turns"] as? [Any])?.isEmpty == true)   // no positions ⇒ no COG ⇒ no turns
 
@@ -712,6 +769,10 @@ import Testing
         #expect(takeoff["pumps"] is NSNull)
         #expect(takeoff["success"] as? Bool == true)
         #expect(analysis.summary.takeoff.successPct == nil)  // failures invisible w/o accel
+        // No wrist stream ⇒ no bursts to classify ⇒ an empty *list*, written rather than
+        // omitted: "this source had no episodes" and "this analysis predates the block"
+        // must not look the same, which is the whole reason the key is always encoded.
+        #expect((obj["pumpEpisodes"] as? [Any])?.isEmpty == true)
 
         let caps = try #require(obj["capabilities"] as? [String: Any])
         #expect(Set(caps.keys) == ["hasDoppler", "hasDevFields", "hasWatchLaps",
@@ -741,6 +802,32 @@ import Testing
         var expected = analysis
         expected.records.totalDistanceM = 0
         #expect(decoded == expected)
+    }
+
+    /// A stored `analysis.json` written by engine 0.2.0 has no `pumpEpisodes` key at all.
+    /// It must still decode — the archive reads the document before it compares versions,
+    /// and a decode failure there would look like a corrupt archive rather than a stale one.
+    /// The row is stale by `engineVersion` and `reanalyzeStale()` re-derives it; what must
+    /// not happen is a crash on the way to finding that out.
+    @Test func analysisWithoutPumpEpisodesStillDecodes() throws {
+        var raw = RawTrack()
+        let epoch = Date(timeIntervalSince1970: 1_700_000_000)
+        for t in stride(from: 0.0, through: 120, by: 1) {
+            var s = RecordSample(t: t, timestamp: epoch.addingTimeInterval(t))
+            s.speedMps = (20 <= t && t <= 60) ? 6.0 : 1.0
+            raw.samples.append(s)
+        }
+        raw.capabilities.hasSpeed = true
+        let analysis = SessionSummarizer.analyze(raw)
+        var obj = try #require(try JSONSerialization.jsonObject(
+            with: JSONEncoder().encode(analysis)) as? [String: Any])
+        obj["pumpEpisodes"] = nil                       // the 0.2.0 document, key and all
+        obj["engineVersion"] = "0.2.0"
+        let old = try JSONSerialization.data(withJSONObject: obj)
+
+        let decoded = try JSONDecoder().decode(SessionAnalysis.self, from: old)
+        #expect(decoded.pumpEpisodes.isEmpty)
+        #expect(decoded.engineVersion != AnalysisEngine.version)   // ⇒ stale ⇒ re-derived
     }
 
     /// The other direction of the same contract: a golden the *lab* wrote must decode

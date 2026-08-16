@@ -81,6 +81,17 @@ def test_golden_self_consistency(gpath):
         assert kn["pumps"] == ko["pumps"] and kn["truncated"] == ko["truncated"]
         assert abs(kn["timeToFoilS"] - ko["timeToFoilS"]) <= 1.0
 
+    # Pump episodes: the classifier's verdicts are exact, its instants get the timestamp
+    # tolerance. This is the block a map places failed attempts from, so a drift in the
+    # *order* of the list would silently move markers -- hence zip after a length check.
+    assert len(new["pumpEpisodes"]) == len(gold["pumpEpisodes"])
+    for pn, po in zip(new["pumpEpisodes"], gold["pumpEpisodes"]):
+        assert pn["outcome"] == po["outcome"]
+        assert pn["strokes"] == po["strokes"] and pn["bursts"] == po["bursts"]
+        assert pn["flightIndex"] == po["flightIndex"] and pn["turnIndex"] == po["turnIndex"]
+        assert abs(pn["startTs"] - po["startTs"]) <= 1.0
+        assert abs(pn["endTs"] - po["endTs"]) <= 1.0
+
     # HR cost: the whole block is deterministic off the raw records, so it must reproduce
     # exactly -- there is no resampling or filtering between the FIT and these numbers.
     assert new["hr"] == gold["hr"]
@@ -139,6 +150,27 @@ def test_golden_sanity(gpath):
     assert tk["runsJudged"] + tk["runsTruncated"] == len(g["takeoffs"])
     if not g["capabilities"]["hasAccel"]:
         assert tk["successPct"] is None and tk["totalPumpStrokes"] is None
+
+    # Pump episodes: the serialized form of the tallies right above them. Every outcome
+    # the ladder can produce is written, so the four countable buckets must reconcile
+    # exactly -- if they ever disagree, one of the two is lying about the same session.
+    eps = g["pumpEpisodes"]
+    assert all(set(e.keys()) == {"startTs", "endTs", "strokes", "outcome", "bursts",
+                                 "flightIndex", "turnIndex", "lookaheadS"} for e in eps)
+    if not g["capabilities"]["hasAccel"]:
+        assert eps == []                       # no wrist stream, nothing to classify
+    for key, outcome in (("failedAttempts", "failed"), ("unknownAttempts", "unknown"),
+                         ("recoveryEpisodes", "recovery"), ("inFlightEpisodes", "in_flight")):
+        assert tk[key] == sum(1 for e in eps if e["outcome"] == outcome), key
+    for e in eps:
+        assert e["outcome"] in {"success", "failed", "recovery", "in_flight", "unknown"}
+        assert e["endTs"] >= e["startTs"]
+        assert e["strokes"] >= g["config"]["pumpMinStrokes"] * e["bursts"]
+        assert (e["turnIndex"] is not None) == (e["outcome"] == "recovery")
+        assert (e["flightIndex"] is not None) == (e["outcome"] in {"success", "in_flight"})
+        assert 0.0 <= e["lookaheadS"] <= g["config"]["takeoffAttemptWindow"]
+    # Detection order is time order, and a map that reads `startTs` depends on it.
+    assert [e["startTs"] for e in eps] == sorted(e["startTs"] for e in eps)
     if g["wind"] is not None:
         assert 0.0 <= g["wind"]["dirDeg"] < 360.0
         assert 0.0 <= g["wind"]["confidence"] <= 1.0

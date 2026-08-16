@@ -9,6 +9,14 @@ Engine 0.2.0 fills the phases the 0.1.0 schema left as documented empties — `t
 phase-2/3 output the original schema predates). Source capabilities still degrade the
 same way the modules do: no accel ⇒ `pumps`/stroke counts null, no barometer ⇒ no
 submersion evidence, Smart-Recording truncation ⇒ `unknown` outcomes excluded from tallies.
+
+Engine 0.3.0 adds `pumpEpisodes`. `takeoff.py` has classified every pumping effort since
+0.2.0, but only the *tallies* of that classification reached the file, so the failed
+attempts existed as a number and nowhere else — a consumer could say "14 of them" and not
+say *when*, which is exactly what a map needs. The episodes are now serialized whole, in
+detection order, every outcome: presentation decides what to draw, the schema carries the
+evidence. Adding the key moves no pre-existing number, but it is still a schema change and
+`ENGINE_VERSION` is what tells a stored analysis to re-derive itself.
 """
 
 from __future__ import annotations
@@ -29,7 +37,7 @@ from .hrcost import (Coverage, FatigueBin, HrAnalysis, HrConfig, HrEvent, HrSumm
                      PumpCruiseHr, analyze_hr)
 from .parse import RawTrack, parse_fit
 from .pump import PumpConfig, PumpTrack, pump_track
-from .takeoff import (Takeoff, TakeoffAnalysis, TakeoffConfig, TakeoffSummary,
+from .takeoff import (PumpEpisode, Takeoff, TakeoffAnalysis, TakeoffConfig, TakeoffSummary,
                       analyze_takeoffs, summarize_takeoffs)
 from .turns import (OutcomeCounts, Turn, TurnConfig, TurnSummary, detect_turns,
                     summarize_turns)
@@ -161,6 +169,7 @@ def build_golden(a: Analysis) -> dict:
         },
         "wind": _wind_json(a.wind),
         "takeoffs": [_takeoff_json(k) for k in a.takeoffs.takeoffs],
+        "pumpEpisodes": [_episode_json(e) for e in a.takeoffs.episodes],
         "hr": _hr_json(a.hr),
         "summary": {
             "foilTimeS": round(fr.foil_time_s, 1),
@@ -346,6 +355,31 @@ def _takeoff_json(k: Takeoff) -> dict:
         "free": bool(k.free),
         "truncated": bool(k.truncated),
         "preWindowS": round(k.pre_window_s, 2),
+    }
+
+
+def _episode_json(e: PumpEpisode) -> dict:
+    """One classified pumping effort (docs/algorithms.md "Takeoff analysis", the outcome
+    ladder). Written for **every** outcome, not just `failed`.
+
+    The summary already counts these five buckets; what it cannot carry is *when*. A failed
+    attempt with a timestamp can be placed on a map, drawn on the speed chart and matched to
+    a heart-rate window; the same attempt as a tally can only be apologized for. Filtering to
+    the outcomes a given screen cares about is presentation's job — the file's job is to say
+    what the classifier saw, once, in detection order.
+
+    `durationS` is deliberately absent: it is `endTs - startTs`, and one fact spelled twice
+    is one fact that can drift.
+    """
+    return {
+        "startTs": round(e.start_t, 2),           # first stroke
+        "endTs": round(e.end_t, 2),               # last stroke
+        "strokes": e.strokes,
+        "outcome": e.outcome,                     # success|failed|recovery|in_flight|unknown
+        "bursts": e.bursts,
+        "flightIndex": e.flight_index,            # the flight it produced, or happened in
+        "turnIndex": e.turn_index,                # the turn whose recovery it is
+        "lookaheadS": round(e.lookahead_s, 2),    # gap-free record past the last stroke
     }
 
 

@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.2.0** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.3.0** (bump on any change that alters outputs; triggers phone re-analysis)
 
 ## Flight (foil) detection — hysteresis state machine
 
@@ -432,6 +432,11 @@ attempt, not four), then:
 | `recovery` | the episode lies inside a detected turn's outcome window | the turn's `touchdown`, already scored there |
 | `failed` | none of the above | a failed takeoff attempt |
 | `unknown` | the record does not run gap-free for `takeoffAttemptWindow` past the last stroke | nothing — excluded from every tally |
+
+Since **0.3.0** the episodes themselves are serialized, as the golden's top-level
+`pumpEpisodes` list (docs/testing.md) — every outcome, in detection order, with the instants
+and the cross-reference indices — so a failed attempt can be *placed* (on the map, in the speed
+chart) instead of only counted; the classifier is unchanged, only its output now leaves the file.
 
 `takeoff_attempts` = flights + failed attempts, `takeoff_successes` = **flights**: a flight
 demonstrably happened, so it succeeded even when its run was truncated; truncation only removes

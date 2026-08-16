@@ -4,7 +4,11 @@ import Foundation
 /// that alters outputs — triggers phone re-analysis (the archive discards a cached
 /// `analysis.json` whose version does not match).
 public enum AnalysisEngine {
-    public static let version = "0.2.0"
+    /// 0.3.0 adds the `pumpEpisodes` block: the classifier's per-episode verdicts, which
+    /// until now only reached the file as tallies. Nothing pre-existing moved, but a stored
+    /// analysis written by 0.2.0 has no episodes at all — so it must re-derive rather than
+    /// silently present a map with no failed attempts on it.
+    public static let version = "0.3.0"
 }
 
 /// Echo of the parameters actually used, keyed by their docs/algorithms.md names.
@@ -389,6 +393,74 @@ public struct TakeoffRecord: Sendable, Codable, Equatable {
     }
 }
 
+/// Golden-schema pumping episode (docs/algorithms.md "Takeoff analysis", the outcome
+/// ladder). One continuous effort, classified exactly once.
+///
+/// Every outcome is carried, not just `failed`: the summary already counts the five
+/// buckets, and what it cannot carry is *when*. A failed attempt with a timestamp can be
+/// placed on the map and shaded in the chart; the same attempt as a tally can only be
+/// apologized for. Which outcomes a screen draws is presentation's decision.
+///
+/// `durationS` is deliberately not encoded — it is `endTs - startTs`, and one fact spelled
+/// twice is one fact that can drift.
+public struct PumpEpisodeRecord: Sendable, Codable, Equatable {
+    /// First stroke of the effort.
+    public var startTs: Double
+    /// Last stroke of the effort.
+    public var endTs: Double
+    public var strokes: Int
+    public var outcome: PumpEpisodeOutcome
+    /// Bursts merged into this one effort.
+    public var bursts: Int
+    /// The flight it produced (`success`) or happened inside (`inFlight`); nil otherwise.
+    public var flightIndex: Int?
+    /// The turn whose outcome window owns it (`recovery`); nil otherwise.
+    public var turnIndex: Int?
+    /// Gap-free record available past the last stroke, capped at `takeoffAttemptWindow`.
+    public var lookaheadS: Double
+
+    public init(_ episode: PumpEpisode) {
+        startTs = episode.startT
+        endTs = episode.endT
+        strokes = episode.strokes
+        outcome = episode.outcome
+        bursts = episode.bursts
+        flightIndex = episode.flightIndex
+        turnIndex = episode.turnIndex
+        lookaheadS = episode.lookaheadS
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case startTs, endTs, strokes, outcome, bursts, flightIndex, turnIndex, lookaheadS
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        startTs = try c.decode(Double.self, forKey: .startTs)
+        endTs = try c.decode(Double.self, forKey: .endTs)
+        strokes = try c.decode(Int.self, forKey: .strokes)
+        outcome = try c.decode(PumpEpisodeOutcome.self, forKey: .outcome)
+        bursts = try c.decode(Int.self, forKey: .bursts)
+        flightIndex = try c.decodeIfPresent(Int.self, forKey: .flightIndex)
+        turnIndex = try c.decodeIfPresent(Int.self, forKey: .turnIndex)
+        lookaheadS = try c.decode(Double.self, forKey: .lookaheadS)
+    }
+
+    /// Explicit nulls for the two indices, matching the lab's golden JSON: "this episode
+    /// produced no flight" is a fact, not a missing key.
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(startTs, forKey: .startTs)
+        try c.encode(endTs, forKey: .endTs)
+        try c.encode(strokes, forKey: .strokes)
+        try c.encode(outcome, forKey: .outcome)
+        try c.encode(bursts, forKey: .bursts)
+        try c.encode(flightIndex, forKey: .flightIndex)     // explicit null
+        try c.encode(turnIndex, forKey: .turnIndex)         // explicit null
+        try c.encode(lookaheadS, forKey: .lookaheadS)
+    }
+}
+
 public struct SessionSummary: Sendable, Codable, Equatable {
     public var foilTimeS: Double
     public var foilPct: Double
@@ -424,6 +496,12 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
     public var records: GP3SRecords
     public var wind: WindEstimate?
     public var takeoffs: [TakeoffRecord]
+    /// Every classified pumping effort, in detection (= time) order — the block that gives
+    /// the failed attempts a position. Empty rather than absent on a source with no
+    /// accelerometer: there were no bursts to classify, which is a fact about the source.
+    /// Decoded leniently so a stored `analysis.json` from 0.2.0 still opens; such a row is
+    /// stale by `engineVersion` anyway and `reanalyzeStale()` re-derives it.
+    public var pumpEpisodes: [PumpEpisodeRecord]
     /// The HR-cost block (docs/algorithms.md "HR cost"). Optional only so a stored
     /// `analysis.json` written before the block existed still decodes; a fresh analysis
     /// always fills it, with `hasHR: false` when the source carries no heart rate.
@@ -432,12 +510,13 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case engineVersion, config, capabilities, flights, turns, flightEnds
-        case records, wind, takeoffs, hr, summary
+        case records, wind, takeoffs, pumpEpisodes, hr, summary
     }
 
     public init(engineVersion: String, config: AnalysisConfig, capabilities: AnalysisCapabilities,
                 flights: [FlightRecord], turns: [TurnRecord], flightEnds: [FlightEndRecord],
                 records: GP3SRecords, wind: WindEstimate?, takeoffs: [TakeoffRecord],
+                pumpEpisodes: [PumpEpisodeRecord] = [],
                 hr: HrAnalysis? = nil, summary: SessionSummary) {
         self.engineVersion = engineVersion
         self.config = config
@@ -448,6 +527,7 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
         self.records = records
         self.wind = wind
         self.takeoffs = takeoffs
+        self.pumpEpisodes = pumpEpisodes
         self.hr = hr
         self.summary = summary
     }
@@ -463,6 +543,8 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
         records = try c.decode(GP3SRecords.self, forKey: .records)
         wind = try c.decodeIfPresent(WindEstimate.self, forKey: .wind)
         takeoffs = try c.decode([TakeoffRecord].self, forKey: .takeoffs)
+        pumpEpisodes = try c.decodeIfPresent([PumpEpisodeRecord].self,
+                                             forKey: .pumpEpisodes) ?? []
         hr = try c.decodeIfPresent(HrAnalysis.self, forKey: .hr)
         summary = try c.decode(SessionSummary.self, forKey: .summary)
     }
@@ -478,6 +560,7 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
         try c.encode(records, forKey: .records)
         try c.encode(wind, forKey: .wind)          // explicit null per schema
         try c.encode(takeoffs, forKey: .takeoffs)
+        try c.encode(pumpEpisodes, forKey: .pumpEpisodes)
         try c.encode(hr, forKey: .hr)              // explicit null per schema
         try c.encode(summary, forKey: .summary)
     }
@@ -561,6 +644,7 @@ public enum SessionSummarizer {
             records: records,
             wind: wind,
             takeoffs: takeoffs.takeoffs.map(TakeoffRecord.init),
+            pumpEpisodes: takeoffs.episodes.map(PumpEpisodeRecord.init),
             hr: hr,
             summary: summary)
     }
