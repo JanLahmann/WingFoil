@@ -13,7 +13,7 @@
  */
 
 import { ask } from "./rpc.js";
-import { C, esc, hms, hideTip, int, nf, showTip, svg } from "./render.js";
+import { C, esc, figureWidth, hideTip, hms, int, isNarrow, nf, showTip, svg } from "./render.js";
 
 const el = (id) => document.getElementById(id);
 
@@ -59,6 +59,12 @@ export async function showTrends(entries) {
 /** Drop the memoised aggregate — call after a save or a delete. */
 export function invalidateTrends() {
   cache = { signature: null, data: null };
+}
+
+/** Redraw from the memoised aggregate — the figures are sized to their container, so a
+ *  rotation or a resize has to lay them out again. No Python call, nothing recomputed. */
+export function redrawTrends() {
+  if (cache.data) draw(el("trends-body"), cache.data);
 }
 
 /* --------------------------------------------------------------------- drawing */
@@ -112,16 +118,19 @@ function renderRecords(table, records) {
     table.innerHTML = "";
     return;
   }
+  // `stack-sm` + data-th: on a phone this table restacks into one card per record (CSS).
+  // The record's name leads the card; the rest become labelled rows.
   const head = ["record", "value", "session", "date", ""];
+  table.className = "stack-sm";
   table.innerHTML = `<thead><tr>${head.map((h, i) =>
     `<th${i !== 1 ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
     <tbody>${records.map((r) => `
       <tr data-record="${esc(r.key)}">
-        <td class="l">${esc(r.label)}</td>
-        <td><strong>${nf(r.value, 2)}</strong> <span class="dim">${esc(r.unit)}</span></td>
-        <td class="l">${esc(r.spot || r.fileName || r.id)}</td>
-        <td class="l dim">${esc(r.dateUtc || "—")}</td>
-        <td class="l"><button class="ghost small-btn" data-act="record"
+        <td class="l stack-lead" data-th="record">${esc(r.label)}</td>
+        <td data-th="value"><strong>${nf(r.value, 2)}</strong> <span class="dim">${esc(r.unit)}</span></td>
+        <td class="l" data-th="session">${esc(r.spot || r.fileName || r.id)}</td>
+        <td class="l dim" data-th="date">${esc(r.dateUtc || "—")}</td>
+        <td class="l stack-actions" data-th=""><button class="ghost small-btn" data-act="record"
           data-id="${esc(r.id)}">Show the window</button></td>
       </tr>`).join("")}</tbody>`;
 }
@@ -130,7 +139,15 @@ function renderRecords(table, records) {
 
 function drawChart(host, chart, sessions) {
   host.innerHTML = "";
-  const W = 1100, H = 220, L = 52, R = 176, T = 16, B = 34;
+  const W = figureWidth(host);
+  const narrow = isNarrow(W);
+  // Desktop keeps a wide right gutter for the direct end-labels. On a phone that gutter
+  // would be half the chart, so the labels move inside the plot instead (see below) and
+  // the gutter shrinks to nothing.
+  const H = narrow ? Math.round(Math.max(170, W * 0.56)) : 220;
+  const nLines = Math.max(1, chart.lines.length);
+  const L = narrow ? 34 : 52, R = narrow ? 12 : 176, B = 34;
+  const T = narrow ? 10 + nLines * 12 : 16;      // narrow: the line labels live above the plot
   const n = sessions.length;
   const plot = W - L - R;
   // One column per session: categorical, evenly spaced, because sessions are events and
@@ -150,11 +167,18 @@ function drawChart(host, chart, sessions) {
     t.textContent = chart.yStep >= 1 ? String(Math.round(v)) : v.toFixed(1);
   }
 
-  const stride = Math.max(1, Math.ceil(n / 9));
+  // A "06 Aug" tick is ~42 units wide; leave at least that much between the ones we keep.
+  const stride = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(plot / (narrow ? 52 : 120)))));
   sessions.forEach((s, i) => {
     if (i % stride && i !== n - 1) return;
-    const t = svg("text", { x: X(i), y: H - B + 16, "text-anchor": "middle",
-                            "font-size": 10.5, fill: C.ink3 }, root);
+    const first = i === 0, last = i === n - 1;
+    const t = svg("text", {
+      // The end ticks are pulled inside the plot so they cannot hang off the figure.
+      x: narrow && first ? L : narrow && last ? W - R : X(i),
+      y: H - B + 16,
+      "text-anchor": narrow && first ? "start" : narrow && last ? "end" : "middle",
+      "font-size": 10.5, fill: C.ink3,
+    }, root);
     t.textContent = tickLabel(s.startUtc);
   });
 
@@ -192,11 +216,18 @@ function drawChart(host, chart, sessions) {
       dot.addEventListener("pointerleave", hideTip);
     }
     // Direct end-label instead of a colour key: the reader never has to match a swatch.
+    // Narrow charts have no right gutter to put it in, so it goes above the last point,
+    // right-aligned to the plot edge — still directly attached to its own line, still no
+    // swatch to match, and haloed in the surface colour so it survives over the grid.
     if (last) {
-      const t = svg("text", { x: Math.min(X(last.i) + 10, W - R + 8),
-                              y: Y(last.v) + 3.5 + (li ? 13 : 0), "font-size": 11,
-                              "font-weight": 600, fill: style.color, stroke: C.surface,
-                              "stroke-width": 3, "paint-order": "stroke" }, root);
+      const t = svg("text", {
+        x: narrow ? W - R : Math.min(X(last.i) + 10, W - R + 8),
+        y: narrow ? T - 8 - (nLines - 1 - li) * 12 : Y(last.v) + 3.5 + (li ? 13 : 0),
+        "text-anchor": narrow ? "end" : "start",
+        "font-size": narrow ? 10.5 : 11,
+        "font-weight": 600, fill: style.color, stroke: C.surface,
+        "stroke-width": 3, "paint-order": "stroke",
+      }, root);
       t.textContent = line.label;
     }
   });

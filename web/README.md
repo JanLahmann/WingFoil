@@ -203,6 +203,50 @@ exports — same surface, same grid ink, series-1 blue and its tint, direct end-
 of a colour key, and a dashed second line so the port/starboard split survives a
 colour-vision check without a second hue.
 
+## Phone layout
+
+The app is used on the beach, on a phone, so 390 × 844 is a first-class target rather than a
+narrow-window afterthought. Four rules, all of them in `css/style.css` and `js/render.js`:
+
+**1. The page never scrolls sideways.** Wide content scrolls inside its own box or restacks;
+`body { overflow-x: hidden }` is the guard rail, not the mechanism. `main > div` uses
+`grid-template-columns: minmax(0, 1fr)` because a grid item's automatic minimum is its
+*min-content* width, which is the usual way a wide table pushes a whole page over.
+
+**2. Figures are drawn at their container's real width.** Every inline SVG is `width: 100%`
+over a `viewBox`, so the viewBox width *is* the scale factor. A 1100-unit chart in a 350 px
+column renders its 10.5 px axis labels at 3.3 px. So `render.figureWidth(host)` measures the
+slot and the figure is drawn at that many user units — scale 1, type at its stated size, on
+a phone and on a desktop alike. Below 640 units `render.isNarrow()` also switches the
+geometry: smaller gutters, fewer ticks, no rotated axis titles (there is no room beside a
+34-unit gutter), bare units instead, and the trend charts' direct end-labels move from the
+right gutter to above the plot. Because the figures now depend on their width, `app.js`
+redraws them on a debounced `resize` — that is what makes a rotation come out right.
+
+**3. Two of the tables restack into cards.** Turns (16 columns × 34 rows) and flight ends
+stay tabular and scroll sideways inside `.table-scroll`: as cards they would be a mile of
+page. The library rows and the records table are *browsed* one row at a time, so below
+760 px `table.stack-sm` turns each `<tr>` into a card and each `<td>` into a labelled row,
+reading its label from `data-th` — written by the same code that writes the `<th>`, so the
+two cannot drift.
+
+**4. Touch, not hover.** Every button is ≥ 44 px tall below 760 px, `@media (hover: none)`
+neutralises the hover styles so they do not stick after a tap, and inputs are 16 px because
+Safari zooms the whole page when a focused field is smaller. The file picker is a real
+`<label for>` over the input, not a button calling `input.click()` — **iPhone Safari has no
+drag & drop, so the picker is the only intake path there** and it must not depend on JS.
+
+Safe areas: `viewport-fit=cover` plus `env(safe-area-inset-*)` on every edge chrome (topbar
+top and sides, `main`, the footer's bottom), so the installed PWA — which declares
+`apple-mobile-web-app-status-bar-style: black-translucent` — clears the notch and the home
+indicator. `100dvh`, never `100vh`: on iOS `100vh` is the *largest* viewport and overflows.
+
+Verified with headless Chrome under mobile emulation at 375 × 667, 390 × 844 and 430 × 932
+(`document.scrollingElement.scrollWidth === innerWidth` on all three views, with the
+`overflow-x` guard rail temporarily off so it cannot mask anything). **Real iOS Safari has
+not been driven automatically** — Chrome's emulation is not WebKit; the WebKit-specific
+choices above are made from the documented behaviour, not from a measured device.
+
 ## PWA / offline
 
 `manifest.webmanifest` plus `sw.js` make the app installable and usable with no network.
@@ -215,7 +259,9 @@ colour-vision check without a second hue.
 - **Updates are offered, never applied behind your back.** A swap mid-analysis would reload
   the page and throw the result away, so a new worker waits and a banner appears with
   *Reload to update*. Bump `VERSION` in `sw.js` whenever anything under `web/` changes; the
-  old caches are deleted on activate.
+  old caches are deleted on activate. **This is not optional for a CSS or JS edit**: the
+  shell is served cache-first, so without the bump every already-installed client keeps the
+  old stylesheet indefinitely. Current value: `v2` (the phone-layout pass).
 
 Icons live in `web/icons/`, copied from `brand/` (`icon-tile-*` for the normal icon,
 `icon-square-*` full-bleed for the maskable one). Nothing outside `web/` is referenced.
@@ -314,7 +360,14 @@ groups (**153 assertions**, all green at the time of writing — 30 / 8 / 28 / 4
     must leave a **gap** in the pumps chart, not a point at zero.
 17. **Delete.** Confirm, and the row, the files and the storage figure all go down. The
     trends view recomputes (a record that belonged to the deleted session disappears).
-18. **PWA.** DevTools → Application: the manifest parses, the icons resolve, the service
+18. **Phone.** DevTools → device toolbar → iPhone 15 Pro (390 × 844). Walk all three views:
+    nothing may scroll the *page* sideways (`document.scrollingElement.scrollWidth` must
+    equal `innerWidth`); the turns table scrolls inside its own box; the library rows and
+    the records table are cards, not rows; the map and the speed strip are drawn at ~332
+    units wide with legible axis labels. **Tap *Choose a file…*** — it is a `<label>`, and
+    on a real iPhone it is the only way in, because Safari has no drag & drop. Rotate: the
+    figures must redraw at the new width, not stretch.
+19. **PWA.** DevTools → Application: the manifest parses, the icons resolve, the service
     worker is activated with a `wingfoil-shell-*` and a `wingfoil-runtime-*` cache. Go
     offline and reload — the app boots and the library opens. Edit `VERSION` in `sw.js`,
     reload twice: the *"A new version … Reload to update"* banner must appear, and pressing

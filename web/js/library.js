@@ -120,24 +120,28 @@ function renderRows(entries) {
     return;
   }
 
+  // Ten columns is a lot for a 390 px screen, and these rows are *browsed* one at a time
+  // rather than scanned as a column — so on a phone `stack-sm` (css/style.css) turns each
+  // row into a card. Every cell carries the same label its <th> has, from the same list.
   const head = ["date", "session", "on foil", "distance", "flights", "longest", "turns",
                 "best 2 s", "size", ""];
-  host.innerHTML = `<div class="table-scroll"><table class="lib-table">
+  const th = (i) => ` data-th="${esc(head[i])}"`;
+  host.innerHTML = `<div class="table-scroll"><table class="lib-table stack-sm">
     <thead><tr>${head.map((h, i) =>
       `<th${i <= 1 || i === 9 ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
     <tbody>${entries.map((e) => `
       <tr data-id="${esc(e.id)}">
-        <td class="l">${esc(shortDate(e.startUtc))}</td>
-        <td class="l"><span class="lib-spot">${esc(e.spot || "Session")}</span>
+        <td class="l stack-lead"${th(0)}>${esc(shortDate(e.startUtc))}</td>
+        <td class="l stack-block"${th(1)}><span class="lib-spot">${esc(e.spot || "Session")}</span>
           <span class="lib-file">${esc(e.fileName || "")}</span></td>
-        <td>${nf(e.foilPct, 0)} %</td>
-        <td>${nf(e.distanceKm, 2)} km</td>
-        <td>${int(e.flightCount)}</td>
-        <td>${hms(e.longestFlightS)}</td>
-        <td>${int(e.turns?.counted)}</td>
-        <td>${nf(e.records?.best2sKn, 2)}</td>
-        <td class="dim">${esc(mb((e.bytesFit || 0) + (e.bytesJson || 0)))}</td>
-        <td class="l lib-row-actions">
+        <td${th(2)}>${nf(e.foilPct, 0)} %</td>
+        <td${th(3)}>${nf(e.distanceKm, 2)} km</td>
+        <td${th(4)}>${int(e.flightCount)}</td>
+        <td${th(5)}>${hms(e.longestFlightS)}</td>
+        <td${th(6)}>${int(e.turns?.counted)}</td>
+        <td${th(7)}>${nf(e.records?.best2sKn, 2)}</td>
+        <td class="dim"${th(8)}>${esc(mb((e.bytesFit || 0) + (e.bytesJson || 0)))}</td>
+        <td class="l lib-row-actions stack-actions"${th(9)}>
           <button class="ghost small-btn" data-act="open">Open</button>
           <button class="ghost small-btn" data-act="fit">.fit</button>
           <button class="ghost small-btn" data-act="json">.json</button>

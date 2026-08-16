@@ -37,14 +37,38 @@
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
+/* Phone geometry, in one place so every rule below reads from the same numbers.
+   --pad-x is the page gutter, widened to clear a landscape notch; --tap is the minimum
+   touch target (Apple HIG says 44 pt and the whole app has to honour it). */
+:root {
+  --pad-x: 20px;
+  --pad-x-l: max(var(--pad-x), env(safe-area-inset-left));
+  --pad-x-r: max(var(--pad-x), env(safe-area-inset-right));
+  --tap: 44px;
+}
+
 * { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;          /* iOS: 100vh is the *largest* viewport, so it overflows */
   background: var(--surface-0);
   color: var(--ink);
   font: 15px/1.55 var(--sans);
   -webkit-font-smoothing: antialiased;
+  /* Nothing in this app is a horizontally scrollable page. Wide things (tables, figures)
+     scroll inside their own box; if one ever escapes, this is the guard rail. */
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Visually hidden but still a real, focusable, label-addressable control. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
 }
 
 h1, h2, h3 { margin: 0; font-weight: 650; letter-spacing: -0.01em; }
@@ -61,10 +85,12 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--ink-2); }
 
 .topbar {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  padding: 14px 20px; border-bottom: 1px solid var(--line-soft);
+  padding: calc(14px + env(safe-area-inset-top)) var(--pad-x-r) 14px var(--pad-x-l);
+  border-bottom: 1px solid var(--line-soft);
   background: var(--surface-1); position: sticky; top: 0; z-index: 20;
 }
-.brand { display: flex; align-items: center; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand h1 { white-space: nowrap; }
 .brand .sub { font-size: 12.5px; color: var(--ink-3); }
 .mark {
   width: 26px; height: 26px; border-radius: 7px; flex: none;
@@ -77,9 +103,14 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--ink-2); }
   padding: 6px 9px; border: 1px solid var(--line); border-radius: 999px;
 }
 
-main { max-width: 1120px; margin: 0 auto; padding: 22px 20px 40px; }
+main {
+  max-width: 1120px; margin: 0 auto;
+  padding: 22px var(--pad-x-r) 40px var(--pad-x-l);
+}
 /* One <div> per view; only one is ever un-hidden. Each keeps the panel rhythm. */
-main > div { display: grid; gap: 18px; }
+/* minmax(0,1fr) rather than the default `auto`: a grid item's automatic minimum is its
+   min-content width, which is how a wide table pushes the whole page sideways. */
+main > div { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
 main > div[hidden], [hidden] { display: none !important; }
 
 /* ------------------------------------------------------------------- view tabs */
@@ -101,30 +132,47 @@ main > div[hidden], [hidden] { display: none !important; }
 
 .update-banner {
   display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap;
-  padding: 11px 20px; background: #14293f; border-bottom: 1px solid #2a5a91;
+  padding: 11px var(--pad-x-r) 11px var(--pad-x-l);
+  background: #14293f; border-bottom: 1px solid #2a5a91;
   color: #d9e8fb; font-size: 13.5px;
 }
-.update-actions { display: flex; gap: 8px; }
+.update-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 
 /* ---------------------------------------------------------------- controls */
 
-button {
+/* `.btn` exists so the file-picker <label> is indistinguishable from a button. */
+button, .btn {
   font: 600 13.5px/1 var(--sans); border-radius: 8px; cursor: pointer;
-  padding: 9px 14px; border: 1px solid transparent; transition: background .12s, border-color .12s;
+  padding: 9px 14px; border: 1px solid transparent;
+  transition: background .12s, border-color .12s;
+  touch-action: manipulation;              /* no 300 ms double-tap-zoom delay */
+  -webkit-tap-highlight-color: transparent;
 }
-button.primary { background: var(--series-1); color: #fff; }
-button.primary:hover { background: #2d76d0; }
-button.ghost { background: transparent; color: var(--ink-2); border-color: var(--line); }
-button.ghost:hover { background: var(--surface-2); color: var(--ink); }
+.btn { display: inline-flex; align-items: center; justify-content: center; }
+button.primary, .btn.primary { background: var(--series-1); color: #fff; }
+button.primary:hover, .btn.primary:hover { background: #2d76d0; }
+button.ghost, .btn.ghost { background: transparent; color: var(--ink-2); border-color: var(--line); }
+button.ghost:hover, .btn.ghost:hover { background: var(--surface-2); color: var(--ink); }
 button:disabled { opacity: .5; cursor: default; }
+/* A touch device has no hover; the :hover styles above must not stick after a tap. */
+@media (hover: none) {
+  button.primary:hover, .btn.primary:hover { background: var(--series-1); }
+  button.ghost:hover, .btn.ghost:hover { background: transparent; color: var(--ink-2); }
+  .views button:hover { color: var(--ink-3); }
+  .views button[aria-current=page]:hover { color: var(--ink); }
+  tbody tr:hover td { background: none; }
+}
 
 input[type=text], input[type=password] {
   background: var(--surface-0); color: var(--ink); border: 1px solid var(--line);
-  border-radius: 8px; padding: 8px 10px; font: 13.5px var(--mono); min-width: 200px;
+  border-radius: 8px; padding: 8px 10px; font: 13.5px var(--mono);
+  min-width: 200px; max-width: 100%;
 }
-input:focus-visible, button:focus-visible, .dropzone:focus-visible {
+input:focus-visible, button:focus-visible, .btn:focus-visible, .dropzone:focus-visible {
   outline: 2px solid var(--series-1); outline-offset: 2px;
 }
+/* The file input is .sr-only, so keyboard focus has to show up on its label instead. */
+.drop-hint:has(#file:focus-visible) #pick { outline: 2px solid var(--series-1); outline-offset: 2px; }
 
 /* -------------------------------------------------------------- drop zone */
 
@@ -217,7 +265,12 @@ input:focus-visible, button:focus-visible, .dropzone:focus-visible {
 
 /* ------------------------------------------------------------------ tables */
 
-.table-scroll { overflow-x: auto; }
+/* Wide tables (turns, flight ends) scroll inside this box and never move the page.
+   `overscroll-behavior-x: contain` stops the swipe turning into a Safari back-gesture. */
+.table-scroll {
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain; max-width: 100%;
+}
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th, td {
   text-align: right; padding: 7px 9px; white-space: nowrap;
@@ -302,14 +355,15 @@ button.ghost.danger:hover { background: #2a1414; border-color: #6b2626; color: #
 .icu-row .meta { color: var(--ink-3); font-size: 12.5px; }
 
 footer {
-  border-top: 1px solid var(--line-soft); padding: 18px 20px 30px;
+  border-top: 1px solid var(--line-soft);
+  padding: 18px var(--pad-x-r) calc(30px + env(safe-area-inset-bottom)) var(--pad-x-l);
   color: var(--ink-3); font-size: 12.5px; text-align: center;
 }
 
 /* --------------------------------------------------------------- tooltip */
 
 .tip {
-  position: fixed; z-index: 40; pointer-events: none; opacity: 0;
+  position: fixed; left: 0; top: 0; z-index: 40; pointer-events: none; opacity: 0;
   background: #000000e6; border: 1px solid var(--line); border-radius: 7px;
   padding: 7px 9px; font: 12px/1.45 var(--sans); color: var(--ink);
   transition: opacity .08s; max-width: 260px;
@@ -317,7 +371,124 @@ footer {
 .tip.on { opacity: 1; }
 .tip b { font-variant-numeric: tabular-nums; }
 
-@media (max-width: 640px) {
-  .topbar { flex-wrap: wrap; }
+/* ==========================================================================
+   Phones.  Reference widths: 375×667 (SE), 390×844 (15/17 Pro), 430×932 (Max).
+   Two rules govern everything below:
+     1. the page itself never scrolls horizontally — wide content scrolls in its own box,
+        or restacks into cards;
+     2. anything you tap is at least --tap tall.
+   ========================================================================== */
+
+@media (max-width: 760px) {
+  :root { --pad-x: 14px; }
+
+  /* --- topbar: brand + intervals.icu on row one, the tabs full-width on row two.
+     `display: contents` dissolves .topbar-right so its three children can be ordered
+     independently — otherwise the tabs and the buttons cannot split across rows. */
+  .topbar {
+    flex-wrap: wrap; gap: 8px 10px;
+    padding: calc(10px + env(safe-area-inset-top)) var(--pad-x-r) 10px var(--pad-x-l);
+  }
+  .topbar-right { display: contents; }
+  .brand { flex: 1 1 auto; gap: 10px; }
+  .brand .sub { display: none; }               /* the tagline is desktop-only chrome */
+  .views { flex: 1 1 100%; order: 3; }
+  .views button { flex: 1 1 0; justify-content: center; padding: 0 6px; min-height: var(--tap); }
+  .wide-only { display: none; }
+  #save-session { width: 100%; }
+  #icu-toggle { order: 2; min-height: var(--tap); }
+  #engine-chip { order: 1; }
+
+  main { padding-top: 16px; padding-bottom: 28px; }
+  main > div { gap: 14px; }
+  .panel { padding: 14px; border-radius: 8px; }
+  .panel-head { gap: 10px; margin-bottom: 12px; }
+  /* The panel head stacks: title block, then the badges + primary action, full bleed.
+     (`.panel-head > div` makes both halves grids; the 1fr column is what lets the primary
+     action span the card instead of shrink-wrapping the badge row above it.) */
+  .panel-head > div { grid-template-columns: minmax(0, 1fr); }
+  .head-right { flex: 1 1 100%; justify-content: flex-start; }
+
+  /* --- touch targets */
+  button, .btn { min-height: var(--tap); padding: 10px 14px; }
+  button.small-btn { min-height: 38px; padding: 6px 11px; font-size: 12.5px; }
+  .dropzone { padding: 22px 14px; }
+  .dropzone .btn { width: 100%; }
+  .drop-hint { width: 100%; }
+
+  /* --- iOS zooms the whole page when a focused input is under 16px. */
+  input[type=text], input[type=password] { font-size: 16px; min-width: 0; width: 100%; }
+  .icu-form { gap: 12px; }
+  .icu-form label { width: 100%; }
+  .icu-form button { width: 100%; }
+  .icu-row { flex-wrap: wrap; gap: 8px; }
+  .icu-row button { width: 100%; }
+
+  .tiles { grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); }
+  .tile { padding: 11px 12px; }
   .tile .v { font-size: 19px; }
+
+  .legend { gap: 6px 14px; }
+  .kv { grid-template-columns: 1fr; gap: 8px; }
+
+  .update-banner { padding: 10px var(--pad-x-r) 10px var(--pad-x-l); }
+  .update-actions { width: 100%; }
+  .update-actions button { flex: 1 1 0; }
+
+  footer { padding-top: 14px; }
+
+  /* --- restacked tables.
+     The turns / flight-ends tables stay tabular and scroll sideways in their box: 34 rows
+     × 16 fields as cards would be a mile of page. The two *browsing* tables (library rows,
+     records) become cards instead, because on a phone they are read one row at a time.
+     Every <td> carries data-th, written by the same code that writes the <th>. */
+  table.stack-sm { display: block; font-size: 13.5px; }
+  table.stack-sm thead { display: none; }
+  table.stack-sm tbody { display: block; }
+  table.stack-sm tr {
+    display: block; background: var(--surface-0);
+    border: 1px solid var(--line-soft); border-radius: 8px;
+    padding: 4px 12px 8px; margin-bottom: 10px;
+  }
+  table.stack-sm tr:last-child { margin-bottom: 0; }
+  table.stack-sm td {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    text-align: right; white-space: normal; padding: 6px 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  table.stack-sm td:last-child { border-bottom: 0; }
+  table.stack-sm td:nth-child(n) { width: auto; }   /* beats .lib-table td:nth-child(2) */
+  table.stack-sm td::before {
+    content: attr(data-th); flex: none; text-align: left;
+    font: 600 10.5px/1.4 var(--sans); text-transform: uppercase; letter-spacing: .06em;
+    color: var(--ink-3); padding-top: 2px;
+  }
+  table.stack-sm td[data-th=""]::before { display: none; }
+  /* The row's headline (date, or the record's name) leads the card at full width. */
+  table.stack-sm td.stack-lead {
+    display: block; text-align: left; font-weight: 650; font-size: 14.5px;
+    padding-top: 8px; padding-bottom: 8px;
+  }
+  table.stack-sm td.stack-lead::before { display: none; }
+  /* A cell whose own content is already two stacked lines (spot + filename): let it flow. */
+  table.stack-sm td.stack-block { display: block; text-align: left; padding-top: 0; }
+  table.stack-sm td.stack-block::before { display: none; }
+  table.stack-sm td.stack-actions { display: block; padding-top: 10px; }
+  table.stack-sm td.lib-row-actions {         /* four actions: two rows of two */
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+    white-space: normal; padding-top: 10px;
+  }
+  table.stack-sm td.stack-actions button { width: 100%; }
+  .lib-file { word-break: break-all; }
+}
+
+/* Below ~560 the engine chip is the first thing that can go: it is a diagnostic, and the
+   same string is in the console and in the PWA update banner. */
+@media (max-width: 560px) {
+  #engine-chip { display: none !important; }
+}
+
+/* Landscape phone: the sticky topbar would otherwise eat a third of the screen. */
+@media (max-height: 460px) and (orientation: landscape) {
+  .topbar { position: static; }
 }
