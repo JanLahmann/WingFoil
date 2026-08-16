@@ -63,8 +63,8 @@ targets:
         # rather than a build error.
         OTHER_LDFLAGS: "-ObjC"
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil
-        MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "0.2.0"
+        CURRENT_PROJECT_VERSION: "4"
         TARGETED_DEVICE_FAMILY: "1"          # iPhone only
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB         # Jan-Rainer Lahmann (personal + program team)
@@ -193,8 +193,8 @@ targets:
       base:
         PRODUCT_NAME: WingFoilWidgets
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.widgets
-        MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "0.2.0"
+        CURRENT_PROJECT_VERSION: "4"
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB
