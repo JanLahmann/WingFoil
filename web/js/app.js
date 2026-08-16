@@ -8,7 +8,7 @@
 import { mountIcu } from "./icu.js";
 import { mountLibrary, openStoredSession, refresh as refreshLibrary, saveSession }
   from "./library.js";
-import { render } from "./render.js";
+import { closePopover, render, resetSession } from "./render.js";
 import { analyze as runAnalysis, on, warmUp } from "./rpc.js";
 import { listEntries } from "./store.js";
 import { invalidateTrends, mountTrends, redrawTrends, showTrends } from "./trends.js";
@@ -130,6 +130,10 @@ export async function analyzeFile(file) {
   state.busy = true;
   el("error").hidden = true;
   el("results").hidden = true;
+  // The session view is being torn down: drop the previous document's playhead, zoom,
+  // chip states and popover with it, and let its sample arrays go before the next FIT
+  // arrives — on a phone the two documents would otherwise be in memory at once.
+  resetSession();
   el("progress").hidden = false;
   resetSteps();
   showView("analyze");
@@ -247,6 +251,10 @@ async function openStored(id, record = null) {
 
 function showView(name) {
   const view = VIEWS.includes(name) ? name : "analyze";
+  // A marker popover is a fixed-position child of <body>, not of the session panel, so
+  // hiding the analyze view would leave it floating over the library. It belongs to the
+  // figure that opened it; when that figure goes off screen, so does it.
+  closePopover();
   for (const v of VIEWS) {
     el(`view-${v}`).hidden = v !== view;
     const tab = document.querySelector(`.views button[data-view="${v}"]`);

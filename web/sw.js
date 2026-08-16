@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v2";      // v2: responsive/phone layout pass (CSS + figure geometry)
+const VERSION = "v3";      // v3: interactive session view (shared playhead, layers, zoom)
 const SHELL = `wingfoil-shell-${VERSION}`;
 const RUNTIME = `wingfoil-runtime-${VERSION}`;
 
@@ -34,8 +34,10 @@ const APP_SHELL = [
   "js/library.js",
   "js/render.js",
   "js/rpc.js",
+  "js/session.js",
   "js/store.js",
   "js/trends.js",
+  "js/viz.js",
   "js/worker.js",
   "icons/icon.svg",
   "icons/icon-192.png",

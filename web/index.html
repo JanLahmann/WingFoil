@@ -132,7 +132,8 @@
     <section class="panel">
       <div class="panel-head">
         <h2>Track</h2>
-        <p class="muted small">Local-metre projection, north up. Shape carries the outcome; colour reinforces it.</p>
+        <p class="muted small">Local-metre projection, north up. Shape carries the outcome; colour
+          reinforces it. Drag the track to move the playhead; tap a marker for its facts.</p>
       </div>
       <div class="figure" id="map-figure"></div>
       <div class="legend" id="map-legend"></div>
@@ -141,8 +142,12 @@
     <section class="panel">
       <div class="panel-head">
         <h2>Speed</h2>
-        <p class="muted small">Doppler drives the flight state; the positional channel scores the turns. Numbers match the map.</p>
+        <p class="muted small">Doppler drives the flight state; the positional channel scores the
+          turns. Numbers match the map. Drag to scrub, wheel or pinch to zoom the time axis.</p>
       </div>
+      <!-- The playhead readout: filled in by js/session.js while a playhead is set, and
+           the one place the map dot and the chart rule are guaranteed to agree. -->
+      <div class="readout" id="strip-readout" hidden></div>
       <div class="figure" id="strip-figure"></div>
       <div class="legend" id="strip-legend"></div>
     </section>
