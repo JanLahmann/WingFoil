@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v1";
+const VERSION = "v2";      // v2: responsive/phone layout pass (CSS + figure geometry)
 const SHELL = `wingfoil-shell-${VERSION}`;
 const RUNTIME = `wingfoil-runtime-${VERSION}`;
 

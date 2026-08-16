@@ -2,10 +2,17 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>WingFoil Lab — session analyzer</title>
 <meta name="description" content="Drop a .fit file and run the WingFoil lab engine in your browser. Nothing is uploaded.">
 <meta name="theme-color" content="#101010">
+<!-- iOS home-screen install: iOS only reads the manifest's `display` from 17.4 on, so the
+     legacy meta stays. `black-translucent` lets the page own the status-bar strip, which is
+     why every edge chrome (topbar, main, footer) pads with env(safe-area-inset-*). -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WingFoil">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="css/style.css">
@@ -25,7 +32,10 @@
     <nav class="views" aria-label="Views">
       <button type="button" data-view="analyze" aria-current="page">Analyze</button>
       <button type="button" data-view="library">Library <span class="count" hidden></span></button>
-      <button type="button" data-view="trends">Records &amp; trends</button>
+      <!-- The full label wraps to two lines in a third of a 390 px tab bar, so the
+           "& trends" half is dropped below 760 px (css). The accessible name stays whole. -->
+      <button type="button" data-view="trends" aria-label="Records and trends">Records<span
+        class="wide-only">&nbsp;&amp; trends</span></button>
     </nav>
     <span class="chip" id="engine-chip" hidden>engine —</span>
     <button class="ghost" id="icu-toggle" type="button" aria-expanded="false">intervals.icu</button>
@@ -55,8 +65,13 @@
       </svg>
       <p class="drop-title">Drop a <strong>.fit</strong> file (or a .zip containing one)</p>
       <p class="drop-hint">
-        <button class="primary" id="pick" type="button">Choose a file…</button>
-        <input id="file" type="file" accept=".fit,.zip,application/zip" hidden>
+        <!-- A real <label for> — not a button calling input.click() — so the picker opens
+             even where scripted activation is restricted. iPhone Safari has no drag & drop,
+             so this is the ONLY intake path there and it must not depend on JS. The input is
+             visually hidden rather than `hidden`, because a display:none control is not a
+             reliable label target. -->
+        <label class="btn primary" id="pick" for="file">Choose a file…</label>
+        <input id="file" type="file" accept=".fit,.zip,application/zip" class="sr-only">
       </p>
       <p class="privacy">Your file never leaves this browser tab — the analysis runs locally in WebAssembly.</p>
     </div>

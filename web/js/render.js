@@ -59,6 +59,24 @@ const el = (id) => document.getElementById(id);
 
 const SVGNS = "http://www.w3.org/2000/svg";
 
+/**
+ * The user-unit width to draw a figure at.
+ *
+ * Every figure is `width: 100%` over a viewBox, so the viewBox width sets the scale factor
+ * between user units and CSS pixels. Drawing a 1100-unit chart into a 350 px column scales
+ * everything by 0.32 — a 10.5 px axis label lands at 3.3 px and the figure is decoration,
+ * not data. So the viewBox is the container's real width: scale 1, type at its stated size,
+ * on a phone and on a desktop alike. Clamped so a freak container cannot produce a
+ * degenerate chart, and rounded so the numbers in the markup stay readable.
+ */
+export function figureWidth(host, { min = 300, max = 1100 } = {}) {
+  const w = host?.clientWidth || host?.parentElement?.clientWidth || max;
+  return Math.round(Math.max(min, Math.min(max, w)));
+}
+
+/** Below this the figures switch to their compact geometry (paddings, gutters, ticks). */
+export const isNarrow = (w) => w < 640;
+
 export function svg(tag, attrs = {}, parent = null) {
   const node = document.createElementNS(SVGNS, tag);
   for (const [k, v] of Object.entries(attrs)) {
@@ -211,11 +229,16 @@ function renderMap(host, legendHost, result, highlight = null) {
   }
 
   const b = v.bounds;
-  const W = 1100, PAD = 34;
+  const W = figureWidth(host);
+  const narrow = isNarrow(W);
+  const PAD = narrow ? 20 : 34;
   const dw = Math.max(b.x1 - b.x0, 1), dh = Math.max(b.y1 - b.y0, 1);
   const inner = W - 2 * PAD;
   let H = Math.round(inner * (dh / dw)) + 2 * PAD;
-  H = Math.min(Math.max(H, 340), 760);
+  // The clamp is a fraction of the width, not a pixel count, so the map keeps a sane
+  // aspect at every column width. A phone gets a taller box: vertical space is what it has.
+  H = Math.min(Math.max(H, Math.round(W * (narrow ? 0.85 : 0.31))),
+               Math.round(W * (narrow ? 1.45 : 0.69)));
   const s = Math.min(inner / dw, (H - 2 * PAD) / dh);
   const ox = PAD + (inner - dw * s) / 2 - b.x0 * s;
   const oy = PAD + (H - 2 * PAD - dh * s) / 2 + b.y1 * s;   // y flipped: north up
@@ -274,8 +297,8 @@ function renderMap(host, legendHost, result, highlight = null) {
       `(${nf(turn.score * 100, 0)} %)`);
   });
 
-  if (g.wind) windArrow(root, g.wind, W, H);
-  scaleBar(root, s, PAD, H - 16);
+  if (g.wind) windArrow(root, g.wind, W, narrow);
+  scaleBar(root, s, PAD, H - 14);
 
   legendHost.innerHTML = mapLegend(g) + (hw.length ? highlightLegend(highlight) : "");
 }
@@ -299,8 +322,9 @@ function polylineRuns(v, keep) {
   return runs;
 }
 
-function windArrow(root, wind, W, H) {
-  const cx = W - 92, cy = 62, span = 62;
+function windArrow(root, wind, W, narrow) {
+  const span = narrow ? 40 : 62;
+  const cx = W - (narrow ? 46 : 92), cy = narrow ? 42 : 62;
   const to = ((wind.dirDeg + 180) * Math.PI) / 180;      // where the air travels
   const dx = Math.sin(to) * span, dy = -Math.cos(to) * span;
   const g = svg("g", {}, root);
@@ -310,9 +334,17 @@ function windArrow(root, wind, W, H) {
   svg("line", { x1: cx - dx / 2, y1: cy - dy / 2, x2: cx + dx / 2, y2: cy + dy / 2,
                 stroke: C.ink2, "stroke-width": 2.2, "stroke-linecap": "round",
                 "marker-end": "url(#windhead)" }, g);
-  const t = svg("text", { x: cx, y: cy + span / 2 + 18, "text-anchor": "middle",
-                          "font-size": 11, "font-weight": 600, fill: C.ink2 }, g);
-  t.textContent = `wind ${wind.dirDeg.toFixed(0)}° (conf ${wind.confidence.toFixed(2)})`;
+  // On a phone the full caption is wider than the arrow's own corner, so it right-aligns
+  // to the figure edge and drops the confidence (which is also in the Wind axis tile).
+  const t = svg("text", {
+    x: narrow ? W - 8 : cx, y: cy + span / 2 + (narrow ? 15 : 18),
+    "text-anchor": narrow ? "end" : "middle",
+    "font-size": narrow ? 10.5 : 11, "font-weight": 600, fill: C.ink2,
+    stroke: C.surface, "stroke-width": 2.6, "paint-order": "stroke",
+  }, g);
+  t.textContent = narrow
+    ? `wind ${wind.dirDeg.toFixed(0)}°`
+    : `wind ${wind.dirDeg.toFixed(0)}° (conf ${wind.confidence.toFixed(2)})`;
 }
 
 function scaleBar(root, s, x, y) {
@@ -369,7 +401,10 @@ function renderStrip(host, legendHost, result, highlight = null) {
   const v = result.view, g = result.golden;
   if (!v.count) { host.innerHTML = `<p class="note">No speed samples.</p>`; return; }
 
-  const W = 1100, H = 320, L = 46, R = 16, T = 18, B = 34;
+  const W = figureWidth(host);
+  const narrow = isNarrow(W);
+  const H = narrow ? Math.round(Math.max(200, W * 0.62)) : 320;
+  const L = narrow ? 34 : 46, R = narrow ? 10 : 16, T = 18, B = narrow ? 32 : 34;
   const b = v.bounds;
   const t0 = b.t0, t1 = Math.max(b.t1, t0 + 1);
   const knMax = Math.max(2, Math.ceil((b.knMax * 1.12) / 2) * 2);
@@ -384,23 +419,32 @@ function renderStrip(host, legendHost, result, highlight = null) {
     svg("rect", { x: X(f.startTs), y: T, width: Math.max(1, X(f.endTs) - X(f.startTs)),
                   height: H - T - B, fill: C.foil, opacity: 0.10 }, root);
   }
-  for (let kn = 0; kn <= knMax; kn += 2) {
+  // Gridline spacing follows the space available, so the labels never collide.
+  const knStep = (H - T - B) / Math.max(1, knMax / 2) < 18 ? 4 : 2;
+  for (let kn = 0; kn <= knMax; kn += knStep) {
     svg("line", { x1: L, x2: W - R, y1: Y(kn), y2: Y(kn), stroke: C.grid, "stroke-width": 1,
                   opacity: kn === 0 ? 0.9 : 0.45 }, root);
     const t = svg("text", { x: L - 8, y: Y(kn) + 3.5, "text-anchor": "end",
                             "font-size": 10.5, fill: C.ink3 }, root);
     t.textContent = String(kn);
   }
-  const stepMin = tickStep((t1 - t0) / 60);
+  const stepMin = tickStep((t1 - t0) / 60, narrow ? 7 : 14);
   for (let m = 0; m * 60 <= t1; m += stepMin) {
     const x = X(m * 60);
     svg("line", { x1: x, x2: x, y1: H - B, y2: H - B + 4, stroke: C.grid, "stroke-width": 1 }, root);
-    const t = svg("text", { x, y: H - B + 17, "text-anchor": "middle", "font-size": 10.5,
+    const t = svg("text", { x, y: H - B + 16, "text-anchor": "middle", "font-size": 10.5,
                             fill: C.ink3 }, root);
     t.textContent = `${m}`;
   }
-  axisLabel(root, L - 34, T + (H - T - B) / 2, "speed (kn)", true);
-  axisLabel(root, L + (W - L - R) / 2, H - 4, "session time (min)", false);
+  if (narrow) {
+    // No room for a rotated axis title beside a 34-unit gutter — it would sit at x≈0 and be
+    // clipped. Bare units instead; the panel heading already says what the figure is.
+    axisUnit(root, L - 8, T - 4, "kn", "end");
+    axisUnit(root, W - R, H - 3, "min", "end");
+  } else {
+    axisLabel(root, L - 34, T + (H - T - B) / 2, "speed (kn)", true);
+    axisLabel(root, L + (W - L - R) / 2, H - 4, "session time (min)", false);
+  }
 
   // Record windows: a bracketed band, drawn before the traces so the speed line stays
   // readable through it. Narrow windows (a 2 s record is ~1 px wide) get a minimum width
@@ -468,14 +512,21 @@ function series(root, v, arr, X, Y, color, width, opacity) {
   flush();
 }
 
-function tickStep(minutes) {
-  for (const s of [1, 2, 5, 10, 15, 20, 30, 60]) if (minutes / s <= 14) return s;
+function tickStep(minutes, maxTicks = 14) {
+  for (const s of [1, 2, 5, 10, 15, 20, 30, 60]) if (minutes / s <= maxTicks) return s;
   return 120;
 }
 
 function axisLabel(root, x, y, text, rotate) {
   const t = svg("text", { x, y, "text-anchor": "middle", "font-size": 11, fill: C.ink3,
                           transform: rotate ? `rotate(-90 ${x} ${y})` : null }, root);
+  t.textContent = text;
+}
+
+/** The compact form of an axis title: just the unit, tucked against the axis end. */
+function axisUnit(root, x, y, text, anchor) {
+  const t = svg("text", { x, y, "text-anchor": anchor, "font-size": 10,
+                          "font-weight": 600, fill: C.ink3 }, root);
   t.textContent = text;
 }
 

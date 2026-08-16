@@ -11,7 +11,7 @@ import { mountLibrary, openStoredSession, refresh as refreshLibrary, saveSession
 import { render } from "./render.js";
 import { analyze as runAnalysis, on, warmUp } from "./rpc.js";
 import { listEntries } from "./store.js";
-import { invalidateTrends, mountTrends, showTrends } from "./trends.js";
+import { invalidateTrends, mountTrends, redrawTrends, showTrends } from "./trends.js";
 
 const el = (id) => document.getElementById(id);
 
@@ -22,6 +22,7 @@ const state = {
   lastDigest: null,    // its Python digest — what the library would store
   lastBytes: null,     // the original FIT bytes, kept so "save" needs no re-read
   fromLibrary: false,  // true when the document on screen came out of storage
+  highlight: null,     // the record window marked on the figures, if any
 };
 
 const VIEWS = ["analyze", "library", "trends"];
@@ -76,6 +77,7 @@ function showResult(result, { digest = null, bytes = null, fromLibrary = false,
   state.lastDigest = digest;
   state.lastBytes = bytes;
   state.fromLibrary = fromLibrary;
+  state.highlight = highlight;
 
   el("progress").hidden = true;
   el("error").hidden = true;
@@ -171,11 +173,15 @@ function wireDropzone() {
     window.addEventListener(type, (ev) => { if (ev.target !== zone) ev.preventDefault(); });
   }
 
-  zone.addEventListener("click", (ev) => { if (!ev.target.closest("button")) el("file").click(); });
+  // The whole zone is a shortcut to the picker, but the <label> and the <input> activate it
+  // themselves — clicking through to `file.click()` as well would open the picker twice.
+  zone.addEventListener("click", (ev) => {
+    if (ev.target.closest("button, label, input")) return;
+    el("file").click();
+  });
   zone.addEventListener("keydown", (ev) => {
     if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); el("file").click(); }
   });
-  el("pick").addEventListener("click", (ev) => { ev.stopPropagation(); el("file").click(); });
   el("file").addEventListener("change", (ev) => {
     const file = ev.target.files?.[0];
     if (file) analyzeFile(file);
@@ -302,12 +308,39 @@ function wireServiceWorker() {
   el("update-dismiss").addEventListener("click", () => { banner.hidden = true; });
 }
 
+/* ------------------------------------------------------------------- reflow */
+
+/**
+ * The figures are drawn at their container's real CSS width so their type stays at its
+ * stated size instead of being shrunk by a viewBox (a 1100-unit chart in a 350 px slot
+ * renders 10.5 px axis labels at 3.3 px). That makes them width-dependent, so a rotation
+ * or a window resize has to redraw them. Debounced, and only past a width that actually
+ * changes the layout — a Safari toolbar collapsing must not repaint the page.
+ */
+function wireReflow() {
+  let width = document.documentElement.clientWidth;
+  let timer = 0;
+  window.addEventListener("resize", () => {
+    const now = document.documentElement.clientWidth;
+    if (Math.abs(now - width) < 40) return;
+    width = now;
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      if (state.last && !el("results").hidden && !el("view-analyze").hidden) {
+        render(state.last, { highlight: state.highlight });
+      }
+      if (!el("view-trends").hidden) redrawTrends();
+    }, 180);
+  });
+}
+
 /* --------------------------------------------------------------------------- go */
 
 wireDropzone();
 wireDownload();
 wireSave();
 wireNav();
+wireReflow();
 wireServiceWorker();
 mountIcu({ analyzeBuffer });
 mountTrends({
