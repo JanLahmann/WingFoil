@@ -12,18 +12,30 @@
  *   marker SHAPE  carries the outcome (disc / triangle / heavy X / hairline x / hollow square)
  *   marker colour only reinforces it — the status ramp fails a CVD check on its own
  *   marker number is the turn's row number in the Turns table
+ *
+ * The presentation *values* are not written here: they come from js/tokens.js, generated
+ * from design/tokens.json, which is also where the iOS app's EventMarkerStyle gets them
+ * (docs/presentation.md "Enforcement"). `C` maps those tokens onto this app's role names,
+ * so nothing downstream has to know a token from a literal.
  */
 
+import { TOKENS } from "./tokens.js";
+
 export const C = {
-  track: "#4a4a45", foil: "#3987e5", tint: "#7fb0e8",
-  good: "#0ca30c", warn: "#fab219", bad: "#d03b3b", reject: "#7a7a72",
-  ink: "#ffffff", ink2: "#c3c2b7", ink3: "#8a8a80",
+  track: TOKENS.phase.offFoil.hex, foil: TOKENS.phase.flying.hex, tint: "#7fb0e8",
+  good: TOKENS.outcome.flew.hex, warn: TOKENS.outcome.touchdown.hex,
+  bad: TOKENS.outcome.fellIn.hex, reject: TOKENS.outcome.courseChange.hex,
+  ink: "#ffffff", ink2: TOKENS.direction.ink.hex, ink3: "#8a8a80",
   surface: "#1a1a19", grid: "#333331",
   // The three layers that are about effort and water rather than about an outcome. They
   // are deliberately outside the green/amber/red ladder (same reasoning as the iOS app's
   // EventMarkerStyle): nothing here is a verdict, so borrowing the verdict palette would
   // make a takeoff look like a good jibe.
-  pump: "#8f7ce8", takeoff: "#3987e5", splash: "#3fc4d8",
+  pump: TOKENS.effort.pumping.hex, takeoff: TOKENS.effort.takeoff.hex,
+  splash: TOKENS.effort.splash.hex,
+  // The one exception, and it earns it: a failed attempt is the single event in those
+  // layers with an outcome, so it alone borrows the ladder's red.
+  failedTakeoff: TOKENS.effort.failedTakeoff.hex,
 };
 
 export const OUTCOME_COLOR = { flew_through: C.good, touchdown: C.warn, fell_in: C.bad,

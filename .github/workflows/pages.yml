@@ -5,6 +5,11 @@
 # guard worth running is the one that matters: lab_bundle/wingfoil_lab must be the same
 # code as lab/src/wingfoil_lab, or the site would silently analyze with a stale engine.
 # bundle_lab.py --check compares source hashes and fails the deploy on drift.
+#
+# The same argument applies to the presentation values: web/css/tokens.css and
+# web/js/tokens.js are generated from design/tokens.json, and deploying a site whose
+# tokens no longer match the source would ship colours the iOS app does not have. So
+# check_tokens.py --check runs beside it, before the upload.
 name: Deploy web to Pages
 
 on:
@@ -13,6 +18,7 @@ on:
     paths:
       - "web/**"
       - "lab/src/wingfoil_lab/**"
+      - "design/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -38,6 +44,8 @@ jobs:
           python-version: "3.12"
       - name: Bundle staleness check
         run: python web/tools/bundle_lab.py --check
+      - name: Design token staleness check
+        run: python design/check_tokens.py --check
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

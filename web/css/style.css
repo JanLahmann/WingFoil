@@ -9,7 +9,12 @@
    so **shape carries the state everywhere** and colour only reinforces it; every
    outcome has its own marker and its own legend label. The wind arrow is drawn in
    secondary ink with a direct label rather than a fifth hue, because an orange
-   annotation sits only ΔE 6.8 from the critical red for normal vision. */
+   annotation sits only ΔE 6.8 from the critical red for normal vision.
+
+   The presentation values themselves live in design/tokens.json and arrive through
+   css/tokens.css (loaded first, generated, CI-checked) — see docs/presentation.md
+   "Enforcement". The names below are this app's *roles*; the tokens are the values,
+   shared with the iOS app so neither can drift alone. */
 
 :root {
   color-scheme: dark;
@@ -23,14 +28,14 @@
   --ink-2:     #c3c2b7;
   --ink-3:     #8a8a80;
 
-  --series-1:  #3987e5;
+  --series-1:  var(--wf-phase-flying);
   --series-1-tint: #7fb0e8;
-  --track:     #4a4a45;
+  --track:     var(--wf-phase-off-foil);
 
-  --good:      #0ca30c;
-  --warn:      #fab219;
-  --bad:       #d03b3b;
-  --reject:    #7a7a72;
+  --good:      var(--wf-outcome-flew);
+  --warn:      var(--wf-outcome-touchdown);
+  --bad:       var(--wf-outcome-fell-in);
+  --reject:    var(--wf-outcome-course-change);
 
   --radius: 10px;
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
