@@ -8,7 +8,7 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
 
 ```json
 {
-  "engineVersion": "0.2.0",
+  "engineVersion": "0.3.0",
   "config": { "foilEntrySpeed": 12.0, "...": "params actually used" },
   "capabilities": { "hasDoppler": true, "hasDevFields": false, "hasWatchLaps": false,
                      "hasAccel": false, "hasHR": true, "sampleRateHz": 1 },
@@ -35,6 +35,10 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
                   "timeToFoilS": 0.0, "speedRiseS": 0.0, "entryKn": 0.0,
                   "cadenceSpm": null, "inFlightStrokes": null, "free": false,
                   "truncated": false, "preWindowS": 0.0 } ],
+  "pumpEpisodes": [ { "startTs": 0, "endTs": 0, "strokes": 0,
+                      "outcome": "success|failed|recovery|in_flight|unknown",
+                      "bursts": 1, "flightIndex": null, "turnIndex": null,
+                      "lookaheadS": 0.0 } ],
   "hr":      { "hasHR": true,
                "takeoffEvents": [ { "kind": "takeoff|swim", "index": 0, "ts": 0,
                                     "approximate": false, "strokes": null,
@@ -82,7 +86,12 @@ channel gets `hasHR: false` beside empty lists and null averages, never a missin
 it, an unmeasurable window is null throughout (`baselineBpm`, `costBpm`, `avgTakeoffCostBpm`,
 `bpmPerStroke`, …) and never 0.0, which would read as "this attempt was free"; the
 `<name>Valid`/`<name>Total` pair beside each average is the `n valid / n total` that says how
-much of the session it actually speaks for.
+much of the session it actually speaks for. `pumpEpisodes` (engine 0.3.0, docs/algorithms.md
+"Takeoff analysis") carries **every** classified pumping effort, not only the failed ones: the
+`summary.takeoff` tallies count the five buckets, and this list is the same classification with
+its *instants* attached, which is what lets iOS place a failed attempt on the map instead of
+apologizing for it. It degrades like `turns` — a source with no accelerometer has no bursts to
+classify and gets `[]`, written rather than omitted.
 
 ## Tolerances (Swift & Python vs goldens)
 
@@ -90,6 +99,7 @@ much of the session it actually speaks for.
 |---|---|
 | counts (flights, turns, attempts, strokes) | exact |
 | verdicts (turn type/outcome, flight-end outcome, ownership) | exact |
+| pump episodes (list length **and order**, outcome, strokes, bursts, flightIndex/turnIndex) | exact; their `startTs`/`endTs`/`lookaheadS` ± 1 s |
 | timestamps | ± 1 s |
 | speeds (records, turn entry/minimum) | ± 0.05 kn (alpha ± 0.1 kn) |
 | angles (wind direction/axis, turn net sweep) | ± 1° |
@@ -185,12 +195,20 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    `UI_LOAD_EXAMPLE=1` taps the setup card's "Load an example session first" button, and
    `UI_SCROLL_TO=setup` parks the (screen-and-a-half tall) onboarding card on its bottom
    edge — the only way to photograph that button, which lives below the key field.
-   `UI_SCROLL_TO=<anchor>` (`replay`, `summary`, `takeoff`, `hr` for the HR-cost card,
-   `gear`), `UI_PLAYHEAD=0.0…1.0`, `UI_FULLSCREEN_MAP=1` and
-   `UI_HIDE_LAYERS=<MapLayer,…>` stage the session detail page: the last one starts with
-   those legend chips switched off (e.g. `fellIn,courseChange`), which is the only way to
-   photograph a filtered map without a finger. It is applied *after* the stored preference
-   and never written back — the override stages a screenshot, it does not edit the setting.
+   On the Trends tab `UI_SCROLL_TO=sideSuccess` parks the screen on the port/starboard
+   turn-success chart. On the session page,
+   `UI_SCROLL_TO=<anchor>` (`replay`, `summary`, `turns` for the turn cards and the
+   drill-in row, `takeoff`, `hr` for the HR-cost card, `gear`), `UI_PLAYHEAD=0.0…1.0`,
+   `UI_FULLSCREEN_MAP=1` and `UI_HIDE_LAYERS=<MapLayer,…>` stage the session detail page:
+   the last one starts with those legend chips switched off (e.g. `fellIn,courseChange`,
+   or one of the layers added later — `pumping`, `takeoff`, `splash`), which is the only
+   way to photograph a filtered map without a finger. It is applied *after* the stored
+   preference and never written back — the override stages a screenshot, it does not edit
+   the setting. `UI_RECORD=<window key>` (`best10s`, `best250m`, `bestNm`, …) preselects a
+   non-default GP3S window so the map glow and the chart shading can be photographed on
+   something other than the best 2 s. `UI_OPEN_TURNS=1` pushes the turns drill-in page and
+   `UI_TURN_FILTER=<jibes|tacks|both>,<port|starboard|both>` engages its two segmented
+   filters (e.g. `jibes,starboard`), which `simctl` likewise cannot tap.
 3. **Monkey C units (Toybox.Test)** — the core suite lives in the `WingFoilCore` barrel
    (`garmin/barrel/WingFoilCore/tests/`) and is therefore compiled into **both** consumers'
    `--unit-test` builds: `bin/WingFoilTests.prg` (device app: 16 tests) and

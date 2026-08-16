@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.2.0",
+  "engineVersion": "0.3.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -2208,6 +2208,7 @@
       "preWindowS": 18.0
     }
   ],
+  "pumpEpisodes": [],
   "hr": {
     "hasHR": true,
     "takeoffEvents": [
