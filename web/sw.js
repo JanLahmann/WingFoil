@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v6";      // v6: phase tint cut at the flight boundaries + tap-only pairing
+const VERSION = "v7";      // v7: map pan/zoom + the pinch ergonomics on the speed strip
 const SHELL = `wingfoil-shell-${VERSION}`;
 const RUNTIME = `wingfoil-runtime-${VERSION}`;
 

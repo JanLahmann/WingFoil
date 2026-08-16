@@ -25,7 +25,8 @@ web/
 ├── js/worker.js                Pyodide worker — loads the runtime + the lab, runs the pipeline
 ├── js/render.js                summary tiles and tables; calls the figures
 ├── js/session.js               the interactive session view: track map + speed strip, the
-│                               playhead they share, layer chips, zoom, marker popovers
+│                               playhead they share, layer chips, pan/zoom on both figures,
+│                               marker popovers
 ├── js/viz.js                   drawing primitives both figure files share: palette, SVG
 │                               helpers, the marker vocabulary, formatters, tooltip
 ├── js/tokens.js                GENERATED from design/tokens.json — do not edit
@@ -62,12 +63,14 @@ Concretely: if you want a number the UI does not yet show, it goes into
 SVG coordinate placement and adding up file sizes for the storage indicator.
 
 This holds for the interactive session view too, which is where it is easiest to break. The
-playhead, the layer chips, the time-axis zoom and the marker popovers in `js/session.js` do
-no analysis: a popover's rows are fields of the analysis document read out verbatim, the
-scrubber's readout is the values of the sample nearest the playhead, and the only numeric
-work is placing shapes, the binary search from a time to that sample, and the interpolation
-that slides the map dot between two fixes. If an interaction needs a number the document
-does not carry, the number goes into `lab_bundle/`.
+playhead, the layer chips, the time-axis zoom, the map's camera and the marker popovers in
+`js/session.js` do no analysis: a popover's rows are fields of the analysis document read out
+verbatim, the scrubber's readout is the values of the sample nearest the playhead, and the
+only numeric work is placing shapes, the binary search from a time to that sample, and the
+interpolation that slides the map dot between two fixes. The map's zoom is the same kind of
+thing — one multiply and one offset on coordinates the document already carries, with the
+figure redrawn from them; it reports no distance and rounds no number. If an interaction
+needs a number the document does not carry, the number goes into `lab_bundle/`.
 
 ## Privacy
 
@@ -225,7 +228,7 @@ colour-vision check without a second hue.
 ## Phone layout
 
 The app is used on the beach, on a phone, so 390 × 844 is a first-class target rather than a
-narrow-window afterthought. Four rules, all of them in `css/style.css`, `js/session.js` and
+narrow-window afterthought. Five rules, all of them in `css/style.css`, `js/session.js` and
 `js/viz.js`:
 
 **1. The page never scrolls sideways.** Wide content scrolls inside its own box or restacks;
@@ -257,6 +260,16 @@ Safari zooms the whole page when a focused field is smaller. The file picker is 
 `<label for>` over the input, not a button calling `input.click()` — **iPhone Safari has no
 drag & drop, so the picker is the only intake path there** and it must not depend on JS.
 
+**5. A gesture the browser can also claim is a gesture you will lose.** Two rules, both in
+`js/session.js`. *One:* `touch-action` is latched when the **first** finger lands, so it can
+never say "one finger scrolls the page, two fingers pinch the figure" — the second finger's
+own `touchstart`/`touchmove` say it instead, with `preventDefault` (`lockTwoFingerScroll`).
+Without that the page slides under a pinch and the gesture arrives as a `pointercancel`.
+*Two:* nothing that a finger is touching may move. The playhead readout appears on the first
+touch, so it lives below the figures (see above), and every zoom step redraws the strip, so
+the pointer bookkeeping and the `pointermove`/`pointerup` listeners are on `window` and at
+module scope — the element the gesture began on is gone by the second move.
+
 Safe areas: `viewport-fit=cover` plus `env(safe-area-inset-*)` on every edge chrome (topbar
 top and sides, `main`, the footer's bottom), so the installed PWA — which declares
 `apple-mobile-web-app-status-bar-style: black-translucent` — clears the notch and the home
@@ -282,7 +295,7 @@ choices above are made from the documented behaviour, not from a measured device
   *Reload to update*. Bump `VERSION` in `sw.js` whenever anything under `web/` changes; the
   old caches are deleted on activate. **This is not optional for a CSS or JS edit**: the
   shell is served cache-first, so without the bump every already-installed client keeps the
-  old stylesheet indefinitely. Current value: `v2` (the phone-layout pass).
+  old stylesheet indefinitely. Current value: `v7` (map pan/zoom + the pinch ergonomics).
 
 Icons live in `web/icons/`, copied from `brand/` (`icon-tile-*` for the normal icon,
 `icon-square-*` full-bleed for the maskable one). Nothing outside `web/` is referenced.
@@ -352,7 +365,10 @@ groups (**153 assertions**, all green at the time of writing — 30 / 8 / 28 / 4
    red hollow u-turns for failed attempts / cyan drops where the barometer saw the wrist go
    under; wind arrow + scale bar. Hovering a marker
    shows a tooltip, tapping one opens a popover of that event's facts. The legend counts
-   must match the tiles. **The teal is cut at the engine's exact flight boundaries**, so
+   must match the tiles. **Zoom it**: wheel/pinch/double-tap, or the **&minus; + Reset zoom**
+   row under the chips. At 3× the markers and their numbers must be the same size as at 1×
+   (only the track grows), the chevrons must keep roughly the spacing they had, the scale bar
+   must have re-picked its distance, and a one-finger drag must pan rather than scrub. **The teal is cut at the engine's exact flight boundaries**, so
    every landing shows a grey stub even where the source recorded no fix inside it — on the
    2026-08-06 wingfoiling file that is 24 of its 54 boundaries, and before the cut they drew
    as continuous flight with a takeoff arrow apparently mid-flight. (A file with no GPS fixes at all must show *"No GPS positions in
@@ -364,20 +380,33 @@ groups (**153 assertions**, all green at the time of writing — 30 / 8 / 28 / 4
    shows a crosshair with the time and both speeds.
 6b. **The interactions** (`js/session.js`), which is what the two figures are *for*:
    - **Scrub.** Drag the speed strip: a dashed rule follows the pointer, a dot slides along
-     the track at the same instant, and the readout above the strip names that instant once
+     the track at the same instant, and the readout below the strip names that instant once
      — clock time, elapsed, both speeds, flying or off foil. Drag on or near the track
      instead: the same three move together. A press well away from the track does nothing
-     rather than yanking the playhead somewhere unrelated.
+     rather than yanking the playhead somewhere unrelated. The readout sits **below** the
+     figures, not above: it appears the moment a finger lands, and above the strip its
+     arrival pushed the figure 151 px down on a phone — out from under the very finger that
+     had just set it (see `index.html`).
    - **Layer chips.** Eleven of them, worded by `design/tokens.json` and therefore the same
      words the iOS legend uses: flying · off foil · pumping · direction · best 2 s (the
      effort chip is named after the window it is showing) · flew through · touchdown · fell
      in · course change · takeoff · splash. Every chip hides its category on the map *and*
      in the chart — `direction` takes the chevrons with it and leaves the route. A chip with
      nothing to show stays as a subdued caption, not a dead button. "Show all" returns.
-   - **Zoom.** Wheel or trackpad over the plot (or a two-finger pinch on a touch screen)
-     zooms the time axis about the pointer; markers and bands outside the window are not
-     drawn; the axis switches to m:ss; "Reset zoom" or a double-click restores it. Scrubbing
-     still works while zoomed.
+   - **Zoom, on the strip.** Wheel or trackpad over the plot (or a two-finger pinch on a
+     touch screen) zooms the time axis about the pointer; markers and bands outside the
+     window are not drawn; the axis switches to m:ss. Scrubbing still works while zoomed.
+     Out again: the **Reset zoom** chip, a double-click (mouse) or a two-finger double-tap
+     (touch). A one-finger **double-tap zooms in** about the tap — the mouse keeps its old
+     double-click-to-reset, because a mouse has a wheel and a finger does not. **&minus;**
+     and **+** beside the chip do the same about the middle of the window, at 44 px.
+   - **Zoom and pan, on the map.** Same vocabulary: wheel/trackpad or pinch zooms about the
+     gesture, up to 8×. The chevrons re-space themselves so their *screen* rhythm is the one
+     they were tuned at, the markers stay exactly the size they are (the geometry scales, not
+     the symbols), and the scale bar re-picks its rounded distance. **Zoomed in, a one-finger
+     drag pans**, and a clean tap still scrubs or opens a mark; at 1× a drag scrubs along the
+     track as it always did, because there is nowhere to pan to. Same three buttons in the
+     map's own legend, and the same double-tap pair.
    - **Pairing, on tap only** (docs/presentation.md). Tap a takeoff arrow: the popover gains
      one accent line, `starts flight 12 · 1:23 · ended: touchdown`. A red u-turn says
      `no flight · 3 strokes`; a hollow flight-end square says
@@ -437,9 +466,12 @@ groups (**153 assertions**, all green at the time of writing — 30 / 8 / 28 / 4
   very first analysis on a cold cache takes ~25 s end to end for a 90-minute session.
 - The intervals.icu integration will normally be blocked by CORS. That is not fixable from a
   zero-server app; the panel detects it and explains the manual export path.
-- No pan/zoom on the **map** — it is a fixed, aspect-correct plot, like
-  `lab/tools/plot_turns.py`. The *speed strip* does zoom its time axis (wheel or pinch), and
-  the map answers by moving the shared playhead rather than by changing scale.
+- **A wheel over either figure zooms it, and does not scroll the page.** That is the same
+  rule the speed strip already had, now on the map too — consistency was worth more than the
+  odd overshoot, and the page still scrolls from anywhere beside them.
+- The **map's zoom is a camera over the fitted plot**, not a tile server: there is no
+  imagery under it and no rotation, so at 8× you are looking at the same polyline, larger.
+  The limit is 8× because past that a 1 Hz track is mostly the interpolation between fixes.
 - **The library is device-local and unsynced.** Two browsers, two libraries. There is nowhere
   for a zero-server app to sync to, and inventing one would break the privacy promise. The
   zip export is the migration path.

@@ -14,6 +14,9 @@
  *     not), and the barometer's submersion evidence.
  *   - Time-axis zoom on the strip (wheel/trackpad, or a two-finger pinch), with the
  *     markers and the shading following the visible window.
+ *   - A camera on the map with the same vocabulary — pinch/wheel to zoom about the
+ *     gesture, drag to pan once there is somewhere to pan to — plus buttons and a
+ *     double-tap for the same, because a pinch is awkward one-handed on a beach.
  *
  * **Nothing here computes a metric.** Every number drawn or shown comes out of the
  * analysis document verbatim; the only arithmetic is SVG coordinate placement, the
@@ -144,9 +147,79 @@ const state = {
   model: null,         // marks + spans, derived once per document
   playhead: null,      // session-clock seconds, or null
   zoom: null,          // {t0, t1} visible window on the strip, or null for "all of it"
+  camera: null,        // {k, tx, ty} on the map, or null for "the whole track, fitted"
   hidden: new Set(),   // layer ids the chips have switched off (transient, not persisted)
   live: null,          // handles into the drawn figures, so a scrub is not a redraw
 };
+
+/* ------------------------------------------------------------------ the camera
+ *
+ * The map used to be a fixed plot. It is now a camera over the same fitted projection:
+ * `k` magnifies about the figure's own top-left, `tx`/`ty` slide it, and the drawing
+ * composes them onto the base scale — `screen = k · base + t`.
+ *
+ * Everything else follows for free, which is why it is done this way rather than with an
+ * SVG transform on a group:
+ *
+ *   - the polylines are re-emitted at the new scale, so the *geometry* grows;
+ *   - the markers are still drawn at their own fixed size around a moved centre, so a
+ *     glyph is the same number of pixels at 4× as at 1× (a group transform would blow them
+ *     up into blobs, and the number labels with them);
+ *   - `chevrons()` decimates by *screen* distance, so zooming in re-spaces them instead of
+ *     stretching the gaps — the arrows keep the rhythm they were tuned for;
+ *   - the scale bar is handed `s · k` and re-picks its rounded distance.
+ *
+ * `null` means 1× — the state the figure had before any of this, so a session that is
+ * never zoomed draws exactly what it always drew.
+ */
+const MAP_ZOOM_MAX = 8;
+
+const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+
+/** Keep the camera legal: never below 1×, never panned past the edge of the plot. */
+function clampCamera(cam, W, H) {
+  const k = clamp(cam.k, 1, MAP_ZOOM_MAX);
+  return { k, tx: clamp(cam.tx, W - k * W, 0), ty: clamp(cam.ty, H - k * H, 0) };
+}
+
+const camera = () => state.camera || { k: 1, tx: 0, ty: 0 };
+
+/** Zoom by `factor` about the figure-local point (sx, sy), which stays put under it. */
+function zoomMap(sx, sy, factor, from = null) {
+  const live = state.live?.map;
+  if (!live) return;
+  const base = from || camera();
+  const k = clamp(base.k * factor, 1, MAP_ZOOM_MAX);
+  // the *unzoomed* coordinate currently under the gesture — the thing that must not move
+  const bx = (sx - base.tx) / base.k, by = (sy - base.ty) / base.k;
+  const next = clampCamera({ k, tx: sx - bx * k, ty: sy - by * k }, live.W, live.H);
+  setCamera(next);
+}
+
+function panMap(dx, dy, from = null) {
+  const live = state.live?.map;
+  if (!live) return;
+  const base = from || camera();
+  setCamera(clampCamera({ k: base.k, tx: base.tx + dx, ty: base.ty + dy }, live.W, live.H));
+}
+
+function setCamera(next) {
+  const now = camera();
+  const settled = next.k <= 1.0001 ? null : next;
+  const was = state.camera;
+  if (!settled && !was) return;                         // already all the way out
+  if (settled && was && Math.abs(now.k - next.k) < 1e-4
+      && Math.abs(now.tx - next.tx) < 0.04 && Math.abs(now.ty - next.ty) < 0.04) return;
+  state.camera = settled;
+  drawMap();
+  // The legend only has to be rebuilt when it would *say* something different: a pan moves
+  // the camera many times a second and none of those change "showing 3.3×", so redrawing
+  // the chips with it would throw eleven buttons away under the reader's finger.
+  if (Math.abs(now.k - camera().k) > 0.005 || !was !== !settled) drawChips();
+  applyPlayhead();
+}
+
+const resetCamera = () => setCamera({ k: 1, tx: 0, ty: 0 });
 
 /* ------------------------------------------------------------------ time lookups */
 
@@ -368,6 +441,7 @@ export function renderFigures(result, highlight = null) {
     state.model = buildModel(result);
     state.playhead = null;
     state.zoom = null;
+    state.camera = null;
     state.hidden.clear();
     endStripGesture();
     closePopover();
@@ -386,6 +460,7 @@ export function resetSession() {
   state.model = null;
   state.playhead = null;
   state.zoom = null;
+  state.camera = null;
   state.hidden.clear();
   endStripGesture();
   closePopover();
@@ -419,12 +494,20 @@ function drawMap() {
   const s = Math.min(inner / dw, (H - 2 * PAD) / dh);
   const ox = PAD + (inner - dw * s) / 2 - b.x0 * s;
   const oy = PAD + (H - 2 * PAD - dh * s) / 2 + b.y1 * s;   // y flipped: north up
-  const X = (x) => ox + x * s;
-  const Y = (y) => oy - y * s;
+  // The camera rides on top of the fit: at 1× it is the identity and this is the figure
+  // that was here before. Everything downstream draws in *screen* units, so markers and
+  // chevrons stay the size they were tuned at whatever `k` is (see "the camera" above).
+  const cam = camera();
+  const X = (x) => (ox + x * s) * cam.k + cam.tx;
+  const Y = (y) => (oy - y * s) * cam.k + cam.ty;
 
+  const zoomed = cam.k > 1.0001;
+  host.classList.toggle("panning", zoomed);
   const root = svg("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", class: "scrubbable",
+                            "data-zoom": cam.k.toFixed(3),
                             "aria-label": "GPS track with event markers; drag to move the "
-                                          + "replay playhead" }, host);
+                                          + "replay playhead, pinch or scroll to zoom"
+                                          + (zoomed ? ", drag to pan" : "") }, host);
   svg("rect", { width: W, height: H, fill: C.surface }, root);
 
   // The chevrons ride the *whole* route rather than the phase runs: spacing has to be
@@ -506,7 +589,9 @@ function drawMap() {
   }
 
   if (model.g.wind) windArrow(root, model.g.wind, W, narrow);
-  scaleBar(root, s, PAD, H - 14);
+  // The bar is a screen ruler, so it reads the *effective* scale and re-picks its rounded
+  // distance — at 4× it says 100 m where it said 500 m.
+  scaleBar(root, s * cam.k, PAD, H - 14);
 
   // The playhead, drawn last so it sits above the outcome markers — it is the thing being
   // moved. Deliberately unlike them (bigger, white-ringed, with a halo) so it reads as
@@ -521,8 +606,8 @@ function drawMap() {
   const dot = svg("circle", { r: 5.2, fill: C.foil, stroke: C.ink, "stroke-width": 2 }, head);
   // (its fill follows the phase under it — see applyPlayhead)
 
-  state.live.map = { root, X, Y, head, halo, dot, W, H };
-  wireMapScrub(root, W, H, X, Y);
+  state.live.map = { root, X, Y, head, halo, dot, W, H, cam };
+  wireMapInput(root);
 }
 
 /**
@@ -689,65 +774,215 @@ function scaleBar(root, s, x, y) {
   t.textContent = meters >= 1000 ? `${meters / 1000} km` : `${meters} m`;
 }
 
-/* ------------------------------------------------------------- map: scrubbing */
+/* ------------------------------------------------- map: scrubbing, pan and zoom */
 
 /**
- * The map is the second handle on the playhead: press near the track and the playhead
- * jumps there, drag and it follows. A press that lands nowhere near the track is ignored
- * rather than yanking the playhead to some unrelated corner of the session — the
- * tolerance is in *screen* units, so it is roughly a fingertip whatever the scale is.
+ * Every gesture on the map.
+ *
+ * The map is still the second handle on the playhead — press near the track and the
+ * playhead jumps there — and it is now also a camera. The two never fight, because the
+ * *shape* of the gesture decides, not where it started:
+ *
+ *   - a **tap** scrubs (or opens a mark's popover), whether or not it landed on the track;
+ *   - a **drag** pans, once the camera is zoomed in. At 1× there is nowhere to pan to, so
+ *     a drag keeps its old meaning and scrubs along the track;
+ *   - **two fingers** pinch about their own midpoint, and a **wheel** zooms about the
+ *     pointer.
+ *
+ * The moves and the releases are heard on `window`, not on the SVG: a zoom step redraws
+ * the figure, which throws away the element the gesture began on, and a finger that leaves
+ * the box mid-drag would otherwise take the gesture with it.
  */
-function wireMapScrub(root, W, H, X, Y) {
+
+const mapPointers = new Map();      // pointerId -> {x, y, onMark}
+let mapPinch = null;                // {dist, cam, sx, sy} — the pinch's starting state
+let mapPan = null;                  // {x, y, cam} — the drag's starting state
+let mapGestured = false;            // a pan or pinch happened: this is no longer a tap
+let mapFingers = 0;                 // most fingers seen in the gesture (for the two-finger tap)
+let mapTap = { at: 0, x: 0, y: 0, fingers: 0 };
+
+const endMapGesture = () => {
+  mapPointers.clear();
+  mapPinch = null;
+  mapPan = null;
+  mapGestured = false;
+  mapFingers = 0;
+};
+
+/** Figure-local coordinates, in the viewBox's units (which are CSS pixels here). */
+function mapLocal(clientX, clientY) {
+  const live = state.live?.map;
+  if (!live) return null;
+  const r = live.root.getBoundingClientRect();
+  if (!r.width || !r.height) return null;
+  return { ux: ((clientX - r.left) / r.width) * live.W,
+           uy: ((clientY - r.top) / r.height) * live.H };
+}
+
+/** The time of the fix nearest a figure-local point, or null if none is within a
+ *  fingertip. The tolerance is in *screen* units, so it stays a fingertip at every zoom. */
+function nearestOnTrack(ux, uy) {
+  const live = state.live?.map;
+  if (!live) return null;
   const v = state.model.v;
-  const tolerance = 34;                       // user units == CSS px at this viewBox
-  let dragging = false;
+  const tolerance = 34;
+  let bestT = null, bestD = Infinity;
+  for (let i = 0; i < v.count; i++) {
+    if (v.x[i] == null || v.y[i] == null) continue;
+    const dx = live.X(v.x[i]) - ux, dy = live.Y(v.y[i]) - uy;
+    const d = dx * dx + dy * dy;
+    if (d < bestD) { bestD = d; bestT = v.t[i]; }
+  }
+  return bestD <= tolerance * tolerance ? bestT : null;
+}
 
-  const toUser = (ev) => {
-    const r = root.getBoundingClientRect();
-    return { ux: ((ev.clientX - r.left) / r.width) * W,
-             uy: ((ev.clientY - r.top) / r.height) * H };
-  };
-
-  const nearest = (ux, uy) => {
-    let bestT = null, bestD = Infinity;
-    for (let i = 0; i < v.count; i++) {
-      if (v.x[i] == null || v.y[i] == null) continue;
-      const dx = X(v.x[i]) - ux, dy = Y(v.y[i]) - uy;
-      const d = dx * dx + dy * dy;
-      if (d < bestD) { bestD = d; bestT = v.t[i]; }
-    }
-    return bestD <= tolerance * tolerance ? bestT : null;
-  };
-
-  let from = 0;
+function wireMapInput(root) {
   root.addEventListener("pointerdown", (ev) => {
     // Before any early return: a new press is never the drag the last one was, and a mark
     // whose press is ignored here still has to be tappable (its click handler asks).
     dragged = false;
-    if (ev.target.closest("[data-mark]")) return;      // a marker tap opens its popover
-    const { ux, uy } = toUser(ev);
-    const t = nearest(ux, uy);
-    if (t === null) return;
-    dragging = true;
-    from = ev.clientX + ev.clientY;
-    root.setPointerCapture(ev.pointerId);
+    if (ev.pointerType !== "mouse") lastTouchAt = performance.now();
+    const onMark = !!ev.target.closest("[data-mark]");
+    // A gesture that starts with nothing down starts clean, whatever the last one left
+    // behind (a release swallowed by a redraw would otherwise make the next single tap
+    // look like a two-finger one).
+    if (mapPointers.size === 0) { mapFingers = 0; mapGestured = false; }
+    mapPointers.set(ev.pointerId,
+                    { x: ev.clientX, y: ev.clientY, x0: ev.clientX, y0: ev.clientY, onMark });
+    mapFingers = Math.max(mapFingers, mapPointers.size);
+
+    if (mapPointers.size === 2) {
+      const [a, b] = [...mapPointers.values()];
+      const mid = mapLocal((a.x + b.x) / 2, (a.y + b.y) / 2);
+      const dist = Math.hypot(a.x - b.x, a.y - b.y);
+      mapPinch = { dist, smooth: dist, seeded: dist >= PINCH_MIN, cam: camera(),
+                   sx: mid?.ux ?? 0, sy: mid?.uy ?? 0 };
+      mapPan = null;
+      hideTip();
+      ev.preventDefault();
+      return;
+    }
+    if (mapPointers.size !== 1) return;
+    if (onMark) return;                                // a marker tap opens its popover
+    if (state.camera) {
+      mapPan = { x: ev.clientX, y: ev.clientY, cam: camera() };
+      ev.preventDefault();
+      return;
+    }
+    // 1×: a drag has nowhere to pan to, so it keeps its old job of walking the playhead
+    // along the track. A press well away from the track still does nothing at all.
+    const p = mapLocal(ev.clientX, ev.clientY);
+    const t = p && nearestOnTrack(p.ux, p.uy);
+    if (t === null || t === undefined) return;
     setPlayhead(t);
     ev.preventDefault();
   });
-  root.addEventListener("pointermove", (ev) => {
-    if (!dragging) return;
-    if (Math.abs(ev.clientX + ev.clientY - from) > 4) dragged = true;
-    const { ux, uy } = toUser(ev);
-    const t = nearest(ux, uy);
-    if (t !== null) setPlayhead(t);
+
+  // Two fingers on the figure are a pinch, never a page scroll. `touch-action` cannot say
+  // that (it is latched when the first finger lands, and one finger still has to scroll
+  // the page over a map this tall), so the second finger's own events say it instead.
+  lockTwoFingerScroll(root);
+
+  root.addEventListener("wheel", (ev) => {
+    const p = mapLocal(ev.clientX, ev.clientY);
+    if (!p) return;
+    ev.preventDefault();
+    // A trackpad pinch arrives as a wheel with ctrlKey and much bigger deltas; the two
+    // share one exponent so a mouse notch and a trackpad pinch feel like the same control.
+    zoomMap(p.ux, p.uy, Math.exp(-ev.deltaY * (ev.ctrlKey ? 0.01 : 0.0025)));
+  }, { passive: false });
+
+  root.addEventListener("dblclick", (ev) => {
+    if (fromTouch()) return;                   // the touch double-tap already zoomed in
+    ev.preventDefault();
+    resetCamera();
   });
-  for (const type of ["pointerup", "pointercancel", "pointerleave"]) {
-    root.addEventListener(type, (ev) => {
-      if (!dragging) return;
-      dragging = false;
-      if (root.hasPointerCapture?.(ev.pointerId)) root.releasePointerCapture(ev.pointerId);
-    });
+}
+
+function onMapPointerMove(ev) {
+  const p = mapPointers.get(ev.pointerId);
+  if (!p) return;
+  p.x = ev.clientX;
+  p.y = ev.clientY;
+
+  if (mapPointers.size >= 2 && mapPinch) {
+    const [a, b] = [...mapPointers.values()];
+    const dist = Math.hypot(a.x - b.x, a.y - b.y);
+    // Same floor and the same smoothing as the strip: two fingertips a few pixels apart
+    // measure noise rather than intent, and a pinch that begins that close is re-seated
+    // when the fingers part instead of being dead for the rest of the gesture.
+    if (!mapPinch.seeded) {
+      if (dist < PINCH_MIN) return;
+      mapPinch = { dist, smooth: dist, seeded: true, cam: camera(),
+                   sx: mapPinch.sx, sy: mapPinch.sy };
+      return;
+    }
+    // Only now is this a gesture rather than two fingers resting: a two-finger *tap* has to
+    // survive as a tap, because that is the way back out of the zoom.
+    dragged = true;
+    mapGestured = true;
+    mapPinch.smooth += (dist - mapPinch.smooth) * PINCH_SMOOTH;
+    zoomMap(mapPinch.sx, mapPinch.sy,
+            Math.max(mapPinch.smooth, PINCH_MIN) / mapPinch.dist, mapPinch.cam);
+    return;
   }
+  if (mapPan) {
+    const live = state.live?.map;
+    if (!live) return;
+    const r = live.root.getBoundingClientRect();
+    const dx = (ev.clientX - mapPan.x) * (r.width ? live.W / r.width : 1);
+    const dy = (ev.clientY - mapPan.y) * (r.height ? live.H / r.height : 1);
+    // A few pixels of slop, so a tap that trembles is still a tap and still scrubs.
+    if (!mapGestured && Math.hypot(dx, dy) <= 4) return;
+    dragged = true;
+    mapGestured = true;
+    panMap(dx, dy, mapPan.cam);
+    return;
+  }
+  if (state.camera) return;                    // zoomed: a one-finger drag pans, never scrubs
+  if (p.onMark) return;
+  const local = mapLocal(ev.clientX, ev.clientY);
+  if (!local) return;
+  if (Math.hypot(ev.clientX - p.x0, ev.clientY - p.y0) > 4) dragged = true;
+  const t = nearestOnTrack(local.ux, local.uy);
+  if (t !== null) setPlayhead(t);
+}
+
+function onMapPointerUp(ev) {
+  if (!mapPointers.has(ev.pointerId)) return;
+  const was = mapPointers.get(ev.pointerId);
+  mapPointers.delete(ev.pointerId);
+  if (mapPointers.size < 2) mapPinch = null;
+  if (mapPointers.size !== 0) return;
+
+  const fingers = mapFingers;
+  const gestured = mapGestured;
+  mapPan = null;
+  mapGestured = false;
+  mapFingers = 0;
+
+  if (ev.type === "pointercancel") return;
+  // While zoomed the press started a pan rather than a scrub, because it could not know
+  // yet which it would become. It turned out to be a tap, so it scrubs after all.
+  if (!gestured && fingers === 1 && state.camera && !was?.onMark) {
+    const p = mapLocal(ev.clientX, ev.clientY);
+    const t = p && nearestOnTrack(p.ux, p.uy);
+    if (t !== null && t !== undefined) setPlayhead(t);
+  }
+
+  if (gestured || ev.pointerType === "mouse") return;
+  // A clean tap, on touch. One finger twice zooms in about it; two fingers twice go back —
+  // the same pair the strip offers, and the reset chip is the way out of either.
+  const now = performance.now();
+  const near = now - mapTap.at < 340
+    && Math.hypot(ev.clientX - mapTap.x, ev.clientY - mapTap.y) < 44
+    && mapTap.fingers === fingers;
+  if (!near) { mapTap = { at: now, x: ev.clientX, y: ev.clientY, fingers }; return; }
+  mapTap = { at: 0, x: 0, y: 0, fingers: 0 };
+  if (fingers >= 2) { resetCamera(); return; }
+  if (was?.onMark) return;                     // a double-tap on a mark is two mark taps
+  const p = mapLocal(ev.clientX, ev.clientY);
+  if (p) zoomMap(p.ux, p.uy, 2);
 }
 
 /* ------------------------------------------------------------------ speed strip */
@@ -980,12 +1215,7 @@ function wireStripInput(root, cross, box) {
     const { ux, uy } = local(ev);
     return ux >= box.L && ux <= box.W - box.R && uy >= box.T && uy <= box.H - box.B;
   };
-  const timeAt = (clientX) => {
-    const r = root.getBoundingClientRect();
-    const ux = ((clientX - r.left) / r.width) * box.W;
-    const t = box.t0 + ((ux - box.L) / (box.W - box.L - box.R)) * (box.t1 - box.t0);
-    return Math.min(Math.max(t, box.t0), box.t1);
-  };
+  const timeAt = (clientX) => stripTimeAt(clientX);
 
   /* --- hover crosshair: the reading-without-committing gesture (mouse only) */
   root.addEventListener("pointermove", (ev) => {
@@ -1011,53 +1241,68 @@ function wireStripInput(root, cross, box) {
     hideTip();
   });
 
-  /* --- drag to scrub, two fingers to zoom */
+  /* --- drag to scrub, two fingers to zoom.
+     Only the press is heard here. The moves and the releases are on `window` (see below):
+     a zoom step redraws the strip, which deletes the element this listener belongs to. */
   root.addEventListener("pointerdown", (ev) => {
     dragged = false;                                   // see the map's handler
+    if (ev.pointerType !== "mouse") lastTouchAt = performance.now();
     if (!inPlot(ev)) return;
-    if (ev.target.closest("[data-mark]") && stripPointers.size === 0) return;  // mark → popover
-    stripPointers.set(ev.pointerId, ev.clientX);
-    root.setPointerCapture(ev.pointerId);
+    // A press on a mark is registered like any other finger — it is only barred from
+    // *scrubbing*, because the mark's own click opens the popover. It used to be dropped
+    // outright, which meant a pinch whose first finger happened to land on one of the ~100
+    // glyphs never became a pinch at all: the second finger arrived as "the first", and the
+    // gesture scrubbed instead of zooming. On a busy strip that is most of them.
+    const onMark = !!ev.target.closest("[data-mark]");
+    if (stripPointers.size === 0) { stripFingers = 0; stripPinched = false; }
+    stripPointers.set(ev.pointerId,
+                      { x: ev.clientX, y: ev.clientY, x0: ev.clientX, onMark });
+    stripFingers = Math.max(stripFingers, stripPointers.size);
     if (stripPointers.size === 2) {
-      const [a, b] = [...stripPointers.values()];
-      stripPinch = { span: Math.abs(a - b), t0: box.t0, t1: box.t1,
-                     centre: timeAt((a + b) / 2) };
+      beginStripPinch();
       cross.cross.setAttribute("visibility", "hidden");
       hideTip();
-    } else {
-      setPlayhead(timeAt(ev.clientX));
+      ev.preventDefault();
+      return;
     }
+    if (stripPointers.size !== 1 || onMark) return;
+    setPlayhead(timeAt(ev.clientX));
     ev.preventDefault();
   });
 
-  root.addEventListener("pointermove", (ev) => {
-    if (!stripPointers.has(ev.pointerId)) return;
-    if (Math.abs(stripPointers.get(ev.pointerId) - ev.clientX) > 3) dragged = true;
-    stripPointers.set(ev.pointerId, ev.clientX);
-    if (stripPointers.size >= 2 && stripPinch) {
-      const [a, b] = [...stripPointers.values()];
-      const span = Math.abs(a - b);
-      if (span > 8 && stripPinch.span > 8) zoomTo(stripPinch.centre, stripPinch.span / span,
-                                                  stripPinch);
-      return;
-    }
-    setPlayhead(timeAt(ev.clientX));
-  });
+  // Two fingers on the figure are a pinch, never a page scroll or a page zoom.
+  lockTwoFingerScroll(root);
 
   /* --- wheel / trackpad zoom around the pointer. Only over the plot: a wheel on the axes
      or beside the figure is someone scrolling the page, and stealing that would be rude. */
   root.addEventListener("wheel", (ev) => {
     if (!inPlot(ev)) return;
     ev.preventDefault();
-    zoomTo(timeAt(ev.clientX), Math.exp(ev.deltaY * 0.0022));
+    zoomTo(timeAt(ev.clientX), Math.exp(ev.deltaY * (ev.ctrlKey ? 0.009 : 0.0022)));
   }, { passive: false });
 
-  root.addEventListener("dblclick", (ev) => { ev.preventDefault(); resetZoom(); });
+  root.addEventListener("dblclick", (ev) => {
+    if (fromTouch()) return;                   // the touch double-tap already zoomed in
+    ev.preventDefault();
+    resetZoom();
+  });
 }
 
 /** True while the last press on a figure turned into a drag — a scrub that happens to
  *  cross a mark must not also fire that mark's popover. */
 let dragged = false;
+
+/**
+ * When a finger last touched a figure.
+ *
+ * A touch double-tap also synthesises a `dblclick`, and the two handlers disagree on
+ * purpose: on a mouse a double-click *resets* the zoom (there is a wheel for going in), on
+ * a finger a double-tap zooms *in* (there is no wheel). Left alone the compatibility event
+ * arrives second and undoes the tap. So `dblclick` only listens when no finger has been
+ * near the figure recently.
+ */
+let lastTouchAt = 0;
+const fromTouch = () => performance.now() - lastTouchAt < 700;
 
 /**
  * The fingers currently on the strip, and the pinch they started.
@@ -1073,19 +1318,140 @@ let dragged = false;
  */
 const stripPointers = new Map();
 let stripPinch = null;
+let stripPinched = false;    // a pinch happened in this gesture (see the lift guard)
+let stripFingers = 0;        // most fingers seen in it, for the double-tap
+let stripTap = { at: 0, x: 0, y: 0, fingers: 0 };
+
+/** Below this many pixels apart, two fingertips measure noise rather than intent. */
+const PINCH_MIN = 28;
+/** How much of a new span reading to believe per move — the rest is the previous one. */
+const PINCH_SMOOTH = 0.45;
+
+/** The strip's live geometry, whichever redraw produced it. */
+function stripTimeAt(clientX) {
+  const live = state.live?.strip;
+  if (!live) return 0;
+  const b = live.box;
+  const r = live.root.getBoundingClientRect();
+  const ux = r.width ? ((clientX - r.left) / r.width) * b.W : 0;
+  const t = b.t0 + ((ux - b.L) / (b.W - b.L - b.R)) * (b.t1 - b.t0);
+  return clamp(t, b.t0, b.t1);
+}
+
+/**
+ * Start (or re-seat) the pinch.
+ *
+ * The span is the fingers' full distance, not their horizontal separation: only the time
+ * axis moves, but a pinch held at an angle is still a pinch and measuring one component of
+ * it turns a steady gesture into a jittery one.
+ *
+ * A pinch that *starts* with the fingers closer than `PINCH_MIN` is not thrown away — it
+ * is left un-seeded and seeded on the first move that clears the floor, so it scales from
+ * there. The old code compared the starting span with the floor and, if it failed, the
+ * whole gesture was dead however far the fingers then travelled.
+ */
+function beginStripPinch() {
+  const live = state.live?.strip;
+  if (!live) return;
+  const [a, b] = [...stripPointers.values()];
+  const dist = Math.hypot(a.x - b.x, a.y - b.y);
+  stripPinch = { span: dist, smooth: dist, seeded: dist >= PINCH_MIN,
+                 t0: live.box.t0, t1: live.box.t1,
+                 centre: stripTimeAt((a.x + b.x) / 2) };
+  stripPinched = true;
+}
+
+function onStripPointerMove(ev) {
+  const p = stripPointers.get(ev.pointerId);
+  if (!p) return;
+  if (Math.abs(p.x0 - ev.clientX) > 3) dragged = true;
+  p.x = ev.clientX;
+  p.y = ev.clientY;
+
+  if (stripPointers.size >= 2 && stripPinch) {
+    const [a, b] = [...stripPointers.values()];
+    const dist = Math.hypot(a.x - b.x, a.y - b.y);
+    if (!stripPinch.seeded) {
+      if (dist < PINCH_MIN) return;
+      beginStripPinch();                       // the fingers have parted: scale from here
+      return;
+    }
+    stripPinch.smooth += (dist - stripPinch.smooth) * PINCH_SMOOTH;
+    zoomTo(stripPinch.centre, stripPinch.span / Math.max(stripPinch.smooth, PINCH_MIN),
+           stripPinch);
+    return;
+  }
+  // The lift guard. A pinch ends one finger at a time, and the finger still down is not
+  // suddenly a scrub — it is the tail of the gesture that was just zooming. Without this
+  // the playhead jumps to wherever that finger happens to be, in *either* lift order,
+  // which is how a careful zoom ended somewhere else entirely.
+  if (stripPinched || p.onMark) return;
+  setPlayhead(stripTimeAt(ev.clientX));
+}
+
+function onStripPointerUp(ev) {
+  if (!stripPointers.has(ev.pointerId)) return;
+  const was = stripPointers.get(ev.pointerId);
+  stripPointers.delete(ev.pointerId);
+  if (stripPointers.size < 2) stripPinch = null;
+  if (stripPointers.size !== 0) return;
+
+  const fingers = stripFingers;
+  const moved = dragged;                       // a two-finger *tap* never moved anything
+  stripPinched = false;
+  stripFingers = 0;
+  if (ev.type === "pointercancel" || moved || ev.pointerType === "mouse") return;
+
+  // A clean tap, on touch: one finger twice zooms in about it, two fingers twice go back.
+  // (The mouse keeps its documented double-click-to-reset — a mouse has a wheel.)
+  const now = performance.now();
+  const near = now - stripTap.at < 340
+    && Math.hypot(ev.clientX - stripTap.x, ev.clientY - stripTap.y) < 44
+    && stripTap.fingers === fingers;
+  if (!near) { stripTap = { at: now, x: ev.clientX, y: ev.clientY, fingers }; return; }
+  stripTap = { at: 0, x: 0, y: 0, fingers: 0 };
+  if (fingers >= 2) resetZoom();
+  else if (!was?.onMark) zoomTo(stripTimeAt(ev.clientX), 0.5);
+}
 
 // The finger can leave the figure before it is lifted — the strip is redrawn under it on
 // every pinch move, and a pointer released over the legend never reaches the figure at all.
-// The window hears the release either way, so the bookkeeping cannot get stuck holding a
-// phantom finger down (which would read as a pinch on the next single-finger drag).
+// The window hears both the moves and the release, so a fast gesture that outruns the
+// figure keeps working and the bookkeeping cannot get stuck holding a phantom finger down.
+window.addEventListener("pointermove", (ev) => {
+  onStripPointerMove(ev);
+  onMapPointerMove(ev);
+}, { passive: true });
 for (const type of ["pointerup", "pointercancel"]) {
   window.addEventListener(type, (ev) => {
-    stripPointers.delete(ev.pointerId);
-    if (stripPointers.size < 2) stripPinch = null;
+    onStripPointerUp(ev);
+    onMapPointerUp(ev);
   });
 }
 
-const endStripGesture = () => { stripPointers.clear(); stripPinch = null; };
+/**
+ * Hold the page still while two fingers are working a figure.
+ *
+ * `touch-action` cannot express this: it is latched when the *first* finger lands, and one
+ * finger over a figure this tall still has to scroll the page. So the touch events say it
+ * instead — as soon as there are two of them on the figure, the browser's own pan and
+ * page-zoom are cancelled and the gesture belongs to the figure until a finger comes off.
+ */
+function lockTwoFingerScroll(node) {
+  for (const type of ["touchstart", "touchmove"]) {
+    node.addEventListener(type, (ev) => {
+      if (ev.touches.length >= 2 && ev.cancelable) ev.preventDefault();
+    }, { passive: false });
+  }
+}
+
+const endStripGesture = () => {
+  stripPointers.clear();
+  stripPinch = null;
+  stripPinched = false;
+  stripFingers = 0;
+  endMapGesture();
+};
 
 /**
  * Zoom the time axis by `factor` (>1 zooms out) about `centre`, which stays under the
@@ -1214,6 +1580,47 @@ function interpolate(v, t) {
   return { x: v.x[i] + (v.x[j] - v.x[i]) * f, y: v.y[i] + (v.y[j] - v.y[i]) * f };
 }
 
+/* --------------------------------------------------------------- zoom affordances
+ *
+ * A gesture nobody can find is not an affordance, and a pinch is hard on a phone held in
+ * one hand on a beach. So each figure carries the same three buttons beside its caption —
+ * out, in, and (only while it is zoomed) the way back — at a real touch size. They do
+ * exactly what the gestures do, about the middle of the figure, so nothing here is a
+ * second way of thinking about the zoom.
+ */
+function zoomBar(kind, caption, zoomed) {
+  return `<span class="item zoom-state">${esc(caption)}` +
+    `<span class="zoom-btns">` +
+    `<button type="button" class="ghost small-btn zoom-btn" data-zoom="${kind}:out" ` +
+    `aria-label="Zoom out">&minus;</button>` +
+    `<button type="button" class="ghost small-btn zoom-btn" data-zoom="${kind}:in" ` +
+    `aria-label="Zoom in">+</button>` +
+    (zoomed ? `<button type="button" class="ghost small-btn" data-zoom="${kind}:reset">` +
+              `Reset zoom</button>` : "") +
+    `</span></span>`;
+}
+
+/** Handle a click on any of those buttons. Returns true when it was one. */
+function onZoomButton(ev) {
+  const button = ev.target.closest("[data-zoom]");
+  if (!button) return false;
+  const [kind, action] = button.dataset.zoom.split(":");
+  if (kind === "map") {
+    const live = state.live?.map;
+    if (!live) return true;
+    if (action === "reset") resetCamera();
+    else zoomMap(live.W / 2, live.H / 2, action === "in" ? 1.8 : 1 / 1.8);
+    return true;
+  }
+  if (action === "reset") resetZoom();
+  else {
+    const v = state.model.v;
+    const centre = (window0(v) + window1(v)) / 2;
+    zoomTo(centre, action === "in" ? 0.55 : 1 / 0.55);
+  }
+  return true;
+}
+
 /* ------------------------------------------------------------------- legend chips */
 
 /**
@@ -1250,14 +1657,22 @@ function drawChips() {
 
   const showAll = state.hidden.size
     ? `<button type="button" class="ghost small-btn" id="show-all-layers">Show all</button>` : "";
-  host.innerHTML = chips + showAll +
-    `<p class="legend-note">Tap a chip to hide or show it on the map <em>and</em> in the
+  const zoomed = !!state.camera;
+  host.innerHTML = chips + showAll
+    + (state.model.positioned
+        ? zoomBar("map", zoomed
+            ? `showing ${camera().k.toFixed(1)}×`
+            : "pinch, scroll or double-tap to zoom", zoomed)
+        : "")
+    + `<p class="legend-note">Tap a chip to hide or show it on the map <em>and</em> in the
       speed strip. Chevrons point the way you were riding. Solid shape = manoeuvre outcome ·
       hollow square = straight-line flight end, on the same colour ladder · arrow = takeoff,
-      red u-turn = a failed attempt. Drag either figure to move the playhead; tap a mark —
-      or a flown stretch of track — for which flight it belongs to.</p>`;
+      red u-turn = a failed attempt. Tap either figure to move the playhead; tap a mark —
+      or a flown stretch of track — for which flight it belongs to. Zoomed in, a drag on the
+      map pans it.</p>`;
 
   host.onclick = (ev) => {
+    if (onZoomButton(ev)) return;
     const chip = ev.target.closest(".chip-btn");
     if (chip) {
       const id = chip.dataset.layer;
@@ -1299,17 +1714,14 @@ function drawStripLegend() {
                `${esc(state.highlight.label || "record window")}` +
                `${hw.length > 1 ? ` (${hw.length} windows)` : ""}</span>`);
   }
-  if (state.zoom) {
-    items.push(`<span class="item zoom-state">showing ${hms(state.zoom.t0)}–` +
-               `${hms(state.zoom.t1)} of ${hms(v.bounds.t1)}` +
-               `<button type="button" class="ghost small-btn" id="strip-reset">Reset zoom</button></span>`);
-  } else {
-    items.push(`<span class="item muted-item">wheel or pinch to zoom the time axis · ` +
-               `drag to scrub</span>`);
-  }
+  items.push(zoomBar("strip", state.zoom
+    ? `showing ${hms(state.zoom.t0)}–${hms(state.zoom.t1)} of ${hms(v.bounds.t1)}`
+    : "wheel, pinch or double-tap to zoom the time axis · drag to scrub", !!state.zoom));
   host.innerHTML = items.join("");
-  const reset = el("strip-reset");
-  if (reset) reset.addEventListener("click", resetZoom);
+  // One id kept for the manual checklist and for anything that reaches for "the reset chip".
+  const reset = host.querySelector('[data-zoom="strip:reset"]');
+  if (reset) reset.id = "strip-reset";
+  host.onclick = onZoomButton;
 }
 
 /* ---------------------------------------------------------------------- popovers */

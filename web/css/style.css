@@ -271,9 +271,15 @@ input:focus-visible, button:focus-visible, .btn:focus-visible, .dropzone:focus-v
 .figure svg { display: block; width: 100%; height: auto; }
 .figure svg text { font-family: var(--sans); }
 /* The two interactive figures. `pan-y` keeps the page scrollable with a vertical swipe
-   over them, while horizontal drags (scrub) and two-finger gestures (pinch-zoom the time
-   axis) reach the handlers instead of the browser. */
+   over them, while horizontal drags (scrub) and two-finger gestures (pinch-zoom) reach the
+   handlers instead of the browser. `touch-action` is latched when the *first* finger lands,
+   so it cannot express "one finger scrolls, two fingers pinch" — js/session.js says that
+   half with preventDefault on the second touch (see `lockTwoFingerScroll`). */
 .figure svg.scrubbable { touch-action: pan-y; cursor: crosshair; }
+/* A zoomed map is a map: one finger drags it, so the browser gets no gesture at all. At
+   1× the class is off again and a swipe over it scrolls the page as before. */
+.figure.panning svg.scrubbable { touch-action: none; cursor: grab; }
+.figure.panning svg.scrubbable:active { cursor: grabbing; }
 
 .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; }
 .legend .item { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-2); }
@@ -307,7 +313,14 @@ input:focus-visible, button:focus-visible, .btn:focus-visible, .dropzone:focus-v
   background: transparent; padding: 5px 0; opacity: .45; color: var(--ink-3);
 }
 .legend button.chip:hover { background: var(--surface-0); color: var(--ink); }
-.legend .zoom-state { gap: 10px; color: var(--ink-2); }
+.legend .zoom-state { gap: 10px; color: var(--ink-2); flex: 1 1 100%; }
+/* The zoom controls: the non-gesture way in and out, on both figures. A pinch is awkward
+   one-handed, so these are real targets rather than icons — 44 px square on a phone. */
+.legend .zoom-btns { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.legend .zoom-btn {
+  min-width: 34px; font: 600 15px/1 var(--sans); font-variant-numeric: tabular-nums;
+}
+.legend .zoom-btns button { white-space: nowrap; }
 
 /* --- the playhead readout: one line, tabular, above the speed strip. */
 .readout {
@@ -528,6 +541,10 @@ footer {
      control — 44 px tall, wrapping into as many rows as it takes. */
   .legend button.chip { min-height: var(--tap); padding: 8px 12px; font-size: 13px; }
   .legend .chip.off-empty { padding: 6px 0; }
+  /* The zoom buttons are the fallback for a gesture that is awkward one-handed, so they
+     are full touch targets, not 12 px chips. */
+  .legend .zoom-btn { min-width: var(--tap); min-height: var(--tap); font-size: 18px; }
+  .legend .zoom-state button.small-btn { min-height: var(--tap); }
   .readout { padding: 10px 12px; gap: 8px 14px; }
   .readout .ro b { font-size: 16px; }
   .readout #clear-playhead { margin-left: 0; flex: 1 1 100%; }
