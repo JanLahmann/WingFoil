@@ -1,0 +1,46 @@
+# Deploy web/ to GitHub Pages.
+#
+# The web app is deliberately static: Pyodide runs the actual wingfoil_lab Python in the
+# browser, so there is nothing to build here — no bundler, no node, no server. The only
+# guard worth running is the one that matters: lab_bundle/wingfoil_lab must be the same
+# code as lab/src/wingfoil_lab, or the site would silently analyze with a stale engine.
+# bundle_lab.py --check compares source hashes and fails the deploy on drift.
+name: Deploy web to Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "lab/src/wingfoil_lab/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Bundle staleness check
+        run: python web/tools/bundle_lab.py --check
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+      - id: deployment
+        uses: actions/deploy-pages@v4
