@@ -1196,6 +1196,228 @@ import Testing
         #expect(w.visible == w.full)
     }
 
+    /// The tapped flight frames itself, with its approach and its landing either side.
+    @Test func focusingOnAFlightFramesItWithAMargin() {
+        var w = window(minutes: 80)                       // 1000…5800
+        w.focus(on: 2000...2200)
+        #expect(w.isZoomed)
+        #expect(abs(w.visible.lowerBound - 1960) < 0.001, "20 % of 200 s of margin in front")
+        #expect(abs(w.visible.upperBound - 2240) < 0.001)
+        #expect(w.contains(2000) && w.contains(2200))
+
+        // A flight at the very start cannot be centred; the window clamps rather than
+        // scrolling off the recording.
+        w.focus(on: 1000...1100)
+        #expect(w.visible.lowerBound == w.full.lowerBound)
+        #expect(w.contains(1100))
+
+        // A hop shorter than the floor still opens a readable window rather than a sliver.
+        w.focus(on: 3000...3002)
+        #expect(abs(w.span - w.minSpan) < 0.001)
+        #expect(w.contains(3000) && w.contains(3002))
+    }
+
+    // MARK: - Phase cut at the flight boundaries
+    //
+    // The bug this exists for: on a coarse source an off-foil span can contain no positioned
+    // sample at all, so "is this fix inside a flight?" never changes across the landing and
+    // two flights draw as one. Every case below is a boundary that no sample sits inside.
+
+    private func line(_ times: [Double], segment: Int = 0) -> [TrackPhaseCut.Point] {
+        // Due east from Torbole, 10 m per second of session clock, so a point's longitude
+        // is a direct reading of its time and an interpolation can be checked by hand.
+        let lat = 45.87
+        let metresPerDegLon = 111_320 * cos(lat * .pi / 180)
+        return times.map { TrackPhaseCut.Point(t: $0, lat: lat,
+                                               lon: 10.87 + ($0 * 10) / metresPerDegLon,
+                                               segment: segment) }
+    }
+
+    /// The longitude a point *should* have if it sits at time `t` on the line above.
+    private func lon(at t: Double) -> Double {
+        10.87 + (t * 10) / (111_320 * cos(45.87 * .pi / 180))
+    }
+
+    @Test func aBoundaryInsideASampleIntervalIsCutOnAnInterpolatedPoint() {
+        let points = line([0, 10, 20, 30])
+        let runs = TrackPhaseCut.runs(points, flights: [TrackPhaseCut.Span(start: 5, end: 25)])
+
+        #expect(runs.map(\.flying) == [false, true, false])
+        // The cut lands at t = 5, between the fixes at 0 and 10, and it is the last point of
+        // one run and the first of the next — a shared vertex, so the line has no hole.
+        #expect(runs[0].points.last?.t == 5)
+        #expect(runs[1].points.first?.t == 5)
+        #expect(abs((runs[0].points.last?.lon ?? 0) - lon(at: 5)) < 1e-9,
+                "the cut coordinate must sit on the line the map already draws")
+        #expect(runs[1].points.last?.t == 25)
+        #expect(runs[2].points.first?.t == 25)
+        #expect(abs((runs[2].points.first?.lon ?? 0) - lon(at: 25)) < 1e-9)
+        // Nothing was invented: every interior point is still a real fix.
+        #expect(runs[1].points.map(\.t) == [5, 10, 20, 25])
+    }
+
+    /// The corpus case: the boundary falls exactly *on* a fix, and the two fixes either side
+    /// of the landing are both inside a flight. Tinting per sample sees no change at all.
+    @Test func aBoundaryExactlyOnASampleStillCutsTheTrack() {
+        // Flight one ends at 364 (a fix), flight two starts at 369 (a fix), and nothing was
+        // recorded in between — the 2026-08-06 wingfoiling session's own shape.
+        let points = line([360, 362, 364, 369, 371])
+        let flights = [TrackPhaseCut.Span(start: 358, end: 364),
+                       TrackPhaseCut.Span(start: 369, end: 375)]
+        let runs = TrackPhaseCut.runs(points, flights: flights)
+
+        #expect(runs.map(\.flying) == [true, false, true],
+                "the landing must produce an off-foil run of its own")
+        let stub = runs[1]
+        #expect(stub.points.map(\.t) == [364, 369], "the stub is the two fixes that bracket it")
+        #expect(runs[0].points.last?.t == 364)
+        #expect(runs[2].points.first?.t == 369)
+        // No duplicated vertex where a cut landed on a fix.
+        #expect(runs[0].points.map(\.t) == [360, 362, 364])
+    }
+
+    /// The same gap, but the recording itself broke across it (the engine's own segment id
+    /// changes). The line still has to be cut and the stub still has to be drawn: those two
+    /// fixes are the only evidence there is of where the phase changed.
+    @Test func aRecordingGapBreaksTheLineExceptAcrossABoundary() {
+        var points = line([360, 362, 364])
+        points += line([369, 371], segment: 1)
+        let flights = [TrackPhaseCut.Span(start: 358, end: 364),
+                       TrackPhaseCut.Span(start: 369, end: 375)]
+        #expect(TrackPhaseCut.runs(points, flights: flights).map(\.flying)
+                == [true, false, true])
+
+        // Away from a boundary the gap does break the line — a pause on the beach is not a
+        // stretch of water he rode across.
+        var pause = line([100, 102, 104])
+        pause += line([400, 402], segment: 1)
+        let runs = TrackPhaseCut.runs(pause, flights: [])
+        #expect(runs.count == 2)
+        #expect(runs[0].points.map(\.t) == [100, 102, 104])
+        #expect(runs[1].points.map(\.t) == [400, 402])
+    }
+
+    @Test func anOffFoilSpanningManyMissingSamplesIsOneStub() {
+        // A 30 s swim with a single fix in the middle of it.
+        let points = line([100, 110, 125, 140, 150])
+        let flights = [TrackPhaseCut.Span(start: 90, end: 112),
+                       TrackPhaseCut.Span(start: 142, end: 160)]
+        let runs = TrackPhaseCut.runs(points, flights: flights)
+        #expect(runs.map(\.flying) == [true, false, true])
+        #expect(runs[1].points.map(\.t) == [112, 125, 140, 142])
+        #expect(abs((runs[1].points.first?.lon ?? 0) - lon(at: 112)) < 1e-9)
+        #expect(abs((runs[1].points.last?.lon ?? 0) - lon(at: 142)) < 1e-9)
+    }
+
+    /// A flight the recording never sampled: both of its boundaries fall inside one sample
+    /// interval. It is still a flight, and it still gets a (short) teal run.
+    @Test func aFlightShorterThanOneSampleIntervalStillDraws() {
+        let points = line([0, 10, 20])
+        let runs = TrackPhaseCut.runs(points, flights: [TrackPhaseCut.Span(start: 12, end: 16)])
+        #expect(runs.map(\.flying) == [false, true, false])
+        #expect(runs[1].points.map(\.t) == [12, 16])
+        #expect(abs((runs[1].points[0].lon) - lon(at: 12)) < 1e-9)
+        #expect(abs((runs[1].points[1].lon) - lon(at: 16)) < 1e-9)
+        #expect(runs[0].points.map(\.t) == [0, 10, 12])
+        #expect(runs[2].points.map(\.t) == [16, 20])
+    }
+
+    /// The degenerate inputs a real recording produces: nothing at all, a flight covering
+    /// everything, and a boundary outside the samples entirely.
+    @Test func thePhaseCutSurvivesDegenerateInput() {
+        #expect(TrackPhaseCut.runs([], flights: [TrackPhaseCut.Span(start: 0, end: 1)]).isEmpty)
+        let points = line([0, 10, 20])
+        #expect(TrackPhaseCut.runs(points, flights: []).map(\.flying) == [false])
+        let whole = TrackPhaseCut.runs(points,
+                                       flights: [TrackPhaseCut.Span(start: -5, end: 25)])
+        #expect(whole.map(\.flying) == [true])
+        #expect(whole[0].points.map(\.t) == [0, 10, 20], "no cut, no invented point")
+        // A single fix is not a stretch of water and draws nothing.
+        #expect(TrackPhaseCut.runs(line([0]), flights: []).isEmpty)
+    }
+
+    // MARK: - Pairing (tap only)
+
+    private func pairingFlight(index: Int = 11, count: Int = 55, start: Double = 2467,
+                               end: Double = 2550, distM: Double? = 272,
+                               pumps: Int? = 7,
+                               outcome: FlightPairing.Outcome = .touchdown)
+    -> FlightPairing.Flight {
+        FlightPairing.Flight(index: index, count: count, startTs: start, endTs: end,
+                             distM: distM, pumps: pumps, outcome: outcome)
+    }
+
+    /// The four lines, exactly as docs/presentation.md writes them. The web app draws the
+    /// same four; a difference here is a difference the two apps would ship.
+    @Test func thePairingLinesAreTheContractsWording() {
+        let flight = pairingFlight()
+        #expect(FlightPairing.takeoffLine(flight)
+                == "starts flight 12 · 1:23 · ended: touchdown")
+        #expect(FlightPairing.flightEndLine(flight)
+                == "ends flight 12 · started 41:07 · 7 pumps")
+        #expect(FlightPairing.flightLine(flight)
+                == "flight 12 of 55 · 1:23 · 272 m · ended: touchdown")
+        #expect(FlightPairing.failedLine(strokes: 3) == "no flight · 3 strokes")
+        #expect(FlightPairing.failedLine(strokes: 1) == "no flight · 1 stroke")
+    }
+
+    /// Absence is absence: no accelerometer means the stroke count is *missing*, and a
+    /// missing clause is dropped rather than written as a zero.
+    @Test func thePairingOmitsWhatWasNeverMeasured() {
+        let noAccel = pairingFlight(pumps: nil)
+        #expect(FlightPairing.flightEndLine(noAccel) == "ends flight 12 · started 41:07")
+        #expect(!FlightPairing.flightEndLine(noAccel).contains("0 pump"))
+
+        let noDistance = pairingFlight(distM: nil)
+        #expect(FlightPairing.flightLine(noDistance)
+                == "flight 12 of 55 · 1:23 · ended: touchdown")
+        // A measured single stroke is a value, not an absence.
+        #expect(FlightPairing.flightEndLine(pairingFlight(pumps: 1))
+                == "ends flight 12 · started 41:07 · 1 pump")
+    }
+
+    /// A recording that stopped is not a verdict, and the engine's label for it must not be
+    /// repeated as one.
+    @Test func aTruncatedFlightEndReportsTheRecordingNotAnOutcome() {
+        #expect(FlightPairing.Outcome(endOutcome: "glide_out", truncated: true)
+                == .recordingEnded)
+        #expect(FlightPairing.Outcome(endOutcome: "unknown", truncated: false)
+                == .recordingEnded)
+        #expect(FlightPairing.Outcome(endOutcome: "fell_in", truncated: false) == .fellIn)
+        #expect(FlightPairing.Outcome(endOutcome: "touchdown", truncated: false) == .touchdown)
+        #expect(FlightPairing.Outcome(endOutcome: "glide_out", truncated: false) == .glidedOut)
+        // Every outcome word is distinct, or two different endings would read the same.
+        let words = FlightPairing.Outcome.allCases.map(\.rawValue)
+        #expect(Set(words).count == words.count)
+    }
+
+    /// The clock the pairing prints is the web app's `hms`: m:ss, h:mm:ss past an hour.
+    @Test func thePairingClockMatchesTheWebFormat() {
+        #expect(FlightPairing.clock(0) == "0:00")
+        #expect(FlightPairing.clock(83) == "1:23")
+        #expect(FlightPairing.clock(2467) == "41:07")
+        #expect(FlightPairing.clock(3600) == "1:00:00")
+        #expect(FlightPairing.clock(5493.4) == "1:31:33")
+        #expect(FlightPairing.clock(-4) == "0:00")
+        #expect(FlightPairing.metres(272.7) == "273 m")
+        #expect(FlightPairing.metres(1420) == "1.42 km")
+    }
+
+    /// A takeoff names its flight by the instant they share, so a mark that cannot resolve
+    /// one gets no line at all rather than a wrong number.
+    @Test func aTakeoffResolvesItsFlightByTheInstantTheyShare() {
+        let flights = [pairingFlight(index: 0, count: 2, start: 100, end: 160),
+                       pairingFlight(index: 1, count: 2, start: 300, end: 340)]
+        #expect(FlightPairing.flight(startingAt: 300, in: flights)?.index == 1)
+        #expect(FlightPairing.flight(startingAt: 100, in: flights)?.index == 0)
+        #expect(FlightPairing.flight(startingAt: 999, in: flights) == nil)
+        #expect(FlightPairing.flight(covering: 320, in: flights)?.index == 1)
+        #expect(FlightPairing.flight(covering: 200, in: flights) == nil, "off the foil")
+        #expect(FlightPairing.flight(at: 5, in: flights) == nil)
+        #expect(flights[0].number == 1 && flights[1].number == 2)
+        #expect(flights[1].durationS == 40)
+    }
+
     // MARK: - Direction of travel
 
     /// A straight run of `count` samples heading due east from Torbole, `stepM` apart.
@@ -1362,6 +1584,13 @@ import Testing
             let total: Int
         }
 
+        struct FlightEnds: Decodable {
+            let drawn: Int
+            let ownedByTurn: Int
+            let truncated: Int
+            let total: Int
+        }
+
         struct Filter: Decodable {
             let type: String
             let side: String
@@ -1370,7 +1599,9 @@ import Testing
         }
 
         let fixture: String
+        let flightCount: Int
         let markers: Markers
+        let flightEnds: FlightEnds
         let takeoff: Takeoff
         let splash: Int
         let pumpingSpans: Int
@@ -1421,6 +1652,35 @@ import Testing
 
             #expect(got.splash == want.splash, "\(name): splash marks")
             #expect(got.pumpingSpans == want.pumpingSpans, "\(name): pumping spans")
+
+            // One takeoff starts every flight, one end stops it — docs/presentation.md
+            // "Enforcement" 3. The pairing lines a callout draws are written from exactly
+            // this arithmetic, so it is pinned rather than trusted: a takeoff with no
+            // flight to name would print a wrong number in a popover long before any tally
+            // looked odd. A `failed` attempt is deliberately outside both sums.
+            #expect(got.flightCount == want.flightCount, "\(name): flight count")
+            #expect(got.flightEnds.drawn == want.flightEnds.drawn, "\(name): drawn ends")
+            #expect(got.flightEnds.ownedByTurn == want.flightEnds.ownedByTurn,
+                    "\(name): turn-owned ends")
+            #expect(got.flightEnds.truncated == want.flightEnds.truncated,
+                    "\(name): truncated ends")
+            #expect(got.flightEnds.total == want.flightEnds.total, "\(name): flight ends")
+            #expect(got.takeoff.pumped + got.takeoff.free == got.flightCount,
+                    "\(name): every flight is started by exactly one takeoff")
+            #expect(got.flightEnds.total == got.flightCount,
+                    "\(name): every flight is stopped by exactly one end")
+            #expect(got.takeoff.total - got.takeoff.failed == got.flightCount,
+                    "\(name): a failed attempt starts no flight")
+            // The block the pairing actually reads has to line up with all of it.
+            let pairings = FlightPairing.flights(analysis)
+            #expect(pairings.count == got.flightCount, "\(name): pairing flights")
+            #expect(pairings.allSatisfy { $0.count == got.flightCount })
+            #expect(analysis.takeoffs.allSatisfy {
+                FlightPairing.flight(startingAt: $0.startTs, in: pairings) != nil
+            }, "\(name): a takeoff whose flight cannot be named")
+            #expect(PresentationRules.drawnFlightEnds(analysis).allSatisfy {
+                FlightPairing.flight(at: $0.flightIndex, in: pairings) != nil
+            }, "\(name): a drawn end whose flight cannot be named")
 
             #expect(got.recordWindows == want.recordWindows, "\(name): record windows")
             #expect(got.defaultRecordWindow == want.defaultRecordWindow,

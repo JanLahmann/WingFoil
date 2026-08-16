@@ -20,6 +20,10 @@ Five groups:
    agreeing is evidence, one spelling agreeing with itself is not.
 2b. **Flight-end folding.** A `glide_out` end is a hollow *flew through* mark, not a layer
    of its own — asserted on the fixture with the most straight-line ends to fold.
+2c. **Flight-count invariants.** One takeoff starts every flight and one end stops it, so
+   `takeoff.pumped + takeoff.free == flightCount == flightEnds.total`, per fixture, with the
+   three end buckets partitioning the block. The pairing lines in docs/presentation.md are
+   built on that arithmetic.
 3. **Internal consistency.** Marker totals, takeoff totals and the filter grid have to
    add up against the analysis document's own summary block.
 4. **The engine path** (skipped by `--fast`): re-analyze one FIT through `web_entry`, the
@@ -118,6 +122,8 @@ def check_shape() -> None:
         check(f"  {stem}: record windows keep catalogue order",
               facts["recordWindows"],
               [k for k in record_ids if k in facts["recordWindows"]])
+        check(f"  {stem}: the flight-end buckets are the three the rules distinguish",
+              sorted(facts["flightEnds"]), ["drawn", "ownedByTurn", "total", "truncated"])
         check(f"  {stem}: the filter grid is complete",
               [(row["type"], row["side"]) for row in facts["filters"]],
               [(t, s) for t in gen.TYPE_FILTERS for s in gen.SIDE_FILTERS])
@@ -199,6 +205,55 @@ def check_rules() -> None:
             check(f"  {stem}: filter {row['type']}/{row['side']} flew through",
                   row["flewThrough"],
                   sum(1 for t in kept if t["outcome"] in ("flew_through", "glide_out")))
+
+
+# --------------------------------------------- 2c. the flight-count invariants
+
+def check_flight_invariants() -> None:
+    """One takeoff starts every flight; one end stops it.
+
+    docs/presentation.md, "Enforcement" 3. The pairing lines a popover draws
+    ("starts flight 12 · 1:23 · ended: touchdown") are only meaningful if the three blocks
+    are the same list of flights seen from three sides, so the arithmetic is pinned per
+    fixture rather than trusted: a takeoff with no flight to name, or a flight with two
+    ends, would print a wrong number in a callout long before any tally looked odd.
+
+    `failed` attempts are deliberately outside both sums — a failed attempt is the one mark
+    in the takeoff layer that starts no flight, and folding it in would hide exactly the
+    thing the layer exists to show.
+    """
+    section("2c. flight-count invariants (one takeoff and one end per flight)")
+    for stem in fixtures():
+        doc, facts = load(stem)
+        count = facts["flightCount"]
+        ends = facts["flightEnds"]
+
+        check(f"  {stem}: flightCount is the engine's own",
+              count, doc.get("summary", {}).get("flightCount"))
+        check(f"  {stem}: ... and the length of the flights block",
+              count, len(doc.get("flights", [])))
+        check(f"  {stem}: takeoff marks that flew == flightCount",
+              facts["takeoff"]["pumped"] + facts["takeoff"]["free"], count)
+        check(f"  {stem}: flight-end marks total == flightCount", ends["total"], count)
+        check(f"  {stem}: the end buckets partition the block",
+              ends["drawn"] + ends["ownedByTurn"] + ends["truncated"], ends["total"])
+        check(f"  {stem}: the drawn ends are the ones the marker rules keep",
+              ends["drawn"], len(gen.drawn_flight_ends(doc)))
+        # The pairing reads `flights[i]` through the takeoff drawn at its start, so the two
+        # lists have to line up index for index — not merely have the same length.
+        pairs = list(zip(doc.get("takeoffs", []), doc.get("flights", [])))
+        check(f"  {stem}: takeoff i starts flight i", len(pairs), count)
+        check(f"  {stem}: ... at the same instant",
+              [i for i, (k, f) in enumerate(pairs) if k["startTs"] != f["startTs"]], [])
+        check(f"  {stem}: flight end i stops flight i",
+              [e["flightIndex"] for e in doc.get("flightEnds", [])], list(range(count)))
+        check(f"  {stem}: ... at the same instant",
+              [i for i, (e, f) in enumerate(zip(doc.get("flightEnds", []),
+                                                doc.get("flights", [])))
+               if e["ts"] != f["endTs"]], [])
+        # A failed attempt is not a flight: it must be in neither sum.
+        check(f"  {stem}: failed attempts start no flight",
+              facts["takeoff"]["total"] - facts["takeoff"]["failed"], count)
 
 
 # ------------------------------------------------- 2b. flight ends fold into the ladder
@@ -301,8 +356,8 @@ def check_engine() -> None:
     doc = json.loads(web_entry.analyze_json(fit.read_bytes(), fit.name))["golden"]
     _, facts = load(CIQ)
     fresh = gen.facts(CIQ, doc)
-    for key in ("markers", "takeoff", "splash", "pumpingSpans", "recordWindows",
-                "defaultRecordWindow", "filters"):
+    for key in ("markers", "flightCount", "flightEnds", "takeoff", "splash", "pumpingSpans",
+                "recordWindows", "defaultRecordWindow", "filters"):
         check(f"  {CIQ}: {key} from a fresh analysis", fresh[key], facts[key])
     # The one number the whole layer exists for, stated out loud.
     check(f"  {CIQ}: failed takeoff attempts", fresh["takeoff"]["failed"], 14)
@@ -325,6 +380,7 @@ def main(argv=None) -> int:
 
     check_shape()
     check_rules()
+    check_flight_invariants()
     check_flight_end_folding()
     check_consistency()
     if args.fast:

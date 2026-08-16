@@ -13,6 +13,9 @@ struct SessionDetailView: View {
     /// Session-clock seconds under the replay playhead; nil = not scrubbing. Shared by the
     /// scrubber, the chart and the map — that shared binding *is* the map/chart link.
     @State private var playhead: Double?
+    /// The flight a tap on the map asked about — the map sets it, the chart frames it.
+    /// Transient like every other zoom (docs/presentation.md, "Pairing").
+    @State private var flightFocus: SessionDetail.FlightFocus?
     @State private var showShare = false
     #if DEBUG && targetEnvironment(simulator)
     /// Screenshot hook only (`UI_FULLSCREEN_MAP=1`): `simctl` cannot tap the link.
@@ -41,7 +44,7 @@ struct SessionDetailView: View {
                         noTrackNote
                     } else {
                         TrackMapView(detail: detail, effort: effort, playhead: $playhead,
-                                     visibility: store.mapLayers)
+                                     visibility: store.mapLayers, flightFocus: $flightFocus)
                         NavigationLink {
                             FullScreenMapView(detail: detail, effort: effort,
                                               playheadT: playhead)
@@ -51,7 +54,7 @@ struct SessionDetailView: View {
                         }
                     }
                     SpeedChartView(detail: detail, effort: effort, playhead: $playhead,
-                                   visibility: store.mapLayers)
+                                   visibility: store.mapLayers, flightFocus: flightFocus)
                         .id("chart")
                     ReplayScrubber(detail: detail, playhead: $playhead)
                         .id("replay")

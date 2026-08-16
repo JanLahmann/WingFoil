@@ -21,7 +21,9 @@ rule*, and every rule is written down in docs/presentation.md:
   * pump episodes: only `success` and `failed` are attempts; `recovery`, `in_flight` and
     `unknown` are counted by the engine but never drawn;
   * splash evidence comes from the engine's `submerged` flags and is never re-derived;
-  * turn filters are type × ENTRY side, ANDed, over counted turns only.
+  * turn filters are type × ENTRY side, ANDed, over counted turns only;
+  * every flight is started by one takeoff and stopped by one end, so the takeoff halves
+    and the flight-end buckets each sum to `flightCount`.
 
 Stdlib only, and byte-stable: two runs produce identical files.
 """
@@ -97,6 +99,22 @@ def takeoff_counts(doc: dict) -> dict[str, int]:
             "total": pumped + free + failed}
 
 
+def flight_end_counts(doc: dict) -> dict[str, int]:
+    """Every flight end, in the three buckets the marker rules already distinguish.
+
+    `drawn` is the hollow mark; `ownedByTurn` is the end a turn's outcome window already
+    explains (marking both would draw one swim twice); `truncated` is a recording that
+    stopped rather than a flight that ended. They partition the block, so `total` is also
+    the flight count — the invariant `check_flight_invariants` asserts.
+    """
+    ends = doc.get("flightEnds", [])
+    owned = sum(1 for e in ends if e.get("ownedByTurn") is not None
+                and not e.get("truncated", False))
+    truncated = sum(1 for e in ends if e.get("truncated", False))
+    return {"drawn": len(drawn_flight_ends(doc)), "ownedByTurn": owned,
+            "truncated": truncated, "total": len(ends)}
+
+
 def splash_count(doc: dict) -> int:
     """The barometer's evidence on both channels, with the same ownership rule that keeps
     one swim from being marked twice."""
@@ -160,7 +178,11 @@ def facts(stem: str, doc: dict) -> dict:
         "source": f"fixtures/goldens/{stem}{SUFFIX}",
         "generator": "web/tools/make_presentation_goldens.py",
         "note": NOTE,
+        # The engine's own count, and the two blocks that must add up to it: one takeoff
+        # starts every flight, one end stops it (docs/presentation.md "Enforcement" 3).
+        "flightCount": doc.get("summary", {}).get("flightCount"),
         "markers": marker_counts(doc),
+        "flightEnds": flight_end_counts(doc),
         "takeoff": takeoff_counts(doc),
         "splash": splash_count(doc),
         "pumpingSpans": pumping_spans(doc),

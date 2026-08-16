@@ -17,6 +17,14 @@ struct TrackMapView: View {
     /// Which categories the legend chips are currently showing. Passed in rather than read
     /// here so the drawing stays a pure function of it.
     let visibility: MapLayerVisibility
+    /// The flight the chart is framing, when a flying segment has been tapped. Owned by the
+    /// page so the map and the chart are the same tap (docs/presentation.md, "Pairing").
+    @Binding var flightFocus: SessionDetail.FlightFocus?
+
+    /// Tap-only: nothing about the pairing renders until something is tapped.
+    @State private var callout: SessionDetail.Callout?
+    /// Bumped on every flight tap; see `SessionDetail.FlightFocus`.
+    @State private var focusTick = 0
 
     /// Direction chevrons for the camera as it stands. State rather than a computed value:
     /// the spacing is measured in screen points, so it is a function of the camera and has
@@ -45,30 +53,132 @@ struct TrackMapView: View {
                 // mean exactly one thing: "show me this point".
                 .onTapGesture { location in
                     guard let coordinate = proxy.convert(location, from: .local) else { return }
-                    scrub(to: coordinate)
+                    tapped(coordinate)
                 }
+            }
+            if let callout {
+                TrackCalloutCard(callout: callout) { self.callout = nil }
             }
             MapLegendView(detail: detail, effort: effort)
             if !detail.timeline.isEmpty {
-                Text("Tap the track to move the replay playhead.")
+                Text("Tap the track to move the replay playhead — on a mark or a flight for "
+                     + "what it was.")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
         }
+        #if DEBUG && targetEnvironment(simulator)
+        .onAppear(perform: stageCalloutForScreenshot)
+        #endif
     }
 
-    /// A tap that lands nowhere near the track is ignored rather than snapping the playhead
-    /// to some unrelated corner of the session. The tolerance scales with how much water
-    /// the map is showing, so it is roughly a fingertip at any zoom.
-    private func scrub(to coordinate: CLLocationCoordinate2D) {
+    /// One tap, three answers, in order of how specific they are.
+    ///
+    /// A tap that lands on a *mark* means that mark — the tolerance is tight, so it takes
+    /// aim rather than a stray press near it. Otherwise the tap moves the playhead, which is
+    /// what the caption promises; and when it landed on a stretch of *flown* track it also
+    /// says which flight that was and frames the flight in the chart. A tap nowhere near the
+    /// track is ignored rather than snapping the playhead to some unrelated corner of the
+    /// session. Both tolerances scale with how much water the map is showing, so they are
+    /// roughly a fingertip at any zoom.
+    private func tapped(_ coordinate: CLLocationCoordinate2D) {
         let spanM = detail.region.span.latitudeDelta * 110_540
-        let tolerance = max(25, spanM * 0.06)
-        if let t = detail.time(nearLat: coordinate.latitude, lon: coordinate.longitude,
-                               toleranceM: tolerance) {
-            playhead = t
+        if let mark = detail.mark(nearLat: coordinate.latitude, lon: coordinate.longitude,
+                                  toleranceM: max(12, spanM * 0.025)) {
+            callout = mark
+            playhead = mark.t
+            return
+        }
+        guard let t = detail.time(nearLat: coordinate.latitude, lon: coordinate.longitude,
+                                  toleranceM: max(25, spanM * 0.06)) else { return }
+        playhead = t
+        // Off the foil a tap is a scrub and nothing more: there is no flight to name, and a
+        // callout that said so would be noise on every second press.
+        if let flight = detail.flightCallout(at: t) {
+            callout = flight
+            focus(on: flight)
+        } else {
+            callout = nil
         }
     }
 
+    /// Ask the chart to frame the flight this callout is about.
+    private func focus(on callout: SessionDetail.Callout) {
+        guard let span = callout.focus else { return }
+        focusTick += 1
+        flightFocus = SessionDetail.FlightFocus(span: span, tick: focusTick)
+    }
+
+    #if DEBUG && targetEnvironment(simulator)
+    /// Screenshot hook, same family as `UI_HIDE_LAYERS`: the pairing is tap-only and
+    /// `simctl` has no fingers, so `UI_MAP_CALLOUT=takeoff|failed|end|flight` opens the
+    /// first callout of that kind. Staging only — it opens the same card a tap opens.
+    private func stageCalloutForScreenshot() {
+        guard let kind = ProcessInfo.processInfo.environment["UI_MAP_CALLOUT"] else { return }
+        switch kind {
+        case "takeoff", "failed":
+            let wantFailed = kind == "failed"
+            guard let mark = detail.takeoffMarks.first(where: { $0.isFailed == wantFailed })
+            else { return }
+            callout = SessionDetail.Callout(id: "takeoff-\(mark.id)", title: mark.title,
+                                            detail: mark.detail, pairing: mark.pairing,
+                                            t: mark.t)
+            playhead = mark.t
+        case "end":
+            guard let marker = detail.markers.first(where: { $0.pairing != nil }) else { return }
+            callout = SessionDetail.Callout(id: "marker-\(marker.id)", title: marker.title,
+                                            detail: marker.detail, pairing: marker.pairing,
+                                            t: marker.t)
+            playhead = marker.t
+        case "flight":
+            guard let flight = detail.pairings.first else { return }
+            let middle = (flight.startTs + flight.endTs) / 2
+            callout = detail.flightCallout(at: middle)
+            playhead = middle
+            if let callout { focus(on: callout) }
+        default: return
+        }
+    }
+    #endif
+}
+
+/// The tap-only callout, under the map rather than over it: the answer to "what is this?"
+/// must not cover the thing that was tapped, and a card that stays put while the rider looks
+/// back at the track beats a popover they have to dismiss to see anything.
+private struct TrackCalloutCard: View {
+    let callout: SessionDetail.Callout
+    let close: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(callout.title).font(.footnote.weight(.semibold))
+                Spacer()
+                Button(action: close) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.footnote)
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Close")
+            }
+            Text(callout.detail)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            // The line this whole feature is for. Absent — not blank — on a mark that is
+            // not a flight boundary.
+            if let pairing = callout.pairing {
+                Text(pairing)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(Color.accentColor)
+                    .accessibilityIdentifier("pairing-line")
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.secondary.opacity(0.12), in: .rect(cornerRadius: 10))
+        .accessibilityElement(children: .contain)
+    }
 }
 
 struct FullScreenMapView: View {

@@ -343,6 +343,13 @@ input:focus-visible, button:focus-visible, .btn:focus-visible, .dropzone:focus-v
   padding: 4px 8px; border-radius: 6px;
 }
 .pop-close:hover { color: var(--ink); background: var(--surface-2); }
+/* The pairing line (docs/presentation.md): which flight this mark belongs to, and what
+   became of it. Tap-only, so it is never on screen uninvited — and set in the accent so it
+   reads as the answer rather than as one more row of the table under it. */
+.pop-pair {
+  margin: 0; padding: 8px 12px 0; color: var(--series-1-tint);
+  font-weight: 600; font-variant-numeric: tabular-nums;
+}
 .pop-rows { padding: 6px 12px 10px; display: grid; gap: 4px; }
 .pop-rows > div { display: flex; justify-content: space-between; gap: 14px; }
 .pop-rows span:first-child { color: var(--ink-3); }

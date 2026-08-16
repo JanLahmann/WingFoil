@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v5";      // v5: unified presentation — phase tints, effort ink, chip labels
+const VERSION = "v6";      // v6: phase tint cut at the flight boundaries + tap-only pairing
 const SHELL = `wingfoil-shell-${VERSION}`;
 const RUNTIME = `wingfoil-runtime-${VERSION}`;
 

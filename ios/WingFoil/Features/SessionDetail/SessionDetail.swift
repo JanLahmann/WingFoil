@@ -50,6 +50,11 @@ struct SessionDetail: Sendable {
         var filled: Bool
         var title: String
         var detail: String
+        /// The flight this mark ends, when it is a straight-line flight end — tap-only, and
+        /// nil on a turn marker, which is not a flight boundary (docs/presentation.md,
+        /// "Pairing").
+        var pairing: String?
+        var flightIndex: Int?
     }
 
     /// One pumping *attempt*, as a stretch of track: the episode's first stroke to its last.
@@ -89,6 +94,10 @@ struct SessionDetail: Sendable {
         var kind: Kind
         var title: String
         var detail: String
+        /// The flight this attempt started, or "no flight" when it did not — tap-only
+        /// (docs/presentation.md, "Pairing").
+        var pairing: String?
+        var flightIndex: Int?
 
         var isFailed: Bool { kind == .failed }
     }
@@ -160,6 +169,9 @@ struct SessionDetail: Sendable {
     let turnPins: [TurnPin]
     /// GP3S efforts with map/chart geometry, strongest set first.
     let efforts: [RecordEffort]
+    /// Every flight with the end that stopped it and the strokes that started it — what the
+    /// tap-only pairing lines are written from (docs/presentation.md, "Pairing").
+    let pairings: [FlightPairing.Flight]
     /// Watch-vs-phone disagreements worth a banner (class (a) only, empty otherwise).
     let divergences: [Divergence]
     /// The rider's own wind direction from session dev field 39, when the watch wrote one.
@@ -203,11 +215,15 @@ struct SessionDetail: Sendable {
         windDirUserDeg = track.watchSummary.windDirUserDeg
         divergences = DivergenceCheck.compare(watch: track.watchSummary, phone: analysis)
 
+        let pairings = FlightPairing.flights(analysis)
+        self.pairings = pairings
+
         let positioned = track.samples.filter { $0.lat != nil && $0.lon != nil }
         segments = Self.buildSegments(positioned, flights: flights)
-        markers = Self.buildMarkers(analysis, positioned: positioned)
+        markers = Self.buildMarkers(analysis, positioned: positioned, pairings: pairings)
         pumpSpans = Self.buildPumpSpans(analysis, positioned: positioned)
-        takeoffMarks = Self.buildTakeoffMarks(analysis, positioned: positioned)
+        takeoffMarks = Self.buildTakeoffMarks(analysis, positioned: positioned,
+                                              pairings: pairings)
         splashMarks = Self.buildSplashMarks(analysis, positioned: positioned)
         turnPins = Self.buildTurnPins(analysis, positioned: positioned)
         efforts = Self.buildEfforts(analysis, positioned: positioned)
@@ -232,6 +248,81 @@ struct SessionDetail: Sendable {
         speed = Self.buildSpeedSeries(track.samples)
         maxSpeedKn = speed.map(\.kn).max() ?? 0
         timeline = Self.buildTimeline(track.samples, flights: flights)
+    }
+
+    // MARK: - Pairing (tap only)
+
+    /// What the track callout is showing. One value for all four tappable things, because
+    /// they all answer the same question — "what is this?" — and the pairing line is the
+    /// only part that differs (docs/presentation.md, "Pairing").
+    struct Callout: Identifiable, Equatable, Sendable {
+        var id: String
+        var title: String
+        var detail: String
+        /// The pairing line, when the tapped thing is a flight boundary. Absent on a turn
+        /// marker and on a splash, which are not.
+        var pairing: String?
+        /// Where the callout puts the playhead.
+        var t: Double
+        /// The flight to frame in the chart — set only by a tap on a flying segment.
+        var focus: ClosedRange<Double>?
+    }
+
+    /// A flight the map has asked the chart to frame.
+    ///
+    /// `tick` is what makes a *repeat* tap on the same flight a new request: the span alone
+    /// compares equal to the last one, so after the rider has reset the zoom, tapping the
+    /// same stretch of water again would otherwise change nothing.
+    struct FlightFocus: Equatable, Sendable {
+        var span: ClosedRange<Double>
+        var tick: Int
+    }
+
+    /// The nearest tappable *mark* to a coordinate, or nil when the tap was not on one.
+    /// Markers win over the track: a tap that lands on a takeoff arrow means the arrow.
+    func mark(nearLat lat: Double, lon: Double, toleranceM: Double) -> Callout? {
+        var best: Callout?
+        var bestDistanceSq = toleranceM * toleranceM
+        let cosLat = cos(lat * .pi / 180)
+
+        func consider(_ pLat: Double, _ pLon: Double, _ make: () -> Callout) {
+            let dx = (pLon - lon) * cosLat * 111_320
+            let dy = (pLat - lat) * 110_540
+            let distanceSq = dx * dx + dy * dy
+            guard distanceSq <= bestDistanceSq else { return }
+            bestDistanceSq = distanceSq
+            best = make()
+        }
+
+        for mark in takeoffMarks {
+            consider(mark.lat, mark.lon) {
+                Callout(id: "takeoff-\(mark.id)", title: mark.title, detail: mark.detail,
+                        pairing: mark.pairing, t: mark.t)
+            }
+        }
+        for marker in markers {
+            consider(marker.lat, marker.lon) {
+                Callout(id: "marker-\(marker.id)", title: marker.title,
+                        detail: marker.detail, pairing: marker.pairing, t: marker.t)
+            }
+        }
+        for mark in splashMarks {
+            consider(mark.lat, mark.lon) {
+                Callout(id: "splash-\(mark.id)", title: mark.title, detail: mark.detail,
+                        pairing: nil, t: mark.t)
+            }
+        }
+        return best
+    }
+
+    /// The flight covering an instant, as a callout: what a tap on a flying stretch of track
+    /// answers with. Nil off the foil — a tap there is a scrub and nothing more.
+    func flightCallout(at t: Double) -> Callout? {
+        guard let flight = FlightPairing.flight(covering: t, in: pairings) else { return nil }
+        return Callout(id: "flight-\(flight.index)", title: "Flight \(flight.number)",
+                       detail: "tapped on the flown track",
+                       pairing: FlightPairing.flightLine(flight), t: t,
+                       focus: flight.startTs...max(flight.endTs, flight.startTs))
     }
 
     // MARK: - Replay
@@ -313,42 +404,29 @@ struct SessionDetail: Sendable {
         }
     }
 
+    /// The track as runs of one phase each, **cut at the engine's exact flight boundaries**
+    /// (`TrackPhaseCut`, docs/presentation.md "Phase tints").
+    ///
+    /// This used to ask the question per sample — "is this fix inside a flight?" — and start
+    /// a new segment whenever the answer changed. On a coarse source that answer never
+    /// changes across a short landing: the 2026-08-06 "Wingfoiling" session has 24 boundaries
+    /// whose off-foil span contains no positioned sample at all, and every one of them drew
+    /// as continuous teal with a takeoff arrow apparently mid-flight. The cut is made at the
+    /// boundary time instead, on an interpolated point, so the stub is always there.
     private static func buildSegments(_ positioned: [RecordSample],
                                       flights: [FlightRecord]) -> [TrackSegment] {
         guard !positioned.isEmpty else { return [] }
         let stride = max(1, positioned.count / maxTrackPoints)
-        let isFlying = flyingLookup(flights)
-
-        var segments: [TrackSegment] = []
-        var current: [Point] = []
-        var currentFlying = isFlying(positioned[0].t)
-        var nextID = 0
-
-        func flush() {
-            guard current.count >= 2 else {
-                current.removeAll()
-                return
-            }
-            segments.append(TrackSegment(id: nextID, flying: currentFlying, points: current))
-            nextID += 1
-            current.removeAll()
+        let points = positioned.compactMap { sample -> TrackPhaseCut.Point? in
+            guard let lat = sample.lat, let lon = sample.lon else { return nil }
+            return TrackPhaseCut.Point(t: sample.t, lat: lat, lon: lon)
         }
-
-        for (index, sample) in positioned.enumerated() {
-            let flying = isFlying(sample.t)
-            let keep = index % stride == 0 || index == positioned.count - 1
-                || flying != currentFlying
-            guard keep else { continue }
-            let point = Point(lat: sample.lat!, lon: sample.lon!)
-            if flying != currentFlying {
-                current.append(point)          // shared vertex: no visual gap at the phase change
-                flush()
-                currentFlying = flying
+        let spans = flights.map { TrackPhaseCut.Span(start: $0.startTs, end: $0.endTs) }
+        return TrackPhaseCut.runs(points, flights: spans, keepEvery: stride)
+            .enumerated().map { index, run in
+                TrackSegment(id: index, flying: run.flying,
+                             points: run.points.map { Point(lat: $0.lat, lon: $0.lon) })
             }
-            current.append(point)
-        }
-        flush()
-        return segments
     }
 
     /// Turn outcomes plus the straight-line flight ends no turn already explains.
@@ -358,16 +436,21 @@ struct SessionDetail: Sendable {
     /// counted at its turn and would double-mark the same swim, so it is dropped. `unknown`
     /// ends are dropped too: the recording stopped, nothing happened there.
     private static func buildMarkers(_ analysis: SessionAnalysis,
-                                     positioned: [RecordSample]) -> [EventMarker] {
+                                     positioned: [RecordSample],
+                                     pairings: [FlightPairing.Flight]) -> [EventMarker] {
         guard !positioned.isEmpty else { return [] }
         var out: [EventMarker] = []
         var nextID = 0
 
-        func add(t: Double, tone: EventMarker.Tone, filled: Bool, title: String, detail: String) {
+        func add(t: Double, tone: EventMarker.Tone, filled: Bool, title: String, detail: String,
+                 flightIndex: Int? = nil) {
             guard let sample = nearest(positioned, t: t),
                   let lat = sample.lat, let lon = sample.lon else { return }
+            let flight = flightIndex.flatMap { FlightPairing.flight(at: $0, in: pairings) }
             out.append(EventMarker(id: nextID, t: t, lat: lat, lon: lon, tone: tone,
-                                   filled: filled, title: title, detail: detail))
+                                   filled: filled, title: title, detail: detail,
+                                   pairing: flight.map(FlightPairing.flightEndLine),
+                                   flightIndex: flight?.index))
             nextID += 1
         }
 
@@ -385,7 +468,7 @@ struct SessionDetail: Sendable {
             if end.stoppedS > 0 { detail += String(format: " · stopped %.0f s", end.stoppedS) }
             if end.submerged { detail += " · wrist under" }
             add(t: end.ts, tone: outcomeTone(end.outcome), filled: false,
-                title: endTitle(end.outcome), detail: detail)
+                title: endTitle(end.outcome), detail: detail, flightIndex: end.flightIndex)
         }
         return out.sorted { $0.t < $1.t }
     }
@@ -464,13 +547,16 @@ struct SessionDetail: Sendable {
     /// means the recording stopped before it could be judged — marking it would state as
     /// fact the one thing the data cannot say.
     private static func buildTakeoffMarks(_ analysis: SessionAnalysis,
-                                          positioned: [RecordSample]) -> [TakeoffMark] {
+                                          positioned: [RecordSample],
+                                          pairings: [FlightPairing.Flight]) -> [TakeoffMark] {
         var out: [TakeoffMark] = []
-        func add(t: Double, kind: TakeoffMark.Kind, title: String, detail: String) {
+        func add(t: Double, kind: TakeoffMark.Kind, title: String, detail: String,
+                 pairing: String?, flightIndex: Int?) {
             guard let sample = nearest(positioned, t: t),
                   let lat = sample.lat, let lon = sample.lon else { return }
             out.append(TakeoffMark(id: out.count, t: t, lat: lat, lon: lon, kind: kind,
-                                   title: title, detail: detail))
+                                   title: title, detail: detail, pairing: pairing,
+                                   flightIndex: flightIndex))
         }
 
         for takeoff in analysis.takeoffs {
@@ -481,8 +567,12 @@ struct SessionDetail: Sendable {
             if !takeoff.truncated {
                 detail += String(format: " · %.0f s run", takeoff.timeToFoilS)
             }
+            // The flight this attempt started, matched on the instant rather than on a
+            // shared array index: an unresolvable takeoff gets no pairing line at all.
+            let flight = FlightPairing.flight(startingAt: takeoff.startTs, in: pairings)
             add(t: takeoff.startTs, kind: takeoff.free ? .free : .pumped,
-                title: takeoff.free ? "Free takeoff" : "Takeoff", detail: detail)
+                title: takeoff.free ? "Free takeoff" : "Takeoff", detail: detail,
+                pairing: flight.map(FlightPairing.takeoffLine), flightIndex: flight?.index)
         }
         // The episode's *first* stroke, not its last: the marker should sit where he
         // started trying, which is where the pumping run he can recognise begins.
@@ -491,7 +581,9 @@ struct SessionDetail: Sendable {
             let duration = episode.endTs - episode.startTs
             if duration >= 1 { detail += String(format: " · %.0f s", duration) }
             if episode.bursts > 1 { detail += " · \(episode.bursts) bursts" }
-            add(t: episode.startTs, kind: .failed, title: "Failed attempt", detail: detail)
+            add(t: episode.startTs, kind: .failed, title: "Failed attempt", detail: detail,
+                pairing: FlightPairing.failedLine(strokes: episode.strokes),
+                flightIndex: nil)
         }
 
         // Time order, so the chart's marks and the map's read the session the same way —

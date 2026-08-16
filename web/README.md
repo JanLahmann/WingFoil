@@ -45,7 +45,8 @@ web/
 ├── tools/make_presentation_goldens.py
 │                               writes fixtures/presentation/ from the analysis goldens
 ├── tools/verify_presentation.py
-│                               headless checks: marker/filter counts vs those goldens
+│                               headless checks: marker/filter counts and the flight-count
+│                               invariants, vs those goldens
 └── .nojekyll                   GitHub Pages: serve files verbatim
 ```
 
@@ -351,7 +352,10 @@ groups (**153 assertions**, all green at the time of writing — 30 / 8 / 28 / 4
    red hollow u-turns for failed attempts / cyan drops where the barometer saw the wrist go
    under; wind arrow + scale bar. Hovering a marker
    shows a tooltip, tapping one opens a popover of that event's facts. The legend counts
-   must match the tiles. (A file with no GPS fixes at all must show *"No GPS positions in
+   must match the tiles. **The teal is cut at the engine's exact flight boundaries**, so
+   every landing shows a grey stub even where the source recorded no fix inside it — on the
+   2026-08-06 wingfoiling file that is 24 of its 54 boundaries, and before the cut they drew
+   as continuous flight with a takeoff arrow apparently mid-flight. (A file with no GPS fixes at all must show *"No GPS positions in
    this file"* in the map slot and still render every other section —
    `tools/verify_web_entry.py` covers this headlessly.)
 6. **Speed strip.** Blue Doppler line over the paler positional line, teal flight bands,
@@ -374,6 +378,14 @@ groups (**153 assertions**, all green at the time of writing — 30 / 8 / 28 / 4
      zooms the time axis about the pointer; markers and bands outside the window are not
      drawn; the axis switches to m:ss; "Reset zoom" or a double-click restores it. Scrubbing
      still works while zoomed.
+   - **Pairing, on tap only** (docs/presentation.md). Tap a takeoff arrow: the popover gains
+     one accent line, `starts flight 12 · 1:23 · ended: touchdown`. A red u-turn says
+     `no flight · 3 strokes`; a hollow flight-end square says
+     `ends flight 12 · started 41:07 · 7 pumps` (the stroke clause is *absent*, never `0`,
+     on a source with no wrist accelerometer). Tap a **flown stretch of track** — the teal
+     line itself — and it names the flight (`flight 12 of 55 · 1:23 · 272 m · ended: …`)
+     *and* zooms the strip to that flight plus a margin. Nothing of this is on screen until
+     something is tapped.
    - Everything above is transient: it belongs to the document on screen and is not saved.
 7. **Tables.** 34 turn rows (30 counted + 4 rejected), 23 flight-end rows. Turn #1 at
    08:03:36 local, jibe, fell in.

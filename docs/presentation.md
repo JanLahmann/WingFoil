@@ -69,6 +69,20 @@ verdict about effort nobody measured.
 label grey. They are *not* the app's own accent blue — a track tinted with the brand colour
 reads as chrome, and the flying tint has to be a category.
 
+**Phase tint follows the engine's flight spans, cut at exact boundary times with
+interpolated points — a gap with no samples still renders off-foil.** Tinting per *sample*
+("is this fix inside a flight?") is the wrong question on a coarse source: at 2 s cadence
+with a 5 s p95, an off-foil span of 5–7 s can contain no positioned sample at all, and the
+two flights on either side of it then tint as one continuous flight with a takeoff arrow
+apparently mid-flight. So the polylines are cut at the engine's own `start_t` / `end_t`: the
+cut coordinate is interpolated between the two positioned samples that straddle the boundary
+(a boundary that falls *on* a sample cuts there, and the sample belongs to both runs — a
+shared vertex, so the drawn line has no hole), and every off-foil span therefore renders as
+at least a short grey stub. The interpolated point lies on the line the map already draws
+between those two fixes, so the cut changes the colour and never the geometry. A recording
+gap still breaks the line — except across a boundary cut, where the two straddling fixes are
+the only evidence there is of where the phase changed.
+
 **Direction chevrons**: small, semi-transparent, oriented to travel, subordinate to every
 marker — they indicate, never compete.
 
@@ -127,6 +141,49 @@ filters and trends read `side`.
   shading outside the visible domain are not drawn.
 - Zoom state is transient per session view.
 
+## Pairing
+
+A takeoff, the flight it started and the end that stopped it are three marks on one event.
+Drawing that link *always* — a leader line, a shared number, a badge on every arrow — buys a
+fact nobody asked for at the cost of the busiest layer on the map. So the pairing is
+**tap-only: nothing about it renders until a mark or a flying segment is tapped**, and what
+appears is one extra line on the popover (iOS: the track callout) that was going to open
+anyway.
+
+Every fact in it is read verbatim from the analysis document — the flight's own `startTs` /
+`endTs` / `distM`, its flight end's `outcome`, its takeoff's `pumps`. Nothing is recomputed
+here; the only arithmetic is `endTs - startTs`, which is the same licence
+`PumpEpisodeRecord` takes for not encoding its own duration.
+
+The four lines, exactly:
+
+| tapped | line |
+|---|---|
+| takeoff (pumped or free) | `starts flight 12 · 1:23 · ended: touchdown` |
+| failed attempt | `no flight · 3 strokes` |
+| straight-line flight end | `ends flight 12 · started 41:07 · 7 pumps` |
+| a flying segment of the track | `flight 12 of 55 · 1:23 · 272 m · ended: touchdown` |
+
+`·` separates, times are `m:ss` (`h:mm:ss` past an hour) on the session clock, the flight
+number is 1-based, and the outcome words are the flight-end ladder's own: **glided out ·
+touchdown · fell in**, plus **recording ended** for an end the engine marked `unknown` or
+`truncated` (a recording that stopped is not a verdict).
+
+Absence, as everywhere else, is absence and never zero:
+
+- no accelerometer stream ⇒ `pumps` is nil ⇒ the ` · N pumps` clause is **omitted**, not
+  written as `0 pumps`;
+- a flight with no distance ⇒ the ` · N m` clause is omitted;
+- a mark whose flight cannot be resolved gets **no pairing line at all** rather than
+  `flight ?`.
+
+Tapping a flying segment does one more thing: it **focuses the chart on that flight** — the
+timeline window is set to the flight's span plus a margin on each side (iOS:
+`TimelineWindow.focus(on:)`, the same window the pinch moves; web: the strip's zoom window),
+so the tap that asks "what was this stretch?" answers on both figures at once. The focus is
+transient like every other zoom, and the reset affordance the zoom already has is the way
+out of it.
+
 ## Enforcement
 
 1. `design/tokens.json` + generated constants + a CI staleness check (bundle_lab-style) —
@@ -135,3 +192,12 @@ filters and trends read `side`.
    per layer, filter tallies and record-window sets, asserted by BOTH the Swift
    `PresentationTests` and the web verification scripts. A count that differs between
    platforms is a failing test, not a bug report.
+3. **Flight-count invariants**, in the same goldens and asserted on both platforms. Every
+   flight is started by exactly one takeoff and stopped by exactly one end, so
+   `takeoff.pumped + takeoff.free == flightCount` and `flightEnds.total == flightCount`,
+   per fixture — with `flightEnds` partitioned into the three buckets the marker rules
+   already distinguish (`drawn` + `ownedByTurn` + `truncated`). They are the arithmetic the
+   pairing above depends on: a takeoff that cannot name its flight, or a flight with two
+   ends, would render a wrong number in a popover long before anyone noticed a tally was
+   off. `failed` attempts are deliberately outside both sums — a failed attempt is the one
+   takeoff-layer mark that starts no flight.
