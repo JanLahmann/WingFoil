@@ -95,8 +95,10 @@ function showHighlightNote(highlight) {
   note.hidden = !highlight;
   if (!highlight) return;
   const many = highlight.windows.length > 1 ? ` (${highlight.windows.length} windows)` : "";
-  note.innerHTML = `Showing <strong>${highlight.label}</strong>${many} — the window is
-    marked in white on the track and on the speed strip.
+  const value = highlight.value === undefined ? ""
+    : ` — ${highlight.value} ${highlight.unit ?? ""}`.trimEnd();
+  note.innerHTML = `Showing <strong>${highlight.label}</strong>${value}${many} — the window
+    is marked in orange on the track and on the speed strip.
     <button class="ghost small-btn" id="clear-highlight" type="button">Clear</button>`;
   el("clear-highlight").addEventListener("click", () => {
     showResult(state.last, { digest: state.lastDigest, bytes: state.lastBytes,
@@ -239,7 +241,11 @@ function wireSave() {
 async function openStored(id, record = null) {
   try {
     const highlight = record
-      ? { label: `${record.label} — ${record.value} ${record.unit}`, windows: record.windows }
+      // The label is the record's own ("Best 2 s"), because it is also the legend chip's
+      // text and the chip names the *window*, not its value (the iOS chip reads the same).
+      // The value travels beside it, for the note and for the band's popover.
+      ? { label: record.label, value: record.value, unit: record.unit,
+          windows: record.windows }
       : null;
     showResult(await openStoredSession(id), { fromLibrary: true, highlight });
   } catch (err) {

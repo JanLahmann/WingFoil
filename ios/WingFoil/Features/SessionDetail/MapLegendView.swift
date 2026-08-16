@@ -78,15 +78,16 @@ struct MapLegendView: View {
 
     private var lineRow: some View {
         WrapRow(spacing: 6) {
-            chip(.flying, swatch: .line(.teal))
-            chip(.offFoil, swatch: .line(.secondary))
+            chip(.flying, swatch: .line(DesignTokens.Phase.flying))
+            chip(.offFoil, swatch: .line(DesignTokens.Phase.offFoil))
             chip(.pumping, swatch: .line(EventMarkerStyle.pumping))
             // Sits with the line chips rather than the marker ones because that is what it
             // is about — the route, not the events on it — even though hiding it removes
             // the arrows outright the way a marker layer does.
-            chip(.direction, swatch: .glyph("chevron.up", .secondary))
+            chip(.direction, swatch: .glyph("chevron.up", DesignTokens.Direction.ink))
             if let effort {
-                chip(.effort, swatch: .line(.orange), label: effort.label.lowercased())
+                chip(.effort, swatch: .line(DesignTokens.Effort.window),
+                     label: effort.label.lowercased())
             }
             if !visibility.isEverythingVisible { showAllButton }
         }

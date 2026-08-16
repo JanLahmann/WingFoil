@@ -22,7 +22,13 @@
 import { TOKENS } from "./tokens.js";
 
 export const C = {
-  track: TOKENS.phase.offFoil.hex, foil: TOKENS.phase.flying.hex, tint: "#7fb0e8",
+  // The phase tints, which are a *category* and therefore a token: teal on foil, secondary
+  // grey off it, exactly what the iOS app's `.teal` / `.secondary` render as on dark. They
+  // are deliberately not the app's own blue — see `series` below.
+  track: TOKENS.phase.offFoil.hex, foil: TOKENS.phase.flying.hex,
+  // The site's own blue and its tint: the logo, the buttons, the links and the Doppler
+  // trace. Chrome, not a presentation token — a speed trace is not a phase.
+  series: "#3987e5", tint: "#7fb0e8",
   good: TOKENS.outcome.flew.hex, warn: TOKENS.outcome.touchdown.hex,
   bad: TOKENS.outcome.fellIn.hex, reject: TOKENS.outcome.courseChange.hex,
   ink: "#ffffff", ink2: TOKENS.direction.ink.hex, ink3: "#8a8a80",
@@ -36,10 +42,16 @@ export const C = {
   // The one exception, and it earns it: a failed attempt is the single event in those
   // layers with an outcome, so it alone borrows the ladder's red.
   failedTakeoff: TOKENS.effort.failedTakeoff.hex,
+  // The highlighted record window — one ink for both of its marks (the glow on the track
+  // and the band in the chart), the same orange the iOS app draws it in.
+  effort: TOKENS.effort.window.hex,
 };
 
+// `glide_out` is the *green* end of the ladder: a flight that ended without drama. It is
+// not a fourth verdict and has no colour of its own — the hollow fill is what says the
+// channel was a straight line rather than a maneuver (docs/presentation.md).
 export const OUTCOME_COLOR = { flew_through: C.good, touchdown: C.warn, fell_in: C.bad,
-                               glide_out: C.ink2, unknown: C.ink3 };
+                               glide_out: C.good, unknown: C.ink3 };
 export const OUTCOME_LABEL = { flew_through: "flew through", touchdown: "touched down",
                                fell_in: "fell in", glide_out: "glided out",
                                unknown: "no evidence" };

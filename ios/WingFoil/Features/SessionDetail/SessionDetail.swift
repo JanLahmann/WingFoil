@@ -52,18 +52,21 @@ struct SessionDetail: Sendable {
         var detail: String
     }
 
-    /// One takeoff run he pumped through: the stretch of track between the first stroke
-    /// (or the start of the speed rise) and the moment the board came up.
+    /// One pumping *attempt*, as a stretch of track: the episode's first stroke to its last.
     ///
-    /// It is the pumping that *worked*, and only that: a span is drawn from a takeoff run,
-    /// so a failed attempt gets a takeoff-layer marker (`TakeoffMark.Kind.failed`) rather
-    /// than a stretch of tinted track. In-flight pumping stays a summary total — it is a
+    /// Both halves of an attempt, exactly as `docs/presentation.md` defines the layer —
+    /// "pumping spans = the success and failed episodes' [startTs, endTs]". The burst that
+    /// worked and the burst that did not are the same act, and the takeoff-layer glyph at
+    /// the end of the span is what says which it was. `recovery`, `in_flight` and `unknown`
+    /// episodes stay out: pumping the foil back after a touchdown, or holding a glide, is a
     /// different act from trying to get up, and tinting it would read as one.
     struct PumpSpan: Identifiable, Sendable {
         var id: Int
         var band: Band
-        /// nil on a source with no accelerometer; such a run is not drawn at all.
-        var strokes: Int?
+        /// The episode's own numbers, carried with its geometry so nothing downstream has
+        /// to find the episode again: how many strokes it took, and whether it worked.
+        var strokes: Int
+        var outcome: PumpEpisodeOutcome
         var points: [Point]
     }
 
@@ -147,7 +150,7 @@ struct SessionDetail: Sendable {
     let flightBands: [Band]
     /// Turn outcomes (solid) and straight-line flight ends (hollow), in time order.
     let markers: [EventMarker]
-    /// The pumped takeoff runs, in time order.
+    /// The pumping attempts (success + failed episodes), in time order.
     let pumpSpans: [PumpSpan]
     /// One per takeoff the analysis carries.
     let takeoffMarks: [TakeoffMark]
@@ -424,26 +427,26 @@ struct SessionDetail: Sendable {
         }
     }
 
-    /// The takeoff runs he pumped through, as spans of track.
+    /// The pumping attempts, as spans of track.
     ///
-    /// A truncated run is skipped: the recording does not reach back over it, so there is
-    /// no stretch of water to tint — drawing one would invent the approach. So is a run
-    /// with no strokes (the wind did it) and one from a source with no accelerometer,
-    /// where "pumping" is not a thing this file can know about at all.
+    /// Through the shared rule (`PresentationRules.attemptEpisodes`), because the count this
+    /// produces is pinned by `fixtures/presentation/*.expected.json` and asserted on both
+    /// platforms: one span per `success | failed` episode, over its own `[startTs, endTs]`.
+    /// It used to be built from `analysis.takeoffs` instead — one span per takeoff *run* —
+    /// which silently dropped every failed attempt and every truncated run, and made the
+    /// same session count 23 spans here and 37 on the web.
+    ///
+    /// Every attempt is kept, including one the GPS had no fix for: the count is the
+    /// contract's, and a span with fewer than two positioned samples simply draws no
+    /// polyline (the map asks). Its chart band comes from the episode's own times.
     private static func buildPumpSpans(_ analysis: SessionAnalysis,
                                        positioned: [RecordSample]) -> [PumpSpan] {
-        var out: [PumpSpan] = []
-        for takeoff in analysis.takeoffs {
-            guard !takeoff.truncated, let strokes = takeoff.pumps, strokes > 0,
-                  takeoff.startTs > takeoff.runStartTs else { continue }
-            let points = self.points(positioned, from: takeoff.runStartTs, to: takeoff.startTs)
-            guard points.count >= 2 else { continue }
-            out.append(PumpSpan(id: out.count,
-                                band: Band(id: out.count, start: takeoff.runStartTs,
-                                           end: takeoff.startTs),
-                                strokes: strokes, points: points))
+        PresentationRules.attemptEpisodes(analysis).enumerated().map { index, episode in
+            PumpSpan(id: index,
+                     band: Band(id: index, start: episode.startTs, end: episode.endTs),
+                     strokes: episode.strokes, outcome: episode.outcome,
+                     points: points(positioned, from: episode.startTs, to: episode.endTs))
         }
-        return out
     }
 
     /// Both halves of the takeoff layer: the attempts that flew and the attempts that did

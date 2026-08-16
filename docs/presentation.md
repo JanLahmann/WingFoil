@@ -7,10 +7,10 @@ and nothing but convention kept them aligned until this contract. The rule is th
 for the engine: **semantics are defined once, here. An implementation that needs to deviate
 changes this file first, in the same commit.**
 
-Colour *values* will move to `design/tokens.json` (with generated Swift constants and CSS
-variables, staleness-checked in CI). Until that lands, the reference implementations for
-values are `ios/WingFoil/Features/SessionDetail/EventMarkerStyle.swift` and
-`web/css/style.css`; this file defines the *meanings*.
+Colour *values* live in `design/tokens.json`, which generates the Swift constants
+(`DesignTokens`), `web/css/tokens.css` and `web/js/tokens.js` and is staleness-checked in CI
+(`design/check_tokens.py --check`). A value is edited there and nowhere else; this file
+defines the *meanings*.
 
 ## Layers
 
@@ -32,6 +32,13 @@ Layer visibility persists on iOS (hidden-set, `mapLayerVisibility.v1`; unknown i
 decode harmlessly so old prefs survive new layers) and is transient on web. Legend chips are
 the only toggle surface; a struck-through chip means hidden.
 
+**Chip text is the layer catalogue's `label` in `design/tokens.json`** — flying · off foil ·
+pumping · direction · flew through · touchdown · fell in · course change · takeoff · splash
+— read from the generated constants on both platforms, never written as a literal in a view.
+The one exception is `effort`, whose chip is labelled with the *selected* window ("best 2 s")
+because that is what it is currently highlighting; the catalogue's "best effort" is the
+fallback for a session with no achieved window.
+
 ## Colour and glyph vocabulary
 
 **The outcome ladder is a verdict scale and nothing else may borrow it:**
@@ -42,13 +49,25 @@ end no turn explains. Same dot, same ladder, different fill.
 
 **Effort-and-water layers sit deliberately outside the ladder** — nothing in them is a
 verdict, and borrowing the ladder would make a takeoff look like a good jibe:
-pumping = indigo (spans) · takeoff = blue (glyphs) · splash = cyan (drop glyph).
+pumping = indigo (spans) · takeoff = blue (glyphs) · splash = cyan (drop glyph) ·
+the selected record window = orange, one ink for both of its marks (the glow on the track
+and the shading in the chart).
 
 **Takeoff glyphs** (glyphs, not dots, so they can't be mistaken for outcomes on a busy
 track): filled up-arrow = pumped takeoff ("this cost something") · hollow up-arrow = free
 takeoff (wind alone) · **hollow red u-turn = failed attempt** — the one event in the effort
 layers that *has* an outcome, so it alone borrows the ladder's red, and shape + fill carry
 the distinction on two more channels for anyone who cannot use colour.
+
+On sources without an accelerometer stream every takeoff renders as the filled (pumped)
+arrow; free takeoffs cannot be distinguished without stroke counts. The engine reports
+neither half of the split there (`freeTakeoffs` / `pumpedTakeoffs` are absent and every
+takeoff carries `free: false`), so both apps draw the same arrow rather than inventing a
+verdict about effort nobody measured.
+
+**Phase tints** are one colour each, in both apps: flying = teal, off foil = the secondary
+label grey. They are *not* the app's own accent blue — a track tinted with the brand colour
+reads as chrome, and the flying tint has to be a category.
 
 **Direction chevrons**: small, semi-transparent, oriented to travel, subordinate to every
 marker — they indicate, never compete.
@@ -67,6 +86,14 @@ says nothing.
 - Pump episodes: only `success` and `failed` get markers. `recovery`, `in_flight` and
   `unknown` are counted where the analysis counts them but are **not** attempts and are
   never drawn.
+- **Pumping spans = the `success` and `failed` episodes' `[startTs, endTs]`** — one span per
+  attempt, both halves, on the track and as a chart band. Not one per *takeoff run*: that
+  spelling drops every failed attempt, and the two counts differing between the platforms is
+  precisely what the presentation goldens exist to catch (`pumpingSpans`).
+- A straight-line flight end whose outcome is `glide_out` is the green end of the ladder and
+  is counted under `flewThrough`, drawn hollow. There is no separate "glided out" layer or
+  chip: fill carries the channel, colour carries the verdict, and a third category would say
+  the same thing twice.
 - Splash evidence comes from the engine's submersion flags (turns, flight ends); the UI
   never re-derives it.
 

@@ -76,13 +76,14 @@ struct SpeedChartView: View {
                 if window.isZoomed { rangeBar }
                 HStack(spacing: 14) {
                     if visibility.isVisible(.flying) {
-                        swatch(color: .teal.opacity(0.35), label: "flights")
+                        swatch(color: DesignTokens.Phase.flying.opacity(0.35), label: "flights")
                     }
                     if !detail.pumpSpans.isEmpty, visibility.isVisible(.pumping) {
                         swatch(color: EventMarkerStyle.pumping.opacity(0.45), label: "pumping")
                     }
                     if let effort, showsEffort {
-                        swatch(color: .orange.opacity(0.6), label: effort.label.lowercased())
+                        swatch(color: DesignTokens.Effort.window.opacity(0.6),
+                                label: effort.label.lowercased())
                     }
                     Spacer()
                 }
@@ -147,7 +148,7 @@ struct SpeedChartView: View {
                 ForEach(clip(detail.flightBands)) { band in
                     RectangleMark(xStart: .value("Flight start", band.start),
                                   xEnd: .value("Flight end", band.end))
-                        .foregroundStyle(Color.teal.opacity(0.16))
+                        .foregroundStyle(DesignTokens.Phase.flying.opacity(0.16))
                 }
             }
             // Pumping is a span, so the chart draws it the way it draws flights: a band,
@@ -163,7 +164,7 @@ struct SpeedChartView: View {
             if let effort, showsEffort, let band = clip([effort.band]).first {
                 RectangleMark(xStart: .value("Best start", band.start),
                               xEnd: .value("Best end", band.end))
-                    .foregroundStyle(Color.orange.opacity(0.55))
+                    .foregroundStyle(DesignTokens.Effort.window.opacity(0.55))
             }
             ForEach(visibleSpeed) { point in
                 LineMark(x: .value("Time", point.t), y: .value("Speed", point.kn))
