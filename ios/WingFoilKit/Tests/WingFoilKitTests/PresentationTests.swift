@@ -469,7 +469,7 @@ import Testing
         let markers = MapLayer.allCases.filter(\.isMarker)
         #expect(Set(lines) == [.flying, .offFoil, .effort, .pumping])
         #expect(Set(markers) == [.flewThrough, .touchdown, .fellIn, .courseChange,
-                                 .takeoff, .splash])
+                                 .takeoff, .splash, .direction])
         #expect(lines.count + markers.count == MapLayer.allCases.count)
         let labels = MapLayer.allCases.map(\.label)
         #expect(Set(labels).count == labels.count, "two chips would read the same")
@@ -1076,5 +1076,270 @@ import Testing
         #expect(tally.count(.takeoff) == 23)
         #expect(!tally.isToggleable(.splash),
                 "a session the barometer saw no submersion in has no splash toggle")
+    }
+
+    // MARK: - Timeline zoom
+
+    private func window(minutes: Double) -> TimelineWindow {
+        TimelineWindow(full: 1000...(1000 + minutes * 60))
+    }
+
+    /// The reason zoom exists: on a long session the marks pile up, and the fix is to show
+    /// fewer seconds. So the window must actually *narrow*, and it must report by how much.
+    @Test func pinchingNarrowsTheWindowAndKeepsTheAnchorUnderTheFinger() {
+        var w = window(minutes: 80)
+        #expect(!w.isZoomed)
+        #expect(w.factor == 1)
+
+        let anchor = 1000 + 2400.0                     // half way in
+        w.magnify(by: 4, around: anchor)
+        #expect(w.isZoomed)
+        #expect(abs(w.factor - 4) < 0.001)
+        #expect(abs(w.span - 1200) < 0.001)
+        // The pinch centre was in the middle of the window and stays in the middle of it.
+        #expect(abs((anchor - w.visible.lowerBound) / w.span - 0.5) < 0.001)
+
+        // Pinches compose: a second 3× on top of a 4× is a 12× view, not a 3× one.
+        w.magnify(by: 3, around: anchor)
+        #expect(abs(w.factor - 12) < 0.001)
+    }
+
+    /// A pinch at either end must not slide the window off the recording — the commonest
+    /// way a hand-rolled visible domain shows you a chart of nothing.
+    @Test func zoomingClampsAtBothSessionEdges() {
+        var w = window(minutes: 80)
+        w.magnify(by: 8, around: w.full.lowerBound)
+        #expect(w.visible.lowerBound == w.full.lowerBound)
+        #expect(w.visible.upperBound <= w.full.upperBound)
+        #expect(abs(w.startFraction) < 0.0001)
+
+        w.reset()
+        w.magnify(by: 8, around: w.full.upperBound)
+        #expect(w.visible.upperBound == w.full.upperBound)
+        #expect(w.visible.lowerBound >= w.full.lowerBound)
+        #expect(abs(w.endFraction - 1) < 0.0001)
+
+        // Panning past the end stops at the end rather than scrolling into empty water.
+        w.pan(bySeconds: 99_999)
+        #expect(w.visible.upperBound == w.full.upperBound)
+        w.pan(bySeconds: -99_999)
+        #expect(w.visible.lowerBound == w.full.lowerBound)
+    }
+
+    /// Zooming out past the session, or in past the resolution of the speed series, are both
+    /// refusals rather than surprises.
+    @Test func theWindowNeverLeavesItsLimits() {
+        var w = window(minutes: 80)
+        w.magnify(by: 1000, around: 1000 + 2400)
+        #expect(abs(w.span - w.minSpan) < 0.001)
+        #expect(abs(w.factor - TimelineWindow.maxFactor) < 0.001)
+
+        w.magnify(by: 0.01, around: 1000 + 2400)
+        #expect(w.span == w.fullSpan)
+        #expect(!w.isZoomed, "back to the whole session must retire the reset chip")
+
+        // A short session still zooms — to 20 s, the floor, not to a proportional sliver.
+        var short = window(minutes: 4)
+        short.magnify(by: 1000, around: 1000)
+        #expect(abs(short.span - TimelineWindow.minSpanS) < 0.001)
+    }
+
+    /// What the chart draws is `contains` and `clipped`: marks outside the window are not
+    /// drawn at all (that decluttering *is* the feature), while a flight band that straddles
+    /// the edge is cut to fit rather than dropped — the water it covers was still flown.
+    @Test func theWindowFiltersMarksAndClipsSpans() {
+        var w = window(minutes: 80)
+        w.zoom(to: 8, centeredOn: 1000 + 2400)         // 600 s around the middle
+        #expect(abs(w.visible.lowerBound - (1000 + 2100)) < 0.001)
+        #expect(abs(w.visible.upperBound - (1000 + 2700)) < 0.001)
+
+        let marks = [1000.0, 3000, 3100, 3400, 3700, 4200]
+        #expect(marks.filter(w.contains) == [3100, 3400, 3700])
+
+        // Straddling both edges, one edge, and missing entirely.
+        #expect(w.clipped(start: 0, end: 9999) == w.visible)
+        #expect(w.clipped(start: 2000, end: 3200) == 3100...3200)
+        #expect(w.clipped(start: 3800, end: 4000) == nil)
+        // A zero-length span exactly on the edge still belongs to the window.
+        #expect(w.clipped(start: 3700, end: 3700) == 3700...3700)
+
+        #expect(w.clamp(0) == w.visible.lowerBound)
+        #expect(w.clamp(9999) == w.visible.upperBound)
+    }
+
+    /// Replay has to stay watchable while zoomed: when the playhead walks out of the window,
+    /// the window follows it instead of the rider losing the dot.
+    @Test func theWindowFollowsAPlayheadThatWalksOutOfIt() {
+        var w = window(minutes: 80)
+        w.zoom(to: 10, centeredOn: 1000 + 1000)        // 480 s wide
+        let span = w.span
+        let inside = w.visible.lowerBound + span / 2
+        w.reveal(inside)
+        #expect(abs(w.span - span) < 0.001, "a playhead in the middle moves nothing")
+
+        let ahead = w.visible.upperBound + 5
+        w.reveal(ahead)
+        #expect(w.contains(ahead))
+        #expect(abs(w.span - span) < 0.001, "revealing pans, it never rezooms")
+
+        let behind = w.visible.lowerBound - 60
+        w.reveal(behind)
+        #expect(w.contains(behind))
+
+        // And at the very end of the session it stops rather than scrolling past it.
+        w.reveal(w.full.upperBound)
+        #expect(w.visible.upperBound == w.full.upperBound)
+        #expect(w.contains(w.full.upperBound))
+
+        w.reset()
+        #expect(!w.isZoomed)
+        #expect(w.visible == w.full)
+    }
+
+    // MARK: - Direction of travel
+
+    /// A straight run of `count` samples heading due east from Torbole, `stepM` apart.
+    private func eastwardTrack(count: Int, stepM: Double,
+                               flyingFrom: Int = .max) -> [TrackDirection.Point] {
+        let lat = 45.87
+        let lonStep = stepM / (111_320 * cos(lat * .pi / 180))
+        return (0..<count).map {
+            TrackDirection.Point(lat: lat, lon: 10.87 + Double($0) * lonStep,
+                                 flying: $0 >= flyingFrom)
+        }
+    }
+
+    @Test func bearingIsClockwiseFromNorthAndSurvivesTheAntimeridian() {
+        func bearing(_ aLat: Double, _ aLon: Double, _ bLat: Double, _ bLon: Double) -> Double {
+            TrackDirection.bearingDeg(fromLat: aLat, fromLon: aLon, toLat: bLat, toLon: bLon)
+        }
+        #expect(abs(bearing(45.87, 10.87, 45.88, 10.87) - 0) < 0.01)     // north
+        #expect(abs(bearing(45.87, 10.87, 45.87, 10.88) - 90) < 0.01)    // east
+        #expect(abs(bearing(45.87, 10.87, 45.86, 10.87) - 180) < 0.01)   // south
+        #expect(abs(bearing(45.87, 10.87, 45.87, 10.86) - 270) < 0.01)   // west
+
+        // Every bearing is normalized into 0..<360 — a chevron rotated by -90° would point
+        // the wrong way on some platforms and is simply not a value this returns.
+        #expect((0..<36).allSatisfy { i in
+            let b = bearing(45.87, 10.87, 45.87 + cos(Double(i) * 10), 10.87 + sin(Double(i) * 10))
+            return b >= 0 && b < 360
+        })
+
+        // Crossing the antimeridian eastwards is 90°, not 270° — the flat-earth formula
+        // gets this exactly backwards, which is why the great-circle one is used.
+        #expect(abs(bearing(0.0, 179.99, 0.0, -179.99) - 90) < 0.1)
+        #expect(abs(bearing(0.0, -179.99, 0.0, 179.99) - 270) < 0.1)
+
+        // Two samples in the same place have no direction; 0 rather than a NaN rotation.
+        #expect(bearing(45.87, 10.87, 45.87, 10.87) == 0)
+    }
+
+    /// The scale is the whole point: the same track at two zooms must produce a comparable
+    /// *on-screen* rhythm, which means proportionally more chevrons when zoomed in.
+    @Test func chevronSpacingFollowsTheMapScale() {
+        let track = eastwardTrack(count: 101, stepM: 10)      // 1 000 m due east
+        let far = TrackDirection.chevrons(along: track, metresPerPoint: 10,
+                                          spacingPoints: 50, maxCount: 500)
+        let near = TrackDirection.chevrons(along: track, metresPerPoint: 2,
+                                           spacingPoints: 50, maxCount: 500)
+        #expect(far.count == 2, "500 m apart on a 1 km track")
+        #expect(near.count == 10, "100 m apart on the same track")
+        #expect(near.allSatisfy { abs($0.bearingDeg - 90) < 0.5 }, "all of it heads east")
+
+        // Evenly spaced, not clumped: consecutive gaps are the requested spacing.
+        for pair in zip(near, near.dropFirst()) {
+            let gap = TrackDirection.metresBetween(lat1: pair.0.lat, lon1: pair.0.lon,
+                                                   lat2: pair.1.lat, lon2: pair.1.lon)
+            #expect(abs(gap - 100) < 1)
+        }
+        // A scale of zero (a map that has not been laid out yet) draws nothing at all
+        // rather than dividing by it.
+        #expect(TrackDirection.chevrons(along: track, metresPerPoint: 0).isEmpty)
+        #expect(TrackDirection.chevrons(along: [], metresPerPoint: 5).isEmpty)
+    }
+
+    /// The budget is enforced by widening the spacing, never by stopping half way: a track
+    /// arrowed for its first third and bare afterwards reads as missing data.
+    @Test func theChevronBudgetWidensTheSpacingInsteadOfTruncating() throws {
+        let track = eastwardTrack(count: 401, stepM: 10)      // 4 km
+        let capped = TrackDirection.chevrons(along: track, metresPerPoint: 0.5,
+                                             spacingPoints: 50, maxCount: 12)
+        #expect(capped.count <= 12)
+        #expect(capped.count >= 10)
+        let last = try #require(capped.last)
+        let covered = TrackDirection.metresBetween(lat1: track[0].lat, lon1: track[0].lon,
+                                                   lat2: last.lat, lon2: last.lon)
+        #expect(covered > 3_500, "the arrows reach the end of the track")
+    }
+
+    /// Zooming in does not mean "the same arrows, bigger": the camera box is what makes a
+    /// close-up stretch get its own dense set while the rest of the session costs nothing.
+    @Test func chevronsOutsideTheCameraAreNotBuilt() {
+        let track = eastwardTrack(count: 201, stepM: 10)      // 2 km
+        let lat = track[0].lat
+        let halfway = track[100].lon
+        let box = TrackDirection.Box(minLat: lat - 0.01, maxLat: lat + 0.01,
+                                     minLon: track[0].lon - 0.0001, maxLon: halfway)
+        let all = TrackDirection.chevrons(along: track, metresPerPoint: 2, spacingPoints: 50)
+        let clipped = TrackDirection.chevrons(along: track, metresPerPoint: 2,
+                                              spacingPoints: 50, within: box)
+        #expect(clipped.count < all.count)
+        #expect(clipped.allSatisfy { box.contains(lat: $0.lat, lon: $0.lon) })
+        // Ids stay a dense 0..<n so `ForEach` has no holes in it.
+        #expect(clipped.map(\.id) == Array(0..<clipped.count))
+    }
+
+    /// A chevron is tinted like the water under it, so the phase has to survive decimation
+    /// rather than being looked up again from a different clock.
+    @Test func chevronsCarryThePhaseOfTheWaterUnderThem() {
+        let track = eastwardTrack(count: 201, stepM: 10, flyingFrom: 100)
+        let chevrons = TrackDirection.chevrons(along: track, metresPerPoint: 2,
+                                               spacingPoints: 50)
+        #expect(chevrons.contains { $0.flying })
+        #expect(chevrons.contains { !$0.flying })
+        // The phase flips exactly once, at the takeoff, and never flickers back.
+        let flips = zip(chevrons, chevrons.dropFirst()).filter { $0.flying != $1.flying }
+        #expect(flips.count == 1)
+    }
+
+    /// MapKit fits the region, so the scale that governs is the axis that had to shrink.
+    @Test func metresPerPointTakesTheTighterAxis() {
+        // A wide, short region in a tall, narrow view: longitude is what is squeezed.
+        let wide = TrackDirection.metresPerPoint(latSpan: 0.001, lonSpan: 0.02,
+                                                 centerLat: 45.87,
+                                                 widthPoints: 390, heightPoints: 260)
+        #expect(abs(wide - (0.02 * 111_320 * cos(45.87 * .pi / 180) / 390)) < 0.001)
+        // Half the span in the same view is half the metres per point.
+        let closer = TrackDirection.metresPerPoint(latSpan: 0.0005, lonSpan: 0.01,
+                                                   centerLat: 45.87,
+                                                   widthPoints: 390, heightPoints: 260)
+        #expect(abs(closer - wide / 2) < 0.001)
+        // A view with no size yet is not a division by zero.
+        #expect(TrackDirection.metresPerPoint(latSpan: 0.01, lonSpan: 0.01, centerLat: 45.87,
+                                              widthPoints: 0, heightPoints: 0) == 0)
+    }
+
+    /// The compatibility rule, again, for the layer added after the direction chevrons
+    /// shipped: an existing preference must keep its choices and leave `direction` on.
+    @Test func directionDefaultsVisibleForPreferencesWrittenBeforeIt() throws {
+        let defaults = try scratchDefaults()
+        defaults.set(Data(#"["courseChange","fellIn","splash"]"#.utf8),
+                     forKey: MapLayerVisibilityStore.defaultsKey)
+
+        var loaded = MapLayerVisibilityStore.load(from: defaults)
+        #expect(loaded.hiddenLayers == [.fellIn, .courseChange, .splash])
+        #expect(loaded.isVisible(.direction), "direction must default to visible")
+        #expect(MapLayer(rawValue: "direction") != nil,
+                "UI_HIDE_LAYERS=direction would be a no-op")
+
+        // Hiding the chevrons must leave the route exactly as it was — they are an overlay
+        // on the track, not the track.
+        loaded.toggle(.direction)
+        #expect(!loaded.isVisible(.direction))
+        #expect(loaded.lineStyle(flying: true) == .flying)
+        #expect(loaded.lineStyle(flying: false) == .offFoil)
+        // A marker, not a line: hiding it removes the arrows outright rather than degrading
+        // them to a neutral route they do not have.
+        #expect(MapLayer.direction.isMarker && !MapLayer.direction.isLine)
     }
 }

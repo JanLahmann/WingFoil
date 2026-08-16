@@ -52,6 +52,7 @@ struct SessionDetailView: View {
                     }
                     SpeedChartView(detail: detail, effort: effort, playhead: $playhead,
                                    visibility: store.mapLayers)
+                        .id("chart")
                     ReplayScrubber(detail: detail, playhead: $playhead)
                         .id("replay")
                     SummaryGrid(detail: detail, selectedEffort: $selectedEffort)
@@ -76,9 +77,9 @@ struct SessionDetailView: View {
             #if DEBUG && targetEnvironment(simulator)
             // Headless-driving hook (see LibraryView): `simctl launch` cannot scroll, so
             // `UI_SCROLL_TO=<anchor>` parks the page on a card section for a screenshot
-            // ("summary" for the whole grid, "turns" for the turn cards and the drill-in
-            // row, "takeoff" for the pumping card, "hr" for the HR-cost card, "gear" for
-            // the gear card, "replay" for the scrubber).
+            // ("chart" for the speed chart, "summary" for the whole grid, "turns" for the
+            // turn cards and the drill-in row, "takeoff" for the pumping card, "hr" for the
+            // HR-cost card, "gear" for the gear card, "replay" for the scrubber).
             .onChange(of: detail == nil) {
                 guard detail != nil else { return }
                 let environment = ProcessInfo.processInfo.environment
