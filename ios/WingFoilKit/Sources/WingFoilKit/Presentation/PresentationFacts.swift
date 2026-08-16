@@ -117,6 +117,30 @@ public struct PresentationFacts: Sendable, Equatable {
         }
     }
 
+    /// Every flight end, in the three buckets the marker rules already distinguish.
+    ///
+    /// They partition the block, so `total` is also the flight count — which is the point:
+    /// one end stops every flight, and the pairing line a callout draws ("ends flight 12 ·
+    /// started 41:07") is only meaningful while that holds. A flight with two ends would
+    /// print a wrong number in a popover long before any tally looked odd.
+    public struct FlightEndCounts: Sendable, Equatable {
+        /// The hollow mark: no turn owns it, the recording did not stop.
+        public var drawn = 0
+        /// A turn's outcome window already explains it; marking both would draw one swim
+        /// twice.
+        public var ownedByTurn = 0
+        /// The recording stopped, not the flight.
+        public var truncated = 0
+
+        public init(drawn: Int = 0, ownedByTurn: Int = 0, truncated: Int = 0) {
+            self.drawn = drawn
+            self.ownedByTurn = ownedByTurn
+            self.truncated = truncated
+        }
+
+        public var total: Int { drawn + ownedByTurn + truncated }
+    }
+
     /// One chip, three glyphs: the takeoff layer's split.
     public struct TakeoffCounts: Sendable, Equatable {
         public var pumped = 0
@@ -149,7 +173,11 @@ public struct PresentationFacts: Sendable, Equatable {
         }
     }
 
+    /// The engine's own flight count — the number both blocks below have to add up to
+    /// (docs/presentation.md "Enforcement" 3).
+    public let flightCount: Int
     public let markers: MarkerCounts
+    public let flightEnds: FlightEndCounts
     public let takeoff: TakeoffCounts
     public let splash: Int
     public let pumpingSpans: Int
@@ -163,6 +191,13 @@ public struct PresentationFacts: Sendable, Equatable {
     public let filters: [FilterTally]
 
     public init(_ analysis: SessionAnalysis) {
+        flightCount = analysis.summary.flightCount
+        flightEnds = FlightEndCounts(
+            drawn: PresentationRules.drawnFlightEnds(analysis).count,
+            ownedByTurn: analysis.flightEnds.filter { $0.ownedByTurn != nil && !$0.truncated }
+                .count,
+            truncated: analysis.flightEnds.filter(\.truncated).count)
+
         var markers = MarkerCounts()
         for turn in analysis.turns { markers.add(PresentationRules.layer(for: turn)) }
         for end in PresentationRules.drawnFlightEnds(analysis) {

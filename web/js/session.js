@@ -66,6 +66,70 @@ const LAYERS = [
 const OUTCOME_LAYER = { flew_through: "flewThrough", touchdown: "touchdown",
                         fell_in: "fellIn", glide_out: "flewThrough" };
 
+/* --------------------------------------------------------------------- pairing
+ *
+ * docs/presentation.md, "Pairing": a takeoff, the flight it started and the end that
+ * stopped it are three marks on one event, and the link between them is drawn *only* on a
+ * tap. Every fact below is read verbatim from the analysis document — the flight's own
+ * startTs/endTs/distM, its end's outcome, its takeoff's strokes; the only arithmetic is
+ * `endTs - startTs`. The iOS app writes the same four lines from
+ * `WingFoilKit/Presentation/FlightPairing.swift`, word for word, which is what stops the
+ * two apps wording the same fact differently.
+ */
+
+/** What stopped a flight, in the words the callout uses. A recording that stopped is not a
+ *  verdict, so a truncated (or `unknown`) end says so instead of borrowing the ladder. */
+function endedWith(end) {
+  if (!end || end.truncated || end.outcome === "unknown") return "recording ended";
+  if (end.outcome === "fell_in") return "fell in";
+  if (end.outcome === "touchdown") return "touchdown";
+  return "glided out";                      // glide_out | flew_through
+}
+
+/** Whole metres below a kilometre, then two decimals of one. */
+const metres = (m) => (m >= 1000 ? `${(m / 1000).toFixed(2)} km` : `${m.toFixed(0)} m`);
+
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+/** Every flight with the end that stopped it and the strokes that started it. */
+function flightFacts(g) {
+  const ends = new Map((g.flightEnds || []).map((e) => [e.flightIndex, e]));
+  const count = (g.flights || []).length;
+  return (g.flights || []).map((f, index) => ({
+    index,
+    count,
+    startTs: f.startTs,
+    endTs: f.endTs,
+    distM: f.distM > 0 ? f.distM : null,
+    pumps: f.takeoffPumps === undefined ? null : f.takeoffPumps,
+    outcome: endedWith(ends.get(index)),
+  }));
+}
+
+const pairTakeoff = (f) =>
+  `starts flight ${f.index + 1} · ${hms(f.endTs - f.startTs)} · ended: ${f.outcome}`;
+
+const pairFailed = (strokes) => `no flight · ${plural(strokes, "stroke")}`;
+
+const pairEnd = (f) =>
+  `ends flight ${f.index + 1} · started ${hms(f.startTs)}`
+  + (f.pumps === null ? "" : ` · ${plural(f.pumps, "pump")}`);
+
+const pairFlight = (f) =>
+  `flight ${f.index + 1} of ${f.count} · ${hms(f.endTs - f.startTs)}`
+  + (f.distM === null ? "" : ` · ${metres(f.distM)}`)
+  + ` · ended: ${f.outcome}`;
+
+/** The flight a takeoff started: the one whose `startTs` is the takeoff's own. Matched on
+ *  the instant rather than on a shared array index, so a mark that cannot resolve a flight
+ *  gets no pairing line at all rather than a wrong number. */
+const flightStartingAt = (flights, t) =>
+  flights.find((f) => f.startTs === t)
+  ?? flights.find((f) => t >= f.startTs && t <= f.endTs) ?? null;
+
+const flightCovering = (flights, t) =>
+  flights.find((f) => t >= f.startTs && t <= f.endTs) ?? null;
+
 /** The direction chip's swatch: the chevron itself, at chip size and in its own ink. */
 const chevronSwatch = () =>
   `<svg viewBox="-8 -8 16 16"><path d="M-3.4,-3.4 L1.8,0 L-3.4,3.4" fill="none"
@@ -119,6 +183,7 @@ const highlightWindows = (h) => (h && Array.isArray(h.windows) ? h.windows : [])
  */
 function buildModel(result) {
   const v = result.view, g = result.golden, meta = result.meta;
+  const flights = flightFacts(g);
   const marks = [];
   const positioned = v.count && v.hasPositions !== false && v.x.length === v.count;
   const at = (t) => {
@@ -157,9 +222,11 @@ function buildModel(result) {
   // answer to the outcome chips rather than to one of their own.
   for (const e of v.endMarkers.filter((x) => x.drawOnMap)) {
     const end = g.flightEnds[e.i];
+    const flight = flights[e.flightIndex];
     marks.push({
       layer: OUTCOME_LAYER[e.outcome] || "flewThrough", t: e.t, x: e.x, y: e.y,
       kn: e.kn ?? traceKn(v, e.t), style: endStyle(e), n: null,
+      pairing: flight ? pairEnd(flight) : null,
       title: `Flight ${e.flightIndex + 1} ends · straight line`,
       tip: `<b>${clockAt(meta.startUtc, e.t)}</b> — flight ${e.flightIndex + 1} ends<br>` +
            `${OUTCOME_LABEL[e.outcome]} · straight line (no manoeuvre)`,
@@ -189,11 +256,13 @@ function buildModel(result) {
     if (k.cadenceSpm !== null && k.cadenceSpm !== undefined) {
       rows.push(["cadence", `${nf(k.cadenceSpm, 0)} strokes/min`]);
     }
+    const flight = flightStartingAt(flights, k.startTs);
     marks.push({
       layer: "takeoff", t: k.startTs, x: p.x, y: p.y, kn: traceKn(v, k.startTs),
       style: { shape: (k.free ? TOKENS.glyphs.takeoffFree : TOKENS.glyphs.takeoffPumped)
                         .webShape,
                color: C.takeoff }, n: null,
+      pairing: flight ? pairTakeoff(flight) : null,
       title: k.free ? "Free takeoff" : "Takeoff",
       tip: `<b>${clockAt(meta.startUtc, k.startTs)}</b> — ${k.free ? "free takeoff" : "takeoff"}<br>` +
            `up at ${nf(k.entryKn, 1)} kn` +
@@ -208,6 +277,7 @@ function buildModel(result) {
     marks.push({
       layer: "takeoff", t: ep.startTs, x: p.x, y: p.y, kn: traceKn(v, ep.startTs),
       style: { shape: TOKENS.glyphs.takeoffFailed.webShape, color: C.failedTakeoff }, n: null,
+      pairing: pairFailed(ep.strokes),
       title: "Failed attempt",
       tip: `<b>${clockAt(meta.startUtc, ep.startTs)}</b> — failed attempt<br>` +
            `${ep.strokes} stroke${ep.strokes === 1 ? "" : "s"}, no flight`,
@@ -262,7 +332,8 @@ function buildModel(result) {
     .map((ep) => ({ t0: ep.startTs, t1: ep.endTs, strokes: ep.strokes, outcome: ep.outcome,
                     bursts: ep.bursts }));
 
-  return { v, g, meta, marks, pumpSpans, positioned };
+  return { v, g, meta, marks, pumpSpans, positioned, flights,
+           phase: positioned ? phaseRuns(v, v.flights) : [] };
 }
 
 /** How many marks/spans a layer has in this document — the input to "is this chip a
@@ -356,22 +427,41 @@ function drawMap() {
                                           + "replay playhead" }, host);
   svg("rect", { width: W, height: H, fill: C.surface }, root);
 
-  // Off-foil track, broken at recording gaps. A hidden line category keeps its route as a
-  // dimmer line: the chips filter what the colours claim, not where the rider went.
+  // The chevrons ride the *whole* route rather than the phase runs: spacing has to be
+  // continuous across a takeoff, or every short off-foil run would collect its own cluster
+  // of arrows (the iOS map flattens its segments for the same reason).
   const runs = polylineRuns(v, () => true);
-  for (const pts of runs) {
-    svg("polyline", { points: screenPoints(pts, X, Y), fill: "none",
-                      stroke: visible("offFoil") ? C.track : "#2c2c2a", "stroke-width": 1.4,
-                      "stroke-linecap": "round", "stroke-linejoin": "round" }, root);
+
+  // The track, one run per phase, cut at the engine's exact flight boundaries. A hidden
+  // line category keeps its route as a dimmer line: the chips filter what the colours
+  // claim, not where the rider went.
+  for (const run of model.phase) {
+    const on = visible(run.flying ? "flying" : "offFoil");
+    const stroke = on ? (run.flying ? C.foil : C.track) : "#2c2c2a";
+    svg("polyline", { points: screenPoints(run.pts, X, Y), fill: "none", stroke,
+                      "stroke-width": run.flying && on ? 2.1 : 1.4,
+                      opacity: run.flying && on ? 0.9 : 1,
+                      "stroke-linecap": "round", "stroke-linejoin": "round",
+                      "data-phase": run.flying ? "flying" : "offFoil" }, root);
   }
-  if (visible("flying")) {
-    for (const f of v.flights) {
-      for (const pts of polylineRuns(v, (t) => t >= f.startTs && t <= f.endTs)) {
-        svg("polyline", { points: screenPoints(pts, X, Y), fill: "none", stroke: C.foil,
-                          "stroke-width": 2.1, opacity: 0.9, "stroke-linecap": "round",
-                          "stroke-linejoin": "round" }, root);
-      }
-    }
+  // A flying run is also the handle on its flight: tapping it says which flight this was
+  // and frames it in the chart (docs/presentation.md, "Pairing"). The hit line is a wide
+  // transparent twin, because a 2-unit stroke is not a tap target — and it is drawn under
+  // everything that follows, so a marker on top of it still wins the tap.
+  for (const run of model.phase) {
+    if (!run.flying) continue;
+    const flight = flightCovering(model.flights, run.pts[0][2]);
+    if (!flight) continue;
+    const hit = svg("polyline", { points: screenPoints(run.pts, X, Y), fill: "none",
+                                  stroke: "transparent", "stroke-width": 14,
+                                  "stroke-linecap": "round", "stroke-linejoin": "round",
+                                  "data-flight": flight.index }, root);
+    hit.style.cursor = "pointer";
+    hit.addEventListener("click", (ev) => {
+      if (dragged) return;                   // a scrub that crossed this run, not a tap
+      ev.stopPropagation();
+      openFlight(ev, flight);
+    });
   }
   // Under the effort glow and under the markers: a pumping attempt is context for the
   // takeoff (or the failure) that ends it, not a thing to read on its own.
@@ -433,6 +523,80 @@ function drawMap() {
 
   state.live.map = { root, X, Y, head, halo, dot, W, H };
   wireMapScrub(root, W, H, X, Y);
+}
+
+/**
+ * The track as runs of one phase each, **cut at the engine's exact flight boundaries**
+ * (docs/presentation.md, "Phase tints").
+ *
+ * Asking the question per sample — "is this fix inside a flight?" — is wrong on a coarse
+ * source, and wrong in the direction that flatters the rider. The 2026-08-06
+ * "Wingfoiling"-app session records at 2 s with a 5 s p95, and 24 of its 54 flight
+ * boundaries have an off-foil span of 5–7 s containing no positioned sample at all: the fix
+ * before the landing is inside flight *n*, the fix after the next takeoff is inside flight
+ * *n+1*, and the landing has nowhere to be drawn. Every 0.5 Hz native fixture in the corpus
+ * has the same shape, up to 74 boundaries in one session.
+ *
+ * So the cut is made at the boundary *time*: the coordinate is interpolated between the two
+ * fixes that straddle it, which puts the cut point exactly on the line this figure already
+ * draws between them — the colour changes, the geometry does not. Consecutive runs share
+ * that vertex, so there is no hole at a phase change, and every off-foil span renders as at
+ * least a short grey stub.
+ *
+ * A recording gap still breaks the line, *except* across a boundary cut: there the two
+ * straddling fixes are the only evidence there is of where the phase changed, and a hole
+ * reads as the flight simply carrying on. (Corpus-wide the longest such bridge is 8 s /
+ * 44 m — it is the app's sloppy cadence, not a pause on the beach.)
+ */
+function phaseRuns(v, flights) {
+  const cuts = [];
+  for (const f of flights) {
+    cuts.push({ t: f.startTs, flying: true });
+    cuts.push({ t: f.endTs, flying: false });
+  }
+  cuts.sort((a, b) => a.t - b.t);
+
+  const at = (i) => (v.x[i] == null || v.y[i] == null ? null : [v.x[i], v.y[i], v.t[i]]);
+  const lerp = (a, b, t) => {
+    const span = b[2] - a[2];
+    const k = span > 0 ? Math.min(Math.max((t - a[2]) / span, 0), 1) : 1;
+    return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, t];
+  };
+
+  const runs = [];
+  let cur = [], flying = false, next = 0, prev = null;
+  const flush = () => { if (cur.length > 1) runs.push({ flying, pts: cur }); cur = []; };
+
+  for (let i = 0; i < v.count; i++) {
+    const p = at(i);
+    if (p === null) { flush(); prev = null; continue; }
+    if (prev === null) {
+      // The first drawable fix of a run: everything before it only decides the phase.
+      while (next < cuts.length && cuts[next].t <= p[2]) flying = cuts[next++].flying;
+      cur.push(p);
+      prev = p;
+      continue;
+    }
+    let cutHere = false;
+    while (next < cuts.length && cuts[next].t <= p[2]) {
+      const point = lerp(prev, p, cuts[next].t);
+      cur.push(point);
+      flush();
+      flying = cuts[next].flying;
+      cur.push(point);                       // shared vertex: no hole at the change
+      next += 1;
+      cutHere = true;
+    }
+    if (!cutHere && v.segment[i] !== v.segment[i - 1]) {
+      flush();
+      cur.push(p);
+    } else if (cur.length === 0 || cur[cur.length - 1][2] !== p[2]) {
+      cur.push(p);
+    }
+    prev = p;
+  }
+  flush();
+  return runs;
 }
 
 /** Contiguous runs of samples matching `keep`, split at gaps (segment id changes). */
@@ -1090,7 +1254,8 @@ function drawChips() {
     `<p class="legend-note">Tap a chip to hide or show it on the map <em>and</em> in the
       speed strip. Chevrons point the way you were riding. Solid shape = manoeuvre outcome ·
       hollow square = straight-line flight end, on the same colour ladder · arrow = takeoff,
-      red u-turn = a failed attempt. Drag either figure to move the playhead.</p>`;
+      red u-turn = a failed attempt. Drag either figure to move the playhead; tap a mark —
+      or a flown stretch of track — for which flight it belongs to.</p>`;
 
   host.onclick = (ev) => {
     const chip = ev.target.closest(".chip-btn");
@@ -1163,6 +1328,38 @@ function annotate(node, mk, where) {
   });
 }
 
+/**
+ * A tap on a flying stretch of track: its flight's facts, and the strip framed on it.
+ *
+ * The zoom is the flight plus a margin either side — the same window the pinch moves, so
+ * the reset chip the strip already carries is the way out of it (docs/presentation.md,
+ * "Pairing"). The playhead goes to the start of the run that was tapped, which is where the
+ * reader's finger already is.
+ */
+function openFlight(ev, flight) {
+  const v = state.model.v;
+  const margin = Math.max((flight.endTs - flight.startTs) * 0.2, 2);
+  const full1 = Math.max(v.bounds.t1, v.bounds.t0 + 1);
+  const t0 = Math.max(v.bounds.t0, flight.startTs - margin);
+  const t1 = Math.min(full1, flight.endTs + margin);
+  state.zoom = (t1 - t0) >= (full1 - v.bounds.t0) - 0.5 ? null : { t0, t1 };
+  openPopover(ev, {
+    title: `Flight ${flight.index + 1}`,
+    pairing: pairFlight(flight),
+    rows: [
+      ["time", `${clockAt(state.model.meta.startUtc, flight.startTs)} · ${hms(flight.startTs)}`],
+      ["duration", hms(flight.endTs - flight.startTs)],
+      ["distance", flight.distM === null ? "—" : metres(flight.distM)],
+      ["ended", flight.outcome],
+      ["pumps", flight.pumps === null ? "— (no wrist accelerometer)" : `${flight.pumps}`],
+    ],
+  });
+  setPlayhead(Math.min(Math.max(state.playhead ?? flight.startTs, flight.startTs),
+                       flight.endTs));
+  drawStrip();
+  applyPlayhead();
+}
+
 let popoverEl = null;
 
 function openPopover(ev, facts) {
@@ -1173,6 +1370,10 @@ function openPopover(ev, facts) {
   box.innerHTML =
     `<div class="pop-head"><b>${esc(facts.title)}</b>` +
     `<button type="button" class="pop-close" aria-label="Close">×</button></div>` +
+    // The pairing line: which flight this mark belongs to, and what became of it. Present
+    // only on a flight boundary, and only ever because something was tapped
+    // (docs/presentation.md, "Pairing").
+    (facts.pairing ? `<p class="pop-pair">${esc(facts.pairing)}</p>` : "") +
     `<div class="pop-rows">${facts.rows.map(([k, val]) =>
       `<div><span>${esc(k)}</span><span>${esc(val)}</span></div>`).join("")}</div>`;
   document.body.appendChild(box);

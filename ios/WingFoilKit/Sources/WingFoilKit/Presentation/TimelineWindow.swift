@@ -91,6 +91,20 @@ public struct TimelineWindow: Sendable, Equatable {
         set(lower: center - newSpan / 2, span: newSpan)
     }
 
+    /// Frame one span — a tapped flight — with a margin on each side, so the thing asked
+    /// about is on screen *with* its approach and its landing rather than welded to the
+    /// frame edge (docs/presentation.md, "Pairing").
+    ///
+    /// The margin is a fraction of the span, so a 15-second hop and a four-minute reach both
+    /// arrive looking deliberate; `minSpan` still governs, which is what stops a two-second
+    /// flight from magnifying the chart into a domain with nothing left to draw.
+    public mutating func focus(on span: ClosedRange<Double>, margin fraction: Double = 0.2) {
+        guard fullSpan > 0 else { return }
+        let width = max(span.upperBound - span.lowerBound, 0)
+        let padding = max(width * fraction, 2)
+        set(lower: span.lowerBound - padding, span: width + padding * 2)
+    }
+
     public mutating func pan(bySeconds delta: Double) {
         set(lower: visible.lowerBound + delta, span: span)
     }

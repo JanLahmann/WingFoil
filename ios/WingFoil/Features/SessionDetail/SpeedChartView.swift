@@ -24,6 +24,9 @@ struct SpeedChartView: View {
     /// one session, and an outcome dot present in one but missing from the other would
     /// make the pair unreadable.
     let visibility: MapLayerVisibility
+    /// The flight a tap on the map asked about, if any. The chart frames it — one tap, two
+    /// figures (docs/presentation.md, "Pairing").
+    let flightFocus: SessionDetail.FlightFocus?
 
     /// Transient by design: zoom is how you are looking at the session that is open, not a
     /// preference about sessions. Nil until something moves it.
@@ -98,6 +101,16 @@ struct SpeedChartView: View {
         .onChange(of: playhead) {
             guard let playhead, pinchBase == nil, window.isZoomed else { return }
             update { $0.reveal(playhead) }
+        }
+        // A flight tapped on the map frames itself here, with its approach and its landing
+        // either side of it. The reset chip the zoom already has is the way back out.
+        .onChange(of: flightFocus) {
+            guard let flightFocus else { return }
+            withAnimation(.easeOut(duration: 0.18)) {
+                var next = TimelineWindow(full: fullRange)
+                next.focus(on: flightFocus.span)
+                zoom = next
+            }
         }
         #if DEBUG && targetEnvironment(simulator)
         .onAppear(perform: stageZoomForScreenshot)
