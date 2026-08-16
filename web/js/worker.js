@@ -4,9 +4,20 @@
  * (pure Python, no wheels to build), mounts web/lab_bundle/ into the Pyodide filesystem
  * and calls web_entry.analyze_json(). numpy and pandas ship with Pyodide.
  *
- * Protocol (main -> worker):   {type:'init'} | {type:'analyze', id, name, buffer}
- * Protocol (worker -> main):   {type:'status', step, state, detail}
- *                              {type:'ready'} | {type:'result', id, json} | {type:'error', id, message}
+ * Every number the app shows — including the library's dedupe key, the all-time records
+ * and every trend point — is produced by Python here. The main thread renders JSON.
+ *
+ * Protocol (main -> worker):
+ *   {type:'init'}
+ *   {type:'analyze',   id, name, buffer}
+ *   {type:'digest',    id, json, name}              analysis JSON -> library digest
+ *   {type:'dedupe',    id, digestJson, indexJson}   is this session already stored?
+ *   {type:'aggregate', id, digestsJson}             records + trends over the library
+ *   {type:'zip',       id, files:[{name, bytes}]}   bulk export, via Python's zipfile
+ * Protocol (worker -> main):
+ *   {type:'status', step, state, detail} | {type:'ready'}
+ *   {type:'result', id, json, digestJson} | {type:'json', id, kind, json}
+ *   {type:'bytes',  id, kind, buffer}    | {type:'error', id, message}
  */
 
 const PYODIDE_VERSION = "0.28.3";
@@ -17,7 +28,8 @@ const FITDECODE = "fitdecode==0.11.0";
 const FITDECODE_LOCAL_WHEEL = null;
 
 let pyodide = null;
-let entry = null;
+let entry = null;          // lab_bundle/web_entry.py — FIT bytes -> analysis document
+let lib = null;            // lab_bundle/library.py   — digests, dedupe, records, trends
 let booting = null;
 
 const status = (step, state, detail = "") =>
@@ -39,6 +51,7 @@ async function boot() {
   await mountLab();
   pyodide.runPython("import sys\nif '/lab_bundle' not in sys.path: sys.path.insert(0, '/lab_bundle')");
   entry = pyodide.pyimport("web_entry");
+  lib = pyodide.pyimport("library");
   const version = pyodide.runPython("import wingfoil_lab; wingfoil_lab.ENGINE_VERSION");
   status("engine", "done", `engine ${version}`);
   self.postMessage({ type: "ready", engineVersion: version, pyodideVersion: PYODIDE_VERSION });
@@ -81,21 +94,71 @@ async function analyze(id, name, buffer) {
     status("parse", "done", "");
   }
   status("analyze", "done", "");
-  self.postMessage({ type: "result", id, json });
+  // The library digest costs one extra Python call on a document we already have, and
+  // saves the UI from ever having to derive a summary row itself.
+  self.postMessage({ type: "result", id, json, digestJson: lib.digest_json(json, name) });
+}
+
+async function ready() {
+  if (!booting) booting = boot();
+  await booting;
+}
+
+/** Bulk export. Python's own `zipfile` writes the archive one member at a time — no JS
+ *  zip library, and no moment where the whole library sits in JS *and* in Python at
+ *  once. The finished archive lands in the Pyodide filesystem and comes back through
+ *  `FS.readFile`, which hands JS a real Uint8Array. */
+const ZIP_PATH = "/tmp/wingfoil-library.zip";
+
+async function buildZip(id, files) {
+  await ready();
+  lib.export_begin();
+  try {
+    for (const f of files) lib.export_add(f.name, f.bytes, !!f.deflate);
+    lib.export_finish(ZIP_PATH);
+  } catch (err) {
+    lib.export_abort();
+    throw err;
+  }
+  const bytes = pyodide.FS.readFile(ZIP_PATH);
+  pyodide.FS.unlink(ZIP_PATH);
+  const buffer = bytes.buffer;
+  self.postMessage({ type: "bytes", id, kind: "zip", buffer }, [buffer]);
 }
 
 self.onmessage = async (ev) => {
   const msg = ev.data || {};
   try {
-    if (msg.type === "init") {
-      if (!booting) booting = boot();
-      await booting;
-    } else if (msg.type === "analyze") {
-      await analyze(msg.id, msg.name, msg.buffer);
+    switch (msg.type) {
+      case "init":
+        await ready();
+        break;
+      case "analyze":
+        await analyze(msg.id, msg.name, msg.buffer);
+        break;
+      case "digest":
+        await ready();
+        self.postMessage({ type: "json", id: msg.id, kind: "digest",
+                           json: lib.digest_json(msg.json, msg.name || "session.fit") });
+        break;
+      case "dedupe":
+        await ready();
+        self.postMessage({ type: "json", id: msg.id, kind: "dedupe",
+                           json: lib.dedupe_match_json(msg.digestJson, msg.indexJson) });
+        break;
+      case "aggregate":
+        await ready();
+        self.postMessage({ type: "json", id: msg.id, kind: "aggregate",
+                           json: lib.aggregate_json(msg.digestsJson) });
+        break;
+      case "zip":
+        await buildZip(msg.id, msg.files);
+        break;
     }
   } catch (err) {
-    booting = null;                       // a failed boot must be retryable
-    self.postMessage({ type: "error", id: msg.id ?? null, message: describe(err) });
+    if (!entry) booting = null;           // a failed *boot* must be retryable
+    self.postMessage({ type: "error", id: msg.id ?? null, kind: msg.type,
+                       message: describe(err) });
   }
 };
 

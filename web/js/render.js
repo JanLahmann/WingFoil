@@ -10,7 +10,7 @@
  *   marker number is the turn's row number in the Turns table
  */
 
-const C = {
+export const C = {
   track: "#4a4a45", foil: "#3987e5", tint: "#7fb0e8",
   good: "#0ca30c", warn: "#fab219", bad: "#d03b3b", reject: "#7a7a72",
   ink: "#ffffff", ink2: "#c3c2b7", ink3: "#8a8a80",
@@ -24,10 +24,12 @@ const OUTCOME_LABEL = { flew_through: "flew through", touchdown: "touched down",
 
 /* ---------------------------------------------------------------- formatting */
 
-const nf = (v, d = 1) => (v === null || v === undefined || Number.isNaN(v) ? "—" : v.toFixed(d));
-const int = (v) => (v === null || v === undefined ? "—" : Math.round(v).toLocaleString("en-US"));
+export const nf = (v, d = 1) =>
+  (v === null || v === undefined || Number.isNaN(v) ? "—" : v.toFixed(d));
+export const int = (v) =>
+  (v === null || v === undefined ? "—" : Math.round(v).toLocaleString("en-US"));
 
-function hms(sec) {
+export function hms(sec) {
   if (sec === null || sec === undefined) return "—";
   const s = Math.round(sec);
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
@@ -41,14 +43,14 @@ function clockAt(startUtc, t) {
   return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
-function sessionDate(startUtc) {
+export function sessionDate(startUtc) {
   if (!startUtc) return "Session";
   return new Date(startUtc).toLocaleString("en-GB",
     { weekday: "short", year: "numeric", month: "short", day: "numeric",
       hour: "2-digit", minute: "2-digit" });
 }
 
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
+export const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 const el = (id) => document.getElementById(id);
@@ -57,7 +59,7 @@ const el = (id) => document.getElementById(id);
 
 const SVGNS = "http://www.w3.org/2000/svg";
 
-function svg(tag, attrs = {}, parent = null) {
+export function svg(tag, attrs = {}, parent = null) {
   const node = document.createElementNS(SVGNS, tag);
   for (const [k, v] of Object.entries(attrs)) {
     if (v !== null && v !== undefined) node.setAttribute(k, v);
@@ -116,15 +118,31 @@ function label(parent, x, y, n, color, up) {
 
 /* ---------------------------------------------------------------- the report */
 
-export function render(result) {
+/**
+ * Draw the whole report.
+ *
+ * `highlight` (optional) is a record's own provenance, straight out of the analysis
+ * document's `records.windows` — `{label, value, unit, windows: [{startTs, durS}, …]}`.
+ * When it is present the map and the speed strip mark exactly those windows. It is an
+ * annotation on data already in the document: nothing about it is recomputed here.
+ */
+export function render(result, { highlight = null } = {}) {
   const g = result.golden, v = result.view, meta = result.meta;
   renderSummary(result);
-  renderMap(el("map-figure"), el("map-legend"), result);
-  renderStrip(el("strip-figure"), el("strip-legend"), result);
+  renderMap(el("map-figure"), el("map-legend"), result, highlight);
+  renderStrip(el("strip-figure"), el("strip-legend"), result, highlight);
   renderTakeoffs(el("takeoff-body"), g, meta);
   renderTurns(el("turns-table"), el("turns-caption"), g, v, meta);
   renderEnds(el("ends-table"), el("ends-caption"), g, meta);
 }
+
+/** Windows overlap-test helper: is sample time `t` inside any highlighted window? */
+function inWindows(windows, t) {
+  for (const w of windows) if (t >= w.startTs && t <= w.startTs + w.durS) return true;
+  return false;
+}
+
+const highlightWindows = (h) => (h && Array.isArray(h.windows) ? h.windows : []);
 
 /* -------------------------------------------------------------------- header */
 
@@ -180,7 +198,7 @@ function renderSummary(result) {
 
 /* ----------------------------------------------------------------------- map */
 
-function renderMap(host, legendHost, result) {
+function renderMap(host, legendHost, result, highlight = null) {
   host.innerHTML = "";
   const v = result.view, g = result.golden;
   // `hasPositions` is false for Doppler-only sources: the analysis (speed strip, records,
@@ -224,6 +242,21 @@ function renderMap(host, legendHost, result) {
     }
   }
 
+  // The highlighted record window, on top of the track but under the markers: a white
+  // halo plus a white line. White is not in the outcome ramp, so it cannot be mistaken
+  // for one; the caption above the figure names what it is.
+  const hw = highlightWindows(highlight);
+  if (hw.length) {
+    for (const pts of polylineRuns(v, (t) => inWindows(hw, t))) {
+      const points = pts.map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(" ");
+      svg("polyline", { points, fill: "none", stroke: C.surface, "stroke-width": 6.5,
+                        opacity: 0.85, "stroke-linecap": "round",
+                        "stroke-linejoin": "round" }, root);
+      svg("polyline", { points, fill: "none", stroke: C.ink, "stroke-width": 3.0,
+                        "stroke-linecap": "round", "stroke-linejoin": "round" }, root);
+    }
+  }
+
   // Straight-line flight ends (hollow squares) below the turn markers.
   for (const e of v.endMarkers.filter((e) => e.drawOnMap)) {
     const m = marker(root, endStyle(e), X(e.x), Y(e.y));
@@ -244,8 +277,12 @@ function renderMap(host, legendHost, result) {
   if (g.wind) windArrow(root, g.wind, W, H);
   scaleBar(root, s, PAD, H - 16);
 
-  legendHost.innerHTML = mapLegend(g);
+  legendHost.innerHTML = mapLegend(g) + (hw.length ? highlightLegend(highlight) : "");
 }
+
+const highlightLegend = (h) => `<span class="item">
+  <svg viewBox="-8 -8 16 16"><line x1="-7" y1="0" x2="7" y2="0" stroke="${C.ink}"
+    stroke-width="2.8" stroke-linecap="round"/></svg>${esc(h.label || "record window")}</span>`;
 
 /** Contiguous runs of samples matching `keep`, split at gaps (segment id changes). */
 function polylineRuns(v, keep) {
@@ -327,7 +364,7 @@ function glyph(shape, color, text) {
 
 /* --------------------------------------------------------------- speed strip */
 
-function renderStrip(host, legendHost, result) {
+function renderStrip(host, legendHost, result, highlight = null) {
   host.innerHTML = "";
   const v = result.view, g = result.golden;
   if (!v.count) { host.innerHTML = `<p class="note">No speed samples.</p>`; return; }
@@ -365,6 +402,30 @@ function renderStrip(host, legendHost, result) {
   axisLabel(root, L - 34, T + (H - T - B) / 2, "speed (kn)", true);
   axisLabel(root, L + (W - L - R) / 2, H - 4, "session time (min)", false);
 
+  // Record windows: a bracketed band, drawn before the traces so the speed line stays
+  // readable through it. Narrow windows (a 2 s record is ~1 px wide) get a minimum width
+  // so they are still findable.
+  const hw = highlightWindows(highlight);
+  hw.forEach((w, i) => {
+    const x0 = X(w.startTs), x1 = Math.max(X(w.startTs + w.durS), x0 + 2.5);
+    svg("rect", { x: x0, y: T, width: x1 - x0, height: H - T - B,
+                  fill: C.ink, opacity: 0.14 }, root);
+    for (const x of [x0, x1]) {
+      svg("line", { x1: x, x2: x, y1: T, y2: H - B, stroke: C.ink, "stroke-width": 1.1,
+                    opacity: 0.75, "stroke-dasharray": "4 3" }, root);
+    }
+    if (i === 0 && highlight?.label) {
+      // A record set late in the session would push its label off the right edge, so the
+      // label flips to the other side of the band rather than being clipped.
+      const flip = x1 > W * 0.62;
+      const t = svg("text", { x: flip ? x0 - 6 : x1 + 6, y: T + 12,
+                              "text-anchor": flip ? "end" : "start", "font-size": 11,
+                              "font-weight": 700, fill: C.ink, stroke: C.surface,
+                              "stroke-width": 3, "paint-order": "stroke" }, root);
+      t.textContent = highlight.label;
+    }
+  });
+
   series(root, v, v.speedKn, X, Y, C.tint, 1.0, 0.85);
   series(root, v, v.dopplerKn, X, Y, C.foil, 1.5, 1);
 
@@ -383,7 +444,11 @@ function renderStrip(host, legendHost, result) {
     line(C.foil, "Doppler — drives the flight state") +
     line(C.tint, "positional — scores the turns") +
     `<span class="item"><svg viewBox="-8 -8 16 16"><rect x="-7" y="-6" width="14" height="12"
-      fill="${C.foil}" opacity="0.22"/></svg>flight (on foil)</span>`;
+      fill="${C.foil}" opacity="0.22"/></svg>flight (on foil)</span>` +
+    (hw.length ? `<span class="item"><svg viewBox="-8 -8 16 16"><rect x="-6" y="-6" width="12"
+      height="12" fill="${C.ink}" opacity="0.2" stroke="${C.ink}" stroke-width="1.1"
+      stroke-dasharray="3 2"/></svg>${esc(highlight.label || "record window")}${
+        hw.length > 1 ? ` (${hw.length} windows)` : ""}</span>` : "");
 }
 
 function series(root, v, arr, X, Y, color, width, opacity) {
@@ -454,7 +519,7 @@ function tip() {
   if (!tipEl) { tipEl = document.createElement("div"); tipEl.className = "tip"; document.body.appendChild(tipEl); }
   return tipEl;
 }
-function showTip(ev, html) {
+export function showTip(ev, html) {
   const t = tip();
   t.innerHTML = html;
   t.classList.add("on");
@@ -465,7 +530,7 @@ function showTip(ev, html) {
   if (y + r.height > window.innerHeight - 8) y = ev.clientY - r.height - pad;
   t.style.left = `${x}px`; t.style.top = `${y}px`;
 }
-const hideTip = () => tipEl && tipEl.classList.remove("on");
+export const hideTip = () => tipEl && tipEl.classList.remove("on");
 
 function tipTarget(node, html) {
   node.style.cursor = "pointer";
