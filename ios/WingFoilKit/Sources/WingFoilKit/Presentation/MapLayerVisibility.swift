@@ -14,10 +14,19 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
     case offFoil
     /// The highlighted GP3S window (best 2 s by default) on the map, shaded in the chart.
     case effort
+    /// The takeoff runs he pumped through, tinted along the track and shaded in the chart.
+    /// A span, not a moment, which is why it is a line category.
+    case pumping
     case flewThrough
     case touchdown
     case fellIn
     case courseChange
+    /// Takeoff *attempts*: every flight start the analysis carries, and — since engine
+    /// 0.3.0 gave the pumping episodes timestamps — every attempt that never became one.
+    /// One chip, because to the rider they are one act: pumping to get up.
+    case takeoff
+    /// The wrist went under: the barometer's submersion evidence on a turn or a flight end.
+    case splash
 
     public var id: String { rawValue }
 
@@ -26,8 +35,8 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
     /// markers, whose overlays simply disappear.
     public var isLine: Bool {
         switch self {
-        case .flying, .offFoil, .effort: return true
-        case .flewThrough, .touchdown, .fellIn, .courseChange: return false
+        case .flying, .offFoil, .effort, .pumping: return true
+        case .flewThrough, .touchdown, .fellIn, .courseChange, .takeoff, .splash: return false
         }
     }
 
@@ -40,10 +49,13 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
         case .flying: return "flying"
         case .offFoil: return "off foil"
         case .effort: return "best effort"
+        case .pumping: return "pumping"
         case .flewThrough: return "flew through"
         case .touchdown: return "touchdown"
         case .fellIn: return "fell in"
         case .courseChange: return "course change"
+        case .takeoff: return "takeoff"
+        case .splash: return "splash"
         }
     }
 
@@ -53,10 +65,13 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
         case .flying: return "flying track"
         case .offFoil: return "off foil track"
         case .effort: return "best effort highlight"
+        case .pumping: return "pumping runs"
         case .flewThrough: return "flew through markers"
         case .touchdown: return "touchdown markers"
         case .fellIn: return "fell in markers"
         case .courseChange: return "course change markers"
+        case .takeoff: return "takeoff and failed attempt markers"
+        case .splash: return "splash markers"
         }
     }
 }

@@ -23,15 +23,23 @@ struct MapLegendView: View {
     private var visibility: MapLayerVisibility { store.mapLayers }
     private var tally: MapLayerTally { detail.layerTally(effort: effort) }
 
+    private var hasMarkers: Bool {
+        !detail.markers.isEmpty || !detail.takeoffMarks.isEmpty
+            || !detail.splashMarks.isEmpty
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             lineRow
-            if !detail.markers.isEmpty { markerRow }
+            if hasMarkers { markerRow }
             if !compact {
-                Text(caption)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(caption)
+                    if let note = takeoffNote { Text(note) }
+                }
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .fixedSize(horizontal: false, vertical: true)
             }
         }
         .font(.caption2)
@@ -46,27 +54,45 @@ struct MapLegendView: View {
         return text
     }
 
+    /// The takeoff chip now toggles two kinds of mark, and a legend that named only one of
+    /// them would leave the reader guessing what the red arrow means.
+    ///
+    /// This note used to apologize: the failed attempts were counted and "carried no
+    /// position". Engine 0.3.0 serializes the pumping episodes, so they carry a timestamp
+    /// and therefore a place on the water — the sentence is now a key rather than a caveat.
+    /// The count still comes from `summary.takeoff.failedAttempts` rather than from the
+    /// marks: a mark is missing wherever the GPS had no fix, and the number the rider is
+    /// owed is how often he tried, not how often we could draw it.
+    private var takeoffNote: String? {
+        let failed = detail.analysis.summary.takeoff.failedAttempts
+        guard failed > 0 else { return nil }
+        return "Takeoff carries both halves of an attempt: arrow up = got up, "
+            + "red u-turn = did not. \(failed) failed attempt"
+            + "\(failed == 1 ? "" : "s") this session."
+    }
+
     // MARK: - Rows
 
     private var lineRow: some View {
-        HStack(spacing: 6) {
+        WrapRow(spacing: 6) {
             chip(.flying, swatch: .line(.teal))
             chip(.offFoil, swatch: .line(.secondary))
+            chip(.pumping, swatch: .line(EventMarkerStyle.pumping))
             if let effort {
                 chip(.effort, swatch: .line(.orange), label: effort.label.lowercased())
             }
-            Spacer(minLength: 0)
             if !visibility.isEverythingVisible { showAllButton }
         }
     }
 
     private var markerRow: some View {
-        HStack(spacing: 6) {
+        WrapRow(spacing: 6) {
             chip(.flewThrough, swatch: .dot(EventMarkerStyle.color(.flew)))
             chip(.touchdown, swatch: .dot(EventMarkerStyle.color(.touchdown)))
             chip(.fellIn, swatch: .dot(EventMarkerStyle.color(.fell)))
             chip(.courseChange, swatch: .dot(EventMarkerStyle.color(.course)))
-            Spacer(minLength: 0)
+            chip(.takeoff, swatch: .glyph("arrow.up.circle.fill", EventMarkerStyle.takeoff))
+            chip(.splash, swatch: .glyph("drop.fill", EventMarkerStyle.splash))
         }
     }
 
@@ -99,6 +125,9 @@ private struct LegendChip: View {
     enum Swatch {
         case line(Color)
         case dot(Color)
+        /// An SF Symbol, for the marker categories whose map annotation is a glyph rather
+        /// than a plain dot — the chip has to look like the thing it toggles.
+        case glyph(String, Color)
     }
 
     let layer: MapLayer
@@ -169,7 +198,81 @@ private struct LegendChip: View {
                 .fill(isOn ? color : Color.clear)
                 .stroke(color, lineWidth: isOn ? 0 : 1.5)
                 .frame(width: 9, height: 9)
+        case .glyph(let name, let color):
+            Image(systemName: name)
+                .font(.system(size: 10))
+                .foregroundStyle(color)
+                .opacity(isOn ? 1 : 0.55)
+                .frame(width: 11, height: 11)
         }
+    }
+}
+
+/// A row of chips that wraps instead of squeezing.
+///
+/// The legend outgrew a single `HStack` when pumping, takeoff and splash joined it: on a
+/// narrow iPhone six chips in one line either truncate their labels or push each other off
+/// the edge, and a chip whose label is gone is not a legend entry. Written against
+/// `Layout` rather than a `LazyVGrid` because the chips are different widths and should
+/// keep them — a grid would give "splash" the same column as "course change".
+private struct WrapRow: Layout {
+    var spacing: CGFloat = 6
+    /// Vertical gap between wrapped lines; a touch tighter than the horizontal one, which
+    /// reads as one block rather than two rows.
+    var lineSpacing: CGFloat = 5
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews,
+                      cache: inout ()) -> CGSize {
+        let lines = layout(subviews, width: proposal.width ?? .infinity)
+        let height = lines.reduce(0) { $0 + $1.height } +
+            lineSpacing * CGFloat(max(0, lines.count - 1))
+        let width = lines.map(\.width).max() ?? 0
+        return CGSize(width: min(width, proposal.width ?? width), height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews,
+                       cache: inout ()) {
+        var y = bounds.minY
+        for line in layout(subviews, width: bounds.width) {
+            var x = bounds.minX
+            for index in line.range {
+                let size = subviews[index].sizeThatFits(.unspecified)
+                subviews[index].place(at: CGPoint(x: x, y: y + (line.height - size.height) / 2),
+                                      proposal: ProposedViewSize(size))
+                x += size.width + spacing
+            }
+            y += line.height + lineSpacing
+        }
+    }
+
+    private struct Line {
+        var range: Range<Int>
+        var width: CGFloat
+        var height: CGFloat
+    }
+
+    private func layout(_ subviews: Subviews, width: CGFloat) -> [Line] {
+        var lines: [Line] = []
+        var start = 0
+        var x: CGFloat = 0
+        var height: CGFloat = 0
+        for index in subviews.indices {
+            let size = subviews[index].sizeThatFits(.unspecified)
+            let advance = x == 0 ? size.width : x + spacing + size.width
+            if advance > width, index > start {
+                lines.append(Line(range: start..<index, width: x, height: height))
+                start = index
+                x = size.width
+                height = size.height
+            } else {
+                x = advance
+                height = max(height, size.height)
+            }
+        }
+        if start < subviews.count {
+            lines.append(Line(range: start..<subviews.count, width: x, height: height))
+        }
+        return lines
     }
 }
 
@@ -181,6 +284,9 @@ extension SessionDetail {
         var tally = MapLayerTally()
         for segment in segments { tally.add(segment.flying ? .flying : .offFoil) }
         for marker in markers { tally.add(marker.layer) }
+        tally.add(.pumping, pumpSpans.count)
+        tally.add(.takeoff, takeoffMarks.count)
+        tally.add(.splash, splashMarks.count)
         // Two points is the same floor the map uses before it draws the highlight at all.
         if let effort, effort.points.count >= 2 { tally.add(.effort) }
         return tally

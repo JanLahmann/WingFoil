@@ -46,6 +46,7 @@ struct TrendsView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
+                ScrollViewReader { proxy in
                 VStack(alignment: .leading, spacing: 18) {
                     Picker("Range", selection: $range) {
                         ForEach(TrendRange.allCases) { Text($0.rawValue).tag($0) }
@@ -67,6 +68,18 @@ struct TrendsView: View {
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 28)
+                #if DEBUG && targetEnvironment(simulator)
+                // Same hook family as the session page's: `simctl` cannot scroll, so
+                // `UI_SCROLL_TO=sideSuccess` parks the screen on the port/starboard
+                // success chart, which is several charts below the fold.
+                .onChange(of: points.isEmpty) {
+                    guard !points.isEmpty,
+                          let anchor = ProcessInfo.processInfo.environment["UI_SCROLL_TO"]
+                    else { return }
+                    proxy.scrollTo(anchor, anchor: .top)
+                }
+                #endif
+                }
             }
             .navigationTitle("Trends")
             .refreshable { await reload() }
@@ -128,7 +141,67 @@ struct TrendsView: View {
         TrendChart(title: "Port / starboard", unit: "% port", points: points, tone: .purple,
                    value: \.portSharePct, domain: 0...100, reference: 50,
                    note: "50 % is symmetric; the gap is the side you avoid.")
+        sideSuccessChart
         weeklyChart
+    }
+
+    /// Turn success split by the tack he *entered* on — the "am I one-sided?" chart that
+    /// the share chart above can only hint at.
+    ///
+    /// Two series rather than one difference line: a rider whose port jibes are at 40 %
+    /// and starboard at 20 % and one at 80/60 have the same gap and completely different
+    /// seasons, and the pair shows both at once. A session that never entered a turn on
+    /// one tack contributes no point on that side — absent, not 0 %, the same rule the
+    /// rest of this screen follows.
+    private var sideSuccessChart: some View {
+        let series: [(side: String, tone: Color, values: [(date: Date, value: Double)])] = [
+            ("Port entry", .blue,
+             points.compactMap { p in p.portFlewThroughPct.map { (p.date, $0) } }),
+            ("Starboard entry", .green,
+             points.compactMap { p in p.starboardFlewThroughPct.map { (p.date, $0) } }),
+        ]
+        let total = series.reduce(0) { $0 + $1.values.count }
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Turn success by entry tack").font(.subheadline.weight(.semibold))
+                Spacer()
+                Text("% flew through").font(.caption).foregroundStyle(.secondary)
+            }
+            if total == 0 {
+                Text("No session in this range has turns with a usable entry tack — that "
+                     + "needs a wind axis the engine trusts.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
+            } else {
+                Chart {
+                    ForEach(series, id: \.side) { line in
+                        ForEach(line.values, id: \.date) { item in
+                            LineMark(x: .value("Date", item.date),
+                                     y: .value("Flew through", item.value),
+                                     series: .value("Entry tack", line.side))
+                                .foregroundStyle(by: .value("Entry tack", line.side))
+                                .interpolationMethod(.monotone)
+                            PointMark(x: .value("Date", item.date),
+                                      y: .value("Flew through", item.value))
+                                .symbolSize(18)
+                                .foregroundStyle(by: .value("Entry tack", line.side))
+                        }
+                    }
+                }
+                .chartForegroundStyleScale(["Port entry": Color.blue,
+                                            "Starboard entry": Color.green])
+                .chartYScale(domain: 0...100)
+                .chartYAxis { AxisMarks(position: .leading) }
+                .chartLegend(position: .bottom, alignment: .leading)
+                .frame(height: 150)
+                Text("Entry tack is the tack you came into the turn on, not the rotation "
+                     + "direction. Course changes are excluded.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .id("sideSuccess")
     }
 
     private var weeklyChart: some View {

@@ -467,8 +467,9 @@ import Testing
     @Test func everyLayerIsEitherALineOrAMarker() {
         let lines = MapLayer.allCases.filter(\.isLine)
         let markers = MapLayer.allCases.filter(\.isMarker)
-        #expect(Set(lines) == [.flying, .offFoil, .effort])
-        #expect(Set(markers) == [.flewThrough, .touchdown, .fellIn, .courseChange])
+        #expect(Set(lines) == [.flying, .offFoil, .effort, .pumping])
+        #expect(Set(markers) == [.flewThrough, .touchdown, .fellIn, .courseChange,
+                                 .takeoff, .splash])
         #expect(lines.count + markers.count == MapLayer.allCases.count)
         let labels = MapLayer.allCases.map(\.label)
         #expect(Set(labels).count == labels.count, "two chips would read the same")
@@ -762,5 +763,318 @@ import Testing
             [bin(0, 20, attempts: 1, successes: 1, cost: 8, baseline: 89, valid: 1, total: 1),
              bin(20, 40, attempts: 0, successes: 0, cost: nil, baseline: nil,
                  valid: 0, total: 0)])) == nil)
+    }
+
+    // MARK: - Turns page
+    //
+    // Two segmented filters that compose, over a field whose name ("side") means the
+    // *entry* tack and not the rotation. Both halves are worth a test: the composition,
+    // because an AND that silently became an OR would still look plausible on screen, and
+    // the wording, because "left" would read as the wrong field entirely.
+
+    /// A turn built field by field. `direction` is deliberately set *opposite* to `side`
+    /// in most of these, which is the real corpus shape — the golden's first jibe is
+    /// `side: starboard, direction: port` — so a filter that read the wrong field would
+    /// fail these tests rather than pass them by luck.
+    private func turn(_ ts: Double, type: String, side: String, direction: String,
+                      outcome: String, counted: Bool = true, score: Double = 0.5,
+                      submerged: Bool = false, stopped: Double = 0) throws -> TurnRecord {
+        let json: [String: Any] = [
+            "ts": ts, "endTs": ts + 8, "type": type, "counted": counted,
+            "entryKn": 11.1, "minKn": 7.5, "score": score, "success": score >= 0.7,
+            "side": side, "direction": direction, "netDeg": -151.1, "arcM": 44.0,
+            "radiusM": 16.7, "outcome": outcome, "borderline": false, "offFoilS": 54.0,
+            "stoppedS": stopped, "pumped": false, "submerged": submerged,
+            "outcomeWindowS": 11.0,
+        ]
+        let data = try JSONSerialization.data(withJSONObject: json)
+        return try JSONDecoder().decode(TurnRecord.self, from: data)
+    }
+
+    /// A session shaped like the corpus one: jibes on both entry tacks, a tack, and two
+    /// course changes that must never be counted.
+    private func turnSet() throws -> [TurnRecord] {
+        [
+            try turn(100, type: "jibe", side: "port", direction: "starboard",
+                     outcome: "flew_through", score: 0.82),
+            try turn(200, type: "jibe", side: "port", direction: "starboard",
+                     outcome: "fell_in", score: 0.31),
+            try turn(300, type: "jibe", side: "starboard", direction: "port",
+                     outcome: "touchdown", score: 0.55),
+            try turn(400, type: "jibe", side: "starboard", direction: "port",
+                     outcome: "flew_through", score: 0.9, submerged: true),
+            try turn(500, type: "tack", side: "port", direction: "port",
+                     outcome: "touchdown", score: 0.6),
+            try turn(600, type: "tack", side: "starboard", direction: "starboard",
+                     outcome: "flew_through", score: 0.75),
+            // Course changes: rejected by the engine, invisible to every filter here.
+            try turn(700, type: "bear_away", side: "starboard", direction: "port",
+                     outcome: "flew_through", counted: false),
+            try turn(800, type: "round_up", side: "port", direction: "starboard",
+                     outcome: "fell_in", counted: false),
+        ]
+    }
+
+    /// The point of the page: the two filters are ANDed, not ORed, and each one reads its
+    /// own field.
+    @Test func bothTurnFiltersApplyAtOnce() throws {
+        let turns = try turnSet()
+
+        #expect(TurnAnalytics.items(turns, filter: TurnFilter()).map(\.ts)
+            == [100, 200, 300, 400, 500, 600], "both/both is every *counted* turn")
+
+        let jibesOnStarboard = TurnAnalytics.items(
+            turns, filter: TurnFilter(type: .jibes, side: .starboard))
+        #expect(jibesOnStarboard.map(\.ts) == [300, 400])
+        #expect(jibesOnStarboard.allSatisfy { $0.side == "starboard" })
+
+        // The same side filter over tacks picks a different turn entirely — an OR would
+        // have returned all three.
+        #expect(TurnAnalytics.items(turns, filter: TurnFilter(type: .tacks, side: .starboard))
+            .map(\.ts) == [600])
+        #expect(TurnAnalytics.items(turns, filter: TurnFilter(type: .jibes, side: .port))
+            .map(\.ts) == [100, 200])
+        #expect(TurnAnalytics.items(turns, filter: TurnFilter(type: .tacks, side: .port))
+            .map(\.ts) == [500])
+    }
+
+    /// The filter reads `side` (the tack entered on), never `direction` (the rotation).
+    /// Every jibe in the set turns the opposite way to the tack it came in on, so a filter
+    /// on the wrong field would return the other pair.
+    @Test func theSideFilterReadsTheEntryTackNotTheRotation() throws {
+        let turns = try turnSet()
+        let port = TurnAnalytics.items(turns, filter: TurnFilter(type: .jibes, side: .port))
+        #expect(port.map(\.ts) == [100, 200])
+        #expect(port.allSatisfy { $0.sideLabel == "port entry" })
+        #expect(TurnSideFilter.port.label == "Port entry")
+        #expect(TurnSideFilter.starboard.label == "Starboard entry")
+        for side in TurnSideFilter.allCases {
+            #expect(!side.label.lowercased().contains("left"))
+            #expect(!side.label.lowercased().contains("right"))
+        }
+        #expect(TurnAnalytics.sideLabel("unknown") == "entry tack unknown")
+    }
+
+    /// Course changes stay out of every view of the page — the same rule the session
+    /// summary applies with `counted`.
+    @Test func courseChangesNeverReachTheTurnsPage() throws {
+        let turns = try turnSet()
+        for type in TurnTypeFilter.allCases {
+            for side in TurnSideFilter.allCases {
+                let items = TurnAnalytics.items(turns, filter: TurnFilter(type: type,
+                                                                          side: side))
+                #expect(!items.contains { $0.ts == 700 || $0.ts == 800 },
+                        "\(type.rawValue)/\(side.rawValue) let a course change through")
+            }
+        }
+        #expect(TurnAnalytics.count(turns, filter: TurnFilter()) == 6)
+    }
+
+    /// The tally is over the filtered set, and an empty filter reports *nothing*, not 0 %.
+    @Test func theTallyFollowsTheFilter() throws {
+        let turns = try turnSet()
+
+        let all = TurnAnalytics.tally(turns, filter: TurnFilter())
+        #expect((all.flewThrough, all.touchdown, all.fellIn) == (3, 2, 1))
+        #expect(all.total == 6)
+        #expect(all.flewThroughPct.map { Int($0.rounded()) } == 50)
+        #expect(all.caption == "3 flew · 2 touch · 1 fell")
+
+        let portJibes = TurnAnalytics.tally(turns, filter: TurnFilter(type: .jibes,
+                                                                      side: .port))
+        #expect((portJibes.flewThrough, portJibes.touchdown, portJibes.fellIn) == (1, 0, 1))
+        #expect(portJibes.flewThroughPct == 50)
+
+        let starboardJibes = TurnAnalytics.tally(turns, filter: TurnFilter(type: .jibes,
+                                                                           side: .starboard))
+        #expect((starboardJibes.flewThrough, starboardJibes.touchdown,
+                 starboardJibes.fellIn) == (1, 1, 0))
+        #expect(starboardJibes.count(.fellIn) == 0)
+
+        // A filter that matches nothing: "you have never done this" is not "you fail at
+        // it", so the rate is absent rather than zero.
+        let noTacks = TurnAnalytics.tally(
+            try [turn(100, type: "jibe", side: "port", direction: "starboard",
+                      outcome: "fell_in")],
+            filter: TurnFilter(type: .tacks, side: .both))
+        #expect(noTacks.total == 0)
+        #expect(noTacks.flewThroughPct == nil)
+        #expect(noTacks.caption == "nothing matches this filter")
+    }
+
+    /// The row is the whole formatting contract: the view prints no number itself.
+    @Test func turnRowsCarryTheirOwnWording() throws {
+        let turns = try turnSet()
+        let rows = TurnAnalytics.items(turns, filter: TurnFilter(type: .jibes,
+                                                                 side: .starboard))
+        let submerged = try #require(rows.last)
+        #expect(submerged.id == 3, "the id is the index in the analysis, not in the filter")
+        #expect(submerged.typeLabel == "Jibe")
+        #expect(submerged.sideLabel == "starboard entry")
+        #expect(submerged.outcome == .flewThrough)
+        #expect(submerged.scoreText == "90")
+        #expect(submerged.detail.contains("wrist under"))
+        #expect(submerged.accessibilityText.contains("Jibe, starboard entry"))
+        #expect(submerged.accessibilityText.contains("flew through"))
+
+        // Every outcome gets a distinct shape as well as a distinct colour.
+        let symbols = TurnOutcomeKind.allCases.map(\.symbolName)
+        #expect(Set(symbols).count == symbols.count)
+        #expect(TurnOutcomeKind("glide_out") == .flewThrough)
+    }
+
+    /// The filter's own description, which the empty state and VoiceOver both read.
+    @Test func theFilterDescribesItselfInRiderWords() {
+        #expect(TurnFilter().description == "all turns")
+        #expect(TurnFilter().isEverything)
+        #expect(TurnFilter(type: .jibes, side: .both).description == "jibes")
+        #expect(TurnFilter(type: .both, side: .port).description == "turns entered on port")
+        #expect(TurnFilter(type: .tacks, side: .starboard).description
+            == "tacks entered on starboard")
+    }
+
+    // MARK: - Trends: turn success by entry tack
+
+    /// The two series the Trends chart plots. Built from per-turn rows because the session
+    /// summary counts the sides but not their outcomes.
+    @Test func turnSuccessSplitsByTheEntryTack() throws {
+        let split = TurnSideSplit.make(try turnSet())
+        #expect(split.portCounted == 3)          // two jibes + one tack, course change out
+        #expect(split.portFlewThrough == 1)
+        #expect(split.starboardCounted == 3)
+        #expect(split.starboardFlewThrough == 2)
+        #expect(split.portSuccessPct.map { Int($0.rounded()) } == 33)
+        #expect(split.starboardSuccessPct.map { Int($0.rounded()) } == 67)
+        #expect(split.gapPct.map { Int($0.rounded()) } == -33, "port is the weaker side")
+        #expect(!split.isEmpty)
+    }
+
+    /// A side he never entered on contributes no point — absent, not 0 %, which is the
+    /// rule the rest of the Trends screen follows.
+    @Test func aSideNeverRiddenIsAbsentFromTheSeriesNotZero() throws {
+        let onlyPort = TurnSideSplit.make(try [
+            turn(100, type: "jibe", side: "port", direction: "starboard",
+                 outcome: "fell_in"),
+        ])
+        #expect(onlyPort.portSuccessPct == 0, "he did jibe on port, and failed: that is 0 %")
+        #expect(onlyPort.starboardSuccessPct == nil, "he never entered on starboard")
+        #expect(onlyPort.gapPct == nil, "a gap needs two numbers")
+
+        // A turn with no usable wind axis has no entry tack and is attributed to neither.
+        var unknown = TurnSideSplit()
+        unknown.add(side: "unknown", flewThrough: true)
+        #expect(unknown.isEmpty)
+        #expect(unknown.portSuccessPct == nil)
+        #expect(unknown.starboardSuccessPct == nil)
+    }
+
+    // MARK: - Record-window picker
+
+    /// The three edges of the picker: where it starts, what a second tap does, and what a
+    /// record with no window does (nothing).
+    @Test func recordWindowSelectionStartsOnTheTwoSecondPeak() {
+        let available: Set<String> = ["best2s", "best10s", "bestNm"]
+        #expect(RecordWindowSelection.defaultKey == "best2s")
+        #expect(RecordWindowSelection.initial(available: available) == "best2s")
+
+        // A session with no 2 s window highlights nothing rather than substituting one.
+        #expect(RecordWindowSelection.initial(available: ["best500m"]) == nil)
+        #expect(RecordWindowSelection.initial(available: []) == nil)
+    }
+
+    @Test func tappingAnotherRecordMovesTheGlowAndTappingItAgainGoesBack() {
+        let available: Set<String> = ["best2s", "best10s", "bestNm"]
+        var selection: String? = RecordWindowSelection.initial(available: available)
+
+        selection = RecordWindowSelection.tapped("best10s", current: selection,
+                                                 available: available)
+        #expect(selection == "best10s")
+
+        // Tapping the *selected* row returns to the default, not to nothing: the glow is
+        // the page's resting state, and this is the way back to it.
+        selection = RecordWindowSelection.tapped("best10s", current: selection,
+                                                 available: available)
+        #expect(selection == "best2s")
+
+        // Only re-tapping the default itself clears the glow.
+        selection = RecordWindowSelection.tapped("best2s", current: selection,
+                                                 available: available)
+        #expect(selection == nil)
+        selection = RecordWindowSelection.tapped("bestNm", current: selection,
+                                                 available: available)
+        #expect(selection == "bestNm")
+    }
+
+    /// A record the session never achieved is not tappable and says nothing: a tap on it
+    /// leaves the selection exactly where it was.
+    @Test func aRecordWithoutAWindowIsNotSelectable() {
+        let available: Set<String> = ["best2s", "best10s"]
+        #expect(RecordWindowSelection.tapped("alpha500", current: "best10s",
+                                             available: available) == "best10s")
+        #expect(RecordWindowSelection.tapped("alpha500", current: nil,
+                                             available: available) == nil)
+        // Every catalogue entry is a real engine window key, or the card could never light.
+        for kind in RecordWindowSelection.catalogue {
+            #expect(RecordKind(rawValue: kind.rawValue) != nil)
+        }
+        #expect(RecordWindowSelection.catalogue.first == .best2s)
+        #expect(!RecordWindowSelection.catalogue.contains(.bestHour),
+                "an hour-long window would light the whole track")
+    }
+
+    // MARK: - The new map layers
+
+    /// The compatibility rule that matters on upgrade: a preference written by the build
+    /// *before* pumping/takeoff/splash existed must decode, keep its choices, and leave
+    /// the three new categories visible.
+    @Test func oldStoredPreferencesLeaveTheNewLayersVisible() throws {
+        let defaults = try scratchDefaults()
+        // Exactly what the v1 build wrote: the old case set, sorted, as a JSON array.
+        defaults.set(Data(#"["courseChange","fellIn"]"#.utf8),
+                     forKey: MapLayerVisibilityStore.defaultsKey)
+
+        let loaded = MapLayerVisibilityStore.load(from: defaults)
+        #expect(loaded.hiddenLayers == [.fellIn, .courseChange], "the old choice survived")
+        for layer in [MapLayer.pumping, .takeoff, .splash] {
+            #expect(loaded.isVisible(layer), "\(layer.rawValue) must default to visible")
+        }
+        // And the round trip back out keeps the new ones out of the stored set.
+        MapLayerVisibilityStore.save(loaded, to: defaults)
+        let data = try #require(defaults.data(forKey: MapLayerVisibilityStore.defaultsKey))
+        #expect(String(decoding: data, as: UTF8.self) == #"["courseChange","fellIn"]"#)
+    }
+
+    @Test func theNewLayersToggleAndPersistLikeTheOldOnes() throws {
+        let defaults = try scratchDefaults()
+        var visibility = MapLayerVisibility()
+        visibility.toggle(.splash)
+        visibility.toggle(.pumping)
+        #expect(!visibility.isVisible(.splash))
+        #expect(!visibility.isVisible(.pumping))
+        #expect(visibility.isVisible(.takeoff))
+        // Pumping is a line category, but it is an *overlay* on the route rather than a
+        // phase, so hiding it must not neutralize the flying/off-foil colouring.
+        #expect(visibility.lineStyle(flying: true) == .flying)
+        #expect(visibility.lineStyle(flying: false) == .offFoil)
+
+        MapLayerVisibilityStore.save(visibility, to: defaults)
+        #expect(MapLayerVisibilityStore.load(from: defaults) == visibility)
+
+        // The `UI_HIDE_LAYERS` debug hook resolves layers by raw value; the three new
+        // names have to survive that round trip or the screenshot hook cannot stage them.
+        for name in ["pumping", "takeoff", "splash"] {
+            #expect(MapLayer(rawValue: name) != nil, "UI_HIDE_LAYERS=\(name) would be a no-op")
+        }
+    }
+
+    @Test func theNewLayerChipsAreInertOnASessionWithoutThem() {
+        var tally = MapLayerTally()
+        tally.add(.pumping, 23)
+        tally.add(.takeoff, 23)
+        tally.add(.splash, 0)
+        #expect(tally.isToggleable(.pumping))
+        #expect(tally.count(.takeoff) == 23)
+        #expect(!tally.isToggleable(.splash),
+                "a session the barometer saw no submersion in has no splash toggle")
     }
 }

@@ -39,6 +39,12 @@ struct SummaryGrid: View {
 
     // MARK: - Records
 
+    /// The record cards are the map's window picker.
+    ///
+    /// Every record the engine produced gets a card, and every card can be tapped to move
+    /// the glow to *that* window — 10 s, 250 m, the 1 NM run — instead of the 2 s peak the
+    /// page opens on. Nothing is computed here: the engine already recorded where each
+    /// window was (`records.windows`), and this only chooses which one to draw.
     private var speedRecords: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
@@ -49,35 +55,37 @@ struct SummaryGrid: View {
                 HelpButton(topic: .recordSet, size: .footnote)
                 Spacer()
                 if !detail.efforts.isEmpty {
-                    Text("tap to locate").font(.caption2).foregroundStyle(.tertiary)
+                    Text(selectedEffort == nil ? "tap to locate" : "tap again for 2 s")
+                        .font(.caption2).foregroundStyle(.tertiary)
                 }
             }
             LazyVGrid(columns: columns, spacing: 12) {
-                record("Best 2 s", records.best2sKn, window: "best2s")
-                record("Best 10 s", records.best10sKn, window: "best10s")
-                record("5 × 10 s", records.best5x10sKn, window: "best5x10s")
-                record("Best 500 m", records.best500mKn, window: "best500m")
-                record("Alpha 500", records.alpha500Kn, window: "alpha500")
-                record("Best 1 NM", records.bestNmKn, window: "bestNm")
+                ForEach(RecordWindowSelection.catalogue, id: \.rawValue) { record($0) }
             }
         }
     }
 
-    private func record(_ title: String, _ value: Double?, window: String) -> some View {
-        let locatable = detail.efforts.contains { $0.id == window }
+    /// Window keys this session actually produced — the set that decides which cards are
+    /// live. A record with no window (alpha never achieved, no 1 NM run) is inert and says
+    /// nothing beyond "no qualifying run".
+    private var locatable: Set<String> { Set(detail.efforts.map(\.id)) }
+
+    private func record(_ kind: RecordKind) -> some View {
+        let key = kind.rawValue
+        let value = kind.value(in: records)
         return Button {
-            guard locatable else { return }
-            selectedEffort = selectedEffort == window ? nil : window
+            selectedEffort = RecordWindowSelection.tapped(key, current: selectedEffort,
+                                                          available: locatable)
         } label: {
-            StatCard(title: title,
+            StatCard(title: SessionDetail.effortLabel(kind),
                      value: Fmt.kn(value),
                      caption: value == nil ? "no qualifying run"
-                                           : caption(for: records.windows[window]),
+                                           : caption(for: records.windows[key]),
                      dimmed: value == nil,
-                     highlighted: selectedEffort == window)
+                     highlighted: selectedEffort == key)
         }
         .buttonStyle(.plain)
-        .disabled(!locatable)
+        .disabled(!locatable.contains(key))
     }
 
     private func caption(for window: RecordWindow?) -> String {
@@ -92,7 +100,8 @@ struct SummaryGrid: View {
         let t = summary.turns
         let split = summary.outcomeSplit
         if t.turnsCounted > 0 || t.rejected > 0 || summary.flightEnds.all.total > 0 {
-            section("Turns & losses", help: .turnOutcomes) {
+            VStack(alignment: .leading, spacing: 10) {
+            section("Turns & losses", anchor: "turns", help: .turnOutcomes) {
                 StatCard(title: "Jibes", value: "\(t.jibes)",
                          caption: outcomeCaption(t.jibeOutcomes), help: .turnTypes)
                 StatCard(title: "Tacks", value: "\(t.tacks)",
@@ -128,7 +137,38 @@ struct SummaryGrid: View {
                              : "came off and kept moving",
                          help: .glideOuts)
             }
+            if t.turnsCounted > 0 { turnsDrillIn(t) }
+            }
         }
+    }
+
+    /// The way into the turns page.
+    ///
+    /// A separate row rather than a tap target on the cards above: those cards carry their
+    /// own `?` buttons, and a button inside a navigation link swallows one of the two taps.
+    /// This row is the whole "turns area" affordance and it says what is behind it — the
+    /// two filters, not just "more".
+    private func turnsDrillIn(_ t: TurnSummary) -> some View {
+        NavigationLink {
+            TurnsAnalysisView(detail: detail)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
+                    .font(.footnote)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("All \(t.turnsCounted) turns").font(.subheadline.weight(.medium))
+                    Text("jibes or tacks · port or starboard entry")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.tertiary)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
     }
 
     private func outcomeCaption(_ counts: OutcomeCounts) -> String {
