@@ -36,13 +36,15 @@ public enum DesignTokens {
         public static let splash = Color.cyan
         /// the one effort-layer event with an outcome, so it alone borrows the ladder's red
         public static let failedTakeoff = Color.red
+        /// the selected record window: the glow on the track and the shading in the chart (the `effort` layer's ink, hex = systemOrange on dark)
+        public static let window = Color.orange
     }
 
     /// Track tint by phase.
     public enum Phase {
-        /// track tinted on foil
+        /// track tinted on foil (hex = systemTeal on dark, what SwiftUI .teal renders as)
         public static let flying = Color.teal
-        /// track tinted off foil
+        /// track tinted off foil (hex = the secondary label over a dark surface, what SwiftUI .secondary renders as)
         public static let offFoil = Color.secondary
     }
 
@@ -83,8 +85,9 @@ public enum DesignTokens {
         public static let effortTakeoff = "#3987e5"
         public static let effortSplash = "#3fc4d8"
         public static let effortFailedTakeoff = "#d03b3b"
-        public static let phaseFlying = "#3987e5"
-        public static let phaseOffFoil = "#4a4a45"
+        public static let effortWindow = "#ff9f0a"
+        public static let phaseFlying = "#40c8e0"
+        public static let phaseOffFoil = "#97979d"
         public static let directionInk = "#c3c2b7"
     }
 

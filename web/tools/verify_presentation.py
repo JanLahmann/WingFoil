@@ -10,7 +10,7 @@ this side of the repo, so a rule that drifts on one platform fails on both.
     lab/.venv/bin/python web/tools/verify_presentation.py
     lab/.venv/bin/python web/tools/verify_presentation.py --fast   # skip the engine run
 
-Four groups:
+Five groups:
 
 1. **Contract shape.** Every layer and record id in a presentation golden is one the
    contract knows (design/tokens.json, the same catalogue the iOS enums are checked
@@ -18,6 +18,8 @@ Four groups:
 2. **The rules, re-derived.** The counts are recomputed here from the analysis golden,
    written out differently from the generator on purpose: two spellings of the same rule
    agreeing is evidence, one spelling agreeing with itself is not.
+2b. **Flight-end folding.** A `glide_out` end is a hollow *flew through* mark, not a layer
+   of its own — asserted on the fixture with the most straight-line ends to fold.
 3. **Internal consistency.** Marker totals, takeoff totals and the filter grid have to
    add up against the analysis document's own summary block.
 4. **The engine path** (skipped by `--fast`): re-analyze one FIT through `web_entry`, the
@@ -49,6 +51,9 @@ TOKENS = REPO / "design" / "tokens.json"
 SESSIONS = REPO / "fixtures" / "sessions"
 
 CIQ = "2026-08-07-0754_nago-torbole-windsurfen_ciq"
+# A fixture whose flights end in a straight line: three `glide_out` ends no turn owns, which
+# is what makes it the one that can prove the folding rule below.
+GLIDE_OUT = "2026-08-03-0741_nago-torbole-windsurfen_native"
 
 PASSED = 0
 FAILED: list[str] = []
@@ -118,6 +123,8 @@ def check_shape() -> None:
               [(t, s) for t in gen.TYPE_FILTERS for s in gen.SIDE_FILTERS])
         check(f"  {stem}: bestHour is not offered",
               "bestHour" in facts["recordWindows"], False)
+        check(f"  {stem}: there is no glided-out layer",
+              "glideOut" in facts["markers"], False)
 
 
 # --------------------------------------------------------- 2. the rules, again
@@ -194,6 +201,37 @@ def check_rules() -> None:
                   sum(1 for t in kept if t["outcome"] in ("flew_through", "glide_out")))
 
 
+# ------------------------------------------------- 2b. flight ends fold into the ladder
+
+
+def check_flight_end_folding() -> None:
+    """A `glide_out` flight end is a *flew through* mark drawn hollow, not a layer of its own.
+
+    docs/presentation.md, "Colour and glyph vocabulary": the ladder carries the verdict and
+    the fill carries the channel — solid = a maneuver's outcome, hollow = a straight-line
+    flight end no turn explains. A separate "glided out" chip (which the web app used to
+    have) says the same thing twice and makes the two platforms count differently, so this
+    asserts the folding on the fixture that has the most straight-line ends to fold.
+    """
+    section("2b. glide-out flight ends fold into flewThrough (hollow, same ladder)")
+    doc, facts = load(GLIDE_OUT)
+    ends = Counter(e["outcome"] for e in gen.drawn_flight_ends(doc))
+    turns = Counter(t["outcome"] for t in doc.get("turns", []) if t["counted"])
+
+    # Without ends to fold the rest of this section would pass vacuously.
+    check(f"  {GLIDE_OUT}: has straight-line glide-outs to fold", ends["glide_out"], 3)
+    check(f"  {GLIDE_OUT}: they are counted under flewThrough",
+          facts["markers"]["flewThrough"], turns["flew_through"] + ends["glide_out"])
+    check(f"  {GLIDE_OUT}: and they are the difference — a turns-only count is short",
+          facts["markers"]["flewThrough"] - turns["flew_through"], ends["glide_out"])
+    check(f"  {GLIDE_OUT}: no glide-out chip exists to hold them",
+          sorted(facts["markers"]), ["courseChange", "fellIn", "flewThrough", "touchdown"])
+    # The hollow half must not leak into a verdict tally: the filter grid is turns only.
+    grid = {(row["type"], row["side"]): row for row in facts["filters"]}
+    check(f"  {GLIDE_OUT}: the filter grid counts turns, not ends",
+          grid[("both", "both")]["flewThrough"], turns["flew_through"] + turns["glide_out"])
+
+
 # ------------------------------------------------------ 3. internal consistency
 
 
@@ -226,8 +264,10 @@ def check_consistency() -> None:
         # The free/pumped split is only a *claim* where the source has a wrist
         # accelerometer. Without one the engine reports neither, every takeoff carries
         # `free: false`, and both apps draw the filled arrow — identically, which is what
-        # this asserts. (Whether a filled "this cost something" arrow is the right glyph
-        # for a run nobody counted strokes on is a contract question, not a drift.)
+        # this asserts. That is now written down rather than merely observed:
+        # docs/presentation.md, "Takeoff glyphs" — "On sources without an accelerometer
+        # stream every takeoff renders as the filled (pumped) arrow; free takeoffs cannot
+        # be distinguished without stroke counts."
         if doc.get("capabilities", {}).get("hasAccel"):
             check(f"  {stem}: free + pumped takeoffs are the engine's split",
                   [facts["takeoff"]["free"], facts["takeoff"]["pumped"]],
@@ -285,6 +325,7 @@ def main(argv=None) -> int:
 
     check_shape()
     check_rules()
+    check_flight_end_folding()
     check_consistency()
     if args.fast:
         _close_section()

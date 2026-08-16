@@ -28,9 +28,16 @@
   --ink-2:     #c3c2b7;
   --ink-3:     #8a8a80;
 
-  --series-1:  var(--wf-phase-flying);
+  /* The app's own blue: chrome, links, buttons and the Doppler trace. Not a presentation
+     token — the phase tints below are, and a track tinted with the brand colour reads as
+     chrome rather than as a category (docs/presentation.md "Phase tints"). */
+  --series-1:  #3987e5;
   --series-1-tint: #7fb0e8;
+  /* Phase tints, from design/tokens.json: teal on foil, secondary grey off it — what the
+     iOS app's .teal / .secondary render as on dark. */
+  --foil:      var(--wf-phase-flying);
   --track:     var(--wf-phase-off-foil);
+  --effort:    var(--wf-effort-window);
 
   --good:      var(--wf-outcome-flew);
   --warn:      var(--wf-outcome-touchdown);
@@ -315,7 +322,9 @@ input:focus-visible, button:focus-visible, .btn:focus-visible, .dropzone:focus-v
   font: 600 11px/1 var(--sans); text-transform: uppercase; letter-spacing: .06em;
   padding: 5px 9px; border-radius: 999px; color: var(--ink-3); background: var(--surface-0);
 }
-.readout .phase.flying { color: #9ec8f5; background: #14293f; }
+.readout .phase.flying {
+  color: var(--foil); background: color-mix(in srgb, var(--foil) 20%, var(--surface-0));
+}
 .readout #clear-playhead { margin-left: auto; }
 
 /* --- marker popover: the facts of one event, verbatim from the analysis document. */
@@ -370,7 +379,10 @@ td.dim { color: var(--ink-3); }
 .pill.flew_through { color: #7fd67f; border-color: #245a24; background: #11240f; }
 .pill.touchdown    { color: #f6c86a; border-color: #6a5117; background: #26200c; }
 .pill.fell_in      { color: #ee8b8b; border-color: #6b2626; background: #2a1414; }
-.pill.glide_out, .pill.unknown { color: var(--ink-3); }
+/* A glide-out is the green end of the ladder — a flight that ended without drama — and
+   only `unknown` (a recording that stopped) is a non-verdict grey. */
+.pill.glide_out    { color: #7fd67f; border-color: #245a24; background: #11240f; }
+.pill.unknown      { color: var(--ink-3); }
 
 .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px 20px; }
 .kv .row { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px;

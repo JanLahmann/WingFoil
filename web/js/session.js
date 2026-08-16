@@ -34,25 +34,43 @@ const el = (id) => document.getElementById(id);
 
 /** Draw order on the map and in the chart: context first, verdicts over it, the two
  *  glyph layers last so a busy stretch still reads. */
-const MARK_ORDER = ["courseChange", "glideOut", "flewThrough", "touchdown", "fellIn",
+const MARK_ORDER = ["courseChange", "flewThrough", "touchdown", "fellIn",
                     "splash", "takeoff"];
 
+/** Chip text, from the generated token catalogue — the same strings the iOS `MapLayer.label`
+ *  is checked against, so a chip cannot be renamed on one platform only. */
+const LABEL = Object.fromEntries(TOKENS.layers.map((l) => [l.id, l.label]));
+
+/**
+ * The legend, in chip order. `id` is the layer, `swatch` draws the thing it toggles.
+ *
+ * There is no "glided out" chip: a straight-line flight end is a mark on the *same* ladder
+ * drawn hollow — fill carries the channel — so it belongs to `flewThrough` (or to touchdown
+ * / fell in, when that is how the flight ended). A chip of its own said the same thing
+ * twice and made this app count flew-throughs differently from the iOS one.
+ */
 const LAYERS = [
-  { id: "flying",       label: "foiling",              swatch: () => lineSwatch(C.foil) },
-  { id: "offFoil",      label: "off foil",             swatch: () => lineSwatch(C.track) },
-  { id: "pumping",      label: "pumping",              swatch: () => lineSwatch(C.pump, 4.5) },
-  { id: "effort",       label: "record window",        swatch: () => lineSwatch(C.ink, 2.8) },
-  { id: "flewThrough",  label: "flew through",         swatch: () => glyphSwatch("disc", C.good) },
-  { id: "touchdown",    label: "touched down",         swatch: () => glyphSwatch("triangle", C.warn) },
-  { id: "fellIn",       label: "fell in",              swatch: () => glyphSwatch("cross", C.bad) },
-  { id: "glideOut",     label: "glided out",           swatch: () => glyphSwatch("square", C.ink2) },
-  { id: "courseChange", label: "bear-away / round-up", swatch: () => glyphSwatch("hairline", C.reject) },
-  { id: "takeoff",      label: "takeoff",              swatch: () => glyphSwatch("arrow-up", C.takeoff) },
-  { id: "splash",       label: "wrist under",          swatch: () => glyphSwatch("drop", C.splash) },
+  { id: "flying",       swatch: () => lineSwatch(C.foil) },
+  { id: "offFoil",      swatch: () => lineSwatch(C.track) },
+  { id: "pumping",      swatch: () => lineSwatch(C.pump, 4.5) },
+  { id: "direction",    swatch: () => chevronSwatch() },
+  { id: "effort",       swatch: () => lineSwatch(C.effort, 2.8) },
+  { id: "flewThrough",  swatch: () => glyphSwatch("disc", C.good) },
+  { id: "touchdown",    swatch: () => glyphSwatch("triangle", C.warn) },
+  { id: "fellIn",       swatch: () => glyphSwatch("cross", C.bad) },
+  { id: "courseChange", swatch: () => glyphSwatch("hairline", C.reject) },
+  { id: "takeoff",      swatch: () => glyphSwatch("arrow-up", C.takeoff) },
+  { id: "splash",       swatch: () => glyphSwatch("drop", C.splash) },
 ];
 
 const OUTCOME_LAYER = { flew_through: "flewThrough", touchdown: "touchdown",
-                        fell_in: "fellIn", glide_out: "glideOut" };
+                        fell_in: "fellIn", glide_out: "flewThrough" };
+
+/** The direction chip's swatch: the chevron itself, at chip size and in its own ink. */
+const chevronSwatch = () =>
+  `<svg viewBox="-8 -8 16 16"><path d="M-3.4,-3.4 L1.8,0 L-3.4,3.4" fill="none"
+    stroke="${TOKENS.direction.ink.hex}" stroke-width="1.8" stroke-linecap="round"
+    stroke-linejoin="round"/></svg>`;
 
 /* --------------------------------------------------------------------- the state */
 
@@ -135,10 +153,12 @@ function buildModel(result) {
   }
 
   // --- straight-line flight ends (hollow squares) -------------------------------
+  // Same ladder as the turns, hollow instead of solid: the fill is the channel, so these
+  // answer to the outcome chips rather than to one of their own.
   for (const e of v.endMarkers.filter((x) => x.drawOnMap)) {
     const end = g.flightEnds[e.i];
     marks.push({
-      layer: OUTCOME_LAYER[e.outcome] || "glideOut", t: e.t, x: e.x, y: e.y,
+      layer: OUTCOME_LAYER[e.outcome] || "flewThrough", t: e.t, x: e.x, y: e.y,
       kn: e.kn ?? traceKn(v, e.t), style: endStyle(e), n: null,
       title: `Flight ${e.flightIndex + 1} ends · straight line`,
       tip: `<b>${clockAt(meta.startUtc, e.t)}</b> — flight ${e.flightIndex + 1} ends<br>` +
@@ -255,6 +275,10 @@ function tally(model, highlight) {
   counts.offFoil = model.v.count ? 1 : 0;
   counts.pumping = model.pumpSpans.length;
   counts.effort = highlightWindows(highlight).length;
+  // Counted as "is there a track to point along", not as chevrons drawn: how many arrows
+  // fit is a question about the camera, and the chip has to be live or inert before
+  // anything is laid out (the iOS legend counts track runs for the same reason).
+  counts.direction = model.positioned ? 1 : 0;
   return counts;
 }
 
@@ -349,8 +373,8 @@ function drawMap() {
       }
     }
   }
-  // Under the effort glow and under the markers: a pump run is context for the takeoff
-  // that ends it, not a thing to read on its own.
+  // Under the effort glow and under the markers: a pumping attempt is context for the
+  // takeoff (or the failure) that ends it, not a thing to read on its own.
   if (visible("pumping")) {
     for (const span of model.pumpSpans) {
       for (const pts of polylineRuns(v, (t) => t >= span.t0 && t <= span.t1)) {
@@ -362,11 +386,14 @@ function drawMap() {
   }
 
   // Direction of travel, decimated by on-screen spacing so a slow stretch does not turn
-  // into a solid bar of chevrons. Drawn over the track and under everything else.
-  chevrons(root, runs, X, Y, narrow ? 34 : 46);
+  // into a solid bar of chevrons. Drawn over the track and under everything else, and
+  // hidden by its own chip — the arrows are not the route, so removing them leaves the
+  // track exactly as it was.
+  if (visible("direction")) chevrons(root, runs, X, Y, narrow ? 34 : 46);
 
-  // The highlighted record window, on top of the track but under the markers: a white halo
-  // plus a white line. White is not in the outcome ramp, so it cannot be mistaken for one.
+  // The highlighted record window, on top of the track but under the markers: a dark halo
+  // so the glow separates from whatever it is drawn over, then the effort ink itself — the
+  // same orange the iOS map glows in, and one of the two marks the `effort` token owns.
   const hw = highlightWindows(state.highlight);
   if (hw.length && visible("effort")) {
     for (const pts of polylineRuns(v, (t) => inWindows(hw, t))) {
@@ -374,7 +401,7 @@ function drawMap() {
       svg("polyline", { points, fill: "none", stroke: C.surface, "stroke-width": 6.5,
                         opacity: 0.85, "stroke-linecap": "round",
                         "stroke-linejoin": "round" }, root);
-      svg("polyline", { points, fill: "none", stroke: C.ink, "stroke-width": 3.0,
+      svg("polyline", { points, fill: "none", stroke: C.effort, "stroke-width": 3.0,
                         "stroke-linecap": "round", "stroke-linejoin": "round",
                         "data-span": "effort" }, root);
     }
@@ -402,6 +429,7 @@ function drawMap() {
                           "pointer-events": "none" }, root);
   const halo = svg("circle", { r: 11, fill: C.foil, opacity: 0.26 }, head);
   const dot = svg("circle", { r: 5.2, fill: C.foil, stroke: C.ink, "stroke-width": 2 }, head);
+  // (its fill follows the phase under it — see applyPlayhead)
 
   state.live.map = { root, X, Y, head, halo, dot, W, H };
   wireMapScrub(root, W, H, X, Y);
@@ -651,9 +679,9 @@ function drawStrip() {
     if (w.startTs + w.durS < t0 || w.startTs > t1) return;
     const x0 = X(w.startTs), x1 = Math.max(X(w.startTs + w.durS), x0 + 2.5);
     const band = svg("rect", { x: x0, y: T, width: x1 - x0, height: plotH,
-                               fill: C.ink, opacity: 0.14, "data-band": "effort" }, plot);
+                               fill: C.effort, opacity: 0.18, "data-band": "effort" }, plot);
     for (const x of [x0, x1]) {
-      svg("line", { x1: x, x2: x, y1: T, y2: H - B, stroke: C.ink, "stroke-width": 1.1,
+      svg("line", { x1: x, x2: x, y1: T, y2: H - B, stroke: C.effort, "stroke-width": 1.1,
                     opacity: 0.75, "stroke-dasharray": "4 3" }, plot);
     }
     const facts = {
@@ -675,14 +703,16 @@ function drawStrip() {
       const flip = x1 > W * 0.62;
       const t = svg("text", { x: flip ? x0 - 6 : x1 + 6, y: T + 12,
                               "text-anchor": flip ? "end" : "start", "font-size": 11,
-                              "font-weight": 700, fill: C.ink, stroke: C.surface,
+                              "font-weight": 700, fill: C.effort, stroke: C.surface,
                               "stroke-width": 3, "paint-order": "stroke" }, plot);
       t.textContent = state.highlight.label;
     }
   });
 
+  // The two speed channels are *series*, not phases: they keep the app's own blue, and
+  // the teal above them is the flight shading — the same split the iOS chart makes.
   series(plot, v, v.speedKn, X, Y, C.tint, 1.0, 0.85, t0, t1);
-  series(plot, v, v.dopplerKn, X, Y, C.foil, 1.5, 1, t0, t1);
+  series(plot, v, v.dopplerKn, X, Y, C.series, 1.5, 1, t0, t1);
 
   for (const mk of state.model.marks) {
     if (!visible(mk.layer) || !inView(mk.t)) continue;
@@ -697,7 +727,7 @@ function drawStrip() {
   const cross = svg("g", { visibility: "hidden", "pointer-events": "none" }, root);
   const cline = svg("line", { y1: T, y2: H - B, stroke: C.ink3, "stroke-width": 1,
                               "stroke-dasharray": "3 3" }, cross);
-  const cdot = svg("circle", { r: 3.4, fill: C.foil, stroke: C.surface,
+  const cdot = svg("circle", { r: 3.4, fill: C.series, stroke: C.surface,
                                "stroke-width": 1.4 }, cross);
 
   const head = svg("g", { id: "playhead-strip", visibility: "hidden",
@@ -957,7 +987,7 @@ function applyPlayhead() {
   const v = model.v;
   const i = indexAt(v, t);
   const flying = inFlight(v, t);
-  const tint = flying ? C.foil : C.ink2;
+  const tint = flying ? C.foil : C.track;          // the phase tints, same as the track
 
   if (live.map) {
     const p = interpolate(v, t);
@@ -1035,9 +1065,15 @@ function drawChips() {
     .map((layer) => {
       const n = counts[layer.id] || 0;
       const on = visible(layer.id);
+      // The effort chip is labelled with the window it is currently highlighting ("best
+      // 2 s"), which is what the iOS chip says; the catalogue's "best effort" is the
+      // fallback. Every other chip is the catalogue's word, verbatim.
       const text = layer.id === "effort" && state.highlight?.label
-        ? state.highlight.label.toLowerCase() : layer.label;
-      const count = layer.id === "offFoil" ? "" : `<span class="n">${n}</span>`;
+        ? state.highlight.label.toLowerCase() : LABEL[layer.id];
+      // Two chips are properties of the route rather than tallies of events, and "1" beside
+      // them would read as "one off-foil thing" — they carry no number.
+      const count = layer.id === "offFoil" || layer.id === "direction"
+        ? "" : `<span class="n">${n}</span>`;
       if (!n) {
         return `<span class="item chip off-empty" data-layer="${layer.id}">` +
                `${layer.swatch()}<span>${esc(text)}</span></span>`;
@@ -1052,9 +1088,9 @@ function drawChips() {
     ? `<button type="button" class="ghost small-btn" id="show-all-layers">Show all</button>` : "";
   host.innerHTML = chips + showAll +
     `<p class="legend-note">Tap a chip to hide or show it on the map <em>and</em> in the
-      speed strip. Solid shape = manoeuvre outcome · hollow square = straight-line flight
-      end · arrow = takeoff, red u-turn = a failed attempt. Drag either figure to move the
-      playhead.</p>`;
+      speed strip. Chevrons point the way you were riding. Solid shape = manoeuvre outcome ·
+      hollow square = straight-line flight end, on the same colour ladder · arrow = takeoff,
+      red u-turn = a failed attempt. Drag either figure to move the playhead.</p>`;
 
   host.onclick = (ev) => {
     const chip = ev.target.closest(".chip-btn");
@@ -1083,7 +1119,7 @@ function drawStripLegend() {
   const host = el("strip-legend");
   const v = state.model.v;
   const items = [
-    `<span class="item">${lineSwatch(C.foil)}Doppler — drives the flight state</span>`,
+    `<span class="item">${lineSwatch(C.series)}Doppler — drives the flight state</span>`,
     `<span class="item">${lineSwatch(C.tint)}positional — scores the turns</span>`,
   ];
   if (visible("flying")) {
@@ -1094,7 +1130,7 @@ function drawStripLegend() {
   }
   const hw = visible("effort") ? highlightWindows(state.highlight) : [];
   if (hw.length) {
-    items.push(`<span class="item">${bandSwatch(C.ink, 0.25)}` +
+    items.push(`<span class="item">${bandSwatch(C.effort, 0.3)}` +
                `${esc(state.highlight.label || "record window")}` +
                `${hw.length > 1 ? ` (${hw.length} windows)` : ""}</span>`);
   }

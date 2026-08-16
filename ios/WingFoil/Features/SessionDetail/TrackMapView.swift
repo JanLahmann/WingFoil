@@ -130,10 +130,12 @@ private struct TrackContent: MapContent {
                         style: StrokeStyle(lineWidth: Self.width(style),
                                            lineCap: .round, lineJoin: .round))
         }
-        // Under the effort glow and under the markers: a pump run is context for the
-        // takeoff that ends it, not a thing to read on its own.
+        // Under the effort glow and under the markers: a pumping attempt is context for
+        // the takeoff (or the failure) that ends it, not a thing to read on its own.
         if visibility.isVisible(.pumping) {
-            ForEach(detail.pumpSpans) { span in
+            // An attempt the GPS had no fix for is counted by the legend and drawn by
+            // nobody: a one-point polyline is not a stretch of water.
+            ForEach(detail.pumpSpans.filter { $0.points.count >= 2 }) { span in
                 MapPolyline(coordinates: span.points.map(Self.coordinate))
                     .stroke(EventMarkerStyle.pumping.opacity(0.75),
                             style: StrokeStyle(lineWidth: 6, lineCap: .round,
@@ -156,7 +158,7 @@ private struct TrackContent: MapContent {
         // computed (`records.windows`), so the rider can see *where* the best run happened.
         if let effort, effort.points.count >= 2, visibility.isVisible(.effort) {
             MapPolyline(coordinates: effort.points.map(Self.coordinate))
-                .stroke(Color.orange,
+                .stroke(DesignTokens.Effort.window,
                         style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))
         }
         if visibility.isVisible(.takeoff) {
@@ -203,9 +205,9 @@ private struct TrackContent: MapContent {
     /// would be a much worse surprise than an unwanted tint.
     private static func color(_ style: TrackLineStyle) -> Color {
         switch style {
-        case .flying: return .teal
-        case .offFoil: return Color.secondary.opacity(0.65)
-        case .neutral: return Color.secondary.opacity(0.3)
+        case .flying: return DesignTokens.Phase.flying
+        case .offFoil: return DesignTokens.Phase.offFoil.opacity(0.65)
+        case .neutral: return DesignTokens.Phase.offFoil.opacity(0.3)
         }
     }
 
@@ -256,7 +258,8 @@ private extension DirectionChevron {
     /// from the line in both light and dark mode.
     var tint: Color {
         switch style {
-        case .flying: return Color.teal.mix(with: Color(.label), by: 0.55).opacity(0.62)
+        case .flying:
+            return DesignTokens.Phase.flying.mix(with: Color(.label), by: 0.55).opacity(0.62)
         case .offFoil: return Color(.label).opacity(0.38)
         case .neutral: return Color(.label).opacity(0.22)
         }
@@ -316,7 +319,7 @@ private struct PlayheadDot: View {
     let flying: Bool
 
     var body: some View {
-        let tint = flying ? Color.teal : Color.secondary
+        let tint = flying ? DesignTokens.Phase.flying : DesignTokens.Phase.offFoil
         ZStack {
             Circle().fill(tint.opacity(0.28)).frame(width: 28, height: 28)
             Circle()

@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v4";      // v4: generated design tokens (css/tokens.css, js/tokens.js)
+const VERSION = "v5";      // v5: unified presentation — phase tints, effort ink, chip labels
 const SHELL = `wingfoil-shell-${VERSION}`;
 const RUNTIME = `wingfoil-runtime-${VERSION}`;
 

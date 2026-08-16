@@ -18,9 +18,10 @@
   --wf-effort-takeoff: #3987e5;
   --wf-effort-splash: #3fc4d8;
   --wf-effort-failed-takeoff: #d03b3b;
+  --wf-effort-window: #ff9f0a;
   /* phase */
-  --wf-phase-flying: #3987e5;
-  --wf-phase-off-foil: #4a4a45;
+  --wf-phase-flying: #40c8e0;
+  --wf-phase-off-foil: #97979d;
   /* direction */
   --wf-direction-ink: #c3c2b7;
   /* opacity */

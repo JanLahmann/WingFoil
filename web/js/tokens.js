@@ -42,15 +42,19 @@ export const TOKENS = {
     "failedTakeoff": {
       "hex": "#d03b3b",
       "swiftUI": "red"
+    },
+    "window": {
+      "hex": "#ff9f0a",
+      "swiftUI": "orange"
     }
   },
   "phase": {
     "flying": {
-      "hex": "#3987e5",
+      "hex": "#40c8e0",
       "swiftUI": "teal"
     },
     "offFoil": {
-      "hex": "#4a4a45",
+      "hex": "#97979d",
       "swiftUI": "secondary"
     }
   },

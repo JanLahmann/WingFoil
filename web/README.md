@@ -203,8 +203,8 @@ One Python call (`library.aggregate`) over the stored digests produces the whole
 
 - **All-time records** — every GP3S kind (best 2 s … best 1 NM, alpha 500) with the value,
   the session and the date. Ties go to the earlier session: the record was set then.
-  *Show the window* opens that session with **that record's exact window** marked in white on
-  the track and on the speed strip — the provenance is already in every analysis document
+  *Show the window* opens that session with **that record's exact window** marked in orange
+  (the effort ink, one token for both apps) on the track and on the speed strip — the provenance is already in every analysis document
   under `records.windows`, so nothing is recomputed to draw it. Best 5×10 s marks all five.
 - **Session by session** — on-foil %, longest flight, turn success rate, average pumps to
   takeoff, and turn success split by the tack the turn was *entered* on. Oldest first; click
@@ -343,17 +343,20 @@ groups (**153 assertions**, all green at the time of writing — 30 / 8 / 28 / 4
 4. **Check the numbers** against the golden above: 23 flights, 60 % on foil, 12.76 km,
    Turns 30, Outcomes 9/9/12, wind 36°, best 2 s 11.36 kn. Badges: `wingfoil`,
    `CIQ dev fields`, `accel`, `HR`.
-5. **Map.** North-up track; grey off-foil line with blue foiling segments on top; small
-   chevrons showing which way he went; numbered markers — green discs / amber triangles /
-   red crosses / grey hairline crosses for bear-aways / hollow squares for straight-line
-   flight ends / blue takeoff arrows / red hollow u-turns for failed attempts / cyan drops
-   where the barometer saw the wrist go under; wind arrow + scale bar. Hovering a marker
+5. **Map.** North-up track; grey off-foil line with teal foiling segments on top (the phase
+   tints, the same two the iOS map uses); small chevrons showing which way he went; numbered
+   markers — green discs / amber triangles / red crosses / grey hairline crosses for
+   bear-aways / hollow squares on the *same* colour ladder for straight-line flight ends (a
+   glide-out is a hollow green square, not a category of its own) / blue takeoff arrows /
+   red hollow u-turns for failed attempts / cyan drops where the barometer saw the wrist go
+   under; wind arrow + scale bar. Hovering a marker
    shows a tooltip, tapping one opens a popover of that event's facts. The legend counts
    must match the tiles. (A file with no GPS fixes at all must show *"No GPS positions in
    this file"* in the map slot and still render every other section —
    `tools/verify_web_entry.py` covers this headlessly.)
-6. **Speed strip.** Blue Doppler line over the paler positional line, blue flight bands,
-   purple pumping bands, the same marker numbers as the map. Moving the pointer across it
+6. **Speed strip.** Blue Doppler line over the paler positional line, teal flight bands,
+   purple pumping bands (one per pumping attempt — 37 on the CIQ file, the number the
+   presentation golden pins), the same marker numbers as the map. Moving the pointer across it
    shows a crosshair with the time and both speeds.
 6b. **The interactions** (`js/session.js`), which is what the two figures are *for*:
    - **Scrub.** Drag the speed strip: a dashed rule follows the pointer, a dot slides along
@@ -361,8 +364,12 @@ groups (**153 assertions**, all green at the time of writing — 30 / 8 / 28 / 4
      — clock time, elapsed, both speeds, flying or off foil. Drag on or near the track
      instead: the same three move together. A press well away from the track does nothing
      rather than yanking the playhead somewhere unrelated.
-   - **Layer chips.** Every chip hides its category on the map *and* in the chart. A chip
-     with nothing to show stays as a subdued caption, not a dead button. "Show all" returns.
+   - **Layer chips.** Eleven of them, worded by `design/tokens.json` and therefore the same
+     words the iOS legend uses: flying · off foil · pumping · direction · best 2 s (the
+     effort chip is named after the window it is showing) · flew through · touchdown · fell
+     in · course change · takeoff · splash. Every chip hides its category on the map *and*
+     in the chart — `direction` takes the chevrons with it and leaves the route. A chip with
+     nothing to show stays as a subdued caption, not a dead button. "Show all" returns.
    - **Zoom.** Wheel or trackpad over the plot (or a two-finger pinch on a touch screen)
      zooms the time axis about the pointer; markers and bands outside the window are not
      drawn; the axis switches to m:ss; "Reset zoom" or a double-click restores it. Scrubbing
@@ -391,8 +398,8 @@ groups (**153 assertions**, all green at the time of writing — 30 / 8 / 28 / 4
     entirely and *Open* again — it must still work, because nothing is fetched. `.fit` and
     `.json` download; *Download all (.zip)* produces an archive that unzips.
 16. **Records & trends.** Every record row names the session it came from. *Show the window*
-    jumps to that session with a white band on the speed strip and a white overlay on the
-    track, plus a "Showing …" note with a *Clear* button. A session with no accelerometer
+    jumps to that session with an orange band on the speed strip and an orange overlay on
+    the track, plus a "Showing …" note with a *Clear* button. A session with no accelerometer
     must leave a **gap** in the pumps chart, not a point at zero.
 17. **Delete.** Confirm, and the row, the files and the storage figure all go down. The
     trends view recomputes (a record that belonged to the deleted session disappears).
