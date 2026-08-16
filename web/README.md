@@ -18,7 +18,8 @@ web/
 ├── manifest.webmanifest        PWA metadata
 ├── sw.js                       service worker: app-shell precache + Pyodide runtime cache
 ├── icons/                      copied from brand/ — nothing is hotlinked outside web/
-├── css/style.css               dark styling + the data-viz palette
+├── css/tokens.css              GENERATED from design/tokens.json — do not edit
+├── css/style.css               dark styling + the data-viz palette (reads the tokens)
 ├── js/app.js                   file intake, view routing, save-to-library, SW updates
 ├── js/rpc.js                   the one channel to the worker (request/response by id)
 ├── js/worker.js                Pyodide worker — loads the runtime + the lab, runs the pipeline
@@ -27,6 +28,7 @@ web/
 │                               playhead they share, layer chips, zoom, marker popovers
 ├── js/viz.js                   drawing primitives both figure files share: palette, SVG
 │                               helpers, the marker vocabulary, formatters, tooltip
+├── js/tokens.js                GENERATED from design/tokens.json — do not edit
 ├── js/store.js                 OPFS storage, with an IndexedDB fallback
 ├── js/library.js               library view: rows, open, delete, per-session + zip export
 ├── js/trends.js                records table + inline-SVG trend charts
@@ -40,6 +42,10 @@ web/
 ├── tools/bundle_lab.py         regenerates lab_bundle/wingfoil_lab
 ├── tools/verify_web_entry.py   headless checks: golden parity + no-GPS regression
 ├── tools/verify_library.py     headless checks: dedupe, digests, records, trends, zip
+├── tools/make_presentation_goldens.py
+│                               writes fixtures/presentation/ from the analysis goldens
+├── tools/verify_presentation.py
+│                               headless checks: marker/filter counts vs those goldens
 └── .nojekyll                   GitHub Pages: serve files verbatim
 ```
 

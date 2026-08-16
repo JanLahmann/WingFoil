@@ -377,7 +377,7 @@ struct SessionDetail: Sendable {
             add(t: turn.ts, tone: tone, filled: true,
                 title: turnTitle(turn), detail: detail)
         }
-        for end in analysis.flightEnds where end.ownedByTurn == nil && !end.truncated {
+        for end in PresentationRules.drawnFlightEnds(analysis) {
             var detail = "straight-line"
             if end.stoppedS > 0 { detail += String(format: " · stopped %.0f s", end.stoppedS) }
             if end.submerged { detail += " · wrist under" }
@@ -387,10 +387,12 @@ struct SessionDetail: Sendable {
         return out.sorted { $0.t < $1.t }
     }
 
+    /// Through the shared rule (`PresentationRules`), not a second copy of the ladder:
+    /// the chip a mark answers to and the colour it is drawn in must be the same decision.
     private static func outcomeTone(_ outcome: String) -> EventMarker.Tone {
-        switch outcome {
-        case "fell_in": return .fell
-        case "touchdown": return .touchdown
+        switch PresentationRules.layer(forOutcome: outcome) {
+        case .fellIn: return .fell
+        case .touchdown: return .touchdown
         default: return .flew            // flew_through | glide_out
         }
     }
@@ -481,7 +483,7 @@ struct SessionDetail: Sendable {
         }
         // The episode's *first* stroke, not its last: the marker should sit where he
         // started trying, which is where the pumping run he can recognise begins.
-        for episode in analysis.pumpEpisodes where episode.outcome == .failed {
+        for episode in PresentationRules.failedAttempts(analysis) {
             var detail = "\(episode.strokes) stroke\(episode.strokes == 1 ? "" : "s")"
             let duration = episode.endTs - episode.startTs
             if duration >= 1 { detail += String(format: " · %.0f s", duration) }
@@ -510,12 +512,11 @@ struct SessionDetail: Sendable {
             out.append(SplashMark(id: out.count, t: t, lat: lat, lon: lon,
                                   title: title, detail: detail))
         }
-        for turn in analysis.turns where turn.submerged && turn.counted {
+        for turn in PresentationRules.splashTurns(analysis) {
             add(t: turn.ts, title: "\(TurnAnalytics.typeLabel(turn.type)) · wrist under",
                 detail: String(format: "%.1f → %.1f kn", turn.entryKn, turn.minKn))
         }
-        for end in analysis.flightEnds
-        where end.submerged && end.ownedByTurn == nil && !end.truncated {
+        for end in PresentationRules.splashEnds(analysis) {
             add(t: end.ts, title: "Wrist under",
                 detail: end.stoppedS > 0
                     ? String(format: "straight-line · stopped %.0f s", end.stoppedS)

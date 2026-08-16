@@ -1,0 +1,39 @@
+# The presentation values cannot drift silently (docs/presentation.md "Enforcement" 1).
+#
+# design/tokens.json is the only file a human edits; DesignTokens.swift, css/tokens.css
+# and js/tokens.js are generated from it. This job regenerates into a temp tree and
+# compares bytes, so a colour typed straight into EventMarkerStyle.swift or viz.js — or a
+# token changed without re-running the generator — fails here instead of showing up as
+# two apps drawing the same jibe in two different greens.
+#
+# pages.yml runs the same check before deploying (the web app consumes two of the three
+# artifacts); this job is what covers a design/ or iOS-only change, which never touches
+# web/ and so never triggers a deploy.
+name: Design tokens
+
+on:
+  push:
+    branches: [main]
+    paths: &token_paths
+      - "design/**"
+      - "ios/WingFoilKit/Sources/WingFoilKit/Presentation/DesignTokens.swift"
+      - "web/css/tokens.css"
+      - "web/js/tokens.js"
+      - ".github/workflows/tokens.yml"
+  pull_request:
+    paths: *token_paths
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tokens-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Token staleness check
+        run: python design/check_tokens.py --check

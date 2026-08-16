@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v3";      // v3: interactive session view (shared playhead, layers, zoom)
+const VERSION = "v4";      // v4: generated design tokens (css/tokens.css, js/tokens.js)
 const SHELL = `wingfoil-shell-${VERSION}`;
 const RUNTIME = `wingfoil-runtime-${VERSION}`;
 
@@ -28,6 +28,7 @@ const APP_SHELL = [
   "./",
   "index.html",
   "manifest.webmanifest",
+  "css/tokens.css",
   "css/style.css",
   "js/app.js",
   "js/icu.js",
@@ -36,6 +37,7 @@ const APP_SHELL = [
   "js/rpc.js",
   "js/session.js",
   "js/store.js",
+  "js/tokens.js",
   "js/trends.js",
   "js/viz.js",
   "js/worker.js",

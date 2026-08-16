@@ -26,6 +26,7 @@ import {
   C, OUTCOME_LABEL, bandSwatch, clockAt, endStyle, esc, figureWidth, glyphSwatch, hideTip,
   hms, isNarrow, label, lineSwatch, marker, nf, showTip, svg, tipTarget, turnStyle,
 } from "./viz.js";
+import { TOKENS } from "./tokens.js";
 
 const el = (id) => document.getElementById(id);
 
@@ -170,7 +171,9 @@ function buildModel(result) {
     }
     marks.push({
       layer: "takeoff", t: k.startTs, x: p.x, y: p.y, kn: traceKn(v, k.startTs),
-      style: { shape: k.free ? "arrow-up-hollow" : "arrow-up", color: C.takeoff }, n: null,
+      style: { shape: (k.free ? TOKENS.glyphs.takeoffFree : TOKENS.glyphs.takeoffPumped)
+                        .webShape,
+               color: C.takeoff }, n: null,
       title: k.free ? "Free takeoff" : "Takeoff",
       tip: `<b>${clockAt(meta.startUtc, k.startTs)}</b> — ${k.free ? "free takeoff" : "takeoff"}<br>` +
            `up at ${nf(k.entryKn, 1)} kn` +
@@ -184,7 +187,7 @@ function buildModel(result) {
     const p = at(ep.startTs);
     marks.push({
       layer: "takeoff", t: ep.startTs, x: p.x, y: p.y, kn: traceKn(v, ep.startTs),
-      style: { shape: "uturn", color: C.bad }, n: null,
+      style: { shape: TOKENS.glyphs.takeoffFailed.webShape, color: C.failedTakeoff }, n: null,
       title: "Failed attempt",
       tip: `<b>${clockAt(meta.startUtc, ep.startTs)}</b> — failed attempt<br>` +
            `${ep.strokes} stroke${ep.strokes === 1 ? "" : "s"}, no flight`,
@@ -205,7 +208,7 @@ function buildModel(result) {
     const p = at(turn.ts);
     marks.push({
       layer: "splash", t: turn.ts, x: p.x, y: p.y, kn: traceKn(v, turn.ts),
-      style: { shape: "drop", color: C.splash }, n: null,
+      style: { shape: TOKENS.glyphs.splash.webShape, color: C.splash }, n: null,
       title: `${turn.type} · wrist under`,
       tip: `<b>${clockAt(meta.startUtc, turn.ts)}</b> — wrist under<br>` +
            `${esc(turn.type)} · ${nf(turn.entryKn, 1)} → ${nf(turn.minKn, 1)} kn`,
@@ -219,7 +222,7 @@ function buildModel(result) {
     const p = at(end.ts);
     marks.push({
       layer: "splash", t: end.ts, x: p.x, y: p.y, kn: traceKn(v, end.ts),
-      style: { shape: "drop", color: C.splash }, n: null,
+      style: { shape: TOKENS.glyphs.splash.webShape, color: C.splash }, n: null,
       title: "Wrist under",
       tip: `<b>${clockAt(meta.startUtc, end.ts)}</b> — wrist under<br>straight-line flight end`,
       rows: [["time", time(end.ts)], ["evidence", "barometer saw the wrist go under"],
@@ -430,7 +433,10 @@ const screenPoints = (pts, X, Y) =>
  * where the track is already most crowded.
  */
 function chevrons(root, runs, X, Y, spacing) {
-  const g = svg("g", { id: "track-chevrons", fill: "none", stroke: C.ink2, opacity: 0.42,
+  // Ink and opacity from design/tokens.json: the chevrons indicate, never compete, and
+  // "how subordinate" is a value the two apps have to agree on (docs/presentation.md).
+  const g = svg("g", { id: "track-chevrons", fill: "none", stroke: TOKENS.direction.ink.hex,
+                       opacity: TOKENS.opacity.directionWeb,
                        "stroke-width": 1.3, "stroke-linecap": "round",
                        "stroke-linejoin": "round", "pointer-events": "none" }, root);
   for (const pts of runs) {

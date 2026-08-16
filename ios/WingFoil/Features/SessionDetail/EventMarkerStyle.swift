@@ -5,28 +5,33 @@ import WingFoilKit
 /// drift apart. Colour carries the verdict (docs/algorithms.md "Turn outcome" /
 /// "Flight-end outcome"), fill carries the *channel*: solid = a maneuver's outcome,
 /// hollow = a straight-line flight end that no turn explains.
+///
+/// The *values* are not written here any more: they come from `DesignTokens`, generated
+/// from `design/tokens.json`, so the same edit reaches the web app's CSS in the same
+/// commit (docs/presentation.md "Enforcement"). This file still owns the *meanings* —
+/// which tone belongs to which verdict, and which glyph to which takeoff kind.
 enum EventMarkerStyle {
 
     static func color(_ tone: SessionDetail.EventMarker.Tone) -> Color {
         switch tone {
-        case .flew: return .green
-        case .touchdown: return .orange
-        case .fell: return .red
-        case .course: return .gray
+        case .flew: return DesignTokens.Outcome.flew
+        case .touchdown: return DesignTokens.Outcome.touchdown
+        case .fell: return DesignTokens.Outcome.fellIn
+        case .course: return DesignTokens.Outcome.courseChange
         }
     }
 
     /// The three layers that are about *effort and water* rather than about an outcome.
     /// They are deliberately outside the green/amber/red ladder: nothing here is a verdict,
     /// so borrowing the verdict palette would make a takeoff look like a good jibe.
-    static let pumping = Color.indigo
-    static let takeoff = Color.blue
-    static let splash = Color.cyan
+    static let pumping = DesignTokens.Effort.pumping
+    static let takeoff = DesignTokens.Effort.takeoff
+    static let splash = DesignTokens.Effort.splash
     /// The one exception, and it earns it: a *failed* attempt is the single event in these
     /// three layers that has an outcome, so it borrows the ladder's red. Shape and fill
     /// carry the distinction on their own (see `takeoffMark`), so nothing here depends on
     /// telling red from blue.
-    static let failedTakeoff = Color.red
+    static let failedTakeoff = DesignTokens.Effort.failedTakeoff
 
     /// The dot itself, at a size that stays legible on a zoomed-out track.
     @ViewBuilder
@@ -50,9 +55,9 @@ enum EventMarkerStyle {
     /// two. The takeoff arrows stay blue and unchanged around it.
     static func takeoffSymbol(_ kind: SessionDetail.TakeoffMark.Kind) -> String {
         switch kind {
-        case .pumped: return "arrow.up.circle.fill"
-        case .free: return "arrow.up.circle"
-        case .failed: return "arrow.uturn.down.circle"
+        case .pumped: return DesignTokens.Glyph.takeoffPumped
+        case .free: return DesignTokens.Glyph.takeoffFree
+        case .failed: return DesignTokens.Glyph.takeoffFailed
         }
     }
 
@@ -69,7 +74,7 @@ enum EventMarkerStyle {
 
     @ViewBuilder
     static func splashMark(size: CGFloat = 12) -> some View {
-        Image(systemName: "drop.fill")
+        Image(systemName: DesignTokens.Glyph.splash)
             .font(.system(size: size, weight: .semibold))
             .foregroundStyle(splash)
             .shadow(radius: 1)

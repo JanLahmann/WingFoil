@@ -1342,4 +1342,167 @@ import Testing
         // them to a neutral route they do not have.
         #expect(MapLayer.direction.isMarker && !MapLayer.direction.isLine)
     }
+
+    // MARK: - Presentation goldens
+
+    /// One `fixtures/presentation/*.expected.json`: what a session-detail screen is
+    /// allowed to draw from the analysis of the same name.
+    private struct PresentationGolden: Decodable {
+        struct Markers: Decodable {
+            let flewThrough: Int
+            let touchdown: Int
+            let fellIn: Int
+            let courseChange: Int
+        }
+
+        struct Takeoff: Decodable {
+            let pumped: Int
+            let free: Int
+            let failed: Int
+            let total: Int
+        }
+
+        struct Filter: Decodable {
+            let type: String
+            let side: String
+            let count: Int
+            let flewThrough: Int
+        }
+
+        let fixture: String
+        let markers: Markers
+        let takeoff: Takeoff
+        let splash: Int
+        let pumpingSpans: Int
+        let recordWindows: [String]
+        let defaultRecordWindow: String?
+        let filters: [Filter]
+    }
+
+    /// The other half of docs/presentation.md's enforcement: the *counts* are pinned, per
+    /// fixture, and the web verification asserts the same file with the same rules
+    /// (`web/tools/verify_presentation.py`). A marker that appears here and not there —
+    /// or a filter that quietly starts counting bear-aways — fails on both platforms in
+    /// the same commit rather than turning up as "the two apps disagree" months later.
+    ///
+    /// The analysis goldens are decoded rather than recomputed: this test is about the
+    /// presentation rules, and `GoldenTests` already holds the engine to the same files.
+    @Test func presentationGoldensPinEveryMarkerAndFilterCount() throws {
+        let dir = testFixturesDir.appendingPathComponent("presentation")
+        let files = ((try? FileManager.default.contentsOfDirectory(
+            at: dir, includingPropertiesForKeys: nil)) ?? [])
+            .filter { $0.lastPathComponent.hasSuffix(".expected.json") }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+        try #require(!files.isEmpty,
+                     "fixtures/presentation is empty — run web/tools/make_presentation_goldens.py")
+
+        for url in files {
+            let want = try JSONDecoder().decode(PresentationGolden.self,
+                                                from: Data(contentsOf: url))
+            let source = testFixturesDir
+                .appendingPathComponent("goldens/\(want.fixture).expected.json")
+            let analysis = try JSONDecoder().decode(SessionAnalysis.self,
+                                                    from: Data(contentsOf: source))
+            let got = PresentationFacts(analysis)
+            let name = want.fixture
+
+            #expect(got.markers.flewThrough == want.markers.flewThrough,
+                    "\(name): flew-through markers")
+            #expect(got.markers.touchdown == want.markers.touchdown,
+                    "\(name): touchdown markers")
+            #expect(got.markers.fellIn == want.markers.fellIn, "\(name): fell-in markers")
+            #expect(got.markers.courseChange == want.markers.courseChange,
+                    "\(name): course-change markers")
+
+            #expect(got.takeoff.pumped == want.takeoff.pumped, "\(name): pumped takeoffs")
+            #expect(got.takeoff.free == want.takeoff.free, "\(name): free takeoffs")
+            #expect(got.takeoff.failed == want.takeoff.failed, "\(name): failed attempts")
+            #expect(got.takeoff.total == want.takeoff.total, "\(name): takeoff layer total")
+
+            #expect(got.splash == want.splash, "\(name): splash marks")
+            #expect(got.pumpingSpans == want.pumpingSpans, "\(name): pumping spans")
+
+            #expect(got.recordWindows == want.recordWindows, "\(name): record windows")
+            #expect(got.defaultRecordWindow == want.defaultRecordWindow,
+                    "\(name): default record window")
+
+            #expect(got.filters.count == want.filters.count, "\(name): filter grid size")
+            for row in want.filters {
+                let type = try #require(TurnTypeFilter(rawValue: row.type))
+                let side = try #require(TurnSideFilter(rawValue: row.side))
+                let mine = try #require(got.filters.first { $0.type == type && $0.side == side },
+                                        "\(name): no tally for \(row.type)/\(row.side)")
+                #expect(mine.count == row.count, "\(name): \(row.type)/\(row.side) count")
+                #expect(mine.flewThrough == row.flewThrough,
+                        "\(name): \(row.type)/\(row.side) flew through")
+            }
+
+            // The legend reads the same numbers: a chip is live exactly when its layer has
+            // something in it.
+            let tally = got.layerTally
+            #expect(tally.count(.fellIn) == want.markers.fellIn)
+            #expect(tally.count(.takeoff) == want.takeoff.total)
+            #expect(tally.isToggleable(.splash) == (want.splash > 0))
+        }
+    }
+
+    /// The uncounted turns are the reason the rule exists: a bear-away is drawn as a
+    /// course change and appears in no tally, on either platform.
+    @Test func courseChangesAreMarkedButNeverTallied() throws {
+        let turns = try turnSet()
+        let rejected = turns.filter { !$0.counted }
+        #expect(!rejected.isEmpty, "the fixture must contain a rejected sweep to prove anything")
+
+        for turn in rejected {
+            #expect(PresentationRules.layer(for: turn) == .courseChange,
+                    "a rejected sweep is never a verdict")
+        }
+        for turn in turns where turn.counted {
+            #expect(PresentationRules.layer(for: turn) != .courseChange)
+        }
+        // ... and the same turns are absent from every tally, which is the half a marker
+        // count alone would not catch.
+        #expect(TurnAnalytics.count(turns, filter: TurnFilter())
+                == turns.count - rejected.count)
+    }
+
+    // MARK: - Design tokens
+
+    /// The generated tokens and the code's own catalogues are one contract, so a layer or
+    /// a record added on one side and not the other fails here rather than showing up as a
+    /// legend chip the web app has never heard of (docs/presentation.md "Enforcement").
+    @Test func designTokensCarryTheSameCataloguesAsTheCode() {
+        #expect(DesignTokens.Layers.order == MapLayer.allCases.map(\.rawValue))
+        for entry in DesignTokens.Layers.catalogue {
+            let layer = MapLayer(rawValue: entry.id)
+            #expect(layer != nil, "token layer \(entry.id) is not a MapLayer")
+            #expect(layer?.label == entry.label, "layer \(entry.id) label")
+        }
+        // Everything visible by default is the whole catalogue — the stored preference is
+        // the *hidden* set precisely so a new layer arrives switched on.
+        #expect(DesignTokens.Layers.visibleByDefault == MapLayer.allCases.map(\.rawValue))
+        #expect(MapLayerVisibility.allVisible.hiddenLayers.isEmpty)
+
+        #expect(DesignTokens.RecordWindows.order
+                == RecordWindowSelection.catalogue.map(\.rawValue))
+        #expect(DesignTokens.RecordWindows.defaultID == RecordWindowSelection.defaultKey)
+        for entry in DesignTokens.RecordWindows.catalogue {
+            let kind = RecordKind(rawValue: entry.id)
+            #expect(kind != nil, "token record \(entry.id) is not a RecordKind")
+            #expect(kind?.label == entry.label, "record \(entry.id) label")
+        }
+    }
+
+    /// The glyph names are values like any other: the takeoff arrows and the drop come out
+    /// of the token file, and the failed attempt keeps its own shape *and* its own colour.
+    @Test func takeoffGlyphsAreDistinctOnEveryChannel() {
+        let glyphs = [DesignTokens.Glyph.takeoffPumped, DesignTokens.Glyph.takeoffFree,
+                      DesignTokens.Glyph.takeoffFailed]
+        #expect(Set(glyphs).count == glyphs.count, "two takeoff kinds share a glyph")
+        #expect(DesignTokens.Glyph.takeoffFailed.contains("uturn"),
+                "a failed attempt must not merely be a differently-tinted up-arrow")
+        #expect(DesignTokens.Hex.effortFailedTakeoff == DesignTokens.Hex.outcomeFellIn,
+                "the one effort-layer event with an outcome borrows the ladder's red")
+        #expect(DesignTokens.Hex.effortTakeoff != DesignTokens.Hex.outcomeFellIn)
+    }
 }
