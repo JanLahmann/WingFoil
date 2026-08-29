@@ -5,8 +5,15 @@
       (windsurfing) with developer fields per docs/fit-schema.md.
       minApiLevel 5.0.0 covers all shipped Fenix 8 firmware (see docs/plan.md §2 CIQ facts).
     -->
+    <!--
+      Release version. It is an ATTRIBUTE the SDK validates (an unknown one fails the build),
+      and it must move together with FitSchema.APP_MINOR — the FIT session's `app_version`
+      field carries that minor number in its high byte, so a watch that says 0.8.0 here and
+      writes a 1 there is a watch nobody can identify from its own files. The unit test
+      `appVersionAgreesWithTheFitByte` holds the two together.
+    -->
     <iq:application id="b1ef484c-77b9-4a69-b33d-18574f3bcbde" type="watch-app"
-        name="@Strings.AppName" entry="WingfoilApp" launcherIcon="@Drawables.LauncherIcon"
+        name="@Strings.AppName" entry="WingfoilApp" version="0.8.0" launcherIcon="@Drawables.LauncherIcon"
         minApiLevel="5.0.0">
         <iq:products>
             <iq:product id="fenix843mm"/>

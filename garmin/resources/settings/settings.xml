@@ -74,6 +74,7 @@
             <listEntry value="6">@Strings.LayClock</listEntry>
             <listEntry value="7">@Strings.LayMap</listEntry>
             <listEntry value="8">@Strings.LayTimeline</listEntry>
+            <listEntry value="9">@Strings.LayMain</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg1s1" title="@Strings.SetPg1s1">
@@ -98,6 +99,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg1s2" title="@Strings.SetPg1s2">
@@ -122,6 +124,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg1s3" title="@Strings.SetPg1s3">
@@ -146,6 +149,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg1s4" title="@Strings.SetPg1s4">
@@ -170,6 +174,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg1s5" title="@Strings.SetPg1s5">
@@ -194,6 +199,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg2Layout" title="@Strings.SetPg2Layout">
@@ -207,6 +213,7 @@
             <listEntry value="6">@Strings.LayClock</listEntry>
             <listEntry value="7">@Strings.LayMap</listEntry>
             <listEntry value="8">@Strings.LayTimeline</listEntry>
+            <listEntry value="9">@Strings.LayMain</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg2s1" title="@Strings.SetPg2s1">
@@ -231,6 +238,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg2s2" title="@Strings.SetPg2s2">
@@ -255,6 +263,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg2s3" title="@Strings.SetPg2s3">
@@ -279,6 +288,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg2s4" title="@Strings.SetPg2s4">
@@ -303,6 +313,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg2s5" title="@Strings.SetPg2s5">
@@ -327,6 +338,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg3Layout" title="@Strings.SetPg3Layout">
@@ -340,6 +352,7 @@
             <listEntry value="6">@Strings.LayClock</listEntry>
             <listEntry value="7">@Strings.LayMap</listEntry>
             <listEntry value="8">@Strings.LayTimeline</listEntry>
+            <listEntry value="9">@Strings.LayMain</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg3s1" title="@Strings.SetPg3s1">
@@ -364,6 +377,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg3s2" title="@Strings.SetPg3s2">
@@ -388,6 +402,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg3s3" title="@Strings.SetPg3s3">
@@ -412,6 +427,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg3s4" title="@Strings.SetPg3s4">
@@ -436,6 +452,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg3s5" title="@Strings.SetPg3s5">
@@ -460,6 +477,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg4Layout" title="@Strings.SetPg4Layout">
@@ -473,6 +491,7 @@
             <listEntry value="6">@Strings.LayClock</listEntry>
             <listEntry value="7">@Strings.LayMap</listEntry>
             <listEntry value="8">@Strings.LayTimeline</listEntry>
+            <listEntry value="9">@Strings.LayMain</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg4s1" title="@Strings.SetPg4s1">
@@ -497,6 +516,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg4s2" title="@Strings.SetPg4s2">
@@ -521,6 +541,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg4s3" title="@Strings.SetPg4s3">
@@ -545,6 +566,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg4s4" title="@Strings.SetPg4s4">
@@ -569,6 +591,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg4s5" title="@Strings.SetPg4s5">
@@ -593,6 +616,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg5Layout" title="@Strings.SetPg5Layout">
@@ -606,6 +630,7 @@
             <listEntry value="6">@Strings.LayClock</listEntry>
             <listEntry value="7">@Strings.LayMap</listEntry>
             <listEntry value="8">@Strings.LayTimeline</listEntry>
+            <listEntry value="9">@Strings.LayMain</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg5s1" title="@Strings.SetPg5s1">
@@ -630,6 +655,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg5s2" title="@Strings.SetPg5s2">
@@ -654,6 +680,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg5s3" title="@Strings.SetPg5s3">
@@ -678,6 +705,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg5s4" title="@Strings.SetPg5s4">
@@ -702,6 +730,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg5s5" title="@Strings.SetPg5s5">
@@ -726,6 +755,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg6Layout" title="@Strings.SetPg6Layout">
@@ -739,6 +769,7 @@
             <listEntry value="6">@Strings.LayClock</listEntry>
             <listEntry value="7">@Strings.LayMap</listEntry>
             <listEntry value="8">@Strings.LayTimeline</listEntry>
+            <listEntry value="9">@Strings.LayMain</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg6s1" title="@Strings.SetPg6s1">
@@ -763,6 +794,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg6s2" title="@Strings.SetPg6s2">
@@ -787,6 +819,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg6s3" title="@Strings.SetPg6s3">
@@ -811,6 +844,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg6s4" title="@Strings.SetPg6s4">
@@ -835,6 +869,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pg6s5" title="@Strings.SetPg6s5">
@@ -859,6 +894,7 @@
             <listEntry value="17">@Strings.MetTakeoffs</listEntry>
             <listEntry value="18">@Strings.MetPumpsToTakeoff</listEntry>
             <listEntry value="19">@Strings.MetTakeoffCost</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
         </settingConfig>
     </setting>
 </settings>

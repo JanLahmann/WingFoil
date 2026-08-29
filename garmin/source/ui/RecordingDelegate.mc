@@ -22,12 +22,39 @@ module PageNav {
     // stepping on or off the map page swaps the view.
     function step(dir as Number) as Void {
         var wasMap = PageModel.layoutAt(index) == PageModel.LAYOUT_MAP;
-        index = PageModel.wrap(index + dir);
+        index = nextIndex(index, dir,
+            getApp().controller.state == SessionController.STATE_PAUSED);
         if (wasMap || PageModel.layoutAt(index) == PageModel.LAYOUT_MAP) {
             show();
         } else {
             WatchUi.requestUpdate();
         }
+    }
+
+    // Where `dir` steps land. While PAUSED the map page is skipped over.
+    //
+    // MapPageView extends the firmware's MapTrackView and cannot be drawn into, so it can
+    // show no PAUSED banner, no speed, no foil state — nothing. A rider who pauses, pages to
+    // the map and rides on has no indication anywhere on the watch that he is not recording,
+    // and the only thing worse than a lost session is a lost session you did not notice.
+    // Refusing to page onto it is the honest fix available inside the API: the page comes
+    // back the instant he resumes.
+    //
+    // Pure and static, so the rule is testable without a map or a session. The guard is
+    // bounded by MAX_PAGES and falls back to the page it started on, which is what keeps an
+    // all-map configuration from spinning.
+    function nextIndex(from as Number, dir as Number, paused as Boolean) as Number {
+        var i = PageModel.wrap(from + dir);
+        if (!paused) {
+            return i;
+        }
+        for (var guard = 0; guard < PageModel.MAX_PAGES; guard++) {
+            if (PageModel.layoutAt(i) != PageModel.LAYOUT_MAP) {
+                return i;
+            }
+            i = PageModel.wrap(i + (dir >= 0 ? 1 : -1));
+        }
+        return from;
     }
 }
 
@@ -82,6 +109,10 @@ class StopMenuDelegate extends WatchUi.Menu2InputDelegate {
         var id = item.getId();
         if (id == :save) {
             c.finishSave();
+            // The summary's page LIST depends on what the session produced (no turns, no
+            // turns page), so it is built once here, after the save, from the engine state
+            // that finishSave deliberately leaves intact.
+            SummaryNav.build(c);
             WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
             WatchUi.switchToView(new SummaryView(), new SummaryDelegate(),
                 WatchUi.SLIDE_IMMEDIATE);

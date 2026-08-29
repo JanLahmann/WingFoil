@@ -582,6 +582,8 @@ import Testing
                 ("unclassified", s.unclassified), ("turnsCounted", s.turnsCounted),
                 ("turnsSuccessful", s.turnsSuccessful), ("rejected", s.rejected),
                 ("port", s.port), ("starboard", s.starboard), ("unknownSide", s.unknownSide),
+                ("longestDryStreak", s.longestDryStreak),
+                ("longestFlewStreak", s.longestFlewStreak),
             ]
             for (key, actual) in counts {
                 guard let v = int(t[key]) else { continue }
@@ -590,6 +592,12 @@ import Testing
             if let v = num(t["successPct"]) {
                 #expect(abs(s.successPct - v) <= 0.5, "\(stem) summary.turns.successPct")
             }
+            // A strict run is a sub-run of a dry one, and neither can outnumber the turns
+            // they run over — true of the goldens and of anything the engine may produce.
+            #expect(s.longestFlewStreak <= s.longestDryStreak,
+                    "\(stem) flew streak \(s.longestFlewStreak) > dry \(s.longestDryStreak)")
+            #expect(s.longestDryStreak <= s.turnsCounted,
+                    "\(stem) dry streak \(s.longestDryStreak) > counted \(s.turnsCounted)")
             expectOutcomes(stem, "outcomes", t["outcomes"], s.outcomes)
             expectOutcomes(stem, "tackOutcomes", t["tackOutcomes"], s.tackOutcomes)
             expectOutcomes(stem, "jibeOutcomes", t["jibeOutcomes"], s.jibeOutcomes)
@@ -729,7 +737,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.3.0")
+        #expect(analysis.engineVersion == "0.4.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)

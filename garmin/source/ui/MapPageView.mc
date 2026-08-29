@@ -73,8 +73,8 @@ module TrackTint {
 // The map API is Toybox.WatchUi.MapTrackView — a *View*, not something that can be painted
 // inside RecordingView.onUpdate — which is why paging onto this page swaps the whole view
 // (PageNav.step). MapTrackView keeps itself centred on the current position and draws the
-// device's own navigation arrow; all we contribute is the session's track, drawn green where
-// the rider was flying and dark gray where he was not.
+// device's own navigation arrow; all we contribute is the session's track, drawn in the phase
+// teal where the rider was flying and the dim ink where he was not.
 //
 // Every fenix 8 variant in the manifest ships MapTrackView (verified against the SDK 9.2 doc's
 // supported-device list), so this compiles unconditionally; PageModel.hasMap() still gates the
@@ -130,7 +130,10 @@ class MapPageView extends WatchUi.MapTrackView {
         while (i < n) {
             var end = TrackTint.runEnd(fly, n, i, minRun);
             var poly = new WatchUi.MapPolyline();
-            poly.setColor(fly[i] ? Graphics.COLOR_GREEN : Graphics.COLOR_DK_GRAY);
+            // Phase teal / the dim ink, never green: the rider has been trained by the
+            // outcome markers to read green as "that jibe worked", and a green track would
+            // be saying it about a straight line (docs/presentation.md).
+            poly.setColor(fly[i] ? Ink.phaseFlying() : Ink.dim());
             poly.setWidth(TRACK_W);
             for (var k = i; k < end; k++) {
                 poly.addLocation(_loc(lat[k], lon[k]));

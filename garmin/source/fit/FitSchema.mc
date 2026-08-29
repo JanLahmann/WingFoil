@@ -23,7 +23,14 @@ module FitSchema {
     // Schema version, carried in the low byte of session field 43 `app_version`. A parser
     // keys its v1-direct vs v2-packed handling off it (docs/fit-schema.md).
     const SCHEMA_VERSION = 2;
-    const APP_MINOR = 1;
+    // High byte of session field 43 `app_version`: the device app's MINOR version, i.e. the 8
+    // of 0.8.0. It is the app's release number and nothing else — a parser that wants to know
+    // which fields exist reads their PRESENCE, and SCHEMA_VERSION in the low byte when it
+    // needs to disambiguate an encoding (docs/fit-schema.md).
+    const APP_MINOR = 8;
+    // The full version string, so "what is this build" has exactly one answer in the source
+    // tree. `appVersionMatchesMinor()` in the test suite holds the two together.
+    const APP_VERSION = "0.8.0";
 
     // ---- platform limits (measured, see the header) ----
     // Fields per message type. HARD: exceeding it kills the app, uncatchably.

@@ -14,7 +14,9 @@ import WingFoilCore;
 //     -> 51-tap Hamming-windowed sinc band-pass 0.5-2.5 Hz (pumpFilterSpan 2 s x 25 Hz)
 //     -> local maximum above pumpStrokeAmp, pumpRefractory dead time  = one STROKE
 //     -> strokes <= pumpStrokeMaxInterval apart = a BURST; >= pumpMinStrokes = pumping
-//     -> qualifying bursts <= takeoffAttemptWindow apart = one ATTEMPT (one effort)
+//     -> qualifying bursts less than takeoffAttemptWindow apart, measured from the last
+//        stroke of the effort to the FIRST stroke of the next burst, = one ATTEMPT (one
+//        effort) -- the lab's `_group` rule, live
 //
 // This class lives in the device app, NOT in the WingFoilCore barrel: every Toybox.Sensor
 // entry point crashes a data field (docs/fit-schema.md class d), so the barrel -- shared with
@@ -49,6 +51,14 @@ class PumpDetector {
     const MIN_STROKES = 4;              // pumpMinStrokes
     // ---- docs/algorithms.md "Takeoff analysis" ----
     const ATTEMPT_WINDOW_MS = 10000;    // takeoffAttemptWindow (also attemptFailSilence)
+    // An effort may not be declared failed while a burst that BEGAN inside the window is
+    // still too young to have reached MIN_STROKES: (MIN_STROKES - 1) * BURST_GAP_MS = 4500 ms
+    // is the longest a legal qualifying burst can take to form, GROUP_DELAY_MS is how late
+    // the filter reports its strokes, and one 1 Hz tick is the batch the last of them arrives
+    // in. Without this grace the 10 s silence expires between a joining burst's first and
+    // fourth stroke and one long bout is counted as several attempts (docs/algorithms.md
+    // "Watch approximation" row 5a).
+    const ATTEMPT_JOIN_GRACE_MS = 6500;
     const FREE_TAKEOFF = 3;             // freeTakeoff: fewer strokes = the wind did the work
     // ---- live display ----
     const CADENCE_WINDOW_MS = 10000;    // pump_cadence is measured over the last 10 s
@@ -99,7 +109,8 @@ class PumpDetector {
     hidden var _atOpen as Boolean = false;
     hidden var _atStartMs as Number = 0;
     hidden var _atLastMs as Number = 0;
-    hidden var _atStrokes as Number = 0;
+    hidden var _atStrokes as Number = 0;         // strokes of the effort's LEAD burst =
+                                                 //   pumps-to-takeoff if it gets up
     hidden var _atRecovery as Boolean = false;
 
     // flight/turn context, sampled at 1 Hz from MetricsEngine
@@ -330,9 +341,17 @@ class PumpDetector {
             return;
         }
         if (_burstN == MIN_STROKES) {
-            // the burst qualifies as pumping only now — attach it to an effort
-            if (_atOpen && tMs - _atLastMs < ATTEMPT_WINDOW_MS) {
-                _atStrokes += MIN_STROKES;      // same effort, a new burst inside it
+            // The burst qualifies as pumping only now, but the silence that separates two
+            // efforts is measured to its FIRST stroke, exactly as the lab's `_group` does
+            // (`first - out[-1].end_t < attempt_window_s`). Measuring it to this fourth
+            // stroke instead shortens the merge window by however long the burst took to
+            // form — up to 4.5 s — and splits one bout into several attempts.
+            if (_atOpen && _burstStartMs - _atLastMs < ATTEMPT_WINDOW_MS) {
+                // Same effort, a new burst inside it. `_atStrokes` tracks the LEAD burst,
+                // not the whole effort: the lab's `pumps_to_takeoff` counts the strokes of
+                // the run (speed rise ∪ lead burst), so an effort spanning half a minute of
+                // thrashing must not report all of it as the cost of the takeoff.
+                _atStrokes = MIN_STROKES;
                 _burstOwned = true;
             } else if (!_flying) {
                 _atOpen = true;
@@ -380,6 +399,7 @@ class PumpDetector {
     // Every confirmed flight is a takeoff success (lab: `takeoff_successes` = flights), and
     // the effort that produced it — if there was one inside takeoffAttemptWindow — is its
     // takeoff run. No effort ⇒ 0 pumps ⇒ a free takeoff: the wind did the work.
+    // `_atStrokes` is the effort's LEAD burst, the watch's stand-in for the lab's run.
     hidden function _onFlightConfirmed() as Number {
         successes++;
         var pumped = _atOpen && _onFoilMs >= _atStartMs
@@ -398,13 +418,19 @@ class PumpDetector {
 
     // An effort ends when the rider stops trying: takeoffAttemptWindow of silence. If he is
     // ON foil at that moment the flight may still be confirmed (minFlight is up to 5 s late),
-    // so the effort is held open until it is confirmed or the flight collapses.
+    // so the effort is held open until it is confirmed or the flight collapses — and if a
+    // fresh burst has already started inside the window, until that burst has had
+    // ATTEMPT_JOIN_GRACE_MS to reach pumpMinStrokes and join.
     hidden function _expire(nowMs as Number) as Void {
         if (!_atOpen || nowMs - _atLastMs <= ATTEMPT_WINDOW_MS) {
             return;
         }
         if (_flying && _onFoilMs - _atLastMs <= ATTEMPT_WINDOW_MS) {
             return;     // pending: ON_FOIL happened inside the window, wait for minFlight
+        }
+        if (_burstN > 0 && !_burstOwned && _burstStartMs - _atLastMs < ATTEMPT_WINDOW_MS
+                && nowMs - _burstStartMs <= ATTEMPT_JOIN_GRACE_MS) {
+            return;     // a burst opened inside the window and may still reach MIN_STROKES
         }
         if (_atRecovery) {
             recoveryEpisodes++;     // the turn already scored this as a touchdown

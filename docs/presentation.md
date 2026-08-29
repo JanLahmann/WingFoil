@@ -8,9 +8,30 @@ for the engine: **semantics are defined once, here. An implementation that needs
 changes this file first, in the same commit.**
 
 Colour *values* live in `design/tokens.json`, which generates the Swift constants
-(`DesignTokens`), `web/css/tokens.css` and `web/js/tokens.js` and is staleness-checked in CI
-(`design/check_tokens.py --check`). A value is edited there and nowhere else; this file
-defines the *meanings*.
+(`DesignTokens`), `web/css/tokens.css`, `web/js/tokens.js` and `garmin/source/DesignTokens.mc`
+and is staleness-checked in CI (`design/check_tokens.py --check`). A value is edited there and
+nowhere else; this file defines the *meanings*.
+
+**The watch (device app ≥ 0.8.0).** It consumes the `hex` half, like the web: `Dc.setColor`
+takes a literal `0xRRGGBB` on every product in `garmin/manifest.xml`. Each token additionally
+carries a generated `_MIP` twin — its nearest colour in the fixed 64-entry `{00,55,AA,FF}³`
+palette that the 8 bpp products (both fenix 8 Solars, the whole fenix 7 family) quantise to.
+The firmware does that snapping itself, so the twin changes no pixel; it exists so the
+fallback is a reviewable value and so palette *collisions* are visible in the generated file
+rather than on the water — on 8 bpp, `phase.flying`, `effort.takeoff` and `effort.splash` all
+land on `0x55AAFF`, and `outcome.touchdown` and `effort.window` both on `0xFFAA00`. None of
+those pairs is drawn on one watch screen. `garmin/source/ui/Ink.mc` picks the half per device
+and is also where the one contrast concession lives: the "off" half of a two-state mark is
+`COLOR_DK_GRAY` on AMOLED over true black, and the phase grey on a reflective MIP, where dark
+grey over a mid-grey ground in sun is nothing at all.
+
+Until 0.8.0 the watch reused `Graphics.COLOR_GREEN` for *both* the phase tint and the ladder's
+"flew through", which broke on the Timeline page in particular — foil-fraction bars and turn
+outcome dots, six rows apart on one screen, in one ink for two meanings. The phase tint is now
+the teal, on the ring, the foil-% arc, the flight timer, the timeline bars, the breadcrumb and
+the summary's track; green is the verdict and nothing else. Heart rate left the ladder's red
+for the effort indigo (a pulse is not a swim), and the PB celebration left green for the
+effort orange (a record is something the rider *did*, not a verdict).
 
 ## Layers
 

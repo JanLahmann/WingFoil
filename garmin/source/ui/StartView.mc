@@ -79,7 +79,7 @@ class StartView extends WatchUi.View {
         dc.clear();
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
-        var radius = RecordingView.fitRadius(dc);
+        var radius = RecordingView.fitRadius(dc, false, false);
         var CV = Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER;
 
         var r = dotRadius(dc);
@@ -110,7 +110,10 @@ class StartView extends WatchUi.View {
                     Graphics.COLOR_TRANSPARENT);
                 dc.fillCircle(x, yDots, r);
             } else {
-                dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+                // Ink.dim() rather than COLOR_DK_GRAY: on a reflective MIP in sun, dark grey
+                // over a mid-grey ground is indistinguishable from no dot at all, and "how
+                // many dots are unfilled" is the whole content of this row.
+                dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
                 dc.drawCircle(x, yDots, r);
             }
         }

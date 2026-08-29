@@ -11,10 +11,16 @@ import WingFoilCore;
 // (`pg<N>Layout`, `pg<N>s<M>`), so the rider re-orders, re-fills and removes screens from the
 // phone; `build()` re-runs on every onSettingsChanged, which is the whole hot-reload story.
 //
-// The DEFAULTS below reproduce the five screens the app shipped with, pixel for pixel:
-// 1 Speed hero · 2 Session grid · 3 Records · 4 Turns · 5 Clock · 6 off. Change them here and
+// The DEFAULTS below are the six screens 0.8.0 ships with:
+// 1 Main · 2 Session grid · 3 Records · 4 Turns · 5 Clock · 6 Timeline. Change them here and
 // in resources/settings/properties.xml together — properties.xml wins on a real device, this
 // table is the fallback and the thing the unit test asserts against.
+//
+// Page 1 changed in 0.8.0 from the speed HERO (speed / flight timer / HR) to LAYOUT_MAIN.
+// The flight timer and heart rate did not disappear: they are catalog metrics and go in any
+// slot on any other page. What page 1 owes the rider is the four things he glances at
+// between two jibes — how fast, how the turns are going, whether he is still dry, and what
+// time it is — and a duration is explicitly not one of them.
 //
 // Slot semantics per layout:
 //   HERO     s1 = giant number (+ its unit line), s2/s3 = the two rows under it
@@ -34,9 +40,13 @@ module PageModel {
         LAYOUT_TURNS = 5,
         LAYOUT_CLOCK = 6,
         LAYOUT_MAP = 7,
-        LAYOUT_TIMELINE = 8
+        LAYOUT_TIMELINE = 8,
+        // The default page 1 since 0.8.0: giant live speed, the outcome ladder as three
+        // counts, the no-fall streak and the time of day. Bespoke like RECORDS/TURNS —
+        // what it shows is the point of the screen, so it carries no slots.
+        LAYOUT_MAIN = 9
     }
-    const LAYOUT_MAX = 8;
+    const LAYOUT_MAX = 9;
 
     // Metric catalog. Values are the GCM list values — append only, never renumber.
     enum {
@@ -59,19 +69,23 @@ module PageModel {
         M_PUMP_STROKES = 16,
         M_TAKEOFFS = 17,
         M_PUMPS_TO_TAKEOFF = 18,
-        M_TAKEOFF_COST = 19
+        M_TAKEOFF_COST = 19,
+        // "now/best" no-fall streak (docs/algorithms.md "Turn streaks"). On the main screen
+        // it has its own row; here it is a cell like any other, for a rider who wants it on
+        // page 3 instead.
+        M_STREAK = 20
     }
-    const M_MAX = 19;
+    const M_MAX = 20;
 
     const MAX_PAGES = 6;
     const SLOTS = 5;
 
     // ---- the shipped five pages, as data ----
     var DEF_LAYOUT as Array<Number> = [
-        LAYOUT_HERO, LAYOUT_GRID4, LAYOUT_RECORDS, LAYOUT_TURNS, LAYOUT_CLOCK, LAYOUT_TIMELINE
+        LAYOUT_MAIN, LAYOUT_GRID4, LAYOUT_RECORDS, LAYOUT_TURNS, LAYOUT_CLOCK, LAYOUT_TIMELINE
     ];
     var DEF_SLOTS as Array<Array<Number> > = [
-        [M_SPEED, M_FLIGHT_TIMER, M_HR, M_NONE, M_NONE],
+        [M_NONE, M_NONE, M_NONE, M_NONE, M_NONE],
         [M_FOIL_PCT, M_FOIL_TIME, M_LONGEST, M_DISTANCE, M_FLIGHTS],
         [M_NONE, M_NONE, M_NONE, M_NONE, M_NONE],
         [M_NONE, M_NONE, M_NONE, M_NONE, M_NONE],
@@ -210,6 +224,7 @@ module PageModel {
         if (id == M_TAKEOFFS) { return "takeoffs"; }
         if (id == M_PUMPS_TO_TAKEOFF) { return "to foil"; }
         if (id == M_TAKEOFF_COST) { return "hr cost"; }
+        if (id == M_STREAK) { return "dry run"; }
         return "";
     }
 
@@ -228,7 +243,7 @@ module PageModel {
         // the takeoff cost is a heartbeat number before it is a pumping one: what the eye is
         // being told is "this is your heart", and the label says which of the two it is
         if (id == M_HR || id == M_TAKEOFF_COST) { return Glyphs.G_HEART; }
-        if (id == M_TURNS || id == M_TURN_SCORE) { return Glyphs.G_TURN; }
+        if (id == M_TURNS || id == M_TURN_SCORE || id == M_STREAK) { return Glyphs.G_TURN; }
         if (id == M_PUMP_STROKES || id == M_TAKEOFFS || id == M_PUMPS_TO_TAKEOFF) {
             return Glyphs.G_PUMP;
         }
@@ -292,6 +307,7 @@ module PageModel {
             // them mean "not measured" rather than "it cost nothing".
             return e.hrCost.lastCostBpm < 0 ? "--" : e.hrCost.lastCostBpm.toString();
         }
+        if (id == M_STREAK) { return streakText(e.turns); }
         return "";
     }
 
@@ -301,13 +317,24 @@ module PageModel {
         return id == M_HR || id == M_TAKEOFF_COST ? " bpm" : "";
     }
 
+    // "now / best" — the live dry streak beside the session's longest. One string so it fits
+    // a cell; the main screen draws the two halves separately so it can colour them.
+    function streakText(t as TurnDetector) as String {
+        return t.dryStreak.toString() + "/" + t.bestDryStreak.toString();
+    }
+
+    // Cell/row ink. Two rules from docs/presentation.md decide every line here:
+    // the phase tint is TEAL and not the ladder's green (green means "flew through", and a
+    // page that says green for both is lying about one of them), and the outcome ladder is a
+    // verdict scale nothing else may borrow — which is why heart rate is no longer the
+    // ladder's red. A pulse is not a swim.
     function color(id as Number, c as SessionController) as Number {
         if (id == M_FLIGHT_TIMER) {
             return c.engine.detector.state == FlightDetector.STATE_ON
-                ? Graphics.COLOR_GREEN : Graphics.COLOR_DK_GRAY;
+                ? Ink.phaseFlying() : Ink.dim();
         }
-        if (id == M_HR || id == M_TAKEOFF_COST) { return Graphics.COLOR_RED; }
-        if (id == M_FOIL_PCT) { return Graphics.COLOR_GREEN; }
+        if (id == M_HR || id == M_TAKEOFF_COST) { return Ink.effortPumping(); }
+        if (id == M_FOIL_PCT) { return Ink.phaseFlying(); }
         return Graphics.COLOR_WHITE;
     }
 
@@ -325,6 +352,7 @@ module PageModel {
         if (id == M_HR || id == M_PUMPS_TO_TAKEOFF || id == M_TAKEOFF_COST) { return "199"; }
         if (id == M_PUMP_STROKES) { return "9999"; }
         if (id == M_TAKEOFFS) { return "99>99"; }
+        if (id == M_STREAK) { return "99/99"; }
         if (id == M_CLOCK) { return "23:59"; }
         return "199:59";   // every timer: >3 h sessions still read m:ss
     }

@@ -38,6 +38,18 @@ module AppSettings {
     // bottom row of a 2x2 grid.
     var showLabels as Boolean = true;
 
+    // Did a wind axis EVER hold a real bearing this run? Sticky, and deliberately not the
+    // same question as `cfg.windDirection >= 0`.
+    //
+    // It gates the FIT's tack_count / jibe_count / wind_dir_user (FitFields.updateSession).
+    // Without an axis the classifier calls every sweep a generic turn, so both counters are
+    // structurally 0 — and a FIT that says "0 tacks, 0 jibes" is indistinguishable from a
+    // session where the rider genuinely never tacked. Absent is the honest encoding, and the
+    // phone's parser already treats a missing pair as "unclassified" (docs/fit-schema.md).
+    // Sticky rather than live because the counts, once classified, stay meaningful even if
+    // the rider clears the axis afterwards.
+    var windEverSet as Boolean = false;
+
     function load() as Void {
         cfg.foilEntryMps = _num("foilEntryKmh", 12.0) / 3.6;
         cfg.foilExitMps = _num("foilExitKmh", 8.0) / 3.6;
@@ -62,6 +74,9 @@ module AppSettings {
             autoPauseDelayS = 2;
         }
         cfg.setWindDirection(_num("windDirDeg", -1.0).toNumber());
+        if (cfg.windDirection >= 0) {
+            windEverSet = true;
+        }
         // hysteresis sanity: exit must sit below entry
         cfg.sanitize();
     }
@@ -70,6 +85,9 @@ module AppSettings {
     // Only turns detected from here on are classified — no retro pass on the watch.
     function storeWindDirection(deg as Number) as Void {
         cfg.setWindDirection(deg);
+        if (cfg.windDirection >= 0) {
+            windEverSet = true;      // sticky: clearing the axis does not unclassify the past
+        }
         try {
             Properties.setValue("windDirDeg", cfg.windDirection);
         } catch (e) {

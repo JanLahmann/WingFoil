@@ -193,7 +193,31 @@ public enum FitSessionParser {
         // schema version is only corroboration: the data-field variant (class d) writes
         // `cfg_pack` under schema v1, and a file may carry no `app_version` at all.
         for pack in Self.sessionPacks { pack.unpack(d, into: &s) }
+        demoteUnclassifiedTurnCounts(&s)
         return s
+    }
+
+    /// `0/0` turn counts with no wind axis mean *unclassified*, not *none* — drop them.
+    ///
+    /// The watch can only name a sweep a tack or a jibe against a wind axis the rider set
+    /// by hand (docs/algorithms.md: "wind is manual only"). Older builds still wrote
+    /// `tack_count`/`jibe_count` when he never set one, and the only value they could write
+    /// was a literal 0 — so a session of fifty clean jibes arrives claiming zero of each,
+    /// and the divergence banner reports "Jibes: watch 0 vs phone 50" as if the two
+    /// implementations disagreed. They do not: the watch never counted.
+    ///
+    /// docs/presentation.md's formatter rule is that missing must be *absent*, never 0, so
+    /// the pair is dropped here at the parser boundary. `DivergenceCheck` skips nil counts
+    /// and therefore stops comparing them. This runs after the pack unpacking so a future
+    /// packed turn field is demoted on the same rule.
+    ///
+    /// Deliberately narrow: only the `0/0`-with-no-wind case, which cannot be a real
+    /// observation the watch made — one non-zero count, or any `wind_dir_user`, means the
+    /// axis was set and a 0 is a genuine "none of those", still worth comparing.
+    private static func demoteUnclassifiedTurnCounts(_ s: inout WatchSummary) {
+        guard s.windDirUserDeg == nil, s.tackCount == 0, s.jibeCount == 0 else { return }
+        s.tackCount = nil
+        s.jibeCount = nil
     }
 
     // MARK: - v2 packed session fields

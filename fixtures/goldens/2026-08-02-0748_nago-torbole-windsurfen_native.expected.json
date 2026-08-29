@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.3.0",
+  "engineVersion": "0.4.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -5040,6 +5040,8 @@
       "port": 19,
       "starboard": 17,
       "unknownSide": 0,
+      "longestDryStreak": 5,
+      "longestFlewStreak": 3,
       "outcomes": {
         "flewThrough": 15,
         "touchdown": 15,

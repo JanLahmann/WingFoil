@@ -11,11 +11,12 @@ import pytest
 
 from wingfoil_lab.filters import clean, clean_from_arrays
 from wingfoil_lab.flight import segment_flights
+from wingfoil_lab.flightend import GLIDE_OUT, UNKNOWN, FlightEnd, classify_flight_ends
 from wingfoil_lab.parse import parse_fit
 from wingfoil_lab.pump import pump_track_from_arrays
 from wingfoil_lab.turns import (BEAR_AWAY, COUNTED_TYPES, FELL_IN, FLEW_THROUGH, JIBE,
-                                OUTCOMES, TACK, TOUCHDOWN, UNCLASSIFIED, TurnConfig,
-                                detect_turns, summarize_turns)
+                                OUTCOMES, TACK, TOUCHDOWN, UNCLASSIFIED, Turn, TurnConfig,
+                                detect_turns, streaks, summarize_turns)
 from wingfoil_lab.wind import WindEstimate, estimate_wind
 
 FIXTURES = Path(__file__).resolve().parents[2] / "fixtures"
@@ -543,3 +544,170 @@ def test_real_session_pumping_only_adds_touchdowns():
     assert wet.fell_in == dry.fell_in
     assert wet.touchdown > dry.touchdown
     assert wet.flew_through == dry.flew_through - (wet.touchdown - dry.touchdown)
+
+
+# --- streaks: merged turn + flight-end event list ----------------------------------------
+
+def _seq(*outcomes, counted=True):
+    """Counted turns carrying only what a streak reads: end time and outcome.
+
+    `counted` may be a tuple to interleave rejected sweeps. End times are 10, 20, 30 ...
+    so a flight end can be dropped between any two of them.
+    """
+    flags = counted if isinstance(counted, tuple) else (counted,) * len(outcomes)
+    return [Turn(start_t=10.0 * (i + 1) - 1, end_t=10.0 * (i + 1), min_t=10.0 * (i + 1),
+                 kind=JIBE, counted=c, net_deg=180.0, peak_rate_deg_s=30.0,
+                 direction="port", side="port", entry_kn=12.0, min_kn=9.0,
+                 entry_kn_doppler=12.0, min_kn_doppler=9.0, score=0.75, success=True,
+                 twa_in_deg=90.0, twa_out_deg=-90.0, outcome=o)
+            for i, (o, c) in enumerate(zip(outcomes, flags))]
+
+
+def _end(t, outcome, owner=None, truncated=False):
+    """A flight end at `t`; `owner` is an index into the turn list, as `flightend` sets it."""
+    return FlightEnd(flight_index=0, t=float(t), outcome=outcome, truncated=truncated,
+                     owned_by_turn=owner)
+
+
+def test_streaks_are_zero_without_counted_turns():
+    assert streaks([]) == (0, 0)
+    assert streaks(_seq(FLEW_THROUGH, FLEW_THROUGH, counted=False)) == (0, 0)
+    # A flight end on its own cannot make a streak either -- only turns lengthen a run.
+    assert streaks([], [_end(5, GLIDE_OUT)]) == (0, 0)
+
+
+def test_touchdown_extends_the_dry_streak_but_breaks_the_flown_one():
+    """Staying out of the water and carrying it clean are different claims."""
+    assert streaks(_seq(FLEW_THROUGH, TOUCHDOWN, FLEW_THROUGH)) == (3, 1)
+
+
+def test_a_fall_resets_both_streaks_and_the_longest_run_wins():
+    assert streaks(_seq(FLEW_THROUGH, FLEW_THROUGH, FELL_IN, FLEW_THROUGH)) == (2, 2)
+    assert streaks(_seq(FLEW_THROUGH, FLEW_THROUGH, FLEW_THROUGH,
+                        FELL_IN, FLEW_THROUGH)) == (3, 3)
+
+
+def test_a_borderline_touchdown_counts_as_a_touchdown():
+    """`borderline` is a flag on a touchdown, not a fourth outcome: dry survives it."""
+    turns = _seq(FLEW_THROUGH, TOUCHDOWN, FLEW_THROUGH)
+    turns[1].borderline = True
+    assert streaks(turns) == (3, 1)
+
+
+def test_rejected_sweeps_neither_extend_nor_break_a_streak_as_turns():
+    """A bear-away is not a maneuver, so *as a turn* it is invisible either way."""
+    assert streaks(_seq(FLEW_THROUGH, FELL_IN, FLEW_THROUGH,
+                        counted=(True, False, True))) == (2, 2)
+    assert streaks(_seq(FLEW_THROUGH, FLEW_THROUGH, FLEW_THROUGH,
+                        counted=(True, False, True))) == (2, 2)
+
+
+# --- ...but their consequences are visible, and so are straight-line ones ----------------
+
+def test_a_straight_line_fall_inside_a_flown_run_breaks_it():
+    """The bug the first cut of this metric had: a swim between two clean jibes.
+
+    Nothing in the turn channel records it -- the rider simply fell in on a reach -- and a
+    turn-only streak reads four clean jibes in a row where the rider remembers two.
+    """
+    turns = _seq(FLEW_THROUGH, FLEW_THROUGH, FLEW_THROUGH, FLEW_THROUGH)
+    assert streaks(turns) == (4, 4)                       # blind to it
+    broken = streaks(turns, [_end(25, FELL_IN)])          # ...between turns 2 and 3
+    assert broken == (2, 2)
+
+
+def test_a_fall_owned_by_a_rejected_sweep_breaks_the_streak():
+    """The sweep is not a maneuver; the swim it ended is still a swim."""
+    turns = _seq(FLEW_THROUGH, FELL_IN, FLEW_THROUGH, FLEW_THROUGH,
+                 counted=(True, False, True, True))
+    # The bear-away is turn index 1, and the flight end it owns lands just after it.
+    assert streaks(turns, [_end(21, FELL_IN, owner=1)]) == (2, 2)
+    # Without the end, the rejected turn alone leaves the run untouched.
+    assert streaks(turns) == (3, 3)
+
+
+def test_an_end_owned_by_a_counted_turn_is_not_charged_twice():
+    """The turn's own outcome already speaks for it (flightend ownership)."""
+    turns = _seq(FLEW_THROUGH, FELL_IN, FLEW_THROUGH, FLEW_THROUGH)
+    owned = streaks(turns, [_end(21, FELL_IN, owner=1)])
+    assert owned == streaks(turns) == (2, 2)
+
+
+def test_a_straight_line_touchdown_breaks_flew_but_not_dry():
+    """He got wet without swimming: the dry run survives, the clean run does not."""
+    turns = _seq(FLEW_THROUGH, FLEW_THROUGH, FLEW_THROUGH)
+    assert streaks(turns, [_end(15, TOUCHDOWN)]) == (3, 2)
+
+
+def test_glide_outs_unknowns_and_truncated_ends_change_nothing():
+    turns = _seq(FLEW_THROUGH, FLEW_THROUGH, FLEW_THROUGH)
+    for end in (_end(15, GLIDE_OUT), _end(15, UNKNOWN),
+                _end(15, UNKNOWN, truncated=True),
+                _end(15, FELL_IN, truncated=True)):   # a stopped recording says nothing
+        assert streaks(turns, [end]) == (3, 3), end.outcome
+
+
+def test_non_turn_events_never_lengthen_a_run():
+    """Only a maneuver the rider carried can add to a streak."""
+    turns = _seq(FLEW_THROUGH, FLEW_THROUGH)
+    assert streaks(turns, [_end(t, GLIDE_OUT) for t in (5, 15, 25, 35)]) == (2, 2)
+
+
+def test_events_are_merged_in_time_order_not_list_order():
+    turns = _seq(FELL_IN, FLEW_THROUGH, FLEW_THROUGH)
+    turns.reverse()                                   # list order now flew, flew, fell
+    assert streaks(turns) == (2, 2)                   # end order still fell, flew, flew
+    # ...and an end sorts into the middle of the turn list by its own timestamp.
+    assert streaks(turns, [_end(25, FELL_IN)]) == (1, 1)
+
+
+def test_summary_carries_the_streaks():
+    turns = _seq(FLEW_THROUGH, TOUCHDOWN, FLEW_THROUGH, FELL_IN, FLEW_THROUGH)
+    s = summarize_turns(turns, [_end(15, GLIDE_OUT)])
+    assert (s.longest_dry_streak, s.longest_flew_streak) == (3, 1)
+    assert s.turns_counted == 5
+
+
+def test_flown_streak_never_exceeds_the_dry_one():
+    ends = [_end(15, FELL_IN), _end(35, TOUCHDOWN)]
+    for outcomes in ((FLEW_THROUGH, TOUCHDOWN, FELL_IN, FLEW_THROUGH, FLEW_THROUGH),
+                     (TOUCHDOWN, TOUCHDOWN, TOUCHDOWN),
+                     (FELL_IN, FELL_IN)):
+        for e in ([], ends):
+            dry, flew = streaks(_seq(*outcomes), e)
+            assert flew <= dry
+
+
+@pytest.mark.skipif(not TODAY.exists(), reason="ciq fixture missing")
+def test_real_session_streaks_match_the_merged_event_sequence():
+    """Recompute the runs from the two channels, independently of the summarizer."""
+    ct = clean(parse_fit(TODAY))
+    flights = segment_flights(ct)
+    turns = detect_turns(ct, flights, estimate_wind(ct, flights))
+    ends = classify_flight_ends(ct, flights, turns)
+    s = summarize_turns(turns, ends)
+
+    counted = {i for i, t in enumerate(turns) if t.counted}
+    events = [(t.end_t, 1, t.outcome, t.borderline) for i, t in enumerate(turns)
+              if i in counted]
+    events += [(e.t, 0, e.outcome, False) for e in ends
+               if not e.truncated and e.owned_by_turn not in counted]
+    assert any(ev[1] == 0 for ev in events), "the fixture must exercise the merge"
+
+    dry = flew = best_dry = best_flew = 0
+    for _t, is_turn, outcome, borderline in sorted(events, key=lambda e: (e[0], e[1])):
+        if is_turn:
+            dry = 0 if outcome == FELL_IN else dry + 1
+            flew = flew + 1 if (outcome == FLEW_THROUGH and not borderline) else 0
+            best_dry, best_flew = max(best_dry, dry), max(best_flew, flew)
+        else:
+            if outcome == FELL_IN:
+                dry = 0
+            if outcome in (FELL_IN, TOUCHDOWN):
+                flew = 0
+    assert (s.longest_dry_streak, s.longest_flew_streak) == (best_dry, best_flew)
+    assert s.longest_flew_streak <= s.longest_dry_streak <= s.turns_counted
+    # The merged rule can only ever be stricter than the turn-only one it replaced.
+    turn_only = streaks(turns)
+    assert s.longest_dry_streak <= turn_only[0]
+    assert s.longest_flew_streak <= turn_only[1]

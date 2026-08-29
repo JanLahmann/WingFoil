@@ -431,4 +431,224 @@ function implausibleSpeedIsNotARecord(logger as Test.Logger) as Boolean {
     return true;
 }
 
+
+// ---- Turn streaks (docs/algorithms.md "Turn streaks") ----
+// A tally says how the session went; a streak says how it FELT. These assert the exact two
+// rules from the contract — dry survives a touchdown and dies on a fall, flew dies on
+// anything that is not a clean fly-through — plus the one that is easy to get wrong: a
+// rejected sweep is INVISIBLE to both, neither extending nor breaking a run.
+
+// One clean 180 deg jibe carried all the way through, at `speed`.
+function streakFlyThrough(d as TurnDetector, cog as Float) as Void {
+    runStraight(d, 5, cog, 8.0);
+    runSweep(d, cog, 30.0, 6, 8.0);
+    runStraight(d, 6, cog + 180.0, 8.0);
+}
+
+// A jibe with a brief touch: off the foil, then pumped straight back up. Never swam.
+function streakTouchdown(d as TurnDetector, cog as Float) as Void {
+    runStraight(d, 5, cog, 8.0);
+    runSweep(d, cog, 30.0, 6, 8.0);
+    runStraight(d, 3, cog + 180.0, 0.5);
+    runStraight(d, 6, cog + 180.0, 8.0);
+}
+
+// A jibe he swam out of: never gets going again inside the lookahead cap.
+function streakFellIn(d as TurnDetector, cog as Float) as Void {
+    runStraight(d, 5, cog, 8.0);
+    runSweep(d, cog, 30.0, 6, 8.0);
+    runStraight(d, 14, cog + 180.0, 0.2);
+}
+
+// n seconds OFF the foil at `speed`, holding `cog`. The flight-end half of the streak rule
+// needs the flying flag to actually fall, which runStraight never lets it do.
+function runOffFoil(d as TurnDetector, n as Number, cog as Float, speed as Float) as Void {
+    for (var i = 0; i < n; i++) {
+        d.tick(1.0, cog, speed, speed, false, false);
+    }
+}
+
+(:test)
+function turnStreaksFollowTheOutcomeLadder(logger as Test.Logger) as Boolean {
+    var d = new TurnDetector(coreDefaults());
+    Test.assertEqual(d.dryStreak, 0);
+    Test.assertEqual(d.bestDryStreak, 0);
+    Test.assertEqual(d.flewStreak, 0);
+    Test.assertEqual(d.bestFlewStreak, 0);
+
+    // two clean ones: both runs advance together
+    streakFlyThrough(d, 0.0);
+    streakFlyThrough(d, 0.0);
+    Test.assertMessage(d.flewCount == 2, "two fly-throughs, got " + d.flewCount.toString());
+    Test.assertEqual(d.dryStreak, 2);
+    Test.assertEqual(d.flewStreak, 2);
+
+    // a touchdown: he stayed OUT OF THE WATER, so dry survives and only flew resets
+    streakTouchdown(d, 0.0);
+    Test.assertMessage(d.touchdownCount == 1, "one touchdown");
+    Test.assertMessage(d.dryStreak == 3,
+        "a touchdown must not end a dry run, got " + d.dryStreak.toString());
+    Test.assertEqual(d.flewStreak, 0);
+    Test.assertEqual(d.bestFlewStreak, 2);
+    Test.assertEqual(d.bestDryStreak, 3);
+
+    // he swims: both runs end
+    streakFellIn(d, 0.0);
+    Test.assertMessage(d.fellCount == 1, "one fall");
+    Test.assertEqual(d.dryStreak, 0);
+    Test.assertEqual(d.flewStreak, 0);
+    Test.assertEqual(d.bestDryStreak, 3);       // the best survives the reset
+
+    // ... and a shorter run afterwards does not lower the session best
+    streakFlyThrough(d, 0.0);
+    Test.assertEqual(d.dryStreak, 1);
+    Test.assertEqual(d.bestDryStreak, 3);
+    Test.assertEqual(d.bestFlewStreak, 2);
+
+    // the invariant the contract states: flew <= dry, always
+    Test.assertMessage(d.bestFlewStreak <= d.bestDryStreak,
+        "flew streak " + d.bestFlewStreak.toString() + " > dry streak "
+            + d.bestDryStreak.toString());
+    logger.debug("streaks: dry " + d.bestDryStreak.toString() + " best, flew "
+        + d.bestFlewStreak.toString() + " best over " + d.turnCount.toString() + " turns");
+    return true;
+}
+
+(:test)
+function rejectedSweepsAreInvisibleToStreaks(logger as Test.Logger) as Boolean {
+    var cfg = coreDefaults();
+    cfg.windDirection = 0;                      // wind from north
+    var d = new TurnDetector(cfg);
+
+    // Two clean jibes with a BEAR-AWAY between them. A course change is not a maneuver the
+    // rider attempted: counting it either way would make the streak depend on how far he bore
+    // away between two jibes, which is not what the number claims.
+    runStraight(d, 5, 120.0, 8.0);
+    runSweep(d, 120.0, 30.0, 4, 8.0);           // 120 -> 240 through dead downwind: a jibe
+    runStraight(d, 6, 240.0, 8.0);
+    Test.assertMessage(d.jibeCount == 1, "first jibe, got " + d.jibeCount.toString());
+    Test.assertEqual(d.dryStreak, 1);
+
+    // 60 -> 150: crosses neither axis end, so KIND_REJECT
+    runStraight(d, 5, 60.0, 8.0);
+    runSweep(d, 60.0, 30.0, 3, 8.0);
+    runStraight(d, 6, 150.0, 8.0);
+    Test.assertMessage(d.rejectedCount == 1,
+        "expected one rejected sweep, got " + d.rejectedCount.toString());
+    Test.assertMessage(d.dryStreak == 1,
+        "a rejected sweep moved the streak: " + d.dryStreak.toString());
+    Test.assertMessage(d.flewStreak == 1, "a rejected sweep moved the flew streak");
+
+    // the next real jibe continues the run rather than starting a new one
+    runStraight(d, 5, 120.0, 8.0);
+    runSweep(d, 120.0, 30.0, 4, 8.0);
+    runStraight(d, 6, 240.0, 8.0);
+    Test.assertMessage(d.jibeCount == 2, "second jibe, got " + d.jibeCount.toString());
+    Test.assertMessage(d.dryStreak == 2,
+        "the run must span the course change, got " + d.dryStreak.toString());
+    Test.assertEqual(d.bestDryStreak, 2);
+    // and the streaks count exactly the population turnCount does
+    Test.assertEqual(d.turnCount, 2);
+    logger.debug("bear-away between two jibes: streak " + d.dryStreak.toString()
+        + " over " + d.turnCount.toString() + " counted turns, "
+        + d.rejectedCount.toString() + " rejected");
+    return true;
+}
+
+
+// The amendment: a swim that no turn explains still ends the run. A rider who ventilates the
+// foil on a straight reach and goes in HAS been in the water, and a "dry" streak that counted
+// only turn outcomes was quietly claiming otherwise — it overcounted, on the corpus by one
+// (12 rather than 11 dry) and by twice that on the strict run (10 rather than 5 flew).
+(:test)
+function straightLineFallsBreakTheStreaks(logger as Test.Logger) as Boolean {
+    var d = new TurnDetector(coreDefaults());
+
+    streakFlyThrough(d, 0.0);
+    streakFlyThrough(d, 0.0);
+    Test.assertEqual(d.dryStreak, 2);
+    Test.assertEqual(d.flewStreak, 2);
+
+    // ...and now he ventilates on a straight reach and swims. No sweep, no turn, no counter
+    // moves — and both runs are over anyway.
+    var turnsBefore = d.turnCount;
+    var flewBefore = d.flewCount;
+    runOffFoil(d, 14, 0.0, 0.2);
+    Test.assertMessage(d.turnCount == turnsBefore,
+        "a straight-line fall must not become a turn");
+    Test.assertMessage(d.flewCount == flewBefore, "no outcome may be tallied for it");
+    Test.assertMessage(d.dryStreak == 0,
+        "a swim outside a turn left the dry run at " + d.dryStreak.toString());
+    Test.assertEqual(d.flewStreak, 0);
+    Test.assertEqual(d.bestDryStreak, 2);       // the best still stands
+
+    // the run restarts from the next clean turn
+    runStraight(d, 5, 0.0, 8.0);
+    streakFlyThrough(d, 0.0);
+    Test.assertEqual(d.dryStreak, 1);
+    Test.assertEqual(d.flewStreak, 1);
+
+    // A straight-line TOUCHDOWN — off the foil, briefly slow, up again — is not a swim: dry
+    // survives it, the strict run does not. Same asymmetry as a turn's touchdown.
+    runOffFoil(d, 2, 0.0, 0.5);
+    runStraight(d, 4, 0.0, 8.0);                 // flying again closes the window
+    Test.assertMessage(d.dryStreak == 1,
+        "a straight-line touchdown ended the dry run: " + d.dryStreak.toString());
+    Test.assertEqual(d.flewStreak, 0);
+
+    // A GLIDE-OUT changes nothing at all: he came off the foil and kept making way.
+    streakFlyThrough(d, 0.0);
+    var dry = d.dryStreak;
+    runOffFoil(d, 6, 0.0, 5.0);                  // never reaches the stop floor
+    runStraight(d, 4, 0.0, 8.0);
+    Test.assertMessage(d.dryStreak == dry,
+        "a glide-out broke the dry run: " + d.dryStreak.toString());
+    Test.assertMessage(d.flewStreak > 0, "a glide-out broke the flew run");
+    logger.debug("straight-line ends: fall resets both, touchdown resets flew only, "
+        + "glide-out resets neither");
+    return true;
+}
+
+// The case the amendment was written for, stated on its own: a fall BETWEEN two clean turns
+// must reset both runs, so the two fly-throughs either side never read as a run of two.
+(:test)
+function aFallBetweenTwoFlewTurnsResetsBothStreaks(logger as Test.Logger) as Boolean {
+    var d = new TurnDetector(coreDefaults());
+    streakFlyThrough(d, 0.0);
+    Test.assertEqual(d.dryStreak, 1);
+
+    runOffFoil(d, 14, 0.0, 0.2);                 // he goes in, no maneuver involved
+    Test.assertEqual(d.dryStreak, 0);
+    Test.assertEqual(d.flewStreak, 0);
+
+    runStraight(d, 5, 0.0, 8.0);
+    streakFlyThrough(d, 0.0);
+    Test.assertMessage(d.flewCount == 2, "both turns still flew through");
+    Test.assertMessage(d.bestDryStreak == 1,
+        "the two fly-throughs were merged into a run of " + d.bestDryStreak.toString());
+    Test.assertEqual(d.bestFlewStreak, 1);
+    logger.debug("2 fly-throughs split by one swim: best run "
+        + d.bestDryStreak.toString() + ", not 2");
+    return true;
+}
+
+// A GPS gap is missing evidence, not a swim. An end the detector cannot judge must be
+// dropped, exactly as an unjudgeable takeoff effort is — "he might have gone in" must never
+// break a run the rider actually kept.
+(:test)
+function anUnjudgeableFlightEndDoesNotBreakAStreak(logger as Test.Logger) as Boolean {
+    var d = new TurnDetector(coreDefaults());
+    streakFlyThrough(d, 0.0);
+    streakFlyThrough(d, 0.0);
+    Test.assertEqual(d.dryStreak, 2);
+
+    runOffFoil(d, 3, 0.0, 0.4);                  // the end opens, evidence starts collecting
+    d.onGap();                                    // ...and the fixes stop arriving
+    runOffFoil(d, 14, 0.0, 0.4);
+    Test.assertMessage(d.dryStreak == 2,
+        "a gap was read as a swim, run fell to " + d.dryStreak.toString());
+    logger.debug("gap during a flight end: run held at " + d.dryStreak.toString());
+    return true;
+}
+
 }

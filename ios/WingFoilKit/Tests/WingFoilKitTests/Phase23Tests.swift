@@ -194,6 +194,137 @@ import Testing
         #expect(sharedEnds == ownEnds)
     }
 
+    // MARK: - Turn streaks
+
+    /// Counted turns carrying only what a streak reads: end time and outcome. End times are
+    /// 10, 20, 30 … so a flight end can be dropped between any two of them.
+    private func streakTurns(_ outcomes: [TurnOutcome],
+                             counted: [Bool]? = nil) -> [Turn] {
+        let flags = counted ?? Array(repeating: true, count: outcomes.count)
+        return outcomes.enumerated().map { i, outcome in
+            let end = 10.0 * Double(i + 1)
+            return Turn(startT: end - 1, endT: end, minT: end,
+                        kind: flags[i] ? .jibe : .bearAway, netDeg: 180, peakRateDegS: 30,
+                        direction: "port", side: "port", entryKn: 12, minKn: 9,
+                        entryKnDoppler: 12, minKnDoppler: 9, score: 0.75, success: true,
+                        twaInDeg: 90, twaOutDeg: -90, outcome: outcome)
+        }
+    }
+
+    /// A flight end at `t`; `owner` is an index into the turn list, as the classifier sets it.
+    private func streakEnd(_ t: Double, _ outcome: FlightEndOutcome,
+                           owner: Int? = nil, truncated: Bool = false) -> FlightEnd {
+        var end = FlightEnd(flightIndex: 0, t: t, outcome: outcome)
+        end.truncated = truncated
+        end.ownedByTurn = owner
+        return end
+    }
+
+    /// docs/algorithms.md "Turn streaks": dry counts staying out of the water, so a
+    /// touchdown extends it; flew is the strict run and a touchdown resets it too.
+    @Test func touchdownExtendsDryButBreaksFlew() {
+        let s = TurnDetector.streaks(streakTurns([.flewThrough, .touchdown, .flewThrough]))
+        #expect(s.dry == 3)
+        #expect(s.flew == 1)
+    }
+
+    @Test func aFallResetsBothStreaksAndTheLongestRunWins() {
+        let s = TurnDetector.streaks(
+            streakTurns([.flewThrough, .flewThrough, .flewThrough, .fellIn, .flewThrough]))
+        #expect(s.dry == 3)
+        #expect(s.flew == 3)
+    }
+
+    /// A bear-away is not a maneuver, so *as a turn* it is invisible either way.
+    @Test func rejectedSweepsAreInvisibleToStreaksAsTurns() {
+        let bridged = TurnDetector.streaks(
+            streakTurns([.flewThrough, .fellIn, .flewThrough], counted: [true, false, true]))
+        #expect(bridged.dry == 2)
+        #expect(bridged.flew == 2)
+
+        let notLengthened = TurnDetector.streaks(
+            streakTurns([.flewThrough, .flewThrough, .flewThrough],
+                        counted: [true, false, true]))
+        #expect(notLengthened.dry == 2)
+        #expect(notLengthened.flew == 2)
+    }
+
+    /// The bug the first cut of this metric had: a swim between two clean jibes that the
+    /// turn channel cannot see, because the rider simply fell in on a reach.
+    @Test func aStraightLineFallInsideAFlownRunBreaksIt() {
+        let turns = streakTurns([.flewThrough, .flewThrough, .flewThrough, .flewThrough])
+        #expect(TurnDetector.streaks(turns) == (4, 4))          // blind to it
+
+        let broken = TurnDetector.streaks(turns, ends: [streakEnd(25, .fellIn)])
+        #expect(broken.dry == 2)
+        #expect(broken.flew == 2)
+    }
+
+    /// The sweep is not a maneuver; the swim it ended is still a swim.
+    @Test func aFallOwnedByARejectedSweepBreaksTheStreak() {
+        let turns = streakTurns([.flewThrough, .fellIn, .flewThrough, .flewThrough],
+                                counted: [true, false, true, true])
+        let owned = TurnDetector.streaks(turns, ends: [streakEnd(21, .fellIn, owner: 1)])
+        #expect(owned.dry == 2)
+        #expect(owned.flew == 2)
+        #expect(TurnDetector.streaks(turns) == (3, 3))          // without the end
+    }
+
+    /// An end a counted turn owns is already spoken for by that turn's own outcome.
+    @Test func anEndOwnedByACountedTurnIsNotChargedTwice() {
+        let turns = streakTurns([.flewThrough, .fellIn, .flewThrough, .flewThrough])
+        #expect(TurnDetector.streaks(turns, ends: [streakEnd(21, .fellIn, owner: 1)])
+                    == TurnDetector.streaks(turns))
+        #expect(TurnDetector.streaks(turns) == (2, 2))
+    }
+
+    /// He got wet without swimming: the dry run survives, the clean run does not.
+    @Test func aStraightLineTouchdownBreaksFlewButNotDry() {
+        let s = TurnDetector.streaks(
+            streakTurns([.flewThrough, .flewThrough, .flewThrough]),
+            ends: [streakEnd(15, .touchdown)])
+        #expect(s.dry == 3)
+        #expect(s.flew == 2)
+    }
+
+    @Test func glideOutsUnknownsAndTruncatedEndsChangeNothing() {
+        let turns = streakTurns([.flewThrough, .flewThrough, .flewThrough])
+        let harmless = [streakEnd(15, .glideOut), streakEnd(15, .unknown),
+                        streakEnd(15, .unknown, truncated: true),
+                        // A stopped recording says nothing about the rider.
+                        streakEnd(15, .fellIn, truncated: true)]
+        for end in harmless {
+            #expect(TurnDetector.streaks(turns, ends: [end]) == (3, 3), "\(end.outcome)")
+        }
+        // Only a maneuver the rider carried can add to a streak.
+        #expect(TurnDetector.streaks(streakTurns([.flewThrough, .flewThrough]),
+                                     ends: [5, 15, 25, 35].map { streakEnd($0, .glideOut) })
+                    == (2, 2))
+    }
+
+    /// Events merge by time, not by list order.
+    @Test func eventsMergeInTimeOrderAndAreZeroWhenEmpty() {
+        var turns = streakTurns([.fellIn, .flewThrough, .flewThrough])
+        turns.reverse()
+        #expect(TurnDetector.streaks(turns) == (2, 2))
+        #expect(TurnDetector.streaks(turns, ends: [streakEnd(25, .fellIn)]) == (1, 1))
+
+        #expect(TurnDetector.streaks([]) == (0, 0))
+        #expect(TurnDetector.streaks([], ends: [streakEnd(5, .glideOut)]) == (0, 0))
+        #expect(TurnDetector.streaks(
+            streakTurns([.flewThrough, .flewThrough], counted: [false, false])) == (0, 0))
+    }
+
+    @Test func summaryCarriesTheStreaks() {
+        let s = TurnDetector.summarize(
+            streakTurns([.flewThrough, .touchdown, .flewThrough, .fellIn, .flewThrough]),
+            ends: [streakEnd(15, .glideOut)])
+        #expect(s.turnsCounted == 5)
+        #expect(s.longestDryStreak == 3)
+        #expect(s.longestFlewStreak == 1)
+    }
+
+
     // MARK: - Divergence check
 
     @Test func divergenceBannerFiresOnlyPastTheThresholds() {
@@ -217,6 +348,48 @@ import Testing
 
         // Nothing to compare on a source without our session dev fields.
         #expect(DivergenceCheck.compare(watch: WatchSummary(), phone: analysis).isEmpty)
+    }
+
+    /// A `0`/`0` turn pair with no `wind_dir_user` means the watch could not classify, not
+    /// that it saw no turns — docs/fit-schema.md. Reading it literally produced banners like
+    /// "Jibes: watch 0 vs phone 50" on a session of fifty clean jibes.
+    @Test func unclassifiedTurnCountsDoNotDiverge() {
+        var analysis = SessionSummarizer.analyze(syntheticFlightTrack())
+        analysis.summary.turns.tacks = 4
+        analysis.summary.turns.jibes = 50
+
+        /// Fixture-shaped session dev fields: the watch always writes these.
+        func session(tacks: Int, jibes: Int, windDeg: Double?) -> [String: FitDevValue] {
+            var d: [String: FitDevValue] = [
+                "discipline": .text("wingfoil"), "foil_time": .number(2439),
+                "foil_pct": .number(58), "flight_count": .number(23),
+                "tack_count": .number(Double(tacks)), "jibe_count": .number(Double(jibes)),
+            ]
+            if let windDeg { d["wind_dir_user"] = .number(windDeg) }
+            return d
+        }
+
+        // No wind axis ⇒ the pair is absent, so neither metric is comparable at all.
+        let noWind = FitSessionParser.watchSummary(session(tacks: 0, jibes: 0, windDeg: nil))
+        #expect(noWind.tackCount == nil)
+        #expect(noWind.jibeCount == nil)
+        #expect(!noWind.isEmpty)                       // the rest of the summary still stands
+        let quiet = DivergenceCheck.compare(watch: noWind, phone: analysis)
+        #expect(!quiet.contains { $0.metric == "Tacks" || $0.metric == "Jibes" })
+
+        // Same zeros *with* a wind axis: the watch really did count none, so it compares.
+        let withWind = FitSessionParser.watchSummary(session(tacks: 0, jibes: 0, windDeg: 200))
+        #expect(withWind.tackCount == 0)
+        #expect(withWind.jibeCount == 0)
+        let loud = DivergenceCheck.compare(watch: withWind, phone: analysis)
+        #expect(Set(loud.map(\.metric)).isSuperset(of: ["Tacks", "Jibes"]))
+
+        // And the demotion is narrow: one non-zero count means the axis was set after all.
+        let oneSided = FitSessionParser.watchSummary(session(tacks: 3, jibes: 0, windDeg: nil))
+        #expect(oneSided.tackCount == 3)
+        #expect(oneSided.jibeCount == 0)
+        #expect(DivergenceCheck.compare(watch: oneSided, phone: analysis)
+                    .contains { $0.metric == "Jibes" })
     }
 
     // MARK: - Helpers
