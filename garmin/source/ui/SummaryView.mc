@@ -321,11 +321,14 @@ class SummaryView extends WatchUi.View {
             Graphics.FONT_XTINY, (e.distM / 1000.0).format("%.1f") + " km", CV);
     }
 
-    // Half-side of the square the track is drawn in: the square inscribed in the glass
-    // (side 2R/sqrt2), less the margin. Shared with the layout test.
+    // Full side of the square the track is drawn in: the square inscribed in the glass
+    // (side R*sqrt2), less the margin. Callers scale the track's longer axis to this and
+    // hang the caption off `cy + box/2`, so this must be the whole side — returning the
+    // half-side once drew every track at half size with the caption floating mid-glass.
+    // Shared with the layout test.
     static function trackBox(dc as Dc) as Number {
         var r = dc.getWidth() / 2 - SUM_TRACK_MARGIN;
-        return (r * 1000 / 1414);
+        return (r * 1414 / 1000);
     }
 
     // Degrees-to-pixels, aspect preserved: whichever axis is relatively longer sets the
@@ -347,11 +350,13 @@ class SummaryView extends WatchUi.View {
         dc.drawText(dc.getWidth() / 2, savedY(dc), Graphics.FONT_XTINY, SUM_SAVED, CV);
     }
 
-    // Ink centre of the SAVED pill and of the dot row: both hang off the bottom of the glass
-    // and both are measured against the chord there by the layout test.
+    // Ink centre of the SAVED pill: the TOP arc of the verdict page, mirroring where the
+    // MAIN page keeps its clock. The bottom slot it first shipped in sat one line above the
+    // dot band, which on a 454 px glass is 6 px above the verdict's second sub-row — two
+    // baselines overprinting each other on the exact page the rider lands on. The top of
+    // that page is empty, and an acknowledgement reads fine as an eyebrow.
     static function savedY(dc as Dc) as Number {
-        var h = dc.getHeight();
-        return h - dotBand(dc) - dc.getFontHeight(Graphics.FONT_XTINY);
+        return dotBand(dc) + dc.getFontHeight(Graphics.FONT_XTINY);
     }
 
     static function dotBand(dc as Dc) as Number {
