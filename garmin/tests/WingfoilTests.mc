@@ -2253,25 +2253,29 @@ function summaryPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
         }
     }
 
-    // the SAVED pill and the page dots hang off the bottom arc
+    // the SAVED pill sits on the TOP arc (the verdict page's eyebrow); the dots hang off
+    // the bottom. The pill's old bottom slot overprinted the verdict's second sub-row.
     var savedW = dc.getTextWidthInPixels(SUM_SAVED, Graphics.FONT_XTINY);
     var rSaved = cornerRadius(savedW, RecordingView.inkH(dc, Graphics.FONT_XTINY),
         SummaryView.savedY(dc), cy);
-    Test.assertMessage(rSaved <= RecordingView.fitRadius(dc, false, false).toFloat(),
+    Test.assertMessage(rSaved <= RecordingView.fitRadius(dc, false, true).toFloat(),
         "SAVED pill corner " + rSaved.format("%.0f") + " off the glass");
+    Test.assertMessage(SummaryView.savedY(dc) + dc.getFontHeight(Graphics.FONT_XTINY) / 2
+        < cy - dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT) / 2,
+        "SAVED pill reaches the verdict giant");
     var dr = SummaryView.dotRadius(dc);
     var dotN = 7;                                   // every page the summary can produce
     var dotW = dotN * (2 * dr + SUM_DOT_GAP) - SUM_DOT_GAP;
     var rDots = cornerRadius(dotW, 2 * dr, screenPx() - SummaryView.dotBand(dc), cy);
     Test.assertMessage(rDots <= RecordingView.fitRadius(dc, false, false).toFloat(),
         "summary dot row corner " + rDots.format("%.0f") + " off the glass");
-    Test.assertMessage(SummaryView.savedY(dc) + dc.getFontHeight(Graphics.FONT_XTINY) / 2
-        <= screenPx() - SummaryView.dotBand(dc) - dr, "SAVED pill collides with the dots");
 
-    // the track page's box, and the aspect rule: a long thin track must stay long and thin
+    // the track page's box, and the aspect rule: a long thin track must stay long and thin.
+    // `trackBox` is the FULL side of the inscribed square — the drawn track spans `box`
+    // pixels on its longer axis, so `box` itself must sit inside the glass.
     var box = SummaryView.trackBox(dc);
-    Test.assertMessage(2 * box <= screenPx(), "track box wider than the glass");
-    Test.assertMessage(cornerRadius(2 * box, 2 * box, cy, cy)
+    Test.assertMessage(box <= screenPx(), "track box wider than the glass");
+    Test.assertMessage(cornerRadius(box, box, cy, cy)
         <= RecordingView.fitRadius(dc, false, false).toFloat() + 1.0,
         "track box corners off the glass");
     var wide = SummaryView.trackScale(box, 0.030, 0.002);
@@ -2281,7 +2285,7 @@ function summaryPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
         "a 15:1 track was stretched to fill the box");
     // a degenerate (single-point) track must produce a finite scale, not an infinity
     Test.assertMessage(SummaryView.trackScale(box, 0.0, 0.0) <= 1.0e8, "degenerate track");
-    logger.debug("summary: dots r" + dr.toString() + ", track box " + (2 * box).toString()
+    logger.debug("summary: dots r" + dr.toString() + ", track box " + box.toString()
         + "px, SAVED at y " + SummaryView.savedY(dc).toString());
     return true;
 }
