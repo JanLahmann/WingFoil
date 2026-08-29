@@ -92,8 +92,8 @@ field of headroom. Declared in one place: `garmin/source/fit/FitSchema.mc`.
 | 29 | `best_500m` | uint16 | cm/s | summary | |
 | 30 | `best_nm` | uint16 | cm/s | — | 1852 m; 0 = no qualifying run |
 | 31 | `alpha500_lite` | uint16 | cm/s | — | watch approximation; phone computes exact |
-| 32 | `tack_count` | uint8 | count | summary | only ≠0 when wind axis known; saturates at 254 |
-| 33 | `jibe_count` | uint8 | count | summary | |
+| 32 | `tack_count` | uint8 | count | summary | written only when the wind axis was set; saturates at 254 |
+| 33 | `jibe_count` | uint8 | count | summary | as `tack_count` |
 | 34 | `turn_success_pct` | uint8 | % | summary | successful / attempted turns (score ≥ `turnSuccessPct` and never off the foil), over *all* counted turns including the generic ones |
 | 38 | `total_pump_strokes` | uint16 | strokes | — | **watch-written**: every detected stroke, in flight or not |
 | 39 | `wind_dir_user` | uint16 | deg | — | direction the wind blows **from**, true; 65535 = unset. Set in GCM (`windDirDeg`) or on the watch (BACK → Session → Wind, 16 compass points). The value written is the one in effect at save; the watch classifies only turns detected *after* it was set, so a mid-session change can leave earlier turns generic — the phone re-runs classification over the whole track and is authoritative |
@@ -104,6 +104,28 @@ field of headroom. Declared in one place: `garmin/source/fit/FitSchema.mc`.
 
 Fields 28–31 (`best_5x10s`, `best_500m`, `best_nm`, `alpha500_lite`) are **reserved, not
 written**: the phone computes them exactly and there is no field slot to spare.
+
+**`tack_count`/`jibe_count` are written only when the wind axis was set.** Naming a sweep a
+tack or a jibe needs a wind direction, and the watch only ever has the one the rider entered
+by hand (`wind_dir_user`); without it every turn it detects stays generic. A **`0`/`0` pair
+with no `wind_dir_user`** — which is what older builds wrote in that case, having no way to
+say "unknown" in a uint8 — therefore means *unclassified*, not *none*, and the parser
+(`FitSessionParser.watchSummary`) treats the pair as **absent**: it leaves
+`WatchSummary.tackCount`/`.jibeCount` nil so the divergence check has nothing to compare.
+Reading them as literal zeros produced banners like "Jibes: watch 0 vs phone 50" for a
+session of fifty clean jibes, which is docs/presentation.md's missing-is-absent-never-0 rule
+being broken at the source. The demotion is deliberately narrow: one non-zero count, or any
+`wind_dir_user` at all, means the axis *was* set, and a 0 is then a real observation that
+still compares.
+
+**The watch side of that rule (device app ≥ 0.8.0).** `FitFields.updateSession` now simply
+does not call `setData` on 32, 33 or 39 unless a wind axis was set at some point in the
+session, and a developer field that is never written is not emitted — so new files carry the
+three fields **absent** rather than as a `0`/`0`/`65535` triple, which is what the paragraph
+above has to reconstruct for older files. The gate is `AppSettings.windEverSet`, sticky on
+purpose: a rider who sets the axis and later clears it has genuinely classified turns, so the
+counts stay and only `wind_dir_user` falls back to its unset sentinel. Asserted by
+`fitOmitsTurnCountsWhenNoWindAxisWasSet` in `garmin/tests/WingfoilTests.mc`.
 
 ### v1 — historical, for files written by app ≤ 0.5.0
 

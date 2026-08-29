@@ -52,7 +52,12 @@ class WingfoilApp extends Application.AppBase {
         AppSettings.load();
         PageModel.build(null);
         PageNav.index = PageModel.wrap(PageNav.index);
-        controller.engine.trackEnabled = PageModel.mapPage;
+        // The breadcrumb is now recorded ALWAYS, not only when a map page is configured.
+        // The post-save summary draws the session's track as its last page, and that page is
+        // the difference between a receipt and a review — it cannot be conditional on a
+        // setting the rider has probably never opened. Cost: 128 x (4 + 4 + 1) bytes = 1.2 KB
+        // against a 786 KB app budget.
+        controller.engine.trackEnabled = true;
     }
 
     function getInitialView() as [Views] or [Views, InputDelegates] {

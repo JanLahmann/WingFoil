@@ -68,12 +68,21 @@ rider had to pump it out; neither alone is enough.
 
 The score%/success pair is kept as the secondary, continuous metric: outcome says *what
 happened*, score says *how much speed the turn cost*.
+
+The summary finally carries two **streaks**, ``longest_dry_streak`` (no swim) and
+``longest_flew_streak`` (every turn carried clean). They are the one part of the summary
+that is *not* read from the turn channel alone: a streak claims something about the rider,
+and a swim in a straight line ends a run of clean jibes exactly as a botched jibe does. So
+the counted turns are merged with the flight ends no counted turn owns into one time-ordered
+event list, and only a counted turn can lengthen a run -- see `streaks`.
 """
 
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass, field
+from typing import Protocol
 
 import numpy as np
 
@@ -157,6 +166,39 @@ class Turn:
     outcome_window_s: float = 0.0    # tail past the sweep the outcome was judged over
 
 
+class FlightEndLike(Protocol):
+    """The four fields a streak reads off a `flightend.FlightEnd`.
+
+    Declared structurally rather than imported: `flightend` imports *this* module for the
+    shared outcome vocabulary, so the dependency has to keep running one way only.
+    """
+
+    t: float
+    outcome: str
+    truncated: bool
+    owned_by_turn: int | None
+
+
+@dataclass(frozen=True)
+class _StreakEvent:
+    """One thing that happened to the rider, from either channel (see `streaks`)."""
+
+    t: float
+    is_turn: bool
+    outcome: str
+    borderline: bool
+
+    @property
+    def flew_clean(self) -> bool:
+        """A counted turn carried all the way through -- the only thing `flew` extends on.
+
+        `borderline` only ever rides on a `touchdown`, so the flag is redundant against the
+        outcome today; it is spelled out because a streak is exactly where a "nearly a fall"
+        must not read as a clean one, whatever a later re-tune does to the flag.
+        """
+        return self.is_turn and self.outcome == FLEW_THROUGH and not self.borderline
+
+
 @dataclass
 class OutcomeCounts:
     """Three-way outcome tally for one family of turns."""
@@ -194,6 +236,8 @@ class TurnSummary:
     port: int = 0                    # counted turns entered on port tack
     starboard: int = 0
     unknown_side: int = 0
+    longest_dry_streak: int = 0      # longest run of counted turns without a fell_in
+    longest_flew_streak: int = 0     # longest run of counted turns that all flew through
 
 
 def detect_turns(clean: CleanTrack, flights: FlightResult,
@@ -235,8 +279,14 @@ def detect_turns(clean: CleanTrack, flights: FlightResult,
     return turns
 
 
-def summarize_turns(turns: list[Turn]) -> TurnSummary:
-    """Aggregate detected turns; bear-aways/round-ups only feed `rejected`."""
+def summarize_turns(turns: list[Turn],
+                    ends: Sequence[FlightEndLike] = ()) -> TurnSummary:
+    """Aggregate detected turns; bear-aways/round-ups only feed `rejected`.
+
+    Every count here reads turns alone. `ends` is needed by the **streaks** only, which are
+    a claim about the rider rather than about the turn channel and so have to see the
+    losses that happened outside a maneuver too (`streaks`).
+    """
     s = TurnSummary()
     for t in turns:
         if not t.counted:
@@ -259,7 +309,72 @@ def summarize_turns(turns: list[Turn]) -> TurnSummary:
         s.starboard += int(t.side == "starboard")
         s.unknown_side += int(t.side == "unknown")
     s.success_pct = 100.0 * s.turns_successful / s.turns_counted if s.turns_counted else 0.0
+    s.longest_dry_streak, s.longest_flew_streak = streaks(turns, ends)
     return s
+
+
+def streaks(turns: list[Turn], ends: Sequence[FlightEndLike] = ()) -> tuple[int, int]:
+    """(longest dry streak, longest flew streak) over one merged, time-ordered event list.
+
+    A streak is a claim about *the rider*, not about the turn channel, so it cannot be read
+    from turn outcomes alone: a swim in a straight line, or one inside a bear-away, ends a
+    run of clean jibes just as surely as a botched jibe does. The events are therefore
+
+    * every **counted turn**, at its ``end_t``, carrying its turn outcome; and
+    * every **flight end no counted turn owns** -- straight-line ends, and ends owned by a
+      rejected sweep -- at its ``t``, carrying its flight-end outcome.
+
+    An end a counted turn *does* own is left out: that turn's own outcome already speaks
+    for it, and counting both would penalize one swim twice.
+
+    Only a counted turn can lengthen a run. A non-turn event can only end one:
+
+    ``dry``  reset by ``fell_in`` from either channel; a turn extends it on anything else,
+             and a non-turn ``touchdown``/``glide_out``/``unknown`` changes nothing --
+             pumping straight back up out of a straight-line touchdown is still dry;
+    ``flew`` reset by ``touchdown`` or ``fell_in`` from either channel (and by a
+             ``borderline`` turn); only ``flew_through`` extends it.
+
+    `ends` omitted means the caller has no flight-end channel to offer -- correct for a
+    synthetic turn-only track, and never the case in the real pipeline, which classifies
+    ends before it summarizes turns.
+    """
+    longest_dry = longest_flew = dry = flew = 0
+    for ev in _streak_events(turns, ends):
+        if ev.is_turn:
+            dry = 0 if ev.outcome == FELL_IN else dry + 1
+            flew = flew + 1 if ev.flew_clean else 0
+            longest_dry = max(longest_dry, dry)
+            longest_flew = max(longest_flew, flew)
+        else:
+            # Nothing outside a maneuver is a maneuver the rider carried, so a non-turn
+            # event never lengthens a run -- it can only cut one short.
+            if ev.outcome == FELL_IN:
+                dry = 0
+            if ev.outcome in (FELL_IN, TOUCHDOWN):
+                flew = 0
+    return longest_dry, longest_flew
+
+
+def _streak_events(turns: list[Turn],
+                   ends: Sequence[FlightEndLike]) -> list["_StreakEvent"]:
+    """The merged event list a streak walks, in time order (see `streaks`).
+
+    Truncated ends are dropped outright: the recording stopped, which is not evidence that
+    anything happened to the rider. At an identical timestamp the non-turn event is applied
+    first, so a coincident fall breaks the run rather than being masked by the turn that
+    would extend it -- the conservative reading, and a tie the ownership window makes
+    unreachable in practice anyway.
+    """
+    counted = {i for i, t in enumerate(turns) if t.counted}
+    events = [_StreakEvent(t.end_t, True, t.outcome, t.borderline)
+              for i, t in enumerate(turns) if i in counted]
+    for end in ends:
+        if end.truncated or end.owned_by_turn in counted:
+            continue
+        events.append(_StreakEvent(float(end.t), False, end.outcome, False))
+    events.sort(key=lambda e: (e.t, e.is_turn))
+    return events
 
 
 def _assign_outcomes(turns: list[Turn], clean: CleanTrack, flights: FlightResult,

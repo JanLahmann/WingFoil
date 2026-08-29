@@ -39,6 +39,7 @@
     <string id="LayClock">Clock + 1 cell</string>
     <string id="LayMap">Map (breadcrumb track)</string>
     <string id="LayTimeline">Timeline (session story)</string>
+    <string id="LayMain">Main (speed + turns + streak)</string>
     <string id="MetNone">— none —</string>
     <string id="MetSpeed">Speed</string>
     <string id="MetFoilPct">Foil %</string>
@@ -59,6 +60,7 @@
     <string id="MetTakeoffs">Takeoffs (attempts&gt;made)</string>
     <string id="MetPumpsToTakeoff">Pumps to takeoff (last)</string>
     <string id="MetTakeoffCost">Takeoff HR cost (last)</string>
+    <string id="MetStreak">Dry run (now/best)</string>
     <!-- data screens (Feature 1): 6 pages x (layout + 5 metric slots) -->
     <string id="SetPageGroup">Data screens</string>
     <string id="SetPg1Layout">Page 1 layout</string>

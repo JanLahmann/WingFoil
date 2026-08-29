@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.3.0** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.4.0** (bump on any change that alters outputs; triggers phone re-analysis)
 
 ## Flight (foil) detection — hysteresis state machine
 
@@ -266,6 +266,98 @@ The same code with no accel and no barometer still moves 2026-08-05 am from 15/1
 and 2026-08-04 pm from 42/7/5 to 35/11/8, so the correction is not an artifact of the one
 session that has extra channels.
 
+### Turn streaks — `longestDryStreak` · `longestFlewStreak`
+
+A tally says how the session went; a streak says how it *felt*. That makes a streak a claim
+about **the rider**, not about the turn channel — so it cannot be read from turn outcomes
+alone. A swim in a straight line ends a run of clean jibes exactly as a botched jibe does,
+and the rider remembers it that way.
+
+**One merged event list**, in time order, from both outcome channels:
+
+* every **counted turn**, at its `endTs`, carrying its turn outcome; plus
+* every **flight end that no counted turn owns** — straight-line ends, and ends owned by a
+  rejected sweep — at its `ts`, carrying its flight-end outcome.
+
+A flight end a counted turn *does* own is excluded: that turn's own outcome already speaks
+for it (docs "Flight-end outcome" → **Ownership**), and counting both would charge one swim
+twice. Truncated ends are dropped outright — the recording stopped, which is not evidence
+that anything happened to the rider.
+
+Only a counted turn can *lengthen* a run. A non-turn event can only cut one short:
+
+| event | `longestDryStreak` | `longestFlewStreak` |
+| --- | --- | --- |
+| counted turn, `flew_through` | +1 | +1 |
+| counted turn, `touchdown` (incl. `borderline`) | +1 | reset |
+| counted turn, `fell_in` | reset | reset |
+| non-turn end, `fell_in` | reset | reset |
+| non-turn end, `touchdown` | — | reset |
+| non-turn end, `glide_out` / `unknown` / truncated | — | — |
+
+Dry counts *staying out of the water*, so a touchdown pumped straight back out never ends
+it, from either channel. Flew is the strict run: every maneuver carried clean, and any wet
+event anywhere resets it. `longestFlewStreak ≤ longestDryStreak` always, both are `0` with
+no counted turns, and at an identical timestamp the non-turn event is applied first — the
+conservative reading, though the ownership window makes that tie unreachable in practice.
+
+**Rejected sweeps are still not maneuvers**, but their *consequences* are. A bear-away
+neither extends nor breaks a streak as a turn — it is not something the rider attempted, and
+counting it either way would make a streak depend on how much he bore away between jibes. A
+fall that a bear-away owns is a different matter entirely: he swam. It enters as a non-turn
+event, which is exactly how the flight-end channel already reports it.
+
+That distinction is what the first cut of this metric got wrong, and the corpus says so
+loudly. On 2026-08-29 the turn-only rule read **12 dry / 10 flew**; the merged rule reads
+**11 / 5**. The 10-run was never real — it spans a fall inside a bear-away at 3551 s (flight
+end owned by turn 33, `bear_away`) and a straight-line fall at 3790 s, two swims the turn
+channel cannot see because neither happened in a counted turn. The scale of the blind spot
+is the reason: that session has **25 falls, and only 8 of them are in a counted turn**. The
+other 17 arrive as non-turn events — 13 straight-line, 4 owned by bear-aways — alongside one
+straight-line touchdown, 18 events in all. Read through the turn channel alone a streak
+misses two thirds of the session's swims, which is precisely how a run of 10 survived two of
+them. 2026-08-07 moves **5 / 2 → 4 / 2** on the same rule.
+
+The two numbers still say what the tallies cannot. 2026-08-29 (51 counted turns, 35 flew /
+8 touchdown / 8 fell) reads 11 / 5; 2026-08-07 (30 counted, 9 / 9 / 12) reads 4 / 2. The
+first rider strung his good turns together and the second did not, and that is the whole
+point of carrying the streaks beside the counts.
+
+**On the watch, live** (device app ≥ 0.8.0). `WingFoilCore.TurnDetector` carries
+`dryStreak`/`bestDryStreak` and `flewStreak`/`bestFlewStreak`; the current dry run and the
+session best are the bottom row of the main screen, and the best is on the post-save Turns
+page. Counted turns move them in `_resolve()`, the one place a turn outcome is decided — so a
+rejected sweep increments nothing by construction, since `KIND_REJECT` returns before the
+outcome window ever opens.
+
+The **non-turn channel** is the half the watch has to approximate, because it has no
+flight-end classifier of its own. `_flightEndTick` is a small one: on the flying→not-flying
+edge, *and only while the turn state machine is idle*, it opens a `turnLookahead`-long window
+and collects the same evidence `_track` collects for a turn — barometric submersion, and the
+longest spell below `turnStopSpeedFloor` on the same both-ends-qualify clock — then applies
+the table above's non-turn rows. It touches nothing else: no counter, no event, no FIT marker.
+A GPS gap closes the window unjudged rather than calling it a fall, on the same principle that
+drops an unjudgeable takeoff effort. Falls owned by a bear-away arrive through this path
+too — a rejected sweep leaves the state machine idle, so the swim after one is an unowned
+flight end, which is exactly the classification the merged rule wants.
+
+Two drifts from the engine, both in the conservative direction and both from having only live
+evidence:
+
+- **ownership** is "is a turn window open right now" rather than the engine's retrospective
+  `ownedByTurn`, so a fall a few seconds after a turn has already resolved reads as
+  straight-line on the watch and as turn-owned on the phone. The streak effect is identical;
+  only the attribution differs.
+- an end whose evidence only arrives after the window closes — a very slow sink — is a
+  glide-out to the watch. The phone, seeing the whole track, calls it what it was.
+
+The phone remains authoritative and recomputes both numbers on import.
+`garmin/barrel/WingFoilCore/tests/CoreTests.mc` asserts the watch rules:
+`turnStreaksFollowTheOutcomeLadder`, `rejectedSweepsAreInvisibleToStreaks`,
+`straightLineFallsBreakTheStreaks`, `aFallBetweenTwoFlewTurnsResetsBothStreaks` and
+`anUnjudgeableFlightEndDoesNotBreakAStreak`.
+
+
 ### Flight-end outcome — `glide_out` · `touchdown` · `fell_in` · `unknown`
 
 Turn outcomes only explain the losses that happen *in a maneuver*. Sessions also lose the
@@ -348,7 +440,9 @@ default, compiled in rather than exposed in GCM: they were tuned on the corpus, 
 guessing at them would only break the comparison against the phone. What the rider does get is
 two switches: `pumpDetection` (default on) and `alertTakeoff` (default on). The watch's old
 `attemptSuccessWindow` (5 s) is gone — `takeoffAttemptWindow` plays both roles, as
-*Takeoff analysis* already stated.
+*Takeoff analysis* already stated. The one constant with no lab counterpart is
+`ATTEMPT_JOIN_GRACE_MS` (6.5 s), which exists because the watch has to decide *now* whether an
+effort is over while the burst that would join it is still forming — row 5a below.
 
 It lives in the **device app, not the WingFoilCore barrel**: every `Toybox.Sensor` entry point
 crashes a data field (docs/fit-schema.md, source class d), so the shared core must not even
@@ -374,15 +468,35 @@ to answer while the rider is still on the water. The deviations, all deliberate:
 | 3 | box-average onto a uniform grid | the sensor **is** the grid (25 Hz requested); a faster device is decimated onto it, a slower one leaves the detector unavailable rather than mis-banded | fenix 8 delivers exactly 25 Hz |
 | 4 | gaps bookkept, their bins discarded | a late or short batch **restarts the filter**, and nothing is emitted for the 51-sample warmup | same intent: a dropout contributes no strokes rather than a burst of edge artifacts |
 | 5 | episodes classified afterwards, ladder in_flight → success → recovery → unknown → failed | the same ladder, decided **when the burst qualifies**: one that starts while `STATE_ON` is in-flight pumping and never opens an effort; a turn window open during *any* stroke marks the effort as recovery (the lab asks whether the whole episode lies inside the window) | the watch cannot see the future; both approximations only ever *remove* attempts, so the live count is a floor and the phone stays authoritative |
+| 5a | two bursts are one episode when `first - prev_end < takeoffAttemptWindow` — measured to the next burst's **first** stroke | identical, live: the merge test reads `_burstStartMs`, and `_expire` will not declare an effort failed while a burst that began inside the window is younger than `ATTEMPT_JOIN_GRACE_MS` (6.5 s = the 4.5 s a legal `pumpMinStrokes` burst may take to form + the 1 s FIR group delay + the 1 Hz tick its last stroke arrives in) | without both halves the 10 s silence expires *between* a joining burst's first and fourth stroke, and one long bout is counted as several attempts — see below |
 | 6 | `ON_FOIL` is the exact flight boundary | the `STATE_OFF→STATE_ON` transition, backdated by `entryHoldS` | that is the instant the FlightDetector backdates its own accounting to |
 | 7 | success = a flight starts inside the window | the flight must also be **confirmed** (`minFlight`, up to 5 s later); an effort whose window expires while the rider is ON foil is held pending until the flight is confirmed or collapses | nothing shorter than `minFlight` counts as a flight anywhere else either |
 | 8 | `unknown` episodes are excluded from every tally | a GPS gap drops the open effort silently | identical outcome, same reason |
-| 9 | `pumps_to_takeoff` = strokes in the run (speed rise ∪ lead burst) | strokes in the **effort** alone | the watch has no walk-back over past speed; a takeoff with no qualifying burst reports 0 = free takeoff, which is what the lab reports when the run holds no strokes |
+| 9 | `pumps_to_takeoff` = strokes in the run (speed rise ∪ lead burst) | strokes in the effort's **lead burst** alone | the watch has no walk-back over past speed, but it can hold the current burst apart from the rest of the effort — and must, now that an effort may span half a minute of thrashing (row 5a). A takeoff with no qualifying burst reports 0 = free takeoff, which is what the lab reports when the run holds no strokes |
 | 10 | `takeoff_successes` = flights · `takeoff_attempts` = flights + failed efforts | identical, counted live | — |
 
-Expected drift: the watch counts **fewer or equal** attempts, and its stroke total should sit
-within a few percent of the phone's. Anything larger is the divergence check's business
-(below) — filed against the session fixture, since a tuning difference is not a bug.
+Expected drift: the watch counts **slightly more** attempts than the phone — it cannot merge a
+bout across a burst it did not resolve the same way, and it has no walk-back — and its stroke
+total should sit within a few percent of the phone's. Anything larger is the divergence check's
+business (below) — filed against the session fixture, since a tuning difference is not a bug.
+
+Row 5a is measured, not asserted. `lab/tools/watch_pump_replica.py` (a tuning harness, not
+engine code) replays this detector offline against a fixture FIT and is calibrated against the
+watch's own `takeoff_pack`: on 2026-08-29 the watch recorded 86 attempts / 31 successes / 14.7
+avg pumps and the replica reproduces 83 / 31 / 15.0. Before row 5a the replica fragmented ten
+of the phone's 69 episodes into extra failed attempts; with it, three. Replica vs the phone's
+authoritative count, on the two `ciq` fixtures:
+
+| fixture | before | after | phone |
+|---|---|---|---|
+| 2026-08-07 | 41 attempts / 23 / 11.6 pumps | 40 / 23 / 9.9 | 37 / 23 / 9.0 |
+| 2026-08-29 | 83 attempts / 31 / 15.0 pumps | 75 / 31 / 12.0 | 69 / 31 / 10.3 |
+
+Successes are exact by construction (every confirmed flight is one). The residual is not
+segmentation: it is three qualifying 4-stroke bursts per session that the causal filter finds
+and the zero-phase one does not, plus three merges the watch's own stroke train cannot see.
+Buying those back needs a merge window of 16–20 s, which trades three real boundaries away for
+six wrong merges — a better number for a worse rule, so it was not taken.
 
 Phone metrics beyond the watch's: time-to-takeoff, HR cost (HR rise over attempt +30 s, only
 over valid HR spans — see *HR cost* below), in-flight pump episodes (v2).

@@ -17,6 +17,11 @@ say *when*, which is exactly what a map needs. The episodes are now serialized w
 detection order, every outcome: presentation decides what to draw, the schema carries the
 evidence. Adding the key moves no pre-existing number, but it is still a schema change and
 `ENGINE_VERSION` is what tells a stored analysis to re-derive itself.
+
+Engine 0.4.0 adds `summary.turns.longestDryStreak` / `longestFlewStreak`. Same kind of
+change again — nothing pre-existing moved — but the absence of a streak is not the same
+statement as a streak of 0, and only the version bump keeps a 0.3.0 document from being
+read as the latter.
 """
 
 from __future__ import annotations
@@ -116,7 +121,9 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
     # it joins to three earlier phases at once (runs, ends, turns) -- so it runs last.
     hr = analyze_hr(track, fr, takeoffs, ends, pt, turns, hcfg)
 
-    turn_summary = summarize_turns(turns)
+    # `ends` because the streaks span both channels: a straight-line swim ends a run of
+    # clean turns too (docs/algorithms.md "Turn streaks").
+    turn_summary = summarize_turns(turns, ends)
     end_summary = summarize_flight_ends(ends)
     return Analysis(
         track=track, clean=ct, flights=fr, records=rec,
@@ -519,6 +526,8 @@ def _turn_summary_json(s: TurnSummary) -> dict:
         "port": s.port,
         "starboard": s.starboard,
         "unknownSide": s.unknown_side,
+        "longestDryStreak": s.longest_dry_streak,
+        "longestFlewStreak": s.longest_flew_streak,
         "outcomes": _outcome_counts_json(s.outcomes),
         "tackOutcomes": _outcome_counts_json(s.tack_outcomes),
         "jibeOutcomes": _outcome_counts_json(s.jibe_outcomes),

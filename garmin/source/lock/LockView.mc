@@ -56,7 +56,7 @@ class LockView extends WatchUi.View {
     // tester has to transcribe. So: measure the ladder first, then only accept a vector size
     // that is genuinely taller.
     static function codeFont(dc as Dc, code as String) as Graphics.FontType {
-        var radius = RecordingView.fitRadius(dc);
+        var radius = RecordingView.fitRadius(dc, false, false);
         var dy = (rowY(dc.getHeight(), ROW_CODE) - dc.getHeight() / 2).abs();
         var l = ladder();
         var best = RecordingView.fitFont(dc, l, 0, code,

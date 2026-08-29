@@ -4,26 +4,69 @@ import Toybox.System;
 import WingFoilCore;
 
 // Vibration alerts (primary on-water channel — tones are inaudible in wind).
-// Global 5 s debounce; per-alert enables live in AppSettings.
+// Per-CHANNEL debounce plus a short global floor; per-alert enables live in AppSettings.
+//
+// This used to be one module-level timestamp shared by every alert type, and that quietly
+// destroyed the thing the vibe patterns were designed for. The three turn-outcome rhythms
+// (`turnOutcome` below: one crisp tick / two soft ticks / three hard ticks) are the only way
+// a rider learns his verdict without looking — and a speed PB four seconds before the jibe
+// swallowed the verdict entirely. Coming out of a fast jibe, a PB and a turn outcome landing
+// within five seconds of each other is not an edge case, it is the normal case.
+//
+// So: each channel keeps its own 5 s window, which is what "don't repeat yourself" was ever
+// meant to say, and a 1 s global floor keeps two different alerts from overlapping into
+// mush. Total vibes stay bounded — at most one per second, at most one per channel per five.
 module AlertManager {
     const DEBOUNCE_MS = 5000;
-    var _lastMs as Number = 0;
+    // Nothing buzzes within this of anything else, whatever channel it is on: two profiles
+    // playing at once is one unreadable buzz, not two alerts.
+    const GLOBAL_FLOOR_MS = 1000;
 
-    function _fire(profiles as Array) as Void {
+    // Channels. Append only — the array below is indexed by these.
+    enum {
+        CH_PB = 0,
+        CH_FLIGHT = 1,
+        CH_INTERVAL = 2,
+        CH_TAKEOFF = 3,
+        CH_TURN = 4,
+        CH_COUNT = 5
+    }
+
+    var _lastMs as Array<Number> = [0, 0, 0, 0, 0];
+    var _lastAnyMs as Number = 0;
+
+    // Pure decision half, so the debounce rules are testable without a vibration motor.
+    // `lastCh` / `lastAny` are the two timestamps; returns true when the alert may play.
+    function allows(now as Number, lastCh as Number, lastAny as Number) as Boolean {
+        return now - lastCh >= DEBOUNCE_MS && now - lastAny >= GLOBAL_FLOOR_MS;
+    }
+
+    function _fire(ch as Number, profiles as Array) as Void {
         var now = System.getTimer();
-        if (now - _lastMs < DEBOUNCE_MS) {
+        // A fresh boot reads 0 for every channel, which `allows` would treat as "buzzed at
+        // t=0" — harmless, because System.getTimer() starts well past DEBOUNCE_MS.
+        if (!allows(now, _lastMs[ch], _lastAnyMs)) {
             return;
         }
-        _lastMs = now;
+        _lastMs[ch] = now;
+        _lastAnyMs = now;
         if (Attention has :vibrate) {
             Attention.vibrate(profiles as Array<Attention.VibeProfile>);
         }
     }
 
+    // Test seam: the suite drives the channels without waiting five real seconds.
+    function reset() as Void {
+        for (var i = 0; i < CH_COUNT; i++) {
+            _lastMs[i] = 0;
+        }
+        _lastAnyMs = 0;
+    }
+
     // New 2 s / 10 s speed PB: double short buzz
     function speedPb() as Void {
         if (AppSettings.alertPb) {
-            _fire([
+            _fire(CH_PB, [
                 new Attention.VibeProfile(100, 200),
                 new Attention.VibeProfile(0, 150),
                 new Attention.VibeProfile(100, 200)
@@ -34,14 +77,14 @@ module AlertManager {
     // New longest flight: one long buzz
     function longestFlight() as Void {
         if (AppSettings.alertFlight) {
-            _fire([new Attention.VibeProfile(100, 600)]);
+            _fire(CH_FLIGHT, [new Attention.VibeProfile(100, 600)]);
         }
     }
 
     // Time/distance interval reached: one medium buzz, distinct from the PB double and the
     // longest-flight long buzz.
     function interval() as Void {
-        _fire([new Attention.VibeProfile(75, 300)]);
+        _fire(CH_INTERVAL, [new Attention.VibeProfile(75, 300)]);
     }
 
     // A pumped takeoff attempt just worked: short-then-long, the "up and away" shape. Only
@@ -50,7 +93,7 @@ module AlertManager {
     // the channel noise.
     function takeoff() as Void {
         if (AppSettings.alertTakeoff) {
-            _fire([
+            _fire(CH_TAKEOFF, [
                 new Attention.VibeProfile(50, 150),
                 new Attention.VibeProfile(0, 80),
                 new Attention.VibeProfile(100, 350)
@@ -65,15 +108,15 @@ module AlertManager {
             return;
         }
         if (outcome == TurnDetector.OUTCOME_FLEW) {
-            _fire([new Attention.VibeProfile(75, 120)]);
+            _fire(CH_TURN, [new Attention.VibeProfile(75, 120)]);
         } else if (outcome == TurnDetector.OUTCOME_TOUCHDOWN) {
-            _fire([
+            _fire(CH_TURN, [
                 new Attention.VibeProfile(50, 100),
                 new Attention.VibeProfile(0, 120),
                 new Attention.VibeProfile(50, 100)
             ]);
         } else {
-            _fire([
+            _fire(CH_TURN, [
                 new Attention.VibeProfile(100, 150),
                 new Attention.VibeProfile(0, 100),
                 new Attention.VibeProfile(100, 150),

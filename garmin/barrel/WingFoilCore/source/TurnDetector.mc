@@ -77,6 +77,11 @@ class TurnDetector {
     const DEG2RAD = 0.017453292;
     const NO_CROSS = 1.0e9;     // "the sweep never passes this axis end"
 
+    // How long an unowned flight end is judged for, before its evidence is called. The turn
+    // window's own cap, reused deliberately: one physical question ("did he stop, and for how
+    // long") deserves one set of numbers however the loss started.
+    const FLIGHT_END_WINDOW_S = LOOKAHEAD_S;
+
     // 8 s sweep cap + 3 s entry window + margin, at 1 Hz
     const HIST = 14;
 
@@ -96,6 +101,33 @@ class TurnDetector {
     var lastScorePct as Number = 0;
     var bestScorePct as Number = 0;
     var borderlineCount as Number = 0;
+
+    // Turn streaks (docs/algorithms.md "Turn streaks"). A tally says how the session went;
+    // a streak says how it FELT — nine fly-throughs scattered one at a time between swims are
+    // not the same session as nine in a row, and the counts alone cannot tell them apart.
+    //
+    //   dry   how many COUNTED TURNS since he last went in. Extended by flew_through and by
+    //         touchdown (borderline included) — a touchdown pumped straight back out does not
+    //         end it, because he never swam. Reset by a fall.
+    //   flew  the strict run: reset by any touchdown or fall, so bestFlewStreak <=
+    //         bestDryStreak always holds.
+    //
+    // WHAT COUNTS AS A FALL IS NOT ONLY A TURN. A streak claims "he has not been in the water
+    // since", and a rider who ventilates the foil on a straight reach and swims has been in
+    // the water — so a **flight end** that no turn is judging is classified with the same
+    // wet/stopped evidence the turn outcomes use, and breaks the runs on the same terms. Only
+    // counted turns ever INCREMENT; straight-line ends can only break. That asymmetry is the
+    // whole rule: what the number counts is maneuvers, what ends it is swims.
+    //
+    // Rejected sweeps — bear-aways and round-ups — still increment nothing, and they need no
+    // special case for the falls either: a rejected sweep leaves the state machine idle, so a
+    // fall after one arrives as an unowned flight end and breaks the run through exactly the
+    // path above. Counting a course change as a maneuver would make a streak depend on how
+    // far the rider bore away between two jibes, which is not what the number claims.
+    var dryStreak as Number = 0;          // current run, live on the main screen
+    var bestDryStreak as Number = 0;      // session best of the same
+    var flewStreak as Number = 0;
+    var bestFlewStreak as Number = 0;
 
     // per-lap (SessionController resets these at every lap boundary)
     var lapTurnCount as Number = 0;
@@ -130,6 +162,17 @@ class TurnDetector {
     hidden var _wet as Boolean = false;
     hidden var _recoverHeld as Float = 0.0;
 
+    // Unowned flight ends — the straight-line half of the streak rule. Same evidence as
+    // `_track` collects for a turn, kept separately because the two windows can overlap in
+    // time and must never share a stop spell.
+    hidden var _wasFlying as Boolean = false;
+    hidden var _endOpen as Boolean = false;
+    hidden var _endStartS as Float = 0.0;
+    hidden var _endWet as Boolean = false;
+    hidden var _endStopRun as Float = 0.0;
+    hidden var _endStopMax as Float = 0.0;
+    hidden var _endTouched as Boolean = false;
+
     // Thresholds live in an injected Config (see FlightDetector) — read live every tick, so
     // a wind axis set mid-session classifies every turn detected from then on.
     hidden var _cfg as Config;
@@ -157,6 +200,9 @@ class TurnDetector {
         if (flying) {
             _lastFlyingS = _clockS;
         }
+        // Before the state machine, and on every tick whatever state it is in: the edge this
+        // watches for is the one the state machine does not see.
+        _flightEndTick(dt, speedMps, flying, submerged);
 
         var u = _unwrap(cogDeg, speedMps);
         var event = EVENT_NONE;
@@ -179,6 +225,9 @@ class TurnDetector {
         if (state == ST_IDLE) {
             _count = 0;
         }
+        // An unjudgeable end is dropped, not called a fall: a GPS gap is missing evidence,
+        // and "he might have swum" must never break a run the rider actually kept.
+        _endOpen = false;
     }
 
     function resetLap() as Void {
@@ -396,19 +445,93 @@ class TurnDetector {
         }
     }
 
+    // The straight-line half of the streak rule (docs/algorithms.md "Turn streaks", watch
+    // approximation). A flight that ends while NO turn is being judged is a loss nothing else
+    // explains — a ventilated foil, a dying gust, a caught tip — and if the rider swam, the
+    // dry run is over whether or not a maneuver was involved.
+    //
+    // Ownership is `state == ST_IDLE`, which is the honest live approximation of the engine's
+    // `ownedByTurn`: a sweep or an outcome window that is still open IS the turn judging this
+    // end, and it will reach its own verdict a few seconds later through `_resolve`. Opening a
+    // second window for the same loss would count it twice.
+    //
+    // It classifies and does nothing else: no counters, no events, no FIT markers. Flight-end
+    // tallies are FlightDetector's business; this exists only so a streak cannot claim the
+    // rider stayed dry through a swim it never looked at.
+    hidden function _flightEndTick(dt as Float, speedMps as Float, flying as Boolean,
+            submerged as Boolean) as Void {
+        if (_wasFlying && !flying && !_endOpen && state == ST_IDLE) {
+            _endOpen = true;
+            _endStartS = _clockS;
+            _endWet = false;
+            _endStopRun = 0.0;
+            _endStopMax = 0.0;
+            _endTouched = false;
+        }
+        _wasFlying = flying;
+        if (!_endOpen) {
+            return;
+        }
+        if (submerged) {
+            _endWet = true;
+        }
+        if (speedMps < STOP_FLOOR_MPS) {
+            _endTouched = true;
+            // both-ends-qualify, the same clock flight segmentation and `_track` use
+            if (_lastSpeed < STOP_FLOOR_MPS) {
+                _endStopRun += dt;
+                if (_endStopRun > _endStopMax) {
+                    _endStopMax = _endStopRun;
+                }
+            }
+        } else {
+            _endStopRun = 0.0;
+        }
+        // Closed by recovery (he is flying again) or by the window running out. Either way the
+        // evidence is called with what there is, exactly as the turn window does.
+        if (flying || _clockS - _endStartS >= FLIGHT_END_WINDOW_S) {
+            _closeFlightEnd();
+        }
+    }
+
+    // Same ladder as a turn outcome, minus the leaf a flight end cannot have: it is already
+    // off the foil, so there is no "flew through".
+    hidden function _closeFlightEnd() as Void {
+        _endOpen = false;
+        if (_endWet || _endStopMax > FALL_STOP_S) {
+            dryStreak = 0;          // he swam
+            flewStreak = 0;
+        } else if (_endTouched) {
+            flewStreak = 0;         // touched down: dry survives, the strict run does not
+        }
+        // else: a glide-out. He came off the foil and kept making way — nothing broke.
+    }
+
     hidden function _resolve() as Number {
         var outcome = OUTCOME_FLEW;
         if (_wet || _stopMax > FALL_STOP_S) {
             outcome = OUTCOME_FELL;
             fellCount++;
+            dryStreak = 0;          // he swam: both runs end here
+            flewStreak = 0;
         } else if (_lostFoil) {
             outcome = OUTCOME_TOUCHDOWN;
             touchdownCount++;
             if (_stopMax > TOUCHDOWN_MAX_STOP_S) {
                 borderlineCount++;
             }
+            dryStreak++;            // dry survives a touchdown; flew does not
+            flewStreak = 0;
         } else {
             flewCount++;
+            dryStreak++;
+            flewStreak++;
+        }
+        if (dryStreak > bestDryStreak) {
+            bestDryStreak = dryStreak;
+        }
+        if (flewStreak > bestFlewStreak) {
+            bestFlewStreak = flewStreak;
         }
         var pct = 0;
         if (_entrySpeed > 0.0) {

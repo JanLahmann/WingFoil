@@ -8,7 +8,12 @@ public enum AnalysisEngine {
     /// until now only reached the file as tallies. Nothing pre-existing moved, but a stored
     /// analysis written by 0.2.0 has no episodes at all — so it must re-derive rather than
     /// silently present a map with no failed attempts on it.
-    public static let version = "0.3.0"
+    ///
+    /// 0.4.0 adds `summary.turns.longestDryStreak` / `longestFlewStreak`. Same shape of
+    /// change: no pre-existing number moved, but a 0.3.0 document cannot answer "how many
+    /// in a row" at all, and a missing streak would decode as 0 — indistinguishable from a
+    /// real session where every turn ended wet. It must re-derive.
+    public static let version = "0.4.0"
 }
 
 /// Echo of the parameters actually used, keyed by their docs/algorithms.md names.
@@ -610,7 +615,9 @@ public enum SessionSummarizer {
         let hr = HrCost.analyze(raw, flights: segmentation, takeoffs: takeoffs,
                                 flightEnds: ends, pump: pump, turns: turns, config: hrConfig)
 
-        let turnSummary = TurnDetector.summarize(turns)
+        // `ends` because the streaks span both channels: a straight-line swim ends a run of
+        // clean turns too (docs/algorithms.md "Turn streaks").
+        let turnSummary = TurnDetector.summarize(turns, ends: ends)
         let endSummary = FlightEndClassifier.summarize(ends)
         let longest = segmentation.longest
         var summary = SessionSummary(

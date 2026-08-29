@@ -347,7 +347,7 @@ groups (**153 assertions**, all green at the time of writing — 30 / 8 / 28 / 4
 ### Manual browser test checklist
 
 1. `cd web && python3 -m http.server 8765`, open <http://127.0.0.1:8765/>.
-2. **Cold boot.** The chip top-right should turn into `engine 0.3.0 · pyodide 0.28.3` within
+2. **Cold boot.** The chip top-right should turn into `engine 0.4.0 · pyodide 0.28.3` within
    ~20 s on a warm connection. Open DevTools → Console: there must be no errors, only
    Pyodide's own "Loading/Loaded micropip, numpy, pandas…" lines.
 3. **Drop** `fixtures/sessions/ciq/2026-08-07-0754_nago-torbole-windsurfen_ciq.fit` on the

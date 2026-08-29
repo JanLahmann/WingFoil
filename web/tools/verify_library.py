@@ -226,7 +226,9 @@ def check_records(digests: list[dict]) -> None:
     section("3. all-time records over the FIT corpus")
     agg = library.aggregate(digests)
     rows = {r["key"]: r for r in agg["records"]}
-    check("  corpus size", agg["count"], 13)
+    # Stated, not derived from `digests`: the aggregate must actually see every session
+    # fixture, and comparing it to `len(digests)` would pass on an empty corpus too.
+    check("  corpus size", agg["count"], 14)
 
     # Independently: the winner of each kind is the max over the digests, and it must be
     # the session the aggregate names.

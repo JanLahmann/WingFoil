@@ -100,7 +100,7 @@ def analyze_session(path: Path) -> dict:
     pump = pump_track(track)
     turns = detect_turns(ct, flights, wind, pump=pump)
     ends = classify_flight_ends(ct, flights, turns, pump=pump)
-    summary = summarize_turns(turns)
+    summary = summarize_turns(turns, ends)
     end_summary = summarize_flight_ends(ends)
     start = track.records["timestamp"].iloc[0] + local_offset(path)
     return {"path": path, "clean": ct, "flights": flights, "wind": wind, "pump": pump,

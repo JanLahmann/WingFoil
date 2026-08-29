@@ -144,6 +144,10 @@ public struct TurnSummary: Sendable, Codable, Equatable {
     public var port = 0
     public var starboard = 0
     public var unknownSide = 0
+    /// Longest run of counted turns, in turn-end order, that did not end in `fellIn`.
+    public var longestDryStreak = 0
+    /// Longest run of counted turns, in turn-end order, that all `flewThrough`.
+    public var longestFlewStreak = 0
     public var outcomes = OutcomeCounts()
     public var tackOutcomes = OutcomeCounts()
     public var jibeOutcomes = OutcomeCounts()
@@ -207,7 +211,11 @@ public enum TurnDetector {
     }
 
     /// Aggregate detected turns; bear-aways/round-ups only feed `rejected`.
-    public static func summarize(_ turns: [Turn]) -> TurnSummary {
+    ///
+    /// Every count reads turns alone. `ends` is needed by the **streaks** only, which are a
+    /// claim about the rider rather than about the turn channel and so must also see the
+    /// losses that happened outside a maneuver (`streaks`).
+    public static func summarize(_ turns: [Turn], ends: [FlightEnd] = []) -> TurnSummary {
         var s = TurnSummary()
         for t in turns {
             guard t.counted else { s.rejected += 1; continue }
@@ -232,7 +240,82 @@ public enum TurnDetector {
         }
         s.successPct = s.turnsCounted > 0
             ? 100.0 * Double(s.turnsSuccessful) / Double(s.turnsCounted) : 0
+        (s.longestDryStreak, s.longestFlewStreak) = streaks(turns, ends: ends)
         return s
+    }
+
+    /// One thing that happened to the rider, from either outcome channel (see `streaks`).
+    private struct StreakEvent {
+        let t: Double
+        let isTurn: Bool
+        /// A counted turn carried all the way through — the only thing `flew` extends on.
+        /// `borderline` only ever rides on a touchdown, so the flag is redundant against
+        /// the outcome today; it is spelled out because a streak is exactly where a "nearly
+        /// a fall" must not read as a clean one, whatever a re-tune does to the flag later.
+        let flewClean: Bool
+        let fellIn: Bool
+        let touchdown: Bool
+    }
+
+    /// (longest dry streak, longest flown streak) over one merged, time-ordered event list.
+    ///
+    /// A streak is a claim about *the rider*, not about the turn channel, so it cannot be
+    /// read from turn outcomes alone: a swim in a straight line, or one inside a bear-away,
+    /// ends a run of clean jibes just as surely as a botched jibe does. The events are
+    /// every **counted turn** (at its `endT`, carrying its turn outcome) plus every
+    /// **flight end no counted turn owns** — straight-line ends, and ends owned by a
+    /// rejected sweep — at its `t`, carrying its flight-end outcome. An end a counted turn
+    /// *does* own is excluded: that turn's outcome already speaks for it, and counting both
+    /// would charge one swim twice. Truncated ends are dropped — the recording stopped,
+    /// which is not evidence that anything happened to the rider.
+    ///
+    /// Only a counted turn can lengthen a run; a non-turn event can only cut one short.
+    /// `dry` is reset by `fellIn` from either channel, `flew` by `fellIn` or `touchdown`
+    /// from either channel. `glideOut`/`unknown` change nothing.
+    ///
+    /// Mirrors `streaks()` in `lab/src/wingfoil_lab/turns.py`.
+    public static func streaks(_ turns: [Turn],
+                               ends: [FlightEnd] = []) -> (dry: Int, flew: Int) {
+        var longestDry = 0, longestFlew = 0, dry = 0, flew = 0
+        for ev in streakEvents(turns, ends) {
+            if ev.isTurn {
+                dry = ev.fellIn ? 0 : dry + 1
+                flew = ev.flewClean ? flew + 1 : 0
+                longestDry = max(longestDry, dry)
+                longestFlew = max(longestFlew, flew)
+            } else {
+                // Nothing outside a maneuver is a maneuver the rider carried, so a non-turn
+                // event never lengthens a run — it can only cut one short.
+                if ev.fellIn { dry = 0 }
+                if ev.fellIn || ev.touchdown { flew = 0 }
+            }
+        }
+        return (longestDry, longestFlew)
+    }
+
+    /// The merged event list a streak walks, in time order. At an identical timestamp the
+    /// non-turn event is applied first, so a coincident fall breaks the run rather than
+    /// being masked by the turn that would extend it — the conservative reading, and a tie
+    /// the ownership window makes unreachable in practice anyway.
+    private static func streakEvents(_ turns: [Turn], _ ends: [FlightEnd]) -> [StreakEvent] {
+        let counted = Set(turns.indices.filter { turns[$0].counted })
+        var events = counted.sorted().map { i -> StreakEvent in
+            let turn = turns[i]
+            return StreakEvent(t: turn.endT, isTurn: true,
+                               flewClean: turn.outcome == .flewThrough && !turn.borderline,
+                               fellIn: turn.outcome == .fellIn,
+                               touchdown: turn.outcome == .touchdown)
+        }
+        for end in ends {
+            if end.truncated { continue }
+            if let owner = end.ownedByTurn, counted.contains(owner) { continue }
+            events.append(StreakEvent(t: end.t, isTurn: false, flewClean: false,
+                                      fellIn: end.outcome == .fellIn,
+                                      touchdown: end.outcome == .touchdown))
+        }
+        return events.sorted {
+            $0.t == $1.t ? (!$0.isTurn && $1.isTurn) : $0.t < $1.t
+        }
     }
 
     // MARK: - Geometry scan

@@ -64,6 +64,12 @@ class FitFields {
         return MARK_NONE;
     }
 
+    // Whether this session may write the wind-derived session fields at all. One line, but
+    // it is the whole rule, and it is static so the test can assert it without a FIT session.
+    static function writesTurnCounts() as Boolean {
+        return AppSettings.windEverSet;
+    }
+
     hidden function _u8(v as Number) as Number {
         return v < 0 ? 0 : (v > 254 ? 254 : v);
     }
@@ -101,13 +107,26 @@ class FitFields {
         _f[FitSchema.SES_FLIGHT_COUNT].setData(detector.flightCount);
         _f[FitSchema.SES_BEST_2S].setData(_cms(records.best2sMps));
         _f[FitSchema.SES_BEST_10S].setData(_cms(records.best10sMps));
-        _f[FitSchema.SES_TACK_COUNT].setData(_u8(turns.tackCount));
-        _f[FitSchema.SES_JIBE_COUNT].setData(_u8(turns.jibeCount));
         _f[FitSchema.SES_TURN_SUCCESS].setData(turns.successPct());
         _f[FitSchema.SES_PUMP_STROKES].setData(pump.strokes > 65534 ? 65534 : pump.strokes);
-        // 65535 = unset, per docs/fit-schema.md session field 39
-        _f[FitSchema.SES_WIND_DIR].setData(
-            AppSettings.cfg.windDirection < 0 ? 65535 : AppSettings.cfg.windDirection);
+
+        // The tack/jibe split, and the axis it was split on, are written ONLY when a wind
+        // axis was actually set. A developer field whose setData is never called is simply
+        // not emitted, so the fields are ABSENT rather than zero — which is the difference
+        // between "this session had no wind axis, so nothing was classified" and "this rider
+        // did 0 tacks and 0 jibes in two hours". Without an axis TurnDetector classifies
+        // every sweep KIND_TURN, so both counters are structurally 0 and writing them would
+        // be writing a measurement nobody made. The phone's parser already reads an absent
+        // pair as unclassified, and reads the 0/0-without-wind of older files the same way
+        // (docs/fit-schema.md).
+        if (writesTurnCounts()) {
+            _f[FitSchema.SES_TACK_COUNT].setData(_u8(turns.tackCount));
+            _f[FitSchema.SES_JIBE_COUNT].setData(_u8(turns.jibeCount));
+            // 65535 = unset, per docs/fit-schema.md session field 39. Reachable only if the
+            // rider set an axis and then cleared it: the counts stay, the axis says "unknown".
+            _f[FitSchema.SES_WIND_DIR].setData(
+                AppSettings.cfg.windDirection < 0 ? 65535 : AppSettings.cfg.windDirection);
+        }
 
         // ---- the three v2 packed fields (docs/fit-schema.md session 54/55/56) ----
         // The longest flight, was 24 (s) + 25 (m).

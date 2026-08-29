@@ -61,9 +61,16 @@ module PbFlash {
         }
     }
 
-    // Alternating shades are what makes it read as a PULSE rather than a still green card.
+    // Alternating shades are what makes it read as a PULSE rather than a still card.
+    //
+    // The ink is the EFFORT window orange, not green: a personal best is something the rider
+    // did, not a verdict on a maneuver, and green on this app is the outcome ladder's "flew
+    // through" (docs/presentation.md). The dim frame is that same token at half brightness —
+    // a derivation of one value, not a second value: shifting every channel down one bit
+    // keeps the hue exactly and cannot drift from the token it came from.
     function color() as Number {
-        return frame % 2 == 0 ? Graphics.COLOR_GREEN : Graphics.COLOR_DK_GREEN;
+        var c = Ink.effortWindow();
+        return frame % 2 == 0 ? c : (c >> 1) & 0x7F7F7F;
     }
 }
 

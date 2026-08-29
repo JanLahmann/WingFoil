@@ -26,7 +26,8 @@ SUMMARY_KEYS = {"foilTimeS", "foilPct", "flightCount", "longestFlightS",
                 "takeoff"}
 TURN_SUMMARY_KEYS = {"tacks", "tacksSuccessful", "jibes", "jibesSuccessful", "unclassified",
                      "turnsCounted", "turnsSuccessful", "successPct", "rejected", "port",
-                     "starboard", "unknownSide", "outcomes", "tackOutcomes", "jibeOutcomes"}
+                     "starboard", "unknownSide", "longestDryStreak", "longestFlewStreak",
+                     "outcomes", "tackOutcomes", "jibeOutcomes"}
 END_COUNT_KEYS = {"glideOut", "touchdown", "fellIn", "unknown", "borderline"}
 TAKEOFF_SUMMARY_KEYS = {"takeoffAttempts", "takeoffSuccesses", "avgPumpsToTakeoff",
                         "totalPumpStrokes", "successPct", "failedAttempts", "unknownAttempts",
@@ -63,7 +64,7 @@ def smoke_golden():
 def test_schema_shape(smoke_golden):
     g = smoke_golden
     assert list(g.keys()) == TOP_KEYS
-    assert g["engineVersion"] == "0.3.0"
+    assert g["engineVersion"] == "0.4.0"
     assert set(g["capabilities"].keys()) == CAP_KEYS
     assert set(g["records"].keys()) == RECORD_KEYS
     assert set(g["summary"].keys()) == SUMMARY_KEYS

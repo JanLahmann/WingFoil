@@ -27,12 +27,14 @@
     <!-- Phase 5: BLE summary card to the paired iPhone app after a save. -->
     <property id="phonePush" type="boolean">false</property>
 
-    <!-- Feature 1: data screens. Defaults reproduce the five shipped pages —
-         mirror of PageModel.DEF_LAYOUT / DEF_SLOTS; change both together. -->
-    <property id="pg1Layout" type="number">1</property>
-    <property id="pg1s1" type="number">1</property>
-    <property id="pg1s2" type="number">4</property>
-    <property id="pg1s3" type="number">9</property>
+    <!-- Feature 1: data screens. Mirror of PageModel.DEF_LAYOUT / DEF_SLOTS; change both
+         together, and note which side wins: on a real device these defaults beat the code's,
+         so a page changed in only one place ships as the OLD page.
+         0.8.0: page 1 is LAYOUT_MAIN (9), the bespoke main screen — it carries no slots. -->
+    <property id="pg1Layout" type="number">9</property>
+    <property id="pg1s1" type="number">0</property>
+    <property id="pg1s2" type="number">0</property>
+    <property id="pg1s3" type="number">0</property>
     <property id="pg1s4" type="number">0</property>
     <property id="pg1s5" type="number">0</property>
     <property id="pg2Layout" type="number">2</property>
