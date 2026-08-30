@@ -575,13 +575,15 @@ import Testing
         analysis.summary.turns.jibes = 50
 
         /// Fixture-shaped session dev fields: the watch always writes these.
-        func session(tacks: Int, jibes: Int, windDeg: Double?) -> [String: FitDevValue] {
+        func session(tacks: Int, jibes: Int, windDeg: Double?,
+                     autoDeg: Double? = nil) -> [String: FitDevValue] {
             var d: [String: FitDevValue] = [
                 "discipline": .text("wingfoil"), "foil_time": .number(2439),
                 "foil_pct": .number(58), "flight_count": .number(23),
                 "tack_count": .number(Double(tacks)), "jibe_count": .number(Double(jibes)),
             ]
             if let windDeg { d["wind_dir_user"] = .number(windDeg) }
+            if let autoDeg { d["wind_dir_auto"] = .number(autoDeg) }
             return d
         }
 
@@ -606,6 +608,35 @@ import Testing
         #expect(oneSided.jibeCount == 0)
         #expect(DivergenceCheck.compare(watch: oneSided, phone: analysis)
                     .contains { $0.metric == "Jibes" })
+
+        // Device app ≥ 0.9.0 (docs/fit-schema.md session 44): the watch can estimate the axis
+        // itself. That is an axis too, so an *estimated* session's 0/0 is a real observation
+        // and must still compare — the demotion asks "was anything classified", not "did the
+        // rider type a bearing".
+        let auto = FitSessionParser.watchSummary(
+            session(tacks: 0, jibes: 0, windDeg: nil, autoDeg: 200))
+        #expect(auto.windDirUserDeg == nil)
+        #expect(auto.windDirAutoDeg == 200)
+        #expect(auto.tackCount == 0)
+        #expect(auto.jibeCount == 0)
+        #expect(Set(DivergenceCheck.compare(watch: auto, phone: analysis).map(\.metric))
+                    .isSuperset(of: ["Tacks", "Jibes"]))
+
+        // Both fields present: the rider set an axis part-way through a session the watch had
+        // already estimated. Neither displaces the other.
+        let both = FitSessionParser.watchSummary(
+            session(tacks: 2, jibes: 9, windDeg: 225, autoDeg: 200))
+        #expect(both.windDirUserDeg == 225)
+        #expect(both.windDirAutoDeg == 200)
+
+        // 65535 is the schema's "this source had none" sentinel, not a bearing — and a
+        // session that writes it for BOTH is the no-axis case the demotion exists for.
+        let sentinel = FitSessionParser.watchSummary(
+            session(tacks: 0, jibes: 0, windDeg: 65535, autoDeg: 65535))
+        #expect(sentinel.windDirUserDeg == nil)
+        #expect(sentinel.windDirAutoDeg == nil)
+        #expect(sentinel.tackCount == nil)
+        #expect(sentinel.jibeCount == nil)
     }
 
     // MARK: - Helpers

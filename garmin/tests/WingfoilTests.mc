@@ -75,7 +75,11 @@ function fitSchemaFitsDeviceBudgets(logger as Test.Logger) as Boolean {
             "message type " + m.toString() + " is " + bytes.toString() + " B, budget is "
             + FitSchema.LIMIT_BYTES.toString());
     }
-    // Self-imposed headroom, so the next row added trips a test with room to spare.
+    // The session target. It USED to be 15, one below the hard limit, so the next row added
+    // tripped a test with room to spare; 0.9.0's wind_dir_auto(44) spent that slot and the
+    // target is now the limit itself (FitSchema.SESSION_FIELD_TARGET says why, and says that
+    // the next session field has to pack). This assertion is therefore no longer the early
+    // warning it was — the one above it is the whole net now.
     var ses = FitSchema.fieldCount(FitSchema.MSG_SESSION);
     Test.assertMessage(ses <= FitSchema.SESSION_FIELD_TARGET,
         "session declares " + ses.toString() + " fields, target is "
@@ -178,7 +182,9 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var hS = dc.getFontHeight(Graphics.FONT_SMALL);
 
     // row 0: header, widest with a wind axis set
-    var header = "tack / jibe  NNE";
+    // The widest form the header can take: 0.9.0 marks an axis the watch estimated with a
+    // leading "~", so the worst case gained a character.
+    var header = "tack / jibe  ~NNE";
     var r = cornerRadius(dc.getTextWidthInPixels(header, Graphics.FONT_XTINY), hT,
         RecordingView.turnsRowY(cy, hT, hG, hK, hD, hS, 0), cy);
     Test.assertMessage(r <= radius, "header corner " + r.format("%.0f") + " > " + radius);
@@ -944,7 +950,10 @@ function startPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     // The wind row in both its forms. The reminder is the longest string the page can hold,
     // so unlike the others it is allowed to STEP DOWN a rung rather than being required to
     // land at FONT_SMALL — but it must still be inside the glass and above the floor.
-    var winds = [START_WIND_UNSET, "wind 337° NNW"];
+    // The third form is 0.9.0's: an axis the WATCH estimated carries a leading "~", one
+    // character wider than the rider's own, which is exactly the sort of thing that overflows
+    // the narrowest glass a release later.
+    var winds = [START_WIND_UNSET, "wind 337° NNW", "wind ~337° NNW"];
     for (var i = 0; i < winds.size(); i++) {
         var f = RecordingView.fitFont(dc, TEXT_FONTS, START_BODY_FONT, winds[i],
             RecordingView.rowBudget(radius, yWind - cy, inkBody));
@@ -971,7 +980,7 @@ function startPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
         "no fix must not read as ready");
 
     // and the wind row says the axis when there is one, the way to set one when there is not
-    var before = AppSettings.cfg.windDirection;
+    var before = AppSettings.cfg.windManual;
     var wasSet = AppSettings.windEverSet;
     AppSettings.storeWindDirection(-1);
     Test.assertEqual(StartView.windText(), START_WIND_UNSET);
@@ -2373,7 +2382,7 @@ function phoneLinkFailedSendKeepsTheSlot(logger as Test.Logger) as Boolean {
 // rest of the session. So: integer degrees 0..359, or -1 to clear, and nothing else.
 (:test)
 function phoneLinkWindPushValidatesHard(logger as Test.Logger) as Boolean {
-    var before = AppSettings.cfg.windDirection;
+    var before = AppSettings.cfg.windManual;
 
     AppSettings.storeWindDirection(90);
     Test.assertMessage(PhoneLink.applyWind(0), "0 deg (north) is a legal bearing");
@@ -2903,7 +2912,11 @@ function summaryPagesBuildAndRenderHeadless(logger as Test.Logger) as Boolean {
 // shared timestamp made the more informative of the two silently disappear.
 (:test)
 function alertDebounceIsPerChannelNotGlobal(logger as Test.Logger) as Boolean {
-    Test.assertEqual(AlertManager.CH_COUNT, 5);
+    // Six channels since 0.9.0: PB · flight · interval · takeoff · turn · auto wind.
+    Test.assertEqual(AlertManager.CH_COUNT, 6);
+    Test.assertMessage(AlertManager._lastMs.size() == AlertManager.CH_COUNT,
+        "the timestamp array must have a slot per channel — a short one writes out of bounds "
+        + "the first time the new channel fires, on the water and nowhere else");
     Test.assertMessage(AlertManager.GLOBAL_FLOOR_MS < AlertManager.DEBOUNCE_MS,
         "the global floor must be shorter than the per-channel window");
 
@@ -2940,6 +2953,7 @@ function alertDebounceIsPerChannelNotGlobal(logger as Test.Logger) as Boolean {
     AlertManager.longestFlight();
     AlertManager.takeoff();
     AlertManager.interval();
+    AlertManager.autoWindLocked();
     AppSettings.alertPb = pb;
     AppSettings.alertTurn = turn;
     AlertManager.reset();
@@ -2991,7 +3005,7 @@ function pumpBreatherDoesNotSplitOneAttempt(logger as Test.Logger) as Boolean {
 // who genuinely never tacked in two hours. Absent is the honest encoding.
 (:test)
 function fitOmitsTurnCountsWhenNoWindAxisWasSet(logger as Test.Logger) as Boolean {
-    var before = AppSettings.cfg.windDirection;
+    var before = AppSettings.cfg.windManual;
     var wasSet = AppSettings.windEverSet;
 
     AppSettings.windEverSet = false;
@@ -3023,13 +3037,152 @@ function fitOmitsTurnCountsWhenNoWindAxisWasSet(logger as Test.Logger) as Boolea
     return true;
 }
 
+// ---- Auto wind: the acceptance against real sessions ----
+//
+// docs/testing.md layer 3, "recorded 1 Hz arrays extracted from fixtures by lab". The two
+// `ciq` fixtures are replayed through `WingFoilCore.AutoWind` one sample at a time and the
+// adopted direction is compared with the PHONE engine's answer for the same session
+// (fixtures/goldens/<stem>.expected.json `wind.dirDeg`), which is the number the whole
+// approximation is judged against.
+//
+// The band is +-20 deg, and it is not arbitrary. The adopted value may lag the converged
+// estimate by up to HYSTERESIS_DEG (15) by construction — that is what the hysteresis IS —
+// and the bin-resolution lobes and cones carry a few degrees more. 20 deg is under one
+// 16-point compass step (22.5), i.e. the watch and the phone never disagree about what to
+// print. Measured: -7.6 deg on 2026-08-07 and -4.0 deg on 2026-08-29.
+//
+// The arrays live in the DEVICE APP's tests, not the barrel's, so the data field's unit-test
+// build does not carry ~14 kB it has no use for.
+
+// One decoded sample from the AutoWindFixtures blob. `cell` undoes the generator's base-33
+// alphabet, which steps over 34 and 92 — the quote and the backslash, the two codes a Monkey C
+// string literal cannot hold raw. Deliberately NOT (:test)-annotated: the runner treats every
+// annotated function as a test case and this one takes an argument and returns a Number.
+function autoWindCell(c as Number) as Number {
+    var v = c;
+    if (v > 92) { v--; }
+    if (v > 34) { v--; }
+    return v - 33;
+}
+
+(:test)
+function autoWindReplayFixtures(logger as Test.Logger) as Boolean {
+    var dt = AutoWindFixtures.stepS();
+    for (var f = 0; f < AutoWindFixtures.count(); f++) {
+        var aw = new AutoWind();
+        var chunks = AutoWindFixtures.chunksAt(f);
+        var locked = -1;
+        var maxStep = 0.0;
+        var updates = 0;
+        // Chunk by chunk, so the char array of a two-hour session is never resident whole:
+        // the narrowest glass in the product list is also the tightest heap.
+        for (var c = 0; c < chunks.size(); c++) {
+            var chars = chunks[c].toCharArray();
+            for (var i = 0; i + 2 < chars.size(); i += 3) {
+                var cog = autoWindCell(chars[i].toNumber()) * 4.0 + 2.0;
+                var speed = autoWindCell(chars[i + 1].toNumber()) * 0.2;
+                var flying = chars[i + 2] == '1';
+                var before = aw.dirDeg;
+                var ev = aw.tick(dt, cog, speed, flying);
+                if (ev == AutoWind.EV_LOCK) {
+                    locked = aw.dirDeg;
+                } else if (ev == AutoWind.EV_UPDATE) {
+                    updates++;
+                    var step = WingFoilCore.wrapDeg180(
+                        (aw.dirDeg - before).toFloat()).abs();
+                    if (step > maxStep) {
+                        maxStep = step;
+                    }
+                }
+            }
+        }
+
+        var name = AutoWindFixtures.nameAt(f);
+        var engine = AutoWindFixtures.engineDegAt(f);
+        Test.assertMessage(locked >= 0, name + ": the estimator never locked");
+        var err = WingFoilCore.wrapDeg180(aw.dirDeg.toFloat() - engine);
+        Test.assertMessage(err.abs() <= 20.0, name + ": watch says " + aw.dirDeg.toString()
+            + " deg, engine says " + engine.format("%.2f") + " (" + err.format("%.1f")
+            + " deg, band is +-20)");
+        // "Never flips after lock" is the assertion that matters most: a flip would relabel
+        // every tack as a jibe, and the one-shot backfill has already been spent by then.
+        Test.assertMessage(maxStep <= 90.0, name + ": the axis flipped after locking, largest"
+            + " adopted step " + maxStep.format("%.1f") + " deg");
+        Test.assertMessage(aw.distanceM > 5000.0,
+            name + ": only " + aw.distanceM.format("%.0f") + " m of flying reached the "
+            + "histogram — the fixture or the gates are wrong");
+        logger.debug(name + ": locked on " + locked.toString() + " deg, finished on "
+            + aw.dirDeg.toString() + " (engine " + engine.format("%.2f") + ", "
+            + err.format("%.1f") + "), " + updates.toString() + " update(s) over "
+            + aw.distanceM.format("%.0f") + " m");
+    }
+    return true;
+}
+
+// ---- Auto wind: precedence and the "~" mark ----
+//
+// Manual ALWAYS wins. A bearing the rider entered is a statement of fact; the estimate is an
+// inference from an hour of headings, and an inference must never overwrite a fact — least of
+// all silently, mid-session, on a rider who set the axis precisely because he distrusted a
+// guess. And an estimate the rider cannot tell from a measurement is worse than no estimate,
+// so every place a bearing is shown marks it.
+(:test)
+function manualWindAlwaysBeatsTheEstimate(logger as Test.Logger) as Boolean {
+    var before = AppSettings.cfg.windManual;
+    var wasSet = AppSettings.windEverSet;
+    var wasAuto = AppSettings.autoWindEverSet;
+
+    AppSettings.storeWindDirection(-1);
+    AppSettings.cfg.setAutoWind(-1);
+    Test.assertEqual(AppSettings.cfg.windDirection, -1);
+    Test.assertMessage(!AppSettings.cfg.windIsAuto(), "nothing set is not an estimate");
+    Test.assertEqual(AppSettings.windLabel(), "--");
+
+    // The watch works it out: the axis fills, and it is marked.
+    AppSettings.applyAutoWind(200);
+    Test.assertEqual(AppSettings.cfg.windDirection, 200);
+    Test.assertMessage(AppSettings.cfg.windIsAuto(), "an unaccompanied estimate IS the axis");
+    Test.assertEqual(AppSettings.windLabel(), "~SSW");
+    Test.assertEqual(AppSettings.cfg.compassLabel(), "SSW");
+    Test.assertMessage(AppSettings.autoWindEverSet, "the estimate arms the FIT counts");
+    Test.assertMessage(FitFields.writesTurnCounts(),
+        "an estimated axis classifies turns, so the counts are real and must be written");
+    Test.assertMessage(StartView.windText().find("~") != null,
+        "the start screen must mark an estimate: " + StartView.windText());
+
+    // The rider disagrees. From here the estimate is not consulted at all.
+    AppSettings.storeWindDirection(45);
+    Test.assertEqual(AppSettings.cfg.windDirection, 45);
+    Test.assertEqual(AppSettings.cfg.windAuto, 200);
+    Test.assertMessage(!AppSettings.cfg.windIsAuto(), "manual must win");
+    Test.assertEqual(AppSettings.windLabel(), "NE");
+    Test.assertMessage(StartView.windText().find("~") == null,
+        "a rider-set axis must NOT be marked: " + StartView.windText());
+
+    // ...and a later estimate still does not displace it.
+    AppSettings.applyAutoWind(310);
+    Test.assertEqual(AppSettings.cfg.windDirection, 45);
+
+    // Clearing the manual bearing hands the axis back to the estimate rather than to nothing.
+    AppSettings.storeWindDirection(-1);
+    Test.assertEqual(AppSettings.cfg.windDirection, 310);
+    Test.assertMessage(AppSettings.cfg.windIsAuto(), "the estimate takes over again");
+
+    AppSettings.cfg.setAutoWind(-1);
+    AppSettings.storeWindDirection(before);
+    AppSettings.windEverSet = wasSet;
+    AppSettings.autoWindEverSet = wasAuto;
+    logger.debug("precedence: manual > auto > unset, estimates marked \"~\"");
+    return true;
+}
+
 // ---- Release bookkeeping ----
 // The FIT's app_version high byte IS the app's minor version. They drifted once (the app was
 // 0.7.0 while the byte still said 1) and nothing noticed, because nothing held them together.
 (:test)
 function appVersionAgreesWithTheFitByte(logger as Test.Logger) as Boolean {
-    Test.assertEqual(FitSchema.APP_VERSION, "0.8.0");
-    Test.assertEqual(FitSchema.APP_MINOR, 8);
+    Test.assertEqual(FitSchema.APP_VERSION, "0.9.0");
+    Test.assertEqual(FitSchema.APP_MINOR, 9);
     // the string's minor field, parsed rather than assumed
     var v = FitSchema.APP_VERSION;
     var dot = v.find(".");
@@ -3042,7 +3195,7 @@ function appVersionAgreesWithTheFitByte(logger as Test.Logger) as Boolean {
         "APP_VERSION " + v + " disagrees with APP_MINOR "
             + FitSchema.APP_MINOR.toString());
     // and the packed field the phone reads
-    Test.assertEqual(FitSchema.APP_MINOR * 256 + FitSchema.SCHEMA_VERSION, 8 * 256 + 2);
+    Test.assertEqual(FitSchema.APP_MINOR * 256 + FitSchema.SCHEMA_VERSION, 9 * 256 + 2);
     logger.debug("release " + FitSchema.APP_VERSION + ", app_version byte "
         + (FitSchema.APP_MINOR * 256 + FitSchema.SCHEMA_VERSION).toString());
     return true;

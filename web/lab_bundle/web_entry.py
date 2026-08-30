@@ -114,6 +114,13 @@ def _meta(a) -> dict:
     wind_user = _num(s.get("wind_dir_user"))
     if wind_user is not None and wind_user >= 65535:     # FIT uint16 "unset" sentinel
         wind_user = None
+    # Session field 44, device app >= 0.9.0: the axis the WATCH estimated for itself
+    # (docs/algorithms.md "Watch approximation: auto wind"). Kept apart from the rider's own
+    # bearing above because one is a statement and the other an inference — the tile marks the
+    # estimate with a "~", exactly as the watch does.
+    wind_auto = _num(s.get("wind_dir_auto"))
+    if wind_auto is not None and wind_auto >= 65535:
+        wind_auto = None
     app_version = _num(s.get("app_version"))
     return {
         "startUtc": start,          # UTC; the UI formats it in the viewer's timezone
@@ -125,6 +132,7 @@ def _meta(a) -> dict:
         "subSport": caps.sub_sport,
         "discipline": caps.discipline,
         "windDirUserDeg": wind_user,
+        "windDirAutoDeg": wind_auto,
         "appVersion": None if app_version is None else int(app_version),
         "schemaVersion": None if app_version is None else int(app_version) & 0xFF,
         "avgHr": _num(s.get("avg_heart_rate")),

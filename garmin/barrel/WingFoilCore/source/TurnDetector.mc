@@ -3,6 +3,72 @@ import Toybox.Math;
 
 module WingFoilCore {
 
+// "this sweep never passes that axis end" — module scope so `classifySweep` and the class
+// that delegates to it read the same sentinel.
+const SWEEP_NO_CROSS = 1.0e9;
+
+// Signed angle difference folded into (-180, 180]. Module scope: three different consumers
+// (turn classification, the auto-wind histogram, the tests) need the same fold.
+function wrapDeg180(deg as Float) as Float {
+    var d = deg;
+    while (d > 180.0) {
+        d -= 360.0;
+    }
+    while (d < -180.0) {
+        d += 360.0;
+    }
+    return d;
+}
+
+// Tack when the TWA sweep crosses head-to-wind, jibe when it crosses dead downwind, rejected
+// when it crosses neither (bear-away / round-up); KIND_TURN when there is no axis.
+//
+// THE one rule, at module scope, because two callers need it and they must never drift:
+// `TurnDetector._classify` names the turn the rider just made, and `AutoWind` names the same
+// sweep under BOTH ends of a candidate axis to see which end makes the rider's declared habit
+// the majority (docs/algorithms.md "Default turn type"). A second copy of this arithmetic
+// would let the prior vote on a different classification than the session reports.
+//
+// `uIn`/`uOut` are UNWRAPPED bearings: uOut may legitimately sit 200 deg from uIn.
+function classifySweep(uIn as Float, uOut as Float, windDeg as Number) as Number {
+    if (windDeg < 0) {
+        return TurnDetector.KIND_TURN;
+    }
+    var twaIn = wrapDeg180(uIn - windDeg.toFloat());
+    var twaOut = twaIn + (uOut - uIn);
+    var lo = twaIn < twaOut ? twaIn : twaOut;
+    var hi = twaIn < twaOut ? twaOut : twaIn;
+    var mid = 0.5 * (lo + hi);
+    var head = sweepCrossing(lo, hi, 0.0, mid);
+    var down = sweepCrossing(lo, hi, 180.0, mid);
+    if (head == SWEEP_NO_CROSS && down == SWEEP_NO_CROSS) {
+        return TurnDetector.KIND_REJECT;
+    }
+    if (down == SWEEP_NO_CROSS) {
+        return TurnDetector.KIND_TACK;
+    }
+    if (head == SWEEP_NO_CROSS) {
+        return TurnDetector.KIND_JIBE;
+    }
+    return (head - mid).abs() <= (down - mid).abs()
+        ? TurnDetector.KIND_TACK : TurnDetector.KIND_JIBE;
+}
+
+// The value offset + 360k inside [lo, hi] closest to mid, or SWEEP_NO_CROSS when the sweep
+// never passes that axis end.
+function sweepCrossing(lo as Float, hi as Float, offset as Float, mid as Float) as Float {
+    var k0 = Math.floor((lo - offset) / 360.0);
+    var best = SWEEP_NO_CROSS;
+    for (var i = 0; i < 3; i++) {
+        var v = offset + 360.0 * (k0 + i);
+        if (v >= lo && v <= hi
+            && (best == SWEEP_NO_CROSS || (v - mid).abs() < (best - mid).abs())) {
+            best = v;
+        }
+    }
+    return best;
+}
+
 // Live turn detection + outcome classification (docs/algorithms.md "Turn detection &
 // classification" / "Turn outcome"). Watch approximation of lab/src/wingfoil_lab/turns.py:
 // one forward pass, bounded work per tick, zero allocation after initialize().
@@ -75,7 +141,6 @@ class TurnDetector {
     const RECOVER_HOLD_S = 2.0;
     const SUCCESS_PCT = 70;
     const DEG2RAD = 0.017453292;
-    const NO_CROSS = 1.0e9;     // "the sweep never passes this axis end"
 
     // How long an unowned flight end is judged for, before its evidence is called. The turn
     // window's own cap, reused deliberately: one physical question ("did he stop, and for how
@@ -97,6 +162,12 @@ class TurnDetector {
     var fellCount as Number = 0;
     var successCount as Number = 0;
     var lastKind as Number = KIND_NONE;
+    // The geometry of the sweep just confirmed, published at EVENT_TURN: the UNWRAPPED entry
+    // bearing and the net rotation (signed, and free to exceed 180 deg). It is what a sweep is
+    // as evidence about the wind — AutoWind logs the pair and re-names it under both ends of a
+    // candidate axis — and it is the only thing about a resolved turn that outlives it.
+    var lastEntryU as Float = 0.0;
+    var lastNetDeg as Float = 0.0;
     var lastOutcome as Number = OUTCOME_NONE;
     var lastScorePct as Number = 0;
     var bestScorePct as Number = 0;
@@ -387,6 +458,9 @@ class TurnDetector {
                 return EVENT_NONE;
             }
         }
+        // Published before the verdict, so the geometry is fresh whatever the verdict is.
+        lastEntryU = _startU;
+        lastNetDeg = _endU - _startU;
         var kind = _classify(_startU, _endU);
         if (kind == KIND_REJECT) {
             rejectedCount++;        // bear-away / round-up: real course change, not a maneuver
@@ -580,28 +654,48 @@ class TurnDetector {
 
     // Tack when the TWA sweep crosses head-to-wind, jibe when it crosses dead downwind,
     // rejected when it crosses neither (bear-away / round-up). No wind axis => generic turn.
+    // The arithmetic lives at module scope (`classifySweep`) because AutoWind's default-turn-
+    // type prior has to name the same sweeps under the other axis end; one rule, two callers.
     hidden function _classify(uIn as Float, uOut as Float) as Number {
+        return classifySweep(uIn, uOut, _cfg.windDirection);
+    }
+
+    // The ONE-SHOT BACKFILL (docs/algorithms.md "Watch approximation: auto wind").
+    //
+    // The watch never re-runs classification: a turn is named with the wind in effect when it
+    // happened, and a manual axis set at minute forty leaves the first forty minutes generic.
+    // Auto wind is the single deliberate exception, and only at its FIRST lock: the estimator
+    // needs ~500 m of flying before it can speak, and without this pass the session's tack /
+    // jibe / port / starboard counts would start from zero at that moment even though the
+    // rider's first reaches are exactly the evidence the axis was estimated FROM. It runs once
+    // per session (SessionController holds the flag) over the sweep log AutoWind kept.
+    //
+    // Deliberately narrow — it only ADDS the splits the counters were missing:
+    //   * `turnCount`, the outcome tallies, the streaks and the scores are untouched. Those
+    //     were real observations made at the time and are not re-judged.
+    //   * a logged sweep that comes out KIND_REJECT under the new axis (a bear-away) stays
+    //     counted as the generic turn it was. Retracting it would move turnCount, successPct
+    //     and every streak that spanned it, i.e. re-judge outcomes on hindsight evidence.
+    // So after the backfill `tackCount + jibeCount <= turnCount`, with the difference being
+    // the sweeps that turned out to be course changes.
+    function backfillWindSplit(entryDeg as Array<Number>, netDeg as Array<Number>,
+            n as Number) as Void {
         var wind = _cfg.windDirection;
         if (wind < 0) {
-            return KIND_TURN;
+            return;
         }
-        var twaIn = _wrap180(uIn - wind);
-        var twaOut = twaIn + (uOut - uIn);
-        var lo = twaIn < twaOut ? twaIn : twaOut;
-        var hi = twaIn < twaOut ? twaOut : twaIn;
-        var mid = 0.5 * (lo + hi);
-        var head = _crossing(lo, hi, 0.0, mid);
-        var down = _crossing(lo, hi, 180.0, mid);
-        if (head == NO_CROSS && down == NO_CROSS) {
-            return KIND_REJECT;
+        for (var i = 0; i < n; i++) {
+            var uIn = entryDeg[i].toFloat();
+            var kind = classifySweep(uIn, uIn + netDeg[i].toFloat(), wind);
+            if (kind == KIND_TACK) {
+                tackCount++;
+            } else if (kind == KIND_JIBE) {
+                jibeCount++;
+            } else {
+                continue;           // a bear-away under this axis: it stays a generic turn
+            }
+            countEntrySide(uIn);
         }
-        if (down == NO_CROSS) {
-            return KIND_TACK;
-        }
-        if (head == NO_CROSS) {
-            return KIND_JIBE;
-        }
-        return (head - mid).abs() <= (down - mid).abs() ? KIND_TACK : KIND_JIBE;
     }
 
     // Which side the wind was crossing at the ENTRY heading, counted once per counted turn.
@@ -622,31 +716,8 @@ class TurnDetector {
         }
     }
 
-    // The value offset + 360k inside [lo, hi] closest to mid, or NO_CROSS when the sweep
-    // never passes that axis end.
-    hidden function _crossing(lo as Float, hi as Float, offset as Float,
-            mid as Float) as Float {
-        var k0 = Math.floor((lo - offset) / 360.0);
-        var best = NO_CROSS;
-        for (var i = 0; i < 3; i++) {
-            var v = offset + 360.0 * (k0 + i);
-            if (v >= lo && v <= hi
-                && (best == NO_CROSS || (v - mid).abs() < (best - mid).abs())) {
-                best = v;
-            }
-        }
-        return best;
-    }
-
     hidden function _wrap180(deg as Float) as Float {
-        var d = deg;
-        while (d > 180.0) {
-            d -= 360.0;
-        }
-        while (d < -180.0) {
-            d += 360.0;
-        }
-        return d;
+        return wrapDeg180(deg);
     }
 }
 

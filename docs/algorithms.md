@@ -474,6 +474,87 @@ On the current fixture corpus the prior never fires: every session's cone margin
 well past `fullMargin`. It exists for the sessions the cone cannot separate — short ones,
 and ones sailed as two broad reaches with no upwind work to empty a cone.
 
+### Watch approximation: auto wind — `garmin/barrel/WingFoilCore/source/AutoWind.mc`
+
+Device app **0.9.0**. Until it, the watch had one source for a wind axis: the bearing the
+rider entered by hand. Without one every sweep is a generic `turn` — no tack/jibe split, no
+port/starboard split, and `tack_count`/`jibe_count` omitted from the FIT — and it is the one
+thing that cannot be fixed after the session. `AutoWind` estimates the axis live, from the
+same evidence the phone uses, so the watch is self-sufficient mid-session.
+
+**It runs the same chain as the engine above**, at 1 Hz, in O(1) per tick with every array
+allocated at construction:
+
+| step | engine (`wind.py`) | watch |
+|---|---|---|
+| samples | foiling, ≥ 2 m/s, weighted by per-step distance | identical: `FlightDetector` ON, Doppler ≥ 2 m/s, weight = `speed × dt` |
+| histogram | 36 × 10°, smoothed ±20° | identical, accumulated incrementally |
+| lobes | argmax of the smoothed histogram, then the weighted circular mean of the raw samples within ±25° | argmax, then the mass-weighted circular mean of the **bin centres** within ±2 bins |
+| axis | bisector of the two lobes; rejected below 60° or above 179° separation | identical |
+| axis confidence | `clip01((mass−0.2)/0.4) × clip01(balance/0.5) × clip01((sep−60)/20)` | identical |
+| 180° call | ±45° no-go cones, `margin = \|mA−mB\|/(mA+mB)`, `eCone = clip01(margin/0.4)` | identical, over bin centres |
+| default-turn-type prior | `e = eCone + 0.5·mTurn` over every detected sweep | identical, over the last 64 logged sweeps |
+| adopt | `confidence = axisConf × certainty ≥ 0.5` | identical, **plus** a confirmation and a hysteresis (below) |
+
+Cadence: evaluate every **60 s**, once **500 m of flying distance** has accumulated — the
+engine's own `min_distance_m`, kept rather than re-tuned so the watch and the phone refuse on
+the same evidence. At a wingfoil's 8 m/s that is a bit over a minute in the air, typically two
+or three reaches: the least that can show two lobes at all.
+
+**The three deliberate divergences**, all forced by the platform:
+
+1. **Bins, not samples.** Lobe refinement and cone mass are computed over bin centres, so both
+   carry up to ±5° of quantization. Measured cost on the corpus: under 2°.
+2. **Incremental and one-way.** A sample joins the histogram and never leaves; the estimate is
+   the whole session so far. There is no sliding window, so a genuine wind shift is not
+   forgotten but averaged — it shows up as the estimate walking, bounded by (3).
+3. **Confirmation + hysteresis.** The first direction is adopted only when **two consecutive**
+   qualifying evaluations agree within 20° — the engine can answer once from complete
+   evidence, the watch's first answer costs a vibe, the one-shot backfill and every turn label
+   from then on. After that the adopted value moves only on a re-evaluation **≥ 15°** away.
+   The estimate keeps converging underneath (on 2026-08-07 it walks 23° → 35° over the hour)
+   and the readout does not follow, because a bearing that creeps by two degrees a minute is
+   unreadable.
+
+**Precedence and display.** Manual wind always wins: `Config.windDirection` is derived as
+`windManual >= 0 ? windManual : windAuto`, so an estimate fills the axis only while the rider
+has set none, and setting one takes over instantly (clearing it hands the axis back). Every
+place a bearing is shown marks an estimate with a leading `~` — `~SSW` on the turns-page
+header and the session menu, `wind ~200° SSW` on the start screen — because an estimate the
+rider cannot tell from a measurement is worse than no estimate. One vibe (`AlertManager`
+channel `CH_WIND`, two rising ticks) when it first locks.
+
+**The one-shot backfill.** Turns are normally classified with the wind in effect at the time
+and never re-judged. Auto wind is the single exception, and only at its first lock:
+`TurnDetector.backfillWindSplit` replays the logged sweeps once, so the session's tack / jibe /
+port / starboard counts do not start from zero at minute two of an hour's riding — the sweeps
+the axis was learned *from* are exactly the session's own first turns. It is narrow on
+purpose: it **adds splits and nothing else**. `turnCount`, the outcome tallies, the scores and
+the streaks are untouched, and a logged sweep that turns out to be a bear-away under the new
+axis stays the generic turn it was counted as (retracting it would move `turnCount`, the
+success percentage and every streak that spanned it). After it,
+`tackCount + jibeCount ≤ turnCount`, the difference being those course changes.
+
+**Settings.** `autoWind` (default **on**) and `windDefaultTurnType` (`jibes` default · `tacks`
+· `balanced`), the latter mirroring the engine's setting of the same name and vocabulary.
+
+**Acceptance: ±20° against the engine, on real sessions.** `garmin/tests/AutoWindFixtures.mc`
+(generated by `lab/tools/make_autowind_arrays.py`) carries the recorded 1 Hz cog/speed/
+foil-state stream of both `ciq` fixtures; `autoWindReplayFixtures` drives `AutoWind` through
+them and asserts it locks, lands within 20° of the phone engine's `wind.dirDeg` for that
+session, and never flips after locking.
+
+| fixture | engine `dirDeg` | watch, at save | error | locks at | later updates |
+|---|---|---|---|---|---|
+| 2026-08-07 | 35.58° | 28.03° | −7.6° | 658 m | 0 |
+| 2026-08-29 | 199.88° | 195.91° | −4.0° | 2 320 m | 0 |
+
+The band is 15° of hysteresis (the adopted value may lag the converged estimate by that much
+*by construction*) plus a few degrees of bin quantization. It is also under one 16-point
+compass step (22.5°), i.e. inside it the watch and the phone never disagree about what to
+print. On this corpus the prior never fires — every cone margin is decisive, exactly as it is
+for the engine.
+
 ## Pump / takeoff detection (watch, live) — `garmin/source/detectors/PumpDetector.mc`
 
 The watch runs the **same chain on the same numbers** as *Pumping (accelerometer)* above and

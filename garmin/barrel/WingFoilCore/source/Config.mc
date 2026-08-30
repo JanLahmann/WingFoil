@@ -21,17 +21,45 @@ class Config {
     var exitHoldS as Number = 3;
     var minFlightS as Number = 5;
     var useKnots as Boolean = false;
-    // Wind direction the wind blows FROM, degrees true. -1 = unset: turns stay generic
-    // (no tack/jibe split).
+    // The wind axis the turn classifier actually uses: degrees the wind blows FROM,
+    // -1 = unset (turns stay generic, no tack/jibe split).
+    //
+    // It is DERIVED, never assigned from outside. Two sources feed it and the precedence
+    // between them is the whole rule: **manual always wins**. A bearing the rider entered by
+    // hand (watch menu, GCM, or the phone's push) is a statement of fact; the on-watch
+    // estimate is an inference from an hour of course headings, and an inference must never
+    // overwrite a fact — least of all silently, mid-session, on a rider who set the axis
+    // precisely because he did not trust a guess.
     var windDirection as Number = -1;
+    var windManual as Number = -1;      // rider-entered, -1 = unset
+    var windAuto as Number = -1;        // AutoWind's adopted estimate, -1 = nothing adopted
 
     function initialize() {
     }
 
-    // Normalizes the wind axis. Anything outside 0-359 means "unset".
+    // Normalizes the MANUAL wind axis. Anything outside 0-359 means "unset".
     // Only turns detected from here on are classified — no retro pass on the watch.
     function setWindDirection(deg as Number) as Void {
-        windDirection = (deg < 0 || deg > 359) ? -1 : deg;
+        windManual = (deg < 0 || deg > 359) ? -1 : deg;
+        _resolveWind();
+    }
+
+    // The on-watch estimate. Fills the axis only while no manual bearing is set; setting one
+    // afterwards takes over instantly, and clearing it hands the axis back to the estimate.
+    function setAutoWind(deg as Number) as Void {
+        windAuto = (deg < 0 || deg > 359) ? -1 : deg;
+        _resolveWind();
+    }
+
+    // Is the axis in effect an ESTIMATE? Everything that displays a wind bearing marks it
+    // with a leading "~" when this is true, because an estimate the rider cannot tell from a
+    // measurement is worse than no estimate at all.
+    function windIsAuto() as Boolean {
+        return windManual < 0 && windAuto >= 0;
+    }
+
+    hidden function _resolveWind() as Void {
+        windDirection = windManual >= 0 ? windManual : windAuto;
     }
 
     // Hysteresis sanity: exit must sit below entry, whatever the settings source said.
@@ -51,8 +79,20 @@ class Config {
         return useKnots ? mps * 1.9438445 : mps * 3.6;
     }
 
-    // 16-point label for the wind axis; "--" when unset.
+    // 16-point label for the wind axis, marked "~" when it is the watch's own estimate;
+    // "--" when unset. E.g. "NW" (rider said so) vs "~NW" (the watch worked it out).
     function windLabel() as String {
+        return windMark() + compassLabel();
+    }
+
+    // The estimate mark on its own, for the call sites that print the bearing in degrees and
+    // would otherwise carry the "~" twice (the start screen's "wind ~200° SSW").
+    function windMark() as String {
+        return windIsAuto() ? "~" : "";
+    }
+
+    // Unmarked 16-point label; "--" when unset.
+    function compassLabel() as String {
         if (windDirection < 0) {
             return "--";
         }

@@ -1243,7 +1243,8 @@ class RecordingView extends WatchUi.View {
         var windSet = AppSettings.cfg.windDirection >= 0;
 
         // row 0 — the header, unchanged: which two maneuvers the counts below are, and the
-        // axis that split them.
+        // axis that split them. `windLabel` marks an axis the WATCH estimated with a leading
+        // "~" ("tack / jibe  ~SSW"), so the header never claims the rider named it.
         var y = turnsRowY(cy, hT, hG, hK, hD, hS, 0);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, Graphics.FONT_XTINY,
