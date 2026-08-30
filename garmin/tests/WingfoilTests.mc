@@ -647,6 +647,128 @@ function gridPairBandFitsRoundDisplay(logger as Test.Logger) as Boolean {
     return true;
 }
 
+// The FOIL page — the shipped page 2 since 0.8.2. A titled 3x2 table: "foil" over the "min" /
+// "km" column headers, then the two shares, the two totals and the two bests. Measured at the
+// worst case the fitter can be handed (100 % on both shares, a 199:59 foil time, 99.9 km) and
+// again at the shipped session's own numbers, on this device's glass, with the foil-% arc on
+// the page — which it always is, since the page draws it by being the foil page.
+(:test)
+function foilPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
+    var dc = testDc();
+    var cx = screenPx() / 2;
+    var cy = screenPx() / 2;
+    var radius = RecordingView.fitRadius(dc, false, true);
+    var limit = radius.toFloat();
+    var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+    var hV = dc.getFontHeight(Graphics.FONT_LARGE);
+    var inkT = RecordingView.inkH(dc, Graphics.FONT_XTINY);
+
+    // ---- the stack: five rows, lifted as one block, and none of them may touch ----
+    var bias = RecordingView.gridBias(dc);
+    var y = [RecordingView.foilRowY(cy, hT, hV, 0, bias),
+        RecordingView.foilRowY(cy, hT, hV, 1, bias),
+        RecordingView.foilRowY(cy, hT, hV, 2, bias),
+        RecordingView.foilRowY(cy, hT, hV, 3, bias),
+        RecordingView.foilRowY(cy, hT, hV, 4, bias)];
+    Test.assertMessage(y[1] - y[0] >= hT, "foil title and column headers overlap");
+    Test.assertMessage(y[2] - y[1] >= (hT + hV) / 2, "foil headers and the share row overlap");
+    Test.assertMessage(y[3] - y[2] >= hV && y[4] - y[3] >= hV, "foil value rows overlap");
+    // the lift buys the bottom row its width from the empty top of the glass, so the block is
+    // exactly `bias` above centre and no further
+    Test.assertMessage(((cy - (y[0] - hT / 2)) - ((y[4] + hV / 2) - cy) - 2 * bias).abs() <= 1,
+        "foil block is not lifted by exactly the grid bias");
+
+    // ---- the table's fixed columns ----
+    var half = RecordingView.foilTableHalf(dc, radius, cy, hT, hV, bias);
+    var keys = RecordingView.foilKeys(dc, half);
+    var keyW = RecordingView.foilKeyWidth(dc, half);
+    var col = RecordingView.foilColumns(cx, half, keyW);
+    Test.assertMessage(col[3] > 0, "the key column ate the whole table");
+    // the two value columns keep the grid's own gutter, and the key column clears them both
+    Test.assertMessage(col[2] - col[1] >= col[3] + CELL_GUTTER, "foil columns overlap");
+    Test.assertMessage(col[1] - col[3] / 2 >= col[0] + keyW + 1,
+        "a row key runs into the first column");
+    // ...and the block is centred as a WHOLE, key column included
+    Test.assertMessage(((cx - col[0]) - ((col[2] + col[3] / 2) - cx)).abs() <= 2,
+        "foil table off centre: the key column pushed the numbers sideways");
+
+    // ---- the worst case the page can be handed ----
+    var pct = PageModel.worstValue(PageModel.M_FOIL_PCT);           // "100%"
+    var tim = PageModel.worstValue(PageModel.M_FOIL_TIME);          // "199:59"
+    var km = PageModel.worstValue(PageModel.M_DISTANCE);            // "99.9"
+    var fP = RecordingView.foilFont(dc, [pct, pct], col[3]);
+    var fV = RecordingView.foilFont(dc, [tim, km, tim, km], col[3]);
+    // a value in a label font is not a value
+    Test.assertMessage(dc.getFontHeight(fP) >= dc.getFontHeight(Graphics.FONT_SMALL)
+        && dc.getFontHeight(fV) >= dc.getFontHeight(Graphics.FONT_SMALL),
+        "a foil row fell below FONT_SMALL");
+    // ...and the row that reserved the band may never be taller than it
+    Test.assertMessage(dc.getFontHeight(fP) <= hV && dc.getFontHeight(fV) <= hV,
+        "a foil value row is taller than the band it was stacked with");
+    // the worst case must fit its column, or the two numbers would run together
+    Test.assertMessage(dc.getTextWidthInPixels(tim, fV) <= col[3]
+        && dc.getTextWidthInPixels(km, fV) <= col[3],
+        "the worst-case foil value overflows its column at " + col[3].toString() + "px");
+    Test.assertMessage(dc.getTextWidthInPixels(pct, fP) <= col[3],
+        "the worst-case share overflows its column");
+
+    // ---- every box, at its own depth and its own column, inside the glass ----
+    var r = cornerRadius(dc.getTextWidthInPixels(FOIL_TITLE, Graphics.FONT_XTINY), inkT,
+        y[0], cy);
+    Test.assertMessage(r <= limit, "foil title r=" + r.format("%.0f") + " > " + limit);
+    var hdr = [FOIL_COL_TIME, FOIL_COL_DIST];
+    for (var i = 0; i < 2; i++) {
+        r = cornerRadiusAt(cx, col[1 + i], dc.getTextWidthInPixels(hdr[i],
+            Graphics.FONT_XTINY), inkT, y[1], cy);
+        Test.assertMessage(r <= limit, "foil header " + i.toString() + " r="
+            + r.format("%.0f") + " > " + limit);
+    }
+    var rows = [[pct, pct], [tim, km], [tim, km]];
+    var fonts = [fP, fV, fV];
+    for (var row = 0; row < 3; row++) {
+        var ink = RecordingView.inkH(dc, fonts[row]);
+        for (var i = 0; i < 2; i++) {
+            r = cornerRadiusAt(cx, col[1 + i],
+                dc.getTextWidthInPixels(rows[row][i], fonts[row]), ink, y[2 + row], cy);
+            Test.assertMessage(r <= limit, "foil value r" + row.toString() + "c"
+                + i.toString() + " r=" + r.format("%.0f") + " > " + limit);
+        }
+    }
+    for (var i = 0; i < 2; i++) {
+        var wk = dc.getTextWidthInPixels(keys[i], Graphics.FONT_XTINY);
+        r = cornerRadiusAt(cx, col[0] + wk / 2, wk, inkT, y[3 + i], cy);
+        Test.assertMessage(r <= limit, "foil key " + keys[i] + " r=" + r.format("%.0f")
+            + " > " + limit);
+    }
+    // the two keys must not read as one word, and must say which row they key
+    Test.assertMessage(!keys[0].equals(keys[1]) && keys[0].length() > 0
+        && keys[1].length() > 0, "the two row keys must differ");
+
+    // ---- the session the app was designed against ----
+    // 56 % / 61 % of a 63:24 / 14.1 km foil session, best flight 7:04 / 2.2 km. Real numbers
+    // must never be SMALLER than the three-digit worst case asserted above.
+    var realP = RecordingView.foilFont(dc, ["56%", "61%"], col[3]);
+    var realV = RecordingView.foilFont(dc, ["63:24", "14.1", "7:04", "2.2"], col[3]);
+    Test.assertMessage(dc.getFontHeight(realP) >= dc.getFontHeight(fP)
+        && dc.getFontHeight(realV) >= dc.getFontHeight(fV),
+        "a real session's foil table is smaller than the worst case");
+    // the km column is ON-FOIL distance, so it is formatted from metres like any other
+    Test.assertEqual(RecordingView.foilKm(14091.0), "14.1");
+    Test.assertEqual(RecordingView.foilKm(2249.0), "2.2");
+    Test.assertEqual(RecordingView.foilKm(0.0), "0.0");
+
+    logger.debug("foil table: half " + half.toString() + "px, key \"" + keys[0] + "\" "
+        + keyW.toString() + "px, columns " + col[3].toString() + "px at "
+        + col[1].toString() + "/" + col[2].toString() + "; share row font height "
+        + dc.getFontHeight(fP).toString() + ", value rows "
+        + dc.getFontHeight(fV).toString() + " (band " + hV.toString()
+        + ", LARGE/MED/SMALL " + dc.getFontHeight(Graphics.FONT_LARGE).toString() + "/"
+        + dc.getFontHeight(Graphics.FONT_MEDIUM).toString() + "/"
+        + dc.getFontHeight(Graphics.FONT_SMALL).toString() + "); real session "
+        + dc.getFontHeight(realP).toString() + "/" + dc.getFontHeight(realV).toString());
+    return true;
+}
+
 // CLOCK page: giant time of day over one configurable cell.
 (:test)
 function clockPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
@@ -986,13 +1108,27 @@ function foilBezelArcSweepsClockwiseFromTwelve(logger as Test.Logger) as Boolean
     Test.assertMessage(RecordingView.scaled(dc, RING_PEN) * REF_PX
         <= (RING_PEN + 1) * dc.getWidth(), "ring pen is not a proportion of the glass");
 
-    // it is a property of the page, not of a cell: the shipped Session grid has foil %
+    // it is a property of the page, not of a cell: the shipped foil page has foil %
     PageModel.build({});
     Test.assertMessage(PageModel.pageHasMetric(1, PageModel.M_FOIL_PCT),
-        "default grid page must carry the foil arc");
-    Test.assertMessage(!PageModel.pageHasMetric(0, PageModel.M_FOIL_PCT),
-        "default speed hero has no foil % and so no arc");
-    Test.assertMessage(!PageModel.pageHasMetric(2, PageModel.M_FOIL_PCT), "records page");
+        "default foil page must carry the foil arc");
+    Test.assertMessage(PageModel.pageDrawsFoilArc(1), "default foil page draws the arc");
+    Test.assertMessage(!PageModel.pageDrawsFoilArc(0),
+        "default main page has no foil % and so no arc");
+    Test.assertMessage(!PageModel.pageDrawsFoilArc(2), "records page");
+    // ...and LAYOUT_FOIL earns the arc by BEING the foil page, with every slot empty: it reads
+    // no slot, so a rider who clears them must not lose the sweep the page is named after.
+    PageModel.build({
+        "pg1Layout" => PageModel.LAYOUT_FOIL,
+        "pg1s1" => PageModel.M_NONE, "pg1s2" => PageModel.M_NONE,
+        "pg1s3" => PageModel.M_NONE, "pg1s4" => PageModel.M_NONE,
+        "pg1s5" => PageModel.M_NONE,
+        "pg2Layout" => 0, "pg3Layout" => 0, "pg4Layout" => 0, "pg5Layout" => 0,
+        "pg6Layout" => 0, "pg7Layout" => 0
+    });
+    Test.assertMessage(!PageModel.pageHasMetric(0, PageModel.M_FOIL_PCT), "no slot carries it");
+    Test.assertMessage(PageModel.pageDrawsFoilArc(0), "a slotless foil page still draws it");
+    PageModel.build({});
     logger.debug("bezel arc r=" + r.toString() + "px, pen " + BEZEL_PEN.toString());
     return true;
 }
@@ -1118,8 +1254,13 @@ function trackTintBoundsTheNumberOfPolylines(logger as Test.Logger) as Boolean {
 (:test)
 function pageModelDefaultsMatchShippedPages(logger as Test.Logger) as Boolean {
     PageModel.build({});
-    Test.assertMessage(PageModel.count() == 6,
-        "expected 6 default pages, got " + PageModel.count().toString());
+    // Seven pages since 0.8.2 — the seventh is the breadcrumb map, and it is the one page the
+    // default set can LOSE: build() turns it off on any product without WatchUi.MapTrackView,
+    // which is what keeps the fenix 7 family on the six screens it can actually draw.
+    var pages = PageModel.hasMap() ? 7 : 6;
+    Test.assertMessage(PageModel.count() == pages,
+        "expected " + pages.toString() + " default pages, got "
+            + PageModel.count().toString());
 
     // Page 1 is the bespoke main screen since 0.8.0. Its GIANT is slot 1 and defaults to the
     // best 10 s (0.8.2): the rider reads the watch when he is not moving, so a live
@@ -1139,7 +1280,11 @@ function pageModelDefaultsMatchShippedPages(logger as Test.Logger) as Boolean {
     Test.assertEqual(PageModel.unitOf(PageModel.M_FLIGHTS), "");
     Test.assertEqual(PageModel.caption(PageModel.M_FLIGHTS), "flights");
 
-    Test.assertEqual(PageModel.layoutAt(1), PageModel.LAYOUT_GRID4);
+    // Page 2 is the bespoke FOIL table since 0.8.2 — it reads no slot. Its five slots are
+    // nevertheless still the old Session grid's, on purpose: a rider who sets page 2 back to
+    // "Grid" in Garmin Connect gets exactly the page he had, and pg2s1 = foil % is what keeps
+    // the bezel arc on the page in either layout.
+    Test.assertEqual(PageModel.layoutAt(1), PageModel.LAYOUT_FOIL);
     Test.assertEqual(PageModel.slotAt(1, 0), PageModel.M_FOIL_PCT);
     Test.assertEqual(PageModel.slotAt(1, 1), PageModel.M_FOIL_TIME);
     Test.assertEqual(PageModel.slotAt(1, 2), PageModel.M_LONGEST);
@@ -1163,11 +1308,22 @@ function pageModelDefaultsMatchShippedPages(logger as Test.Logger) as Boolean {
     Test.assertEqual(PageModel.label(PageModel.M_TIMER), "timer");
     Test.assertEqual(PageModel.suffix(PageModel.M_HR), " bpm");
 
+    // Page 7 is the breadcrumb map, shipped ON at last: it has been in the app since 0.7 and
+    // in nobody's page cycle, because a page you have to go and find in Garmin Connect is a
+    // page that does not exist. It goes last — it is the one page that cannot be drawn into,
+    // so the pager skips it while paused.
+    if (PageModel.hasMap()) {
+        Test.assertEqual(PageModel.layoutAt(6), PageModel.LAYOUT_MAP);
+    }
+    Test.assertMessage(PageModel.mapPage == PageModel.hasMap(),
+        "the map page ships on wherever MapTrackView exists, and only there");
+
     // wrapping is total: no index can escape the page set
-    Test.assertEqual(PageModel.wrap(-1), 5);
-    Test.assertEqual(PageModel.wrap(6), 0);
-    Test.assertMessage(!PageModel.mapPage, "map off by default");
-    logger.debug("defaults: 6 pages, main/grid4/records/turns/clock/timeline");
+    Test.assertEqual(PageModel.wrap(-1), pages - 1);
+    Test.assertEqual(PageModel.wrap(pages), 0);
+    logger.debug("defaults: " + pages.toString()
+        + " pages, main/foil/records/turns/clock/timeline"
+        + (PageModel.hasMap() ? "/map" : " (no map on this product)"));
     return true;
 }
 
@@ -1184,7 +1340,7 @@ function pageModelCustomConfigMaps(logger as Test.Logger) as Boolean {
         "pg5Layout" => PageModel.LAYOUT_GRID4,
         "pg5s1" => 42,                           // out of range -> none
         "pg5s2" => PageModel.M_BATTERY,
-        "pg6Layout" => PageModel.LAYOUT_OFF
+        "pg6Layout" => PageModel.LAYOUT_OFF, "pg7Layout" => PageModel.LAYOUT_OFF
     });
     Test.assertMessage(PageModel.count() == 3,
         "expected 3 pages, got " + PageModel.count().toString());
@@ -1202,7 +1358,7 @@ function pageModelCustomConfigMaps(logger as Test.Logger) as Boolean {
         "pg1Layout" => PageModel.LAYOUT_MAP,
         "pg2Layout" => PageModel.LAYOUT_OFF, "pg3Layout" => PageModel.LAYOUT_OFF,
         "pg4Layout" => PageModel.LAYOUT_OFF, "pg5Layout" => PageModel.LAYOUT_OFF,
-        "pg6Layout" => PageModel.LAYOUT_OFF
+        "pg6Layout" => PageModel.LAYOUT_OFF, "pg7Layout" => PageModel.LAYOUT_OFF
     });
     if (PageModel.hasMap()) {
         Test.assertEqual(PageModel.layoutAt(0), PageModel.LAYOUT_MAP);
@@ -1214,7 +1370,7 @@ function pageModelCustomConfigMaps(logger as Test.Logger) as Boolean {
     // every page off must still leave one readable screen
     PageModel.build({
         "pg1Layout" => 0, "pg2Layout" => 0, "pg3Layout" => 0,
-        "pg4Layout" => 0, "pg5Layout" => 0, "pg6Layout" => 0
+        "pg4Layout" => 0, "pg5Layout" => 0, "pg6Layout" => 0, "pg7Layout" => 0
     });
     Test.assertEqual(PageModel.count(), 1);
     Test.assertEqual(PageModel.layoutAt(0), PageModel.LAYOUT_HERO);
@@ -1729,7 +1885,7 @@ function everyLayoutRendersHeadless(logger as Test.Logger) as Boolean {
 
     var layouts = [PageModel.LAYOUT_MAIN, PageModel.LAYOUT_HERO, PageModel.LAYOUT_GRID4,
         PageModel.LAYOUT_CELLS2, PageModel.LAYOUT_RECORDS, PageModel.LAYOUT_TURNS,
-        PageModel.LAYOUT_CLOCK, PageModel.LAYOUT_TIMELINE];
+        PageModel.LAYOUT_CLOCK, PageModel.LAYOUT_TIMELINE, PageModel.LAYOUT_FOIL];
     var view = new RecordingView();
     for (var i = 0; i < layouts.size(); i++) {
         // every slot filled with a timer: the widest thing the catalog can produce
@@ -1739,7 +1895,7 @@ function everyLayoutRendersHeadless(logger as Test.Logger) as Boolean {
             "pg1s3" => PageModel.M_HR, "pg1s4" => PageModel.M_FOIL_TIME,
             "pg1s5" => PageModel.M_BEST_10S,
             "pg2Layout" => 0, "pg3Layout" => 0, "pg4Layout" => 0,
-            "pg5Layout" => 0, "pg6Layout" => 0
+            "pg5Layout" => 0, "pg6Layout" => 0, "pg7Layout" => 0
         });
         PageNav.index = 0;
         Test.assertEqual(PageModel.layoutAt(0), layouts[i]);
@@ -1771,7 +1927,7 @@ function everyLayoutRendersHeadless(logger as Test.Logger) as Boolean {
     PageModel.build({"pg1Layout" => PageModel.LAYOUT_HERO, "pg1s1" => PageModel.M_FOIL_PCT,
         "pg1s2" => PageModel.M_SPEED, "pg1s3" => PageModel.M_HR,
         "pg2Layout" => 0, "pg3Layout" => 0, "pg4Layout" => 0, "pg5Layout" => 0,
-        "pg6Layout" => 0});
+        "pg6Layout" => 0, "pg7Layout" => 0});
     PageNav.index = 0;
     Test.assertMessage(PageModel.pageHasMetric(0, PageModel.M_FOIL_PCT), "hero foil arc");
     view.onUpdate(dc);
@@ -1791,7 +1947,8 @@ function everyLayoutRendersHeadless(logger as Test.Logger) as Boolean {
     c.engine = fresh;
     for (var i = 0; i < layouts.size(); i++) {
         PageModel.build({"pg1Layout" => layouts[i], "pg2Layout" => 0, "pg3Layout" => 0,
-            "pg4Layout" => 0, "pg5Layout" => 0, "pg6Layout" => 0});
+            "pg4Layout" => 0, "pg5Layout" => 0, "pg6Layout" => 0,
+            "pg7Layout" => 0});
         PageNav.index = 0;
         view.onUpdate(dc);
     }
@@ -2906,7 +3063,7 @@ function pausedRidersCannotPageOntoTheMap(logger as Test.Logger) as Boolean {
         "pg1Layout" => PageModel.LAYOUT_MAIN,
         "pg2Layout" => PageModel.LAYOUT_MAP,
         "pg3Layout" => PageModel.LAYOUT_CLOCK,
-        "pg4Layout" => 0, "pg5Layout" => 0, "pg6Layout" => 0
+        "pg4Layout" => 0, "pg5Layout" => 0, "pg6Layout" => 0, "pg7Layout" => 0
     });
     Test.assertEqual(PageModel.count(), 3);
     Test.assertEqual(PageModel.layoutAt(1), PageModel.LAYOUT_MAP);
@@ -2924,7 +3081,8 @@ function pausedRidersCannotPageOntoTheMap(logger as Test.Logger) as Boolean {
     PageModel.build({
         "pg1Layout" => PageModel.LAYOUT_MAP,
         "pg2Layout" => PageModel.LAYOUT_MAP,
-        "pg3Layout" => 0, "pg4Layout" => 0, "pg5Layout" => 0, "pg6Layout" => 0
+        "pg3Layout" => 0, "pg4Layout" => 0, "pg5Layout" => 0, "pg6Layout" => 0,
+        "pg7Layout" => 0
     });
     Test.assertEqual(PageNav.nextIndex(0, 1, true), 0);
 

@@ -40,6 +40,7 @@
     <string id="LayMap">Map (breadcrumb track)</string>
     <string id="LayTimeline">Timeline (session story)</string>
     <string id="LayMain">Main (speed + turns + streak)</string>
+    <string id="LayFoil">Foil (min + km table)</string>
     <string id="MetNone">— none —</string>
     <string id="MetSpeed">Speed</string>
     <string id="MetFoilPct">Foil %</string>
@@ -62,7 +63,7 @@
     <string id="MetTakeoffCost">Takeoff HR cost (last)</string>
     <string id="MetStreak">Dry run (now/best)</string>
     <string id="MetFoilDistPct">Foil distance %</string>
-    <!-- data screens (Feature 1): 6 pages x (layout + 5 metric slots) -->
+    <!-- data screens (Feature 1): 7 pages x (layout + 5 metric slots) -->
     <string id="SetPageGroup">Data screens</string>
     <string id="SetPg1Layout">Page 1 layout</string>
     <string id="SetPg1s1">Page 1 slot 1</string>
@@ -100,6 +101,12 @@
     <string id="SetPg6s3">Page 6 slot 3</string>
     <string id="SetPg6s4">Page 6 slot 4</string>
     <string id="SetPg6s5">Page 6 slot 5</string>
+    <string id="SetPg7Layout">Page 7 layout</string>
+    <string id="SetPg7s1">Page 7 slot 1</string>
+    <string id="SetPg7s2">Page 7 slot 2</string>
+    <string id="SetPg7s3">Page 7 slot 3</string>
+    <string id="SetPg7s4">Page 7 slot 4</string>
+    <string id="SetPg7s5">Page 7 slot 5</string>
 
     <!-- FIT developer-field labels (Garmin Connect rendering) -->
     <string id="FitFoilStateChart">Foil state</string>

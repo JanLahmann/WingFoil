@@ -130,6 +130,29 @@ var PAIR_FONTS as Array<Graphics.FontType> = [
 ];
 const PAIR_FLOOR = 2;
 
+// ---- the FOIL page's table (see drawFoilPage) ----
+// A titled 3x2: one header, two column headers, three rows of two numbers. Everything on it
+// is a foil number, so the word "foil" is said ONCE, at the top, instead of six times in six
+// cell labels — which is the whole reason the page is a table and not a grid of cells.
+//
+// The column headers are UNITS, not categories ("min"/"km" rather than "time"/"dist"), because
+// the units are the information the numbers are missing: "63:24" and "14.1" say nothing about
+// what they are counting, while "56%" and "61%" under them read as exactly what they are — the
+// share of the MINUTES flown and the share of the KILOMETRES flown.
+const FOIL_TITLE = "foil";
+const FOIL_COL_TIME = "min";
+const FOIL_COL_DIST = "km";
+// The row keys. `total` gives way to `tot` when the long word would cost the values their
+// size: a key is already at the smallest font on the watch, so its LENGTH is the only thing
+// left to trade, and three letters separate the two rows exactly as well as five do.
+const FOIL_KEY_TOTAL = "total";
+const FOIL_KEY_TOTAL_TIGHT = "tot";
+const FOIL_KEY_MAX = "max";
+const FOIL_KEY_GAP = 6;
+// Values never go below TEXT_FONTS[FOIL_FLOOR] = FONT_SMALL, the readability floor every
+// other number on this watch keeps.
+const FOIL_FLOOR = 2;
+
 // Timeline page bands (see drawTimelinePage). The two tall ones were authored for the fenix 8
 // family, whose smallest glass is TL_REF_PX; RecordingView.stripH/sparkH keep them exactly as
 // written at or above that width and scale them down below it.
@@ -165,7 +188,7 @@ class RecordingView extends WatchUi.View {
         dc.clear();
         // A page that shows foil % anywhere gets it a second time as an arc round the glass —
         // the one number the rider glances at without reading.
-        var foilArc = PageModel.pageHasMetric(i, PageModel.M_FOIL_PCT);
+        var foilArc = PageModel.pageDrawsFoilArc(i);
         var layout = PageModel.layoutAt(i);
         // Pages that paint the flight-state ring, and therefore have less room for text.
         var ring = layout == PageModel.LAYOUT_HERO || layout == PageModel.LAYOUT_MAIN;
@@ -173,6 +196,8 @@ class RecordingView extends WatchUi.View {
             drawMainPage(dc, c, i, foilArc);
         } else if (layout == PageModel.LAYOUT_HERO) {
             drawHeroPage(dc, c, i, foilArc);
+        } else if (layout == PageModel.LAYOUT_FOIL) {
+            drawFoilPage(dc, c, foilArc);
         } else if (layout == PageModel.LAYOUT_GRID4) {
             drawGridPage(dc, c, i, foilArc);
         } else if (layout == PageModel.LAYOUT_CELLS2) {
@@ -700,6 +725,191 @@ class RecordingView extends WatchUi.View {
             return y + hN + hT + hL / 2;
         }
         return y + hN + hT + hL + hM / 2;
+    }
+
+    // ---- FOIL: the session's foil numbers as a titled 3x2 table ----
+    //
+    // It replaced the Session grid, and what it dropped is as much of the point as what it
+    // kept. The grid showed the foil shares, the foil time, the longest flight, the session
+    // DISTANCE and the flight COUNT — two of which are not foil numbers at all. The odometer
+    // total and the flight count are still catalog metrics for any other page's slots (and the
+    // count also has its own summary screen); this page is now one question asked twice, in
+    // minutes and in kilometres:
+    //
+    //          foil
+    //      min      km
+    //      56%     61%          how much of it was flown
+    //  tot 63:24   14.1         how much there was of it
+    //  max  7:04    2.2         and the best single flight of it
+    //
+    // The column headers are said ONCE, at the top, and all three rows inherit them — that is
+    // what makes it a table rather than three pairs of captioned cells, and it buys two rows of
+    // glass back from captions that would have repeated the same two words three times.
+    //
+    // The distance column is ON-FOIL distance throughout (FlightDetector.foilDistM /
+    // longestM), never the odometer: a "km" column whose top cell is a foil SHARE and whose
+    // middle cell were the whole session would be two different denominators in one column.
+    //
+    // The bezel arc stays, and stays keyed to the TIME share: an arc is a sweep, a sweep can
+    // only be one number, and the top-left cell is that number.
+    hidden function drawFoilPage(dc as Dc, c as SessionController, foilArc as Boolean) as Void {
+        var d = c.engine.detector;
+        var cx = dc.getWidth() / 2;
+        var cy = dc.getHeight() / 2;
+        var radius = fitRadius(dc, false, foilArc);
+        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+        var hV = dc.getFontHeight(Graphics.FONT_LARGE);
+        var bias = gridBias(dc);
+        var half = foilTableHalf(dc, radius, cy, hT, hV, bias);
+        var keys = foilKeys(dc, half);
+        var col = foilColumns(cx, half, foilKeyBlock(dc, keys));
+        var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
+
+        // row 0 — the page's name, in the same grey every other page header wears
+        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, foilRowY(cy, hT, hV, 0, bias), Graphics.FONT_XTINY, FOIL_TITLE, CV);
+
+        // row 1 — the two column headers, once, for the three rows under them
+        var yh = foilRowY(cy, hT, hV, 1, bias);
+        dc.drawText(col[1], yh, Graphics.FONT_XTINY, FOIL_COL_TIME, CV);
+        dc.drawText(col[2], yh, Graphics.FONT_XTINY, FOIL_COL_DIST, CV);
+
+        // row 2 — the two shares, teal, exactly as the pair band drew them: a PHASE tint, not
+        // the outcome ladder's green (docs/presentation.md)
+        var pt = PageModel.value(PageModel.M_FOIL_PCT, c);
+        var pd = PageModel.value(PageModel.M_FOIL_DIST_PCT, c);
+        drawFoilRow(dc, col, foilRowY(cy, hT, hV, 2, bias), "", pt, pd,
+            foilFont(dc, [pt, pd], col[3]), Ink.phaseFlying(), LV);
+
+        // rows 3 and 4 — the totals and the bests, white, and in ONE font: they are the two
+        // halves of the same table, and a row that shrank on its own would read as a different
+        // kind of number rather than as the same number a session later.
+        var tt = PageModel.fmtTime(d.foilTimeS);
+        var td = foilKm(d.foilDistM);
+        var mt = PageModel.fmtTime(d.longestS);
+        var md = foilKm(d.longestM);
+        var f = foilFont(dc, [tt, td, mt, md], col[3]);
+        drawFoilRow(dc, col, foilRowY(cy, hT, hV, 3, bias), keys[0], tt, td, f,
+            Graphics.COLOR_WHITE, LV);
+        drawFoilRow(dc, col, foilRowY(cy, hT, hV, 4, bias), keys[1], mt, md, f,
+            Graphics.COLOR_WHITE, LV);
+    }
+
+    // One table row: an optional grey key at the block's left edge, then the two values on
+    // their fixed columns. The key is left-justified and the values centred, which is what
+    // keeps the columns lined up down the page whatever the keys measure.
+    hidden function drawFoilRow(dc as Dc, col as Array<Number>, y as Number, key as String,
+            a as String, b as String, f as Graphics.FontType, ink as Number,
+            LV as Number) as Void {
+        if (!key.equals("")) {
+            dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
+            dc.drawText(col[0], y, Graphics.FONT_XTINY, key, LV);
+        }
+        dc.setColor(ink, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(col[1], y, f, a, CV);
+        dc.drawText(col[2], y, f, b, CV);
+    }
+
+    // Metres as the kilometres the column header promises. One decimal, like every other
+    // distance on the watch.
+    static function foilKm(metres as Float) as String {
+        return (metres / 1000.0).format("%.1f");
+    }
+
+    // Row centres: 0 title · 1 column headers · 2 shares · 3 totals · 4 bests. Stacked from
+    // font heights only, so no two rows can ever touch. `hV` is the band a value row reserves
+    // — always FONT_LARGE's line height, whatever font the fit lands in, so shrinking a number
+    // moves nothing.
+    //
+    // The block is LIFTED by the same bias the GRID4 page uses, and for the same reason: what
+    // this page needs is width in its bottom row, the top of the glass has two XTINY words on
+    // it and nothing else, and the trade is measured — at 454 px the lift takes the bottom
+    // row's chord from 332 px to 370 px, which is the difference between a 199:59 worst case
+    // fitting its column and overflowing it. Shared with the layout test.
+    static function foilRowY(cy as Number, hT as Number, hV as Number, row as Number,
+            bias as Number) as Number {
+        var y = cy - (2 * hT + 3 * hV) / 2 - bias;
+        if (row == 0) { return y + hT / 2; }
+        if (row == 1) { return y + hT + hT / 2; }
+        return y + 2 * hT + (row - 2) * hV + hV / 2;
+    }
+
+    // Half the width the TABLE may use: the narrowest of the three VALUE rows, each measured
+    // at its own depth. One number for all of them, because a table whose columns move from
+    // row to row is not a table.
+    //
+    // The header row is deliberately NOT in this minimum. It sits highest, so on a lifted
+    // block it is the narrowest row on the page — but all it carries is two three-letter words
+    // centred on columns that are already inside its chord, and letting it set the width would
+    // hand the whole table the budget of its emptiest row. The layout test measures the two
+    // headers where they are actually drawn instead.
+    static function foilTableHalf(dc as Dc, radius as Number, cy as Number, hT as Number,
+            hV as Number, bias as Number) as Number {
+        var h = 0;
+        for (var row = 2; row <= 4; row++) {
+            var k = chordHalf(radius, foilRowY(cy, hT, hV, row, bias) - cy,
+                inkH(dc, Graphics.FONT_LARGE));
+            if (row == 2 || k < h) {
+                h = k;
+            }
+        }
+        return h;
+    }
+
+    // What one value column is wide, once the key column and the gutter are paid for.
+    static function foilColWidth(half as Number, keyW as Number) as Number {
+        return (2 * half - keyW - FOIL_KEY_GAP - CELL_GUTTER) / 2;
+    }
+
+    // The table's fixed geometry: [key LEFT edge, column 1 centre, column 2 centre, column
+    // width]. The whole block — key column included — is centred on the glass, so the keys do
+    // not push the numbers off centre; they are part of what is centred.
+    static function foilColumns(cx as Number, half as Number,
+            keyW as Number) as Array<Number> {
+        var w = foilColWidth(half, keyW);
+        var x0 = cx - half;
+        var c1 = x0 + keyW + FOIL_KEY_GAP + w / 2;
+        return [x0, c1, c1 + w + CELL_GUTTER, w];
+    }
+
+    // The key column's width, and with it which pair of words the page uses. The long words
+    // give way when they would push the WORST CASE below its floor: what this table owes the
+    // rider is six readable numbers, and a word that costs one of them its size is a word that
+    // has to get shorter. Shared with the layout test.
+    static function foilKeyWidth(dc as Dc, half as Number) as Number {
+        return foilKeyBlock(dc, foilKeys(dc, half));
+    }
+
+    static function foilKeys(dc as Dc, half as Number) as Array<String> {
+        var long = [FOIL_KEY_TOTAL, FOIL_KEY_MAX];
+        var worst = dc.getTextWidthInPixels(PageModel.worstValue(PageModel.M_FOIL_TIME),
+            TEXT_FONTS[FOIL_FLOOR]);
+        return foilColWidth(half, foilKeyBlock(dc, long)) >= worst
+            ? long : [FOIL_KEY_TOTAL_TIGHT, FOIL_KEY_MAX];
+    }
+
+    static function foilKeyBlock(dc as Dc, keys as Array<String>) as Number {
+        var a = dc.getTextWidthInPixels(keys[0], Graphics.FONT_XTINY);
+        var b = dc.getTextWidthInPixels(keys[1], Graphics.FONT_XTINY);
+        return a > b ? a : b;
+    }
+
+    // The largest text font every one of `vals` fits its column in, floored at FONT_SMALL.
+    // One font for the whole set: a table's column is one column.
+    static function foilFont(dc as Dc, vals as Array<String>,
+            colW as Number) as Graphics.FontType {
+        for (var i = 0; i < FOIL_FLOOR; i++) {
+            var fits = true;
+            for (var j = 0; j < vals.size(); j++) {
+                if (dc.getTextWidthInPixels(vals[j], TEXT_FONTS[i]) > colW) {
+                    fits = false;
+                }
+            }
+            if (fits) {
+                return TEXT_FONTS[i];
+            }
+        }
+        return TEXT_FONTS[FOIL_FLOOR];
     }
 
     // ---- GRID4: optional giant number on top, then a 2x2 of label/value cells ----

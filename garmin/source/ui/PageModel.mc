@@ -11,8 +11,8 @@ import WingFoilCore;
 // (`pg<N>Layout`, `pg<N>s<M>`), so the rider re-orders, re-fills and removes screens from the
 // phone; `build()` re-runs on every onSettingsChanged, which is the whole hot-reload story.
 //
-// The DEFAULTS below are the six screens 0.8.0 ships with:
-// 1 Main · 2 Session grid · 3 Records · 4 Turns · 5 Clock · 6 Timeline. Change them here and
+// The DEFAULTS below are the seven screens 0.8.2 ships with:
+// 1 Main · 2 Foil · 3 Records · 4 Turns · 5 Clock · 6 Timeline · 7 Map. Change them here and
 // in resources/settings/properties.xml together — properties.xml wins on a real device, this
 // table is the fallback and the thing the unit test asserts against.
 //
@@ -35,7 +35,7 @@ import WingFoilCore;
 //            (bandPartner below) — which is what the shipped Session page draws.
 //   CELLS2   s1/s2 = two side-by-side cells
 //   CLOCK    s1 = the single cell under the giant time of day
-//   RECORDS / TURNS / TIMELINE / MAP   bespoke renderers, slots unused
+//   FOIL / RECORDS / TURNS / TIMELINE / MAP   bespoke renderers, slots unused
 module PageModel {
 
     // Layout ids. Values are the GCM list values — append only, never renumber.
@@ -53,9 +53,14 @@ module PageModel {
         // ladder as three counts, the turn-outcome strip, the no-fall streak and the time of
         // day. Bespoke like RECORDS/TURNS — everything but the giant is the point of the
         // screen, so only slot 1 is read.
-        LAYOUT_MAIN = 9
+        LAYOUT_MAIN = 9,
+        // The default page 2 since 0.8.2: the foil TABLE. Three rows of two — the two shares,
+        // the two totals, the two bests — under one "min / km" pair of column headers. Bespoke
+        // like MAIN/RECORDS/TURNS: no slot is read, because every cell on it is a foil number
+        // and a configurable cell could only make it a worse version of the grid it replaced.
+        LAYOUT_FOIL = 10
     }
-    const LAYOUT_MAX = 9;
+    const LAYOUT_MAX = 10;
 
     // Metric catalog. Values are the GCM list values — append only, never renumber.
     enum {
@@ -90,28 +95,41 @@ module PageModel {
     }
     const M_MAX = 21;
 
-    const MAX_PAGES = 6;
+    // Seven configurable pages since 0.8.2. The seventh exists so the BREADCRUMB MAP can ship
+    // ON by default: the page has been in the app since 0.7 but was never in the shipped set,
+    // and a rider who has to find "Map" in a Garmin Connect layout list never learns it is
+    // there. It goes LAST on purpose — it is the one page that cannot be drawn into, so it
+    // carries no state, no speed and no PAUSED banner, and it is skipped while paused
+    // (PageNav). On any product without WatchUi.MapTrackView build() turns it OFF, so those
+    // watches simply keep the six screens they had.
+    const MAX_PAGES = 7;
     const SLOTS = 5;
 
     // ---- the shipped five pages, as data ----
     var DEF_LAYOUT as Array<Number> = [
-        LAYOUT_MAIN, LAYOUT_GRID4, LAYOUT_RECORDS, LAYOUT_TURNS, LAYOUT_CLOCK, LAYOUT_TIMELINE
+        LAYOUT_MAIN, LAYOUT_FOIL, LAYOUT_RECORDS, LAYOUT_TURNS, LAYOUT_CLOCK, LAYOUT_TIMELINE,
+        LAYOUT_MAP
     ];
+    // Page 2's slots are LEFT AT THE OLD SESSION GRID even though LAYOUT_FOIL reads none of
+    // them. Two reasons: a rider who sets page 2 back to "Grid" in Garmin Connect gets exactly
+    // the page he had, cell for cell; and pg2s1 = M_FOIL_PCT is what the bezel-arc rule keys
+    // on, so the arc survives that switch in both directions.
     var DEF_SLOTS as Array<Array<Number> > = [
         [M_BEST_10S, M_NONE, M_NONE, M_NONE, M_NONE],
         [M_FOIL_PCT, M_FOIL_TIME, M_LONGEST, M_DISTANCE, M_FLIGHTS],
         [M_NONE, M_NONE, M_NONE, M_NONE, M_NONE],
         [M_NONE, M_NONE, M_NONE, M_NONE, M_NONE],
         [M_TIMER, M_NONE, M_NONE, M_NONE, M_NONE],
+        [M_NONE, M_NONE, M_NONE, M_NONE, M_NONE],
         [M_NONE, M_NONE, M_NONE, M_NONE, M_NONE]
     ];
 
     // ---- built state ----
     // `_layout`/`_slot` are indexed by CONFIG page (0..5); `_order` lists the configured pages
     // that are actually on, in order, and is what the UI cycles through.
-    var _layout as Array<Number> = [0, 0, 0, 0, 0, 0];
+    var _layout as Array<Number> = [0, 0, 0, 0, 0, 0, 0];
     var _slot as Array<Array<Number> > = [
-        [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]
     ];
     var _order as Array<Number> = [0];
@@ -183,6 +201,13 @@ module PageModel {
             }
         }
         return false;
+    }
+
+    // Does the i-th visible page draw the foil-% bezel arc? Two ways to earn it: carry foil %
+    // in a slot (any configurable layout), or BE the foil page — LAYOUT_FOIL reads no slots,
+    // and a page whose every number is a foil number does not need a cell to prove it.
+    function pageDrawsFoilArc(i as Number) as Boolean {
+        return layoutAt(i) == LAYOUT_FOIL || pageHasMetric(i, M_FOIL_PCT);
     }
 
     function wrap(i as Number) as Number {
