@@ -40,13 +40,25 @@
     <property id="pg1s3" type="number">0</property>
     <property id="pg1s4" type="number">0</property>
     <property id="pg1s5" type="number">0</property>
-    <!-- Page 2, the Session grid. 0.8.2: pg2s1 = 2 (M_FOIL_PCT) no longer draws ONE number.
-         The giant band renders as a PAIR — foil time % beside foil dist % (M_FOIL_DIST_PCT,
-         21) — because the giant slot holding foil % is what opens it (PageModel.bandPartner).
-         That is why nothing here moved: the value a watch already has stored is the value that
-         switches the new band on, so an existing install gets it on the next update instead of
-         keeping the old single giant, which is what a new layout id would have done. -->
-    <property id="pg2Layout" type="number">2</property>
+    <!-- Page 2, the FOIL page (layout 10, LAYOUT_FOIL). It replaces the Session grid: a titled
+         3x2 table — the two foil shares, the two foil totals, the two bests — under one
+         "min / km" pair of column headers. The session odometer and the flight count left it
+         (neither is a foil number); both remain catalog metrics for any other slot, and the
+         count keeps its own summary screen.
+
+         READ THIS BEFORE CHANGING A DEFAULT HERE. A stored property beats this file: the
+         values below are written into a watch's property store on FIRST INSTALL, and an app
+         UPDATE leaves the ones already there alone. So a watch that already carries 0.8.2 with
+         pg2Layout = 2 keeps the Session grid — with its pair band, which is why the GRID4
+         renderer and PageModel.bandPartner are untouched and that page still looks right. Only
+         a fresh install picks the foil page up automatically; an existing one gets it by
+         setting "Page 2 layout" to "Foil" in Garmin Connect (or by reinstalling).
+
+         The SLOTS below are deliberately left at the old grid's five metrics even though
+         LAYOUT_FOIL reads none of them: switching page 2 back to "Grid" then restores exactly
+         the page that was there, and pg2s1 = 2 keeps the foil-% bezel arc on the page in
+         either layout (PageModel.pageDrawsFoilArc). -->
+    <property id="pg2Layout" type="number">10</property>
     <property id="pg2s1" type="number">2</property>
     <property id="pg2s2" type="number">5</property>
     <property id="pg2s3" type="number">6</property>
@@ -76,4 +88,16 @@
     <property id="pg6s3" type="number">0</property>
     <property id="pg6s4" type="number">0</property>
     <property id="pg6s5" type="number">0</property>
+    <!-- Page 7, the breadcrumb MAP (layout 7). It ships ON: the page has existed since 0.7
+         but was never in the default set, and a rider who has to find "Map" in a layout list
+         in Garmin Connect never learns it is there. It goes last because it is the one page
+         that cannot be drawn into — no PAUSED banner, no state ring — which is also why the
+         pager skips it while paused. On a product without WatchUi.MapTrackView PageModel
+         turns it off, so those watches keep the six screens they had. Slots unused. -->
+    <property id="pg7Layout" type="number">7</property>
+    <property id="pg7s1" type="number">0</property>
+    <property id="pg7s2" type="number">0</property>
+    <property id="pg7s3" type="number">0</property>
+    <property id="pg7s4" type="number">0</property>
+    <property id="pg7s5" type="number">0</property>
 </properties>

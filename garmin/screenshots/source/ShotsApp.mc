@@ -48,7 +48,11 @@ class ShotsApp extends WingfoilApp {
 
     function onStart(state as Dictionary?) as Void {
         AppSettings.load();
-        PageModel.build(null);
+        // An EMPTY dict, not null: null reads the simulator's own property store, which keeps
+        // whatever a previous run left in it — and a stored pg2Layout beats the code default
+        // exactly as it does on a watch, so the harness shot the OLD Session grid on the first
+        // 0.8.2 pass. The screenshots must show what a FRESH install draws.
+        PageModel.build({});
         PageNav.index = 0;
         controller.engine.trackEnabled = true;
         ShotSeed.seed(controller);
