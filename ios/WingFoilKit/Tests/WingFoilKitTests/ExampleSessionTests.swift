@@ -38,6 +38,10 @@ import Testing
     @Test func exampleIsBundledAndReadable() throws {
         let data = try ExampleSession.data()
         #expect(data.count > 100_000, "the bundled example is suspiciously small")
+        // The upper bound is the point of `--drop-accel`: the source recording is 10.5 MB,
+        // 96 % of it the 100 Hz accelerometer stream. A bundle that grows past a megabyte
+        // means someone re-bundled the unstripped file.
+        #expect(data.count < 1_000_000, "the accelerometer stream is back in the bundle")
         // A FIT file announces itself in bytes 8..11 — a resource that was mangled by the
         // build (text encoding, line endings) fails here rather than at run time.
         #expect(Array(data[8..<12]) == Array("\u{2E}FIT".utf8))
@@ -76,16 +80,20 @@ import Testing
             Issue.record("the example did not import")
             return
         }
-        #expect(row.durationS > 3_000)                       // ~69 minutes
-        #expect((row.distanceKm ?? 0) > 10)
-        #expect((row.flightCount ?? 0) >= 20)
-        #expect((row.jibes ?? 0) >= 25)
-        #expect((row.best2sKn ?? 0) > 10)
-        #expect(row.hasAccel == true)                        // pump counts survive
+        #expect(row.durationS > 7_000)                       // ~117 minutes
+        #expect((row.distanceKm ?? 0) > 22)                  // 22.985 km
+        #expect(row.flightCount == 31)
+        #expect(row.jibes == 50)
+        #expect((row.best2sKn ?? 0) > 13)                    // 13.209 kn
         #expect(row.hasHR == true)                           // Jan consented to the HR stream
-        #expect((row.totalPumpStrokes ?? 0) > 500)
         #expect(row.windDirDeg != nil)
         #expect(row.startLat != nil && row.startLon != nil)   // Lake Garda track intact
+
+        // The one thing the bundle gives up. `--drop-accel` removed the 100 Hz stream, so
+        // the example degrades exactly like a native-Windsurf recording: the capability is
+        // reported false and the stroke counts are *absent*, never zero.
+        #expect(row.hasAccel == false)
+        #expect(row.totalPumpStrokes == nil)
 
         // Child tables filled the same way any import fills them.
         let counts = try await harness.ingestor.database.writer.read { db in
@@ -93,8 +101,8 @@ import Testing
              turns: try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM turn") ?? 0,
              efforts: try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM record_effort") ?? 0)
         }
-        #expect(counts.flights >= 20)
-        #expect(counts.turns >= 25)
+        #expect(counts.flights == 31)
+        #expect(counts.turns >= 51)                          // 51 counted, 11 rejected
         #expect(counts.efforts > 0)
     }
 
@@ -202,7 +210,7 @@ import Testing
 
         // The unscrubbed original: same start, same duration — the dedupe key matches.
         let original = try #require(
-            allFixtureFITs().first { $0.lastPathComponent.contains("2026-08-07-0754") },
+            allFixtureFITs().first { $0.lastPathComponent.contains("2026-08-29-1440") },
             "the example's source fixture is missing from the corpus")
         let outcome = try await harness.ingestor.ingest(
             fitData: try Data(contentsOf: original),
@@ -227,7 +235,7 @@ import Testing
         defer { cleanup(harness) }
 
         let original = try #require(
-            allFixtureFITs().first { $0.lastPathComponent.contains("2026-08-07-0754") })
+            allFixtureFITs().first { $0.lastPathComponent.contains("2026-08-29-1440") })
         guard case .imported(let real) = try await harness.ingestor.ingest(
             fitData: try Data(contentsOf: original),
             filename: original.lastPathComponent, source: .icu, icuActivityId: "i42") else {
