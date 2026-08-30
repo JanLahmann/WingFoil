@@ -3,13 +3,19 @@ import SwiftUI
 @main
 struct WingFoilApp: App {
     @State private var store: SessionStore
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         #if DEBUG
         // `UI_RESET=1` (simulator only) has to run before the store reads the keychain.
         SessionStore.resetIfRequested()
         #endif
-        _store = State(initialValue: SessionStore())
+        let store = SessionStore()
+        _store = State(initialValue: store)
+        // Both halves of the background wake have to be in place before launch finishes:
+        // BGTaskScheduler throws at launch over an unregistered permitted identifier, and
+        // a cold start *from* a notification delivers the tap to the delegate immediately.
+        ActivityNotifier.shared.register(store: store)
     }
 
     var body: some Scene {
@@ -41,6 +47,13 @@ struct WingFoilApp: App {
                 .onOpenURL { url in
                     guard !store.handleCompanionURL(url) else { return }
                     Task { await store.importPicked(urls: [url]) }
+                }
+                // A background wake may have imported a session while the app was away —
+                // the library in memory would otherwise be one session behind until the
+                // next launch. Silent and free on every ordinary foreground.
+                .onChange(of: scenePhase) { _, phase in
+                    guard phase == .active else { return }
+                    Task { await store.absorbBackgroundImports() }
                 }
         }
     }

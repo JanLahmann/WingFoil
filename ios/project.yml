@@ -122,6 +122,16 @@ targets:
           WingFoil uses Bluetooth to exchange session summaries and wind direction with
           your Garmin watch through the Garmin Connect app.
         ITSAppUsesNonExemptEncryption: false
+        # --- new-session notifications (App/ActivityNotifier.swift) ---
+        # The phone polls intervals.icu on a BGAppRefreshTask and posts a local
+        # notification for an activity it has not seen. Both keys are load-bearing:
+        # without `fetch` the scheduler refuses to submit the request, and an identifier
+        # missing from the permitted list is a launch-time exception the moment
+        # `BGTaskScheduler.register` is called.
+        UIBackgroundModes:
+          - fetch
+        BGTaskSchedulerPermittedIdentifiers:
+          - de.lahmann.wingfoil.refresh
         # Storyboard-free launch screen: the tile mark centred on the brand navy, so the
         # cold-start frame is the app's own colour instead of a white flash.
         UILaunchScreen:
