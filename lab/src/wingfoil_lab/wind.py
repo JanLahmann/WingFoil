@@ -18,6 +18,14 @@ Angles are meteorological: ``dir_deg`` is the direction the wind blows *from*, 0
 clockwise. TWA is ``wrap180(cog - dir_deg)``: 0 = sailing straight upwind, +-180 = straight
 downwind, positive = wind over the port bow (port tack).
 
+The 180 deg call has a second, *rider-declared* source of evidence: the *default turn
+type*. Flipping the wind 180 deg swaps every jibe and tack, so a rider's declared habit is
+evidence about orientation -- "I jibe far more than I tack" says the wind blows from
+whichever end makes the session's sweeps come out mostly jibes. It is a prior, not a
+measurement, so it may only ever break a tie the cone could not: it is consulted only while
+the cone margin is below ``full_margin``, and it can never touch a decisive cone call. See
+`_turn_type_prior` for the blend.
+
 Known limitation: when the two lobes are exactly opposite (pure beam-reach out-and-back)
 the bisector is degenerate -- the true axis is then perpendicular to the lobes and no
 histogram bisector can recover it. Such sessions are rejected (``dir_deg = None``).
@@ -32,6 +40,12 @@ import numpy as np
 
 from .filters import CleanTrack, unwrapped_cog_deg
 from .flight import FlightResult
+
+# `default_turn_type` vocabulary (docs/algorithms.md "Default turn type").
+JIBES = "jibes"
+TACKS = "tacks"
+BALANCED = "balanced"          # prior off: the cone decides alone, as it always did
+DEFAULT_TURN_TYPES = (JIBES, TACKS, BALANCED)
 
 
 @dataclass
@@ -49,6 +63,8 @@ class WindConfig:
     no_go_half_angle_deg: float = 45.0    # cone around an axis end used for the 180 deg call
     min_cone_mass: float = 0.01           # both cones emptier than this -> call unresolved
     full_margin: float = 0.4              # cone asymmetry at/above which the call is certain
+    default_turn_type: str = JIBES        # the rider's declared habit; "balanced" = no prior
+    turn_prior_weight: float = 0.5        # cap on the prior's signed evidence contribution
 
 
 @dataclass
@@ -66,6 +82,12 @@ class WindEstimate:
     ambiguity_margin: float = 0.0         # no-go cone asymmetry backing the 180 deg call
     speed_asymmetry: float = 0.0          # diagnostic: weighted corr(cos TWA, speed); the
     #                                       corpus runs positive (upwind faster on a foil)
+    turn_type_margin: float = 0.0         # |default - other| / votes, the prior's strength
+    turn_type_dir_deg: float | None = None  # axis end the declared habit favours; None = the
+    #                                       prior did not run (balanced / decisive cone) or
+    #                                       had no votes
+    turn_type_votes: int = 0              # sweeps that were tack-or-jibe under BOTH ends
+    prior_flipped: bool = False           # the prior overturned the no-go-cone call
     distance_m: float = 0.0               # foiled distance the estimate is built on
     min_confidence: float = WindConfig.min_confidence   # the bar this estimate is judged at
     #                                       (carried from the WindConfig it was built with,
@@ -78,12 +100,21 @@ class WindEstimate:
 
 
 def estimate_wind(clean: CleanTrack, flights: FlightResult,
-                  config: WindConfig | None = None) -> WindEstimate:
+                  config: WindConfig | None = None,
+                  turn_config: "TurnConfig | None" = None) -> WindEstimate:   # noqa: F821
     """Estimate the wind axis from the foiling part of a track.
 
     Returns a `WindEstimate` with ``dir_deg = None`` and zero confidence whenever the
     COG distribution is not usefully bimodal (too little foiling, one lobe only, or an
     exactly opposed pair).
+
+    `turn_config` is the `turns.TurnConfig` the *same* pipeline will detect turns with (its
+    annotation is quoted rather than imported: `turns` imports this module, so the
+    dependency has to keep running one way only). It is read only when the default-turn-type
+    prior actually runs -- a weak cone margin and a declared habit -- and only to find the
+    same sweeps that pipeline will report. A caller that tunes turn detection must hand its
+    config in, or the prior would vote on a different set of turns than the ones the session
+    ends up showing.
     """
     cfg = config or WindConfig()
     cog, weight, speed = foiling_courses(clean, flights, cfg)
@@ -105,16 +136,113 @@ def estimate_wind(clean: CleanTrack, flights: FlightResult,
 
     bisector = _circular_mean(np.array(lobe_deg), np.ones(2))
     axis_conf = _axis_confidence(mass, sep, cfg)
-    dir_deg, margin = _resolve_180(cog, weight, bisector, cfg)
+    cone_dir, margin = _resolve_180(cog, weight, bisector, cfg)
+    prior = _turn_type_prior(clean, flights, cone_dir, margin, cfg, turn_config)
+    dir_deg = cone_dir + (180.0 if prior.flipped else 0.0)
     asym = _weighted_corr(np.cos(np.radians(cog - dir_deg)), speed, weight)
-    conf = axis_conf * _clip01(margin / cfg.full_margin) if cfg.full_margin > 0 else axis_conf
+    conf = axis_conf * prior.certainty
     return WindEstimate(
         dir_deg=float(dir_deg % 360.0), confidence=float(conf), source="estimate",
         axis_deg=float(dir_deg % 180.0), lobes_deg=lobe_deg, lobe_mass=mass,
         separation_deg=float(sep), axis_confidence=float(axis_conf),
-        ambiguity_margin=float(margin), speed_asymmetry=float(asym), distance_m=total,
-        min_confidence=cfg.min_confidence,
+        ambiguity_margin=float(margin), speed_asymmetry=float(asym),
+        turn_type_margin=prior.margin, turn_type_dir_deg=prior.favoured_deg,
+        turn_type_votes=prior.votes, prior_flipped=prior.flipped,
+        distance_m=total, min_confidence=cfg.min_confidence,
     )
+
+
+@dataclass
+class _Prior:
+    """What the default-turn-type prior did to one 180 deg call."""
+
+    certainty: float                      # the [0,1] factor `confidence` is scaled by
+    flipped: bool = False                 # the prior overturned the cone's pick
+    margin: float = 0.0                   # |default - other| / votes, in [0,1]
+    favoured_deg: float | None = None     # the axis end the declared habit points at
+    votes: int = 0
+
+
+def _turn_type_prior(clean: CleanTrack, flights: FlightResult, cone_dir: float,
+                     cone_margin: float, cfg: WindConfig, turn_config) -> _Prior:
+    """Blend the rider's declared turn habit into a *weak* 180 deg call.
+
+    Flipping the wind 180 deg shifts every TWA by 180 deg, so every head-to-wind crossing
+    becomes a dead-downwind one: the same sweep that is a tack under one end of the axis is
+    a jibe under the other. A rider who declares "mostly jibes" is therefore stating a
+    preference between the two ends, and on a session whose no-go cones cannot separate them
+    that statement is the best evidence left.
+
+    It is a prior, not a measurement, and the blend keeps it in its place:
+
+    * ``e_cone = clip01(cone_margin / full_margin)`` -- the cone's own certainty, exactly the
+      factor `confidence` has always been scaled by. ``e_cone >= 1`` means the cone is
+      decisive and the prior is **not consulted at all**, so a strong call is untouchable and
+      its numbers are bit-identical to the pre-prior engine.
+    * Only sweeps that come out tack-or-jibe under **both** ends vote -- a bear-away is not
+      evidence about the wind, and a sweep that is a maneuver under one end only would let
+      the prior manufacture its own electorate.
+    * ``m_turn = (n_default - n_other) / votes`` in [-1, 1], signed *towards the cone's pick*:
+      positive means the cone's end already makes the rider's declared type the majority.
+    * ``e = e_cone + turn_prior_weight * m_turn``. The call is the cone's when ``e >= 0`` and
+      the opposite end when ``e < 0``, and ``certainty = clip01(|e|)`` replaces the cone
+      factor in `confidence`.
+
+    With the default weight 0.5 the prior can only overturn a cone margin below half of
+    `full_margin`, and only then with a decisive turn-type majority: a 90/10 jibe split
+    (``|m_turn| = 0.8``) flips a cone margin under 0.16, an even split flips nothing. With
+    `default_turn_type` = ``balanced``, no votes, or an exact tie the prior contributes
+    nothing and the result is the pre-prior one, to the bit.
+    """
+    e_cone = _clip01(cone_margin / cfg.full_margin) if cfg.full_margin > 0 else 1.0
+    if cfg.default_turn_type == BALANCED or e_cone >= 1.0:
+        return _Prior(certainty=e_cone)
+    from .turns import turn_sweeps                       # local: turns imports this module
+    n_default, n_other = turn_type_votes(turn_sweeps(clean, flights, turn_config),
+                                         cone_dir, cfg.default_turn_type)
+    return _blend(e_cone, n_default, n_other, cone_dir, cfg)
+
+
+def turn_type_votes(sweeps: list[tuple[float, float]], cone_dir: float,
+                    default_turn_type: str) -> tuple[int, int]:
+    """(votes for the declared type, votes against) among `sweeps`, judged at `cone_dir`.
+
+    A sweep votes only if it is a tack-or-jibe under **both** ends of the axis: a bear-away
+    is not evidence about the wind, and a sweep that is a maneuver under one end only would
+    let the prior manufacture its own electorate. The two ends give opposite names to every
+    sweep that does vote, so the count against is the count the flipped orientation would
+    return -- one pass over the sweeps answers for both.
+    """
+    from .turns import JIBE, TACK, classify_sweep        # local: turns imports this module
+    wanted = JIBE if default_turn_type == JIBES else TACK
+    n_default = n_other = 0
+    for cog_in, cog_out in sweeps:
+        here = classify_sweep(cog_in, cog_out, cone_dir)[0]
+        there = classify_sweep(cog_in, cog_out, cone_dir + 180.0)[0]
+        if here not in (TACK, JIBE) or there not in (TACK, JIBE):
+            continue
+        n_default += int(here == wanted)
+        n_other += int(here != wanted)
+    return n_default, n_other
+
+
+def _blend(e_cone: float, n_default: int, n_other: int, cone_dir: float,
+           cfg: WindConfig) -> _Prior:
+    """The arithmetic of the blend (`_turn_type_prior`, and docs/algorithms.md).
+
+    ``e = e_cone + turn_prior_weight * m_turn`` with ``m_turn`` signed towards the cone's
+    own pick; the call is the cone's while ``e >= 0`` and the opposite end below that, and
+    ``clip01(|e|)`` is the certainty that replaces the cone factor in `confidence`.
+    """
+    votes = n_default + n_other
+    if votes == 0:
+        return _Prior(certainty=e_cone)
+    m_turn = (n_default - n_other) / votes
+    favoured = None if m_turn == 0 else (cone_dir if m_turn > 0 else cone_dir + 180.0)
+    e = e_cone + cfg.turn_prior_weight * m_turn
+    return _Prior(certainty=_clip01(abs(e)), flipped=e < 0.0, margin=abs(m_turn),
+                  favoured_deg=None if favoured is None else float(favoured % 360.0),
+                  votes=votes)
 
 
 def foiling_courses(clean: CleanTrack, flights: FlightResult,

@@ -52,19 +52,235 @@ import Testing
         config.minArcM = 12
         config.minRadiusM = 6
 
-        var pivot = makeTurn(netDeg: 180, arcM: 8, radiusM: 2.5)
-        #expect(!TurnDetector.carved(pivot, config))
+        // The radius is *derived* from arc ÷ swept angle, so each case is one honest
+        // geometry rather than an arc and a radius that could disagree.
+        #expect(abs(TurnDetector.radius(arcM: 8, netDeg: 180) - 2.55) < 0.01)
 
-        pivot.arcM = 30                    // enough water, still pivoting on the spot
-        pivot.radiusM = 4
-        #expect(!TurnDetector.carved(pivot, config))
+        // Pivot on the spot: 8 m of water swept through a half turn.
+        #expect(!TurnDetector.carved(arcM: 8, netDeg: 180, config))
 
-        let jibe = makeTurn(netDeg: 150, arcM: 44, radiusM: 16.7)
-        #expect(TurnDetector.carved(jibe, config))
+        // Enough water, still pivoting: 30 m spent spinning through 430° is a 4 m radius.
+        #expect(!TurnDetector.carved(arcM: 30, netDeg: 430, config))
+
+        // A carved jibe: 44 m through 150° is a 16.8 m radius.
+        #expect(TurnDetector.carved(arcM: 44, netDeg: 150, config))
 
         // Corpus-calibration anchor (docs/algorithms.md): the tightest genuine turn in the
         // three reference sessions measures arc 14.4 m / radius 8.7 m and must survive.
-        #expect(TurnDetector.carved(makeTurn(netDeg: 95, arcM: 14.4, radiusM: 8.7), config))
+        #expect(TurnDetector.carved(arcM: 14.4, netDeg: 95, config))
+        #expect(abs(TurnDetector.radius(arcM: 14.4, netDeg: 95) - 8.69) < 0.01)
+    }
+
+    // MARK: - Default turn type (the 180° prior)
+
+    // docs/algorithms.md "Default turn type". Mirrors the block of the same name in
+    // `lab/tests/test_wind.py`: the blend is exercised twice over, as pure arithmetic and
+    // end to end on a constructed track.
+
+    /// The geometric fact the whole prior rests on, asserted directly.
+    @Test func flippingTheWind180SwapsEveryTackAndJibe() {
+        let track = misreadConeTrack()
+        let sweeps = TurnDetector.sweeps(track, flights: FlightSegmenter.segment(track),
+                                         config: TurnConfig())
+        #expect(sweeps.count == 12)
+        for (cogIn, cogOut) in sweeps {
+            let here = TurnDetector.classifySweep(cogIn: cogIn, cogOut: cogOut, dirDeg: 0).kind
+            let there = TurnDetector.classifySweep(cogIn: cogIn, cogOut: cogOut, dirDeg: 180).kind
+            #expect(Set([here, there]) == Set([TurnKind.tack, .jibe]))
+        }
+    }
+
+    /// Only a sweep that is a tack-or-jibe under *both* ends of the axis may vote.
+    @Test func turnTypeVotesIgnoreSweepsThatAreNotManeuversUnderBothEnds() {
+        let jibe = (135.0, 225.0)       // crosses 180: jibe at wind-from 0, tack at 180
+        let tack = (315.0, 405.0)       // crosses 0:   tack at wind-from 0, jibe at 180
+        let bearAway = (45.0, 135.0)    // crosses neither end, whichever way the wind blows
+        let sweeps = [jibe, jibe, jibe, tack, bearAway, bearAway]
+
+        #expect(WindEstimator.turnTypeVotes(sweeps, coneDir: 0, defaultTurnType: .jibes) == (3, 1))
+        #expect(WindEstimator.turnTypeVotes(sweeps, coneDir: 0, defaultTurnType: .tacks) == (1, 3))
+        // The other end of the axis names every voting sweep the opposite way.
+        #expect(WindEstimator.turnTypeVotes(sweeps, coneDir: 180, defaultTurnType: .jibes) == (1, 3))
+    }
+
+    /// `e = eCone + w · mTurn`; the sign of `e` is the call, `|e|` clipped is the certainty.
+    @Test func blendIsTheDocumentedFormula() {
+        let config = WindConfig()                       // turnPriorWeight 0.5
+
+        // Weak cone (0.2), unanimous majority against it: 0.2 − 0.5 = −0.3 ⇒ flip.
+        let flipped = WindEstimator.blend(eCone: 0.2, nDefault: 0, nOther: 10, coneDir: 90,
+                                          config: config)
+        #expect(flipped.flipped)
+        #expect(abs(flipped.certainty - 0.3) < 1e-9)
+        #expect(abs(flipped.margin - 1.0) < 1e-9)
+        #expect(flipped.favouredDeg == 270)
+        #expect(flipped.votes == 10)
+
+        // The same cone with the majority behind it: 0.2 + 0.5 = 0.7, and it keeps its pick.
+        let agreed = WindEstimator.blend(eCone: 0.2, nDefault: 10, nOther: 0, coneDir: 90,
+                                         config: config)
+        #expect(!agreed.flipped)
+        #expect(abs(agreed.certainty - 0.7) < 1e-9)
+        #expect(agreed.favouredDeg == 90)
+
+        // 0.5 is exactly the weight, so a unanimous majority cannot quite overturn it.
+        #expect(!WindEstimator.blend(eCone: 0.5, nDefault: 0, nOther: 10, coneDir: 90,
+                                     config: config).flipped)
+
+        // A 60/40 split moves 0.2 by 0.5 × 0.2 = 0.1, not enough to flip a 0.2 cone.
+        let narrow = WindEstimator.blend(eCone: 0.2, nDefault: 4, nOther: 6, coneDir: 90,
+                                         config: config)
+        #expect(!narrow.flipped)
+        #expect(abs(narrow.certainty - 0.1) < 1e-9)
+        #expect(abs(narrow.margin - 0.2) < 1e-9)
+        #expect(narrow.favouredDeg == 270)
+    }
+
+    @Test func evenSplitAndEmptyElectorateContributeNothing() {
+        let config = WindConfig()
+        for prior in [WindEstimator.blend(eCone: 0.3, nDefault: 5, nOther: 5, coneDir: 90,
+                                          config: config),
+                      WindEstimator.blend(eCone: 0.3, nDefault: 0, nOther: 0, coneDir: 90,
+                                          config: config)] {
+            #expect(abs(prior.certainty - 0.3) < 1e-9)   // the bare cone factor
+            #expect(!prior.flipped)
+            #expect(prior.margin == 0)
+            #expect(prior.favouredDeg == nil)
+        }
+    }
+
+    /// The motivating case: the cone cannot tell, and "I mostly jibe" decides.
+    ///
+    /// `fullMargin` is raised to 3.0 to say the cone's 0.6 asymmetry is *not* certain —
+    /// which is exactly what that parameter means. The twelve sweeps are tacks under the
+    /// cone's pick and jibes under the other end, so a rider who declares "jibes" turns the
+    /// call over. `minConfidence` is dropped so the labels are readable on both sides of the
+    /// flip: the point is *which* wind was chosen, not whether it clears the shipped bar.
+    @Test func weakConeAndAJibeMajorityFlipsThe180Call() throws {
+        let track = misreadConeTrack()
+        let flights = FlightSegmenter.segment(track)
+        var config = WindConfig()
+        config.fullMargin = 3.0
+        config.minConfidence = 0.1
+
+        var balanced = config
+        balanced.defaultTurnType = .balanced
+        let coneOnly = try #require(WindEstimator.estimate(track, flights: flights,
+                                                           config: balanced))
+        #expect(abs(WindEstimator.wrap180(coneOnly.dirDeg)) < 5)
+        #expect(TurnDetector.summarize(TurnDetector.detect(track, flights: flights,
+                                                           wind: coneOnly)).tacks == 12)
+
+        let est = try #require(WindEstimator.estimate(track, flights: flights,
+                                                      config: config))   // .jibes
+        #expect(est.priorFlipped)
+        #expect(abs(WindEstimator.wrap180(est.dirDeg - 180)) < 5)
+        #expect(est.turnTypeVotes == 12)
+        #expect(abs(est.turnTypeMargin - 1.0) < 1e-9)
+        #expect(abs(WindEstimator.wrap180((est.turnTypeDirDeg ?? .nan) - est.dirDeg)) < 1e-9)
+        // e = 0.598/3 − 0.5 = −0.301, and the labels follow the wind that was chosen.
+        #expect(abs(est.confidence - est.axisConfidence * 0.301) < 0.01)
+        #expect(TurnDetector.summarize(TurnDetector.detect(track, flights: flights,
+                                                           wind: est)).jibes == 12)
+
+        // The declared habit pointing *with* the cone leaves the call alone, only raising it.
+        var tacks = config
+        tacks.defaultTurnType = .tacks
+        let agreeing = try #require(WindEstimator.estimate(track, flights: flights,
+                                                           config: tacks))
+        #expect(!agreeing.priorFlipped)
+        #expect(agreeing.dirDeg == coneOnly.dirDeg)
+        #expect(agreeing.confidence > coneOnly.confidence)
+    }
+
+    /// At the shipped `fullMargin` the same session's cone is certain, so nothing moves.
+    @Test func aDecisiveConeIsUntouchableByThePrior() throws {
+        let track = misreadConeTrack()
+        let flights = FlightSegmenter.segment(track)
+        let est = try #require(WindEstimator.estimate(track, flights: flights))
+        #expect(est.ambiguityMargin > WindConfig().fullMargin)
+        #expect(!est.priorFlipped)
+        #expect(est.turnTypeVotes == 0)
+        #expect(est.turnTypeMargin == 0)
+        #expect(est.turnTypeDirDeg == nil)
+        #expect(TurnDetector.summarize(TurnDetector.detect(track, flights: flights,
+                                                           wind: est)).tacks == 12)
+        // … and it is the *same* estimate the prior-free engine produces, field for field.
+        var balanced = WindConfig()
+        balanced.defaultTurnType = .balanced
+        #expect(est == WindEstimator.estimate(track, flights: flights, config: balanced))
+    }
+
+    /// `balanced` is the engine as it was: confidence = axis confidence × cone certainty.
+    @Test func balancedReproducesThePreProriorConfidence() throws {
+        let track = misreadConeTrack()
+        let flights = FlightSegmenter.segment(track)
+        for fullMargin in [0.4, 3.0] {
+            var config = WindConfig()
+            config.fullMargin = fullMargin
+            config.defaultTurnType = .balanced
+            let est = try #require(WindEstimator.estimate(track, flights: flights,
+                                                          config: config))
+            let expected = est.axisConfidence * min(est.ambiguityMargin / fullMargin, 1)
+            #expect(abs(est.confidence - expected) < 1e-12)
+            #expect(est.turnTypeVotes == 0)
+            #expect(est.turnTypeDirDeg == nil)
+        }
+    }
+
+    /// A session the no-go cone reads one way and the turn types read the other.
+    ///
+    /// Two reaches at COG 100 and 260 with every transit taken through 0 (so each sweep
+    /// crosses one end of the axis, never the other), plus a long straight leg at 180
+    /// entered and left at 4°/s — too slow for `turnPeakRate`, so it adds cone mass without
+    /// adding a turn. That 180 leg is what makes the cone pick the *other* end than the
+    /// sweeps do: the cone lands on ~0, under which all twelve sweeps are tacks, while a
+    /// rider who declares "mostly jibes" is pointing at ~180.
+    /// Mirrors `_misread_cone_track()` in `lab/tests/test_wind.py`.
+    private func misreadConeTrack() -> CleanTrack {
+        enum Step { case hold(Double, Int), turn(Double, Double) }
+        var steps: [Step] = [.hold(100, 60)]
+        for _ in 0..<6 {
+            steps += [.turn(-100, 30), .hold(-100, 60), .turn(100, 30), .hold(100, 60)]
+        }
+        steps += [.turn(180, 4), .hold(180, 120), .turn(100, 4), .hold(100, 60)]
+
+        var cog: [Double] = []
+        var cur = 0.0
+        for step in steps {
+            switch step {
+            case let .hold(deg, seconds):
+                cur = deg
+                cog += Array(repeating: deg, count: seconds)
+            case let .turn(target, rate):
+                let n = Int(abs(target - cur) / rate)
+                for k in 0..<n { cog.append(cur + (target - cur) * Double(k) / Double(n)) }
+                cur = target
+            }
+        }
+        return courseTrack(cog, speedMps: 6)
+    }
+
+    /// A `CleanTrack` sailed at a constant speed along the given per-second unwrapped COG,
+    /// with the local-metre frame integrated straight from the course (the Swift twin of the
+    /// lab's `clean_from_arrays`).
+    private func courseTrack(_ cogDeg: [Double], speedMps: Double) -> CleanTrack {
+        var track = CleanTrack()
+        var x = 0.0, y = 0.0, dist = 0.0
+        for (i, deg) in cogDeg.enumerated() {
+            track.samples.append(CleanSample(t: Double(i), dt: i == 0 ? 0 : 1, gapBefore: false,
+                                             x: x, y: y, dopplerMps: speedMps,
+                                             positionalMps: speedMps, cumDistM: dist))
+            x += sin(deg * .pi / 180) * speedMps
+            y += cos(deg * .pi / 180) * speedMps
+            dist += speedMps
+        }
+        track.segments = [0..<track.samples.count]
+        track.medianDtS = 1
+        track.gapThresholdS = 3
+        track.spanS = Double(cogDeg.count - 1)
+        track.timerTimeS = Double(cogDeg.count - 1)
+        return track
     }
 
     /// Below `turnCogSpeedFloor` the COG is position noise, so those samples never form a
@@ -393,13 +609,6 @@ import Testing
     }
 
     // MARK: - Helpers
-
-    private func makeTurn(netDeg: Double, arcM: Double, radiusM: Double) -> Turn {
-        Turn(startT: 0, endT: 5, minT: 3, kind: .jibe, netDeg: netDeg, peakRateDegS: 40,
-             direction: "starboard", side: "port", entryKn: 12, minKn: 8,
-             entryKnDoppler: 12, minKnDoppler: 8, score: 0.66, success: false,
-             twaInDeg: 120, twaOutDeg: -120, arcM: arcM, chordM: arcM * 0.6, radiusM: radiusM)
-    }
 
     /// 1 Hz, one clear flight, no position/accel/altitude channel.
     private func syntheticFlightTrack() -> RawTrack {

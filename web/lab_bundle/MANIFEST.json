@@ -3,19 +3,19 @@
   "generator": "web/tools/bundle_lab.py",
   "note": "Generated \u2014 do not edit by hand. Re-run bundle_lab.py after lab changes.",
   "files": {
-    "__init__.py": "392aa8b618da588f",
+    "__init__.py": "54a8c0a67778333a",
     "evidence.py": "f93521b20109aaa8",
     "filters.py": "dc85c017f70ebe6b",
     "flight.py": "621f9422258baa15",
     "flightend.py": "75076566ed44f4c5",
-    "goldens.py": "03f416b7506000fc",
+    "goldens.py": "4f295470fd02618d",
     "gp3s.py": "c18edc1780d81574",
     "hrcost.py": "c40bf313a7a5ae7b",
     "jump.py": "e6b0b3ebde92d2d4",
     "parse.py": "390dee387d7b0689",
     "pump.py": "d76db69a74cb35de",
     "takeoff.py": "9029f6a4cf6366d1",
-    "turns.py": "352e24850c861b88",
-    "wind.py": "c8e1f1e9ec0354a0"
+    "turns.py": "6b71509a782cccff",
+    "wind.py": "ca13761adbd2aa97"
   }
 }

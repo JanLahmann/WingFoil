@@ -13,7 +13,14 @@ public enum AnalysisEngine {
     /// change: no pre-existing number moved, but a 0.3.0 document cannot answer "how many
     /// in a row" at all, and a missing streak would decode as 0 — indistinguishable from a
     /// real session where every turn ended wet. It must re-derive.
-    public static let version = "0.4.0"
+    ///
+    /// 0.5.0 adds the **default-turn-type prior** (docs/algorithms.md "Default turn type"):
+    /// `config.windDefaultTurnType`, and the evidence trail it leaves on the wind object.
+    /// Unlike the three bumps above this one *can* move pre-existing numbers — a session
+    /// whose no-go cones nearly tie can now have its wind direction resolved the other way,
+    /// taking every tack/jibe label with it — which is exactly why a stored document must
+    /// re-derive rather than be read as if the rider had never declared a habit.
+    public static let version = "0.5.0"
 }
 
 /// Echo of the parameters actually used, keyed by their docs/algorithms.md names.
@@ -50,6 +57,9 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
     public var windMinSpeed: Double
     public var windBinDeg: Double
     public var windMinConfidence: Double
+    /// The rider's declared turn habit, feeding the 180° prior. Optional only so a stored
+    /// `analysis.json` from 0.4.0 still decodes; such a row re-derives on its version.
+    public var windDefaultTurnType: DefaultTurnType?
     // Pumping
     public var pumpStrokeAmp: Double
     public var pumpMinStrokes: Int
@@ -88,6 +98,7 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
         windMinSpeed = wind.minSpeedMps
         windBinDeg = wind.binDeg
         windMinConfidence = wind.minConfidence
+        windDefaultTurnType = wind.defaultTurnType
         pumpStrokeAmp = pump.strokeAmpG
         pumpMinStrokes = pump.minStrokes
         takeoffAttemptWindow = takeoff.attemptWindowS
@@ -296,12 +307,25 @@ public struct WindEstimate: Sendable, Codable, Equatable {
     /// Diagnostic only: weighted corr(cos TWA, speed). The corpus runs positive (upwind
     /// faster on a foil), which is why it is not the 180° rule.
     public var speedAsymmetry: Double
+    /// The default-turn-type prior's evidence trail (docs/algorithms.md "Default turn
+    /// type"): |default − other| ÷ votes, the strength of the rider's declared majority.
+    public var turnTypeMargin: Double
+    /// The axis end the declared habit favours. Nil when the prior did not run (`balanced`,
+    /// or a cone margin at/above `windFullMargin`) or found no sweep that is a maneuver
+    /// under both ends — which is not the same statement as a margin of 0.
+    public var turnTypeDirDeg: Double?
+    /// Sweeps that were tack-or-jibe under **both** ends of the axis.
+    public var turnTypeVotes: Int
+    /// The prior overturned the no-go-cone call.
+    public var priorFlipped: Bool
     public var distanceM: Double
     public var usable: Bool
 
     public init(dirDeg: Double, confidence: Double, source: String, axisDeg: Double,
                 axisConfidence: Double, ambiguityMargin: Double, separationDeg: Double?,
                 lobesDeg: [Double]?, lobeMass: [Double]?, speedAsymmetry: Double,
+                turnTypeMargin: Double = 0, turnTypeDirDeg: Double? = nil,
+                turnTypeVotes: Int = 0, priorFlipped: Bool = false,
                 distanceM: Double, usable: Bool) {
         self.dirDeg = dirDeg
         self.confidence = confidence
@@ -313,6 +337,10 @@ public struct WindEstimate: Sendable, Codable, Equatable {
         self.lobesDeg = lobesDeg
         self.lobeMass = lobeMass
         self.speedAsymmetry = speedAsymmetry
+        self.turnTypeMargin = turnTypeMargin
+        self.turnTypeDirDeg = turnTypeDirDeg
+        self.turnTypeVotes = turnTypeVotes
+        self.priorFlipped = priorFlipped
         self.distanceM = distanceM
         self.usable = usable
     }
@@ -323,6 +351,59 @@ public struct WindEstimate: Sendable, Codable, Equatable {
                   axisDeg: userDirDeg.truncatingRemainder(dividingBy: 180),
                   axisConfidence: 1, ambiguityMargin: 1, separationDeg: nil,
                   lobesDeg: nil, lobeMass: nil, speedAsymmetry: 0, distanceM: 0, usable: true)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case dirDeg, confidence, source, axisDeg, axisConfidence, ambiguityMargin
+        case separationDeg, lobesDeg, lobeMass, speedAsymmetry
+        case turnTypeMargin, turnTypeDirDeg, turnTypeVotes, priorFlipped
+        case distanceM, usable
+    }
+
+    /// The four prior fields decode leniently so a stored `analysis.json` from 0.4.0 still
+    /// opens; such a row is stale by `engineVersion` anyway and `reanalyzeStale()` re-derives
+    /// it (which is the whole point of the bump — the prior *can* move a wind direction).
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        dirDeg = try c.decode(Double.self, forKey: .dirDeg)
+        confidence = try c.decode(Double.self, forKey: .confidence)
+        source = try c.decode(String.self, forKey: .source)
+        axisDeg = try c.decode(Double.self, forKey: .axisDeg)
+        axisConfidence = try c.decode(Double.self, forKey: .axisConfidence)
+        ambiguityMargin = try c.decode(Double.self, forKey: .ambiguityMargin)
+        separationDeg = try c.decodeIfPresent(Double.self, forKey: .separationDeg)
+        lobesDeg = try c.decodeIfPresent([Double].self, forKey: .lobesDeg)
+        lobeMass = try c.decodeIfPresent([Double].self, forKey: .lobeMass)
+        speedAsymmetry = try c.decode(Double.self, forKey: .speedAsymmetry)
+        turnTypeMargin = try c.decodeIfPresent(Double.self, forKey: .turnTypeMargin) ?? 0
+        turnTypeDirDeg = try c.decodeIfPresent(Double.self, forKey: .turnTypeDirDeg)
+        turnTypeVotes = try c.decodeIfPresent(Int.self, forKey: .turnTypeVotes) ?? 0
+        priorFlipped = try c.decodeIfPresent(Bool.self, forKey: .priorFlipped) ?? false
+        distanceM = try c.decode(Double.self, forKey: .distanceM)
+        usable = try c.decode(Bool.self, forKey: .usable)
+    }
+
+    /// `separationDeg`, `lobesDeg`, `lobeMass` and `turnTypeDirDeg` are written as explicit
+    /// nulls, matching the lab's golden JSON: "the prior did not run" is a fact, not a
+    /// missing key.
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(dirDeg, forKey: .dirDeg)
+        try c.encode(confidence, forKey: .confidence)
+        try c.encode(source, forKey: .source)
+        try c.encode(axisDeg, forKey: .axisDeg)
+        try c.encode(axisConfidence, forKey: .axisConfidence)
+        try c.encode(ambiguityMargin, forKey: .ambiguityMargin)
+        try c.encode(separationDeg, forKey: .separationDeg)
+        try c.encode(lobesDeg, forKey: .lobesDeg)
+        try c.encode(lobeMass, forKey: .lobeMass)
+        try c.encode(speedAsymmetry, forKey: .speedAsymmetry)
+        try c.encode(turnTypeMargin, forKey: .turnTypeMargin)
+        try c.encode(turnTypeDirDeg, forKey: .turnTypeDirDeg)   // explicit null
+        try c.encode(turnTypeVotes, forKey: .turnTypeVotes)
+        try c.encode(priorFlipped, forKey: .priorFlipped)
+        try c.encode(distanceM, forKey: .distanceM)
+        try c.encode(usable, forKey: .usable)
     }
 }
 
@@ -592,7 +673,11 @@ public enum SessionSummarizer {
         let clean = TrackCleaner.clean(raw, config: filterConfig)
         let segmentation = FlightSegmenter.segment(clean, config: flightConfig)
         let records = GP3SCalculator.records(for: clean, config: recordsConfig)
-        let wind = WindEstimator.estimate(clean, flights: segmentation, config: windConfig)
+        // `turnConfig` because the default-turn-type prior (docs/algorithms.md "Default turn
+        // type") votes on the very sweeps `TurnDetector` is about to report — one turn
+        // config, or the prior and the session would be talking about different turns.
+        let wind = WindEstimator.estimate(clean, flights: segmentation, config: windConfig,
+                                          turnConfig: turnConfig)
         let pump = PumpAnalyzer.track(raw, config: pumpConfig)
         // The turn ladder and the flight-end ladder read the same three channels of the
         // same track, so the whole-track evidence is built once here and handed to both.

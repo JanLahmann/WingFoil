@@ -47,7 +47,8 @@ final class SessionStore {
         }
     }
 
-    let ingestor: SessionIngestor
+    /// `var` because one engine parameter is the rider's to set: `defaultTurnType`.
+    var ingestor: SessionIngestor
     /// Lazy track thumbnails for the library rows.
     let thumbnails: ThumbnailStore
     private let databaseURL: URL?
@@ -77,9 +78,12 @@ final class SessionStore {
         let archiveRoot = (try? AppPaths.sessionsRoot())
             ?? URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("Sessions")
         databaseURL = url
-        let ingestor = SessionIngestor(database: database!,
+        var ingestor = SessionIngestor(database: database!,
                                        archive: SessionArchive(root: archiveRoot))
+        ingestor.windConfig.defaultTurnType = Self.storedDefaultTurnType
         self.ingestor = ingestor
+        // The thumbnail cache only ever touches the archive, never the analyzer, so its
+        // copy of the ingestor does not need the engine parameter kept in step.
         thumbnails = ThumbnailStore(ingestor: ingestor)
         errorMessage = problem
     }
@@ -440,6 +444,31 @@ final class SessionStore {
         return stored
     }
 
+    // MARK: - Analysis settings
+
+    static let defaultTurnTypeKey = "defaultTurnType"
+
+    /// The rider's declared turn habit (docs/algorithms.md "Default turn type"), the one
+    /// engine parameter the app exposes. It is evidence for the wind's 180° ambiguity only,
+    /// and only where the no-go cone cannot settle it — so on most sessions changing it
+    /// changes nothing, which is the intended behaviour, not a broken setting.
+    ///
+    /// Stored analyses carry the *current* engine version, so they are not stale by version
+    /// when this moves; it takes an explicit re-analysis to apply it to the existing library
+    /// (`rerunAnalysis`). New imports pick it up straight away.
+    var defaultTurnType: DefaultTurnType {
+        get { Self.storedDefaultTurnType }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: Self.defaultTurnTypeKey)
+            ingestor.windConfig.defaultTurnType = newValue
+        }
+    }
+
+    private static var storedDefaultTurnType: DefaultTurnType {
+        UserDefaults.standard.string(forKey: defaultTurnTypeKey)
+            .flatMap(DefaultTurnType.init(rawValue:)) ?? WindConfig().defaultTurnType
+    }
+
     // MARK: - Apple Health (opt-in, write-only)
 
     /// Off by default (plan phase 4: "optional Apple Health write"). Nothing is ever read
@@ -765,7 +794,8 @@ final class SessionStore {
         guard ProcessInfo.processInfo.environment["UI_RESET"] == "1" else { return }
         Keychain.remove(Keychain.icuApiKey)
         for key in ["lastIcuSync", problemKey, pbSnapshotKey, "healthExported",
-                    "healthWriteEnabled", MapLayerVisibilityStore.defaultsKey] {
+                    "healthWriteEnabled", defaultTurnTypeKey,
+                    MapLayerVisibilityStore.defaultsKey] {
             UserDefaults.standard.removeObject(forKey: key)
         }
         let fm = FileManager.default

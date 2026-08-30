@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.4.0",
+  "engineVersion": "0.5.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -49,6 +49,8 @@
     "windNoGoHalfAngle": 45.0,
     "windMinConeMass": 0.01,
     "windFullMargin": 0.4,
+    "windDefaultTurnType": "jibes",
+    "windTurnPriorWeight": 0.5,
     "pumpBandLo": 0.5,
     "pumpBandHi": 2.5,
     "pumpResampleHz": 25.0,
@@ -2866,6 +2868,10 @@
       0.4116
     ],
     "speedAsymmetry": 0.2385,
+    "turnTypeMargin": 0.0,
+    "turnTypeDirDeg": null,
+    "turnTypeVotes": 0,
+    "priorFlipped": false,
     "distanceM": 10110.6,
     "usable": true
   },

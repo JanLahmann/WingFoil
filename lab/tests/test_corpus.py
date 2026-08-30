@@ -172,8 +172,20 @@ def test_golden_sanity(gpath):
     # Detection order is time order, and a map that reads `startTs` depends on it.
     assert [e["startTs"] for e in eps] == sorted(e["startTs"] for e in eps)
     if g["wind"] is not None:
-        assert 0.0 <= g["wind"]["dirDeg"] < 360.0
-        assert 0.0 <= g["wind"]["confidence"] <= 1.0
+        w = g["wind"]
+        assert 0.0 <= w["dirDeg"] < 360.0
+        assert 0.0 <= w["confidence"] <= 1.0
+        # The default-turn-type prior (docs/algorithms.md): it is consulted only where the
+        # no-go cone is not already certain, so on this corpus -- every session's margin is
+        # well past `windFullMargin` -- it must leave no trace at all.
+        assert 0.0 <= w["turnTypeMargin"] <= 1.0
+        # No favoured end exactly when there is no majority -- an empty electorate and an
+        # exact tie both read as margin 0, and neither points anywhere.
+        assert (w["turnTypeDirDeg"] is None) == (w["turnTypeMargin"] == 0.0)
+        assert w["turnTypeVotes"] >= 0
+        assert w["priorFlipped"] is False
+        if w["ambiguityMargin"] >= g["config"]["windFullMargin"]:
+            assert w["turnTypeVotes"] == 0
     assert s["foilTimeS"] == pytest.approx(
         sum(f["endTs"] - f["startTs"] for f in g["flights"]), abs=0.5)
     if g["flights"]:
