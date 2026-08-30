@@ -243,4 +243,13 @@ class MetricsEngine {
     function foilPct() as Float {
         return timerS > 0 ? detector.foilTimeS / timerS * 100.0 : 0.0;
     }
+
+    // The same question asked of the odometer instead of the clock: what share of the ground
+    // covered was covered flying. It is NOT a restatement of foilPct — flying is the fast half
+    // of a session, so the distance share always runs ahead of the time share, and the gap
+    // between the two is exactly how much faster. Negative only if a teleport guard ever
+    // clawed back more than it gave; callers guard on distM instead of on this.
+    function foilDistPct() as Float {
+        return distM > 0 ? detector.foilDistM / distM * 100.0 : 0.0;
+    }
 }

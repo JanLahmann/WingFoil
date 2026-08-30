@@ -217,8 +217,9 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     logger.debug("turns giant: worst " + dc.getFontHeight(worstF).toString() + "px, real "
         + dc.getFontHeight(realF).toString() + "px (NUMBER_MEDIUM is " + hG.toString() + ")");
 
-    // row 2: BOTH streaks — the strict fly-through run and the dry run — as two captioned
-    // now/best pairs. Worst case is four two-digit numbers.
+    // row 2: BOTH streaks — "streak: 99/99  99/99". ONE grey caption for the row now, the two
+    // runs told apart by the ladder's own inks rather than by two words. Worst case is four
+    // two-digit numbers, and it is strictly narrower than the two-caption row it replaced.
     var y2 = RecordingView.turnsRowY(cy, hT, hG, hK, hD, hS, 2);
     var kBudget = RecordingView.rowBudget(pageR, y2 - cy,
         RecordingView.inkH(dc, Graphics.FONT_MEDIUM));
@@ -250,9 +251,12 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
         "strip corner " + r.format("%.0f") + " > " + pageR.toString());
     Test.assertEqual(RecordingView.dotsShown(3, stripW), 3);   // short sessions show them all
 
-    // row 4: the verdict and the port/starboard entry split, at its widest — "100 % ok" with
-    // two two-digit side counts. The P/S half is DROPPED rather than shrunk when it does not
-    // fit, so the assertion is on whichever form the renderer would actually choose.
+    // row 4: the verdict and the port/starboard entry split, at its widest — "100% flew" with
+    // two two-digit side counts. The word grew by two glyphs in 0.8.2 (the row now prints the
+    // flew-through share, which agrees with the tally above it by construction), so the 416 px
+    // assertion below is exactly the one that had to be re-measured. The P/S half is DROPPED
+    // rather than shrunk when it does not fit, so the assertion is on whichever form the
+    // renderer would actually choose.
     var y4 = RecordingView.turnsRowY(cy, hT, hG, hK, hD, hS, 4);
     var vBudget = RecordingView.rowBudget(pageR, y4 - cy,
         RecordingView.inkH(dc, Graphics.FONT_SMALL));
@@ -263,7 +267,7 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
         "verdict corner " + r.format("%.0f") + " > " + pageR.toString());
     // the verdict alone must ALWAYS fit: it is the row's reason to exist
     Test.assertMessage(RecordingView.verdictWidth(dc, "100", "99", "99", false) <= vBudget,
-        "not even '100% ok' fits the verdict row");
+        "not even '100% flew' fits the verdict row");
     // ...and on the two AMOLED variants the SIDE SPLIT must survive too. It is the only
     // number on the page the rider can act on tomorrow, and it was being dropped on the 43 mm
     // glass by three spaces (" % ok", "P ", " / ") that carried no information.
@@ -312,12 +316,12 @@ function tallyRowShedsContentNotSize(logger as Test.Logger) as Boolean {
     var budget = RecordingView.rowBudget(pageR, y - cy,
         RecordingView.inkH(dc, Graphics.FONT_LARGE));
 
-    var tallyF = RecordingView.tallyFont(dc, "99", "99", "99", "100% ok", budget, 0);
+    var tallyF = RecordingView.tallyFont(dc, "99", "99", "99", "100% flew", budget, 0);
     Test.assertMessage(dc.getFontHeight(tallyF) >= dc.getFontHeight(Graphics.FONT_SMALL),
         "the tally stepped below the readability floor");
-    var mask = RecordingView.tallyContent(dc, "99", "99", "99", "100% ok", budget, tallyF);
+    var mask = RecordingView.tallyContent(dc, "99", "99", "99", "100% flew", budget, tallyF);
     Test.assertMessage(mask >= 0, "not even three bare counts fit the tally row");
-    var ok = (mask & TALLY_OK) != 0 ? "100% ok" : "";
+    var ok = (mask & TALLY_OK) != 0 ? "100% flew" : "";
     var sep = (mask & TALLY_SEPARATORS) != 0 ? TURNS_TALLY_SEP : TALLY_SEP_NARROW;
     var r = cornerRadius(RecordingView.tallyWidth(dc, "99", "99", "99", ok, sep, tallyF),
         RecordingView.inkH(dc, tallyF), y, cy);
@@ -327,18 +331,21 @@ function tallyRowShedsContentNotSize(logger as Test.Logger) as Boolean {
     // ...and dropping content must actually be cheaper than keeping it, in that order
     Test.assertMessage(
         RecordingView.tallyWidth(dc, "99", "99", "99", "", TURNS_TALLY_SEP, tallyF)
-            < RecordingView.tallyWidth(dc, "99", "99", "99", "100% ok", TURNS_TALLY_SEP,
+            < RecordingView.tallyWidth(dc, "99", "99", "99", "100% flew", TURNS_TALLY_SEP,
                 tallyF), "dropping the verdict must save width");
     Test.assertMessage(
         RecordingView.tallyWidth(dc, "99", "99", "99", "", TALLY_SEP_NARROW, tallyF)
             < RecordingView.tallyWidth(dc, "99", "99", "99", "", TURNS_TALLY_SEP, tallyF),
         "dropping the separators must save width");
 
-    // the rate is a share of TURNS, not of outcomes, and it stays empty until there is one
-    Test.assertEqual(RecordingView.okText(0, 0), "");
-    Test.assertEqual(RecordingView.okText(2, 1), "50% ok");
-    Test.assertEqual(RecordingView.okText(3, 3), "100% ok");
-    Test.assertEqual(RecordingView.okText(30, 19), "63% ok");
+    // The share is the FLEW-THROUGH share — the green count over the counted turns, so it is
+    // derivable from the tally beside it — and it stays empty until there is a turn to divide
+    // by. (The carried-speed success score left the watch in 0.8.2; it lives in the phone
+    // analysis, where a number that mixes speed retention into an outcome belongs.)
+    Test.assertEqual(RecordingView.flewText(0, 0), "");
+    Test.assertEqual(RecordingView.flewText(2, 1), "50% flew");
+    Test.assertEqual(RecordingView.flewText(3, 3), "100% flew");
+    Test.assertEqual(RecordingView.flewText(51, 35), "68% flew");
     logger.debug("main tally at font height " + dc.getFontHeight(tallyF).toString()
         + ", content mask " + mask.toString());
     return true;
@@ -524,6 +531,119 @@ function gridAndCellsPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
         "grid block off centre: " + (cy - topEdge).toString() + " vs "
             + (botEdge - cy).toString());
     logger.debug("grid: narrowest cell budget " + narrowest.toString() + "px");
+    return true;
+}
+
+// The GRID4 PAIR BAND — the shipped Session page's top row since 0.8.2: foil time % beside
+// foil dist %, each under its own word, both inside the band the single giant used to own.
+// Measured at the worst case the fitter can be handed ("100%" on both sides plus the captions)
+// and at the shipped session's own numbers, on this device's glass, with the foil-% arc on the
+// page — which it always is, since foil % is what opens the band in the first place.
+(:test)
+function gridPairBandFitsRoundDisplay(logger as Test.Logger) as Boolean {
+    var dc = testDc();
+    var cx = screenPx() / 2;
+    var cy = screenPx() / 2;
+    var radius = RecordingView.fitRadius(dc, false, true);
+    var limit = radius.toFloat();
+    var hG = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
+    var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+    var hL = dc.getFontHeight(Graphics.FONT_LARGE);
+    var bias = RecordingView.gridBias(dc);
+    var y = RecordingView.gridRowY(cy, hG, hT, hL, 0, true, bias);
+
+    // the convention: foil % opens the band with the distance share, and nothing else opens
+    // one. A rider who puts the distance share in a giant slot gets the single metric he asked
+    // for, which is what keeps a re-configured page out of a state the renderer has no rule for.
+    Test.assertEqual(PageModel.bandPartner(PageModel.M_FOIL_PCT), PageModel.M_FOIL_DIST_PCT);
+    Test.assertEqual(PageModel.bandPartner(PageModel.M_FOIL_DIST_PCT), PageModel.M_NONE);
+    for (var m = 1; m <= PageModel.M_MAX; m++) {
+        Test.assertMessage(m == PageModel.M_FOIL_PCT
+            || PageModel.bandPartner(m) == PageModel.M_NONE,
+            "metric " + m.toString() + " opens a pair band nobody designed");
+    }
+    var lc = PageModel.bandCaption(PageModel.M_FOIL_PCT);
+    var rc = PageModel.bandCaption(PageModel.M_FOIL_DIST_PCT);
+    Test.assertMessage(!lc.equals(rc) && lc.length() > 0 && rc.length() > 0,
+        "the two halves must not share a caption");
+
+    var worst = PageModel.worstValue(PageModel.M_FOIL_PCT);
+    Test.assertEqual(worst, PageModel.worstValue(PageModel.M_FOIL_DIST_PCT));
+    var f = RecordingView.pairFont(dc, worst, lc, worst, rc, hG, radius, y, cy);
+
+    // a value in a label font is not a value: FONT_MEDIUM is the floor for this band
+    Test.assertMessage(dc.getFontHeight(f) >= dc.getFontHeight(Graphics.FONT_MEDIUM),
+        "pair band fell below FONT_MEDIUM");
+    // ...the block must fit the band the single giant reserved, or it would push the 2x2 down
+    // and take the bottom row's corners off the glass...
+    Test.assertMessage(RecordingView.pairBandHeight(dc, f) <= hG,
+        "pair band is " + RecordingView.pairBandHeight(dc, f).toString()
+            + "px tall in a " + hG.toString() + "px band");
+    // ...and the font the renderer picked must be one that actually fits, by the renderer's
+    // own three-part rule
+    Test.assertMessage(
+        RecordingView.pairFits(dc, worst, lc, worst, rc, f, hG, radius, y, cy),
+        "the fitter returned a font that does not fit");
+    var dx = RecordingView.pairColumn(dc, f, radius, y, cy);
+    var wl = RecordingView.pairHalfWidth(dc, worst, lc, f);
+    var wr = RecordingView.pairHalfWidth(dc, worst, rc, f);
+    var yCap = RecordingView.pairRowY(dc, y, f, 0);
+    var yVal = RecordingView.pairRowY(dc, y, f, 1);
+
+    // both halves, both of their rows, each measured at its own depth and its own column
+    var caps = [lc, rc];
+    var halves = [wl, wr];
+    for (var i = 0; i < 2; i++) {
+        var r = cornerRadiusAt(cx, cx + dx,
+            dc.getTextWidthInPixels(caps[i], Graphics.FONT_XTINY),
+            RecordingView.inkH(dc, Graphics.FONT_XTINY), yCap, cy);
+        Test.assertMessage(r <= limit, "pair caption " + i.toString() + " r="
+            + r.format("%.0f") + " > " + limit);
+        r = cornerRadiusAt(cx, cx + dx, halves[i], RecordingView.inkH(dc, f), yVal, cy);
+        Test.assertMessage(r <= limit, "pair value " + i.toString() + " r="
+            + r.format("%.0f") + " > " + limit);
+    }
+    // the two halves must not touch — the column split keeps the grid's own gutter between
+    // them, exactly as it does for the cells below
+    for (var i = 0; i < 2; i++) {
+        Test.assertMessage(dx - halves[i] / 2 >= CELL_GUTTER / 2,
+            "pair half " + i.toString() + " overflows its column: " + halves[i].toString()
+                + "px at dx " + dx.toString());
+    }
+    // the block must clear the cell row under it and stay inside its own band above
+    var yCell = RecordingView.gridRowY(cy, hG, hT, hL, 1, true, bias);
+    Test.assertMessage(yVal + RecordingView.inkH(dc, f) / 2 <= yCell - hT / 2,
+        "the pair band's digits reach into the first cell row");
+    Test.assertMessage(yCap - hT / 2 >= y - hG / 2,
+        "the pair band's caption reaches above its own band");
+
+    // the session the app was designed against must not be permanently stepped down: two
+    // two-digit shares are what a rider actually sees, and they may never be SMALLER than the
+    // three-digit worst case the fitter is asserted on above.
+    var realF = RecordingView.pairFont(dc, "56%", lc, "61%", rc, hG, radius, y, cy);
+    Test.assertMessage(dc.getFontHeight(realF) >= dc.getFontHeight(f),
+        "a real session's band is smaller than the worst case");
+    Test.assertMessage(RecordingView.pairFits(dc, "56%", lc, "61%", rc, realF, hG,
+        radius, y, cy), "the shipped session's own band does not fit");
+    // ...and shorter numbers must SPREAD, not huddle: the columns are fixed, so the gap
+    // between the two readings is what grows.
+    // (the gap between the two readings is 2*dx minus the two inner half-widths)
+    var realDx = RecordingView.pairColumn(dc, realF, radius, y, cy);
+    var realGap = 2 * realDx - (RecordingView.pairHalfWidth(dc, "56%", lc, realF)
+        + RecordingView.pairHalfWidth(dc, "61%", rc, realF)) / 2;
+    Test.assertMessage(realGap > 2 * dx - (wl + wr) / 2,
+        "a short pair does not read wider apart than the worst case");
+    // a half is never narrower than its own caption
+    Test.assertMessage(RecordingView.pairHalfWidth(dc, "0%", lc, f)
+        >= dc.getTextWidthInPixels(lc, Graphics.FONT_XTINY),
+        "a one-digit half is narrower than the word under it");
+    logger.debug("pair band: halves " + wl.toString() + "/" + wr.toString()
+        + "px in a " + (2 * RecordingView.cellColumns(radius, yVal - cy,
+            RecordingView.inkH(dc, f))[1]).toString() + "px column at dx " + dx.toString()
+        + ", font height " + dc.getFontHeight(f).toString() + " (MILD band is "
+        + hG.toString() + "), block " + RecordingView.pairBandHeight(dc, f).toString()
+        + "px; worst-case gap " + (2 * dx - (wl + wr) / 2).toString()
+        + "px, real session gap " + realGap.toString() + "px");
     return true;
 }
 
@@ -792,6 +912,47 @@ function everyMetricHasADrawableGlyph(logger as Test.Logger) as Boolean {
     }
     logger.debug("glyphs: " + Glyphs.G_BATTERY.toString() + " metric symbols + 4 outcomes at "
         + s.toString() + "px");
+    return true;
+}
+
+// The foil DISTANCE share: the twin of foil %, and the right half of the Session page's band.
+// What is asserted here is that it is a share of the ODOMETER and not of the clock, and that
+// it says "--" rather than "0%" before there is a distance to take a share of.
+(:test)
+function foilDistanceShareIsAShareOfTheOdometer(logger as Test.Logger) as Boolean {
+    var c = getApp().controller;
+    var e = c.engine;
+    var distWas = e.distM;
+    var foilDistWas = e.detector.foilDistM;
+    var foilTimeWas = e.detector.foilTimeS;
+    var timerWas = e.timerS;
+
+    e.distM = 0.0;
+    e.detector.foilDistM = 0.0;
+    Test.assertEqual(PageModel.value(PageModel.M_FOIL_DIST_PCT, c), "--");
+    Test.assertMessage(e.foilDistPct() == 0.0, "no metres, no share");
+
+    // Jan's 2026-08-24 session: 14.1 km of the 23.1 km covered on the foil, in 63:24 of the
+    // 1:53:13 the timer ran. Two different denominators, two different numbers — which is
+    // exactly why the band shows both.
+    e.distM = 23100.0;
+    e.detector.foilDistM = 14091.0;
+    e.detector.foilTimeS = 3804.0;
+    e.timerS = 6793.0;
+    Test.assertEqual(PageModel.value(PageModel.M_FOIL_DIST_PCT, c), "61%");
+    Test.assertEqual(PageModel.value(PageModel.M_FOIL_PCT, c), "56%");
+    Test.assertEqual(PageModel.worstValue(PageModel.M_FOIL_DIST_PCT), "100%");
+    // same family, same phase ink: it is the foil, seen the other way
+    Test.assertEqual(PageModel.color(PageModel.M_FOIL_DIST_PCT, c), Ink.phaseFlying());
+    Test.assertEqual(PageModel.glyph(PageModel.M_FOIL_DIST_PCT),
+        PageModel.glyph(PageModel.M_FOIL_PCT));
+    logger.debug("foil dist " + PageModel.value(PageModel.M_FOIL_DIST_PCT, c) + " vs time "
+        + PageModel.value(PageModel.M_FOIL_PCT, c));
+
+    e.distM = distWas;
+    e.detector.foilDistM = foilDistWas;
+    e.detector.foilTimeS = foilTimeWas;
+    e.timerS = timerWas;
     return true;
 }
 
@@ -2871,3 +3032,4 @@ function colourVocabularyIsUnambiguous(logger as Test.Logger) as Boolean {
         + (Ink.isMip() ? "MIP" : "AMOLED"));
     return true;
 }
+

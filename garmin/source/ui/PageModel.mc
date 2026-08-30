@@ -30,7 +30,9 @@ import WingFoilCore;
 // Slot semantics per layout:
 //   MAIN     s1 = the giant (+ its inline unit and caption); the rest of the page is fixed
 //   HERO     s1 = giant number (+ its unit line), s2/s3 = the two rows under it
-//   GRID4    s1 = giant number on top (optional), s2..s5 = the 2x2 cells (TL, TR, BL, BR)
+//   GRID4    s1 = giant number on top (optional), s2..s5 = the 2x2 cells (TL, TR, BL, BR).
+//            s1 = M_FOIL_PCT makes that band a PAIR — foil time % beside foil dist %
+//            (bandPartner below) — which is what the shipped Session page draws.
 //   CELLS2   s1/s2 = two side-by-side cells
 //   CLOCK    s1 = the single cell under the giant time of day
 //   RECORDS / TURNS / TIMELINE / MAP   bespoke renderers, slots unused
@@ -80,9 +82,13 @@ module PageModel {
         // "now/best" no-fall streak (docs/algorithms.md "Turn streaks"). On the main screen
         // it has its own row; here it is a cell like any other, for a rider who wants it on
         // page 3 instead.
-        M_STREAK = 20
+        M_STREAK = 20,
+        // The distance twin of M_FOIL_PCT: what share of the KILOMETRES was flown, against
+        // M_FOIL_PCT's share of the MINUTES. The two are one fact seen from two sides and the
+        // default Session page shows them side by side (see bandPair below).
+        M_FOIL_DIST_PCT = 21
     }
-    const M_MAX = 20;
+    const M_MAX = 21;
 
     const MAX_PAGES = 6;
     const SLOTS = 5;
@@ -232,7 +238,35 @@ module PageModel {
         if (id == M_PUMPS_TO_TAKEOFF) { return "to foil"; }
         if (id == M_TAKEOFF_COST) { return "hr cost"; }
         if (id == M_STREAK) { return "dry run"; }
+        if (id == M_FOIL_DIST_PCT) { return "foil dist"; }
         return "";
+    }
+
+    // ---- the paired top band ----
+    // A GRID4 giant slot holding M_FOIL_PCT does not draw one number: it draws BOTH foil
+    // shares, time on the left and distance on the right, because the pair is the fact and
+    // either half alone is half of it. Riders read "56 % of the session" and hear "and barely
+    // moving the rest of it" — the distance share (61 %) is what says how much of the WATER he
+    // covered on the foil, and the two are only meaningful against each other.
+    //
+    // It is a CONVENTION, not a layout: no new page type, no sixth slot, no default to move in
+    // properties.xml — page 2 still ships `pg2s1 = 2` and every watch already carrying that
+    // value gets the pair on the next update. Only M_FOIL_PCT opens the band, so a rider who
+    // puts the distance share anywhere (a cell, another page's giant) gets exactly the single
+    // metric he asked for, and the foil-% bezel arc's rule — "this page carries M_FOIL_PCT" —
+    // needs no special case either.
+    function bandPartner(id as Number) as Number {
+        return id == M_FOIL_PCT ? M_FOIL_DIST_PCT : M_NONE;
+    }
+
+    // The word under each half of that band. Deliberately NOT the catalog labels: side by side
+    // the only thing the eye has to separate two "61 %" is which one is which, and "time" /
+    // "dist" is that distinction with nothing else in the way. Both halves are foil shares —
+    // the word "foil" would be printed twice and separate nothing.
+    function bandCaption(id as Number) as String {
+        if (id == M_FOIL_PCT) { return "time"; }
+        if (id == M_FOIL_DIST_PCT) { return "dist"; }
+        return caption(id);
     }
 
     // The symbol a cell shows beside (or, with showLabels off, instead of) its label.
@@ -241,7 +275,9 @@ module PageModel {
     // which is all the eye needs at 25 kn.
     function glyph(id as Number) as Number {
         if (id == M_SPEED || id == M_BEST_2S || id == M_BEST_10S) { return Glyphs.G_BOLT; }
-        if (id == M_FOIL_PCT || id == M_FLIGHTS) { return Glyphs.G_WING; }
+        if (id == M_FOIL_PCT || id == M_FLIGHTS || id == M_FOIL_DIST_PCT) {
+            return Glyphs.G_WING;
+        }
         if (id == M_FLIGHT_TIMER || id == M_FOIL_TIME || id == M_LONGEST || id == M_TIMER
             || id == M_CLOCK) {
             return Glyphs.G_WATCH;
@@ -314,6 +350,12 @@ module PageModel {
             // them mean "not measured" rather than "it cost nothing".
             return e.hrCost.lastCostBpm < 0 ? "--" : e.hrCost.lastCostBpm.toString();
         }
+        if (id == M_FOIL_DIST_PCT) {
+            // "--" until the odometer has anything to take a share OF. A "0%" before the
+            // first metre is not a fact about the session, it is a division that has not
+            // happened yet — the same rule M_PUMPS_TO_TAKEOFF and M_TAKEOFF_COST keep.
+            return e.distM > 0 ? e.foilDistPct().format("%.0f") + "%" : "--";
+        }
         if (id == M_STREAK) { return streakText(e.turns); }
         return "";
     }
@@ -364,7 +406,7 @@ module PageModel {
                 ? Ink.phaseFlying() : Ink.dim();
         }
         if (id == M_HR || id == M_TAKEOFF_COST) { return Ink.effortPumping(); }
-        if (id == M_FOIL_PCT) { return Ink.phaseFlying(); }
+        if (id == M_FOIL_PCT || id == M_FOIL_DIST_PCT) { return Ink.phaseFlying(); }
         return Graphics.COLOR_WHITE;
     }
 
@@ -375,7 +417,10 @@ module PageModel {
         if (id == M_SPEED || id == M_BEST_2S || id == M_BEST_10S || id == M_DISTANCE) {
             return "99.9";
         }
-        if (id == M_FOIL_PCT || id == M_TURN_SCORE || id == M_BATTERY) { return "100%"; }
+        if (id == M_FOIL_PCT || id == M_FOIL_DIST_PCT || id == M_TURN_SCORE
+            || id == M_BATTERY) {
+            return "100%";
+        }
         if (id == M_FLIGHTS || id == M_TURNS) { return "999"; }
         // the cost is a difference inside the 30-220 bpm plausibility band, so three digits is
         // its honest ceiling even though a real takeoff costs 7
