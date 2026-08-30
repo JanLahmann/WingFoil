@@ -87,6 +87,10 @@ module ShotSeed {
         d.state = FlightDetector.STATE_ON;  // flying: the state ring goes teal
         d.flightCount = 31;
         d.foilTimeS = 3804.0;               // 63:24
+        // 14.1 of the 23.1 km covered on the foil: 61 % of the DISTANCE against 56 % of the
+        // time, which is the whole point of the Session page's paired top band — flying is the
+        // fast half of a session, so the two shares are never the same number.
+        d.foilDistM = 14091.0;
         d.longestS = 424.0;                 // 7:04
         d.longestM = 2249.0;
         d.currentFlightS = 96.0;
@@ -102,7 +106,10 @@ module ShotSeed {
         t.touchdownCount = 8;
         t.fellCount = 8;
         t.turnCount = 51;
-        t.successCount = 25;                // 25/51 = 49 % ok
+        // 35 of the 51 counted turns flew through: "68% flew" on the Turns page's bottom row.
+        // successCount is the carried-speed score, which left the watch in 0.8.2 and now only
+        // rides in the FIT/phone payload — seeded so those still have a realistic number.
+        t.successCount = 25;
         t.tackCount = 27;
         t.jibeCount = 24;
         t.portEntryCount = 29;              // the entry-side split, P 29 / S 22

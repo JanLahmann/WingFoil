@@ -99,6 +99,60 @@ function flightDetectorDiscardsShortFlights(logger as Test.Logger) as Boolean {
     return true;
 }
 
+// The session's FLYING distance, metre by metre, on a feed whose every segment is known.
+// foilDistM is the twin of foilTimeS, so this asserts the three places they are written
+// together — accumulate, backdate the end, discard a short flight — with exact numbers rather
+// than a tolerance: at 1 Hz with a constant distDelta the arithmetic is closed-form.
+(:test)
+function flightDetectorTracksFlyingDistance(logger as Test.Logger) as Boolean {
+    var d = new FlightDetector(coreDefaults());
+    Test.assertMessage(d.foilDistM == 0.0, "a fresh session has flown no metres");
+
+    // 10 s of slow taxi at 2 m/s: off foil throughout, 20 m that must not count
+    for (var i = 0; i < 10; i++) {
+        d.tick(1.0, 2.0, 2.0);
+    }
+    Test.assertMessage(d.foilDistM == 0.0, "taxiing is not flying, got "
+        + d.foilDistM.format("%.1f"));
+
+    // 20 samples at 5 m/s. Sample 3 confirms ON (entryHold + 1) and is backdated in TIME
+    // only, so the metres start with sample 4: 17 samples x 5 m = 85 m.
+    for (var i = 0; i < 20; i++) {
+        d.tick(1.0, 5.0, 5.0);
+    }
+    Test.assert(d.state == FlightDetector.STATE_ON && d.flightCount == 1);
+    Test.assertMessage((d.foilDistM - 85.0).abs() < 0.0001,
+        "17 flying samples x 5 m = 85, got " + d.foilDistM.format("%.2f"));
+
+    // 4 samples at 1 m/s: the end backdates to the FIRST sub-exit sample, so exactly one of
+    // those metres stays on the foil and three come back off it. 85 + 4 - 3 = 86.
+    for (var i = 0; i < 4; i++) {
+        d.tick(1.0, 1.0, 1.0);
+    }
+    Test.assert(d.state == FlightDetector.STATE_OFF && d.flightCount == 1);
+    Test.assertMessage((d.foilDistM - 86.0).abs() < 0.0001,
+        "exit backdate leaves 86 m, got " + d.foilDistM.format("%.2f"));
+    Test.assertMessage((d.longestM - 86.0).abs() < 0.0001,
+        "the one flight IS the longest, got " + d.longestM.format("%.2f"));
+
+    // A second burst too short to count: 4 samples up (3 s of flight, under minFlight 5) and
+    // 4 back down. It is never a flight, so it must leave the session total untouched — the
+    // same rule foilTimeS keeps, and the reason the discard branch subtracts currentFlightM.
+    for (var i = 0; i < 4; i++) {
+        d.tick(1.0, 5.0, 5.0);
+    }
+    for (var i = 0; i < 4; i++) {
+        d.tick(1.0, 1.0, 1.0);
+    }
+    Test.assert(d.state == FlightDetector.STATE_OFF);
+    Test.assertMessage(d.flightCount == 1, "the short burst was counted as a flight");
+    Test.assertMessage((d.foilDistM - 86.0).abs() < 0.0001,
+        "a discarded flight leaves no metres behind, got " + d.foilDistM.format("%.2f"));
+    // and the share is a share: 86 m of the 20 + 100 + 4 + 20 + 4 = 148 m the odometer saw
+    logger.debug("foilDist " + d.foilDistM.format("%.0f") + " m of 148 m fed");
+    return true;
+}
+
 (:test)
 function flightDetectorEntryHoldIsBothEndsQualifying(logger as Test.Logger) as Boolean {
     // lab/src/wingfoil_lab/flight.py `_flight_spans`: the first qualifying sample opens the

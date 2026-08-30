@@ -29,6 +29,15 @@ class FlightDetector {
     var state as Number = STATE_OFF;
     var flightCount as Number = 0;
     var foilTimeS as Float = 0.0;
+    // Session distance covered ON the foil. The exact twin of foilTimeS, fed from the same
+    // three places and corrected by the same three: what dt is to the clock, distDelta is to
+    // the odometer. Two consequences follow from that symmetry and are deliberate:
+    //   * a discarded (sub-minFlight) flight leaves neither time nor metres behind;
+    //   * the entry-hold window is backdated in TIME only, because the detector never kept
+    //     the metres of those samples (see currentFlightM below) — so foilDistM is, like
+    //     currentFlightM, marginally conservative and the phone's re-analysis is authoritative.
+    // Pause needs no code: the controller stops calling tick(), so neither accumulator moves.
+    var foilDistM as Float = 0.0;
     var longestS as Float = 0.0;
     var longestM as Float = 0.0;
     var currentFlightS as Float = 0.0;   // 0 when off foil
@@ -81,6 +90,7 @@ class FlightDetector {
 
         // STATE_ON
         foilTimeS += dt;
+        foilDistM += distDelta;
         currentFlightS += dt;
         currentFlightM += distDelta;
         var event = EVENT_NONE;
@@ -105,6 +115,7 @@ class FlightDetector {
             if (_exitAccum >= _cfg.exitHoldS) {
                 // backdate the end to the first sub-exit sample
                 foilTimeS -= _exitAccum;
+                foilDistM -= _exitDistAccum;
                 currentFlightS -= _exitAccum;
                 currentFlightM -= _exitDistAccum;
                 if (_confirmed) {
@@ -116,8 +127,9 @@ class FlightDetector {
                     }
                     event = EVENT_END;
                 } else {
-                    // too short: never counted, remove its time entirely
+                    // too short: never counted, remove its time and its metres entirely
                     foilTimeS -= currentFlightS;
+                    foilDistM -= currentFlightM;
                 }
                 state = STATE_OFF;
                 currentFlightS = 0.0;

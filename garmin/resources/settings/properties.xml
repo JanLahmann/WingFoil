@@ -40,6 +40,12 @@
     <property id="pg1s3" type="number">0</property>
     <property id="pg1s4" type="number">0</property>
     <property id="pg1s5" type="number">0</property>
+    <!-- Page 2, the Session grid. 0.8.2: pg2s1 = 2 (M_FOIL_PCT) no longer draws ONE number.
+         The giant band renders as a PAIR — foil time % beside foil dist % (M_FOIL_DIST_PCT,
+         21) — because the giant slot holding foil % is what opens it (PageModel.bandPartner).
+         That is why nothing here moved: the value a watch already has stored is the value that
+         switches the new band on, so an existing install gets it on the next update instead of
+         keeping the old single giant, which is what a new layout id would have done. -->
     <property id="pg2Layout" type="number">2</property>
     <property id="pg2s1" type="number">2</property>
     <property id="pg2s2" type="number">5</property>
