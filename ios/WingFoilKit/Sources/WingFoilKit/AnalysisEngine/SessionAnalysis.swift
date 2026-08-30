@@ -20,7 +20,13 @@ public enum AnalysisEngine {
     /// whose no-go cones nearly tie can now have its wind direction resolved the other way,
     /// taking every tack/jibe label with it — which is exactly why a stored document must
     /// re-derive rather than be read as if the rider had never declared a habit.
-    public static let version = "0.5.0"
+    ///
+    /// 0.6.0 adds the **session rate metrics** (docs/algorithms.md "Session rates"):
+    /// `summary.durationS` / `avgSpeedKmh` / `turnsPerHour` / `jibesPerHour` / `wetPerHour`.
+    /// Nothing pre-existing moves — they are arithmetic over numbers the summary already
+    /// carried — but a 0.5.0 document cannot answer "how busy was that hour" at all, and a
+    /// missing rate decoded as 0 would claim a session with no jibes in it.
+    public static let version = "0.6.0"
 }
 
 /// Echo of the parameters actually used, keyed by their docs/algorithms.md names.
@@ -547,6 +553,41 @@ public struct PumpEpisodeRecord: Sendable, Codable, Equatable {
     }
 }
 
+/// Session basics and the per-hour rates (docs/algorithms.md "Session rates").
+///
+/// All four rates share one denominator — **elapsed** session time, first to last cleaned
+/// sample — so they answer "per hour on the water", not "per hour of flight". A rider who
+/// jibes forty times in two hours of drifting and a rider who does it in one are not having
+/// the same session, and only a wall-clock denominator says so.
+///
+/// Every rate is nil rather than 0 when there is no duration to divide by: a one-sample
+/// track has no answer, and a zero would read as "he did nothing". Mirrors
+/// `lab/src/wingfoil_lab/goldens.py` `session_rates`.
+public struct SessionRates: Sendable, Equatable {
+    public var durationS: Double
+    public var avgSpeedKmh: Double?
+    public var turnsPerHour: Double?
+    public var jibesPerHour: Double?
+    /// How often the rider got **wet**, per hour: every `fell_in` flight end, straight-line
+    /// swims and turn swims alike. Deliberately not the turn ladder's `fellIn` — most of a
+    /// session's falls happen outside a counted turn, and the water does not care.
+    public var wetPerHour: Double?
+
+    public init(durationS: Double, distanceM: Double, turnsCounted: Int, jibes: Int,
+                fellIn: Int) {
+        guard durationS > 0 else {
+            self.durationS = max(durationS, 0)
+            return
+        }
+        self.durationS = durationS
+        let hours = durationS / 3600
+        avgSpeedKmh = distanceM / durationS * 3.6
+        turnsPerHour = Double(turnsCounted) / hours
+        jibesPerHour = Double(jibes) / hours
+        wetPerHour = Double(fellIn) / hours
+    }
+}
+
 public struct SessionSummary: Sendable, Codable, Equatable {
     public var foilTimeS: Double
     public var foilPct: Double
@@ -554,6 +595,13 @@ public struct SessionSummary: Sendable, Codable, Equatable {
     public var longestFlightS: Double
     public var longestFlightM: Double
     public var distanceKm: Double
+    /// Elapsed session span (s), first to last cleaned sample — gaps included, because a
+    /// paused recording still spent that time on the water. The rate denominator.
+    public var durationS: Double = 0
+    public var avgSpeedKmh: Double?
+    public var turnsPerHour: Double?
+    public var jibesPerHour: Double?
+    public var wetPerHour: Double?
     public var turns = TurnSummary()
     public var flightEnds = FlightEndSummary()
     public var outcomeSplit = OutcomeSplit()
@@ -567,6 +615,15 @@ public struct SessionSummary: Sendable, Codable, Equatable {
         self.longestFlightS = longestFlightS
         self.longestFlightM = longestFlightM
         self.distanceKm = distanceKm
+    }
+
+    /// Fills the five 0.6.0 fields from one computed rate block.
+    public mutating func apply(_ rates: SessionRates) {
+        durationS = rates.durationS
+        avgSpeedKmh = rates.avgSpeedKmh
+        turnsPerHour = rates.turnsPerHour
+        jibesPerHour = rates.jibesPerHour
+        wetPerHour = rates.wetPerHour
     }
 }
 
@@ -716,6 +773,14 @@ public enum SessionSummarizer {
         summary.flightEnds = endSummary
         summary.outcomeSplit = FlightEndClassifier.split(turns: turnSummary, ends: endSummary)
         summary.takeoff = TakeoffAnalyzer.summarize(takeoffs)
+        // Session rates (docs/algorithms.md "Session rates"): elapsed wall clock as the one
+        // denominator, and *every* fell-in end as the wet count — most of a session's swims
+        // happen outside a counted turn.
+        summary.apply(SessionRates(durationS: clean.spanS,
+                                   distanceM: records.totalDistanceM,
+                                   turnsCounted: turnSummary.turnsCounted,
+                                   jibes: turnSummary.jibes,
+                                   fellIn: endSummary.all.fellIn))
 
         var pumpsByFlight = [Int?](repeating: nil, count: segmentation.flights.count)
         for t in takeoffs.takeoffs where segmentation.flights.indices.contains(t.flightIndex) {

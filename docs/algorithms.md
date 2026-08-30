@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.5.0** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.6.0** (bump on any change that alters outputs; triggers phone re-analysis)
 
 ## Flight (foil) detection — hysteresis state machine
 
@@ -407,6 +407,67 @@ Pump corroboration carries over unchanged: accel promotes `glide_out` → `touch
 the speed channels also went marginal. At a flight end that test is near-vacuous (the flight
 ended *because* speed fell below `foilExitSpeed`), and that is intended — a rider who has to
 pump a burst out of it did not glide out by choice.
+
+## Session rates (phone, engine ≥ 0.6.0) — `durationS` · `avgSpeedKmh` · `turnsPerHour` · `jibesPerHour` · `wetPerHour`
+
+A tally answers "how many"; a rate answers "how busy". Forty jibes is a good session in an
+hour and a slow one in four, and until 0.6.0 nothing in the summary could tell those apart —
+the document carried counts and a foil percentage, and every "per hour" a screen wanted had
+to be improvised from `foilTimeS`, which is the wrong denominator for all of them.
+
+Five top-level fields in `summary`, all phone/web analysis outputs — **nothing here is
+written to the FIT** (docs/fit-schema.md is untouched by this version):
+
+| field | definition | units |
+|---|---|---|
+| `durationS` | last − first sample of the **cleaned** track | s, 1 dp |
+| `avgSpeedKmh` | `records.distanceM / durationS × 3.6` | km/h, 2 dp |
+| `turnsPerHour` | `turns.turnsCounted / (durationS/3600)` | 1/h, 1 dp |
+| `jibesPerHour` | `turns.jibes / (durationS/3600)` | 1/h, 1 dp |
+| `wetPerHour` | `flightEnds.all.fellIn / (durationS/3600)` | 1/h, 1 dp |
+
+**One denominator, and it is elapsed time.** Not `foilTimeS` and not `timerTimeS`: the
+question every one of these answers is "per hour *on the water*". A rider who jibes forty
+times in two hours of drifting between gusts and one who does it in one are not having the
+same session, and only a wall-clock denominator says so. The span is measured on the
+*cleaned* track because that is the timeline every other summary number was measured on, and
+it deliberately **includes gaps** — a Smart-Recording hole is time the rider spent out there,
+not time that did not happen. That also makes `avgSpeedKmh` an honest moving-plus-waiting
+average, always well below `distanceKm / foilTimeS`; it is a session-shape number, never a
+speed record, and the GP3S block remains the only place records live.
+
+**Wet is every fall, not every fallen jibe.** `wetPerHour` counts **all** `fell_in` flight
+ends — straight-line swims and turn-owned swims alike (`flightEnds.all`, which is exactly
+`straight.fellIn + inTurn.fellIn`). Deliberately *not* the turn ladder's `turns.outcomes.
+fellIn`: on 2026-08-29 that would read 8 where the rider swam 25 times, because 17 of his
+swims happened outside a counted turn — the same blind spot documented under "Turn streaks".
+The two channels count genuinely different events and neither bounds the other: a mid-turn
+swim that never ended a flight (a short turn touchdown, or a fall inside a flight that ran
+on) is a `fell_in` **turn** and no flight end at all, which is why 2026-06-13 reads 15 turn
+falls against 9 fell-in ends while 2026-08-29 reads 8 against 25. The rider-facing question
+is "how often did I get in the water", so the flight-end channel — one event per actual
+swim — is the one that answers it.
+
+**No duration, no rate.** `durationS ≤ 0` (a one-sample track, an empty clean) makes all four
+derived values **null**, never 0.0. Zero would claim "he did nothing in an hour on the
+water"; null says there is no hour to divide by. `durationS` itself stays 0.0. Rates are
+computed from unrounded inputs and rounded only on the way into JSON.
+
+Corpus, for scale — the two CIQ sessions:
+
+| session | `durationS` | `avgSpeedKmh` | `turnsPerHour` | `jibesPerHour` | `wetPerHour` |
+|---|---|---|---|---|---|
+| 2026-08-07 am (30 counted turns, 16 fell-in ends) | 5080.0 | 9.05 | 21.3 | 21.3 | 11.3 |
+| 2026-08-29 pm (51 counted, 25 fell-in ends) | 7029.0 | 11.77 | 26.1 | 25.6 | 12.8 |
+
+The afternoon session is the busier *and* the faster one, and it is wetter per hour despite
+a far better turn success rate — because it is long enough that the straight-line swims
+dominate. That is the pair of facts the counts alone never surfaced.
+
+Implemented once per engine: `session_rates` in `lab/src/wingfoil_lab/goldens.py`,
+`SessionRates` in `ios/WingFoilKit/…/AnalysisEngine/SessionAnalysis.swift`. The watch does
+not compute them (it has no flight-end classifier and no cleaned track); the phone
+recomputes them on import like every other summary number.
 
 ## Wind axis estimation (phone)
 

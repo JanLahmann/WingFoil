@@ -601,6 +601,34 @@ import Testing
                     "\(stem) summary.distanceKm")
         }
 
+        // Session rates (docs/algorithms.md "Session rates"). The duration is a wall clock,
+        // so it is pinned tightly (± 0.1 s); the rates are per-hour numbers over it and
+        // follow the ± 0.05 style of every other derived quantity.
+        if let v = num(expSummary["durationS"]) {
+            #expect(abs(analysis.summary.durationS - v) <= 0.1,
+                    "\(stem) summary.durationS: \(analysis.summary.durationS) vs \(v)")
+        }
+        expectOptional(stem, "summary.avgSpeedKmh", num(expSummary["avgSpeedKmh"]),
+                       analysis.summary.avgSpeedKmh, tolerance: 0.05)
+        expectOptional(stem, "summary.turnsPerHour", num(expSummary["turnsPerHour"]),
+                       analysis.summary.turnsPerHour, tolerance: 0.05)
+        expectOptional(stem, "summary.jibesPerHour", num(expSummary["jibesPerHour"]),
+                       analysis.summary.jibesPerHour, tolerance: 0.05)
+        expectOptional(stem, "summary.wetPerHour", num(expSummary["wetPerHour"]),
+                       analysis.summary.wetPerHour, tolerance: 0.05)
+        // The wet rate counts *every* fell-in flight end — the straight-line swims and the
+        // turn-owned ones, both channels, once each. It is deliberately not the turn
+        // ladder's `fellIn`, which counts a different event (a mid-turn swim that never
+        // ended a flight is a fall to the turn ladder and no flight end at all).
+        if analysis.summary.durationS > 0, let wet = analysis.summary.wetPerHour {
+            let hours = analysis.summary.durationS / 3600
+            let ends = analysis.summary.flightEnds
+            #expect(ends.all.fellIn == ends.straight.fellIn + ends.inTurn.fellIn,
+                    "\(stem) fell-in ends do not split into straight + inTurn")
+            #expect(abs(wet - Double(ends.all.fellIn) / hours) < 1e-9,
+                    "\(stem) summary.wetPerHour \(wet) is not every fell-in end over the hour")
+        }
+
         if let t = expSummary["turns"] as? [String: Any] {
             let s = analysis.summary.turns
             let counts: [(String, Int)] = [
@@ -764,7 +792,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.5.0")
+        #expect(analysis.engineVersion == "0.6.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)
@@ -828,7 +856,15 @@ import Testing
         let summary = try #require(obj["summary"] as? [String: Any])
         #expect(Set(summary.keys) == ["foilTimeS", "foilPct", "flightCount",
                                       "longestFlightS", "longestFlightM", "distanceKm",
+                                      "durationS", "avgSpeedKmh", "turnsPerHour",
+                                      "jibesPerHour", "wetPerHour",
                                       "turns", "flightEnds", "outcomeSplit", "takeoff"])
+        // 120 s of synthetic, one flight, no turns: the duration is real and the rates are
+        // real zeroes — "he did no jibes in that hour", not "unknown".
+        #expect(abs((num(summary["durationS"]) ?? 0) - 120) <= 0.1)
+        #expect(num(summary["turnsPerHour"]) == 0)
+        #expect(num(summary["jibesPerHour"]) == 0)
+        #expect(analysis.summary.avgSpeedKmh != nil)
 
         // Round-trip: the model decodes its own encoding losslessly — except
         // `records.totalDistanceM`, which is deliberately not part of the golden
@@ -837,6 +873,32 @@ import Testing
         var expected = analysis
         expected.records.totalDistanceM = 0
         #expect(decoded == expected)
+    }
+
+    /// The rate block's arithmetic and its one guard (docs/algorithms.md "Session rates"),
+    /// mirroring `lab/tests/test_goldens.py`. Two hours, 40 km, 60 counted turns of which
+    /// 44 jibes and 9 swims: 30 turns/h, 22 jibes/h, 4.5 swims/h, 20 km/h.
+    @Test func sessionRatesDivideByTheElapsedHour() {
+        let r = SessionRates(durationS: 7200, distanceM: 40_000,
+                             turnsCounted: 60, jibes: 44, fellIn: 9)
+        #expect(r.durationS == 7200)
+        #expect(abs((r.avgSpeedKmh ?? 0) - 20) < 1e-9)
+        #expect(abs((r.turnsPerHour ?? 0) - 30) < 1e-9)
+        #expect(abs((r.jibesPerHour ?? 0) - 22) < 1e-9)
+        #expect(abs((r.wetPerHour ?? 0) - 4.5) < 1e-9)
+
+        // No elapsed time ⇒ no hour to divide by. Every rate is nil, never a 0 that would
+        // read as "he did nothing in an hour on the water".
+        for empty in [SessionRates(durationS: 0, distanceM: 1234,
+                                   turnsCounted: 7, jibes: 5, fellIn: 2),
+                      SessionRates(durationS: -12, distanceM: 1234,
+                                   turnsCounted: 7, jibes: 5, fellIn: 2)] {
+            #expect(empty.durationS == 0)
+            #expect(empty.avgSpeedKmh == nil)
+            #expect(empty.turnsPerHour == nil)
+            #expect(empty.jibesPerHour == nil)
+            #expect(empty.wetPerHour == nil)
+        }
     }
 
     /// A stored `analysis.json` written by engine 0.2.0 has no `pumpEpisodes` key at all.
