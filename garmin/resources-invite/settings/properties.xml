@@ -5,4 +5,25 @@
          Deliberately NOT in resources/settings/: the public app must not show a setting
          whose gate is compiled out. -->
     <property id="unlockKey" type="string"></property>
+
+    <!-- Raw 100 Hz accelerometer into the FIT: ON everywhere else, OFF for invite testers.
+         It is ~96 % of a session file — about 10 MB for two hours — and every byte of that
+         crosses BLE to the phone before the activity appears in Garmin Connect. On the dev and
+         beta builds that trade is worth it: the raw stream is the validation vehicle the whole
+         lab pipeline is built on. An invite tester gets none of that benefit and all of the
+         wait, and a tester who thinks the app is broken because the sync takes twenty minutes
+         is a tester lost.
+
+         This is a PROPERTIES override rather than a code default on purpose: on a real device
+         properties.xml beats whatever AppSettings' `_bool(key, dflt)` fallback says, so a code
+         branch here would ship the OLD default and nothing would notice (the same trap
+         docs/plan.md records for the page table). resources-invite/ is appended to
+         base.resourcePath by monkey-invite.jungle only, so this row exists in exactly one
+         build and the shared resources/settings/properties.xml keeps its `true` for the rest.
+
+         The GCM toggle itself stays in resources/settings/settings.xml for every build, so a
+         tester who wants to send a session in for analysis can turn it on. And the flag gates
+         only the SensorLogger: the live PumpDetector registers its own listener from
+         SessionController._startAccel(), behind `pumpDetection`, and is untouched here. -->
+    <property id="accelLogging" type="boolean">false</property>
 </properties>

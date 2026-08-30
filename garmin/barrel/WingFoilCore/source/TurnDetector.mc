@@ -129,6 +129,18 @@ class TurnDetector {
     var flewStreak as Number = 0;
     var bestFlewStreak as Number = 0;
 
+    // Which tack the rider was ON when he entered the maneuver: port when the wind was
+    // crossing his port side (true wind angle > 0), starboard when it was crossing his
+    // starboard side. Counted for every COUNTED turn, and only while a wind axis is set —
+    // without one there is no side to be on, and both stay 0.
+    //
+    // It is the asymmetry number: a rider whose jibes work one way round and not the other
+    // sees it here and nowhere else, and every counter above averages it away. Derived from
+    // the SAME `_wrap180(entry heading - wind)` the tack/jibe classifier already computes, so
+    // the two can never disagree about which side of the wind a turn started on.
+    var portEntryCount as Number = 0;
+    var starboardEntryCount as Number = 0;
+
     // per-lap (SessionController resets these at every lap boundary)
     var lapTurnCount as Number = 0;
     var lapBestScorePct as Number = 0;
@@ -390,6 +402,7 @@ class TurnDetector {
         } else if (kind == KIND_JIBE) {
             jibeCount++;
         }
+        countEntrySide(_startU);
         state = ST_OUTCOME;
         return EVENT_TURN;
     }
@@ -589,6 +602,24 @@ class TurnDetector {
             return KIND_JIBE;
         }
         return (head - mid).abs() <= (down - mid).abs() ? KIND_TACK : KIND_JIBE;
+    }
+
+    // Which side the wind was crossing at the ENTRY heading, counted once per counted turn.
+    // TWA > 0 means the heading sits clockwise of the wind's own bearing, i.e. the wind
+    // arrives over the port side: port tack. Exactly 0 (dead head-to-wind on entry) is not a
+    // side and is not counted — it is also not a state a foiler holds.
+    // Public so the layout tests and the FIT layer can reason about the same rule.
+    function countEntrySide(entryU as Float) as Void {
+        var wind = _cfg.windDirection;
+        if (wind < 0) {
+            return;             // no axis: there is no side, and 0/0 is the honest answer
+        }
+        var twa = _wrap180(entryU - wind.toFloat());
+        if (twa > 0.0) {
+            portEntryCount++;
+        } else if (twa < 0.0) {
+            starboardEntryCount++;
+        }
     }
 
     // The value offset + 360k inside [lo, hi] closest to mid, or NO_CROSS when the sweep

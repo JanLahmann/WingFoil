@@ -1,4 +1,5 @@
 import Toybox.Communications;
+import Toybox.Position;
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
@@ -159,90 +160,170 @@ function SessionPackEncoding(entryCms as Number, exitCms as Number,
     return entryCms * 65536 + minFlightS * 2048 + exitCms;
 }
 
+// The Turns page, rebuilt in 0.8.2: header · the TALLY as the giant · both streaks · the
+// outcome strip · the verdict with its port/starboard entry split. Five rows on a round glass,
+// two of which (the strip and the verdict) live deep in the bottom arc where the chord has
+// collapsed to about two thirds of the diameter — which is exactly why they are measured here.
 (:test)
 function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var dc = testDc();
     var cy = screenPx() / 2;
     var radius = screenPx() / 2.0 - BEZEL;
+    var pageR = RecordingView.fitRadius(dc, false, false);
 
     var hT = dc.getFontHeight(Graphics.FONT_XTINY);
-    var hHot = dc.getFontHeight(Graphics.FONT_NUMBER_HOT);
-    var hL = dc.getFontHeight(Graphics.FONT_LARGE);
+    var hG = dc.getFontHeight(Graphics.FONT_NUMBER_MEDIUM);
+    var hK = dc.getFontHeight(Graphics.FONT_MEDIUM);
+    var hD = RecordingView.stripBandH(dc);
     var hS = dc.getFontHeight(Graphics.FONT_SMALL);
 
     // row 0: header, widest with a wind axis set
     var header = "tack / jibe  NNE";
     var r = cornerRadius(dc.getTextWidthInPixels(header, Graphics.FONT_XTINY), hT,
-        RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 0), cy);
+        RecordingView.turnsRowY(cy, hT, hG, hK, hD, hS, 0), cy);
     Test.assertMessage(r <= radius, "header corner " + r.format("%.0f") + " > " + radius);
 
-    // row 1: the GIANT is now the last turn's score, not the tack/jibe count — the count is
-    // a number you read once an hour, the score is the one that changes on every jibe. It is
-    // fitted, so like every other fitted row in this suite it is asserted against fitRadius,
-    // the margin the fitter itself works to.
-    var pageR = RecordingView.fitRadius(dc, false, false);
-    var y1 = RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 1);
-    var scoreF = RecordingView.fitFont(dc, NUMBER_FONTS, 1, "100%",
-        RecordingView.rowBudget(pageR, y1 - cy,
-            RecordingView.inkH(dc, Graphics.FONT_NUMBER_HOT)));
-    r = cornerRadius(dc.getTextWidthInPixels("100%", scoreF),
-        RecordingView.inkH(dc, Graphics.FONT_NUMBER_HOT), y1, cy);
+    // row 1: the GIANT is the tally itself — flew · touched · swam, three counts in the three
+    // ladder colours. Measured at its worst case (three two-digit counts) and at the shipped
+    // session's own (35/8/8), because the first says it never clips and the second says the
+    // page a rider actually sees is not permanently stepped down.
+    var y1 = RecordingView.turnsRowY(cy, hT, hG, hK, hD, hS, 1);
+    var gBudget = RecordingView.rowBudget(pageR, y1 - cy,
+        RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM));
+    var worstF = RecordingView.giantTallyFont(dc, "99", "99", "99", gBudget);
+    r = cornerRadius(RecordingView.giantTallyWidth(dc, "99", "99", "99", worstF),
+        RecordingView.inkH(dc, worstF), y1, cy);
     Test.assertMessage(r <= pageR,
-        "score corner " + r.format("%.0f") + " > " + pageR.toString());
-    // ...and it must still be a NUMBER font: a score at FONT_LARGE is not a hero.
-    Test.assertMessage(dc.getFontHeight(scoreF)
-        >= dc.getFontHeight(Graphics.FONT_NUMBER_MILD),
-        "turns giant shrank out of the number ladder");
-    Test.assertEqual(RecordingView.scoreText(TurnDetector.OUTCOME_NONE, 0), "--");
-    Test.assertEqual(RecordingView.scoreText(TurnDetector.OUTCOME_FLEW, 87), "87%");
-    logger.debug("turns giant font height " + dc.getFontHeight(scoreF).toString()
-        + " (NUMBER_HOT is " + hHot.toString() + "), corner " + r.format("%.0f") + " of "
-        + pageR.toString());
+        "giant tally corner " + r.format("%.0f") + " > " + pageR.toString());
+    // a count is a value: the ladder may step down, never below the readability floor
+    Test.assertMessage(dc.getFontHeight(worstF) >= dc.getFontHeight(Graphics.FONT_SMALL),
+        "giant tally fell below FONT_SMALL");
+    // and it must still be a NUMBER font for the session the app was designed against
+    var realF = RecordingView.giantTallyFont(dc, "35", "8", "8", gBudget);
+    Test.assertMessage(dc.getFontHeight(realF) >= dc.getFontHeight(Graphics.FONT_NUMBER_MILD),
+        "the giant tally is not a giant on a real session");
+    r = cornerRadius(RecordingView.giantTallyWidth(dc, "35", "8", "8", realF),
+        RecordingView.inkH(dc, realF), y1, cy);
+    Test.assertMessage(r <= pageR,
+        "giant tally (real) corner " + r.format("%.0f") + " > " + pageR.toString());
+    // the separator is a drawn dot, not punctuation — the number fonts have none — so its
+    // slot has to scale with whatever font the row landed in
+    Test.assertMessage(RecordingView.giantSepW(dc, realF) > RecordingView.giantSepR(dc, realF),
+        "the separator dot does not fit its own slot");
+    Test.assertMessage(
+        RecordingView.giantTallyWidth(dc, "9", "9", "9", realF)
+            < RecordingView.giantTallyWidth(dc, "99", "99", "99", realF),
+        "one-digit counts are not narrower than two-digit ones");
+    logger.debug("turns giant: worst " + dc.getFontHeight(worstF).toString() + "px, real "
+        + dc.getFontHeight(realF).toString() + "px (NUMBER_MEDIUM is " + hG.toString() + ")");
 
-    // row 2: the outcome SYMBOL next to the tack/jibe split. The symbol is a fixed box, so
-    // this row's width does not depend on which outcome happens to be showing.
-    var symW = RecordingView.outcomeSymSize(dc);
-    Test.assertMessage(symW >= 14 && symW <= hL,
-        "outcome symbol " + symW.toString() + "px out of band");
-    r = cornerRadius(RecordingView.outcomeWidth(dc, symW, "99 / 99"), hL,
-        RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 2), cy);
-    Test.assertMessage(r <= radius, "split corner " + r.format("%.0f") + " > " + radius);
-    // every outcome maps to a symbol, and the three real ones are all different
-    Test.assertEqual(RecordingView.outcomeSymbol(TurnDetector.OUTCOME_FLEW), Glyphs.O_CHECK);
-    Test.assertEqual(RecordingView.outcomeSymbol(TurnDetector.OUTCOME_TOUCHDOWN),
-        Glyphs.O_TRIANGLE);
-    Test.assertEqual(RecordingView.outcomeSymbol(TurnDetector.OUTCOME_FELL), Glyphs.O_CROSS);
-    Test.assertEqual(RecordingView.outcomeSymbol(TurnDetector.OUTCOME_NONE), Glyphs.O_DASH);
+    // row 2: BOTH streaks — the strict fly-through run and the dry run — as two captioned
+    // now/best pairs. Worst case is four two-digit numbers.
+    var y2 = RecordingView.turnsRowY(cy, hT, hG, hK, hD, hS, 2);
+    var kBudget = RecordingView.rowBudget(pageR, y2 - cy,
+        RecordingView.inkH(dc, Graphics.FONT_MEDIUM));
+    var kf = RecordingView.streakRow2Font(dc, "99", "99", "99", "99", kBudget, true);
+    r = cornerRadius(RecordingView.streakRow2Width(dc, "99", "99", "99", "99", kf, true),
+        RecordingView.inkH(dc, kf), y2, cy);
+    Test.assertMessage(r <= pageR,
+        "streak row corner " + r.format("%.0f") + " > " + pageR.toString());
+    Test.assertMessage(dc.getFontHeight(kf) >= dc.getFontHeight(Graphics.FONT_SMALL),
+        "streak row fell below FONT_SMALL");
+    // the post-save form drops "the run he is on" and must be narrower for it
+    Test.assertMessage(
+        RecordingView.streakRow2Width(dc, "99", "99", "99", "99", kf, false)
+            < RecordingView.streakRow2Width(dc, "99", "99", "99", "99", kf, true),
+        "dropping the live run must save width");
 
-    // row 3: three 2-digit tallies plus the session success rate that shares the row. The
-    // widest this row ever gets is 3 x 2 digits and "100% ok", which is what it is asserted
-    // at — it is the row most likely to run off a narrow fenix 7 glass.
-    var y3ok = RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 3);
-    var okBudget = RecordingView.rowBudget(pageR, y3ok - cy,
+    // row 3: the outcome strip. It is a texture, not a census — it shows the most recent dots
+    // that fit — so what is asserted is that the band it reserves clears the glass and that a
+    // long session really does drop the oldest rather than overflow.
+    var y3 = RecordingView.turnsRowY(cy, hT, hG, hK, hD, hS, 3);
+    var stripW = RecordingView.rowBudget(pageR, y3 - cy, hD);
+    var shown = RecordingView.dotsShown(64, stripW);
+    Test.assertMessage(shown >= 8,
+        "the strip row holds only " + shown.toString() + " dots");
+    Test.assertMessage(shown <= 64, "the strip claims more dots than the log holds");
+    var pitch = 2 * TL_DOT_R + TL_DOT_GAP;
+    r = cornerRadius(shown * pitch - TL_DOT_GAP, 2 * TL_DOT_R, y3, cy);
+    Test.assertMessage(r <= pageR,
+        "strip corner " + r.format("%.0f") + " > " + pageR.toString());
+    Test.assertEqual(RecordingView.dotsShown(3, stripW), 3);   // short sessions show them all
+
+    // row 4: the verdict and the port/starboard entry split, at its widest — "100 % ok" with
+    // two two-digit side counts. The P/S half is DROPPED rather than shrunk when it does not
+    // fit, so the assertion is on whichever form the renderer would actually choose.
+    var y4 = RecordingView.turnsRowY(cy, hT, hG, hK, hD, hS, 4);
+    var vBudget = RecordingView.rowBudget(pageR, y4 - cy,
         RecordingView.inkH(dc, Graphics.FONT_SMALL));
-    var tallyF = RecordingView.tallyFont(dc, "99", "99", "99", "100% ok", okBudget,
-        TALLY_FLOOR);
-    // THE rule this row exists to enforce: it never goes below FONT_SMALL. The old fitter
-    // stepped the worst case (three two-digit tallies plus "100% ok") down to FONT_XTINY,
-    // ~21 px of digit — and that worst case is a 30-turn session, i.e. exactly the tally the
-    // rider wants to read. It sheds content instead now, and tallyContent says what survived.
-    Test.assertEqual(tallyF, Graphics.FONT_SMALL);
-    var worstMask = RecordingView.tallyContent(dc, "99", "99", "99", "100% ok", okBudget,
-        tallyF);
-    Test.assertMessage(worstMask >= 0,
-        "not even three bare counts fit the tally row at FONT_SMALL");
-    var worstOk = (worstMask & TALLY_OK) != 0 ? "100% ok" : "";
-    var worstSep = (worstMask & TALLY_SEPARATORS) != 0 ? TURNS_TALLY_SEP : TALLY_SEP_NARROW;
-    r = cornerRadius(
-        RecordingView.tallyWidth(dc, "99", "99", "99", worstOk, worstSep, tallyF),
-        RecordingView.inkH(dc, tallyF), y3ok, cy);
+    var sides = RecordingView.verdictWidth(dc, "100", "99", "99", true) <= vBudget;
+    r = cornerRadius(RecordingView.verdictWidth(dc, "100", "99", "99", sides),
+        RecordingView.inkH(dc, Graphics.FONT_SMALL), y4, cy);
+    Test.assertMessage(r <= pageR,
+        "verdict corner " + r.format("%.0f") + " > " + pageR.toString());
+    // the verdict alone must ALWAYS fit: it is the row's reason to exist
+    Test.assertMessage(RecordingView.verdictWidth(dc, "100", "99", "99", false) <= vBudget,
+        "not even '100% ok' fits the verdict row");
+    // ...and on the two AMOLED variants the SIDE SPLIT must survive too. It is the only
+    // number on the page the rider can act on tomorrow, and it was being dropped on the 43 mm
+    // glass by three spaces (" % ok", "P ", " / ") that carried no information.
+    if (screenPx() >= 416) {
+        Test.assertMessage(RecordingView.verdictWidth(dc, "49", "29", "22", true) <= vBudget,
+            "the port/starboard split does not fit a "
+                + screenPx().toString() + "px glass: "
+                + RecordingView.verdictWidth(dc, "49", "29", "22", true).toString()
+                + "px of " + vBudget.toString());
+    }
+    Test.assertMessage(RecordingView.verdictWidth(dc, "49", "29", "22", false)
+        < RecordingView.verdictWidth(dc, "49", "29", "22", true),
+        "dropping the side split must save width");
+    logger.debug("verdict row: " + RecordingView.verdictWidth(dc, "49", "29", "22", true)
+        .toString() + "px of " + vBudget.toString() + ", sides " + (sides ? "on" : "dropped"));
+
+    // the rows must not collide, and the block must be centred
+    var y0 = RecordingView.turnsRowY(cy, hT, hG, hK, hD, hS, 0);
+    Test.assertMessage(y1 - y0 >= (hT + hG) / 2, "header/giant gap");
+    Test.assertMessage(y2 - y1 >= (hG + hK) / 2, "giant/streak gap");
+    Test.assertMessage(y3 - y2 >= (hK + hD) / 2, "streak/strip gap");
+    Test.assertMessage(y4 - y3 >= (hD + hS) / 2, "strip/verdict gap");
+    Test.assertMessage((((cy - (y0 - hT / 2)) - ((y4 + hS / 2) - cy)).abs() <= 1),
+        "turns block off centre: " + (cy - (y0 - hT / 2)).toString() + " vs "
+            + ((y4 + hS / 2) - cy).toString());
+    logger.debug("turns page rows y=" + y0.toString() + "," + y1.toString() + ","
+        + y2.toString() + "," + y3.toString() + "," + y4.toString());
+    return true;
+}
+
+// The tally block on the MAIN page — three counts, optional separators, optional verdict —
+// keeps its own rules: it sheds CONTENT rather than dropping below FONT_SMALL, because the
+// session whose tally is widest (30+ turns, three two-digit counts) is exactly the session
+// whose tally the rider wants to read.
+(:test)
+function tallyRowShedsContentNotSize(logger as Test.Logger) as Boolean {
+    var dc = testDc();
+    var cy = screenPx() / 2;
+    var pageR = RecordingView.fitRadius(dc, false, false);
+    var hC = dc.getFontHeight(Graphics.FONT_LARGE);
+    var hN = dc.getFontHeight(Graphics.FONT_NUMBER_MEDIUM);
+    var hD = RecordingView.stripBandH(dc);
+    var hO = dc.getFontHeight(Graphics.FONT_LARGE);
+    var hK = dc.getFontHeight(Graphics.FONT_MEDIUM);
+    var y = RecordingView.mainRowY(cy, hC, hN, hD, hO, hK, 3);
+    var budget = RecordingView.rowBudget(pageR, y - cy,
+        RecordingView.inkH(dc, Graphics.FONT_LARGE));
+
+    var tallyF = RecordingView.tallyFont(dc, "99", "99", "99", "100% ok", budget, 0);
+    Test.assertMessage(dc.getFontHeight(tallyF) >= dc.getFontHeight(Graphics.FONT_SMALL),
+        "the tally stepped below the readability floor");
+    var mask = RecordingView.tallyContent(dc, "99", "99", "99", "100% ok", budget, tallyF);
+    Test.assertMessage(mask >= 0, "not even three bare counts fit the tally row");
+    var ok = (mask & TALLY_OK) != 0 ? "100% ok" : "";
+    var sep = (mask & TALLY_SEPARATORS) != 0 ? TURNS_TALLY_SEP : TALLY_SEP_NARROW;
+    var r = cornerRadius(RecordingView.tallyWidth(dc, "99", "99", "99", ok, sep, tallyF),
+        RecordingView.inkH(dc, tallyF), y, cy);
     Test.assertMessage(r <= pageR,
         "tally corner " + r.format("%.0f") + " > " + pageR.toString());
-    // the ordinary case — one-digit tallies — keeps everything at the nominal font
-    Test.assertEqual(RecordingView.tallyFont(dc, "9", "9", "9", "50% ok", okBudget,
-        TALLY_FLOOR), Graphics.FONT_SMALL);
-    Test.assertEqual(RecordingView.tallyContent(dc, "9", "9", "9", "50% ok", okBudget,
-        Graphics.FONT_SMALL), TALLY_SEPARATORS | TALLY_OK);
+
     // ...and dropping content must actually be cheaper than keeping it, in that order
     Test.assertMessage(
         RecordingView.tallyWidth(dc, "99", "99", "99", "", TURNS_TALLY_SEP, tallyF)
@@ -252,33 +333,14 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
         RecordingView.tallyWidth(dc, "99", "99", "99", "", TALLY_SEP_NARROW, tallyF)
             < RecordingView.tallyWidth(dc, "99", "99", "99", "", TURNS_TALLY_SEP, tallyF),
         "dropping the separators must save width");
-    logger.debug("tally worst case at font height "
-        + dc.getFontHeight(tallyF).toString() + " (SMALL is " + hS.toString()
-        + "), content mask " + worstMask.toString());
 
     // the rate is a share of TURNS, not of outcomes, and it stays empty until there is one
     Test.assertEqual(RecordingView.okText(0, 0), "");
     Test.assertEqual(RecordingView.okText(2, 1), "50% ok");
     Test.assertEqual(RecordingView.okText(3, 3), "100% ok");
     Test.assertEqual(RecordingView.okText(30, 19), "63% ok");
-    // ... and before the first turn the row is exactly the tally it always was
-    Test.assertMessage(
-        RecordingView.tallyWidth(dc, "9", "9", "9", "50% ok", TURNS_TALLY_SEP,
-                Graphics.FONT_SMALL)
-            > RecordingView.tallyWidth(dc, "9", "9", "9", "", TURNS_TALLY_SEP,
-                Graphics.FONT_SMALL),
-        "rate takes no room");
-
-    // and the rows must not collide
-    var y0 = RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 0);
-    var y2 = RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 2);
-    var y3 = RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 3);
-    Test.assertMessage(y1 - y0 >= (hT + hHot) / 2, "header/counts gap");
-    Test.assertMessage(y2 - y1 >= (hHot + hL) / 2, "counts/outcome gap");
-    Test.assertMessage(y3 - y2 >= (hL + hS) / 2, "outcome/tally gap");
-    logger.debug("turns page rows y=" + y0.toString() + "," + y1.toString() + ","
-        + y2.toString() + "," + y3.toString() + " heights " + hT.toString() + ","
-        + hHot.toString() + "," + hL.toString() + "," + hS.toString());
+    logger.debug("main tally at font height " + dc.getFontHeight(tallyF).toString()
+        + ", content mask " + mask.toString());
     return true;
 }
 
@@ -561,6 +623,24 @@ function timelinePageFitsRoundDisplay(logger as Test.Logger) as Boolean {
         logger.debug("glass too narrow for 256 slots — " + (2 * hwStrip).toString()
             + "px strip shares columns");
     }
+    // The three band captions. They grew in 0.8.2 — "on foil" became "on foil %" and "speed"
+    // became "top speed", because a bar chart with one rail says "more is more" and a max-per-
+    // slot sparkline labelled "speed" reads as an average. Both are XTINY labels sitting at
+    // shallower depths than the bands they name, but the widest of them is measured here so a
+    // future rewording cannot quietly run off the glass.
+    var caps = ["on foil %", "top speed km/h", "turns"];
+    var capRows = [0, 2, 4];
+    for (var i = 0; i < caps.size(); i++) {
+        var yc = RecordingView.timelineRowY(cy, hT, strip, spark, capRows[i]);
+        r = cornerRadius(dc.getTextWidthInPixels(caps[i], Graphics.FONT_XTINY),
+            RecordingView.inkH(dc, Graphics.FONT_XTINY), yc, cy);
+        Test.assertMessage(r <= limit,
+            "timeline caption '" + caps[i] + "' r=" + r.format("%.0f") + " > " + limit);
+    }
+    // the strip's two rails span the same chord, so the band reads as a 0-100 % envelope
+    Test.assertMessage(
+        RecordingView.bandHalfWidth(radius, yStripTop, yStripTop + strip, cy) == hwStrip,
+        "the strip's rails do not share one chord");
     logger.debug("timeline strip " + (2 * hwStrip).toString() + "px spark "
         + (2 * hwSpark).toString() + "px dots " + shown.toString() + " of 64");
     return true;
@@ -578,35 +658,36 @@ function assertStartRow(dc as Graphics.Dc, text as String, y as Number, cy as Nu
     Test.assertEqual(f, TEXT_FONTS[from]);
 }
 
-// START page: title, GPS dot row, GPS state, hint. It is the first thing every tester sees,
-// and it was the last page still laid out in absolute pixels — offsets authored on a 454 px
-// AMOLED that overflowed a 240 px fenix 7S. Same measurement as the recording pages.
+// START page: title, GPS state, wind axis, hint. It is the first thing every tester sees, and
+// it was the last page still laid out in absolute pixels — offsets authored on a 454 px AMOLED
+// that overflowed a 240 px fenix 7S. Same measurement as the recording pages.
+//
+// The four GPS dots went in 0.8.2. They cost a row to say what the word beside them already
+// said, and the row they freed went to the wind axis — the one setting that cannot be fixed
+// after the session, because a turn detected without it is classified as a generic turn for
+// good. The reminder therefore has to name the button that opens the menu, which makes it the
+// longest string on the page and the one this test exists to measure.
 (:test)
 function startPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var dc = testDc();
-    var cx = screenPx() / 2;
     var cy = screenPx() / 2;
     var radius = RecordingView.fitRadius(dc, false, false);
-    var limit = radius.toFloat();
     var titleFont = TEXT_FONTS[START_TITLE_FONT];
     var bodyFont = TEXT_FONTS[START_BODY_FONT];
     var hTitle = dc.getFontHeight(titleFont);
     var hBody = dc.getFontHeight(bodyFont);
     var inkTitle = RecordingView.inkH(dc, titleFont);
     var inkBody = RecordingView.inkH(dc, bodyFont);
-    var r = StartView.dotRadius(dc);
-    var step = StartView.dotStep(r);
-    var hDots = 2 * r;
 
-    var yTitle = StartView.rowY(cy, hTitle, hDots, hBody, 0);
-    var yDots = StartView.rowY(cy, hTitle, hDots, hBody, 1);
-    var yState = StartView.rowY(cy, hTitle, hDots, hBody, 2);
-    var yHint = StartView.rowY(cy, hTitle, hDots, hBody, 3);
+    var yTitle = StartView.rowY(cy, hTitle, hBody, 0);
+    var yState = StartView.rowY(cy, hTitle, hBody, 1);
+    var yWind = StartView.rowY(cy, hTitle, hBody, 2);
+    var yHint = StartView.rowY(cy, hTitle, hBody, 3);
 
     // rows in order, no overlap
-    Test.assertMessage(yDots - yTitle >= (hTitle + hDots) / 2, "title/dots overlap");
-    Test.assertMessage(yState - yDots >= (hDots + hBody) / 2, "dots/state overlap");
-    Test.assertMessage(yHint - yState >= hBody, "state/hint overlap");
+    Test.assertMessage(yState - yTitle >= (hTitle + hBody) / 2, "title/state overlap");
+    Test.assertMessage(yWind - yState >= hBody, "state/wind overlap");
+    Test.assertMessage(yHint - yWind >= hBody, "wind/hint overlap");
 
     // the block is centred: equal air above the title and below the hint
     Test.assertMessage((((cy - (yTitle - hTitle / 2)) - ((yHint + hBody / 2) - cy)).abs() <= 1),
@@ -618,15 +699,47 @@ function startPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     assertStartRow(dc, "GPS ready", yState, cy, radius, START_BODY_FONT, inkBody);
     assertStartRow(dc, START_HINT, yHint, cy, radius, START_BODY_FONT, inkBody);
 
-    // the four dots, measured at the outermost one
-    var xOuter = cx + (3 * step) / 2;
-    var cr = cornerRadiusAt(cx, xOuter, hDots, hDots, yDots, cy);
-    Test.assertMessage(cr <= limit, "start dots r=" + cr.format("%.0f") + " > " + limit);
-    Test.assertMessage(step >= 2 * r + 2, "dots touch: step " + step.toString()
-        + " for r " + r.toString());
-    logger.debug("start: dots r" + r.toString() + " step " + step.toString()
-        + ", rows " + yTitle.toString() + "/" + yDots.toString() + "/" + yState.toString()
-        + "/" + yHint.toString() + " on " + screenPx().toString() + "px");
+    // The wind row in both its forms. The reminder is the longest string the page can hold,
+    // so unlike the others it is allowed to STEP DOWN a rung rather than being required to
+    // land at FONT_SMALL — but it must still be inside the glass and above the floor.
+    var winds = [START_WIND_UNSET, "wind 337° NNW"];
+    for (var i = 0; i < winds.size(); i++) {
+        var f = RecordingView.fitFont(dc, TEXT_FONTS, START_BODY_FONT, winds[i],
+            RecordingView.rowBudget(radius, yWind - cy, inkBody));
+        var cr = cornerRadius(dc.getTextWidthInPixels(winds[i], f),
+            RecordingView.inkH(dc, f), yWind, cy);
+        Test.assertMessage(cr <= radius.toFloat(),
+            "start wind '" + winds[i] + "' r=" + cr.format("%.0f") + " > " + radius.toString());
+        logger.debug("wind row '" + winds[i] + "' at font height "
+            + dc.getFontHeight(f).toString());
+    }
+
+    // the four GPS rungs are four distinct words, and the two that mean "not yet" are not
+    // green — colour and word have to agree or the row says two things
+    Test.assertEqual(StartView.gpsText(Position.QUALITY_NOT_AVAILABLE), "GPS ...");
+    Test.assertEqual(StartView.gpsText(Position.QUALITY_POOR), "GPS weak");
+    Test.assertEqual(StartView.gpsText(Position.QUALITY_USABLE), "GPS ready");
+    Test.assertEqual(StartView.gpsText(Position.QUALITY_GOOD), "GPS good");
+    Test.assertEqual(StartView.gpsColor(Position.QUALITY_USABLE), Graphics.COLOR_GREEN);
+    Test.assertEqual(StartView.gpsColor(Position.QUALITY_GOOD), Graphics.COLOR_GREEN);
+    Test.assertMessage(StartView.gpsColor(Position.QUALITY_POOR) != Graphics.COLOR_GREEN,
+        "a weak fix must not read as ready");
+    Test.assertMessage(
+        StartView.gpsColor(Position.QUALITY_NOT_AVAILABLE) != Graphics.COLOR_GREEN,
+        "no fix must not read as ready");
+
+    // and the wind row says the axis when there is one, the way to set one when there is not
+    var before = AppSettings.cfg.windDirection;
+    var wasSet = AppSettings.windEverSet;
+    AppSettings.storeWindDirection(-1);
+    Test.assertEqual(StartView.windText(), START_WIND_UNSET);
+    AppSettings.storeWindDirection(22);
+    Test.assertEqual(StartView.windText(), "wind 22° NNE");
+    AppSettings.storeWindDirection(before);
+    AppSettings.windEverSet = wasSet;
+
+    logger.debug("start rows " + yTitle.toString() + "/" + yState.toString() + "/"
+        + yWind.toString() + "/" + yHint.toString() + " on " + screenPx().toString() + "px");
     return true;
 }
 
@@ -847,13 +960,23 @@ function pageModelDefaultsMatchShippedPages(logger as Test.Logger) as Boolean {
     Test.assertMessage(PageModel.count() == 6,
         "expected 6 default pages, got " + PageModel.count().toString());
 
-    // Page 1 is the bespoke main screen since 0.8.0. It carries NO slots — what it shows is
-    // the point of the screen — and the flight timer and heart rate that used to live here
-    // are catalog metrics the rider can put in any slot on any other page.
+    // Page 1 is the bespoke main screen since 0.8.0. Its GIANT is slot 1 and defaults to the
+    // best 10 s (0.8.2): the rider reads the watch when he is not moving, so a live
+    // speedometer shows him 4 km/h and tells him nothing about the run he just did. Slots 2-5
+    // are unread — the rest of the page is the point of the screen.
     Test.assertEqual(PageModel.layoutAt(0), PageModel.LAYOUT_MAIN);
-    for (var s = 0; s < PageModel.SLOTS; s++) {
+    Test.assertEqual(PageModel.slotAt(0, 0), PageModel.M_BEST_10S);
+    for (var s = 1; s < PageModel.SLOTS; s++) {
         Test.assertEqual(PageModel.slotAt(0, s), PageModel.M_NONE);
     }
+    // the giant's inline suffix: a unit AND a caption, because "24.3" alone is not a fact.
+    // A metric whose label already IS its unit prints it once, not twice.
+    Test.assertEqual(PageModel.unitOf(PageModel.M_BEST_10S), AppSettings.speedLabel());
+    Test.assertEqual(PageModel.caption(PageModel.M_BEST_10S), "best 10s");
+    Test.assertEqual(PageModel.caption(PageModel.M_SPEED), "");
+    Test.assertEqual(PageModel.caption(PageModel.M_DISTANCE), "");
+    Test.assertEqual(PageModel.unitOf(PageModel.M_FLIGHTS), "");
+    Test.assertEqual(PageModel.caption(PageModel.M_FLIGHTS), "flights");
 
     Test.assertEqual(PageModel.layoutAt(1), PageModel.LAYOUT_GRID4);
     Test.assertEqual(PageModel.slotAt(1, 0), PageModel.M_FOIL_PCT);
@@ -2053,56 +2176,96 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var cy = screenPx() / 2;
     var radius = RecordingView.fitRadius(dc, true, false);
     var limit = radius.toFloat();
-    var hS = dc.getFontHeight(Graphics.FONT_SMALL);
-    var hN = dc.getFontHeight(Graphics.FONT_NUMBER_HOT);
-    var hT = dc.getFontHeight(Graphics.FONT_XTINY);
-    var hL = dc.getFontHeight(Graphics.FONT_LARGE);
-    var hM = dc.getFontHeight(Graphics.FONT_MEDIUM);
+    var hC = dc.getFontHeight(Graphics.FONT_LARGE);
+    var hN = dc.getFontHeight(Graphics.FONT_NUMBER_MEDIUM);
+    var hD = RecordingView.stripBandH(dc);
+    var hO = dc.getFontHeight(Graphics.FONT_LARGE);
+    var hK = dc.getFontHeight(Graphics.FONT_MEDIUM);
 
     // the ring-aware radius must actually be TIGHTER than the glass, or the fix is inert
     Test.assertMessage(radius < RecordingView.fitRadius(dc, false, false),
         "fitRadius ignores the state ring");
 
     // rows in order, no overlap, block centred
-    var y0 = RecordingView.mainRowY(cy, hS, hN, hT, hL, hM, 0);
-    var y1 = RecordingView.mainRowY(cy, hS, hN, hT, hL, hM, 1);
-    var y2 = RecordingView.mainRowY(cy, hS, hN, hT, hL, hM, 2);
-    var y3 = RecordingView.mainRowY(cy, hS, hN, hT, hL, hM, 3);
-    var y4 = RecordingView.mainRowY(cy, hS, hN, hT, hL, hM, 4);
-    Test.assertMessage(y1 - y0 >= (hS + hN) / 2, "main clock/giant overlap");
-    Test.assertMessage(y2 - y1 >= (hN + hT) / 2, "main giant/unit overlap");
-    Test.assertMessage(y3 - y2 >= (hT + hL) / 2, "main unit/outcomes overlap");
-    Test.assertMessage(y4 - y3 >= (hL + hM) / 2, "main outcomes/streak overlap");
-    Test.assertMessage((((cy - (y0 - hS / 2)) - ((y4 + hM / 2) - cy)).abs() <= 1),
-        "main block off centre: " + (cy - (y0 - hS / 2)).toString() + " vs "
-            + ((y4 + hM / 2) - cy).toString());
+    var y0 = RecordingView.mainRowY(cy, hC, hN, hD, hO, hK, 0);
+    var y1 = RecordingView.mainRowY(cy, hC, hN, hD, hO, hK, 1);
+    var y2 = RecordingView.mainRowY(cy, hC, hN, hD, hO, hK, 2);
+    var y3 = RecordingView.mainRowY(cy, hC, hN, hD, hO, hK, 3);
+    var y4 = RecordingView.mainRowY(cy, hC, hN, hD, hO, hK, 4);
+    Test.assertMessage(y1 - y0 >= (hC + hN) / 2, "main clock/giant overlap");
+    Test.assertMessage(y2 - y1 >= (hN + hD) / 2, "main giant/strip overlap");
+    Test.assertMessage(y3 - y2 >= (hD + hO) / 2, "main strip/outcomes overlap");
+    Test.assertMessage(y4 - y3 >= (hO + hK) / 2, "main outcomes/streak overlap");
+    Test.assertMessage((((cy - (y0 - hC / 2)) - ((y4 + hK / 2) - cy)).abs() <= 1),
+        "main block off centre: " + (cy - (y0 - hC / 2)).toString() + " vs "
+            + ((y4 + hK / 2) - cy).toString());
 
     // row 0 — the clock, and the PAUSED word that replaces it. Both must fit the same row.
+    // The band is FONT_LARGE now (the owner asked for a bigger clock); the fitter is allowed
+    // to step either string down, but never past the value floor.
     var tops = ["23:59", PAUSED_TEXT];
     for (var i = 0; i < tops.size(); i++) {
-        var f = RecordingView.fitFont(dc, TEXT_FONTS, 2, tops[i],
-            RecordingView.rowBudget(radius, y0 - cy, RecordingView.inkH(dc, Graphics.FONT_SMALL)));
+        var f = RecordingView.fitFont(dc, TEXT_FONTS, 0, tops[i],
+            RecordingView.rowBudget(radius, y0 - cy, RecordingView.inkH(dc, Graphics.FONT_LARGE)));
         var r = cornerRadius(dc.getTextWidthInPixels(tops[i], f),
             RecordingView.inkH(dc, f), y0, cy);
         Test.assertMessage(r <= limit,
             "main row0 '" + tops[i] + "' r=" + r.format("%.0f") + " > " + limit);
-        Test.assertEqual(f, Graphics.FONT_SMALL);
+        Test.assertMessage(dc.getFontHeight(f) >= dc.getFontHeight(Graphics.FONT_SMALL),
+            "main row0 '" + tops[i] + "' fell below FONT_SMALL");
     }
+    // ...and the clock itself must actually BE bigger than the FONT_SMALL it used to be
+    var clockF = RecordingView.fitFont(dc, TEXT_FONTS, 0, "23:59",
+        RecordingView.rowBudget(radius, y0 - cy, RecordingView.inkH(dc, Graphics.FONT_LARGE)));
+    Test.assertMessage(dc.getFontHeight(clockF) > dc.getFontHeight(Graphics.FONT_SMALL),
+        "the clock is no larger than it was at FONT_SMALL");
 
-    // row 1 — the hero. It must NOT have to step down: putting the clock above the giant is
-    // what keeps the giant near the equator, and if the fitter shrinks it the trade failed.
-    var gf = RecordingView.fitFont(dc, NUMBER_FONTS, 1, "99.9",
+    // row 1 — the giant, which is now a catalog SLOT (best 10 s by default) with its unit and
+    // caption inline beside the digits. Every metric the slot can hold is measured, at its
+    // worst-case value, with the suffix taken out of the budget first — that is the fitter's
+    // own arithmetic, and the inline suffix is the part of it that is new.
+    var narrowest = 9999;
+    for (var m = 1; m <= PageModel.M_MAX; m++) {
+        var v = PageModel.worstValue(m);
+        var unit = m == PageModel.M_SPEED || m == PageModel.M_BEST_2S
+            || m == PageModel.M_BEST_10S ? "km/h" : PageModel.unitOf(m);
+        var cap = PageModel.caption(m);
+        var sufW = RecordingView.giantSuffixWidth(dc, unit, cap);
+        var budget = RecordingView.rowBudget(radius, y1 - cy,
+            RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM)) - sufW;
+        var gf = RecordingView.fitGiant(dc, v, 2, budget);
+        var w = dc.getTextWidthInPixels(v, gf) + sufW;
+        if (budget < narrowest) { narrowest = budget; }
+        var r = cornerRadius(w, RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM), y1, cy);
+        Test.assertMessage(r <= limit, "main giant m" + m.toString() + " r="
+            + r.format("%.0f") + " > " + limit);
+        // a giant that has fallen to a label font is not a giant
+        Test.assertMessage(dc.getFontHeight(gf) >= dc.getFontHeight(Graphics.FONT_LARGE),
+            "main giant m" + m.toString() + " fell to a label font");
+        // the suffix must sit inside the giant's own band, not spill into the strip below it
+        var sy = RecordingView.suffixLineY(dc, y1, gf, 1, 2);
+        Test.assertMessage(sy + dc.getFontHeight(Graphics.FONT_XTINY) / 2 <= y1 + hN / 2,
+            "main giant caption m" + m.toString() + " spills out of the giant's band");
+        Test.assertMessage(RecordingView.suffixLineY(dc, y1, gf, 0, 2) < sy,
+            "the unit line is not above the caption line");
+    }
+    // the DEFAULT giant must stay in the NUMBER ladder: it is the page's hero, and stepping
+    // out of it would mean the inline suffix cost more than the unit row it replaced
+    var defF = RecordingView.fitGiant(dc, "99.9", 2,
         RecordingView.rowBudget(radius, y1 - cy,
-            RecordingView.inkH(dc, Graphics.FONT_NUMBER_HOT)));
-    var r = cornerRadius(dc.getTextWidthInPixels("99.9", gf),
-        RecordingView.inkH(dc, gf), y1, cy);
-    Test.assertMessage(r <= limit, "main giant r=" + r.format("%.0f") + " > " + limit);
-    Test.assertEqual(gf, Graphics.FONT_NUMBER_HOT);
+            RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM))
+        - RecordingView.giantSuffixWidth(dc, "km/h", "best 10s"));
+    Test.assertMessage(dc.getFontHeight(defF) >= dc.getFontHeight(Graphics.FONT_NUMBER_MILD),
+        "the default main giant fell out of the number ladder");
 
-    // row 2 — the unit line
-    r = cornerRadius(dc.getTextWidthInPixels("km/h", Graphics.FONT_XTINY),
-        RecordingView.inkH(dc, Graphics.FONT_XTINY), y2, cy);
-    Test.assertMessage(r <= limit, "main unit r=" + r.format("%.0f") + " > " + limit);
+    // row 2 — the outcome strip, straddling the equator with the giant because it is the
+    // widest thing on the page and that is where the chord is widest
+    var stripW = RecordingView.rowBudget(radius, y2 - cy, hD);
+    var shown = RecordingView.dotsShown(64, stripW);
+    Test.assertMessage(shown >= 12, "the main strip holds only " + shown.toString() + " dots");
+    var pitch = 2 * TL_DOT_R + TL_DOT_GAP;
+    var rr = cornerRadius(shown * pitch - TL_DOT_GAP, 2 * TL_DOT_R, y2, cy);
+    Test.assertMessage(rr <= limit, "main strip r=" + rr.format("%.0f") + " > " + limit);
 
     // row 3 — the outcome ladder at its worst case: three two-digit counts, no verdict.
     var tBudget = RecordingView.rowBudget(radius, y3 - cy,
@@ -2111,9 +2274,9 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var mask = RecordingView.tallyContent(dc, "99", "99", "99", "", tBudget, tf);
     Test.assertMessage(mask >= 0, "main outcome row cannot hold three counts");
     var sep = (mask & TALLY_SEPARATORS) != 0 ? TURNS_TALLY_SEP : TALLY_SEP_NARROW;
-    r = cornerRadius(RecordingView.tallyWidth(dc, "99", "99", "99", "", sep, tf),
+    rr = cornerRadius(RecordingView.tallyWidth(dc, "99", "99", "99", "", sep, tf),
         RecordingView.inkH(dc, tf), y3, cy);
-    Test.assertMessage(r <= limit, "main outcomes r=" + r.format("%.0f") + " > " + limit);
+    Test.assertMessage(rr <= limit, "main outcomes r=" + rr.format("%.0f") + " > " + limit);
     // the counts are rider-relevant numbers and must stay big — never a label font
     Test.assertMessage(dc.getFontHeight(tf) >= dc.getFontHeight(Graphics.FONT_SMALL),
         "main outcome counts fell below FONT_SMALL");
@@ -2121,10 +2284,10 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     // row 4 — the streak, at "dry 99 / 99"
     var sBudget = RecordingView.rowBudget(radius, y4 - cy,
         RecordingView.inkH(dc, Graphics.FONT_MEDIUM));
-    var sf = RecordingView.streakFont(dc, "99", "99", sBudget);
-    r = cornerRadius(RecordingView.streakWidth(dc, "99", "99", sf),
+    var sf = RecordingView.streakFont(dc, "99", "99", sBudget, 1);
+    rr = cornerRadius(RecordingView.streakWidth(dc, "99", "99", sf),
         RecordingView.inkH(dc, sf), y4, cy);
-    Test.assertMessage(r <= limit, "main streak r=" + r.format("%.0f") + " > " + limit);
+    Test.assertMessage(rr <= limit, "main streak r=" + rr.format("%.0f") + " > " + limit);
     Test.assertMessage(dc.getFontHeight(sf) >= dc.getFontHeight(Graphics.FONT_SMALL),
         "main streak fell below FONT_SMALL");
     // a one-digit streak must never be WIDER than the two-digit worst case
@@ -2132,7 +2295,8 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
         <= RecordingView.streakWidth(dc, "99", "99", sf), "streak worst case is not worst");
     logger.debug("main rows " + y0.toString() + "/" + y1.toString() + "/" + y2.toString()
         + "/" + y3.toString() + "/" + y4.toString() + " on r=" + radius.toString()
-        + " (glass " + RecordingView.fitRadius(dc, false, false).toString() + ")");
+        + ", giant budget >= " + narrowest.toString() + "px, strip " + shown.toString()
+        + " dots");
     return true;
 }
 
@@ -2206,14 +2370,19 @@ function summaryPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
         }
     }
 
-    // Every page's worst-case content, through the same fitters SummaryView draws with. The
-    // arc flag matters: the Verdict page paints the foil arc, so it gets a tighter radius.
-    var giants = ["100%", "99.9", "199:59", "100%", "99/99"];
-    var arcs = [true, false, false, false, false];
-    var units = ["on foil", "best 2s km/h", "longest flight", "turns", "takeoffs"];
-    var rows1 = ["199:59 foil", "10s 99.9", "999 flights", "99/99 · run 99",
-        "99.9 to foil"];
-    var rows2 = ["of 199:59", "99.9 km", "99.9 km", "", "+199 bpm"];
+    // Every HERO-shaped page's worst-case content, through the same fitters SummaryView draws
+    // with. The arc flag matters: the Verdict page paints the foil arc, so it gets a tighter
+    // radius. S4 (turns) is not in this list any more — it is the live Turns page verbatim
+    // and is measured by turnsPageFitsRoundDisplay, which is the point of reusing it.
+    //
+    // S3's two rows swapped in 0.8.2: the LONGEST FLIGHT's duration and distance now sit
+    // together, with the flight count below them. With the count between them the eye read
+    // "7:04 · 31 · 2.2 km" as one series and the distance looked like the session's.
+    var giants = ["100%", "99.9", "199:59", "99/99"];
+    var arcs = [true, false, false, false];
+    var units = ["on foil", "best 2s km/h", "longest flight", "takeoffs"];
+    var rows1 = ["199:59 foil", "10s 99.9", "99.9 km longest", "99.9 to foil"];
+    var rows2 = ["of 199:59", "99.9 km", "999 flights", "+199 bpm"];
     for (var i = 0; i < giants.size(); i++) {
         var radius = RecordingView.fitRadius(dc, false, arcs[i]);
         var limit = radius.toFloat();
@@ -2275,6 +2444,23 @@ function summaryPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
     // pixels on its longer axis, so `box` itself must sit inside the glass.
     var box = SummaryView.trackBox(dc);
     Test.assertMessage(box <= screenPx(), "track box wider than the glass");
+    // The distance caption is a VALUE and moved from FONT_XTINY to FONT_SMALL in 0.8.2 — the
+    // one place in the app where a number was drawn at a label's size. The taller line has to
+    // clear the page-position dots on the bottom arc, which is what the box gave up 34 px of
+    // margin to pay for. Assert both ends of that trade.
+    var capY = SummaryView.trackCaptionY(dc);
+    var capInk = RecordingView.inkH(dc, Graphics.FONT_SMALL);
+    Test.assertMessage(capY - capInk / 2 >= cy + box / 2,
+        "the track caption overlaps the track box");
+    Test.assertMessage(capY + capInk / 2 < screenPx() - SummaryView.dotBand(dc)
+        - SummaryView.dotRadius(dc),
+        "the track caption (" + (capY + capInk / 2).toString() + ") reaches the page dots ("
+            + (screenPx() - SummaryView.dotBand(dc) - SummaryView.dotRadius(dc)).toString()
+            + ")");
+    var rCap = cornerRadius(dc.getTextWidthInPixels("99.9 km", Graphics.FONT_SMALL), capInk,
+        capY, cy);
+    Test.assertMessage(rCap <= RecordingView.fitRadius(dc, false, false).toFloat(),
+        "track caption corner " + rCap.format("%.0f") + " off the glass");
     Test.assertMessage(cornerRadius(box, box, cy, cy)
         <= RecordingView.fitRadius(dc, false, false).toFloat() + 1.0,
         "track box corners off the glass");

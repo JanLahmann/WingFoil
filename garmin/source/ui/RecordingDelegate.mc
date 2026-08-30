@@ -122,7 +122,9 @@ class StopMenuDelegate extends WatchUi.Menu2InputDelegate {
             WatchUi.switchToView(new StartView(), new StartDelegate(),
                 WatchUi.SLIDE_IMMEDIATE);
         } else if (id == :wind) {
-            WatchUi.pushView(WindMenu.build(), new WindMenuDelegate(), WatchUi.SLIDE_UP);
+            // two pops on the way out: the wind menu, then this session menu, so a wind pick
+            // puts the rider straight back on the water rather than one menu up from it
+            WatchUi.pushView(WindMenu.build(), new WindMenuDelegate(2), WatchUi.SLIDE_UP);
         } else {
             WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
         }
@@ -150,17 +152,26 @@ module WindMenu {
     }
 }
 
+// `pops` is how many views to unwind after a pick, and it is not cosmetic: the session menu
+// pushes this on top of ITSELF (2 = wind menu + session menu, landing back on the water),
+// while the start screen pushes it straight onto StartView (1 = the wind menu alone). Popping
+// two from the start screen would pop StartView, which is the bottom of that stack — i.e.
+// choosing a wind direction before the session would exit the app.
 class WindMenuDelegate extends WatchUi.Menu2InputDelegate {
 
-    function initialize() {
+    hidden var _pops as Number;
+
+    function initialize(pops as Number) {
         Menu2InputDelegate.initialize();
+        _pops = pops;
     }
 
     function onSelect(item as WatchUi.MenuItem) as Void {
         var id = item.getId();
         AppSettings.storeWindDirection(id instanceof Lang.Number ? id as Number : -1);
-        WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);   // wind menu
-        WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);   // session menu -> back on the water
+        for (var i = 0; i < _pops; i++) {
+            WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+        }
     }
 
     function onBack() as Void {

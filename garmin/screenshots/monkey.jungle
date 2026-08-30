@@ -1,0 +1,11 @@
+# THROWAWAY screenshot harness — not part of any shipped build, never committed.
+# Reuses the app's real source, resources and barrel; adds one file (source/ShotsApp.mc)
+# that subclasses WingfoilApp, seeds the engine with a real session and cycles every
+# screen on a timer so the simulator can be photographed.
+project.manifest = manifest.xml
+
+base.sourcePath = ../source;../source-nopepper;source
+base.resourcePath = ../resources
+base.barrelPath = ../barrel/WingFoilCore/barrel.jungle
+
+fenix843mm.resourcePath = $(fenix843mm.resourcePath);../resources-icon60

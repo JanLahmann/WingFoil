@@ -88,9 +88,16 @@ module SummaryNav {
 // with the layout test, so they live at file scope beside the constants they use.
 const SUM_DOT_GAP = 4;
 const SUM_SAVED = "SAVED";
-// The track page draws into the square inscribed in the circle, inset by the same margin
-// every other page keeps from the glass.
-const SUM_TRACK_MARGIN = 10;
+// The track page draws into the square inscribed in the circle, inset by this margin.
+//
+// It grew from 10 to 34 when the distance caption stopped being FONT_XTINY. That caption is a
+// VALUE — "12.4 km" — and the readability floor for a value on this watch is FONT_SMALL, so
+// XTINY was the one place in the app where a number was drawn at a label's size. The bigger
+// line needs 39 px of ink hanging below the box instead of 28, and the page-position dots on
+// the bottom arc do not move, so the box gives up 34 px of its side (306 -> 272 on a 454 px
+// glass, 11 %) to buy the number its legibility. A map you can read the scale of beats a map
+// 11 % wider whose scale you cannot.
+const SUM_TRACK_MARGIN = 34;
 
 class SummaryView extends WatchUi.View {
 
@@ -196,48 +203,29 @@ class SummaryView extends WatchUi.View {
     // ---- S3 Flights ----
     // `longestM` is tracked by FlightDetector on every flight and, until this page, was never
     // shown anywhere.
+    //
+    // The two rows are ordered so that the LONGEST FLIGHT's two numbers sit together: the
+    // giant is its duration and row 1 is its distance, captioned "longest" so the pairing is
+    // stated and not merely implied. With the flight COUNT between them — which is what
+    // shipped in 0.8.1 — the eye read "7:04 · 31 · 2.2 km" as one series and the 2.2 km looked
+    // like the session's distance, which it is not; it is how far he went on one flight.
     hidden function drawFlights(dc as Dc, c as SessionController) as Void {
         var d = c.engine.detector;
         drawHero(dc, PageModel.fmtTime(d.longestS), "longest flight",
+            (d.longestM / 1000.0).format("%.1f") + " km longest",
             d.flightCount.toString() + " flights",
-            (d.longestM / 1000.0).format("%.1f") + " km",
             Graphics.COLOR_WHITE, false);
     }
 
     // ---- S4 Turns ----
-    // Today's Turns page with the live-oriented parts swapped for session-oriented ones:
-    // "the last outcome" means nothing once the session is over, so the giant is the tally's
-    // own headline — the best score of the day — and the streaks say whether the session's
-    // fly-throughs arrived together or one at a time (docs/algorithms.md "Turn streaks").
+    // The live Turns page, VERBATIM, with one flag flipped: the streak row shows the session's
+    // bests alone rather than "the run he is on", because the run he is on ended when he
+    // pressed save. Everything else — the tally as the giant in the ladder's colours, the
+    // outcome strip, the verdict with its port/starboard split — is the same question after
+    // the session as during it, and asking it twice in two pieces of code is how two screens
+    // start disagreeing about one session (the same reason S6 reuses the timeline).
     hidden function drawTurns(dc as Dc, c as SessionController) as Void {
-        var t = c.engine.turns;
-        var cx = dc.getWidth() / 2;
-        var cy = dc.getHeight() / 2;
-        var radius = RecordingView.fitRadius(dc, false, false);
-        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
-        var hHot = dc.getFontHeight(Graphics.FONT_NUMBER_HOT);
-        var hL = dc.getFontHeight(Graphics.FONT_LARGE);
-        var hS = dc.getFontHeight(Graphics.FONT_SMALL);
-        var windSet = AppSettings.cfg.windDirection >= 0;
-
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 0), Graphics.FONT_XTINY,
-            windSet ? "tack / jibe  " + AppSettings.windLabel() : "turns", CV);
-
-        var best = t.bestScorePct.toString() + "%";
-        var y = RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 1);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, RecordingView.fitFont(dc, NUMBER_FONTS, 1, best,
-            RecordingView.rowBudget(radius, y - cy,
-                RecordingView.inkH(dc, Graphics.FONT_NUMBER_HOT))), best, CV);
-
-        drawRow(dc, cx, cy, radius, RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 2), 0,
-            (windSet
-                ? t.tackCount.toString() + "/" + t.jibeCount.toString()
-                : t.turnCount.toString()) + " · run " + t.bestDryStreak.toString(),
-            Graphics.COLOR_WHITE);
-        _painter.drawTally(dc, cx, RecordingView.turnsRowY(cy, hT, hHot, hL, hS, 3),
-            cy, radius, t, RecordingView.okText(t.turnCount, t.successCount), TALLY_FLOOR);
+        _painter.drawTurnsBody(dc, c, false);
     }
 
     // ---- S5 Takeoffs ----
@@ -317,8 +305,16 @@ class SummaryView extends WatchUi.View {
         }
         dc.setPenWidth(1);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, cy + box / 2 + dc.getFontHeight(Graphics.FONT_XTINY) / 2,
-            Graphics.FONT_XTINY, (e.distM / 1000.0).format("%.1f") + " km", CV);
+        dc.drawText(cx, trackCaptionY(dc), Graphics.FONT_SMALL,
+            (e.distM / 1000.0).format("%.1f") + " km", CV);
+    }
+
+    // Ink centre of the distance caption: hung off the bottom of the track box. FONT_SMALL,
+    // not XTINY — it is a value, and values do not go below the readability floor. Shared with
+    // the layout test, which asserts it clears the page-position dots underneath it.
+    static function trackCaptionY(dc as Dc) as Number {
+        return dc.getHeight() / 2 + trackBox(dc) / 2
+            + dc.getFontHeight(Graphics.FONT_SMALL) / 2;
     }
 
     // Full side of the square the track is drawn in: the square inscribed in the glass
