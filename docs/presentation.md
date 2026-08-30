@@ -107,6 +107,53 @@ the only evidence there is of where the phase changed.
 **Direction chevrons**: small, semi-transparent, oriented to travel, subordinate to every
 marker — they indicate, never compete.
 
+## Key metrics — the block that opens the session
+
+Both apps open the session analysis with the same block, above the map and the chart, in
+the same four rows, numbers big and labels small. It exists because `app-ui-review.md` §1.1
+measured the alternative: on a 6.9″ phone the first actual result sat one and a third
+screens below a map, ten legend chips and three paragraphs of legend documentation.
+
+| row | content |
+|---|---|
+| 1 | duration `h:mm` · distance · average speed |
+| 2 | the best 2 s record, labelled **"max 2 s"** |
+| 3 | the outcome tally on the ladder's inks · the two turn streaks |
+| 4 | **JPH** and **WPH** (`docs/algorithms.md` "Session rates"), one decimal |
+
+The rules, which are the only thing the two implementations can disagree about:
+
+- **Duration is rounded to the nearest minute, never truncated.** `0:00` over a recording
+  that exists reads as a failure to measure.
+- **Average speed is converted to knots.** The engine reports `avgSpeedKmh`, but every
+  other speed in both apps is knots, and a km/h number in a column of knots is a misread
+  waiting to happen. It is a session-shape number — elapsed time, gaps included — and never
+  a record: the GP3S block is still the only place records live.
+- **Row 2 names the window, not the peak.** "max 2 s", the same rule the record picker's
+  chip follows; "max speed" over a 2 s window would be the overclaim that rule exists to
+  prevent.
+- **Row 3 is the jibe ladder**, and the caption says what the three numbers are out of
+  ("of 50 jibes"). A session whose wind axis never resolved has no jibes at all, so it
+  falls back to every counted turn ("of 51 turns") — an empty ladder over an afternoon of
+  turns would read as "nothing happened". This is the only place outside the map where
+  either app draws the tally in the ladder's colours, and it is a verdict, so it may.
+- **Streaks are `summary.turns.longestDryStreak` / `longestFlewStreak`**, rendered
+  `11 dry · 5 flew` — the first time either app draws them. They are over counted turns,
+  which is what the engine measures them over; nothing is re-derived here.
+- **Row 4 degrades JPH to TPH, not to zero.** When `jibesPerHour` is 0 while
+  `turnsPerHour` is positive — turns the wind axis could not name — the row shows
+  `turnsPerHour` labelled TPH. WPH needs no fallback: a fell-in flight end is a fall
+  whatever the wind was doing. A session with a duration and genuinely no turns keeps JPH
+  at `0.0`, because that is a measured zero.
+- **No duration, no row.** `durationS <= 0` makes the engine report all four rates as
+  null, and row 4 disappears — the general rule ("a missing value is absent, never 0")
+  applied to the one place where a 0.0 would read as a verdict on the rider.
+
+Implemented once per platform: `KeyMetrics` in `ios/WingFoilKit/…/Presentation/`, whose
+strings `PresentationTests.keyMetrics*` pin, and `keyMetrics` in `web/js/render.js`. The
+Swift half resolves every display string so the SwiftUI view is pure layout; the two are
+twins, and a difference between them is a bug.
+
 ## Record windows
 
 Eight kinds, in canonical order: `best2s, best10s, best5x10s, best100m, best250m, best500m,

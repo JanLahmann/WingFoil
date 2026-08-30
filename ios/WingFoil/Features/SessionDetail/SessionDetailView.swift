@@ -37,6 +37,11 @@ struct SessionDetailView: View {
             VStack(alignment: .leading, spacing: 20) {
                 header
                 if let detail {
+                    // First on the page, above the map: the four rows that answer "was
+                    // that a good session" (docs/app-ui-review.md §1.1 / §4).
+                    KeyMetricsView(metrics: KeyMetrics.make(summary: detail.analysis.summary,
+                                                            records: detail.analysis.records))
+                        .id("key")
                     if !detail.divergences.isEmpty {
                         DivergenceBanner(divergences: detail.divergences)
                     }
