@@ -226,6 +226,11 @@ module PhoneLink {
             KEY_FELL => t.fellCount,
             KEY_TAKEOFF_ATT => p.attempts(),
             KEY_TAKEOFF_OK => p.successes,
+            // The axis the counts beside it were actually made on — the rider's when he set
+            // one, the watch's own estimate otherwise (0.9.0). The card is a preview of a FIT
+            // that is arriving anyway, and the FIT carries the two apart in fields 39 and 44;
+            // one number is all this payload has room to say and the effective axis is the
+            // one that explains KEY_TACKS / KEY_JIBES.
             KEY_WIND => AppSettings.cfg.windDirection,
             KEY_APP => FitSchema.APP_MINOR * 256 + FitSchema.SCHEMA_VERSION
         } as Dictionary;

@@ -22,6 +22,11 @@
     <string id="SetAlertFlight">Vibrate on longest flight</string>
     <string id="SetAlertTurn">Vibrate on turn outcome</string>
     <string id="SetWindDir">Wind direction (deg from, -1 = unset)</string>
+    <string id="SetAutoWind">Estimate wind on the watch</string>
+    <string id="SetTurnHabit">I mostly do</string>
+    <string id="TurnHabitJibes">Jibes</string>
+    <string id="TurnHabitTacks">Tacks</string>
+    <string id="TurnHabitBalanced">About the same</string>
     <string id="SetPhonePush">Send summary to phone app</string>
 
     <string id="SetAutoPause">Auto-pause when stopped</string>

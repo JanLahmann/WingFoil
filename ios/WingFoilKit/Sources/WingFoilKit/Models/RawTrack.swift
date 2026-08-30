@@ -97,7 +97,14 @@ public struct WatchSummary: Sendable, Equatable {
     /// Strokes, already un-scaled from the wire's ×0.1 encoding.
     public var avgPumpsToTakeoff: Double?
     public var totalPumpStrokes: Int?
+    /// Session field 39: the wind axis the RIDER entered (watch menu, GCM, or the phone push).
     public var windDirUserDeg: Double?
+    /// Session field 44 (device app ≥ 0.9.0): the axis the watch estimated for itself, from
+    /// the course-over-ground distribution of the session so far (docs/algorithms.md
+    /// "Watch approximation: auto wind"). Kept apart from `windDirUserDeg` because the two are
+    /// different claims — one is the rider's word, the other the watch's inference — and only
+    /// one of them may be shown as fact. Either, both or neither may be present.
+    public var windDirAutoDeg: Double?
     public var cfgEntrySpeedMps: Double?
     public var cfgExitSpeedMps: Double?
     public var cfgMinFlightS: Double?

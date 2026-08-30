@@ -70,8 +70,14 @@ function renderSummary(result) {
   const windTile = w
     ? { k: "Wind axis", v: `${nf(w.dirDeg, 0)}°`, unit: "from",
         n: `confidence ${nf(w.confidence, 2)} · lobes ${nf(w.lobesDeg?.[0], 0)}/${nf(w.lobesDeg?.[1], 0)}°` +
+           // What the watch had to go on. The rider's own bearing is stated flat; an axis the
+           // watch ESTIMATED (session field 44, app >= 0.9.0) carries the same leading "~" it
+           // wears on the watch, because an estimate that reads like a measurement is worse
+           // than no estimate at all.
            (meta.windDirUserDeg !== null && meta.windDirUserDeg !== undefined
-              ? ` · watch says ${nf(meta.windDirUserDeg, 0)}°` : "") }
+              ? ` · watch says ${nf(meta.windDirUserDeg, 0)}°` : "") +
+           (meta.windDirAutoDeg !== null && meta.windDirAutoDeg !== undefined
+              ? ` · watch estimated ~${nf(meta.windDirAutoDeg, 0)}°` : "") }
     : { k: "Wind axis", v: "—", n: "no usable axis in the COG distribution" };
 
   const tiles = [

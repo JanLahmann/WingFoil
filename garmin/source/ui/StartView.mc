@@ -91,11 +91,17 @@ class StartView extends WatchUi.View {
     }
 
     // The wind row: the axis when there is one, and how to set one when there is not.
+    //
+    // An axis the WATCH estimated reads "wind ~200° SSW" — the tilde is the whole difference
+    // between a number the rider gave and one the app inferred, and it is carried once, on the
+    // bearing, rather than twice (`windMark` rather than `windLabel`, which folds it into the
+    // compass point for the call sites that print only that).
     static function windText() as String {
         var deg = AppSettings.cfg.windDirection;
         return deg < 0
             ? START_WIND_UNSET
-            : START_WIND_PREFIX + deg.toString() + "° " + AppSettings.windLabel();
+            : START_WIND_PREFIX + AppSettings.cfg.windMark() + deg.toString() + "° "
+                + AppSettings.cfg.compassLabel();
     }
 
     function onUpdate(dc as Dc) as Void {

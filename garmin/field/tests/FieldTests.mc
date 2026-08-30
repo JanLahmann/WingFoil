@@ -16,7 +16,7 @@ function fieldCfg() as WingFoilCore.Config {
     cfg.entryHoldS = 2;
     cfg.exitHoldS = 3;
     cfg.minFlightS = 5;
-    cfg.windDirection = -1;
+    cfg.setWindDirection(-1);
     return cfg;
 }
 
@@ -139,7 +139,7 @@ function sessionValuesComeFromTheDetectors(logger as Test.Logger) as Boolean {
     // The mapping detector counters -> session fields, end to end: fly for a while, then
     // check the packed summary says what the detectors say.
     var cfg = fieldCfg();
-    cfg.windDirection = 210;
+    cfg.setWindDirection(210);
     var e = new FieldEngine(cfg);
     e.timerS = 100.0;
     for (var i = 0; i < 30; i++) {               // 30 s at 5 m/s: one flight
