@@ -72,6 +72,13 @@ import Testing
             if let v = num(cfg["turnMinRadius"]) { turnCfg.minRadiusM = v }
             if let v = num(cfg["turnBaroDrop"]) { turnCfg.baroDropM = v }
             if let v = num(cfg["windMinConfidence"]) { windCfg.minConfidence = v }
+            if let v = num(cfg["windFullMargin"]) { windCfg.fullMargin = v }
+            if let v = num(cfg["windTurnPriorWeight"]) { windCfg.turnPriorWeight = v }
+            // The rider's declared habit is a parameter like any other: run the golden with
+            // the one it was written under, or the 180° prior would be asked a different
+            // question than the lab asked (docs/algorithms.md "Default turn type").
+            if let v = cfg["windDefaultTurnType"] as? String,
+               let type = DefaultTurnType(rawValue: v) { windCfg.defaultTurnType = type }
             if let v = num(cfg["pumpStrokeAmp"]) { pumpCfg.strokeAmpG = v }
             if let v = num(cfg["pumpMinStrokes"]) { pumpCfg.minStrokes = Int(v) }
             if let v = num(cfg["takeoffAttemptWindow"]) { takeoffCfg.attemptWindowS = v }
@@ -219,6 +226,26 @@ import Testing
         }
         if let v = expWind["usable"] as? Bool {
             #expect(wind.usable == v, "\(stem) wind.usable: \(wind.usable) vs \(v)")
+        }
+        // The default-turn-type prior's evidence trail. `turnTypeDirDeg` is checked through
+        // its presence too: "the prior did not run" and "it ran and tied" are different
+        // facts, and only the null tells them apart.
+        if let v = num(expWind["turnTypeMargin"]) {
+            #expect(abs(wind.turnTypeMargin - v) <= 0.01, "\(stem) wind.turnTypeMargin")
+        }
+        if let v = num(expWind["turnTypeVotes"]) {
+            #expect(wind.turnTypeVotes == Int(v), "\(stem) wind.turnTypeVotes")
+        }
+        if let v = expWind["priorFlipped"] as? Bool {
+            #expect(wind.priorFlipped == v, "\(stem) wind.priorFlipped")
+        }
+        if expWind.keys.contains("turnTypeDirDeg") {
+            if let v = num(expWind["turnTypeDirDeg"]), let actual = wind.turnTypeDirDeg {
+                #expect(abs(angleDelta(actual, v)) <= 1.0, "\(stem) wind.turnTypeDirDeg")
+            } else {
+                #expect(expWind["turnTypeDirDeg"] is NSNull && wind.turnTypeDirDeg == nil,
+                        "\(stem) wind.turnTypeDirDeg: \(describe(wind.turnTypeDirDeg))")
+            }
         }
         if let v = num(expWind["source"] as? NSNumber) { _ = v }
         if let v = expWind["source"] as? String {
@@ -737,7 +764,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.4.0")
+        #expect(analysis.engineVersion == "0.5.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)

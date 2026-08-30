@@ -1,5 +1,25 @@
 import Foundation
 
+/// The rider's declared turn habit — evidence for the 180° call only
+/// (docs/algorithms.md "Default turn type"). Mirrors the `default_turn_type` vocabulary
+/// in `lab/src/wingfoil_lab/wind.py`.
+public enum DefaultTurnType: String, Sendable, Codable, CaseIterable {
+    /// Wingfoilers overwhelmingly jibe — the default.
+    case jibes
+    case tacks
+    /// Prior off: the no-go cone decides alone, exactly as it did before 0.5.0.
+    case balanced
+
+    /// Rider-facing wording for the settings picker.
+    public var label: String {
+        switch self {
+        case .jibes: "Mostly jibes (typical)"
+        case .tacks: "Mostly tacks"
+        case .balanced: "No assumption"
+        }
+    }
+}
+
 /// Wind-axis estimation parameters (docs/algorithms.md "Wind axis estimation").
 /// Mirrors `lab/src/wingfoil_lab/wind.py` `WindConfig`.
 public struct WindConfig: Sendable, Equatable {
@@ -23,6 +43,10 @@ public struct WindConfig: Sendable, Equatable {
     public var minConeMass: Double = 0.01
     /// Cone asymmetry at/above which the 180° call is certain.
     public var fullMargin: Double = 0.4
+    /// The rider's declared habit; `.balanced` switches the prior off.
+    public var defaultTurnType: DefaultTurnType = .jibes
+    /// Cap on the prior's signed evidence contribution.
+    public var turnPriorWeight: Double = 0.5
 
     public init() {}
 }
@@ -37,13 +61,23 @@ public struct WindConfig: Sendable, Equatable {
 ///
 /// The up/downwind **speed** asymmetry originally specified for that step is not used: on
 /// the whole fixture corpus its sign is inverted (a foil loses apparent wind deep downwind),
-/// so it is kept as a diagnostic only. Mirrors `lab/src/wingfoil_lab/wind.py`.
+/// so it is kept as a diagnostic only.
+///
+/// The 180° call has a second, *rider-declared* source of evidence: the **default turn
+/// type**. Flipping the wind 180° swaps every jibe and tack, so a rider's declared habit is
+/// evidence about orientation. It is a prior, not a measurement, so it may only ever break a
+/// tie the cone could not — see `turnTypePrior`. Mirrors `lab/src/wingfoil_lab/wind.py`.
 public enum WindEstimator {
 
     /// Estimate the wind axis, or nil when the COG distribution is not usefully bimodal
     /// (too little foiling, one lobe only, or an exactly opposed pair).
+    ///
+    /// `turnConfig` is the config the *same* pipeline will detect turns with. It is only
+    /// read when the default-turn-type prior actually runs (a weak cone margin and a
+    /// declared habit), and only to find the same sweeps that pipeline will report.
     public static func estimate(_ track: CleanTrack, flights: FlightSegmentation,
-                                config: WindConfig = WindConfig()) -> WindEstimate? {
+                                config: WindConfig = WindConfig(),
+                                turnConfig: TurnConfig = TurnConfig()) -> WindEstimate? {
         let courses = foilingCourses(track, flights: flights, config: config)
         let total = courses.weight.reduce(0, +)
         guard total >= config.minDistanceM else { return nil }
@@ -64,20 +98,115 @@ public enum WindEstimator {
 
         let bisector = circularMean(lobes, [1, 1])
         let axisConf = axisConfidence(mass: mass, sepDeg: sep, config: config)
-        let (dirDeg, margin) = resolve180(courses, bisector: bisector, total: total,
-                                          config: config)
+        let (coneDir, margin) = resolve180(courses, bisector: bisector, total: total,
+                                           config: config)
+        let prior = turnTypePrior(track, flights: flights, coneDir: coneDir,
+                                  coneMargin: margin, config: config, turnConfig: turnConfig)
+        let dirDeg = coneDir + (prior.flipped ? 180 : 0)
         let asym = weightedCorrelation(courses.cog.map { cos(($0 - dirDeg) * .pi / 180) },
                                        courses.speed, courses.weight)
-        let conf = config.fullMargin > 0
-            ? axisConf * clip01(margin / config.fullMargin) : axisConf
+        let conf = axisConf * prior.certainty
 
         return WindEstimate(
-            dirDeg: dirDeg.truncatingRemainder(dividingBy: 360),
+            dirDeg: mod360(dirDeg),
             confidence: conf, source: "estimate",
-            axisDeg: dirDeg.truncatingRemainder(dividingBy: 180),
+            axisDeg: mod360(dirDeg).truncatingRemainder(dividingBy: 180),
             axisConfidence: axisConf, ambiguityMargin: margin, separationDeg: sep,
-            lobesDeg: lobes, lobeMass: mass, speedAsymmetry: asym, distanceM: total,
-            usable: conf >= config.minConfidence)
+            lobesDeg: lobes, lobeMass: mass, speedAsymmetry: asym,
+            turnTypeMargin: prior.margin, turnTypeDirDeg: prior.favouredDeg,
+            turnTypeVotes: prior.votes, priorFlipped: prior.flipped,
+            distanceM: total, usable: conf >= config.minConfidence)
+    }
+
+    // MARK: - Default-turn-type prior
+
+    /// What the default-turn-type prior did to one 180° call.
+    struct Prior {
+        /// The [0,1] factor `confidence` is scaled by.
+        var certainty: Double
+        /// The prior overturned the cone's pick.
+        var flipped = false
+        /// |default − other| ÷ votes, in [0,1].
+        var margin: Double = 0
+        /// The axis end the declared habit points at.
+        var favouredDeg: Double?
+        var votes = 0
+    }
+
+    /// Blend the rider's declared turn habit into a *weak* 180° call.
+    ///
+    /// Flipping the wind 180° shifts every TWA by 180°, so every head-to-wind crossing
+    /// becomes a dead-downwind one: the same sweep that is a tack under one end of the axis
+    /// is a jibe under the other. A rider who declares "mostly jibes" is therefore stating a
+    /// preference between the two ends, and on a session whose no-go cones cannot separate
+    /// them that statement is the best evidence left.
+    ///
+    /// It is a prior, not a measurement, and the blend keeps it in its place:
+    ///
+    /// * `eCone = clip01(coneMargin / fullMargin)` — the cone's own certainty, exactly the
+    ///   factor confidence has always been scaled by. `eCone ≥ 1` means the cone is decisive
+    ///   and the prior is **not consulted at all**, so a strong call is untouchable and its
+    ///   numbers are bit-identical to the pre-prior engine.
+    /// * Only sweeps that come out tack-or-jibe under **both** ends vote — a bear-away is not
+    ///   evidence about the wind, and a sweep that is a maneuver under one end only would let
+    ///   the prior manufacture its own electorate.
+    /// * `mTurn = (nDefault − nOther) / votes` in [−1, 1], signed *toward the cone's pick*.
+    /// * `e = eCone + turnPriorWeight · mTurn`; the call is the cone's when `e ≥ 0` and the
+    ///   opposite end when `e < 0`, and `certainty = clip01(|e|)` replaces the cone factor.
+    ///
+    /// With the default weight 0.5 the prior can only overturn a cone margin below half of
+    /// `fullMargin`, and only then with a decisive turn-type majority. `balanced`, no votes
+    /// and an exact tie all leave the pre-prior result untouched, to the bit.
+    static func turnTypePrior(_ track: CleanTrack, flights: FlightSegmentation,
+                              coneDir: Double, coneMargin: Double, config: WindConfig,
+                              turnConfig: TurnConfig) -> Prior {
+        let eCone = config.fullMargin > 0 ? clip01(coneMargin / config.fullMargin) : 1
+        guard config.defaultTurnType != .balanced, eCone < 1 else {
+            return Prior(certainty: eCone)
+        }
+        let sweeps = TurnDetector.sweeps(track, flights: flights, config: turnConfig)
+        let (nDefault, nOther) = turnTypeVotes(sweeps, coneDir: coneDir,
+                                               defaultTurnType: config.defaultTurnType)
+        return blend(eCone: eCone, nDefault: nDefault, nOther: nOther, coneDir: coneDir,
+                     config: config)
+    }
+
+    /// (votes for the declared type, votes against) among `sweeps`, judged at `coneDir`.
+    ///
+    /// A sweep votes only if it is a tack-or-jibe under **both** ends of the axis. The two
+    /// ends give opposite names to every sweep that does vote, so the count against is the
+    /// count the flipped orientation would return — one pass answers for both.
+    static func turnTypeVotes(_ sweeps: [(Double, Double)], coneDir: Double,
+                              defaultTurnType: DefaultTurnType) -> (Int, Int) {
+        let wanted: TurnKind = defaultTurnType == .jibes ? .jibe : .tack
+        var nDefault = 0, nOther = 0
+        for (cogIn, cogOut) in sweeps {
+            let here = TurnDetector.classifySweep(cogIn: cogIn, cogOut: cogOut,
+                                                  dirDeg: coneDir).kind
+            let there = TurnDetector.classifySweep(cogIn: cogIn, cogOut: cogOut,
+                                                   dirDeg: coneDir + 180).kind
+            guard here == .tack || here == .jibe, there == .tack || there == .jibe else {
+                continue
+            }
+            if here == wanted { nDefault += 1 } else { nOther += 1 }
+        }
+        return (nDefault, nOther)
+    }
+
+    /// The arithmetic of the blend (`turnTypePrior`, and docs/algorithms.md).
+    ///
+    /// `e = eCone + turnPriorWeight · mTurn` with `mTurn` signed toward the cone's own pick;
+    /// the call is the cone's while `e ≥ 0` and the opposite end below that, and
+    /// `clip01(|e|)` is the certainty that replaces the cone factor in `confidence`.
+    static func blend(eCone: Double, nDefault: Int, nOther: Int, coneDir: Double,
+                      config: WindConfig) -> Prior {
+        let votes = nDefault + nOther
+        guard votes > 0 else { return Prior(certainty: eCone) }
+        let mTurn = Double(nDefault - nOther) / Double(votes)
+        let favoured: Double? = mTurn == 0 ? nil : mod360(coneDir + (mTurn > 0 ? 0 : 180))
+        let e = eCone + config.turnPriorWeight * mTurn
+        return Prior(certainty: clip01(abs(e)), flipped: e < 0, margin: abs(mTurn),
+                     favouredDeg: favoured, votes: votes)
     }
 
     // MARK: - Sampling

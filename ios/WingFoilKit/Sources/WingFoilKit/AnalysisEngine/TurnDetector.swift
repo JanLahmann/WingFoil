@@ -104,6 +104,17 @@ public struct Turn: Sendable, Equatable {
     public var counted: Bool { kind.counted }
 }
 
+/// The three fields overlap resolution reads. Declared so a `Candidate` and a `Turn` can
+/// go through the same `dropOverlaps` — the resolution happens before scoring, so both
+/// paths see one list.
+protocol SweepSpan {
+    var startT: Double { get }
+    var endT: Double { get }
+    var netDeg: Double { get }
+}
+
+extension Turn: SweepSpan {}
+
 /// Three-way outcome tally for one family of turns.
 public struct OutcomeCounts: Sendable, Codable, Equatable {
     public var flewThrough = 0
@@ -172,13 +183,55 @@ public enum TurnDetector {
     static let mpsToKn = Units.mpsToKn
     static let kmhToMps = 1.0 / 3.6
 
+    /// One accepted sweep, before any wind is applied — the geometry half of a `Turn`.
+    ///
+    /// Detection is split here so the wind estimator can ask "what sweeps did this session
+    /// contain?" without a wind axis (`sweeps`, feeding the default-turn-type prior in
+    /// `WindEstimator`) while `detect` builds the very same list into scored turns. The
+    /// arrays are the segment's, held by copy-on-write reference: nothing here copies a
+    /// track. Mirrors `_Candidate` in `lab/src/wingfoil_lab/turns.py`.
+    struct Candidate: SweepSpan {
+        let t: [Double], man: [Double], dop: [Double]
+        let tu: [Double], u: [Double], rate: [Double]
+        let i: Int, j: Int
+        let arc: (Double, Double)
+
+        var startT: Double { tu[i] }
+        var endT: Double { tu[j] }
+        var netDeg: Double { u[j] - u[i] }
+        var cogIn: Double { u[i] }
+        var cogOut: Double { u[j] }
+    }
+
     /// `evidence` lets the caller hand in the whole-track `OffFoilEvidence` it already
     /// built (the flight-end classifier needs the same arrays); omitted, it is built here.
     public static func detect(_ track: CleanTrack, flights: FlightSegmentation,
                               wind: WindEstimate? = nil, config: TurnConfig = TurnConfig(),
                               pump: PumpTrack? = nil,
                               evidence: OffFoilEvidence? = nil) -> [Turn] {
-        var turns: [Turn] = []
+        var turns = acceptedCandidates(track, flights: flights, config: config).map {
+            build($0, wind: wind, config: config)
+        }
+        assignOutcomes(&turns, track: track, flights: flights, config: config, pump: pump,
+                       evidence: evidence)
+        return turns
+    }
+
+    /// The (COG in, COG out) sweep of every turn `detect` would report, in order.
+    ///
+    /// Exactly the same scan, non-maximum suppression, on-foil test, carve gate and overlap
+    /// resolution — only the scoring and the wind classification are left off, because the
+    /// caller (`WindEstimator.turnTypePrior`) has no wind axis yet and needs none: a sweep
+    /// plus a candidate direction is enough to say "tack" or "jibe".
+    static func sweeps(_ track: CleanTrack, flights: FlightSegmentation,
+                       config: TurnConfig) -> [(Double, Double)] {
+        acceptedCandidates(track, flights: flights, config: config).map { ($0.cogIn, $0.cogOut) }
+    }
+
+    /// Every sweep that survives detection, in time order with overlaps resolved.
+    static func acceptedCandidates(_ track: CleanTrack, flights: FlightSegmentation,
+                                   config: TurnConfig) -> [Candidate] {
+        var cands: [Candidate] = []
         for seg in track.segments where seg.count >= 3 {
             let t = seg.map { track.samples[$0].t }
             let x = seg.map { track.samples[$0].x ?? .nan }
@@ -196,18 +249,18 @@ public enum TurnDetector {
                     let (i, j) = trim(pair.0, pair.1, rate: rate, u: u, config: config)
                     guard onFoil(tu[i], tu[j], flights: flights, config: config) else { continue }
                     let arc = arcAndChord(x, y, lo: a + i, hi: a + j + 1)
-                    let turn = build(t: t, man: man, dop: v, tu: tu, u: u, rate: rate,
-                                     i: i, j: j, wind: wind, config: config, arc: arc)
-                    guard carved(turn, config) else { continue }
-                    turns.append(turn)
+                    guard carved(arcM: arc.0, netDeg: u[j] - u[i], config) else { continue }
+                    cands.append(Candidate(t: t, man: man, dop: v, tu: tu, u: u, rate: rate,
+                                           i: i, j: j, arc: arc))
                 }
             }
         }
-        turns.sort { $0.startT < $1.startT }
-        turns = dropOverlaps(turns)
-        assignOutcomes(&turns, track: track, flights: flights, config: config, pump: pump,
-                       evidence: evidence)
-        return turns
+        // Stable by start time, like numpy's sort in the lab, then overlap-resolved.
+        cands = cands.enumerated()
+            .sorted { $0.element.startT != $1.element.startT
+                        ? $0.element.startT < $1.element.startT : $0.offset < $1.offset }
+            .map(\.element)
+        return dropOverlaps(cands)
     }
 
     /// Aggregate detected turns; bear-aways/round-ups only feed `rejected`.
@@ -413,9 +466,16 @@ public enum TurnDetector {
         return (arc, (cx * cx + cy * cy).squareRoot())
     }
 
-    /// The spatial gate: did the rider actually move around the curve?
-    static func carved(_ turn: Turn, _ config: TurnConfig) -> Bool {
-        turn.arcM >= config.minArcM && turn.radiusM >= config.minRadiusM
+    /// The spatial gate: did the rider actually move around the curve? Takes the raw
+    /// geometry rather than a built `Turn` so it runs during the scan, before scoring —
+    /// `sweeps` needs the same accepted set.
+    static func carved(arcM: Double, netDeg: Double, _ config: TurnConfig) -> Bool {
+        arcM >= config.minArcM && radius(arcM: arcM, netDeg: netDeg) >= config.minRadiusM
+    }
+
+    /// Effective turn radius: path length over the swept angle in radians.
+    static func radius(arcM: Double, netDeg: Double) -> Double {
+        netDeg != 0 ? arcM / abs(netDeg * .pi / 180) : 0
     }
 
     /// True when the turn overlaps a flight, or starts within `contextAfterS` of one.
@@ -425,8 +485,8 @@ public enum TurnDetector {
     }
 
     /// Keep the wider-sweeping turn when two detections overlap in time across runs.
-    static func dropOverlaps(_ turns: [Turn]) -> [Turn] {
-        var out: [Turn] = []
+    static func dropOverlaps<T: SweepSpan>(_ turns: [T]) -> [T] {
+        var out: [T] = []
         for t in turns {
             if let last = out.last, t.startT <= last.endT {
                 if abs(t.netDeg) > abs(last.netDeg) { out[out.count - 1] = t }
@@ -439,13 +499,13 @@ public enum TurnDetector {
 
     // MARK: - Scoring & classification
 
-    private static func build(t: [Double], man: [Double], dop: [Double], tu: [Double],
-                              u: [Double], rate: [Double], i: Int, j: Int,
-                              wind: WindEstimate?, config: TurnConfig,
-                              arc: (Double, Double)) -> Turn {
-        let startT = tu[i], endT = tu[j]
-        let net = u[j] - u[i]
-        let radius = net != 0 ? arc.0 / abs(net * .pi / 180) : 0
+    private static func build(_ c: Candidate, wind: WindEstimate?,
+                              config: TurnConfig) -> Turn {
+        let t = c.t, man = c.man, dop = c.dop, rate = c.rate
+        let i = c.i, j = c.j, arc = c.arc
+        let startT = c.startT, endT = c.endT
+        let net = c.netDeg
+        let radiusM = radius(arcM: arc.0, netDeg: net)
         var peak = 0.0
         if j > i {
             for r in i..<j where abs(rate[r]) > abs(peak) { peak = rate[r] }
@@ -472,26 +532,39 @@ public enum TurnDetector {
         let stayedUp = minDop > config.foilExitSpeedKmh * kmhToMps
         let success = score >= config.successPct / 100 && stayedUp
 
-        let c = classify(cogIn: u[i], cogOut: u[j], wind: wind)
-        return Turn(startT: startT, endT: endT, minT: t[max(minIdx, 0)], kind: c.kind,
+        let k = classify(cogIn: c.cogIn, cogOut: c.cogOut, wind: wind)
+        return Turn(startT: startT, endT: endT, minT: t[max(minIdx, 0)], kind: k.kind,
                     netDeg: net, peakRateDegS: peak,
-                    direction: net >= 0 ? "starboard" : "port", side: c.side,
+                    direction: net >= 0 ? "starboard" : "port", side: k.side,
                     entryKn: entryMan * mpsToKn, minKn: minMan * mpsToKn,
                     entryKnDoppler: entryDop * mpsToKn, minKnDoppler: minDop * mpsToKn,
-                    score: score, success: success, twaInDeg: c.twaIn, twaOutDeg: c.twaOut,
-                    arcM: arc.0, chordM: arc.1, radiusM: radius)
+                    score: score, success: success, twaInDeg: k.twaIn, twaOutDeg: k.twaOut,
+                    arcM: arc.0, chordM: arc.1, radiusM: radiusM)
     }
 
-    /// (kind, side, twaIn, twaOut) from the unwrapped COG sweep and the wind axis.
+    /// (kind, side, twaIn, twaOut) from the unwrapped COG sweep and the wind estimate.
+    /// Without a *usable* wind axis every turn stays unclassified; with one, the naming is
+    /// `classifySweep`'s.
+    static func classify(cogIn: Double, cogOut: Double, wind: WindEstimate?)
+    -> (kind: TurnKind, side: String, twaIn: Double, twaOut: Double) {
+        guard let wind, wind.usable else { return (.unclassified, "unknown", .nan, .nan) }
+        return classifySweep(cogIn: cogIn, cogOut: cogOut, dirDeg: wind.dirDeg)
+    }
+
+    /// (kind, side, twaIn, twaOut) for one sweep against one candidate wind direction.
     ///
     /// The sweep is carried onto TWA unwrapped, so "crosses head-to-wind" is "passes a
     /// multiple of 360" and "crosses dead downwind" is "passes 180 + a multiple of 360".
     /// A sweep wide enough to do both is named after whichever crossing sits nearer its
-    /// middle. Without a usable wind axis every turn stays unclassified.
-    static func classify(cogIn: Double, cogOut: Double, wind: WindEstimate?)
+    /// middle.
+    ///
+    /// Split out of `classify` because the 180° ambiguity prior in `WindEstimator` has to
+    /// name the same sweep under *both* ends of the axis, before either of them is the
+    /// wind: flipping `dirDeg` by 180° shifts every TWA by 180°, turning each head-to-wind
+    /// crossing into a dead-downwind one and so swapping tack and jibe.
+    static func classifySweep(cogIn: Double, cogOut: Double, dirDeg: Double)
     -> (kind: TurnKind, side: String, twaIn: Double, twaOut: Double) {
-        guard let wind, wind.usable else { return (.unclassified, "unknown", .nan, .nan) }
-        let twaIn = WindEstimator.wrap180(cogIn - wind.dirDeg)
+        let twaIn = WindEstimator.wrap180(cogIn - dirDeg)
         let twaOut = twaIn + (cogOut - cogIn)
         let lo = min(twaIn, twaOut), hi = max(twaIn, twaOut)
         let mid = 0.5 * (lo + hi)

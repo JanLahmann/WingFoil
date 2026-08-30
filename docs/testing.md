@@ -8,7 +8,7 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
 
 ```json
 {
-  "engineVersion": "0.4.0",
+  "engineVersion": "0.5.0",
   "config": { "foilEntrySpeed": 12.0, "...": "params actually used" },
   "capabilities": { "hasDoppler": true, "hasDevFields": false, "hasWatchLaps": false,
                      "hasAccel": false, "hasHR": true, "sampleRateHz": 1 },
@@ -30,7 +30,9 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
   "wind":    { "dirDeg": 0, "confidence": 0.0, "source": "estimate|openmeteo|user",
                "axisDeg": 0, "axisConfidence": 0.0, "ambiguityMargin": 0.0,
                "separationDeg": 0.0, "lobesDeg": [0, 0], "lobeMass": [0.0, 0.0],
-               "speedAsymmetry": 0.0, "distanceM": 0.0, "usable": true },
+               "speedAsymmetry": 0.0, "turnTypeMargin": 0.0, "turnTypeDirDeg": null,
+               "turnTypeVotes": 0, "priorFlipped": false,
+               "distanceM": 0.0, "usable": true },
   "takeoffs": [ { "startTs": 0, "runStartTs": 0, "pumps": null, "success": true,
                   "timeToFoilS": 0.0, "speedRiseS": 0.0, "entryKn": 0.0,
                   "cadenceSpm": null, "inFlightStrokes": null, "free": false,

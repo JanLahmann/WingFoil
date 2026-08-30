@@ -22,6 +22,15 @@ Engine 0.4.0 adds `summary.turns.longestDryStreak` / `longestFlewStreak`. Same k
 change again — nothing pre-existing moved — but the absence of a streak is not the same
 statement as a streak of 0, and only the version bump keeps a 0.3.0 document from being
 read as the latter.
+
+Engine 0.5.0 adds the **default-turn-type prior** (docs/algorithms.md "Default turn type"):
+`config.windDefaultTurnType` / `windTurnPriorWeight`, and the evidence trail it leaves on
+the wind object (`turnTypeMargin`, `turnTypeDirDeg`, `turnTypeVotes`, `priorFlipped`).
+Unlike the three bumps above this one *can* move pre-existing numbers — a session whose
+no-go cones nearly tie can now have its wind direction resolved the other way, taking every
+tack/jibe label with it — which is exactly why a stored document must re-derive rather than
+be read as if the rider had never declared a habit. On the current corpus nothing moves:
+every fixture's cone margin is already decisive, so the prior is never consulted.
 """
 
 from __future__ import annotations
@@ -98,7 +107,10 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
     ct = clean(track, fcfg)
     fr = segment_flights(ct, flcfg)
     rec = gp3s.records(ct)
-    wind = estimate_wind(ct, fr, wcfg)
+    # `tcfg` because the default-turn-type prior (docs/algorithms.md "Default turn type")
+    # votes on the very sweeps `detect_turns` is about to report -- one turn config, or the
+    # prior and the session would be talking about different turns.
+    wind = estimate_wind(ct, fr, wcfg, tcfg)
     pt = pump_track(track, pcfg)
 
     # One off-foil evidence object for the whole session: turns, flight ends and takeoffs
@@ -266,6 +278,8 @@ def _config_dict(a: Analysis) -> dict:
         "windNoGoHalfAngle": w.no_go_half_angle_deg,
         "windMinConeMass": w.min_cone_mass,
         "windFullMargin": w.full_margin,
+        "windDefaultTurnType": w.default_turn_type,
+        "windTurnPriorWeight": w.turn_prior_weight,
         # pumping
         "pumpBandLo": p.band_lo_hz,
         "pumpBandHi": p.band_hi_hz,
@@ -502,6 +516,16 @@ def _wind_json(w: WindEstimate) -> dict | None:
         "lobesDeg": None if w.lobes_deg is None else [round(v, 2) for v in w.lobes_deg],
         "lobeMass": None if w.lobe_mass is None else [round(v, 4) for v in w.lobe_mass],
         "speedAsymmetry": round(w.speed_asymmetry, 4),
+        # The default-turn-type prior's evidence trail. `turnTypeDirDeg` is null whenever the
+        # prior did not run (balanced, or a cone margin at/above `windFullMargin`) or found
+        # no sweep that is a maneuver under both ends -- which is not the same statement as
+        # a margin of 0, and a UI that wants to say "your jibe habit decided this" needs to
+        # tell the two apart.
+        "turnTypeMargin": round(w.turn_type_margin, 4),
+        "turnTypeDirDeg": None if w.turn_type_dir_deg is None
+                          else round(w.turn_type_dir_deg, 2),
+        "turnTypeVotes": w.turn_type_votes,
+        "priorFlipped": bool(w.prior_flipped),
         "distanceM": round(w.distance_m, 1),
         "usable": bool(w.usable),
     }

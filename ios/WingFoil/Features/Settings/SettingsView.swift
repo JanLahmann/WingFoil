@@ -15,6 +15,7 @@ struct SettingsView: View {
                 icuSection
                 WatchLinkSection()
                 placesSection
+                analysisSection
                 healthSection
                 storageSection
                 #if DEBUG
@@ -106,6 +107,39 @@ struct SettingsView: View {
             Text("Sessions starting within \(Int(SpotClusterer.defaultRadiusM)) m of each "
                  + "other are one spot. Names come from the map when the network allows; "
                  + "rename any of them and it sticks.")
+        }
+    }
+
+    /// The one engine parameter the rider owns (docs/algorithms.md "Default turn type").
+    ///
+    /// The wind axis is a line, so which end of it the wind blows from is a coin flip until
+    /// something breaks the tie. The no-go zone usually does; where it cannot, "I mostly
+    /// jibe" does, because flipping the wind 180° swaps every jibe and tack. The footer says
+    /// exactly that, in the rider's words rather than the estimator's.
+    private var analysisSection: some View {
+        Section {
+            Picker("Most of my turns are", selection: Binding(
+                get: { store.defaultTurnType },
+                set: { newValue in
+                    guard newValue != store.defaultTurnType else { return }
+                    store.defaultTurnType = newValue
+                    // Stored analyses are not stale by engine version, so only an explicit
+                    // re-run applies this to sessions already in the library.
+                    if !store.sessions.isEmpty { confirmReanalyze = true }
+                })) {
+                ForEach(DefaultTurnType.allCases, id: \.self) { type in
+                    Text(type.label).tag(type)
+                }
+            }
+        } header: {
+            Text("Analysis")
+        } footer: {
+            Text("The wind axis comes out of your track as a *line* — which end of it the "
+                 + "wind blew from is the hard half. Usually the no-go zone settles it: you "
+                 + "can sail any downwind course but none straight into the wind. When a "
+                 + "session cannot settle it that way, your habit does, because flipping "
+                 + "the wind end for end turns every jibe into a tack. Sessions already in "
+                 + "the library only change if you re-run the analysis.")
         }
     }
 

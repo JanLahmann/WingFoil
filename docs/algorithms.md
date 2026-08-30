@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.4.0** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.5.0** (bump on any change that alters outputs; triggers phone re-analysis)
 
 ## Flight (foil) detection — hysteresis state machine
 
@@ -415,11 +415,12 @@ pump a burst out of it did not glide out by choice.
    (reaches) → axis = bisector.
 3. 180° ambiguity: **no-go zone** — of the two axis ends, the one whose ±45° cone holds
    (almost) no distance is where the wind comes from; margin = relative cone asymmetry
-   (`fullMargin` 0.4 ⇒ certain, both cones empty ⇒ unresolved) → else Open-Meteo prior →
+   (`fullMargin` 0.4 ⇒ certain, both cones empty ⇒ unresolved), then the rider's
+   **default turn type** where that margin is weak (below) → else Open-Meteo prior →
    else user value.
 4. Confidence ∈ [0,1] = axis confidence (lobe mass × lobe balance × mode separation) ×
-   ambiguity margin; `< 0.5` ⇒ turns labeled `turn`, not tack/jibe, unless user set wind
-   manually (manual always wins).
+   the 180° call's certainty; `< 0.5` ⇒ turns labeled `turn`, not tack/jibe, unless user
+   set wind manually (manual always wins).
 
 The **speed** asymmetry originally specified for step 3 is not used: across the whole
 fixture corpus mean speed rises as the course turns *toward* the wind (a foil loses
@@ -428,6 +429,50 @@ taken from. It is kept as a diagnostic only. The no-go-zone rule matches Garda's
 pattern (morning Peler from N, afternoon Ora from S) on every corpus session.
 Degenerate case: exactly opposed lobes (pure beam-reach out-and-back) put the true axis
 perpendicular to the lobes where no bisector can find it — rejected, no estimate.
+
+### Default turn type — the rider's habit as 180° evidence
+
+Flipping the wind 180° swaps every jibe and tack, so a rider's declared habit is evidence
+about orientation. A wingfoiler jibes far more than he tacks; if one end of the axis makes
+this session's sweeps come out mostly jibes and the other makes them mostly tacks, the
+first end is the one the rider actually sailed in.
+
+`windDefaultTurnType` — `jibes` (**default**) · `tacks` · `balanced` (prior off). It is
+a *prior*, not a measurement, and three rules keep it in its place:
+
+* **Axis never.** It touches the 180° call only. The bisector, the lobes and
+  `axisConfidence` are computed before it and are not consulted about it.
+* **Weak calls only.** With `eCone = clip01(ambiguityMargin / fullMargin)` — the very
+  factor confidence has always been scaled by — a decisive cone (`eCone ≥ 1`, i.e.
+  `ambiguityMargin ≥ fullMargin` 0.4) is untouchable: the prior is not even evaluated, and
+  the numbers are bit-identical to the pre-prior engine.
+* **Only real maneuvers vote.** Every sweep `detect_turns` would report is classified under
+  *both* axis ends, and a sweep votes only if it is a tack-or-jibe under both. A bear-away
+  is not evidence about the wind, and a sweep that is a maneuver under one end only would
+  let the prior pick its own electorate.
+
+The blend, with `nDefault`/`nOther` the votes for and against the declared type **under the
+cone's own pick** and `w` = `windTurnPriorWeight` (0.5):
+
+```
+eCone    = clip01(ambiguityMargin / fullMargin)          ∈ [0, 1]
+mTurn    = (nDefault − nOther) / (nDefault + nOther)     ∈ [−1, 1], signed toward the cone
+e        = eCone + w · mTurn
+direction = cone's pick            if e ≥ 0
+            cone's pick + 180°     if e < 0            (`priorFlipped`)
+certainty = clip01(|e|)                                  → confidence = axisConfidence × certainty
+```
+
+So the prior can overturn the cone only below half of `fullMargin`, and only with a
+decisive majority: a 90/10 jibe split (`|mTurn|` 0.8) flips a cone margin under 0.16; an
+even split (`mTurn` 0) flips nothing and changes nothing. `balanced`, no votes, and an
+exact tie are all bit-identical to the cone acting alone. The wind object records what
+happened — `turnTypeMargin` (`|mTurn|`), `turnTypeDirDeg` (the end the habit favours, null
+when the prior did not run or had no votes), `turnTypeVotes`, `priorFlipped`.
+
+On the current fixture corpus the prior never fires: every session's cone margin is ≥ 0.52,
+well past `fullMargin`. It exists for the sessions the cone cannot separate — short ones,
+and ones sailed as two broad reaches with no upwind work to empty a cone.
 
 ## Pump / takeoff detection (watch, live) — `garmin/source/detectors/PumpDetector.mc`
 

@@ -77,6 +77,9 @@ public struct SessionIngestor: Sendable {
     public var filterConfig = FilterConfig()
     public var flightConfig = FlightConfig()
     public var recordsConfig = RecordsConfig()
+    /// Carries the rider's declared `defaultTurnType` into the wind estimator
+    /// (docs/algorithms.md "Default turn type"). The only engine parameter the app exposes.
+    public var windConfig = WindConfig()
     public var dedupeToleranceS: TimeInterval = 60
     public var spotRadiusM: Double = SpotClusterer.defaultRadiusM
 
@@ -231,7 +234,7 @@ public struct SessionIngestor: Sendable {
 
     private func analyze(_ track: RawTrack) -> SessionAnalysis {
         SessionSummarizer.analyze(track, filterConfig: filterConfig, flightConfig: flightConfig,
-                                  recordsConfig: recordsConfig)
+                                  recordsConfig: recordsConfig, windConfig: windConfig)
     }
 
     /// Cached `analysis.json`, recomputed from the archived FIT when missing or stale.

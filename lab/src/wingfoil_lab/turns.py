@@ -240,6 +240,43 @@ class TurnSummary:
     longest_flew_streak: int = 0     # longest run of counted turns that all flew through
 
 
+@dataclass
+class _Candidate:
+    """One accepted sweep, before any wind is applied — the geometry half of a `Turn`.
+
+    Detection is split here so the wind estimator can ask "what sweeps did this session
+    contain?" without a wind axis (`turn_sweeps`, feeding the default-turn-type prior in
+    `wind.py`) while `detect_turns` builds the very same list into scored `Turn`s. The
+    arrays are the segment's, held by reference: nothing here copies a track.
+    """
+
+    seg: object                      # the segment frame (`hybrid_speed` reads it)
+    t: np.ndarray                    # segment sample times
+    tu: np.ndarray                   # sailing-run sample times (aligned with `u`)
+    u: np.ndarray                    # unwrapped COG over the run
+    rate: np.ndarray
+    i: int
+    j: int
+    arc: tuple[float, float]         # (path length, chord) across the sweep
+
+    @property
+    def start_t(self) -> float:
+        return float(self.tu[self.i])
+
+    @property
+    def end_t(self) -> float:
+        return float(self.tu[self.j])
+
+    @property
+    def net_deg(self) -> float:
+        return float(self.u[self.j] - self.u[self.i])
+
+    @property
+    def sweep(self) -> tuple[float, float]:
+        """(unwrapped COG in, unwrapped COG out) — all a classification needs."""
+        return float(self.u[self.i]), float(self.u[self.j])
+
+
 def detect_turns(clean: CleanTrack, flights: FlightResult,
                  wind: WindEstimate | None = None,
                  config: TurnConfig | None = None,
@@ -253,7 +290,34 @@ def detect_turns(clean: CleanTrack, flights: FlightResult,
     takeoff passes ask for the very same arrays); omitted, it is built here.
     """
     cfg = config or TurnConfig()
-    turns: list[Turn] = []
+    cands = _accepted_candidates(clean, flights, cfg)
+    turns = [_build_turn(c, wind, cfg) for c in cands]
+    _assign_outcomes(turns, clean, flights, cfg, pump, evidence)
+    return turns
+
+
+def turn_sweeps(clean: CleanTrack, flights: FlightResult,
+                config: TurnConfig | None = None) -> list[tuple[float, float]]:
+    """The (COG in, COG out) sweep of every turn `detect_turns` would report, in order.
+
+    Exactly the same scan, non-maximum suppression, on-foil test, carve gate and overlap
+    resolution -- only the scoring and the wind classification are left off, because the
+    caller (`wind._turn_type_prior`) has no wind axis yet and needs none: a sweep plus a
+    candidate direction is enough to say "tack" or "jibe".
+    """
+    return [c.sweep for c in _accepted_candidates(clean, flights, config or TurnConfig())]
+
+
+def _accepted_candidates(clean: CleanTrack, flights: FlightResult,
+                         cfg: TurnConfig) -> list[_Candidate]:
+    """Every sweep that survives detection, in time order with overlaps resolved."""
+    cands = list(_scan(clean, flights, cfg))
+    cands.sort(key=lambda c: c.start_t)
+    return _drop_overlaps(cands)
+
+
+def _scan(clean: CleanTrack, flights: FlightResult, cfg: TurnConfig):
+    """Yield every candidate sweep that passes the on-foil and carve gates, as detected."""
     for seg in clean.segments():
         if len(seg) < 3 or seg["x"].isna().all():
             continue
@@ -268,15 +332,10 @@ def detect_turns(clean: CleanTrack, flights: FlightResult,
                 i, j = _trim(i, j, rate, u, cfg)
                 if not _on_foil(tu[i], tu[j], flights, cfg):
                     continue
-                turn = _build_turn(seg, t, tu, u, rate, i, j, wind, cfg,
-                                   _arc(x, y, a + i, a + j + 1))
-                if not _carved(turn, cfg):
+                arc = _arc(x, y, a + i, a + j + 1)
+                if not _carved(arc[0], float(u[j] - u[i]), cfg):
                     continue
-                turns.append(turn)
-    turns.sort(key=lambda x: x.start_t)
-    turns = _drop_overlaps(turns)
-    _assign_outcomes(turns, clean, flights, cfg, pump, evidence)
-    return turns
+                yield _Candidate(seg=seg, t=t, tu=tu, u=u, rate=rate, i=i, j=j, arc=arc)
 
 
 def summarize_turns(turns: list[Turn],
@@ -461,9 +520,13 @@ def _sailing_runs(ok: np.ndarray) -> list[tuple[int, int]]:
     return runs
 
 
-def _drop_overlaps(turns: list[Turn]) -> list[Turn]:
-    """Keep the wider-sweeping turn when two detections overlap in time across runs."""
-    out: list[Turn] = []
+def _drop_overlaps(turns: list) -> list:
+    """Keep the wider-sweeping turn when two detections overlap in time across runs.
+
+    Reads `start_t`/`end_t`/`net_deg` only, so it resolves `_Candidate`s and `Turn`s
+    alike -- the resolution happens before scoring so both paths see the same list.
+    """
+    out: list = []
     for t in turns:
         if out and t.start_t <= out[-1].end_t:
             if abs(t.net_deg) > abs(out[-1].net_deg):
@@ -538,15 +601,21 @@ def _arc(x: np.ndarray, y: np.ndarray, lo: int, hi: int) -> tuple[float, float]:
     return float(np.hypot(dx, dy).sum()), float(math.hypot(x[hi] - x[lo], y[hi] - y[lo]))
 
 
-def _carved(turn: Turn, cfg: TurnConfig) -> bool:
+def _carved(arc_m: float, net_deg: float, cfg: TurnConfig) -> bool:
     """The spatial gate: did the rider actually move around the curve? (module docstring)
 
     Two geometric tests, both scale-free with respect to sample rate: `turnMinArc` metres of
     water covered across the sweep, and an effective radius (arc over the swept angle in
     radians) of at least `turnMinRadius`. Angle alone passes a heading flip on the spot;
-    these do not.
+    these do not. Takes the raw geometry rather than a built `Turn` so the gate runs during
+    the scan, before scoring -- `turn_sweeps` needs the same accepted set.
     """
-    return turn.arc_m >= cfg.min_arc_m and turn.radius_m >= cfg.min_radius_m
+    return arc_m >= cfg.min_arc_m and _radius(arc_m, net_deg) >= cfg.min_radius_m
+
+
+def _radius(arc_m: float, net_deg: float) -> float:
+    """Effective turn radius: path length over the swept angle in radians."""
+    return arc_m / abs(math.radians(net_deg)) if net_deg else 0.0
 
 
 def _on_foil(start_t: float, end_t: float, flights: FlightResult, cfg: TurnConfig) -> bool:
@@ -555,13 +624,12 @@ def _on_foil(start_t: float, end_t: float, flights: FlightResult, cfg: TurnConfi
                for f in flights.flights)
 
 
-def _build_turn(seg, t: np.ndarray, tu: np.ndarray, u: np.ndarray, rate: np.ndarray,
-                i: int, j: int, wind: WindEstimate | None, cfg: TurnConfig,
-                arc: tuple[float, float] = (0.0, 0.0)) -> Turn:
-    start_t, end_t = float(tu[i]), float(tu[j])
-    net = float(u[j] - u[i])
-    arc_m, chord_m = arc
-    radius_m = arc_m / abs(math.radians(net)) if net else 0.0
+def _build_turn(c: _Candidate, wind: WindEstimate | None, cfg: TurnConfig) -> Turn:
+    seg, t, tu, u, rate, i, j = c.seg, c.t, c.tu, c.u, c.rate, c.i, c.j
+    start_t, end_t = c.start_t, c.end_t
+    net = c.net_deg
+    arc_m, chord_m = c.arc
+    radius_m = _radius(arc_m, net)
     peak = float(rate[i:j][np.argmax(np.abs(rate[i:j]))]) if j > i else 0.0
 
     man = hybrid_speed(seg)
@@ -594,16 +662,31 @@ def _build_turn(seg, t: np.ndarray, tu: np.ndarray, u: np.ndarray, rate: np.ndar
 
 def _classify(cog_in: float, cog_out: float,
               wind: WindEstimate | None) -> tuple[str, str, float, float]:
-    """(kind, side, twa_in, twa_out) from the unwrapped COG sweep and the wind axis.
+    """(kind, side, twa_in, twa_out) from the unwrapped COG sweep and the wind estimate.
+
+    Without a *usable* wind axis every turn stays `UNCLASSIFIED`; with one, the naming is
+    `classify_sweep`'s.
+    """
+    if wind is None or not wind.usable:
+        return UNCLASSIFIED, "unknown", float("nan"), float("nan")
+    return classify_sweep(cog_in, cog_out, wind.dir_deg)
+
+
+def classify_sweep(cog_in: float, cog_out: float,
+                   dir_deg: float) -> tuple[str, str, float, float]:
+    """(kind, side, twa_in, twa_out) for one sweep against one candidate wind direction.
 
     The sweep is carried onto TWA unwrapped, so "crosses head-to-wind" is "passes a
     multiple of 360" and "crosses dead downwind" is "passes 180 + a multiple of 360".
     A sweep wide enough to do both is named after whichever crossing sits nearer its
-    middle. Without a usable wind axis every turn stays `UNCLASSIFIED`.
+    middle.
+
+    Split out of `_classify` because the 180 deg-ambiguity prior in `wind.py` has to name
+    the same sweep under *both* ends of the axis, before any of them is the wind: flipping
+    `dir_deg` by 180 deg shifts every TWA by 180 deg, which turns each head-to-wind crossing
+    into a dead-downwind one and so swaps tack and jibe.
     """
-    if wind is None or not wind.usable:
-        return UNCLASSIFIED, "unknown", float("nan"), float("nan")
-    twa_in = _wrap180(cog_in - wind.dir_deg)
+    twa_in = _wrap180(cog_in - dir_deg)
     twa_out = twa_in + (cog_out - cog_in)
     lo, hi = min(twa_in, twa_out), max(twa_in, twa_out)
     mid = 0.5 * (lo + hi)
