@@ -82,6 +82,19 @@ public struct IcuSyncService: Sendable {
         return summary
     }
 
+    /// One activity, downloaded and ingested through the same path `sync` uses — the
+    /// background poller's prefetch (`ActivityNotifier`), which has already listed the
+    /// activities itself and only wants this one FIT while iOS is still granting it time.
+    ///
+    /// No `import_log` row: a wake that fetches one file is not an import the rider started,
+    /// and a log full of unattended single-file entries would bury the ones he did.
+    @discardableResult
+    public func fetchOne(_ activity: IcuActivity) async throws -> IngestOutcome {
+        let fit = try await client.originalFit(activityID: activity.id)
+        return try await ingestor.ingest(fitData: fit, filename: Self.filename(for: activity),
+                                         source: .icu, icuActivityId: activity.id)
+    }
+
     /// Default window: two years back. A personal library is small, so a full re-list is
     /// cheap against the 5 k requests/day limit, and known ids are never re-downloaded.
     public static func defaultOldest() -> Date {

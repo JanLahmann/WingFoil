@@ -548,6 +548,63 @@ final class SessionStore {
         await load()
     }
 
+    // MARK: - New-session notifications
+
+    /// Off by default. Turning it on is what asks iOS for permission and what starts the
+    /// background refresh task; turning it off cancels both (`ActivityNotifier`).
+    var notifyOnNewActivities: Bool {
+        get { UserDefaults.standard.bool(forKey: ActivityNotifier.enabledKey) }
+        set {
+            UserDefaults.standard.set(newValue, forKey: ActivityNotifier.enabledKey)
+            if newValue {
+                Task { await enableActivityNotifications() }
+            } else {
+                ActivityNotifier.shared.disable()
+            }
+        }
+    }
+
+    private func enableActivityNotifications() async {
+        guard await ActivityNotifier.shared.requestAuthorization() else {
+            UserDefaults.standard.set(false, forKey: ActivityNotifier.enabledKey)
+            errorMessage = "iOS did not grant permission to send notifications. "
+                + "Turn them on in Settings → Notifications → WingFoil and try again."
+            return
+        }
+        ActivityNotifier.shared.enable()
+        status = "You will be told when a new session appears on intervals.icu"
+    }
+
+    /// Set by a notification tap; the library pushes this session and clears it.
+    var pendingSessionID: String?
+
+    /// The tap's destination. The background wake usually imported the session already, in
+    /// which case this is a `load` and a push; when it did not — no time, no network, a
+    /// FIT Garmin had not finished uploading — the ordinary sync runs first, which is the
+    /// same path the Import screen's button takes.
+    func openSession(icuActivityId: String) async {
+        await load()
+        if let row = sessions.first(where: { $0.icuActivityId == icuActivityId }) {
+            pendingSessionID = row.id
+            return
+        }
+        await syncFromIntervals()
+        if let row = sessions.first(where: { $0.icuActivityId == icuActivityId }) {
+            pendingSessionID = row.id
+        } else {
+            status = "That session is not on intervals.icu yet — pull to sync"
+        }
+    }
+
+    /// Picks up what a background wake imported while the app was away. Cheap and silent:
+    /// on the ordinary foreground, where nothing happened, it does nothing at all.
+    func absorbBackgroundImports() async {
+        guard ActivityNotifier.consumePendingImport() else { return }
+        await load()
+        await refreshPersonalBests(celebrate: false)
+        await writeNewSessionsToHealth()
+    }
+
     // MARK: - Onboarding
 
     /// What an empty library should offer: the four-step setup, the cause of the last
@@ -795,6 +852,8 @@ final class SessionStore {
         Keychain.remove(Keychain.icuApiKey)
         for key in ["lastIcuSync", problemKey, pbSnapshotKey, "healthExported",
                     "healthWriteEnabled", defaultTurnTypeKey,
+                    ActivityNotifier.enabledKey, ActivityNotifier.markKey,
+                    ActivityNotifier.pendingImportKey,
                     MapLayerVisibilityStore.defaultsKey] {
             UserDefaults.standard.removeObject(forKey: key)
         }

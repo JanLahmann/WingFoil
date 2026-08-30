@@ -13,6 +13,7 @@ struct SettingsView: View {
             Form {
                 helpSection
                 icuSection
+                notificationsSection
                 WatchLinkSection()
                 placesSection
                 analysisSection
@@ -91,6 +92,38 @@ struct SettingsView: View {
             Text("Downloads the original FIT of every windsurf, wing, kite, surf and SUP "
                  + "activity in your intervals.icu account, going two years back. "
                  + "Activities already in the library are never downloaded again.")
+        }
+    }
+
+    /// Off by default, and the toggle itself is what asks iOS for permission — a launch
+    /// that opens with a notification prompt before the rider has seen a single session is
+    /// a prompt he says no to.
+    ///
+    /// The footer is honest about the one thing that decides whether this works at all:
+    /// background refresh is granted by iOS, not requested by us. A wake half an hour after
+    /// the upload is the good case, and there is no bad case worth hiding — pull-to-refresh
+    /// on the Sessions list is still the way to get a session *now*.
+    private var notificationsSection: some View {
+        Section {
+            Toggle("Notify on new Garmin activities", isOn: Binding(
+                get: { store.notifyOnNewActivities },
+                set: { store.notifyOnNewActivities = $0 }))
+                .disabled(store.apiKey.isEmpty)
+        } header: {
+            Text("Notifications")
+        } footer: {
+            Text(store.apiKey.isEmpty
+                 ? "Add your intervals.icu API key above first — the check is a call to "
+                   + "your account."
+                 : "While the phone is idle, WingFoil asks intervals.icu whether a new "
+                   + "windsurf, wing, kite, surf or SUP activity has arrived, and tells you "
+                   + "about the ones that are not in your library yet. The session is "
+                   + "downloaded and analysed in the background where there is time for it, "
+                   + "so tapping the notification usually opens a finished analysis.\n\n"
+                   + "iOS decides when a background app may run: it learns your habits and "
+                   + "may hold a check back for hours, and it never runs at all while "
+                   + "Background App Refresh is off (Settings → General → Background App "
+                   + "Refresh) or in Low Power Mode. Pull down on Sessions to sync now.")
         }
     }
 

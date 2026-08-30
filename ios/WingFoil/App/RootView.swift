@@ -26,6 +26,12 @@ struct RootView: View {
                 .tag(Tab.gear)
                 .tabItem { Label("Gear", systemImage: "bag") }
         }
+        // A tapped "new session" notification names a session, and sessions live on the
+        // first tab. The library does the pushing; this only makes sure the tab it pushes
+        // onto is the one on screen.
+        .onChange(of: store.pendingSessionID) { _, pending in
+            if pending != nil { selection = .sessions }
+        }
         #if DEBUG && targetEnvironment(simulator)
         // Headless-driving hook (see LibraryView): `simctl launch` cannot tap, so
         // `UI_TAB=records|trends|gear` parks the app on a tab for an automated screenshot.

@@ -81,6 +81,12 @@ struct LibraryView: View {
                     showSettings = true
                 }
             }
+            // Where a tapped "new session" notification lands. Two hooks rather than one:
+            // on a cold start from the notification the id is already waiting when this
+            // screen appears, and on a warm one it arrives seconds later, after the sync
+            // the tap kicked off.
+            .task { openPendingSession() }
+            .onChange(of: store.pendingSessionID) { _, _ in openPendingSession() }
             #if DEBUG && targetEnvironment(simulator)
             // Headless-driving hooks: `simctl launch` can't tap, so env vars import the
             // fixture corpus and open a session for automated screenshots.
@@ -173,6 +179,15 @@ struct LibraryView: View {
             .padding(.vertical, 8)
             .background(.bar)
         }
+    }
+
+    /// Pushes the session a notification tap asked for, once. Replacing the path rather
+    /// than appending: the rider tapped a banner, not a back button, and whatever he had
+    /// open before is not where he asked to be.
+    private func openPendingSession() {
+        guard let id = store.pendingSessionID else { return }
+        store.pendingSessionID = nil
+        path = [id]
     }
 
     private func delete(at offsets: IndexSet) {
