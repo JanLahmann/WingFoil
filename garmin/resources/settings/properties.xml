@@ -16,6 +16,13 @@
     <property id="alertTakeoff" type="boolean">true</property>
     <!-- wind the turn classifier splits tacks from jibes on; -1 = unset -->
     <property id="windDirDeg" type="number">-1</property>
+    <!-- 0.9.0: estimate the wind axis on the watch when the rider set none. The manual
+         bearing above always wins; an estimate is shown with a leading "~". -->
+    <property id="autoWind" type="boolean">true</property>
+    <!-- the rider's declared turn habit, the 180-degree tiebreaker on a weak no-go cone
+         (docs/algorithms.md "Default turn type"). 0 jibes · 1 tacks · 2 balanced (prior off);
+         mirror of WingFoilCore.TURN_TYPE_* and of the engine's windDefaultTurnType. -->
+    <property id="windDefaultTurnType" type="number">0</property>
     <!-- Feature 3: auto-pause + interval alerts -->
     <property id="autoPause" type="boolean">false</property>
     <property id="autoPauseDelayS" type="number">5</property>

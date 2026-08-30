@@ -86,6 +86,7 @@ class SessionController {
             var pbEvents = (events >> 4) & 0x0F;
             var turnEvent = (events >> 8) & 0x0F;
             var pumpEvent = (events >> 12) & 0x0F;
+            var windEvent = (events >> 16) & 0x0F;
 
             if (flightEvent == FlightDetector.EVENT_START
                 || flightEvent == FlightDetector.EVENT_END) {
@@ -116,6 +117,11 @@ class SessionController {
             }
             if (pumpEvent == PumpDetector.EVENT_TAKEOFF) {
                 AlertManager.takeoff();
+            }
+            // The watch has an axis of its own for the first time: from here the Turns page
+            // reads "tack / jibe ~SSW" instead of "turns", so the rider is told.
+            if (windEvent == AutoWind.EV_LOCK) {
+                AlertManager.autoWindLocked();
             }
             if (_fit != null) {
                 _fit.setRecord(engine.detector.state, engine.tickCount(),

@@ -50,6 +50,21 @@ module AppSettings {
     // the rider clears the axis afterwards.
     var windEverSet as Boolean = false;
 
+    // ---- on-watch automatic wind estimation (device app 0.9.0) ----
+    // The feature switch (default ON: it costs a handful of float operations per fix and it is
+    // the difference between a session of generic "turns" and a session of tacks and jibes for
+    // every rider who forgets the menu), and the rider's declared turn habit, which is the
+    // 180-degree tiebreaker on a weak no-go cone. Both mirror the engine
+    // (docs/algorithms.md "Default turn type"); `windDefaultTurnType` is the same vocabulary
+    // in the same order as `WingFoilCore.TURN_TYPE_*`.
+    var autoWind as Boolean = true;
+    var windDefaultTurnType as Number = WingFoilCore.TURN_TYPE_JIBES;
+
+    // Did the WATCH'S OWN ESTIMATE ever hold a bearing this run? The sibling of `windEverSet`,
+    // kept apart from it on purpose: the two arm the same FIT fields but they are different
+    // claims, and only one of them is the rider's word (FitFields.writesTurnCounts).
+    var autoWindEverSet as Boolean = false;
+
     function load() as Void {
         cfg.foilEntryMps = _num("foilEntryKmh", 12.0) / 3.6;
         cfg.foilExitMps = _num("foilExitKmh", 8.0) / 3.6;
@@ -74,8 +89,15 @@ module AppSettings {
             autoPauseDelayS = 2;
         }
         cfg.setWindDirection(_num("windDirDeg", -1.0).toNumber());
-        if (cfg.windDirection >= 0) {
+        if (cfg.windManual >= 0) {
             windEverSet = true;
+        }
+        autoWind = _bool("autoWind", true);
+        windDefaultTurnType = _num("windDefaultTurnType",
+            WingFoilCore.TURN_TYPE_JIBES.toFloat()).toNumber();
+        if (windDefaultTurnType < WingFoilCore.TURN_TYPE_JIBES
+            || windDefaultTurnType > WingFoilCore.TURN_TYPE_BALANCED) {
+            windDefaultTurnType = WingFoilCore.TURN_TYPE_JIBES;
         }
         // hysteresis sanity: exit must sit below entry
         cfg.sanitize();
@@ -85,18 +107,30 @@ module AppSettings {
     // Only turns detected from here on are classified — no retro pass on the watch.
     function storeWindDirection(deg as Number) as Void {
         cfg.setWindDirection(deg);
-        if (cfg.windDirection >= 0) {
+        if (cfg.windManual >= 0) {
             windEverSet = true;      // sticky: clearing the axis does not unclassify the past
         }
         try {
-            Properties.setValue("windDirDeg", cfg.windDirection);
+            Properties.setValue("windDirDeg", cfg.windManual);
         } catch (e) {
+        }
+    }
+
+    // The watch's own estimate has been adopted. NOT persisted: it is this session's
+    // inference, and a stale one restored at the next START would classify tomorrow's turns
+    // against yesterday's wind. `windDirDeg` stays the rider's property and nothing else
+    // writes it.
+    function applyAutoWind(deg as Number) as Void {
+        cfg.setAutoWind(deg);
+        if (cfg.windAuto >= 0) {
+            autoWindEverSet = true;  // sticky, for the same reason `windEverSet` is
         }
     }
 
     const COMPASS = WingFoilCore.COMPASS;
 
-    // 16-point label for a bearing; "--" when unset.
+    // 16-point label for the axis in effect, with a leading "~" when it is the watch's own
+    // estimate rather than the rider's bearing; "--" when unset.
     function windLabel() as String {
         return cfg.windLabel();
     }

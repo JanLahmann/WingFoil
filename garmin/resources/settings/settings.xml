@@ -51,6 +51,16 @@
     <setting propertyKey="@Properties.windDirDeg" title="@Strings.SetWindDir">
         <settingConfig type="numeric" min="-1" max="359"/>
     </setting>
+    <setting propertyKey="@Properties.autoWind" title="@Strings.SetAutoWind">
+        <settingConfig type="boolean"/>
+    </setting>
+    <setting propertyKey="@Properties.windDefaultTurnType" title="@Strings.SetTurnHabit">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.TurnHabitJibes</listEntry>
+            <listEntry value="1">@Strings.TurnHabitTacks</listEntry>
+            <listEntry value="2">@Strings.TurnHabitBalanced</listEntry>
+        </settingConfig>
+    </setting>
     <setting propertyKey="@Properties.autoPause" title="@Strings.SetAutoPause">
         <settingConfig type="boolean"/>
     </setting>
