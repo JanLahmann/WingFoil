@@ -31,6 +31,13 @@ no-go cones nearly tie can now have its wind direction resolved the other way, t
 tack/jibe label with it — which is exactly why a stored document must re-derive rather than
 be read as if the rider had never declared a habit. On the current corpus nothing moves:
 every fixture's cone margin is already decisive, so the prior is never consulted.
+
+Engine 0.6.0 adds the **session rate metrics** (docs/algorithms.md "Session rates"):
+`summary.durationS` / `avgSpeedKmh` / `turnsPerHour` / `jibesPerHour` / `wetPerHour`. Nothing
+pre-existing moves — they are arithmetic over numbers the summary already carried — but a
+0.5.0 document cannot answer "how busy was that hour" at all, and a missing rate read as 0
+would claim a session with no jibes in it. The denominator is elapsed session time, not
+foiling time, so every one of them is a rate *per hour on the water*.
 """
 
 from __future__ import annotations
@@ -149,11 +156,62 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
     )
 
 
+@dataclass
+class SessionRates:
+    """Session basics and the per-hour rates (docs/algorithms.md "Session rates").
+
+    All four rates share one denominator -- **elapsed** session time, first to last cleaned
+    sample -- so they answer "per hour on the water", not "per hour of flight". A rider who
+    jibes forty times in two hours of drifting and a rider who does it in one are not having
+    the same session, and only a wall-clock denominator says so.
+
+    Every rate is `None` rather than 0.0 when the session has no duration to divide by: a
+    one-sample track has no answer, and a zero would read as "he did nothing".
+    """
+
+    duration_s: float = 0.0
+    avg_speed_kmh: float | None = None
+    turns_per_hour: float | None = None
+    jibes_per_hour: float | None = None
+    wet_per_hour: float | None = None
+
+
+def session_duration_s(ct: CleanTrack) -> float:
+    """Elapsed wall-clock span of the cleaned track (s): last sample - first sample.
+
+    The *cleaned* track, because that is the timeline every other number in the summary was
+    measured on. It includes gaps -- a recording paused mid-session still spent that time on
+    the water -- which is what separates it from `timer_time_s`, the foil-% denominator.
+    """
+    t = ct.records["t"]
+    return 0.0 if len(t) < 2 else float(t.iloc[-1] - t.iloc[0])
+
+
+def session_rates(duration_s: float, distance_m: float, turns_counted: int, jibes: int,
+                  fell_in: int) -> SessionRates:
+    """The rate block. `fell_in` is **every** fell-in flight end, turn and straight-line
+    alike (docs/algorithms.md "Session rates") -- the question is how often the rider got
+    wet, and the water does not care whether he was mid-jibe at the time."""
+    if duration_s <= 0:
+        return SessionRates(duration_s=max(duration_s, 0.0))
+    hours = duration_s / 3600.0
+    return SessionRates(
+        duration_s=duration_s,
+        avg_speed_kmh=distance_m / duration_s * 3.6,
+        turns_per_hour=turns_counted / hours,
+        jibes_per_hour=jibes / hours,
+        wet_per_hour=fell_in / hours,
+    )
+
+
 def build_golden(a: Analysis) -> dict:
     caps = a.track.capabilities
     fr, rec = a.flights, a.records
     longest_s = fr.longest.duration_s if fr.longest else 0.0
     longest_m = max((f.dist_m for f in fr.flights), default=0.0)
+    rates = session_rates(session_duration_s(a.clean), rec.distance_m,
+                          a.turn_summary.turns_counted, a.turn_summary.jibes,
+                          a.flight_end_summary.all_ends.fell_in)
     pumps = {k.flight_index: k.pumps_to_takeoff for k in a.takeoffs.takeoffs}
     return {
         "engineVersion": ENGINE_VERSION,
@@ -197,6 +255,12 @@ def build_golden(a: Analysis) -> dict:
             "longestFlightS": round(longest_s, 1),
             "longestFlightM": round(longest_m, 1),
             "distanceKm": round(rec.distance_m / 1000.0, 3),
+            # Session basics and the per-hour rates, all over elapsed session time.
+            "durationS": round(rates.duration_s, 1),
+            "avgSpeedKmh": _round(rates.avg_speed_kmh, 2),
+            "turnsPerHour": _round(rates.turns_per_hour, 1),
+            "jibesPerHour": _round(rates.jibes_per_hour, 1),
+            "wetPerHour": _round(rates.wet_per_hour, 1),
             "turns": _turn_summary_json(a.turn_summary),
             "flightEnds": _end_summary_json(a.flight_end_summary),
             "outcomeSplit": _split_json(a.outcome_split),

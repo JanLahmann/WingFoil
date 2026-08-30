@@ -8,7 +8,7 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
 
 ```json
 {
-  "engineVersion": "0.5.0",
+  "engineVersion": "0.6.0",
   "config": { "foilEntrySpeed": 12.0, "...": "params actually used" },
   "capabilities": { "hasDoppler": true, "hasDevFields": false, "hasWatchLaps": false,
                      "hasAccel": false, "hasHR": true, "sampleRateHz": 1 },
@@ -59,6 +59,8 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
                                             "deltaBpm": null, "...": "" }, "...": "" } },
   "summary": { "foilTimeS": 0, "foilPct": 0.0, "flightCount": 0, "longestFlightS": 0,
                "longestFlightM": 0.0, "distanceKm": 0.0,
+               "durationS": 0.0, "avgSpeedKmh": null, "turnsPerHour": null,
+               "jibesPerHour": null, "wetPerHour": null,
                "turns":       { "tacks": 0, "jibes": 0, "unclassified": 0, "rejected": 0,
                                 "turnsCounted": 0, "turnsSuccessful": 0, "successPct": 0.0,
                                 "port": 0, "starboard": 0,
@@ -94,7 +96,12 @@ much of the session it actually speaks for. `pumpEpisodes` (engine 0.3.0, docs/a
 `summary.takeoff` tallies count the five buckets, and this list is the same classification with
 its *instants* attached, which is what lets iOS place a failed attempt on the map instead of
 apologizing for it. It degrades like `turns` — a source with no accelerometer has no bursts to
-classify and gets `[]`, written rather than omitted.
+classify and gets `[]`, written rather than omitted. The five **session rates** (engine 0.6.0,
+docs/algorithms.md "Session rates") share the same never-a-flattering-zero rule: `durationS`
+is the elapsed span of the cleaned track, gaps included, and when it is ≤ 0 all four derived
+rates are explicit **null** — "there is no hour to divide by", not "he did nothing in one".
+`wetPerHour` is every `fell_in` *flight end*, straight-line and turn-owned alike, which is a
+different (and on this corpus a much larger) number than the turn ladder's fallen turns.
 
 ## Presentation goldens
 
@@ -138,6 +145,8 @@ and the Pages deploy).
 | heart rates and coverage shares (HR cost, baseline, peak, pumping/cruising) | ± 0.05 bpm |
 | bpm per stroke (a ratio of two of the above) | ± 0.005 |
 | foil time | ± 2 % |
+| session duration (`durationS`) | ± 0.1 s |
+| session rates (`avgSpeedKmh`, `turnsPerHour`, `jibesPerHour`, `wetPerHour`) | ± 0.05 |
 | watch live vs phone recompute | ± 0.2 kn, counts exact on clean clips |
 
 Non-qualifying records (no window of the required length/shape exists — e.g. 1 h in a short

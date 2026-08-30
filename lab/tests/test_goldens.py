@@ -7,12 +7,17 @@ from pathlib import Path
 import pytest
 
 from wingfoil_lab.goldens import (_hr_json, analyze, build_golden, golden_path, load_golden,
-                                  write_golden)
+                                  session_rates, write_golden)
 from wingfoil_lab.hrcost import HrAnalysis
 
 SMOKE = Path(__file__).resolve().parents[2] / "fixtures" / "synthetic" / "smoke-60s.fit"
 CIQ = (Path(__file__).resolve().parents[2] / "fixtures" / "sessions" / "ciq"
        / "2026-08-07-0754_nago-torbole-windsurfen_ciq.fit")
+# The long afternoon session, the one the app bundles: 51 counted turns and 25 swims, of
+# which only 8 happen inside a counted turn -- which is what makes it the fixture that can
+# tell "wet per hour" apart from "fell-in jibes per hour".
+CIQ_LONG = (Path(__file__).resolve().parents[2] / "fixtures" / "sessions" / "ciq"
+            / "2026-08-29-1440_nago-torbole-windsurfen_ciq.fit")
 
 TOP_KEYS = ["engineVersion", "config", "capabilities", "flights", "turns", "flightEnds",
             "records", "wind", "takeoffs", "pumpEpisodes", "hr", "summary"]
@@ -22,8 +27,9 @@ CAP_KEYS = {"hasDoppler", "hasDevFields", "hasWatchLaps", "hasAccel", "hasHR", "
 RECORD_KEYS = {"best2sKn", "best10sKn", "best5x10sKn", "best100mKn", "best250mKn",
                "best500mKn", "bestNmKn", "bestHourKn", "alpha500Kn", "windows"}
 SUMMARY_KEYS = {"foilTimeS", "foilPct", "flightCount", "longestFlightS",
-                "longestFlightM", "distanceKm", "turns", "flightEnds", "outcomeSplit",
-                "takeoff"}
+                "longestFlightM", "distanceKm", "durationS", "avgSpeedKmh",
+                "turnsPerHour", "jibesPerHour", "wetPerHour",
+                "turns", "flightEnds", "outcomeSplit", "takeoff"}
 TURN_SUMMARY_KEYS = {"tacks", "tacksSuccessful", "jibes", "jibesSuccessful", "unclassified",
                      "turnsCounted", "turnsSuccessful", "successPct", "rejected", "port",
                      "starboard", "unknownSide", "longestDryStreak", "longestFlewStreak",
@@ -64,7 +70,7 @@ def smoke_golden():
 def test_schema_shape(smoke_golden):
     g = smoke_golden
     assert list(g.keys()) == TOP_KEYS
-    assert g["engineVersion"] == "0.5.0"
+    assert g["engineVersion"] == "0.6.0"
     assert set(g["capabilities"].keys()) == CAP_KEYS
     assert set(g["records"].keys()) == RECORD_KEYS
     assert set(g["summary"].keys()) == SUMMARY_KEYS
@@ -119,6 +125,76 @@ def test_smoke_content(smoke_golden):
     w = g["records"]["windows"]
     assert "best2s" in w and w["best2s"]["durS"] == 2
     assert "bestHour" not in w and "bestNm" not in w
+
+
+def test_session_rates_on_a_synthetic_session():
+    """Two hours, 40 km, 60 counted turns of which 44 jibes, 9 swims.
+
+    Every rate is per hour of *elapsed* session, so the arithmetic is deliberately trivial
+    and hand-checkable: 60 turns in 2 h is 30/h, 9 swims is 4.5/h, 40 km in 2 h is 20 km/h.
+    """
+    r = session_rates(7200.0, 40_000.0, turns_counted=60, jibes=44, fell_in=9)
+    assert r.duration_s == 7200.0
+    assert r.avg_speed_kmh == pytest.approx(20.0)
+    assert r.turns_per_hour == pytest.approx(30.0)
+    assert r.jibes_per_hour == pytest.approx(22.0)
+    assert r.wet_per_hour == pytest.approx(4.5)
+
+    # Unrounded inputs, rounded only for JSON: a half-hour session divides by 0.5, not by 1.
+    half = session_rates(1800.0, 9_000.0, turns_counted=7, jibes=7, fell_in=1)
+    assert half.avg_speed_kmh == pytest.approx(18.0)
+    assert half.turns_per_hour == pytest.approx(14.0)
+    assert half.wet_per_hour == pytest.approx(2.0)
+
+
+@pytest.mark.parametrize("duration", [0.0, -12.0])
+def test_session_rates_without_a_duration_are_none_not_zero(duration):
+    """A one-sample track has no hour to divide by. Every rate is null -- 0.0 would read as
+    "he did nothing in an hour on the water", which is a different (and wrong) claim."""
+    r = session_rates(duration, 1234.0, turns_counted=7, jibes=5, fell_in=2)
+    assert r.duration_s == 0.0
+    assert r.avg_speed_kmh is None
+    assert r.turns_per_hour is None
+    assert r.jibes_per_hour is None
+    assert r.wet_per_hour is None
+
+
+def test_rates_reconcile_with_the_numbers_beside_them(smoke_golden):
+    s = smoke_golden["summary"]
+    assert s["durationS"] == pytest.approx(60.0, abs=1.5)
+    hours = s["durationS"] / 3600.0
+    assert s["avgSpeedKmh"] == pytest.approx(s["distanceKm"] / hours, abs=0.05)
+    assert s["turnsPerHour"] == pytest.approx(s["turns"]["turnsCounted"] / hours, abs=0.05)
+    assert s["jibesPerHour"] == pytest.approx(s["turns"]["jibes"] / hours, abs=0.05)
+    assert s["wetPerHour"] == pytest.approx(s["flightEnds"]["all"]["fellIn"] / hours, abs=0.05)
+
+
+@pytest.mark.skipif(not CIQ_LONG.exists(), reason="ciq fixture missing")
+def test_wet_per_hour_counts_straight_falls_as_well_as_turn_falls():
+    """"How often did he get wet" is a question about the rider, not about the turn channel.
+
+    2026-08-29 is the session that proves the difference matters: 25 fell-in flight ends, and
+    only 8 of them inside a counted turn. A rate built from turn outcomes alone would tell
+    this rider he swam a third as often as he did.
+    """
+    g = build_golden(analyze(CIQ_LONG))
+    s = g["summary"]
+    ends, turns = s["flightEnds"], s["turns"]
+
+    # Both channels, once each: every fell-in end is either owned by a turn or it is not.
+    assert ends["all"]["fellIn"] == ends["straight"]["fellIn"] + ends["inTurn"]["fellIn"]
+    assert ends["straight"]["fellIn"] > 0 and ends["inTurn"]["fellIn"] > 0
+    # Strictly more than the turn ladder sees -- the straight-line swims are the difference.
+    assert ends["all"]["fellIn"] > turns["outcomes"]["fellIn"]
+
+    hours = s["durationS"] / 3600.0
+    assert hours > 0
+    assert s["wetPerHour"] == pytest.approx(ends["all"]["fellIn"] / hours, abs=0.05)
+    assert s["wetPerHour"] > turns["outcomes"]["fellIn"] / hours
+    # And the other three rates still speak for their own channels.
+    assert s["turnsPerHour"] == pytest.approx(turns["turnsCounted"] / hours, abs=0.05)
+    assert s["jibesPerHour"] == pytest.approx(turns["jibes"] / hours, abs=0.05)
+    assert s["avgSpeedKmh"] == pytest.approx(s["distanceKm"] / hours, abs=0.05)
 
 
 def test_a_source_without_hr_still_gets_the_block():

@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.5.0",
+  "engineVersion": "0.6.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -2727,6 +2727,11 @@
     "longestFlightS": 135.0,
     "longestFlightM": 659.5,
     "distanceKm": 9.332,
+    "durationS": 3508.0,
+    "avgSpeedKmh": 9.58,
+    "turnsPerHour": 13.3,
+    "jibesPerHour": 13.3,
+    "wetPerHour": 4.1,
     "turns": {
       "tacks": 0,
       "tacksSuccessful": 0,
