@@ -3,31 +3,71 @@ import Toybox.WatchUi;
 
 // Where in the page cycle we are. A module, not view state, because the map page is a whole
 // separate View (MapTrackView cannot be painted inside our own onUpdate) — the index has to
-// survive the swap between RecordingView and MapPageView.
+// survive the transition between RecordingView and MapPageView.
+//
+// The map page is PUSHED over RecordingView, never switched to. WatchUi.switchToView has
+// never been supported for native base views (MapView/MapTrackView) — the simulator lets it
+// slide, a real fenix 8 kills the app the moment the switch lands. `mapShown` tracks whether
+// the pushed map is on the stack; it is a stored flag, not derived from layoutAt(index),
+// because a GCM settings edit can change what layoutAt says while the view is still up.
 module PageNav {
     var index as Number = 0;
+    var mapShown as Boolean = false;
 
     function reset() as Void {
         index = 0;
+        mapShown = false;
     }
 
-    // Switch to whichever view paints the current page.
+    // Put the recording UI on screen: RecordingView as the base, plus the pushed map view on
+    // top when the current page is the map (a rider can make the map page 1 in settings).
     function show() as Void {
-        var view = PageModel.layoutAt(index) == PageModel.LAYOUT_MAP
-            ? new MapPageView() as WatchUi.View : new RecordingView() as WatchUi.View;
-        WatchUi.switchToView(view, new RecordingDelegate(), WatchUi.SLIDE_IMMEDIATE);
+        mapShown = false;
+        WatchUi.switchToView(new RecordingView(), new RecordingDelegate(),
+            WatchUi.SLIDE_IMMEDIATE);
+        if (PageModel.layoutAt(index) == PageModel.LAYOUT_MAP) {
+            _pushMap();
+        }
+    }
+
+    function _pushMap() as Void {
+        WatchUi.pushView(new MapPageView(), new RecordingDelegate(),
+            WatchUi.SLIDE_IMMEDIATE);
+        mapShown = true;
+    }
+
+    // Pop the pushed map view if it is up. Safe to call any time; RecordingView is always
+    // underneath it.
+    function dropMap() as Void {
+        if (mapShown) {
+            WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+            mapShown = false;
+        }
     }
 
     // Step `dir` pages and put the right view on screen. Ordinary pages just repaint;
-    // stepping on or off the map page swaps the view.
+    // stepping onto the map page pushes the map view, stepping off it pops back down.
     function step(dir as Number) as Void {
-        var wasMap = PageModel.layoutAt(index) == PageModel.LAYOUT_MAP;
         index = nextIndex(index, dir,
             getApp().controller.state == SessionController.STATE_PAUSED);
-        if (wasMap || PageModel.layoutAt(index) == PageModel.LAYOUT_MAP) {
-            show();
+        var isMap = PageModel.layoutAt(index) == PageModel.LAYOUT_MAP;
+        if (isMap && !mapShown) {
+            _pushMap();
+        } else if (!isMap && mapShown) {
+            dropMap();
+            WatchUi.requestUpdate();
         } else {
             WatchUi.requestUpdate();
+        }
+    }
+
+    // Called after a pause toggle. Pausing while standing on the map steps off it — the map
+    // cannot show the PAUSED banner (see nextIndex), and it is skipped anyway until resume.
+    function onPauseToggled() as Void {
+        if (mapShown
+                && getApp().controller.state == SessionController.STATE_PAUSED) {
+            index = nextIndex(index, 1, true);
+            dropMap();
         }
     }
 
@@ -69,6 +109,7 @@ class RecordingDelegate extends WatchUi.BehaviorDelegate {
 
     function onSelect() as Boolean {
         getApp().controller.togglePause();   // manual pause also cancels auto-pause ownership
+        PageNav.onPauseToggled();            // pausing on the map page steps off it
         WatchUi.requestUpdate();
         return true;
     }
@@ -114,11 +155,15 @@ class StopMenuDelegate extends WatchUi.Menu2InputDelegate {
             // that finishSave deliberately leaves intact.
             SummaryNav.build(c);
             WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+            // if the menu was opened from the map page, the pushed map view is next on the
+            // stack — a switchToView over a native view is what killed the app (see PageNav)
+            PageNav.dropMap();
             WatchUi.switchToView(new SummaryView(), new SummaryDelegate(),
                 WatchUi.SLIDE_IMMEDIATE);
         } else if (id == :discard) {
             c.finishDiscard();
             WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+            PageNav.dropMap();
             WatchUi.switchToView(new StartView(), new StartDelegate(),
                 WatchUi.SLIDE_IMMEDIATE);
         } else if (id == :wind) {
