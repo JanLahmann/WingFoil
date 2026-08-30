@@ -30,9 +30,12 @@
     <!-- Feature 1: data screens. Mirror of PageModel.DEF_LAYOUT / DEF_SLOTS; change both
          together, and note which side wins: on a real device these defaults beat the code's,
          so a page changed in only one place ships as the OLD page.
-         0.8.0: page 1 is LAYOUT_MAIN (9), the bespoke main screen — it carries no slots. -->
+         0.8.0: page 1 is LAYOUT_MAIN (9), the bespoke main screen.
+         0.8.2: its giant is slot 1 and defaults to M_BEST_10S (11), not live speed — a rider
+         reads the watch when he is NOT moving, and the live number then says nothing about
+         the run he just did. Set it to M_SPEED (1) to get the speedometer back. -->
     <property id="pg1Layout" type="number">9</property>
-    <property id="pg1s1" type="number">0</property>
+    <property id="pg1s1" type="number">11</property>
     <property id="pg1s2" type="number">0</property>
     <property id="pg1s3" type="number">0</property>
     <property id="pg1s4" type="number">0</property>

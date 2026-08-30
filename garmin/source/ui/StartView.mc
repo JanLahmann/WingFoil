@@ -8,10 +8,21 @@ import Toybox.WatchUi;
 // class consts are instance-scoped in Monkey C.
 const START_TITLE = "WingFoil";
 const START_HINT = "START to record";
-// Nominal fonts as TEXT_FONTS indices: FONT_MEDIUM for the title, FONT_SMALL for the two
+// Nominal fonts as TEXT_FONTS indices: FONT_MEDIUM for the title, FONT_SMALL for the three
 // text rows. fitFont() shrinks from there when the chord at that depth is narrower.
 const START_TITLE_FONT = 1;
 const START_BODY_FONT = 2;
+
+// The wind row. Without a wind axis the turn classifier calls every sweep a generic turn, so
+// the Turns page loses the tack/jibe split AND the port/starboard entry split, and the FIT
+// omits both counts (docs/fit-schema.md) — an omission the rider can only fix BEFORE he is
+// on the water, which is why the reminder lives on this screen and says HOW.
+//
+// "hold MENU" is the literal binding: StartDelegate.onMenu() pushes the same WindMenu the
+// session menu opens, and MENU on every fenix in the manifest is a long press of the UP
+// button. Naming a button the rider cannot find would be worse than no reminder at all.
+const START_WIND_UNSET = "set wind - hold MENU";
+const START_WIND_PREFIX = "wind ";
 
 // Pre-session screen: GPS acquisition status, START to begin.
 class StartView extends WatchUi.View {
@@ -44,32 +55,47 @@ class StartView extends WatchUi.View {
     // same block 1.9x too tall, so the title clips off the top and the hint off the bottom.
     // The rows are now a stack centred on the screen and measured in the device's own font
     // metrics, exactly like the recording pages.
+    //
+    // The four GPS-quality dots are GONE. They cost a whole row to say what the word beside
+    // them already said — the row's only content was "how many are unfilled", which the state
+    // word now carries in four steps of its own (searching / weak / ready / good) plus its
+    // colour. The row they freed went to the wind reminder, which is information the screen
+    // did not have at all.
 
-    // Radius of one GPS-quality dot: 8 px on a 454 px glass, never below 3 px.
-    static function dotRadius(dc as Dc) as Number {
-        var r = dc.getWidth() / 56;
-        return r < 3 ? 3 : r;
-    }
-
-    // Centre-to-centre pitch of the dot row, held at the authored 30 px : 8 px ratio.
-    static function dotStep(r as Number) as Number {
-        return r * 15 / 4;
-    }
-
-    // Ink centre of row `row` — 0 title, 1 dot row, 2 GPS state, 3 hint — for a stack
-    // centred on `cy`. The gap between rows is half a body line, so the whole page breathes
-    // with the font the device actually has.
-    static function rowY(cy as Number, hTitle as Number, hDots as Number, hBody as Number,
+    // Ink centre of row `row` — 0 title, 1 GPS state, 2 wind, 3 hint — for a stack centred
+    // on `cy`. The gap between rows is half a body line, so the whole page breathes with the
+    // font the device actually has.
+    static function rowY(cy as Number, hTitle as Number, hBody as Number,
             row as Number) as Number {
         var gap = hBody / 2;
-        var y = cy - (hTitle + hDots + 2 * hBody + 3 * gap) / 2;   // top edge of the stack
+        var y = cy - (hTitle + 3 * hBody + 3 * gap) / 2;           // top edge of the stack
         if (row <= 0) { return y + hTitle / 2; }
-        y += hTitle + gap;
-        if (row == 1) { return y + hDots / 2; }
-        y += hDots + gap;
-        if (row == 2) { return y + hBody / 2; }
+        y += hTitle + gap + hBody / 2;
+        if (row == 1) { return y; }
         y += hBody + gap;
-        return y + hBody / 2;
+        return row == 2 ? y : y + hBody + gap;
+    }
+
+    // The GPS row: one line whose WORD and COLOUR together carry what the four dots used to.
+    // Position.QUALITY_* is an ordered scale, so the four rungs map one-to-one.
+    static function gpsText(q as Number) as String {
+        if (q >= Position.QUALITY_GOOD) { return "GPS good"; }
+        if (q >= Position.QUALITY_USABLE) { return "GPS ready"; }
+        if (q >= Position.QUALITY_POOR) { return "GPS weak"; }
+        return "GPS ...";
+    }
+
+    static function gpsColor(q as Number) as Number {
+        if (q >= Position.QUALITY_USABLE) { return Graphics.COLOR_GREEN; }
+        return q >= Position.QUALITY_POOR ? Graphics.COLOR_YELLOW : Ink.dim();
+    }
+
+    // The wind row: the axis when there is one, and how to set one when there is not.
+    static function windText() as String {
+        var deg = AppSettings.cfg.windDirection;
+        return deg < 0
+            ? START_WIND_UNSET
+            : START_WIND_PREFIX + deg.toString() + "° " + AppSettings.windLabel();
     }
 
     function onUpdate(dc as Dc) as Void {
@@ -80,59 +106,39 @@ class StartView extends WatchUi.View {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var radius = RecordingView.fitRadius(dc, false, false);
-        var CV = Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER;
 
-        var r = dotRadius(dc);
         var titleFont = TEXT_FONTS[START_TITLE_FONT];
         var bodyFont = TEXT_FONTS[START_BODY_FONT];
         var hTitle = dc.getFontHeight(titleFont);
         var hBody = dc.getFontHeight(bodyFont);
-        var hDots = 2 * r;
-        var yTitle = rowY(cy, hTitle, hDots, hBody, 0);
-        var yDots = rowY(cy, hTitle, hDots, hBody, 1);
-        var yState = rowY(cy, hTitle, hDots, hBody, 2);
-        var yHint = rowY(cy, hTitle, hDots, hBody, 3);
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, yTitle,
-            RecordingView.fitFont(dc, TEXT_FONTS, START_TITLE_FONT, START_TITLE,
-                RecordingView.rowBudget(radius, yTitle - cy,
-                    RecordingView.inkH(dc, titleFont))),
-            START_TITLE, CV);
+        drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hBody, 0), START_TITLE_FONT,
+            START_TITLE);
 
-        // GPS quality: 4 dots, filled up to current quality
-        var gpsReady = q >= Position.QUALITY_USABLE;
-        var step = dotStep(r);
-        for (var i = 0; i < 4; i++) {
-            var x = cx - (3 * step) / 2 + i * step;
-            if (i < q) {
-                dc.setColor(gpsReady ? Graphics.COLOR_GREEN : Graphics.COLOR_YELLOW,
-                    Graphics.COLOR_TRANSPARENT);
-                dc.fillCircle(x, yDots, r);
-            } else {
-                // Ink.dim() rather than COLOR_DK_GRAY: on a reflective MIP in sun, dark grey
-                // over a mid-grey ground is indistinguishable from no dot at all, and "how
-                // many dots are unfilled" is the whole content of this row.
-                dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
-                dc.drawCircle(x, yDots, r);
-            }
-        }
+        // GPS quality: one line, four rungs, colour and word saying the same thing twice.
+        dc.setColor(gpsColor(q), Graphics.COLOR_TRANSPARENT);
+        drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hBody, 1), START_BODY_FONT, gpsText(q));
 
-        var state = gpsReady ? "GPS ready" : "GPS...";
-        dc.setColor(gpsReady ? Graphics.COLOR_GREEN : Graphics.COLOR_LT_GRAY,
-            Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, yState,
-            RecordingView.fitFont(dc, TEXT_FONTS, START_BODY_FONT, state,
-                RecordingView.rowBudget(radius, yState - cy,
-                    RecordingView.inkH(dc, bodyFont))),
-            state, CV);
+        // The wind axis, or how to set one. Amber when unset: it is not an error — the app
+        // records perfectly well without it — but it is the one thing that cannot be fixed
+        // afterwards, so it should catch the eye before START does.
+        var wind = windText();
+        dc.setColor(AppSettings.cfg.windDirection < 0
+            ? Graphics.COLOR_YELLOW : Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hBody, 2), START_BODY_FONT, wind);
 
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, yHint,
-            RecordingView.fitFont(dc, TEXT_FONTS, START_BODY_FONT, START_HINT,
-                RecordingView.rowBudget(radius, yHint - cy,
-                    RecordingView.inkH(dc, bodyFont))),
-            START_HINT, CV);
+        drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hBody, 3), START_BODY_FONT, START_HINT);
+    }
+
+    // One centred row, at the largest font from `from` that the chord at its depth holds.
+    hidden function drawRow(dc as Dc, cx as Number, cy as Number, radius as Number,
+            y as Number, from as Number, text as String) as Void {
+        dc.drawText(cx, y, RecordingView.fitFont(dc, TEXT_FONTS, from, text,
+            RecordingView.rowBudget(radius, y - cy,
+                RecordingView.inkH(dc, TEXT_FONTS[from]))),
+            text, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 }
 
@@ -147,6 +153,19 @@ class StartDelegate extends WatchUi.BehaviorDelegate {
             PageNav.reset();
             PageNav.show();
         }
+        return true;
+    }
+
+    // MENU (a long press of UP on every fenix in the manifest) opens the wind axis — the
+    // same WindMenu the session menu opens, so there is one place the axis is set and one
+    // string on the start screen naming the button that opens it. Before this the axis could
+    // only be set from inside a running session, i.e. after the first turns had already been
+    // classified as generic ones.
+    //
+    // ONE pop, not the session menu's two: StartView is the bottom of the stack here, and
+    // popping past it would exit the app on a wind pick.
+    function onMenu() as Boolean {
+        WatchUi.pushView(WindMenu.build(), new WindMenuDelegate(1), WatchUi.SLIDE_UP);
         return true;
     }
 

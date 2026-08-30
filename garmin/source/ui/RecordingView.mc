@@ -7,7 +7,6 @@ import WingFoilCore;
 
 // Turns-page metrics, file scope so the static width helpers (shared with the layout
 // test) can reach them — class consts are instance-scoped in Monkey C.
-const TURNS_WORD_GAP = 12;
 const TURNS_TALLY_SEP = " · ";
 // Space between the coloured flew/touchdown/swim tally and the session success rate that
 // shares its row. Wider than the tally's own separator so the two read as two groups.
@@ -23,9 +22,25 @@ const TALLY_SEP_NARROW = " ";
 const TALLY_OK = 1;
 const TALLY_SEPARATORS = 2;
 
-// Main-page streak row: "dry 7 / 12" — the live no-fall run and the session's best.
+// Main-page streak row: "dry 7 / 12" — the live no-fall run and the session's best. The Turns
+// page carries both runs, so it needs the strict one's caption too.
 const STREAK_CAPTION = "dry";
+const STREAK_FLEW_CAPTION = "fly";
 const STREAK_SEP = " / ";
+
+// The Turns page's bottom row: "49% ok  P29/S22". The words are XTINY and the numbers
+// FONT_SMALL, which is what keeps this row inside a bottom-arc chord — the same caption trick
+// the streak row uses. P/S is the ENTRY side, i.e. which tack he was on going in.
+//
+// Every space in these strings was spent and then taken back: with " % ok", "P " and " / "
+// the row measured 301 px against a 291 px chord on a 416 px glass, so the whole P/S half —
+// the one actionable number on the page — was being dropped on the 43 mm watch. It needs no
+// spaces: the caption letters are XTINY grey and the counts FONT_SMALL white, and that size
+// and colour break separates them far better than a space does.
+const TURNS_OK_SUFFIX = "% ok";
+const TURNS_PORT = "P";
+const TURNS_STBD = "S";
+const TURNS_SIDE_SEP = "/";
 
 // PAUSED banner. A word, not a value, so FONT_TINY is the right rung (docs review: XTINY and
 // TINY are label sizes) — and a narrower banner is what lets it sit high enough on the glass
@@ -136,7 +151,7 @@ class RecordingView extends WatchUi.View {
         // Pages that paint the flight-state ring, and therefore have less room for text.
         var ring = layout == PageModel.LAYOUT_HERO || layout == PageModel.LAYOUT_MAIN;
         if (layout == PageModel.LAYOUT_MAIN) {
-            drawMainPage(dc, c, foilArc);
+            drawMainPage(dc, c, i, foilArc);
         } else if (layout == PageModel.LAYOUT_HERO) {
             drawHeroPage(dc, c, i, foilArc);
         } else if (layout == PageModel.LAYOUT_GRID4) {
@@ -399,27 +414,35 @@ class RecordingView extends WatchUi.View {
     // ---- MAIN: the default page 1 ----
     //
     // Five rows, and every one of them answers a question the rider actually asks between two
-    // jibes: how fast am I going, how are the turns going, am I still dry, and what time is
-    // it. Deliberately NOT on this page: the session duration (he can see the sun) and the
+    // jibes: how fast did that run go, how are the turns going, am I still dry, and what time
+    // is it. Deliberately NOT on this page: the session duration (he can see the sun) and the
     // flight timer (it is over by the time he looks). Both remain catalog metrics for any
     // other page's slots.
     //
-    // The giant's band is FONT_NUMBER_HOT rather than the hero page's THAI_HOT, and that is a
-    // measured trade, not a compromise: THAI_HOT (210 px of line on a 454 px glass) plus a
-    // unit line leaves room for exactly two rows, and this page needs three. NUMBER_HOT still
-    // gives ~100 px of digit — three times the readability floor and by far the biggest thing
-    // on the screen — while the clock ABOVE it is what keeps the giant near the equator,
-    // where the chord is widest and the fitter never has to step it down at all.
-    hidden function drawMainPage(dc as Dc, c as SessionController, foilArc as Boolean) as Void {
+    // THE GIANT IS NOT LIVE SPEED. A rider looks at his watch when he is NOT moving — coming
+    // off a run, sitting on the board, sailing back — and at that moment the live number reads
+    // 4 km/h and tells him nothing about the run he just did. The slot therefore defaults to
+    // the best 10 s, and it is a CONFIGURABLE slot (pg1s1) like any HERO giant: a rider who
+    // wants the live number back sets M_SPEED in Garmin Connect, and no code knows the
+    // difference. That is also why the giant now carries a small caption — "best 10s" is not
+    // self-evident the way a live speedometer was.
+    //
+    // The clock is a rung LARGER than it was and the giant a band SMALLER (FONT_NUMBER_MEDIUM,
+    // ~88 px of digit — still three times the readability floor and by far the biggest thing
+    // on the glass), and the unit that used to own a whole row now sits INLINE behind the
+    // digits. Between them those two changes bought the outcome-dot strip its row without
+    // anything else moving.
+    hidden function drawMainPage(dc as Dc, c as SessionController, page as Number,
+            foilArc as Boolean) as Void {
         var e = c.engine;
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var radius = fitRadius(dc, true, foilArc);
-        var hS = dc.getFontHeight(Graphics.FONT_SMALL);
-        var hN = dc.getFontHeight(Graphics.FONT_NUMBER_HOT);
-        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
-        var hL = dc.getFontHeight(Graphics.FONT_LARGE);
-        var hM = dc.getFontHeight(Graphics.FONT_MEDIUM);
+        var hC = dc.getFontHeight(Graphics.FONT_LARGE);
+        var hN = dc.getFontHeight(Graphics.FONT_NUMBER_MEDIUM);
+        var hO = dc.getFontHeight(Graphics.FONT_LARGE);
+        var hD = stripBandH(dc);
+        var hK = dc.getFontHeight(Graphics.FONT_MEDIUM);
 
         drawStateRing(dc, c, foilArc);
 
@@ -428,41 +451,95 @@ class RecordingView extends WatchUi.View {
         // session is more urgent than the time, and the swap costs no pixels.
         var paused = c.state == SessionController.STATE_PAUSED;
         var top = paused ? PAUSED_TEXT : PageModel.clockString();
-        var y = mainRowY(cy, hS, hN, hT, hL, hM, 0);
+        var y = mainRowY(cy, hC, hN, hD, hO, hK, 0);
         dc.setColor(paused ? Graphics.COLOR_YELLOW : Graphics.COLOR_LT_GRAY,
             Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, fitFont(dc, TEXT_FONTS, 2, top,
-            rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_SMALL))), top, CV);
+        dc.drawText(cx, y, fitFont(dc, TEXT_FONTS, 0, top,
+            rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_LARGE))), top, CV);
 
-        // row 1 + 2 — the hero and its unit line
-        var v = AppSettings.speedToDisplay(e.speedMps).format("%.1f");
-        y = mainRowY(cy, hS, hN, hT, hL, hM, 1);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, fitFont(dc, NUMBER_FONTS, 1, v,
-            rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_NUMBER_HOT))), v, CV);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, mainRowY(cy, hS, hN, hT, hL, hM, 2), Graphics.FONT_XTINY,
-            AppSettings.speedLabel(), CV);
+        // row 1 — the giant, with its unit and caption inline behind the digits
+        drawMainGiant(dc, c, page, cx, cy, radius, mainRowY(cy, hC, hN, hD, hO, hK, 1));
+
+        // row 2 — every counted turn as one dot, oldest left. It sits DIRECTLY under the
+        // giant, straddling the equator with it, because it is the widest thing on the page
+        // and the equator is where the chord is widest: a dot strip pushed to the bottom arc
+        // loses half its dots to the glass. The counts say how many; the strip says how they
+        // arrived — three swims in a row is a different session from three swims in an hour,
+        // and no count can tell them apart.
+        y = mainRowY(cy, hC, hN, hD, hO, hK, 2);
+        drawOutcomeStrip(dc, cx, y, rowBudget(radius, y - cy, hD), e.history);
 
         // row 3 — the outcome ladder as three counts. Colour AND position carry the verdict,
         // so it reads before the digits are in focus: green flew, orange touched, red swam.
-        drawTally(dc, cx, mainRowY(cy, hS, hN, hT, hL, hM, 3), cy, radius, e.turns, "", 0);
+        drawTally(dc, cx, mainRowY(cy, hC, hN, hD, hO, hK, 3), cy, radius, e.turns, "", 0);
 
         // row 4 — the dry run: how many turns since he last went in, and the session's best.
-        drawStreakRow(dc, cx, mainRowY(cy, hS, hN, hT, hL, hM, 4), cy, radius, e.turns);
+        drawStreakRow(dc, cx, mainRowY(cy, hC, hN, hD, hO, hK, 4), cy, radius, e.turns);
     }
 
-    // Row centres for MAIN: 0 clock/state · 1 giant · 2 unit line · 3 outcome counts ·
+    // The MAIN giant: a catalog metric in the page's s1 slot, its value in the number ladder
+    // and its unit + caption as two XTINY lines wedged in beside the digits, bottom-aligned on
+    // the digits' own baseline. The unit used to be a whole row of its own; inline it costs
+    // nothing vertically and reads as part of the same number.
+    hidden function drawMainGiant(dc as Dc, c as SessionController, page as Number,
+            cx as Number, cy as Number, radius as Number, y as Number) as Void {
+        var id = PageModel.slotAt(page, 0);
+        if (id == PageModel.M_NONE) {
+            id = PageModel.M_BEST_10S;      // a page 1 with no giant is not a page 1
+        }
+        var v = PageModel.value(id, c);
+        var unit = PageModel.unitOf(id);
+        var cap = PageModel.caption(id);
+        var sufW = giantSuffixWidth(dc, unit, cap);
+        var f = fitGiant(dc, v, 2,
+            rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_NUMBER_MEDIUM)) - sufW);
+        var wv = dc.getTextWidthInPixels(v, f);
+        var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
+        var x = cx - (wv + sufW) / 2;
+        dc.setColor(PageModel.color(id, c), Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, y, f, v, LV);
+        x += wv + GLYPH_GAP;
+        var lines = (unit.equals("") ? 0 : 1) + (cap.equals("") ? 0 : 1);
+        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        if (!unit.equals("")) {
+            dc.drawText(x, suffixLineY(dc, y, f, 0, lines), Graphics.FONT_XTINY, unit, LV);
+        }
+        if (!cap.equals("")) {
+            dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
+            dc.drawText(x, suffixLineY(dc, y, f, 1, lines), Graphics.FONT_XTINY, cap, LV);
+        }
+    }
+
+    // Width the inline suffix block takes from the giant's row budget: the wider of the two
+    // XTINY lines, plus the gap that separates it from the digits. Shared with the layout test.
+    static function giantSuffixWidth(dc as Dc, unit as String, cap as String) as Number {
+        var wu = unit.equals("") ? 0 : dc.getTextWidthInPixels(unit, Graphics.FONT_XTINY);
+        var wc = cap.equals("") ? 0 : dc.getTextWidthInPixels(cap, Graphics.FONT_XTINY);
+        var w = wu > wc ? wu : wc;
+        return w == 0 ? 0 : w + GLYPH_GAP;
+    }
+
+    // Ink centre of suffix line `line` (0 = unit, 1 = caption) of a `lines`-line block whose
+    // bottom sits on the digits' baseline — approximated, as everywhere else in this file, by
+    // the ink half-height below the row centre.
+    static function suffixLineY(dc as Dc, y as Number, f as Graphics.FontType, line as Number,
+            lines as Number) as Number {
+        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+        var base = y + inkH(dc, f) / 2 - hT / 2;
+        return lines == 2 && line == 0 ? base - hT : base;
+    }
+
+    // Row centres for MAIN: 0 clock/state · 1 giant · 2 outcome dots · 3 outcome counts ·
     // 4 streak. Stacked from font heights only, like every other page, so the rows can never
     // overlap on any variant. Shared with the layout test.
-    static function mainRowY(cy as Number, hS as Number, hN as Number, hT as Number,
-            hL as Number, hM as Number, row as Number) as Number {
-        var y = cy - (hS + hN + hT + hL + hM) / 2;
-        if (row == 0) { return y + hS / 2; }
-        if (row == 1) { return y + hS + hN / 2; }
-        if (row == 2) { return y + hS + hN + hT / 2; }
-        if (row == 3) { return y + hS + hN + hT + hL / 2; }
-        return y + hS + hN + hT + hL + hM / 2;
+    static function mainRowY(cy as Number, hC as Number, hN as Number, hD as Number,
+            hO as Number, hK as Number, row as Number) as Number {
+        var y = cy - (hC + hN + hD + hO + hK) / 2;
+        if (row == 0) { return y + hC / 2; }
+        if (row == 1) { return y + hC + hN / 2; }
+        if (row == 2) { return y + hC + hN + hD / 2; }
+        if (row == 3) { return y + hC + hN + hD + hO / 2; }
+        return y + hC + hN + hD + hO + hK / 2;
     }
 
     // "dry 7 / 12" — the live no-fall run beside the session's longest (docs/algorithms.md
@@ -473,37 +550,58 @@ class RecordingView extends WatchUi.View {
         var now = t.dryStreak.toString();
         var best = t.bestDryStreak.toString();
         var f = streakFont(dc, now, best,
-            rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_MEDIUM)));
+            rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_MEDIUM)), 1);
+        drawStreakPair(dc, cx - streakWidth(dc, now, best, f) / 2, y, STREAK_CAPTION, now,
+            best, f, true);
+    }
+
+    // One "<caption> now / best" group, drawn from its LEFT edge and returning the x it ended
+    // at, so a row can carry two of them. `showNow` off draws the best alone, which is what a
+    // post-save page wants: "the current run" stops meaning anything once the rider is ashore.
+    function drawStreakPair(dc as Dc, x as Number, y as Number, caption as String,
+            now as String, best as String, f as Graphics.FontType,
+            showNow as Boolean) as Number {
         var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
-        var x = cx - streakWidth(dc, now, best, f) / 2;
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, y, Graphics.FONT_XTINY, STREAK_CAPTION, LV);
-        x += dc.getTextWidthInPixels(STREAK_CAPTION, Graphics.FONT_XTINY) + GLYPH_GAP;
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, y, f, now, LV);
-        x += dc.getTextWidthInPixels(now, f);
-        dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, y, Graphics.FONT_XTINY, STREAK_SEP, LV);
-        x += dc.getTextWidthInPixels(STREAK_SEP, Graphics.FONT_XTINY);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, y, Graphics.FONT_XTINY, caption, LV);
+        x += dc.getTextWidthInPixels(caption, Graphics.FONT_XTINY) + GLYPH_GAP;
+        if (showNow) {
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(x, y, f, now, LV);
+            x += dc.getTextWidthInPixels(now, f);
+            dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
+            dc.drawText(x, y, Graphics.FONT_XTINY, STREAK_SEP, LV);
+            x += dc.getTextWidthInPixels(STREAK_SEP, Graphics.FONT_XTINY);
+        }
+        dc.setColor(showNow ? Graphics.COLOR_LT_GRAY : Graphics.COLOR_WHITE,
+            Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, f, best, LV);
+        return x + dc.getTextWidthInPixels(best, f);
     }
 
     // Width of that block: an XTINY caption and separator around two numbers in `f`. Shared
     // with the layout test, which measures it at "99 / 99".
     static function streakWidth(dc as Dc, now as String, best as String,
             f as Graphics.FontType) as Number {
-        return dc.getTextWidthInPixels(STREAK_CAPTION, Graphics.FONT_XTINY) + GLYPH_GAP
-            + dc.getTextWidthInPixels(now, f)
-            + dc.getTextWidthInPixels(STREAK_SEP, Graphics.FONT_XTINY)
-            + dc.getTextWidthInPixels(best, f);
+        return pairWidth(dc, STREAK_CAPTION, now, best, f, true);
     }
 
-    // The numbers step down from FONT_MEDIUM — the row's reserved band — and no further than
-    // FONT_SMALL, which is the floor for anything carrying a digit.
+    static function pairWidth(dc as Dc, caption as String, now as String, best as String,
+            f as Graphics.FontType, showNow as Boolean) as Number {
+        var w = dc.getTextWidthInPixels(caption, Graphics.FONT_XTINY) + GLYPH_GAP
+            + dc.getTextWidthInPixels(best, f);
+        if (showNow) {
+            w += dc.getTextWidthInPixels(now, f)
+                + dc.getTextWidthInPixels(STREAK_SEP, Graphics.FONT_XTINY);
+        }
+        return w;
+    }
+
+    // The numbers step down from TEXT_FONTS[from] — the row's reserved band — and no further
+    // than FONT_SMALL, which is the floor for anything carrying a digit.
     static function streakFont(dc as Dc, now as String, best as String,
-            budget as Number) as Graphics.FontType {
-        for (var i = 1; i < TALLY_FLOOR; i++) {
+            budget as Number, from as Number) as Graphics.FontType {
+        for (var i = from; i < TALLY_FLOOR; i++) {
             if (streakWidth(dc, now, best, TEXT_FONTS[i]) <= budget) {
                 return TEXT_FONTS[i];
             }
@@ -672,22 +770,26 @@ class RecordingView extends WatchUi.View {
         dc.drawText(x, yv, fitFont(dc, TEXT_FONTS, 0, value, maxW), value, CV);
     }
 
-    // A cell's label row: the metric's glyph, then — when showLabels is on — the word beside
-    // it, the pair centred on the cell's column as one block. With labels off the glyph alone
-    // carries the meaning, which is the whole point of drawing them.
+    // A cell's label row: the WORD, or — when showLabels is off — the metric's glyph in its
+    // place. Never both.
+    //
+    // They used to be drawn together, and the pair said one thing twice: a ruler beside the
+    // word "km", a wing beside "flights". The glyph then had to be read as well as the word,
+    // in a row that is 37 px of XTINY on a 454 px glass, and it pushed the word off the
+    // column's centre for no information at all. The glyph earns its place only where the
+    // word is not there — with labels off it is the entire content of the row, which is why
+    // it stays for exactly that case: no cell may ever show a bare number.
     hidden function drawCellLabel(dc as Dc, x as Number, y as Number, id as Number) as Void {
-        var g = PageModel.glyph(id);
         var s = Glyphs.size(dc);
         var label = AppSettings.showLabels ? PageModel.label(id) : "";
-        var left = x - cellLabelWidth(dc, id, s, label) / 2;
-        if (g != Glyphs.G_NONE) {
-            Glyphs.draw(dc, g, left + s / 2, y, s, Graphics.COLOR_LT_GRAY);
-            left += s + (label.length() > 0 ? GLYPH_GAP : 0);
-        }
         if (label.length() > 0) {
             dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(left, y, Graphics.FONT_XTINY, label,
-                Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+            dc.drawText(x, y, Graphics.FONT_XTINY, label, CV);
+            return;
+        }
+        var g = PageModel.glyph(id);
+        if (g != Glyphs.G_NONE) {
+            Glyphs.draw(dc, g, x, y, s, Graphics.COLOR_LT_GRAY);
         }
     }
 
@@ -695,14 +797,10 @@ class RecordingView extends WatchUi.View {
     // the chord exactly as it measures the value row.
     static function cellLabelWidth(dc as Dc, id as Number, s as Number,
             label as String) as Number {
-        var w = 0;
-        if (PageModel.glyph(id) != Glyphs.G_NONE) {
-            w = s;
-            if (label.length() > 0) {
-                w += GLYPH_GAP;
-            }
+        if (label.length() > 0) {
+            return dc.getTextWidthInPixels(label, Graphics.FONT_XTINY);
         }
-        return w + dc.getTextWidthInPixels(label, Graphics.FONT_XTINY);
+        return PageModel.glyph(id) != Glyphs.G_NONE ? s : 0;
     }
 
     // ---- RECORDS: live speed records, one giant number per block ----
@@ -758,78 +856,221 @@ class RecordingView extends WatchUi.View {
         return row == 2 ? y : y + (hT + hHot) / 2;
     }
 
-    // ---- TURNS: the last turn's score as the giant, the tack/jibe split under it, the tally
-    // at the bottom ----
+    // ---- TURNS: the outcome tally as the giant, both streaks, the dot strip, and the
+    // session's verdict with its port/starboard split ----
     //
-    // The hierarchy used to be inverted: the NUMBER_HOT slot held the tack/jibe COUNT — a
-    // number a rider reads once an hour — while the thing that changes on every jibe, the
-    // outcome and its score, sat two rungs smaller. The question this page is opened to
-    // answer is "did that one count?", so the score is now the giant and wears the outcome's
-    // own colour: colour and number in one mark, readable before the eye has focused. The
-    // symbol keeps it company on the same row because shape is a second channel for anyone
-    // who cannot use colour.
+    // The hierarchy has been inverted twice now. It started with the tack/jibe COUNT as the
+    // giant — a number a rider reads once an hour. It then promoted the LAST turn's score,
+    // which answers "did that one count?" — but a rider looks at this page when he is sitting
+    // on the board, not two seconds out of a jibe, and by then the last score is history.
+    //
+    // What survives that wait is the SESSION: how the day is going, three counts wide. So the
+    // tally itself is the giant — three counts in the three ladder colours, colour and number
+    // in one mark — and everything else on the page is the same question at a different
+    // resolution: the strip is those turns in order, the streaks are how they clustered, and
+    // the bottom row is what share worked and whether one side of the wind is costing him.
+    //
+    // The last outcome is not lost: it is the rightmost dot on the strip, in its own colour,
+    // which is where a sequence naturally puts it.
     hidden function drawTurnsPage(dc as Dc, c as SessionController) as Void {
+        drawTurnsBody(dc, c, true);
+    }
+
+    // `live` off is the post-save form: the streaks show the session's BESTS alone, because
+    // "the run he is on" stops meaning anything the moment he is ashore. Everything else is
+    // identical, which is the point — two screens showing one session's turns must not be two
+    // pieces of code (the summary calls straight into this).
+    function drawTurnsBody(dc as Dc, c as SessionController, live as Boolean) as Void {
         var t = c.engine.turns;
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var radius = fitRadius(dc, false, false);
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
-        var hHot = dc.getFontHeight(Graphics.FONT_NUMBER_HOT);
-        var hL = dc.getFontHeight(Graphics.FONT_LARGE);
+        var hG = dc.getFontHeight(Graphics.FONT_NUMBER_MEDIUM);
+        var hK = dc.getFontHeight(Graphics.FONT_MEDIUM);
+        var hD = stripBandH(dc);
         var hS = dc.getFontHeight(Graphics.FONT_SMALL);
         var windSet = AppSettings.cfg.windDirection >= 0;
 
-        var y = turnsRowY(cy, hT, hHot, hL, hS, 0);
+        // row 0 — the header, unchanged: which two maneuvers the counts below are, and the
+        // axis that split them.
+        var y = turnsRowY(cy, hT, hG, hK, hD, hS, 0);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, Graphics.FONT_XTINY,
             windSet ? "tack / jibe  " + AppSettings.windLabel() : "turns", CV);
 
-        // row 1 — the giant: the last turn's score, in its verdict colour. On the vertical
-        // centre line, where the round display is widest.
-        y = turnsRowY(cy, hT, hHot, hL, hS, 1);
-        var score = scoreText(t.lastOutcome, t.lastScorePct);
-        dc.setColor(outcomeColor(t.lastOutcome), Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, fitFont(dc, NUMBER_FONTS, 1, score,
-            rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_NUMBER_HOT))), score, CV);
+        // row 1 — the giant: flew · touched · swam, in the ladder's own colours, with the
+        // separators drawn as dim dots because the number fonts have no punctuation.
+        drawGiantTally(dc, cx, turnsRowY(cy, hT, hG, hK, hD, hS, 1), cy, radius, t);
 
-        // row 2 — the split, with the outcome symbol leading it. FONT_LARGE: still ~41 px of
-        // digit, and it is the number that answers "how much have I done", not "how did that
-        // one go".
-        y = turnsRowY(cy, hT, hHot, hL, hS, 2);
-        var symW = outcomeSymSize(dc);
-        var split = windSet
-            ? t.tackCount.toString() + " / " + t.jibeCount.toString()
-            : t.turnCount.toString();
+        // row 2 — both streaks. The dry run says "how long since I last went in", the flew run
+        // "how long since I last even touched down"; bestFlewStreak <= bestDryStreak always.
+        drawStreakRow2(dc, cx, turnsRowY(cy, hT, hG, hK, hD, hS, 2), cy, radius, t, live);
+
+        // row 3 — the same turns as row 1, one dot each, in the order they happened.
+        y = turnsRowY(cy, hT, hG, hK, hD, hS, 3);
+        drawOutcomeStrip(dc, cx, y, rowBudget(radius, y - cy, hD), c.engine.history);
+
+        // row 4 — the verdict, and the asymmetry underneath it. Which side of the wind he
+        // enters on is the one thing on this page he can act on tomorrow.
+        drawVerdictRow(dc, cx, turnsRowY(cy, hT, hG, hK, hD, hS, 4), cy, radius, t);
+    }
+
+    // The giant tally: three counts in a NUMBER font with two dim dots between them. Number
+    // fonts are digit-only — no " · " to be had — so the separator is drawn, which is also
+    // what lets it shrink with the digits instead of pinning a text font's punctuation beside
+    // them. Starts at FONT_NUMBER_MEDIUM and steps down through MILD into the text ladder,
+    // floored at FONT_SMALL like every other count on the watch.
+    hidden function drawGiantTally(dc as Dc, cx as Number, y as Number, cy as Number,
+            radius as Number, t as TurnDetector) as Void {
+        var a = t.flewCount.toString();
+        var b = t.touchdownCount.toString();
+        var s = t.fellCount.toString();
+        var f = giantTallyFont(dc, a, b, s,
+            rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_NUMBER_MEDIUM)));
         var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
-        var x = cx - outcomeWidth(dc, symW, split) / 2;
-        Glyphs.drawOutcome(dc, outcomeSymbol(t.lastOutcome), x + symW / 2, y, symW,
-            outcomeColor(t.lastOutcome));
+        var sep = giantSepW(dc, f);
+        var r = giantSepR(dc, f);
+        var x = cx - giantTallyWidth(dc, a, b, s, f) / 2;
+        var cols = [Ink.ladderFlew(), Ink.ladderTouchdown(), Ink.ladderFellIn()];
+        var vals = [a, b, s];
+        for (var i = 0; i < 3; i++) {
+            if (i > 0) {
+                dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
+                dc.fillCircle(x + sep / 2, y, r);
+                x += sep;
+            }
+            dc.setColor(cols[i], Graphics.COLOR_TRANSPARENT);
+            dc.drawText(x, y, f, vals[i], LV);
+            x += dc.getTextWidthInPixels(vals[i], f);
+        }
+    }
+
+    // Separator slot and dot radius, both derived from the ink height of whatever font the
+    // tally landed in, so the three groups keep their proportions on every variant.
+    static function giantSepW(dc as Dc, f as Graphics.FontType) as Number {
+        return inkH(dc, f) / 3;
+    }
+
+    static function giantSepR(dc as Dc, f as Graphics.FontType) as Number {
+        var r = inkH(dc, f) / 14;
+        return r < 2 ? 2 : r;
+    }
+
+    static function giantTallyWidth(dc as Dc, a as String, b as String, s as String,
+            f as Graphics.FontType) as Number {
+        return dc.getTextWidthInPixels(a, f) + dc.getTextWidthInPixels(b, f)
+            + dc.getTextWidthInPixels(s, f) + 2 * giantSepW(dc, f);
+    }
+
+    // NUMBER_MEDIUM, then MILD, then down the text ladder to the FONT_SMALL floor. A count is
+    // a value, and a value below FONT_SMALL is not readable at arm's length.
+    static function giantTallyFont(dc as Dc, a as String, b as String, s as String,
+            budget as Number) as Graphics.FontType {
+        for (var i = 2; i < NUMBER_FONTS.size(); i++) {
+            if (giantTallyWidth(dc, a, b, s, NUMBER_FONTS[i]) <= budget) {
+                return NUMBER_FONTS[i];
+            }
+        }
+        for (var i = 0; i < TALLY_FLOOR; i++) {
+            if (giantTallyWidth(dc, a, b, s, TEXT_FONTS[i]) <= budget) {
+                return TEXT_FONTS[i];
+            }
+        }
+        return TEXT_FONTS[TALLY_FLOOR];
+    }
+
+    // Two "<caption> now / best" groups on one row, centred as one block.
+    hidden function drawStreakRow2(dc as Dc, cx as Number, y as Number, cy as Number,
+            radius as Number, t as TurnDetector, live as Boolean) as Void {
+        var fNow = t.flewStreak.toString();
+        var fBest = t.bestFlewStreak.toString();
+        var dNow = t.dryStreak.toString();
+        var dBest = t.bestDryStreak.toString();
+        var budget = rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_MEDIUM));
+        var f = streakRow2Font(dc, fNow, fBest, dNow, dBest, budget, live);
+        var x = cx - streakRow2Width(dc, fNow, fBest, dNow, dBest, f, live) / 2;
+        x = drawStreakPair(dc, x, y, STREAK_FLEW_CAPTION, fNow, fBest, f, live);
+        drawStreakPair(dc, x + TURNS_OK_GAP, y, STREAK_CAPTION, dNow, dBest, f, live);
+    }
+
+    static function streakRow2Width(dc as Dc, fNow as String, fBest as String, dNow as String,
+            dBest as String, f as Graphics.FontType, live as Boolean) as Number {
+        return pairWidth(dc, STREAK_FLEW_CAPTION, fNow, fBest, f, live) + TURNS_OK_GAP
+            + pairWidth(dc, STREAK_CAPTION, dNow, dBest, f, live);
+    }
+
+    static function streakRow2Font(dc as Dc, fNow as String, fBest as String, dNow as String,
+            dBest as String, budget as Number, live as Boolean) as Graphics.FontType {
+        for (var i = 1; i < TALLY_FLOOR; i++) {
+            if (streakRow2Width(dc, fNow, fBest, dNow, dBest, TEXT_FONTS[i], live) <= budget) {
+                return TEXT_FONTS[i];
+            }
+        }
+        return TEXT_FONTS[TALLY_FLOOR];
+    }
+
+    // "49 % ok · P 29 / S 22" — the share of turns that worked, and which side of the wind he
+    // entered them on. Values in FONT_SMALL, every word around them XTINY, exactly as the
+    // streak row does it, which is what keeps a nine-glyph row inside a bottom-arc chord.
+    //
+    // The P/S half is DROPPED, not shrunk, when the side counts are absent (no wind axis, so
+    // no side to be on) or when the chord cannot hold it. A number that has to lie about its
+    // size to fit is worse than a number that is not there.
+    hidden function drawVerdictRow(dc as Dc, cx as Number, y as Number, cy as Number,
+            radius as Number, t as TurnDetector) as Void {
+        if (t.turnCount <= 0) {
+            return;                 // no turns, no verdict: "0% ok" is not a fact yet
+        }
+        var pct = (t.successCount * 100 / t.turnCount).toString();
+        var p = t.portEntryCount.toString();
+        var s = t.starboardEntryCount.toString();
+        var sides = t.portEntryCount + t.starboardEntryCount > 0
+            && verdictWidth(dc, pct, p, s, true)
+                <= rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_SMALL));
+        var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
+        var f = Graphics.FONT_SMALL;
+        var x = cx - verdictWidth(dc, pct, p, s, sides) / 2;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x + symW + TURNS_WORD_GAP, y, Graphics.FONT_LARGE, split, LV);
-
-        // row 3 — tally: flew · touchdown · swim, in the ladder's own colours, plus the
-        // session's verdict when the row can hold it.
-        drawTally(dc, cx, turnsRowY(cy, hT, hHot, hL, hS, 3), cy, radius, t,
-            okText(t.turnCount, t.successCount), TALLY_FLOOR);
+        dc.drawText(x, y, f, pct, LV);
+        x += dc.getTextWidthInPixels(pct, f);
+        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, y, Graphics.FONT_XTINY, TURNS_OK_SUFFIX, LV);
+        if (!sides) {
+            return;
+        }
+        x += dc.getTextWidthInPixels(TURNS_OK_SUFFIX, Graphics.FONT_XTINY) + TURNS_OK_GAP;
+        dc.drawText(x, y, Graphics.FONT_XTINY, TURNS_PORT, LV);
+        x += dc.getTextWidthInPixels(TURNS_PORT, Graphics.FONT_XTINY);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, y, f, p, LV);
+        x += dc.getTextWidthInPixels(p, f);
+        dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, y, Graphics.FONT_XTINY, TURNS_SIDE_SEP, LV);
+        x += dc.getTextWidthInPixels(TURNS_SIDE_SEP, Graphics.FONT_XTINY);
+        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, y, Graphics.FONT_XTINY, TURNS_STBD, LV);
+        x += dc.getTextWidthInPixels(TURNS_STBD, Graphics.FONT_XTINY);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, y, f, s, LV);
     }
 
-    // The giant on the Turns page. "--" until a turn has been scored: "0%" before the first
-    // jibe reads like a verdict on a jibe that never happened.
-    static function scoreText(outcome as Number, pct as Number) as String {
-        return outcome == TurnDetector.OUTCOME_NONE ? "--" : pct.toString() + "%";
-    }
-
-    static function outcomeSymbol(outcome as Number) as Number {
-        if (outcome == TurnDetector.OUTCOME_FLEW) { return Glyphs.O_CHECK; }
-        if (outcome == TurnDetector.OUTCOME_TOUCHDOWN) { return Glyphs.O_TRIANGLE; }
-        if (outcome == TurnDetector.OUTCOME_FELL) { return Glyphs.O_CROSS; }
-        return Glyphs.O_DASH;
-    }
-
-    // The outcome symbol's box: the ink height of the score beside it, so the two read as one
-    // line whatever the variant's font metrics are.
-    static function outcomeSymSize(dc as Dc) as Number {
-        return inkH(dc, Graphics.FONT_LARGE);
+    // Width of that row, with and without its port/starboard half. Shared with the layout
+    // test, which measures it at "100 % ok · P 99 / S 99".
+    static function verdictWidth(dc as Dc, pct as String, p as String, s as String,
+            sides as Boolean) as Number {
+        var f = Graphics.FONT_SMALL;
+        var w = dc.getTextWidthInPixels(pct, f)
+            + dc.getTextWidthInPixels(TURNS_OK_SUFFIX, Graphics.FONT_XTINY);
+        if (!sides) {
+            return w;
+        }
+        return w + TURNS_OK_GAP
+            + dc.getTextWidthInPixels(TURNS_PORT, Graphics.FONT_XTINY)
+            + dc.getTextWidthInPixels(p, f)
+            + dc.getTextWidthInPixels(TURNS_SIDE_SEP, Graphics.FONT_XTINY)
+            + dc.getTextWidthInPixels(TURNS_STBD, Graphics.FONT_XTINY)
+            + dc.getTextWidthInPixels(s, f);
     }
 
     // The outcome ladder, and nothing else on the watch may borrow it (docs/presentation.md).
@@ -843,26 +1084,17 @@ class RecordingView extends WatchUi.View {
         return Ink.ladderNone();
     }
 
-    // Row centre for the Turns page: 0 = header, 1 = counts, 2 = outcome, 3 = tally.
-    // Stacked from font heights only, so the rows can never overlap on any variant.
-    // Shared with the layout test, which asserts every row still clears the circle.
-    static function turnsRowY(cy as Number, hT as Number, hHot as Number, hL as Number,
-            hS as Number, row as Number) as Number {
-        var y = cy - (hT + hHot + hL + hS) / 2 + hT / 2;
-        if (row == 0) {
-            return y;
-        }
-        y += (hT + hHot) / 2;
-        if (row == 1) {
-            return y;
-        }
-        y += (hHot + hL) / 2;
-        return row == 2 ? y : y + (hL + hS) / 2;
-    }
-
-    // Total width of the "<symbol> <score>" block.
-    static function outcomeWidth(dc as Dc, symW as Number, score as String) as Number {
-        return symW + TURNS_WORD_GAP + dc.getTextWidthInPixels(score, Graphics.FONT_LARGE);
+    // Row centres for the Turns page: 0 header · 1 giant tally · 2 streaks · 3 outcome dots ·
+    // 4 verdict + side split. Stacked from font heights only, so the rows can never overlap on
+    // any variant. Shared with the layout test, which asserts every row clears the circle.
+    static function turnsRowY(cy as Number, hT as Number, hG as Number, hK as Number,
+            hD as Number, hS as Number, row as Number) as Number {
+        var y = cy - (hT + hG + hK + hD + hS) / 2;
+        if (row == 0) { return y + hT / 2; }
+        if (row == 1) { return y + hT + hG / 2; }
+        if (row == 2) { return y + hT + hG + hK / 2; }
+        if (row == 3) { return y + hT + hG + hK + hD / 2; }
+        return y + hT + hG + hK + hD + hS / 2;
     }
 
     // Width of the tally row: three counts, two separators, and — when it is being shown —
@@ -986,14 +1218,21 @@ class RecordingView extends WatchUi.View {
         var strip = stripH(dc);
         var spark = sparkH(dc);
 
-        // band 1: foil-fraction bars
+        // band 1: foil-fraction bars, between two rails.
+        //
+        // The rails are the whole reason this band is readable. A bar chart with one baseline
+        // says "more is more" and nothing else — there was no way to know that a full-height
+        // bar means "the whole of that half-minute was on the foil", so the band read as a
+        // decorative sawtooth. Drawing the 100 % line as well turns it into an envelope: every
+        // bar is now visibly a FRACTION of a fixed height, and the caption says which fraction.
         var top = timelineRowY(cy, hT, strip, spark, 1);
         var halfW = bandHalfWidth(radius, top, top + strip, cy);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, timelineRowY(cy, hT, strip, spark, 0), Graphics.FONT_XTINY,
-            "on foil", CV);
+            "on foil %", CV);
         dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
         dc.drawLine(cx - halfW, top + strip, cx + halfW, top + strip);
+        dc.drawLine(cx - halfW, top, cx + halfW, top);
         var n = h.slotCount;
         if (n > 0) {
             var w = 2 * halfW;
@@ -1016,8 +1255,11 @@ class RecordingView extends WatchUi.View {
         top = timelineRowY(cy, hT, strip, spark, 3);
         halfW = bandHalfWidth(radius, top, top + spark, cy);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        // "top speed", not "speed": every point on this line is the FASTEST sample in its
+        // slot, and a line labelled "speed" reads as an average — which would make the same
+        // shape mean something the app never measured.
         dc.drawText(cx, timelineRowY(cy, hT, strip, spark, 2), Graphics.FONT_XTINY,
-            "speed " + AppSettings.speedLabel(), CV);
+            "top speed " + AppSettings.speedLabel(), CV);
         var peak = h.peakCms();
         var ref = (c.engine.records.best2sMps * 100.0).toNumber();
         if (ref > peak) {
@@ -1051,14 +1293,34 @@ class RecordingView extends WatchUi.View {
         halfW = bandHalfWidth(radius, yDots - TL_DOT_R, yDots + TL_DOT_R, cy);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, timelineRowY(cy, hT, strip, spark, 4), Graphics.FONT_XTINY, "turns", CV);
-        var shown = dotsShown(h.turnCount, 2 * halfW);
+        drawOutcomeStrip(dc, cx, yDots, 2 * halfW, h);
+    }
+
+    // ---- the outcome strip ----
+    // One dot per counted turn, in the order they happened, each in its verdict colour. It is
+    // a TEXTURE, not a census: when there are more turns than the chord holds it shows the
+    // most recent that fit and says nothing about the rest, because "how has the last while
+    // gone" is the question a strip answers and a count is what answers the other one.
+    //
+    // Public and shared by three screens — the Timeline's bottom band, the MAIN page and the
+    // Turns page (and through it the post-save Turns page). One visual language for one fact
+    // means one function; the moment it was two, they would drift.
+    function drawOutcomeStrip(dc as Dc, cx as Number, y as Number, avail as Number,
+            h as SessionHistory) as Void {
+        var shown = dotsShown(h.turnCount, avail);
         var pitch = 2 * TL_DOT_R + TL_DOT_GAP;
         var x0 = cx - (shown * pitch - TL_DOT_GAP) / 2 + TL_DOT_R;
         for (var i = 0; i < shown; i++) {
-            var outcome = h.turns[h.turnCount - shown + i];
-            dc.setColor(outcomeColor(outcome), Graphics.COLOR_TRANSPARENT);
-            dc.fillCircle(x0 + i * pitch, yDots, TL_DOT_R);
+            dc.setColor(outcomeColor(h.turns[h.turnCount - shown + i]),
+                Graphics.COLOR_TRANSPARENT);
+            dc.fillCircle(x0 + i * pitch, y, TL_DOT_R);
         }
+    }
+
+    // The vertical band a strip reserves in a row stack: the dot plus a gap either side, so
+    // the rows above and below it never sit against the ink. Shared with the layout test.
+    static function stripBandH(dc as Dc) as Number {
+        return 2 * TL_DOT_R + 2 * TL_DOT_GAP;
     }
 
     // Band heights for THIS glass. TL_STRIP_H / TL_SPARK_H were authored for the fenix 8

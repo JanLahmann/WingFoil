@@ -19,10 +19,16 @@ import WingFoilCore;
 // Page 1 changed in 0.8.0 from the speed HERO (speed / flight timer / HR) to LAYOUT_MAIN.
 // The flight timer and heart rate did not disappear: they are catalog metrics and go in any
 // slot on any other page. What page 1 owes the rider is the four things he glances at
-// between two jibes — how fast, how the turns are going, whether he is still dry, and what
-// time it is — and a duration is explicitly not one of them.
+// between two jibes — how the last run went, how the turns are going, whether he is still
+// dry, and what time it is — and a duration is explicitly not one of them.
+//
+// Its giant became a SLOT in 0.8.2, defaulting to M_BEST_10S rather than live speed: a rider
+// looks at the watch when he is not moving, and the live number at that moment reads 4 km/h
+// and says nothing about the run he just finished. Anyone who wants the speedometer back sets
+// pg1s1 to M_SPEED in Garmin Connect — the renderer does not know the difference.
 //
 // Slot semantics per layout:
+//   MAIN     s1 = the giant (+ its inline unit and caption); the rest of the page is fixed
 //   HERO     s1 = giant number (+ its unit line), s2/s3 = the two rows under it
 //   GRID4    s1 = giant number on top (optional), s2..s5 = the 2x2 cells (TL, TR, BL, BR)
 //   CELLS2   s1/s2 = two side-by-side cells
@@ -41,9 +47,10 @@ module PageModel {
         LAYOUT_CLOCK = 6,
         LAYOUT_MAP = 7,
         LAYOUT_TIMELINE = 8,
-        // The default page 1 since 0.8.0: giant live speed, the outcome ladder as three
-        // counts, the no-fall streak and the time of day. Bespoke like RECORDS/TURNS —
-        // what it shows is the point of the screen, so it carries no slots.
+        // The default page 1 since 0.8.0: a giant (slot 1, best 10 s by default), the outcome
+        // ladder as three counts, the turn-outcome strip, the no-fall streak and the time of
+        // day. Bespoke like RECORDS/TURNS — everything but the giant is the point of the
+        // screen, so only slot 1 is read.
         LAYOUT_MAIN = 9
     }
     const LAYOUT_MAX = 9;
@@ -85,7 +92,7 @@ module PageModel {
         LAYOUT_MAIN, LAYOUT_GRID4, LAYOUT_RECORDS, LAYOUT_TURNS, LAYOUT_CLOCK, LAYOUT_TIMELINE
     ];
     var DEF_SLOTS as Array<Array<Number> > = [
-        [M_NONE, M_NONE, M_NONE, M_NONE, M_NONE],
+        [M_BEST_10S, M_NONE, M_NONE, M_NONE, M_NONE],
         [M_FOIL_PCT, M_FOIL_TIME, M_LONGEST, M_DISTANCE, M_FLIGHTS],
         [M_NONE, M_NONE, M_NONE, M_NONE, M_NONE],
         [M_NONE, M_NONE, M_NONE, M_NONE, M_NONE],
@@ -315,6 +322,29 @@ module PageModel {
     // in the label instead, which is what keeps a 2x2 grid inside the round glass.
     function suffix(id as Number) as String {
         return id == M_HR || id == M_TAKEOFF_COST ? " bpm" : "";
+    }
+
+    // ---- the MAIN giant's inline suffix ----
+    // The MAIN page spends no row on a unit line: the unit sits beside the digits, and under
+    // it a caption saying WHAT the number is. The two are split because they answer different
+    // questions — "24.3 what?" and "24.3 when?" — and because a metric whose label already IS
+    // its unit (speed, distance) must not print it twice.
+
+    // The unit that belongs behind the digits, "" when the metric has none.
+    function unitOf(id as Number) as String {
+        if (id == M_SPEED || id == M_BEST_2S || id == M_BEST_10S) {
+            return AppSettings.speedLabel();
+        }
+        if (id == M_DISTANCE) { return "km"; }
+        if (id == M_HR || id == M_TAKEOFF_COST) { return "bpm"; }
+        return "";
+    }
+
+    // The word that says which number this is, "" when the label is already the unit and
+    // would only be printed twice.
+    function caption(id as Number) as String {
+        var l = label(id);
+        return l.equals(unitOf(id)) ? "" : l;
     }
 
     // "now / best" — the live dry streak beside the session's longest. One string so it fits
