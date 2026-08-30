@@ -5,7 +5,7 @@ import WingFoilCore;
 
 // Sole writer of FIT developer fields. WHAT fields exist is `FitSchema`'s table (the
 // docs/fit-schema.md contract); this class only creates them from that table and feeds them
-// values. Scope: record 0+2+3+4, lap 15-16, session 20-23 + 26-27 + 32-34 + 38-39 + 43 +
+// values. Scope: record 0+2+3+4, lap 15-16, session 20-23 + 26-27 + 32-34 + 38-39 + 43-44 +
 // 54-56.
 //
 // Schema v2: the session message packs three groups of small fields into three uint32s
@@ -64,10 +64,16 @@ class FitFields {
         return MARK_NONE;
     }
 
-    // Whether this session may write the wind-derived session fields at all. One line, but
-    // it is the whole rule, and it is static so the test can assert it without a FIT session.
+    // Whether this session may write the wind-derived session fields at all.
+    //
+    // 0.8.1's rule was "the rider set an axis". 0.9.0 widens it by exactly one word: EITHER a
+    // manual axis or the watch's own estimate. What the gate has always asked is "was anything
+    // classified?", and once AutoWind adopts a direction the answer is yes — the tack/jibe
+    // split is then a real observation and omitting it would lose it. Both flags are sticky
+    // for the same reason: turns already split stay split even if the axis is cleared
+    // afterwards. Static so the test can assert it without a FIT session.
     static function writesTurnCounts() as Boolean {
-        return AppSettings.windEverSet;
+        return AppSettings.windEverSet || AppSettings.autoWindEverSet;
     }
 
     hidden function _u8(v as Number) as Number {
@@ -110,22 +116,27 @@ class FitFields {
         _f[FitSchema.SES_TURN_SUCCESS].setData(turns.successPct());
         _f[FitSchema.SES_PUMP_STROKES].setData(pump.strokes > 65534 ? 65534 : pump.strokes);
 
-        // The tack/jibe split, and the axis it was split on, are written ONLY when a wind
-        // axis was actually set. A developer field whose setData is never called is simply
-        // not emitted, so the fields are ABSENT rather than zero — which is the difference
-        // between "this session had no wind axis, so nothing was classified" and "this rider
-        // did 0 tacks and 0 jibes in two hours". Without an axis TurnDetector classifies
-        // every sweep KIND_TURN, so both counters are structurally 0 and writing them would
-        // be writing a measurement nobody made. The phone's parser already reads an absent
-        // pair as unclassified, and reads the 0/0-without-wind of older files the same way
-        // (docs/fit-schema.md).
+        // The tack/jibe split, and the axes it could have been split on, are written ONLY when
+        // a wind axis was in effect at some point — the rider's or the watch's own estimate. A
+        // developer field whose setData is never called is simply not emitted, so the fields
+        // are ABSENT rather than zero, which is the difference between "this session had no
+        // wind axis, so nothing was classified" and "this rider did 0 tacks and 0 jibes in two
+        // hours". With no axis at all TurnDetector classifies every sweep KIND_TURN, so both
+        // counters are structurally 0 and writing them would be writing a measurement nobody
+        // made. The phone's parser reads an absent pair as unclassified, and reads the
+        // 0/0-without-either-wind-field of older files the same way (docs/fit-schema.md).
+        //
+        // Both wind fields go out together, each with 65535 for "this source had none", so the
+        // phone can always tell WHICH axis the counts were made on. 39 is the rider's bearing
+        // and 44 the watch's estimate; a session can carry one, the other, or both (the rider
+        // set an axis part-way through a session the watch had already estimated).
         if (writesTurnCounts()) {
             _f[FitSchema.SES_TACK_COUNT].setData(_u8(turns.tackCount));
             _f[FitSchema.SES_JIBE_COUNT].setData(_u8(turns.jibeCount));
-            // 65535 = unset, per docs/fit-schema.md session field 39. Reachable only if the
-            // rider set an axis and then cleared it: the counts stay, the axis says "unknown".
             _f[FitSchema.SES_WIND_DIR].setData(
-                AppSettings.cfg.windDirection < 0 ? 65535 : AppSettings.cfg.windDirection);
+                AppSettings.cfg.windManual < 0 ? 65535 : AppSettings.cfg.windManual);
+            _f[FitSchema.SES_WIND_DIR_AUTO].setData(
+                AppSettings.cfg.windAuto < 0 ? 65535 : AppSettings.cfg.windAuto);
         }
 
         // ---- the three v2 packed fields (docs/fit-schema.md session 54/55/56) ----

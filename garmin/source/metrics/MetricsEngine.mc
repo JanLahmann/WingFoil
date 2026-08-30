@@ -26,6 +26,14 @@ class MetricsEngine {
     var turns as TurnDetector;
     var records as SpeedRecords;
     var history as SessionHistory;
+    // The live wind-axis estimator (docs/algorithms.md "Watch approximation: auto wind"). It
+    // is in the barrel because it is pure computation over COG and speed, but it is DRIVEN
+    // from here, after the detectors, so that a direction adopted this second classifies the
+    // turns of the next one and never re-judges the one just resolved.
+    var autoWind as AutoWind;
+    // The one-shot backfill is exactly that: it may fire once, at the first lock, and this is
+    // the flag that says so (docs/fit-schema.md, TurnDetector.backfillWindSplit).
+    var autoWindBackfilled as Boolean = false;
     // App-only: the pump/takeoff detector reads the accelerometer, which a data field may not
     // touch, so it lives here rather than in the WingFoilCore barrel (docs/fit-schema.md
     // class d). SessionController owns the sensor listener and feeds it batches.
@@ -69,10 +77,11 @@ class MetricsEngine {
         history = new SessionHistory();
         pump = new PumpDetector(AppSettings.cfg);
         hrCost = new HrCostTracker();
+        autoWind = new AutoWind();
     }
 
     // Returns detector event (FlightDetector.EVENT_*) | pbEvents<<4 | turnEvent<<8
-    // | pumpEvent<<12.
+    // | pumpEvent<<12 | autoWindEvent<<16.
     function tick(info as Position.Info) as Number {
         var now = System.getTimer();
         var dt = _lastMs > 0 ? (now - _lastMs) / 1000.0 : 1.0;
@@ -120,9 +129,10 @@ class MetricsEngine {
             return 0;
         }
 
+        var cog = _cogDeg(info);
         var flightEvent = detector.tick(dt, speedMps, distDelta);
         var pbEvents = records.tick(speedMps);
-        var turnEvent = turns.tick(dt, _cogDeg(info), speedMps, distDelta,
+        var turnEvent = turns.tick(dt, cog, speedMps, distDelta,
             detector.state == FlightDetector.STATE_ON, submerged);
 
         // Pumping is judged against the flight and turn state of this same sample: a burst
@@ -138,10 +148,54 @@ class MetricsEngine {
         if (turnEvent >= TurnDetector.EVENT_FLEW) {
             history.logTurn(turns.lastOutcome);
         }
+        var windEvent = _autoWindTick(dt, cog, turnEvent);
         if (trackEnabled) {
             _trackTick(info, detector.state == FlightDetector.STATE_ON);
         }
-        return flightEvent | (pbEvents << 4) | (turnEvent << 8) | (pumpEvent << 12);
+        return flightEvent | (pbEvents << 4) | (turnEvent << 8) | (pumpEvent << 12)
+            | (windEvent << 16);
+    }
+
+    // The auto-wind half of a tick, after the detectors so that an axis adopted now takes
+    // effect from the NEXT sample: the sweep that just resolved was named with the wind that
+    // was in force while it happened, which is the watch's whole rule about turn labels.
+    //
+    // The single exception is the FIRST lock, and it is deliberate: the sweeps the estimator
+    // learned the axis from are the session's own first turns, and leaving them generic would
+    // mean the Turns page starts counting tacks and jibes from zero at minute two of an hour's
+    // riding. `backfillWindSplit` replays the logged sweeps once — counts only, no outcome and
+    // no score is re-judged — and `autoWindBackfilled` makes sure "once" means once.
+    hidden function _autoWindTick(dt as Float, cog as Float?, turnEvent as Number) as Number {
+        if (!AppSettings.autoWind) {
+            return 0;
+        }
+        // Read live rather than cached at construction, for the same reason the detectors read
+        // their Config live: this object is built in `WingfoilApp.initialize()`, which runs
+        // BEFORE the first `AppSettings.load()`, and a GCM edit mid-session must take effect
+        // without a restart.
+        autoWind.defaultTurnType = AppSettings.windDefaultTurnType;
+        if (turnEvent == TurnDetector.EVENT_TURN) {
+            autoWind.logSweep(turns.lastEntryU, turns.lastNetDeg);
+        }
+        var ev = autoWind.tick(dt, cog, speedMps,
+            detector.state == FlightDetector.STATE_ON);
+        if (ev == AutoWind.EV_NONE) {
+            return ev;
+        }
+        AppSettings.applyAutoWind(autoWind.dirDeg);
+        // Both the backfill and the vibe are about the axis the rider is actually being shown.
+        // With a manual bearing in force the estimate changes nothing on screen and nothing in
+        // the classifier — and backfilling against the MANUAL axis would count every logged
+        // sweep a second time, since those turns were already split as they happened.
+        if (!AppSettings.cfg.windIsAuto()) {
+            return AutoWind.EV_NONE;
+        }
+        if (ev == AutoWind.EV_LOCK && !autoWindBackfilled) {
+            autoWindBackfilled = true;
+            turns.backfillWindSplit(autoWind.sweepEntries(), autoWind.sweepNets(),
+                autoWind.sweepCount);
+        }
+        return ev;
     }
 
     // Appends a decimated breadcrumb point. When the buffer fills, every other point is

@@ -184,7 +184,17 @@ public enum FitSessionParser {
         s.takeoffSuccesses = d["takeoff_successes"]?.int
         s.avgPumpsToTakeoff = d["avg_pumps_to_takeoff"]?.double.map { $0 / 10.0 }
         s.totalPumpStrokes = d["total_pump_strokes"]?.int
-        s.windDirUserDeg = d["wind_dir_user"]?.double
+        // 65535 is the schema's "unset" for both wind fields. A well-behaved decoder drops a
+        // uint16 invalid pattern before it gets here, but the watch writes the sentinel
+        // deliberately (docs/fit-schema.md session 39/44) and a sentinel read as a bearing
+        // would be a wind from 65535° — and, worse, would look to `demoteUnclassifiedTurnCounts`
+        // like an axis that was set.
+        func windDeg(_ key: String) -> Double? {
+            guard let v = d[key]?.double, v < 65535 else { return nil }
+            return v
+        }
+        s.windDirUserDeg = windDeg("wind_dir_user")
+        s.windDirAutoDeg = windDeg("wind_dir_auto")
         s.cfgEntrySpeedMps = mps("cfg_entry_speed")
         s.cfgExitSpeedMps = mps("cfg_exit_speed")
         s.cfgMinFlightS = d["cfg_min_flight"]?.double
@@ -197,25 +207,30 @@ public enum FitSessionParser {
         return s
     }
 
-    /// `0/0` turn counts with no wind axis mean *unclassified*, not *none* — drop them.
+    /// `0/0` turn counts with **no wind axis of either kind** mean *unclassified*, not
+    /// *none* — drop them.
     ///
-    /// The watch can only name a sweep a tack or a jibe against a wind axis the rider set
-    /// by hand (docs/algorithms.md: "wind is manual only"). Older builds still wrote
-    /// `tack_count`/`jibe_count` when he never set one, and the only value they could write
-    /// was a literal 0 — so a session of fifty clean jibes arrives claiming zero of each,
-    /// and the divergence banner reports "Jibes: watch 0 vs phone 50" as if the two
-    /// implementations disagreed. They do not: the watch never counted.
+    /// Naming a sweep a tack or a jibe needs a wind axis. Until device app 0.9.0 the watch had
+    /// exactly one source for one: the bearing the rider entered by hand (`wind_dir_user`).
+    /// Since 0.9.0 it can also estimate one for itself and writes that in `wind_dir_auto`
+    /// (docs/algorithms.md "Watch approximation: auto wind"); either field means the split is
+    /// a real observation. Older builds still wrote `tack_count`/`jibe_count` when there was
+    /// no axis at all, and the only value they could write was a literal 0 — so a session of
+    /// fifty clean jibes arrives claiming zero of each, and the divergence banner reports
+    /// "Jibes: watch 0 vs phone 50" as if the two implementations disagreed. They do not: the
+    /// watch never counted.
     ///
     /// docs/presentation.md's formatter rule is that missing must be *absent*, never 0, so
     /// the pair is dropped here at the parser boundary. `DivergenceCheck` skips nil counts
     /// and therefore stops comparing them. This runs after the pack unpacking so a future
     /// packed turn field is demoted on the same rule.
     ///
-    /// Deliberately narrow: only the `0/0`-with-no-wind case, which cannot be a real
-    /// observation the watch made — one non-zero count, or any `wind_dir_user`, means the
-    /// axis was set and a 0 is a genuine "none of those", still worth comparing.
+    /// Deliberately narrow: only the `0/0`-with-no-wind-at-all case, which cannot be a real
+    /// observation the watch made — one non-zero count, or either wind field, means an axis
+    /// was in effect and a 0 is a genuine "none of those", still worth comparing.
     private static func demoteUnclassifiedTurnCounts(_ s: inout WatchSummary) {
-        guard s.windDirUserDeg == nil, s.tackCount == 0, s.jibeCount == 0 else { return }
+        guard s.windDirUserDeg == nil, s.windDirAutoDeg == nil,
+              s.tackCount == 0, s.jibeCount == 0 else { return }
         s.tackCount = nil
         s.jibeCount = nil
     }

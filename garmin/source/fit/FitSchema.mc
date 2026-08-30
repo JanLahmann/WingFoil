@@ -17,8 +17,16 @@ import Toybox.Lang;
 //     40 + 41 + 42            -> 54 `cfg_pack`      entry_cms<<16 | minFlight_s<<11 | exit_cms
 //     35 + 36 + 37            -> 55 `takeoff_pack`  avgPumpsX10<<16 | attempts<<8 | successes
 //     24 + 25                 -> 56 `longest_pack`  seconds<<16 | metres
-// SESSION is now 15 fields / 48 B: one field of headroom under the hard limit, and the tests
-// below assert it stays that way. RECORD and LAP are unchanged.
+// SESSION was then 15 fields / 48 B: one field of headroom under the hard limit.
+//
+// App 0.9.0 spends it. `wind_dir_auto`(44) carries the axis the watch worked out for itself
+// (docs/algorithms.md "Watch approximation: auto wind") beside `wind_dir_user`(39), which
+// stays exactly what it always was: the bearing the RIDER entered. Two fields rather than one
+// because the two are different claims and the phone has to be able to tell them apart —
+// a manual axis is a fact, an estimate is an inference, and the divergence check, the wind
+// source label and any future re-analysis all care which one a session was classified on.
+// SESSION is now 16 fields / 50 B, i.e. AT the limit; see SESSION_FIELD_TARGET.
+// RECORD and LAP are unchanged.
 module FitSchema {
     // Schema version, carried in the low byte of session field 43 `app_version`. A parser
     // keys its v1-direct vs v2-packed handling off it (docs/fit-schema.md).
@@ -27,19 +35,30 @@ module FitSchema {
     // of 0.8.0. It is the app's release number and nothing else — a parser that wants to know
     // which fields exist reads their PRESENCE, and SCHEMA_VERSION in the low byte when it
     // needs to disambiguate an encoding (docs/fit-schema.md).
-    const APP_MINOR = 8;
+    const APP_MINOR = 9;
     // The full version string, so "what is this build" has exactly one answer in the source
     // tree. `appVersionMatchesMinor()` in the test suite holds the two together.
-    const APP_VERSION = "0.8.0";
+    const APP_VERSION = "0.9.0";
 
     // ---- platform limits (measured, see the header) ----
     // Fields per message type. HARD: exceeding it kills the app, uncatchably.
     const LIMIT_FIELDS = 16;
     // Developer bytes per message type for a device app (docs/plan.md §2).
     const LIMIT_BYTES = 256;
-    // Self-imposed: keep a field of slack under LIMIT_FIELDS so the next row added is caught
-    // by a test with room to think, not by a bricked watch.
-    const SESSION_FIELD_TARGET = 15;
+    // The SESSION message is now AT the hard limit: 0.9.0's `wind_dir_auto`(44) spent the
+    // field of slack v2 bought back, and there is no slack left.
+    //
+    // It was spent knowingly. The alternative was to fold 39 + 44 into one `wind_pack` uint32
+    // the way 54/55/56 fold their groups, which keeps a slot free but takes `wind_dir_user`
+    // off the wire under its own name — a field every parser in the tree, the whole fixture
+    // corpus and the bundled example session already carry. Spending the slot changes no
+    // existing byte; packing would have changed one that four readers depend on.
+    //
+    // So: THE NEXT SESSION FIELD MUST PACK. `fits()` still refuses a 17th row and the test
+    // still fails before the watch does — what is gone is the warning shot, and this comment
+    // is it. The wind pair is the obvious candidate: two uint16s, neither with a Garmin
+    // Connect summary row to lose.
+    const SESSION_FIELD_TARGET = 16;
     // The 1 Hz record message is also a battery/storage budget, not just a platform one
     // (docs/fit-schema.md: 6 B/s).
     const RECORD_BYTES_TARGET = 6;
@@ -80,7 +99,8 @@ module FitSchema {
         SES_JIBE_COUNT,         // 33 uint8
         SES_TURN_SUCCESS,       // 34 uint8  %
         SES_PUMP_STROKES,       // 38 uint16
-        SES_WIND_DIR,           // 39 uint16 deg (65535 = unset)
+        SES_WIND_DIR,           // 39 uint16 deg (65535 = unset)  — the RIDER's bearing
+        SES_WIND_DIR_AUTO,      // 44 uint16 deg (65535 = unset)  — the WATCH's estimate
         SES_APP_VERSION,        // 43 uint16 (minor<<8 | schema)
         SES_CFG_PACK,           // 54 uint32 packed (v2, was 40/41/42)
         SES_TAKEOFF_PACK,       // 55 uint32 packed (v2, was 35/36/37)
@@ -95,13 +115,13 @@ module FitSchema {
         MSG_LAP, MSG_LAP,
         MSG_SESSION, MSG_SESSION, MSG_SESSION, MSG_SESSION, MSG_SESSION, MSG_SESSION,
         MSG_SESSION, MSG_SESSION, MSG_SESSION, MSG_SESSION, MSG_SESSION, MSG_SESSION,
-        MSG_SESSION, MSG_SESSION, MSG_SESSION
+        MSG_SESSION, MSG_SESSION, MSG_SESSION, MSG_SESSION
     ] as Array<Number>;
 
     const IDS = [
         0, 2, 3, 4,
         15, 16,
-        20, 21, 22, 23, 26, 27, 32, 33, 34, 38, 39, 43, 54, 55, 56
+        20, 21, 22, 23, 26, 27, 32, 33, 34, 38, 39, 44, 43, 54, 55, 56
     ] as Array<Number>;
 
     const NAMES = [
@@ -109,28 +129,29 @@ module FitSchema {
         "turn_count", "best_turn_score",
         "discipline", "foil_time", "foil_pct", "flight_count", "best_2s", "best_10s",
         "tack_count", "jibe_count", "turn_success_pct", "total_pump_strokes",
-        "wind_dir_user", "app_version", "cfg_pack", "takeoff_pack", "longest_pack"
+        "wind_dir_user", "wind_dir_auto", "app_version", "cfg_pack", "takeoff_pack",
+        "longest_pack"
     ] as Array<String>;
 
     const TYPES = [
         T_UINT8, T_UINT8, T_UINT8, T_UINT8,
         T_UINT8, T_UINT8,
         T_STRING, T_UINT32, T_UINT8, T_UINT16, T_UINT16, T_UINT16, T_UINT8, T_UINT8,
-        T_UINT8, T_UINT16, T_UINT16, T_UINT16, T_UINT32, T_UINT32, T_UINT32
+        T_UINT8, T_UINT16, T_UINT16, T_UINT16, T_UINT16, T_UINT32, T_UINT32, T_UINT32
     ] as Array<Number>;
 
     // Wire width in bytes. For T_STRING it is the declared `:count`.
     const WIDTHS = [
         1, 1, 1, 1,
         1, 1,
-        16, 4, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 4, 4, 4
+        16, 4, 1, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4
     ] as Array<Number>;
 
     // "" = no unit declared.
     const UNITS = [
         "", "spm", "", "",
         "", "%",
-        "", "s", "%", "", "cm/s", "cm/s", "", "", "%", "", "deg", "", "", "", ""
+        "", "s", "%", "", "cm/s", "cm/s", "", "", "%", "", "deg", "deg", "", "", "", ""
     ] as Array<String>;
 
     // ---- table queries ----

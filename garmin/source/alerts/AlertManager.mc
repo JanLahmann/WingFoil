@@ -29,10 +29,11 @@ module AlertManager {
         CH_INTERVAL = 2,
         CH_TAKEOFF = 3,
         CH_TURN = 4,
-        CH_COUNT = 5
+        CH_WIND = 5,
+        CH_COUNT = 6
     }
 
-    var _lastMs as Array<Number> = [0, 0, 0, 0, 0];
+    var _lastMs as Array<Number> = [0, 0, 0, 0, 0, 0];
     var _lastAnyMs as Number = 0;
 
     // Pure decision half, so the debounce rules are testable without a vibration motor.
@@ -99,6 +100,22 @@ module AlertManager {
                 new Attention.VibeProfile(100, 350)
             ]);
         }
+    }
+
+    // The watch worked out the wind axis for itself and adopted it: two rising ticks, the
+    // "something is now known" shape, on a channel of its own so it can never be swallowed by
+    // a turn verdict or a PB landing in the same five seconds (the reason channels exist at
+    // all — see the header). It fires ONCE per session by construction: only the first lock
+    // sends EV_LOCK, and every later re-evaluation is a silent update.
+    //
+    // Deliberately not behind a toggle: `autoWind` already is the toggle, and a rider who
+    // leaves it on wants to know the moment the Turns page starts saying tack and jibe.
+    function autoWindLocked() as Void {
+        _fire(CH_WIND, [
+            new Attention.VibeProfile(50, 120),
+            new Attention.VibeProfile(0, 90),
+            new Attention.VibeProfile(100, 200)
+        ]);
     }
 
     // Turn outcome resolved. Distinct rhythms so the verdict is readable without looking:

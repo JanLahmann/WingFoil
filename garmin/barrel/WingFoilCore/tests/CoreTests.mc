@@ -21,7 +21,7 @@ function coreDefaults() as Config {
     cfg.entryHoldS = 2;
     cfg.exitHoldS = 3;
     cfg.minFlightS = 5;
-    cfg.windDirection = -1;
+    cfg.setWindDirection(-1);
     return cfg;
 }
 
@@ -334,7 +334,7 @@ function turnWallowIsNotDetected(logger as Test.Logger) as Boolean {
 (:test)
 function turnBearAwayNotCountedAsJibe(logger as Test.Logger) as Boolean {
     var cfg = coreDefaults();
-    cfg.windDirection = 0;                      // wind from north
+    cfg.setWindDirection(0);                    // wind from north
     var d = new TurnDetector(cfg);
     // 60 -> 150 deg: TWA 60 -> 150, crosses neither head-to-wind nor dead downwind
     runStraight(d, 5, 60.0, 8.0);
@@ -349,7 +349,7 @@ function turnBearAwayNotCountedAsJibe(logger as Test.Logger) as Boolean {
 (:test)
 function turnJibeClassifiedWithWind(logger as Test.Logger) as Boolean {
     var cfg = coreDefaults();
-    cfg.windDirection = 0;                      // wind from north -> downwind is 180
+    cfg.setWindDirection(0);                    // wind from north -> downwind is 180
     var d = new TurnDetector(cfg);
     // 120 -> 240 deg sweeps through dead downwind: a jibe
     runStraight(d, 5, 120.0, 8.0);
@@ -571,7 +571,7 @@ function turnStreaksFollowTheOutcomeLadder(logger as Test.Logger) as Boolean {
 (:test)
 function rejectedSweepsAreInvisibleToStreaks(logger as Test.Logger) as Boolean {
     var cfg = coreDefaults();
-    cfg.windDirection = 0;                      // wind from north
+    cfg.setWindDirection(0);                    // wind from north
     var d = new TurnDetector(cfg);
 
     // Two clean jibes with a BEAR-AWAY between them. A course change is not a maneuver the
@@ -683,6 +683,300 @@ function aFallBetweenTwoFlewTurnsResetsBothStreaks(logger as Test.Logger) as Boo
     Test.assertEqual(d.bestFlewStreak, 1);
     logger.debug("2 fly-throughs split by one swim: best run "
         + d.bestDryStreak.toString() + ", not 2");
+    return true;
+}
+
+// ---- AutoWind (docs/algorithms.md "Watch approximation: auto wind") ----
+//
+// Synthetic histograms, driven one second at a time exactly as MetricsEngine would. The
+// against-real-data half of the acceptance — the two `ciq` fixtures replayed through this
+// same class — lives in garmin/tests/WingfoilTests.mc, because the recorded arrays are
+// kilobytes the data field's unit-test build has no reason to carry.
+
+// `ticks` seconds of flying at `speed`, cycling through `cogs`. Returns the last event.
+function autoWindRun(aw as AutoWind, cogs as Array<Float>, ticks as Number,
+        speed as Float) as Number {
+    var last = AutoWind.EV_NONE;
+    for (var i = 0; i < ticks; i++) {
+        var e = aw.tick(1.0, cogs[i % cogs.size()], speed, true);
+        if (e != AutoWind.EV_NONE) {
+            last = e;
+        }
+    }
+    return last;
+}
+
+function autoWindOffBy(aw as AutoWind, deg as Float) as Float {
+    return wrapDeg180(aw.dirDeg.toFloat() - deg).abs();
+}
+
+// The ordinary case, and the one the fixtures exercise at scale: two reach lobes with real
+// separation, one no-go cone holding distance and the other empty. The cone decides alone —
+// the prior is not even consulted — and the answer is the empty end.
+(:test)
+function autoWindTwoLobesResolveTheAxis(logger as Test.Logger) as Boolean {
+    var aw = new AutoWind();
+    // Reaches at 110-160 and 200-250 deg: the axis line is 0/180, and the 180 cone catches
+    // the inner tails of both lobes while nothing at all runs within 45 deg of north.
+    var cogs = [110.0, 120.0, 130.0, 140.0, 150.0, 160.0,
+        200.0, 210.0, 220.0, 230.0, 240.0, 250.0] as Array<Float>;
+    var ev = autoWindRun(aw, cogs, 200, 10.0);
+
+    Test.assertMessage(ev == AutoWind.EV_LOCK || aw.dirDeg >= 0,
+        "the estimator never locked, event " + ev.toString());
+    Test.assertMessage(autoWindOffBy(aw, 0.0) <= 20.0,
+        "wind should read ~0 deg, got " + aw.dirDeg.toString());
+    Test.assertMessage(aw.lastMargin >= aw.FULL_MARGIN,
+        "the cone should be decisive here, margin " + aw.lastMargin.format("%.3f"));
+    Test.assertMessage(aw.lastPriorVotes == 0,
+        "a decisive cone must not consult the prior at all");
+    Test.assertMessage(aw.confidence >= 0.5,
+        "confidence " + aw.confidence.format("%.2f"));
+    logger.debug("two lobes -> wind from " + aw.dirDeg.toString() + " deg, margin "
+        + aw.lastMargin.format("%.2f") + " over " + aw.distanceM.format("%.0f") + " m");
+    return true;
+}
+
+// Nothing is accumulated off the foil or below the COG speed floor — the engine's two
+// `foiling_courses` filters, live. Without them a rider drifting sideways on a swim would
+// vote in the histogram with whatever the GPS calls his heading.
+(:test)
+function autoWindIgnoresSwimmingAndSlowDrift(logger as Test.Logger) as Boolean {
+    var aw = new AutoWind();
+    for (var i = 0; i < 400; i++) {
+        aw.tick(1.0, i % 2 == 0 ? 130.0 : 230.0, 10.0, false);      // fast, but not flying
+    }
+    Test.assertMessage(aw.distanceM == 0.0,
+        "off-foil distance reached the histogram: " + aw.distanceM.toString());
+    for (var i = 0; i < 400; i++) {
+        aw.tick(1.0, i % 2 == 0 ? 130.0 : 230.0, 1.5, true);        // flying, below the floor
+    }
+    Test.assertMessage(aw.distanceM == 0.0,
+        "sub-floor distance reached the histogram: " + aw.distanceM.toString());
+    Test.assertMessage(aw.dirDeg < 0, "nothing to estimate from, yet it estimated");
+    logger.debug("gates hold: 800 excluded samples, 0 m of histogram mass");
+    return true;
+}
+
+// Two opposed broad reaches and no upwind work at all: BOTH no-go cones are empty, the
+// margin is 0 and the axis line is perfectly usable while its direction is a coin flip.
+// This is the case the default-turn-type prior exists for. Under one end of the axis every
+// sweep is a tack, under the other every one is a jibe — so a rider who says "I mostly jibe"
+// has told the watch which end he was sailing in, and that is the only evidence there is.
+(:test)
+function autoWindPriorBreaksACoinFlip(logger as Test.Logger) as Boolean {
+    var cogs = [100.0, 260.0] as Array<Float>;
+    var aw = new AutoWind();
+    aw.defaultTurnType = TURN_TYPE_JIBES;
+    // Four sweeps 100 -> 260 deg. Under the cone's own pick (the 185 deg end) each crosses
+    // head-to-wind and is a TACK; under the other end each crosses dead downwind and is a
+    // JIBE. Declared habit "jibes" therefore points at the other end.
+    for (var i = 0; i < 4; i++) {
+        aw.logSweep(100.0, 160.0);
+    }
+    autoWindRun(aw, cogs, 200, 10.0);
+
+    Test.assertMessage(aw.dirDeg >= 0, "the prior should have resolved the coin flip");
+    Test.assertMessage(aw.lastMargin == 0.0,
+        "this case is meant to have empty cones, margin " + aw.lastMargin.format("%.3f"));
+    Test.assertMessage(aw.lastPriorVotes == 4,
+        "every sweep is a maneuver under both ends, votes " + aw.lastPriorVotes.toString());
+    Test.assertMessage(aw.lastPriorFlipped, "the prior should have overturned the cone");
+    Test.assertMessage(autoWindOffBy(aw, 5.0) <= 20.0,
+        "jibes point at the ~5 deg end, got " + aw.dirDeg.toString());
+
+    // The same session declared the other way round picks the OTHER end. Nothing else moves:
+    // the prior touches the 180 deg call and only that.
+    var tacky = new AutoWind();
+    tacky.defaultTurnType = TURN_TYPE_TACKS;
+    for (var i = 0; i < 4; i++) {
+        tacky.logSweep(100.0, 160.0);
+    }
+    autoWindRun(tacky, cogs, 200, 10.0);
+    Test.assertMessage(tacky.dirDeg >= 0, "the tack-declaring rider gets an answer too");
+    Test.assertMessage(!tacky.lastPriorFlipped, "tacks agree with the cone's own pick");
+    Test.assertMessage(autoWindOffBy(tacky, 185.0) <= 20.0,
+        "tacks point at the ~185 deg end, got " + tacky.dirDeg.toString());
+    logger.debug("coin flip: jibes -> " + aw.dirDeg.toString() + " deg, tacks -> "
+        + tacky.dirDeg.toString() + " deg, from the same track");
+    return true;
+}
+
+// ...and `balanced` switches the prior off, which on a coin flip means NO ANSWER. A wind
+// axis the watch cannot justify is worse than none: it would relabel every sweep in the
+// session, and the rider has no way to tell a guess from a measurement.
+(:test)
+function autoWindBalancedLeavesACoinFlipUnresolved(logger as Test.Logger) as Boolean {
+    var aw = new AutoWind();
+    aw.defaultTurnType = TURN_TYPE_BALANCED;
+    for (var i = 0; i < 4; i++) {
+        aw.logSweep(100.0, 160.0);
+    }
+    autoWindRun(aw, [100.0, 260.0] as Array<Float>, 300, 10.0);
+    Test.assertMessage(aw.dirDeg < 0,
+        "balanced must not resolve an empty-cone session, got " + aw.dirDeg.toString());
+    Test.assertMessage(aw.distanceM > aw.MIN_DISTANCE_M,
+        "the test needs to have got past the distance floor");
+    Test.assertMessage(aw.lastAxisConf >= 0.99,
+        "the AXIS is fine, it is the direction that is not: " + aw.lastAxisConf.toString());
+    logger.debug("balanced + empty cones: axis conf " + aw.lastAxisConf.format("%.2f")
+        + ", no direction adopted");
+    return true;
+}
+
+// A lock is CONFIRMED: two consecutive qualifying evaluations, 60 s apart, agreeing within
+// CONFIRM_DEG. It costs a minute and it is what keeps one freak evaluation from spending the
+// one-shot backfill and the vibe on the wrong axis.
+(:test)
+function autoWindLockNeedsTwoAgreeingEvaluations(logger as Test.Logger) as Boolean {
+    var aw = new AutoWind();
+    var cogs = [110.0, 120.0, 130.0, 140.0, 150.0, 160.0,
+        200.0, 210.0, 220.0, 230.0, 240.0, 250.0] as Array<Float>;
+    // 60 s at 10 m/s = 600 m: past the distance floor, so the first evaluation qualifies...
+    autoWindRun(aw, cogs, 60, 10.0);
+    Test.assertMessage(aw.distanceM >= aw.MIN_DISTANCE_M, "past the floor");
+    Test.assertMessage(aw.dirDeg < 0,
+        "one qualifying evaluation must not lock, got " + aw.dirDeg.toString());
+    // ...and the second confirms it.
+    var ev = autoWindRun(aw, cogs, 60, 10.0);
+    Test.assertMessage(ev == AutoWind.EV_LOCK, "the second evaluation locks, event "
+        + ev.toString());
+    Test.assertMessage(aw.dirDeg >= 0, "a direction was adopted");
+    logger.debug("lock at " + aw.distanceM.format("%.0f") + " m, two evaluations");
+    return true;
+}
+
+// Once adopted the readout holds. The estimate keeps converging underneath — it is the whole
+// session so far and every minute moves it a little — but a wind bearing that creeps by two
+// degrees a minute is unreadable, so only a move of HYSTERESIS_DEG or more is adopted.
+(:test)
+function autoWindHysteresisHoldsTheReadout(logger as Test.Logger) as Boolean {
+    var aw = new AutoWind();
+    var cogs = [110.0, 120.0, 130.0, 140.0, 150.0, 160.0,
+        200.0, 210.0, 220.0, 230.0, 240.0, 250.0] as Array<Float>;
+    autoWindRun(aw, cogs, 200, 10.0);
+    var locked = aw.dirDeg;
+    Test.assertMessage(locked >= 0, "locked first");
+
+    // Nudge the whole distribution ~10 deg clockwise for another ten minutes. The estimate
+    // shifts, the readout does not.
+    var shifted = new Array<Float>[cogs.size()];
+    for (var i = 0; i < cogs.size(); i++) {
+        shifted[i] = cogs[i] + 10.0;
+    }
+    autoWindRun(aw, shifted, 600, 10.0);
+    Test.assertMessage(aw.dirDeg == locked,
+        "a sub-threshold drift moved the readout from " + locked.toString() + " to "
+        + aw.dirDeg.toString());
+
+    // A real shift does move it: rotate the whole session 90 deg and keep going long enough
+    // for the new reaches to dominate the histogram.
+    var turned = new Array<Float>[cogs.size()];
+    for (var i = 0; i < cogs.size(); i++) {
+        turned[i] = cogs[i] + 90.0;
+    }
+    autoWindRun(aw, turned, 3600, 10.0);
+    Test.assertMessage(aw.dirDeg != locked,
+        "a 90 deg shift left the readout at " + aw.dirDeg.toString());
+    logger.debug("hysteresis: held at " + locked.toString()
+        + " deg through a 10 deg drift, moved to " + aw.dirDeg.toString()
+        + " deg on a 90 deg shift");
+    return true;
+}
+
+// The sweep log is capped like SessionHistory's turn log and drops the OLDEST entry: a full
+// log means a long session, and the recent turns are the ones the current axis has to explain.
+(:test)
+function autoWindSweepLogCapsAndDropsOldest(logger as Test.Logger) as Boolean {
+    var aw = new AutoWind();
+    for (var i = 0; i < aw.SWEEP_MAX + 10; i++) {
+        aw.logSweep(i.toFloat(), 160.0);
+    }
+    Test.assertMessage(aw.sweepCount == aw.SWEEP_MAX,
+        "log should saturate at " + aw.SWEEP_MAX.toString() + ", got "
+        + aw.sweepCount.toString());
+    var entries = aw.sweepEntries();
+    Test.assertMessage(entries[aw.SWEEP_MAX - 1] == aw.SWEEP_MAX + 9,
+        "the newest sweep must be last, got "
+        + entries[aw.SWEEP_MAX - 1].toString());
+    Test.assertMessage(entries[0] == 10, "the ten oldest must have fallen off, got "
+        + entries[0].toString());
+    return true;
+}
+
+// ---- the one-shot backfill (TurnDetector.backfillWindSplit) ----
+//
+// The watch never re-runs classification, with exactly one exception: the first time AutoWind
+// adopts an axis, the sweeps it learned that axis FROM are re-named, so the session's counts
+// do not start from zero at minute two. It adds splits and moves nothing else.
+(:test)
+function backfillSplitsTheTurnsTheAxisWasLearnedFrom(logger as Test.Logger) as Boolean {
+    var cfg = coreDefaults();
+    var d = new TurnDetector(cfg);
+    var aw = new AutoWind();
+
+    // Three 120 -> 240 deg sweeps with no wind axis: counted, but generic. The sweep is
+    // CONFIRMED a second or two after the rotation stops (that is what the trailing straight
+    // run is for), so the log entry is taken after it, exactly where MetricsEngine takes it.
+    for (var i = 0; i < 3; i++) {
+        var before = d.turnCount;
+        runStraight(d, 5, 120.0, 8.0);
+        runSweep(d, 120.0, 30.0, 4, 8.0);
+        runStraight(d, 6, 240.0, 8.0);
+        if (d.turnCount > before) {
+            aw.logSweep(d.lastEntryU, d.lastNetDeg);
+        }
+    }
+    Test.assertMessage(d.turnCount == 3, "three turns, got " + d.turnCount.toString());
+    Test.assertMessage(d.tackCount == 0 && d.jibeCount == 0, "no axis: nothing is split");
+    Test.assertMessage(d.portEntryCount == 0 && d.starboardEntryCount == 0,
+        "no axis: there is no side to be on");
+    Test.assertMessage(aw.sweepCount == 3, "three sweeps logged, got "
+        + aw.sweepCount.toString());
+
+    // The estimator adopts north, and the backfill replays the log once.
+    cfg.setAutoWind(0);
+    var turnsBefore = d.turnCount;
+    var flewBefore = d.flewCount;
+    d.backfillWindSplit(aw.sweepEntries(), aw.sweepNets(), aw.sweepCount);
+    Test.assertMessage(d.jibeCount == 3,
+        "120 -> 240 through dead downwind is a jibe, got " + d.jibeCount.toString());
+    Test.assertMessage(d.tackCount == 0, "none of them is a tack");
+    Test.assertMessage(d.turnCount == turnsBefore,
+        "the backfill must not re-count turns: " + d.turnCount.toString());
+    Test.assertMessage(d.flewCount == flewBefore,
+        "the backfill must not re-judge outcomes");
+    Test.assertMessage(d.portEntryCount + d.starboardEntryCount == 3,
+        "each backfilled maneuver gets its entry side");
+    logger.debug("backfill: 3 generic turns became " + d.jibeCount.toString()
+        + " jibes, turnCount held at " + d.turnCount.toString());
+    return true;
+}
+
+// A sweep that turns out to be a BEAR-AWAY under the new axis stays the generic turn it was
+// counted as. Retracting it would move turnCount, the success percentage and every streak
+// that spanned it — i.e. re-judge, on hindsight evidence, observations made at the time.
+(:test)
+function backfillLeavesBearAwaysAsTheGenericTurnsTheyWere(logger as Test.Logger) as Boolean {
+    var cfg = coreDefaults();
+    var d = new TurnDetector(cfg);
+    var aw = new AutoWind();
+
+    // 60 -> 150 deg: with wind from north this crosses neither axis end.
+    runStraight(d, 5, 60.0, 8.0);
+    runSweep(d, 60.0, 30.0, 3, 8.0);
+    runStraight(d, 6, 150.0, 8.0);
+    Test.assertMessage(d.turnCount == 1, "with no axis it is a counted generic turn");
+    aw.logSweep(d.lastEntryU, d.lastNetDeg);
+
+    cfg.setAutoWind(0);
+    d.backfillWindSplit(aw.sweepEntries(), aw.sweepNets(), aw.sweepCount);
+    Test.assertMessage(d.tackCount == 0 && d.jibeCount == 0, "a bear-away is neither");
+    Test.assertMessage(d.turnCount == 1,
+        "the backfill retracted a counted turn: " + d.turnCount.toString());
+    Test.assertMessage(d.rejectedCount == 0, "and it did not retro-reject it either");
+    logger.debug("backfill: bear-away stayed a generic turn, turnCount "
+        + d.turnCount.toString());
     return true;
 }
 
