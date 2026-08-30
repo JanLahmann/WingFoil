@@ -207,9 +207,11 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      Three obligations, all asserted against the **bundled bytes** rather than the repo
      copy, because what ships is what matters: the scrub (no `serial_number` field
      survives; the strings `Lahmann` / `AirPods` and the watch serial in both byte orders
-     are absent from the raw file; it still parses as class (a)); the analysis (it still
-     yields ≥ 20 flights, ≥ 25 jibes, > 10 kn best-2 s, HR, accel-derived pump strokes, a
-     wind estimate and a GPS start fix, with `flight`/`turn`/`record_effort` filled); and
+     are absent from the raw file; it still parses as class (a); and the bundle stays under
+     1 MB, which is how a re-bundled *unstripped* file gets caught); the analysis (31
+     flights, 50 jibes, > 13 kn best-2 s, HR, a wind estimate and a GPS start fix, with
+     `flight`/`turn`/`record_effort` filled, and `hasAccel == false` /
+     `totalPumpStrokes == nil` because the 100 Hz stream is not bundled); and
      the `isExample` flag (set on import, round-tripped through SQLite, deletable, and
      invisible to `records()`, `trend()`, `sessions()`, `weeks()` and the gear rollups
      while a real session next to it still reaches all of them). Plus the v3 migration
@@ -349,18 +351,18 @@ it. So one real recording ships inside the app —
 rather than an app resource so `Bundle.module` reaches it from both the shipping app and
 the test suite (no `project.yml` change is needed; Xcode embeds the SPM resource bundle).
 
-**Source and scrub.** It is Jan's 2026-08-07 Nago-Torbole CIQ session, donated with the HR
-stream, run through `lab/tools/scrub_fit.py`:
+**Source and scrub.** It is Jan's 2026-08-29 afternoon Nago-Torbole CIQ session, donated
+with the HR stream, run through `lab/tools/scrub_fit.py`:
 
 ```
 cd lab
-uv run python tools/scrub_fit.py \
-    ../fixtures/sessions/ciq/2026-08-07-0754_nago-torbole-windsurfen_ciq.fit \
+uv run python tools/scrub_fit.py --drop-accel \
+    ../fixtures/sessions/ciq/2026-08-29-1440_nago-torbole-windsurfen_ciq.fit \
     ../ios/WingFoilKit/Sources/WingFoilKit/Resources/ExampleSession.fit
 ```
 
 The tool does **not** re-encode — no encoder in the lab round-trips 14 developer fields, a
-`developer_data_id`, 16 588 batched `accelerometer_data` messages and a dozen Garmin-private
+`developer_data_id`, 28 112 batched `accelerometer_data` messages and a dozen Garmin-private
 global message numbers. It walks the FIT record stream itself (definition messages, normal
 and compressed-timestamp data records, developer field blocks), drops selected messages,
 overwrites selected fields in place with their base type's *invalid* pattern, and recomputes
@@ -372,14 +374,32 @@ overwrites selected fields in place with their base type's *invalid* pattern, an
 | `user_profile` (global 3) | dropped | name, weight, height, gender, language |
 | global 147 | dropped | paired-accessory BLE address + its name |
 | global 79, global 140 | dropped | Garmin-private lifetime totals / physiological metrics |
-| GPS, HR, developer fields, laps, session, 100 Hz accel | **kept** | that is the whole point |
+| `accelerometer_data` (global 165, ×28 112) | dropped (`--drop-accel`) | 96 % of the file, and 96 % of the download |
+| GPS, HR, developer fields, laps, session | **kept** | that is the whole point |
 
-Verification is built into the tool (`--verify`, default): it re-runs the full lab analysis
-on both files and asserts the golden JSON is **identical**. It is — so the scrub is provably
-invisible to the engine. Size 6 184 873 → 6 184 526 bytes; under the 8 MB bundle budget, so
-the accelerometer stream stays and the phone's pump recompute works on the example.
-(`--drop-accel` produces the stripped variant if that ever changes; the summary then keeps
-the watch's packed pump/takeoff fields and `SourceCapabilities` reports `hasAccel: false`.)
+Size 10 481 264 → **444 933 bytes** (4.2 %). The accelerometer stream is dropped because a
+10 MB app download buys one screen's worth of numbers; the identifier scrub and the accel
+drop are one pass of the same tool, so the shipped file is still byte-for-byte a subset of
+the original.
+
+Verification is built into the tool (`--verify`, default). Without `--drop-accel` it asserts
+the golden JSON is **identical**; with it, the parts that cannot survive are allowed to
+degrade, and the degradation is exactly a native-Windsurf recording's:
+
+| | full file | bundled |
+|---|---|---|
+| `capabilities.hasAccel` | true | **false** |
+| flights, distance, foil time, records, wind, laps, HR stream | \- | **identical** |
+| turns counted / successful / rejected / port / starboard / longest dry streak | 51 / 25 / 11 / 29 / 22 / 11 | **identical** |
+| turn outcomes flew / touchdown / fell | 35 / 8 / 8 | 39 / 4 / 8 |
+| longest flew-through streak | 5 | 7 |
+| `totalPumpStrokes`, `avgPumpsToTakeoff`, `successPct`, `inFlightPumpStrokes` | 3 091 / 10.29 / 44.93 / 430 | **null** |
+| `takeoffAttempts` / `pumpedTakeoffs` / `freeTakeoffs` | 69 / 31 / 0 | 31 / 0 / 0 |
+
+The four turns that move from `touchdown` to `flew_through` are the ones whose touchdown was
+only visible as a pump burst; with no pump trace the engine cannot see them, exactly as it
+cannot on a fenix native recording. `sourceClass` stays **(a)** — the developer fields and
+watch laps are untouched.
 
 **Provenance flag.** Sessions imported from it carry `session.isExample` (schema v3) and
 `importSource = "example"`. They are shown in the library — badged `EXAMPLE`, openable,
@@ -394,8 +414,10 @@ for real and land on the ±60 s dedupe key. That resolves **in favour of the rea
 rejoins Records and Trends — the alternative would permanently exclude the rider's own
 session because a demo got there first. The reverse never fires: loading the example when
 that ride is already in the library returns `.duplicate` and leaves the real row alone.
-Note that the *archived* FIT stays whichever arrived first; since the analysis output is
-byte-identical, the only difference is the scrubbed ids.
+Note that the *archived* FIT stays whichever arrived first, and the two are no longer
+interchangeable: the rider's own copy carries the accelerometer stream and the bundled one
+does not, so a library that kept the example's archive shows that session without its pump
+figures. The row's numbers come from whichever file was archived.
 
 ## On-water protocol (Jan, < 5 min per session)
 

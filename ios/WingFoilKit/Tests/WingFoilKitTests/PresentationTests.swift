@@ -542,7 +542,7 @@ import Testing
     // that looks authoritative, so its missing-value and thin-coverage paths are tested as
     // hard as its happy one.
 
-    /// The example session's own figures (fixtures/goldens, 2026-08-07 ciq `hr.summary`).
+    /// A real session's own figures (fixtures/goldens, 2026-08-07 ciq `hr.summary`).
     private func exampleSummary() -> HrSummary {
         var s = HrSummary()
         s.hasHR = true
@@ -672,7 +672,7 @@ import Testing
         #expect(card.stats[3].caption == "halfway back · 4 of 7 swims")
         #expect(card.stats.prefix(3).allSatisfy { !$0.thin })
         // 4 of 7 is below `thinCoveragePct`: the number is real, and the reader is told not
-        // to lean on it. This is the example session's own figure.
+        // to lean on it. This is that session's own figure.
         #expect(card.stats[3].thin)
     }
 

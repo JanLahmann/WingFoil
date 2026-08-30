@@ -156,9 +156,13 @@ public enum HelpCatalog {
                 + "new install has is an empty library. So one real recording travels inside "
                 + "the app: \(ExampleSession.blurb)",
                 "It comes from \(ExampleSession.place) and was recorded with the WingFoil "
-                + "Connect IQ app on a fenix, which makes it a class-(a) source — every "
-                + "screen has something to show, including the ones that need the "
-                + "accelerometer, the developer fields and the heart-rate stream.",
+                + "Connect IQ app on a fenix, which makes it a class-(a) source — the "
+                + "developer fields, the watch laps and the heart-rate stream are all "
+                + "there. The one thing left behind is the 100 Hz accelerometer stream, "
+                + "which was 96 % of the recording's size and would have been 96 % of the "
+                + "app's download, so the pump and takeoff-stroke figures show as "
+                + "unavailable on this one session — the way they do for any watch that "
+                + "does not record them.",
                 "It is not your data, and WingFoil treats it that way: an example session "
                 + "is badged EXAMPLE in the list and at the top of its own page, and it is "
                 + "left out of Records, Trends and the gear rollups so it can never inflate "
