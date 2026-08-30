@@ -347,7 +347,7 @@ groups (**153 assertions**, all green at the time of writing — 30 / 8 / 28 / 4
 ### Manual browser test checklist
 
 1. `cd web && python3 -m http.server 8765`, open <http://127.0.0.1:8765/>.
-2. **Cold boot.** The chip top-right should turn into `engine 0.6.0 · pyodide 0.28.3` within
+2. **Cold boot.** The chip top-right should turn into `engine 0.7.0 · pyodide 0.28.3` within
    ~20 s on a warm connection. Open DevTools → Console: there must be no errors, only
    Pyodide's own "Loading/Loaded micropip, numpy, pandas…" lines.
 3. **Drop** `fixtures/sessions/ciq/2026-08-07-0754_nago-torbole-windsurfen_ciq.fit` on the
@@ -360,7 +360,8 @@ groups (**153 assertions**, all green at the time of writing — 30 / 8 / 28 / 4
 4b. **Key metrics**, the four rows above the tiles (`docs/presentation.md`, "Key metrics").
    On this file: `1:25 · 12.8 km · 4.89 kn`, then `11.36 kn` under **max 2 s**, then
    `9 · 9 · 12` on the ladder's own green/amber/red *(this is the only place either app
-   draws the tally in colour outside the map)* beside `4 dry · 2 flew`, then `21.3 JPH`
+   draws the tally in colour outside the map)* beside `4 dry · 2 flew`, then `12.8` under
+   **JPH · dry jibes per hour** (the 18 jibes he sailed out of, not all 30 — engine 0.7.0)
    and `11.3 WPH`. It must read identically to the iOS app's block on the same session —
    the two halves are `web/js/render.js` `keyMetrics` and `KeyMetrics.swift`, and the
    Swift half is pinned by `PresentationTests.keyMetrics*`.

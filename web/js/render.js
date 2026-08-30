@@ -56,7 +56,7 @@ export function render(result, { highlight = null } = {}) {
  *   2  the best 2 s record, labelled with the window it is
  *   3  the outcome ladder's three counts on the ladder's own inks, plus the two turn
  *      streaks the engine has computed since 0.4.0 and neither app ever drew
- *   4  JPH (or TPH) and WPH — the 0.6.0 per-hour rates
+ *   4  JPH (or TPH) and WPH — the per-hour rates, JPH over *dry* jibes since 0.7.0
  *
  * Every rule the two platforms have to agree on lives in this one function, and its Swift
  * twin is pinned by `PresentationTests.keyMetrics*`. A difference between the two is a bug.
@@ -85,7 +85,7 @@ export function keyMetrics(g) {
   const rates = [];
   if (s.wetPerHour !== null && s.wetPerHour !== undefined) {
     rates.push((s.jibesPerHour > 0 || !(s.turnsPerHour > 0))
-      ? { v: nf(s.jibesPerHour, 1), k: "JPH · jibes per hour" }
+      ? { v: nf(s.jibesPerHour, 1), k: "JPH · dry jibes per hour" }
       : { v: nf(s.turnsPerHour, 1), k: "TPH · turns per hour" });
     rates.push({ v: nf(s.wetPerHour, 1), k: "WPH · swims per hour" });
   }

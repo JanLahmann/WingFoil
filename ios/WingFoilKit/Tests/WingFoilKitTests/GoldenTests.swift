@@ -54,6 +54,7 @@ import Testing
         var pumpCfg = PumpConfig()
         var takeoffCfg = TakeoffConfig()
         var hrCfg = HrConfig()
+        var ratesCfg = RatesConfig()
         if let cfg = json["config"] as? [String: Any] {
             if let v = num(cfg["foilEntrySpeed"]) { flight.foilEntrySpeedKmh = v }
             if let v = num(cfg["foilExitSpeed"]) { flight.foilExitSpeedKmh = v }
@@ -94,13 +95,14 @@ import Testing
             if let v = num(cfg["hrMinRise"]) { hrCfg.minRiseBpm = v }
             if let v = num(cfg["hrBinMinutes"]) { hrCfg.binMinutes = v }
             if let v = num(cfg["hrMaxSampleGap"]) { hrCfg.maxSampleGapS = v }
+            if let v = num(cfg["windowRateMin"]) { ratesCfg.windowRateMin = v }
         }
         let raw = try FitSessionParser.parse(url: fitURL)
         let analysis = SessionSummarizer.analyze(raw, filterConfig: filter,
                                                  flightConfig: flight, recordsConfig: recCfg,
                                                  turnConfig: turnCfg, windConfig: windCfg,
                                                  pumpConfig: pumpCfg, takeoffConfig: takeoffCfg,
-                                                 hrConfig: hrCfg)
+                                                 hrConfig: hrCfg, ratesConfig: ratesCfg)
 
         checkCapabilities(stem, json, analysis, raw)
         checkFlights(stem, json, analysis)
@@ -628,6 +630,28 @@ import Testing
             #expect(abs(wet - Double(ends.all.fellIn) / hours) < 1e-9,
                     "\(stem) summary.wetPerHour \(wet) is not every fell-in end over the hour")
         }
+        // The 0.7.0 numerator: **dry** jibes, the ones he came out of still sailing. A jibe
+        // he swam out of is one he did not make, so it may not raise the headline rate.
+        if analysis.summary.durationS > 0, let jph = analysis.summary.jibesPerHour {
+            let hours = analysis.summary.durationS / 3600
+            let t = analysis.summary.turns
+            let dry = t.jibes - t.jibeOutcomes.fellIn
+            #expect(dry == t.jibeOutcomes.flewThrough + t.jibeOutcomes.touchdown,
+                    "\(stem) the jibe ladder does not add up to its own total")
+            #expect(abs(jph - Double(dry) / hours) < 1e-9,
+                    "\(stem) summary.jibesPerHour \(jph) is not the DRY jibes over the hour")
+            // …and the tally agrees with the golden's own turn rows, one event each.
+            if let rows = json["turns"] as? [[String: Any]] {
+                let counted = rows.filter { $0["counted"] as? Bool == true }
+                let dryRows = counted.filter {
+                    $0["type"] as? String == "jibe" && $0["outcome"] as? String != "fell_in"
+                }
+                #expect(dryRows.count == dry,
+                        "\(stem) \(dryRows.count) dry jibe rows vs a numerator of \(dry)")
+            }
+        }
+
+        expectWindowRates(stem, expSummary["windowRates"], analysis.summary.windowRates)
 
         if let t = expSummary["turns"] as? [String: Any] {
             let s = analysis.summary.turns
@@ -739,6 +763,50 @@ import Testing
     }
 
     /// nil must match nil; both present must agree within `tolerance`.
+    /// The rolling-window block (docs/algorithms.md "Session rates"): both peaks with the
+    /// window each one names, and every point of the series, in order.
+    ///
+    /// Rates to ± 0.05 like the session rates; the window starts are timestamps and get the
+    /// timestamp treatment (± 0.1 s, tighter than the ± 1 s a detector's instant earns —
+    /// this one is arithmetic on a grid, not a judgement about a sample).
+    private func expectWindowRates(_ stem: String, _ expected: Any?,
+                                   _ actual: SessionWindowRates) {
+        guard let w = expected as? [String: Any] else { return }
+        if let v = num(w["windowMin"]) {
+            #expect(abs(actual.windowMin - v) <= 1e-9,
+                    "\(stem) windowRates.windowMin: \(actual.windowMin) vs \(v)")
+        }
+        expectOptional(stem, "windowRates.bestJph", num(w["bestJph"]),
+                       actual.bestJph, tolerance: 0.05)
+        expectOptional(stem, "windowRates.bestJphStartTs", num(w["bestJphStartTs"]),
+                       actual.bestJphStartTs, tolerance: 0.1)
+        expectOptional(stem, "windowRates.bestWph", num(w["bestWph"]),
+                       actual.bestWph, tolerance: 0.05)
+        expectOptional(stem, "windowRates.bestWphStartTs", num(w["bestWphStartTs"]),
+                       actual.bestWphStartTs, tolerance: 0.1)
+
+        let series = (w["series"] as? [[String: Any]]) ?? []
+        #expect(series.count == actual.series.count,
+                "\(stem) windowRates.series: \(actual.series.count) points vs \(series.count)")
+        for (i, exp) in series.enumerated() where i < actual.series.count {
+            let p = actual.series[i]
+            #expect(abs(p.ts - (num(exp["ts"]) ?? -1)) <= 0.1,
+                    "\(stem) windowRates.series[\(i)].ts: \(p.ts) vs \(describe(num(exp["ts"])))")
+            #expect(abs(p.jph - (num(exp["jph"]) ?? -1)) <= 0.05,
+                    "\(stem) windowRates.series[\(i)].jph: \(p.jph)")
+            #expect(abs(p.wph - (num(exp["wph"]) ?? -1)) <= 0.05,
+                    "\(stem) windowRates.series[\(i)].wph: \(p.wph)")
+        }
+        // The series is a sampling of the very function the peak maximizes, so a peak below
+        // it would mean the search missed a window the file itself prints.
+        if let best = actual.bestJph, let top = actual.series.map(\.jph).max() {
+            #expect(best >= top - 1e-9, "\(stem) bestJph \(best) is under the series' \(top)")
+        }
+        if let best = actual.bestWph, let top = actual.series.map(\.wph).max() {
+            #expect(best >= top - 1e-9, "\(stem) bestWph \(best) is under the series' \(top)")
+        }
+    }
+
     private func expectOptional(_ stem: String, _ label: String, _ expected: Double?,
                                 _ actual: Double?, tolerance: Double) {
         switch (expected, actual) {
@@ -792,7 +860,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.6.0")
+        #expect(analysis.engineVersion == "0.7.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)
@@ -857,7 +925,7 @@ import Testing
         #expect(Set(summary.keys) == ["foilTimeS", "foilPct", "flightCount",
                                       "longestFlightS", "longestFlightM", "distanceKm",
                                       "durationS", "avgSpeedKmh", "turnsPerHour",
-                                      "jibesPerHour", "wetPerHour",
+                                      "jibesPerHour", "wetPerHour", "windowRates",
                                       "turns", "flightEnds", "outcomeSplit", "takeoff"])
         // 120 s of synthetic, one flight, no turns: the duration is real and the rates are
         // real zeroes — "he did no jibes in that hour", not "unknown".
@@ -865,6 +933,16 @@ import Testing
         #expect(num(summary["turnsPerHour"]) == 0)
         #expect(num(summary["jibesPerHour"]) == 0)
         #expect(analysis.summary.avgSpeedKmh != nil)
+
+        // The rolling block is written whole, like the HR block: this session is two minutes
+        // long, far shorter than the 15-minute window, so it gets **one** point over the
+        // span it actually lasted rather than a partial window scaled up to the hour.
+        let windowRates = try #require(summary["windowRates"] as? [String: Any])
+        #expect(Set(windowRates.keys) == ["windowMin", "bestJph", "bestJphStartTs",
+                                          "bestWph", "bestWphStartTs", "series"])
+        #expect(num(windowRates["windowMin"]) == 15)
+        #expect(num(windowRates["bestJph"]) == 0)
+        #expect((windowRates["series"] as? [Any])?.count == 1)
 
         // Round-trip: the model decodes its own encoding losslessly — except
         // `records.totalDistanceM`, which is deliberately not part of the golden
@@ -877,10 +955,10 @@ import Testing
 
     /// The rate block's arithmetic and its one guard (docs/algorithms.md "Session rates"),
     /// mirroring `lab/tests/test_goldens.py`. Two hours, 40 km, 60 counted turns of which
-    /// 44 jibes and 9 swims: 30 turns/h, 22 jibes/h, 4.5 swims/h, 20 km/h.
+    /// 44 dry jibes and 9 swims: 30 turns/h, 22 jibes/h, 4.5 swims/h, 20 km/h.
     @Test func sessionRatesDivideByTheElapsedHour() {
         let r = SessionRates(durationS: 7200, distanceM: 40_000,
-                             turnsCounted: 60, jibes: 44, fellIn: 9)
+                             turnsCounted: 60, dryJibes: 44, fellIn: 9)
         #expect(r.durationS == 7200)
         #expect(abs((r.avgSpeedKmh ?? 0) - 20) < 1e-9)
         #expect(abs((r.turnsPerHour ?? 0) - 30) < 1e-9)
@@ -890,15 +968,72 @@ import Testing
         // No elapsed time ⇒ no hour to divide by. Every rate is nil, never a 0 that would
         // read as "he did nothing in an hour on the water".
         for empty in [SessionRates(durationS: 0, distanceM: 1234,
-                                   turnsCounted: 7, jibes: 5, fellIn: 2),
+                                   turnsCounted: 7, dryJibes: 5, fellIn: 2),
                       SessionRates(durationS: -12, distanceM: 1234,
-                                   turnsCounted: 7, jibes: 5, fellIn: 2)] {
+                                   turnsCounted: 7, dryJibes: 5, fellIn: 2)] {
             #expect(empty.durationS == 0)
             #expect(empty.avgSpeedKmh == nil)
             #expect(empty.turnsPerHour == nil)
             #expect(empty.jibesPerHour == nil)
             #expect(empty.wetPerHour == nil)
         }
+    }
+
+    /// The rolling window's honesty rule, mirroring `lab/tests/test_goldens.py`: a session
+    /// shorter than one window is rated over the span it actually lasted, and the same
+    /// three-minute burst inside an hour is rated over the hour's busiest quarter.
+    @Test func windowPeakNeverScalesAPartialWindowUp() {
+        let short = SessionWindowRates(dryJibeTs: [10, 60, 120], wetTs: [30],
+                                       startT: 0, durationS: 180)
+        #expect(abs((short.bestJph ?? 0) - 60) < 1e-9)     // 3 jibes in the 3 min he sailed
+        #expect(short.bestJphStartTs == 0)
+        #expect(abs((short.bestWph ?? 0) - 20) < 1e-9)
+        #expect(short.series.count == 1)
+        #expect(short.series.first?.ts == 0)
+
+        // The same burst inside an hour is three jibes in the busiest 15 minutes — 12 an
+        // hour, never the 60 the burst alone would have claimed.
+        let long = SessionWindowRates(dryJibeTs: [10, 60, 120], wetTs: [30],
+                                      startT: 0, durationS: 3600)
+        #expect(abs((long.bestJph ?? 0) - 12) < 1e-9)
+        #expect(long.bestJphStartTs == 0)
+        #expect(abs((long.bestWph ?? 0) - 4) < 1e-9)
+    }
+
+    /// The peak is the true sliding maximum, so it opens on the event that starts the
+    /// burst: three jibes spanning 899 s fit in exactly one quarter-hour window, and no
+    /// window on the 60 s grid can hold all three.
+    @Test func windowPeakFindsTheBurstAtItsOwnStart() {
+        let w = SessionWindowRates(dryJibeTs: [2000, 2450, 2899], wetTs: [],
+                                   startT: 0, durationS: 3600)
+        #expect(w.bestJphStartTs == 2000)
+        #expect(abs((w.bestJph ?? 0) - 12) < 1e-9)
+        #expect(abs((w.series.map(\.jph).max() ?? 0) - 8) < 1e-9)
+        #expect((w.bestJph ?? 0) > (w.series.map(\.jph).max() ?? 0))
+        // Nothing wet happened: a measured 0.0, at the first window there was.
+        #expect(w.bestWph == 0 && w.bestWphStartTs == 0)
+    }
+
+    /// One point a minute, the first at the session's own start, the last a full window
+    /// before its end — so every value in the series is a rate over 15 real minutes.
+    @Test func windowSeriesWalksA60SecondGridOfFullWindows() {
+        let w = SessionWindowRates(dryJibeTs: [100, 200], wetTs: [], startT: 0,
+                                   durationS: 3600)
+        let starts: [Double] = (0..<46).map { k in Double(k) * 60 }
+        #expect(w.series.map(\.ts) == starts)              // 3600 - 900 = 2700, the last one
+        let jphs: Set<Double> = Set(w.series.map(\.jph))
+        #expect(jphs.isSubset(of: [0, 4, 8]))              // 0, 1 or 2 jibes / 0.25 h
+
+        // A session that starts at a non-zero clock keeps the grid anchored to its own start.
+        let off = SessionWindowRates(dryJibeTs: [], wetTs: [], startT: 1234.5, durationS: 1800)
+        let offStarts: [Double] = (0..<16).map { k in 1234.5 + Double(k) * 60 }
+        #expect(off.series.map(\.ts) == offStarts)
+
+        // No duration, no window: null peaks and an empty series, never a flattering 0.0.
+        let empty = SessionWindowRates(dryJibeTs: [1], wetTs: [2], startT: 0, durationS: 0)
+        #expect(empty.bestJph == nil && empty.bestWph == nil)
+        #expect(empty.bestJphStartTs == nil && empty.series.isEmpty)
+        #expect(empty.windowMin == 15)
     }
 
     /// A stored `analysis.json` written by engine 0.2.0 has no `pumpEpisodes` key at all.

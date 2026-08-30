@@ -6,8 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from wingfoil_lab.goldens import (_hr_json, analyze, build_golden, golden_path, load_golden,
-                                  session_rates, write_golden)
+from wingfoil_lab.goldens import (RateConfig, _hr_json, analyze, build_golden, dry_jibe_times,
+                                  golden_path, load_golden, session_rates, window_rates,
+                                  write_golden)
 from wingfoil_lab.hrcost import HrAnalysis
 
 SMOKE = Path(__file__).resolve().parents[2] / "fixtures" / "synthetic" / "smoke-60s.fit"
@@ -28,8 +29,10 @@ RECORD_KEYS = {"best2sKn", "best10sKn", "best5x10sKn", "best100mKn", "best250mKn
                "best500mKn", "bestNmKn", "bestHourKn", "alpha500Kn", "windows"}
 SUMMARY_KEYS = {"foilTimeS", "foilPct", "flightCount", "longestFlightS",
                 "longestFlightM", "distanceKm", "durationS", "avgSpeedKmh",
-                "turnsPerHour", "jibesPerHour", "wetPerHour",
+                "turnsPerHour", "jibesPerHour", "wetPerHour", "windowRates",
                 "turns", "flightEnds", "outcomeSplit", "takeoff"}
+WINDOW_RATE_KEYS = {"windowMin", "bestJph", "bestJphStartTs", "bestWph", "bestWphStartTs",
+                    "series"}
 TURN_SUMMARY_KEYS = {"tacks", "tacksSuccessful", "jibes", "jibesSuccessful", "unclassified",
                      "turnsCounted", "turnsSuccessful", "successPct", "rejected", "port",
                      "starboard", "unknownSide", "longestDryStreak", "longestFlewStreak",
@@ -70,7 +73,7 @@ def smoke_golden():
 def test_schema_shape(smoke_golden):
     g = smoke_golden
     assert list(g.keys()) == TOP_KEYS
-    assert g["engineVersion"] == "0.6.0"
+    assert g["engineVersion"] == "0.7.0"
     assert set(g["capabilities"].keys()) == CAP_KEYS
     assert set(g["records"].keys()) == RECORD_KEYS
     assert set(g["summary"].keys()) == SUMMARY_KEYS
@@ -79,6 +82,8 @@ def test_schema_shape(smoke_golden):
     for family in g["summary"]["flightEnds"].values():
         assert set(family.keys()) == END_COUNT_KEYS
     assert set(g["summary"]["takeoff"].keys()) == TAKEOFF_SUMMARY_KEYS
+    assert set(g["summary"]["windowRates"].keys()) == WINDOW_RATE_KEYS
+    assert g["config"]["windowRateMin"] == 15.0
     # A 60 s straight-line synthetic has no turns and no wind axis; every flight start
     # still gets a takeoff run, with `pumps` null because there is no accel stream.
     assert g["turns"] == []
@@ -128,12 +133,12 @@ def test_smoke_content(smoke_golden):
 
 
 def test_session_rates_on_a_synthetic_session():
-    """Two hours, 40 km, 60 counted turns of which 44 jibes, 9 swims.
+    """Two hours, 40 km, 60 counted turns of which 44 dry jibes, 9 swims.
 
     Every rate is per hour of *elapsed* session, so the arithmetic is deliberately trivial
     and hand-checkable: 60 turns in 2 h is 30/h, 9 swims is 4.5/h, 40 km in 2 h is 20 km/h.
     """
-    r = session_rates(7200.0, 40_000.0, turns_counted=60, jibes=44, fell_in=9)
+    r = session_rates(7200.0, 40_000.0, turns_counted=60, dry_jibes=44, fell_in=9)
     assert r.duration_s == 7200.0
     assert r.avg_speed_kmh == pytest.approx(20.0)
     assert r.turns_per_hour == pytest.approx(30.0)
@@ -141,7 +146,7 @@ def test_session_rates_on_a_synthetic_session():
     assert r.wet_per_hour == pytest.approx(4.5)
 
     # Unrounded inputs, rounded only for JSON: a half-hour session divides by 0.5, not by 1.
-    half = session_rates(1800.0, 9_000.0, turns_counted=7, jibes=7, fell_in=1)
+    half = session_rates(1800.0, 9_000.0, turns_counted=7, dry_jibes=7, fell_in=1)
     assert half.avg_speed_kmh == pytest.approx(18.0)
     assert half.turns_per_hour == pytest.approx(14.0)
     assert half.wet_per_hour == pytest.approx(2.0)
@@ -151,7 +156,7 @@ def test_session_rates_on_a_synthetic_session():
 def test_session_rates_without_a_duration_are_none_not_zero(duration):
     """A one-sample track has no hour to divide by. Every rate is null -- 0.0 would read as
     "he did nothing in an hour on the water", which is a different (and wrong) claim."""
-    r = session_rates(duration, 1234.0, turns_counted=7, jibes=5, fell_in=2)
+    r = session_rates(duration, 1234.0, turns_counted=7, dry_jibes=5, fell_in=2)
     assert r.duration_s == 0.0
     assert r.avg_speed_kmh is None
     assert r.turns_per_hour is None
@@ -165,7 +170,8 @@ def test_rates_reconcile_with_the_numbers_beside_them(smoke_golden):
     hours = s["durationS"] / 3600.0
     assert s["avgSpeedKmh"] == pytest.approx(s["distanceKm"] / hours, abs=0.05)
     assert s["turnsPerHour"] == pytest.approx(s["turns"]["turnsCounted"] / hours, abs=0.05)
-    assert s["jibesPerHour"] == pytest.approx(s["turns"]["jibes"] / hours, abs=0.05)
+    dry = s["turns"]["jibes"] - s["turns"]["jibeOutcomes"]["fellIn"]
+    assert s["jibesPerHour"] == pytest.approx(dry / hours, abs=0.05)
     assert s["wetPerHour"] == pytest.approx(s["flightEnds"]["all"]["fellIn"] / hours, abs=0.05)
 
 
@@ -193,8 +199,134 @@ def test_wet_per_hour_counts_straight_falls_as_well_as_turn_falls():
     assert s["wetPerHour"] > turns["outcomes"]["fellIn"] / hours
     # And the other three rates still speak for their own channels.
     assert s["turnsPerHour"] == pytest.approx(turns["turnsCounted"] / hours, abs=0.05)
-    assert s["jibesPerHour"] == pytest.approx(turns["jibes"] / hours, abs=0.05)
+    dry = turns["jibes"] - turns["jibeOutcomes"]["fellIn"]
+    assert s["jibesPerHour"] == pytest.approx(dry / hours, abs=0.05)
     assert s["avgSpeedKmh"] == pytest.approx(s["distanceKm"] / hours, abs=0.05)
+
+
+@pytest.mark.skipif(not CIQ_LONG.exists(), reason="ciq fixture missing")
+def test_jibes_per_hour_counts_only_the_jibes_he_sailed_out_of():
+    """The 0.7.0 numerator: dry jibes, not every jibe the detector named.
+
+    2026-08-29 is the session that shows the size of it -- 50 jibes, 7 of them swum, so the
+    headline reads 22.0 an hour and not 25.6. A rider cannot raise this number by falling
+    more often, which is the whole point of the change.
+    """
+    a = analyze(CIQ_LONG)
+    g = build_golden(a)
+    s = g["summary"]
+    jibes, fell = s["turns"]["jibes"], s["turns"]["jibeOutcomes"]["fellIn"]
+    assert (jibes, fell) == (50, 7)
+
+    # The per-turn list and the tally agree on what "dry" means -- flew-through and
+    # touchdown alike, because pumping back up out of a touchdown is a jibe he made.
+    dry = dry_jibe_times(a.turns)
+    assert len(dry) == jibes - fell == 43
+    assert dry == sorted(dry)
+    outcomes = s["turns"]["jibeOutcomes"]
+    assert len(dry) == outcomes["flewThrough"] + outcomes["touchdown"]
+
+    hours = s["durationS"] / 3600.0
+    assert s["jibesPerHour"] == pytest.approx(len(dry) / hours, abs=0.05) == 22.0
+    # `turnsPerHour` is untouched: it answers "how busy", not "how well".
+    assert s["turnsPerHour"] == pytest.approx(s["turns"]["turnsCounted"] / hours, abs=0.05)
+    assert s["jibesPerHour"] < jibes / hours
+
+
+def test_window_peak_never_scales_a_partial_window_up():
+    """A three-minute burst is not a 60-an-hour session.
+
+    A session shorter than the window has no full window to search, so its peak is its own
+    whole-session rate over the span it actually lasted -- the mirror of the never-a-
+    flattering-zero rule the four session rates follow (docs/testing.md).
+    """
+    # 3 minutes, 3 dry jibes: 60/h over the span it lasted, and not one more.
+    short = window_rates([10.0, 60.0, 120.0], [30.0], start_t=0.0, duration_s=180.0)
+    assert short.best_jph == pytest.approx(60.0)
+    assert short.best_jph_start_t == 0.0
+    assert short.best_wph == pytest.approx(20.0)
+    assert [ (p.start_t, p.jph, p.wph) for p in short.series ] == [(0.0, 60.0, 20.0)]
+
+    # The same burst inside an hour-long session is what it really was: three jibes in the
+    # busiest 15 minutes, 12 an hour -- never the 60 the burst alone would have claimed.
+    long = window_rates([10.0, 60.0, 120.0], [30.0], start_t=0.0, duration_s=3600.0)
+    assert long.best_jph == pytest.approx(12.0)
+    assert long.best_jph_start_t == 0.0
+    assert long.best_wph == pytest.approx(4.0)
+
+
+def test_window_peak_finds_the_burst_at_its_own_start():
+    """The peak is the true sliding maximum, so it opens on the event that starts the burst.
+
+    Three jibes spanning 899 s inside an hour: exactly one quarter-hour window holds all
+    three, and it starts on the first of them. No window on the 60 s grid can -- the one
+    that opens at 1980 has closed by 2880 and misses the last -- so the grid sees 2 where
+    the rider sailed 3, which is why the peak is anchored on the events and not read off
+    the series.
+    """
+    burst = [2000.0, 2450.0, 2899.0]
+    w = window_rates(burst, [], start_t=0.0, duration_s=3600.0)
+
+    assert w.best_jph_start_t == 2000.0                  # the first jibe of the burst
+    assert w.best_jph == pytest.approx(12.0)             # 3 in a quarter hour
+    # The grid is a sampling of the same function: it can only be lower, never higher.
+    assert max(p.jph for p in w.series) == pytest.approx(8.0)
+    assert w.best_jph > max(p.jph for p in w.series)
+    # Nothing wet happened: a measured 0.0, at the first window there was.
+    assert w.best_wph == 0.0 and w.best_wph_start_t == 0.0
+
+
+def test_window_series_walks_a_60_s_grid_of_full_windows():
+    """One point a minute, the first at the session's own start, the last a full window
+    before its end -- so every value in the series is a rate over 15 real minutes."""
+    w = window_rates([100.0, 200.0], [], start_t=0.0, duration_s=3600.0)
+    starts = [p.start_t for p in w.series]
+    assert starts[0] == 0.0
+    assert starts[-1] == 2700.0                          # 3600 - 900, the last full window
+    assert starts == [60.0 * k for k in range(46)]
+    assert all(p.jph in (0.0, 4.0, 8.0) for p in w.series)   # 0, 1 or 2 jibes / 0.25 h
+
+    # A session that starts at a non-zero clock keeps the grid anchored to its own start.
+    off = window_rates([], [], start_t=1234.5, duration_s=1800.0, cfg=RateConfig())
+    assert [p.start_t for p in off.series] == [1234.5 + 60.0 * k for k in range(16)]
+
+    # No duration, no window: null peaks and an empty series, never a flattering 0.0.
+    empty = window_rates([1.0], [2.0], start_t=0.0, duration_s=0.0)
+    assert empty.best_jph is None and empty.best_wph is None
+    assert empty.best_jph_start_t is None and empty.series == []
+
+
+@pytest.mark.skipif(not CIQ_LONG.exists(), reason="ciq fixture missing")
+def test_window_rates_on_the_corpus_reconcile_with_the_events_beside_them():
+    """Every window value is a count off the two lists the golden already carries."""
+    a = analyze(CIQ_LONG)
+    g = build_golden(a)
+    w = g["summary"]["windowRates"]
+    assert w["windowMin"] == 15.0
+
+    dry = dry_jibe_times(a.turns)
+    wet = [e["ts"] for e in g["flightEnds"] if e["outcome"] == "fell_in"]
+    span = 900.0
+
+    def count(events, start):
+        return sum(1 for e in events if start <= e < start + span)
+
+    for p in w["series"]:
+        assert p["jph"] == pytest.approx(count(dry, p["ts"]) * 4, abs=0.05)
+        assert p["wph"] == pytest.approx(count(wet, p["ts"]) * 4, abs=0.05)
+    # The peaks are the true maxima: at least the best the grid saw, and reproducible by
+    # counting the events in the window each one names.
+    assert w["bestJph"] >= max(p["jph"] for p in w["series"])
+    assert w["bestWph"] >= max(p["wph"] for p in w["series"])
+    assert w["bestJph"] == pytest.approx(count(dry, w["bestJphStartTs"]) * 4, abs=0.05)
+    assert w["bestWph"] == pytest.approx(count(wet, w["bestWphStartTs"]) * 4, abs=0.05)
+    # Every window sits wholly inside the session.
+    last_start = g["summary"]["durationS"] - span
+    assert 0.0 <= w["bestJphStartTs"] <= last_start
+    assert 0.0 <= w["bestWphStartTs"] <= last_start
+    assert w["series"][-1]["ts"] <= last_start
+    # The busiest quarter hour is busier than the session average -- that is what it is for.
+    assert w["bestJph"] > g["summary"]["jibesPerHour"]
 
 
 def test_a_source_without_hr_still_gets_the_block():

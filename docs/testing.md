@@ -8,7 +8,7 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
 
 ```json
 {
-  "engineVersion": "0.6.0",
+  "engineVersion": "0.7.0",
   "config": { "foilEntrySpeed": 12.0, "...": "params actually used" },
   "capabilities": { "hasDoppler": true, "hasDevFields": false, "hasWatchLaps": false,
                      "hasAccel": false, "hasHR": true, "sampleRateHz": 1 },
@@ -61,6 +61,9 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
                "longestFlightM": 0.0, "distanceKm": 0.0,
                "durationS": 0.0, "avgSpeedKmh": null, "turnsPerHour": null,
                "jibesPerHour": null, "wetPerHour": null,
+               "windowRates": { "windowMin": 15, "bestJph": null, "bestJphStartTs": null,
+                                "bestWph": null, "bestWphStartTs": null,
+                                "series": [ { "ts": 0, "jph": 0.0, "wph": 0.0 } ] },
                "turns":       { "tacks": 0, "jibes": 0, "unclassified": 0, "rejected": 0,
                                 "turnsCounted": 0, "turnsSuccessful": 0, "successPct": 0.0,
                                 "port": 0, "starboard": 0,
@@ -96,12 +99,20 @@ much of the session it actually speaks for. `pumpEpisodes` (engine 0.3.0, docs/a
 `summary.takeoff` tallies count the five buckets, and this list is the same classification with
 its *instants* attached, which is what lets iOS place a failed attempt on the map instead of
 apologizing for it. It degrades like `turns` — a source with no accelerometer has no bursts to
-classify and gets `[]`, written rather than omitted. The five **session rates** (engine 0.6.0,
+classify and gets `[]`, written rather than omitted. The **session rates** (engine 0.6.0,
 docs/algorithms.md "Session rates") share the same never-a-flattering-zero rule: `durationS`
 is the elapsed span of the cleaned track, gaps included, and when it is ≤ 0 all four derived
 rates are explicit **null** — "there is no hour to divide by", not "he did nothing in one".
 `wetPerHour` is every `fell_in` *flight end*, straight-line and turn-owned alike, which is a
-different (and on this corpus a much larger) number than the turn ladder's fallen turns.
+different (and on this corpus a much larger) number than the turn ladder's fallen turns;
+`jibesPerHour` is the **dry** jibes only (engine 0.7.0) — `jibes - jibeOutcomes.fellIn` —
+because a rate a rider can raise by falling more often is not a measure of his afternoon.
+`windowRates` (engine 0.7.0) is the same two event channels over a rolling 15-minute window:
+a 60 s series of full windows, and the two exact sliding peaks, which are anchored on the
+events and so are never below the series they sit beside. Its peaks obey the **mirror** of
+the zero rule — never a flattering *peak*: only windows lying wholly inside the session
+count, and a session shorter than the window reports its own whole-session rate over the span
+it lasted rather than a fragment scaled up to the hour.
 
 ## Presentation goldens
 
@@ -147,6 +158,8 @@ and the Pages deploy).
 | foil time | ± 2 % |
 | session duration (`durationS`) | ± 0.1 s |
 | session rates (`avgSpeedKmh`, `turnsPerHour`, `jibesPerHour`, `wetPerHour`) | ± 0.05 |
+| window rates (`windowRates` peaks and every series `jph`/`wph`) | ± 0.05 |
+| window starts (`bestJphStartTs`, `bestWphStartTs`, series `ts`) | ± 0.1 s |
 | watch live vs phone recompute | ± 0.2 kn, counts exact on clean clips |
 
 Non-qualifying records (no window of the required length/shape exists — e.g. 1 h in a short

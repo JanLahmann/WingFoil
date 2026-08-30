@@ -38,13 +38,23 @@ pre-existing moves — they are arithmetic over numbers the summary already carr
 0.5.0 document cannot answer "how busy was that hour" at all, and a missing rate read as 0
 would claim a session with no jibes in it. The denominator is elapsed session time, not
 foiling time, so every one of them is a rate *per hour on the water*.
+
+Engine 0.7.0 reworks that block twice over (docs/algorithms.md "Session rates"). First,
+`jibesPerHour` counts **dry** jibes only — `turns.jibes - turns.jibeOutcomes.fellIn` — so the
+number a rider reads as the measure of his afternoon stops counting the jibes he swam out of;
+this *moves* a pre-existing value on every fixture with a fallen jibe in it, which is exactly
+what the version bump is for. Second, `summary.windowRates` adds the rolling-window view of
+the same two events (`config.windowRateMin`, 15 min): a session average over two hours cannot
+say *when* the rider was going well, and the busiest quarter of an hour is the part he
+remembers. Its peak is measured over full windows only — a three-minute burst scaled to the
+hour is a lie, and this file does not tell it.
 """
 
 from __future__ import annotations
 
 import json
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import ENGINE_VERSION, gp3s
@@ -60,9 +70,25 @@ from .parse import RawTrack, parse_fit
 from .pump import PumpConfig, PumpTrack, pump_track
 from .takeoff import (PumpEpisode, Takeoff, TakeoffAnalysis, TakeoffConfig, TakeoffSummary,
                       analyze_takeoffs, summarize_takeoffs)
-from .turns import (OutcomeCounts, Turn, TurnConfig, TurnSummary, detect_turns,
+from .turns import (FELL_IN, JIBE, OutcomeCounts, Turn, TurnConfig, TurnSummary, detect_turns,
                     summarize_turns)
 from .wind import WindConfig, WindEstimate, estimate_wind
+
+
+@dataclass
+class RateConfig:
+    """Session-rate parameters (docs/algorithms.md "Session rates").
+
+    One knob: the rolling window the per-hour series is measured over. 15 minutes is long
+    enough that a single jibe cannot dominate it and short enough to separate the hour the
+    wind filled in from the hour it did not.
+    """
+
+    window_rate_min: float = 15.0
+    #: Spacing of the emitted series. Not a tuning knob -- it is how *finely* the same
+    #: function is sampled for the file, and a minute keeps a two-hour session's series
+    #: reviewable. The peak below is never read off this grid.
+    grid_s: float = 60.0
 
 
 @dataclass
@@ -89,6 +115,7 @@ class Analysis:
     pump_config: PumpConfig
     takeoff_config: TakeoffConfig
     hr_config: HrConfig
+    rate_config: RateConfig
 
 
 def analyze(path: str | Path, filter_config: FilterConfig | None = None,
@@ -98,7 +125,8 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
             flight_end_config: FlightEndConfig | None = None,
             pump_config: PumpConfig | None = None,
             takeoff_config: TakeoffConfig | None = None,
-            hr_config: HrConfig | None = None) -> Analysis:
+            hr_config: HrConfig | None = None,
+            rate_config: RateConfig | None = None) -> Analysis:
     """Full pipeline: parse -> clean -> flights -> records -> wind -> turns -> ends ->
     takeoffs -> HR cost."""
     fcfg = filter_config or FilterConfig()
@@ -109,6 +137,7 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
     pcfg = pump_config or PumpConfig()
     tocfg = takeoff_config or TakeoffConfig()
     hcfg = hr_config or HrConfig()
+    rcfg = rate_config or RateConfig()
 
     track = parse_fit(path)
     ct = clean(track, fcfg)
@@ -152,7 +181,7 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
         outcome_split=split_outcomes(turn_summary, end_summary),
         takeoffs=takeoffs, takeoff_summary=summarize_takeoffs(takeoffs), pump=pt, hr=hr,
         wind_config=wcfg, turn_config=tcfg, flight_end_config=fecfg,
-        pump_config=pcfg, takeoff_config=tocfg, hr_config=hcfg,
+        pump_config=pcfg, takeoff_config=tocfg, hr_config=hcfg, rate_config=rcfg,
     )
 
 
@@ -172,8 +201,41 @@ class SessionRates:
     duration_s: float = 0.0
     avg_speed_kmh: float | None = None
     turns_per_hour: float | None = None
+    #: **Dry** jibes per hour: the ones he came out of still sailing. See `session_rates`.
     jibes_per_hour: float | None = None
     wet_per_hour: float | None = None
+
+
+@dataclass
+class WindowRate:
+    """One evaluation of the rolling window: its start, and the two rates over it."""
+
+    start_t: float
+    jph: float
+    wph: float
+
+
+@dataclass
+class WindowRates:
+    """The rolling-window rate series and its two peaks (docs/algorithms.md "Session rates").
+
+    `best_jph` / `best_wph` are the **true** sliding maxima, not the largest value in
+    `series`: the count in a window can only be highest when the window opens on an event,
+    so the peak search is anchored on the events and the series is a coarse sampling of the
+    same function. `best_* >= max(series)` therefore always holds, and usually strictly.
+
+    Every number here is measured over a **full** window. A session shorter than one window
+    gets a single point over its actual elapsed span instead — an honest whole-session rate —
+    and never a partial window scaled up to the hour, which is how three good minutes turn
+    into a peak the rider never sailed.
+    """
+
+    window_min: float
+    best_jph: float | None = None
+    best_jph_start_t: float | None = None
+    best_wph: float | None = None
+    best_wph_start_t: float | None = None
+    series: list[WindowRate] = field(default_factory=list)
 
 
 def session_duration_s(ct: CleanTrack) -> float:
@@ -187,11 +249,28 @@ def session_duration_s(ct: CleanTrack) -> float:
     return 0.0 if len(t) < 2 else float(t.iloc[-1] - t.iloc[0])
 
 
-def session_rates(duration_s: float, distance_m: float, turns_counted: int, jibes: int,
+def session_start_t(ct: CleanTrack) -> float:
+    """First sample of the cleaned track -- where the session's clock starts, and therefore
+    where the first rolling window opens."""
+    t = ct.records["t"]
+    return 0.0 if len(t) == 0 else float(t.iloc[0])
+
+
+def session_rates(duration_s: float, distance_m: float, turns_counted: int, dry_jibes: int,
                   fell_in: int) -> SessionRates:
-    """The rate block. `fell_in` is **every** fell-in flight end, turn and straight-line
-    alike (docs/algorithms.md "Session rates") -- the question is how often the rider got
-    wet, and the water does not care whether he was mid-jibe at the time."""
+    """The rate block.
+
+    `dry_jibes` is the jibes he came out of **still sailing** -- `jibes - jibeOutcomes.
+    fellIn`, so flew-through and touchdown alike, since pumping straight back up out of a
+    touchdown is a jibe he made. A jibe he swam out of is one he did not, and counting it
+    would let a rider raise his headline number by falling more often. `turnsPerHour` beside
+    it is deliberately still **all** counted turns: that one answers "how busy", which is a
+    question about activity and not about quality.
+
+    `fell_in` is **every** fell-in flight end, turn and straight-line alike -- the question
+    is how often the rider got wet, and the water does not care whether he was mid-jibe at
+    the time.
+    """
     if duration_s <= 0:
         return SessionRates(duration_s=max(duration_s, 0.0))
     hours = duration_s / 3600.0
@@ -199,9 +278,91 @@ def session_rates(duration_s: float, distance_m: float, turns_counted: int, jibe
         duration_s=duration_s,
         avg_speed_kmh=distance_m / duration_s * 3.6,
         turns_per_hour=turns_counted / hours,
-        jibes_per_hour=jibes / hours,
+        jibes_per_hour=dry_jibes / hours,
         wet_per_hour=fell_in / hours,
     )
+
+
+def _count_in_window(events: list[float], start_t: float, window_s: float) -> int:
+    """Events in the half-open window [start, start+window). Half-open so that sliding the
+    window by exactly one event's spacing never counts that event twice."""
+    return sum(1 for e in events if start_t <= e < start_t + window_s)
+
+
+def _peak_rate(events: list[float], start_t: float, duration_s: float,
+               window_s: float) -> tuple[float | None, float | None]:
+    """(peak per-hour rate, the window start that achieved it) over **full** windows only.
+
+    The count in `[s, s+W)` is a step function of `s` that can only reach a local maximum
+    where the window opens exactly on an event, so those instants (plus the two ends of the
+    allowed range, which is where a maximum can be clipped) are the whole candidate set --
+    this is the true sliding maximum, not a sampled one.
+
+    A session shorter than one window has no full window to search: its peak is its own
+    whole-session rate over the span it actually lasted. Scaling a partial window up to the
+    hour would be the flattering lie the rest of this file exists to avoid.
+    """
+    if duration_s <= 0:
+        return None, None
+    if duration_s < window_s:
+        return len(events) / (duration_s / 3600.0), start_t
+    last_start = start_t + duration_s - window_s
+    candidates = sorted({start_t, last_start,
+                         *(e for e in events if start_t <= e <= last_start)})
+    best_n, best_start = -1, start_t
+    for s in candidates:
+        n = _count_in_window(events, s, window_s)
+        if n > best_n:                      # ties keep the earliest window
+            best_n, best_start = n, s
+    return best_n / (window_s / 3600.0), best_start
+
+
+def window_rates(dry_jibe_ts: list[float], wet_ts: list[float], start_t: float,
+                 duration_s: float, cfg: RateConfig | None = None) -> WindowRates:
+    """The rolling-window block: a `cfg.grid_s` series plus the two exact peaks.
+
+    Both channels are the *same* events the session rates count, timestamped where the
+    goldens already timestamp them -- a dry jibe at its turn's `ts`, a swim at its flight
+    end's `ts` -- so a reader can find every event in the window by looking it up in the
+    lists above.
+    """
+    cfg = cfg or RateConfig()
+    window_s = cfg.window_rate_min * 60.0
+    out = WindowRates(window_min=cfg.window_rate_min)
+    if duration_s <= 0 or window_s <= 0:
+        return out
+    out.best_jph, out.best_jph_start_t = _peak_rate(dry_jibe_ts, start_t, duration_s, window_s)
+    out.best_wph, out.best_wph_start_t = _peak_rate(wet_ts, start_t, duration_s, window_s)
+
+    if duration_s < window_s:
+        # One point over the span the session actually lasted: the series says what the
+        # rates were, and says it once, rather than pretending to a window that never closed.
+        hours = duration_s / 3600.0
+        out.series = [WindowRate(start_t, len(dry_jibe_ts) / hours, len(wet_ts) / hours)]
+        return out
+
+    hours = window_s / 3600.0
+    steps = int(math.floor((duration_s - window_s) / cfg.grid_s + 1e-9))
+    out.series = [
+        WindowRate(start_t + k * cfg.grid_s,
+                   _count_in_window(dry_jibe_ts, start_t + k * cfg.grid_s, window_s) / hours,
+                   _count_in_window(wet_ts, start_t + k * cfg.grid_s, window_s) / hours)
+        for k in range(steps + 1)
+    ]
+    return out
+
+
+def dry_jibe_times(turns: list[Turn]) -> list[float]:
+    """When each **dry** jibe happened, in time order: a counted jibe he did not swim out
+    of, at the turn's own `ts` (its start). The list's length is the `jibesPerHour`
+    numerator -- one definition, spelled once."""
+    return [t.start_t for t in turns
+            if t.counted and t.kind == JIBE and t.outcome != FELL_IN]
+
+
+def wet_times(ends: list[FlightEnd]) -> list[float]:
+    """When each swim happened: every fell-in flight end, at the end's own `ts`."""
+    return [e.t for e in ends if e.outcome == FELL_IN]
 
 
 def build_golden(a: Analysis) -> dict:
@@ -209,9 +370,12 @@ def build_golden(a: Analysis) -> dict:
     fr, rec = a.flights, a.records
     longest_s = fr.longest.duration_s if fr.longest else 0.0
     longest_m = max((f.dist_m for f in fr.flights), default=0.0)
-    rates = session_rates(session_duration_s(a.clean), rec.distance_m,
-                          a.turn_summary.turns_counted, a.turn_summary.jibes,
-                          a.flight_end_summary.all_ends.fell_in)
+    dry_ts, wet_ts = dry_jibe_times(a.turns), wet_times(a.flight_ends)
+    duration_s = session_duration_s(a.clean)
+    rates = session_rates(duration_s, rec.distance_m, a.turn_summary.turns_counted,
+                          len(dry_ts), a.flight_end_summary.all_ends.fell_in)
+    windows = window_rates(dry_ts, wet_ts, session_start_t(a.clean), duration_s,
+                           a.rate_config)
     pumps = {k.flight_index: k.pumps_to_takeoff for k in a.takeoffs.takeoffs}
     return {
         "engineVersion": ENGINE_VERSION,
@@ -259,8 +423,9 @@ def build_golden(a: Analysis) -> dict:
             "durationS": round(rates.duration_s, 1),
             "avgSpeedKmh": _round(rates.avg_speed_kmh, 2),
             "turnsPerHour": _round(rates.turns_per_hour, 1),
-            "jibesPerHour": _round(rates.jibes_per_hour, 1),
+            "jibesPerHour": _round(rates.jibes_per_hour, 1),   # DRY jibes (engine 0.7.0)
             "wetPerHour": _round(rates.wet_per_hour, 1),
+            "windowRates": _window_rates_json(windows),
             "turns": _turn_summary_json(a.turn_summary),
             "flightEnds": _end_summary_json(a.flight_end_summary),
             "outcomeSplit": _split_json(a.outcome_split),
@@ -289,7 +454,7 @@ def _config_dict(a: Analysis) -> dict:
     """Params actually used, docs/algorithms.md names (camelCase)."""
     fcfg, flcfg = a.filter_config, a.flight_config
     w, t, p, k = a.wind_config, a.turn_config, a.pump_config, a.takeoff_config
-    h = a.hr_config
+    h, r = a.hr_config, a.rate_config
     return {
         "foilEntrySpeed": flcfg.foil_entry_speed_kmh,
         "entryHold": flcfg.entry_hold_s,
@@ -372,6 +537,24 @@ def _config_dict(a: Analysis) -> dict:
         "hrMinRise": h.min_rise_bpm,
         "hrBinMinutes": h.bin_minutes,
         "hrMaxSampleGap": h.max_sample_gap_s,
+        # session rates
+        "windowRateMin": r.window_rate_min,
+    }
+
+
+def _window_rates_json(w: WindowRates) -> dict:
+    """The rolling-window block. The peaks are null -- never 0.0 -- on a session with no
+    duration, for the same reason the four rates beside them are: there is no window to
+    measure, which is not the same claim as a quarter of an hour in which nothing happened.
+    """
+    return {
+        "windowMin": w.window_min,
+        "bestJph": _round(w.best_jph, 1),
+        "bestJphStartTs": _round(w.best_jph_start_t, 2),
+        "bestWph": _round(w.best_wph, 1),
+        "bestWphStartTs": _round(w.best_wph_start_t, 2),
+        "series": [{"ts": round(p.start_t, 2), "jph": round(p.jph, 1), "wph": round(p.wph, 1)}
+                   for p in w.series],
     }
 
 

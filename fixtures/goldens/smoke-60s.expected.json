@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.6.0",
+  "engineVersion": "0.7.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -75,7 +75,8 @@
     "hrRecoveryWindow": 120.0,
     "hrMinRise": 5.0,
     "hrBinMinutes": 20.0,
-    "hrMaxSampleGap": 10.0
+    "hrMaxSampleGap": 10.0,
+    "windowRateMin": 15.0
   },
   "capabilities": {
     "hasDoppler": true,
@@ -259,6 +260,20 @@
     "turnsPerHour": 0.0,
     "jibesPerHour": 0.0,
     "wetPerHour": 0.0,
+    "windowRates": {
+      "windowMin": 15.0,
+      "bestJph": 0.0,
+      "bestJphStartTs": 0.0,
+      "bestWph": 0.0,
+      "bestWphStartTs": 0.0,
+      "series": [
+        {
+          "ts": 0.0,
+          "jph": 0.0,
+          "wph": 0.0
+        }
+      ]
+    },
     "turns": {
       "tacks": 0,
       "tacksSuccessful": 0,
