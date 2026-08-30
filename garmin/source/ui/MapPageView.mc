@@ -71,8 +71,9 @@ module TrackTint {
 // Breadcrumb map page (PageModel.LAYOUT_MAP).
 //
 // The map API is Toybox.WatchUi.MapTrackView — a *View*, not something that can be painted
-// inside RecordingView.onUpdate — which is why paging onto this page swaps the whole view
-// (PageNav.step). MapTrackView keeps itself centred on the current position and draws the
+// inside RecordingView.onUpdate — which is why paging onto this page PUSHES this view over
+// RecordingView (PageNav.step; switchToView is not supported for native base views and
+// crashes on device). MapTrackView keeps itself centred on the current position and draws the
 // device's own navigation arrow; all we contribute is the session's track, drawn in the phase
 // teal where the rider was flying and the dim ink where he was not.
 //
