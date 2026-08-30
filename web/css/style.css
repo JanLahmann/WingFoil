@@ -251,6 +251,29 @@ input:focus-visible, button:focus-visible, .btn:focus-visible, .dropzone:focus-v
 
 /* ------------------------------------------------------------------- tiles */
 
+/* The key-metrics block: four rows above the tiles, numbers big and labels small — the
+   same block, in the same order, as the iOS app's `KeyMetricsView`. It is deliberately
+   NOT a `.tiles` grid: the tile wall makes every cell the same size, which is exactly the
+   "nothing is the headline" defect this block exists to fix (docs/app-ui-review.md §4). */
+.keys { display: grid; gap: 14px; margin-bottom: 14px; }
+.key-row { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+/* One cell on its own row stays one cell — a 3-up `auto-fit` would stretch the best-2 s
+   number across the whole panel. */
+.key-row:has(> .key.hero) { grid-template-columns: 1fr; }
+.key .v { font: 650 26px/1.15 var(--sans); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.key.hero .v { font-size: 32px; }
+.key .k {
+  font: 600 10.5px/1.3 var(--sans); text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ink-3); margin-top: 3px;
+}
+/* The outcome ladder is a verdict scale and the tally is a verdict, so it carries the
+   ladder's own inks straight from design/tokens.json (docs/presentation.md). The dots
+   between them are not part of the scale and stay recessive. */
+.key .tally .flew { color: var(--wf-outcome-flew); }
+.key .tally .touchdown { color: var(--wf-outcome-touchdown); }
+.key .tally .fell { color: var(--wf-outcome-fell-in); }
+.key .tally i { color: var(--ink-3); font-style: normal; margin: 0 5px; }
+
 .tiles {
   display: grid; gap: 1px; background: var(--line-soft);
   border: 1px solid var(--line-soft); border-radius: 8px; overflow: hidden;
@@ -531,6 +554,14 @@ footer {
   .icu-form button { width: 100%; }
   .icu-row { flex-wrap: wrap; gap: 8px; }
   .icu-row button { width: 100%; }
+
+  /* The key block keeps its rows on a phone — three numbers across a 430 px screen is
+     still readable at 22 px, and reflowing them would lose the row grouping that carries
+     the meaning. Only the type comes down. */
+  .keys { gap: 12px; }
+  .key-row { gap: 10px; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); }
+  .key .v { font-size: 22px; }
+  .key.hero .v { font-size: 27px; }
 
   .tiles { grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); }
   .tile { padding: 11px 12px; }

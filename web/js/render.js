@@ -45,6 +45,94 @@ export function render(result, { highlight = null } = {}) {
   renderEnds(el("ends-table"), el("ends-caption"), g, meta);
 }
 
+/* --------------------------------------------------------------- key metrics */
+
+/**
+ * The KEY METRICS block, and the JavaScript half of `KeyMetrics.swift`.
+ *
+ * Four rows, numbers big and labels small, before the tiles and the figures:
+ *
+ *   1  duration (h:mm) · distance · average speed
+ *   2  the best 2 s record, labelled with the window it is
+ *   3  the outcome ladder's three counts on the ladder's own inks, plus the two turn
+ *      streaks the engine has computed since 0.4.0 and neither app ever drew
+ *   4  JPH (or TPH) and WPH — the 0.6.0 per-hour rates
+ *
+ * Every rule the two platforms have to agree on lives in this one function, and its Swift
+ * twin is pinned by `PresentationTests.keyMetrics*`. A difference between the two is a bug.
+ */
+export function keyMetrics(g) {
+  const s = g.summary, t = s.turns, rec = g.records;
+
+  // Goldens serialize a non-qualifying record as 0.0 where the Swift model uses nil; both
+  // mean "no window of that length exists", and neither may print as a speed.
+  const best2s = rec.best2sKn >= 0.05 ? `${nf(rec.best2sKn, 2)} kn` : "—";
+  // Every other speed in either app is knots, so the one summary number the engine reports
+  // in km/h is converted rather than set beside a column of them.
+  const avg = s.avgSpeedKmh === null || s.avgSpeedKmh === undefined
+    ? "—" : `${nf(s.avgSpeedKmh / 1.852, 2)} kn`;
+
+  // Jibes are what the rider asked for and what JPH counts a row below, so the tally has
+  // to be about the same turns. A session whose wind axis never resolved has no jibes at
+  // all, and an empty ladder over an afternoon of turns would read as "nothing happened" —
+  // so it falls back to every counted turn, the same way the rate row falls back to TPH.
+  // The caption says which, so the three numbers can never be read as the other set.
+  const tally = t.jibes > 0 ? { o: t.jibeOutcomes, of: `of ${t.jibes} jibes` }
+    : (t.turnsCounted > 0 ? { o: t.outcomes, of: `of ${t.turnsCounted} turns` } : null);
+
+  // `durationS <= 0` makes the engine report all four rates as null: there is no hour to
+  // divide by, which is an absence and never a flattering 0.0. The row disappears.
+  const rates = [];
+  if (s.wetPerHour !== null && s.wetPerHour !== undefined) {
+    rates.push((s.jibesPerHour > 0 || !(s.turnsPerHour > 0))
+      ? { v: nf(s.jibesPerHour, 1), k: "JPH · jibes per hour" }
+      : { v: nf(s.turnsPerHour, 1), k: "TPH · turns per hour" });
+    rates.push({ v: nf(s.wetPerHour, 1), k: "WPH · swims per hour" });
+  }
+
+  const cell = (v, k, cls = "") =>
+    `<div class="key${cls ? ` ${cls}` : ""}"><div class="v">${v}</div>
+       <div class="k">${esc(k)}</div></div>`;
+  const row = (cells) => `<div class="key-row">${cells.join("")}</div>`;
+
+  const rows = [
+    row([cell(esc(hm(s.durationS)), "duration"),
+         cell(`${nf(s.distanceKm, 1)} km`, "distance"),
+         cell(esc(avg), "avg speed")]),
+    // The session's fastest measured window, alone on its line and in the block's largest
+    // type: it is the number a rider quotes, and the label names the window rather than
+    // letting "max" imply a peak sample (docs/presentation.md, "Record windows").
+    row([cell(esc(best2s), "max 2 s", "hero")]),
+  ];
+
+  if (tally || t.turnsCounted > 0) {
+    const cells = [];
+    if (tally) {
+      const ladder = `<span class="flew">${int(tally.o.flewThrough)}</span>` +
+        `<i>·</i><span class="touchdown">${int(tally.o.touchdown)}</span>` +
+        `<i>·</i><span class="fell">${int(tally.o.fellIn)}</span>`;
+      cells.push(cell(`<span class="tally">${ladder}</span>`,
+                      `flew · touchdown · fell — ${tally.of}`));
+    }
+    if (t.turnsCounted > 0) {
+      cells.push(cell(`${int(t.longestDryStreak)} dry · ${int(t.longestFlewStreak)} flew`,
+                      "best streaks"));
+    }
+    rows.push(row(cells));
+  }
+  if (rates.length) rows.push(row(rates.map((r) => cell(esc(r.v), r.k))));
+  return rows.join("");
+}
+
+/** `1:57` — hours and minutes, which is how long a session is talked about. Rounded to the
+ *  nearest minute, not truncated: `0:00` over a recording that exists reads as a failure to
+ *  measure. Twin of `KeyMetrics.hoursMinutes`. */
+function hm(sec) {
+  if (sec === null || sec === undefined) return "—";
+  const m = Math.max(0, Math.round(sec / 60));
+  return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`;
+}
+
 /* -------------------------------------------------------------------- header */
 
 function renderSummary(result) {
@@ -66,6 +154,8 @@ function renderSummary(result) {
   if (caps.hasHR) badges.push(["HR", false]);
   el("session-badges").innerHTML = badges
     .map(([t, accent]) => `<span class="badge${accent ? " accent" : ""}">${esc(t)}</span>`).join("");
+
+  el("key-metrics").innerHTML = keyMetrics(g);
 
   const windTile = w
     ? { k: "Wind axis", v: `${nf(w.dirDeg, 0)}°`, unit: "from",

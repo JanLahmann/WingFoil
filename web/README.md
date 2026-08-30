@@ -357,6 +357,13 @@ groups (**153 assertions**, all green at the time of writing — 30 / 8 / 28 / 4
 4. **Check the numbers** against the golden above: 23 flights, 60 % on foil, 12.76 km,
    Turns 30, Outcomes 9/9/12, wind 36°, best 2 s 11.36 kn. Badges: `wingfoil`,
    `CIQ dev fields`, `accel`, `HR`.
+4b. **Key metrics**, the four rows above the tiles (`docs/presentation.md`, "Key metrics").
+   On this file: `1:25 · 12.8 km · 4.89 kn`, then `11.36 kn` under **max 2 s**, then
+   `9 · 9 · 12` on the ladder's own green/amber/red *(this is the only place either app
+   draws the tally in colour outside the map)* beside `4 dry · 2 flew`, then `21.3 JPH`
+   and `11.3 WPH`. It must read identically to the iOS app's block on the same session —
+   the two halves are `web/js/render.js` `keyMetrics` and `KeyMetrics.swift`, and the
+   Swift half is pinned by `PresentationTests.keyMetrics*`.
 5. **Map.** North-up track; grey off-foil line with teal foiling segments on top (the phase
    tints, the same two the iOS map uses); small chevrons showing which way he went; numbered
    markers — green discs / amber triangles / red crosses / grey hairline crosses for

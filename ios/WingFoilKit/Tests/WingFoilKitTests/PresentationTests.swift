@@ -137,6 +137,111 @@ import Testing
         #expect(ShareCardStats.Shape.square.size == (1080, 1080))
     }
 
+    // MARK: - Key metrics
+
+    private func outcomes(_ flew: Int, _ touch: Int, _ fell: Int) -> OutcomeCounts {
+        var counts = OutcomeCounts()
+        counts.flewThrough = flew
+        counts.touchdown = touch
+        counts.fellIn = fell
+        return counts
+    }
+
+    /// The 29 Aug Torbole session's own numbers, from its golden — the block is eyeballed
+    /// against this one, so it is the one pinned here.
+    private func torboleSummary() -> SessionSummary {
+        var summary = SessionSummary(foilTimeS: 3780, foilPct: 53.8, flightCount: 31,
+                                     longestFlightS: 424, longestFlightM: 1580,
+                                     distanceKm: 22.985)
+        summary.apply(SessionRates(durationS: 7029, distanceM: 22_985, turnsCounted: 51,
+                                   jibes: 50, fellIn: 25))
+        summary.turns.turnsCounted = 51
+        summary.turns.jibes = 50
+        summary.turns.longestDryStreak = 11
+        summary.turns.longestFlewStreak = 5
+        summary.turns.outcomes = outcomes(35, 8, 8)
+        summary.turns.jibeOutcomes = outcomes(35, 8, 7)
+        return summary
+    }
+
+    @Test func keyMetricsCarryTheFourRowsInOrder() {
+        var records = GP3SRecords()
+        records.best2sKn = 13.209
+        let block = KeyMetrics.make(summary: torboleSummary(), records: records)
+
+        #expect(block.basics.map(\.key) == ["duration", "distance", "avgSpeed"])
+        #expect(block.basics[0].value == "1:57")
+        #expect(block.basics[1].value == "23.0 km")
+        // 11.77 km/h in the app's own unit — every other speed on the screen is knots.
+        #expect(block.basics[2].value == "6.36 kn")
+        #expect(block.maxSpeed.value == "13.21 kn")
+        #expect(block.maxSpeed.label == "max 2 s")
+        #expect(block.tally?.flewThrough == 35)
+        #expect(block.tally?.touchdown == 8)
+        #expect(block.tally?.fellIn == 7)
+        #expect(block.tally?.caption == "of 50 jibes")
+        #expect(block.streaks?.value == "11 dry · 5 flew")
+        #expect(block.rates.map(\.key) == ["jph", "wph"])
+        #expect(block.rates[0].value == "25.6")
+        #expect(block.rates[1].value == "12.8")
+    }
+
+    /// No duration ⇒ the engine reports every rate as null, and the row disappears rather
+    /// than printing "0.0 JPH" over a rider who was never given an hour to divide by.
+    @Test func keyMetricsHideTheRateRowWithoutADuration() {
+        var summary = SessionSummary(foilTimeS: 0, foilPct: 0, flightCount: 0,
+                                     longestFlightS: 0, longestFlightM: 0, distanceKm: 0)
+        summary.apply(SessionRates(durationS: 0, distanceM: 0, turnsCounted: 0, jibes: 0,
+                                   fellIn: 0))
+        let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
+        #expect(block.rates.isEmpty)
+        #expect(block.basics[0].value == "0:00")
+        // Nothing measured is "—", never a fabricated 0.00 kn.
+        #expect(block.maxSpeed.value == "—")
+        #expect(block.basics[2].value == "—")
+        // No counted turn ⇒ no tally and no streaks: three zeros are not a verdict.
+        #expect(block.tally == nil)
+        #expect(block.streaks == nil)
+    }
+
+    /// A session whose wind axis never resolved has turns and no jibes. JPH would read
+    /// 0.0 over an afternoon of jibing, so both the rate and the tally fall back to the
+    /// turn channel — and both say so in their own label.
+    @Test func keyMetricsFallBackToTurnsWhenNoJibeWasNamed() {
+        var summary = SessionSummary(foilTimeS: 600, foilPct: 30, flightCount: 4,
+                                     longestFlightS: 60, longestFlightM: 300,
+                                     distanceKm: 5)
+        summary.apply(SessionRates(durationS: 3600, distanceM: 5000, turnsCounted: 12,
+                                   jibes: 0, fellIn: 3))
+        summary.turns.turnsCounted = 12
+        summary.turns.unclassified = 12
+        summary.turns.longestDryStreak = 4
+        summary.turns.longestFlewStreak = 2
+        summary.turns.outcomes = outcomes(6, 4, 2)
+        let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
+
+        #expect(block.rates.map(\.key) == ["tph", "wph"])
+        #expect(block.rates[0].label == "TPH · turns per hour")
+        #expect(block.rates[0].value == "12.0")
+        #expect(block.tally?.caption == "of 12 turns")
+        #expect(block.tally?.flewThrough == 6)
+    }
+
+    /// A measured zero is a value: a session with a duration and no turns really did do
+    /// 0.0 jibes an hour, and that is JPH — not the TPH fallback, which exists only for
+    /// turns the wind axis could not name.
+    @Test func keyMetricsKeepJPHWhenThereWereNoTurnsAtAll() {
+        var summary = SessionSummary(foilTimeS: 30, foilPct: 50, flightCount: 1,
+                                     longestFlightS: 30, longestFlightM: 100,
+                                     distanceKm: 0.226)
+        summary.apply(SessionRates(durationS: 59, distanceM: 226, turnsCounted: 0,
+                                   jibes: 0, fellIn: 0))
+        let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
+        #expect(block.rates.map(\.key) == ["jph", "wph"])
+        #expect(block.rates[0].value == "0.0")
+        #expect(block.tally == nil)
+    }
+
     // MARK: - Thumbnail geometry
 
     /// A synthetic out-and-back reach: 400 m east, then back, with the outbound leg flown.
