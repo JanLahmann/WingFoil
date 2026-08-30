@@ -14,7 +14,8 @@ import Foundation
 /// 2. `maxSpeed` — the best 2 s record, labelled with the window it is, never "top speed".
 /// 3. `tally` + `streaks` — the outcome ladder's own three counts, plus the two streaks
 ///    §5.1 flagged as computed-and-never-shown on either platform.
-/// 4. `rates` — the 0.6.0 per-hour rates (`docs/algorithms.md` "Session rates").
+/// 4. `rates` — the per-hour rates (`docs/algorithms.md` "Session rates"); JPH counts
+///    **dry** jibes since 0.7.0, and its label says so.
 ///
 /// Everything resolves to a display string here so both platforms format one way and so
 /// the *content* is testable without a renderer — the same arrangement `ShareCardStats`
@@ -129,7 +130,12 @@ public struct KeyMetrics: Sendable, Equatable {
 
     /// JPH · WPH, one decimal.
     ///
-    /// JPH degrades to TPH rather than to 0.0: a session whose wind axis never resolved
+    /// JPH is **dry** jibes per hour (engine 0.7.0), and the label says so: the number
+    /// counts the jibes he came out of still sailing, so it cannot be raised by falling
+    /// more often, and a caption reading "jibes per hour" over it would name a different
+    /// number than the one printed.
+    ///
+    /// It degrades to TPH rather than to 0.0: a session whose wind axis never resolved
     /// has turns and no jibes, and "0.0 jibes per hour" would be a verdict on a rider who
     /// jibed all afternoon. WPH needs no such fallback — a fell-in flight end is a fall
     /// whatever the wind was doing.
@@ -137,7 +143,7 @@ public struct KeyMetrics: Sendable, Equatable {
         guard let wet = s.wetPerHour else { return [] }
         var out: [Metric] = []
         if let jibes = s.jibesPerHour, jibes > 0 || (s.turnsPerHour ?? 0) <= 0 {
-            out.append(Metric(key: "jph", label: "JPH · jibes per hour",
+            out.append(Metric(key: "jph", label: "JPH · dry jibes per hour",
                               value: rate(jibes)))
         } else if let turns = s.turnsPerHour {
             out.append(Metric(key: "tph", label: "TPH · turns per hour",

@@ -26,7 +26,29 @@ public enum AnalysisEngine {
     /// Nothing pre-existing moves — they are arithmetic over numbers the summary already
     /// carried — but a 0.5.0 document cannot answer "how busy was that hour" at all, and a
     /// missing rate decoded as 0 would claim a session with no jibes in it.
-    public static let version = "0.6.0"
+    ///
+    /// 0.7.0 reworks that block twice (docs/algorithms.md "Session rates"). `jibesPerHour`
+    /// now counts **dry** jibes — `turns.jibes - turns.jibeOutcomes.fellIn` — so the number
+    /// a rider reads as the measure of his afternoon stops counting the jibes he swam out
+    /// of; unlike the four bumps above, this one *moves* a value every stored document
+    /// already carries, which is precisely why it must re-derive. And `summary.windowRates`
+    /// adds the rolling 15-minute view of the same two events (`config.windowRateMin`): the
+    /// busiest quarter of an hour, which a session average cannot say.
+    public static let version = "0.7.0"
+}
+
+/// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's
+/// `RateConfig`.
+public struct RatesConfig: Sendable, Equatable {
+    /// The rolling window the per-hour series is measured over. 15 minutes is long enough
+    /// that one jibe cannot dominate it, short enough to separate the hour the wind filled
+    /// in from the hour it did not.
+    public var windowRateMin: Double = 15
+    /// How finely the same function is sampled *for the file* — not a tuning knob, and
+    /// never where the peak is read from.
+    public var gridS: Double = 60
+
+    public init() {}
 }
 
 /// Echo of the parameters actually used, keyed by their docs/algorithms.md names.
@@ -72,10 +94,15 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
     // Takeoff
     public var takeoffAttemptWindow: Double
     public var freeTakeoff: Int
+    // Session rates
+    /// The rolling-rate window, in minutes. Optional only so a stored `analysis.json` from
+    /// 0.6.0 still decodes; such a row re-derives on its version.
+    public var windowRateMin: Double?
 
     public init(filter: FilterConfig, flight: FlightConfig, records: RecordsConfig,
                 turn: TurnConfig = TurnConfig(), wind: WindConfig = WindConfig(),
-                pump: PumpConfig = PumpConfig(), takeoff: TakeoffConfig = TakeoffConfig()) {
+                pump: PumpConfig = PumpConfig(), takeoff: TakeoffConfig = TakeoffConfig(),
+                rates: RatesConfig = RatesConfig()) {
         foilEntrySpeed = flight.foilEntrySpeedKmh
         entryHold = flight.entryHoldS
         foilExitSpeed = flight.foilExitSpeedKmh
@@ -109,6 +136,7 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
         pumpMinStrokes = pump.minStrokes
         takeoffAttemptWindow = takeoff.attemptWindowS
         freeTakeoff = takeoff.freeTakeoffStrokes
+        windowRateMin = rates.windowRateMin
     }
 }
 
@@ -566,14 +594,20 @@ public struct PumpEpisodeRecord: Sendable, Codable, Equatable {
 public struct SessionRates: Sendable, Equatable {
     public var durationS: Double
     public var avgSpeedKmh: Double?
+    /// **All** counted turns per hour: this one answers "how busy", which is a question
+    /// about activity and not about quality.
     public var turnsPerHour: Double?
+    /// **Dry** jibes per hour (engine 0.7.0): the ones he came out of still sailing —
+    /// flew-through and touchdown alike, since pumping straight back up out of a touchdown
+    /// is a jibe he made. A jibe he swam out of is one he did not, and counting it would
+    /// let a rider raise his headline number by falling more often.
     public var jibesPerHour: Double?
     /// How often the rider got **wet**, per hour: every `fell_in` flight end, straight-line
     /// swims and turn swims alike. Deliberately not the turn ladder's `fellIn` — most of a
     /// session's falls happen outside a counted turn, and the water does not care.
     public var wetPerHour: Double?
 
-    public init(durationS: Double, distanceM: Double, turnsCounted: Int, jibes: Int,
+    public init(durationS: Double, distanceM: Double, turnsCounted: Int, dryJibes: Int,
                 fellIn: Int) {
         guard durationS > 0 else {
             self.durationS = max(durationS, 0)
@@ -583,8 +617,115 @@ public struct SessionRates: Sendable, Equatable {
         let hours = durationS / 3600
         avgSpeedKmh = distanceM / durationS * 3.6
         turnsPerHour = Double(turnsCounted) / hours
-        jibesPerHour = Double(jibes) / hours
+        jibesPerHour = Double(dryJibes) / hours
         wetPerHour = Double(fellIn) / hours
+    }
+}
+
+/// One evaluation of the rolling window: its start, and the two rates over it.
+public struct WindowRatePoint: Sendable, Codable, Equatable {
+    public var ts: Double
+    public var jph: Double
+    public var wph: Double
+
+    public init(ts: Double, jph: Double, wph: Double) {
+        self.ts = ts
+        self.jph = jph
+        self.wph = wph
+    }
+}
+
+/// The rolling-window rate series and its two peaks (docs/algorithms.md "Session rates").
+/// Mirrors the lab's `WindowRates` / `window_rates`.
+///
+/// `bestJph` / `bestWph` are the **true** sliding maxima, not the largest value in `series`:
+/// the count in a window can only be highest when the window opens on an event, so the peak
+/// search is anchored on the events while the series is a coarse sampling of the same
+/// function. `best* >= max(series)` therefore always holds, and often strictly.
+///
+/// Every number here is measured over a **full** window. A session shorter than one window
+/// gets a single point over its actual elapsed span instead — an honest whole-session rate —
+/// and never a partial window scaled up to the hour, which is how three good minutes turn
+/// into a peak the rider never sailed.
+public struct SessionWindowRates: Sendable, Codable, Equatable {
+    public var windowMin: Double
+    public var bestJph: Double?
+    public var bestJphStartTs: Double?
+    public var bestWph: Double?
+    public var bestWphStartTs: Double?
+    public var series: [WindowRatePoint]
+
+    public init(windowMin: Double = 15, series: [WindowRatePoint] = []) {
+        self.windowMin = windowMin
+        self.series = series
+    }
+
+    /// The rolling block for one session. `dryJibeTs` / `wetTs` are the same events the
+    /// session rates count, timestamped where the goldens already timestamp them — a dry
+    /// jibe at its turn's `ts`, a swim at its flight end's `ts`.
+    public init(dryJibeTs: [Double], wetTs: [Double], startT: Double, durationS: Double,
+                config: RatesConfig = RatesConfig()) {
+        self.init(windowMin: config.windowRateMin)
+        let windowS = config.windowRateMin * 60
+        guard durationS > 0, windowS > 0 else { return }
+
+        (bestJph, bestJphStartTs) = Self.peak(dryJibeTs, startT: startT,
+                                              durationS: durationS, windowS: windowS)
+        (bestWph, bestWphStartTs) = Self.peak(wetTs, startT: startT,
+                                              durationS: durationS, windowS: windowS)
+
+        if durationS < windowS {
+            // One point over the span the session actually lasted: the series says what the
+            // rates were, once, rather than pretending to a window that never closed.
+            let hours = durationS / 3600
+            series = [WindowRatePoint(ts: startT, jph: Double(dryJibeTs.count) / hours,
+                                      wph: Double(wetTs.count) / hours)]
+            return
+        }
+        let hours = windowS / 3600
+        let steps = Int(((durationS - windowS) / config.gridS + 1e-9).rounded(.down))
+        series = (0...max(steps, 0)).map { k in
+            let s = startT + Double(k) * config.gridS
+            return WindowRatePoint(ts: s,
+                                   jph: Double(Self.count(dryJibeTs, from: s, windowS)) / hours,
+                                   wph: Double(Self.count(wetTs, from: s, windowS)) / hours)
+        }
+    }
+
+    /// Events in the half-open window `[start, start + window)`. Half-open so that sliding
+    /// the window by one event's spacing never counts that event twice.
+    static func count(_ events: [Double], from start: Double, _ windowS: Double) -> Int {
+        events.reduce(into: 0) { n, e in
+            if start <= e && e < start + windowS { n += 1 }
+        }
+    }
+
+    /// (peak per-hour rate, the window start that achieved it) over **full** windows only.
+    ///
+    /// The count in `[s, s+W)` is a step function of `s` that can only reach a local maximum
+    /// where the window opens exactly on an event, so those instants — plus the two ends of
+    /// the allowed range, where a maximum can be clipped — are the whole candidate set. A
+    /// session shorter than one window has no full window to search: its peak is its own
+    /// whole-session rate over the span it lasted, never a partial window scaled up.
+    static func peak(_ events: [Double], startT: Double, durationS: Double,
+                     windowS: Double) -> (Double?, Double?) {
+        guard durationS > 0 else { return (nil, nil) }
+        guard durationS >= windowS else {
+            return (Double(events.count) / (durationS / 3600), startT)
+        }
+        let lastStart = startT + durationS - windowS
+        var candidates = Set([startT, lastStart])
+        for e in events where e >= startT && e <= lastStart { candidates.insert(e) }
+        var bestN = -1
+        var bestStart = startT
+        for s in candidates.sorted() {
+            let n = count(events, from: s, windowS)
+            if n > bestN {                      // ties keep the earliest window
+                bestN = n
+                bestStart = s
+            }
+        }
+        return (Double(bestN) / (windowS / 3600), bestStart)
     }
 }
 
@@ -602,6 +743,8 @@ public struct SessionSummary: Sendable, Codable, Equatable {
     public var turnsPerHour: Double?
     public var jibesPerHour: Double?
     public var wetPerHour: Double?
+    /// The rolling 15-minute view of the same two events (engine 0.7.0).
+    public var windowRates = SessionWindowRates()
     public var turns = TurnSummary()
     public var flightEnds = FlightEndSummary()
     public var outcomeSplit = OutcomeSplit()
@@ -617,7 +760,7 @@ public struct SessionSummary: Sendable, Codable, Equatable {
         self.distanceKm = distanceKm
     }
 
-    /// Fills the five 0.6.0 fields from one computed rate block.
+    /// Fills the five session-rate fields from one computed rate block.
     public mutating func apply(_ rates: SessionRates) {
         durationS = rates.durationS
         avgSpeedKmh = rates.avgSpeedKmh
@@ -726,7 +869,8 @@ public enum SessionSummarizer {
                                flightEndConfig: FlightEndConfig = FlightEndConfig(),
                                pumpConfig: PumpConfig = PumpConfig(),
                                takeoffConfig: TakeoffConfig = TakeoffConfig(),
-                               hrConfig: HrConfig = HrConfig()) -> SessionAnalysis {
+                               hrConfig: HrConfig = HrConfig(),
+                               ratesConfig: RatesConfig = RatesConfig()) -> SessionAnalysis {
         let clean = TrackCleaner.clean(raw, config: filterConfig)
         let segmentation = FlightSegmenter.segment(clean, config: flightConfig)
         let records = GP3SCalculator.records(for: clean, config: recordsConfig)
@@ -774,13 +918,20 @@ public enum SessionSummarizer {
         summary.outcomeSplit = FlightEndClassifier.split(turns: turnSummary, ends: endSummary)
         summary.takeoff = TakeoffAnalyzer.summarize(takeoffs)
         // Session rates (docs/algorithms.md "Session rates"): elapsed wall clock as the one
-        // denominator, and *every* fell-in end as the wet count — most of a session's swims
-        // happen outside a counted turn.
+        // denominator, *dry* jibes as the JPH numerator — a jibe he swam out of is one he
+        // did not make — and *every* fell-in end as the wet count, since most of a session's
+        // swims happen outside a counted turn.
+        let dryJibeTs = SessionSummarizer.dryJibeTimes(turns)
+        let wetTs = ends.filter { $0.outcome == .fellIn }.map(\.t)
         summary.apply(SessionRates(durationS: clean.spanS,
                                    distanceM: records.totalDistanceM,
                                    turnsCounted: turnSummary.turnsCounted,
-                                   jibes: turnSummary.jibes,
+                                   dryJibes: dryJibeTs.count,
                                    fellIn: endSummary.all.fellIn))
+        summary.windowRates = SessionWindowRates(dryJibeTs: dryJibeTs, wetTs: wetTs,
+                                                 startT: clean.samples.first?.t ?? 0,
+                                                 durationS: clean.spanS,
+                                                 config: ratesConfig)
 
         var pumpsByFlight = [Int?](repeating: nil, count: segmentation.flights.count)
         for t in takeoffs.takeoffs where segmentation.flights.indices.contains(t.flightIndex) {
@@ -791,7 +942,8 @@ public enum SessionSummarizer {
             engineVersion: AnalysisEngine.version,
             config: AnalysisConfig(filter: filterConfig, flight: flightConfig,
                                    records: recordsConfig, turn: turnConfig, wind: windConfig,
-                                   pump: pumpConfig, takeoff: takeoffConfig),
+                                   pump: pumpConfig, takeoff: takeoffConfig,
+                                   rates: ratesConfig),
             capabilities: AnalysisCapabilities(raw.capabilities),
             flights: segmentation.flights.enumerated().map {
                 FlightRecord($0.element, takeoffPumps: pumpsByFlight[$0.offset])
@@ -804,5 +956,13 @@ public enum SessionSummarizer {
             pumpEpisodes: takeoffs.episodes.map(PumpEpisodeRecord.init),
             hr: hr,
             summary: summary)
+    }
+
+    /// When each **dry** jibe happened, in time order: a counted jibe he did not swim out
+    /// of, at the turn's own `ts` (its start). The list's length is the `jibesPerHour`
+    /// numerator — one definition, spelled once. Mirrors the lab's `dry_jibe_times`.
+    public static func dryJibeTimes(_ turns: [Turn]) -> [Double] {
+        turns.filter { $0.counted && $0.kind == .jibe && $0.outcome != .fellIn }
+            .map(\.startT)
     }
 }

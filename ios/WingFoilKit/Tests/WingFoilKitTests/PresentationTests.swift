@@ -154,7 +154,7 @@ import Testing
                                      longestFlightS: 424, longestFlightM: 1580,
                                      distanceKm: 22.985)
         summary.apply(SessionRates(durationS: 7029, distanceM: 22_985, turnsCounted: 51,
-                                   jibes: 50, fellIn: 25))
+                                   dryJibes: 43, fellIn: 25))
         summary.turns.turnsCounted = 51
         summary.turns.jibes = 50
         summary.turns.longestDryStreak = 11
@@ -182,7 +182,10 @@ import Testing
         #expect(block.tally?.caption == "of 50 jibes")
         #expect(block.streaks?.value == "11 dry · 5 flew")
         #expect(block.rates.map(\.key) == ["jph", "wph"])
-        #expect(block.rates[0].value == "25.6")
+        // 43 dry jibes of 50 over 1:57 — the rate counts the ones he sailed out of, and the
+        // label says so, because 50/h would be a different number under the same word.
+        #expect(block.rates[0].label == "JPH · dry jibes per hour")
+        #expect(block.rates[0].value == "22.0")
         #expect(block.rates[1].value == "12.8")
     }
 
@@ -191,7 +194,7 @@ import Testing
     @Test func keyMetricsHideTheRateRowWithoutADuration() {
         var summary = SessionSummary(foilTimeS: 0, foilPct: 0, flightCount: 0,
                                      longestFlightS: 0, longestFlightM: 0, distanceKm: 0)
-        summary.apply(SessionRates(durationS: 0, distanceM: 0, turnsCounted: 0, jibes: 0,
+        summary.apply(SessionRates(durationS: 0, distanceM: 0, turnsCounted: 0, dryJibes: 0,
                                    fellIn: 0))
         let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
         #expect(block.rates.isEmpty)
@@ -212,7 +215,7 @@ import Testing
                                      longestFlightS: 60, longestFlightM: 300,
                                      distanceKm: 5)
         summary.apply(SessionRates(durationS: 3600, distanceM: 5000, turnsCounted: 12,
-                                   jibes: 0, fellIn: 3))
+                                   dryJibes: 0, fellIn: 3))
         summary.turns.turnsCounted = 12
         summary.turns.unclassified = 12
         summary.turns.longestDryStreak = 4
@@ -235,7 +238,7 @@ import Testing
                                      longestFlightS: 30, longestFlightM: 100,
                                      distanceKm: 0.226)
         summary.apply(SessionRates(durationS: 59, distanceM: 226, turnsCounted: 0,
-                                   jibes: 0, fellIn: 0))
+                                   dryJibes: 0, fellIn: 0))
         let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
         #expect(block.rates.map(\.key) == ["jph", "wph"])
         #expect(block.rates[0].value == "0.0")

@@ -119,7 +119,7 @@ screens below a map, ten legend chips and three paragraphs of legend documentati
 | 1 | duration `h:mm` · distance · average speed |
 | 2 | the best 2 s record, labelled **"max 2 s"** |
 | 3 | the outcome tally on the ladder's inks · the two turn streaks |
-| 4 | **JPH** and **WPH** (`docs/algorithms.md` "Session rates"), one decimal |
+| 4 | **JPH** (dry jibes) and **WPH** (`docs/algorithms.md` "Session rates"), one decimal |
 
 The rules, which are the only thing the two implementations can disagree about:
 
@@ -140,6 +140,11 @@ The rules, which are the only thing the two implementations can disagree about:
 - **Streaks are `summary.turns.longestDryStreak` / `longestFlewStreak`**, rendered
   `11 dry · 5 flew` — the first time either app draws them. They are over counted turns,
   which is what the engine measures them over; nothing is re-derived here.
+- **JPH is dry jibes, and the label says so.** The engine's `jibesPerHour` counts the jibes
+  he came out of still sailing (`docs/algorithms.md` "Session rates", engine 0.7.0), so the
+  cell is captioned **"JPH · dry jibes per hour"**. A rate that counted the swims too could
+  be raised by falling more often, and a caption reading "jibes per hour" over a number that
+  excludes seven of them would name a different figure than the one printed.
 - **Row 4 degrades JPH to TPH, not to zero.** When `jibesPerHour` is 0 while
   `turnsPerHour` is positive — turns the wind axis could not name — the row shows
   `turnsPerHour` labelled TPH. WPH needs no fallback: a fell-in flight end is a fall
