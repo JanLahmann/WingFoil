@@ -139,7 +139,7 @@ class MetricsEngine {
         // that starts while flying is in-flight pumping, one inside a turn window is the
         // rider recovering from that turn, and neither is a takeoff attempt.
         var pumpEvent = pump.tick(now, detector.state == FlightDetector.STATE_ON,
-            turns.state != TurnDetector.ST_IDLE, flightEvent);
+            turns.state != TurnDetector.ST_IDLE, flightEvent, speedMps);
         // Priced against the effort the detector just reported, on this same heart rate: the
         // window opens when he starts pumping and stays open 30 s, takeoff or not.
         hrCost.tick(dt, hr, pump.attemptOpen(), pumpEvent == PumpDetector.EVENT_TAKEOFF);

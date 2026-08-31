@@ -1644,6 +1644,9 @@ class PumpRig {
     var flying as Boolean = false;
     var turnOpen as Boolean = false;
     var lastEvent as Number = 0;
+    // 7.2 km/h: the board is moving, so the session total's pumpMinSpeedKmh gate is open.
+    // Tests that mean "he is going nowhere" set this to 0.
+    var speedMps as Float = 2.0;
 
     hidden var _t as Float = 0.0;   // seconds of signal generated so far
     hidden var _buf as Array<Float>;
@@ -1669,12 +1672,19 @@ class PumpRig {
             _t += 1.0;
             ms += 1000;
             det.pushMagBatch(_buf, ms);
-            lastEvent = det.tick(ms, flying, turnOpen, FlightDetector.EVENT_NONE);
+            lastEvent = det.tick(ms, flying, turnOpen, FlightDetector.EVENT_NONE, speedMps);
         }
     }
 
+    // A real burst: ~1.2 Hz at 1.0 g. The band-pass has near-unity gain here, so this
+    // lands just under 1.0 g band-passed -- over pumpBurstPeakG, which is what a takeoff
+    // pump measures on the water. `chop()` is the same cadence at chop amplitude.
     function pump(seconds as Number) as Void {
-        run(seconds, 1.2, 0.6, 0.0, 0.0, 0.0);      // a real burst: ~1.2 Hz, 0.6 g
+        run(seconds, 1.2, 1.0, 0.0, 0.0, 0.0);
+    }
+
+    function chop(seconds as Number) as Void {
+        run(seconds, 1.2, 0.4, 0.0, 0.0, 0.0);
     }
 
     function quiet(seconds as Number) as Void {
@@ -1684,7 +1694,7 @@ class PumpRig {
     // The tick on which the FlightDetector confirms a flight (>= minFlight seconds in).
     function confirmFlight() as Number {
         ms += 1000;
-        lastEvent = det.tick(ms, flying, turnOpen, FlightDetector.EVENT_START);
+        lastEvent = det.tick(ms, flying, turnOpen, FlightDetector.EVENT_START, speedMps);
         return lastEvent;
     }
 }
@@ -1695,11 +1705,14 @@ class PumpRig {
 function pumpBurstBecomesATakeoffAttemptAndSucceeds(logger as Test.Logger) as Boolean {
     var r = new PumpRig();
     r.quiet(5);
-    Test.assertEqual(r.det.strokes, 0);              // a still wrist is never pumping
+    Test.assertEqual(r.det.peaks, 0);                // a still wrist is never pumping
     r.pump(10);                                       // 10 s at 1.2 Hz => ~12 strokes
 
-    Test.assertMessage(r.det.strokes >= 10 && r.det.strokes <= 14,
-        "10 s at 1.2 Hz gave " + r.det.strokes.toString() + " strokes, lab says 12");
+    Test.assertMessage(r.det.peaks >= 10 && r.det.peaks <= 14,
+        "10 s at 1.2 Hz gave " + r.det.peaks.toString() + " peaks, lab says 12");
+    // A moving board and a takeoff-sized burst: every one of those peaks earns its place
+    // in the session total too (docs/algorithms.md "The session total").
+    Test.assertEqual(r.det.strokes, r.det.peaks);
     Test.assertMessage(r.det.minGapMs >= r.det.REFRACTORY_MS,
         "strokes " + r.det.minGapMs.toString() + " ms apart beat the refractory");
     Test.assertMessage(r.det.attemptOpen(), "a qualifying burst must open an effort");
@@ -1709,7 +1722,7 @@ function pumpBurstBecomesATakeoffAttemptAndSucceeds(logger as Test.Logger) as Bo
     // up on the foil, then the flight is confirmed a few seconds later
     r.flying = true;
     r.quiet(3);
-    var burst = r.det.strokes;
+    var burst = r.det.peaks;
     Test.assertEqual(r.confirmFlight(), PumpDetector.EVENT_TAKEOFF);
 
     Test.assertEqual(r.det.successes, 1);
@@ -1728,17 +1741,65 @@ function pumpBurstBecomesATakeoffAttemptAndSucceeds(logger as Test.Logger) as Bo
     return true;
 }
 
+// The session total (engine 0.8.0, docs/algorithms.md "The session total"). Real lake chop
+// is at pumping cadence and clears pumpStrokeAmp, so the peak train alone is not a count of
+// anything — the watch's FIT session field 38 counts only the strokes of a burst that was
+// long enough, tall enough, and moving. The lab's is the authoritative number; this is the
+// live approximation of the same three tests.
+(:test)
+function sessionTotalCountsOnlyStrokesThatEarnedIt(logger as Test.Logger) as Boolean {
+    // 1. chop amplitude at pumping cadence: picked as peaks, never counted.
+    var chop = new PumpRig();
+    chop.quiet(3);
+    chop.chop(10);
+    Test.assertMessage(chop.det.peaks >= 10,
+        "the picker must still see the chop: " + chop.det.peaks.toString() + " peaks");
+    Test.assertMessage(chop.det.strokes == 0,
+        "chop-sized burst put " + chop.det.strokes.toString() + " strokes in the total");
+    // It is still evidence of effort, so it still opens an attempt: the amplitude rule is
+    // deliberately confined to the total (the phone does the same).
+    Test.assertMessage(chop.det.attemptOpen(), "a chop-sized burst still opens an effort");
+
+    // 2. a burst shorter than pumpMinStrokes never reaches the total.
+    var brief = new PumpRig();
+    brief.quiet(3);
+    brief.run(2, 1.2, 1.0, 0.0, 0.0, 0.0);        // ~2-3 peaks: not a bout of pumping
+    Test.assertMessage(brief.det.peaks > 0 && brief.det.peaks < brief.det.MIN_STROKES,
+        "expected a short burst, got " + brief.det.peaks.toString() + " peaks");
+    Test.assertEqual(brief.det.strokes, 0);
+
+    // 3. full amplitude, going nowhere: swim strokes.
+    var swim = new PumpRig();
+    swim.speedMps = 0.5;                          // 1.8 km/h, below pumpMinSpeedKmh
+    swim.quiet(3);
+    swim.pump(10);
+    Test.assertMessage(swim.det.peaks >= 10, "the swimmer's arms are still picked");
+    Test.assertEqual(swim.det.strokes, 0);
+
+    // 4. and the real thing, credited whole — including the strokes before the burst
+    //    qualified, which is what makes the live count equal the lab's.
+    var real = new PumpRig();
+    real.quiet(3);
+    real.pump(10);
+    Test.assertEqual(real.det.strokes, real.det.peaks);
+    logger.debug("session total: chop " + chop.det.peaks.toString() + " peaks / 0 counted, "
+        + "swim " + swim.det.peaks.toString() + " / 0, real " + real.det.strokes.toString()
+        + " / " + real.det.peaks.toString());
+    return true;
+}
+
 // Chop is faster and a lean is slower than pumping; wing trim is in band but tiny. None of
 // the three may produce a single stroke (lab test_chop_is_rejected / small_wing_trim).
 (:test)
 function chopAndWobbleAreNotPumping(logger as Test.Logger) as Boolean {
     var r = new PumpRig();
     r.run(20, 6.0, 0.5, 0.1, 1.0, 0.0);      // 6 Hz chop over a 0.1 Hz body lean
-    Test.assertMessage(r.det.strokes == 0,
-        "chop + lean produced " + r.det.strokes.toString() + " strokes");
+    Test.assertMessage(r.det.peaks == 0,
+        "chop + lean produced " + r.det.peaks.toString() + " peaks");
     r.run(20, 1.2, 0.06, 0.0, 0.0, 0.0);     // in band, far below pumpStrokeAmp
-    Test.assertMessage(r.det.strokes == 0,
-        "wing-trim wobble produced " + r.det.strokes.toString() + " strokes");
+    Test.assertMessage(r.det.peaks == 0,
+        "wing-trim wobble produced " + r.det.peaks.toString() + " peaks");
+    Test.assertEqual(r.det.strokes, 0);
     Test.assertEqual(r.det.attempts(), 0);
     Test.assertEqual(r.det.cadence, 0);
     logger.debug("chop (6 Hz), lean (0.1 Hz) and a 0.06 g wobble all rejected");
@@ -1752,17 +1813,17 @@ function refractoryDeadTimeIsEnforced(logger as Test.Logger) as Boolean {
     var r = new PumpRig();
     r.quiet(3);
     r.run(20, 1.2, 0.6, 2.4, 0.5, 1.5);
-    Test.assertMessage(r.det.strokes > 12,
-        "a 20 s two-tone burst is pumping, got " + r.det.strokes.toString());
+    Test.assertMessage(r.det.peaks > 12,
+        "a 20 s two-tone burst is pumping, got " + r.det.peaks.toString());
     Test.assertMessage(r.det.minGapMs >= r.det.REFRACTORY_MS,
         "two strokes " + r.det.minGapMs.toString() + " ms apart");
     // the raw peak train carries ~48 candidates (the 2.4 Hz hump); the dead time must eat
     // most of them, so the surviving cadence stays physically possible
     Test.assertMessage(r.det.refractoryDrops > 10,
         "the dead time swallowed only " + r.det.refractoryDrops.toString() + " peaks");
-    Test.assertMessage(r.det.strokes <= 30,
-        "impossible cadence: " + r.det.strokes.toString() + " strokes in 20 s");
-    logger.debug("two-tone burst: " + r.det.strokes.toString() + " strokes kept, "
+    Test.assertMessage(r.det.peaks <= 30,
+        "impossible cadence: " + r.det.peaks.toString() + " peaks in 20 s");
+    logger.debug("two-tone burst: " + r.det.peaks.toString() + " peaks kept, "
         + r.det.refractoryDrops.toString() + " dropped by the dead time, closest pair "
         + r.det.minGapMs.toString() + " ms");
     return true;
@@ -1777,12 +1838,12 @@ function inFlightPumpingIsNotATakeoffAttempt(logger as Test.Logger) as Boolean {
     r.quiet(5);
     r.pump(10);
     r.quiet(12);                                  // past takeoffAttemptWindow
-    Test.assertMessage(r.det.strokes >= 10, "in-flight strokes must still be counted");
-    Test.assertEqual(r.det.inFlightStrokes, r.det.strokes);
+    Test.assertMessage(r.det.peaks >= 10, "in-flight strokes must still be counted");
+    Test.assertEqual(r.det.inFlightStrokes, r.det.peaks);
     Test.assertMessage(!r.det.attemptOpen(), "no effort may be open while flying");
     Test.assertEqual(r.det.attempts(), 0);
     Test.assertEqual(r.det.failed, 0);
-    logger.debug("in-flight: " + r.det.strokes.toString()
+    logger.debug("in-flight: " + r.det.peaks.toString()
         + " strokes, 0 attempts");
     return true;
 }
@@ -1797,12 +1858,12 @@ function turnRecoveryBurstIsNotAFailedAttempt(logger as Test.Logger) as Boolean 
     r.pump(10);
     r.turnOpen = false;
     r.quiet(12);
-    Test.assertMessage(r.det.strokes >= 10, "recovery strokes are still strokes");
+    Test.assertMessage(r.det.peaks >= 10, "recovery strokes are still strokes");
     Test.assertEqual(r.det.recoveryEpisodes, 1);
     Test.assertEqual(r.det.failed, 0);
     Test.assertEqual(r.det.attempts(), 0);
     logger.debug("recovery burst owned by the turn: 0 attempts, "
-        + r.det.strokes.toString() + " strokes");
+        + r.det.peaks.toString() + " strokes");
     return true;
 }
 
@@ -3106,7 +3167,7 @@ function pumpBreatherDoesNotSplitOneAttempt(logger as Test.Logger) as Boolean {
     r.quiet(5);
     r.pump(10);                                   // the lead burst opens the effort
     Test.assertMessage(r.det.attemptOpen(), "the first burst must open an effort");
-    var lead = r.det.strokes;
+    var lead = r.det.peaks;
 
     r.quiet(8);                                   // a breather, inside takeoffAttemptWindow
     Test.assertMessage(r.det.attemptOpen(),
@@ -3126,8 +3187,8 @@ function pumpBreatherDoesNotSplitOneAttempt(logger as Test.Logger) as Boolean {
     Test.assertEqual(r.det.successes, 1);
     Test.assertEqual(r.det.failed, 0);
     Test.assertEqual(r.det.successPct(), 100);
-    Test.assertMessage(r.det.strokes > lead, "the second burst's strokes must still count");
-    logger.debug("breather: " + r.det.strokes.toString() + " strokes over two bursts, "
+    Test.assertMessage(r.det.peaks > lead, "the second burst's strokes must still count");
+    logger.debug("breather: " + r.det.peaks.toString() + " strokes over two bursts, "
         + r.det.attempts().toString() + " attempt, " + r.det.failed.toString() + " failed");
     return true;
 }

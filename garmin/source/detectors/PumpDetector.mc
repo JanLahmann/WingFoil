@@ -49,6 +49,14 @@ class PumpDetector {
     const REFRACTORY_MS = 400;          // pumpRefractory
     const BURST_GAP_MS = 1500;          // pumpStrokeMaxInterval
     const MIN_STROKES = 4;              // pumpMinStrokes
+    // The session total's two extra gates (engine 0.8.0, docs/algorithms.md "The session
+    // total"). No unit conversion is involved: _y1 is the output of the SAME 51-tap
+    // Hamming sinc band-pass the lab uses, over |a| already normalised to g by _scale, so
+    // the watch's band-passed peak IS the lab's `PumpTrack.band` value and pumpBurstPeakG
+    // crosses over as 0.8 unchanged. (The milli-g sniff happens before the filter, and the
+    // taps are identical, so there is no gain difference to correct for either.)
+    const BURST_PEAK_G = 0.8;           // pumpBurstPeakG -- PROVISIONAL, see the docs
+    const MIN_SPEED_KMH = 3.0;          // pumpMinSpeedKmh: below this it is a swim stroke
     // ---- docs/algorithms.md "Takeoff analysis" ----
     const ATTEMPT_WINDOW_MS = 10000;    // takeoffAttemptWindow (also attemptFailSilence)
     // An effort may not be declared failed while a burst that BEGAN inside the window is
@@ -67,7 +75,13 @@ class PumpDetector {
     const MILLI_G_FLOOR = 20.0;         // |a| this large can only be milli-g, not g
 
     // ---- session counters (read by PageModel, FitFields, SummaryView) ----
-    var strokes as Number = 0;          // every stroke, in flight or not (FIT session 38)
+    // The session total (FIT session 38): only the strokes of a burst that qualified —
+    // >= MIN_STROKES long, peaking at BURST_PEAK_G, with the board moving. A burst is
+    // credited the moment it first qualifies (its earlier strokes included, retroactively),
+    // and every later stroke of it as it arrives, so a completed burst contributes exactly
+    // what the lab's `_session_strokes` gives it.
+    var strokes as Number = 0;
+    var peaks as Number = 0;            // every picked peak: the pre-0.8.0 number, diagnostic
     var inFlightStrokes as Number = 0;  // strokes inside a flight: holding/extending a glide
     var successes as Number = 0;        // = confirmed flights (FIT session 36), as the lab
     var failed as Number = 0;           // efforts that produced no flight
@@ -106,6 +120,9 @@ class PumpDetector {
     hidden var _burstStartMs as Number = 0;
     hidden var _burstPrevMs as Number = 0;
     hidden var _burstOwned as Boolean = false;   // this burst's strokes feed the open attempt
+    hidden var _burstPeakG as Float = 0.0;       // tallest band-passed peak in this burst
+    hidden var _burstMoving as Number = 0;       // its strokes taken above MIN_SPEED_KMH
+    hidden var _burstCounted as Boolean = false; // it has already reached the session total
     hidden var _atOpen as Boolean = false;
     hidden var _atStartMs as Number = 0;
     hidden var _atLastMs as Number = 0;
@@ -117,6 +134,11 @@ class PumpDetector {
     hidden var _flying as Boolean = false;
     hidden var _turnOpen as Boolean = false;
     hidden var _onFoilMs as Number = 0;
+    // Speed at the last 1 Hz tick. Strokes arrive between ticks, so the session total's
+    // speed gate is read at up to 1 s of age — the live approximation of the lab, which
+    // interpolates the Doppler channel at the stroke's own instant. A GPS gap leaves the
+    // last known speed standing: the rider does not stop because the fix did.
+    hidden var _speedMps as Float = 0.0;
 
     // cadence ring
     hidden var _cad as Array<Number>;
@@ -190,6 +212,9 @@ class PumpDetector {
         _y2 = 0.0;
         _burstN = 0;
         _burstOwned = false;
+        _burstPeakG = 0.0;
+        _burstMoving = 0;
+        _burstCounted = false;
         for (var i = 0; i < N_TAPS; i++) {
             _hist[i] = 0.0;
         }
@@ -302,14 +327,14 @@ class PumpDetector {
         if (_y1 > STROKE_AMP_G && _y1 > _y0 && _y1 >= _y2) {
             var strokeMs = _outMs - STEP_MS;
             if (_lastStrokeMs == 0 || strokeMs - _lastStrokeMs >= REFRACTORY_MS) {
-                _onStroke(strokeMs);
+                _onStroke(strokeMs, _y1);
             } else {
                 refractoryDrops++;      // a human cannot pump faster than the band allows
             }
         }
     }
 
-    hidden function _onStroke(tMs as Number) as Void {
+    hidden function _onStroke(tMs as Number, ampG as Float) as Void {
         if (_lastStrokeMs != 0) {
             var gap = tMs - _lastStrokeMs;
             if (minGapMs == 0 || gap < minGapMs) {
@@ -317,7 +342,7 @@ class PumpDetector {
             }
         }
         _lastStrokeMs = tMs;
-        strokes++;
+        peaks++;
         if (_flying) {
             inFlightStrokes++;
         }
@@ -334,8 +359,30 @@ class PumpDetector {
             _burstN = 1;
             _burstStartMs = tMs;
             _burstOwned = false;
+            _burstPeakG = 0.0;
+            _burstMoving = 0;
+            _burstCounted = false;
         }
         _burstPrevMs = tMs;
+        if (ampG > _burstPeakG) {
+            _burstPeakG = ampG;
+        }
+        var moving = _speedMps * 3.6 >= MIN_SPEED_KMH;
+        if (moving) {
+            _burstMoving++;
+        }
+        // The session total (docs/algorithms.md "The session total"). A burst is credited
+        // once, retroactively, on the stroke that first makes it qualify -- which may be a
+        // late one, since the amplitude test is on the burst's MAXIMUM -- and per stroke
+        // after that.
+        if (_burstCounted) {
+            if (moving) {
+                strokes++;
+            }
+        } else if (_burstN >= MIN_STROKES && _burstPeakG >= BURST_PEAK_G) {
+            strokes += _burstMoving;
+            _burstCounted = true;
+        }
 
         if (_burstN < MIN_STROKES) {
             return;
@@ -375,11 +422,13 @@ class PumpDetector {
     // ---- 1 Hz context tick, driven by MetricsEngine ----
 
     // flying: FlightDetector is ON_FOIL · turnOpen: a TurnDetector sweep/outcome window is
-    // running · flightEvent: this tick's FlightDetector event.
+    // running · flightEvent: this tick's FlightDetector event · speedMps: this sample's
+    // speed, which the session total's `pumpMinSpeedKmh` gate is read from.
     // Returns EVENT_TAKEOFF when a pumped effort just produced a confirmed flight.
     function tick(nowMs as Number, flying as Boolean, turnOpen as Boolean,
-            flightEvent as Number) as Number {
+            flightEvent as Number, speedMps as Float) as Number {
         _turnOpen = turnOpen;
+        _speedMps = speedMps;
         if (flying && !_flying) {
             // FlightDetector backdates ON_FOIL by the entry hold; so do we, so the 10 s
             // window is measured from the same instant the lab measures it from.

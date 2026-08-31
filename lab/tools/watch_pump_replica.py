@@ -339,6 +339,11 @@ class WatchPump:
         self._burst_owned = False
 
     def on_stroke(self, t_ms: int) -> None:
+        # The raw peak train -- `PumpDetector.peaks`, not its `strokes`. This harness sweeps
+        # the *segmentation* knobs, and the stroke train is the input those are swept over;
+        # the session total's amplitude and speed gates (engine 0.8.0) are deliberately not
+        # replicated here, because they change no attempt boundary. The printed `str` column
+        # is therefore the peak count, which is what it always was.
         self.strokes += 1
         if self._burst_n > 0 and t_ms - self._burst_prev_ms <= BURST_GAP_MS:
             self._burst_n += 1
