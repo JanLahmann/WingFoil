@@ -172,6 +172,11 @@
         </div>
         <div class="head-right">
           <div class="badges" id="session-badges"></div>
+          <!-- Beside "Save to library", not in the topbar: both buttons act on the ONE
+               document this panel is about, and a topbar action would have to say which
+               session it meant. Ghost rather than primary — saving is the thing to do with
+               a session you just analyzed; sharing is the thing to do with one you liked. -->
+          <button class="ghost" id="share-card" type="button" hidden>Share card</button>
           <button class="primary" id="save-session" type="button" hidden>Save to library</button>
         </div>
       </div>
@@ -343,6 +348,40 @@
       <button type="submit" class="primary" id="rider-save" value="save">Save</button>
     </div>
   </form>
+</dialog>
+
+<!-- The share-card composer. Same <dialog> pattern as the rider prompt above — showModal()
+     for the focus trap, the backdrop and the Escape key — but no <form>: nothing here is
+     answered, so there is no submit and no return value. Every control redraws the preview
+     in place, and the preview IS the PNG scaled down, so what is approved is what is sent.
+     Wiring: js/sharecard.js; the content is js/cardstats.js. -->
+<dialog id="card-dialog" class="ask card-dialog" aria-labelledby="card-title">
+  <div class="ask-form">
+    <h2 id="card-title">Share card</h2>
+    <p class="muted small" id="card-sub"></p>
+    <div class="card-preview">
+      <canvas id="card-canvas" aria-label="Preview of the share card"></canvas>
+    </div>
+    <div class="seg" role="group" aria-label="Shape">
+      <button type="button" class="seg-btn" data-shape="portrait" aria-pressed="true">Portrait</button>
+      <button type="button" class="seg-btn" data-shape="square" aria-pressed="false">Square</button>
+      <button type="button" class="seg-btn" data-shape="landscape" aria-pressed="false">Landscape</button>
+    </div>
+    <div class="seg" role="group" aria-label="Detail">
+      <button type="button" class="seg-btn" data-preset="complete" aria-pressed="true">Complete</button>
+      <button type="button" class="seg-btn" data-preset="lean" aria-pressed="false">Lean</button>
+    </div>
+    <p class="note" id="card-preset-note"></p>
+    <p class="muted small">PNG · <span id="card-size"></span> · nothing leaves this device
+      until you send it.</p>
+    <div class="ask-actions">
+      <button type="button" class="ghost" id="card-close">Close</button>
+      <!-- Only on browsers where `navigator.canShare({files})` is true — the phone path
+           into WhatsApp. js/sharecard.js unhides it. -->
+      <button type="button" class="ghost" id="card-share" hidden>Share…</button>
+      <button type="button" class="primary" id="card-download">Download PNG</button>
+    </div>
+  </div>
 </dialog>
 
 <footer>

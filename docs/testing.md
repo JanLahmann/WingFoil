@@ -138,6 +138,19 @@ second way and then re-runs the engine through `web_entry` on the CIQ fixture to
 numbers survive the path the browser actually takes. A count that differs between the two
 is a failing test, not a bug report.
 
+`verify_presentation.py` also owns the **share card's content contract** (§5). A card is a
+PNG in somebody else's chat thread — no re-render, no correction, nothing beside it to check
+against — so it may not name a different number for a session than the key-metrics block on
+the page does. The *drawing* cannot be golden-tested; the *derivation* is a pure function and
+therefore is. `web/tools/card_parity.mjs` runs `keyMetrics` and `cardStats` under Node over
+every analysis golden and dumps three lists per fixture — the rendered block parsed back out
+of its own HTML, `complete`, and `lean` — and §5 asserts that `complete` **is** the rendered
+block (same entries, same order, same labels, same strings), that `lean` is that list filtered
+by the four contract keys and nothing else, that no tile-only cell (flight count, foil %,
+longest flight) ever reaches a card, that the tally's three counts are the golden's own, and —
+in a third spelling of the same rules, written in Python — that the value strings themselves
+are right. It needs `node` on PATH and skips itself with a note when there is none.
+
 The presentation *values* — colours and glyph names — are enforced separately, by
 `design/tokens.json` plus `design/check_tokens.py --check` (CI: `.github/workflows/tokens.yml`
 and the Pages deploy).

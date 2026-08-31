@@ -549,6 +549,28 @@ button.ghost.danger:hover { background: #2a1414; border-color: #6b2626; color: #
 .seg-btn:hover { color: var(--ink-2); }
 .seg-btn[aria-pressed=true]:hover { color: var(--ink); }
 
+/* ------------------------------------------------------------- the share card */
+
+/* Wider than the rider prompt, because it has a picture in it: the preview is the tallest
+   shape (portrait, 4:5) at ~300 px, and the dialog is sized to hold that without the
+   controls under it ever leaving the viewport on a phone. */
+.card-dialog { width: min(400px, calc(100vw - 32px)); }
+/* A picture, two pickers and three buttons is more than a short laptop window has: the
+   dialog scrolls inside itself rather than putting Download below the fold. */
+.card-dialog .ask-form { max-height: min(92vh, 860px); overflow-y: auto; }
+.card-preview {
+  display: grid; place-items: center; padding: 12px; border-radius: 8px;
+  background: var(--surface-0); border: 1px solid var(--line-soft);
+  /* The tallest preview plus its padding, reserved: the box must not resize under the
+     rider's finger when they switch from Landscape to Portrait. */
+  min-height: 364px;
+}
+/* The canvas carries its own dimensions (js/sharecard.js sets the device-pixel backing
+   store and the CSS size together); this is only the frame it sits in. */
+#card-canvas { border-radius: 4px; box-shadow: 0 6px 20px #000000aa; }
+#card-sub { color: var(--ink-2); }
+#card-preset-note { color: var(--ink-3); }
+
 #rider-friend { display: grid; gap: 10px; }
 .rider-name {
   display: grid; gap: 5px; font: 600 11px/1 var(--sans);
@@ -668,6 +690,9 @@ footer {
      action span the card instead of shrink-wrapping the badge row above it.) */
   .panel-head > div { grid-template-columns: minmax(0, 1fr); }
   .head-right { flex: 1 1 100%; justify-content: flex-start; }
+  /* Share and Save split the row rather than shrink-wrapping: two words and three words
+     side by side on a 390 px screen otherwise leave a ragged gap where a thumb goes. */
+  .head-right > button { flex: 1 1 0; }
 
   /* --- touch targets */
   button, .btn { min-height: var(--tap); padding: 10px 14px; }

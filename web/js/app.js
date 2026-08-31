@@ -11,6 +11,7 @@ import { mountLibrary, openStoredSession, refresh as refreshLibrary, saveSession
 import { closePopover, render, renderFigures, resetSession } from "./render.js";
 import { CANCELLED, analyze as runAnalysis, cancel as cancelWorker, on, warmUp } from "./rpc.js";
 import { mountSections, resetSections } from "./sections.js";
+import { mountShareCard, openShareCard } from "./sharecard.js";
 import { listEntries } from "./store.js";
 import { invalidateTrends, mountTrends, redrawTrends, showTrends } from "./trends.js";
 
@@ -195,6 +196,10 @@ function showHighlightNote(highlight) {
 }
 
 function updateSaveButton() {
+  // The share card needs an analysis and nothing else — not a save, not a library entry —
+  // so it appears the moment a document is on screen, including the bundled example.
+  el("share-card").hidden = !state.last;
+
   const button = el("save-session");
   button.hidden = false;
   button.disabled = false;
@@ -351,6 +356,13 @@ function wireDownload() {
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   });
+}
+
+/* --------------------------------------------------------------------- share card */
+
+function wireShareCard() {
+  mountShareCard();
+  el("share-card").addEventListener("click", () => openShareCard(state.last));
 }
 
 /* ----------------------------------------------------------------------- library */
@@ -536,6 +548,7 @@ wireExample();
 wireCancel();
 wireDownload();
 wireSave();
+wireShareCard();
 wireNav();
 wireSections();
 wireReflow();

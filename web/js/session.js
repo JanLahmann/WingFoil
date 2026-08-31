@@ -223,8 +223,10 @@ const resetCamera = () => setCamera({ k: 1, tx: 0, ty: 0 });
 
 /* ------------------------------------------------------------------ time lookups */
 
-/** Index of the sample nearest `t` (binary search over the ascending time array). */
-function indexAt(v, t) {
+/** Index of the sample nearest `t` (binary search over the ascending time array).
+ *  Exported for js/sharecard.js: the share card places its splash marks by the same
+ *  "nearest sample" rule the map does, and two binary searches would be one too many. */
+export function indexAt(v, t) {
   let lo = 0, hi = v.count - 1;
   while (lo < hi) { const mid = (lo + hi) >> 1; if (v.t[mid] < t) lo = mid + 1; else hi = mid; }
   if (lo > 0 && Math.abs(v.t[lo - 1] - t) < Math.abs(v.t[lo] - t)) lo -= 1;
@@ -633,7 +635,7 @@ function drawMap() {
  * reads as the flight simply carrying on. (Corpus-wide the longest such bridge is 8 s /
  * 44 m — it is the app's sloppy cadence, not a pause on the beach.)
  */
-function phaseRuns(v, flights) {
+export function phaseRuns(v, flights) {
   const cuts = [];
   for (const f of flights) {
     cuts.push({ t: f.startTs, flying: true });

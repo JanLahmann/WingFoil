@@ -29,6 +29,8 @@ web/
 │                               Stays at the ROOT: its default scope is its own directory,
 │                               so one registration covers homepage and app alike.
 ├── icons/                      copied from brand/ — nothing is hotlinked outside web/
+│   └── qr-cleanjibe.png        33 x 33, one pixel per module: the share card's QR, drawn
+│                               nearest-neighbour so a decoder sees hard edges
 ├── css/tokens.css              GENERATED from design/tokens.json — do not edit
 ├── css/style.css               dark styling + the data-viz palette (reads the tokens)
 ├── css/home.css                the homepage's own layout, layered on top of style.css
@@ -45,6 +47,10 @@ web/
 ├── js/store.js                 OPFS storage, with an IndexedDB fallback
 ├── js/library.js               library view: rows, open, delete, per-session + zip export
 ├── js/rider.js                 the "whose session is this?" prompt, asked on the way in
+├── js/cardstats.js             what a share card SAYS: the key-metrics block as data, the
+│                               presets, the shapes, the branding strings. No DOM, no canvas
+├── js/sharecard.js             what a share card LOOKS like: the composer dialog and the
+│                               canvas that draws the PNG at the iOS pixel sizes
 ├── js/trends.js                records table + inline-SVG trend charts
 ├── js/icu.js                   optional intervals.icu panel
 ├── lab_bundle/
@@ -60,7 +66,10 @@ web/
 │                               writes fixtures/presentation/ from the analysis goldens
 ├── tools/verify_presentation.py
 │                               headless checks: marker/filter counts and the flight-count
-│                               invariants, vs those goldens
+│                               invariants, vs those goldens; and the share card's stat list
+│                               against the key-metrics block
+├── tools/card_parity.mjs       the Node half of that last check — runs keyMetrics and
+│                               cardStats over every golden and dumps them as JSON
 └── .nojekyll                   GitHub Pages: serve files verbatim
 ```
 
@@ -208,6 +217,49 @@ some scrapers refuse to fetch anything larger, and every one of them is on a pho
 
 Note the tile is **not** in the service worker's `APP_SHELL`. Scrapers do not run service
 workers, and an offline visitor has no use for it.
+
+## The share card
+
+The one thing this app makes that *leaves* the device on purpose. `Share card` sits beside
+`Save to library` in the session panel's head — both act on the one document that panel is
+about, which is why neither belongs in the topbar — and opens a `<dialog>` with a shape
+picker (Portrait 1080x1350 / Square 1080x1080 / Landscape 1920x1080, the iOS pixel sizes
+exactly), a preset picker (Complete / Lean), a live preview, **Download PNG**, and a
+**Share...** button on browsers where `navigator.canShare({files})` is true — the path that
+reaches WhatsApp on a phone, and the macOS share sheet in desktop Chrome. Both choices are
+remembered in `localStorage` behind try/catch, because a preference that cannot be read must
+never be the reason a dialog will not open.
+
+Two files, split along the seam that matters:
+
+- **`js/cardstats.js` — what it says.** No DOM, no canvas, no drawing. `keyMetricEntries` is
+  the key-metrics block *as data*, and `js/render.js` now renders the block's HTML from it
+  rather than building the strings a second time. `cardStats(g, preset)` can only *filter*
+  that list. So the numbers on the picture a rider posts and the numbers at the top of the
+  page they posted it from are the same array — not two implementations that agree today.
+  `web/tools/verify_presentation.py` §5 asserts it per fixture, on the rendered markup.
+- **`js/sharecard.js` — what it looks like.** A canvas, laid out in iOS points and scaled 3x
+  once at the top, so the paddings read against `ShareCardView.swift` line for line. The
+  track takes whatever height the header, the grid and the footer leave, and fits the *ride*
+  to that box rather than the square the projection normalized into.
+
+The preview is the exported PNG scaled down — literally, `drawImage` of the same offscreen
+canvas — so what a rider approves is what they send.
+
+Three details worth knowing before changing anything here:
+
+- **Fonts are awaited, and the weights are asked for by name.** A canvas does not reflow: a
+  weight that resolves after `fillText` produces a PNG with the wrong metrics *forever*.
+  `document.fonts.ready` alone is not enough — a face the page has never requested is not
+  pending, and therefore "ready".
+- **Nothing may be tainted.** The mark and the QR are same-origin files under `icons/`; a
+  cross-origin image would make `toBlob` throw and the whole feature silently stop working.
+- **The footer is addressed to the receiver, not the sender** — the mark, `CleanJibe`, the
+  call to action and a QR to `https://cleanjibe.org`. It is the same contract the iOS card
+  prints (`docs/presentation.md`), and every string in it comes from `BRANDING` in
+  `js/cardstats.js`, once. The QR is a committed 33 x 33 PNG, one pixel per module, drawn
+  with `imageSmoothingEnabled = false` at 99 px (a whole 3x nearest-neighbour upscale): the
+  URL is fixed, so a QR library in the bundle would be a dependency to draw a constant.
 
 ## Refreshing `lab_bundle/` — do this after every lab change
 
@@ -391,7 +443,7 @@ Icons live in `web/icons/`, copied from `brand/` (`icon-tile-*` for the normal i
 
 ## Verification
 
-Five checks, none of which needs a browser:
+Six checks, none of which needs a browser:
 
 ```bash
 cd /path/to/WingFoil
@@ -406,10 +458,14 @@ lab/.venv/bin/python web/tools/verify_web_entry.py
 # 2. library: dedupe edge cases, digest fidelity, records, trends, the zip export
 lab/.venv/bin/python web/tools/verify_library.py           # ~35 s; --fast skips the corpus
 
-# 3. JS syntax
+# 3. presentation: what a session screen may draw, and that the share card's stat list is
+#    the key-metrics block (needs node for the last group)
+lab/.venv/bin/python web/tools/verify_presentation.py
+
+# 4. JS syntax
 cd web && for f in js/*.js sw.js; do node --check "$f" || exit 1; done
 
-# 4. the lab itself is still green
+# 5. the lab itself is still green
 cd lab && uv run pytest -q
 ```
 
@@ -441,7 +497,8 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    cards keep their own names (*WingFoil for Garmin*, *WingFoil for iPhone*), because the
    site is branded and the apps are not renamed. Both *Open the analyzer* buttons must land
    on `/app/`, and the analyzer's own wordmark must come back here.
-0b. **The share card.** View source on both documents: `og:image` must be the absolute
+0b. **The social card** (the link preview — not the rider's share card below). View source
+   on both documents: `og:image` must be the absolute
    `https://cleanjibe.org/social-card.png`, with `og:image:width`/`:height` and
    `twitter:card=summary_large_image` beside it. Open
    <http://127.0.0.1:8765/social-card.png> — 1200 x 630, wordmark and tagline whole, the
@@ -474,6 +531,18 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    and `11.3 WPH`. It must read identically to the iOS app's block on the same session —
    the two halves are `web/js/render.js` `keyMetrics` and `KeyMetrics.swift`, and the
    Swift half is pinned by `PresentationTests.keyMetrics*`.
+4c. **The share card.** Press *Share card* beside *Save to library*. The preview must show
+   the same numbers as the block behind it, cell for cell — that is the whole contract, and
+   the fastest way to spot a break is to read the two together. Walk all three shapes and
+   both presets: no clipped or ellipsised text anywhere (the card shrinks type, it never
+   truncates), the tally on the ladder's green/amber/red, the track filling its box with
+   outcome dots and cyan splash *diamonds*, and the footer whole — mark, `CleanJibe`, the
+   call to action, and a QR that a phone camera actually opens. *Download PNG* must save a
+   file whose pixel size matches the caption under the pickers. A *Share…* button appears
+   beside it wherever `navigator.canShare({files: [png]})` is true — iOS Safari, Android
+   Chrome, and desktop Chrome on macOS, which opens the system share sheet — and must be
+   absent everywhere it is not, because a share button that silently does nothing is worse
+   than no button. Re-open the dialog: it comes back on the shape and preset you left it on.
 5. **Map.** North-up track; grey off-foil line with teal foiling segments on top (the phase
    tints, the same two the iOS map uses); small chevrons showing which way he went; numbered
    markers — green discs / amber triangles / red crosses / grey hairline crosses for
