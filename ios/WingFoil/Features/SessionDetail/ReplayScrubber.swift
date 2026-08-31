@@ -36,23 +36,14 @@ struct ReplayScrubber: View {
 
     @State private var isPlaying = false
     @State private var rate = ReplayRate.x30
-    /// The speed sheet the record button opens; nil the rest of the time.
-    @State private var askingRate = false
-    /// The cinema presentation, once a speed has been chosen.
+    /// The setup sheet the record button opens — speed, photos, start.
+    @State private var settingUp = false
+    /// The cinema presentation, once the setup sheet has been answered.
     @State private var cinema: CinemaRun?
 
     /// Derived once per session rather than per redraw: playback moves the playhead 20×
     /// a second, and every one of those rebuilds this view's body.
     @State private var beats: [ReplayBeat] = []
-
-    /// Playback speeds. 30× turns a two-hour session into four minutes, which is about the
-    /// pace at which a jibe is still recognisable.
-    enum ReplayRate: Double, CaseIterable, Identifiable {
-        case x10 = 10, x30 = 30, x60 = 60
-
-        var id: Double { rawValue }
-        var label: String { "\(Int(rawValue))×" }
-    }
 
     /// Playhead ticks per second of wall clock. 20 is smooth to the eye and cheap enough
     /// that a scrubbing session does not warm the phone.
@@ -92,39 +83,31 @@ struct ReplayScrubber: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
             .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 14))
-            .confirmationDialog("Record the replay", isPresented: $askingRate,
-                                titleVisibility: .visible) {
-                ForEach(ReplayRate.allCases) { speed in
-                    // The speed is not what a rider is really choosing between — the *clip
-                    // length* is, and it is not `span / rate` because of the slow-motion
-                    // beats. `ReplayDriver` knows, so the button says so.
-                    Button("\(speed.label) · about \(Fmt.duration(clipLength(speed, range)))") {
-                        start(at: speed)
-                    }
+            // A sheet where an action sheet used to be. Photos are not a fourth button —
+            // see `ReplaySetupSheet`.
+            .sheet(isPresented: $settingUp) {
+                ReplaySetupSheet(detail: detail, milestones: milestones, span: range) {
+                    speed, photos in
+                    start(at: speed, photos: photos)
                 }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text(ReplayRecorder.isAvailable
-                     ? "The replay plays itself full screen and the screen is recorded. "
-                       + "The countdown is not in the clip."
-                     : "Screen recording is not available right now — Low Power Mode, "
-                       + "AirPlay and screen mirroring all switch it off. The replay will "
-                       + "play full screen without being recorded.")
             }
             .fullScreenCover(item: $cinema) { run in
                 ReplayCinemaView(detail: detail, milestones: milestones, span: range,
-                                 rate: run.rate, record: run.record)
+                                 rate: run.rate, record: run.record, photos: run.photos)
             }
             .task(id: detail.row.id) { beats = ReplayBeats.make(detail.analysis) }
             #if DEBUG && targetEnvironment(simulator)
             // `UI_REPLAY_CINEMA=<rate>` opens the cinema replay at that speed, since `simctl`
-            // can tap neither the button nor the speed sheet. `UI_REPLAY_RECORD=0` stages the
+            // can tap neither the button nor the setup sheet. `UI_REPLAY_RECORD=0` stages the
             // *other* mode — the plain full-screen replay a rider gets when the recorder is
             // unavailable or the permission was refused — which is otherwise unreachable on a
             // machine where `isAvailable` happens to be true. Pair either with
             // `UI_REPLAY_CLIP=stub` (`ReplayRecorder`) to walk the clip sheet as well.
+            // `UI_REPLAY_SETUP=1` opens the setup sheet instead, which is the one screen the
+            // photo picker lives on.
             .task {
                 let environment = ProcessInfo.processInfo.environment
+                if environment["UI_REPLAY_SETUP"] == "1" { settingUp = true }
                 guard let raw = environment["UI_REPLAY_CINEMA"],
                       let speed = Double(raw) else { return }
                 cinema = CinemaRun(rate: speed,
@@ -297,6 +280,9 @@ struct ReplayScrubber: View {
         /// False when ReplayKit cannot capture — the replay still plays, it just plays for an
         /// audience of one.
         let record: Bool
+        /// Already loaded and dated by the setup sheet, so the cinema view never waits on the
+        /// photo library with a recording running.
+        var photos: [ReplayPhoto] = []
     }
 
     /// "Record replay" — see the type comment for why it lives here.
@@ -308,7 +294,7 @@ struct ReplayScrubber: View {
     private func recordButton(range: ClosedRange<Double>) -> some View {
         Button {
             stop()
-            askingRate = true
+            settingUp = true
         } label: {
             Label(ReplayRecorder.isAvailable ? "Record replay" : "Play replay full screen",
                   systemImage: ReplayRecorder.isAvailable ? "record.circle" : "play.rectangle")
@@ -319,15 +305,8 @@ struct ReplayScrubber: View {
         .accessibilityHint("Plays the session full screen and records it as a video clip")
     }
 
-    /// How long the finished clip will be at this speed — the ease around each milestone is
-    /// most of the difference, so this is emphatically not `span / rate`.
-    private func clipLength(_ speed: ReplayRate, _ range: ClosedRange<Double>) -> Double {
-        ReplayDriver(span: range, rate: speed.rawValue,
-                     easeAt: milestones.map(\.t)).runWallS
-    }
-
-    private func start(at speed: ReplayRate) {
-        cinema = CinemaRun(rate: speed.rawValue, record: ReplayRecorder.isAvailable)
+    private func start(at speed: Double, photos: [ReplayPhoto]) {
+        cinema = CinemaRun(rate: speed, record: ReplayRecorder.isAvailable, photos: photos)
     }
 
     // MARK: - Beat bar

@@ -314,15 +314,28 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    stored choice.
    The **cinema replay** (`ReplayCinemaView`, the full-screen replay a clip is recorded from)
    opens with `UI_REPLAY_CINEMA=<rate>` — `10`, `30` or `60` — which stands in for the record
-   button plus the speed sheet. `UI_REPLAY_RECORD=0` stages the other mode, the plain
-   full-screen replay a rider gets when the recorder is unavailable or the permission was
-   refused: no countdown, no clip, the transport says "Done". **The Simulator lies about
-   screen recording** — on iOS 26 `RPScreenRecorder.isAvailable` is `true` there, the whole
-   flow runs, and the file that comes out is zero bytes, which `ReplayRecorder.Failure.empty`
-   turns into an honest alert. So the capture itself is device-only; everything around it is
-   not. `UI_REPLAY_CLIP=stub` short-circuits ReplayKit and writes a placeholder file with
-   bytes in it, which is how the clip sheet — player, size, share link, discard — gets driven
-   on a Mac.
+   button plus the setup sheet. `UI_REPLAY_SETUP=1` opens that sheet instead, which is the
+   only screen the photo picker lives on. `UI_REPLAY_RECORD=0` stages the other mode, the
+   plain full-screen replay a rider gets when the recorder is unavailable or the permission
+   was refused: no countdown, no clip, the transport says "Done".
+   A clip is five things in a row — title card, replay, spliced photos, leftover photos,
+   outro card — and the two cards are on screen for 2.5 s and 4 s inside a run `simctl`
+   cannot pause, so `UI_REPLAY_STAGE=title|outro` parks the run on one of them and leaves it
+   there. **Photos cannot be staged**: `PhotosPicker` runs out of process and the placement
+   rule is EXIF-driven, so the splice/slideshow split is covered by
+   `ReplayStoryboardTests` in the kit and by hand on a phone. The camera gestures are also
+   unstageable for the usual reason — pinch and drag on the cinema map are MapKit's own
+   (`interactionModes: [.pan, .zoom]`), and `simctl` has no fingers; the "Fit track" pill
+   beside "Stop" appears on the same tap and is the only one that is tappable.
+   **The Simulator lies about screen recording** — on iOS 26 `RPScreenRecorder.isAvailable`
+   is `true` there, the whole flow runs, and the file that comes out is zero bytes, which
+   `ReplayRecorder.Failure.empty` turns into an honest alert. So the capture itself is
+   device-only; everything around it is not. `UI_REPLAY_CLIP=stub` short-circuits ReplayKit
+   and writes a placeholder file with bytes in it, which is how the clip sheet — player,
+   size, share link, discard — gets driven on a Mac. The one thing only a device can settle
+   is whether the *first recorded frame* is the title card: the countdown is removed, a
+   `titleSettleS` beat passes and only then is `startRecording` awaited, and there is no
+   simulator capture to check it against.
    Orientation is the one thing no hook stages: `simctl` cannot rotate a simulator and
    Simulator.app's Rotate menu is not reachable from a headless run. To photograph the
    landscape frame, temporarily cut `UISupportedInterfaceOrientations` in `ios/project.yml`
