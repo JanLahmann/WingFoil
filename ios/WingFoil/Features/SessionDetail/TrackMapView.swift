@@ -59,13 +59,12 @@ struct TrackMapView: View {
             if let callout {
                 TrackCalloutCard(callout: callout) { self.callout = nil }
             }
+            // The chips, and their `?`. The caption that used to sit under them ("Tap the
+            // track to move the replay playhead — on a mark or a flight for what it was")
+            // is the last paragraph of the `mapLegend` help topic now: it was one of the
+            // three the review measured at ~115 pt above the fold (§1.2), and it said the
+            // same thing on every visit to every session forever.
             MapLegendView(detail: detail, effort: effort)
-            if !detail.timeline.isEmpty {
-                Text("Tap the track to move the replay playhead — on a mark or a flight for "
-                     + "what it was.")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-            }
         }
         #if DEBUG && targetEnvironment(simulator)
         .onAppear(perform: stageCalloutForScreenshot)

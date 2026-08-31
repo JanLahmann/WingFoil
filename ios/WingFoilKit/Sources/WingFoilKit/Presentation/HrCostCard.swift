@@ -260,14 +260,31 @@ public struct HrCostCard: Sendable, Equatable {
 
     private static func pumpCruiseStat(_ s: HrSummary) -> Stat {
         let pc = s.pumpCruise
-        guard let delta = pc.deltaBpm, let pumping = pc.pumpingBpm,
+        // The engine's own `deltaBpm` is still the gate — it is nil exactly when one of the
+        // two windows could not be measured — but the *printed* delta is derived below
+        // from the printed operands, so the three numbers on the card reconcile.
+        guard pc.deltaBpm != nil, let pumping = pc.pumpingBpm,
               let cruising = pc.cruisingBpm else {
             return Stat(key: "pumpCruise", label: "Pumping vs cruising", value: "—",
                         caption: pc.pumpingSpans == 0 ? "no pump bursts on this source"
                             : "not enough usable HR in one of the two",
                         missing: true)
         }
-        var caption = String(format: "%.0f vs %.0f bpm on the foil", pumping, cruising)
+        // **The delta and its operands are printed from the SAME rounded numbers.**
+        //
+        // The card used to read `Pumping vs cruising · -0.1 bpm · 119 vs 119 bpm on the
+        // foil` (app-ui-review.md §5.7): a delta claiming a negative difference over two
+        // operands that, as displayed, were identical. Two things were wrong with it and
+        // both are fixed here. The operands are printed at the delta's own precision —
+        // both are time-weighted means, so the first decimal is a real digit on each of
+        // them — and the delta is then re-derived from those *printed* values rather than
+        // from the unrounded pair, so a reader who does the subtraction always gets the
+        // headline back. The correction is at most half a display digit (0.05 bpm) and it
+        // is the difference between a card that reconciles and one that does not.
+        let shownPumping = (pumping * 10).rounded() / 10
+        let shownCruising = (cruising * 10).rounded() / 10
+        var caption = String(format: "%.1f vs %.1f bpm on the foil",
+                             shownPumping, shownCruising)
         // Time-share coverage rather than n-of-n: these two means are weighted by recorded
         // seconds, so the honest denominator is seconds, not events.
         let covered = min(pc.pumpingCoverage ?? 1, pc.cruisingCoverage ?? 1)
@@ -275,7 +292,7 @@ public struct HrCostCard: Sendable, Equatable {
             caption += String(format: " · %.0f%% covered", covered * 100)
         }
         return Stat(key: "pumpCruise", label: "Pumping vs cruising",
-                    value: bpm(delta, decimals: 1),
+                    value: bpm(shownPumping - shownCruising, decimals: 1),
                     caption: caption, missing: false,
                     thin: covered < thinCoveragePct / 100)
     }

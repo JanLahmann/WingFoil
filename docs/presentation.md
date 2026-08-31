@@ -86,9 +86,25 @@ neither half of the split there (`freeTakeoffs` / `pumpedTakeoffs` are absent an
 takeoff carries `free: false`), so both apps draw the same arrow rather than inventing a
 verdict about effort nobody measured.
 
+**Entry tack has its own pair, and it is the only thing allowed to use it:**
+`side.port` / `side.starboard`. A side is not a verdict, not an effort and not a phase, so
+it may borrow none of their inks — and a symmetric pair needs a symmetric encoding, so the
+two are **one hue at two intensities, with the quieter half dashed as well**. The dash is
+not decoration: it is the second channel that carries the split for a reader who cannot use
+colour, the same job fill does for the outcome dots.
+
+This is a token rather than a convention because it was already broken twice on one screen.
+Trends drew "turn success by entry tack" with port in the takeoff blue and starboard in the
+**ladder's green** — on a chart whose subject is *"% flew through"*, so the green line read
+as the flew-through line — and the port/starboard share chart above it in a **magenta
+belonging to no vocabulary at all** (`app-ui-review.md` §5.2, §5.3). Both were only ever
+literals in a view, which is exactly what `design/tokens.json` exists to prevent.
+
 **Phase tints** are one colour each, in both apps: flying = teal, off foil = the secondary
 label grey. They are *not* the app's own accent blue — a track tinted with the brand colour
-reads as chrome, and the flying tint has to be a category.
+reads as chrome, and the flying tint has to be a category. **Every flight fact takes the
+phase tint**, which includes the "longest flight" trend line — it wore the takeoff blue
+until §5.4, for a metric that is a duration in the air rather than an effort.
 
 **Phase tint follows the engine's flight spans, cut at exact boundary times with
 interpolated points — a gap with no samples still renders off-foil.** Tinting per *sample*
@@ -135,8 +151,11 @@ The rules, which are the only thing the two implementations can disagree about:
 - **Row 3 is the jibe ladder**, and the caption says what the three numbers are out of
   ("of 50 jibes"). A session whose wind axis never resolved has no jibes at all, so it
   falls back to every counted turn ("of 51 turns") — an empty ladder over an afternoon of
-  turns would read as "nothing happened". This is the only place outside the map where
-  either app draws the tally in the ladder's colours, and it is a verdict, so it may.
+  turns would read as "nothing happened". The tally is a verdict, so it may wear the
+  ladder, and the **library row** wears it too — over every counted turn there, which is
+  what a row scanned against its neighbours has to be. The web rows carried no tally at all
+  until §5.6, on the more prominent of the two library surfaces; a row from a digest
+  written before the field existed renders "—" rather than three zeroes.
 - **Streaks are `summary.turns.longestDryStreak` / `longestFlewStreak`**, rendered
   `11 dry · 5 flew` — the first time either app draws them. They are over counted turns,
   which is what the engine measures them over; nothing is re-derived here.
@@ -158,6 +177,51 @@ Implemented once per platform: `KeyMetrics` in `ios/WingFoilKit/…/Presentation
 strings `PresentationTests.keyMetrics*` pin, and `keyMetrics` in `web/js/render.js`. The
 Swift half resolves every display string so the SwiftUI view is pure layout; the two are
 twins, and a difference between them is a bug.
+
+## Sections — how a session divides
+
+Both apps open on the key-metrics block and then **switch between four sections**, in this
+order: **`Map · Speed` · `Turns` · `Takeoffs` · `Effort`**. The ids and the words are
+`SessionSection` in the kit; the web uses the same ids on `data-section` attributes. The
+alternative was measured: one column of ~3 800 pt on the phone and ~6 000 px on a phone
+browser, five unrelated subjects deep, with no way to the fifth except through the other
+four (`app-ui-review.md` §3.1, §7.2).
+
+- **The key-metrics block is above the switcher and is never a section.** It is the answer
+  to "was that a good session"; a page you can navigate away from is not an answer. There
+  is therefore no `Overview`.
+- **The map and the speed chart are on one section, always.** "Scrub and zoom" below
+  mandates one playhead across them and "Pairing" focuses the chart on the flight whose
+  track you tapped — they are one instrument with a *visible* link, and a switcher that
+  gives Map its own page breaks the half of it you can see. Everything that annotates the
+  two figures rides with them, which is why the record picker lives there too and why there
+  is no `Records` section: a picker whose whole purpose is to highlight a window on the map
+  and the chart cannot be on a tab away from them.
+- **The chart's zoom window outlives a section change.** Zoom stays transient per *session
+  view* (below), but a trip to Turns and back is not a new session view, and silently
+  resetting the window would make "transient" mean something the rider did not ask for.
+- **Desktop web keeps its single scroll — this is a phone rule.** Above 760 px the web
+  session view is a document, the two long tables want the continuous page, and that is
+  what makes it a lab tool. The switcher exists only below the breakpoint, and crossing the
+  breakpoint upward must restore every panel.
+- **A section with nothing in it is not shown.** The web has no HR card, so its fourth chip
+  is the raw-output panel (`Data`) rather than an empty `Effort`; an honest label beats a
+  matching one. When the web gains effort content, the id is already reserved.
+
+## Tables over tile walls
+
+Where a screen shows one number per row with the same shape on every row, it is a table:
+`record | value | at` for the session's speed records, `record | value | +Δ PB | when ·
+where` for the all-time ones. Eight 2-up cards spent ~520 pt and ~2 000 pt respectively to
+show eight numbers each, and the values could not be compared by eye because they did not
+line up in a column (`app-ui-review.md` §1.4, §6.2). A table also has no odd-count parity
+problem, which is what left `Glide-outs 0` alone beside an empty cell.
+
+Decoration that repeats the row's own text is not information: the record medallion
+contained the same words as the title beside it, and a 90 px sparkline read as a flat line
+with a bump on all eight rows. The *distinction* a decoration encodes may still be worth
+keeping — record freshness survives as a 7 pt dot — but it is kept at the size the fact is
+worth, not at the size the ornament was.
 
 ## Record windows
 
@@ -190,7 +254,8 @@ Turn filters are type (`both | jibes | tacks`) × side (`both | port | starboard
 **Side means the ENTRY tack — the tack you came into the turn on — never the rotation
 direction.** UI copy must say "Port entry / Starboard entry"; bare "left/right" is a
 misread waiting to happen. Both turn fields exist in the schema (`side`, `direction`);
-filters and trends read `side`.
+filters and trends read `side`. Anything that draws a side in colour uses the `side.*`
+tokens above and nothing else.
 
 ## Formatter rules
 
@@ -201,8 +266,25 @@ filters and trends read `side`.
 - Rates with an empty denominator render empty, not "0%" — "0% ok" before the first turn
   reads as a verdict.
 - A measured zero is a value ("0 bpm"), and "−0" must never appear.
+- **A delta is never printed finer than the numbers it is shown beside, and it reconciles
+  with them.** The HR card read `-0.1 bpm · 119 vs 119 bpm on the foil` (§5.7): a delta
+  asserting a difference over two operands that, as displayed, were the same number. So the
+  operands are printed at the delta's precision *and* the printed delta is derived from the
+  printed operands, which makes the arithmetic on the card exact rather than usually right.
 - Speeds in the rider's unit (kn/km/h per settings); missing HR renders as the unit's
   missing form ("-- bpm"), not as zero.
+- **A time axis is labelled with round times, not with equal fractions of its domain.**
+  Both platforms pick the finest step from one ladder — 5/10/15/30 s, 1/2/5/10/15/30 min,
+  1/2/3/6 h — that fits the label budget, and write its multiples. Dividing the domain into
+  fifths produced `0:00 · 33:20 · 66:40 · 100:00` (§1.5), which is correct and unreadable.
+  Zoom moves which rung is in use, never the roundness. iOS: `TimeAxisTicks` in the kit,
+  pinned by `PresentationTests.timeAxisTicks*`, shared by the speed chart and the HR chart.
+- **Reference material lives behind the `?`, never in body copy on the page.** The session
+  screen printed three grey paragraphs of legend documentation under the chips on every
+  visit — ~115 pt above the fold, telling the rider something he learned once (§1.2). The
+  chips are the control and stay; the words are the `mapLegend` help topic. A number that
+  was hiding in that prose is not help: "38 failed attempts" is a *takeoff* fact and now
+  sits on the takeoff card at the size a number gets.
 
 ## Scrub and zoom
 
@@ -212,7 +294,9 @@ filters and trends read `side`.
   scrubber; web: wheel/pinch). While zoomed: scrubbing works within the window, a reset
   affordance is visible, the window's place in the session is indicated, and markers and
   shading outside the visible domain are not drawn.
-- Zoom state is transient per session view.
+- Zoom state is transient per session view — but it survives a section change, which is not
+  a new session view (see "Sections" above). On iOS that means the window is owned by
+  `SessionDetailView`, not by the chart.
 
 ## Pairing
 

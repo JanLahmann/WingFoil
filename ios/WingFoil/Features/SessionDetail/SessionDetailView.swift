@@ -1,12 +1,44 @@
 import SwiftUI
 import WingFoilKit
 
+/// One session, as a permanent verdict over a four-way switcher.
+///
+/// **Why it is tabbed.** The page was one column of ~3 800 pt — a little over four full
+/// phone screens — carrying five unrelated subjects with no way to the fifth except through
+/// the other four (`app-ui-review.md` §3.1). A rider who wants to know how his jibes went
+/// scrolled past the map, the chart, the replay, four foil tiles and eight record tiles to
+/// get there.
+///
+/// **Why it is tabbed *here*, and not somewhere more obvious.** `presentation.md` "Scrub and
+/// zoom" mandates one playhead — the chart scrub position and the map dot are the same
+/// timestamp, and moving either moves both — and "Pairing" adds that tapping a flown stretch
+/// of track focuses the chart on that flight. Map and chart are therefore one instrument,
+/// not two pages, and the tab set floated in the brief (`Overview / Map / Turns / Takeoffs /
+/// Records`) breaks the visible half of that link: you tap a segment on Map and the chart it
+/// just focused is on another tab. So the split falls between **the figures** — map and
+/// chart together, always, on one tab — and **the analysis cards**, which are genuinely five
+/// independent subjects (§3.2).
+///
+/// Two things that look like omissions and are decisions:
+///
+/// * **There is no Overview tab.** The key-metrics block *is* the overview, and it sits
+///   above the switcher on every tab: it is the answer to "was that a good session" and it
+///   should never be a page you can navigate away from.
+/// * **There is no Records tab.** The record picker's whole purpose is to highlight a window
+///   on the map and the chart; a picker on a tab away from the figures highlights something
+///   you cannot see. The records live on Map · Speed, as a table, with the figures they
+///   annotate (§1.4, and the review's "deliberately not recommended").
 struct SessionDetailView: View {
     let sessionID: String
     @Environment(SessionStore.self) private var store
 
     @State private var detail: SessionDetail?
     @State private var failure: String?
+    /// The selected section. `mapSpeed` is what every session opens on, because the figures
+    /// are the browsing surface and the block above them has already given the verdict. The
+    /// enum, its words and the anchor mapping live in the kit (`SessionSection`) so the
+    /// rules are testable and so the web app can use the same four ids.
+    @State private var tab = SessionSection.mapSpeed
     /// Engine window key of the GP3S effort highlighted on the map and chart. Transient by
     /// design (`RecordWindowSelection`): every session opens on the 2 s peak.
     @State private var selectedEffort: String? = RecordWindowSelection.defaultKey
@@ -16,12 +48,13 @@ struct SessionDetailView: View {
     /// The flight a tap on the map asked about — the map sets it, the chart frames it.
     /// Transient like every other zoom (docs/presentation.md, "Pairing").
     @State private var flightFocus: SessionDetail.FlightFocus?
+    /// The speed chart's visible window. Owned here rather than by the chart so a trip to
+    /// another tab does not reset it — see `SpeedChartView.zoom`.
+    @State private var chartZoom: TimelineWindow?
     @State private var showShare = false
     #if DEBUG && targetEnvironment(simulator)
     /// Screenshot hook only (`UI_FULLSCREEN_MAP=1`): `simctl` cannot tap the link.
     @State private var showFullScreenMap = false
-    /// The same, for the turns drill-in (`UI_OPEN_TURNS=1`).
-    @State private var showTurns = false
     #endif
 
     private var row: SessionRow? { store.session(id: sessionID) }
@@ -34,43 +67,31 @@ struct SessionDetailView: View {
     var body: some View {
         ScrollView {
             ScrollViewReader { proxy in
-            VStack(alignment: .leading, spacing: 20) {
+            // `pinnedViews` is what makes the switcher sticky: it stays under the nav bar
+            // while a tab's body scrolls past it, so changing subject never means scrolling
+            // back up to find the control that changes subject.
+            LazyVStack(alignment: .leading, spacing: 20, pinnedViews: [.sectionHeaders]) {
                 header
                 if let detail {
-                    // First on the page, above the map: the four rows that answer "was
-                    // that a good session" (docs/app-ui-review.md §1.1 / §4).
+                    // Permanent, above the switcher, on every tab: the four rows that
+                    // answer "was that a good session" (docs/app-ui-review.md §1.1 / §4).
                     KeyMetricsView(metrics: KeyMetrics.make(summary: detail.analysis.summary,
                                                             records: detail.analysis.records))
                         .id("key")
+                    // Below the verdict now, not above it. It is a provenance footnote
+                    // about one metric, and it was the most prominent element on the screen
+                    // after the title (§1.3).
                     if !detail.divergences.isEmpty {
                         DivergenceBanner(divergences: detail.divergences)
                     }
-                    if detail.segments.isEmpty {
-                        noTrackNote
-                    } else {
-                        TrackMapView(detail: detail, effort: effort, playhead: $playhead,
-                                     visibility: store.mapLayers, flightFocus: $flightFocus)
-                        NavigationLink {
-                            FullScreenMapView(detail: detail, effort: effort,
-                                              playheadT: playhead)
-                        } label: {
-                            Label("Open map full screen", systemImage: "map")
-                                .font(.footnote)
+                    Section {
+                        VStack(alignment: .leading, spacing: 20) {
+                            body(of: tab, detail: detail)
+                            footer(detail)
                         }
+                    } header: {
+                        switcher
                     }
-                    SpeedChartView(detail: detail, effort: effort, playhead: $playhead,
-                                   visibility: store.mapLayers, flightFocus: flightFocus)
-                        .id("chart")
-                    ReplayScrubber(detail: detail, playhead: $playhead)
-                        .id("replay")
-                    SummaryGrid(detail: detail, selectedEffort: $selectedEffort)
-                        .id("summary")
-                    // Right after the takeoff & pumping section it comments on, and silent
-                    // (no card at all) on a session whose heart rate measured nothing.
-                    HrCostCardView(detail: detail)
-                    SessionGearCard(sessionID: sessionID)
-                        .id("gear")
-                    footer(detail)
                 } else if let failure {
                     ContentUnavailableView("Could not open this session",
                                            systemImage: "exclamationmark.triangle",
@@ -83,11 +104,13 @@ struct SessionDetailView: View {
             .padding(.horizontal)
             .padding(.bottom, 32)
             #if DEBUG && targetEnvironment(simulator)
-            // Headless-driving hook (see LibraryView): `simctl launch` cannot scroll, so
-            // `UI_SCROLL_TO=<anchor>` parks the page on a card section for a screenshot
-            // ("chart" for the speed chart, "summary" for the whole grid, "turns" for the
-            // turn cards and the drill-in row, "takeoff" for the pumping card, "hr" for the
-            // HR-cost card, "gear" for the gear card, "replay" for the scrubber).
+            // Headless-driving hook (see LibraryView): `simctl launch` cannot scroll or
+            // tap, so `UI_SCROLL_TO=<anchor>` parks the page on a card section for a
+            // screenshot ("chart" for the speed chart, "summary" for the record table,
+            // "turns" for the turn cards and the filtered list, "takeoff" for the pumping
+            // card, "hr" for the HR-cost card, "gear" for the gear card, "replay" for the
+            // scrubber). Since the page is tabbed, the anchor also has to *select the tab
+            // it lives on* — a scroll to an anchor on an unselected tab reaches nothing.
             .onChange(of: detail == nil) {
                 guard detail != nil else { return }
                 let environment = ProcessInfo.processInfo.environment
@@ -109,10 +132,12 @@ struct SessionDetailView: View {
                 // `UI_FULLSCREEN_MAP=1` pushes the big map, where the legend chips are the
                 // same controls over the same shared model.
                 if environment["UI_FULLSCREEN_MAP"] == "1" { showFullScreenMap = true }
-                // `UI_OPEN_TURNS=1` pushes the turns page; `UI_TURN_FILTER` (read there)
-                // engages the two segmented filters for the shot.
-                if environment["UI_OPEN_TURNS"] == "1" { showTurns = true }
+                // `UI_OPEN_TURNS=1` used to push a page; the drill-in is the Turns tab now,
+                // so it selects that tab instead. `UI_TURN_FILTER` (read there) still
+                // engages the two segmented filters for the shot, unchanged.
+                if environment["UI_OPEN_TURNS"] == "1" { tab = .turns }
                 if let anchor = environment["UI_SCROLL_TO"] {
+                    if let home = SessionSection.section(owning: anchor) { tab = home }
                     proxy.scrollTo(anchor, anchor: .top)
                 }
             }
@@ -126,9 +151,6 @@ struct SessionDetailView: View {
             if let detail {
                 FullScreenMapView(detail: detail, effort: effort, playheadT: playhead)
             }
-        }
-        .navigationDestination(isPresented: $showTurns) {
-            if let detail { TurnsAnalysisView(detail: detail) }
         }
         #endif
         .toolbar {
@@ -154,6 +176,72 @@ struct SessionDetailView: View {
         } catch {
             failure = "\(error)"
         }
+    }
+
+    // MARK: - The switcher and the four bodies
+
+    /// Sticky, and full-bleed against the scroll behind it — a segmented control floating
+    /// on a transparent strip over scrolling cards is unreadable the moment a card passes
+    /// under it.
+    private var switcher: some View {
+        Picker("Section", selection: $tab) {
+            ForEach(SessionSection.allCases) { Text($0.label).tag($0) }
+        }
+        .pickerStyle(.segmented)
+        .padding(.vertical, 8)
+        .background(.bar)
+        .accessibilityLabel("Session section")
+    }
+
+    @ViewBuilder
+    private func body(of tab: SessionSection, detail: SessionDetail) -> some View {
+        switch tab {
+        case .mapSpeed: mapSpeed(detail)
+        case .turns: SessionTurnsSection(detail: detail)
+        case .takeoffs: SessionTakeoffSection(detail: detail)
+        case .effort: effortTab(detail)
+        }
+    }
+
+    /// **One instrument, one tab.** The map, its legend, the speed chart, the scrubber they
+    /// share and the record table that annotates both. The shared playhead binding and the
+    /// `flightFocus` a map tap sets are the contract's "one playhead" and "pairing"
+    /// (`presentation.md`), and the only way to keep them visibly true is to keep the two
+    /// figures on one screen. Nothing here may be moved to another tab.
+    @ViewBuilder
+    private func mapSpeed(_ detail: SessionDetail) -> some View {
+        if detail.segments.isEmpty {
+            noTrackNote
+        } else {
+            TrackMapView(detail: detail, effort: effort, playhead: $playhead,
+                         visibility: store.mapLayers, flightFocus: $flightFocus)
+            NavigationLink {
+                FullScreenMapView(detail: detail, effort: effort, playheadT: playhead)
+            } label: {
+                Label("Open map full screen", systemImage: "map")
+                    .font(.footnote)
+            }
+        }
+        SpeedChartView(detail: detail, effort: effort, playhead: $playhead,
+                       visibility: store.mapLayers, flightFocus: flightFocus,
+                       zoom: $chartZoom)
+            .id("chart")
+        ReplayScrubber(detail: detail, playhead: $playhead)
+            .id("replay")
+        SessionFoilGrid(detail: detail)
+        SessionRecordsTable(detail: detail, selectedEffort: $selectedEffort)
+    }
+
+    /// What the session cost: the HR card, its fatigue bins, and the kit it was ridden on.
+    /// Gear sits here rather than on a tab of its own because a wing and a foil are the
+    /// other half of the same question the heart rate answers — how hard was that, and on
+    /// what.
+    @ViewBuilder
+    private func effortTab(_ detail: SessionDetail) -> some View {
+        // Silent — no card at all — on a session whose heart rate measured nothing.
+        HrCostCardView(detail: detail)
+        SessionGearCard(sessionID: sessionID)
+            .id("gear")
     }
 
     @ViewBuilder

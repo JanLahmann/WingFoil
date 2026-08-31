@@ -15,7 +15,6 @@ struct SettingsView: View {
                 icuSection
                 notificationsSection
                 WatchLinkSection()
-                placesSection
                 analysisSection
                 healthSection
                 storageSection
@@ -127,21 +126,14 @@ struct SettingsView: View {
         }
     }
 
-    private var placesSection: some View {
-        Section {
-            NavigationLink {
-                SpotsView()
-            } label: {
-                LabeledContent("Spots", value: "\(store.spots.count)")
-            }
-        } header: {
-            Text("Places")
-        } footer: {
-            Text("Sessions starting within \(Int(SpotClusterer.defaultRadiusM)) m of each "
-                 + "other are one spot. Names come from the map when the network allows; "
-                 + "rename any of them and it sticks.")
-        }
-    }
+    // The "Places → Spots" section used to sit here, and that was the whole problem
+    // (app-ui-review.md §6.1): reaching it meant the gear icon, then scrolling past the
+    // help rows, the intervals.icu key field, the sync section and the watch section — for
+    // a dimension that is a top-level filter chip on *both* Records and Trends. It now has
+    // two first-class homes, both of them where the rider already is: a section at the top
+    // of the Gear tab, which is the tab that owns named things sessions reference, and a
+    // "Manage spots…" row inside the spot filter menu itself, so the chip that filters by
+    // spot is the chip that manages them.
 
     /// The one engine parameter the rider owns (docs/algorithms.md "Default turn type").
     ///

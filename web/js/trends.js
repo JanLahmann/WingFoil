@@ -17,9 +17,15 @@ import { C, esc, figureWidth, hideTip, hms, int, isNarrow, nf, showTip, svg } fr
 
 const el = (id) => document.getElementById(id);
 
+// A line's `role` (set in lab_bundle/library.py) picks its ink. `primary`/`secondary` are
+// the app's own two blues for a metric with no vocabulary of its own; the two `side.*`
+// roles exist because a chart about ENTRY TACK must not borrow one that means something
+// else — see docs/presentation.md "Entry tack" and app-ui-review.md §5.2.
 const ROLE = {
   primary: { color: C.foil, dash: null, width: 1.9 },
   secondary: { color: C.tint, dash: "5 3", width: 1.7 },
+  sidePort: { color: C.sidePort, dash: null, width: 1.9 },
+  sideStarboard: { color: C.sideStarboard, dash: "5 3", width: 1.7 },
 };
 
 let hooks = { openRecord: () => {}, openSession: () => {} };

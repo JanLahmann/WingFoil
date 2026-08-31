@@ -22,7 +22,9 @@ import { C, OUTCOME_COLOR, OUTCOME_LABEL, SVGNS, clockAt, esc, hms, int, marker,
 // split into viz.js is an internal arrangement of the rendering layer.
 export { C, clockAt, esc, figureWidth, hideTip, hms, int, isNarrow, nf, sessionDate,
          showTip, svg } from "./viz.js";
-export { clearPlayhead, closePopover, resetSession } from "./session.js";
+// `renderFigures` travels with them because js/sections.js needs the figures redrawn on
+// their own, without the two long tables being rebuilt for nothing (see wireSections).
+export { clearPlayhead, closePopover, renderFigures, resetSession } from "./session.js";
 
 const el = (id) => document.getElementById(id);
 

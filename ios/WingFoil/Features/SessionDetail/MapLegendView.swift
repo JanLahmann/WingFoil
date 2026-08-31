@@ -9,13 +9,22 @@ import WingFoilKit
 /// and outlined with a dashed capsule — so turning a category back on never requires
 /// finding a settings screen. A category this session has no instances of is drawn the way
 /// it always was: subdued and inert, since there is nothing to hide.
+///
+/// **The chips are the control; the explanation is behind the `?`.** Three grey paragraphs
+/// of legend documentation used to sit under them on every visit to every session —
+/// ~115 pt of a 956 pt phone screen, above the fold, telling a rider something he learned
+/// the first time (`app-ui-review.md` §1.2). The words are unchanged, they now live in the
+/// `mapLegend` help topic, and the one genuinely session-specific fact that was buried in
+/// them — how many attempts failed — moved to the takeoff card, which is where a number
+/// about takeoffs belongs.
 struct MapLegendView: View {
     let detail: SessionDetail
     /// The GP3S effort currently highlighted, which is what the `.effort` chip is labelled
     /// with. No effort selected ⇒ no chip, rather than a chip with nothing to name.
     let effort: SessionDetail.RecordEffort?
-    /// True on the full-screen map, where the legend floats over the map and the
-    /// explanatory captions would cover the water.
+    /// True on the full-screen map, where the legend floats over the water on a material
+    /// strip. It drops the `?`: the help sheet would cover the map the rider just went
+    /// full-screen to look at, and the same button is one back-swipe away on the session.
     var compact = false
 
     @Environment(SessionStore.self) private var store
@@ -32,46 +41,9 @@ struct MapLegendView: View {
         VStack(alignment: .leading, spacing: 6) {
             lineRow
             if hasMarkers { markerRow }
-            if !compact {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(caption)
-                    if let note = takeoffNote { Text(note) }
-                }
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .fixedSize(horizontal: false, vertical: true)
-            }
         }
         .font(.caption2)
         .foregroundStyle(.secondary)
-    }
-
-    private var caption: String {
-        var text = "Tap a chip to hide or show it on the map and chart."
-        if !detail.segments.isEmpty {
-            text += " Chevrons point the way you were riding."
-        }
-        if !detail.markers.isEmpty {
-            text += " Solid = maneuver outcome · hollow = straight-line flight end."
-        }
-        return text
-    }
-
-    /// The takeoff chip now toggles two kinds of mark, and a legend that named only one of
-    /// them would leave the reader guessing what the red arrow means.
-    ///
-    /// This note used to apologize: the failed attempts were counted and "carried no
-    /// position". Engine 0.3.0 serializes the pumping episodes, so they carry a timestamp
-    /// and therefore a place on the water — the sentence is now a key rather than a caveat.
-    /// The count still comes from `summary.takeoff.failedAttempts` rather than from the
-    /// marks: a mark is missing wherever the GPS had no fix, and the number the rider is
-    /// owed is how often he tried, not how often we could draw it.
-    private var takeoffNote: String? {
-        let failed = detail.analysis.summary.takeoff.failedAttempts
-        guard failed > 0 else { return nil }
-        return "Takeoff carries both halves of an attempt: arrow up = got up, "
-            + "red u-turn = did not. \(failed) failed attempt"
-            + "\(failed == 1 ? "" : "s") this session."
     }
 
     // MARK: - Rows
@@ -90,6 +62,10 @@ struct MapLegendView: View {
                      label: effort.label.lowercased())
             }
             if !visibility.isEverythingVisible { showAllButton }
+            // Last in the flow rather than in a heading of its own: it is a chip-sized
+            // affordance among chips, it wraps with them on a narrow phone, and it costs
+            // one line where the prose it replaced cost three paragraphs (§1.2).
+            if !compact { HelpButton(topic: .mapLegend, size: .caption) }
         }
     }
 

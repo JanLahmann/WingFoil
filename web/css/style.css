@@ -140,6 +140,15 @@ main > div[hidden], [hidden] { display: none !important; }
 }
 .views button[aria-current=page] .count { background: var(--surface-2); color: var(--ink-2); }
 
+/* --------------------------------------------------------- session sections */
+
+/* The session view's second-level switcher (js/sections.js). `display: none` here is the
+   DESKTOP BEHAVIOUR, not a fallback: app-ui-review.md §3.4 lists tabbing the desktop web
+   session view under "deliberately not recommended" — at 1120 px it is a document, and the
+   34-row turns table and the 23-row flight-ends table want the continuous page. The chips
+   exist only inside the phone block below. */
+.sections { display: none; }
+
 /* --------------------------------------------------------------- update banner */
 
 .update-banner {
@@ -201,6 +210,19 @@ input:focus-visible, button:focus-visible, .btn:focus-visible, .dropzone:focus-v
 .drop-icon { width: 40px; height: 40px; color: var(--ink-3); }
 .drop-title { font-size: 16px; }
 .privacy { font-size: 12.5px; color: var(--ink-3); }
+/* "…or try the example session". Subordinate to the real intake above it — this is the
+   way in for a visitor with no .fit file to hand, not the way in. */
+.drop-alt { font-size: 13.5px; color: var(--ink-2); }
+.drop-alt .dim { color: var(--ink-3); }
+.dropzone.compact .drop-alt { display: none; }
+/* A button that reads as a link: it is a real <button> because it runs script rather than
+   navigating, and the underline is what says it is pressable at that size. */
+.linkish {
+  background: none; border: 0; padding: 0; font: inherit; color: var(--series-1);
+  text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.linkish:hover { color: #6fa9ea; }
+.linkish:disabled { color: var(--ink-3); cursor: default; text-decoration: none; }
 
 /* ------------------------------------------------------------------ panels */
 
@@ -247,7 +269,22 @@ input:focus-visible, button:focus-visible, .btn:focus-visible, .dropzone:focus-v
 .steps li[data-state=done] { color: var(--ink-2); }
 .steps li[data-state=done] .dot { border-color: var(--good); background: var(--good); }
 .steps .detail { font: 12px var(--mono); color: var(--ink-3); }
+/* The elapsed clock. Same ink as the step it sits in when that step is active, so the
+   number a stalled-looking page is judged by is the readable thing on the card. */
+.steps .elapsed {
+  margin-left: 8px; font-variant-numeric: tabular-nums; color: var(--ink-2);
+}
+.steps li[data-state=active] .elapsed { color: var(--ink); }
 @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+
+/* The card's footer: what to expect on the left, the way out on the right. Wraps to two
+   rows on a phone, where the Cancel button then goes full width like every other one. */
+.progress-foot {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap; margin-top: 14px;
+}
+.progress-foot > div { display: grid; gap: 4px; flex: 1 1 260px; }
+.progress-foot p { margin: 0; }
 
 /* ------------------------------------------------------------------- tiles */
 
@@ -268,11 +305,18 @@ input:focus-visible, button:focus-visible, .btn:focus-visible, .dropzone:focus-v
 }
 /* The outcome ladder is a verdict scale and the tally is a verdict, so it carries the
    ladder's own inks straight from design/tokens.json (docs/presentation.md). The dots
-   between them are not part of the scale and stay recessive. */
-.key .tally .flew { color: var(--wf-outcome-flew); }
-.key .tally .touchdown { color: var(--wf-outcome-touchdown); }
-.key .tally .fell { color: var(--wf-outcome-fell-in); }
-.key .tally i { color: var(--ink-3); font-style: normal; margin: 0 5px; }
+   between them are not part of the scale and stay recessive.
+
+   Written unscoped rather than under `.key`, because the library table's `outcomes`
+   column draws the same three numbers on the same three inks (app-ui-review.md §5.6) and
+   two copies of a colour rule is how the two surfaces come to disagree. */
+.tally .flew { color: var(--wf-outcome-flew); }
+.tally .touchdown { color: var(--wf-outcome-touchdown); }
+.tally .fell { color: var(--wf-outcome-fell-in); }
+.tally i { color: var(--ink-3); font-style: normal; margin: 0 5px; }
+/* Tighter between the table's columns than in the key-metrics block, where the tally is
+   a headline with a whole cell to itself. */
+.lib-table .tally i { margin: 0 3px; }
 
 .tiles {
   display: grid; gap: 1px; background: var(--line-soft);
@@ -530,6 +574,26 @@ footer {
   #icu-toggle { order: 2; min-height: var(--tap); }
   #engine-chip { order: 1; }
 
+  /* --- the session section chips: the same control family as .views, one level down.
+     Identical trough, radius and active treatment, so the row below the view tabs reads as
+     the same kind of choice about a smaller thing (app-ui-review.md §3.4). Full width with
+     an equal share each and the --tap floor, because §7.1's rule holds here too: anything
+     you tap is at least 44 px. A quarter of a 375 px screen is ~75 px of label, which is
+     what "Map · Speed" measures at 12.5 px with nothing to spare — so the type is a point
+     smaller than the view tabs' and the chip is allowed to wrap to a second line rather
+     than clip. Two lines at 1.2 still sit inside the 44 px box. */
+  .sections {
+    display: flex; gap: 2px; margin: 14px 0;
+    background: var(--surface-2); border-radius: 8px; padding: 3px;
+  }
+  .sections button {
+    flex: 1 1 0; min-width: 0; background: transparent; color: var(--ink-3); border: 0;
+    border-radius: 6px; padding: 0 5px; min-height: var(--tap);
+    display: inline-flex; align-items: center; justify-content: center;
+    font: 600 12.5px/1.2 var(--sans); text-align: center;
+  }
+  .sections button[aria-current=page] { background: var(--surface-0); color: var(--ink); }
+
   main { padding-top: 16px; padding-bottom: 28px; }
   main > div { gap: 14px; }
   .panel { padding: 14px; border-radius: 8px; }
@@ -546,6 +610,13 @@ footer {
   .dropzone { padding: 22px 14px; }
   .dropzone .btn { width: 100%; }
   .drop-hint { width: 100%; }
+  /* The example link is a real tap target (the 44 px minimum still applies) but it sits
+     inside a sentence, so it keeps its inline metrics rather than the button padding —
+     14 px of side padding on a word mid-sentence reads as a typo, not as a control. */
+  .linkish { min-height: var(--tap); padding: 0; }
+  /* Cancel goes full width like every other phone-width action: it is the only way out of
+     a several-minute analysis and it should not be a small target. */
+  .progress-foot button { width: 100%; }
 
   /* --- iOS zooms the whole page when a focused input is under 16px. */
   input[type=text], input[type=password] { font-size: 16px; min-width: 0; width: 100%; }

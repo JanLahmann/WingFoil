@@ -54,6 +54,15 @@ public enum DesignTokens {
         public static let ink = Color.primary
     }
 
+    /// Entry tack. A side is not a verdict, so it may borrow neither the ladder nor the
+    /// effort inks: one hue at two intensities, and the quieter half is dashed.
+    public enum Side {
+        /// port ENTRY tack — a side, never a verdict, so deliberately outside the ladder
+        public static let port = Color.brown
+        /// starboard ENTRY tack — the same hue at a second lightness, plus a dashed stroke
+        public static let starboard = Color.brown.opacity(0.55)
+    }
+
     /// Opacities the chevrons are drawn at, per phase (web uses its own).
     public enum Opacity {
         public static let directionWeb: Double = 0.42
@@ -89,6 +98,8 @@ public enum DesignTokens {
         public static let phaseFlying = "#40c8e0"
         public static let phaseOffFoil = "#97979d"
         public static let directionInk = "#c3c2b7"
+        public static let sidePort = "#a38054"
+        public static let sideStarboard = "#d9b9a3"
     }
 
     /// The record picker: canonical order, display labels, and the window every
