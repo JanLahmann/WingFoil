@@ -220,7 +220,21 @@ def check_attribution() -> None:
         e.pop("schema")
     check("  a schema-1 library is unchanged", library.aggregate(old)["count"], 2)
     check("  digest stamps the current schema",
-          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 2)
+          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 3)
+
+    # Schema 3 (engine 0.8.2): the session's own UTC offset, and the local calendar date it
+    # implies. `dateUtc` stays what it always was — the UTC day — so an entry written before
+    # this existed still reads correctly; `dateLocal` is the day the *rider* had, and it is
+    # what the trend rows and the x-axis ticks name.
+    doc = {"golden": {}, "meta": {"startUtc": "2026-08-30T22:40:00+00:00", "utcOffsetS": 7200}}
+    tz = library.digest(doc, "late.fit")
+    check("  digest carries the session's own offset", tz["utcOffsetS"], 7200)
+    check("  dateUtc stays the UTC day", tz["dateUtc"], "2026-08-30")
+    check("  dateLocal is the day the rider had", tz["dateLocal"], "2026-08-31")
+    none = library.digest({"golden": {}, "meta": {"startUtc": "2026-08-30T22:40:00+00:00"}},
+                          "unknown.fit")
+    check("  no offset -> no local date rather than a guessed one", none["dateLocal"], None)
+    check("  no offset -> null, never a zero that reads as UTC", none["utcOffsetS"], None)
 
 
 # --------------------------------------------------------------- 2-4. the FIT corpus

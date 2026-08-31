@@ -13,7 +13,8 @@
  */
 
 import { ask } from "./rpc.js";
-import { C, esc, figureWidth, hideTip, hms, int, isNarrow, nf, showTip, svg } from "./render.js";
+import { C, esc, figureWidth, hideTip, hms, int, isNarrow, nf, showTip, svg,
+         zonedFormat } from "./render.js";
 
 const el = (id) => document.getElementById(id);
 
@@ -146,7 +147,7 @@ function renderRecords(table, records) {
         <td class="l stack-lead" data-th="record">${esc(r.label)}</td>
         <td data-th="value"><strong>${nf(r.value, 2)}</strong> <span class="dim">${esc(r.unit)}</span></td>
         <td class="l" data-th="session">${esc(r.spot || r.fileName || r.id)}</td>
-        <td class="l dim" data-th="date">${esc(r.dateUtc || "—")}</td>
+        <td class="l dim" data-th="date">${esc(localDate(r) || "—")}</td>
         <td class="l stack-actions" data-th=""><button class="ghost small-btn" data-act="record"
           data-id="${esc(r.id)}">Show the window</button></td>
       </tr>`).join("")}</tbody>`;
@@ -196,7 +197,7 @@ function drawChart(host, chart, sessions) {
       "text-anchor": narrow && first ? "start" : narrow && last ? "end" : "middle",
       "font-size": 10.5, fill: C.ink3,
     }, root);
-    t.textContent = tickLabel(s.startUtc);
+    t.textContent = tickLabel(s);
   });
 
   chart.lines.forEach((line, li) => {
@@ -225,7 +226,7 @@ function drawChart(host, chart, sessions) {
       dot.dataset.session = p.id;
       dot.style.cursor = "pointer";
       const s = sessions[p.i] || {};
-      const html = `<b>${esc(s.spot || s.id)}</b><br>${esc(s.dateUtc || "")}<br>` +
+      const html = `<b>${esc(s.spot || s.id)}</b><br>${esc(localDate(s))}<br>` +
                    `${esc(chart.label)} · ${esc(line.label)}: ` +
                    `<b>${nf(p.v, 2)}</b> ${esc(chart.unit)}`;
       dot.addEventListener("pointerenter", (ev) => showTip(ev, html));
@@ -250,9 +251,17 @@ function drawChart(host, chart, sessions) {
   });
 }
 
-const tickLabel = (utc) => (utc
-  ? new Date(utc).toLocaleDateString("en-GB", { month: "short", day: "2-digit" })
+/** An x-axis tick: the day the *rider* had, not the day UTC had. `s` is the session stamp
+ *  (`library._stamp`), which carries the instant and the offset it was recorded at. */
+const tickLabel = (s) => (s && s.startUtc
+  ? zonedFormat(s.startUtc, s.utcOffsetS, { month: "short", day: "2-digit" })
   : "—");
+
+/** The calendar date a row or a tooltip names. `dateLocal` is the session's own day
+ *  (library.py, engine 0.8.2); `dateUtc` is the fallback for a digest saved before that
+ *  field existed, and is the UTC day — right for most sessions, a day out for one either
+ *  side of midnight. */
+const localDate = (s) => (s && (s.dateLocal || s.dateUtc)) || "";
 
 /* ---------------------------------------------------------------------- actions */
 

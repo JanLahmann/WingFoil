@@ -534,7 +534,7 @@ export async function drawCard(canvas, content, shape) {
 export function cardContent(result, preset) {
   return {
     title: cardTitle(result.file?.name),
-    dateLine: cardDateLine(result.meta?.startUtc),
+    dateLine: cardDateLine(result.meta),
     stats: cardStats(result.golden, preset),
     disclaimer: cardDisclaimer(result.meta),
     track: buildTrack(result),
@@ -576,7 +576,7 @@ export function openShareCard(result) {
   state.shape = saved.shape;
   state.preset = saved.preset;
   el("card-sub").textContent =
-    `${cardTitle(result.file?.name)} · ${cardDateLine(result.meta?.startUtc)}`;
+    `${cardTitle(result.file?.name)} · ${cardDateLine(result.meta)}`;
   // Only offered where it works: `canShare` with a file is the WhatsApp path on a phone,
   // and a "Share…" button that silently does nothing on a desktop browser is worse than no
   // button at all. Re-tested on every open, because a page can be opened on either.

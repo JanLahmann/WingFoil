@@ -17,7 +17,7 @@
  * Drawing lives in js/sharecard.js. Nothing here knows what a canvas is.
  */
 
-import { int, nf } from "./viz.js";
+import { int, nf, zonedFormat } from "./viz.js";
 
 /* -------------------------------------------------------------------- branding
  *
@@ -95,13 +95,42 @@ export const LEAN_KEYS = new Set(["duration", "distance", "max2s", "tally"]);
 
 /* ---------------------------------------------------------------- the entries */
 
-/** `1:57` — hours and minutes, which is how long a session is talked about. Rounded to the
- *  nearest minute, not truncated: `0:00` over a recording that exists reads as a failure to
- *  measure. Twin of `KeyMetrics.hoursMinutes`. */
+/**
+ * How long the session was: `1:57 h` past an hour, `10:45 min` under one.
+ *
+ * **Why the short form exists.** The block used to be `h:mm` at every length, so a ten
+ * minute forty-five second session printed **`0:11`** — the two most interesting digits
+ * rounded away, and a leading zero where the number should be. That is survivable on a
+ * page the rider can scroll past; it is not survivable on the share card, which is a PNG
+ * in somebody else's chat thread with no re-render and nothing beside it to check against.
+ * A short session is exactly the kind a rider shares ("first flight!"), and `0:11` is the
+ * one string that makes it look like nothing happened.
+ *
+ * **Why the unit rides inside the value.** Every other cell in this block carries its own
+ * unit in the big type — `2.6 km`, `13.47 kn` — so a duration doing the same is the
+ * block's own habit, not a special case. It also settles the ambiguity the bare digits
+ * create: `10:45` under the word "duration" reads as ten and three quarter *hours* just as
+ * easily as it reads as ten and three quarter minutes, and at cell size, on a card, with
+ * no second number to calibrate against, there is nothing to resolve it. `10:45 min`
+ * cannot be misread, and needs no caption to say so — which matters, because the caption
+ * slot on the card is a layout affordance the tally already owns.
+ *
+ * Both forms keep `m:ss`/`h:mm` colon arithmetic rather than "10 m 45 s": the colon is
+ * what a clock looks like, it stays narrow at 75 px type, and it is the same shape the
+ * flight table and the replay caption already print (`FlightPairing.clock`).
+ *
+ * Rounded to the nearest minute above the hour and to the nearest second below it — never
+ * truncated, in both cases for the same reason: `0:00` over a recording that exists reads
+ * as a failure to measure. Twin of `KeyMetrics.duration`.
+ */
 export function hm(sec) {
   if (sec === null || sec === undefined) return "—";
-  const m = Math.max(0, Math.round(sec / 60));
-  return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`;
+  const total = Math.max(0, Math.round(sec));
+  if (total >= 3600) {
+    const m = Math.round(total / 60);
+    return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")} h`;
+  }
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")} min`;
 }
 
 /**
@@ -230,11 +259,15 @@ export function cardTitle(fileName) {
   return words.map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
 }
 
-/** `7 August 2026`, in the reader's own timezone — the same line `ShareCardStats.dateLine`
- *  writes. Fixed to en-GB so a card exported anywhere spells the month the same way. */
-export function cardDateLine(startUtc) {
-  if (!startUtc) return "";
-  return new Date(startUtc).toLocaleDateString("en-GB",
+/** `7 August 2026`, on the **session's** own clock — the same line `ShareCardStats.dateLine`
+ *  writes. Fixed to en-GB so a card exported anywhere spells the month the same way, and
+ *  dated by `meta.utcOffsetS` so a card exported anywhere is dated the same way too: a PNG
+ *  in somebody else's chat thread has no way to correct itself, and a session that started
+ *  at 00:30 in Torbole must not be published under the previous day because the exporter
+ *  happened to be sitting in London. */
+export function cardDateLine(meta) {
+  if (!meta || !meta.startUtc) return "";
+  return zonedFormat(meta.startUtc, meta.utcOffsetS,
     { day: "numeric", month: "long", year: "numeric" });
 }
 
