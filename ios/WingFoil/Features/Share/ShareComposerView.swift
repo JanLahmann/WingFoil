@@ -2,27 +2,53 @@ import PhotosUI
 import SwiftUI
 import WingFoilKit
 
-/// Builds a shareable image of one session: pick an aspect, optionally drop one of your
-/// own photos behind it, export.
+/// The two ways one session leaves the phone: as a picture, or as the recording itself.
 ///
+/// **The card** — pick an aspect, optionally drop one of your own photos behind it, export.
 /// `PhotosPicker` runs out of process, so there is no photo-library permission prompt and
 /// the app never gains access to anything the rider did not hand it. The picked image is
 /// held in memory for the render and nothing is written anywhere until the share sheet
 /// exports it.
+///
+/// **The file** — the archived `original.fit`, run through `FitShareFilter` so the copy
+/// that leaves carries no serial number, no rider profile and no paired-accessory name.
+/// The accelerometer stream is dropped by default: it is 95 % of the bytes, it is only
+/// needed to recount pump strokes, and a 43 KB attachment goes through a chat app that a
+/// 1 MB one does not.
+///
+/// The two live behind one switcher rather than two entry points because they answer the
+/// same request — "send this to someone" — and the difference is only what the someone is
+/// meant to do with it: look at it, or open it in an app of their own.
 struct ShareComposerView: View {
     let row: SessionRow
     /// The already-loaded detail, when the screen has it: the card's outline then comes
     /// from geometry that is in memory rather than from a second FIT parse.
     var detail: SessionDetail?
 
+    /// What the sheet is currently offering.
+    private enum Payload: String, CaseIterable, Identifiable {
+        case card, fit
+
+        var id: String { rawValue }
+        var label: String { self == .card ? "Card" : "FIT file" }
+    }
+
     @Environment(\.dismiss) private var dismiss
     @Environment(ThumbnailStore.self) private var thumbnails
+    @Environment(SessionStore.self) private var store
 
+    @State private var payload = Payload.card
     @State private var shape = ShareCardStats.Shape.portrait
     @State private var pickedItem: PhotosPickerItem?
     @State private var photo: Image?
     @State private var photoFailed = false
     @State private var rendered: Image?
+    /// Width the sheet has for the preview; 0 until the first layout pass.
+    @State private var availableWidth: CGFloat = 0
+    /// Off by default — see the type comment. Flipping it re-runs the scrub.
+    @State private var includeAccelerometer = false
+    @State private var fitFile: (url: URL, bytes: Int)?
+    @State private var fitFailure: String?
 
     private var stats: ShareCardStats {
         ShareCardStats.make(row: row, title: SessionDisplay.title(row))
@@ -41,36 +67,15 @@ struct ShareComposerView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
-                    card
-                        .clipShape(.rect(cornerRadius: 18))
-                        .shadow(radius: 10, y: 4)
-                        .padding(.top, 4)
-
-                    Picker("Shape", selection: $shape) {
-                        ForEach(ShareCardStats.Shape.allCases) { Text($0.label).tag($0) }
+                    Picker("Share", selection: $payload) {
+                        ForEach(Payload.allCases) { Text($0.label).tag($0) }
                     }
                     .pickerStyle(.segmented)
 
-                    photoControls
-
-                    if let rendered {
-                        ShareLink(item: rendered,
-                                  preview: SharePreview(stats.title, image: rendered)) {
-                            Label("Share card", systemImage: "square.and.arrow.up")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
-                    } else {
-                        ProgressView().frame(maxWidth: .infinity, minHeight: 44)
+                    switch payload {
+                    case .card: cardSection
+                    case .fit: fitSection
                     }
-
-                    Text("The card is rendered at \(Int(shape.size.width)) × "
-                         + "\(Int(shape.size.height)) px. Nothing is uploaded — the image is "
-                         + "handed straight to the share sheet.")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 28)
@@ -87,11 +92,147 @@ struct ShareComposerView: View {
             // on a shape flip rather than caching two of them.
             .task(id: renderKey) { render() }
             .task(id: pickedItem) { await loadPhoto() }
+            // The scrub is a full FIT rewrite, so it runs off the main actor and only for
+            // the tab that needs it — opening the sheet on the card must not pay for it.
+            .task(id: fitKey) { await prepareFIT() }
+            #if DEBUG && targetEnvironment(simulator)
+            // Screenshot hooks, same family as `UI_SHEET=share` that opened this sheet:
+            // `simctl` can neither flip the switcher nor pick an aspect.
+            .task {
+                let environment = ProcessInfo.processInfo.environment
+                if environment["UI_SHARE"] == "fit" { payload = .fit }
+                if let raw = environment["UI_SHAPE"],
+                   let wanted = ShareCardStats.Shape(rawValue: raw) { shape = wanted }
+            }
+            #endif
         }
     }
 
+    // MARK: - The card
+
+    @ViewBuilder
+    private var cardSection: some View {
+        cardPreview
+            .padding(.top, 4)
+
+        Picker("Shape", selection: $shape) {
+            ForEach(ShareCardStats.Shape.allCases) { Text($0.label).tag($0) }
+        }
+        .pickerStyle(.segmented)
+
+        photoControls
+
+        if let rendered {
+            ShareLink(item: rendered,
+                      preview: SharePreview(stats.title, image: rendered)) {
+                Label("Share card", systemImage: "square.and.arrow.up")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+        } else {
+            ProgressView().frame(maxWidth: .infinity, minHeight: 44)
+        }
+
+        Text("The card is rendered at \(Int(shape.size.width)) × "
+             + "\(Int(shape.size.height)) px. Nothing is uploaded — the image is "
+             + "handed straight to the share sheet.")
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+    }
+
+    // MARK: - The recording
+
+    @ViewBuilder
+    private var fitSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Scrubbed before it leaves", systemImage: "person.crop.circle.badge.xmark")
+                .font(.subheadline.weight(.semibold))
+            Text("The copy you send carries the track, the speeds, the heart rate and every "
+                 + "lap — but no watch serial number, no rider profile (name, weight, "
+                 + "height) and no paired-accessory name. The original in your library is "
+                 + "never touched.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 14))
+
+        Toggle(isOn: $includeAccelerometer) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Include accelerometer data")
+                Text("The 100 Hz stream is 95 % of the file and only needed to recount "
+                     + "pump strokes. Off keeps the attachment small enough for a chat app.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+
+        if let fitFile {
+            ShareLink(item: fitFile.url,
+                      subject: Text(SessionDisplay.title(row)),
+                      message: Text(Self.invitation)) {
+                Label("Share \(fitFile.url.lastPathComponent) · "
+                      + "\(Fmt.bytes(Int64(fitFile.bytes)))",
+                      systemImage: "square.and.arrow.up")
+                    .frame(maxWidth: .infinity)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+        } else if let fitFailure {
+            Label(fitFailure, systemImage: "exclamationmark.triangle")
+                .font(.footnote)
+                .foregroundStyle(.orange)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            ProgressView().frame(maxWidth: .infinity, minHeight: 44)
+        }
+
+        Text(Self.invitation)
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+    }
+
+    /// Goes with the file, so a receiver with no app still has somewhere to open it: the
+    /// web app reads the same FIT with the same engine, in a browser, without an account.
+    private static let invitation =
+        "WingFoil session — analyze it free in the browser at "
+        + "https://janlahmann.github.io/WingFoil (no account needed)."
+
     private var renderKey: String {
         "\(shape.rawValue)|\(photo == nil ? "plain" : "photo")|\(thumbnail == nil ? 0 : 1)"
+    }
+
+    /// Only the two things that change the bytes: which tab is showing (so the scrub is
+    /// never paid for on the card) and whether the high-rate stream stays in.
+    private var fitKey: String { "\(payload.rawValue)|\(includeAccelerometer)" }
+
+    /// The card at whatever size the sheet has room for.
+    ///
+    /// `ShareCardView` lays itself out at a *fixed* size — its export size over
+    /// `renderScale` — because that is what makes the exported pixels land exactly on the
+    /// shape's dimensions. A shape wider than the phone therefore has to be scaled down for
+    /// the preview rather than made flexible: a card that reflowed to fit the sheet would
+    /// not be the card that gets exported.
+    ///
+    /// The width is measured on the outer, full-width frame, so the measurement cannot
+    /// chase the scale it feeds.
+    private var cardPreview: some View {
+        let scale = availableWidth > 0 ? min(1, availableWidth / card.size.width) : 1
+        return card
+            .clipShape(.rect(cornerRadius: 18))
+            .shadow(radius: 10, y: 4)
+            .scaleEffect(scale)
+            .frame(width: card.size.width * scale, height: card.size.height * scale)
+            .frame(maxWidth: .infinity)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { availableWidth = $0 }
     }
 
     /// The picker's label is built from a plain `String` captured *outside* the closure:
@@ -137,6 +278,18 @@ struct ShareComposerView: View {
         renderer.isOpaque = true
         if let image = renderer.uiImage {
             rendered = Image(uiImage: image)
+        }
+    }
+
+    private func prepareFIT() async {
+        guard payload == .fit else { return }
+        fitFile = nil
+        fitFailure = nil
+        do {
+            fitFile = try await store.shareableFIT(for: row,
+                                                   includeAccelerometer: includeAccelerometer)
+        } catch {
+            fitFailure = "This recording cannot be shared: \(error)"
         }
     }
 
