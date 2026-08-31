@@ -100,7 +100,7 @@ public struct IcuClient: Sendable {
     public static let nameKeywords = ["wing", "foil", "windsurf", "kite", "surf", "sup"]
 
     public static let defaultBaseURL = URL(string: "https://intervals.icu/api/v1")!
-    static let userAgent = "WingFoil-iOS/0.1 (personal use)"
+    static let userAgent = "CleanJibe-iOS/0.1 (personal use)"
 
     public let apiKey: String
     public let baseURL: URL

@@ -65,7 +65,7 @@ struct SettingsView: View {
                 dismiss()
                 store.replayWelcome()
             } label: {
-                Label("What WingFoil does", systemImage: "hand.wave")
+                Label("What CleanJibe does", systemImage: "hand.wave")
             }
             NavigationLink {
                 HelpIndexPage()
@@ -164,7 +164,7 @@ struct SettingsView: View {
             Text(store.apiKey.isEmpty
                  ? "Add your intervals.icu API key above first — the check is a call to "
                    + "your account."
-                 : "While the phone is idle, WingFoil asks intervals.icu whether a new "
+                 : "While the phone is idle, CleanJibe asks intervals.icu whether a new "
                    + "windsurf, wing, kite, surf or SUP activity has arrived, and tells you "
                    + "about the ones that are not in your library yet. The session is "
                    + "downloaded and analysed in the background where there is time for it, "
@@ -229,7 +229,7 @@ struct SettingsView: View {
             Text("Off by default. Each session is written as a **Surfing** workout — the "
                  + "closest type Apple Health offers, since it has no wingfoil or windsurf "
                  + "activity — carrying the discipline, foil share, flights and best 2 s in "
-                 + "its metadata. WingFoil never reads health data.")
+                 + "its metadata. CleanJibe never reads health data.")
         }
     }
 

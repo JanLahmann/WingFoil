@@ -35,9 +35,9 @@ public enum IcuSetupGuide {
     /// Why the detour through intervals.icu exists at all — Garmin has no open API for a
     /// personal app, so this is the supported way to get your own FITs onto the phone.
     public static let rationale =
-        "WingFoil reads your sessions through intervals.icu. Garmin has no open API for a "
+        "CleanJibe reads your sessions through intervals.icu. Garmin has no open API for a "
         + "personal app, so intervals.icu is the bridge: it receives every activity from "
-        + "Garmin Connect automatically and hands WingFoil the original recording. It is "
+        + "Garmin Connect automatically and hands CleanJibe the original recording. It is "
         + "free, it takes about five minutes to set up, and you only do it once."
 
     /// The same point in one breath, for the setup card — where the four steps below it
@@ -74,9 +74,9 @@ public enum IcuSetupGuide {
 
         IcuSetupStep(
             number: 4,
-            title: "Paste the key into WingFoil",
+            title: "Paste the key into CleanJibe",
             detail: "Paste it into the field below (in the app it also lives under "
-                + "Settings → intervals.icu) and tap Save & check. WingFoil verifies the "
+                + "Settings → intervals.icu) and tap Save & check. CleanJibe verifies the "
                 + "key straight away and says how many activities it can see.",
             action: .openIcuSettings),
     ]
@@ -85,7 +85,7 @@ public enum IcuSetupGuide {
     /// a secret you are asked to paste deserves an answer before you have to ask.
     public static let privacyNote =
         "Your API key is stored in this iPhone's Keychain. It is never copied to iCloud, "
-        + "never sent to any WingFoil server — there isn't one — and never written to a "
+        + "never sent to any CleanJibe server — there isn't one — and never written to a "
         + "log. The only place it is ever sent is intervals.icu itself, over HTTPS, to ask "
         + "for your own activities. Clear the field in Settings to remove it, or regenerate "
         + "it in intervals.icu, which makes the old one useless."
@@ -99,7 +99,7 @@ public enum IcuSetupGuide {
         .init(term: "The sync succeeds but the list stays empty",
               detail: "Either Garmin is not connected in intervals.icu yet (Settings → "
                   + "device connections — the back-fill takes a few minutes), or none of "
-                  + "your activities is a watersport yet. WingFoil only pulls Windsurf, "
+                  + "your activities is a watersport yet. CleanJibe only pulls Windsurf, "
                   + "Kitesurf, Sail, Surfing and SUP activities, plus anything whose name "
                   + "mentions wing, foil, surf, kite or SUP."),
         .init(term: "\"Could not reach intervals.icu\"",

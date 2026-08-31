@@ -24,6 +24,6 @@ enum Brand {
         startPoint: .topLeading, endPoint: .bottomTrailing)
 
     /// Confetti colours — the palette plus the outcome green/amber, so a burst reads as
-    /// "WingFoil" rather than as generic party stock.
+    /// "CleanJibe" rather than as generic party stock.
     static let celebration: [Color] = [green, cyan, lime, .orange, paper]
 }

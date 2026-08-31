@@ -931,7 +931,7 @@ final class SessionStore {
         guard await ActivityNotifier.shared.requestAuthorization() else {
             UserDefaults.standard.set(false, forKey: ActivityNotifier.enabledKey)
             errorMessage = "iOS did not grant permission to send notifications. "
-                + "Turn them on in Settings → Notifications → WingFoil and try again."
+                + "Turn them on in Settings → Notifications → CleanJibe and try again."
             return
         }
         ActivityNotifier.shared.enable()
@@ -1031,7 +1031,7 @@ final class SessionStore {
         isShowingWelcome = true
     }
 
-    /// "What WingFoil does", from Settings. Deliberately does **not** touch the flag: this
+    /// "What CleanJibe does", from Settings. Deliberately does **not** touch the flag: this
     /// is a rider asking to read the screen again, which is not the same event as the app
     /// deciding to show it, and re-arming the first run would mean the next launch greeted
     /// him unasked.
@@ -1048,7 +1048,7 @@ final class SessionStore {
 
     /// The deferred half of `replayWelcome`, re-asked on the same hooks as everything else.
     ///
-    /// The wait is the same 400-ish ms the Help sheet's "Open WingFoil Settings" takes, for
+    /// The wait is the same 400-ish ms the Help sheet's "Open CleanJibe Settings" takes, for
     /// the same reason: a sheet's `isPresented` flips to false when its dismissal *starts*,
     /// and a presentation raised into the middle of that animation is one UIKit drops on
     /// the floor without a word. The flag is spent before the sleep, so the hooks firing

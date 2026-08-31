@@ -24,7 +24,7 @@ import Foundation
 public enum ShareText {
 
     /// The title the app falls back to when a recording's filename says nothing. Recognised
-    /// here so the lead-in can decline to lead with it — "Session, 30 August 2026 — WingFoil
+    /// here so the lead-in can decline to lead with it — "Session, 30 August 2026 — CleanJibe
     /// session" is a sentence that says one thing three times.
     public static let unnamedPlace = "Session"
 

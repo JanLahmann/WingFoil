@@ -49,7 +49,7 @@ public struct IcuProblem: Sendable, Equatable, Codable {
     public var message: String {
         switch kind {
         case .noKey:
-            "WingFoil has no intervals.icu key yet, so there is nothing to sync with."
+            "CleanJibe has no intervals.icu key yet, so there is nothing to sync with."
         case .unauthorized:
             "The key is wrong, or it was regenerated in intervals.icu after you pasted it here."
         case .network:
@@ -97,7 +97,7 @@ public struct IcuProblem: Sendable, Equatable, Codable {
 public struct IcuConnectionReport: Sendable, Equatable {
     /// Activities intervals.icu listed in the checked window.
     public let activities: Int
-    /// …of those, the ones WingFoil would actually import.
+    /// …of those, the ones CleanJibe would actually import.
     public let watersports: Int
 
     public init(activities: Int, watersports: Int) {

@@ -199,7 +199,33 @@ tinted by foil state, a dot per **counted** turn on the verdict ladder's inks, a
 barometer's submersion evidence as a cyan **diamond** — shape as well as colour, because a
 splash usually sits on the fell-in verdict it belongs to. Course changes get no dot, by the
 same rule the map draws by. Nothing else from the map's eleven layers survives the shrink.
-The footer carries the app's mark and `Branding.credit`.
+**The footer is a contract of its own, and both platforms print it identically**: the app's
+mark, the wordmark **CleanJibe**, the call to action `analyze your wingfoil sessions free —
+cleanjibe.org`, and a **QR code to `https://cleanjibe.org`** in the trailing corner. The card
+is the declared promotion channel — it leaves the phone as a PNG and is read in somebody
+else's chat by a rider who has never heard of the app — so the footer is the only part of it
+addressed to the receiver rather than to the sender, and it may not differ between the card
+the phone exports and the card the web composes. The strings come from `Branding` in the kit
+(`appName`, `callToAction`, `siteURL`), pinned by test.
+
+Two details of the QR are load-bearing rather than cosmetic and are the same on both
+platforms: it is **dark-on-light with its own light plate**, because the card's background is
+navy or somebody's photo and a decoder needs the light half to be light; and it is drawn at
+**~96 px at 1080 width** from a **nearest-neighbour** upscale with a four-module quiet zone,
+because the generator emits one pixel per module and any smoothing turns every module edge
+into a grey ramp for a decoder to guess at after a chat app has recompressed the picture. iOS
+renders it with `CIQRCodeGenerator` (`ios/WingFoil/Features/Share/BrandQRCode.swift`) at
+correction level M — a short URL, a clean digital image, and bigger modules matter more here
+than damage tolerance.
+
+Note the case, which is deliberate: **CleanJibe** is the brand, *wingfoil* in the call to
+action is the sport. The word WingFoil survives only as the Xcode target, the module and the
+bundle ids (`de.lahmann.wingfoil.*`, unchanged — renaming them would orphan the TestFlight
+build, the BGTask registration and the keychain), and as the name of the **Garmin watch app**,
+which the phone app still refers to by that name where it means that app.
+
+The same footer closes a replay clip (`ReplayClipCards`), which is the frame a viewer is left
+staring at while the clip loops — the one frame worth pointing a camera at.
 
 ## Sections — how a session divides
 
