@@ -135,6 +135,24 @@ import Testing
     @Test func shareCardShapesAreTheDocumentedPixelSizes() {
         #expect(ShareCardStats.Shape.portrait.size == (1080, 1350))
         #expect(ShareCardStats.Shape.square.size == (1080, 1080))
+        #expect(ShareCardStats.Shape.landscape.size == (1920, 1080))
+    }
+
+    /// The renderer switches its whole axis on `isWide` rather than on a case, so the flag
+    /// and the pixels have to agree — a shape that lied here would put the track above the
+    /// stats on a 16:9 card and squash both.
+    @Test func onlyTheWideShapeLaysOutSideBySide() {
+        #expect(ShareCardStats.Shape.landscape.isWide)
+        #expect(!ShareCardStats.Shape.portrait.isWide)
+        #expect(!ShareCardStats.Shape.square.isWide)
+        for shape in ShareCardStats.Shape.allCases {
+            #expect(shape.isWide == (shape.size.width > shape.size.height))
+            #expect(!shape.label.isEmpty)
+        }
+        // The picker shows all three; the card content itself does not vary by shape, so
+        // one set of stats has to survive every aspect.
+        #expect(ShareCardStats.Shape.allCases.count == 3)
+        #expect(Set(ShareCardStats.Shape.allCases.map(\.label)).count == 3)
     }
 
     // MARK: - Key metrics

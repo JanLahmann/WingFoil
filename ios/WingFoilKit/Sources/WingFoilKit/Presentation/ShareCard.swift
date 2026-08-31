@@ -31,6 +31,9 @@ public struct ShareCardStats: Sendable, Equatable {
         case portrait
         /// 1080 × 1080.
         case square
+        /// 1920 × 1080 — the wide format a chat preview, a forum post or a desktop
+        /// screen shows in full instead of cropping to a letterbox.
+        case landscape
 
         public var id: String { rawValue }
 
@@ -38,6 +41,7 @@ public struct ShareCardStats: Sendable, Equatable {
             switch self {
             case .portrait: (1080, 1350)
             case .square: (1080, 1080)
+            case .landscape: (1920, 1080)
             }
         }
 
@@ -45,8 +49,14 @@ public struct ShareCardStats: Sendable, Equatable {
             switch self {
             case .portrait: "Portrait"
             case .square: "Square"
+            case .landscape: "Landscape"
             }
         }
+
+        /// True when the card is wider than it is tall, and the track therefore belongs
+        /// *beside* the stats rather than above them. The renderer asks the shape rather
+        /// than testing for a case, so a fourth aspect lands in the right layout for free.
+        public var isWide: Bool { size.width > size.height }
     }
 
     public let title: String

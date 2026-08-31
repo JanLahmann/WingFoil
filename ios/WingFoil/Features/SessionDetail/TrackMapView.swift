@@ -41,7 +41,7 @@ struct TrackMapView: View {
                                  direction: direction)
                 }
                 .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
-                .frame(height: 260)
+                .figureHeight(regular: 260, compact: 190)
                 .clipShape(.rect(cornerRadius: 14))
                 .onMapCameraChange(frequency: .onEnd) { context in
                     direction.camera(moved: context, detail: detail)
