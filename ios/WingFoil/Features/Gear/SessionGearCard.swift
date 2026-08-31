@@ -23,7 +23,7 @@ struct SessionGearCard: View {
             }
             ForEach(GearKind.allCases) { kind in
                 HStack {
-                    Label(kind.label, systemImage: kind.symbol)
+                    Label { Text(kind.label) } icon: { GearKindIcon(kind: kind, size: 14) }
                         .font(.subheadline)
                         .frame(width: 90, alignment: .leading)
                     Menu {

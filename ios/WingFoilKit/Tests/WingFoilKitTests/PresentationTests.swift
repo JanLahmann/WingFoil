@@ -773,7 +773,8 @@ import Testing
         #expect(card.stats[0].value == "0.76 bpm")
         #expect(card.stats[0].caption == "median 0.75 · 23 of 23 takeoffs")
         #expect(card.stats[1].value == "+5.6 bpm")
-        #expect(card.stats[1].caption == "102 vs 96 bpm on the foil")
+        // One decimal on the operands too — see `hrPumpCruiseDeltaAgreesWithItsOperands`.
+        #expect(card.stats[1].caption == "101.6 vs 96.0 bpm on the foil")
         #expect(card.stats[2].value == "12 s")
         #expect(card.stats[2].caption == "halfway back · 14 of 15 rises")
         #expect(card.stats[3].value == "18 s")
@@ -805,8 +806,47 @@ import Testing
         s.pumpCruise.pumpingCoveredS = 200
         s.pumpCruise.pumpingSpanS = 455.64
         let card = try #require(HrCostCard.make(analysis(s)))
-        #expect(card.stats[1].caption == "102 vs 96 bpm on the foil · 44% covered")
+        #expect(card.stats[1].caption == "101.6 vs 96.0 bpm on the foil · 44% covered")
         #expect(card.stats[1].thin)
+    }
+
+    /// **The delta and the two numbers it came from must reconcile on screen.**
+    ///
+    /// The card read `Pumping vs cruising · -0.1 bpm · 119 vs 119 bpm on the foil` on the
+    /// corpus (app-ui-review.md §5.7): a delta asserting a difference over two operands
+    /// that, as displayed, were the same number. The contract already forbids the adjacent
+    /// version of this ("a measured zero is a value, and −0 must never appear"), and this
+    /// is the same rule one step out — do not print a delta finer than the numbers beside
+    /// it. So all three are printed at one decimal, and the delta is derived from the
+    /// *printed* operands rather than the raw ones, which makes the arithmetic exact
+    /// rather than merely usually right.
+    @Test func hrPumpCruiseDeltaAgreesWithItsOperands() throws {
+        // The pair that produced the bad card: a real difference, invisible at 0 decimals.
+        var s = exampleSummary()
+        s.pumpCruise.pumpingBpm = 119.24
+        s.pumpCruise.cruisingBpm = 119.31
+        s.pumpCruise.deltaBpm = -0.07
+        let card = try #require(HrCostCard.make(analysis(s)))
+        #expect(card.stats[1].caption == "119.2 vs 119.3 bpm on the foil")
+        #expect(card.stats[1].value == "-0.1 bpm")
+
+        // The rounding boundary that a delta taken from the raw pair would get wrong: the
+        // operands print 0.2 apart, so the delta has to say 0.2 and not the raw 0.102.
+        s.pumpCruise.pumpingBpm = 119.351
+        s.pumpCruise.cruisingBpm = 119.249
+        s.pumpCruise.deltaBpm = 0.102
+        let boundary = try #require(HrCostCard.make(analysis(s)))
+        #expect(boundary.stats[1].caption == "119.4 vs 119.2 bpm on the foil")
+        #expect(boundary.stats[1].value == "+0.2 bpm")
+
+        // And a genuinely equal pair still prints the measured zero, unsigned, rather than
+        // the "-0.0 bpm" that a signed formatter produces for a small negative.
+        s.pumpCruise.pumpingBpm = 118.0
+        s.pumpCruise.cruisingBpm = 118.0
+        s.pumpCruise.deltaBpm = -0.004
+        let equal = try #require(HrCostCard.make(analysis(s)))
+        #expect(equal.stats[1].caption == "118.0 vs 118.0 bpm on the foil")
+        #expect(equal.stats[1].value == "0 bpm")
     }
 
     @Test func hrBpmFormatterSignsRisesAndKeepsAMeasuredZero() {
@@ -1872,5 +1912,85 @@ import Testing
         #expect(DesignTokens.Hex.effortFailedTakeoff == DesignTokens.Hex.outcomeFellIn,
                 "the one effort-layer event with an outcome borrows the ladder's red")
         #expect(DesignTokens.Hex.effortTakeoff != DesignTokens.Hex.outcomeFellIn)
+    }
+
+    /// **A side is not a verdict.** The Trends screen drew the port/starboard success pair
+    /// in the ladder's green and the takeoff blue, on a chart whose subject is "% flew
+    /// through" — so the green line read as the flew-through line (app-ui-review.md §5.2),
+    /// and the chart above it used a magenta belonging to no vocabulary at all (§5.3).
+    /// Both are now the `side.*` pair, and this asserts the property that made them wrong:
+    /// the side inks may not be any ink that already means something else.
+    @Test func theSideInksBelongToNoOtherVocabulary() {
+        let sides = [DesignTokens.Hex.sidePort, DesignTokens.Hex.sideStarboard]
+        #expect(Set(sides).count == 2, "port and starboard must be tellable apart")
+        let spoken = [DesignTokens.Hex.outcomeFlew, DesignTokens.Hex.outcomeTouchdown,
+                      DesignTokens.Hex.outcomeFellIn, DesignTokens.Hex.outcomeCourseChange,
+                      DesignTokens.Hex.effortPumping, DesignTokens.Hex.effortTakeoff,
+                      DesignTokens.Hex.effortSplash, DesignTokens.Hex.effortWindow,
+                      DesignTokens.Hex.phaseFlying, DesignTokens.Hex.phaseOffFoil,
+                      DesignTokens.Hex.directionInk]
+        for ink in sides {
+            #expect(!spoken.contains(ink), "\(ink) already means something else")
+        }
+    }
+
+    // MARK: - Time-axis ticks
+
+    /// Swift Charts' `.automatic` divides the domain into equal parts, which on a session
+    /// clock produced `0:00 · 33:20 · 66:40 · 100:00` — arithmetically correct, and a set
+    /// of times nobody has ever thought in (app-ui-review.md §1.5).
+    @Test func timeAxisTicksLandOnRoundTimes() {
+        // The measured case: a 100-minute session, five labels wanted.
+        let ticks = TimeAxisTicks.values(for: 0...6000, desiredCount: 5)
+        #expect(ticks == [0, 1800, 3600, 5400], "half hours, not 2000-second intervals")
+
+        // Every tick, on every reasonable window, is a whole multiple of a step a rider
+        // would name. This is the property; the cases above are the illustrations.
+        for span in [90.0, 300, 900, 3600, 7200, 12_000, 40_000] {
+            for offset in [0.0, 137, 4321] {
+                let range = offset...(offset + span)
+                let values = TimeAxisTicks.values(for: range, desiredCount: 5)
+                #expect(values.count <= 5, "\(span)s asked for too many labels")
+                #expect(values.allSatisfy { range.contains($0) },
+                        "\(span)s put a label outside the window")
+                #expect(values == values.sorted())
+                let step = TimeAxisTicks.steps.first { s in
+                    values.allSatisfy { ($0 / s).rounded() * s == $0 }
+                }
+                #expect(step != nil, "\(span)s at +\(offset) is not on the ladder")
+            }
+        }
+    }
+
+    /// Zooming changes which rung of the ladder is in use, never the roundness of what is
+    /// written on it — which is the whole reason the rule is a ladder and not a divisor.
+    @Test func timeAxisTicksStayRoundAsTheChartIsZoomed() {
+        // A ten-minute window takes five-minute steps: two-minute steps would need six
+        // labels where there is room for five, so the ladder moves up a rung.
+        #expect(TimeAxisTicks.values(for: 600...1200, desiredCount: 5) == [600, 900, 1200])
+        // Forty seconds ⇒ ten-second marks.
+        #expect(TimeAxisTicks.values(for: 100...140, desiredCount: 5)
+            == [100, 110, 120, 130, 140])
+        // And a window holding exactly one round time keeps it, rather than taking the
+        // two-ragged-ends fallback: one round number beats two unround ones.
+        #expect(TimeAxisTicks.values(for: 101...109, desiredCount: 5) == [105])
+    }
+
+    /// The two degenerate ends. A window with no round time inside it still gets an axis
+    /// (its own two edges — better than a chart with no labels at all), and a range that
+    /// is empty or reversed gets nothing rather than a division by zero.
+    @Test func timeAxisTicksDegradeAtBothEnds() {
+        let tiny = TimeAxisTicks.values(for: 101...103, desiredCount: 5)
+        #expect(tiny == [101, 103], "below the finest rung, the window's own ends")
+        #expect(TimeAxisTicks.values(for: 5...5, desiredCount: 5).isEmpty)
+        #expect(TimeAxisTicks.values(for: 0...0, desiredCount: 2).isEmpty)
+        // Longer than the coarsest rung: still on the hour, just a coarser multiple.
+        let long = TimeAxisTicks.values(for: 0...(50 * 3600), desiredCount: 5)
+        #expect(!long.isEmpty)
+        #expect(long.allSatisfy { $0.truncatingRemainder(dividingBy: 3600) == 0 })
+        #expect(long.count <= 5)
+        // `desiredCount` below two is not an axis; it is treated as two.
+        #expect(TimeAxisTicks.values(for: 0...6000, desiredCount: 0)
+            == TimeAxisTicks.values(for: 0...6000, desiredCount: 2))
     }
 }

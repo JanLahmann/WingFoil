@@ -124,11 +124,12 @@ function renderRows(entries) {
   // rather than scanned as a column — so on a phone `stack-sm` (css/style.css) turns each
   // row into a card. Every cell carries the same label its <th> has, from the same list.
   const head = ["date", "session", "on foil", "distance", "flights", "longest", "turns",
-                "best 2 s", "size", ""];
+                "outcomes", "best 2 s", "size", ""];
   const th = (i) => ` data-th="${esc(head[i])}"`;
+  const last = head.length - 1;
   host.innerHTML = `<div class="table-scroll"><table class="lib-table stack-sm">
     <thead><tr>${head.map((h, i) =>
-      `<th${i <= 1 || i === 9 ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
+      `<th${i <= 1 || i === last ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
     <tbody>${entries.map((e) => `
       <tr data-id="${esc(e.id)}">
         <td class="l stack-lead"${th(0)}>${esc(shortDate(e.startUtc))}</td>
@@ -139,15 +140,32 @@ function renderRows(entries) {
         <td${th(4)}>${int(e.flightCount)}</td>
         <td${th(5)}>${hms(e.longestFlightS)}</td>
         <td${th(6)}>${int(e.turns?.counted)}</td>
-        <td${th(7)}>${nf(e.records?.best2sKn, 2)}</td>
-        <td class="dim"${th(8)}>${esc(mb((e.bytesFit || 0) + (e.bytesJson || 0)))}</td>
-        <td class="l lib-row-actions stack-actions"${th(9)}>
+        <td${th(7)}>${tally(e.turns?.outcomes)}</td>
+        <td${th(8)}>${nf(e.records?.best2sKn, 2)}</td>
+        <td class="dim"${th(9)}>${esc(mb((e.bytesFit || 0) + (e.bytesJson || 0)))}</td>
+        <td class="l lib-row-actions stack-actions"${th(last)}>
           <button class="ghost small-btn" data-act="open">Open</button>
           <button class="ghost small-btn" data-act="fit">.fit</button>
           <button class="ghost small-btn" data-act="json">.json</button>
           <button class="ghost small-btn danger" data-act="delete">Delete</button>
         </td>
       </tr>`).join("")}</tbody></table></div>`;
+}
+
+/**
+ * `35 · 8 · 8` on the outcome ladder's own inks — the headline metric every iOS library
+ * row has carried since the start and these rows did not (app-ui-review.md §5.6).
+ *
+ * The ladder is a verdict scale and this is a verdict, so it may use it (the same licence
+ * the key-metrics block takes, docs/presentation.md). A digest written before the field
+ * existed has no tally: it renders as "—", never as three zeroes, which would say the
+ * session had fifty turns and none of them went anywhere.
+ */
+function tally(o) {
+  if (!o) return '<span class="dim">—</span>';
+  return `<span class="tally"><span class="flew">${int(o.flewThrough)}</span><i>·</i>` +
+         `<span class="touchdown">${int(o.touchdown)}</span><i>·</i>` +
+         `<span class="fell">${int(o.fellIn)}</span></span>`;
 }
 
 /* ------------------------------------------------------------------- actions */

@@ -24,6 +24,9 @@
   --wf-phase-off-foil: #97979d;
   /* direction */
   --wf-direction-ink: #c3c2b7;
+  /* side */
+  --wf-side-port: #a38054;
+  --wf-side-starboard: #d9b9a3;
   /* opacity */
   --wf-opacity-direction-web: 0.42;
   --wf-opacity-direction-flying: 0.62;

@@ -229,8 +229,11 @@ struct SpeedChartView: View {
         }
         .chartYAxisLabel("kn")
         .chartXScale(domain: window.visible)
+        // Round times, not equal fifths of the domain: `.automatic` labelled this axis
+        // `0:00 · 33:20 · 66:40 · 100:00` (app-ui-review.md §1.5). `TimeAxisTicks` is the
+        // rule, in the kit, so the HR-cost chart below cannot drift away from it.
         .chartXAxis {
-            AxisMarks(values: .automatic(desiredCount: 5)) { value in
+            AxisMarks(values: TimeAxisTicks.values(for: window.visible, desiredCount: 5)) { value in
                 AxisGridLine()
                 AxisValueLabel {
                     if let seconds = value.as(Double.self) {

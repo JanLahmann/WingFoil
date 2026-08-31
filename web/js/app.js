@@ -9,7 +9,7 @@ import { mountIcu } from "./icu.js";
 import { mountLibrary, openStoredSession, refresh as refreshLibrary, saveSession }
   from "./library.js";
 import { closePopover, render, resetSession } from "./render.js";
-import { analyze as runAnalysis, on, warmUp } from "./rpc.js";
+import { CANCELLED, analyze as runAnalysis, cancel as cancelWorker, on, warmUp } from "./rpc.js";
 import { listEntries } from "./store.js";
 import { invalidateTrends, mountTrends, redrawTrends, showTrends } from "./trends.js";
 
@@ -43,6 +43,7 @@ on("result", (msg) => { if (msg.type === "error") fail(msg.message); });
 
 function fail(message) {
   state.busy = false;
+  stopClock();
   el("progress").hidden = true;
   el("error").hidden = false;
   el("error-text").textContent = message;
@@ -56,16 +57,93 @@ function resetSteps() {
   for (const s of STEPS) {
     const li = document.querySelector(`#steps li[data-step="${s}"]`);
     li.dataset.state = state.booted && (s === "runtime" || s === "engine") ? "done" : "";
-    li.querySelector(".detail").textContent = "";
+    setDetail(li, "");
   }
   el("progress-note").hidden = state.booted;
+}
+
+/** The step rows carry a clock inside their detail cell, so replacing the detail text has
+ *  to leave the clock element alone. One helper, so no caller can forget. */
+function setDetail(li, text) {
+  const cell = li.querySelector(".detail");
+  const clock = cell.querySelector(".elapsed");
+  cell.textContent = text || "";
+  if (clock) cell.appendChild(clock);
 }
 
 function setStep(step, stateName, detail) {
   const li = document.querySelector(`#steps li[data-step="${step}"]`);
   if (!li) return;
   li.dataset.state = stateName;
-  li.querySelector(".detail").textContent = detail || "";
+  setDetail(li, detail);
+}
+
+/* ------------------------------------------------------------------ elapsed + cancel */
+
+/**
+ * A running clock on the analysis, and a way out of it.
+ *
+ * The measured failure this fixes: a 6 MB CIQ fixture spent over nine minutes on
+ * "Analyzing" behind a card that showed a file size where progress should be, with no
+ * elapsed time and no cancel (app-ui-review.md §7.3). Neither of those is a progress bar —
+ * the engine genuinely cannot say how far through a FIT it is — but a number that visibly
+ * increments is the difference between "this is slow" and "this has hung", and it is the
+ * one honest thing the page can show.
+ *
+ * The clock is `mm:ss` and it lives in the *active* step's detail cell, so it moves down
+ * the list with the work and never claims to be timing something that finished.
+ */
+let clockTimer = 0;
+let clockStart = 0;
+
+function startClock() {
+  clockStart = Date.now();
+  const clock = el("elapsed");
+  clock.hidden = false;
+  clock.textContent = "0:00";
+  clearInterval(clockTimer);
+  // 1 s is the resolution of what it displays; anything faster is work for no pixels.
+  clockTimer = setInterval(() => {
+    const s = Math.floor((Date.now() - clockStart) / 1000);
+    clock.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  }, 1000);
+  el("cancel-analysis").hidden = false;
+  el("cancel-analysis").disabled = false;
+  el("progress-expect").hidden = false;
+}
+
+function stopClock() {
+  clearInterval(clockTimer);
+  clockTimer = 0;
+  el("elapsed").hidden = true;
+  el("cancel-analysis").hidden = true;
+  el("progress-expect").hidden = true;
+}
+
+/**
+ * Cancel: kill the worker, put the page back where it was before the drop.
+ *
+ * The worker cannot be interrupted politely mid-analysis (see `rpc.cancel`), so it is
+ * terminated and replaced. That throws the booted runtime away with it, which is why the
+ * engine chip goes and `booted` goes false — the next analysis re-boots Pyodide, from
+ * cache, in seconds. Saying so beats letting the next run look mysteriously slow.
+ */
+function wireCancel() {
+  el("cancel-analysis").addEventListener("click", () => {
+    const button = el("cancel-analysis");
+    button.disabled = true;
+    button.textContent = "Cancelling…";
+    cancelWorker();
+    state.busy = false;
+    state.booted = false;
+    el("engine-chip").hidden = true;
+    stopClock();
+    button.textContent = "Cancel";
+    el("progress").hidden = true;
+    el("dropzone").classList.remove("compact");
+    // Re-boot in the background so the *next* file does not pay for this cancel.
+    warmUp();
+  });
 }
 
 /* -------------------------------------------------------------------- the report */
@@ -79,6 +157,7 @@ function showResult(result, { digest = null, bytes = null, fromLibrary = false,
   state.fromLibrary = fromLibrary;
   state.highlight = highlight;
 
+  stopClock();
   el("progress").hidden = true;
   el("error").hidden = true;
   el("results").hidden = false;
@@ -138,6 +217,7 @@ export async function analyzeFile(file) {
   resetSession();
   el("progress").hidden = false;
   resetSteps();
+  startClock();
   showView("analyze");
 
   const buffer = await file.arrayBuffer();
@@ -149,6 +229,10 @@ export async function analyzeFile(file) {
     state.busy = false;
     showResult(JSON.parse(msg.json), { digest: JSON.parse(msg.digestJson), bytes: keep });
   } catch (err) {
+    // A cancel is the user getting what they asked for, not a failure: the Cancel handler
+    // has already put the page back, and an "That didn't work" panel on top of it would
+    // be the app arguing with them.
+    if (err.message === CANCELLED) return;
     fail(err.message);
   }
 }
@@ -192,6 +276,38 @@ function wireDropzone() {
     const file = ev.target.files?.[0];
     if (file) analyzeFile(file);
     ev.target.value = "";
+  });
+}
+
+/**
+ * "…or try the example session".
+ *
+ * The same bundled recording the iOS app ships (`web/example/ExampleSession.fit`, byte for
+ * byte the file in `ios/WingFoilKit/…/Resources/`): Jan's 2026-08-29 Nago-Torbole
+ * afternoon with the identifiers scrubbed and the 100 Hz accelerometer stream dropped, so
+ * it is 435 KB rather than 10 MB. Because the accel is gone, it analyses exactly the way a
+ * native fenix recording does — no stroke counts, no failed attempts — which is an honest
+ * thing for a demo to show rather than a flattering one.
+ *
+ * It goes through `analyzeFile`, so it is the ordinary path with an ordinary File: nothing
+ * about the example is special-cased downstream, and what a visitor sees is what their own
+ * file will do.
+ */
+function wireExample() {
+  el("try-example").addEventListener("click", async () => {
+    const button = el("try-example");
+    if (state.busy) return;
+    button.disabled = true;
+    try {
+      const res = await fetch("example/ExampleSession.fit");
+      if (!res.ok) throw new Error(`example/ExampleSession.fit: HTTP ${res.status}`);
+      await analyzeFile(new File([await res.arrayBuffer()],
+                                 "example-nago-torbole-2026-08-29.fit"));
+    } catch (err) {
+      fail(`Could not load the example session: ${err.message}`);
+    } finally {
+      button.disabled = false;
+    }
   });
 }
 
@@ -351,6 +467,8 @@ function wireReflow() {
 /* --------------------------------------------------------------------------- go */
 
 wireDropzone();
+wireExample();
+wireCancel();
 wireDownload();
 wireSave();
 wireNav();

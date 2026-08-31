@@ -86,9 +86,25 @@ neither half of the split there (`freeTakeoffs` / `pumpedTakeoffs` are absent an
 takeoff carries `free: false`), so both apps draw the same arrow rather than inventing a
 verdict about effort nobody measured.
 
+**Entry tack has its own pair, and it is the only thing allowed to use it:**
+`side.port` / `side.starboard`. A side is not a verdict, not an effort and not a phase, so
+it may borrow none of their inks — and a symmetric pair needs a symmetric encoding, so the
+two are **one hue at two intensities, with the quieter half dashed as well**. The dash is
+not decoration: it is the second channel that carries the split for a reader who cannot use
+colour, the same job fill does for the outcome dots.
+
+This is a token rather than a convention because it was already broken twice on one screen.
+Trends drew "turn success by entry tack" with port in the takeoff blue and starboard in the
+**ladder's green** — on a chart whose subject is *"% flew through"*, so the green line read
+as the flew-through line — and the port/starboard share chart above it in a **magenta
+belonging to no vocabulary at all** (`app-ui-review.md` §5.2, §5.3). Both were only ever
+literals in a view, which is exactly what `design/tokens.json` exists to prevent.
+
 **Phase tints** are one colour each, in both apps: flying = teal, off foil = the secondary
 label grey. They are *not* the app's own accent blue — a track tinted with the brand colour
-reads as chrome, and the flying tint has to be a category.
+reads as chrome, and the flying tint has to be a category. **Every flight fact takes the
+phase tint**, which includes the "longest flight" trend line — it wore the takeoff blue
+until §5.4, for a metric that is a duration in the air rather than an effort.
 
 **Phase tint follows the engine's flight spans, cut at exact boundary times with
 interpolated points — a gap with no samples still renders off-foil.** Tinting per *sample*
@@ -135,8 +151,11 @@ The rules, which are the only thing the two implementations can disagree about:
 - **Row 3 is the jibe ladder**, and the caption says what the three numbers are out of
   ("of 50 jibes"). A session whose wind axis never resolved has no jibes at all, so it
   falls back to every counted turn ("of 51 turns") — an empty ladder over an afternoon of
-  turns would read as "nothing happened". This is the only place outside the map where
-  either app draws the tally in the ladder's colours, and it is a verdict, so it may.
+  turns would read as "nothing happened". The tally is a verdict, so it may wear the
+  ladder, and the **library row** wears it too — over every counted turn there, which is
+  what a row scanned against its neighbours has to be. The web rows carried no tally at all
+  until §5.6, on the more prominent of the two library surfaces; a row from a digest
+  written before the field existed renders "—" rather than three zeroes.
 - **Streaks are `summary.turns.longestDryStreak` / `longestFlewStreak`**, rendered
   `11 dry · 5 flew` — the first time either app draws them. They are over counted turns,
   which is what the engine measures them over; nothing is re-derived here.
@@ -190,7 +209,8 @@ Turn filters are type (`both | jibes | tacks`) × side (`both | port | starboard
 **Side means the ENTRY tack — the tack you came into the turn on — never the rotation
 direction.** UI copy must say "Port entry / Starboard entry"; bare "left/right" is a
 misread waiting to happen. Both turn fields exist in the schema (`side`, `direction`);
-filters and trends read `side`.
+filters and trends read `side`. Anything that draws a side in colour uses the `side.*`
+tokens above and nothing else.
 
 ## Formatter rules
 
@@ -201,8 +221,25 @@ filters and trends read `side`.
 - Rates with an empty denominator render empty, not "0%" — "0% ok" before the first turn
   reads as a verdict.
 - A measured zero is a value ("0 bpm"), and "−0" must never appear.
+- **A delta is never printed finer than the numbers it is shown beside, and it reconciles
+  with them.** The HR card read `-0.1 bpm · 119 vs 119 bpm on the foil` (§5.7): a delta
+  asserting a difference over two operands that, as displayed, were the same number. So the
+  operands are printed at the delta's precision *and* the printed delta is derived from the
+  printed operands, which makes the arithmetic on the card exact rather than usually right.
 - Speeds in the rider's unit (kn/km/h per settings); missing HR renders as the unit's
   missing form ("-- bpm"), not as zero.
+- **A time axis is labelled with round times, not with equal fractions of its domain.**
+  Both platforms pick the finest step from one ladder — 5/10/15/30 s, 1/2/5/10/15/30 min,
+  1/2/3/6 h — that fits the label budget, and write its multiples. Dividing the domain into
+  fifths produced `0:00 · 33:20 · 66:40 · 100:00` (§1.5), which is correct and unreadable.
+  Zoom moves which rung is in use, never the roundness. iOS: `TimeAxisTicks` in the kit,
+  pinned by `PresentationTests.timeAxisTicks*`, shared by the speed chart and the HR chart.
+- **Reference material lives behind the `?`, never in body copy on the page.** The session
+  screen printed three grey paragraphs of legend documentation under the chips on every
+  visit — ~115 pt above the fold, telling the rider something he learned once (§1.2). The
+  chips are the control and stay; the words are the `mapLegend` help topic. A number that
+  was hiding in that prose is not help: "38 failed attempts" is a *takeoff* fact and now
+  sits on the takeoff card at the size a number gets.
 
 ## Scrub and zoom
 

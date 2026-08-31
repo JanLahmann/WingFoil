@@ -73,4 +73,12 @@ module DesignTokens {
     // chevron ink — subordinate to every marker, so ink plus opacity, no hue
     const DIRECTION_INK = 0xC3C2B7;
     const DIRECTION_INK_MIP = 0xAAAAAA;
+
+    // ---- side: Entry tack. A side is not a verdict — never the ladder's inks.
+    // port ENTRY tack — a side, never a verdict, so deliberately outside the ladder
+    const SIDE_PORT = 0xA38054;
+    const SIDE_PORT_MIP = 0xAAAA55;
+    // starboard ENTRY tack — the same hue at a second lightness, plus a dashed stroke
+    const SIDE_STARBOARD = 0xD9B9A3;
+    const SIDE_STARBOARD_MIP = 0xFFAAAA;
 }

@@ -76,6 +76,17 @@
         <label class="btn primary" id="pick" for="file">Choose a file…</label>
         <input id="file" type="file" accept=".fit,.zip,application/zip" class="sr-only">
       </p>
+      <!-- A first visitor with no .fit file to hand had nothing to look at but a drop
+           target. This is the same recording the iOS app bundles as its example (the
+           2026-08-29 Nago-Torbole session, identifiers scrubbed and the 100 Hz
+           accelerometer stream dropped — docs/testing.md "The bundled example session"),
+           and it goes through the ordinary analysis path so what it shows is what a real
+           file shows. Labelled as an example everywhere it appears, because a demo whose
+           numbers read as yours is worse than no demo. -->
+      <p class="drop-alt">
+        …or <button class="linkish" id="try-example" type="button">try the example
+        session</button> <span class="dim">— Lago di Garda, 29 Aug · 1 h 57 m · 435 KB</span>
+      </p>
       <p class="privacy">Your file never leaves this browser tab — the analysis runs locally in WebAssembly.</p>
     </div>
   </section>
@@ -99,14 +110,25 @@
   </section>
 
   <!-- ---------------------------------------------------------------- status -->
+  <!-- The elapsed clock and the Cancel button are not decoration. A 6 MB CIQ file sat on
+       "Analyzing" for over nine minutes with no timer, no estimate and no way out, and on
+       a phone an unresponsive tab that long is indistinguishable from a hang — so the user
+       kills the tab and loses the work (app-ui-review.md 7.3). The clock says the page is
+       alive; the button is the exit that is not "force-quit Safari". -->
   <section id="progress" class="panel progress" hidden aria-live="polite">
     <ol class="steps" id="steps">
       <li data-step="runtime"><span class="dot"></span><span class="label">Loading Python runtime</span><span class="detail"></span></li>
       <li data-step="engine"><span class="dot"></span><span class="label">Loading wingfoil_lab</span><span class="detail"></span></li>
       <li data-step="parse"><span class="dot"></span><span class="label">Parsing FIT</span><span class="detail"></span></li>
-      <li data-step="analyze"><span class="dot"></span><span class="label">Analyzing</span><span class="detail"></span></li>
+      <li data-step="analyze"><span class="dot"></span><span class="label">Analyzing</span><span class="detail"><span class="elapsed" id="elapsed" hidden></span></span></li>
     </ol>
-    <p class="muted small" id="progress-note">The runtime (~12 MB) loads once and is then cached by the browser.</p>
+    <div class="progress-foot">
+      <div>
+        <p class="muted small" id="progress-note">The runtime (~12 MB) loads once and is then cached by the browser.</p>
+        <p class="muted small" id="progress-expect">A large CIQ recording with its accelerometer stream takes several minutes. The tab is working, not stuck.</p>
+      </div>
+      <button class="ghost" id="cancel-analysis" type="button" hidden>Cancel</button>
+    </div>
   </section>
 
   <section id="error" class="panel error" hidden role="alert">
