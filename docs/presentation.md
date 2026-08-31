@@ -178,6 +178,29 @@ strings `PresentationTests.keyMetrics*` pin, and `keyMetrics` in `web/js/render.
 Swift half resolves every display string so the SwiftUI view is pure layout; the two are
 twins, and a difference between them is a bug.
 
+### The share card carries the same block
+
+The exported card (iOS only — the web has no composer) shows **this block and nothing
+else**, re-laid-out as cells: same keys, same order, same labels, same strings, and the
+tally's three counts kept as counts so they can wear the ladder there too. A card is the
+one artefact that leaves the phone and is read next to nothing, so it is the last place
+either app may name a different number for the same session — `ShareCardStats.make` takes
+the rendered `KeyMetrics` rather than rebuilding anything from the index row.
+
+Two presets choose how much of it appears, and a preset may only **remove** entries:
+
+| preset | cells |
+|---|---|
+| `complete` (default) | the whole block: duration · distance · avg speed · max 2 s · tally · streaks · JPH/TPH · WPH |
+| `lean` | duration · distance · max 2 s · tally |
+
+The card's outline carries three semantics and no more (`TrackThumbnail.Mark`): the track
+tinted by foil state, a dot per **counted** turn on the verdict ladder's inks, and the
+barometer's submersion evidence as a cyan **diamond** — shape as well as colour, because a
+splash usually sits on the fell-in verdict it belongs to. Course changes get no dot, by the
+same rule the map draws by. Nothing else from the map's eleven layers survives the shrink.
+The footer carries the app's mark and `Branding.credit`.
+
 ## Sections — how a session divides
 
 Both apps open on the key-metrics block and then **switch between four sections**, in this
