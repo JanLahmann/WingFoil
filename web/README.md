@@ -14,12 +14,19 @@ file — verified against all 15 corpus fixtures (see *Verification* below).
 
 ```
 web/
-├── index.html                  page shell: three views (analyze / library / trends)
-├── manifest.webmanifest        PWA metadata
-├── sw.js                       service worker: app-shell precache + Pyodide runtime cache
+├── index.html                  the PROJECT HOMEPAGE (cleanjibe.org/) — what the project is,
+│                               the Garmin app, the iOS app, this analyzer. No JS.
+├── app/index.html              the ANALYZER (cleanjibe.org/app/): page shell, three views
+│                               (analyze / library / trends)
+├── app/manifest.webmanifest    PWA metadata — beside the app so `scope`/`start_url` are
+│                               /app/ and an installed icon opens the analyzer
+├── sw.js                       service worker: app-shell precache + Pyodide runtime cache.
+│                               Stays at the ROOT: its default scope is its own directory,
+│                               so one registration covers homepage and app alike.
 ├── icons/                      copied from brand/ — nothing is hotlinked outside web/
 ├── css/tokens.css              GENERATED from design/tokens.json — do not edit
 ├── css/style.css               dark styling + the data-viz palette (reads the tokens)
+├── css/home.css                the homepage's own layout, layered on top of style.css
 ├── js/app.js                   file intake, view routing, save-to-library, SW updates
 ├── js/rpc.js                   the one channel to the worker (request/response by id)
 ├── js/worker.js                Pyodide worker — loads the runtime + the lab, runs the pipeline
@@ -111,8 +118,16 @@ up anywhere — use *Download all (.zip)* if you want a copy you own.
 ```bash
 cd web
 python3 -m http.server 8765
-# open http://127.0.0.1:8765/
+# open http://127.0.0.1:8765/       the project homepage
+# open http://127.0.0.1:8765/app/   the analyzer
 ```
+
+> The site has two documents. `/` is the project homepage (static HTML, one extra
+> stylesheet, no JavaScript at all); `/app/` is this analyzer. Everything the analyzer
+> loads — `css/`, `js/`, `icons/`, `example/`, `lab_bundle/` — stays at the site root and is
+> reached with `../`, so the two pages share one copy of the aesthetic and one service
+> worker. `js/app.js` resolves the example FIT and `sw.js` against `import.meta.url` rather
+> than against the document, which is what lets the page move without moving them.
 
 A plain static server is enough — no build step, no bundler, no npm. The app is plain ES
 modules; `js/worker.js` is a **module worker**, which needs a real HTTP origin, so
@@ -295,7 +310,12 @@ choices above are made from the documented behaviour, not from a measured device
   *Reload to update*. Bump `VERSION` in `sw.js` whenever anything under `web/` changes; the
   old caches are deleted on activate. **This is not optional for a CSS or JS edit**: the
   shell is served cache-first, so without the bump every already-installed client keeps the
-  old stylesheet indefinitely. Current value: `v7` (map pan/zoom + the pinch ergonomics).
+  old stylesheet indefinitely. Current value: `v10` (homepage at the root, analyzer at
+  `/app/`).
+
+The worker precaches **both** documents — `/` and `/app/` — and its offline navigation
+fallback picks between them by path, so an offline deep link to `/app/#/library` gets the
+analyzer's shell and not the front door.
 
 Icons live in `web/icons/`, copied from `brand/` (`icon-tile-*` for the normal icon,
 `icon-square-*` full-bleed for the maskable one). Nothing outside `web/` is referenced.
@@ -346,7 +366,11 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
 
 ### Manual browser test checklist
 
-1. `cd web && python3 -m http.server 8765`, open <http://127.0.0.1:8765/>.
+0. **The homepage.** `cd web && python3 -m http.server 8765`, open
+   <http://127.0.0.1:8765/>. Static HTML: the hero, the three cards, the vocabulary list,
+   the track motif in the outcome colours. Both *Open the analyzer* buttons must land on
+   `/app/`, and the analyzer's own wordmark must come back here.
+1. Open <http://127.0.0.1:8765/app/> for everything below.
 2. **Cold boot.** The chip top-right should turn into `engine 0.7.0 · pyodide 0.28.3` within
    ~20 s on a warm connection. Open DevTools → Console: there must be no errors, only
    Pyodide's own "Loading/Loaded micropip, numpy, pandas…" lines.

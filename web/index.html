@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WingFoil — open wingfoil tracking, from the watch to the numbers</title>
+<meta name="description" content="An open wingfoil tracking system: a Garmin watch app that records flights, jibes and swims, an iOS companion, and a browser analyzer that runs the same engine on your own .fit file — locally, with nothing uploaded.">
+<meta name="theme-color" content="#101010">
+<meta name="color-scheme" content="dark">
+
+<!-- The analyzer at /app/ is the installable PWA and owns the manifest; this page is a
+     plain document and deliberately does not link one, so "add to home screen" from here
+     cannot install a front door instead of the app. -->
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+<!-- Same three-layer stylesheet stack as the analyzer, in the same order: generated
+     presentation tokens, then the app's aesthetic, then this page's own layout. The
+     homepage is a sibling of the app, not a separate design. -->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/home.css">
+
+<meta property="og:title" content="WingFoil — open wingfoil tracking">
+<meta property="og:description" content="A Garmin watch app that records the flights, the jibes and the swims; an iOS companion; and a browser analyzer that runs the same engine on your own .fit file.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://cleanjibe.org/">
+</head>
+<body class="home">
+
+<header class="topbar">
+  <div class="brand">
+    <span class="mark" aria-hidden="true"></span>
+    <div>
+      <h1>WingFoil</h1>
+      <p class="sub">Wing foiling, measured.</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <a class="btn primary" href="app/">Open the analyzer</a>
+    <a class="btn ghost wide-only" href="https://github.com/JanLahmann/WingFoil" rel="noopener">GitHub</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- ------------------------------------------------------------------ hero -->
+  <section class="hero">
+    <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Watch · phone · browser · open source</p>
+    <h1>What your session actually did.</h1>
+    <p class="lede">
+      WingFoil is an open tracking system for wing foiling. A Garmin watch app records the
+      flights, the jibes and the swims while they happen; an iOS app and this site take the
+      recording apart afterwards. All three run the same analysis, and the rules it applies
+      are published rather than guessed at.
+    </p>
+
+    <p class="cta">
+      <a class="btn primary" href="app/">Analyze a .fit file</a>
+      <a class="btn ghost" href="https://github.com/JanLahmann/WingFoil" rel="noopener">Read the source</a>
+      <span class="cta-note">Runs in your browser. Nothing is uploaded. No account.</span>
+    </p>
+
+    <!-- The motif is the page's only graphic, and it is the vocabulary rather than
+         decoration: an off-foil track with two flights drawn on it and the three turn
+         outcomes marked in the presentation tokens themselves (design/tokens.json —
+         green disc flew, amber triangle touched down, red cross fell in), exactly as the
+         apps draw them. Inline SVG, ~2 KB, no request, no image to scale badly. -->
+    <div class="motif">
+      <!-- The colours come from classes in css/home.css rather than from `stroke="var(…)"`:
+           a custom property in an SVG *presentation attribute* is not reliably honoured,
+           whereas the same property applied by a stylesheet rule always is. -->
+      <svg viewBox="0 0 640 128" role="img" aria-label="A wingfoil track: two flights on the foil, a jibe flown through, a touchdown, and a fall.">
+        <!-- the whole track, off foil -->
+        <path class="m-track" d="M20 100 L120 46 Q150 32 172 44 L268 96 Q296 110 318 96 L414 44 Q442 30 464 42 L560 94 L620 74"/>
+
+        <!-- flight one: up the leg, through the jibe, ending in a touchdown -->
+        <path class="m-foil" d="M20 100 L120 46 Q150 32 172 44 L268 96 Q296 110 305 103"/>
+        <!-- flight two: away again, and this one ends in the water -->
+        <path class="m-foil" d="M340 86 L414 44 Q442 30 452 35"/>
+        <!-- and up on the foil once more before the frame runs out -->
+        <path class="m-foil" d="M566 91 L620 74"/>
+
+        <!-- which way he went — set off the line rather than on it, where a 2 px chevron
+             inside a 5 px stroke just reads as a nick in the paint -->
+        <g class="m-dir">
+          <path d="M-4 -5 L2 0 L-4 5" transform="translate(66,63) rotate(-28.4)"/>
+          <path d="M-4 -5 L2 0 L-4 5" transform="translate(508,82) rotate(28.4)"/>
+        </g>
+
+        <!-- flew through -->
+        <circle class="m-flew" cx="163" cy="36" r="7"/>
+        <!-- touched down -->
+        <path class="m-touch" d="M305 94 L313 108 L297 108 Z"/>
+        <!-- fell in -->
+        <g class="m-fell">
+          <path d="M446 29 L458 41"/><path d="M458 29 L446 41"/>
+        </g>
+      </svg>
+      <p class="motif-key">
+        <span class="k-foil"><i></i>on the foil</span>
+        <span class="k-flew"><i></i>flew through</span>
+        <span class="k-touch"><i></i>touched down</span>
+        <span class="k-fell"><i></i>fell in</span>
+      </p>
+    </div>
+  </section>
+
+  <!-- --------------------------------------------------------------- pieces -->
+  <section class="home-section">
+    <h2>The three pieces</h2>
+    <p class="section-lede">
+      The watch does the recording and the live numbers. The phone and the browser do the
+      deep analysis. You can use any one of them on its own.
+    </p>
+
+    <div class="pieces">
+
+      <article class="panel piece">
+        <div class="piece-head">
+          <h3>Garmin watch app</h3>
+          <span class="status">beta · by invite</span>
+        </div>
+        <p class="what">Connect IQ device app, Fenix-class watches</p>
+        <ul>
+          <li>Knows when the board is up on the foil, and counts every flight and touchdown as you ride.</li>
+          <li>Scores each jibe as flew through, touched down or fell in — and keeps the dry streak running.</li>
+          <li>Speed records live on the wrist, best 2 s upwards.</li>
+          <li>Works the wind direction out for itself, from the way you are sailing.</li>
+          <li>Reads pump and takeoff effort from the accelerometer.</li>
+        </ul>
+      </article>
+
+      <article class="panel piece">
+        <div class="piece-head">
+          <h3>iOS companion</h3>
+          <span class="status">beta · TestFlight</span>
+        </div>
+        <p class="what">iPhone — the library, the replay and the season</p>
+        <ul>
+          <li>Every session in one library, each one re-analyzed on the phone.</li>
+          <li>Replay the track with commentary as the session plays back.</li>
+          <li>Trends and records across everything you have ridden.</li>
+          <li>The gear you were on, session by session.</li>
+          <li>Garmin activities arrive on their own, through intervals.icu sync.</li>
+        </ul>
+      </article>
+
+      <article class="panel piece">
+        <div class="piece-head">
+          <h3>Web analyzer</h3>
+          <span class="status live">live now</span>
+        </div>
+        <p class="what">Any browser — nothing to install</p>
+        <ul>
+          <li>Drop in any <code>.fit</code> file. Garmin's own Windsurf recordings work too.</li>
+          <li>The analysis runs inside your browser tab: the file is never uploaded to any server.</li>
+          <li>Free, no account, no sign-up.</li>
+          <li>No file to hand? There is a bundled example session one click inside.</li>
+        </ul>
+        <p class="piece-foot"><a class="btn primary" href="app/">Open the analyzer</a></p>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------------- vocabulary -->
+  <section class="home-section">
+    <h2>What it counts</h2>
+    <p class="section-lede">
+      The same handful of numbers on the wrist, on the phone and on this site — so a session
+      means the same thing wherever you read it.
+    </p>
+    <dl class="terms">
+      <div class="term">
+        <dt>Foil&nbsp;%</dt>
+        <dd>The share of the session actually flying, rather than merely moving.</dd>
+      </div>
+      <div class="term">
+        <dt>Flights &amp; touchdowns</dt>
+        <dd>One takeoff starts a flight; a touchdown or a swim ends it. Both are counted.</dd>
+      </div>
+      <div class="term">
+        <dt>Jibe outcomes</dt>
+        <dd>
+          Every turn gets a verdict:
+          <span class="swatch" style="background: var(--good)" aria-hidden="true"></span>flew through,
+          <span class="swatch" style="background: var(--warn)" aria-hidden="true"></span>touched down,
+          <span class="swatch" style="background: var(--bad)" aria-hidden="true"></span>fell in.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>Dry streaks</dt>
+        <dd>How many jibes in a row you stayed out of the water — and the best run of the day.</dd>
+      </div>
+      <div class="term">
+        <dt>JPH</dt>
+        <dd>Dry jibes per hour. Falling in more often cannot raise it.</dd>
+      </div>
+      <div class="term">
+        <dt>WPH</dt>
+        <dd>Swims per hour. The number nobody wants, kept honest anyway.</dd>
+      </div>
+      <div class="term">
+        <dt>Speed records</dt>
+        <dd>GP3S-style windows: best 2 s, best 1 NM, alpha 500, best hour.</dd>
+      </div>
+      <div class="term">
+        <dt>Pump &amp; takeoff effort</dt>
+        <dd>Strokes counted off the accelerometer, and which attempts got you flying.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <!-- --------------------------------------------------------------- claims -->
+  <section class="home-section">
+    <h2>How it is built</h2>
+    <div class="claims">
+      <article class="panel claim">
+        <h3>One engine, everywhere</h3>
+        <p>
+          The phone and this site run the same analysis code — the browser literally runs the
+          project's Python, compiled to WebAssembly. A number that differs between them is a
+          bug, and there are tests that say so.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>Thresholds in the open</h3>
+        <p>
+          What counts as a flight, a touchdown or a fallen jibe is written down in the
+          repository, not hidden in a product. The values are tunable, and the reasoning
+          behind them is there to argue with.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>Your file stays yours</h3>
+        <p>
+          The analyzer has no backend to upload to. Your recording is read, analyzed and drawn
+          inside your own browser tab: no account, no upload, no tracking.
+        </p>
+      </article>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>WingFoil — an open wing foiling tracking project.</p>
+  <p>
+    Source, issues and the detection thresholds:
+    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">github.com/JanLahmann/WingFoil</a>
+  </p>
+</footer>
+
+</body>
+</html>
