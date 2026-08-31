@@ -774,11 +774,21 @@ to answer while the rider is still on the water. The deviations, all deliberate:
 | 8 | `unknown` episodes are excluded from every tally | a GPS gap drops the open effort silently | identical outcome, same reason |
 | 9 | `pumps_to_takeoff` = strokes in the run (speed rise ∪ lead burst) | strokes in the effort's **lead burst** alone | the watch has no walk-back over past speed, but it can hold the current burst apart from the rest of the effort — and must, now that an effort may span half a minute of thrashing (row 5a). A takeoff with no qualifying burst reports 0 = free takeoff, which is what the lab reports when the run holds no strokes |
 | 10 | `takeoff_successes` = flights · `takeoff_attempts` = flights + failed efforts | identical, counted live | — |
+| 11 | the **session total**'s three tests, applied to the whole burst after the fact | the same three, applied as the burst forms: `MIN_STROKES`, a running maximum against `BURST_PEAK_G`, and `MIN_SPEED_KMH` read from the last 1 Hz tick. A burst is credited *retroactively* the moment it first qualifies — its earlier strokes included — and per stroke after that | a completed burst therefore contributes exactly what the lab gives it. Two live-only deviations: the speed is up to 1 s stale (the lab interpolates the Doppler channel at the stroke's own instant), and a GPS gap leaves the last speed standing rather than interpolating across it. **No unit conversion is involved** — `_y1` is the output of the identical 51-tap band-pass over |a| already normalised to g, so `pumpBurstPeakG` crosses over as `BURST_PEAK_G = 0.8` unchanged |
+
+The raw peak train is still counted, as `PumpDetector.peaks` — a diagnostic, and what
+`strokes` meant before device app 0.8.0's engine. It is not written to the FIT.
 
 Expected drift: the watch counts **slightly more** attempts than the phone — it cannot merge a
 bout across a burst it did not resolve the same way, and it has no walk-back — and its stroke
 total should sit within a few percent of the phone's. Anything larger is the divergence check's
 business (below) — filed against the session fixture, since a tuning difference is not a bug.
+
+**Until the next watch release ships, installed watches disagree with the phone about
+`total_pump_strokes`** — they write the old raw peak count into FIT session field 38 while the
+phone reports the gated one. The divergence banner will say so on every class-(a) import from
+an un-updated watch; that is expected, not a regression, and it ends with the release that
+carries this detector.
 
 Row 5a is measured, not asserted. `lab/tools/watch_pump_replica.py` (a tuning harness, not
 engine code) replays this detector offline against a fixture FIT and is calibrated against the
