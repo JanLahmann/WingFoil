@@ -23,6 +23,7 @@ const state = {
   lastDigest: null,    // its Python digest — what the library would store
   lastBytes: null,     // the original FIT bytes, kept so "save" needs no re-read
   fromLibrary: false,  // true when the document on screen came out of storage
+  isExample: false,    // true when it came from the "try the example session" button
   highlight: null,     // the record window marked on the figures, if any
 };
 
@@ -151,11 +152,12 @@ function wireCancel() {
 
 /** Put an analysis document on screen. `highlight` marks a record window; see render.js. */
 function showResult(result, { digest = null, bytes = null, fromLibrary = false,
-                             highlight = null } = {}) {
+                             isExample = false, highlight = null } = {}) {
   state.last = result;
   state.lastDigest = digest;
   state.lastBytes = bytes;
   state.fromLibrary = fromLibrary;
+  state.isExample = isExample;
   state.highlight = highlight;
 
   stopClock();
@@ -188,7 +190,7 @@ function showHighlightNote(highlight) {
     <button class="ghost small-btn" id="clear-highlight" type="button">Clear</button>`;
   el("clear-highlight").addEventListener("click", () => {
     showResult(state.last, { digest: state.lastDigest, bytes: state.lastBytes,
-                             fromLibrary: state.fromLibrary });
+                             fromLibrary: state.fromLibrary, isExample: state.isExample });
   });
 }
 
@@ -208,7 +210,15 @@ function updateSaveButton() {
 
 /* --------------------------------------------------------------------- the intake */
 
-export async function analyzeFile(file) {
+/**
+ * Analyze one dropped/picked/fetched file.
+ *
+ * `isExample` is the *only* thing the intake knows about a file that the file itself
+ * cannot say, and it is passed rather than sniffed from the name: a visitor who renames
+ * their own FIT to the example's name must not have it silently excluded from their
+ * records, and the example must not count in them.
+ */
+export async function analyzeFile(file, { isExample = false } = {}) {
   if (state.busy) return;
   const name = file.name || "session.fit";
   if (!/\.(fit|zip)$/i.test(name)) {
@@ -234,7 +244,8 @@ export async function analyzeFile(file) {
   try {
     const msg = await runAnalysis(buffer, name);
     state.busy = false;
-    showResult(JSON.parse(msg.json), { digest: JSON.parse(msg.digestJson), bytes: keep });
+    showResult(JSON.parse(msg.json),
+               { digest: JSON.parse(msg.digestJson), bytes: keep, isExample });
   } catch (err) {
     // A cancel is the user getting what they asked for, not a failure: the Cancel handler
     // has already put the page back, and an "That didn't work" panel on top of it would
@@ -297,8 +308,15 @@ function wireDropzone() {
  * stripped file could only report as unknown.
  *
  * It goes through `analyzeFile`, so it is the ordinary path with an ordinary File: nothing
- * about the example is special-cased downstream, and what a visitor sees is what their own
- * file will do.
+ * about the example is special-cased in the ANALYSIS, and what a visitor sees is what
+ * their own file will do.
+ *
+ * The one thing that is special-cased is what happens if it is saved. Somebody else's
+ * afternoon in the library would otherwise set the visitor's all-time records and bend
+ * every trend line, which is the same defect the iOS app fixed with the EXAMPLE badge and
+ * its exclusion. So the flag rides along to `saveSession`, which stores it on the entry —
+ * and, unlike a friend's file, the example is never asked about: there is only one
+ * possible answer to "whose session is this?" for a recording nobody here rode.
  */
 function wireExample() {
   el("try-example").addEventListener("click", async () => {
@@ -313,7 +331,8 @@ function wireExample() {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`example/ExampleSession.fit: HTTP ${res.status}`);
       await analyzeFile(new File([await res.arrayBuffer()],
-                                 "example-nago-torbole-2026-08-30.fit"));
+                                 "example-nago-torbole-2026-08-30.fit"),
+                        { isExample: true });
     } catch (err) {
       fail(`Could not load the example session: ${err.message}`);
     } finally {
@@ -343,10 +362,14 @@ function wireSave() {
     button.disabled = true;
     button.textContent = "Saving…";
     try {
+      // `saveSession` may put a question on screen first ("Whose session is this?", and
+      // for a duplicate, "replace it?"). Both can be answered no, and both come back as
+      // `saved: false` — the button goes back to offering the save rather than claiming one.
       const outcome = await saveSession({
         digest: state.lastDigest,
         analysisJson: JSON.stringify(state.last),
         fitBytes: state.lastBytes,
+        example: state.isExample,
       });
       if (outcome.saved) {
         invalidateTrends();

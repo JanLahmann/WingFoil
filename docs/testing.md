@@ -457,6 +457,15 @@ filters them in `clause()` (Records, Trends, week buckets) and in the gear rollu
 widget snapshot drops them, and they are never given the default gear combo nor written to
 Apple Health.
 
+**On the web.** The same file, and the same rule with a smaller mechanism: the "try the
+example session" button flags what it fetched, `js/store.js` writes `example: true` on the
+library entry, and `library.counts_towards_records` keeps it out of the one place the web app
+aggregates (`library.aggregate` — Records, Trends and the totals block are all downstream of
+it). The row is badged *Example*. A session someone else rode is the same problem from the
+other direction and gets the same treatment: the web save asks *Whose session is this?* and
+stores a `rider` name, which excludes it identically. An entry saved before either field
+existed has neither, and missing reads as *mine, not example*.
+
 **Dedupe decision.** The example is a *real* recording, so its owner will one day import it
 for real and land on the ±60 s dedupe key. That resolves **in favour of the real import**:
 `SessionIngestor.note` clears `isExample`, merges the sources (`"example+icu"`) and the row

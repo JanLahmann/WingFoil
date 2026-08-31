@@ -12,6 +12,7 @@
 
 import { ask, askBytes } from "./rpc.js";
 import { esc, hms, int, nf, sessionDate } from "./render.js";
+import { askRider } from "./rider.js";
 import {
   getAnalysisJson, getFitBlob, listEntries, putSession, removeSession, storageLabel, usage,
 } from "./store.js";
@@ -37,8 +38,15 @@ export function mountLibrary(options) {
  * Dedupe: the "same session" test (start within ±60 s AND duration within ±60 s) runs in
  * Python over the stored index. A match is never resolved silently — the user is asked,
  * and answering no leaves the library untouched rather than adding a second copy.
+ *
+ * Attribution: `example` is true only for the bundled recording (js/app.js knows, because
+ * it fetched it), and it is the one case that is not asked about — a demonstration nobody
+ * in front of this browser rode has one possible answer. Everything else gets the "Whose
+ * session is this?" prompt, because the analyzer answers for any .fit that reaches it and
+ * a friend's afternoon must not become the reader's personal best. Dismissing the prompt
+ * saves nothing; see js/rider.js.
  */
-export async function saveSession({ digest, analysisJson, fitBytes }) {
+export async function saveSession({ digest, analysisJson, fitBytes, example = false }) {
   const index = await listEntries();
   const hit = await ask("dedupe", {
     digestJson: JSON.stringify(digest),
@@ -46,8 +54,10 @@ export async function saveSession({ digest, analysisJson, fitBytes }) {
   });
 
   let replaceId = null;
+  let replacing = null;
   if (hit.match) {
     const existing = index[hit.index] || {};
+    replacing = existing;
     const when = existing.startUtc ? sessionDate(existing.startUtc) : "unknown date";
     const ok = window.confirm(
       `This looks like a session you already have.\n\n` +
@@ -59,11 +69,31 @@ export async function saveSession({ digest, analysisJson, fitBytes }) {
     replaceId = existing.id;
   }
 
-  const entry = await putSession({ digest, analysisJson, fitBytes, replaceId });
+  let rider = null;
+  if (!example) {
+    const answer = await askRider({
+      fileName: digest.fileName || "",
+      known: riderNames(index),
+      // A replace starts where the entry it replaces left off: confirming a second copy
+      // of a friend's session must not quietly promote it into the records.
+      initial: replacing?.rider || null,
+    });
+    if (!answer) return { saved: false, reason: "cancelled" };
+    rider = answer.rider;
+  }
+
+  const entry = await putSession({ digest, analysisJson, fitBytes, replaceId, rider, example });
   invalidateTrends();
   await refresh();
   return { saved: true, replaced: Boolean(replaceId), entry };
 }
+
+/** The friends already in the library, offered by the prompt. The distinct values of one
+ *  field are the whole address book — there is nothing else to keep, and nothing else that
+ *  could get out of step with what the rows actually say. */
+const riderNames = (entries) =>
+  [...new Set(entries.map((e) => e.rider).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b));
 
 /* ------------------------------------------------------------------- the view */
 
@@ -92,6 +122,10 @@ async function renderSub(entries) {
   const u = await usage();
   const where = await storageLabel();
   const bits = [`${entries.length} session${entries.length === 1 ? "" : "s"}`];
+  // Said once, in the count, rather than left to be inferred from a badge per row: the
+  // library holds everything, the records do not, and the difference is a number.
+  const aside = entries.filter((e) => e.example || e.rider).length;
+  if (aside) bits.push(`${aside} not counted in your records`);
   if (entries.length) bits.push(`${mb(u.libraryBytes)} stored`);
   if (u.originBytes !== null) {
     bits.push(`${mb(u.originBytes)} used by this site in total` +
@@ -133,7 +167,8 @@ function renderRows(entries) {
     <tbody>${entries.map((e) => `
       <tr data-id="${esc(e.id)}">
         <td class="l stack-lead"${th(0)}>${esc(shortDate(e.startUtc))}</td>
-        <td class="l stack-block"${th(1)}><span class="lib-spot">${esc(e.spot || "Session")}</span>
+        <td class="l stack-block"${th(1)}><span class="lib-spot">${esc(e.spot || "Session")}
+          ${tags(e)}</span>
           <span class="lib-file">${esc(e.fileName || "")}</span></td>
         <td${th(2)}>${nf(e.foilPct, 0)} %</td>
         <td${th(3)}>${nf(e.distanceKm, 2)} km</td>
@@ -150,6 +185,33 @@ function renderRows(entries) {
           <button class="ghost small-btn danger" data-act="delete">Delete</button>
         </td>
       </tr>`).join("")}</tbody></table></div>`;
+}
+
+/**
+ * "Example", or a friend's name, beside the spot.
+ *
+ * The one thing on a row that cannot be read off any other cell, and the one that changes
+ * what the row *means*: these two kinds of session are shown in full and counted in
+ * nothing, so the row has to say so where the eye already is. The name itself is the
+ * badge — "SHARED" would leave the reader to remember which friend — and the title says
+ * the consequence in words, because a colour cannot.
+ *
+ * The exclusion itself is not decided here. `library.counts_towards_records`
+ * (lab_bundle/library.py) owns the rule for every number; this only reads the two fields
+ * it reads. An entry saved before they existed has neither, which is exactly the "mine,
+ * not example" it always was, and gets no badge.
+ */
+function tags(e) {
+  const out = [];
+  if (e.example) {
+    out.push(`<span class="lib-tag example" title="The bundled demonstration session — ` +
+             `not counted in your records or trends">Example</span>`);
+  }
+  if (e.rider) {
+    out.push(`<span class="lib-tag rider" title="${esc(e.rider)}'s session, shared with ` +
+             `you — not counted in your records or trends">${esc(e.rider)}</span>`);
+  }
+  return out.join("");
 }
 
 /**

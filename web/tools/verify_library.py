@@ -14,6 +14,10 @@ Four groups:
 1. **Dedupe edge cases.** The +/-60 s rule is the project's session-identity rule; 59 s
    must match and 61 s must not, on either axis, and an entry with no start must never
    match anything.
+1c. **Attribution.** The bundled example and a session a friend rode are stored like any
+   other and counted in nothing; `counts_towards_records` is the rule and `aggregate` is
+   the only place it is applied, so a friend's faster afternoon must not reach the records
+   table — and an entry saved before the fields existed must still count as the reader's.
 2. **Digest fidelity.** The digest is a projection of the analysis document, so every
    field it carries must equal the golden it came from — including the port/starboard
    turn split, which is hand-counted here from the golden's own `turns` array.
@@ -141,6 +145,82 @@ def check_spot_names() -> None:
     ]
     for name, want in cases:
         check(f"  {name or '(empty)'}", library.spot_name(name), want)
+
+
+# ------------------------------------------------------------------ 1c. attribution
+
+
+def counted_entry(ident: str, best2s: float, **extra) -> dict:
+    """A stored index entry, thin but real: everything `aggregate` reads is present, so
+    the only thing under test is whether the entry is counted at all."""
+    e = {
+        "schema": library.SCHEMA, "id": ident, "fileName": f"{ident}.fit", "spot": ident,
+        "startUtc": "2026-08-01T08:00:00Z", "startEpoch": 1_785_916_800.0,
+        "dateUtc": "2026-08-01", "durationS": 3600.0, "distanceKm": 10.0,
+        "foilPct": 50.0, "foilTimeS": 1800.0, "flightCount": 5, "longestFlightS": 60.0,
+        "records": {"best2sKn": best2s}, "recordWindows": {"best2sKn": []},
+        "turns": {"counted": 10, "successful": 4, "successPct": 40.0,
+                  "bySide": {"port": {"entries": 5, "successes": 2},
+                             "starboard": {"entries": 5, "successes": 2}}},
+        "takeoff": {"attempts": 5, "successes": 5},
+    }
+    e.update(extra)
+    return e
+
+
+def check_attribution() -> None:
+    """The bundled example and a friend's session are shown in full and counted in
+    nothing. The rule lives in `counts_towards_records` and is applied in `aggregate`
+    only, so these checks are what stop a third copy of it appearing somewhere else."""
+    section("1c. attribution (the example and a friend's session do not count)")
+    cases = [
+        ("no fields at all (an entry saved before schema 2)", {}, True),
+        ("rider: null", {"rider": None}, True),
+        ("rider: \"\"", {"rider": ""}, True),
+        ("rider: whitespace", {"rider": "   "}, True),
+        ("rider: a name", {"rider": "Max"}, False),
+        ("example: false", {"example": False}, True),
+        ("example: true", {"example": True}, False),
+        ("example: true and a rider", {"example": True, "rider": "Max"}, False),
+    ]
+    for label, fields, want in cases:
+        check(f"  {label}", library.counts_towards_records(dict(fields)), want)
+    check("  not a dict", library.counts_towards_records("nope"), False)
+
+    # The friend is the fastest session in this library and the example is the longest —
+    # neither may reach the records table, the totals or a trend point.
+    mine = counted_entry("mine", 12.0)
+    friend = counted_entry("friend", 20.0, rider="Max", distanceKm=99.0)
+    demo = counted_entry("demo", 18.0, example=True, distanceKm=42.0)
+    agg = library.aggregate([mine, friend, demo])
+    check("  aggregate counts only the reader's own", agg["count"], 1)
+    check("  totals.sessions", agg["totals"]["sessions"], 1)
+    check("  totals.distanceKm ignores the excluded two", agg["totals"]["distanceKm"], 10.0)
+    check("  totals.turnsCounted ignores them too", agg["totals"]["turnsCounted"], 10)
+    rows = {r["key"]: r for r in agg["records"]}
+    check("  the record is the reader's, not the friend's",
+          (rows["best2sKn"]["value"], rows["best2sKn"]["id"]), (12.0, "mine"))
+    check("  one point per counted session",
+          [len(l["points"]) for c in agg["trends"]["charts"] for l in c["lines"]],
+          [1] * sum(len(c["lines"]) for c in agg["trends"]["charts"]))
+    check("  the trend stamps name only the counted session",
+          [s["id"] for s in agg["trends"]["sessions"]], ["mine"])
+
+    # A library made only of those: `count` is 0, which is what lets js/trends.js say
+    # "nothing here counts yet" without knowing the rule itself.
+    empty = library.aggregate([friend, demo])
+    check("  nothing counted -> count 0", empty["count"], 0)
+    check("  nothing counted -> no records", empty["records"], [])
+    check("  nothing counted -> no trend stamps", empty["trends"]["sessions"], [])
+
+    # Back-compat, stated as a check rather than a comment: a library written before the
+    # fields existed must aggregate exactly as it did then.
+    old = [counted_entry("a", 12.0), counted_entry("b", 14.0)]
+    for e in old:
+        e.pop("schema")
+    check("  a schema-1 library is unchanged", library.aggregate(old)["count"], 2)
+    check("  digest stamps the current schema",
+          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 2)
 
 
 # --------------------------------------------------------------- 2-4. the FIT corpus
@@ -403,6 +483,7 @@ def main(argv=None) -> int:
 
     check_dedupe()
     check_spot_names()
+    check_attribution()
     check_export()
     if not args.fast:
         digests = build_digests()

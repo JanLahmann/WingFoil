@@ -39,6 +39,7 @@ web/
 ├── js/tokens.js                GENERATED from design/tokens.json — do not edit
 ├── js/store.js                 OPFS storage, with an IndexedDB fallback
 ├── js/library.js               library view: rows, open, delete, per-session + zip export
+├── js/rider.js                 the "whose session is this?" prompt, asked on the way in
 ├── js/trends.js                records table + inline-SVG trend charts
 ├── js/icu.js                   optional intervals.icu panel
 ├── lab_bundle/
@@ -206,6 +207,25 @@ inclusive. The key is computed in Python (`library.digest`), the comparison too
 is never resolved silently: you are told which stored session matched and by how much, and
 asked whether to replace it. Answering no leaves the library exactly as it was.
 
+**Whose session is it.** The analyzer answers for any `.fit` that reaches it, and two of
+them are not the reader's own afternoon: the **bundled example**, and a recording a **friend
+sent** — scrubbed of every identifier by the iOS share, so nothing in the file says who rode
+it and nothing could. Saved unattributed, either one joins the all-time records and bends
+every trend line, and a fast afternoon of somebody else's becomes a personal best that no
+later correction can un-set. So the question is asked on the **Save** press, before anything
+is written: *Whose session is this?* — **Mine** (preselected, one tap) or **A friend's** plus
+a name, with the names already in the library offered as chips so the second file from the
+same friend lands on the same spelling as the first. The example answers for itself and is
+never asked about. Dismissing the prompt saves nothing.
+
+Both kinds are stored, listed and opened like any other session — badged *Example* or with
+the rider's name in the library row — and both are **counted in nothing**: the exclusion is
+one condition, `library.counts_towards_records`, applied in `library.aggregate` only, so the
+records table, the totals block and every trend chart honour it without three call sites
+remembering to. Entries saved before this existed carry neither field, and a missing field
+reads as *mine, not example* — nobody's stored library changes meaning. (Same design as the
+iOS app's `LibraryStore.clause`; the stored-entry schema went to 2 with it.)
+
 **Getting your data out.** Three ways, none of which need a server:
 
 | | What you get |
@@ -230,6 +250,9 @@ One Python call (`library.aggregate`) over the stored digests produces the whole
   a point to open that session. A **gap in a line is a missing measurement, not a zero** —
   a session with no wrist accelerometer has no pump number, and drawing that as 0 would be a
   lie.
+- **What counts** — the reader's own sessions. The bundled example and anything a friend
+  rode are excluded (see *Whose session is it* above); a library made only of those says so
+  instead of drawing a chart of nothing.
 - **Totals** are weighted the way the metric means them: the library's on-foil share is total
   foil time over total on-water time (recovered from each session's own denominator, not from
   elapsed time, which would under-report it by ~19 points), and the turn rate is successes
@@ -475,6 +498,13 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
 14. **Save to library.** Press it: the button becomes *Saved*, and the Library tab shows a
     count. Analyze the same file again under a different filename and press save — you must
     get the duplicate prompt naming the stored session and the two deltas, not a second row.
+14b. **Whose session is this?** Saving anything that is not the example must ask first.
+    *Mine* is preselected; *A friend's* with an empty name must leave *Save* disabled;
+    Escape, *Cancel* and a click on the backdrop must all save nothing. Save one as a
+    friend's: the library row gets the name as a badge, the count line says how many are not
+    counted, and **Records & trends must not move**. The example, saved from *try the example
+    session*, is badged *Example*, is never asked about, and counts in nothing either — a
+    library holding only those two says so instead of drawing empty charts.
 15. **Library.** Row values must match the tiles for that session. *Open* re-renders it
     instantly and the save button reads *Already in the library*. Turn off the network
     entirely and *Open* again — it must still work, because nothing is fetched. `.fit` and

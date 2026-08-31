@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v10";     // v10: homepage at the root, analyzer moved to /app/
+const VERSION = "v11";     // v11: the library asks whose session it is
 const SHELL = `wingfoil-shell-${VERSION}`;
 const RUNTIME = `wingfoil-runtime-${VERSION}`;
 
@@ -43,6 +43,7 @@ const APP_SHELL = [
   "js/icu.js",
   "js/library.js",
   "js/render.js",
+  "js/rider.js",
   "js/rpc.js",
   "js/sections.js",
   "js/session.js",
