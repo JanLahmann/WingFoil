@@ -61,9 +61,49 @@ struct RootView: View {
             Text("When a new Garmin activity syncs, WingFoil can let you know — "
                  + "even in the background.")
         }
-        .task { store.askAboutNewActivitiesIfNeeded() }
+        // The first thing a first launch shows, in front of the setup card the library
+        // would otherwise open on. A cover rather than a sheet: it is one screen with three
+        // answers on it and nothing behind it worth peeking at, and a half-swipe that
+        // reveals an empty list is not a fourth answer. Raised here for the same reason the
+        // two prompts above are — it belongs to the app, not to any one tab — and it goes
+        // through the same "is anything else up?" predicate, so it can never stack.
+        .fullScreenCover(isPresented: Binding(get: { store.isShowingWelcome },
+                                              set: { if !$0 { store.dismissWelcome() } })) {
+            WelcomeView(
+                onTryExample: {
+                    store.dismissWelcome()
+                    Task { await store.loadExampleSessionAndOpen() }
+                },
+                // Straight into the ordinary first run: the library is empty and no key is
+                // stored, so `IcuSetupCard` is already the thing underneath. Nothing to do
+                // but get out of its way.
+                onConnect: { store.dismissWelcome() },
+                onLater: { store.dismissWelcome() })
+        }
+        .task {
+            store.showWelcomeIfNeeded()
+            store.askAboutNewActivitiesIfNeeded()
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { store.askAboutNewActivitiesIfNeeded() }
+        }
+        // The library arriving is what settles whether this install has a history, and it
+        // lands *after* the `task` above — `SessionStore.load` is asynchronous, and the
+        // first read of an empty list means "not read yet", not "no sessions". So the real
+        // decision happens here, on the generation counter, which is bumped by every load
+        // including the one that finds nothing.
+        .onChange(of: store.libraryGeneration) { _, _ in store.showWelcomeIfNeeded() }
+        // …and the moment whatever was in the way goes away — the same two hooks the
+        // notification offer waits on, for the same reason. Both halves are re-asked: the
+        // first run because a deferral is not a refusal, and the Settings replay because
+        // the sheet it was tapped in has to finish closing first.
+        .onChange(of: store.isPresentingSheet) { _, _ in
+            store.showWelcomeIfNeeded()
+            store.raiseRequestedWelcome()
+        }
+        .onChange(of: store.pendingImport?.id) { _, _ in
+            store.showWelcomeIfNeeded()
+            store.raiseRequestedWelcome()
         }
         // The moment setup finishes: a key typed into the first-run card or into Settings,
         // proved against intervals.icu, and the screen behind it now worth notifying about.
