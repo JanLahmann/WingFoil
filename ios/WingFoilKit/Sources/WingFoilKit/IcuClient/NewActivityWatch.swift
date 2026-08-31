@@ -208,3 +208,34 @@ public enum NewActivityWatch {
                                 : facts.joined(separator: " · ") + " — tap to analyze")
     }
 }
+
+/// Whether to offer the feature above, out loud, once.
+///
+/// The toggle lives four sections down a settings sheet and starts off, which is the right
+/// default — a launch that opens with a permission prompt before the rider has seen a
+/// single session is a prompt he says no to — but it is also why nobody has the feature.
+/// So the app asks, at the first moment the question can be answered honestly, and then
+/// never again whatever the answer was.
+///
+/// Pure, because this is the sort of path that is walked once per install by hand and then
+/// never tested again: "asked twice" and "asked before there was a key" are both bugs that
+/// only a fresh device would show.
+public enum NewActivityPrompt {
+
+    /// - Parameters:
+    ///   - hasKey: an intervals.icu key is stored. Without one there is nothing to poll,
+    ///     so the offer would be for a feature that cannot work yet — which is also why
+    ///     the Settings toggle itself is disabled until the key is there.
+    ///   - isEnabled: the toggle is already on. A rider who found it himself is not asked
+    ///     to turn on what he turned on.
+    ///   - hasAsked: the offer has been made before. Once is the whole contract: a "not
+    ///     now" that comes back next launch is a "no" that was not listened to.
+    ///   - isPresenting: something else is on screen — the "whose session is this?" sheet,
+    ///     Settings, Help, an error alert. That is a *deferral*, not a refusal: the caller
+    ///     writes `hasAsked` down only when the alert actually goes up, so the next clear
+    ///     screen asks again.
+    public static func shouldAsk(hasKey: Bool, isEnabled: Bool, hasAsked: Bool,
+                                 isPresenting: Bool = false) -> Bool {
+        hasKey && !isEnabled && !hasAsked && !isPresenting
+    }
+}

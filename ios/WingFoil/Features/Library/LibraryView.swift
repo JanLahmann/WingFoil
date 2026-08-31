@@ -81,6 +81,13 @@ struct LibraryView: View {
                     showSettings = true
                 }
             }
+            // The root's one-time notification offer must not land on top of a sheet this
+            // screen opened — most of all Settings, which is where the key that *arms* the
+            // offer is usually typed. The sheets are this view's state and the alert is two
+            // levels up, so the state is reported rather than guessed at.
+            .onChange(of: showSettings || showImporter || showHelp || helpTopic != nil) {
+                _, presenting in store.isPresentingSheet = presenting
+            }
             // Where a tapped "new session" notification lands. Two hooks rather than one:
             // on a cold start from the notification the id is already waiting when this
             // screen appears, and on a warm one it arrives seconds later, after the sync
