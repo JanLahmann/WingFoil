@@ -45,6 +45,11 @@ export const C = {
   // The highlighted record window — one ink for both of its marks (the glow on the track
   // and the band in the chart), the same orange the iOS app draws it in.
   effort: TOKENS.effort.window.hex,
+  // Entry tack. A side is not a verdict and not an effort, so it gets a vocabulary of its
+  // own rather than borrowing one: one hue at two lightnesses, the quieter half dashed
+  // (docs/presentation.md "Entry tack"). Before these tokens existed the trend chart drew
+  // the pair in the ladder's green and an unowned magenta — app-ui-review.md §5.2/§5.3.
+  sidePort: TOKENS.side.port.hex, sideStarboard: TOKENS.side.starboard.hex,
 };
 
 // `glide_out` is the *green* end of the ladder: a flight that ended without drama. It is

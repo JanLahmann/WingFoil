@@ -64,6 +64,16 @@ export const TOKENS = {
       "swiftUI": "primary"
     }
   },
+  "side": {
+    "port": {
+      "hex": "#a38054",
+      "swiftUI": "brown"
+    },
+    "starboard": {
+      "hex": "#d9b9a3",
+      "swiftUI": "brown"
+    }
+  },
   "opacity": {
     "directionWeb": 0.42,
     "directionFlying": 0.62,

@@ -183,6 +183,16 @@ struct SummaryGrid: View {
         let k = summary.takeoff
         if k.takeoffSuccesses > 0 {
             section("Takeoff & pumping", anchor: "takeoff", help: .takeoffAttempts) {
+                // Promoted out of the map legend's grey body copy, where "38 failed
+                // attempts this session" was the one session-specific fact buried in three
+                // paragraphs of documentation (app-ui-review.md §1.2). It is a number about
+                // takeoffs and it belongs on the takeoff card, at the size a number gets.
+                if k.failedAttempts > 0 {
+                    StatCard(title: "Failed attempts",
+                             value: "\(k.failedAttempts)",
+                             caption: "went at it and came back down · red u-turns on the map",
+                             help: .takeoffAttempts)
+                }
                 StatCard(title: "Pumps to takeoff",
                          value: k.avgPumpsToTakeoff.map { String(format: "%.1f", $0) } ?? "—",
                          caption: k.avgPumpsToTakeoff == nil

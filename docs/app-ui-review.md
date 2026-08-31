@@ -513,21 +513,59 @@ token-level fixes.
 
 ## 9. Prioritized punch list
 
+**Status.** Items are marked as they ship. `✅ shipped` means the change is in and its
+tests are green; an unmarked item is still open. The two commits that worked this list are
+named in the entries.
+
 ### Quick wins — small diffs, visible immediately
 
-1. **§5.2 / §5.3** Stop Trends using ladder green + takeoff blue for port/starboard, and
-   retire the magenta. Add `side.port` / `side.starboard` to `design/tokens.json`, amend
-   `presentation.md` in the same commit. *The only outright contract violations in either app.*
-2. **§1.2** Collapse SessionDetail's three legend paragraphs behind the existing `?` help.
-   Recovers ~115 pt on the first screen; promote "38 failed attempts" into the takeoff card.
-3. **§7.3 (a)+(b)** Elapsed timer + cancel on the web analysis card.
+1. ✅ **shipped (quick-wins commit)** — **§5.2 / §5.3** Stop Trends using ladder green +
+   takeoff blue for port/starboard, and retire the magenta. Added `side.port` /
+   `side.starboard` to `design/tokens.json` — one hue at two intensities, the quieter half
+   dashed — regenerated all four token artifacts (`DesignTokens.swift`, `tokens.css`,
+   `tokens.js`, `DesignTokens.mc`), and applied them on **both** platforms: the iOS
+   side-success and port-share charts, and the web `turnSide` chart through two new line
+   roles (`sidePort` / `sideStarboard`). `presentation.md` amended in the same commit, and
+   `PresentationTests.theSideInksBelongToNoOtherVocabulary` now asserts the property that
+   made the old spelling wrong. *The only outright contract violations in either app.*
+2. ✅ **shipped (quick-wins commit)** — **§1.2** The three legend paragraphs are the
+   `mapLegend` help topic, reached by a `?` that flows with the chips. "38 failed attempts"
+   is a `Failed attempts` card on the takeoff section.
+3. ✅ **shipped (quick-wins commit)** — **§7.3 (a)+(b)** A ticking `mm:ss` clock on the
+   active step, a one-line expectation ("large CIQ recordings take several minutes"), and a
+   Cancel that terminates the worker and re-warms a fresh one in the background. The
+   analysis is one synchronous call into CPython-on-WASM, so terminate is the only thing
+   that actually stops it — see the note on `rpc.cancel`.
 4. **§5.1** Render `longestFlewStreak` — already computed, never shown.
-5. **§5.4** Longest-flight trend to the phase teal.
-6. **§5.7** Make the pumping-vs-cruising delta and its operands agree.
-7. **§6.3** Replace the aeroplane with a foil silhouette (or no icon).
-8. **§1.5** Round the chart time ticks.
-9. **§5.6** Outcome-tally column on the web library table.
+   *(Superseded in part: the key-metrics block, shipped before this review's punch list was
+   worked, already draws `11 dry · 5 flew`. Nothing remains on the session screen; the
+   trends screen still never shows a streak.)*
+5. ✅ **shipped (quick-wins commit)** — **§5.4** Longest-flight trend is the phase teal.
+   Every trend tone is now a token rather than a `Color` literal.
+6. ✅ **shipped (quick-wins commit)** — **§5.7** The pumping-vs-cruising operands are
+   printed at the delta's own precision, and the printed delta is derived from the printed
+   operands, so the card reconciles exactly.
+7. ✅ **shipped (quick-wins commit)** — **§6.3** `GearKind.symbol` is now optional and
+   `foil` returns nil: there is no SF Symbol that means "hydrofoil", so rather than the
+   next-nearest wrong picture the app draws its own front-wing silhouette (`GearKindIcon`).
+8. ✅ **shipped (quick-wins commit)** — **§1.5** `TimeAxisTicks` in the kit picks the finest
+   step from a ladder of nameable units and labels its multiples; the speed chart and the
+   HR-cost chart share it, so they cannot drift apart.
+9. ✅ **shipped (quick-wins commit)** — **§5.6** The web library table has an `outcomes`
+   column on the ladder's inks. The tally is a new digest field, absent on rows stored
+   before it existed, which render "—" rather than three zeroes.
 10. **§7.4 / §7.5** Close the tile-grid hole; stop "Save to library" out-shouting the numbers.
+
+### Added after the review, at Jan's request
+
+- ✅ **shipped (quick-wins commit)** — **The web had no sample file.** A first visitor with
+  no `.fit` to hand saw a drop target and nothing else. `web/example/ExampleSession.fit` is
+  now the same 435 KB recording the iOS app bundles (byte for byte), reached by an
+  "…or try the example session — Lago di Garda, 29 Aug" link beside the file chooser. It
+  goes through the ordinary `analyzeFile` path, so what it shows is what a real file shows;
+  it is precached by the service worker, which is what makes it work for an installed app
+  with no network; and GitHub Pages uploads the whole of `web/`, so the deploy needed no
+  change.
 
 ### Structural — worth planning
 

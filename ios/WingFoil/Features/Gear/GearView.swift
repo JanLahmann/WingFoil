@@ -40,7 +40,7 @@ struct GearView: View {
                                 .font(.footnote)
                         }
                     } header: {
-                        Label(kind.label, systemImage: kind.symbol)
+                        Label { Text(kind.label) } icon: { GearKindIcon(kind: kind, size: 13) }
                     }
                 }
 

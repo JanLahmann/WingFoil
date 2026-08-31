@@ -127,18 +127,29 @@ struct TrendsView: View {
 
     @ViewBuilder
     private var charts: some View {
-        TrendChart(title: "Foil time", unit: "%", points: points, tone: .teal,
+        // Every tone here is a token, and each one is the vocabulary its metric belongs to
+        // (docs/presentation.md "Colour and glyph vocabulary"): foil time and longest
+        // flight are both *flight* facts and therefore the phase teal — longest flight
+        // wore the takeoff blue until app-ui-review.md §5.4 — jibes-flown-through is a
+        // verdict and may have the ladder's green, and the port share is a side, so it
+        // takes the side ink rather than the unowned magenta of §5.3.
+        TrendChart(title: "Foil time", unit: "%", points: points,
+                   tone: DesignTokens.Phase.flying,
                    value: \.foilPct, domain: 0...100)
-        TrendChart(title: "Longest flight", unit: "min", points: points, tone: .blue,
+        TrendChart(title: "Longest flight", unit: "min", points: points,
+                   tone: DesignTokens.Phase.flying,
                    value: { $0.longestFlightS.map { $0 / 60 } })
-        TrendChart(title: "Jibes flown through", unit: "%", points: points, tone: .green,
+        TrendChart(title: "Jibes flown through", unit: "%", points: points,
+                   tone: DesignTokens.Outcome.flew,
                    value: \.jibeFlewThroughPct, domain: 0...100,
                    note: "Share of jibes that never touched down.")
-        TrendChart(title: "Pumps to takeoff", unit: "strokes", points: points, tone: .orange,
+        TrendChart(title: "Pumps to takeoff", unit: "strokes", points: points,
+                   tone: DesignTokens.Effort.window,
                    value: \.avgPumpsToTakeoff,
                    note: "Needs the wrist accelerometer — only our own CIQ recordings "
                        + "carry it.")
-        TrendChart(title: "Port / starboard", unit: "% port", points: points, tone: .purple,
+        TrendChart(title: "Port / starboard", unit: "% port", points: points,
+                   tone: DesignTokens.Side.port,
                    value: \.portSharePct, domain: 0...100, reference: 50,
                    note: "50 % is symmetric; the gap is the side you avoid.")
         sideSuccessChart
@@ -153,11 +164,19 @@ struct TrendsView: View {
     /// seasons, and the pair shows both at once. A session that never entered a turn on
     /// one tack contributes no point on that side — absent, not 0 %, the same rule the
     /// rest of this screen follows.
+    ///
+    /// **The two inks are `side.port` / `side.starboard` and nothing else.** This chart
+    /// drew port in the takeoff blue and starboard in the ladder's *green* until
+    /// app-ui-review.md §5.2 — on a chart whose subject is "% flew through", a green line
+    /// reads as the flew-through line, which is exactly the misread the ladder's
+    /// verdicts-only rule exists to prevent. The pair is symmetric, so its encoding is:
+    /// one hue at two intensities, and starboard dashed as well, so the split survives a
+    /// colour-vision check with no second hue.
     private var sideSuccessChart: some View {
         let series: [(side: String, tone: Color, values: [(date: Date, value: Double)])] = [
-            ("Port entry", .blue,
+            ("Port entry", DesignTokens.Side.port,
              points.compactMap { p in p.portFlewThroughPct.map { (p.date, $0) } }),
-            ("Starboard entry", .green,
+            ("Starboard entry", DesignTokens.Side.starboard,
              points.compactMap { p in p.starboardFlewThroughPct.map { (p.date, $0) } }),
         ]
         let total = series.reduce(0) { $0 + $1.values.count }
@@ -181,6 +200,9 @@ struct TrendsView: View {
                                      y: .value("Flew through", item.value),
                                      series: .value("Entry tack", line.side))
                                 .foregroundStyle(by: .value("Entry tack", line.side))
+                                .lineStyle(StrokeStyle(lineWidth: 1.8,
+                                                       dash: line.side == "Port entry"
+                                                           ? [] : [5, 3]))
                                 .interpolationMethod(.monotone)
                             PointMark(x: .value("Date", item.date),
                                       y: .value("Flew through", item.value))
@@ -189,8 +211,8 @@ struct TrendsView: View {
                         }
                     }
                 }
-                .chartForegroundStyleScale(["Port entry": Color.blue,
-                                            "Starboard entry": Color.green])
+                .chartForegroundStyleScale(["Port entry": DesignTokens.Side.port,
+                                            "Starboard entry": DesignTokens.Side.starboard])
                 .chartYScale(domain: 0...100)
                 .chartYAxis { AxisMarks(position: .leading) }
                 .chartLegend(position: .bottom, alignment: .leading)

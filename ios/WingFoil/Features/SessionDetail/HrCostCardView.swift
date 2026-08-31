@@ -119,8 +119,10 @@ struct HrCostCardView: View {
             .chartYAxisLabel("% up")
             .chartYScale(domain: 0...100)
             .chartXScale(domain: domain)
+            // The same round-time rule as the speed chart above it — the two are read
+            // against each other on one page, so they share an axis vocabulary.
             .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 4)) { value in
+                AxisMarks(values: TimeAxisTicks.values(for: domain, desiredCount: 4)) { value in
                     AxisGridLine()
                     AxisValueLabel {
                         if let seconds = value.as(Double.self) { Text(Fmt.clock(seconds)) }
