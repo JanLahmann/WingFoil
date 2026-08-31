@@ -127,15 +127,18 @@ struct LibraryView: View {
                     try? await Task.sleep(for: .milliseconds(600))
                     withAnimation(.none) { proxy.scrollTo(anchor, anchor: .bottom) }
                 }
+                // …and then push the session, here rather than only on the count change.
+                //
+                // The `onChange` below used to be the whole of it, and it only ever worked on
+                // a run that *imported* something: `UI_OPEN_SESSION` on a simulator whose
+                // library already holds the session never changed the count, so the hook
+                // watched for a transition that had happened before the app launched and the
+                // staging run sat on the list. Asking directly, once the imports above have
+                // finished, covers that; the handler stays for the run where the import is
+                // still landing when this task ends.
+                openRequestedSession()
             }
-            .onChange(of: store.sessions.count) {
-                guard let wanted = ProcessInfo.processInfo.environment["UI_OPEN_SESSION"],
-                      path.isEmpty else { return }
-                let match = wanted == "latest"
-                    ? store.sessions.first
-                    : store.sessions.first { ($0.originalFilename ?? "").contains(wanted) }
-                if let match { path = [match.id] }
-            }
+            .onChange(of: store.sessions.count) { openRequestedSession() }
             #endif
             .safeAreaInset(edge: .bottom) { statusBar }
             .alert("Something went wrong",
@@ -196,6 +199,20 @@ struct LibraryView: View {
         store.pendingSessionID = nil
         path = [id]
     }
+
+    #if DEBUG && targetEnvironment(simulator)
+    /// `UI_OPEN_SESSION=latest|<name>` — the staging hook that stands in for a tap on a row.
+    /// `latest` takes the newest; anything else is matched against the archived filename
+    /// (e.g. `UI_OPEN_SESSION=ciq`).
+    private func openRequestedSession() {
+        guard let wanted = ProcessInfo.processInfo.environment["UI_OPEN_SESSION"],
+              path.isEmpty else { return }
+        let match = wanted == "latest"
+            ? store.sessions.first
+            : store.sessions.first { ($0.originalFilename ?? "").contains(wanted) }
+        if let match { path = [match.id] }
+    }
+    #endif
 
     private func delete(at offsets: IndexSet) {
         let rows = offsets.map { store.sessions[$0] }
