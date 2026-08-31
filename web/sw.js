@@ -20,7 +20,10 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v13";     // v13: engine 0.8.1 (the in-flight strokes take the amplitude gate)
+const VERSION = "v14";     // v14: the site is CleanJibe now (both page shells changed)
+// The cache *names* keep the historical prefix on purpose: the activate handler below
+// deletes every cache starting with it, so renaming the prefix would strand every v1–v13
+// cache on every device that ever visited, forever. Nobody sees these strings.
 const SHELL = `wingfoil-shell-${VERSION}`;
 const RUNTIME = `wingfoil-runtime-${VERSION}`;
 

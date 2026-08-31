@@ -1,7 +1,7 @@
 {
-  "name": "WingFoil Lab",
-  "short_name": "WingFoil",
-  "description": "Analyze a wingfoil session FIT file in the browser, and keep a private session library. Nothing is uploaded.",
+  "name": "CleanJibe Lab",
+  "short_name": "CleanJibe",
+  "description": "CleanJibe: analyze a wingfoil session FIT file in the browser, and keep a private session library. Nothing is uploaded.",
   "id": "/wingfoil-lab",
   "start_url": "./",
   "scope": "./",
