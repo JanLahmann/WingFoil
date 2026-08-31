@@ -194,9 +194,14 @@ import Testing
                 == nil)
     }
 
-    /// The closing card's lines are picked out of the script the clip already said out loud —
-    /// top speed, the *best* streak, the longest flight — and never recomputed.
-    @Test func theOutroHighlightsAreTheCommentarysOwnSuperlatives() throws {
+    /// The commentary's superlatives, still picked out of the script the clip said out loud.
+    ///
+    /// The **closing card no longer prints them** — two of the three restated cells of its own
+    /// metrics grid, so the lines went and the one number the grid was missing became its
+    /// ninth cell instead (`ShareCardStatsTests.theOutroGridIsTheBlockPlusTheLongestFlight`).
+    /// The picker itself stays: it is a fact about the commentary, and what it names is what
+    /// the grid now has to carry.
+    @Test func theCommentarysSuperlativesAreStillTheOnesTheGridHasToCover() throws {
         let milestones = try script()
         let highlights = ReplayCommentary.highlights(milestones)
 
@@ -209,17 +214,9 @@ import Testing
             "Flying! · Longest flight — 6:32",
         ])
         #expect(highlights.allSatisfy { milestones.contains($0) })
-
-        let board = ReplayStoryboard.make(span: span, rate: 30, milestones: milestones)
-        #expect(board.highlights == highlights)
-    }
-
-    /// A rider who switched the commentary off asked for a replay that does not narrate, and
-    /// the closing card honours that: no captions in, no highlight lines out. The metrics on
-    /// it are not commentary and stay.
-    @Test func aSilentReplayHasASilentOutro() {
+        // The first two are the max-2 s and streaks cells said in a sentence; the third is
+        // the one the grid did not have, and now does.
         #expect(ReplayCommentary.highlights([]).isEmpty)
-        #expect(ReplayStoryboard.make(span: span, rate: 30).highlights.isEmpty)
     }
 
     /// The limit is a limit, not a shape — a caller with room for two lines gets the two most

@@ -2,17 +2,72 @@ import PhotosUI
 import SwiftUI
 import WingFoilKit
 
-/// Playback speeds, shared by the scrubber's inline picker and the clip's setup sheet.
+/// Playback speeds for the **scrubber's** inline picker — the one on the session page, next
+/// to the play button.
 ///
-/// One enum for both because they are one choice said twice: a rider who watched at 30× in
-/// the card and then records at 60× is choosing against what he just saw, and two independent
-/// definitions would let the two lists drift apart. 30× turns a two-hour session into four
-/// minutes, which is about the pace at which a jibe is still recognisable.
+/// It stayed a speed picker when the clip's setup sheet became a length picker, and the
+/// difference is what the two controls are for. Scrubbing is *browsing*: the rider is looking
+/// for the jibe he remembers, the run has no end he is planning around, and "how fast does
+/// this go past" is exactly the question. A clip has a length and an audience, and nobody
+/// chooses one by its rate — see `ReplayClipLength`.
 enum ReplayRate: Double, CaseIterable, Identifiable {
     case x10 = 10, x30 = 30, x60 = 60
 
     var id: Double { rawValue }
     var label: String { "\(Int(rawValue))×" }
+}
+
+/// How long the clip should be.
+///
+/// **Why this replaced the rate picker.** The sheet used to offer 10× / 30× / 60× and print
+/// the length underneath each. Nobody was choosing a rate: the eye went to the seconds, and
+/// the seconds were what the decision was about — which is why the same 30× meant a 34-second
+/// clip on one afternoon and four minutes on the next. So the picker offers the thing that is
+/// actually being chosen, and `ReplayPacing` works the speed out.
+///
+/// Ten and twenty-five seconds because that is what a clip in a chat app is: the two-minute
+/// version was watched by nobody. Sixty for a session worth a longer look. And **Full
+/// detail**, which is deliberately *not* a length — it is the old 10×, kept for the rider who
+/// wants to watch the afternoon rather than post it, and it is the one choice whose clip gets
+/// longer as the session does.
+enum ReplayClipLength: String, CaseIterable, Identifiable {
+    case s10, s25, s60, full
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .s10: "10 s"
+        case .s25: "25 s"
+        case .s60: "60 s"
+        case .full: "Full detail"
+        }
+    }
+
+    /// Wall seconds of *replay* this asks for, or nil for "full detail", which asks for a
+    /// pace instead. The two cards and the photo pauses are added on top of it by
+    /// `ReplayStoryboard` — see its `runWallS`.
+    var targetWallS: Double? {
+        switch self {
+        case .s10: 10
+        case .s25: 25
+        case .s60: 60
+        case .full: nil
+        }
+    }
+
+    /// The pace "Full detail" means: the rate the picker's slowest option used to be, which is
+    /// where the pinned 77.7 s Torbole run comes from.
+    static let fullDetailRate: Double = 10
+
+    /// The rate and ease this choice resolves to for one session.
+    func pacing(span: ClosedRange<Double>, milestones: [ReplayMilestone]) -> ReplayPacing.Plan {
+        guard let targetWallS else {
+            return ReplayPacing.Plan(rate: Self.fullDetailRate, ease: .cinema)
+        }
+        return ReplayPacing.plan(span: span, targetWallS: targetWallS,
+                                 easeAt: milestones.map(\.t))
+    }
 }
 
 /// What a rider decides before a clip is made: how fast, and which of his own photos go in it.
@@ -35,12 +90,17 @@ struct ReplaySetupSheet: View {
     /// computed from.
     let milestones: [ReplayMilestone]
     let span: ClosedRange<Double>
-    /// Called with the chosen speed and the loaded photos. The sheet dismisses itself first.
-    let start: (Double, [ReplayPhoto]) -> Void
+    /// Called with the resolved pacing, the chosen frame and the loaded photos. The sheet
+    /// dismisses itself first.
+    let start: (ReplayPacing.Plan, ReplayFraming, [ReplayPhoto]) -> Void
 
     @Environment(\.dismiss) private var dismiss
+    /// Only for the remembered length — the one thing on this sheet that belongs to the rider
+    /// rather than to this session.
+    @Environment(SessionStore.self) private var store
 
-    @State private var rate = ReplayRate.x30
+    @State private var length = ReplayClipLength.s25
+    @State private var framing = ReplayFraming.fullScreen
     @State private var picked: [PhotosPickerItem] = []
     @State private var photos: [ReplayPhoto] = []
     @State private var loading = false
@@ -48,20 +108,28 @@ struct ReplaySetupSheet: View {
     /// `ReplayPhotoLoader.load`.
     @State private var unreadable = 0
 
+    /// What the chosen length comes out at on *this* session — a rate, and (on a short target
+    /// with a talkative afternoon) briefer slow-motion dips. See `ReplayPacing`.
+    private var pacing: ReplayPacing.Plan {
+        length.pacing(span: span, milestones: milestones)
+    }
+
     /// The whole clip, as the kit sees it — the length under the picker, and the count of
     /// what will splice into the replay versus what plays at the end.
     private var storyboard: ReplayStoryboard {
-        ReplayStoryboard.make(span: span, rate: rate.rawValue, milestones: milestones,
-                              photos: photos.map(\.entry),
-                              place: SessionDisplay.title(detail.row),
-                              startedAt: detail.row.startDate)
+        let plan = pacing
+        return ReplayStoryboard.make(span: span, rate: plan.rate, milestones: milestones,
+                                     photos: photos.map(\.entry),
+                                     place: SessionDisplay.title(detail.row),
+                                     startedAt: detail.row.startDate, ease: plan.ease)
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    speedSection
+                    lengthSection
+                    framingSection
                     photoSection
                     availabilityNote
                 }
@@ -78,30 +146,91 @@ struct ReplaySetupSheet: View {
                 }
             }
             .task(id: picked.map(\.hashValue)) { await loadPhotos() }
+            // The sheet opens on the length the last clip was made at — the second clip of an
+            // afternoon is nearly always the same shape as the first.
+            .onAppear {
+                length = store.replayClipLength
+                framing = store.replayFraming
+            }
         }
         .presentationDetents([.medium, .large])
     }
 
-    // MARK: - Speed
+    // MARK: - Length
 
-    private var speedSection: some View {
+    /// The picker, and one sentence that adds up out loud.
+    ///
+    /// The sentence is the whole reason the inversion is safe. "10 s" on the button is the
+    /// length of the *replay*; the clip is that plus a title card, a closing card and every
+    /// photo pause, and a rider who added three photos and then found a 24-second video where
+    /// the button said 10 would rightly stop trusting the button. So the total leads, and the
+    /// parts it is made of follow — including the derived speed, which is what the finished
+    /// video's own corner chip will say.
+    private var lengthSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Speed").font(.headline)
-            Picker("Speed", selection: $rate) {
-                ForEach(ReplayRate.allCases) { Text($0.label).tag($0) }
+            Text("Length").font(.headline)
+            Picker("Length", selection: $length) {
+                ForEach(ReplayClipLength.allCases) { Text($0.label).tag($0) }
             }
             .pickerStyle(.segmented)
-            // The speed is not what a rider is choosing between — the *clip length* is, and
-            // it is neither `span / rate` (the slow-motion beats) nor the replay's own run
-            // (the title card, the outro and every photo pause). `ReplayStoryboard` knows.
-            Text("About \(Fmt.duration(storyboard.runWallS)) of video — "
-                 + "\(Fmt.duration(storyboard.replayWallS)) of replay, plus the title and "
-                 + "the closing card"
-                 + (storyboard.photoWallS > 0
-                    ? " and \(Fmt.duration(storyboard.photoWallS)) of photos." : "."))
+            Text(lengthNote)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var lengthNote: String {
+        var sentence = "About \(Fmt.duration(storyboard.runWallS)) of video — "
+            + "\(Fmt.duration(storyboard.replayWallS)) of replay at about "
+            + "\(Int(pacing.rate.rounded()))×, plus the title and the closing card"
+        if storyboard.photoWallS > 0 {
+            sentence += " and \(Fmt.duration(storyboard.photoWallS)) of photos"
+        }
+        sentence += "."
+        // The one case where the button cannot keep its promise: a very long session squeezed
+        // into a very short clip would need a speed at which the dot stops reading as a moving
+        // boat, so the rate is capped and the clip comes out longer. Said, not hidden.
+        if let target = length.targetWallS, storyboard.replayWallS > target + 0.5 {
+            sentence += " This session is too long to fit \(Fmt.duration(target)) without the "
+                + "replay becoming a slideshow, so it runs at the fastest speed the map can "
+                + "still animate."
+        }
+        return sentence
+    }
+
+    // MARK: - Shape
+
+    /// What shape the video should be — the same decision the share card's aspect picker is,
+    /// and the same words on it.
+    ///
+    /// **Full screen is the default and stays the default.** It is the only choice that needs
+    /// no export at all (the recorder already produces it), it is what every clip made before
+    /// this existed looks like, and it is what a failed crop falls back to. The three ratios
+    /// are for a rider who knows where the clip is going.
+    private var framingSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Shape").font(.headline)
+            Picker("Shape", selection: $framing) {
+                ForEach(ReplayFraming.allCases) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            Text(framingNote)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var framingNote: String {
+        switch framing {
+        case .fullScreen:
+            "The whole screen, exactly as the phone records it — no cropping, nothing to go "
+                + "wrong."
+        default:
+            "\(framing.name) — the replay plays inside a \(framing.label) frame and the rest "
+                + "of the screen is painted out, so you can see what the clip will be while "
+                + "you record it. The video is cropped to that frame afterwards."
         }
     }
 
@@ -231,9 +360,14 @@ struct ReplaySetupSheet: View {
     private var startBar: some View {
         Button {
             let chosen = photos
-            let speed = rate.rawValue
+            let plan = pacing
+            // Remembered here rather than on every tap of the picker: a rider who opened the
+            // sheet, tried the three lengths and cancelled has not changed his mind about
+            // anything. The choice is made by starting.
+            store.replayClipLength = length
+            store.replayFraming = framing
             dismiss()
-            start(speed, chosen)
+            start(plan, framing, chosen)
         } label: {
             Label(ReplayRecorder.isAvailable
                   ? "Record · about \(Fmt.duration(storyboard.runWallS))"

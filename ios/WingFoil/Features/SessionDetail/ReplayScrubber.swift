@@ -87,13 +87,14 @@ struct ReplayScrubber: View {
             // see `ReplaySetupSheet`.
             .sheet(isPresented: $settingUp) {
                 ReplaySetupSheet(detail: detail, milestones: milestones, span: range) {
-                    speed, photos in
-                    start(at: speed, photos: photos)
+                    pacing, framing, photos in
+                    start(with: pacing, framing: framing, photos: photos)
                 }
             }
             .fullScreenCover(item: $cinema) { run in
                 ReplayCinemaView(detail: detail, milestones: milestones, span: range,
-                                 rate: run.rate, record: run.record, photos: run.photos)
+                                 pacing: run.pacing, record: run.record,
+                                 framing: run.framing, photos: run.photos)
             }
             .task(id: detail.row.id) { beats = ReplayBeats.make(detail.analysis) }
             #if DEBUG && targetEnvironment(simulator)
@@ -105,14 +106,29 @@ struct ReplayScrubber: View {
             // `UI_REPLAY_CLIP=stub` (`ReplayRecorder`) to walk the clip sheet as well.
             // `UI_REPLAY_SETUP=1` opens the setup sheet instead, which is the one screen the
             // photo picker lives on.
+            // `UI_REPLAY_LENGTH=10|25|60|full` opens the cinema at what the *picker* would
+            // have resolved that choice to on this session — a raw rate says nothing about
+            // whether the length arithmetic is right, and the length is now the control.
+            // `UI_REPLAY_FRAMING=portrait|square|landscape|fullScreen` stages the letterbox,
+            // which is otherwise behind the setup sheet's third picker.
             .task {
                 let environment = ProcessInfo.processInfo.environment
                 if environment["UI_REPLAY_SETUP"] == "1" { settingUp = true }
+                let record = environment["UI_REPLAY_RECORD"] != "0"
+                    && ReplayRecorder.isAvailable
+                let framing = environment["UI_REPLAY_FRAMING"]
+                    .flatMap(ReplayFraming.init(rawValue:)) ?? .fullScreen
+                if let raw = environment["UI_REPLAY_LENGTH"],
+                   let choice = ReplayClipLength(rawValue: raw == "full" ? "full" : "s\(raw)") {
+                    cinema = CinemaRun(
+                        pacing: choice.pacing(span: range, milestones: milestones),
+                        record: record, framing: framing)
+                    return
+                }
                 guard let raw = environment["UI_REPLAY_CINEMA"],
                       let speed = Double(raw) else { return }
-                cinema = CinemaRun(rate: speed,
-                                   record: environment["UI_REPLAY_RECORD"] != "0"
-                                       && ReplayRecorder.isAvailable)
+                cinema = CinemaRun(pacing: ReplayPacing.Plan(rate: speed, ease: .cinema),
+                                   record: record, framing: framing)
             }
             #endif
             // Playback advances on a timer while `isPlaying`; flipping the flag cancels
@@ -276,10 +292,16 @@ struct ReplayScrubber: View {
     /// new run rather than reusing the state of the last one.
     private struct CinemaRun: Identifiable {
         let id = UUID()
-        let rate: Double
+        /// The rate and the ease, already resolved from the length the rider picked
+        /// (`ReplayPacing`). Carried as a pair because on a short clip the two are one
+        /// decision — the dips had to be shortened to make that rate reach that length, and a
+        /// run given the rate without the ease would be a different, longer clip.
+        let pacing: ReplayPacing.Plan
         /// False when ReplayKit cannot capture — the replay still plays, it just plays for an
         /// audience of one.
         let record: Bool
+        /// The clip's shape. Staged live and cropped afterwards — see `ReplayStage`.
+        var framing: ReplayFraming = .fullScreen
         /// Already loaded and dated by the setup sheet, so the cinema view never waits on the
         /// photo library with a recording running.
         var photos: [ReplayPhoto] = []
@@ -305,8 +327,10 @@ struct ReplayScrubber: View {
         .accessibilityHint("Plays the session full screen and records it as a video clip")
     }
 
-    private func start(at speed: Double, photos: [ReplayPhoto]) {
-        cinema = CinemaRun(rate: speed, record: ReplayRecorder.isAvailable, photos: photos)
+    private func start(with pacing: ReplayPacing.Plan, framing: ReplayFraming,
+                       photos: [ReplayPhoto]) {
+        cinema = CinemaRun(pacing: pacing, record: ReplayRecorder.isAvailable,
+                           framing: framing, photos: photos)
     }
 
     // MARK: - Beat bar
