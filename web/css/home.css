@@ -1,0 +1,203 @@
+/* WingFoil — project homepage (web/index.html).
+ *
+ * A sibling of css/style.css, not a replacement: the homepage loads tokens.css, then
+ * style.css, then this file, so the surfaces, ink, buttons, panels, topbar and footer are
+ * literally the analyzer's. Everything here is what a marketing-shaped page needs and an
+ * app shell does not — a hero, a card grid, a term list, the track motif.
+ *
+ * Nothing in this file is loaded by the analyzer, and nothing in it overrides a rule the
+ * analyzer relies on: every selector below is scoped to a `.home-*` class or to an element
+ * that only exists on this page.
+ *
+ * Mobile-first. The only breakpoints are the two style.css already uses (760 / 560), so the
+ * two pages change shape at the same widths.
+ */
+
+/* ------------------------------------------------------------------- chrome */
+
+/* The topbar's right half on the homepage: one primary way in, one link out to the source.
+   `.topbar-right` (style.css) already lays them out; these are the link-as-button bits. */
+.topbar-right a.btn { text-decoration: none; }
+
+.home main { padding-bottom: 34px; }
+
+/* ---------------------------------------------------------------------- hero */
+
+.hero {
+  padding: 26px 0 30px;
+  display: grid;
+  gap: 20px;
+}
+
+/* style.css sizes h1 for a topbar (18px). The page's actual headline is its own thing. */
+.hero h1 {
+  font-size: clamp(28px, 7.5vw, 46px);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  max-width: 16ch;
+}
+.hero .lede {
+  font-size: clamp(15px, 4vw, 18px);
+  line-height: 1.5;
+  color: var(--ink-2);
+  max-width: 60ch;
+}
+.hero .eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font: 600 11.5px/1 var(--mono);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.hero .eyebrow .dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--foil);
+  box-shadow: 0 0 0 3px #40c8e02e;   /* the same teal at 18 %, spelled out for old engines */
+}
+
+.cta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.cta .btn { text-decoration: none; }
+.cta .cta-note { color: var(--ink-3); font-size: 13px; }
+
+/* ---------------------------------------------------------------- the motif */
+
+/* The track breadcrumb: an off-foil line with two flying segments on it and the three
+   outcome markers, drawn in the presentation tokens themselves. It is a picture of what
+   the apps record, and it is also the legend for the vocabulary the rest of the page uses,
+   which is why the labels are real text rather than part of the drawing. */
+.motif {
+  border: 1px solid var(--line-soft); border-radius: var(--radius);
+  background:
+    radial-gradient(120% 140% at 12% 0%, #16232a 0%, var(--surface-1) 60%);
+  padding: 16px 14px 12px;
+}
+.motif svg { display: block; width: 100%; height: auto; }
+
+/* The drawing's ink. These are the presentation tokens the apps use for the same things
+   (docs/presentation.md): the phase tints for the track, the outcome ladder for the three
+   verdicts. Shape carries the state — disc / triangle / cross — and colour reinforces it,
+   which is the rule the whole project draws by. */
+.motif .m-track {
+  fill: none; stroke: var(--track); stroke-width: 3; opacity: 0.55;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.motif .m-foil {
+  fill: none; stroke: var(--foil); stroke-width: 5;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.motif .m-dir {
+  fill: none; stroke: var(--wf-direction-ink); stroke-width: 2; opacity: 0.45;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.motif .m-flew  { fill: var(--good); stroke: var(--surface-1); stroke-width: 2; }
+.motif .m-touch { fill: var(--warn); stroke: var(--surface-1); stroke-width: 2; }
+.motif .m-fell  { fill: none; stroke: var(--bad); stroke-width: 3.5; stroke-linecap: round; }
+.motif-key {
+  display: flex; flex-wrap: wrap; gap: 8px 18px;
+  margin-top: 10px; font-size: 12.5px; color: var(--ink-3);
+}
+.motif-key span { display: inline-flex; align-items: center; gap: 7px; }
+.motif-key i {
+  width: 10px; height: 10px; flex: none; border-radius: 50%;
+  background: currentColor; font-style: normal;
+}
+.motif-key .k-flew { color: var(--good); }
+.motif-key .k-touch { color: var(--warn); }
+.motif-key .k-fell { color: var(--bad); }
+.motif-key .k-foil { color: var(--foil); }
+
+/* ------------------------------------------------------------------ sections */
+
+.home-section { padding: 30px 0 0; }
+.home-section > h2 { margin-bottom: 4px; }
+.home-section > .section-lede {
+  color: var(--ink-2); max-width: 62ch; margin-bottom: 16px;
+}
+
+/* --------------------------------------------------------------- piece cards */
+
+.pieces { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+
+/* `.panel` gives the card its surface; this gives it its innards. */
+.piece { display: grid; gap: 12px; align-content: start; }
+.piece-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.piece h3 { font-size: 17px; letter-spacing: -0.01em; }
+.piece .what { color: var(--ink-3); font-size: 12.5px; }
+.piece ul {
+  margin: 0; padding: 0; list-style: none;
+  display: grid; gap: 7px; font-size: 14px; color: var(--ink-2);
+}
+/* A hairline tick rather than a bullet glyph: the same restraint the app's legends use.
+   Absolutely positioned rather than a second grid column — a grid `li` turns every inline
+   element inside it (a `<code>` span, say) into a grid item of its own and shatters the
+   sentence across the columns. */
+.piece li { position: relative; padding-left: 18px; }
+.piece li::before {
+  content: ""; position: absolute; left: 0; top: 10px;
+  height: 1px; width: 10px; background: var(--line); border-radius: 1px;
+}
+.piece .piece-foot { margin-top: auto; padding-top: 2px; }
+.piece .piece-foot .btn { text-decoration: none; }
+
+/* The card's status line: "beta, by invite" is a fact, and it belongs beside the name. */
+.status {
+  font: 600 10.5px/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-3); border: 1px solid var(--line); border-radius: 999px;
+  padding: 5px 8px; white-space: nowrap;
+}
+.status.live { color: var(--foil); border-color: #3a6068; }
+
+/* --------------------------------------------------------------- vocabulary */
+
+.terms { display: grid; gap: 0; }
+.term {
+  display: grid; gap: 3px;
+  padding: 12px 0; border-top: 1px solid var(--line-soft);
+}
+.term:first-child { border-top: 0; }
+.term dt { font-weight: 650; font-size: 14.5px; }
+.term dd { margin: 0; color: var(--ink-2); font-size: 13.5px; }
+.term .swatch {
+  display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+  margin-right: 7px; vertical-align: 1px;
+}
+
+/* ------------------------------------------------------------------- claims */
+
+.claims { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+.claim h3 { font-size: 15px; margin-bottom: 6px; }
+.claim p { color: var(--ink-2); font-size: 14px; }
+
+/* -------------------------------------------------------------------- footer */
+
+.home footer p + p { margin-top: 6px; }
+.home footer a { color: var(--ink-2); }
+
+/* ---------------------------------------------------------------- wider than a phone */
+
+@media (min-width: 761px) {
+  .hero { padding: 44px 0 40px; gap: 24px; }
+  .pieces { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .claims { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .home-section { padding-top: 46px; }
+  /* Two columns of definitions, with the rule between rows still reading left to right. */
+  .terms { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; }
+  .term:nth-child(2) { border-top: 0; }
+}
+
+@media (max-width: 760px) {
+  /* style.css already gives buttons a 44 px target here; a full-width primary CTA is the
+     phone convention and stops the two buttons sharing a cramped row. */
+  .cta { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .cta .btn { width: 100%; }
+  .cta .cta-note { text-align: center; }
+}
+
+@media (max-width: 560px) {
+  .hero h1 { max-width: none; }
+  .motif { padding: 12px 10px 10px; }
+}
+
+/* The motif is decoration with meaning, not an animation; nothing here moves. But the
+   gradient is the one place a forced-colors user would lose the panel edge. */
+@media (forced-colors: active) {
+  .motif { background: Canvas; }
+}
