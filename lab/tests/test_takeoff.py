@@ -59,8 +59,15 @@ def _fly(n, speed=6.0):
     return [speed] * n
 
 
-def _wrist(duration, *bursts, hz=25.0, cadence_hz=1.2, amp_g=0.6):
-    """A pump track over [0, duration] carrying a sine burst for each (t0, t1) given."""
+def _wrist(duration, *bursts, hz=25.0, cadence_hz=1.2, amp_g=1.0):
+    """A pump track over [0, duration] carrying a sine burst for each (t0, t1) given.
+
+    The default amplitude is a *takeoff-sized* pump: the band-pass has near-unity gain in
+    this band, so 1.0 g of sine lands at ~0.99 g band-passed, comfortably over
+    `pumpBurstPeakG` and therefore counted in the session total. Chop-sized bursts
+    (`amp_g=0.4`) still pick the same strokes -- the picker's gate is `pumpStrokeAmp` --
+    and are exactly what the total is supposed to throw away.
+    """
     t = np.arange(0.0, duration, 1.0 / hz)
     mag = np.ones_like(t)
     for t0, t1 in bursts:
@@ -161,7 +168,10 @@ def test_bursts_a_few_seconds_apart_are_one_attempt_not_four():
 
 
 def test_pumping_inside_a_flight_is_a_separate_metric_not_an_attempt():
-    course, speed = _reach(_rest(20), _ramp(), _fly(80))
+    # Drifting at 1 m/s rather than 0.5: still "at rest" for the walk-back (`takeoffRestSpeed`
+    # is inclusive) but over `pumpMinSpeedKmh`, so the takeoff burst reaches the session total
+    # and the two stroke counts can be compared at all.
+    course, speed = _reach(_rest(20, 1.0), _ramp(), _fly(80))
     _, a = _analyze(course, speed, pump=_wrist(105.0, BURST, (50.0, 60.0)))
     assert [e.outcome for e in a.episodes] == [SUCCESS, IN_FLIGHT]
     assert a.takeoffs[0].in_flight_strokes == pytest.approx(12, abs=3)
@@ -200,6 +210,62 @@ def test_pumping_back_up_after_a_jibe_belongs_to_the_turn_not_to_the_takeoffs():
     # Without the turn list the very same burst reads as a failed takeoff attempt: the
     # ownership rule is what keeps the two channels from counting one event twice.
     assert [e.outcome for e in analyze_takeoffs(ct, flights, pump=pump).episodes] == [FAILED]
+
+
+# --- the session total: a stroke has to earn it (module docstring) -------------------------
+
+# A drifting board, no flight, one 9 s bout of pumping: the smallest track on which the
+# session total is the *only* thing under test.
+DRIFT = _reach(_rest(60, 1.5))                 # 5.4 km/h: over `pumpMinSpeedKmh`
+SWIM = _reach(_rest(60, 0.5))                  # 1.8 km/h: he is in the water, not on it
+BOUT = (10.0, 19.0)
+
+
+def test_the_session_total_counts_a_real_bout_of_pumping():
+    pump = _wrist(65.0, BOUT)
+    _, a = _analyze(*DRIFT, pump=pump)
+    assert pump.strokes(0.0, 65.0).size == 11
+    assert a.total_strokes == 11               # every stroke passes all three tests
+    assert summarize_takeoffs(a).total_pump_strokes == 11      # and the summary says so
+
+
+def test_a_burst_shorter_than_pumpminstrokes_never_reaches_the_total():
+    """The chop signature: singletons and pairs, which were 196 of the example's 286."""
+    pump = _wrist(65.0, (10.0, 12.0), (30.0, 30.9), (50.0, 50.9))
+    _, a = _analyze(*DRIFT, pump=pump)
+    assert pump.strokes(0.0, 65.0).size == 7    # the picker still sees every peak...
+    assert a.total_strokes == 0                 # ...and none of them is a bout of pumping
+
+
+def test_a_chop_sized_burst_is_dropped_from_the_total_and_from_nothing_else():
+    """Same cadence, half the amplitude: `pumpBurstPeakG` is what tells the two apart."""
+    chop, pumping = _wrist(85.0, BURST, amp_g=0.4), _wrist(85.0, BURST)
+    assert chop.strokes(0.0, 85.0).size == pumping.strokes(0.0, 85.0).size
+    _, low = _analyze(*TAKEOFF, pump=chop)
+    _, high = _analyze(*TAKEOFF, pump=pumping)
+
+    # The corroborating metrics do not move: a small burst is still evidence he was working.
+    assert low.takeoffs[0].pumps_to_takeoff == high.takeoffs[0].pumps_to_takeoff == 10
+    assert [e.outcome for e in low.episodes] == [e.outcome for e in high.episodes] == [SUCCESS]
+
+    _, drift_low = _analyze(*DRIFT, pump=_wrist(65.0, BOUT, amp_g=0.4))
+    _, drift_high = _analyze(*DRIFT, pump=_wrist(65.0, BOUT))
+    assert drift_low.total_strokes == 0 and drift_high.total_strokes == 11
+
+
+def test_strokes_that_moved_nothing_are_swim_strokes_and_do_not_count():
+    """A swimmer's arms make a fine 1 Hz oscillation at full amplitude."""
+    pump = _wrist(65.0, BOUT)
+    _, drifting = _analyze(*DRIFT, pump=pump)
+    _, swimming = _analyze(*SWIM, pump=pump)
+    assert drifting.total_strokes == 11 and swimming.total_strokes == 0
+
+
+def test_the_new_rules_leave_a_source_without_an_accelerometer_alone():
+    for course, speed in (TAKEOFF, DRIFT, SWIM):
+        _, a = _analyze(course, speed)
+        assert a.total_strokes is None
+        assert summarize_takeoffs(a).total_pump_strokes is None
 
 
 # --- degradation: no accelerometer, and a recording that does not cover the run ------------

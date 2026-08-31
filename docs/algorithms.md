@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.7.0** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.8.0** (bump on any change that alters outputs; triggers phone re-analysis)
 
 ## Flight (foil) detection — hysteresis state machine
 
@@ -172,8 +172,22 @@ inventing turns):
 ## Pumping (accelerometer)
 
 Phone-side twin of the watch `PumpDetector`, and the only consumer of the raw SensorLogging
-stream so far. A wing pump is a whole-body ~1 Hz oscillation the wrist sees as a large swing
-in |a|; chop is faster and smaller, wing trim and arm drift are slower or smaller.
+stream so far. A wing pump is a whole-body oscillation the wrist sees as a large swing in |a|;
+wing trim and arm drift are slower or smaller.
+
+**Chop is not faster and smaller — it is the same speed and only somewhat smaller.** That
+sentence stood here until engine 0.8.0 and the corpus does not support it. Measured on the
+2026-08-30 example (band-passed |a|, Welch over the flights and over the ten seconds before
+each `ON_FOIL`):
+
+| | dominant | rms, band-passed | raw \|a\| σ | detected strokes |
+|---|---|---|---|---|
+| on foil, cruising | **0.98 Hz** | 0.18 g | 0.30 g | median peak 0.35 g |
+| pumping onto the foil | **1.76 Hz** | 0.42 g | — | median peak 0.65 g |
+
+Chop plus the arm riding it sits *below* pumping cadence, dead centre in the pass band, and
+its crests clear `pumpStrokeAmp` — so the peak picker fires roughly once per crest for the
+whole flight. Amplitude, not frequency, is what separates the two, and only by about 2×.
 
 | param | default | units | notes |
 |---|---|---|---|
@@ -184,6 +198,8 @@ in |a|; chop is faster and smaller, wing trim and arm drift are slower or smalle
 | `pumpRefractory` | 0.4 | s | dead time after a stroke (a human cannot pump at >2.5 Hz) |
 | `pumpStrokeMaxInterval` | 1.5 | s | strokes closer than this belong to the same burst |
 | `pumpMinStrokes` | 4 | | burst length that means "the rider was pumping" |
+| `pumpBurstPeakG` | 0.8 | g | **PROVISIONAL** — a burst's tallest stroke must reach this to enter the *session total*. Nothing else reads it (engine ≥ 0.8.0) |
+| `pumpMinSpeedKmh` | 3.0 | km/h | speed at a stroke below which it is a swim stroke, not a pump. Session total only (engine ≥ 0.8.0) |
 
 The stream is orientation-free by construction (magnitude, not axes — the wrist rotates
 constantly through a jibe). Empty grid bins are held at the session mean so the FIR does not
@@ -195,6 +211,37 @@ inside a turn's outcome window is ≤2 for every jibe the speed channels called 
 the two pump-outs, which score 6 and 7, and the verdict is unchanged at `pumpStrokeAmp`
 0.20–0.30 g. Garmin writes `calibrated_accel_*` in milli-g although the FIT profile names
 the unit "g"; the parser sniffs the scale from the resting magnitude rather than assuming.
+
+### The session total — `summary.takeoff.totalPumpStrokes` (engine ≥ 0.8.0)
+
+The last two rows exist for **one** metric, and the reason is worth writing down. Every other
+pump number in the engine is gated by `pumpMinStrokes`; the session total was not, so it
+reported the raw output of the peak picker — which, given the table above, is mostly chop.
+On the bundled 2026-08-30 example it read **286** against a hand count of about **26**: 213
+of those 286 were logged *in flight* at ~20 km/h, and 196 of them were singletons or pairs.
+
+A counted stroke must now pass all three tests:
+
+1. **in a burst** of at least `pumpMinStrokes` — the engine's own definition of pumping,
+   the same rule `in_flight_strokes` already applies (286 → 90 on the example);
+2. **its burst is tall enough**: the burst's *maximum* band-passed peak reaches
+   `pumpBurstPeakG`. Per burst, not per stroke — a rider's fourth pump is smaller than his
+   first and belongs to the same effort (90 → 31);
+3. **it moved the board**: speed at the stroke is at least `pumpMinSpeedKmh`, which is what
+   keeps a swimmer's arms out of the tally (31 → 31 here; −36 and −6 on the two longer
+   sessions).
+
+`pumpBurstPeakG` is marked **PROVISIONAL** deliberately. On 2026-08-30 the sixteen qualifying
+bursts peak at 0.35–0.64 g (thirteen of them), then 0.73, 0.86, 1.41, 1.45 — 0.8 g lands
+*between* 0.73 and 0.86, not in a wide gap, and no session in the corpus carries a logged
+stroke count to check it against. The on-water protocol now asks for one
+(`fixtures/README.md`); the day it exists, this is the number to re-tune.
+
+**Nothing else moves.** Peak picking, `pumps_to_takeoff`, `avgPumpsToTakeoff`,
+`takeoffs[].pumps`, `inFlightStrokes`, `pumpEpisodes` and `is_pumping` — the corroboration
+the turn and flight-end ladders read — are all untouched. Those ask *was he working here*, a
+question a short or gentle burst still answers truthfully, and plumbing the amplitude rule
+into `is_pumping` drops real, speed-corroborated pump-outs from the turn outcomes.
 
 ### Turn outcome (primary, rider-facing) — `flew_through` · `touchdown` · `fell_in`
 

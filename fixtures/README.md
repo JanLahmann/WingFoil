@@ -29,6 +29,15 @@ One row per session, filled by Jan right after the session (< 5 min). This is th
 dataset all detectors are tuned against — approximate honesty beats precise guessing; use `?`
 where unsure.
 
-| file | spot | wind dir/strength | gear (wing/board/foil) | jibes att/made | tacks att/made | takeoff attempts | crashes | longest flight felt | notes |
-|---|---|---|---|---|---|---|---|---|---|
-| _example:_ 2026-08-07_garda_wingfoil.fit | Garda (Torbole) | N ~18 kn | 4.5 m / 95 L / 1100 cm² | 8/5 | 4/2 | ~12 | 3 | ~90 s | HR dropouts mid-session |
+| file | spot | wind dir/strength | gear (wing/board/foil) | jibes att/made | tacks att/made | takeoff attempts | pump strokes | crashes | longest flight felt | notes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| _example:_ 2026-08-07_garda_wingfoil.fit | Garda (Torbole) | N ~18 kn | 4.5 m / 95 L / 1100 cm² | 8/5 | 4/2 | ~12 | ~40 | 3 | ~90 s | HR dropouts mid-session |
+| 2026-08-30-1407_nago-torbole-windsurfen_ciq.fit | Nago-Torbole | S (Ora) | ? | ?/10 | 0/0 | 4 | **~26** † | 2 | ~6 min | the bundled example; 10 m 45 s |
+
+† **Not observed — derived.** Nobody counted these on the water; ~26 is what the 2026-08-30
+accelerometer trace supports once chop is excluded by hand (the three real bouts of pumping
+in the session), and it is the number that exposed the engine's 286 as an artifact
+(docs/algorithms.md "The session total"). It is the tuning target for `pumpBurstPeakG`, which
+is why that parameter is still marked PROVISIONAL — **a counted-on-the-water number for any
+session would replace it.** The on-water protocol (docs/testing.md) now asks for one:
+a rough count of how many times you pumped the wing, per takeoff or for the session.

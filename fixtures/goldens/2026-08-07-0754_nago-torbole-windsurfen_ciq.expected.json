@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.7.0",
+  "engineVersion": "0.8.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -59,6 +59,8 @@
     "pumpRefractory": 0.4,
     "pumpStrokeMaxInterval": 1.5,
     "pumpMinStrokes": 4,
+    "pumpBurstPeakG": 0.8,
+    "pumpMinSpeedKmh": 3.0,
     "takeoffMaxRun": 30.0,
     "takeoffRiseSlack": 0.3,
     "takeoffRestSpeed": 1.0,
@@ -3648,7 +3650,7 @@
       "takeoffAttempts": 37,
       "takeoffSuccesses": 23,
       "avgPumpsToTakeoff": 9.043,
-      "totalPumpStrokes": 1341,
+      "totalPumpStrokes": 395,
       "successPct": 62.16,
       "failedAttempts": 14,
       "unknownAttempts": 1,
