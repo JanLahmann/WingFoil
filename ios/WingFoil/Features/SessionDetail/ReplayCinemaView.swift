@@ -987,7 +987,7 @@ private struct ReplayClipSheet: View {
         }
     }
 
-    /// "Torbole, 30 August 2026 — WingFoil session clip · cleanjibe.org".
+    /// "Torbole, 30 August 2026 — CleanJibe session clip · cleanjibe.org".
     ///
     /// Composed in the kit (`ShareText`) alongside the FIT's and the card's, so an afternoon
     /// exported three ways is named and dated identically all three times. Shorter than the

@@ -67,7 +67,7 @@ public struct HelpLink: Sendable, Equatable {
 
 /// An in-app destination a help topic can offer as a button.
 public enum HelpAction: String, Sendable, Equatable {
-    /// Opens WingFoil's own Settings screen, scrolled to the intervals.icu section.
+    /// Opens CleanJibe's own Settings screen, scrolled to the intervals.icu section.
     case openIcuSettings
     /// Imports the bundled example session (`ExampleSession`) — the same button the
     /// empty-library setup card offers, so Help is not a dead end for a first-time reader.
@@ -137,7 +137,7 @@ public enum HelpCatalog {
             summary: "Four steps, about five minutes, once.",
             body: [
                 IcuSetupGuide.rationale,
-                "Nothing is uploaded and nothing is changed on either side: WingFoil lists "
+                "Nothing is uploaded and nothing is changed on either side: CleanJibe lists "
                 + "your activities, downloads the original FIT of the watersport ones, and "
                 + "analyses them on the phone.",
             ],
@@ -152,7 +152,7 @@ public enum HelpCatalog {
             id: .exampleSession, section: .setup, title: "Look around with the example session",
             summary: "One real session ships with the app — load it before you connect anything.",
             body: [
-                "Nothing in WingFoil makes sense on an empty library, and the first thing a "
+                "Nothing in CleanJibe makes sense on an empty library, and the first thing a "
                 + "new install has is an empty library. So one real recording travels inside "
                 + "the app: \(ExampleSession.blurb)",
                 "It comes from \(ExampleSession.place) and was recorded with the WingFoil "
@@ -163,7 +163,7 @@ public enum HelpCatalog {
                 + "app's download, so the pump and takeoff-stroke figures show as "
                 + "unavailable on this one session — the way they do for any watch that "
                 + "does not record them.",
-                "It is not your data, and WingFoil treats it that way: an example session "
+                "It is not your data, and CleanJibe treats it that way: an example session "
                 + "is badged EXAMPLE in the list and at the top of its own page, and it is "
                 + "left out of Records, Trends and the gear rollups so it can never inflate "
                 + "a personal best or bend a trend line. Delete it with a swipe whenever you "
@@ -180,7 +180,7 @@ public enum HelpCatalog {
             id: .icuTroubleshooting, section: .setup, title: "When the sync does not work",
             summary: "The four things that actually go wrong, and the fix for each.",
             body: [
-                "Every failure WingFoil can see is reported as a cause rather than as a "
+                "Every failure CleanJibe can see is reported as a cause rather than as a "
                 + "stack trace, because the fix is different in each case — a rejected key "
                 + "is your key, an empty list is usually Garmin not being connected yet, and "
                 + "a network error is neither.",

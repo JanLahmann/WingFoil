@@ -23,7 +23,7 @@ import Testing
     }
 
     /// A recording whose filename says nothing gets the date alone. `SessionDisplay.title`
-    /// falls back to the literal "Session", and "Session, 30 August 2026 — WingFoil session"
+    /// falls back to the literal "Session", and "Session, 30 August 2026 — CleanJibe session"
     /// is one sentence saying one thing three times.
     @Test func anUnnamedSessionLeadsWithTheDateAlone() {
         for place in [nil, "", "   ", ShareText.unnamedPlace] {
@@ -47,7 +47,7 @@ import Testing
     @Test func theClipMessageIsShortAndCarriesNoPitch() {
         let message = ShareText.clipMessage(place: "Torbole", startedAt: startedAt,
                                             timeZone: cest)
-        #expect(message == "Torbole, 30 August 2026 — WingFoil session clip · cleanjibe.org")
+        #expect(message == "Torbole, 30 August 2026 — CleanJibe session clip · cleanjibe.org")
         #expect(!message.contains("no account needed"))
         #expect(!message.contains("https://"))
     }
@@ -56,7 +56,7 @@ import Testing
     /// carries the site in its footer pixels.
     @Test func theCardMessageMatchesTheClipsShape() {
         #expect(ShareText.cardMessage(place: "Torbole", startedAt: startedAt, timeZone: cest)
-                == "Torbole, 30 August 2026 — WingFoil session · cleanjibe.org")
+                == "Torbole, 30 August 2026 — CleanJibe session · cleanjibe.org")
     }
 
     /// All three start with the same words, which is the point of there being one helper:

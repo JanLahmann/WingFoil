@@ -39,7 +39,7 @@ struct ReAddDeletedSheet: View {
                 } header: {
                     Text(SessionTombstones.reAddQuestion(count: offer.count))
                 } footer: {
-                    Text("You deleted these, so WingFoil has been leaving them on "
+                    Text("You deleted these, so CleanJibe has been leaving them on "
                          + "intervals.icu rather than downloading them again. Anything you "
                          + "do not pick stays deleted.")
                 }

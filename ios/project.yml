@@ -84,12 +84,12 @@ targets:
       path: WingFoil/Info.plist
       properties:
         NSHealthUpdateUsageDescription: >-
-          Adds your wingfoil sessions to the Health app as workouts. WingFoil only writes
+          Adds your wingfoil sessions to the Health app as workouts. CleanJibe only writes
           workouts you already imported; it never reads your health data.
         # App Store validation requires the share string too whenever HealthKit APIs are
         # referenced, even though the app never reads health data.
         NSHealthShareUsageDescription: >-
-          WingFoil does not read any data from the Health app. This permission exists only
+          CleanJibe does not read any data from the Health app. This permission exists only
           because the workout-export feature links the HealthKit framework.
         # The end-of-recording sheet's "Save to Photos" (App/PhotoLibrarySaver.swift). ADD
         # ONLY: the app asks for `.addOnly` authorization and can never read an asset back,
@@ -97,12 +97,18 @@ targets:
         # rider splices into a clip come from `PhotosPicker`, which runs out of process and
         # needs no permission at all — so this is the only photo-library prompt the app has.
         NSPhotoLibraryAddUsageDescription: >-
-          Saves the replay clip you just recorded to your photo library. WingFoil only adds
+          Saves the replay clip you just recorded to your photo library. CleanJibe only adds
           videos you ask it to save; it never reads your photos.
-        # Read by the ConnectIQ SDK itself when it hands control to Garmin Connect
+        # THE HOME-SCREEN NAME, and the one the rider reads everywhere the system names us:
+        # the springboard, Settings → Notifications, the share sheet, the Health source list.
+        # The brand is CleanJibe; the target, the module and every bundle id underneath stay
+        # `WingFoil`/`de.lahmann.wingfoil.*`, which are identifiers nobody reads — renaming
+        # them would orphan the TestFlight build, the BGTask registration and the keychain.
+        #
+        # Also read by the ConnectIQ SDK itself when it hands control to Garmin Connect
         # Mobile — GCM shows this name to the rider. It must exist, or device selection
         # comes back empty with no error anywhere.
-        CFBundleDisplayName: WingFoil
+        CFBundleDisplayName: CleanJibe
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSRequiresIPhoneOS: true
@@ -123,11 +129,11 @@ targets:
         # SDK does on our behalf. Real sentences, not placeholders: TestFlight review
         # rejects the build otherwise, and the rider deserves to know why we are asking.
         NSBluetoothAlwaysUsageDescription: >-
-          WingFoil uses Bluetooth to receive a session summary from your Garmin watch the
+          CleanJibe uses Bluetooth to receive a session summary from your Garmin watch the
           moment you stop recording, and to send the wind direction back to it. All of it
-          goes through the Garmin Connect app; WingFoil never pairs with anything itself.
+          goes through the Garmin Connect app; CleanJibe never pairs with anything itself.
         NSBluetoothPeripheralUsageDescription: >-
-          WingFoil uses Bluetooth to exchange session summaries and wind direction with
+          CleanJibe uses Bluetooth to exchange session summaries and wind direction with
           your Garmin watch through the Garmin Connect app.
         ITSAppUsesNonExemptEncryption: false
         # --- new-session notifications (App/ActivityNotifier.swift) ---
@@ -222,7 +228,9 @@ targets:
     info:
       path: WingFoilWidgets/Info.plist
       properties:
-        CFBundleDisplayName: WingFoil
+        # The name the widget gallery prints above both widgets. Same brand, same reason as
+        # the app's — the extension's own bundle id stays `de.lahmann.wingfoil.widgets`.
+        CFBundleDisplayName: CleanJibe
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:

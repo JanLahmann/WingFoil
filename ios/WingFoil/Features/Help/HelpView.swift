@@ -151,7 +151,7 @@ struct HelpTopicSheet: View {
                                 Button {
                                     open()
                                 } label: {
-                                    Label("Open WingFoil Settings", systemImage: "gearshape")
+                                    Label("Open CleanJibe Settings", systemImage: "gearshape")
                                         .font(.callout.weight(.semibold))
                                 }
                             }

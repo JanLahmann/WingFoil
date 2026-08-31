@@ -11,7 +11,7 @@ import Photos
 /// **Add-only, and that is the whole permission.** `.addOnly` asks for the one thing this
 /// needs — put a file in — and cannot read a single asset back. It is a different, quieter
 /// system prompt than the read/write one, and it is the honest description of what happens:
-/// nothing in WingFoil ever looks at the camera roll. (The photos a rider splices into a clip
+/// nothing in CleanJibe ever looks at the camera roll. (The photos a rider splices into a clip
 /// come from `PhotosPicker`, which runs out of process and needs no permission at all — see
 /// `ReplaySetupSheet`. So this is the *only* photo-library permission the app ever asks for.)
 ///
@@ -34,7 +34,7 @@ enum PhotoLibrarySaver {
         var errorDescription: String? {
             switch self {
             case .denied:
-                "WingFoil is not allowed to add to your photo library, so the clip was not "
+                "CleanJibe is not allowed to add to your photo library, so the clip was not "
                     + "saved. You can still share it, or allow it in Settings."
             case .library(let message):
                 "The clip could not be saved to Photos: \(message)"

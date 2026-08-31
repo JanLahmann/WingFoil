@@ -63,7 +63,7 @@ struct LibraryView: View {
             // A named topic opens as itself rather than as "the index, then the topic":
             // one sheet, one animation, and it is what the deep link actually meant.
             .sheet(item: $helpTopic) { HelpTopicSheet(id: $0) }
-            // The setup topic offers "Open WingFoil Settings"; only this screen knows how
+            // The setup topic offers "Open CleanJibe Settings"; only this screen knows how
             // to get there, so it hands the action down rather than Help guessing.
             // Help's example topic offers "Load the example session"; only a screen with
             // the store can honour it, so it is handed down the same way Settings is.

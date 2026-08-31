@@ -71,7 +71,7 @@ struct RootView: View {
             Button("Enable") { store.acceptNewActivityNotifications() }
             Button("Not now", role: .cancel) { store.declineNewActivityNotifications() }
         } message: {
-            Text("When a new Garmin activity syncs, WingFoil can let you know — "
+            Text("When a new Garmin activity syncs, CleanJibe can let you know — "
                  + "even in the background.")
         }
         // "You have pulled twice in ten seconds and the sessions you deleted are still not

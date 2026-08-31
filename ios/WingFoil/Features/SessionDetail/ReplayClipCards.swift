@@ -288,20 +288,29 @@ struct ReplayOutroCardView: View {
         }
     }
 
-    /// The mark, the name, the address — the whole point of a frame somebody else sees, and
-    /// the same footer the shared card carries.
+    /// The mark, the name, the invitation and the code — the whole point of a frame somebody
+    /// else sees, and deliberately the same four things in the same order as the exported
+    /// card's footer and the web card's. The outro is the frame a viewer is left staring at
+    /// while the clip loops, which makes it the one frame worth pointing a camera at.
     private func footer(_ scale: CGFloat) -> some View {
-        HStack(spacing: 8 * scale) {
+        HStack(alignment: .center, spacing: 8 * scale) {
             Image("LaunchMark")
                 .resizable()
                 .interpolation(.high)
-                .frame(width: 22 * scale, height: 22 * scale)
-                .clipShape(.rect(cornerRadius: 5 * scale))
-            Text(Branding.credit)
-                .font(.system(size: 13 * scale, weight: .semibold, design: .rounded))
-                .foregroundStyle(Brand.paper.opacity(0.85))
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
+                .frame(width: 26 * scale, height: 26 * scale)
+                .clipShape(.rect(cornerRadius: 6 * scale))
+            VStack(alignment: .leading, spacing: 0) {
+                Text(Branding.appName)
+                    .font(.system(size: 15 * scale, weight: .bold, design: .rounded))
+                    .foregroundStyle(Brand.paper)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                Text(Branding.callToAction)
+                    .font(.system(size: 9.5 * scale, weight: .medium))
+                    .foregroundStyle(Brand.paper.opacity(0.72))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.55)
+            }
             Spacer(minLength: 4)
             if let disclaimer = stats.disclaimer {
                 Text(disclaimer)
@@ -310,6 +319,7 @@ struct ReplayOutroCardView: View {
                     .multilineTextAlignment(.trailing)
                     .lineLimit(2)
             }
+            BrandQRCode(size: 38 * scale)
         }
         .padding(.top, 6 * scale)
     }

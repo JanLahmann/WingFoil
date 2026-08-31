@@ -196,7 +196,7 @@ private struct EmptyStateView: View {
             Image(systemName: "water.waves")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(WidgetPalette.green)
-            Text(unreachable ? "Open WingFoil to finish setting up the widget."
+            Text(unreachable ? "Open CleanJibe to finish setting up the widget."
                              : "No sessions yet.")
                 .font(.system(size: 11))
                 .foregroundStyle(WidgetPalette.paper.opacity(0.75))

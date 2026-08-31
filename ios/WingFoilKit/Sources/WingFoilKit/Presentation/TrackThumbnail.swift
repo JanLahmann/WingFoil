@@ -301,7 +301,7 @@ public struct TrackThumbnail: Codable, Sendable, Equatable {
     ///
     /// Exposed because the share card draws the *same* outline from geometry the detail
     /// screen already has in memory — there must be exactly one definition of what a
-    /// WingFoil track outline looks like, or the card and the list row would disagree
+    /// CleanJibe track outline looks like, or the card and the list row would disagree
     /// about the same session.
     public static func outline(
         coordinates: [(lat: Double, lon: Double, flying: Bool)]) -> [Point] {

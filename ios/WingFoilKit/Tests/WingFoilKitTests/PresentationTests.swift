@@ -262,14 +262,39 @@ import Testing
     }
 
     /// The card names the app and where to find it, from one constant — the same one the
-    /// invitation that travels with a shared FIT reads. The address has moved once already
-    /// (the GitHub Pages URL, before `cleanjibe.org` was registered), which is why it is a
-    /// constant and not six string literals.
+    /// invitation that travels with a shared FIT reads. Both halves have moved once already
+    /// (the GitHub Pages URL, before `cleanjibe.org` was registered; the name, when the
+    /// domain became the brand), which is why they are constants and not six string
+    /// literals.
     @Test func brandingCreditIsTheNameAndTheSite() {
-        #expect(Branding.credit == "WingFoil · cleanjibe.org")
+        #expect(Branding.credit == "CleanJibe · cleanjibe.org")
         #expect(Branding.siteURL == "https://cleanjibe.org")
         #expect(Branding.credit.hasPrefix(Branding.appName))
         #expect(Branding.credit.hasSuffix(Branding.site))
+    }
+
+    /// The brand, pinned. Every one of these is print — a card that has left the phone as a
+    /// PNG, a message already in somebody's chat — so a drift here is not a thing that can be
+    /// fixed by shipping an update.
+    ///
+    /// **The call to action is pinned character for character** because the web share card
+    /// prints the same line (`docs/presentation.md`, the card contract) and the two are read
+    /// side by side in the same feed. Note the case: `CleanJibe` is the brand, `wingfoil` in
+    /// the CTA is the sport, and the CTA leads lowercase because it is a subtitle under the
+    /// wordmark rather than a sentence beside it.
+    @Test func theBrandIsCleanJibeAndTheCallToActionMatchesTheWeb() {
+        #expect(Branding.appName == "CleanJibe")
+        #expect(Branding.site == "cleanjibe.org")
+        #expect(Branding.callToAction
+                == "analyze your wingfoil sessions free — cleanjibe.org")
+        // The sport word stays lowercase; the brand never appears in the CTA.
+        #expect(!Branding.callToAction.contains("WingFoil"))
+        #expect(!Branding.callToAction.contains(Branding.appName))
+        #expect(Branding.callToAction.hasSuffix(Branding.site))
+        // Nothing that leaves the phone still carries the old name.
+        for line in [Branding.credit, Branding.callToAction, Branding.siteURL] {
+            #expect(!line.contains("WingFoil"))
+        }
     }
 
     @Test func shareCardShapesAreTheDocumentedPixelSizes() {

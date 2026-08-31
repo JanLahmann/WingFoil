@@ -251,24 +251,40 @@ struct ShareCardView: View {
 
     // MARK: - Footer
 
-    /// The mark, the name and the address — the whole point of a card someone else sees.
+    /// The mark, the name, the invitation and the code — the whole point of a card someone
+    /// else sees, and the same four things in the same order as the web card's footer
+    /// (`docs/presentation.md`, the card contract). A rider who is sent this picture is the
+    /// audience the app has: the footer is the only part of it addressed to him rather than
+    /// to the person who made it.
     ///
     /// `LaunchMark` is the app-icon artwork as an ordinary image asset (the launch screen
     /// already needs it as one, because `AppIcon` cannot be loaded outside the icon slot).
     /// Its corners are rounded in the artwork itself; the clip is belt and braces so the
     /// square backing can never show through at an export scale.
+    ///
+    /// The QR is trailing on every shape, which is where it fits without moving anything:
+    /// the footer row was 18 pt of mark against 300-odd pt of slack, and the wordmark and its
+    /// subtitle stack into that height beside it. 32 pt exports at 96 px — see `BrandQRCode`
+    /// for why the number matters.
     private var footer: some View {
-        HStack(spacing: 7) {
+        HStack(alignment: .center, spacing: 7) {
             Image("LaunchMark")
                 .resizable()
                 .interpolation(.high)
-                .frame(width: 18, height: 18)
-                .clipShape(.rect(cornerRadius: 4))
-            Text(Branding.credit)
-                .font(.system(size: 10.5, weight: .semibold, design: .rounded))
-                .foregroundStyle(Brand.paper.opacity(0.85))
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
+                .frame(width: 22, height: 22)
+                .clipShape(.rect(cornerRadius: 5))
+            VStack(alignment: .leading, spacing: 0) {
+                Text(Branding.appName)
+                    .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                    .foregroundStyle(Brand.paper)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                Text(Branding.callToAction)
+                    .font(.system(size: 8, weight: .medium))
+                    .foregroundStyle(Brand.paper.opacity(0.72))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.55)
+            }
             Spacer(minLength: 4)
             if let disclaimer = stats.disclaimer {
                 Text(disclaimer)
@@ -277,6 +293,7 @@ struct ShareCardView: View {
                     .multilineTextAlignment(.trailing)
                     .lineLimit(2)
             }
+            BrandQRCode(size: 32)
         }
         .padding(.top, 4)
     }
