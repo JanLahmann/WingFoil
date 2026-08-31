@@ -13,24 +13,31 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="WingFoil">
+<!-- The analyzer lives at /app/; the site root is the project homepage. The manifest sits
+     beside this file so its `scope`/`start_url` ("./") are the app, not the homepage —
+     an installed icon must open the analyzer. Everything else (css, js, icons, the
+     example FIT, lab_bundle) is shared with the homepage and stays at the site root,
+     one directory up. -->
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
 <!-- Generated from design/tokens.json (design/generate_tokens.py); style.css reads its
      values from these custom properties, so it must come second. -->
-<link rel="stylesheet" href="css/tokens.css">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/style.css">
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 </head>
 <body>
 
 <header class="topbar">
-  <div class="brand">
+  <!-- The mark and the name are the way back to the project homepage at the site root —
+       the ordinary web convention, and the only navigation the analyzer needs to it. -->
+  <a class="brand" href="../">
     <span class="mark" aria-hidden="true"></span>
     <div>
       <h1>WingFoil Lab</h1>
       <p class="sub">The <code>wingfoil_lab</code> Python engine, running in your browser.</p>
     </div>
-  </div>
+  </a>
   <div class="topbar-right">
     <nav class="views" aria-label="Views">
       <button type="button" data-view="analyze" aria-current="page">Analyze</button>
@@ -288,9 +295,10 @@
   <p>
     Runs <code>lab/src/wingfoil_lab</code> unchanged via
     <a href="https://pyodide.org/" rel="noopener">Pyodide</a>. No server, no upload, no tracking.
+    <br><a href="../">About the WingFoil project</a>
   </p>
 </footer>
 
-<script type="module" src="js/app.js"></script>
+<script type="module" src="../js/app.js"></script>
 </body>
 </html>

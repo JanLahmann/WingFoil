@@ -306,7 +306,11 @@ function wireExample() {
     if (state.busy) return;
     button.disabled = true;
     try {
-      const res = await fetch("example/ExampleSession.fit");
+      // Resolved against this module, not against the document: the page lives at /app/
+      // while the example (like css/, icons/ and lab_bundle/) stays at the site root,
+      // shared with the homepage. js/worker.js reaches lab_bundle/ the same way.
+      const url = new URL("../example/ExampleSession.fit", import.meta.url);
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`example/ExampleSession.fit: HTTP ${res.status}`);
       await analyzeFile(new File([await res.arrayBuffer()],
                                  "example-nago-torbole-2026-08-30.fit"));
@@ -412,7 +416,12 @@ function wireServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   const banner = el("update-banner");
 
-  navigator.serviceWorker.register("./sw.js").then((reg) => {
+  // `sw.js` stays at the site ROOT even though the page is at /app/, and that placement is
+  // the point: a worker's default scope is its own directory, so a root script controls the
+  // homepage and the analyzer with one registration and one cache. The URL is resolved
+  // against this module (js/ is at the root too) rather than against the document, so the
+  // page can move again without moving the scope with it.
+  navigator.serviceWorker.register(new URL("../sw.js", import.meta.url)).then((reg) => {
     const offer = (worker) => {
       if (!worker) return;
       worker.addEventListener("statechange", () => {

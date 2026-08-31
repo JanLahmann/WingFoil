@@ -20,16 +20,25 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v9";      // v9: the example session is the 2026-08-30 recording
+const VERSION = "v10";     // v10: homepage at the root, analyzer moved to /app/
 const SHELL = `wingfoil-shell-${VERSION}`;
 const RUNTIME = `wingfoil-runtime-${VERSION}`;
 
+/** The analyzer's directory, relative to this worker's root scope. See APP_SHELL. */
+const APP_DIR = "app/";
+
 const APP_SHELL = [
+  // Two documents now, both inside this worker's root scope: the project homepage at "/"
+  // and the analyzer at "/app/". The homepage is 6 KB of HTML plus one stylesheet, so
+  // precaching it costs nothing and buys the offline visitor a way back out of the app.
   "./",
   "index.html",
-  "manifest.webmanifest",
+  "app/",
+  "app/index.html",
+  "app/manifest.webmanifest",
   "css/tokens.css",
   "css/style.css",
+  "css/home.css",
   "js/app.js",
   "js/icu.js",
   "js/library.js",
@@ -142,7 +151,13 @@ async function staleWhileRevalidate(request, cacheName) {
   const res = await network;
   if (res) return res;
   if (request.mode === "navigate") {
-    const shell = await cache.match("index.html");
+    // Two shells since the restructure: a navigation under /app/ falls back to the
+    // analyzer (it is the single page with the hash routes), anything else to the
+    // homepage. Falling back to the wrong one would show a visitor the front door when
+    // they asked for #/library.
+    const path = new URL(request.url).pathname;
+    const inApp = path.includes(`/${APP_DIR}`);
+    const shell = await cache.match(inApp ? `${APP_DIR}index.html` : "index.html");
     if (shell) return shell;
   }
   return new Response("Offline, and this file is not in the cache.",
