@@ -35,8 +35,11 @@ from datetime import datetime, timezone
 
 # The stored-entry schema. v2 added the two attribution fields the JS side writes beside
 # the digest (`rider`, `example`, see `counts_towards_records`); a v1 entry predates them
-# and reads as the rider's own, which is what it always was.
-SCHEMA = 2
+# and reads as the rider's own, which is what it always was. v3 (engine 0.8.2) added the
+# session's own UTC offset and the *local* calendar date it implies — `dateUtc` was, and
+# still is, the UTC day, which is a different day from the rider's for every session
+# either side of midnight and the wrong one to bucket a trend by.
+SCHEMA = 3
 
 # The project-wide "same session" rule, in one place: a session start within +/-60 s AND a
 # duration within +/-60 s of an existing entry is the same session recorded twice (watch
@@ -78,6 +81,25 @@ def _num(v, places: int | None = None):
     if not math.isfinite(f):
         return None
     return f if places is None else round(f, places)
+
+
+def _offset(value):
+    """A UTC offset in whole seconds, or None. Anything absurd is treated as absent."""
+    if value is None:
+        return None
+    try:
+        seconds = int(round(float(value)))
+    except (TypeError, ValueError):
+        return None
+    return seconds if -18 * 3600 <= seconds <= 18 * 3600 else None
+
+
+def _local_date(start_epoch, offset_s) -> str | None:
+    """The `YYYY-MM-DD` the rider would have written on it, or None without an offset."""
+    offset = _offset(offset_s)
+    if start_epoch is None or offset is None:
+        return None
+    return datetime.fromtimestamp(start_epoch + offset, tz=timezone.utc).strftime("%Y-%m-%d")
 
 
 def _epoch(iso: str | None):
@@ -236,7 +258,15 @@ def digest(doc, file_name: str | None = None) -> dict:
         "startEpoch": None if start_epoch is None else round(start_epoch, 3),
         "durationS": _num(duration_s, 1),
         # --- the library row ---
+        # The session's own UTC offset in seconds (engine 0.8.2), so a stored row can be
+        # dated and clocked the way the rider saw it without re-reading the FIT. Null on a
+        # digest written before the field existed, and on a source that could not say.
+        "utcOffsetS": _offset(meta.get("utcOffsetS")),
         "dateUtc": (str(start_utc)[:10] if start_utc else None),
+        # The rider's own calendar day. A session that starts at 23:30 in Torbole is a
+        # 21:30 UTC session on the *previous* day two months of the year, and a trend
+        # bucketed on `dateUtc` would file that evening under the day before it happened.
+        "dateLocal": _local_date(start_epoch, meta.get("utcOffsetS")),
         "distanceKm": _num(summ.get("distanceKm")),
         "foilPct": _num(summ.get("foilPct")),
         "foilTimeS": _num(summ.get("foilTimeS")),
@@ -368,7 +398,8 @@ def _sorted(digests) -> list:
 def _stamp(d: dict) -> dict:
     """The bit of a digest every records row / trend point needs to name its session."""
     return {"id": d.get("id"), "fileName": d.get("fileName"), "spot": d.get("spot"),
-            "startUtc": d.get("startUtc"), "dateUtc": d.get("dateUtc")}
+            "startUtc": d.get("startUtc"), "dateUtc": d.get("dateUtc"),
+            "dateLocal": d.get("dateLocal"), "utcOffsetS": d.get("utcOffsetS")}
 
 
 def _records(ds: list) -> list:

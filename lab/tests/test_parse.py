@@ -6,11 +6,13 @@ The schema v1/v2 tests drive `_unpack_session_v2` on synthetic session dicts —
 is pure dict work, and encoding FITs to exercise it would only test fitdecode.
 """
 
+import datetime as dt
 from pathlib import Path
 
 import pytest
 
-from wingfoil_lab.parse import _unpack_session_v2, parse_fit, summarize
+from wingfoil_lab.parse import (_unpack_session_v2, activity_utc_offset_s,
+                                coarse_utc_offset_s, parse_fit, summarize)
 
 FIXTURES = Path(__file__).resolve().parents[2] / "fixtures" / "sessions"
 
@@ -139,3 +141,53 @@ def test_real_fixtures():
         assert info["samples"] > 0, f"{f.name}: no records"
         assert track.capabilities.has_position, f"{f.name}: no GPS"
         print(info)
+
+
+# --------------------------------------------------------------- the session's own clock
+
+
+def test_activity_offset_is_the_watchs_own_answer():
+    """`activity.local_timestamp - activity.timestamp`, in whole seconds."""
+    base = dt.datetime(2026, 8, 30, 12, 7, 30, tzinfo=dt.timezone.utc)
+    assert activity_utc_offset_s(
+        {"timestamp": base, "local_timestamp": base + dt.timedelta(hours=2)}) == 7200
+    assert activity_utc_offset_s(
+        {"timestamp": base, "local_timestamp": base - dt.timedelta(hours=8)}) == -28800
+    # A session really recorded at UTC says 0 — which is a fact, not an absence.
+    assert activity_utc_offset_s({"timestamp": base, "local_timestamp": base}) == 0
+
+
+@pytest.mark.parametrize("activity", [
+    {},
+    {"timestamp": dt.datetime(2026, 8, 30, tzinfo=dt.timezone.utc)},
+    {"local_timestamp": dt.datetime(2026, 8, 30, tzinfo=dt.timezone.utc)},
+    {"timestamp": "2026-08-30", "local_timestamp": "2026-08-30"},
+])
+def test_missing_activity_fields_are_none_and_never_zero(activity):
+    """"This file does not say" and "this was UTC" are different facts.
+
+    Only one of them licenses a fallback, so the parser must never turn the first into the
+    second — a 0 here would be a claim about the session that nothing measured.
+    """
+    assert activity_utc_offset_s(activity) is None
+
+
+def test_coarse_offset_from_longitude_is_solar_and_says_so():
+    """The fallback rung: `round(lon / 15)` hours. Documented as approximate for a reason."""
+    assert coarse_utc_offset_s(10.87) == 3600        # Torbole — an hour out under CEST
+    assert coarse_utc_offset_s(0.0) == 0
+    assert coarse_utc_offset_s(-118.24) == -8 * 3600  # Los Angeles, and right this time
+    assert coarse_utc_offset_s(float("nan")) is None
+
+
+def test_every_fixture_carries_its_recorded_offset():
+    """The corpus was ridden in CEST, and every file in it says so — CIQ and native alike.
+
+    This is the fact the whole per-session-timezone change rests on: the offset is not
+    something we infer, it is something the watch wrote down.
+    """
+    fits = sorted(FIXTURES.rglob("*.fit"))
+    if not fits:
+        pytest.skip("no session fixtures downloaded yet (see lab/tools/download_icu.py)")
+    for f in fits:
+        assert parse_fit(f).start_utc_offset_s == 7200, f"{f.name}: lost its recorded offset"
