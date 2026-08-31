@@ -193,7 +193,13 @@ public enum FitShareFilter {
     /// The date is the session's own, in the reader's calendar, and the tail is the title
     /// the app already shows for the session, lowercased and reduced to what is safe in a
     /// filename on every platform a share sheet can reach.
+    ///
+    /// `pathExtension` is here so the *other* thing a session can leave as — the replay clip
+    /// (`ReplayRecorder`) — arrives in the same chat under the same name with a different
+    /// tail. One naming rule, or a rider ends up with `2026-08-30-torbole.fit` beside
+    /// `Replay 3.mp4` and no way to tell they are the same afternoon.
     public static func filename(date: Date, title: String,
+                                pathExtension: String = "fit",
                                 timeZone: TimeZone = .current) -> String {
         let formatter = DateFormatter()
         formatter.timeZone = timeZone
@@ -216,6 +222,6 @@ public enum FitShareFilter {
         while slug.hasSuffix("-") { slug.removeLast() }
         slug = String(slug.prefix(40))
         while slug.hasSuffix("-") { slug.removeLast() }
-        return slug.isEmpty ? "\(stamp).fit" : "\(stamp)-\(slug).fit"
+        return slug.isEmpty ? "\(stamp).\(pathExtension)" : "\(stamp)-\(slug).\(pathExtension)"
     }
 }

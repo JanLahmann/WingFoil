@@ -312,6 +312,22 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    the stat preset — three controls `simctl` likewise cannot tap. The last one sets the same
    state the picker does but, unlike a tap on the picker, does **not** write the rider's
    stored choice.
+   The **cinema replay** (`ReplayCinemaView`, the full-screen replay a clip is recorded from)
+   opens with `UI_REPLAY_CINEMA=<rate>` — `10`, `30` or `60` — which stands in for the record
+   button plus the speed sheet. `UI_REPLAY_RECORD=0` stages the other mode, the plain
+   full-screen replay a rider gets when the recorder is unavailable or the permission was
+   refused: no countdown, no clip, the transport says "Done". **The Simulator lies about
+   screen recording** — on iOS 26 `RPScreenRecorder.isAvailable` is `true` there, the whole
+   flow runs, and the file that comes out is zero bytes, which `ReplayRecorder.Failure.empty`
+   turns into an honest alert. So the capture itself is device-only; everything around it is
+   not. `UI_REPLAY_CLIP=stub` short-circuits ReplayKit and writes a placeholder file with
+   bytes in it, which is how the clip sheet — player, size, share link, discard — gets driven
+   on a Mac.
+   Orientation is the one thing no hook stages: `simctl` cannot rotate a simulator and
+   Simulator.app's Rotate menu is not reachable from a headless run. To photograph the
+   landscape frame, temporarily cut `UISupportedInterfaceOrientations` in `ios/project.yml`
+   down to `UIInterfaceOrientationLandscapeRight`, `xcodegen generate`, build, shoot, and put
+   it back.
 3. **Monkey C units (Toybox.Test)** — the core suite lives in the `WingFoilCore` barrel
    (`garmin/barrel/WingFoilCore/tests/`) and is therefore compiled into **both** consumers'
    `--unit-test` builds: `bin/WingFoilTests.prg` (device app) and `bin/WingFoilFieldTests.prg`

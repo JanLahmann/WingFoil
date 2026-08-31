@@ -242,7 +242,11 @@ struct SessionDetailView: View {
                        visibility: store.mapLayers, flightFocus: flightFocus,
                        zoom: $chartZoom)
             .id("chart")
-        ReplayScrubber(detail: detail, playhead: $playhead)
+        // The same filtered list the map is given, and for the same reason: the scrubber
+        // owns the commentary toggle, and the cinema replay it can launch has to caption —
+        // and slow down for — exactly the lines the inline map would have shown.
+        ReplayScrubber(detail: detail, playhead: $playhead,
+                       milestones: store.replayCommentary ? milestones : [])
             .id("replay")
         SessionFoilGrid(detail: detail)
         SessionRecordsTable(detail: detail, selectedEffort: $selectedEffort)
