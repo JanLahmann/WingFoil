@@ -342,6 +342,82 @@ import ZIPFoundation
         // No accelerometer in a native Windsurf FIT: pumps stay unknown, never 0.
         #expect(points.allSatisfy { $0.avgPumpsToTakeoff == nil })
     }
+
+    // MARK: - Rider attribution
+
+    /// The whole point of the `rider` column: a friend's session is in the library, opens
+    /// in full, and moves *nothing*.
+    ///
+    /// Asserted by importing the same fixture twice — once as the reader's own, once
+    /// credited to a friend, two hours apart so the dedupe key does not merge them. The
+    /// two sessions are then identical in every number, which is the sharpest possible
+    /// form of the test: any aggregate that counts the friend's copy would visibly double,
+    /// and any that does not is provably filtering on attribution rather than on luck.
+    @Test func aFriendsSessionIsKeptOutOfEveryAggregate() async throws {
+        let harness = try makeHarness()
+        defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
+        let (data, name) = try fixture("2026-08-05-0827")
+
+        guard case .imported(let mine) = try await harness.ingestor.ingest(
+            fitData: data, filename: name, source: .file) else {
+            Issue.record("expected a fresh import"); return
+        }
+        // Two hours out of the way first, so the second import of the same bytes is a
+        // different session rather than a dedupe hit — and only *then* photograph the
+        // aggregates, since a record carries the session's wall-clock time.
+        try await shift(harness, id: mine.id, seconds: 7200, durationDelta: 0)
+        let before = try await harness.store.records()
+        let beforeTrend = try await harness.store.trend()
+
+        guard case .imported(let theirs) = try await harness.ingestor.ingest(
+            fitData: data, filename: name, source: .file, rider: "  Marco  ") else {
+            Issue.record("a friend's session is still a session"); return
+        }
+        // Stored trimmed, so the badge and the "known riders" list cannot end up with two
+        // spellings of one friend.
+        #expect(theirs.rider == "Marco")
+        #expect(mine.rider == nil)
+
+        // It is in the library, in full — the detail screen reads this list.
+        #expect(try await harness.ingestor.allSessions().count == 2)
+        #expect(try await harness.ingestor.session(id: theirs.id)?.rider == "Marco")
+        // …and offered back as a name for the next file from the same friend.
+        #expect(try await harness.store.riders() == ["Marco"])
+
+        // But every aggregate is exactly where it was before he arrived.
+        #expect(try await harness.store.sessions().map(\.id) == [mine.id])
+        #expect(try await harness.store.records() == before)
+        #expect(try await harness.store.trend() == beforeTrend)
+        #expect(try await harness.store.weeks().map(\.count).reduce(0, +) == 1)
+
+        // Including the gear rollups, which have their own SQL.
+        let wing = GearRow(name: "Duotone 5.0", kind: .wing)
+        try await harness.store.saveGear(wing)
+        for id in [mine.id, theirs.id] {
+            try await harness.store.assignGear(sessionId: id, kind: .wing, gearId: wing.id)
+        }
+        let rollup = try #require(try await harness.store.gearAggregates().first)
+        #expect(rollup.sessions == 1, "a friend's session must not pad the gear totals")
+    }
+
+    /// The prompt's text field can be left blank after tapping "a friend's". An empty
+    /// string in the column would be the worst of both worlds — excluded from every
+    /// aggregate, badged with nothing — so it degrades to "mine".
+    @Test func aBlankRiderNameMeansMine() async throws {
+        let harness = try makeHarness()
+        defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
+        let (data, name) = try fixture("2026-08-05-0827")
+
+        guard case .imported(let row) = try await harness.ingestor.ingest(
+            fitData: data, filename: name, source: .file, rider: "   ") else {
+            Issue.record("expected a fresh import"); return
+        }
+        #expect(row.rider == nil)
+        #expect(try await harness.store.sessions().count == 1)
+        #expect(SessionIngestor.riderName(nil) == nil)
+        #expect(SessionIngestor.riderName("") == nil)
+        #expect(SessionIngestor.riderName(" Jo ") == "Jo")
+    }
 }
 
 /// Store-mode ZIP builder shared by the library and GDPR import tests.

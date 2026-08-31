@@ -250,6 +250,7 @@ struct SessionDetailView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(Fmt.date(row.startDate)).font(.title3.weight(.semibold))
                 if row.isExample { exampleNote }
+                if row.rider != nil { riderNote(row) }
                 HStack(spacing: 8) {
                     Text(SessionDisplay.badge(row))
                         .font(.caption.weight(.semibold))
@@ -280,6 +281,23 @@ struct SessionDetailView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             HelpButton(topic: .exampleSession, size: .caption2)
+        }
+    }
+
+    /// Said at the top, beside the name, for the same reason the example note is: the
+    /// numbers below are somebody else's, and every one of them looks exactly like the
+    /// rider's own. The page analyses the session in full — that is the point of being
+    /// sent it — it just does not count.
+    @ViewBuilder
+    private func riderNote(_ row: SessionRow) -> some View {
+        if let rider = row.rider, let note = SessionDisplay.riderNote(row) {
+            HStack(spacing: 8) {
+                RiderBadge(name: rider, font: .caption)
+                Text(note)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 

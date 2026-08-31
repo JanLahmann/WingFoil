@@ -154,9 +154,16 @@ public struct LibraryStore: Sendable {
     /// nothing. It has no `record_effort` rows either, so it could never hold a record.
     /// The exclusion is temporary by construction: when the FIT lands, `SessionIngestor`
     /// fills the same row with real analysis and clears the flag.
+    ///
+    /// A session credited to a friend (`rider IS NOT NULL`) is excluded for the plainest
+    /// reason of the three: it is not the reader's session. Since the app answers for
+    /// `.fit` files, a friend's recording is one tap on a chat attachment away from the
+    /// library, and a personal best is a claim about a person — the third condition here
+    /// is what keeps it one.
     static func clause(_ filter: LibraryFilter, alias: String) -> (join: String, where: String,
                                                                    args: StatementArguments) {
-        var conditions: [String] = ["\(alias).isExample = 0", "\(alias).isProvisional = 0"]
+        var conditions: [String] = ["\(alias).isExample = 0", "\(alias).isProvisional = 0",
+                                    "\(alias).rider IS NULL"]
         var args = StatementArguments()
         var join = ""
         if let gearId = filter.gearId {
@@ -305,6 +312,7 @@ public struct LibraryStore: Sendable {
                 let rows = try SessionRow.fetchAll(db, sql: """
                     SELECT s.* FROM session s JOIN session_gear sg ON sg.sessionId = s.id
                     WHERE sg.gearId = ? AND s.isExample = 0 AND s.isProvisional = 0
+                      AND s.rider IS NULL
                     ORDER BY s.startDate
                     """, arguments: [item.id])
                 return Self.aggregate(item, rows: rows)
@@ -458,6 +466,24 @@ public struct LibraryStore: Sendable {
     public func recluster(radiusM: Double = SpotClusterer.defaultRadiusM) async throws {
         try await database.writer.write { db in
             try SpotClusterer.recluster(db: db, radiusM: radiusM)
+        }
+    }
+
+    // MARK: - Riders
+
+    /// The friends whose sessions are already in the library, alphabetically.
+    ///
+    /// The distinct values of the column *are* the address book — a rider imports two or
+    /// three friends' files, and a table plus a picker plus a merge story for a name typed
+    /// two ways would be more machinery than the fact deserves. The import prompt offers
+    /// these so the second file from the same friend is one tap and lands on the same
+    /// spelling as the first.
+    public func riders() async throws -> [String] {
+        try await database.writer.read { db in
+            try String.fetchAll(db, sql: """
+                SELECT DISTINCT rider FROM session
+                WHERE rider IS NOT NULL AND TRIM(rider) <> '' ORDER BY rider COLLATE NOCASE
+                """)
         }
     }
 

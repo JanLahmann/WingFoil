@@ -139,6 +139,24 @@ import Testing
         #expect(records.allSatisfy { $0.valueKn > 0 })
     }
 
+    /// v5 adds the rider column. A shipped library's rows are the reader's own, so every
+    /// one of them has to come out of the migration as NULL — a default of "" or a
+    /// non-null column would take the whole library out of its own Records overnight.
+    @Test func v5AddsTheRiderColumnAndLeavesEveryExistingRowMine() throws {
+        let harness = try migratedV1Library()
+        defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
+
+        let (hasColumn, mine) = try harness.database.writer.read { db in
+            (try db.columns(in: "session").map(\.name).contains("rider"),
+             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM session WHERE rider IS NULL"))
+        }
+        #expect(hasColumn)
+        #expect(mine == harness.v1Ids.count)
+        // The registration list itself is pinned by
+        // `ExampleSessionTests.migrationListNamesEveryRegisteredMigration`.
+        #expect(AppDatabase.migrationNames.contains("v5"))
+    }
+
     @Test func deletingASessionCascadesToItsDerivedRows() async throws {
         let harness = try migratedV1Library(fixtureCount: 1)
         defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }

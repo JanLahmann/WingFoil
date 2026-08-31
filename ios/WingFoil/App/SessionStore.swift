@@ -144,9 +144,11 @@ final class SessionStore {
     /// group entitlement it lands in the app's own container instead, and the widget shows
     /// its placeholder (see `WidgetSnapshotStore`).
     private func publishWidgetSnapshot() async {
-        // The example is on loan, not ridden: it must not become "your last session" on
-        // the home screen, nor count towards this week's foil time.
-        let rows = sessions.filter { !$0.isExample }
+        // The example is on loan, not ridden, and a friend's session is not the reader's
+        // at all: neither may become "your last session" on the home screen, nor count
+        // towards this week's foil time. Same rule as `LibraryStore.clause`, restated here
+        // because the widget reads the in-memory list rather than going through SQL.
+        let rows = sessions.filter { !$0.isExample && $0.rider == nil }
         let snapshot = WidgetSnapshot.make(sessions: rows) { SessionDisplay.title($0) }
         await Task.detached(priority: .utility) {
             WidgetSnapshotStore.write(snapshot)
@@ -314,25 +316,72 @@ final class SessionStore {
 
     // MARK: - Import
 
+    /// Files waiting for the rider to say whose session they are.
+    ///
+    /// Held in memory rather than imported and corrected afterwards: attribution decides
+    /// whether the session may touch Records, Trends and Apple Health, and a session that
+    /// was briefly counted and then withdrawn would already have fired a personal-best
+    /// celebration for somebody else's speed.
+    struct PendingImport: Identifiable, Sendable {
+        let id = UUID()
+        let payloads: [DiscoveredFit]
+        let source: ImportSource
+
+        var filenames: [String] { payloads.map(\.name) }
+    }
+
+    /// Set while the "whose session is this?" prompt is up; `RootView` presents it.
+    var pendingImport: PendingImport?
+
     /// Reads security-scoped picker URLs and imports them. `source` is only the tag the
     /// import log carries: a hand-picked FIT and a GDPR bulk export take the same path.
-    func importFiles(urls: [URL], source: ImportSource) async {
-        guard !urls.isEmpty else { return }
-        var payloads: [(name: String, data: Data)] = []
+    func importFiles(urls: [URL], source: ImportSource, rider: String? = nil) async {
+        guard let payloads = readPayloads(urls) else { return }
+        await runImport(payloads, source: source, rider: rider)
+    }
+
+    /// A hand-picked file, or one tapped in another app — the two paths that can carry
+    /// somebody else's recording, and the only two that ask.
+    ///
+    /// Everything else is the rider's own by construction: an intervals.icu sync reads
+    /// *his* account, a GDPR export is *his* Garmin history, and the bundled example has
+    /// its own flag. Asking there would be a question with one possible answer.
+    func importPicked(urls: [URL]) async {
+        guard let payloads = readPayloads(urls), !payloads.isEmpty else { return }
+        pendingImport = PendingImport(payloads: payloads, source: .file)
+    }
+
+    /// The prompt's answer: nil (or blank) = mine, a name = a friend's.
+    func confirmPendingImport(rider: String?) async {
+        guard let pending = pendingImport else { return }
+        pendingImport = nil
+        await runImport(pending.payloads, source: pending.source,
+                        rider: SessionIngestor.riderName(rider))
+    }
+
+    /// Dismissing the prompt imports nothing. There is no safe default for "whose is it"
+    /// once the app can be handed a stranger's file.
+    func cancelPendingImport() { pendingImport = nil }
+
+    /// Friends already in the library, offered by the prompt so a second file from the
+    /// same person lands on the same spelling as the first.
+    func knownRiders() async -> [String] {
+        (try? await library.riders()) ?? []
+    }
+
+    private func readPayloads(_ urls: [URL]) -> [DiscoveredFit]? {
+        guard !urls.isEmpty else { return nil }
+        var payloads: [DiscoveredFit] = []
         for url in urls {
             let scoped = url.startAccessingSecurityScopedResource()
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             if let data = try? Data(contentsOf: url) {
-                payloads.append((url.lastPathComponent, data))
+                payloads.append(DiscoveredFit(name: url.lastPathComponent, data: data))
             } else {
                 errorMessage = "Could not read \(url.lastPathComponent)"
             }
         }
-        await runImport(payloads, source: source)
-    }
-
-    func importPicked(urls: [URL]) async {
-        await importFiles(urls: urls, source: .file)
+        return payloads
     }
 
     #if DEBUG
@@ -360,7 +409,9 @@ final class SessionStore {
             return
         }
         let payloads = urls.compactMap { url in
-            (try? Data(contentsOf: url)).map { (url.lastPathComponent, $0) }
+            (try? Data(contentsOf: url)).map {
+                DiscoveredFit(name: url.lastPathComponent, data: $0)
+            }
         }
         await runImport(payloads, source: .fixtures)
         #endif
@@ -413,7 +464,8 @@ final class SessionStore {
         await importFiles(urls: urls, source: .gdpr)
     }
 
-    private func runImport(_ payloads: [(name: String, data: Data)], source: ImportSource) async {
+    private func runImport(_ payloads: [DiscoveredFit], source: ImportSource,
+                           rider: String? = nil) async {
         guard !payloads.isEmpty, !isBusy else { return }
         isBusy = true
         status = "Importing \(payloads.count) file\(payloads.count == 1 ? "" : "s")…"
@@ -424,7 +476,7 @@ final class SessionStore {
         }
 
         let ingestor = self.ingestor
-        let sendablePayloads = payloads.map { DiscoveredFit(name: $0.name, data: $0.data) }
+        let sendablePayloads = payloads
         let relay = ProgressRelay { [weak self] snapshot in
             Task { @MainActor in self?.importProgress = snapshot }
         }
@@ -433,7 +485,7 @@ final class SessionStore {
             for payload in sendablePayloads {
                 let base = total
                 let one = await ingestor.ingestContainer(
-                    data: payload.data, name: payload.name, source: source,
+                    data: payload.data, name: payload.name, source: source, rider: rider,
                     progress: { partial in
                         var merged = base
                         merged.absorb(partial)
@@ -538,7 +590,9 @@ final class SessionStore {
     func writeNewSessionsToHealth() async {
         guard healthWriteEnabled else { return }
         var exported = Set(UserDefaults.standard.stringArray(forKey: "healthExported") ?? [])
-        let pending = sessions.filter { !exported.contains($0.id) }
+        // A friend's session is not a workout the reader did. Health is the one place
+        // where getting that wrong leaves a mark outside this app.
+        let pending = sessions.filter { !exported.contains($0.id) && $0.rider == nil }
         guard !pending.isEmpty else { return }
         var written = 0
         for row in pending {

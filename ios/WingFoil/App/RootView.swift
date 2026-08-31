@@ -35,6 +35,13 @@ struct RootView: View {
         .onChange(of: store.pendingSessionID) { _, pending in
             if pending != nil { selection = .sessions }
         }
+        // "Whose session is this?" — asked here rather than on the Import screen because a
+        // FIT also arrives by being tapped in another app (`onOpenURL`), with no screen of
+        // ours on top. One presentation, wherever the file came from.
+        .sheet(item: Binding(get: { store.pendingImport },
+                             set: { if $0 == nil { store.cancelPendingImport() } })) { pending in
+            RiderPromptView(pending: pending)
+        }
         #if DEBUG && targetEnvironment(simulator)
         // Headless-driving hook (see LibraryView): `simctl launch` cannot tap, so
         // `UI_TAB=records|trends|gear` parks the app on a tab for an automated screenshot.
