@@ -268,8 +268,12 @@ struct FullScreenMapView: View {
     }
 }
 
-/// Shared map content so the inline and full-screen maps never drift apart.
-private struct TrackContent: MapContent {
+/// Shared map content so the inline, full-screen and cinema maps never drift apart.
+///
+/// Internal rather than private because `ReplayCinemaView` is the third caller: the frame a
+/// clip is recorded from has to be the same track, the same marks and the same playhead dot a
+/// rider sees on this page, or the video is of an app nobody has.
+struct TrackContent: MapContent {
     let detail: SessionDetail
     let effort: SessionDetail.RecordEffort?
     let visibility: MapLayerVisibility

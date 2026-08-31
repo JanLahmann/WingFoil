@@ -15,9 +15,20 @@ import WingFoilKit
 /// jibe in its outcome's colour, the 2 s peak, the longest flight — and the two skip
 /// buttons walk them. Which instants those are is `ReplayBeats`, in the kit, because it is
 /// a statement about the session rather than about this view.
+///
+/// **The record button.** The one thing on this card that leaves the phone. It is here, on
+/// the replay's own controls, rather than in the share sheet beside the card and the FIT: a
+/// clip does not *exist* until the replay has been played, so the button that makes one
+/// belongs next to the speeds it will be played at, in the place a rider is already thinking
+/// about playback. (The share sheet stays what it is — a chooser over things that are already
+/// finished.)
 struct ReplayScrubber: View {
     let detail: SessionDetail
     @Binding var playhead: Double?
+    /// The replay's commentary track, already filtered by the rider's toggle upstream — the
+    /// same list the map is drawing captions from. Passed in rather than derived so the
+    /// cinema replay's captions, its slow-motion beats and the map's bubbles are one script.
+    var milestones: [ReplayMilestone] = []
 
     /// Only for the commentary switch — the one control on this row that is a *preference*
     /// rather than a position, and therefore belongs to the rider and not to this session.
@@ -25,6 +36,10 @@ struct ReplayScrubber: View {
 
     @State private var isPlaying = false
     @State private var rate = ReplayRate.x30
+    /// The speed sheet the record button opens; nil the rest of the time.
+    @State private var askingRate = false
+    /// The cinema presentation, once a speed has been chosen.
+    @State private var cinema: CinemaRun?
 
     /// Derived once per session rather than per redraw: playback moves the playhead 20×
     /// a second, and every one of those rebuilds this view's body.
@@ -72,11 +87,51 @@ struct ReplayScrubber: View {
 
                 readout(range: range)
                 controls(range: range)
+                recordButton(range: range)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
             .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 14))
+            .confirmationDialog("Record the replay", isPresented: $askingRate,
+                                titleVisibility: .visible) {
+                ForEach(ReplayRate.allCases) { speed in
+                    // The speed is not what a rider is really choosing between — the *clip
+                    // length* is, and it is not `span / rate` because of the slow-motion
+                    // beats. `ReplayDriver` knows, so the button says so.
+                    Button("\(speed.label) · about \(Fmt.duration(clipLength(speed, range)))") {
+                        start(at: speed)
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(ReplayRecorder.isAvailable
+                     ? "The replay plays itself full screen and the screen is recorded. "
+                       + "The countdown is not in the clip."
+                     : "Screen recording is not available right now — Low Power Mode, "
+                       + "AirPlay and screen mirroring all switch it off. The replay will "
+                       + "play full screen without being recorded.")
+            }
+            .fullScreenCover(item: $cinema) { run in
+                ReplayCinemaView(detail: detail, milestones: milestones, span: range,
+                                 rate: run.rate, record: run.record)
+            }
             .task(id: detail.row.id) { beats = ReplayBeats.make(detail.analysis) }
+            #if DEBUG && targetEnvironment(simulator)
+            // `UI_REPLAY_CINEMA=<rate>` opens the cinema replay at that speed, since `simctl`
+            // can tap neither the button nor the speed sheet. `UI_REPLAY_RECORD=0` stages the
+            // *other* mode — the plain full-screen replay a rider gets when the recorder is
+            // unavailable or the permission was refused — which is otherwise unreachable on a
+            // machine where `isAvailable` happens to be true. Pair either with
+            // `UI_REPLAY_CLIP=stub` (`ReplayRecorder`) to walk the clip sheet as well.
+            .task {
+                let environment = ProcessInfo.processInfo.environment
+                guard let raw = environment["UI_REPLAY_CINEMA"],
+                      let speed = Double(raw) else { return }
+                cinema = CinemaRun(rate: speed,
+                                   record: environment["UI_REPLAY_RECORD"] != "0"
+                                       && ReplayRecorder.isAvailable)
+            }
+            #endif
             // Playback advances on a timer while `isPlaying`; flipping the flag cancels
             // the task, so there is never more than one loop running.
             .task(id: isPlaying) {
@@ -230,6 +285,49 @@ struct ReplayScrubber: View {
         .accessibilityLabel("Commentary")
         .accessibilityValue(store.replayCommentary ? "On" : "Off")
         .accessibilityHint("Comments on the session as the replay passes them")
+    }
+
+    // MARK: - Recording
+
+    /// One presentation of the cinema replay. `Identifiable` so a second tap makes a genuinely
+    /// new run rather than reusing the state of the last one.
+    private struct CinemaRun: Identifiable {
+        let id = UUID()
+        let rate: Double
+        /// False when ReplayKit cannot capture — the replay still plays, it just plays for an
+        /// audience of one.
+        let record: Bool
+    }
+
+    /// "Record replay" — see the type comment for why it lives here.
+    ///
+    /// Offered even when the recorder is unavailable, because the same button then does the
+    /// other useful half of the feature (the replay, full screen, with nothing around it) and
+    /// the dialog says which of the two is about to happen. A button that vanished in Low
+    /// Power Mode would just be a feature the rider could not find.
+    private func recordButton(range: ClosedRange<Double>) -> some View {
+        Button {
+            stop()
+            askingRate = true
+        } label: {
+            Label(ReplayRecorder.isAvailable ? "Record replay" : "Play replay full screen",
+                  systemImage: ReplayRecorder.isAvailable ? "record.circle" : "play.rectangle")
+                .font(.subheadline.weight(.medium))
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .accessibilityHint("Plays the session full screen and records it as a video clip")
+    }
+
+    /// How long the finished clip will be at this speed — the ease around each milestone is
+    /// most of the difference, so this is emphatically not `span / rate`.
+    private func clipLength(_ speed: ReplayRate, _ range: ClosedRange<Double>) -> Double {
+        ReplayDriver(span: range, rate: speed.rawValue,
+                     easeAt: milestones.map(\.t)).runWallS
+    }
+
+    private func start(at speed: ReplayRate) {
+        cinema = CinemaRun(rate: speed.rawValue, record: ReplayRecorder.isAvailable)
     }
 
     // MARK: - Beat bar
