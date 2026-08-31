@@ -48,6 +48,16 @@ the same two events (`config.windowRateMin`, 15 min): a session average over two
 say *when* the rider was going well, and the busiest quarter of an hour is the part he
 remembers. Its peak is measured over full windows only — a three-minute burst scaled to the
 hour is a lie, and this file does not tell it.
+
+Engine 0.8.0 fixes `summary.takeoff.totalPumpStrokes` (docs/algorithms.md "The session
+total"). It was the one pump metric that skipped `pumpMinStrokes`, so it reported the raw
+output of the peak picker -- and chop, measured, runs at pumping cadence and clears
+`pumpStrokeAmp` at its crests, so a flight contributed roughly one "stroke" per chop crest.
+On the bundled 2026-08-30 example it read 286 against a hand count of about 26. It now counts
+a stroke only inside a qualifying burst whose tallest peak reaches `pumpBurstPeakG` (0.8 g,
+**provisional**) and whose speed clears `pumpMinSpeedKmh`, and the config echo gains both.
+286 -> 31, 3091 -> 701, 1341 -> 395; every other field on every fixture is unchanged, and the
+twelve accel-less goldens keep their null.
 """
 
 from __future__ import annotations
