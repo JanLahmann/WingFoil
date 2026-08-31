@@ -351,15 +351,19 @@ public enum ReplayCommentary {
     static func startLine(place: String?, startedAt: Date?, timeZone: TimeZone) -> String {
         var lead: [String] = []
         if let place, !place.trimmingCharacters(in: .whitespaces).isEmpty { lead.append(place) }
-        if let startedAt {
-            let formatter = DateFormatter()
-            formatter.timeZone = timeZone
-            formatter.locale = Locale(identifier: "en_US_POSIX")
-            formatter.dateFormat = "HH:mm"
-            lead.append(formatter.string(from: startedAt))
-        }
+        if let startedAt { lead.append(hourMinute(startedAt, timeZone: timeZone)) }
         guard !lead.isEmpty else { return "Session start" }
         return lead.joined(separator: ", ") + " — session start"
+    }
+
+    /// "14:07". Factored out of `startLine` for `ReplayTitleCard`, which is the same sentence
+    /// laid out rather than spoken and must print the same clock — see that type.
+    static func hourMinute(_ date: Date, timeZone: TimeZone) -> String {
+        let formatter = DateFormatter()
+        formatter.timeZone = timeZone
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
     }
 
     /// "Session end — 10:45 · 2.6 km · 8 dry jibes".
@@ -396,5 +400,40 @@ public enum ReplayCommentary {
     public static func current(at t: Double, in milestones: [ReplayMilestone])
         -> ReplayMilestone? {
         milestones.last { $0.t <= t }
+    }
+
+    // MARK: - The closing card
+
+    /// The two or three lines a clip's outro card carries under the metrics — the top speed,
+    /// the best streak and the longest flight, in that order.
+    ///
+    /// **Derived, never restated.** These are the *same* milestones the replay already said
+    /// out loud, picked out of the script rather than recomputed from the analysis. A closing
+    /// card that built its own "Top speed — 13.5 kn" could round differently from the caption
+    /// the viewer saw forty seconds earlier in the same video, and there is no reading of that
+    /// which is not a bug. It also means a clip with the commentary switched off has no
+    /// highlights, which is right: the rider asked for a replay that does not narrate.
+    ///
+    /// The streak line is the *best* one — a session that went 3, then 5, then 8 emitted three
+    /// milestones and only the last is news at the end. The other two kinds occur at most once
+    /// by construction.
+    ///
+    /// Only these three kinds. The bookends are on the card already (its title is the session
+    /// and its metrics are the closing line's numbers), a jibe ordinal is a count rather than
+    /// a superlative, and "First splash" is not what anybody wants their clip to end on.
+    public static func highlights(_ milestones: [ReplayMilestone],
+                                  limit: Int = 3) -> [ReplayMilestone] {
+        guard limit > 0 else { return [] }
+        var out: [ReplayMilestone] = []
+        if let top = milestones.first(where: { $0.kind == .topSpeed }) { out.append(top) }
+        if let streak = milestones
+            .filter({ if case .streak = $0.kind { return true } else { return false } })
+            .max(by: { (count($0.kind) ?? 0) < (count($1.kind) ?? 0) }) {
+            out.append(streak)
+        }
+        if let flight = milestones.first(where: { $0.kind == .longestFlight }) {
+            out.append(flight)
+        }
+        return Array(out.prefix(limit))
     }
 }
