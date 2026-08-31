@@ -14,6 +14,13 @@ gate separates the two cleanly. This is the phone-side twin of the watch `PumpDe
 5. strokes closer together than ``pumpStrokeMaxInterval`` form a *burst*; a burst of
    ``pumpMinStrokes`` or more is pumping.
 
+Steps 4-5 answer "was he pumping *here*", which is all the corroborating consumers (turn
+outcomes, flight ends) ever ask. Counting a whole session is a different question and needs
+two more gates -- ``pumpBurstPeakG`` and ``pumpMinSpeedKmh``, applied by `takeoff.py` and
+documented there. They live in this config because they are facts about a stroke, not about
+a takeoff, but nothing in *this* module applies them: a corroborating burst that fails them
+is still evidence the rider was working.
+
 Consumers ask questions about time windows (`is_pumping`), never about the raw signal.
 Sources without an accel stream get `None` from `pump_track` and every consumer degrades to
 its speed-only path -- native and GPX sessions must keep working unchanged.
@@ -40,6 +47,10 @@ class PumpConfig:
     refractory_s: float = 0.4            # pumpRefractory
     stroke_max_interval_s: float = 1.5   # pumpStrokeMaxInterval: still the same burst
     min_strokes: int = 4                 # pumpMinStrokes: burst length that means "pumping"
+    burst_peak_g: float = 0.8            # pumpBurstPeakG: PROVISIONAL -- a burst's tallest
+                                         #   stroke must reach this to be counted in the
+                                         #   session total (see takeoff.py)
+    min_speed_kmh: float = 3.0           # pumpMinSpeedKmh: a counted stroke moved the board
 
 
 @dataclass
@@ -57,6 +68,17 @@ class PumpTrack:
         hi = int(np.searchsorted(self.t, end_t, "right"))
         return _pick_peaks(self.t[lo:hi], self.band[lo:hi], self.valid[lo:hi],
                            self.config.stroke_amp_g, self.config.refractory_s)
+
+    def peak_amps(self, strokes: np.ndarray) -> np.ndarray:
+        """Band-passed height, in g, at each of these stroke times.
+
+        Stroke times are grid samples by construction, so this reads the peak the picker
+        actually fired on rather than an interpolation of it.
+        """
+        strokes = np.asarray(strokes, float)
+        if strokes.size == 0:
+            return np.empty(0)
+        return np.interp(strokes, self.t, self.band)
 
     def bursts(self, start_t: float, end_t: float) -> list[np.ndarray]:
         """Stroke times in [start_t, end_t] grouped into bursts, in time order.

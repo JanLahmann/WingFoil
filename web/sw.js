@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v11";     // v11: the library asks whose session it is
+const VERSION = "v12";     // v12: engine 0.8.0 (the pump-stroke total)
 const SHELL = `wingfoil-shell-${VERSION}`;
 const RUNTIME = `wingfoil-runtime-${VERSION}`;
 

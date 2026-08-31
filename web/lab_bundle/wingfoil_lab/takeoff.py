@@ -47,6 +47,36 @@ uses, for the same reason.
 ``unknown``     the recording does not run gap-free for `takeoffAttemptWindow` past the last
                 stroke, so whether a flight followed is unknowable. Excluded from tallies.
 
+**The session total.** `total_pump_strokes` is the one metric that speaks for the whole
+afternoon, and until engine 0.8.0 it was the only pump number that skipped every rule the
+others obey: it counted *peaks*, so a session's total was the raw output of the peak picker.
+On the 2026-08-30 example that read **286** against a hand count of about **26**, because on
+foil the chop plus the arm riding it puts ~1 Hz at ~0.29 g rms on the wrist -- over
+`pumpStrokeAmp` and squarely inside the band -- and the picker fires about once per chop
+crest for the whole flight. Three quarters of those 286 were logged in flight at 20 km/h.
+
+So a counted stroke now has to earn it, on all three tests:
+
+1. it lies in a burst of at least `pumpMinStrokes` -- the engine's own definition of pumping,
+   the same `bursts()`/`_burst_strokes()` rule `in_flight_strokes` already uses. Singletons
+   and pairs are the chop signature and were 196 of the 286;
+2. its burst's tallest stroke reaches `pumpBurstPeakG`. Real takeoff pumping is about twice
+   the amplitude of the on-foil ride at the *same* cadence, so amplitude separates them where
+   frequency does not. The threshold is judged per **burst**, not per stroke: a rider's fourth
+   pump is smaller than his first and still part of the same effort;
+3. speed at the stroke is at least `pumpMinSpeedKmh` -- a swimmer's arms make a fine 1 Hz
+   oscillation, and a stroke that moved nothing moved nothing.
+
+`pumpBurstPeakG` is **PROVISIONAL**: 0.8 g separates this corpus cleanly, but the corpus has
+no logged ground truth for stroke counts yet (fixtures/README.md). It is the one number here
+that should be re-tuned the day Jan counts his pumps on the water.
+
+Nothing else moves. Per-stroke peak picking, `pumps_to_takeoff`, `takeoffs[].pumps`,
+`in_flight_strokes`, the `PumpEpisode` list and `is_pumping` -- the turn and flight-end
+corroboration -- are all untouched: those ask "was he working here", a question a small burst
+still answers truthfully, and putting the amplitude rule into `is_pumping` drops real,
+speed-corroborated pump-outs.
+
 **Truncation.** The same honesty rule as the flight ends, at the other end of the flight: when
 fewer than `takeoffMinPreWindow` seconds of gap-free record precede the flight start, the run
 is not in the data and `pumps_to_takeoff`/`duration_s` are not reported (`truncated`). The
@@ -148,7 +178,8 @@ class TakeoffAnalysis:
     takeoffs: list[Takeoff] = field(default_factory=list)
     episodes: list[PumpEpisode] = field(default_factory=list)
     has_accel: bool = False
-    total_strokes: int | None = None   # every detected stroke, bursts and singletons alike
+    total_strokes: int | None = None   # every stroke that earned it (module "The session
+                                       #   total"): in a burst, tall enough, and moving
 
 
 @dataclass
@@ -158,7 +189,7 @@ class TakeoffSummary:
     takeoff_attempts: int = 0          # field 35: successes + failed attempts
     takeoff_successes: int = 0         # field 36: flights -- every one is a takeoff that took
     avg_pumps_to_takeoff: float | None = None    # field 37 (x0.1 on the wire)
-    total_pump_strokes: int | None = None        # field 38: every stroke in the session
+    total_pump_strokes: int | None = None        # field 38: the session's counted strokes
     success_pct: float | None = None   # None without accel: failures are invisible there
     failed_attempts: int = 0
     unknown_attempts: int = 0          # efforts whose lookahead a gap cut short
@@ -198,8 +229,7 @@ def analyze_takeoffs(clean: CleanTrack, flights: FlightResult,
     for i, f in enumerate(flights.flights):
         takeoffs.append(_takeoff(i, f, ev, cfg, pump, prev_end_t))
         prev_end_t = f.end_t
-    total = None if pump is None else int(pump.strokes(float(ev.t[0]),
-                                                       float(ev.t[-1])).size)
+    total = None if pump is None else _session_strokes(pump, ev)
     return TakeoffAnalysis(takeoffs=takeoffs,
                            episodes=_episodes(ev, flights, turns or [], cfg, pump),
                            has_accel=pump is not None, total_strokes=total)
@@ -386,6 +416,28 @@ def _burst_strokes(pump: PumpTrack, start_t: float, end_t: float) -> int:
     """Strokes in [start_t, end_t] that belong to a burst of at least `pumpMinStrokes`."""
     return int(sum(len(b) for b in pump.bursts(start_t, end_t)
                    if len(b) >= pump.config.min_strokes))
+
+
+def _session_strokes(pump: PumpTrack, ev: OffFoilEvidence) -> int:
+    """The session total: every stroke that earns it (module docstring, "The session total").
+
+    Three tests, in the order they cost least: the burst-length rule the rest of the module
+    already uses, then the burst's peak amplitude against `pumpBurstPeakG`, then the speed at
+    each surviving stroke against `pumpMinSpeedKmh`. The first two are properties of the
+    *burst* -- one effort is kept or dropped whole -- while the speed test is per stroke,
+    because a rider who pumps himself off a standstill really does earn the strokes that got
+    the board moving and not the ones before them.
+    """
+    cfg = pump.config
+    total = 0
+    for b in pump.bursts(float(ev.t[0]), float(ev.t[-1])):
+        if len(b) < cfg.min_strokes:
+            continue
+        if float(pump.peak_amps(b).max()) < cfg.burst_peak_g:
+            continue
+        speed_kmh = np.interp(b, ev.t, ev.doppler) * 3.6
+        total += int(np.count_nonzero(speed_kmh >= cfg.min_speed_kmh))
+    return total
 
 
 def _flight_containing(flights: FlightResult, first: float, last: float) -> int | None:

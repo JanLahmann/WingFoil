@@ -237,6 +237,17 @@ bursts peak at 0.35–0.64 g (thirteen of them), then 0.73, 0.86, 1.41, 1.45 —
 stroke count to check it against. The on-water protocol now asks for one
 (`fixtures/README.md`); the day it exists, this is the number to re-tune.
 
+**The total is no longer a superset of the other stroke counts, and the UI has not caught
+up.** `inFlightPumpStrokes` and `takeoffs[].pumps` are gated by `pumpMinStrokes` alone, so a
+session can now report a *smaller* total than its in-flight count — the bundled 2026-08-30
+example does exactly that (31 total against 60 in flight, because the in-flight bursts are
+chop that clears four strokes but not 0.8 g). The numbers are each correct for the question
+they answer, but a panel that lists them side by side ("Total pump strokes" above "In-flight
+pump strokes") reads as an arithmetic error. Both the web takeoff panel (`web/js/render.js`)
+and the iOS summary grid still print them that way; deciding whether the other counts should
+take the amplitude gate too, or whether the labels should say what each one counts, is a
+product decision left open by this change and not made here.
+
 **Nothing else moves.** Peak picking, `pumps_to_takeoff`, `avgPumpsToTakeoff`,
 `takeoffs[].pumps`, `inFlightStrokes`, `pumpEpisodes` and `is_pumping` — the corroboration
 the turn and flight-end ladders read — are all untouched. Those ask *was he working here*, a
