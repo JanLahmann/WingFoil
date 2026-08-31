@@ -34,7 +34,15 @@ public enum AnalysisEngine {
     /// already carries, which is precisely why it must re-derive. And `summary.windowRates`
     /// adds the rolling 15-minute view of the same two events (`config.windowRateMin`): the
     /// busiest quarter of an hour, which a session average cannot say.
-    public static let version = "0.7.0"
+    ///
+    /// 0.8.0 fixes the **session total** (docs/algorithms.md "The session total").
+    /// `summary.takeoff.totalPumpStrokes` was the one pump metric that skipped
+    /// `pumpMinStrokes`, so it reported the raw output of the peak picker — and chop, it
+    /// turns out, runs at pumping cadence and clears `pumpStrokeAmp` at its crests, so a
+    /// flight contributed roughly one "stroke" per chop crest. On the bundled example that
+    /// read 286 against a hand count of ~26. Like 0.7.0's `jibesPerHour`, this *moves* a
+    /// value every stored document already carries, which is why it must re-derive.
+    public static let version = "0.8.0"
 }
 
 /// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's
@@ -91,6 +99,10 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
     // Pumping
     public var pumpStrokeAmp: Double
     public var pumpMinStrokes: Int
+    /// The two session-total gates (engine 0.8.0). Optional only so a stored
+    /// `analysis.json` from 0.7.0 still decodes; such a row re-derives on its version.
+    public var pumpBurstPeakG: Double?
+    public var pumpMinSpeedKmh: Double?
     // Takeoff
     public var takeoffAttemptWindow: Double
     public var freeTakeoff: Int
@@ -134,6 +146,8 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
         windDefaultTurnType = wind.defaultTurnType
         pumpStrokeAmp = pump.strokeAmpG
         pumpMinStrokes = pump.minStrokes
+        pumpBurstPeakG = pump.burstPeakG
+        pumpMinSpeedKmh = pump.minSpeedKmh
         takeoffAttemptWindow = takeoff.attemptWindowS
         freeTakeoff = takeoff.freeTakeoffStrokes
         windowRateMin = rates.windowRateMin

@@ -94,7 +94,7 @@ import Testing
         // the one channel a native-Windsurf file cannot — the pump trace — and the stroke
         // counts are real numbers rather than an honest "unknown".
         #expect(row.hasAccel == true)
-        #expect(row.totalPumpStrokes == 286)
+        #expect(row.totalPumpStrokes == 31)     // engine 0.8.0: 286 was mostly chop
 
         // Child tables filled the same way any import fills them.
         let counts = try await harness.ingestor.database.writer.read { db in
