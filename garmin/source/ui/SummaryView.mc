@@ -22,10 +22,11 @@ import WingFoilCore;
 // is a new measurement; it is the session's own numbers, finally shown.
 //
 // Two things this screen may NOT do:
-//   * reuse MapPageView. MapTrackView keeps itself centred on the CURRENT position and
-//     finishSave has already called stopGps() — paging onto it after a save shows a map
-//     centred on nothing. The track page is therefore drawn here, with Dc primitives, from
-//     the lat/lon buffer (which WingfoilApp now fills unconditionally for exactly this).
+//   * reuse the firmware's map. MapTrackView keeps itself centred on the CURRENT position and
+//     finishSave has already called stopGps(), so paging onto it after a save would show a map
+//     centred on nothing — and on the fenix 8 it killed the app outright, which is why 0.9.2
+//     dropped it from the live page too. The track is drawn with Dc primitives from the
+//     lat/lon buffer (TrackDraw), which WingfoilApp fills unconditionally for exactly this.
 //   * assume every page exists. Turns, takeoffs and the track are conditional, so the page
 //     LIST is built per session and the dots at the bottom count what is really there.
 module SummaryNav {
@@ -140,7 +141,7 @@ class SummaryView extends WatchUi.View {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var radius = RecordingView.fitRadius(dc, false, arc);
-        var hN = dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT);
+        var hN = RecordingView.inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
         var hL = dc.getFontHeight(Graphics.FONT_LARGE);
         var hM = dc.getFontHeight(Graphics.FONT_MEDIUM);
@@ -151,7 +152,7 @@ class SummaryView extends WatchUi.View {
         dc.drawText(cx, y, RecordingView.fitFont(dc, NUMBER_FONTS, 0, giant,
             RecordingView.rowBudget(radius, y - cy,
                 RecordingView.inkH(dc, Graphics.FONT_NUMBER_THAI_HOT))), giant, CV);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, RecordingView.heroRowY(cy, hN, hT, hL, hM, 1, nSub),
             Graphics.FONT_XTINY, unit, CV);
         if (!row1.equals("")) {
@@ -160,7 +161,7 @@ class SummaryView extends WatchUi.View {
         }
         if (!row2.equals("")) {
             drawRow(dc, cx, cy, radius, RecordingView.heroRowY(cy, hN, hT, hL, hM, 3, nSub),
-                1, row2, Graphics.COLOR_LT_GRAY);
+                1, row2, Graphics.COLOR_WHITE);
         }
     }
 
@@ -255,56 +256,20 @@ class SummaryView extends WatchUi.View {
     hidden var _painter as RecordingView = new RecordingView();
 
     // ---- S7 Track ----
-    // The breadcrumb as a SHAPE, tinted by foil state, scaled into the square inscribed in
-    // the circle. Bounding box, longitudes squeezed by cos(lat) so the track keeps its real
-    // proportions, then one aspect-preserving scale — a straight-line reach must land in a
-    // band, not be stretched to fill the box.
+    // The breadcrumb as a SHAPE, tinted by foil state, scaled into the square inscribed in the
+    // circle. The renderer moved to TrackDraw in 0.9.2 when the live map page stopped being the
+    // firmware's MapTrackView and started being drawn the same way — a live trail and a
+    // post-save trail that disagreed about which half of the session was flown would be the
+    // same bug twice. No position marker here: the rider is ashore.
     hidden function drawTrack(dc as Dc, c as SessionController) as Void {
         var e = c.engine;
-        var n = e.trackN;
-        var lat = e.trackLat;
-        var lon = e.trackLon;
-        var fly = e.trackFly;
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
-        if (n < 2 || lat == null || lon == null || fly == null) {
+        if (!TrackDraw.draw(dc, e.trackLat, e.trackLon, e.trackFly, e.trackN, cx, cy,
+                trackBox(dc), false)) {
             return;
         }
-        var box = trackBox(dc);
-        var latLo = lat[0];
-        var latHi = lat[0];
-        var lonLo = lon[0];
-        var lonHi = lon[0];
-        for (var i = 1; i < n; i++) {
-            if (lat[i] < latLo) { latLo = lat[i]; }
-            if (lat[i] > latHi) { latHi = lat[i]; }
-            if (lon[i] < lonLo) { lonLo = lon[i]; }
-            if (lon[i] > lonHi) { lonHi = lon[i]; }
-        }
-        var squeeze = Math.cos((latLo + latHi) / 2.0 * 0.017453292);
-        var w = (lonHi - lonLo) * squeeze;
-        var h = latHi - latLo;
-        var scale = trackScale(box, w, h);
-        var midLat = (latLo + latHi) / 2.0;
-        var midLon = (lonLo + lonHi) / 2.0;
-
-        dc.setPenWidth(3);
-        var px = 0;
-        var py = 0;
-        for (var i = 0; i < n; i++) {
-            var qx = cx + ((lon[i] - midLon) * squeeze * scale).toNumber();
-            // screen y grows downward, latitude grows northward
-            var qy = cy - ((lat[i] - midLat) * scale).toNumber();
-            if (i > 0) {
-                dc.setColor(fly[i - 1] ? Ink.phaseFlying() : Ink.dim(),
-                    Graphics.COLOR_TRANSPARENT);
-                dc.drawLine(px, py, qx, qy);
-            }
-            px = qx;
-            py = qy;
-        }
-        dc.setPenWidth(1);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, trackCaptionY(dc), Graphics.FONT_SMALL,
             (e.distM / 1000.0).format("%.1f") + " km", CV);
     }
@@ -317,24 +282,16 @@ class SummaryView extends WatchUi.View {
             + dc.getFontHeight(Graphics.FONT_SMALL) / 2;
     }
 
-    // Full side of the square the track is drawn in: the square inscribed in the glass
-    // (side R*sqrt2), less the margin. Callers scale the track's longer axis to this and
-    // hang the caption off `cy + box/2`, so this must be the whole side — returning the
-    // half-side once drew every track at half size with the caption floating mid-glass.
-    // Shared with the layout test.
+    // Full side of the square the track is drawn in: the square inscribed in the glass, less
+    // this screen's own margin (the page-position dots and the distance caption live in it).
+    // The geometry itself is TrackDraw's, shared with the live map page. Shared with the
+    // layout test.
     static function trackBox(dc as Dc) as Number {
-        var r = dc.getWidth() / 2 - SUM_TRACK_MARGIN;
-        return (r * 1414 / 1000);
+        return TrackDraw.boxSide(dc.getWidth() / 2 - SUM_TRACK_MARGIN);
     }
 
-    // Degrees-to-pixels, aspect preserved: whichever axis is relatively longer sets the
-    // scale, so a track that is 3 km by 200 m draws as a band. A degenerate (single-point)
-    // track gets a finite scale rather than an infinity.
     static function trackScale(box as Number, w as Float, h as Float) as Float {
-        var sw = w > 0.0 ? box / w : 1.0e9;
-        var sh = h > 0.0 ? box / h : 1.0e9;
-        var s = sw < sh ? sw : sh;
-        return s > 1.0e8 ? 1.0e8 : s;
+        return TrackDraw.scale(box, w, h);
     }
 
     // Neutral grey, not green. "Saved" is an acknowledgement, not a verdict on the session,
@@ -342,7 +299,7 @@ class SummaryView extends WatchUi.View {
     // made a FONT_MEDIUM green "Saved!" the largest element on a page whose subject is how
     // the session went — which is the one thing the rider already knows, since he pressed it.
     hidden function drawSavedPill(dc as Dc) as Void {
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(dc.getWidth() / 2, savedY(dc), Graphics.FONT_XTINY, SUM_SAVED, CV);
     }
 

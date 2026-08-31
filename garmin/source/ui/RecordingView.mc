@@ -52,6 +52,10 @@ const TURNS_FLEW_SUFFIX = "% flew";
 const TURNS_PORT = "P";
 const TURNS_STBD = "S";
 const TURNS_SIDE_SEP = "/";
+// The rung that row's VALUES start at, as a TEXT_FONTS index — FONT_MEDIUM, which is also the
+// band the row reserves. It steps down from there to TALLY_FLOOR (FONT_SMALL), where every
+// other count on the watch stops.
+const VERDICT_FROM = 1;
 
 // PAUSED banner. A word, not a value, so FONT_TINY is the right rung (docs review: XTINY and
 // TINY are label sizes) — and a narrower banner is what lets it sit high enough on the glass
@@ -111,6 +115,9 @@ const FIT_MARGIN = 2;
 const GRID_BIAS = 28;
 const GRID_REF_PX = 454;
 
+// The CLOCK page's lift, in the other direction — see drawClockPage. Same reference glass.
+const CLOCK_BIAS = 32;
+
 // Font ladders, largest first. Giant slots walk the number fonts, everything else the text
 // fonts; fitFont() picks the first that fits the chord it has been given.
 var NUMBER_FONTS as Array<Graphics.FontType> = [
@@ -135,12 +142,12 @@ const PAIR_FLOOR = 2;
 // is a foil number, so the word "foil" is said ONCE, at the top, instead of six times in six
 // cell labels — which is the whole reason the page is a table and not a grid of cells.
 //
-// The column headers are UNITS, not categories ("min"/"km" rather than "time"/"dist"), because
-// the units are the information the numbers are missing: "63:24" and "14.1" say nothing about
-// what they are counting, while "56%" and "61%" under them read as exactly what they are — the
-// share of the MINUTES flown and the share of the KILOMETRES flown.
+// The column headers name what the column counts. "min" became "time" in 0.9.2 (the rider's
+// call): the column holds m:ss and h:mm strings, so "min" was naming a unit the cells do not
+// actually print, and the word beside "km" reads as the pair it is — time and distance, the
+// same session asked twice.
 const FOIL_TITLE = "foil";
-const FOIL_COL_TIME = "min";
+const FOIL_COL_TIME = "time";
 const FOIL_COL_DIST = "km";
 // The row keys. `total` gives way to `tot` when the long word would cost the values their
 // size: a key is already at the smallest font on the watch, so its LENGTH is the only thing
@@ -156,12 +163,27 @@ const FOIL_FLOOR = 2;
 // Timeline page bands (see drawTimelinePage). The two tall ones were authored for the fenix 8
 // family, whose smallest glass is TL_REF_PX; RecordingView.stripH/sparkH keep them exactly as
 // written at or above that width and scale them down below it.
+// The two tall bands grew in 0.9.2 (44 -> 56, 96 -> 124). The three bands and their captions
+// filled 263 px of a 454 px glass, i.e. 42 % of the page was empty — on the one page whose
+// content is SHAPES, where height is resolution: a sparkline 96 px tall resolves a speed run
+// to about two thirds of a knot. They are paid for out of the top and bottom air, and they
+// cost the outcome-dot row three of its dots (35 -> 32 on a 454 px glass), because the row is
+// pushed deeper into the arc. A taller sparkline is worth more than three dots the Turns page
+// also draws.
 const TL_REF_PX = 416;
-const TL_STRIP_H = 44;
-const TL_SPARK_H = 96;
+const TL_STRIP_H = 56;
+const TL_SPARK_H = 124;
 const TL_DOT_R = 6;
 const TL_DOT_GAP = 4;
 const TL_MARGIN = 6;
+
+// MAP page. The margin is what the square inscribed in the glass gives up so the distance
+// caption has a line to sit on under it — authored at REF_PX and read through scaled(), like
+// every other bezel dimension. The waiting line is what the page says before the first fix:
+// a map page that renders empty reads as a crashed map page, which on this app's history is
+// exactly the wrong thing to imply.
+const MAP_MARGIN = 34;
+const MAP_WAITING = "waiting for GPS";
 
 // The on-water screens. Which screens exist, in what order, is PageModel's business — this
 // class only knows how to paint a layout. Fonts are deliberately large: spray + chop make
@@ -210,9 +232,10 @@ class RecordingView extends WatchUi.View {
             drawTimelinePage(dc, c);
         } else if (layout == PageModel.LAYOUT_CLOCK) {
             drawClockPage(dc, c, i, foilArc);
+        } else if (layout == PageModel.LAYOUT_MAP) {
+            drawMapPage(dc, c, foilArc);
         } else {
-            // LAYOUT_MAP lives in MapPageView and never reaches here; anything else is a
-            // property the firmware handed us out of range — fall back to something readable.
+            // a property the firmware handed us out of range — fall back to something readable
             drawHeroPage(dc, c, i, foilArc);
             ring = true;
         }
@@ -226,7 +249,10 @@ class RecordingView extends WatchUi.View {
             drawPbFlash(dc);
         }
         // MAIN says PAUSED in its own top row — it is the only layout whose first row sits
-        // where the banner wants to be, and a state word beats the time of day.
+        // where the banner wants to be, and a state word beats the time of day. Every other
+        // page gets the banner, the map page included: that it could NOT was the whole reason
+        // the map used to be skipped while paused (PageNav), and drawing it ourselves is what
+        // gave the banner back.
         if (c.state == SessionController.STATE_PAUSED && layout != PageModel.LAYOUT_MAIN) {
             drawPausedBanner(dc, fitRadius(dc, ring, foilArc));
         }
@@ -476,14 +502,24 @@ class RecordingView extends WatchUi.View {
     // on the glass), and the unit that used to own a whole row now sits INLINE behind the
     // digits. Between them those two changes bought the outcome-dot strip its row without
     // anything else moving.
+    //
+    // 0.9.2 made the clock bigger again, and paid for it out of leading rather than out of any
+    // other row. Two changes, worth 42 px between them and costing 3:
+    //   * the clock's band is FONT_NUMBER_MILD, not FONT_LARGE — ~66 px of digit against 41 —
+    //     and it is fitted through the NUMBER ladder, so PAUSED (which is a word, and wider)
+    //     still steps down into the text fonts and lands on FONT_LARGE exactly as before;
+    //   * the GIANT's band is its INK height, not FONT_NUMBER_MEDIUM's line height. The 39 px
+    //     difference is leading: air above and below the digits that nothing is drawn in. The
+    //     rows below it move up by half of that and gain chord, and the stack as a whole is
+    //     three pixels taller than it was.
     hidden function drawMainPage(dc as Dc, c as SessionController, page as Number,
             foilArc as Boolean) as Void {
         var e = c.engine;
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var radius = fitRadius(dc, true, foilArc);
-        var hC = dc.getFontHeight(Graphics.FONT_LARGE);
-        var hN = dc.getFontHeight(Graphics.FONT_NUMBER_MEDIUM);
+        var hC = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
+        var hN = inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
         var hO = dc.getFontHeight(Graphics.FONT_LARGE);
         var hD = stripBandH(dc);
         var hK = dc.getFontHeight(Graphics.FONT_MEDIUM);
@@ -496,10 +532,10 @@ class RecordingView extends WatchUi.View {
         var paused = c.state == SessionController.STATE_PAUSED;
         var top = paused ? PAUSED_TEXT : PageModel.clockString();
         var y = mainRowY(cy, hC, hN, hD, hO, hK, 0);
-        dc.setColor(paused ? Graphics.COLOR_YELLOW : Graphics.COLOR_LT_GRAY,
+        dc.setColor(paused ? Graphics.COLOR_YELLOW : Graphics.COLOR_WHITE,
             Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, fitFont(dc, TEXT_FONTS, 0, top,
-            rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_LARGE))), top, CV);
+        dc.drawText(cx, y, fitGiant(dc, top, 3,
+            rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_NUMBER_MILD))), top, CV);
 
         // row 1 — the giant, with its unit and caption inline behind the digits
         drawMainGiant(dc, c, page, cx, cy, radius, mainRowY(cy, hC, hN, hD, hO, hK, 1));
@@ -544,12 +580,12 @@ class RecordingView extends WatchUi.View {
         dc.drawText(x, y, f, v, LV);
         x += wv + GLYPH_GAP;
         var lines = (unit.equals("") ? 0 : 1) + (cap.equals("") ? 0 : 1);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         if (!unit.equals("")) {
             dc.drawText(x, suffixLineY(dc, y, f, 0, lines), Graphics.FONT_XTINY, unit, LV);
         }
         if (!cap.equals("")) {
-            dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
             dc.drawText(x, suffixLineY(dc, y, f, 1, lines), Graphics.FONT_XTINY, cap, LV);
         }
     }
@@ -576,6 +612,11 @@ class RecordingView extends WatchUi.View {
     // Row centres for MAIN: 0 clock/state · 1 giant · 2 outcome dots · 3 outcome counts ·
     // 4 streak. Stacked from font heights only, like every other page, so the rows can never
     // overlap on any variant. Shared with the layout test.
+    //
+    // `hN` is the giant's INK height, not its line height (0.9.2): the giant is the only row
+    // whose font is pinned at the top of its own ladder, so the leading around it is knowable
+    // dead space rather than the safety margin it is everywhere else. The row below it is
+    // stacked against the ink, which is what it visually sits under.
     static function mainRowY(cy as Number, hC as Number, hN as Number, hD as Number,
             hO as Number, hK as Number, row as Number) as Number {
         var y = cy - (hC + hN + hD + hO + hK) / 2;
@@ -606,19 +647,19 @@ class RecordingView extends WatchUi.View {
             now as String, best as String, f as Graphics.FontType,
             showNow as Boolean) as Number {
         var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        // Every glyph in this row is white since 0.9.2 (the rider's call: grey text is not
+        // text on the water). The caption and the separator are XTINY and the two numbers are
+        // `f`, so SIZE is what separates the word from the values now — it was carrying most
+        // of that job already, and it is the half that survives spray and low brightness.
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, Graphics.FONT_XTINY, caption, LV);
         x += dc.getTextWidthInPixels(caption, Graphics.FONT_XTINY) + GLYPH_GAP;
         if (showNow) {
-            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
             dc.drawText(x, y, f, now, LV);
             x += dc.getTextWidthInPixels(now, f);
-            dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
             dc.drawText(x, y, Graphics.FONT_XTINY, STREAK_SEP, LV);
             x += dc.getTextWidthInPixels(STREAK_SEP, Graphics.FONT_XTINY);
         }
-        dc.setColor(showNow ? Graphics.COLOR_LT_GRAY : Graphics.COLOR_WHITE,
-            Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, f, best, LV);
         return x + dc.getTextWidthInPixels(best, f);
     }
@@ -662,7 +703,7 @@ class RecordingView extends WatchUi.View {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var radius = fitRadius(dc, true, foilArc);
-        var hN = dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT);
+        var hN = inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
         var hL = dc.getFontHeight(Graphics.FONT_LARGE);
         var hM = dc.getFontHeight(Graphics.FONT_MEDIUM);
@@ -685,7 +726,7 @@ class RecordingView extends WatchUi.View {
             rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_NUMBER_THAI_HOT)));
         dc.setColor(PageModel.color(giant, c), Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, gFont, gv, CV);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, heroRowY(cy, hN, hT, hL, hM, 1, nSub), Graphics.FONT_XTINY,
             PageModel.label(giant), CV);
         if (sub1 != PageModel.M_NONE) {
@@ -709,8 +750,15 @@ class RecordingView extends WatchUi.View {
 
     // Row centres for HERO: 0 = giant number, 1 = unit line, 2 = first sub-row (LARGE),
     // 3 = second sub-row (MEDIUM). The block is centred on the rows it actually has, and the
-    // giant's BAND is always the biggest number font's line height whatever font lands in it —
+    // giant's BAND is always the biggest number font's INK height whatever font lands in it —
     // so the stack is deterministic and the fit can shrink the number without moving anything.
+    //
+    // Ink, not line height, since 0.9.2. THAI_HOT's line is 210 px on a 454 px glass and its
+    // digits are 157 of them; the 53 px difference is leading, and it was being spent twice —
+    // once above the giant, where the top of the glass is empty anyway, and once below it,
+    // where it pushed the two sub-rows 26 px deeper into the narrowing chord than the digits
+    // they sit under. The giant does not move (the block is centred on its total); the unit
+    // line and both sub-rows come up and get their width back.
     static function heroRowY(cy as Number, hN as Number, hT as Number, hL as Number,
             hM as Number, row as Number, nSub as Number) as Number {
         var total = hN + hT + (nSub >= 1 ? hL : 0) + (nSub >= 2 ? hM : 0);
@@ -737,14 +785,23 @@ class RecordingView extends WatchUi.View {
     // minutes and in kilometres:
     //
     //          foil
-    //      min      km
     //      56%     61%          how much of it was flown
     //  tot 63:24   14.1         how much there was of it
     //  max  7:04    2.2         and the best single flight of it
+    //      time     km
     //
-    // The column headers are said ONCE, at the top, and all three rows inherit them — that is
-    // what makes it a table rather than three pairs of captioned cells, and it buys two rows of
-    // glass back from captions that would have repeated the same two words three times.
+    // The column headers are said ONCE and all three rows inherit them — that is what makes it
+    // a table rather than three pairs of captioned cells, and it buys two rows of glass back
+    // from captions that would have repeated the same two words three times.
+    //
+    // They sit UNDER the matrix since 0.9.2, and the block is no longer lifted. Both changes
+    // are the same change: the header row used to be the second row from the top, which on a
+    // lifted block is the narrowest row on the page, and it pushed all three VALUE rows further
+    // from the equator where the chord is widest. Below the matrix it costs the numbers
+    // nothing — a two-word label row is the cheapest thing to put where the glass is narrow —
+    // and the three value rows land on -1/0/+1 bands around the centre. Measured on a 454 px
+    // glass: the table's usable half-width goes 185 -> 190 px, which with the tighter row keys
+    // is the difference between FONT_MEDIUM and FONT_LARGE for all six numbers.
     //
     // The distance column is ON-FOIL distance throughout (FlightDetector.foilDistM /
     // longestM), never the odometer: a "km" column whose top cell is a foil SHARE and whose
@@ -759,40 +816,41 @@ class RecordingView extends WatchUi.View {
         var radius = fitRadius(dc, false, foilArc);
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
         var hV = dc.getFontHeight(Graphics.FONT_LARGE);
-        var bias = gridBias(dc);
-        var half = foilTableHalf(dc, radius, cy, hT, hV, bias);
-        var keys = foilKeys(dc, half);
-        var col = foilColumns(cx, half, foilKeyBlock(dc, keys));
+        var half = foilTableHalf(dc, radius, cy, hT, hV);
         var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
 
-        // row 0 — the page's name, in the same grey every other page header wears
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, foilRowY(cy, hT, hV, 0, bias), Graphics.FONT_XTINY, FOIL_TITLE, CV);
-
-        // row 1 — the two column headers, once, for the three rows under them
-        var yh = foilRowY(cy, hT, hV, 1, bias);
-        dc.drawText(col[1], yh, Graphics.FONT_XTINY, FOIL_COL_TIME, CV);
-        dc.drawText(col[2], yh, Graphics.FONT_XTINY, FOIL_COL_DIST, CV);
-
-        // row 2 — the two shares, teal, exactly as the pair band drew them: a PHASE tint, not
-        // the outcome ladder's green (docs/presentation.md)
-        var pt = PageModel.value(PageModel.M_FOIL_PCT, c);
-        var pd = PageModel.value(PageModel.M_FOIL_DIST_PCT, c);
-        drawFoilRow(dc, col, foilRowY(cy, hT, hV, 2, bias), "", pt, pd,
-            foilFont(dc, [pt, pd], col[3]), Ink.phaseFlying(), LV);
-
-        // rows 3 and 4 — the totals and the bests, white, and in ONE font: they are the two
-        // halves of the same table, and a row that shrank on its own would read as a different
-        // kind of number rather than as the same number a session later.
         var tt = PageModel.fmtTime(d.foilTimeS);
         var td = foilKm(d.foilDistM);
         var mt = PageModel.fmtTime(d.longestS);
         var md = foilKm(d.longestM);
+        var keys = foilKeys(dc, half, foilWidest(dc, [tt, td, mt, md]));
+        var col = foilColumns(cx, half, foilKeyBlock(dc, keys));
+
+        // row 0 — the page's name
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, foilRowY(cy, hT, hV, 0), Graphics.FONT_XTINY, FOIL_TITLE, CV);
+
+        // row 1 — the two shares, teal, exactly as the pair band drew them: a PHASE tint, not
+        // the outcome ladder's green (docs/presentation.md)
+        var pt = PageModel.value(PageModel.M_FOIL_PCT, c);
+        var pd = PageModel.value(PageModel.M_FOIL_DIST_PCT, c);
+        drawFoilRow(dc, col, foilRowY(cy, hT, hV, 1), "", pt, pd,
+            foilFont(dc, [pt, pd], col[3]), Ink.phaseFlying(), LV);
+
+        // rows 2 and 3 — the totals and the bests, white, and in ONE font: they are the two
+        // halves of the same table, and a row that shrank on its own would read as a different
+        // kind of number rather than as the same number a session later.
         var f = foilFont(dc, [tt, td, mt, md], col[3]);
-        drawFoilRow(dc, col, foilRowY(cy, hT, hV, 3, bias), keys[0], tt, td, f,
+        drawFoilRow(dc, col, foilRowY(cy, hT, hV, 2), keys[0], tt, td, f,
             Graphics.COLOR_WHITE, LV);
-        drawFoilRow(dc, col, foilRowY(cy, hT, hV, 4, bias), keys[1], mt, md, f,
+        drawFoilRow(dc, col, foilRowY(cy, hT, hV, 3), keys[1], mt, md, f,
             Graphics.COLOR_WHITE, LV);
+
+        // row 4 — the column headers, under the numbers they name
+        var yh = foilRowY(cy, hT, hV, 4);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(col[1], yh, Graphics.FONT_XTINY, FOIL_COL_TIME, CV);
+        dc.drawText(col[2], yh, Graphics.FONT_XTINY, FOIL_COL_DIST, CV);
     }
 
     // One table row: an optional grey key at the block's left edge, then the two values on
@@ -802,7 +860,7 @@ class RecordingView extends WatchUi.View {
             a as String, b as String, f as Graphics.FontType, ink as Number,
             LV as Number) as Void {
         if (!key.equals("")) {
-            dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
             dc.drawText(col[0], y, Graphics.FONT_XTINY, key, LV);
         }
         dc.setColor(ink, Graphics.COLOR_TRANSPARENT);
@@ -816,40 +874,40 @@ class RecordingView extends WatchUi.View {
         return (metres / 1000.0).format("%.1f");
     }
 
-    // Row centres: 0 title · 1 column headers · 2 shares · 3 totals · 4 bests. Stacked from
+    // Row centres: 0 title · 1 shares · 2 totals · 3 bests · 4 column headers. Stacked from
     // font heights only, so no two rows can ever touch. `hV` is the band a value row reserves
     // — always FONT_LARGE's line height, whatever font the fit lands in, so shrinking a number
     // moves nothing.
     //
-    // The block is LIFTED by the same bias the GRID4 page uses, and for the same reason: what
-    // this page needs is width in its bottom row, the top of the glass has two XTINY words on
-    // it and nothing else, and the trade is measured — at 454 px the lift takes the bottom
-    // row's chord from 332 px to 370 px, which is the difference between a 199:59 worst case
-    // fitting its column and overflowing it. Shared with the layout test.
-    static function foilRowY(cy as Number, hT as Number, hV as Number, row as Number,
-            bias as Number) as Number {
-        var y = cy - (2 * hT + 3 * hV) / 2 - bias;
+    // The block is CENTRED, with no bias of any kind: with the header row moved to the bottom
+    // the three value rows are symmetric about the equator, which is both the widest they can
+    // be and the only arrangement in which none of them is wider than the others (a table whose
+    // middle row could hold a bigger font than its neighbours is still limited by its
+    // neighbours). Shared with the layout test.
+    static function foilRowY(cy as Number, hT as Number, hV as Number,
+            row as Number) as Number {
+        var y = cy - (2 * hT + 3 * hV) / 2;
         if (row == 0) { return y + hT / 2; }
-        if (row == 1) { return y + hT + hT / 2; }
-        return y + 2 * hT + (row - 2) * hV + hV / 2;
+        if (row == 4) { return y + hT + 3 * hV + hT / 2; }
+        return y + hT + (row - 1) * hV + hV / 2;
     }
 
     // Half the width the TABLE may use: the narrowest of the three VALUE rows, each measured
     // at its own depth. One number for all of them, because a table whose columns move from
     // row to row is not a table.
     //
-    // The header row is deliberately NOT in this minimum. It sits highest, so on a lifted
-    // block it is the narrowest row on the page — but all it carries is two three-letter words
-    // centred on columns that are already inside its chord, and letting it set the width would
-    // hand the whole table the budget of its emptiest row. The layout test measures the two
-    // headers where they are actually drawn instead.
+    // The title and header rows are deliberately NOT in this minimum. They sit outside the
+    // matrix, at the two shallowest and deepest depths on the page, and all they carry is
+    // three short words centred on columns already inside their own chords; letting them set
+    // the width would hand the whole table the budget of its emptiest row. The layout test
+    // measures them where they are actually drawn instead.
     static function foilTableHalf(dc as Dc, radius as Number, cy as Number, hT as Number,
-            hV as Number, bias as Number) as Number {
+            hV as Number) as Number {
         var h = 0;
-        for (var row = 2; row <= 4; row++) {
-            var k = chordHalf(radius, foilRowY(cy, hT, hV, row, bias) - cy,
+        for (var row = 1; row <= 3; row++) {
+            var k = chordHalf(radius, foilRowY(cy, hT, hV, row) - cy,
                 inkH(dc, Graphics.FONT_LARGE));
-            if (row == 2 || k < h) {
+            if (row == 1 || k < h) {
                 h = k;
             }
         }
@@ -872,20 +930,51 @@ class RecordingView extends WatchUi.View {
         return [x0, c1, c1 + w + CELL_GUTTER, w];
     }
 
-    // The key column's width, and with it which pair of words the page uses. The long words
-    // give way when they would push the WORST CASE below its floor: what this table owes the
-    // rider is six readable numbers, and a word that costs one of them its size is a word that
-    // has to get shorter. Shared with the layout test.
-    static function foilKeyWidth(dc as Dc, half as Number) as Number {
-        return foilKeyBlock(dc, foilKeys(dc, half));
+    // The key column's width, and with it which pair of words the page uses. What this table
+    // owes the rider is six readable numbers, and a word that costs one of them its size is a
+    // word that has to get shorter. Two tests, in that order:
+    //
+    //   1. the FLOOR. The long words may never push the worst case the page can be handed
+    //      ("199:59") below TEXT_FONTS[FOIL_FLOOR]. This is the original rule.
+    //   2. the RUNG (0.9.2). Even above the floor, the long words give way the moment they
+    //      cost the matrix a whole font size against what the short ones would allow. On a
+    //      454 px glass "total" leaves the columns 150 px and "tot" leaves them 163, and a
+    //      "63:24" in FONT_LARGE is 151 — so five letters were buying two extra characters of
+    //      key at the price of every number on the page. `wide` is the widest value the matrix
+    //      is actually about to print, so this adapts to the session rather than to a ceiling.
+    //
+    // Shared with the layout test.
+    static function foilKeyWidth(dc as Dc, half as Number, wide as String) as Number {
+        return foilKeyBlock(dc, foilKeys(dc, half, wide));
     }
 
-    static function foilKeys(dc as Dc, half as Number) as Array<String> {
+    static function foilKeys(dc as Dc, half as Number, wide as String) as Array<String> {
         var long = [FOIL_KEY_TOTAL, FOIL_KEY_MAX];
+        var tight = [FOIL_KEY_TOTAL_TIGHT, FOIL_KEY_MAX];
+        var wLong = foilColWidth(half, foilKeyBlock(dc, long));
         var worst = dc.getTextWidthInPixels(PageModel.worstValue(PageModel.M_FOIL_TIME),
             TEXT_FONTS[FOIL_FLOOR]);
-        return foilColWidth(half, foilKeyBlock(dc, long)) >= worst
-            ? long : [FOIL_KEY_TOTAL_TIGHT, FOIL_KEY_MAX];
+        if (wLong < worst) {
+            return tight;
+        }
+        var wTight = foilColWidth(half, foilKeyBlock(dc, tight));
+        return dc.getFontHeight(foilFont(dc, [wide], wLong))
+            >= dc.getFontHeight(foilFont(dc, [wide], wTight)) ? long : tight;
+    }
+
+    // The widest of a set of values at the top of the value ladder — i.e. the one that decides
+    // what rung the whole set lands on, since a table is drawn in one font.
+    static function foilWidest(dc as Dc, vals as Array<String>) as String {
+        var wide = vals[0];
+        var w = dc.getTextWidthInPixels(wide, TEXT_FONTS[0]);
+        for (var i = 1; i < vals.size(); i++) {
+            var k = dc.getTextWidthInPixels(vals[i], TEXT_FONTS[0]);
+            if (k > w) {
+                w = k;
+                wide = vals[i];
+            }
+        }
+        return wide;
     }
 
     static function foilKeyBlock(dc as Dc, keys as Array<String>) as Number {
@@ -940,9 +1029,9 @@ class RecordingView extends WatchUi.View {
         }
         var rowBias = gridBias(dc);
         drawCellRow(dc, c, cx, cy, radius, gridRowY(cy, hG, hT, hL, 1, hasGiant, rowBias),
-            PageModel.slotAt(page, 1), PageModel.slotAt(page, 2));
+            PageModel.slotAt(page, 1), PageModel.slotAt(page, 2), false);
         drawCellRow(dc, c, cx, cy, radius, gridRowY(cy, hG, hT, hL, 2, hasGiant, rowBias),
-            PageModel.slotAt(page, 3), PageModel.slotAt(page, 4));
+            PageModel.slotAt(page, 3), PageModel.slotAt(page, 4), false);
     }
 
     // ---- the paired top band ----
@@ -994,7 +1083,7 @@ class RecordingView extends WatchUi.View {
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
         var ink = inkH(dc, f);
         var top = y - (hT + ink) / 2;
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, top + hT / 2, Graphics.FONT_XTINY, cap, CV);
         dc.setColor(col, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, top + hT + ink / 2, f, v, CV);
@@ -1082,42 +1171,70 @@ class RecordingView extends WatchUi.View {
     }
 
     // ---- CELLS2: two side-by-side cells, centred ----
+    //
+    // A whole screen for two numbers, and until 0.9.2 it spent 76 % of that screen on nothing:
+    // a label line and a FONT_LARGE value came to 108 px of a 454 px glass. The value band is
+    // now FONT_NUMBER_MILD and the values are fitted through the NUMBER ladder — which is what
+    // "as large as reasonably possible" means on the page with the most room and the fewest
+    // things to say. The fit still steps down to the text fonts for the strings that need it
+    // (a "199:59" timer does not hold MILD in half a chord), so nothing clips and nothing is
+    // smaller than it was.
     hidden function drawCells2Page(dc as Dc, c as SessionController, page as Number,
             foilArc as Boolean) as Void {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
-        var hL = dc.getFontHeight(Graphics.FONT_LARGE);
-        drawCellRow(dc, c, cx, cy, fitRadius(dc, false, foilArc), cells2RowY(cy, hT, hL),
-            PageModel.slotAt(page, 0), PageModel.slotAt(page, 1));
+        var hV = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
+        drawCellRow(dc, c, cx, cy, fitRadius(dc, false, foilArc), cells2RowY(cy, hT, hV),
+            PageModel.slotAt(page, 0), PageModel.slotAt(page, 1), true);
     }
 
-    // Label centre line for CELLS2; the value hangs (hT + hL) / 2 below it.
-    static function cells2RowY(cy as Number, hT as Number, hL as Number) as Number {
-        return cy - (hT + hL) / 2 + hT / 2;
+    // Label centre line for CELLS2; the value hangs (hT + hV) / 2 below it.
+    static function cells2RowY(cy as Number, hT as Number, hV as Number) as Number {
+        return cy - (hT + hV) / 2 + hT / 2;
     }
 
     // Two cells sharing one row's chord. The column offset comes from the depth of the row's
     // deepest ink, so the same code lays out a comfortable middle row and a tight bottom one.
+    // `big` is the CELLS2 form: a FONT_NUMBER_MILD band and the number ladder under it.
     hidden function drawCellRow(dc as Dc, c as SessionController, cx as Number, cy as Number,
-            radius as Number, y as Number, left as Number, right as Number) as Void {
+            radius as Number, y as Number, left as Number, right as Number,
+            big as Boolean) as Void {
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
-        var hL = dc.getFontHeight(Graphics.FONT_LARGE);
-        var yv = y + (hT + hL) / 2;
-        var col = cellColumns(radius, yv - cy, inkH(dc, Graphics.FONT_LARGE));
-        drawSlotCell(dc, c, cx - col[0], y, yv, 2 * col[1], left);
-        drawSlotCell(dc, c, cx + col[0], y, yv, 2 * col[1], right);
+        var hV = cellValueBand(dc, big);
+        var yv = y + (hT + hV) / 2;
+        var col = cellColumns(radius, yv - cy, inkH(dc, cellValueFont(big)));
+        drawSlotCell(dc, c, cx - col[0], y, yv, 2 * col[1], left, big);
+        drawSlotCell(dc, c, cx + col[0], y, yv, 2 * col[1], right, big);
+    }
+
+    // The band a cell's value reserves, and the font that band is named after. Shared with the
+    // layout test, which measures both cell shapes.
+    static function cellValueFont(big as Boolean) as Graphics.FontType {
+        return big ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_LARGE;
+    }
+
+    static function cellValueBand(dc as Dc, big as Boolean) as Number {
+        return dc.getFontHeight(cellValueFont(big));
+    }
+
+    // The value's own fitter: the number ladder from FONT_NUMBER_MILD down into the text fonts
+    // for a `big` cell, the text ladder from FONT_LARGE for an ordinary one. Shared with the
+    // layout test.
+    static function cellValueFit(dc as Dc, value as String, maxW as Number,
+            big as Boolean) as Graphics.FontType {
+        return big ? fitGiant(dc, value, 3, maxW) : fitFont(dc, TEXT_FONTS, 0, value, maxW);
     }
 
     hidden function drawSlotCell(dc as Dc, c as SessionController, x as Number, y as Number,
-            yv as Number, maxW as Number, id as Number) as Void {
+            yv as Number, maxW as Number, id as Number, big as Boolean) as Void {
         if (id == PageModel.M_NONE) {
             return;
         }
         drawCellLabel(dc, x, y, id);
         var value = PageModel.value(id, c);
         dc.setColor(PageModel.color(id, c), Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, yv, fitFont(dc, TEXT_FONTS, 0, value, maxW), value, CV);
+        dc.drawText(x, yv, cellValueFit(dc, value, maxW, big), value, CV);
     }
 
     // A cell's label row: the WORD, or — when showLabels is off — the metric's glyph in its
@@ -1133,13 +1250,13 @@ class RecordingView extends WatchUi.View {
         var s = Glyphs.size(dc);
         var label = AppSettings.showLabels ? PageModel.label(id) : "";
         if (label.length() > 0) {
-            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
             dc.drawText(x, y, Graphics.FONT_XTINY, label, CV);
             return;
         }
         var g = PageModel.glyph(id);
         if (g != Glyphs.G_NONE) {
-            Glyphs.draw(dc, g, x, y, s, Graphics.COLOR_LT_GRAY);
+            Glyphs.draw(dc, g, x, y, s, Graphics.COLOR_WHITE);
         }
     }
 
@@ -1171,21 +1288,21 @@ class RecordingView extends WatchUi.View {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var radius = fitRadius(dc, false, false);
-        var hHot = dc.getFontHeight(Graphics.FONT_NUMBER_HOT);
-        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
         var ink = inkH(dc, Graphics.FONT_NUMBER_HOT);
+        var hHot = ink;
+        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
         // unit only on the lower label, to keep the top one narrow
         var unit = " " + AppSettings.speedLabel();
         var best2s = AppSettings.speedToDisplay(r.best2sMps).format("%.1f");
         var best10s = AppSettings.speedToDisplay(r.best10sMps).format("%.1f");
 
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, recordsRowY(cy, hHot, hT, 0), Graphics.FONT_XTINY, "best 2s", CV);
         var y = recordsRowY(cy, hHot, hT, 1);
         dc.setColor(Ink.effortWindow(), Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, fitFont(dc, NUMBER_FONTS, 1, best2s,
             rowBudget(radius, y - cy, ink)), best2s, CV);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, recordsRowY(cy, hHot, hT, 2), Graphics.FONT_XTINY,
             "best 10s" + unit, CV);
         y = recordsRowY(cy, hHot, hT, 3);
@@ -1196,6 +1313,12 @@ class RecordingView extends WatchUi.View {
 
     // Row centres for RECORDS: 0/2 = the two labels, 1/3 = the two numbers. Stacked from font
     // heights and centred on the glass, with no bias of any kind. Shared with the layout test.
+    //
+    // `hHot` is the numbers' INK height since 0.9.2. Two NUMBER_HOT LINE boxes and two labels
+    // came to 420 px of a 454 px glass — 93 %, with a fifth of it leading — which is why this
+    // page needed a magic bias in the first place. Against the ink it is 332, the bottom
+    // number's chord goes from 250 px to 306 against the 229 it needs, and the two label/number
+    // pairs finally read as two pairs rather than as four evenly spaced rows.
     static function recordsRowY(cy as Number, hHot as Number, hT as Number,
             row as Number) as Number {
         var y = cy - (2 * hHot + 2 * hT) / 2 + hT / 2;
@@ -1236,17 +1359,17 @@ class RecordingView extends WatchUi.View {
         var cy = dc.getHeight() / 2;
         var radius = fitRadius(dc, false, false);
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
-        var hG = dc.getFontHeight(Graphics.FONT_NUMBER_MEDIUM);
+        var hG = inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
         var hK = dc.getFontHeight(Graphics.FONT_MEDIUM);
         var hD = stripBandH(dc);
-        var hS = dc.getFontHeight(Graphics.FONT_SMALL);
+        var hS = dc.getFontHeight(TEXT_FONTS[VERDICT_FROM]);
         var windSet = AppSettings.cfg.windDirection >= 0;
 
         // row 0 — the header, unchanged: which two maneuvers the counts below are, and the
         // axis that split them. `windLabel` marks an axis the WATCH estimated with a leading
         // "~" ("tack / jibe  ~SSW"), so the header never claims the rider named it.
         var y = turnsRowY(cy, hT, hG, hK, hD, hS, 0);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, Graphics.FONT_XTINY,
             windSet ? "tack / jibe  " + AppSettings.windLabel() : "turns", CV);
 
@@ -1353,7 +1476,7 @@ class RecordingView extends WatchUi.View {
         var f = streakRow2Font(dc, fNow, fBest, dNow, dBest, budget, live);
         var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
         var x = cx - streakRow2Width(dc, fNow, fBest, dNow, dBest, f, live) / 2;
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, Graphics.FONT_XTINY, STREAK_ROW_CAPTION, LV);
         x += dc.getTextWidthInPixels(STREAK_ROW_CAPTION, Graphics.FONT_XTINY) + GLYPH_GAP;
         x = drawStreakRun(dc, x, y, fNow, fBest, f, live, Ink.ladderFlew());
@@ -1370,7 +1493,7 @@ class RecordingView extends WatchUi.View {
             dc.setColor(col, Graphics.COLOR_TRANSPARENT);
             dc.drawText(x, y, f, now, LV);
             x += dc.getTextWidthInPixels(now, f);
-            dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
             dc.drawText(x, y, f, STREAK_SEP_TIGHT, LV);
             x += dc.getTextWidthInPixels(STREAK_SEP_TIGHT, f);
         }
@@ -1407,16 +1530,21 @@ class RecordingView extends WatchUi.View {
     }
 
     // "69 % flew · P 29 / S 22" — the share of counted turns he flew through, and which side of
-    // the wind he entered them on. Values in FONT_SMALL, every word around them XTINY, exactly
-    // as the streak row does it, which is what keeps a nine-glyph row inside a bottom-arc
-    // chord.
+    // the wind he entered them on. Values in the row's own font, every word around them XTINY,
+    // exactly as the streak row does it, which is what keeps a nine-glyph row inside a
+    // bottom-arc chord.
     //
     // The share is flewCount / turnCount, the same two numbers the green tally and the total
     // above it are drawn from, so this row can only ever agree with them.
     //
     // The P/S half is DROPPED, not shrunk, when the side counts are absent (no wind axis, so
-    // no side to be on) or when the chord cannot hold it. A number that has to lie about its
-    // size to fit is worse than a number that is not there.
+    // no side to be on) or when the chord cannot hold it even at the floor. A number that has
+    // to lie about its size to fit is worse than a number that is not there — CONTENT first,
+    // then size, the same order the tally row sheds things in.
+    //
+    // The size half is new in 0.9.2: the values were pinned at FONT_SMALL, the floor, on a row
+    // that had already been given a FONT_MEDIUM band. They now start there and step down, so a
+    // roomy glass gets a rung it was throwing away.
     hidden function drawVerdictRow(dc as Dc, cx as Number, y as Number, cy as Number,
             radius as Number, t as TurnDetector) as Void {
         if (t.turnCount <= 0) {
@@ -1425,16 +1553,16 @@ class RecordingView extends WatchUi.View {
         var pct = (t.flewCount * 100 / t.turnCount).toString();
         var p = t.portEntryCount.toString();
         var s = t.starboardEntryCount.toString();
+        var budget = rowBudget(radius, y - cy, inkH(dc, TEXT_FONTS[VERDICT_FROM]));
         var sides = t.portEntryCount + t.starboardEntryCount > 0
-            && verdictWidth(dc, pct, p, s, true)
-                <= rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_SMALL));
+            && verdictWidth(dc, pct, p, s, true, TEXT_FONTS[TALLY_FLOOR]) <= budget;
         var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
-        var f = Graphics.FONT_SMALL;
-        var x = cx - verdictWidth(dc, pct, p, s, sides) / 2;
+        var f = verdictFont(dc, pct, p, s, sides, budget);
+        var x = cx - verdictWidth(dc, pct, p, s, sides, f) / 2;
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, f, pct, LV);
         x += dc.getTextWidthInPixels(pct, f);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, Graphics.FONT_XTINY, TURNS_FLEW_SUFFIX, LV);
         if (!sides) {
             return;
@@ -1445,21 +1573,32 @@ class RecordingView extends WatchUi.View {
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, f, p, LV);
         x += dc.getTextWidthInPixels(p, f);
-        dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, Graphics.FONT_XTINY, TURNS_SIDE_SEP, LV);
         x += dc.getTextWidthInPixels(TURNS_SIDE_SEP, Graphics.FONT_XTINY);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, Graphics.FONT_XTINY, TURNS_STBD, LV);
         x += dc.getTextWidthInPixels(TURNS_STBD, Graphics.FONT_XTINY);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, f, s, LV);
     }
 
+    // The row's font: the largest from TEXT_FONTS[VERDICT_FROM] at which the content it has
+    // decided to keep fits, floored at FONT_SMALL like every other value on the watch.
+    static function verdictFont(dc as Dc, pct as String, p as String, s as String,
+            sides as Boolean, budget as Number) as Graphics.FontType {
+        for (var i = VERDICT_FROM; i < TALLY_FLOOR; i++) {
+            if (verdictWidth(dc, pct, p, s, sides, TEXT_FONTS[i]) <= budget) {
+                return TEXT_FONTS[i];
+            }
+        }
+        return TEXT_FONTS[TALLY_FLOOR];
+    }
+
     // Width of that row, with and without its port/starboard half. Shared with the layout
     // test, which measures it at "100 % flew · P 99 / S 99".
     static function verdictWidth(dc as Dc, pct as String, p as String, s as String,
-            sides as Boolean) as Number {
-        var f = Graphics.FONT_SMALL;
+            sides as Boolean, f as Graphics.FontType) as Number {
         var w = dc.getTextWidthInPixels(pct, f)
             + dc.getTextWidthInPixels(TURNS_FLEW_SUFFIX, Graphics.FONT_XTINY);
         if (!sides) {
@@ -1487,6 +1626,10 @@ class RecordingView extends WatchUi.View {
     // Row centres for the Turns page: 0 header · 1 giant tally · 2 streaks · 3 outcome dots ·
     // 4 verdict + side split. Stacked from font heights only, so the rows can never overlap on
     // any variant. Shared with the layout test, which asserts every row clears the circle.
+    //
+    // `hG` is the giant tally's INK height (0.9.2, see heroRowY): 39 px of NUMBER_MEDIUM
+    // leading on a 454 px glass that the four rows under it were being pushed down by. The
+    // bottom row's chord gains 32 px of it, which is most of what pays for its bigger font.
     static function turnsRowY(cy as Number, hT as Number, hG as Number, hK as Number,
             hD as Number, hS as Number, row as Number) as Number {
         var y = cy - (hT + hG + hK + hD + hS) / 2;
@@ -1590,18 +1733,18 @@ class RecordingView extends WatchUi.View {
         var x = cx - tallyWidth(dc, a, b, s, verdict, sep, f) / 2;
         dc.setColor(Ink.ladderFlew(), Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, f, a, LV);
-        dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x + wa, y, f, sep, LV);
         dc.setColor(Ink.ladderTouchdown(), Graphics.COLOR_TRANSPARENT);
         dc.drawText(x + wa + wSep, y, f, b, LV);
-        dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x + wa + wSep + wb, y, f, sep, LV);
         dc.setColor(Ink.ladderFellIn(), Graphics.COLOR_TRANSPARENT);
         dc.drawText(x + wa + wb + 2 * wSep, y, f, s, LV);
         // ... and the session's own verdict at the end of the same row, in neutral grey so
         // the three coloured tallies stay the thing the eye lands on.
         if (!verdict.equals("")) {
-            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
             dc.drawText(x + wa + wb + ws + 2 * wSep + TURNS_OK_GAP, y, f, verdict, LV);
         }
     }
@@ -1632,7 +1775,7 @@ class RecordingView extends WatchUi.View {
         // bar is now visibly a FRACTION of a fixed height, and the caption says which fraction.
         var top = timelineRowY(cy, hT, strip, spark, 1);
         var halfW = bandHalfWidth(radius, top, top + strip, cy);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, timelineRowY(cy, hT, strip, spark, 0), Graphics.FONT_XTINY,
             "on foil %", CV);
         dc.setColor(Ink.dim(), Graphics.COLOR_TRANSPARENT);
@@ -1659,7 +1802,7 @@ class RecordingView extends WatchUi.View {
         // band 2: max-speed sparkline + best-2s reference
         top = timelineRowY(cy, hT, strip, spark, 3);
         halfW = bandHalfWidth(radius, top, top + spark, cy);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         // "top speed", not "speed": every point on this line is the FASTEST sample in its
         // slot, and a line labelled "speed" reads as an average — which would make the same
         // shape mean something the app never measured.
@@ -1696,7 +1839,7 @@ class RecordingView extends WatchUi.View {
         // band 3: turn outcomes, newest on the right
         var yDots = timelineRowY(cy, hT, strip, spark, 5);
         halfW = bandHalfWidth(radius, yDots - TL_DOT_R, yDots + TL_DOT_R, cy);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, timelineRowY(cy, hT, strip, spark, 4), Graphics.FONT_XTINY, "turns", CV);
         drawOutcomeStrip(dc, cx, yDots, 2 * halfW, h);
     }
@@ -1782,34 +1925,96 @@ class RecordingView extends WatchUi.View {
         return k < 0 ? 0 : k;
     }
 
+    // ---- MAP: the session's own breadcrumb, drawn by us ----
+    //
+    // Until 0.9.2 this page was WatchUi.MapTrackView pushed over RecordingView, and the fenix 8
+    // killed the app on it twice — a Type Error on 0.9.0's switchToView, then a silent firmware
+    // kill on 0.9.1's pushView with nothing in CIQ_LOG. The trail is now ours: the same
+    // renderer the post-save Track page has used since 0.8.2 (TrackDraw), which has never
+    // crashed anything, plus the two things a LIVE trail owes the rider that a post-save one
+    // does not — a marker on where he is now, and the PAUSED banner, which a native view could
+    // not carry and which is why this page used to be skipped while paused.
+    //
+    // North is up. No basemap, no rotation, no zoom: what this page answers is "where have I
+    // been and how far out am I", and the shape of the session's own track answers it.
+    hidden function drawMapPage(dc as Dc, c as SessionController, foilArc as Boolean) as Void {
+        var e = c.engine;
+        var cx = dc.getWidth() / 2;
+        var cy = dc.getHeight() / 2;
+        var radius = fitRadius(dc, false, foilArc);
+        var box = mapBox(dc, radius);
+        if (!TrackDraw.draw(dc, e.trackLat, e.trackLon, e.trackFly, e.trackN, cx, cy, box,
+                true)) {
+            drawFittedRow(dc, cx, cy, radius, cy, 0, MAP_WAITING, Graphics.COLOR_WHITE);
+            return;
+        }
+        // A map with no number on it is a shape. The odometer is the one number the shape
+        // cannot show, and it is a VALUE, so FONT_SMALL is its floor.
+        var km = (e.distM / 1000.0).format("%.1f") + " km";
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, mapCaptionY(dc, box), Graphics.FONT_SMALL, km, CV);
+    }
+
+    // Side of the square the trail is drawn in, and the ink centre of the caption hung off its
+    // bottom edge. Both shared with the layout test.
+    static function mapBox(dc as Dc, radius as Number) as Number {
+        return TrackDraw.boxSide(radius - scaled(dc, MAP_MARGIN));
+    }
+
+    static function mapCaptionY(dc as Dc, box as Number) as Number {
+        return dc.getHeight() / 2 + box / 2 + dc.getFontHeight(Graphics.FONT_SMALL) / 2;
+    }
+
     // ---- CLOCK: giant time of day, then one configurable cell ----
+    //
+    // The cell under the clock is the session TIMER by default, and in 0.9.2 it stopped being a
+    // FONT_LARGE cell like any other and became a MILD one, the same treatment CELLS2 got — it
+    // is the only value on a page whose other content is a clock, and this page had 136 px of
+    // a 454 px glass doing nothing.
+    //
+    // That is not free: a taller cell pushes the giant up, and the giant is a THAI_HOT "23:59"
+    // that fits its chord by ONE pixel when centred. It is paid for out of the giant's own
+    // leading (its band is its ink height, 157 px rather than 210) plus a downward lift of the
+    // whole block — the mirror image of GRID4's, and for the mirror reason: what this page needs
+    // is width at the TOP, where the giant is, and the empty space it can take it from is at the
+    // bottom. Measured at 454 px: the giant's budget goes 364 -> 378 px against the 363 it
+    // needs, and the timer's column 306 -> 294 against the 240 a MILD "199:59" needs.
     hidden function drawClockPage(dc as Dc, c as SessionController, page as Number,
             foilArc as Boolean) as Void {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var radius = fitRadius(dc, false, foilArc);
-        var hN = dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT);
+        var hN = inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
-        var hL = dc.getFontHeight(Graphics.FONT_LARGE);
+        var hV = cellValueBand(dc, true);
+        var bias = clockBias(dc);
 
         var now = PageModel.clockString();
-        var y = clockRowY(cy, hN, hT, hL, 0);
+        var y = clockRowY(cy, hN, hT, hV, 0, bias);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, fitFont(dc, NUMBER_FONTS, 0, now,
-            rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_NUMBER_THAI_HOT))), now, CV);
+            rowBudget(radius, y - cy, hN)), now, CV);
         // battery deliberately absent from the default cell: non-important on the water (Jan)
-        var yl = clockRowY(cy, hN, hT, hL, 1);
-        var yv = yl + (hT + hL) / 2;
+        var yl = clockRowY(cy, hN, hT, hV, 1, bias);
+        var yv = yl + (hT + hV) / 2;
         drawSlotCell(dc, c, cx, yl, yv,
-            rowBudget(radius, yv - cy, inkH(dc, Graphics.FONT_LARGE)),
-            PageModel.slotAt(page, 0));
+            rowBudget(radius, yv - cy, inkH(dc, cellValueFont(true))),
+            PageModel.slotAt(page, 0), true);
     }
 
-    // Clock rows: 0 = giant time, 1 = cell label centre.
-    static function clockRowY(cy as Number, hN as Number, hT as Number, hL as Number,
-            row as Number) as Number {
-        var y = cy - (hN + hT + hL) / 2 + hN / 2;
+    // Clock rows: 0 = giant time, 1 = cell label centre. `hN` is the giant's INK height (see
+    // heroRowY) and `bias` lifts the whole block DOWNWARD. Shared with the layout test.
+    static function clockRowY(cy as Number, hN as Number, hT as Number, hV as Number,
+            row as Number, bias as Number) as Number {
+        var y = cy - (hN + hT + hV) / 2 + bias + hN / 2;
         return row == 0 ? y : y + hN / 2 + hT / 2;
+    }
+
+    // The clock page's downward lift, as a fraction of the glass — GRID_BIAS's opposite number,
+    // and scaled the same way. 32 px at 454 sits in the middle of the [21, 52] window in which
+    // both the giant keeps THAI_HOT and the timer keeps FONT_NUMBER_MILD.
+    static function clockBias(dc as Dc) as Number {
+        return dc.getHeight() * CLOCK_BIAS / GRID_REF_PX;
     }
 
     static function fmtTime(seconds as Float) as String {

@@ -1,106 +1,42 @@
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-// Where in the page cycle we are. A module, not view state, because the map page is a whole
-// separate View (MapTrackView cannot be painted inside our own onUpdate) — the index has to
-// survive the transition between RecordingView and MapPageView.
+// Where in the page cycle we are. A module rather than view state because the index has to
+// outlive any view swap — the menu, the summary and a settings reload all reach for it.
 //
-// The map page is PUSHED over RecordingView, never switched to. WatchUi.switchToView has
-// never been supported for native base views (MapView/MapTrackView) — the simulator lets it
-// slide, a real fenix 8 kills the app the moment the switch lands. `mapShown` tracks whether
-// the pushed map is on the stack; it is a stored flag, not derived from layoutAt(index),
-// because a GCM settings edit can change what layoutAt says while the view is still up.
+// IT USED TO BE MUCH MORE THAN THIS. The map page was `WatchUi.MapTrackView`, the firmware's
+// own View, which cannot be painted inside our onUpdate — so paging onto it swapped views, and
+// this module carried the whole push/pop state machine that went with it (`mapShown`,
+// `_pushMap`, `dropMap`, `onPauseToggled`, and a `nextIndex` that skipped the map while paused
+// because a native view can show no PAUSED banner). 0.9.0 switched to it and the watch threw a
+// Type Error; 0.9.1 pushed it, the documented way, and the fenix 8 killed the app anyway with
+// nothing in CIQ_LOG. 0.9.2 draws the trail itself (TrackDraw), so LAYOUT_MAP is an ordinary
+// layout, paging is an index and a repaint, and every one of those special cases is gone —
+// including the paused skip, since the page now carries the banner like any other.
 module PageNav {
     var index as Number = 0;
-    var mapShown as Boolean = false;
 
     function reset() as Void {
         index = 0;
-        mapShown = false;
     }
 
-    // Put the recording UI on screen: RecordingView as the base, plus the pushed map view on
-    // top when the current page is the map (a rider can make the map page 1 in settings).
+    // Put the recording UI on screen. One view, whatever the page.
     function show() as Void {
-        mapShown = false;
         WatchUi.switchToView(new RecordingView(), new RecordingDelegate(),
             WatchUi.SLIDE_IMMEDIATE);
-        if (PageModel.layoutAt(index) == PageModel.LAYOUT_MAP) {
-            _pushMap();
-        }
     }
 
-    function _pushMap() as Void {
-        WatchUi.pushView(new MapPageView(), new RecordingDelegate(),
-            WatchUi.SLIDE_IMMEDIATE);
-        mapShown = true;
-    }
-
-    // Pop the pushed map view if it is up. Safe to call any time; RecordingView is always
-    // underneath it.
-    function dropMap() as Void {
-        if (mapShown) {
-            WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
-            mapShown = false;
-        }
-    }
-
-    // Step `dir` pages and put the right view on screen. Ordinary pages just repaint;
-    // stepping onto the map page pushes the map view, stepping off it pops back down.
+    // Step `dir` pages and repaint. Every layout is drawn by RecordingView, so there is
+    // nothing else to do.
     function step(dir as Number) as Void {
-        index = nextIndex(index, dir,
-            getApp().controller.state == SessionController.STATE_PAUSED);
-        var isMap = PageModel.layoutAt(index) == PageModel.LAYOUT_MAP;
-        if (isMap && !mapShown) {
-            _pushMap();
-        } else if (!isMap && mapShown) {
-            dropMap();
-            WatchUi.requestUpdate();
-        } else {
-            WatchUi.requestUpdate();
-        }
-    }
-
-    // Called after a pause toggle. Pausing while standing on the map steps off it — the map
-    // cannot show the PAUSED banner (see nextIndex), and it is skipped anyway until resume.
-    function onPauseToggled() as Void {
-        if (mapShown
-                && getApp().controller.state == SessionController.STATE_PAUSED) {
-            index = nextIndex(index, 1, true);
-            dropMap();
-        }
-    }
-
-    // Where `dir` steps land. While PAUSED the map page is skipped over.
-    //
-    // MapPageView extends the firmware's MapTrackView and cannot be drawn into, so it can
-    // show no PAUSED banner, no speed, no foil state — nothing. A rider who pauses, pages to
-    // the map and rides on has no indication anywhere on the watch that he is not recording,
-    // and the only thing worse than a lost session is a lost session you did not notice.
-    // Refusing to page onto it is the honest fix available inside the API: the page comes
-    // back the instant he resumes.
-    //
-    // Pure and static, so the rule is testable without a map or a session. The guard is
-    // bounded by MAX_PAGES and falls back to the page it started on, which is what keeps an
-    // all-map configuration from spinning.
-    function nextIndex(from as Number, dir as Number, paused as Boolean) as Number {
-        var i = PageModel.wrap(from + dir);
-        if (!paused) {
-            return i;
-        }
-        for (var guard = 0; guard < PageModel.MAX_PAGES; guard++) {
-            if (PageModel.layoutAt(i) != PageModel.LAYOUT_MAP) {
-                return i;
-            }
-            i = PageModel.wrap(i + (dir >= 0 ? 1 : -1));
-        }
-        return from;
+        index = PageModel.wrap(index + dir);
+        WatchUi.requestUpdate();
     }
 }
 
 // Button-first input while recording. Stray wet-touch taps are swallowed; page swipes are
 // harmless and left enabled. Destructive actions live behind BACK -> menu.
-// Shared by RecordingView and MapPageView — paging lives in PageNav, not in the view.
+// Paging lives in PageNav, not in the view.
 class RecordingDelegate extends WatchUi.BehaviorDelegate {
 
     function initialize() {
@@ -109,7 +45,6 @@ class RecordingDelegate extends WatchUi.BehaviorDelegate {
 
     function onSelect() as Boolean {
         getApp().controller.togglePause();   // manual pause also cancels auto-pause ownership
-        PageNav.onPauseToggled();            // pausing on the map page steps off it
         WatchUi.requestUpdate();
         return true;
     }
@@ -155,15 +90,11 @@ class StopMenuDelegate extends WatchUi.Menu2InputDelegate {
             // that finishSave deliberately leaves intact.
             SummaryNav.build(c);
             WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
-            // if the menu was opened from the map page, the pushed map view is next on the
-            // stack — a switchToView over a native view is what killed the app (see PageNav)
-            PageNav.dropMap();
             WatchUi.switchToView(new SummaryView(), new SummaryDelegate(),
                 WatchUi.SLIDE_IMMEDIATE);
         } else if (id == :discard) {
             c.finishDiscard();
             WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
-            PageNav.dropMap();
             WatchUi.switchToView(new StartView(), new StartDelegate(),
                 WatchUi.SLIDE_IMMEDIATE);
         } else if (id == :wind) {

@@ -715,6 +715,142 @@ to make `trackEnabled` unconditional.
 
 ---
 
+## 12. What 0.9.2 changed
+
+Two things: the rider's own polish list after a session on 0.9.1, and the end of the native
+map. Every number below is measured on a 454 px `fenix847mm` unless it says otherwise; the
+suite runs the same arithmetic on `fenix7s` (240 px) and asserts it there too.
+
+### 12.1 The native map is gone — the breadcrumb is ours now
+
+Three releases, three ways for the same page to kill the app:
+
+| | what it did | what the watch did |
+|---|---|---|
+| 0.8.x–0.9.0 | `switchToView` onto `WatchUi.MapTrackView` | Type Error on device; fine in the simulator |
+| 0.9.1 | `pushView`, the documented way for a native base view | fenix 8 killed the app on the page during a recording session, **with no CIQ_LOG entry at all** |
+| 0.9.2 | draws the trail itself, inside `RecordingView.onUpdate` | — |
+
+A crash a rider reproduces and a log cannot see is not a crash to keep chasing, and there was
+never a second opinion available: `MapTrackView` is a *View*, so the layout suite could not
+render it, could not measure it, and could not have caught any of this. The post-save Track
+page has been drawing the same breadcrumb with `Dc` primitives since 0.8.2 and has never
+crashed anything.
+
+So `LAYOUT_MAP` is now an ordinary layout. The renderer both screens call is `TrackDraw`
+(`garmin/source/ui/TrackDraw.mc`, which also inherited `TrackTint` from the deleted
+`MapPageView.mc`): bounding box, longitudes squeezed by cos(lat), one aspect-preserving scale
+into the square inscribed in the glass, one `setColor` per run of equal foil state. The live
+page adds the two things a live trail owes the rider and a post-save one does not — a white
+marker on the newest point, and the word **"waiting for GPS"** when there are fewer than two
+points, because a map page that renders empty reads as a crashed map page. Under it sits the
+odometer in `FONT_SMALL`: a map with no number on it is a shape.
+
+What went with it is as much of the point:
+
+- the whole push/pop state machine in `PageNav` — `mapShown`, `_pushMap`, `dropMap`,
+  `onPauseToggled`, the two `dropMap()` calls in the save/discard path, and the pop in
+  `WingfoilApp._applySettings`. `step()` is `wrap(index + dir)` and a repaint;
+- the paused skip (§5.2, punch-list item 8). It existed because a native view can carry no
+  PAUSED banner. This page carries it like every other, so the rider gets his map while
+  paused — banner and all;
+- `PageModel.hasMap()`. The page needed `WatchUi has :MapTrackView` and now needs nothing, so
+  it ships on **every** product in the manifest, the fenix 7 family included;
+- the hole in the test suite. `everyLayoutRendersHeadless` covers all ten layouts now, and
+  `mapPageFitsRoundDisplay` measures the box corners, the caption and the waiting line.
+
+### 12.2 All text is white
+
+Grey text is retired everywhere — recording pages, start, summary, clock, lock screen. Labels,
+captions, units, headers, separators and row keys are `COLOR_WHITE`; **size** alone now
+separates a label from a value, which it was already doing most of the work of. The colour
+vocabulary is untouched (§6): the ladder's green/orange/red, the phase teal, the effort orange,
+the PAUSED yellow, the GPS row's green and amber. So is grey where it is **structure rather
+than text** — `Ink.dim()` still draws the off-foil ring, the unfilled foil arc, the timeline
+rails, the sparkline's best-2s reference, the giant tally's separator dots and the off-foil
+half of both breadcrumbs.
+
+### 12.3 The foil matrix, rearranged and a rung bigger
+
+`min` became **`time`** (the cells print `m:ss`, never minutes), and the two column headers
+moved from *above* the matrix to *below* it. The move is what pays for the size:
+
+| | 0.9.1 | 0.9.2 |
+|---|---|---|
+| stack | title · headers · shares · totals · bests, lifted 28 px | title · shares · totals · bests · headers, centred |
+| value-row depths | −62 / +9 / +80 | −71 / 0 / +71 |
+| table half-width | 185 px | **190 px** |
+| row keys | `total` / `max` (63 px) | `tot` / `max` (59 px, see below) |
+| column width | 145 px | **152 px** |
+| the six numbers | `FONT_MEDIUM` | **`FONT_LARGE`** |
+
+With the headers at the bottom the three value rows are symmetric about the equator, which is
+the widest three rows of that height can be; a two-word label row is the cheapest thing to put
+where the chord has collapsed. `foilKeys` gained a second rule to go with it: the long word
+`total` already gave way when it pushed the worst case below the floor, and now it also gives
+way when it costs the matrix **a whole rung** against what `tot` would allow — five letters
+were buying two characters of key at the price of every number on the page.
+
+### 12.4 Leading is not layout: five stacks now reserve INK, not line height
+
+Garmin font heights include leading. Where a row's font is *pinned* — a giant that starts at
+the top of its own ladder — that leading is knowable dead space, and stacking against it pushes
+every row below it deeper into the narrowing chord for nothing. Five stacks now reserve the
+giant's ink height instead:
+
+| page | band | freed | what it bought |
+|---|---|---|---|
+| MAIN | `NUMBER_MEDIUM` 153 → 114 | 39 px | the bigger clock, below |
+| HERO (and every summary hero) | `THAI_HOT` 210 → 157 | 53 px | 56 px of chord for sub-row 2 |
+| RECORDS | `NUMBER_HOT` 173 → 129 ×2 | 88 px | bottom number's chord 250 → 306 px |
+| TURNS | `NUMBER_MEDIUM` 153 → 114 | 39 px | verdict row's chord 328 → 354 px |
+| CLOCK | `THAI_HOT` 210 → 157 | 53 px | the bigger timer, below |
+
+The label under a giant is stacked against the ink, i.e. exactly where the digits end. Nothing
+moves the giant itself — a block centred on its total puts the giant at the same y either way.
+
+### 12.5 The rest of the font pass
+
+- **MAIN, the time of day** — band `FONT_LARGE` → `FONT_NUMBER_MILD`, fitted through the
+  NUMBER ladder (~41 px of digit → ~66). PAUSED, which is a word and wider, still steps down
+  into the text fonts and lands on `FONT_LARGE` exactly as before. Net cost to the stack after
+  §12.4: **three pixels**.
+- **CLOCK, the timer** — the cell is a `FONT_NUMBER_MILD` one now, fitted through the NUMBER
+  ladder; all 21 catalogue metrics reach MILD in it at their worst-case strings. It is paid for
+  by §12.4 plus a `CLOCK_BIAS` of 32 px — GRID4's lift in the other direction, because what
+  this page needs is width at the *top*, where the giant is. The giant keeps THAI_HOT: its
+  budget goes 364 → 378 px against the 363 px `"23:59"` needs, i.e. from one pixel of margin
+  to fifteen.
+- **CELLS2** — the same treatment, and the page that needed it most: two numbers and a label
+  line filled 108 px of a 454 px glass, 24 % of it. Band `FONT_LARGE` → `FONT_NUMBER_MILD`,
+  values through the NUMBER ladder, floor unchanged.
+- **TURNS, the verdict row** — the values were pinned at `FONT_SMALL`, the floor, on a row that
+  already reserved a `FONT_MEDIUM` band. They start at MEDIUM and step down now; the P/S half
+  is still decided at the floor first, because this row sheds content before size.
+- **TIMELINE** — `TL_STRIP_H` 44 → 56, `TL_SPARK_H` 96 → 124. The three bands and their
+  captions filled 263 px of a 454 px glass; on the one page whose content is *shapes*, height
+  is resolution — a 96 px sparkline resolves a speed run to about two thirds of a knot. The
+  bands are pushed a little deeper into the arc for it, so they are ~5 % narrower (strip
+  400 → 378 px, sparkline 409 → 390) and the dot row drops two dots (22 → 20). A quarter more
+  height on both figures is worth two dots the Turns page also draws.
+- **START** — the GPS state row gets the title's rung (§8.1: the answer to the screen's only
+  question was smaller than the app's name). Paid for out of the row gaps, a third of a body
+  line rather than a half; the wind reminder keeps `FONT_SMALL` on a 240 px glass, which is the
+  row that measures closest to its chord anywhere in the app.
+
+**Not enlarged, and why.** The GRID4 giant band stays a `NUMBER_MILD` *line* height — its slack
+is not slack, it is where the pair band's caption lives, and cutting it to the ink would demote
+that band from `FONT_LARGE` to `FONT_MEDIUM`. GRID4's cells stay `FONT_LARGE`: that is already
+the top of the text ladder, and the page carries four of them plus a giant. The RECORDS numbers
+stay on the `NUMBER_HOT` rung — `THAI_HOT` needs 280 px and the bottom row has 230 after the
+band would have to grow to hold it. The TURNS giant tally still starts at `NUMBER_MEDIUM`:
+starting it at `NUMBER_HOT` would make the page's headline number change size as the session
+went on. And every XTINY label stayed XTINY — the standing rule is about values, not about
+field descriptions.
+
+---
+
 *Measured against ConnectIQ SDK 9.2.0 on `fenix847mm` (454 px, 16 bpp AMOLED) and
 `fenix843mm` (416 px, 16 bpp AMOLED). MIP variants (fenix 8 Solar 260/280 px, fenix 7 family
-240/260/280 px) are 8 bpp and were reasoned about from their device profiles, not measured.*
+240/260/280 px) are 8 bpp and were reasoned about from their device profiles, not measured —
+except `fenix7s` (240 px), which the layout suite has run on since 0.8.2 and still does.*

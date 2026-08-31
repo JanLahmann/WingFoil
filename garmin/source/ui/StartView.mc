@@ -8,9 +8,19 @@ import Toybox.WatchUi;
 // class consts are instance-scoped in Monkey C.
 const START_TITLE = "WingFoil";
 const START_HINT = "START to record";
-// Nominal fonts as TEXT_FONTS indices: FONT_MEDIUM for the title, FONT_SMALL for the three
-// text rows. fitFont() shrinks from there when the chord at that depth is narrower.
+// Nominal fonts as TEXT_FONTS indices: FONT_MEDIUM for the title and — since 0.9.2 — for the
+// GPS STATE row, FONT_SMALL for the wind and hint rows. fitFont() shrinks any of them when the
+// chord at that depth is narrower, which is what still fits the long wind reminder on a 240 px
+// glass.
+//
+// The state row was FONT_SMALL, one rung under the app's own name, on a screen whose only
+// question is "can I press start yet?" — the answer to it was smaller than the label on the
+// question. It is now the title's equal, and it is paid for out of the row GAPS (a third of a
+// body line rather than a half): the block still leaves 39 % of a 454 px glass empty, and the
+// wind row keeps FONT_SMALL on the narrowest glass in the manifest, which is the row that
+// measures closest to its chord.
 const START_TITLE_FONT = 1;
+const START_STATE_FONT = 1;
 const START_BODY_FONT = 2;
 
 // The wind row. Without a wind axis the turn classifier calls every sweep a generic turn, so
@@ -63,16 +73,17 @@ class StartView extends WatchUi.View {
     // did not have at all.
 
     // Ink centre of row `row` — 0 title, 1 GPS state, 2 wind, 3 hint — for a stack centred
-    // on `cy`. The gap between rows is half a body line, so the whole page breathes with the
-    // font the device actually has.
-    static function rowY(cy as Number, hTitle as Number, hBody as Number,
+    // on `cy`. The gap between rows is a third of a body line, so the whole page breathes with
+    // the font the device actually has. `hState` is its own band since 0.9.2: the row that
+    // answers the screen's only question is a rung bigger than the two under it.
+    static function rowY(cy as Number, hTitle as Number, hState as Number, hBody as Number,
             row as Number) as Number {
-        var gap = hBody / 2;
-        var y = cy - (hTitle + 3 * hBody + 3 * gap) / 2;           // top edge of the stack
+        var gap = hBody / 3;
+        var y = cy - (hTitle + hState + 2 * hBody + 3 * gap) / 2;  // top edge of the stack
         if (row <= 0) { return y + hTitle / 2; }
-        y += hTitle + gap + hBody / 2;
+        y += hTitle + gap + hState / 2;
         if (row == 1) { return y; }
-        y += hBody + gap;
+        y += hState / 2 + gap + hBody / 2;
         return row == 2 ? y : y + hBody + gap;
     }
 
@@ -87,7 +98,9 @@ class StartView extends WatchUi.View {
 
     static function gpsColor(q as Number) as Number {
         if (q >= Position.QUALITY_USABLE) { return Graphics.COLOR_GREEN; }
-        return q >= Position.QUALITY_POOR ? Graphics.COLOR_YELLOW : Ink.dim();
+        // White, not the dim ink: "GPS ..." is the state the rider is WAITING on, and a grey
+        // word on a black screen at 30 % brightness is a word he cannot read (0.9.2).
+        return q >= Position.QUALITY_POOR ? Graphics.COLOR_YELLOW : Graphics.COLOR_WHITE;
     }
 
     // The wind row: the axis when there is one, and how to set one when there is not.
@@ -113,29 +126,30 @@ class StartView extends WatchUi.View {
         var cy = dc.getHeight() / 2;
         var radius = RecordingView.fitRadius(dc, false, false);
 
-        var titleFont = TEXT_FONTS[START_TITLE_FONT];
-        var bodyFont = TEXT_FONTS[START_BODY_FONT];
-        var hTitle = dc.getFontHeight(titleFont);
-        var hBody = dc.getFontHeight(bodyFont);
+        var hTitle = dc.getFontHeight(TEXT_FONTS[START_TITLE_FONT]);
+        var hState = dc.getFontHeight(TEXT_FONTS[START_STATE_FONT]);
+        var hBody = dc.getFontHeight(TEXT_FONTS[START_BODY_FONT]);
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hBody, 0), START_TITLE_FONT,
+        drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hState, hBody, 0), START_TITLE_FONT,
             START_TITLE);
 
         // GPS quality: one line, four rungs, colour and word saying the same thing twice.
         dc.setColor(gpsColor(q), Graphics.COLOR_TRANSPARENT);
-        drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hBody, 1), START_BODY_FONT, gpsText(q));
+        drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hState, hBody, 1), START_STATE_FONT,
+            gpsText(q));
 
         // The wind axis, or how to set one. Amber when unset: it is not an error — the app
         // records perfectly well without it — but it is the one thing that cannot be fixed
         // afterwards, so it should catch the eye before START does.
         var wind = windText();
         dc.setColor(AppSettings.cfg.windDirection < 0
-            ? Graphics.COLOR_YELLOW : Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hBody, 2), START_BODY_FONT, wind);
+            ? Graphics.COLOR_YELLOW : Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hState, hBody, 2), START_BODY_FONT, wind);
 
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
-        drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hBody, 3), START_BODY_FONT, START_HINT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hState, hBody, 3), START_BODY_FONT,
+            START_HINT);
     }
 
     // One centred row, at the largest font from `from` that the chord at its depth holds.
