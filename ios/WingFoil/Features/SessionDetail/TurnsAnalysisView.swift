@@ -3,16 +3,25 @@ import MapKit
 import SwiftUI
 import WingFoilKit
 
-/// The turns drill-in: one session's maneuvers under two filters at once.
+/// One session's maneuvers under two filters at once — **the Turns tab's own content**.
 ///
-/// The page exists because "how are my jibes?" is really four questions — jibes or tacks,
-/// entered on port or on starboard — and the session card can only answer the first two as
-/// totals. Here the two segmented controls compose (AND), and **everything on the page
-/// obeys both of them**: the map dots, the outcome tally and the list are three views of
-/// the same filtered set, never of three different ones.
+/// It exists because "how are my jibes?" is really four questions — jibes or tacks, entered
+/// on port or on starboard — and the session cards can only answer the first two as totals.
+/// Here the two segmented controls compose (AND), and **everything below them obeys both**:
+/// the map dots, the outcome tally and the list are three views of the same filtered set,
+/// never of three different ones.
 ///
 /// The side filter is the tack the turn was **entered** on (`side`), not the direction the
 /// board rotated (`direction`) — see `TurnSideFilter`, which is why the labels say "entry".
+///
+/// **It used to be a pushed page, and that was the mistake.** `app-ui-review.md` §2.1 called
+/// this the best screen in the app and noted that nothing led to it: it opened with the
+/// outcome tally as a headline and a percentage as the giant over a dense scannable list —
+/// verbatim the design language the watch had just adopted and verbatim the owner's taste —
+/// and it was reached only by scrolling ~2 400 pt to an "All 51 turns" row and tapping it.
+/// So it is not a page any more. It is the body of the Turns tab, folded in under the turn
+/// cards it belongs with, and the extra push is gone. This view is therefore layout only:
+/// no `ScrollView` and no navigation title, because it is one block on a scrolling tab.
 struct TurnsAnalysisView: View {
     let detail: SessionDetail
 
@@ -34,22 +43,19 @@ struct TurnsAnalysisView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                filters
-                tallyStrip
-                if !detail.segments.isEmpty { map }
-                list
-                footnote
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 28)
+        VStack(alignment: .leading, spacing: 16) {
+            Text("All \(detail.analysis.summary.turns.turnsCounted) turns")
+                .font(.headline)
+            filters
+            tallyStrip
+            if !detail.segments.isEmpty { map }
+            list
+            footnote
         }
-        .navigationTitle("Turns")
-        .navigationBarTitleDisplayMode(.inline)
+        .frame(maxWidth: .infinity, alignment: .leading)
         #if DEBUG && targetEnvironment(simulator)
         // Screenshot hook, same family as `UI_HIDE_LAYERS`: `simctl` cannot tap a segment,
-        // so `UI_TURN_FILTER=jibes,starboard` opens the page with both filters engaged.
+        // so `UI_TURN_FILTER=jibes,starboard` opens the tab with both filters engaged.
         .onAppear {
             guard let raw = ProcessInfo.processInfo.environment["UI_TURN_FILTER"] else { return }
             for token in raw.split(separator: ",") {
@@ -262,9 +268,9 @@ enum TurnOutcomeStyle {
 
     static func color(_ outcome: TurnOutcomeKind) -> Color {
         switch outcome {
-        case .flewThrough: return .green
-        case .touchdown: return .orange
-        case .fellIn: return .red
+        case .flewThrough: return DesignTokens.Outcome.flew
+        case .touchdown: return DesignTokens.Outcome.touchdown
+        case .fellIn: return DesignTokens.Outcome.fellIn
         }
     }
 

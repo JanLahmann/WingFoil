@@ -159,7 +159,21 @@
       <div class="tiles" id="tiles"></div>
     </section>
 
-    <section class="panel">
+    <!-- The section switcher, below 760 px only (app-ui-review.md §3.4 / §7.2 — the desktop
+         session view stays one document; the review lists tabbing it as deliberately not
+         recommended). Empty here on purpose: js/sections.js builds the chips from the
+         `data-section` attributes on the panels below, so a panel added later joins the
+         switcher by carrying one. It sits BELOW #summary-panel because the block that
+         answers "was that a good session" is permanent and must never be a tab you can
+         navigate away from — the same rule the iOS key-metrics block follows. -->
+    <nav class="sections" id="section-nav" aria-label="Session sections" hidden></nav>
+
+    <!-- Track and Speed share the one chip, and that is a contract requirement rather than
+         a layout preference: docs/presentation.md "Scrub and zoom" mandates one playhead
+         across the map dot and the strip's scrub position, and "Pairing" focuses the strip
+         on the flight whose track you tapped. Separating them would put half of a visible
+         link on another page. Do not give either its own section. -->
+    <section class="panel" data-section="mapSpeed">
       <div class="panel-head">
         <h2>Track</h2>
         <p class="muted small">Local-metre projection, north up. Shape carries the outcome; colour
@@ -170,7 +184,7 @@
       <div class="legend" id="map-legend"></div>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-section="mapSpeed">
       <div class="panel-head">
         <h2>Speed</h2>
         <p class="muted small">Doppler drives the flight state; the positional channel scores the
@@ -192,12 +206,14 @@
       <div class="legend" id="strip-legend"></div>
     </section>
 
-    <section class="panel" id="takeoff-panel">
+    <section class="panel" id="takeoff-panel" data-section="takeoffs">
       <div class="panel-head"><h2>Takeoffs</h2></div>
       <div id="takeoff-body"></div>
     </section>
 
-    <section class="panel">
+    <!-- Turns and Flight ends share a chip: 34 rows and 23 rows are the ~2 000 px of phone
+         scroll §7.2 measured, and they are the same subject read two ways. -->
+    <section class="panel" data-section="turns">
       <div class="panel-head">
         <h2>Turns</h2>
         <p class="muted small" id="turns-caption"></p>
@@ -205,7 +221,7 @@
       <div class="table-scroll"><table id="turns-table"></table></div>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-section="turns">
       <div class="panel-head">
         <h2>Flight ends</h2>
         <p class="muted small" id="ends-caption"></p>
@@ -213,7 +229,9 @@
       <div class="table-scroll"><table id="ends-table"></table></div>
     </section>
 
-    <section class="panel">
+    <!-- "Data" rather than "Raw output" on the chip: the chip is a place to go, and three
+         words of heading do not fit a quarter of a 390 px row. The panel keeps its title. -->
+    <section class="panel" data-section="data">
       <div class="panel-head"><h2>Raw output</h2></div>
       <p class="muted small">
         The <code>golden</code> block below is byte-identical to

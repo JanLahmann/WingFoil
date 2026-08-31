@@ -178,6 +178,51 @@ strings `PresentationTests.keyMetrics*` pin, and `keyMetrics` in `web/js/render.
 Swift half resolves every display string so the SwiftUI view is pure layout; the two are
 twins, and a difference between them is a bug.
 
+## Sections — how a session divides
+
+Both apps open on the key-metrics block and then **switch between four sections**, in this
+order: **`Map · Speed` · `Turns` · `Takeoffs` · `Effort`**. The ids and the words are
+`SessionSection` in the kit; the web uses the same ids on `data-section` attributes. The
+alternative was measured: one column of ~3 800 pt on the phone and ~6 000 px on a phone
+browser, five unrelated subjects deep, with no way to the fifth except through the other
+four (`app-ui-review.md` §3.1, §7.2).
+
+- **The key-metrics block is above the switcher and is never a section.** It is the answer
+  to "was that a good session"; a page you can navigate away from is not an answer. There
+  is therefore no `Overview`.
+- **The map and the speed chart are on one section, always.** "Scrub and zoom" below
+  mandates one playhead across them and "Pairing" focuses the chart on the flight whose
+  track you tapped — they are one instrument with a *visible* link, and a switcher that
+  gives Map its own page breaks the half of it you can see. Everything that annotates the
+  two figures rides with them, which is why the record picker lives there too and why there
+  is no `Records` section: a picker whose whole purpose is to highlight a window on the map
+  and the chart cannot be on a tab away from them.
+- **The chart's zoom window outlives a section change.** Zoom stays transient per *session
+  view* (below), but a trip to Turns and back is not a new session view, and silently
+  resetting the window would make "transient" mean something the rider did not ask for.
+- **Desktop web keeps its single scroll — this is a phone rule.** Above 760 px the web
+  session view is a document, the two long tables want the continuous page, and that is
+  what makes it a lab tool. The switcher exists only below the breakpoint, and crossing the
+  breakpoint upward must restore every panel.
+- **A section with nothing in it is not shown.** The web has no HR card, so its fourth chip
+  is the raw-output panel (`Data`) rather than an empty `Effort`; an honest label beats a
+  matching one. When the web gains effort content, the id is already reserved.
+
+## Tables over tile walls
+
+Where a screen shows one number per row with the same shape on every row, it is a table:
+`record | value | at` for the session's speed records, `record | value | +Δ PB | when ·
+where` for the all-time ones. Eight 2-up cards spent ~520 pt and ~2 000 pt respectively to
+show eight numbers each, and the values could not be compared by eye because they did not
+line up in a column (`app-ui-review.md` §1.4, §6.2). A table also has no odd-count parity
+problem, which is what left `Glide-outs 0` alone beside an empty cell.
+
+Decoration that repeats the row's own text is not information: the record medallion
+contained the same words as the title beside it, and a 90 px sparkline read as a flat line
+with a bump on all eight rows. The *distinction* a decoration encodes may still be worth
+keeping — record freshness survives as a 7 pt dot — but it is kept at the size the fact is
+worth, not at the size the ornament was.
+
 ## Record windows
 
 Eight kinds, in canonical order: `best2s, best10s, best5x10s, best100m, best250m, best500m,
@@ -249,7 +294,9 @@ tokens above and nothing else.
   scrubber; web: wheel/pinch). While zoomed: scrubbing works within the window, a reset
   affordance is visible, the window's place in the session is indicated, and markers and
   shading outside the visible domain are not drawn.
-- Zoom state is transient per session view.
+- Zoom state is transient per session view — but it survives a section change, which is not
+  a new session view (see "Sections" above). On iOS that means the window is owned by
+  `SessionDetailView`, not by the chart.
 
 ## Pairing
 

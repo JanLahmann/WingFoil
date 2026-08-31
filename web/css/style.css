@@ -140,6 +140,15 @@ main > div[hidden], [hidden] { display: none !important; }
 }
 .views button[aria-current=page] .count { background: var(--surface-2); color: var(--ink-2); }
 
+/* --------------------------------------------------------- session sections */
+
+/* The session view's second-level switcher (js/sections.js). `display: none` here is the
+   DESKTOP BEHAVIOUR, not a fallback: app-ui-review.md §3.4 lists tabbing the desktop web
+   session view under "deliberately not recommended" — at 1120 px it is a document, and the
+   34-row turns table and the 23-row flight-ends table want the continuous page. The chips
+   exist only inside the phone block below. */
+.sections { display: none; }
+
 /* --------------------------------------------------------------- update banner */
 
 .update-banner {
@@ -564,6 +573,26 @@ footer {
   #save-session { width: 100%; }
   #icu-toggle { order: 2; min-height: var(--tap); }
   #engine-chip { order: 1; }
+
+  /* --- the session section chips: the same control family as .views, one level down.
+     Identical trough, radius and active treatment, so the row below the view tabs reads as
+     the same kind of choice about a smaller thing (app-ui-review.md §3.4). Full width with
+     an equal share each and the --tap floor, because §7.1's rule holds here too: anything
+     you tap is at least 44 px. A quarter of a 375 px screen is ~75 px of label, which is
+     what "Map · Speed" measures at 12.5 px with nothing to spare — so the type is a point
+     smaller than the view tabs' and the chip is allowed to wrap to a second line rather
+     than clip. Two lines at 1.2 still sit inside the 44 px box. */
+  .sections {
+    display: flex; gap: 2px; margin: 14px 0;
+    background: var(--surface-2); border-radius: 8px; padding: 3px;
+  }
+  .sections button {
+    flex: 1 1 0; min-width: 0; background: transparent; color: var(--ink-3); border: 0;
+    border-radius: 6px; padding: 0 5px; min-height: var(--tap);
+    display: inline-flex; align-items: center; justify-content: center;
+    font: 600 12.5px/1.2 var(--sans); text-align: center;
+  }
+  .sections button[aria-current=page] { background: var(--surface-0); color: var(--ink); }
 
   main { padding-top: 16px; padding-bottom: 28px; }
   main > div { gap: 14px; }

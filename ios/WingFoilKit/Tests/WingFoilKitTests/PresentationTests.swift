@@ -1934,6 +1934,56 @@ import Testing
         }
     }
 
+    // MARK: - Session sections
+
+    /// The switcher's shape, which is the part of it that is a decision rather than layout.
+    ///
+    /// Two of these are the review's "deliberately not recommended" list expressed as an
+    /// assertion (`app-ui-review.md` §3.3): an `overview` section would compete with the
+    /// key-metrics block that sits *above* the switcher, and a `records` section would put
+    /// the record picker on a tab away from the map and chart whose windows it highlights.
+    /// The third is §3.2's constraint — the figures share a playhead, so they share a tab.
+    @Test func sessionSectionsAreTheFourTheReviewSettledOn() {
+        #expect(SessionSection.allCases == [.mapSpeed, .turns, .takeoffs, .effort])
+        #expect(SessionSection.allCases.first == .mapSpeed, "the default is the figures")
+        let labels = SessionSection.allCases.map(\.label)
+        #expect(labels == ["Map · Speed", "Turns", "Takeoffs", "Effort"])
+        #expect(Set(labels).count == labels.count)
+        // The chart and the map's own anchors are on one section, and that is the contract's
+        // "one playhead" made structural — nothing may move them apart.
+        let figures = SessionSection.mapSpeed.anchors
+        #expect(figures.contains("chart"))
+        #expect(figures.contains("replay"))
+        #expect(SessionSection.section(owning: "chart") == .mapSpeed)
+        #expect(SessionSection.section(owning: "replay") == .mapSpeed)
+        // The record table is on the same section as the figures it annotates.
+        #expect(SessionSection.section(owning: "summary") == .mapSpeed)
+    }
+
+    /// Every screenshot anchor `docs/testing.md` documents has to resolve to the section it
+    /// lives on, or `UI_SCROLL_TO` silently photographs the wrong tab.
+    @Test func everyScrollAnchorResolvesToExactlyOneSection() {
+        let documented = ["chart", "replay", "summary", "turns", "takeoff", "hr", "gear"]
+        for anchor in documented {
+            #expect(SessionSection.section(owning: anchor) != nil,
+                    "\(anchor) is on no section — UI_SCROLL_TO would reach nothing")
+        }
+        #expect(SessionSection.section(owning: "turns") == .turns)
+        #expect(SessionSection.section(owning: "takeoff") == .takeoffs)
+        #expect(SessionSection.section(owning: "hr") == .effort)
+        #expect(SessionSection.section(owning: "gear") == .effort)
+
+        // No anchor may belong to two sections: the mapping is what selects a tab, and an
+        // ambiguous one would select whichever case happened to be declared first.
+        let all = SessionSection.allCases.flatMap(\.anchors)
+        #expect(Set(all).count == all.count, "an anchor is claimed by two sections")
+
+        // And the key-metrics block belongs to none of them on purpose — it is above the
+        // switcher, on every section, so scrolling to it must not change the selection.
+        #expect(SessionSection.section(owning: "key") == nil)
+        #expect(SessionSection.section(owning: "nonsense") == nil)
+    }
+
     // MARK: - Time-axis ticks
 
     /// Swift Charts' `.automatic` divides the domain into equal parts, which on a session

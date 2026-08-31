@@ -171,6 +171,19 @@ def check_digest_fidelity() -> None:
     check("  longestFlightS == golden", d["longestFlightS"], s["longestFlightS"])
     check("  turns.counted == golden", d["turns"]["counted"], s["turns"]["turnsCounted"])
     check("  turns.successPct == golden", d["turns"]["successPct"], s["turns"]["successPct"])
+    # The outcome tally the library row draws on the ladder's inks (app-ui-review.md 5.6).
+    # It is copied from the engine's verdict, never recounted here -- a second count would
+    # be a second definition of the ladder.
+    check("  turns.outcomes == golden", d["turns"]["outcomes"],
+          {k: s["turns"]["outcomes"][k] for k in ("flewThrough", "touchdown", "fellIn")})
+    check("  turns.outcomes sums to the counted turns",
+          sum(d["turns"]["outcomes"].values()), d["turns"]["counted"])
+    # A document with no outcome block gets None, never three zeroes: the row then renders
+    # a dash. Three zeroes would say the rider took fifty turns and none of them went
+    # anywhere, which is the "absent is never 0" rule (docs/presentation.md) at row scale.
+    check("  turns.outcomes is absent, not zeroed, when the engine reported none",
+          library.digest({"golden": {"summary": {"turns": {}}}}, "x.fit")["turns"]["outcomes"],
+          None)
     check("  records.best2sKn == golden", d["records"]["best2sKn"], rec["best2sKn"])
     check("  records.alpha500Kn == golden", d["records"]["alpha500Kn"], rec["alpha500Kn"])
     check("  recordWindows.best2s == golden", d["recordWindows"]["best2sKn"],
