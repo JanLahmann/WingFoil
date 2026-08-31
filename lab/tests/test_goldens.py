@@ -14,9 +14,10 @@ from wingfoil_lab.hrcost import HrAnalysis
 SMOKE = Path(__file__).resolve().parents[2] / "fixtures" / "synthetic" / "smoke-60s.fit"
 CIQ = (Path(__file__).resolve().parents[2] / "fixtures" / "sessions" / "ciq"
        / "2026-08-07-0754_nago-torbole-windsurfen_ciq.fit")
-# The long afternoon session, the one the app bundles: 51 counted turns and 25 swims, of
-# which only 8 happen inside a counted turn -- which is what makes it the fixture that can
-# tell "wet per hour" apart from "fell-in jibes per hour".
+# The long afternoon session: 51 counted turns and 25 swims, of which only 8 happen inside
+# a counted turn -- which is what makes it the fixture that can tell "wet per hour" apart
+# from "fell-in jibes per hour". (The session the apps *bundle* is the short 2026-08-30
+# one; this is the one long enough to separate the two rates.)
 CIQ_LONG = (Path(__file__).resolve().parents[2] / "fixtures" / "sessions" / "ciq"
             / "2026-08-29-1440_nago-torbole-windsurfen_ciq.fit")
 

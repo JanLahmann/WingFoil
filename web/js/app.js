@@ -290,11 +290,11 @@ function wireDropzone() {
  * "…or try the example session".
  *
  * The same bundled recording the iOS app ships (`web/example/ExampleSession.fit`, byte for
- * byte the file in `ios/WingFoilKit/…/Resources/`): Jan's 2026-08-29 Nago-Torbole
- * afternoon with the identifiers scrubbed and the 100 Hz accelerometer stream dropped, so
- * it is 435 KB rather than 10 MB. Because the accel is gone, it analyses exactly the way a
- * native fenix recording does — no stroke counts, no failed attempts — which is an honest
- * thing for a demo to show rather than a flattering one.
+ * byte the file in `ios/WingFoilKit/…/Resources/`): Jan's 2026-08-30 Nago-Torbole
+ * afternoon with the identifiers scrubbed and nothing else touched. It is a ten-minute
+ * ride, which is what lets the whole recording ship at 942 KB — 100 Hz accelerometer
+ * stream included — so the demo shows the stroke counts and the failed attempts a
+ * stripped file could only report as unknown.
  *
  * It goes through `analyzeFile`, so it is the ordinary path with an ordinary File: nothing
  * about the example is special-cased downstream, and what a visitor sees is what their own
@@ -309,7 +309,7 @@ function wireExample() {
       const res = await fetch("example/ExampleSession.fit");
       if (!res.ok) throw new Error(`example/ExampleSession.fit: HTTP ${res.status}`);
       await analyzeFile(new File([await res.arrayBuffer()],
-                                 "example-nago-torbole-2026-08-29.fit"));
+                                 "example-nago-torbole-2026-08-30.fit"));
     } catch (err) {
       fail(`Could not load the example session: ${err.message}`);
     } finally {

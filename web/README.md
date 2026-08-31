@@ -10,7 +10,7 @@ and watch the **records and trends** across them. Installable as a PWA and usabl
 `lab/src/wingfoil_lab` unchanged and calls the same `goldens.analyze()` +
 `goldens.build_golden()` that `lab/tools/make_goldens.py` calls. The `golden` block in the
 downloadable JSON is byte-identical to `fixtures/goldens/<stem>.expected.json` for the same
-file — verified against all 13 corpus fixtures (see *Verification* below).
+file — verified against all 15 corpus fixtures (see *Verification* below).
 
 ```
 web/
@@ -333,14 +333,14 @@ Expected numbers for that CIQ session: **30 jibes / 0 tacks**, outcomes **9 flew
 touchdown / 12 fell in**, **23 flights**, 12.764 km, wind from 36°, 60 % on foil.
 
 `tools/verify_library.py` covers everything the library and the trends view compute, in five
-groups (**153 assertions**, all green at the time of writing — 30 / 8 / 28 / 49 / 30 / 8):
+groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 49 / 30 / 8):
 
 | Group | What it pins down |
 |---|---|
 | 1. dedupe | ±59 s matches on either axis, ±61 s does not, exactly 60 s does; a missing start never matches; the *closest* candidate wins so a replace lands on the right recording |
 | 1b. spot names | the corpus filename convention, plus filenames that ignore it |
 | 2. digest fidelity | every digest field equals the golden it was projected from, and the port/starboard split is checked against a hand count off the golden's own turn rows: **port 14 entries / 2 held (14.29 %), starboard 16 / 2 (12.5 %)** for the CIQ session, summing to the engine's own 30 counted / 4 held |
-| 3. records | the winner of every kind, over all 13 corpus FITs, matched independently *and* named: best 2 s **14.99 kn on 2026-08-01**, best 1 NM **11.451 kn on 2026-08-05**, alpha 500 **11.994 kn on 2026-08-05**; best hour is dropped because nobody set one; every record carries a window that lies inside its session |
+| 3. records | the winner of every kind, over all 15 corpus FITs, matched independently *and* named: best 2 s **14.99 kn on 2026-08-01**, best 1 NM **11.451 kn on 2026-08-05**, alpha 500 **11.994 kn on 2026-08-05**; best hour is dropped because nobody set one; every record carries a window that lies inside its session |
 | 4. trends | one point per session per line, indices and ids aligned with the session list, oldest first, values equal to the digests in order, and pumps `null` (not 0) for the accelerometer-less sessions |
 | 5. zip export | the archive unzips, FIT bytes survive byte-for-byte, JSON is deflated, an aborted export cannot leak into the next one |
 
@@ -354,6 +354,15 @@ groups (**153 assertions**, all green at the time of writing — 30 / 8 / 28 / 4
    drop zone. The progress list should walk *runtime → wingfoil_lab → parsing → analyzing*
    and the page must stay responsive the whole time (the analysis is in a worker; scrolling
    must not stutter).
+3b. **The example button.** Reload, then click *…or try the example session* instead of
+   dropping anything. It must fetch `example/ExampleSession.fit` (the 2026-08-30 recording
+   the iOS app bundles — docs/testing.md "The bundled example session") and walk the same
+   progress list. Expect the short-session numbers: **2 flights**, 68 % on foil, 2.56 km,
+   Turns 10 (all jibes), Outcomes 8 / 0 / 2, wind 196°, best 2 s 13.47 kn, and the same
+   four badges — `accel` included, because this example ships whole. Key metrics read
+   `0:10 · 2.6 km · 7.71 kn`, `13.47 kn` under **max 2 s**, `8 · 0 · 2` (of 10 jibes) on
+   the ladder's colours beside `8 dry · 8 flew`, then `44.7` **JPH** and `11.2 WPH`. Being
+   under the 15-minute window, the JPH/WPH peaks equal the whole-session rates.
 4. **Check the numbers** against the golden above: 23 flights, 60 % on foil, 12.76 km,
    Turns 30, Outcomes 9/9/12, wind 36°, best 2 s 11.36 kn. Badges: `wingfoil`,
    `CIQ dev fields`, `accel`, `HR`.
