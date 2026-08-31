@@ -42,7 +42,7 @@ struct SessionRowView: View {
                         .foregroundStyle(SessionDisplay.badgeColor(row))
                 }
 
-                Text("\(Fmt.date(row.startDate)) · \(Fmt.duration(row.durationS))")
+                Text("\(Fmt.date(row.startDate, zone: row.displayZone)) · \(Fmt.duration(row.durationS))")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 

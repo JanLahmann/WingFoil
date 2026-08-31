@@ -86,7 +86,7 @@ import Testing
         #expect(counted.count == 10, "the fixture must contain ten counted jibes")
         #expect(dry.count == 8, "two of which were swum")
 
-        let script = ReplayCommentary.make(analysis)
+        let script = ReplayCommentary.make(analysis, timeZone: fixtureZone)
         // Ten attempts but only eight dry, so the tenth ordinal is never reached — and the
         // closing line totals the same eight the ordinals ran on.
         #expect(!script.contains { $0.text.contains("10 dry jibes") })
@@ -110,7 +110,7 @@ import Testing
     /// Without a name and a clock the opening line still exists — it just says less. A
     /// commentary that invented a location would be worse than one that admits it has none.
     @Test func theOpeningLineDegradesRatherThanInventing() throws {
-        let script = ReplayCommentary.make(try torbole())
+        let script = ReplayCommentary.make(try torbole(), timeZone: fixtureZone)
         #expect(script.first?.text == "Session start")
         #expect(ReplayCommentary.startLine(place: "Torbole", startedAt: nil,
                                            timeZone: .current) == "Torbole — session start")
@@ -121,7 +121,7 @@ import Testing
     /// The bookends follow the replay's own clock, not the engine's zero: a caption the
     /// slider cannot reach is a caption nobody hears.
     @Test func theBookendsSitOnTheSpanTheyAreGiven() throws {
-        let script = ReplayCommentary.make(try torbole(), span: 12...600)
+        let script = ReplayCommentary.make(try torbole(), span: 12...600, timeZone: fixtureZone)
         #expect(script.first?.t == 12)
         #expect(script.last?.t == 600)
         #expect(script.last?.kind == .sessionEnd)
@@ -137,7 +137,7 @@ import Testing
                       "2026-08-29-1440_nago-torbole-windsurfen_ciq"])
     func theStreakLinesAgreeWithTheEngine(_ stem: String) throws {
         let analysis = try golden(stem)
-        let script = ReplayCommentary.make(analysis)
+        let script = ReplayCommentary.make(analysis, timeZone: fixtureZone)
         let announced = script.compactMap { milestone -> Int? in
             if case .streak(let n) = milestone.kind { return n }
             return nil
@@ -167,7 +167,7 @@ import Testing
         let analysis = try golden("2026-08-29-1440_nago-torbole-windsurfen_ciq")
         let wet = analysis.flightEnds.filter { $0.outcome == "fell_in" }.count
         #expect(wet > 0, "the fixture must contain swims")
-        let script = ReplayCommentary.make(analysis)
+        let script = ReplayCommentary.make(analysis, timeZone: fixtureZone)
         let splashes = script.compactMap { milestone -> Int? in
             if case .splash(let n) = milestone.kind { return n }
             return nil
@@ -189,7 +189,7 @@ import Testing
         analysis.flightEnds = []
         analysis.records = GP3SRecords()
         analysis.summary.turns = TurnSummary()
-        let script = ReplayCommentary.make(analysis)
+        let script = ReplayCommentary.make(analysis, timeZone: fixtureZone)
         #expect(script.map(\.kind) == [.sessionStart, .sessionEnd])
         #expect(script.last?.text == "Session end — 10:45 · 2.6 km")
     }
@@ -199,14 +199,14 @@ import Testing
     @Test func aZeroLengthRecordingSaysNothing() throws {
         var analysis = try torbole()
         analysis.summary.durationS = 0
-        #expect(ReplayCommentary.make(analysis, span: 0...0).isEmpty)
-        #expect(ReplayCommentary.make(analysis).isEmpty)
+        #expect(ReplayCommentary.make(analysis, span: 0...0, timeZone: fixtureZone).isEmpty)
+        #expect(ReplayCommentary.make(analysis, timeZone: fixtureZone).isEmpty)
     }
 
     /// What the bubble shows: the line the playhead has most recently passed, never one it
     /// is about to reach — a caption that arrived before its jibe would be a spoiler.
     @Test func theCurrentLineIsTheOneAlreadyPassed() throws {
-        let script = ReplayCommentary.make(try torbole())
+        let script = ReplayCommentary.make(try torbole(), timeZone: fixtureZone)
         #expect(ReplayCommentary.current(at: -1, in: script) == nil)
         #expect(ReplayCommentary.current(at: 0, in: script)?.kind == .sessionStart)
         #expect(ReplayCommentary.current(at: 291.9, in: script)?.t == 278)

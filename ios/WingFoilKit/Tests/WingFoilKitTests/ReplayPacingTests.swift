@@ -20,7 +20,7 @@ import Testing
     private let span = 0.0...645.0
 
     private func script() throws -> [ReplayMilestone] {
-        ReplayCommentary.make(try torbole(), span: span)
+        ReplayCommentary.make(try torbole(), span: span, timeZone: fixtureZone)
     }
 
     // MARK: - The button says what comes out
@@ -31,7 +31,7 @@ import Testing
         let milestones = try script()
         for target in [10.0, 25.0, 60.0] {
             let board = ReplayStoryboard.make(span: span, targetWallS: target,
-                                              milestones: milestones)
+                                              milestones: milestones, timeZone: fixtureZone)
             #expect(abs(board.replayWallS - target) < 0.01,
                     "\(Int(target)) s should run \(target) s, got \(board.replayWallS)")
             // …and the clip is that plus the two cards, said out loud by the sheet.
@@ -59,7 +59,7 @@ import Testing
     /// Its numbers are exactly the ones `ReplayDriverTests` and `ReplayStoryboardTests`
     /// already pin, which is the point of leaving it as a rate.
     @Test func fullDetailIsStillThePinnedTenTimes() throws {
-        let board = ReplayStoryboard.make(span: span, rate: 10, milestones: try script())
+        let board = ReplayStoryboard.make(span: span, rate: 10, milestones: try script(), timeZone: fixtureZone)
         #expect(abs(board.replayWallS - 77.70) < 0.05)
         #expect(abs(board.runWallS - 84.20) < 0.05)
     }
@@ -117,7 +117,7 @@ import Testing
         for target in [10.0, 25.0, 60.0] {
             let plan = ReplayPacing.plan(span: span, targetWallS: target)
             #expect(abs(plan.rate - 645 / target) < 0.001)
-            #expect(abs(ReplayStoryboard.make(span: span, targetWallS: target).replayWallS
+            #expect(abs(ReplayStoryboard.make(span: span, targetWallS: target, timeZone: fixtureZone).replayWallS
                         - target) < 0.01)
         }
     }
@@ -134,7 +134,7 @@ import Testing
         let plan = ReplayPacing.plan(span: long, targetWallS: 10, easeAt: try script().map(\.t))
         #expect(plan.rate == ReplayPacing.maxRate)
         let board = ReplayStoryboard.make(span: long, targetWallS: 10,
-                                          milestones: try script())
+                                          milestones: try script(), timeZone: fixtureZone)
         #expect(board.replayWallS > 10)
         #expect(abs(board.replayWallS - 61.15) < 0.05)
         // Whatever it comes out at, the quoted clip length is still the honest sum.
@@ -147,7 +147,7 @@ import Testing
     @Test func aSessionShorterThanTheTargetPlaysInRealTime() {
         let plan = ReplayPacing.plan(span: 0.0...30.0, targetWallS: 60)
         #expect(plan.rate == ReplayPacing.minRate)
-        #expect(ReplayStoryboard.make(span: 0.0...30.0, targetWallS: 60).replayWallS == 30)
+        #expect(ReplayStoryboard.make(span: 0.0...30.0, targetWallS: 60, timeZone: fixtureZone).replayWallS == 30)
     }
 
     /// A recording with no duration, and a nonsense target, both come back with something a
@@ -157,7 +157,7 @@ import Testing
                 == ReplayPacing.minRate)
         #expect(ReplayPacing.plan(span: span, targetWallS: 0).rate == ReplayPacing.minRate)
         #expect(ReplayPacing.plan(span: span, targetWallS: -5).rate == ReplayPacing.minRate)
-        #expect(ReplayStoryboard.make(span: 42.0...42.0, targetWallS: 10).runWallS == 0)
+        #expect(ReplayStoryboard.make(span: 42.0...42.0, targetWallS: 10, timeZone: fixtureZone).runWallS == 0)
     }
 
     // MARK: - The estimate is the run

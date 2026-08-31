@@ -15,6 +15,8 @@ public enum FitSessionParser {
         static let record: UInt16 = 20
         static let lap: UInt16 = 19
         static let session: UInt16 = 18
+        /// Read for one field only: `local_timestamp`. See `utcOffsetS`.
+        static let activity: UInt16 = 34
         static let accelerometerData: UInt16 = 165
         static let threeDSensorCalibration: UInt16 = 167
     }
@@ -137,7 +139,45 @@ public enum FitSessionParser {
         // (docs/fit-schema.md): sport 43 alone cannot tell wingfoiling from windsurfing.
         caps.discipline = track.watchSummary.discipline
         track.capabilities = caps
+        // Only the file's own exact answer here. The coarse longitude guess is a rung
+        // further down a ladder `SessionIngestor` owns, because intervals.icu's `timezone`
+        // sits between the two and the parser has never heard of intervals.icu.
+        track.startUtcOffsetS = utcOffsetS(fit)
         return track
+    }
+
+    /// The session's own UTC offset in seconds, from the `activity` message.
+    ///
+    /// `activity.local_timestamp` and `activity.timestamp` are written at save time from
+    /// one clock, so their difference is exactly the offset that was in force **for this
+    /// session** — DST included, and unaffected by where the file is read afterwards.
+    /// Present and correct (+7200) on every fixture in the corpus, our CIQ recordings and
+    /// native Garmin ones alike. Mirrors `activity_utc_offset_s` in
+    /// lab/src/wingfoil_lab/parse.py — Python is the reference.
+    ///
+    /// nil, never 0, when the message or either field is missing: "this file does not say"
+    /// and "this session was recorded at UTC" are different facts and only one of them
+    /// licenses a fallback.
+    static func utcOffsetS(_ fit: FitFile) -> Int? {
+        for message in fit.messages(forMessageType: FitMessageType(Mesg.activity)) {
+            guard let local = message.interpretedField(key: "local_timestamp")?.time,
+                  let utc = message.interpretedField(key: "timestamp")?.time else { continue }
+            return Int(local.timeIntervalSince(utc).rounded())
+        }
+        return nil
+    }
+
+    /// A whole-hour offset guessed from longitude — the fallback, and only ever that.
+    ///
+    /// `round(lon / 15°)` hours is the *solar* offset, not the civil one: right to the hour
+    /// across most of Europe in winter, an hour out there all summer (DST), up to two hours
+    /// out inside wide zones (China, Spain), and blind to the half-hour zones (India,
+    /// Newfoundland). It exists for one case — a source with GPS fixes and no `activity`
+    /// message — where "within an hour or two" beats formatting an Italian afternoon in the
+    /// reader's Californian morning. Anything that can answer exactly wins over it.
+    static func coarseUtcOffsetS(_ lon: Double) -> Int? {
+        guard lon.isFinite else { return nil }
+        return Int((lon / 15.0).rounded()) * 3600
     }
 
     // MARK: - Developer fields

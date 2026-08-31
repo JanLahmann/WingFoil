@@ -32,7 +32,7 @@ public struct AppDatabase: Sendable {
 
     /// Every migration this build knows, oldest first — the migration test asserts a v1
     /// database moves through all of them.
-    public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6"]
+    public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7"]
 
     /// Public so a caller (and the migration test) can migrate a writer only part of the
     /// way — `migrator.migrate(writer, upTo: "v1")` reproduces a shipped v1 library.
@@ -140,7 +140,73 @@ public struct AppDatabase: Sendable {
                 t.column("deletedAt", .datetime).notNull()
             }
         }
+
+        // v7: what time it was where the session happened.
+        //
+        // `startDate` is an instant, and every clock the app printed was that instant
+        // formatted in the *reader's* current zone. That is correct only while the reader
+        // and the recording share one — a coincidence that ends at every DST boundary
+        // (on 25 October 2026 every session in the library would shift by an hour, and
+        // stay shifted) and on the first session ridden abroad. A session's time is a fact
+        // about the session, so it is stored with the session.
+        //
+        // Seconds rather than a zone name: what the FIT can tell us is an *offset*
+        // (`activity.local_timestamp - activity.timestamp`), not an IANA identifier, and
+        // storing a name we had to guess would be inventing a fact. NULL means "no source
+        // could say", and `SessionRow.displayZone` falls back to the device's zone there —
+        // the old behaviour, kept deliberately for the one case that has no better answer.
+        //
+        // No re-analysis is triggered: nothing derived changes. Existing rows are backfilled
+        // from their archived `original.fit` by `backfillStartUtcOffsets(archive:)`, which
+        // re-reads the recording rather than guessing — the app calls it once after opening
+        // the database.
+        migrator.registerMigration("v7") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "startUtcOffsetS", .integer)
+            }
+        }
         return migrator
+    }
+
+    /// Fill `startUtcOffsetS` on every row that has none, from the session's own archived
+    /// recording. Returns how many rows were filled.
+    ///
+    /// Idempotent and cheap to call at every launch: it only looks at NULL rows, and a row
+    /// whose FIT cannot answer (no `activity` message, no GPS fix, no archived original —
+    /// an intervals.icu-metadata-only row, say) stays NULL and is simply looked at again
+    /// next time. That is the right trade: re-reading a handful of files beats writing a
+    /// guess into the column that says "this is the offset the session was recorded at".
+    ///
+    /// It re-reads rather than guessing because the archive *has* the answer:
+    /// `SessionArchive` keeps `original.fit` for every imported session, and its `activity`
+    /// message carries the offset the watch was wearing. Backfilling from the device's
+    /// current zone would have written today's guess into history — and written it as fact.
+    @discardableResult
+    public func backfillStartUtcOffsets(archive: SessionArchive) async throws -> Int {
+        let ids = try await writer.read { db in
+            try String.fetchAll(db, sql: """
+                SELECT id FROM session WHERE startUtcOffsetS IS NULL ORDER BY startDate DESC
+                """)
+        }
+        guard !ids.isEmpty else { return 0 }
+
+        var found: [String: Int] = [:]
+        for id in ids {
+            guard let data = try? archive.originalData(for: id),
+                  let track = try? FitSessionParser.parse(data: data),
+                  let offset = track.startUtcOffsetS else { continue }
+            found[id] = offset
+        }
+        guard !found.isEmpty else { return 0 }
+
+        let resolved = found
+        return try await writer.write { db in
+            for (id, offset) in resolved {
+                try db.execute(sql: "UPDATE session SET startUtcOffsetS = ? WHERE id = ?",
+                               arguments: [offset, id])
+            }
+            return resolved.count
+        }
     }
 
     // MARK: - v2 pieces
@@ -412,6 +478,36 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// `isExample` is: a rule six call sites have to remember is a rule that will be
     /// forgotten, and the failure mode here is someone else's speed in your PB list.
     public var rider: String?
+
+    // MARK: schema v7
+    /// The UTC offset **in seconds** that was in force where and when this session was
+    /// ridden — the watch's own, out of the FIT's `activity` message
+    /// (`RawTrack.startUtcOffsetS`), or intervals.icu's `timezone`, or, failing both, a
+    /// coarse guess from the first GPS longitude.
+    ///
+    /// nil means no source could say. `displayZone` falls back to the device's zone there,
+    /// which is the behaviour every session had before this column existed.
+    public var startUtcOffsetS: Int?
+
+    /// **The** zone every clock and calendar date this session is drawn in.
+    ///
+    /// One accessor, deliberately, and the reason the presentation types no longer default
+    /// their `timeZone:` parameters to `.current`: a default is a decision made silently at
+    /// every call site, and the silent decision here was wrong at all of them. With the
+    /// defaults gone the compiler names every place a session's time is printed, and each
+    /// one has to answer the question out loud — with this, or with `.current` and a
+    /// comment saying why.
+    ///
+    /// `.current` remains right for a genuinely-*now* surface: Settings' "Last sync", the
+    /// trend range pickers, the week buckets a rider scans against this week. Those are
+    /// about the reader's calendar, not about any session's.
+    public var displayZone: TimeZone {
+        startUtcOffsetS.flatMap { TimeZone(secondsFromGMT: $0) } ?? .current
+    }
+
+    /// Whether `displayZone` is the session's own answer or the device's stand-in — so a
+    /// surface that wants to say "times on your own clock" can know to say it.
+    public var hasKnownZone: Bool { startUtcOffsetS != nil }
 
     public init(id: String = UUID().uuidString, startDate: Date, durationS: Double, sourceClass: String) {
         self.id = id

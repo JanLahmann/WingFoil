@@ -127,7 +127,7 @@ import Testing
         let block = KeyMetrics.make(summary: torboleSummary(), records: records)
         for preset in ShareCardStats.Preset.allCases {
             let stats = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block,
-                                            preset: preset)
+                                            preset: preset, timeZone: fixtureZone)
             #expect(!stats.stats.contains { $0.key == "flights" },
                     "\(preset.rawValue) still carries the flight count")
             #expect(!stats.stats.contains { $0.key == "foilPct" })
@@ -148,7 +148,7 @@ import Testing
         records.best2sKn = 13.209
         let block = KeyMetrics.make(summary: torboleSummary(), records: records)
         let outro = ShareCardStats.outro(row: sampleRow(), title: "Torbole", metrics: block,
-                                         longestFlightS: 392)
+                                         longestFlightS: 392, timeZone: fixtureZone)
 
         #expect(outro.stats.map(\.key)
                 == ["duration", "distance", "avgSpeed", "max2s", "tally", "streaks",
@@ -162,7 +162,7 @@ import Testing
         // Everything before it is the complete preset, cell for cell — the outro adds, it
         // never rewords.
         let card = ShareCardStats.make(row: sampleRow(), title: "Torbole", metrics: block,
-                                       preset: .complete)
+                                       preset: .complete, timeZone: fixtureZone)
         #expect(Array(outro.stats.dropLast()) == card.stats)
         #expect(outro.disclaimer == card.disclaimer)
         // …and the exported card itself is untouched: it stays the strict `KeyMetrics` mirror.
@@ -177,7 +177,7 @@ import Testing
         let block = KeyMetrics.make(summary: torboleSummary(), records: records)
         for seconds in [nil, 0, -1] as [Double?] {
             let outro = ShareCardStats.outro(row: sampleRow(), title: "x", metrics: block,
-                                             longestFlightS: seconds)
+                                             longestFlightS: seconds, timeZone: fixtureZone)
             #expect(outro.stats.count == 8)
             #expect(!outro.stats.contains { $0.key == ShareCardStats.Key.longestFlight })
         }
@@ -193,9 +193,9 @@ import Testing
         records.best2sKn = 13.209
         let block = KeyMetrics.make(summary: torboleSummary(), records: records)
         let complete = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block,
-                                           preset: .complete).stats
+                                           preset: .complete, timeZone: fixtureZone).stats
         let lean = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block,
-                                       preset: .lean).stats
+                                       preset: .lean, timeZone: fixtureZone).stats
 
         #expect(lean.map(\.key) == ["duration", "distance", "max2s", "tally"])
         #expect(lean.count < complete.count)
@@ -215,7 +215,7 @@ import Testing
         summary.apply(SessionRates(durationS: 0, distanceM: 0, turnsCounted: 0, dryJibes: 0,
                                    fellIn: 0))
         let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
-        let stats = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block)
+        let stats = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block, timeZone: fixtureZone)
         #expect(stats.stats.map(\.key) == ["duration", "distance", "avgSpeed", "max2s"])
         #expect(!stats.stats.contains { $0.key == "jph" || $0.key == "wph" })
         // Nothing measured is "—", never a fabricated 0.00 kn.
@@ -232,17 +232,19 @@ import Testing
     @Test func shareCardPrintsPlaceholdersRatherThanZero() {
         var row = SessionRow(id: "s2", startDate: Date(), durationS: 600, sourceClass: "c")
         row.flightCount = nil
-        let stats = ShareCardStats.make(row: row, title: "Session")
+        let stats = ShareCardStats.make(row: row, title: "Session", timeZone: fixtureZone)
         #expect(stats.stats.map(\.key) == ["duration", "distance", "max2s"])
         #expect(stats.stats.allSatisfy { !$0.value.contains("0.00") })
         #expect(stats.stats.first { $0.key == "max2s" }?.value == "—")
         #expect(stats.stats.first { $0.key == "distance" }?.value == "—")
-        #expect(stats.stats.first { $0.key == "duration" }?.value == "0:10")
+        // A ten-minute session, said in minutes and seconds. This printed "0:10" until
+        // 0.8.2 — an hours-and-minutes reading of a number that is not hours.
+        #expect(stats.stats.first { $0.key == "duration" }?.value == "10:00 min")
         #expect(!stats.stats.contains { $0.key == "tally" })
     }
 
     @Test func shareCardDisclaimsUncertifiedSources() {
-        let stats = ShareCardStats.make(row: sampleRow(sourceClass: "c"), title: "Session")
+        let stats = ShareCardStats.make(row: sampleRow(sourceClass: "c"), title: "Session", timeZone: fixtureZone)
         #expect(stats.disclaimer != nil)
     }
 
@@ -353,7 +355,7 @@ import Testing
         let block = KeyMetrics.make(summary: torboleSummary(), records: records)
 
         #expect(block.basics.map(\.key) == ["duration", "distance", "avgSpeed"])
-        #expect(block.basics[0].value == "1:57")
+        #expect(block.basics[0].value == "1:57 h")
         #expect(block.basics[1].value == "23.0 km")
         // 11.77 km/h in the app's own unit — every other speed on the screen is knots.
         #expect(block.basics[2].value == "6.36 kn")
@@ -381,7 +383,7 @@ import Testing
                                    fellIn: 0))
         let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
         #expect(block.rates.isEmpty)
-        #expect(block.basics[0].value == "0:00")
+        #expect(block.basics[0].value == "0:00 min")
         // Nothing measured is "—", never a fabricated 0.00 kn.
         #expect(block.maxSpeed.value == "—")
         #expect(block.basics[2].value == "—")

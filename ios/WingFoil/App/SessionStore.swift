@@ -234,6 +234,11 @@ final class SessionStore {
     func refreshDerived() async {
         guard !isBusy else { return }
         let ingestor = self.ingestor
+        // Schema v7's column arrives empty, and the answer is in each session's archived
+        // recording rather than anywhere we could infer it — so it is re-read, once, from
+        // the FITs. Silent and best-effort: a row this cannot fill keeps the old
+        // device-zone behaviour and is simply asked again next launch.
+        _ = try? await ingestor.database.backfillStartUtcOffsets(archive: ingestor.archive)
         let stale = (try? await ingestor.reanalyzeStale()) ?? 0
         guard stale > 0 else { return }
         status = "Re-derived \(stale) session\(stale == 1 ? "" : "s") "
@@ -375,8 +380,11 @@ final class SessionStore {
     func shareableFIT(for row: SessionRow,
                       includeAccelerometer: Bool) async throws -> (url: URL, bytes: Int) {
         let archive = ingestor.archive
+        // The session's own zone, not the phone's: a file named after the afternoon it
+        // records must not change its name because the rider flew home.
         let name = FitShareFilter.filename(date: row.startDate,
-                                           title: SessionDisplay.title(row))
+                                           title: SessionDisplay.title(row),
+                                           timeZone: row.displayZone)
         return try await Task.detached(priority: .userInitiated) {
             let original = try archive.originalData(for: row.id)
             guard let scrubbed = FitShareFilter.filter(original,

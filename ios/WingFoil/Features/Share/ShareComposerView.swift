@@ -59,7 +59,8 @@ struct ShareComposerView: View {
     /// analysis behind the sheet is still loading, which the card degrades for on its own.
     private var stats: ShareCardStats {
         ShareCardStats.make(row: row, title: SessionDisplay.title(row),
-                            metrics: metrics, preset: preset)
+                            metrics: metrics, preset: preset,
+                            timeZone: row.displayZone)
     }
 
     private var metrics: KeyMetrics? {
@@ -252,13 +253,15 @@ struct ShareComposerView: View {
     /// been sent. Composed in the kit (`ShareText`) rather than here, so the FIT, the clip and
     /// the card cannot drift into three different ways of naming one session.
     private var invitation: String {
-        ShareText.fitMessage(place: SessionDisplay.title(row), startedAt: row.startDate)
+        ShareText.fitMessage(place: SessionDisplay.title(row), startedAt: row.startDate,
+                            timeZone: row.displayZone)
     }
 
     /// The card's own message. Short: a PNG is not something a receiver can re-analyse, and
     /// the card already carries the site in its footer pixels.
     private var cardCaption: String {
-        ShareText.cardMessage(place: SessionDisplay.title(row), startedAt: row.startDate)
+        ShareText.cardMessage(place: SessionDisplay.title(row), startedAt: row.startDate,
+                             timeZone: row.displayZone)
     }
 
     private var renderKey: String {

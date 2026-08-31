@@ -131,7 +131,8 @@ private struct ImportLogRowView: View {
             HStack {
                 Text(entry.container ?? entry.source).font(.subheadline).lineLimit(1)
                 Spacer()
-                Text(Fmt.shortDate(entry.startedAt))
+                // `.current` deliberately: an import is something that happened to this phone.
+                Text(Fmt.shortDate(entry.startedAt, zone: .current))
                     .font(.caption).foregroundStyle(.secondary)
             }
             Text(summary)

@@ -29,8 +29,20 @@ public struct RecordBest: Sendable, Identifiable, Equatable {
     public var sourceClass: String
     public var window: RecordWindow?
     public var history: [RecordEffortRow]
+    /// The UTC offset of the session the record was set in (`SessionRow.startUtcOffsetS`),
+    /// so the row dates the effort on the day the *rider* had. Carried here rather than
+    /// looked up by the view: a PB row names a day, and a day is a question only the
+    /// session's own zone can answer — an evening session either side of midnight is filed
+    /// under the wrong date by any other clock.
+    public var utcOffsetS: Int?
 
     public var id: String { kind.rawValue }
+
+    /// The zone the effort's date is drawn in. `.current` when the session could not say —
+    /// the same fallback `SessionRow.displayZone` makes, for the same reason.
+    public var displayZone: TimeZone {
+        utcOffsetS.flatMap { TimeZone(secondsFromGMT: $0) } ?? .current
+    }
 
     /// The efforts that were a personal best *when they happened* — the step curve.
     public var personalBests: [RecordEffortRow] {
@@ -205,6 +217,15 @@ public struct LibraryStore: Sendable {
                 """, arguments: args)
             var byKind: [String: [RecordEffortRow]] = [:]
             for effort in efforts { byKind[effort.kind, default: []].append(effort) }
+            // One extra read rather than a wider effort row: the offset belongs to the
+            // session, and denormalizing it onto every effort would be a second copy of a
+            // fact that already has a home.
+            var offsets: [String: Int] = [:]
+            for row in try Row.fetchAll(db, sql: """
+                SELECT id, startUtcOffsetS FROM session WHERE startUtcOffsetS IS NOT NULL
+                """) {
+                offsets[row["id"]] = row["startUtcOffsetS"]
+            }
 
             return RecordKind.allCases.compactMap { kind -> RecordBest? in
                 guard let history = byKind[kind.rawValue], !history.isEmpty,
@@ -214,7 +235,8 @@ public struct LibraryStore: Sendable {
                 }
                 return RecordBest(kind: kind, valueKn: best.valueKn, sessionId: best.sessionId,
                                   achievedAt: best.achievedAt, sourceClass: best.sourceClass,
-                                  window: window, history: history)
+                                  window: window, history: history,
+                                  utcOffsetS: offsets[best.sessionId])
             }
         }
     }

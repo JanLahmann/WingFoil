@@ -90,7 +90,9 @@ struct ReAddDeletedSheet: View {
                     Text(stone.title ?? "Session")
                         .font(.headline)
                         .lineLimit(1)
-                    Text("\(Fmt.date(stone.startDate)) · \(Fmt.duration(stone.durationS))")
+                    // `.current`: a tombstone is four facts about a session whose row and whose
+                    // recording are both gone, so there is nothing left that knows its zone.
+                    Text("\(Fmt.date(stone.startDate, zone: .current)) · \(Fmt.duration(stone.durationS))")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -114,7 +116,7 @@ struct ReAddDeletedSheet: View {
                     ? [] : Set(candidates.stones.map(\.id))
             }
             if let day = candidates.recentDay {
-                Button("Only \(Fmt.shortDate(day))") {
+                Button("Only \(Fmt.shortDate(day, zone: .current))") {
                     selected = Set(candidates.recentDayIds)
                 }
             }

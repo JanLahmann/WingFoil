@@ -122,7 +122,9 @@ private struct GearRowView: View {
             }
             .font(.caption)
             if let last = entry.lastUsed {
-                Text("Last used \(Fmt.shortDate(last))")
+                // `.current`: an aggregate over many sessions, which have no single zone
+                // between them. "How long since I rode this" is asked from here and now.
+                Text("Last used \(Fmt.shortDate(last, zone: .current))")
                     .font(.caption2).foregroundStyle(.secondary)
             }
         }

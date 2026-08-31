@@ -49,7 +49,14 @@ public enum AnalysisEngine {
     /// The in-flight count now takes the same `pumpBurstPeakG` gate (60 → 5 there), and the
     /// total is a superset of its parts again. Another value that moves under stored
     /// documents, so again: re-derive.
-    public static let version = "0.8.1"
+    ///
+    /// 0.8.2 moves no metric at all — it adds one: the session's own UTC offset
+    /// (`RawTrack.startUtcOffsetS`, `meta.utcOffsetS`, `session.startUtcOffsetS`), so that
+    /// a session's times read the way the rider saw them rather than the way the reader's
+    /// device would render the same instant (docs/presentation.md, "Session time"). The
+    /// analysis numbers are byte-identical to 0.8.1's; the bump is here because the
+    /// document gained a field and stored rows have to pick it up.
+    public static let version = "0.8.2"
 }
 
 /// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's

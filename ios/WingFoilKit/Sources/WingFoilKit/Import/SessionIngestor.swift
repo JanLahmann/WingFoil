@@ -99,10 +99,16 @@ public struct SessionIngestor: Sendable {
     /// a FIT they shared. Only the hand-picked paths ever pass a name: an intervals.icu
     /// sync and a Garmin GDPR backfill are the rider's own account by construction, and a
     /// prompt on either would be asking a question that cannot have a second answer.
+    ///
+    /// `utcOffsetS` is what the *caller* knows about the session's timezone — intervals.icu
+    /// states one per activity, and it is an exact answer where our own fallback is a
+    /// guess. It is consulted only when the FIT itself cannot say (see
+    /// `resolveUtcOffsetS`); a hand-picked file passes nil and simply has one fewer rung.
     @discardableResult
     public func ingest(fitData: Data, filename: String?, source: ImportSource,
                        icuActivityId: String? = nil,
                        rider: String? = nil,
+                       utcOffsetS: Int? = nil,
                        requireWatersport: Bool = false) async throws -> IngestOutcome {
         let track = try FitSessionParser.parse(data: fitData)
         let caps = track.capabilities
@@ -141,6 +147,12 @@ public struct SessionIngestor: Sendable {
         row.sport = caps.sport
         row.discipline = caps.discipline
         row.originalFilename = filename
+        // What clock this session's times are drawn on — see `resolveUtcOffsetS`. It
+        // survives a provisional-row upgrade the same way the id does: the FIT is a better
+        // source than anything the BLE card could imply, so it overwrites rather than
+        // defers, and only an answer of "nothing" leaves the existing value standing.
+        row.startUtcOffsetS = Self.resolveUtcOffsetS(track: track, fallback: utcOffsetS)
+            ?? existing?.startUtcOffsetS
         // The card's "watch" tag survives the upgrade: the row really did reach the
         // library over BLE first, and that is worth being able to see afterwards.
         row.importSource = Self.merge(sources: existing?.importSource, adding: source)
@@ -392,6 +404,29 @@ public struct SessionIngestor: Sendable {
     /// call (`ingest(card:)`). A card and its FIT describe the same minutes of the same
     /// afternoon, so if the two ever used different rules the rider would see the session
     /// twice — and neither side can tell a duplicate from two back-to-back sessions.
+    /// Which clock this session's times are drawn on, best source first:
+    ///
+    /// 1. **The FIT's own `activity` message** — `local_timestamp - timestamp`, the offset
+    ///    the watch was wearing at save time. Exact, DST included, present on every file in
+    ///    the corpus.
+    /// 2. **What the caller was told** — intervals.icu's `timezone` for the activity,
+    ///    resolved at the session's own instant. Also exact; second only because it is
+    ///    about the athlete's account rather than about this recording.
+    /// 3. **A coarse guess from the first GPS fix** — `round(lon / 15°)` hours. Solar, not
+    ///    civil: an hour out under DST, up to two inside a wide zone, blind to the
+    ///    half-hour zones. It is here for sources that carry position and nothing else,
+    ///    where "within an hour or two" beats an Italian afternoon shown as a Californian
+    ///    morning.
+    /// 4. **Nothing.** nil is stored, and `SessionRow.displayZone` falls back to the
+    ///    device's zone — flagged by `hasKnownZone`, so a surface can say so rather than
+    ///    passing the guess off as the session's.
+    static func resolveUtcOffsetS(track: RawTrack, fallback: Int?) -> Int? {
+        if let exact = track.startUtcOffsetS { return exact }
+        if let fallback { return fallback }
+        guard let lon = track.samples.first(where: { $0.lon != nil })?.lon else { return nil }
+        return FitSessionParser.coarseUtcOffsetS(lon)
+    }
+
     func duplicate(startDate: Date, durationS: Double,
                    icuActivityId: String? = nil) async throws -> SessionRow? {
         let tolerance = dedupeToleranceS

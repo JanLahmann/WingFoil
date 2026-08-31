@@ -10,7 +10,7 @@ import Foundation
 ///
 /// Four rows, in this order, numbers big and labels small (the watch's established taste):
 ///
-/// 1. `basics` — duration `h:mm`, distance, average speed.
+/// 1. `basics` — duration (`10:45 min` / `1:57 h`), distance, average speed.
 /// 2. `maxSpeed` — the best 2 s record, labelled with the window it is, never "top speed".
 /// 3. `tally` + `streaks` — the outcome ladder's own three counts, plus the two streaks
 ///    §5.1 flagged as computed-and-never-shown on either platform.
@@ -90,7 +90,7 @@ public struct KeyMetrics: Sendable, Equatable {
         return KeyMetrics(
             basics: [
                 Metric(key: "duration", label: "duration",
-                       value: hoursMinutes(summary.durationS)),
+                       value: duration(summary.durationS)),
                 Metric(key: "distance", label: "distance", value: km(summary.distanceKm)),
                 Metric(key: "avgSpeed", label: "avg speed",
                        value: knots(knFromKmh(summary.avgSpeedKmh))),
@@ -161,14 +161,40 @@ public struct KeyMetrics: Sendable, Equatable {
 
     static func rate(_ value: Double) -> String { String(format: "%.1f", value) }
 
-    /// `1:57` — hours and minutes, which is how long a session is talked about. Seconds
-    /// belong to a flight timer, not to an afternoon.
+    /// How long the session was: `1:57 h` past an hour, `10:45 min` under one.
     ///
-    /// Rounded to the nearest minute rather than truncated: a 59 s clip is a minute on the
-    /// water, and `0:00` over a recording that exists reads as a failure to measure.
-    static func hoursMinutes(_ seconds: Double) -> String {
-        let minutes = max(0, Int((seconds / 60).rounded()))
-        return String(format: "%d:%02d", minutes / 60, minutes % 60)
+    /// **Why the short form exists.** This was `h:mm` at every length, so a ten minute
+    /// forty-five second session printed **`0:11`** — the two most interesting digits
+    /// rounded away, and a leading zero where the number should be. That is survivable on
+    /// a page the rider can scroll past; it is not survivable on the share card, which is
+    /// a PNG in somebody else's chat thread with no re-render and nothing beside it to
+    /// check against. A short session is exactly the kind a rider shares ("first
+    /// flight!"), and `0:11` is the one string that makes it look like nothing happened.
+    ///
+    /// **Why the unit rides inside the value.** Every other cell in this block carries its
+    /// own unit in the big type — `2.6 km`, `13.47 kn` — so a duration doing the same is
+    /// the block's own habit rather than a special case. It also settles the ambiguity the
+    /// bare digits create: `10:45` under the word "duration" reads as ten and three
+    /// quarter *hours* just as easily as it reads as ten and three quarter minutes, and at
+    /// cell size, on a card, with no second number to calibrate against, there is nothing
+    /// to resolve it. `10:45 min` cannot be misread, and needs no caption to say so —
+    /// which matters, because the card's caption slot is a layout affordance the tally
+    /// already owns.
+    ///
+    /// Both forms keep `m:ss`/`h:mm` colon arithmetic rather than "10 m 45 s": the colon
+    /// is what a clock looks like, it stays narrow at 75 px type, and it is the shape the
+    /// flight table and the replay caption already print (`FlightPairing.clock`).
+    ///
+    /// Rounded to the nearest minute above the hour and to the nearest second below it —
+    /// never truncated, in both cases for the same reason: `0:00` over a recording that
+    /// exists reads as a failure to measure. Twin of `hm` in web/js/cardstats.js.
+    static func duration(_ seconds: Double) -> String {
+        let total = max(0, Int(seconds.rounded()))
+        if total >= 3600 {
+            let minutes = Int((Double(total) / 60).rounded())
+            return String(format: "%d:%02d h", minutes / 60, minutes % 60)
+        }
+        return String(format: "%d:%02d min", total / 60, total % 60)
     }
 
     static func km(_ value: Double) -> String { String(format: "%.1f km", value) }

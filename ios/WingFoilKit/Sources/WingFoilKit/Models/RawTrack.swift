@@ -145,6 +145,20 @@ public struct RawTrack: Sendable {
     public var watchSummary = WatchSummary()
     /// Wrist accelerometer, time-sorted; empty for every source without the stream.
     public var accel: [AccelSample] = []
+    /// The session's own UTC offset in **seconds**, from the FIT `activity` message's
+    /// `local_timestamp` minus its `timestamp`.
+    ///
+    /// A FIT timestamp is UTC, and until engine 0.8.2 every clock either app printed was
+    /// that instant formatted in the *reader's* current zone — right only while the reader
+    /// and the recording share one, which is a coincidence that expires at the next DST
+    /// boundary and on the first flight abroad. This is the offset the watch was wearing
+    /// when it wrote the file, so it is the one number that makes a session read the way
+    /// the rider saw it, from anywhere, for ever.
+    ///
+    /// nil when the file carries no `activity` message and no GPS fix to guess from. The
+    /// caller then falls back to the device's zone, flagged — see `SessionRow.displayZone`.
+    /// Mirrors `RawTrack.start_utc_offset_s` in lab/src/wingfoil_lab/parse.py.
+    public var startUtcOffsetS: Int?
 
     public init() {}
 }

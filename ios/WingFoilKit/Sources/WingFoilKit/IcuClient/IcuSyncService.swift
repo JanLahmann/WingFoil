@@ -126,7 +126,8 @@ public struct IcuSyncService: Sendable {
         }
         let fit = try await client.originalFit(activityID: activity.id)
         return try await ingestor.ingest(fitData: fit, filename: Self.filename(for: activity),
-                                         source: .icu, icuActivityId: activity.id)
+                                         source: .icu, icuActivityId: activity.id,
+                                         utcOffsetS: activity.utcOffsetS)
     }
 
     /// Default window: two years back. A personal library is small, so a full re-list is

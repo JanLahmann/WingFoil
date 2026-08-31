@@ -39,7 +39,9 @@ struct WatchLinkSection: View {
             }
 
             if let last = store.lastCardAt {
-                LabeledContent("Last summary", value: Fmt.date(last))
+                // `.current` deliberately: when the watch last reached this phone, which is an
+                // event on the reader's clock rather than a moment in any session.
+                LabeledContent("Last summary", value: Fmt.date(last, zone: .current))
             }
         } header: {
             Text("Garmin watch")

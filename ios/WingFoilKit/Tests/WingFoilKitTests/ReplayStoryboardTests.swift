@@ -24,7 +24,7 @@ import Testing
     private let cest = TimeZone(secondsFromGMT: 2 * 3600)!
 
     private func script() throws -> [ReplayMilestone] {
-        ReplayCommentary.make(try torbole(), span: span)
+        ReplayCommentary.make(try torbole(), span: span, timeZone: fixtureZone)
     }
 
     // MARK: - Length
@@ -37,7 +37,7 @@ import Testing
         let replay: [Double: Double] = [10: 77.70, 30: 34.44, 60: 22.52]
 
         for (rate, runWallS) in replay {
-            let board = ReplayStoryboard.make(span: span, rate: rate, milestones: milestones)
+            let board = ReplayStoryboard.make(span: span, rate: rate, milestones: milestones, timeZone: fixtureZone)
             #expect(abs(board.replayWallS - runWallS) < 0.05)
             #expect(board.photoWallS == 0)
             // 2.5 s of title + 4 s of outro, on top of the driver's own run.
@@ -49,7 +49,7 @@ import Testing
     /// A session with no duration has no clip at all — not a 6.5 s clip of two cards over a
     /// replay that never moves. The cinema view reads this to know it has nothing to record.
     @Test func aSessionWithNoDurationHasNoClip() {
-        let board = ReplayStoryboard.make(span: 42.0...42.0, rate: 30)
+        let board = ReplayStoryboard.make(span: 42.0...42.0, rate: 30, timeZone: fixtureZone)
         #expect(board.runWallS == 0)
         #expect(board.driver.hasFinished(board.driver.start))
     }
@@ -61,7 +61,7 @@ import Testing
         let board = ReplayStoryboard.make(
             span: span, rate: 30, milestones: milestones,
             photos: [.init(id: "a", takenAt: startedAt.addingTimeInterval(100))],
-            startedAt: startedAt, timing: .bare)
+            startedAt: startedAt, timeZone: fixtureZone, timing: .bare)
         #expect(abs(board.runWallS - 34.44) < 0.05)
         #expect(board.splices.isEmpty)
         #expect(board.slideshow.isEmpty)
@@ -77,7 +77,7 @@ import Testing
             photos: [.init(id: "jibe", takenAt: startedAt.addingTimeInterval(292)),
                      .init(id: "screenshot", takenAt: nil),
                      .init(id: "launch", takenAt: startedAt.addingTimeInterval(40))],
-            startedAt: startedAt)
+            startedAt: startedAt, timeZone: fixtureZone)
 
         // In time order, not picked order — the replay can only pass them one way.
         #expect(board.splices.map(\.photo) == ["launch", "jibe"])
@@ -107,7 +107,7 @@ import Testing
         let board = ReplayStoryboard.make(
             span: span, rate: 30,
             photos: [.init(id: "car-park", takenAt: startedAt.addingTimeInterval(4000))],
-            startedAt: startedAt)
+            startedAt: startedAt, timeZone: fixtureZone)
         #expect(board.splices.isEmpty)
         #expect(board.slideshow == ["car-park"])
     }
@@ -120,7 +120,7 @@ import Testing
         let board = ReplayStoryboard.make(
             span: span, rate: 30,
             photos: [.init(id: "a", takenAt: startedAt.addingTimeInterval(100)),
-                     .init(id: "b", takenAt: startedAt.addingTimeInterval(200))])
+                     .init(id: "b", takenAt: startedAt.addingTimeInterval(200))], timeZone: fixtureZone)
         #expect(board.splices.isEmpty)
         #expect(board.slideshow == ["a", "b"])
     }
@@ -134,7 +134,7 @@ import Testing
                                    takenAt: startedAt.addingTimeInterval(600 - Double($0) * 60))
         }
         let board = ReplayStoryboard.make(span: span, rate: 30, photos: photos,
-                                          startedAt: startedAt)
+                                          startedAt: startedAt, timeZone: fixtureZone)
         #expect(board.splices.count == 6)
         #expect(Set(board.splices.map(\.photo)) == Set(["p0", "p1", "p2", "p3", "p4", "p5"]))
         // …and *played* oldest-first, because a replay passes them in one order only.
@@ -149,7 +149,7 @@ import Testing
             span: span, rate: 30,
             photos: [.init(id: "burst-1", takenAt: startedAt.addingTimeInterval(292)),
                      .init(id: "burst-2", takenAt: startedAt.addingTimeInterval(292))],
-            startedAt: startedAt)
+            startedAt: startedAt, timeZone: fixtureZone)
         #expect(board.splices.map(\.photo) == ["burst-1", "burst-2"])
         #expect(board.photoWallS == 4)
     }
@@ -162,7 +162,7 @@ import Testing
             span: span, rate: 30,
             photos: [.init(id: "a", takenAt: startedAt.addingTimeInterval(100)),
                      .init(id: "b", takenAt: startedAt.addingTimeInterval(200))],
-            startedAt: startedAt)
+            startedAt: startedAt, timeZone: fixtureZone)
         #expect(board.nextSplice(shown: 0)?.photo == "a")
         #expect(board.nextSplice(shown: 1)?.photo == "b")
         #expect(board.nextSplice(shown: 2) == nil)
@@ -188,8 +188,8 @@ import Testing
     /// No place and no date invents neither. The card then carries the session's own title,
     /// which the view supplies, and nothing else.
     @Test func theTitleCardDegradesRatherThanInventing() {
-        #expect(ReplayTitleCard.make(place: "  ", startedAt: nil).place == nil)
-        #expect(ReplayTitleCard.make(place: "  ", startedAt: nil).dateLine == "")
+        #expect(ReplayTitleCard.make(place: "  ", startedAt: nil, timeZone: fixtureZone).place == nil)
+        #expect(ReplayTitleCard.make(place: "  ", startedAt: nil, timeZone: fixtureZone).dateLine == "")
         #expect(ReplayTitleCard.make(place: nil, startedAt: startedAt, timeZone: cest).place
                 == nil)
     }

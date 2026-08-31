@@ -186,13 +186,13 @@ public enum NewActivityWatch {
     /// not downloaded to write a notification.
     ///
     /// Duration and distance are formatted the way the KEY METRICS block formats them
-    /// (`KeyMetrics.hoursMinutes` / `KeyMetrics.km`), because the rider reads the same two
+    /// (`KeyMetrics.duration` / `KeyMetrics.km`), because the rider reads the same two
     /// numbers again ten seconds later at the top of the session, and a notification that
     /// said "1:57 h · 23.0 km" over a page that says something else is a bug he can see.
     public static func notice(for activity: IcuActivity) -> NewActivityNotice {
         var facts: [String] = []
         if let seconds = activity.movingTimeS, seconds > 0 {
-            facts.append(KeyMetrics.hoursMinutes(Double(seconds)) + " h")
+            facts.append(KeyMetrics.duration(Double(seconds)))
         }
         if let meters = activity.distanceM, meters > 0 {
             facts.append(KeyMetrics.km(meters / 1000))
