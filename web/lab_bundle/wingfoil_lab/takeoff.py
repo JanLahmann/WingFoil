@@ -57,9 +57,8 @@ crest for the whole flight. Three quarters of those 286 were logged in flight at
 
 So a counted stroke now has to earn it, on all three tests:
 
-1. it lies in a burst of at least `pumpMinStrokes` -- the engine's own definition of pumping,
-   the same `bursts()`/`_burst_strokes()` rule `in_flight_strokes` already uses. Singletons
-   and pairs are the chop signature and were 196 of the 286;
+1. it lies in a burst of at least `pumpMinStrokes` -- the engine's own definition of pumping.
+   Singletons and pairs are the chop signature and were 196 of the 286;
 2. its burst's tallest stroke reaches `pumpBurstPeakG`. Real takeoff pumping is about twice
    the amplitude of the on-foil ride at the *same* cadence, so amplitude separates them where
    frequency does not. The threshold is judged per **burst**, not per stroke: a rider's fourth
@@ -71,11 +70,20 @@ So a counted stroke now has to earn it, on all three tests:
 no logged ground truth for stroke counts yet (fixtures/README.md). It is the one number here
 that should be re-tuned the day Jan counts his pumps on the water.
 
-Nothing else moves. Per-stroke peak picking, `pumps_to_takeoff`, `takeoffs[].pumps`,
-`in_flight_strokes`, the `PumpEpisode` list and `is_pumping` -- the turn and flight-end
-corroboration -- are all untouched: those ask "was he working here", a question a small burst
-still answers truthfully, and putting the amplitude rule into `is_pumping` drops real,
-speed-corroborated pump-outs.
+**In flight.** `in_flight_strokes` counts pumping *during* a flight -- working the foil to
+hold or extend a glide. It is the count the chop hurts most (the wrist is on foil for the
+whole window), and 0.8.0 shipped it with the burst-length rule alone, which left the session
+total reading 31 beside an in-flight 60: a part larger than its whole. Engine 0.8.1 gives it
+the *same two burst-level tests* the total applies -- `pumpMinStrokes` and `pumpBurstPeakG`
+-- so the two agree about what a stroke is and the total is a superset again (60 -> 9 on the
+example). It does not take the total's third test, `pumpMinSpeedKmh`: the window is a flight,
+so every stroke in it is already far above 3 km/h and the gate could never fire.
+
+Nothing else moves. Per-stroke peak picking, `pumps_to_takeoff`, `takeoffs[].pumps`, the
+`PumpEpisode` list and `is_pumping` -- the turn and flight-end corroboration -- are all
+untouched: those ask "was he working here", a question a small burst still answers
+truthfully, and putting the amplitude rule into `is_pumping` drops real, speed-corroborated
+pump-outs.
 
 **Truncation.** The same honesty rule as the flight ends, at the other end of the flight: when
 fewer than `takeoffMinPreWindow` seconds of gap-free record precede the flight start, the run
@@ -137,7 +145,8 @@ class Takeoff:
     pumps_to_takeoff: int | None = None    # None: no accel stream, or truncated
     cadence_spm: float | None = None   # strokes per minute over the run
     entry_kn: float = 0.0              # Doppler at ON_FOIL: what he took off at
-    in_flight_strokes: int | None = None   # pumping *during* the flight -- a separate metric
+    in_flight_strokes: int | None = None   # pumping *during* the flight -- a separate metric,
+                                           #   counted (module "In flight"), not raw peaks
     free: bool = False                 # fewer than freeTakeoff strokes: wind did the work
     truncated: bool = False            # the record does not reach back over the run
     pre_window_s: float = 0.0          # gap-free record available before the flight start
@@ -413,9 +422,20 @@ def _lead_burst(pump: PumpTrack, win_start_t: float, start_t: float,
 
 
 def _burst_strokes(pump: PumpTrack, start_t: float, end_t: float) -> int:
-    """Strokes in [start_t, end_t] that belong to a burst of at least `pumpMinStrokes`."""
+    """Counted strokes in [start_t, end_t] (module docstring, "In flight").
+
+    A burst of at least `pumpMinStrokes` whose tallest band-passed peak reaches
+    `pumpBurstPeakG` -- the same two burst-level tests the session total applies, so the
+    total stays a superset of this count.
+
+    The total's third test, `pumpMinSpeedKmh`, is deliberately *not* applied here: this
+    window is a flight, so the rider is on foil and every stroke in it is already far above
+    3 km/h. Adding the test would never change an answer, and a gate that cannot fire reads
+    as though it might.
+    """
     return int(sum(len(b) for b in pump.bursts(start_t, end_t)
-                   if len(b) >= pump.config.min_strokes))
+                   if len(b) >= pump.config.min_strokes
+                   and float(pump.peak_amps(b).max()) >= pump.config.burst_peak_g))
 
 
 def _session_strokes(pump: PumpTrack, ev: OffFoilEvidence) -> int:

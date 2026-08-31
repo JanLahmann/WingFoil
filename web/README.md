@@ -394,7 +394,7 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    the track motif in the outcome colours. Both *Open the analyzer* buttons must land on
    `/app/`, and the analyzer's own wordmark must come back here.
 1. Open <http://127.0.0.1:8765/app/> for everything below.
-2. **Cold boot.** The chip top-right should turn into `engine 0.8.0 · pyodide 0.28.3` within
+2. **Cold boot.** The chip top-right should turn into `engine 0.8.1 · pyodide 0.28.3` within
    ~20 s on a warm connection. Open DevTools → Console: there must be no errors, only
    Pyodide's own "Loading/Loaded micropip, numpy, pandas…" lines.
 3. **Drop** `fixtures/sessions/ciq/2026-08-07-0754_nago-torbole-windsurfen_ciq.fit` on the

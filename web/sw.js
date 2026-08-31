@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v12";     // v12: engine 0.8.0 (the pump-stroke total)
+const VERSION = "v13";     // v13: engine 0.8.1 (the in-flight strokes take the amplitude gate)
 const SHELL = `wingfoil-shell-${VERSION}`;
 const RUNTIME = `wingfoil-runtime-${VERSION}`;
 

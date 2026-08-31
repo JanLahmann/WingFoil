@@ -58,6 +58,13 @@ a stroke only inside a qualifying burst whose tallest peak reaches `pumpBurstPea
 **provisional**) and whose speed clears `pumpMinSpeedKmh`, and the config echo gains both.
 286 -> 31, 3091 -> 701, 1341 -> 395; every other field on every fixture is unchanged, and the
 twelve accel-less goldens keep their null.
+
+Engine 0.8.1 finishes that job on `takeoffs[].inFlightStrokes` (docs/algorithms.md "In-flight
+strokes"). 0.8.0 left it on the burst-length rule alone, so the bundled example reported a
+total of 31 beside an in-flight 60 -- a part larger than its whole, on the very count the
+chop hurts most. It now takes the same `pumpBurstPeakG` gate (not the speed one: the window
+is a flight, so the test could never fire). 60 -> 5, 293 -> 127, 430 -> 153, and
+`summary.takeoff.inFlightPumpStrokes` follows; nothing else on any fixture moves.
 """
 
 from __future__ import annotations

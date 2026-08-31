@@ -37,7 +37,8 @@ public struct Takeoff: Sendable, Equatable {
     public var cadenceSpm: Double?
     /// Doppler at ON_FOIL: what he took off at.
     public var entryKn: Double = 0
-    /// Pumping *during* the flight — a separate metric.
+    /// Pumping *during* the flight — a separate metric, counted (`burstStrokes`), not raw
+    /// peaks.
     public var inFlightStrokes: Int?
     /// Fewer than `freeTakeoff` strokes: the wind did the work.
     public var free = false
@@ -272,11 +273,22 @@ public enum TakeoffAnalyzer {
         return nil
     }
 
-    /// Strokes in [startT, endT] that belong to a burst of at least `pumpMinStrokes`.
+    /// Counted strokes in [startT, endT] — `inFlightStrokes` (engine 0.8.1,
+    /// docs/algorithms.md "In-flight strokes").
+    ///
+    /// A burst of at least `pumpMinStrokes` whose tallest band-passed peak reaches
+    /// `pumpBurstPeakG`: the same two burst-level tests the session total applies, so the
+    /// total stays a superset of this count. 0.8.0 applied only the first and the bundled
+    /// example reported 31 total against 60 in flight.
+    ///
+    /// The total's third test, `pumpMinSpeedKmh`, is deliberately *not* applied here: the
+    /// window is a flight, so every stroke in it is already far above 3 km/h. The test could
+    /// never change an answer, and a gate that cannot fire reads as though it might.
     private static func burstStrokes(_ pump: PumpTrack, from startT: Double,
                                      to endT: Double) -> Int {
         pump.bursts(from: startT, to: endT)
-            .filter { $0.count >= pump.config.minStrokes }
+            .filter { $0.count >= pump.config.minStrokes
+                      && (pump.peakAmps($0).max() ?? 0) >= pump.config.burstPeakG }
             .reduce(0) { $0 + $1.count }
     }
 
@@ -292,8 +304,10 @@ public enum TakeoffAnalyzer {
     /// `pumpMinSpeedKmh`. The first two are properties of the *burst* — one effort is kept
     /// or dropped whole — while the speed test is per stroke.
     ///
-    /// Nothing else reads either threshold: `pumpsToTakeoff`, `inFlightStrokes`, the
-    /// episodes and `isPumping` are deliberately untouched.
+    /// `inFlightStrokes` shares the first two tests since 0.8.1 (see `burstStrokes`).
+    /// Nothing else reads either threshold: `pumpsToTakeoff`, the episodes and `isPumping`
+    /// are deliberately untouched — those ask *was he working here*, a question a short or
+    /// gentle burst still answers truthfully.
     private static func sessionStrokes(_ pump: PumpTrack, ev: OffFoilEvidence) -> Int {
         var total = 0
         for b in pump.bursts(from: ev.t[0], to: ev.t[ev.count - 1]) {

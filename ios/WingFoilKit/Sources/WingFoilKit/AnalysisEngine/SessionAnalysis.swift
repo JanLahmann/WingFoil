@@ -42,7 +42,14 @@ public enum AnalysisEngine {
     /// flight contributed roughly one "stroke" per chop crest. On the bundled example that
     /// read 286 against a hand count of ~26. Like 0.7.0's `jibesPerHour`, this *moves* a
     /// value every stored document already carries, which is why it must re-derive.
-    public static let version = "0.8.0"
+    ///
+    /// 0.8.1 finishes that job. 0.8.0 left `inFlightStrokes` on the burst-length rule alone,
+    /// so the bundled example reported a session total of 31 beside an in-flight 60 — a part
+    /// larger than its whole, because the in-flight window is precisely where the chop lives.
+    /// The in-flight count now takes the same `pumpBurstPeakG` gate (60 → 5 there), and the
+    /// total is a superset of its parts again. Another value that moves under stored
+    /// documents, so again: re-derive.
+    public static let version = "0.8.1"
 }
 
 /// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's
