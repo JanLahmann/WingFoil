@@ -18,7 +18,8 @@ public struct ReplayMilestone: Sendable, Equatable, Identifiable {
         case sessionStart
         /// The first flight of the session. Only the first: the tenth takeoff is not news.
         case firstTakeoff
-        /// The nth counted jibe, at one of the counts worth saying out loud.
+        /// The nth **dry** jibe — the JPH count, the one a fall never advances — at one of
+        /// the counts worth saying out loud.
         case jibe(Int)
         /// A new session-best run of dry maneuvers, at the maneuver that set it.
         case streak(Int)
@@ -66,7 +67,7 @@ public enum ReplayCommentary {
 
     // MARK: - The counts worth saying
 
-    /// Jibe ordinals that get a line: the first, the third, the fifth, then every tenth.
+    /// Dry-jibe ordinals that get a line: the first, the third, the fifth, then every tenth.
     ///
     /// Three and five are close together on purpose — early in a session they are the
     /// numbers a rider is actually counting — and after ten the interval opens up, because
@@ -126,10 +127,24 @@ public enum ReplayCommentary {
 
         // MARK: jibes, and the streaks they build
         //
-        // Counted jibes only — a bear-away is a course change with no verdict in it, the
-        // same rule the map's markers and the beat bar follow.
+        // **Dry** jibes, which is `SessionSummarizer.dryJibeTimes` — counted, named a jibe,
+        // and not swum out of. Two rules in one:
+        //
+        // * Counted only. A bear-away is a course change with no verdict in it, the same
+        //   rule the map's markers and the beat bar follow.
+        // * Dry only, the JPH numerator (engine 0.7.0): a jibe he swam out of is one he did
+        //   not make, and a running count that a fall advanced would let the commentary
+        //   congratulate a rider for falling. The fall is not lost — its splash line says
+        //   so, on the same channel WPH counts.
+        //
+        // The wording carries the unit for the same reason `KeyMetrics` labels JPH "dry
+        // jibes per hour": "10 jibes" over a count that skipped two is a wrong number, and
+        // only the word "dry" makes it a right one.
         let jibes = analysis.turns.enumerated()
-            .filter { $0.element.counted && $0.element.type == "jibe" }
+            .filter {
+                $0.element.counted && $0.element.type == "jibe"
+                    && TurnOutcomeKind($0.element.outcome) != .fellIn
+            }
             .sorted { $0.element.ts < $1.element.ts }
         for (ordinal, entry) in jibes.enumerated() {
             let n = ordinal + 1
@@ -137,7 +152,9 @@ public enum ReplayCommentary {
             let outcome = TurnOutcomeKind(entry.element.outcome)
             out.append(ReplayMilestone(
                 id: "jibe-\(n)", t: entry.element.ts, kind: .jibe(n),
-                text: n == 1 ? "First jibe — \(outcome.label)" : "\(n) jibes"))
+                // The first needs no unit: the first dry jibe is by definition the first
+                // one he came out of sailing, and the outcome is right there in the line.
+                text: n == 1 ? "First jibe — \(outcome.label)" : "\(n) dry jibes"))
         }
         out.append(contentsOf: streakMilestones(analysis))
 
@@ -262,14 +279,15 @@ public enum ReplayCommentary {
     ///
     /// A reader cannot read two captions in the same frame, and a session hands out plenty
     /// of coincidences — the first takeoff *is* the start of the longest flight on most
-    /// sessions, and while a streak is unbroken from the first jibe the streak count and the
-    /// jibe count are the same number.
+    /// sessions, and until something interrupts it the dry-jibe count and the dry streak are
+    /// the same number on the same jibe.
     ///
     /// So: the group is ordered by how specific it is (`rank`), and a milestone is **dropped
     /// when a higher-ranked one at the same instant already states its number** — that is
-    /// the "record beats ordinal" rule, and it is what turns "3 jibes · New streak — 3 dry
-    /// jibes" into the one line that says both. What survives is joined the other way round,
-    /// plainest fact first, so the sentence reads "Flying! · Longest flight — 6:32" rather
+    /// the "record beats ordinal" rule, and it is what turns "3 dry jibes · New streak — 3
+    /// dry jibes" into the one line that says both. What survives is joined the other way
+    /// round, plainest fact first, so the sentence reads "Flying! · Longest flight — 6:32"
+    /// rather
     /// than starting with the superlative and explaining afterwards. The surviving `kind`
     /// and `id` are the top-ranked one's — that is what the caption's ink reads.
     private static func collapse(_ milestones: [ReplayMilestone]) -> [ReplayMilestone] {
@@ -344,17 +362,24 @@ public enum ReplayCommentary {
         return lead.joined(separator: ", ") + " — session start"
     }
 
-    /// "Session end — 10:45 · 2.6 km · 10 jibes".
+    /// "Session end — 10:45 · 2.6 km · 8 dry jibes".
     ///
-    /// The turn count falls back from jibes to counted turns exactly the way
-    /// `KeyMetrics.tally` does, and for the same reason: a session whose wind axis never
-    /// resolved has turns and no jibes, and closing it with "0 jibes" would be a verdict on
-    /// a rider who jibed all afternoon.
+    /// **Dry**, and it says so — the same count the ordinals ran on and the same one JPH
+    /// divides by. A closing line that totalled every attempt would disagree with the
+    /// commentary it just finished, and with the headline rate one screen up.
+    ///
+    /// The count falls back from jibes to counted turns exactly the way `KeyMetrics.tally`
+    /// does, and for the same reason: a session whose wind axis never resolved has turns and
+    /// no jibes at all, and closing it with "0 dry jibes" would be a verdict on a rider who
+    /// jibed all afternoon. Where the session *did* name jibes, a genuine zero is left
+    /// standing — "0 dry jibes" after an afternoon of swimming is the truth, and softening
+    /// it would make every other number on the line suspect.
     static func endLine(_ summary: SessionSummary) -> String {
         var parts = [FlightPairing.clock(summary.durationS), KeyMetrics.km(summary.distanceKm)]
         let turns = summary.turns
         if turns.jibes > 0 {
-            parts.append("\(turns.jibes) jibe\(turns.jibes == 1 ? "" : "s")")
+            let dry = turns.jibeOutcomes.flewThrough + turns.jibeOutcomes.touchdown
+            parts.append("\(dry) dry jibe\(dry == 1 ? "" : "s")")
         } else if turns.turnsCounted > 0 {
             parts.append("\(turns.turnsCounted) turn\(turns.turnsCounted == 1 ? "" : "s")")
         }
