@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.8.0** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.8.1** (bump on any change that alters outputs; triggers phone re-analysis)
 
 ## Flight (foil) detection — hysteresis state machine
 
@@ -198,7 +198,7 @@ whole flight. Amplitude, not frequency, is what separates the two, and only by a
 | `pumpRefractory` | 0.4 | s | dead time after a stroke (a human cannot pump at >2.5 Hz) |
 | `pumpStrokeMaxInterval` | 1.5 | s | strokes closer than this belong to the same burst |
 | `pumpMinStrokes` | 4 | | burst length that means "the rider was pumping" |
-| `pumpBurstPeakG` | 0.8 | g | **PROVISIONAL** — a burst's tallest stroke must reach this to enter the *session total*. Nothing else reads it (engine ≥ 0.8.0) |
+| `pumpBurstPeakG` | 0.8 | g | **PROVISIONAL** — a burst's tallest stroke must reach this for the burst to be *counted*: the session total (engine ≥ 0.8.0) and `inFlightStrokes` (engine ≥ 0.8.1). The corroborating metrics never read it |
 | `pumpMinSpeedKmh` | 3.0 | km/h | speed at a stroke below which it is a swim stroke, not a pump. Session total only (engine ≥ 0.8.0) |
 
 The stream is orientation-free by construction (magnitude, not axes — the wrist rotates
@@ -222,8 +222,8 @@ of those 286 were logged *in flight* at ~20 km/h, and 196 of them were singleton
 
 A counted stroke must now pass all three tests:
 
-1. **in a burst** of at least `pumpMinStrokes` — the engine's own definition of pumping,
-   the same rule `in_flight_strokes` already applies (286 → 90 on the example);
+1. **in a burst** of at least `pumpMinStrokes` — the engine's own definition of pumping
+   (286 → 90 on the example);
 2. **its burst is tall enough**: the burst's *maximum* band-passed peak reaches
    `pumpBurstPeakG`. Per burst, not per stroke — a rider's fourth pump is smaller than his
    first and belongs to the same effort (90 → 31);
@@ -237,22 +237,37 @@ bursts peak at 0.35–0.64 g (thirteen of them), then 0.73, 0.86, 1.41, 1.45 —
 stroke count to check it against. The on-water protocol now asks for one
 (`fixtures/README.md`); the day it exists, this is the number to re-tune.
 
-**The total is no longer a superset of the other stroke counts, and the UI has not caught
-up.** `inFlightPumpStrokes` and `takeoffs[].pumps` are gated by `pumpMinStrokes` alone, so a
-session can now report a *smaller* total than its in-flight count — the bundled 2026-08-30
-example does exactly that (31 total against 60 in flight, because the in-flight bursts are
-chop that clears four strokes but not 0.8 g). The numbers are each correct for the question
-they answer, but a panel that lists them side by side ("Total pump strokes" above "In-flight
-pump strokes") reads as an arithmetic error. Both the web takeoff panel (`web/js/render.js`)
-and the iOS summary grid still print them that way; deciding whether the other counts should
-take the amplitude gate too, or whether the labels should say what each one counts, is a
-product decision left open by this change and not made here.
+### In-flight strokes — `takeoffs[].inFlightStrokes` (engine ≥ 0.8.1)
+
+`inFlightStrokes` counts pumping *during* a flight: working the foil to hold or extend a
+glide. As shipped in 0.8.0 it applied the burst-length rule alone, which left the bundled
+2026-08-30 example reporting a session total of **31** beside an in-flight **60** — a part
+larger than its whole, and on a panel that stacks the two labels it reads as an arithmetic
+error. It is also the count the chop hurts most, because the wrist is on foil for the whole
+window by definition.
+
+Engine 0.8.1 gives it the **same two burst-level tests** the session total applies: a burst
+of at least `pumpMinStrokes` whose tallest band-passed peak reaches `pumpBurstPeakG`. The
+total is a superset of it again, and provably so — restricting a burst to a flight window can
+only drop strokes, so a sub-burst that passes both tests sits inside a session burst that
+passes them too, and every stroke on foil clears `pumpMinSpeedKmh` besides.
+
+It does **not** take the total's third test, `pumpMinSpeedKmh`: the window is a flight, so
+every stroke in it is already far above 3 km/h. The gate could never fire, and one that
+cannot fire reads as though it might.
+
+On the corpus: **60 → 5** (2026-08-30), 293 → 127 (2026-08-07), 430 → 153 (2026-08-29). The
+bursts are re-formed inside each flight window, as they always have been, so the number is
+not the same as "session-qualifying strokes that happen to fall in a flight" (9 / 139 / 201
+on those three) — a burst straddling a flight boundary is judged on the part inside it.
 
 **Nothing else moves.** Peak picking, `pumps_to_takeoff`, `avgPumpsToTakeoff`,
-`takeoffs[].pumps`, `inFlightStrokes`, `pumpEpisodes` and `is_pumping` — the corroboration
-the turn and flight-end ladders read — are all untouched. Those ask *was he working here*, a
-question a short or gentle burst still answers truthfully, and plumbing the amplitude rule
-into `is_pumping` drops real, speed-corroborated pump-outs from the turn outcomes.
+`takeoffs[].pumps`, `pumpEpisodes` and `is_pumping` — the corroboration the turn and
+flight-end ladders read — are all untouched. Those ask *was he working here*, a question a
+short or gentle burst still answers truthfully, and plumbing the amplitude rule into
+`is_pumping` drops real, speed-corroborated pump-outs from the turn outcomes. An in-flight
+*episode* is therefore still detected and still classified `in_flight` when the pumping is
+gentle; only its stroke tally is now zero.
 
 ### Turn outcome (primary, rider-facing) — `flew_through` · `touchdown` · `fell_in`
 
@@ -779,6 +794,12 @@ to answer while the rider is still on the water. The deviations, all deliberate:
 The raw peak train is still counted, as `PumpDetector.peaks` — a diagnostic, and what
 `strokes` meant before device app 0.8.0's engine. It is not written to the FIT.
 
+**The watch has no in-flight stroke metric** and engine 0.8.1 therefore does not touch it.
+`PumpDetector.inFlightStrokes` is a second diagnostic — peaks that arrived while `_flying` —
+read by no page, no FIT field and no summary; the phone's `inFlightStrokes` is a different
+quantity (bursts re-formed inside each flight window, then gated), and the watch never forms
+those windows because it cannot see a flight's end until it has happened.
+
 Expected drift: the watch counts **slightly more** attempts than the phone — it cannot merge a
 bout across a burst it did not resolve the same way, and it has no walk-back — and its stroke
 total should sit within a few percent of the phone's. Anything larger is the divergence check's
@@ -851,7 +872,7 @@ attempt, not four), then:
 
 | outcome | test | counted as |
 |---|---|---|
-| `in_flight` | the episode lies wholly inside a flight | `in_flight_strokes` — pumping to hold or extend a glide, never a takeoff |
+| `in_flight` | the episode lies wholly inside a flight | `in_flight_strokes` — pumping to hold or extend a glide, never a takeoff. Amplitude-gated since 0.8.1 ("In-flight strokes"), so a gentle episode is still classified and still placed, and contributes 0 strokes |
 | `success` | a flight starts between the first stroke and `takeoffAttemptWindow` after the last | nothing extra: it *is* that flight's takeoff run, already counted as a flight |
 | `recovery` | the episode lies inside a detected turn's outcome window | the turn's `touchdown`, already scored there |
 | `failed` | none of the above | a failed takeoff attempt |
@@ -870,8 +891,9 @@ than a flattering 100 %.
 
 **Corpus (defaults above).** 2026-08-07 ciq: 23 takeoffs, all judged, 14 failed attempts ⇒ 37
 attempts at 62 % success; 9.0 pumps to takeoff on average (median 7, range 4–21), 8.7 s average
-run (median 8.0), 0 free takeoffs, 1341 strokes of which 293 in flight across 36 in-flight
-episodes. The native sessions have no accel and lose most runs to Smart Recording: 2026-08-05 am
+run (median 8.0), 0 free takeoffs, 395 counted strokes (1341 raw peaks before engine 0.8.0) of
+which 127 in flight across 36 in-flight episodes. The native sessions have no accel and lose
+most runs to Smart Recording: 2026-08-05 am
 9 of 52 runs judged (6.8 s average), 2026-08-04 pm 23 of 130 (7.6 s) — the same truncation that
 costs 111 of its 130 flight *ends*. **Unvalidated:** the failed-attempt count has no ground
 truth yet (fixtures/README.md logs takeoff attempts per session — 2026-08-07 is still blank),

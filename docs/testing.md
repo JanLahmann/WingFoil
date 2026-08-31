@@ -8,7 +8,7 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
 
 ```json
 {
-  "engineVersion": "0.8.0",
+  "engineVersion": "0.8.1",
   "config": { "foilEntrySpeed": 12.0, "...": "params actually used" },
   "capabilities": { "hasDoppler": true, "hasDevFields": false, "hasWatchLaps": false,
                      "hasAccel": false, "hasHR": true, "sampleRateHz": 1 },
@@ -499,8 +499,9 @@ What the example therefore shows: 645 s elapsed, **67.9 %** on foil (431 s), **2
 through, 2 fallen, 5 port / 5 starboard — **44.7 JPH** and **11.2 WPH**, best 2 s
 **13.47 kn**, alpha 500 **11.70 kn**, wind from **196°** at full confidence, 4 takeoff
 attempts of which 2 succeeded on **31** pump strokes (286 before engine 0.8.0 taught the
-total to reject chop — docs/algorithms.md "The session total"), and an average takeoff HR cost of
-**16.5 bpm**. Being shorter than the 15-minute rate window, it is also the corpus's worked
+total to reject chop — docs/algorithms.md "The session total") of which **5** in flight (60
+before 0.8.1 put the same amplitude gate on that count — "In-flight strokes"), and an average
+takeoff HR cost of **16.5 bpm**. Being shorter than the 15-minute rate window, it is also the corpus's worked
 example of the "no flattering peak" rule: `windowRates` reports one point, the whole-session
 rate over the span it actually lasted.
 

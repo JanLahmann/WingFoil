@@ -183,6 +183,31 @@ def test_pumping_inside_a_flight_is_a_separate_metric_not_an_attempt():
     assert s.total_pump_strokes > s.in_flight_pump_strokes    # the takeoff's strokes too
 
 
+def test_chop_sized_pumping_in_a_flight_no_longer_reaches_the_in_flight_count():
+    """Engine 0.8.1: `in_flight_strokes` takes the session total's amplitude gate.
+
+    The same track as above with the *in-flight* burst halved to chop amplitude. The picker
+    still fires on every crest and the episode is still classified `in_flight` -- he was
+    doing something -- but the strokes are no longer counted, which is what keeps the
+    session total a superset of its parts (0.8.0 shipped 31 total against 60 in flight).
+    """
+    course, speed = _reach(_rest(20, 1.0), _ramp(), _fly(80))
+    t = np.arange(0.0, 105.0, 1.0 / 25.0)
+    mag = np.ones_like(t)
+    for (t0, t1), amp in ((BURST, 1.0), ((50.0, 60.0), 0.4)):     # takeoff pump, then chop
+        on = (t >= t0) & (t <= t1)
+        mag[on] += amp * np.sin(2 * np.pi * 1.2 * t[on])
+    pump = pump_track_from_arrays(t, mag)
+    _, a = _analyze(course, speed, pump=pump)
+    assert [e.outcome for e in a.episodes] == [SUCCESS, IN_FLIGHT]   # still an effort
+    assert pump.strokes(50.0, 60.0).size >= 4                        # still picked as peaks
+    assert a.takeoffs[0].in_flight_strokes == 0                      # and not counted
+
+    s = summarize_takeoffs(a)
+    assert s.in_flight_episodes == 1 and s.in_flight_pump_strokes == 0
+    assert s.total_pump_strokes >= s.in_flight_pump_strokes
+
+
 def _jibe_then(dip, tail=40):
     """A clean jibe carried at speed, then `dip`, then a leg -- test_flightend's shape."""
     ramp = list(np.linspace(90.0, 270.0, 7))

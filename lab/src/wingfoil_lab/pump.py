@@ -15,11 +15,12 @@ gate separates the two cleanly. This is the phone-side twin of the watch `PumpDe
    ``pumpMinStrokes`` or more is pumping.
 
 Steps 4-5 answer "was he pumping *here*", which is all the corroborating consumers (turn
-outcomes, flight ends) ever ask. Counting a whole session is a different question and needs
-two more gates -- ``pumpBurstPeakG`` and ``pumpMinSpeedKmh``, applied by `takeoff.py` and
-documented there. They live in this config because they are facts about a stroke, not about
-a takeoff, but nothing in *this* module applies them: a corroborating burst that fails them
-is still evidence the rider was working.
+outcomes, flight ends) ever ask. *Counting* strokes is a different question and needs two
+more gates -- ``pumpBurstPeakG`` and ``pumpMinSpeedKmh``, applied by `takeoff.py` and
+documented there (both for the session total; the amplitude one also for the in-flight
+count, engine >= 0.8.1). They live in this config because they are facts about a stroke, not
+about a takeoff, but nothing in *this* module applies them: a corroborating burst that fails
+them is still evidence the rider was working.
 
 Consumers ask questions about time windows (`is_pumping`), never about the raw signal.
 Sources without an accel stream get `None` from `pump_track` and every consumer degrades to
@@ -48,8 +49,9 @@ class PumpConfig:
     stroke_max_interval_s: float = 1.5   # pumpStrokeMaxInterval: still the same burst
     min_strokes: int = 4                 # pumpMinStrokes: burst length that means "pumping"
     burst_peak_g: float = 0.8            # pumpBurstPeakG: PROVISIONAL -- a burst's tallest
-                                         #   stroke must reach this to be counted in the
-                                         #   session total (see takeoff.py)
+                                         #   stroke must reach this for the burst to be
+                                         #   counted at all (session total and in-flight
+                                         #   strokes alike -- see takeoff.py)
     min_speed_kmh: float = 3.0           # pumpMinSpeedKmh: a counted stroke moved the board
 
 

@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.8.0",
+  "engineVersion": "0.8.1",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -453,7 +453,7 @@
       "speedRiseS": 13.0,
       "entryKn": 7.128,
       "cadenceSpm": 64.62,
-      "inFlightStrokes": 56,
+      "inFlightStrokes": 5,
       "free": false,
       "truncated": false,
       "preWindowS": 85.0
@@ -467,7 +467,7 @@
       "speedRiseS": 6.0,
       "entryKn": 7.146,
       "cadenceSpm": 90.0,
-      "inFlightStrokes": 4,
+      "inFlightStrokes": 0,
       "free": false,
       "truncated": false,
       "preWindowS": 46.0
@@ -853,7 +853,7 @@
       "unknownAttempts": 0,
       "recoveryEpisodes": 0,
       "inFlightEpisodes": 12,
-      "inFlightPumpStrokes": 60,
+      "inFlightPumpStrokes": 5,
       "runsJudged": 2,
       "runsTruncated": 0,
       "freeTakeoffs": 0,

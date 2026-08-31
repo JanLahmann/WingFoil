@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.8.0",
+  "engineVersion": "0.8.1",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -2220,7 +2220,7 @@
       "speedRiseS": 11.0,
       "entryKn": 7.237,
       "cadenceSpm": 54.55,
-      "inFlightStrokes": 23,
+      "inFlightStrokes": 14,
       "free": false,
       "truncated": false,
       "preWindowS": 34.0
@@ -2248,7 +2248,7 @@
       "speedRiseS": 4.0,
       "entryKn": 7.019,
       "cadenceSpm": 80.39,
-      "inFlightStrokes": 22,
+      "inFlightStrokes": 9,
       "free": false,
       "truncated": false,
       "preWindowS": 491.0
@@ -2262,7 +2262,7 @@
       "speedRiseS": 2.0,
       "entryKn": 7.581,
       "cadenceSpm": 74.54,
-      "inFlightStrokes": 55,
+      "inFlightStrokes": 24,
       "free": false,
       "truncated": false,
       "preWindowS": 60.0
@@ -2276,7 +2276,7 @@
       "speedRiseS": 9.0,
       "entryKn": 6.928,
       "cadenceSpm": 53.33,
-      "inFlightStrokes": 25,
+      "inFlightStrokes": 7,
       "free": false,
       "truncated": false,
       "preWindowS": 359.0
@@ -2304,7 +2304,7 @@
       "speedRiseS": 4.0,
       "entryKn": 7.672,
       "cadenceSpm": 70.33,
-      "inFlightStrokes": 23,
+      "inFlightStrokes": 0,
       "free": false,
       "truncated": false,
       "preWindowS": 116.0
@@ -2318,7 +2318,7 @@
       "speedRiseS": 16.0,
       "entryKn": 6.819,
       "cadenceSpm": 48.75,
-      "inFlightStrokes": 27,
+      "inFlightStrokes": 0,
       "free": false,
       "truncated": false,
       "preWindowS": 37.0
@@ -2346,7 +2346,7 @@
       "speedRiseS": 2.0,
       "entryKn": 7.744,
       "cadenceSpm": 63.97,
-      "inFlightStrokes": 22,
+      "inFlightStrokes": 0,
       "free": false,
       "truncated": false,
       "preWindowS": 45.0
@@ -2374,7 +2374,7 @@
       "speedRiseS": 5.0,
       "entryKn": 6.656,
       "cadenceSpm": 59.37,
-      "inFlightStrokes": 4,
+      "inFlightStrokes": 0,
       "free": false,
       "truncated": false,
       "preWindowS": 123.0
@@ -2388,7 +2388,7 @@
       "speedRiseS": 4.0,
       "entryKn": 6.802,
       "cadenceSpm": 82.15,
-      "inFlightStrokes": 9,
+      "inFlightStrokes": 0,
       "free": false,
       "truncated": false,
       "preWindowS": 111.0
@@ -2402,7 +2402,7 @@
       "speedRiseS": 5.0,
       "entryKn": 6.693,
       "cadenceSpm": 86.91,
-      "inFlightStrokes": 19,
+      "inFlightStrokes": 5,
       "free": false,
       "truncated": false,
       "preWindowS": 309.0
@@ -2430,7 +2430,7 @@
       "speedRiseS": 5.0,
       "entryKn": 6.893,
       "cadenceSpm": 72.0,
-      "inFlightStrokes": 4,
+      "inFlightStrokes": 0,
       "free": false,
       "truncated": false,
       "preWindowS": 32.0
@@ -2444,7 +2444,7 @@
       "speedRiseS": 3.0,
       "entryKn": 7.254,
       "cadenceSpm": 94.79,
-      "inFlightStrokes": 12,
+      "inFlightStrokes": 4,
       "free": false,
       "truncated": false,
       "preWindowS": 31.0
@@ -2458,7 +2458,7 @@
       "speedRiseS": 5.0,
       "entryKn": 6.928,
       "cadenceSpm": 64.66,
-      "inFlightStrokes": 13,
+      "inFlightStrokes": 5,
       "free": false,
       "truncated": false,
       "preWindowS": 73.0
@@ -2472,7 +2472,7 @@
       "speedRiseS": 2.0,
       "entryKn": 6.675,
       "cadenceSpm": 75.5,
-      "inFlightStrokes": 84,
+      "inFlightStrokes": 42,
       "free": false,
       "truncated": false,
       "preWindowS": 74.0
@@ -2486,7 +2486,7 @@
       "speedRiseS": 3.0,
       "entryKn": 6.928,
       "cadenceSpm": 85.23,
-      "inFlightStrokes": 5,
+      "inFlightStrokes": 0,
       "free": false,
       "truncated": false,
       "preWindowS": 93.0
@@ -2514,7 +2514,7 @@
       "speedRiseS": 1.0,
       "entryKn": 7.363,
       "cadenceSpm": 97.84,
-      "inFlightStrokes": 12,
+      "inFlightStrokes": 7,
       "free": false,
       "truncated": false,
       "preWindowS": 62.0
@@ -2542,7 +2542,7 @@
       "speedRiseS": 3.0,
       "entryKn": 6.873,
       "cadenceSpm": 101.08,
-      "inFlightStrokes": 13,
+      "inFlightStrokes": 4,
       "free": false,
       "truncated": false,
       "preWindowS": 66.0
@@ -2556,7 +2556,7 @@
       "speedRiseS": 6.0,
       "entryKn": 6.747,
       "cadenceSpm": 100.0,
-      "inFlightStrokes": 19,
+      "inFlightStrokes": 0,
       "free": false,
       "truncated": false,
       "preWindowS": 94.0
@@ -2612,7 +2612,7 @@
       "speedRiseS": 8.0,
       "entryKn": 7.383,
       "cadenceSpm": 75.0,
-      "inFlightStrokes": 12,
+      "inFlightStrokes": 5,
       "free": false,
       "truncated": false,
       "preWindowS": 114.0
@@ -5632,7 +5632,7 @@
       "unknownAttempts": 0,
       "recoveryEpisodes": 0,
       "inFlightEpisodes": 71,
-      "inFlightPumpStrokes": 430,
+      "inFlightPumpStrokes": 153,
       "runsJudged": 31,
       "runsTruncated": 0,
       "freeTakeoffs": 0,
