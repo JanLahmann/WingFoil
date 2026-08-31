@@ -9,8 +9,14 @@ import WingFoilKit
 /// the uncertified disclaimer are made — an image cannot fall back at draw time.
 ///
 /// Layout is expressed against `ShareCardStats.Shape.size` divided by `renderScale`, so
-/// one set of paddings works for both aspect ratios and the exported pixels land exactly
-/// on 1080 × 1350 / 1080 × 1080.
+/// one set of paddings works for every aspect ratio and the exported pixels land exactly
+/// on 1080 × 1350 / 1080 × 1080 / 1920 × 1080.
+///
+/// The wide shape gets a *column* layout rather than the tall shapes' stack: at 1920 × 1080
+/// a track stretched across the full width leaves the stat block a 200 px strip, and the
+/// title reads as a caption under a banner. Beside the stats the same track is square-ish
+/// and the block is a readable column — same tokens, same type sizes, only the axis
+/// changes (`ShareCardStats.Shape.isWide`).
 struct ShareCardView: View {
     let stats: ShareCardStats
     let shape: ShareCardStats.Shape
@@ -69,7 +75,18 @@ struct ShareCardView: View {
 
     // MARK: - Content
 
+    @ViewBuilder
     private var content: some View {
+        Group {
+            if shape.isWide { wideContent } else { tallContent }
+        }
+        .padding(.horizontal, 22)
+        .padding(.top, 22)
+        .padding(.bottom, 18)
+        .frame(width: size.width, height: size.height, alignment: .topLeading)
+    }
+
+    private var tallContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
             // The track absorbs whatever height is left over, so the stat block and the
@@ -78,10 +95,23 @@ struct ShareCardView: View {
             statGrid
             footer
         }
-        .padding(.horizontal, 22)
-        .padding(.top, 22)
-        .padding(.bottom, 18)
-        .frame(width: size.width, height: size.height, alignment: .topLeading)
+    }
+
+    /// Track left, everything that is words right. The right column is a fixed fraction of
+    /// the card rather than intrinsic width, so the stat cells are the same size on a wide
+    /// card as on a tall one and the track always gets the remainder — including the whole
+    /// card when a recording has no positions at all.
+    private var wideContent: some View {
+        HStack(alignment: .top, spacing: 22) {
+            track
+            VStack(alignment: .leading, spacing: 12) {
+                header
+                statGrid
+                Spacer(minLength: 0)
+                footer
+            }
+            .frame(width: size.width * 0.42)
+        }
     }
 
     private var header: some View {

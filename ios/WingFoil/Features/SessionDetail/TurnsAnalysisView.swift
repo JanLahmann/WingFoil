@@ -170,7 +170,7 @@ struct TurnsAnalysisView: View {
                 }
             }
             .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
-            .frame(height: 240)
+            .figureHeight(regular: 240, compact: 180)
             .clipShape(.rect(cornerRadius: 14))
             Text(pins.isEmpty
                  ? "Nothing to mark — widen the filters."

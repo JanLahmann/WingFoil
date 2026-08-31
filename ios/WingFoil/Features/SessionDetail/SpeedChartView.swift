@@ -248,7 +248,7 @@ struct SpeedChartView: View {
         }
         .chartYScale(domain: 0...(max(detail.maxSpeedKn * 1.1, 5)))
         .chartOverlay { proxy in gestureSurface(proxy) }
-        .frame(height: 190)
+        .figureHeight(regular: 190, compact: 150)
     }
 
     // MARK: - Marks inside the window
