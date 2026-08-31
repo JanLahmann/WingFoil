@@ -24,6 +24,15 @@ struct SessionRowView: View {
                     if let example = SessionDisplay.exampleBadge(row) {
                         ExampleBadge(text: example, font: .caption2)
                     }
+                    if let rider = row.rider {
+                        // Priority over the title: "whose session is this" is the one
+                        // thing on the row that cannot be inferred from anything else, and
+                        // a badge truncated to "Ma…" answers nothing. Capped so a long
+                        // name still leaves the title readable.
+                        RiderBadge(name: rider)
+                            .layoutPriority(1)
+                            .frame(maxWidth: 130, alignment: .trailing)
+                    }
                     if row.isProvisional { ProvisionalBadge() }
                     Text(SessionDisplay.badge(row))
                         .font(.caption2.weight(.semibold))

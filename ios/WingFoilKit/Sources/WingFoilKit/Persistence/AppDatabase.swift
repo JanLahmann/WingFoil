@@ -32,7 +32,7 @@ public struct AppDatabase: Sendable {
 
     /// Every migration this build knows, oldest first — the migration test asserts a v1
     /// database moves through all of them.
-    public static let migrationNames = ["v1", "v2", "v3", "v4"]
+    public static let migrationNames = ["v1", "v2", "v3", "v4", "v5"]
 
     /// Public so a caller (and the migration test) can migrate a writer only part of the
     /// way — `migrator.migrate(writer, upTo: "v1")` reproduces a shipped v1 library.
@@ -94,6 +94,25 @@ public struct AppDatabase: Sendable {
             try db.alter(table: "session") { t in
                 t.add(column: "isProvisional", .boolean).notNull().defaults(to: false)
             }
+        }
+
+        // v5: whose session this is. A rider can now hand a scrubbed FIT to a friend
+        // (`FitShareFilter`), and the app is registered as a handler for `.fit`, so a
+        // session that is *somebody else's* can land in the library by tapping an
+        // attachment. Without a column saying so, that friend's afternoon would silently
+        // become the reader's personal best.
+        //
+        // NULL means "mine", which is what every existing row is and what the icu sync and
+        // the GDPR backfill keep writing — a nullable column rather than a flag plus a
+        // name, so "is this mine" and "whose is it" are one question with one answer. Same
+        // mechanism as `isExample`/`isProvisional`: `LibraryStore.clause` excludes it from
+        // every aggregate in one place. No re-analysis is triggered; nothing derived
+        // changes, only who the row belongs to.
+        migrator.registerMigration("v5") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "rider", .text)
+            }
+            try db.create(index: "session_rider", on: "session", columns: ["rider"])
         }
         return migrator
     }
@@ -355,6 +374,18 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// the FIT lands, at which point `SessionIngestor` fills the same row with real
     /// analysis, clears this flag, and the session rejoins Records and Trends.
     public var isProvisional = false
+
+    // MARK: schema v5
+    /// Whose session this is: nil for the rider's own, a friend's name for one that
+    /// arrived as a shared FIT.
+    ///
+    /// A named session is shown in full — the library lists it, the detail page analyses
+    /// it exactly like any other — and excluded from every number that claims to describe
+    /// *the reader*: records, trends, the week histogram, the gear rollups, the widget.
+    /// The exclusion is one condition in `LibraryStore.clause`, for the same reason
+    /// `isExample` is: a rule six call sites have to remember is a rule that will be
+    /// forgotten, and the failure mode here is someone else's speed in your PB list.
+    public var rider: String?
 
     public init(id: String = UUID().uuidString, startDate: Date, durationS: Double, sourceClass: String) {
         self.id = id

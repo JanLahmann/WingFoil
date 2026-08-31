@@ -58,6 +58,16 @@ enum SessionDisplay {
         row.isExample ? "EXAMPLE" : nil
     }
 
+    /// Said in full under the badge on the detail page, because "this one does not count
+    /// towards your records" is the consequence a rider has to be told once rather than
+    /// left to infer from a colour.
+    static func riderNote(_ row: SessionRow) -> String? {
+        row.rider.map {
+            "\($0)'s session, shared with you — kept out of your records, trends and gear "
+            + "totals."
+        }
+    }
+
     /// The line under a row that arrived over Bluetooth and has no recording yet. Said in
     /// full words rather than hinted at with a colour, because "these numbers came from
     /// the watch and will be replaced" is not something a rider can be expected to infer
@@ -92,6 +102,29 @@ struct ExampleBadge: View {
             .background(Color.orange.opacity(0.18), in: .capsule)
             .foregroundStyle(Color.orange)
             .accessibilityLabel("Example session, not your data")
+    }
+}
+
+/// The "this is somebody else's session" capsule.
+///
+/// A third colour rather than a reuse of the example badge's amber: the two say different
+/// things. The example is a demonstration nobody rode; this is a real session a real person
+/// rode, just not the reader — and the name is the whole point, so the badge carries it
+/// rather than a word like "SHARED". It reads at row size in a list of the rider's own
+/// sessions, which is the only place it has to work.
+struct RiderBadge: View {
+    let name: String
+    var font: Font = .caption2
+
+    var body: some View {
+        Label(name, systemImage: "person.crop.circle")
+            .font(font.weight(.semibold))
+            .lineLimit(1)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(Color.purple.opacity(0.16), in: .capsule)
+            .foregroundStyle(Color.purple)
+            .accessibilityLabel("\(name)'s session, not counted in your records")
     }
 }
 

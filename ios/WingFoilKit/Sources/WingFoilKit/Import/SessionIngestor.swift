@@ -94,9 +94,15 @@ public struct SessionIngestor: Sendable {
 
     /// Ingests one FIT. `requireWatersport` gates bulk imports (ZIP walking); a file the
     /// user picked by hand is always accepted.
+    ///
+    /// `rider` is whose session this is — nil for the app owner's own, a friend's name for
+    /// a FIT they shared. Only the hand-picked paths ever pass a name: an intervals.icu
+    /// sync and a Garmin GDPR backfill are the rider's own account by construction, and a
+    /// prompt on either would be asking a question that cannot have a second answer.
     @discardableResult
     public func ingest(fitData: Data, filename: String?, source: ImportSource,
                        icuActivityId: String? = nil,
+                       rider: String? = nil,
                        requireWatersport: Bool = false) async throws -> IngestOutcome {
         let track = try FitSessionParser.parse(data: fitData)
         let caps = track.capabilities
@@ -140,6 +146,10 @@ public struct SessionIngestor: Sendable {
         row.importSource = Self.merge(sources: existing?.importSource, adding: source)
         row.icuActivityId = icuActivityId ?? existing?.icuActivityId
         row.isExample = source == .example
+        // A blank name means "mine": the prompt's text field can be left empty after the
+        // rider has tapped "a friend's", and an empty string in the column would exclude
+        // the session from every aggregate while showing an empty badge.
+        row.rider = Self.riderName(rider) ?? existing?.rider
         if let fix = track.samples.first(where: { $0.lat != nil && $0.lon != nil }) {
             row.startLat = fix.lat
             row.startLon = fix.lon
@@ -164,6 +174,16 @@ public struct SessionIngestor: Sendable {
         return .imported(row)
     }
 
+    /// The name as it goes in the column, or nil for "mine".
+    ///
+    /// Whitespace-trimmed and empty-to-nil, because the prompt's text field can be left
+    /// blank after tapping "a friend's": an empty string would exclude the session from
+    /// every aggregate while showing a badge with nothing in it — the worst of both.
+    public static func riderName(_ raw: String?) -> String? {
+        let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
     public static func isWatersport(_ caps: SourceCapabilities) -> Bool {
         if caps.discipline != nil || caps.hasDevFields { return true }
         guard let sport = caps.sport?.lowercased() else { return false }
@@ -175,6 +195,7 @@ public struct SessionIngestor: Sendable {
     /// after every file so the UI can show "n found / imported / duplicates / skipped".
     @discardableResult
     public func ingestContainer(data: Data, name: String, source: ImportSource,
+                                rider: String? = nil,
                                 progress: (@Sendable (ImportSummary) -> Void)? = nil)
     async -> ImportSummary {
         var log = ImportLogRow(source: source, container: name)
@@ -192,7 +213,7 @@ public struct SessionIngestor: Sendable {
             progress?(await box.snapshot)
             do {
                 switch try await ingest(fitData: fit.data, filename: short, source: source,
-                                        requireWatersport: gate) {
+                                        rider: rider, requireWatersport: gate) {
                 case .imported: await box.count(\.imported)
                 case .duplicate: await box.count(\.duplicates)
                 case .skipped: await box.count(\.skipped)

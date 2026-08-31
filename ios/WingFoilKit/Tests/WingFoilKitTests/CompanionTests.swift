@@ -360,7 +360,9 @@ import Testing
         _ = try AppDatabase(queue)                      // ← runs v4
         let after = try queue.read { db in try db.columns(in: "session").map(\.name) }
         #expect(after.contains("isProvisional"))
-        #expect(AppDatabase.migrationNames.last == "v4")
+        // Registered, not necessarily last: later schema versions keep arriving,
+        // and this test is about v4 doing its own job.
+        #expect(AppDatabase.migrationNames.contains("v4"))
     }
 
     // MARK: - The link seam
