@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v7";      // v7: map pan/zoom + the pinch ergonomics on the speed strip
+const VERSION = "v8";      // v8: side tokens, the example session, elapsed + cancel
 const SHELL = `wingfoil-shell-${VERSION}`;
 const RUNTIME = `wingfoil-runtime-${VERSION}`;
 
@@ -35,6 +35,7 @@ const APP_SHELL = [
   "js/library.js",
   "js/render.js",
   "js/rpc.js",
+  "js/sections.js",
   "js/session.js",
   "js/store.js",
   "js/tokens.js",
@@ -46,6 +47,11 @@ const APP_SHELL = [
   "icons/icon-512.png",
   "icons/icon-maskable-512.png",
   "icons/apple-touch-icon.png",
+  // The bundled example (435 KB). Precached with the shell rather than fetched on demand,
+  // because the whole point of it is the visitor who has nothing else to open — including
+  // the one who opened the installed app on a train. It is the same file the iOS app
+  // ships; see docs/testing.md "The bundled example session".
+  "example/ExampleSession.fit",
   "lab_bundle/FILES.json",
   "lab_bundle/MANIFEST.json",
 ];

@@ -22,6 +22,9 @@ struct RootView: View {
             TrendsView()
                 .tag(Tab.trends)
                 .tabItem { Label("Trends", systemImage: "chart.xyaxis.line") }
+            // "Gear" rather than "Gear & spots" on the tab item: four tab labels share a
+            // 390 pt bar, and the screen's own title carries the longer name. Spots moved
+            // in here from the fourth level of the Settings sheet (app-ui-review.md §6.1).
             GearView()
                 .tag(Tab.gear)
                 .tabItem { Label("Gear", systemImage: "bag") }

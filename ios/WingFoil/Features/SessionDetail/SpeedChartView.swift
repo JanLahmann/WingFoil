@@ -28,9 +28,13 @@ struct SpeedChartView: View {
     /// figures (docs/presentation.md, "Pairing").
     let flightFocus: SessionDetail.FlightFocus?
 
-    /// Transient by design: zoom is how you are looking at the session that is open, not a
-    /// preference about sessions. Nil until something moves it.
-    @State private var zoom: TimelineWindow?
+    /// The visible time window. Transient by design — zoom is how you are looking at the
+    /// session that is open, not a preference about sessions — but owned by
+    /// `SessionDetailView` rather than by this view, because the tab bar can take the chart
+    /// off screen and bring it back. A `@State` here would silently reset the window on
+    /// every trip to the Turns tab, and "reset my zoom because I looked at something else"
+    /// is not what a transient window means. Nil until something moves it.
+    @Binding var zoom: TimelineWindow?
     /// The window as the pinch found it. A magnification is cumulative from the start of the
     /// gesture, so it has to be applied to a fixed base or the chart accelerates away.
     @State private var pinchBase: TimelineWindow?
@@ -229,8 +233,11 @@ struct SpeedChartView: View {
         }
         .chartYAxisLabel("kn")
         .chartXScale(domain: window.visible)
+        // Round times, not equal fifths of the domain: `.automatic` labelled this axis
+        // `0:00 · 33:20 · 66:40 · 100:00` (app-ui-review.md §1.5). `TimeAxisTicks` is the
+        // rule, in the kit, so the HR-cost chart below cannot drift away from it.
         .chartXAxis {
-            AxisMarks(values: .automatic(desiredCount: 5)) { value in
+            AxisMarks(values: TimeAxisTicks.values(for: window.visible, desiredCount: 5)) { value in
                 AxisGridLine()
                 AxisValueLabel {
                     if let seconds = value.as(Double.self) {

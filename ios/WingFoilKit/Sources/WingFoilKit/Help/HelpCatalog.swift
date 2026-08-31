@@ -110,7 +110,7 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
 /// Every explainable metric, as an enum so a `?` button cannot point at a missing topic.
 public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
     case icuSetup, exampleSession, icuTroubleshooting, icuPrivacy
-    case foilPct, flights, longestFlight, distance
+    case foilPct, flights, longestFlight, distance, mapLegend
     case recordSet, best2s, best10s, best5x10s, best500m, bestNm, alpha500, uncertified
     case turnTypes, turnOutcomes, turnSuccess, portStarboard, falls, touchdowns, glideOuts
     case takeoffAttempts, pumpsToTakeoff, pumpStrokes
@@ -253,6 +253,35 @@ public enum HelpCatalog {
                 "It covers the whole session — flying, taxiing and drifting.",
             ],
             related: [.sourceClass]),
+
+        // The legend documentation used to be printed under the chips on every visit to
+        // every session — three grey paragraphs, ~115 pt of a 956 pt phone screen, to a
+        // rider who learned it once (app-ui-review.md §1.2). It is reference material, and
+        // reference material belongs behind the `?` the rest of the page already uses.
+        HelpTopic(
+            id: .mapLegend, section: .foil, title: "Reading the map",
+            summary: "What the chips, the colours, the arrows and the dots mean.",
+            body: [
+                "Every chip under the map is a switch. Tapping one hides that category on "
+                + "the map and in the speed chart at the same time — the two are one reading "
+                + "of the same session, so a marker in one and not the other would be a lie. "
+                + "A hidden chip stays in place, struck through, and \"show all\" brings "
+                + "everything back. A category this session has none of is not a switch.",
+                "The track is tinted by phase: teal where you were flying, grey where you "
+                + "were not. Small chevrons along it point the way you were riding.",
+                "The dots are verdicts, on one ladder: green flew through, orange touched "
+                + "down, red fell in, grey a course change that is no verdict at all. Fill "
+                + "carries the channel rather than a second colour — solid is a maneuver's "
+                + "outcome, hollow is a straight-line flight end that no turn explains.",
+                "Takeoffs are arrows, not dots, so a busy track cannot confuse them with "
+                + "outcomes: an up-arrow got you up, and a red u-turn is an attempt that did "
+                + "not. One chip hides both halves, because they are two ends of the same "
+                + "thing. The indigo bands are pump bursts and the cyan drop is the "
+                + "barometer seeing your wrist go under.",
+                "Tap the track to move the replay playhead; tap a mark, or a flown stretch, "
+                + "for its own facts.",
+            ],
+            related: [.foilPct, .turnOutcomes, .takeoffAttempts]),
 
         // MARK: Speed records
 

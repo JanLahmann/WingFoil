@@ -201,11 +201,19 @@ public enum GearKind: String, CaseIterable, Sendable, Codable, Identifiable {
         }
     }
 
-    public var symbol: String {
+    /// The SF Symbol for this kind, or **nil where no SF Symbol means it**.
+    ///
+    /// `foil` is nil on purpose. It was `airplane` until app-ui-review.md §6.3 — "no
+    /// unclear icons" is an explicit owner preference and a hydrofoil rendered as a
+    /// passenger jet is the definition of unclear. There is no front-wing glyph in the SF
+    /// Symbols set, so rather than reaching for the next-nearest wrong picture the kind
+    /// says it has none and the app draws its own silhouette (`GearKindIcon`). Optional,
+    /// not a placeholder string, so a caller cannot accidentally render a stand-in.
+    public var symbol: String? {
         switch self {
         case .wing: "wind"
         case .board: "surfboard"
-        case .foil: "airplane"
+        case .foil: nil
         }
     }
 }

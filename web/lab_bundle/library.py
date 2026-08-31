@@ -150,6 +150,19 @@ def _duration(doc) -> float | None:
     return None
 
 
+def _outcomes(raw) -> dict | None:
+    """The three-rung outcome tally, or None when the engine reported none.
+
+    Read straight out of `summary.turns.outcomes` rather than recounted: the ladder is the
+    engine's verdict and a second count here would be a second definition of it. None
+    rather than three zeroes when the block is absent — the row then says nothing instead
+    of saying that nothing happened.
+    """
+    if not isinstance(raw, dict):
+        return None
+    return {key: int(raw.get(key) or 0) for key in ("flewThrough", "touchdown", "fellIn")}
+
+
 def _turn_split(turns) -> dict:
     """Counted turns grouped by the tack they were *entered* on.
 
@@ -242,6 +255,13 @@ def digest(doc, file_name: str | None = None) -> dict:
             "successPct": _num(turns.get("successPct")),
             "jibes": int(turns.get("jibes") or 0),
             "tacks": int(turns.get("tacks") or 0),
+            # The outcome tally, so a library row can carry the headline metric the iOS
+            # rows have always carried and these did not (app-ui-review.md §5.6). Over
+            # every counted turn, which is what the iOS row shows, not over jibes alone.
+            # Absent on a digest written before this field existed: the row renders "—"
+            # there rather than three zeroes, which would read as a session in which
+            # nothing happened.
+            "outcomes": _outcomes(turns.get("outcomes")),
             "bySide": _turn_split(g.get("turns")),
         },
         "takeoff": {
@@ -388,6 +408,11 @@ def _trends(ds: list) -> dict:
     `role` is a drawing hint, not data: the renderer maps primary/secondary onto the two
     blues the speed strip already uses, and the second line is dashed as well as tinted so
     the split chart survives a CVD check without a second hue.
+
+    `sidePort` / `sideStarboard` are the same idea for the one chart whose lines mean a
+    *side*: they map onto the `side.*` design tokens instead of the app's own blues, which
+    is what stops a chart about entry tacks being drawn in a vocabulary that means
+    something else (docs/presentation.md "Entry tack", app-ui-review.md §5.2).
     """
     charts = _charts(ds)
     for c in charts:
@@ -411,9 +436,9 @@ def _charts(ds: list) -> list:
                     "points": _points(ds, lambda d: _num((d.get("takeoff") or {}).get("avgPumpsToTakeoff")))}]},
         {"key": "turnSide", "label": "Turn success by entry tack", "unit": "%", "percent": True,
          "lines": [
-             {"key": "port", "label": "port entry", "role": "primary",
+             {"key": "port", "label": "port entry", "role": "sidePort",
               "points": _points(ds, lambda d: _side_pct(d, "port"))},
-             {"key": "starboard", "label": "starboard entry", "role": "secondary",
+             {"key": "starboard", "label": "starboard entry", "role": "sideStarboard",
               "points": _points(ds, lambda d: _side_pct(d, "starboard"))},
          ]},
     ]
