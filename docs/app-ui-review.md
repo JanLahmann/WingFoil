@@ -569,26 +569,60 @@ named in the entries.
 
 ### Structural — worth planning
 
-11. **§1.1 + §4 — the verdict block.** A permanent header on SessionDetail: foil % + time,
-    the `35 · 8 · 8` tally in ladder inks, flights + longest, best streak. This is the single
-    highest-value change in the review and it makes the phone answer the same question the
-    watch now answers on its landing page.
-12. **§3 — tab SessionDetail on iOS**: `Map · Speed | Turns | Takeoffs | Effort` beneath a
-    permanent verdict block, with map and chart kept **on one tab** so the shared playhead and
-    the tap-to-focus pairing survive. Folds in §2.1 (the drill-in becomes the Turns tab
-    instead of a push).
-13. **§1.4 + §6.2 — tables instead of tile walls** for session speed records and the Records
-    tab. ~2 500 pt of scroll recovered across the two, and it is the owner's stated preference.
-14. **§3.4 + §7.2 — the narrow web.** Collapse the turns and flight-ends panels below 760 px
-    (cheap), or add the section switcher (better). Leave the desktop scroll alone.
-15. **§6.1 — move Spots** out from under Settings to wherever its filter chips live.
+11. ✅ **shipped (before this punch list was worked)** — **§1.1 + §4 — the verdict block.**
+    `KeyMetrics` / `KeyMetricsView` and the web's `keyMetrics`: four rows above the map,
+    pinned by `PresentationTests.keyMetrics*` on both platforms. The structural commit made
+    it **permanent** — it sits above the switcher, on every section, and the divergence
+    banner moved below it (§1.3), where a provenance footnote about one metric belongs.
+12. ✅ **shipped (structural commit)** — **§3 — tab SessionDetail on iOS**:
+    `Map · Speed | Turns | Takeoffs | Effort`, sticky, beneath the permanent key-metrics
+    block. Map and chart are on one section and everything that annotates them rides along,
+    so the shared playhead and the tap-to-focus pairing are intact; the chart's zoom window
+    moved up to `SessionDetailView` so a trip to Turns does not silently reset it. §2.1 is
+    folded in: the drill-in is the Turns tab's own body, under the turn cards, and the push
+    is gone. The section model, its words and the anchor→section mapping live in the kit
+    (`SessionSection`), asserted by `PresentationTests.sessionSections*` /
+    `everyScrollAnchorResolvesToExactlyOneSection` — a `UI_SCROLL_TO` anchor that resolved
+    to no section would silently photograph the wrong tab.
+13. ✅ **shipped (structural commit)** — **§1.4 + §6.2 — tables instead of tile walls.** The
+    session's speed records are `record | value | at` with the picker's orange selection as
+    a row band; the Records tab is `record | value | +Δ PB | when · where` under one header
+    row. The medallion is gone (it repeated the title) and the 90 px sparkline with it; the
+    freshness it encoded survives as a 7 pt dot, and `+Δ PB` — previously the smallest text
+    in the row — is a column.
+14. ✅ **shipped (structural commit)** — **§3.4 + §7.2 — the narrow web.** The section
+    switcher, not the cheap `<details>` fallback: `Map · Speed | Turns | Takeoffs | Data`
+    below 760 px, built from `data-section` attributes so a new panel joins by carrying one.
+    Turns and Flight ends share a chip, which is the ~2 000 px §7.2 measured. The fourth
+    chip is `Data` rather than `Effort` because the web has no HR content and an empty tab
+    is worse than an unmatched label; the `effort` id is reserved for when it does.
+    **The desktop scroll is untouched**, and crossing the breakpoint upward restores every
+    panel, so no sequence of taps and resizes can strand a desktop reader.
+15. ✅ **shipped (structural commit)** — **§6.1 — Spots**, both of the review's options:
+    a "Manage spots…" row inside the spot filter menu itself, so the chip that filters by
+    spot is the chip that manages them, and a Spots section at the top of the Gear tab,
+    which is the tab that owns named things sessions reference. The Settings sheet's
+    "Places" section is gone.
 16. **§7.3 (c)** Confirm the analysis runs off the main thread end-to-end.
+    *(Partly answered by the Cancel work: `entry.analyze_json` is one synchronous call
+    inside `js/worker.js`, so it is off the main thread — the tab's unresponsiveness is the
+    worker saturating the machine, not the UI thread doing the parse. Whether that can be
+    yielded from inside Pyodide is still open.)*
 
 ### Deliberately not recommended
 
+All three were re-confirmed while the structural commit was written, and two of them are
+now asserted rather than merely intended.
+
 - **Tabs on the desktop web session view.** It is a document and it works as one; the two long
-  tables want the continuous page. Narrow viewports only.
+  tables want the continuous page. Narrow viewports only. *(Held: `.sections` is
+  `display: none` above 760 px, and `js/sections.js` un-hides every panel on the way back up,
+  so no sequence of taps and resizes can leave a desktop reader short a panel.)*
 - **A separate "Records" tab inside iOS SessionDetail.** The record picker's purpose is to
-  highlight a window on the map and chart; separating them breaks the feature.
+  highlight a window on the map and chart; separating them breaks the feature. *(Held: there
+  is no `records` case in `SessionSection`, and
+  `PresentationTests.sessionSectionsAreTheFourTheReviewSettledOn` asserts both the four
+  cases and that the record table's anchor sits on the same section as the two figures.)*
 - **Restacking the web turns table into cards on phones.** The CSS already decided against
-  this for good reason, and the reason is still good.
+  this for good reason, and the reason is still good. *(Held: the turns table is untouched —
+  the switcher moves the whole panel off screen rather than reshaping what is inside it.)*

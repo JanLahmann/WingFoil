@@ -8,8 +8,9 @@
 import { mountIcu } from "./icu.js";
 import { mountLibrary, openStoredSession, refresh as refreshLibrary, saveSession }
   from "./library.js";
-import { closePopover, render, resetSession } from "./render.js";
+import { closePopover, render, renderFigures, resetSession } from "./render.js";
 import { CANCELLED, analyze as runAnalysis, cancel as cancelWorker, on, warmUp } from "./rpc.js";
+import { mountSections, resetSections } from "./sections.js";
 import { listEntries } from "./store.js";
 import { invalidateTrends, mountTrends, redrawTrends, showTrends } from "./trends.js";
 
@@ -162,6 +163,12 @@ function showResult(result, { digest = null, bytes = null, fromLibrary = false,
   el("error").hidden = true;
   el("results").hidden = false;
   el("dropzone").classList.add("compact");
+  // Before render(), not after: below 760 px the switcher hides every panel but the active
+  // section's, and a figure measured inside a hidden panel falls back to the 1100-unit
+  // maximum instead of its column (js/viz.js `figureWidth`). Resetting first means the
+  // Track and Speed panels are on screen when render() draws into them. A new document
+  // also starts on Map · Speed the way a new session view starts unzoomed.
+  resetSections();
   render(result, { highlight });
   updateSaveButton();
   showHighlightNote(highlight);
@@ -464,6 +471,32 @@ function wireReflow() {
   });
 }
 
+/* ------------------------------------------------------------------ sections */
+
+/**
+ * The narrow-viewport section switcher (app-ui-review.md §3.4 / §7.2). js/sections.js owns
+ * the chips and which panels are on screen; this is the one thing it cannot do for itself —
+ * put the figures back at their real width when a chip reveals them.
+ *
+ * `renderFigures` rather than the whole-report `render()`, and not because `render()` would
+ * lose anything: `renderFigures` clears the playhead, the zoom, the camera and the chip
+ * states only when the document IDENTITY changes, and a chip tap passes the same object, so
+ * either call keeps the playhead the user set. It is that `render()` rebuilds a 34-row and
+ * a 23-row table, plus every tile, to fix two SVGs — work for no pixels on the device with
+ * the least of it to spare. The guards are the same ones `wireReflow` uses, so a chip tap
+ * with no document loaded (impossible today, `#results` is hidden, but cheap to promise)
+ * does nothing rather than throwing.
+ */
+function wireSections() {
+  mountSections({
+    redrawFigures: () => {
+      if (state.last && !el("results").hidden && !el("view-analyze").hidden) {
+        renderFigures(state.last, state.highlight);
+      }
+    },
+  });
+}
+
 /* --------------------------------------------------------------------------- go */
 
 wireDropzone();
@@ -472,6 +505,7 @@ wireCancel();
 wireDownload();
 wireSave();
 wireNav();
+wireSections();
 wireReflow();
 wireServiceWorker();
 mountIcu({ analyzeBuffer });

@@ -35,6 +35,7 @@ const APP_SHELL = [
   "js/library.js",
   "js/render.js",
   "js/rpc.js",
+  "js/sections.js",
   "js/session.js",
   "js/store.js",
   "js/tokens.js",

@@ -260,6 +260,13 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    without reinstalling. `UI_IMPORT_FIXTURES=1`, `UI_OPEN_SESSION=latest|<name>`,
    `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings` and
    `UI_HELP_TOPIC=<HelpTopicID>` park the app on a given screen, since `simctl` cannot tap.
+   **Since the session page became a four-way switcher** (`SessionSection`,
+   docs/presentation.md "Sections"), every session hook that names a place also **selects
+   the section that place lives on** — `UI_SCROLL_TO` through `SessionSection.section(owning:)`,
+   and `UI_OPEN_TURNS=1`, which used to push a page, by selecting `Turns`. A scroll to an
+   anchor on an unselected section reaches nothing at all, silently, and produces a
+   screenshot of the wrong screen; `PresentationTests.everyScrollAnchorResolvesToExactlyOneSection`
+   is what stops an anchor being renamed out from under a hook.
    `UI_LOAD_EXAMPLE=1` taps the setup card's "Load an example session first" button, and
    `UI_SCROLL_TO=setup` parks the (screen-and-a-half tall) onboarding card on its bottom
    edge — the only way to photograph that button, which lives below the key field.
@@ -275,7 +282,8 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    preference and never written back — the override stages a screenshot, it does not edit
    the setting. `UI_RECORD=<window key>` (`best10s`, `best250m`, `bestNm`, …) preselects a
    non-default GP3S window so the map glow and the chart shading can be photographed on
-   something other than the best 2 s. `UI_OPEN_TURNS=1` pushes the turns drill-in page and
+   something other than the best 2 s. `UI_OPEN_TURNS=1` selects the **Turns** section (it
+   pushed a page until the drill-in was folded inline, app-ui-review.md §2.1) and
    `UI_TURN_FILTER=<jibes|tacks|both>,<port|starboard|both>` engages its two segmented
    filters (e.g. `jibes,starboard`), which `simctl` likewise cannot tap.
    `UI_MAP_CALLOUT=takeoff|failed|end|flight` opens the track callout on the first mark of

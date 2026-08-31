@@ -1,4 +1,4 @@
-import Charts
+// No `import Charts` any more: the per-row sparkline is gone (see the note below the row).
 import SwiftUI
 import UIKit
 import WingFoilKit
@@ -35,11 +35,16 @@ struct RecordsView: View {
                         .listRowBackground(Color.clear)
                 } else {
                     Section {
+                        recordsHeader
+                            .listRowInsets(EdgeInsets(top: 4, leading: 16,
+                                                      bottom: 4, trailing: 16))
                         ForEach(records) { best in
                             NavigationLink(value: best.sessionId) {
                                 RecordRowView(best: best, title: title(of: best.sessionId),
                                               isNew: freshlyBeaten.contains(best.kind))
                             }
+                            .listRowInsets(EdgeInsets(top: 6, leading: 16,
+                                                      bottom: 6, trailing: 16))
                         }
                     } footer: {
                         Text(footnote)
@@ -96,11 +101,26 @@ struct RecordsView: View {
         }
     }
 
+    /// The table's column names. A header row rather than four repeated labels down the
+    /// page: naming a column once is the whole economy a table buys.
+    private var recordsHeader: some View {
+        HStack(spacing: 10) {
+            Text("record").frame(width: 66, alignment: .leading)
+            Text("kn").frame(width: 58, alignment: .trailing)
+            Text("+Δ PB").frame(width: 56, alignment: .trailing)
+            Text("when · where").frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .font(.caption2)
+        .foregroundStyle(.tertiary)
+        .accessibilityHidden(true)
+    }
+
     private var footnote: String {
         let certified = records.filter(\.certified).count
         return "Doppler speed, GP3S windows. \(certified) of \(records.count) from certified "
-            + "sources (device FIT); class (c) sources are marked. The medal shows how fresh "
-            + "a record is — gold within a month, silver within the season, bronze older."
+            + "sources (device FIT); class (c) sources are marked. The dot on the record's "
+            + "name says how fresh it is — filled within a month, hollow within the season, "
+            + "faint when it is older than six months."
     }
 
     private func title(of sessionID: String) -> String {
@@ -113,62 +133,120 @@ struct RecordsView: View {
     }
 }
 
+/// One record, as a table row.
+///
+/// It was a ~245 pt card: a gold gradient disc containing the same text as the label beside
+/// it, the value, a provenance line, a PB delta, and a ~90 px sparkline that at that width
+/// read as a flat line with a bump on all eight rows. Eight of them was about 2 000 pt of
+/// scroll — two full screens for eight numbers — and the genuinely good content, `+1.27 kn
+/// on the previous best`, was the smallest text in the row (`app-ui-review.md` §6.2).
+///
+/// So: `record | value | +Δ PB | when · where`, on one line, under a header that names the
+/// columns once. The disc is gone (it duplicated the title), the sparkline is gone (at 90 px
+/// it carried no information, and widening it into a real PB step curve is the job of the
+/// detail page the row still pushes to). What survives is what the row was for — the eight
+/// values in a column, where the eye can compare them.
+///
+/// The medal's *information* survives without its decoration: freshness is now a small dot
+/// beside the record's name, filled / hollow / faint. It is a fact worth keeping — a 2 s
+/// from three seasons ago is a fact about a day, not about form — and it costs 9 pt instead
+/// of 44.
 private struct RecordRowView: View {
     let best: RecordBest
     let title: String
     var isNew = false
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            RecordMedal(kind: best.kind, age: Medal.of(best.achievedAt))
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Text(best.kind.label)
-                        .font(.subheadline.weight(.semibold))
-                    if isNew {
-                        Text("NEW")
-                            .font(.caption2.weight(.heavy))
-                            .padding(.horizontal, 5).padding(.vertical, 2)
-                            .background(Color.accentColor.opacity(0.22), in: .capsule)
-                            .foregroundStyle(Color.accentColor)
-                    }
-                    if !best.certified {
-                        Text("uncertified")
-                            .font(.caption2)
-                            .padding(.horizontal, 5).padding(.vertical, 2)
-                            .background(Color.orange.opacity(0.18), in: .capsule)
-                            .foregroundStyle(.orange)
-                    }
-                }
-                Text(Fmt.kn(best.valueKn))
-                    .font(.title2.weight(.bold).monospacedDigit())
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 10) {
                 HStack(spacing: 5) {
-                    Text(Fmt.shortDate(best.achievedAt))
-                    Text("·")
-                    Text(title).lineLimit(1)
+                    FreshnessDot(age: Medal.of(best.achievedAt))
+                    Text(best.kind.label)
+                        .font(.subheadline)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                if let previous = best.previousBest {
-                    Text(String(format: "+%.2f kn on the previous best", best.valueKn - previous))
-                        .font(.caption2)
-                        .foregroundStyle(.green)
-                } else if best.history.count == 1 {
-                    Text("First session with this record")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                .frame(width: 66, alignment: .leading)
+
+                Text(Fmt.kn(best.valueKn))
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                    .frame(width: 58, alignment: .trailing)
+
+                // The delta was the smallest text in the old row and it is the reason a
+                // rider opens this screen: it is a column of its own now.
+                Group {
+                    if let previous = best.previousBest {
+                        Text(String(format: "+%.2f", best.valueKn - previous))
+                            .foregroundStyle(DesignTokens.Outcome.flew)
+                    } else {
+                        Text("—").foregroundStyle(.tertiary)
+                    }
+                }
+                .font(.caption.monospacedDigit())
+                .frame(width: 56, alignment: .trailing)
+
+                Text("\(Fmt.shortDate(best.achievedAt)) · \(title)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            // The two badges are exceptions rather than columns — a column that is empty on
+            // seven rows out of eight is a column that should not exist — so they wrap onto
+            // a second line only on the rows that have one.
+            if isNew || !best.certified || best.history.count == 1 {
+                HStack(spacing: 6) {
+                    Spacer().frame(width: 66)
+                    if isNew { badge("NEW", Color.accentColor) }
+                    if !best.certified { badge("uncertified", .orange) }
+                    if best.previousBest == nil, best.history.count == 1 {
+                        Text("first session with this record")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                    Spacer(minLength: 0)
                 }
             }
-            Spacer(minLength: 0)
-            PBSparkline(best: best)
-                .frame(width: 74, height: 40)
         }
-        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(best.kind.label) record, \(Fmt.kn(best.valueKn))")
+        .accessibilityValue(Medal.of(best.achievedAt).label)
+    }
+
+    private func badge(_ text: String, _ tint: Color) -> some View {
+        Text(text)
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 5).padding(.vertical, 2)
+            .background(tint.opacity(0.18), in: .capsule)
+            .foregroundStyle(tint)
     }
 }
 
-/// How fresh a standing record is. The metal answers "which of my PBs still mean
-/// something" — a 2 s from three seasons ago is a fact about a day, not about form.
+/// How fresh a standing record is, in 9 points instead of a 44 pt gradient disc. Filled,
+/// hollow and faint rather than gold, silver and bronze: three shades of metal at 9 px are
+/// three shades of grey, and a filled/hollow pair is legible without colour vision at all.
+private struct FreshnessDot: View {
+    let age: Medal
+
+    var body: some View {
+        Group {
+            switch age {
+            case .gold: Circle().fill(Color.accentColor)
+            case .silver: Circle().strokeBorder(Color.accentColor, lineWidth: 1.5)
+            case .bronze: Circle().strokeBorder(Color.secondary.opacity(0.5), lineWidth: 1)
+            }
+        }
+        .frame(width: 7, height: 7)
+        .accessibilityHidden(true)
+    }
+}
+
+/// How fresh a standing record is. It answers "which of my PBs still mean something" — a
+/// 2 s from three seasons ago is a fact about a day, not about form.
+///
+/// The three brushed-metal gradients it used to carry went with the disc they filled; the
+/// distinction they encoded did not, because it is the only thing on the row that a value
+/// and a date cannot say. `FreshnessDot` draws it in 7 pt.
 enum Medal {
     case gold, silver, bronze
 
@@ -177,17 +255,6 @@ enum Medal {
         if days <= 30 { return .gold }
         if days <= 183 { return .silver }
         return .bronze
-    }
-
-    var colors: [Color] {
-        switch self {
-        case .gold: [Color(red: 1.00, green: 0.86, blue: 0.42),
-                     Color(red: 0.85, green: 0.62, blue: 0.12)]
-        case .silver: [Color(red: 0.92, green: 0.94, blue: 0.96),
-                       Color(red: 0.62, green: 0.66, blue: 0.71)]
-        case .bronze: [Color(red: 0.87, green: 0.66, blue: 0.47),
-                       Color(red: 0.61, green: 0.40, blue: 0.24)]
-        }
     }
 
     var label: String {
@@ -199,69 +266,12 @@ enum Medal {
     }
 }
 
-/// The medal disc: a brushed-metal gradient with the record's own short label struck into
-/// it, so the row is scannable without reading the numbers.
-private struct RecordMedal: View {
-    let kind: RecordKind
-    let age: Medal
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(LinearGradient(colors: age.colors,
-                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-            Circle()
-                .stroke(.white.opacity(0.55), lineWidth: 1)
-                .padding(3)
-            Text(kind.label)
-                .font(.system(size: 10, weight: .bold, design: .rounded))
-                .foregroundStyle(.black.opacity(0.72))
-                .minimumScaleFactor(0.5)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-                .padding(4)
-        }
-        .frame(width: 44, height: 44)
-        .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
-        .accessibilityLabel("\(kind.label) record, \(age.label)")
-    }
-}
-
-/// Every session's effort for one record kind (faint line) with the PB step curve on top
-/// and the standing best as a filled point.
-struct PBSparkline: View {
-    let best: RecordBest
-
-    var body: some View {
-        if best.history.count < 2 {
-            Image(systemName: "trophy.fill")
-                .foregroundStyle(.yellow)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-            Chart {
-                ForEach(best.history, id: \.sessionId) { effort in
-                    LineMark(x: .value("When", effort.achievedAt),
-                             y: .value("Speed", effort.valueKn),
-                             series: .value("Series", "efforts"))
-                        .foregroundStyle(.secondary.opacity(0.45))
-                        .lineStyle(StrokeStyle(lineWidth: 1))
-                }
-                ForEach(best.personalBests, id: \.sessionId) { effort in
-                    LineMark(x: .value("When", effort.achievedAt),
-                             y: .value("Speed", effort.valueKn),
-                             series: .value("Series", "pbs"))
-                        .foregroundStyle(Color.accentColor)
-                        .interpolationMethod(.stepEnd)
-                }
-                PointMark(x: .value("When", best.achievedAt),
-                          y: .value("Speed", best.valueKn))
-                    .symbolSize(24)
-                    .foregroundStyle(Color.accentColor)
-            }
-            .chartXAxis(.hidden)
-            .chartYAxis(.hidden)
-            .chartLegend(.hidden)
-            .accessibilityLabel("Personal best history, \(best.history.count) sessions")
-        }
-    }
-}
+// The medal disc and the per-row PB sparkline used to live here and are deliberately gone
+// (app-ui-review.md §6.2). The disc contained the same text as the label beside it — "2 s"
+// struck into a gold gradient, next to a title reading "2 s" — so it was 44 pt of
+// duplication; and the sparkline was ~90 px wide, at which width all eight rows read as a
+// flat line with a bump, so it was decoration wearing the clothes of a chart. The PB
+// history is still in `record_effort` and `RecordBest.personalBests` still carries it: a
+// step curve drawn at a width where it means something belongs on a record detail screen,
+// not eight times over in a list. What the rows kept is the number that curve was there to
+// imply — `+Δ PB`, which had been the smallest text in the row and is now a column.
