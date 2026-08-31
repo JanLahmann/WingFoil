@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>WingFoil — open wingfoil tracking, from the watch to the numbers</title>
-<meta name="description" content="An open wingfoil tracking system: a Garmin watch app that records flights, jibes and swims, an iOS companion, and a browser analyzer that runs the same engine on your own .fit file — locally, with nothing uploaded.">
+<title>CleanJibe — open wingfoil tracking, from the watch to the numbers</title>
+<meta name="description" content="CleanJibe is an open wingfoil tracking system: a Garmin watch app that records flights, jibes and swims, an iOS companion, and a browser analyzer that runs the same engine on your own .fit file — locally, with nothing uploaded.">
 <meta name="theme-color" content="#101010">
 <meta name="color-scheme" content="dark">
 
@@ -21,10 +21,25 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/home.css">
 
-<meta property="og:title" content="WingFoil — open wingfoil tracking">
-<meta property="og:description" content="A Garmin watch app that records the flights, the jibes and the swims; an iOS companion; and a browser analyzer that runs the same engine on your own .fit file.">
+<!-- The share card. og:image must be an ABSOLUTE URL: the scrapers (Slack, WhatsApp,
+     iMessage, Mastodon, X) fetch the tag's value as-is and do not resolve it against the
+     page, so a relative path silently yields no preview. The tile itself is
+     social-card.png, 1200x630 — see web/tools/social_card.html for the source it is
+     rasterized from. -->
+<meta property="og:site_name" content="CleanJibe">
+<meta property="og:title" content="CleanJibe — open wingfoil tracking">
+<meta property="og:description" content="A Garmin watch app that records the flights, the jibes and the swims; an iPhone companion; and a browser analyzer that runs the same engine on your own .fit file.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cleanjibe.org/">
+<meta property="og:image" content="https://cleanjibe.org/social-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CleanJibe — open wingfoil tracking">
+<meta name="twitter:description" content="A Garmin watch app that records the flights, the jibes and the swims; an iPhone companion; and a browser analyzer that runs the same engine on your own .fit file.">
+<meta name="twitter:image" content="https://cleanjibe.org/social-card.png">
+<meta name="twitter:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
 </head>
 <body class="home">
 
@@ -32,7 +47,7 @@
   <div class="brand">
     <span class="mark" aria-hidden="true"></span>
     <div>
-      <h1>WingFoil</h1>
+      <h1>CleanJibe</h1>
       <p class="sub">Wing foiling, measured.</p>
     </div>
   </div>
@@ -49,10 +64,18 @@
     <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Watch · phone · browser · open source</p>
     <h1>What your session actually did.</h1>
     <p class="lede">
-      WingFoil is an open tracking system for wing foiling. A Garmin watch app records the
-      flights, the jibes and the swims while they happen; an iOS app and this site take the
-      recording apart afterwards. All three run the same analysis, and the rules it applies
-      are published rather than guessed at.
+      CleanJibe is an open tracking system for wing foiling. A Garmin watch app records the
+      flights, the jibes and the swims while they happen; an iPhone app and this site take
+      the recording apart afterwards. All three run the same analysis, and the rules it
+      applies are published rather than guessed at.
+    </p>
+
+    <!-- The name is not decoration: "flew through" is literally an outcome the engine
+         assigns to every turn it finds, and the dry streak is built out of them. -->
+    <p class="pun">
+      A clean jibe is one you fly all the way through, without touching down and without
+      swimming. That is the verdict this project puts on every turn you make — so the name
+      is a number, not a slogan.
     </p>
 
     <p class="cta">
@@ -110,15 +133,16 @@
   <section class="home-section">
     <h2>The three pieces</h2>
     <p class="section-lede">
-      The watch does the recording and the live numbers. The phone and the browser do the
-      deep analysis. You can use any one of them on its own.
+      CleanJibe is the home of the <b>WingFoil</b> apps: the watch does the recording and the
+      live numbers, the phone and the browser do the deep analysis. You can use any one of
+      them on its own.
     </p>
 
     <div class="pieces">
 
       <article class="panel piece">
         <div class="piece-head">
-          <h3>Garmin watch app</h3>
+          <h3>WingFoil for Garmin</h3>
           <span class="status">beta · by invite</span>
         </div>
         <p class="what">Connect IQ device app, Fenix-class watches</p>
@@ -133,10 +157,10 @@
 
       <article class="panel piece">
         <div class="piece-head">
-          <h3>iOS companion</h3>
+          <h3>WingFoil for iPhone</h3>
           <span class="status">beta · TestFlight</span>
         </div>
-        <p class="what">iPhone — the library, the replay and the season</p>
+        <p class="what">The library, the replay and the season</p>
         <ul>
           <li>Every session in one library, each one re-analyzed on the phone.</li>
           <li>Replay the track with commentary as the session plays back.</li>
@@ -245,7 +269,7 @@
 </main>
 
 <footer>
-  <p>WingFoil — an open wing foiling tracking project.</p>
+  <p>CleanJibe — an open wing foiling tracking project, and the home of the WingFoil apps.</p>
   <p>
     Source, issues and the detection thresholds:
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">github.com/JanLahmann/WingFoil</a>

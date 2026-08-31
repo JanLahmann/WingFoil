@@ -1,6 +1,7 @@
-# WingFoil Lab — web
+# CleanJibe — web
 
-A zero-server web app that runs the **actual `wingfoil_lab` Python engine** in the browser
+The site at **cleanjibe.org**: a project homepage and a zero-server analyzer that runs the
+**actual `wingfoil_lab` Python engine** in the browser
 via [Pyodide](https://pyodide.org/) (CPython compiled to WebAssembly). Drop a `.fit` file,
 get the full session analysis: flights, GP3S speed records, wind axis, turns with outcomes,
 flight ends, takeoffs. Keep the sessions you care about in a private on-device **library**,
@@ -14,10 +15,14 @@ file — verified against all 15 corpus fixtures (see *Verification* below).
 
 ```
 web/
-├── index.html                  the PROJECT HOMEPAGE (cleanjibe.org/) — what the project is,
-│                               the Garmin app, the iOS app, this analyzer. No JS.
-├── app/index.html              the ANALYZER (cleanjibe.org/app/): page shell, three views
-│                               (analyze / library / trends)
+├── index.html                  the PROJECT HOMEPAGE (cleanjibe.org/) — what CleanJibe is,
+│                               the WingFoil watch app, the iPhone app, this analyzer. No JS.
+├── app/index.html              the ANALYZER, "CleanJibe Lab" (cleanjibe.org/app/): page
+│                               shell, three views (analyze / library / trends)
+├── social-card.png             the 1200x630 Open Graph tile both pages point at, by
+│                               ABSOLUTE URL (scrapers do not resolve relative ones)
+├── tools/social_card.html      the tile's source; rasterize with headless Chrome to
+│                               regenerate it — see "The social card" below
 ├── app/manifest.webmanifest    PWA metadata — beside the app so `scope`/`start_url` are
 │                               /app/ and an installed icon opens the analyzer
 ├── sw.js                       service worker: app-shell precache + Pyodide runtime cache.
@@ -162,6 +167,47 @@ Notes:
 - `.nojekyll` is required: without it Jekyll may drop files and mangle the `lab_bundle/`.
 - No COOP/COEP headers are needed — this build of Pyodide does not use threads.
 - Everything is same-origin except the Pyodide CDN and PyPI, so no CORS setup is needed.
+
+## The social card
+
+Both documents carry a full Open Graph / Twitter set, and both point at the same tile:
+
+```
+https://cleanjibe.org/social-card.png     1200 x 630, 66 KB
+```
+
+Two things about those tags are load-bearing and easy to get wrong:
+
+- **`og:image` must be absolute.** Slack, WhatsApp, iMessage, Mastodon and X fetch the
+  tag's value verbatim; none of them resolve it against the page. A relative path does not
+  produce a broken image, it produces *no preview at all*, which is why this is worth a
+  paragraph. The same goes for `og:url`.
+- **`og:image:width` / `:height` are how a scraper decides to render large.** Without them
+  some clients wait for the image before laying the card out, and some fall back to the
+  small square. With `twitter:card=summary_large_image` beside them, every client that
+  matters renders the wide tile.
+
+The tile is a static PNG rather than anything generated: it is one image for one site, and
+a build step to produce one file would cost more than it saves. Its source is
+`tools/social_card.html` — the homepage's own hero motif, the same geometry and the same
+`design/tokens.json` colours, over the site's surface. To regenerate:
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu \
+  --force-device-scale-factor=1 --window-size=1200,630 \
+  --screenshot=/tmp/card.png file://$PWD/web/tools/social_card.html
+python3 -c "from PIL import Image; \
+  Image.open('/tmp/card.png').convert('RGB') \
+       .quantize(colors=256).save('web/social-card.png', optimize=True)"
+```
+
+The quantize step is what takes it from 187 KB to 66 KB; the tile is flat surfaces, a
+gradient and four accent hues, so a 256-colour palette with Floyd–Steinberg dither is
+visually identical (checked at 2x on the gradient, no banding). Keep it under ~200 KB —
+some scrapers refuse to fetch anything larger, and every one of them is on a phone.
+
+Note the tile is **not** in the service worker's `APP_SHELL`. Scrapers do not run service
+workers, and an offline visitor has no use for it.
 
 ## Refreshing `lab_bundle/` — do this after every lab change
 
@@ -333,8 +379,8 @@ choices above are made from the documented behaviour, not from a measured device
   *Reload to update*. Bump `VERSION` in `sw.js` whenever anything under `web/` changes; the
   old caches are deleted on activate. **This is not optional for a CSS or JS edit**: the
   shell is served cache-first, so without the bump every already-installed client keeps the
-  old stylesheet indefinitely. Current value: `v10` (homepage at the root, analyzer at
-  `/app/`).
+  old stylesheet indefinitely. Current value: `v14` (the CleanJibe rename, which changed both
+  page shells).
 
 The worker precaches **both** documents — `/` and `/app/` — and its offline navigation
 fallback picks between them by path, so an offline deep link to `/app/#/library` gets the
@@ -391,8 +437,15 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
 
 0. **The homepage.** `cd web && python3 -m http.server 8765`, open
    <http://127.0.0.1:8765/>. Static HTML: the hero, the three cards, the vocabulary list,
-   the track motif in the outcome colours. Both *Open the analyzer* buttons must land on
-   `/app/`, and the analyzer's own wordmark must come back here.
+   the track motif in the outcome colours. The wordmark reads **CleanJibe**; the two app
+   cards keep their own names (*WingFoil for Garmin*, *WingFoil for iPhone*), because the
+   site is branded and the apps are not renamed. Both *Open the analyzer* buttons must land
+   on `/app/`, and the analyzer's own wordmark must come back here.
+0b. **The share card.** View source on both documents: `og:image` must be the absolute
+   `https://cleanjibe.org/social-card.png`, with `og:image:width`/`:height` and
+   `twitter:card=summary_large_image` beside it. Open
+   <http://127.0.0.1:8765/social-card.png> — 1200 x 630, wordmark and tagline whole, the
+   motif in the outcome colours.
 1. Open <http://127.0.0.1:8765/app/> for everything below.
 2. **Cold boot.** The chip top-right should turn into `engine 0.8.1 · pyodide 0.28.3` within
    ~20 s on a warm connection. Open DevTools → Console: there must be no errors, only

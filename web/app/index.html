@@ -3,16 +3,34 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>WingFoil Lab — session analyzer</title>
-<meta name="description" content="Drop a .fit file and run the WingFoil lab engine in your browser. Nothing is uploaded.">
+<title>CleanJibe Lab — session analyzer</title>
+<meta name="description" content="Drop a .fit file and run the CleanJibe analysis engine in your browser. Nothing is uploaded.">
 <meta name="theme-color" content="#101010">
+
+<!-- The share card. og:image is absolute on purpose: scrapers fetch the tag's value as-is
+     and never resolve it against the page, so a relative path yields no preview at all.
+     The tile lives at the site root beside the homepage's copy of these tags. -->
+<meta property="og:site_name" content="CleanJibe">
+<meta property="og:title" content="CleanJibe session analyzer">
+<meta property="og:description" content="Drop a .fit file and get the whole session: flights, jibe outcomes, speed records, wind axis. The analysis runs in your own browser tab — nothing is uploaded.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://cleanjibe.org/app/">
+<meta property="og:image" content="https://cleanjibe.org/social-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CleanJibe session analyzer">
+<meta name="twitter:description" content="Drop a .fit file and get the whole session: flights, jibe outcomes, speed records, wind axis. The analysis runs in your own browser tab — nothing is uploaded.">
+<meta name="twitter:image" content="https://cleanjibe.org/social-card.png">
+<meta name="twitter:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
 <!-- iOS home-screen install: iOS only reads the manifest's `display` from 17.4 on, so the
      legacy meta stays. `black-translucent` lets the page own the status-bar strip, which is
      why every edge chrome (topbar, main, footer) pads with env(safe-area-inset-*). -->
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="WingFoil">
+<meta name="apple-mobile-web-app-title" content="CleanJibe">
 <!-- The analyzer lives at /app/; the site root is the project homepage. The manifest sits
      beside this file so its `scope`/`start_url` ("./") are the app, not the homepage —
      an installed icon must open the analyzer. Everything else (css, js, icons, the
@@ -34,7 +52,7 @@
   <a class="brand" href="../">
     <span class="mark" aria-hidden="true"></span>
     <div>
-      <h1>WingFoil Lab</h1>
+      <h1>CleanJibe Lab</h1>
       <p class="sub">The <code>wingfoil_lab</code> Python engine, running in your browser.</p>
     </div>
   </a>
@@ -53,7 +71,7 @@
 </header>
 
 <div id="update-banner" class="update-banner" role="status" hidden>
-  <span>A new version of WingFoil Lab has been downloaded.</span>
+  <span>A new version of CleanJibe Lab has been downloaded.</span>
   <span class="update-actions">
     <button class="primary" id="update-reload" type="button">Reload to update</button>
     <button class="ghost" id="update-dismiss" type="button">Later</button>
@@ -331,7 +349,7 @@
   <p>
     Runs <code>lab/src/wingfoil_lab</code> unchanged via
     <a href="https://pyodide.org/" rel="noopener">Pyodide</a>. No server, no upload, no tracking.
-    <br><a href="../">About the WingFoil project</a>
+    <br><a href="../">About the CleanJibe project</a>
   </p>
 </footer>
 

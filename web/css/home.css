@@ -1,4 +1,4 @@
-/* WingFoil — project homepage (web/index.html).
+/* CleanJibe — project homepage (web/index.html).
  *
  * A sibling of css/style.css, not a replacement: the homepage loads tokens.css, then
  * style.css, then this file, so the surfaces, ink, buttons, panels, topbar and footer are
@@ -51,6 +51,13 @@
 .hero .eyebrow .dot {
   width: 7px; height: 7px; border-radius: 50%; background: var(--foil);
   box-shadow: 0 0 0 3px #40c8e02e;   /* the same teal at 18 %, spelled out for old engines */
+}
+
+/* What the name means. A quieter register than the lede — it is an aside, and it must not
+   compete with the headline — but set on the accent so it still reads as a claim. */
+.hero .pun {
+  color: var(--ink-3); font-size: 14.5px; line-height: 1.5; max-width: 58ch;
+  border-left: 2px solid var(--foil); padding-left: 14px;
 }
 
 .cta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
