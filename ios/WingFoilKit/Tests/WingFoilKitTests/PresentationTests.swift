@@ -88,48 +88,137 @@ import Testing
         return row
     }
 
-    @Test func shareCardCarriesTheHeadlineStats() {
-        let stats = ShareCardStats.make(row: sampleRow(), title: "Torbole",
+    /// The card's stats *are* the key-metrics block, cell for cell. This is the assertion
+    /// that keeps a posted picture and the app's own summary of the same session from
+    /// naming different numbers with different words.
+    @Test func shareCardCompletePresetMirrorsTheKeyMetricsBlock() {
+        var records = GP3SRecords()
+        records.best2sKn = 13.209
+        let block = KeyMetrics.make(summary: torboleSummary(), records: records)
+        let stats = ShareCardStats.make(row: sampleRow(), title: "Torbole", metrics: block,
+                                        preset: .complete,
                                         timeZone: TimeZone(identifier: "UTC")!)
+
         #expect(stats.title == "Torbole")
-        let keys = stats.stats.map(\.key)
-        // Always exactly four: the card's 2 x 2 block is fixed-size artwork.
-        #expect(keys == ["foilPct", "flights", "longestFlight", "best2s"])
-        #expect(stats.stats[0].value == "62%")
-        #expect(stats.stats[1].value == "23")
-        #expect(stats.stats[2].value == "3 m")
-        #expect(stats.stats[2].caption == "1.42 km")
-        #expect(stats.stats[3].value == "21.37 kn")
-        #expect(stats.turnLine == "30 jibes · 9 flew · 9 touch · 12 fell")
+        #expect(stats.stats.map(\.key)
+                == ["duration", "distance", "avgSpeed", "max2s", "tally", "streaks",
+                    "jph", "wph"])
+        // Labels and values verbatim from the block — no rewording, no reformatting.
+        for metric in block.basics + [block.maxSpeed] + block.rates {
+            let cell = stats.stats.first { $0.key == metric.key }
+            #expect(cell?.label == metric.label)
+            #expect(cell?.value == metric.value)
+        }
+        #expect(stats.stats.first { $0.key == "streaks" }?.value == "11 dry · 5 flew")
+        // The tally keeps its three counts *as counts*, so the card can draw them on the
+        // ladder's inks, and carries the block's own caption.
+        let tally = stats.stats.first { $0.key == "tally" }
+        #expect(tally?.value == "35 · 8 · 7")
+        #expect(tally?.caption == "of 50 jibes")
+        #expect(tally?.tally == block.tally)
         #expect(stats.disclaimer == nil)
+    }
+
+    /// The flight count is gone. It was the card's own invention — the key-metrics block
+    /// never carried it — and "23 flights" says nothing a rider wants on a picture.
+    @Test func shareCardNoLongerCarriesTheFlightCount() {
+        var records = GP3SRecords()
+        records.best2sKn = 13.209
+        let block = KeyMetrics.make(summary: torboleSummary(), records: records)
+        for preset in ShareCardStats.Preset.allCases {
+            let stats = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block,
+                                            preset: preset)
+            #expect(!stats.stats.contains { $0.key == "flights" },
+                    "\(preset.rawValue) still carries the flight count")
+            #expect(!stats.stats.contains { $0.key == "foilPct" })
+            #expect(!stats.stats.contains { $0.key == "longestFlight" })
+        }
+    }
+
+    /// Lean can only *remove*. If it ever substituted or reworded a cell it would be a
+    /// second vocabulary again, and the card would be free to disagree with the app.
+    @Test func leanPresetIsAStrictSubsetOfComplete() {
+        var records = GP3SRecords()
+        records.best2sKn = 13.209
+        let block = KeyMetrics.make(summary: torboleSummary(), records: records)
+        let complete = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block,
+                                           preset: .complete).stats
+        let lean = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block,
+                                       preset: .lean).stats
+
+        #expect(lean.map(\.key) == ["duration", "distance", "max2s", "tally"])
+        #expect(lean.count < complete.count)
+        for cell in lean {
+            #expect(complete.contains(cell), "\(cell.key) was reworded by the preset")
+        }
+        // The order the block reads in survives the filter.
+        #expect(lean.map(\.key) == complete.map(\.key).filter(lean.map(\.key).contains))
+        #expect(ShareCardStats.Preset.complete == ShareCardStats.Preset.allCases.last)
+    }
+
+    /// The rate cells disappear on a session with no hour to divide by — the same rule
+    /// `KeyMetrics` applies, because it is the same list.
+    @Test func shareCardHidesTheRatesWhenTheBlockHasNone() {
+        var summary = SessionSummary(foilTimeS: 0, foilPct: 0, flightCount: 0,
+                                     longestFlightS: 0, longestFlightM: 0, distanceKm: 0)
+        summary.apply(SessionRates(durationS: 0, distanceM: 0, turnsCounted: 0, dryJibes: 0,
+                                   fellIn: 0))
+        let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
+        let stats = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block)
+        #expect(stats.stats.map(\.key) == ["duration", "distance", "avgSpeed", "max2s"])
+        #expect(!stats.stats.contains { $0.key == "jph" || $0.key == "wph" })
+        // Nothing measured is "—", never a fabricated 0.00 kn.
+        #expect(stats.stats.allSatisfy { !$0.value.contains("0.00") })
+        #expect(stats.stats.first { $0.key == "max2s" }?.value == "—")
     }
 
     /// The card is an image, so "not measured" has to be printed, not left to an optional
     /// binding — a card claiming "0.00 kn" would be a lie with a share sheet attached.
+    ///
+    /// Without an analysis the card falls back to the three facts the index row carries.
+    /// It must not reconstruct a tally out of the whole-turn columns: the block one screen
+    /// away counts *jibe* outcomes, and the two sets differ on most sessions.
     @Test func shareCardPrintsPlaceholdersRatherThanZero() {
         var row = SessionRow(id: "s2", startDate: Date(), durationS: 600, sourceClass: "c")
         row.flightCount = nil
         let stats = ShareCardStats.make(row: row, title: "Session")
+        #expect(stats.stats.map(\.key) == ["duration", "distance", "max2s"])
         #expect(stats.stats.allSatisfy { !$0.value.contains("0.00") })
-        #expect(stats.stats.first { $0.key == "best2s" }?.value == "—")
-        #expect(stats.stats.first { $0.key == "foilPct" }?.value == "—")
-        // No turn data at all ⇒ no tally line, and still exactly four stat cells.
-        #expect(stats.turnLine == nil)
-        #expect(stats.stats.count == 4)
-    }
-
-    /// "9 flew" alone does not say out of how many, so the jibe count is prefixed — but
-    /// only when the session actually classified jibes.
-    @Test func shareCardTurnLineOmitsTheJibeCountWhenThereIsNone() {
-        var row = sampleRow()
-        row.jibes = nil
-        #expect(ShareCardStats.make(row: row, title: "x").turnLine
-                == "9 flew · 9 touch · 12 fell")
+        #expect(stats.stats.first { $0.key == "max2s" }?.value == "—")
+        #expect(stats.stats.first { $0.key == "distance" }?.value == "—")
+        #expect(stats.stats.first { $0.key == "duration" }?.value == "0:10")
+        #expect(!stats.stats.contains { $0.key == "tally" })
     }
 
     @Test func shareCardDisclaimsUncertifiedSources() {
         let stats = ShareCardStats.make(row: sampleRow(sourceClass: "c"), title: "Session")
         #expect(stats.disclaimer != nil)
+    }
+
+    /// A preference, not a per-session choice — and one that defaults to showing the whole
+    /// block, because a rider who never touched the picker asked for the app's own summary.
+    @Test func shareCardPresetSurvivesTheRoundTripAndDefaultsToComplete() throws {
+        let defaults = try scratchDefaults()
+        #expect(ShareCardPresetStore.load(from: defaults) == .complete)
+
+        ShareCardPresetStore.save(.lean, to: defaults)
+        #expect(ShareCardPresetStore.load(from: defaults) == .lean)
+
+        // A value from a build that knows a preset this one does not must not strand the
+        // composer on a blank card.
+        defaults.set("exhaustive", forKey: ShareCardPresetStore.defaultsKey)
+        #expect(ShareCardPresetStore.load(from: defaults) == .complete)
+    }
+
+    /// The card names the app and where to find it, from one constant — the same one the
+    /// invitation that travels with a shared FIT reads. The address has moved once already
+    /// (the GitHub Pages URL, before `cleanjibe.org` was registered), which is why it is a
+    /// constant and not six string literals.
+    @Test func brandingCreditIsTheNameAndTheSite() {
+        #expect(Branding.credit == "WingFoil · cleanjibe.org")
+        #expect(Branding.siteURL == "https://cleanjibe.org")
+        #expect(Branding.credit.hasPrefix(Branding.appName))
+        #expect(Branding.credit.hasSuffix(Branding.site))
     }
 
     @Test func shareCardShapesAreTheDocumentedPixelSizes() {
@@ -362,6 +451,80 @@ import Testing
         }
         let thumb = TrackThumbnail.make(track: track, flights: [])
         #expect(thumb.points.allSatisfy { $0.x.isFinite && $0.y.isFinite })
+    }
+
+    // MARK: - Thumbnail marks
+
+    /// The card's three semantics and no more: the verdict ladder on the *counted* turns,
+    /// and the barometer's submersion evidence on both of its channels. A bear-away is a
+    /// course change, not a verdict, and gets no dot — the same rule the map draws by.
+    ///
+    /// Asserted against a decoded golden rather than a hand-built session, for the reason
+    /// `ReplayBeatsTests` gives: a synthetic analysis can be made to agree with any rule at
+    /// all. 29 Aug Torbole has 51 counted turns (35 · 8 · 8), 11 uncounted ones, and seven
+    /// splashes across three turns and four straight-line flight ends.
+    @Test func thumbnailEventsAreTheLadderPlusTheSplashes() throws {
+        let url = testFixturesDir.appendingPathComponent(
+            "goldens/2026-08-29-1440_nago-torbole-windsurfen_ciq.expected.json")
+        let analysis = try JSONDecoder().decode(SessionAnalysis.self,
+                                                from: Data(contentsOf: url))
+        let events = TrackThumbnail.events(analysis)
+        let counts = Dictionary(grouping: events, by: \.kind).mapValues(\.count)
+
+        #expect(counts[.flewThrough] == 35)
+        #expect(counts[.touchdown] == 8)
+        #expect(counts[.fellIn] == 8)
+        #expect(counts[.splash] == 7)
+        // 62 turns in the session, 51 of them counted: the eleven course changes are not
+        // verdicts and are not marked.
+        #expect(events.count == 58)
+        #expect(events.map(\.t) == events.map(\.t).sorted(), "marks must be in time order")
+    }
+
+    /// A mark has to land on the vertex it belongs to, which means going through the
+    /// outline's own projection rather than a second normalization of its own.
+    @Test func thumbnailMarksLandOnTheTrackTheyBelongTo() {
+        let track = syntheticTrack()                       // 400 m east, then back
+        let flights = [FlightRecord(Flight(startT: 0, endT: 199, distM: 400, maxKn: 20))]
+        let thumb = TrackThumbnail.make(
+            track: track, flights: flights,
+            events: [TrackThumbnail.Event(t: 0, kind: .flewThrough),
+                     TrackThumbnail.Event(t: 199, kind: .fellIn),
+                     TrackThumbnail.Event(t: 199, kind: .splash)])
+
+        #expect(thumb.marks.map(\.kind) == [.flewThrough, .fellIn, .splash])
+        // t = 0 is the western end of the reach, t = 199 the eastern one.
+        #expect(thumb.marks[0].x < 0.02)
+        #expect(thumb.marks[1].x > 0.98)
+        #expect(thumb.marks[1].x == thumb.marks[2].x)
+        // Every mark sits on the polyline's own band, not in the letterbox above or below.
+        let ys = thumb.points.map(\.y)
+        for mark in thumb.marks {
+            #expect(mark.y >= ys.min()! - 0.01 && mark.y <= ys.max()! + 0.01)
+        }
+    }
+
+    /// A moment with no fix anywhere near it is dropped. A dot in the wrong bay cannot be
+    /// corrected by tapping it — a card is looked at, not queried.
+    @Test func thumbnailDropsAMarkWithNoPositionNearIt() {
+        let thumb = TrackThumbnail.make(
+            track: syntheticTrack(), flights: [],
+            events: [TrackThumbnail.Event(t: 50, kind: .fellIn),
+                     TrackThumbnail.Event(t: 9_999, kind: .fellIn)])
+        #expect(thumb.marks.count == 1)
+    }
+
+    /// What lets the share card stop letterboxing the ride twice: the extent the track
+    /// actually occupies inside the square it was normalized into. A 400 m out-and-back is
+    /// a horizontal band, so its content box is full width and a sliver high.
+    @Test func thumbnailContentBoxIsTheTrackNotTheUnitSquare() throws {
+        let thumb = TrackThumbnail.make(track: syntheticTrack(), flights: [])
+        let box = try #require(thumb.contentBox)
+        #expect(box.minX < 0.01 && box.maxX > 0.99)
+        #expect(box.maxY - box.minY < 0.05)
+        #expect(box.minY > 0.4 && box.maxY < 0.6, "the short axis is centred")
+        // Nothing to fit is nothing to divide by.
+        #expect(TrackThumbnail(points: [], speed: [], maxKn: 0).contentBox == nil)
     }
 
     @Test func thumbnailRoundTripsThroughItsCacheFormat() throws {
