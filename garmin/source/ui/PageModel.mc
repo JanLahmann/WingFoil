@@ -98,10 +98,9 @@ module PageModel {
     // Seven configurable pages since 0.8.2. The seventh exists so the BREADCRUMB MAP can ship
     // ON by default: the page has been in the app since 0.7 but was never in the shipped set,
     // and a rider who has to find "Map" in a Garmin Connect layout list never learns it is
-    // there. It goes LAST on purpose — it is the one page that cannot be drawn into, so it
-    // carries no state, no speed and no PAUSED banner, and it is skipped while paused
-    // (PageNav). On any product without WatchUi.MapTrackView build() turns it OFF, so those
-    // watches simply keep the six screens they had.
+    // there. It goes LAST because it is the least glanceable, not because it is special: since
+    // 0.9.2 the trail is drawn by RecordingView like every other page (TrackDraw), so it needs
+    // no firmware map support, carries the PAUSED banner, and exists on every product.
     const MAX_PAGES = 7;
     const SLOTS = 5;
 
@@ -135,13 +134,6 @@ module PageModel {
     var _order as Array<Number> = [0];
     var mapPage as Boolean = false;      // any page asks for the breadcrumb map
 
-    // MapTrackView is the native map view (Toybox.WatchUi, not a Toybox.Map module — see the
-    // availability note in docs/plan.md). Every fenix 8 variant in the manifest has it; the
-    // check keeps the page out of the cycle anywhere it is missing rather than crashing.
-    function hasMap() as Boolean {
-        return WatchUi has :MapTrackView;
-    }
-
     // Rebuilds the model. `src` null = read GCM properties; a Dictionary = read that instead
     // (the unit tests inject one, so "defaults reproduce the shipped pages" is assertable
     // without a device).
@@ -151,9 +143,6 @@ module PageModel {
         for (var p = 0; p < MAX_PAGES; p++) {
             var key = "pg" + (p + 1).toString();
             var lay = _clamp(_read(src, key + "Layout", DEF_LAYOUT[p]), 0, LAYOUT_MAX);
-            if (lay == LAYOUT_MAP && !hasMap()) {
-                lay = LAYOUT_OFF;
-            }
             _layout[p] = lay;
             var row = _slot[p];
             var defRow = DEF_SLOTS[p];

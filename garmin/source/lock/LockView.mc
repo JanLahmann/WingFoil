@@ -106,11 +106,11 @@ class LockView extends WatchUi.View {
             dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
             centered(dc, cx, rowY(h, ROW_STATUS), Graphics.FONT_XTINY, "key not valid");
         } else {
-            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
             centered(dc, cx, rowY(h, ROW_STATUS), Graphics.FONT_XTINY, "send this code");
         }
 
-        dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         centered(dc, cx, rowY(h, ROW_HINT1), Graphics.FONT_XTINY, "key goes in Garmin");
         centered(dc, cx, rowY(h, ROW_HINT2), Graphics.FONT_XTINY, "Connect app settings");
     }

@@ -52,14 +52,6 @@ class WingfoilApp extends Application.AppBase {
         AppSettings.load();
         PageModel.build(null);
         PageNav.index = PageModel.wrap(PageNav.index);
-        // A settings edit can remove the page the pushed map view is standing on; pop it
-        // rather than leave a view no index refers to. (Pushing the map from here is not
-        // done: if the edit made the current page a map, the next page press picks it up.)
-        if (PageNav.mapShown
-                && PageModel.layoutAt(PageNav.index) != PageModel.LAYOUT_MAP) {
-            PageNav.dropMap();
-            WatchUi.requestUpdate();
-        }
         // The breadcrumb is now recorded ALWAYS, not only when a map page is configured.
         // The post-save summary draws the session's track as its last page, and that page is
         // the difference between a receipt and a review — it cannot be conditional on a
