@@ -265,7 +265,7 @@ function buildModel(result) {
     const i = indexAt(v, t);
     return { i, x: positioned ? v.x[i] : null, y: positioned ? v.y[i] : null };
   };
-  const time = (t) => `${clockAt(meta.startUtc, t)} · ${hms(t)}`;
+  const time = (t) => `${clockAt(meta, t)} · ${hms(t)}`;
 
   // --- turn outcomes (solid shapes) --------------------------------------------
   for (const m of v.turnMarkers) {
@@ -275,7 +275,7 @@ function buildModel(result) {
     marks.push({
       layer, t: m.t, x: m.x, y: m.y, kn: m.kn, style: turnStyle(m), n: m.n,
       title: `#${m.n} ${m.kind}${m.counted ? "" : " (not counted)"}`,
-      tip: `<b>#${m.n} ${clockAt(meta.startUtc, m.t)}</b> — ${esc(m.kind)}<br>` +
+      tip: `<b>#${m.n} ${clockAt(meta, m.t)}</b> — ${esc(m.kind)}<br>` +
            `${OUTCOME_LABEL[m.outcome] || m.outcome} · ${nf(turn.entryKn, 1)} → ` +
            `${nf(turn.minKn, 1)} kn (${nf(turn.score * 100, 0)} %)`,
       rows: [
@@ -303,7 +303,7 @@ function buildModel(result) {
       kn: e.kn ?? traceKn(v, e.t), style: endStyle(e), n: null,
       pairing: flight ? pairEnd(flight) : null,
       title: `Flight ${e.flightIndex + 1} ends · straight line`,
-      tip: `<b>${clockAt(meta.startUtc, e.t)}</b> — flight ${e.flightIndex + 1} ends<br>` +
+      tip: `<b>${clockAt(meta, e.t)}</b> — flight ${e.flightIndex + 1} ends<br>` +
            `${OUTCOME_LABEL[e.outcome]} · straight line (no manoeuvre)`,
       rows: [
         ["time", time(e.t)],
@@ -339,7 +339,7 @@ function buildModel(result) {
                color: C.takeoff }, n: null,
       pairing: flight ? pairTakeoff(flight) : null,
       title: k.free ? "Free takeoff" : "Takeoff",
-      tip: `<b>${clockAt(meta.startUtc, k.startTs)}</b> — ${k.free ? "free takeoff" : "takeoff"}<br>` +
+      tip: `<b>${clockAt(meta, k.startTs)}</b> — ${k.free ? "free takeoff" : "takeoff"}<br>` +
            `up at ${nf(k.entryKn, 1)} kn` +
            (k.pumps === null ? "" : ` · ${k.pumps} stroke${k.pumps === 1 ? "" : "s"}`) +
            (k.truncated ? "" : ` · ${nf(k.timeToFoilS, 0)} s run`),
@@ -354,7 +354,7 @@ function buildModel(result) {
       style: { shape: TOKENS.glyphs.takeoffFailed.webShape, color: C.failedTakeoff }, n: null,
       pairing: pairFailed(ep.strokes),
       title: "Failed attempt",
-      tip: `<b>${clockAt(meta.startUtc, ep.startTs)}</b> — failed attempt<br>` +
+      tip: `<b>${clockAt(meta, ep.startTs)}</b> — failed attempt<br>` +
            `${ep.strokes} stroke${ep.strokes === 1 ? "" : "s"}, no flight`,
       rows: [
         ["time", time(ep.startTs)],
@@ -375,7 +375,7 @@ function buildModel(result) {
       layer: "splash", t: turn.ts, x: p.x, y: p.y, kn: traceKn(v, turn.ts),
       style: { shape: TOKENS.glyphs.splash.webShape, color: C.splash }, n: null,
       title: `${turn.type} · wrist under`,
-      tip: `<b>${clockAt(meta.startUtc, turn.ts)}</b> — wrist under<br>` +
+      tip: `<b>${clockAt(meta, turn.ts)}</b> — wrist under<br>` +
            `${esc(turn.type)} · ${nf(turn.entryKn, 1)} → ${nf(turn.minKn, 1)} kn`,
       rows: [["time", time(turn.ts)], ["evidence", "barometer saw the wrist go under"],
              ["turn", `${turn.type} · ${OUTCOME_LABEL[turn.outcome] || turn.outcome}`],
@@ -389,7 +389,7 @@ function buildModel(result) {
       layer: "splash", t: end.ts, x: p.x, y: p.y, kn: traceKn(v, end.ts),
       style: { shape: TOKENS.glyphs.splash.webShape, color: C.splash }, n: null,
       title: "Wrist under",
-      tip: `<b>${clockAt(meta.startUtc, end.ts)}</b> — wrist under<br>straight-line flight end`,
+      tip: `<b>${clockAt(meta, end.ts)}</b> — wrist under<br>straight-line flight end`,
       rows: [["time", time(end.ts)], ["evidence", "barometer saw the wrist go under"],
              ["channel", "straight-line flight end"],
              ["stopped", `${nf(end.stoppedS, 1)} s`]],
@@ -1043,7 +1043,7 @@ function drawStrip() {
       const x0 = X(span.t0), x1 = Math.max(X(span.t1), x0 + 1.5);
       const band = svg("rect", { x: x0, y: T, width: x1 - x0, height: plotH, fill: C.pump,
                                  opacity: 0.3, "data-band": "pumping" }, plot);
-      tipTarget(band, `<b>${clockAt(model.meta.startUtc, span.t0)}</b> — pumping<br>` +
+      tipTarget(band, `<b>${clockAt(model.meta, span.t0)}</b> — pumping<br>` +
                       `${span.strokes} stroke${span.strokes === 1 ? "" : "s"} · ` +
                       `${nf(span.t1 - span.t0, 1)} s · ${esc(span.outcome)}`);
     }
@@ -1234,7 +1234,7 @@ function wireStripInput(root, cross, box) {
     cross.cline.setAttribute("x2", box.X(v.t[i]));
     cross.cdot.setAttribute("cx", box.X(v.t[i]));
     cross.cdot.setAttribute("cy", box.Y(kn));
-    showTip(ev, `<b>${clockAt(state.model.meta.startUtc, v.t[i])}</b> · ${hms(v.t[i])}<br>` +
+    showTip(ev, `<b>${clockAt(state.model.meta, v.t[i])}</b> · ${hms(v.t[i])}<br>` +
                 `Doppler <b>${nf(v.dopplerKn[i], 2)}</b> kn · positional ` +
                 `<b>${nf(v.speedKn[i], 2)}</b> kn`);
   });
@@ -1551,7 +1551,7 @@ function applyPlayhead() {
     readout.hidden = false;
     readout.setAttribute("data-t", t.toFixed(2));
     readout.innerHTML =
-      field(clockAt(model.meta.startUtc, v.t[i]), "clock") +
+      field(clockAt(model.meta, v.t[i]), "clock") +
       field(hms(v.t[i]), "elapsed") +
       field(nf(v.dopplerKn[i], 2), "kn Doppler") +
       field(nf(v.speedKn[i], 2), "kn positional") +
@@ -1761,7 +1761,7 @@ function openFlight(ev, flight) {
     title: `Flight ${flight.index + 1}`,
     pairing: pairFlight(flight),
     rows: [
-      ["time", `${clockAt(state.model.meta.startUtc, flight.startTs)} · ${hms(flight.startTs)}`],
+      ["time", `${clockAt(state.model.meta, flight.startTs)} · ${hms(flight.startTs)}`],
       ["duration", hms(flight.endTs - flight.startTs)],
       ["distance", flight.distM === null ? "—" : metres(flight.distM)],
       ["ended", flight.outcome],

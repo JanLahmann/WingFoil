@@ -76,15 +76,50 @@ export function hms(sec) {
            : `${m}:${String(r).padStart(2, "0")}`;
 }
 
-export function clockAt(startUtc, t) {
-  if (!startUtc) return hms(t);
-  const d = new Date(new Date(startUtc).getTime() + t * 1000);
-  return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+/**
+ * Format a UTC instant in the **session's own** zone — the one clock a rider recognises.
+ *
+ * A FIT timestamp is UTC. Rendering it in the reader's current zone is correct only while
+ * the reader and the recording share one, which is a coincidence that expires: at the next
+ * DST boundary every session in the library silently shifts by an hour, and on any trip the
+ * afternoon on the water is filed under somebody else's breakfast. `meta.utcOffsetS`
+ * (engine 0.8.2) is the offset the *watch* was wearing when it saved the file, so shifting
+ * the instant by it and formatting in UTC reproduces the wall clock the rider actually saw,
+ * for ever and from anywhere.
+ *
+ * `offsetS` null/undefined is the honest unknown — a source that carried neither an
+ * `activity` message nor a GPS fix. The reader's own zone is then all there is, and
+ * `renderSummary` says so in words rather than letting the number pass as the session's.
+ *
+ * @param {string|number|Date|null} utc  the instant
+ * @param {number|null|undefined} offsetS  the session's UTC offset in seconds
+ * @param {object} opts  Intl options — date parts, time parts, or both
+ */
+export function zonedFormat(utc, offsetS, opts) {
+  if (utc === null || utc === undefined) return "";
+  const ms = new Date(utc).getTime();
+  if (Number.isNaN(ms)) return "";
+  if (offsetS === null || offsetS === undefined || !Number.isFinite(offsetS)) {
+    return new Date(ms).toLocaleString("en-GB", opts);
+  }
+  return new Date(ms + offsetS * 1000)
+    .toLocaleString("en-GB", { ...opts, timeZone: "UTC" });
 }
 
-export function sessionDate(startUtc) {
+/** `14:07:33` on the session's own clock. `meta` carries both halves of the answer, so it
+ *  is passed whole rather than split into two arguments a caller can pair up wrongly. */
+export function clockAt(meta, t) {
+  const startUtc = meta && meta.startUtc;
+  if (!startUtc) return hms(t);
+  return zonedFormat(new Date(startUtc).getTime() + t * 1000, meta.utcOffsetS,
+                     { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
+/** `Sun, 30 Aug 2026, 14:07` — the session heading. */
+export function sessionDate(meta) {
+  const startUtc = meta && meta.startUtc;
   if (!startUtc) return "Session";
-  return new Date(startUtc).toLocaleString("en-GB",
+  return zonedFormat(startUtc, meta.utcOffsetS,
     { weekday: "short", year: "numeric", month: "short", day: "numeric",
       hour: "2-digit", minute: "2-digit" });
 }

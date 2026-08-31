@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v15";     // v15: the share card (js/cardstats.js, js/sharecard.js, the QR)
+const VERSION = "v16";     // v16: per-session timezone (js/viz.js zonedFormat) + the duration form
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.

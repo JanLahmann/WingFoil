@@ -22,7 +22,7 @@ import { C, OUTCOME_COLOR, OUTCOME_LABEL, SVGNS, clockAt, esc, hms, int, marker,
 // Re-exported so the rest of the app keeps one import site for the shared helpers; the
 // split into viz.js is an internal arrangement of the rendering layer.
 export { C, clockAt, esc, figureWidth, hideTip, hms, int, isNarrow, nf, sessionDate,
-         showTip, svg } from "./viz.js";
+         showTip, svg, zonedFormat } from "./viz.js";
 // `renderFigures` travels with them because js/sections.js needs the figures redrawn on
 // their own, without the two long tables being rebuilt for nothing (see wireSections).
 export { clearPlayhead, closePopover, renderFigures, resetSession } from "./session.js";
@@ -97,10 +97,17 @@ function renderSummary(result) {
   const g = result.golden, meta = result.meta, caps = g.capabilities;
   const s = g.summary, rec = g.records, w = g.wind;
 
-  el("session-title").textContent = sessionDate(meta.startUtc);
+  el("session-title").textContent = sessionDate(meta);
+  // What clock the times on this page are on. Since engine 0.8.2 that is the *session's*
+  // own — the offset its watch was wearing — so the note states the fact rather than the
+  // old apology, and only falls back to naming the reader's zone when the file could not
+  // say (`utcOffsetS` null), which is the one case where the reader has to know.
+  const clockNote = meta.utcOffsetS === null || meta.utcOffsetS === undefined
+    ? " · no timezone in this file — times shown on your own clock"
+    : " · times as recorded on the water";
   el("session-sub").innerHTML =
     `${esc(result.file.name)} · ${int(meta.samples)} samples @ ${nf(caps.sampleRateHz, 0)} Hz` +
-    (meta.startUtc ? ` · times shown in your local timezone` : "");
+    (meta.startUtc ? clockNote : "");
 
   const badges = [];
   if (meta.discipline) badges.push([meta.discipline, true]);
@@ -205,7 +212,7 @@ function renderTurns(table, caption, g, v, meta) {
     <tbody>${g.turns.map((t, i) => `
       <tr>
         <td class="l">${i + 1}</td>
-        <td class="l">${clockAt(meta.startUtc, t.ts)}</td>
+        <td class="l">${clockAt(meta, t.ts)}</td>
         <td class="l">${esc(t.type)}${t.counted ? "" : ' <span class="pill">not counted</span>'}</td>
         <td class="l dim">${esc(t.direction)}</td>
         <td class="l dim">${esc(t.side)}</td>
@@ -237,7 +244,7 @@ function renderEnds(table, caption, g, meta) {
     <tbody>${g.flightEnds.map((x) => `
       <tr>
         <td class="l">${x.flightIndex + 1}</td>
-        <td class="l">${clockAt(meta.startUtc, x.ts)}</td>
+        <td class="l">${clockAt(meta, x.ts)}</td>
         <td class="l">${outcomePill(x.outcome)}${x.borderline ? ' <span class="pill">borderline</span>' : ""}</td>
         <td>${nf(x.stoppedS, 1)}</td>
         <td>${nf(x.offFoilS, 1)}</td>

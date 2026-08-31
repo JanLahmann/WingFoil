@@ -11,7 +11,7 @@
  */
 
 import { ask, askBytes } from "./rpc.js";
-import { esc, hms, int, nf, sessionDate } from "./render.js";
+import { esc, hms, int, nf, sessionDate, zonedFormat } from "./render.js";
 import { askRider } from "./rider.js";
 import {
   getAnalysisJson, getFitBlob, listEntries, putSession, removeSession, storageLabel, usage,
@@ -58,7 +58,7 @@ export async function saveSession({ digest, analysisJson, fitBytes, example = fa
   if (hit.match) {
     const existing = index[hit.index] || {};
     replacing = existing;
-    const when = existing.startUtc ? sessionDate(existing.startUtc) : "unknown date";
+    const when = existing.startUtc ? sessionDate(existing) : "unknown date";
     const ok = window.confirm(
       `This looks like a session you already have.\n\n` +
       `In the library: ${existing.fileName || existing.id} (${when})\n` +
@@ -140,8 +140,12 @@ const mb = (bytes) => (bytes === null || bytes === undefined ? "—"
   : bytes >= 1024 * 1024 ? `${(bytes / 1024 ** 2).toFixed(1)} MB`
   : `${Math.max(1, Math.round(bytes / 1024))} KB`);
 
-const shortDate = (utc) => (utc
-  ? new Date(utc).toLocaleString("en-GB",
+/** A library row's date, on the *session's* clock (`zonedFormat`) rather than the reader's
+ *  — a row that changed its own time every time the reader crossed a timezone would make
+ *  the library look like it had been edited. `e` is the stored digest, which carries both
+ *  the instant and the offset it was recorded at. */
+const shortDate = (e) => (e && e.startUtc
+  ? zonedFormat(e.startUtc, e.utcOffsetS,
       { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })
   : "—");
 
@@ -166,7 +170,7 @@ function renderRows(entries) {
       `<th${i <= 1 || i === last ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
     <tbody>${entries.map((e) => `
       <tr data-id="${esc(e.id)}">
-        <td class="l stack-lead"${th(0)}>${esc(shortDate(e.startUtc))}</td>
+        <td class="l stack-lead"${th(0)}>${esc(shortDate(e))}</td>
         <td class="l stack-block"${th(1)}><span class="lib-spot">${esc(e.spot || "Session")}
           ${tags(e)}</span>
           <span class="lib-file">${esc(e.fileName || "")}</span></td>
@@ -254,7 +258,7 @@ async function onRowClick(ev) {
       break;
     case "delete":
       if (window.confirm(
-        `Delete “${entry.spot || entry.fileName}” (${shortDate(entry.startUtc)})?\n\n` +
+        `Delete “${entry.spot || entry.fileName}” (${shortDate(entry)})?\n\n` +
         `The stored FIT and its analysis are removed from this browser. ` +
         `This cannot be undone.`)) {
         await removeSession(id);

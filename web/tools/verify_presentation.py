@@ -48,6 +48,7 @@ import shutil
 import subprocess
 import sys
 from collections import Counter
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 WEB = Path(__file__).resolve().parents[1]
@@ -362,7 +363,8 @@ def check_engine() -> None:
         print(f"  (skipped: web_entry not importable: {exc})")
         return
 
-    doc = json.loads(web_entry.analyze_json(fit.read_bytes(), fit.name))["golden"]
+    result = json.loads(web_entry.analyze_json(fit.read_bytes(), fit.name))
+    doc = result["golden"]
     _, facts = load(CIQ)
     fresh = gen.facts(CIQ, doc)
     for key in ("markers", "flightCount", "flightEnds", "takeoff", "splash", "pumpingSpans",
@@ -370,6 +372,38 @@ def check_engine() -> None:
         check(f"  {CIQ}: {key} from a fresh analysis", fresh[key], facts[key])
     # The one number the whole layer exists for, stated out loud.
     check(f"  {CIQ}: failed takeoff attempts", fresh["takeoff"]["failed"], 14)
+    check_session_clock(result)
+
+
+def check_session_clock(result: dict) -> None:
+    """The web half of `SessionTimeZoneTests`: this page reads on the session's clock.
+
+    The fixture is `2026-08-07-0754_…`, and the filename is the assertion: the rider was on
+    the water at **07:54** on 7 August. The recording says 05:54:35 UTC. Until engine 0.8.2
+    the page had nothing to bridge the two with — `meta` carried the instant and the browser
+    formatted it wherever the reader happened to be, so the heading was right in Italy in
+    August and wrong everywhere and everywhen else. `meta.utcOffsetS` is what fixes it, and
+    this asserts the arithmetic every clock on the page now goes through (`zonedFormat` in
+    web/js/viz.js), in Python, so the machine's own clock cannot supply the answer.
+
+    The expected strings are taken from the fixture's **filename**, which is what a rider
+    wrote down: a change that made this fail would be a change that made the page disagree
+    with the file it is showing.
+    """
+    stamp = CIQ.split("_")[0]                       # "2026-08-07-0754"
+    day, clock = stamp[:10], f"{stamp[11:13]}:{stamp[13:15]}"
+    meta = result["meta"]
+    check("  meta carries the session's own UTC offset", meta["utcOffsetS"], 7200)
+    start = datetime.fromisoformat(meta["startUtc"]).astimezone(timezone.utc)
+    check("  the instant underneath is untouched (UTC)",
+          start.strftime("%H:%M:%S"), "05:54:35")
+    # `zonedFormat`, spelled out: shift by the offset, then read in UTC. The naive rendering
+    # on a UTC machine says 05:54; the session's own clock says what the filename says.
+    shown = start + timedelta(seconds=meta["utcOffsetS"])
+    check("  the page's heading reads on the session's clock",
+          shown.strftime("%H:%M"), clock)
+    check("  …and dates it on the session's calendar day",
+          shown.strftime("%Y-%m-%d"), day)
 
 
 # --------------------------------------------- 5. the share card is the block
@@ -388,9 +422,19 @@ FORBIDDEN_KEYS = {"flightCount", "flights", "foilPct", "longestFlight", "best500
 
 
 def _hm(sec: float) -> str:
-    """`1:25`, written out again — the Python spelling of `KeyMetrics.hoursMinutes`."""
-    m = max(0, round(sec / 60))
-    return f"{m // 60}:{m % 60:02d}"
+    """`1:25 h` / `10:45 min`, written out again — the Python spelling of the block's
+    duration rule (`KeyMetrics.duration`, `hm` in web/js/cardstats.js).
+
+    Under an hour it is minutes and seconds, because `h:mm` printed `0:11` for the ten
+    minute forty-five second example session and a card is the last place a number may be
+    rounded into meaninglessness. The unit rides inside the string, as `km` and `kn` do in
+    every other cell, so `10:45` can never be read as ten and three quarter hours.
+    """
+    total = max(0, round(sec))
+    if total >= 3600:
+        m = round(total / 60)
+        return f"{m // 60}:{m % 60:02d} h"
+    return f"{total // 60}:{total % 60:02d} min"
 
 
 def expected_card_values(doc: dict) -> dict[str, str]:
