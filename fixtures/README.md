@@ -14,6 +14,15 @@ Sources: `native` (Fenix 8 Windsurf profile) · `wingfoil` (our CIQ app) · `foi
 - `goldens/` — `<fixture>.expected.json` (schema in `docs/testing.md`)
 - `speedreader/` — GPS-Speedreader result exports for the same files (GP3S cross-validation)
 
+## Provenance
+
+Every FIT here is one of Jan's own recordings, kept as it came off the watch — with one
+deliberate exception:
+
+| file | provenance |
+|---|---|
+| `sessions/ciq/2026-08-30-1407_nago-torbole-windsurfen_ciq.fit` | 10 m 45 s early-afternoon Ora, **scrubbed** with `lab/tools/scrub_fit.py` (serials zeroed; `user_profile`, paired-accessory and Garmin-private lifetime blobs dropped; GPS, HR, accelerometer and all 14 developer fields kept, analysis provably identical). This is the file the iOS app and the web app ship as **the bundled example** — `ios/WingFoilKit/…/Resources/ExampleSession.fit` and `web/example/ExampleSession.fit` are byte-identical copies of it. See docs/testing.md, "The bundled example session". |
+
 ## Ground-truth table
 
 One row per session, filled by Jan right after the session (< 5 min). This is the labeled

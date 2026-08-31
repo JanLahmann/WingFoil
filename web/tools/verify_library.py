@@ -241,7 +241,7 @@ def check_records(digests: list[dict]) -> None:
     rows = {r["key"]: r for r in agg["records"]}
     # Stated, not derived from `digests`: the aggregate must actually see every session
     # fixture, and comparing it to `len(digests)` would pass on an empty corpus too.
-    check("  corpus size", agg["count"], 14)
+    check("  corpus size", agg["count"], 15)
 
     # Independently: the winner of each kind is the max over the digests, and it must be
     # the session the aggregate names.
