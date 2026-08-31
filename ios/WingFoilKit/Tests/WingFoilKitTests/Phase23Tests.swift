@@ -349,11 +349,18 @@ import Testing
         #expect(chop.summary.takeoff.totalPumpStrokes == 0)
         #expect(swimming.summary.takeoff.totalPumpStrokes == 0)
         // The band-pass has near-unity gain here, so both amplitudes pick the *same*
-        // strokes — only the total tells them apart. Everything the turn and flight-end
-        // ladders read is deliberately blind to the difference.
-        #expect(pumping.takeoffs[0].inFlightStrokes == chop.takeoffs[0].inFlightStrokes)
+        // strokes; the amplitude gate is what tells them apart. Since engine 0.8.1 the
+        // in-flight count applies it too — the total was 31 against an in-flight 60 on the
+        // bundled example, a part larger than its whole — so the chop bout is counted
+        // nowhere, and the total stays a superset of the in-flight number.
         #expect(pumping.takeoffs[0].inFlightStrokes ?? 0 > 0)
+        #expect(chop.takeoffs[0].inFlightStrokes == 0)
+        #expect(pumping.summary.takeoff.totalPumpStrokes ?? 0
+                >= pumping.summary.takeoff.inFlightPumpStrokes ?? 0)
+        // Everything the turn and flight-end ladders read is still blind to the difference:
+        // a gentle burst is evidence the rider was working, whatever it is worth as a count.
         #expect(pumping.pumpEpisodes.count == chop.pumpEpisodes.count)
+        #expect(pumping.pumpEpisodes.map(\.outcome) == chop.pumpEpisodes.map(\.outcome))
     }
 
     /// `pumpStrokeMaxInterval` splits efforts: two clusters a long silence apart are two

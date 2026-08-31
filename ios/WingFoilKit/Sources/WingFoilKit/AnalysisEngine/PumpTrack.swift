@@ -17,8 +17,9 @@ public struct PumpConfig: Sendable, Equatable {
     public var strokeMaxIntervalS: Double = 1.5
     /// Burst length that means "the rider was pumping".
     public var minStrokes: Int = 4
-    /// pumpBurstPeakG — **PROVISIONAL**. A burst's tallest stroke must reach this to be
-    /// counted in the *session total*; nothing else reads it (`TakeoffAnalyzer`).
+    /// pumpBurstPeakG — **PROVISIONAL**. A burst's tallest stroke must reach this for the
+    /// burst to be *counted* at all: the session total and, since engine 0.8.1, the in-flight
+    /// count (`TakeoffAnalyzer`). The corroborating metrics never read it.
     public var burstPeakG: Double = 0.8
     /// pumpMinSpeedKmh — below this a stroke is a swim stroke, not a pump. Session total only.
     public var minSpeedKmh: Double = 3.0
