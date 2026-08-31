@@ -33,7 +33,10 @@ import re
 import zipfile
 from datetime import datetime, timezone
 
-SCHEMA = 1
+# The stored-entry schema. v2 added the two attribution fields the JS side writes beside
+# the digest (`rider`, `example`, see `counts_towards_records`); a v1 entry predates them
+# and reads as the rider's own, which is what it always was.
+SCHEMA = 2
 
 # The project-wide "same session" rule, in one place: a session start within +/-60 s AND a
 # duration within +/-60 s of an existing entry is the same session recorded twice (watch
@@ -327,6 +330,33 @@ def dedupe_match_json(new_json: str, existing_json: str) -> str:
 # ------------------------------------------------------------------ records + trends
 
 
+def counts_towards_records(entry) -> bool:
+    """Is this stored entry one of the reader's *own* sessions?
+
+    Two things in the library are shown in full and counted in nothing:
+
+      * the bundled example (`example: true`) — a demonstration nobody in front of this
+        browser rode, loaded by the "try the example session" button;
+      * a session someone else rode (`rider: "<name>"`) — a FIT a friend sent, scrubbed
+        and identity-free by design, so attribution is the receiver's to state.
+
+    Both are stated at save time by `js/store.js` and stored beside the digest, because
+    nothing in a FIT could say either. Neither field exists on an entry written before
+    schema 2: **missing reads as the reader's own, not example**, so nobody's saved
+    library changes meaning under them.
+
+    This is the one condition, and it is applied in exactly one place — `aggregate`,
+    below — so the records table, the totals block and every trend chart honour it
+    without three call sites remembering to. Same rule as the iOS `LibraryStore.clause`.
+    """
+    if not isinstance(entry, dict):
+        return False
+    if entry.get("example"):
+        return False
+    rider = entry.get("rider")
+    return rider is None or not str(rider).strip()
+
+
 def _sorted(digests) -> list:
     ds = [d for d in (_as_doc(digests) or []) if isinstance(d, dict)]
     ds.sort(key=lambda d: (d.get("startEpoch") is None,
@@ -495,8 +525,13 @@ def _totals(ds: list) -> dict:
 
 
 def aggregate(digests) -> dict:
-    """The whole Records & Trends view, in one Python call over the stored digests."""
-    ds = _sorted(digests)
+    """The whole Records & Trends view, in one Python call over the stored digests.
+
+    The example session and a friend's session are filtered out here and nowhere else —
+    see `counts_towards_records`. `count` is therefore what the view actually aggregates,
+    which is what lets the UI say "nothing here counts yet" without knowing the rule.
+    """
+    ds = [d for d in _sorted(digests) if counts_towards_records(d)]
     return {"schema": SCHEMA, "count": len(ds), "totals": _totals(ds),
             "records": _records(ds), "trends": _trends(ds)}
 

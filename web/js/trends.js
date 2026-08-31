@@ -76,6 +76,17 @@ export function redrawTrends() {
 /* --------------------------------------------------------------------- drawing */
 
 function draw(host, agg) {
+  // `agg.count` is what `library.aggregate` actually aggregated, not what the library
+  // holds: the bundled example and a friend's session are shown in full and counted in
+  // nothing (`library.counts_towards_records`, the one place that rule lives). A library
+  // made only of those has no records to draw and must say why, rather than drawing a
+  // chart of zero sessions. This file does not know the rule and must not learn it.
+  if (!agg.count) {
+    host.innerHTML = `<p class="note">Nothing saved here counts towards your records yet —
+      the example session and sessions a friend rode are kept out of them. Save one of
+      your own and the records and trends fill in.</p>`;
+    return;
+  }
   host.innerHTML = `
     <div class="kv" id="trend-totals"></div>
     <h3 class="sub-head">All-time records</h3>

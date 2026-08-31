@@ -501,6 +501,66 @@ button.ghost.danger:hover { background: #2a1414; border-color: #6b2626; color: #
 .lib-file { display: block; font: 11.5px var(--mono); color: var(--ink-3); }
 .lib-row-actions { display: flex; gap: 6px; white-space: nowrap; }
 
+/* --- "Example" and the rider's name: the two rows that are shown in full and counted in
+   nothing (lab_bundle/library.py `counts_towards_records`).
+
+   Chrome, not presentation. "Whose session is this" is not a category in
+   design/tokens.json — it says nothing about foiling — so these must NOT borrow an
+   outcome, effort or phase ink: an amber badge next to an amber touchdown tally, or a
+   violet one next to violet pumping markers, would read as a fourth thing on a scale that
+   has three. The example stays in plain ink because it is a disclaimer; the rider's name
+   gets an ink of its own because it is an identity, and there can be several of them in
+   one list. */
+.lib-tag {
+  display: inline-block; vertical-align: 1px; margin-left: 7px;
+  font: 600 10.5px/1 var(--sans); letter-spacing: .04em;
+  padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line);
+  color: var(--ink-3); max-width: 15ch; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lib-tag.example { text-transform: uppercase; }
+.lib-tag.rider { color: #b9a7f2; border-color: #453a6b; background: #201b33; }
+
+/* ------------------------------------------------- "whose session is this?" (dialog) */
+
+/* One modal in the app, so it is styled once and by role rather than by id. The backdrop
+   is the page dimmed rather than blacked out: the analysis the question is about stays
+   visible behind it. */
+.ask {
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-1);
+  color: var(--ink); padding: 0; width: min(420px, calc(100vw - 32px));
+  box-shadow: 0 24px 60px #000000aa;
+}
+.ask::backdrop { background: #000000a6; }
+.ask-form { display: grid; gap: 12px; padding: 20px; }
+.ask h2 { font-size: 17px; }
+#rider-file { font: 11.5px var(--mono); color: var(--ink-3); word-break: break-all; }
+.ask .note { margin: 0; }
+.ask-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+
+/* The segmented control: two answers, one of them always chosen, in the same shape as the
+   view tabs at the top of the page — the app already teaches that vocabulary, and "Mine"
+   is preselected because it is the true answer nearly every time. */
+.seg { display: flex; gap: 2px; background: var(--surface-2); border-radius: 8px; padding: 3px; }
+.seg-btn {
+  flex: 1; background: none; color: var(--ink-3); border-radius: 6px; padding: 9px 10px;
+}
+.seg-btn[aria-pressed=true] { background: var(--surface-0); color: var(--ink); }
+.seg-btn:hover { color: var(--ink-2); }
+.seg-btn[aria-pressed=true]:hover { color: var(--ink); }
+
+#rider-friend { display: grid; gap: 10px; }
+.rider-name {
+  display: grid; gap: 5px; font: 600 11px/1 var(--sans);
+  text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3);
+}
+.rider-name input { width: 100%; }
+/* The names already in the library, as pressable copies of the badge the row will get —
+   the same shape means the chip visibly *is* the thing being chosen. */
+.rider-known { display: flex; flex-wrap: wrap; gap: 6px; }
+.rider-known .lib-tag { margin-left: 0; cursor: pointer; max-width: 100%; }
+.rider-known .lib-tag.on { border-color: #6b5aa8; background: #2b2447; color: #d5c9ff; }
+
 .highlight-note {
   border-left-color: var(--ink); color: var(--ink-2);
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
@@ -630,6 +690,11 @@ footer {
   .icu-form button { width: 100%; }
   .icu-row { flex-wrap: wrap; gap: 8px; }
   .icu-row button { width: 100%; }
+
+  /* The rider prompt: the two answers and the two actions are the only targets on the
+     screen, so they get the full width the phone has. */
+  .ask { width: calc(100vw - 24px); }
+  .ask-actions button { flex: 1; }
 
   /* The key block keeps its rows on a phone — three numbers across a 430 px screen is
      still readable at 22 px, and reflowing them would lose the row grouping that carries

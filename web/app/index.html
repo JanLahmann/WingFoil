@@ -291,6 +291,42 @@
 
 </main>
 
+<!-- ------------------------------------------------------- whose session is this? -->
+<!-- Asked on the Save press, before anything is written. A .fit a friend sent is scrubbed
+     of every identifier (that is what the iOS share does), so nothing in the file says who
+     rode it and nothing could — and an unattributed friend's session would join the
+     all-time records and set a personal best for somebody else's speed.
+
+     A real <dialog>: showModal() brings the focus trap, the backdrop and the Escape key,
+     none of which a hand-rolled overlay gets right for free, and every control below is
+     the app's own. Escape, Cancel and the backdrop all mean "nothing was answered", and
+     nothing is saved. Wiring: js/rider.js. -->
+<dialog id="rider-dialog" class="ask" aria-labelledby="rider-title">
+  <form method="dialog" class="ask-form">
+    <h2 id="rider-title">Whose session is this?</h2>
+    <p class="muted small" id="rider-file"></p>
+    <div class="seg" role="group" aria-labelledby="rider-title">
+      <button type="button" class="seg-btn" data-who="mine" aria-pressed="true">Mine</button>
+      <button type="button" class="seg-btn" data-who="friend" aria-pressed="false">A friend's</button>
+    </div>
+    <div id="rider-friend" hidden>
+      <label class="rider-name">Name
+        <input id="rider-name" type="text" autocomplete="off" spellcheck="false"
+               placeholder="Their name">
+      </label>
+      <!-- The names already in the library, so a second file from the same friend lands on
+           the same spelling as the first. Filled by js/rider.js. -->
+      <div class="rider-known" id="rider-known" hidden></div>
+      <p class="note">A friend's session is saved and shown in full — map, charts,
+        everything — but stays out of your records and trends.</p>
+    </div>
+    <div class="ask-actions">
+      <button type="button" class="ghost" id="rider-cancel">Cancel</button>
+      <button type="submit" class="primary" id="rider-save" value="save">Save</button>
+    </div>
+  </form>
+</dialog>
+
 <footer>
   <p>
     Runs <code>lab/src/wingfoil_lab</code> unchanged via

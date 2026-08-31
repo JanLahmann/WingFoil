@@ -18,7 +18,7 @@
  *
  * Layout (identical in both backends, so an index written by one reads back in the other):
  *
- *   index.json          [ { ...digest, savedUtc, bytesFit, bytesJson }, ... ]
+ *   index.json          [ { ...digest, savedUtc, bytesFit, bytesJson, rider, example }, ... ]
  *   <id>.fit            the original bytes, exactly as they were dropped
  *   <id>.json           the full analysis document — opening a session re-renders THIS,
  *                       with no Pyodide run at all
@@ -179,8 +179,18 @@ const newestFirst = (a, b) =>
  * it into the index untouched and adds only storage bookkeeping. `replaceId` comes from
  * the Python dedupe decision the user confirmed; passing it removes the old files first,
  * so a replace never leaves an orphan behind.
+ *
+ * `rider` and `example` are the one thing about a session that is NOT in the digest,
+ * because it is not in the FIT and could not be: whose afternoon this was. They are
+ * stated by the saver (js/library.js asks; the example button answers for itself) and
+ * they are what `library.counts_towards_records` reads. Both are written explicitly on
+ * every new entry — `rider: null`, `example: false` for the ordinary case — so an
+ * exported index.json says what it means rather than leaving it to be inferred from an
+ * absent key. Entries written before this existed have neither, and absent reads as
+ * "mine, not example" everywhere.
  */
-export async function putSession({ digest, analysisJson, fitBytes, replaceId = null }) {
+export async function putSession({ digest, analysisJson, fitBytes, replaceId = null,
+                                   rider = null, example = false }) {
   const be = await backend();
   const id = digest.id;
   const entries = await listEntries();
@@ -200,6 +210,10 @@ export async function putSession({ digest, analysisJson, fitBytes, replaceId = n
     savedUtc: new Date().toISOString(),
     bytesFit: fitBlob.size,
     bytesJson: jsonBlob.size,
+    // A blank name is not a friend: "A friend's" with nothing typed would be a session
+    // excluded from the records for a reason no badge could show.
+    rider: (typeof rider === "string" && rider.trim()) ? rider.trim() : null,
+    example: example === true,
   };
   const kept = entries.filter((e) => e.id !== id && e.id !== replaceId);
   kept.push(entry);
