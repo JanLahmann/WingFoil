@@ -132,15 +132,31 @@ screens below a map, ten legend chips and three paragraphs of legend documentati
 
 | row | content |
 |---|---|
-| 1 | duration `h:mm` · distance · average speed |
+| 1 | duration (`10:45 min` / `1:57 h`) · distance · average speed |
 | 2 | the best 2 s record, labelled **"max 2 s"** |
 | 3 | the outcome tally on the ladder's inks · the two turn streaks |
 | 4 | **JPH** (dry jibes) and **WPH** (`docs/algorithms.md` "Session rates"), one decimal |
 
 The rules, which are the only thing the two implementations can disagree about:
 
-- **Duration is rounded to the nearest minute, never truncated.** `0:00` over a recording
-  that exists reads as a failure to measure.
+- **Duration is `M:SS min` under an hour and `H:MM h` at or above one.** It was `h:mm` at
+  every length, which printed **`0:11`** for the ten minute forty-five second example
+  session — the two interesting digits rounded away, and a leading zero where the number
+  should be. Survivable on a page a rider can scroll past; not survivable on the share
+  card, which is a PNG in somebody else's chat thread with no re-render and nothing beside
+  it to check against. A short session is exactly the kind a rider shares.
+  - **The unit rides inside the value**, as `km` and `kn` do in every other cell of this
+    block. That is the block's own habit, and it settles the ambiguity the bare digits
+    create: `10:45` under the word "duration" reads as ten and three quarter *hours* as
+    easily as minutes, and at cell size on a card there is no second number to resolve it
+    against. It also keeps the card's caption slot free — the tally owns that.
+  - **Colons, not "10 m 45 s".** A colon is what a clock looks like, it stays narrow at
+    75 px type, and it is the shape the flight table and the replay caption already print.
+  - **Rounded, never truncated** — to the nearest minute above the hour, to the nearest
+    second below it. `0:00` over a recording that exists reads as a failure to measure.
+  - Implemented as `KeyMetrics.duration` (Swift) and `hm` (web/js/cardstats.js), with a
+    third spelling in `verify_presentation.py` §5 so the two are checked against a rule
+    rather than against each other. The engine's `durationS` is untouched: this is display.
 - **Average speed is converted to knots.** The engine reports `avgSpeedKmh`, but every
   other speed in both apps is knots, and a km/h number in a column of knots is a misread
   waiting to happen. It is a session-shape number — elapsed time, gaps included — and never
@@ -172,6 +188,57 @@ The rules, which are the only thing the two implementations can disagree about:
 - **No duration, no row.** `durationS <= 0` makes the engine report all four rates as
   null, and row 4 disappears — the general rule ("a missing value is absent, never 0")
   applied to the one place where a 0.0 would read as a verdict on the rider.
+
+## Session time — the clock a session is drawn on
+
+**Every time either app prints for a session is the time the rider saw**, not the time the
+reader's device would make of the same instant.
+
+A FIT timestamp is UTC. Until engine 0.8.2 that instant was formatted in whatever zone the
+*viewer* was currently in, which is correct only while the viewer and the recording share
+one — a coincidence that ends at every DST boundary (on 25 October 2026 every session in
+the library shifts by an hour, and stays shifted) and on the first session ridden abroad. A
+session's time is a fact about the session, so it is stored with the session.
+
+- **What is stored** is a UTC offset in **seconds**, not a zone name: what a source can
+  tell us is an offset, and a name we had to guess would be inventing a fact.
+  `session.startUtcOffsetS` (GRDB schema v7), `meta.utcOffsetS` in the web digest.
+- **Where it comes from**, best answer first:
+  1. the FIT's own `activity` message — `local_timestamp − timestamp`, the offset the watch
+     was wearing at save time. Exact, DST included, and present on every file in the corpus;
+  2. intervals.icu's `timezone` for the activity, resolved at the session's own instant.
+     Also exact;
+  3. a coarse guess from the first GPS longitude, `round(lon / 15°)` hours. This is the
+     *solar* offset, not the civil one — an hour out under DST, up to two inside a wide
+     zone, blind to the half-hour zones — and it exists only for a source that carries
+     position and nothing else;
+  4. nothing. The column stays NULL, the display falls back to the device's zone, and the
+     surface is allowed to say so (`SessionRow.hasKnownZone`; the web page's header note).
+- **One accessor, no defaults.** `SessionRow.displayZone` is the only answer, and the
+  `timeZone:` parameters on `ReplayCommentary.make`, `ReplayStoryboard.make`,
+  `ReplayTitleCard.make`, `ShareCardStats.make`/`outro`, `ShareText.*` and
+  `FitShareFilter.filename` have **no default**. A default is a decision made silently at
+  every call site, and the silent decision was wrong at all of them; with the defaults gone
+  the compiler names each one and it has to answer out loud.
+- **`.current` is still right in three places**, and is commented as such where it is used:
+  Settings' "Last sync" and the watch link's "Last summary" (events on the reader's clock),
+  the trend ranges and week buckets (the reader's calendar), and the spot/gear "last used"
+  aggregates (which span sessions and have no one zone). A tombstone also keeps `.current`,
+  because a deleted session's recording is gone and nothing is left that knows its zone.
+- **On the web** every clock goes through `zonedFormat` (web/js/viz.js): shift the instant
+  by `meta.utcOffsetS`, then format in UTC. `clockAt` and `sessionDate` take the whole
+  `meta` rather than a bare `startUtc`, so a caller cannot pair the two up wrongly. The
+  header note says **"times as recorded on the water"**, and only names the reader's own
+  zone when the file could not say.
+- **Calendar dates too.** A session that starts at 00:30 in Torbole is a 22:30 UTC session
+  on the *previous* day, so a library row, a trend x-axis tick and a share card dated on
+  the UTC day would name a day the rider did not have. The digest carries `dateLocal`
+  beside `dateUtc` for exactly this.
+- **Pinned by** `SessionTimeZoneTests` (iOS), which ingests the bundled example through the
+  real ingest path with the process default zone forced away from the session's and asserts
+  the bookend, title card, share-card date line and shared filename all still read `14:07` /
+  `30 August 2026`; and by `verify_presentation.py` §4, which does the same arithmetic on
+  the web's `meta`. `TZ=UTC swift test` is the stronger form and is what CI runs.
 
 Implemented once per platform: `KeyMetrics` in `ios/WingFoilKit/…/Presentation/`, whose
 strings `PresentationTests.keyMetrics*` pin, and `keyMetrics` in `web/js/render.js`. The
