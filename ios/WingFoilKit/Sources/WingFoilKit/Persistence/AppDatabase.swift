@@ -32,7 +32,7 @@ public struct AppDatabase: Sendable {
 
     /// Every migration this build knows, oldest first — the migration test asserts a v1
     /// database moves through all of them.
-    public static let migrationNames = ["v1", "v2", "v3", "v4", "v5"]
+    public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6"]
 
     /// Public so a caller (and the migration test) can migrate a writer only part of the
     /// way — `migrator.migrate(writer, upTo: "v1")` reproduces a shipped v1 library.
@@ -113,6 +113,32 @@ public struct AppDatabase: Sendable {
                 t.add(column: "rider", .text)
             }
             try db.create(index: "session_rider", on: "session", columns: ["rider"])
+        }
+
+        // v6: sessions the rider deleted, so they stay deleted.
+        //
+        // Deleting a synced session used to be a wish rather than an instruction: the row
+        // went, and the next intervals.icu sync saw an activity that was no longer in the
+        // library and dutifully downloaded it again. This table is the memory that closes
+        // that loop — four facts about a session that used to be here, read by exactly one
+        // code path (`IcuSyncService`) and by the Settings row that offers them all back.
+        //
+        // Not a column on `session`, because a deleted session is *gone*: its FIT is out of
+        // the archive and its derived rows have cascaded away. A flag would mean every query
+        // in the app grew a condition it must never forget. See `SessionTombstoneRow`.
+        migrator.registerMigration("v6") { db in
+            try db.create(table: "deleted_session") { t in
+                // The deleted row's own uuid — deleting the same session twice is then
+                // impossible rather than merely unlikely.
+                t.column("id", .text).primaryKey()
+                t.column("icuActivityId", .text).indexed()
+                // The library's own dedupe key (plan §3.3), for a session that never carried
+                // an intervals.icu id but is on intervals.icu all the same.
+                t.column("startDate", .datetime).notNull().indexed()
+                t.column("durationS", .double).notNull()
+                t.column("title", .text)
+                t.column("deletedAt", .datetime).notNull()
+            }
         }
         return migrator
     }

@@ -40,11 +40,19 @@ struct ReplayCinemaView: View {
     /// The session clock, from `SessionDetail.timeRange`. Non-optional: a session with no
     /// timeline never offers the button that gets here.
     let span: ClosedRange<Double>
-    /// Session seconds per wall second — 10, 30 or 60, chosen before the view appeared.
-    let rate: Double
+    /// The pace, resolved from the length the rider picked in the setup sheet
+    /// (`ReplayPacing`): session seconds per wall second, plus the slow-motion ease that rate
+    /// was solved against. The two travel together because on a short clip they are one
+    /// decision — see `ReplayScrubber.CinemaRun`.
+    let pacing: ReplayPacing.Plan
     /// Whether to capture. False when ReplayKit said no or the phone cannot record, in which
     /// case this is simply a full-screen replay with no countdown and no clip at the end.
     let record: Bool
+    /// The shape the finished clip should be (`ReplayFraming`). The replay is drawn inside a
+    /// box of that ratio and the rest of the glass is painted out, so the rider composes
+    /// against the frame he will get; the crop that follows the recording is exactly that box
+    /// (`ReplayStage`, `finish`).
+    var framing: ReplayFraming = .fullScreen
     /// The rider's own pictures, already loaded and dated by the setup sheet. Empty is the
     /// ordinary case and the whole photo path then costs nothing.
     var photos: [ReplayPhoto] = []
@@ -58,19 +66,21 @@ struct ReplayCinemaView: View {
     /// rebuild two `DateFormatter`s and re-sort the photo list on every one of the twenty
     /// body passes a second the playhead causes.
     init(detail: SessionDetail, milestones: [ReplayMilestone], span: ClosedRange<Double>,
-         rate: Double, record: Bool, photos: [ReplayPhoto] = []) {
+         pacing: ReplayPacing.Plan, record: Bool, framing: ReplayFraming = .fullScreen,
+         photos: [ReplayPhoto] = []) {
         self.detail = detail
         self.milestones = milestones
         self.span = span
-        self.rate = rate
+        self.pacing = pacing
         self.record = record
+        self.framing = framing
         self.photos = photos
         _camera = State(initialValue: .region(detail.initialRegion))
         _storyboard = State(initialValue: ReplayStoryboard.make(
-            span: span, rate: rate, milestones: milestones,
+            span: span, rate: pacing.rate, milestones: milestones,
             photos: photos.map(\.entry),
             place: SessionDisplay.title(detail.row),
-            startedAt: detail.row.startDate))
+            startedAt: detail.row.startDate, ease: pacing.ease))
     }
 
     @Environment(\.dismiss) private var dismiss
@@ -115,6 +125,15 @@ struct ReplayCinemaView: View {
     /// position, because a splice pauses the replay *at* its own instant — see
     /// `ReplayStoryboard.nextSplice(shown:)`.
     @State private var splicesShown = 0
+    /// Where the clip's frame is on the glass, and how big the glass is — both measured rather
+    /// than assumed, and both needed *after* the run to turn the staged box into a crop in the
+    /// recorded file's pixels (`ReplayStage.crop`).
+    @State private var stageRect: CGRect = .zero
+    @State private var glassSize: CGSize = .zero
+    /// Set when the crop was asked for and could not be done, so the sheet can offer the
+    /// full-screen recording and say what happened rather than quietly handing back the wrong
+    /// shape.
+    @State private var framingNote: String?
     /// The closing card's track, thinned once. `SessionDetail.shareOutline` walks every point
     /// of every segment, which is not a thing to do on a body pass — and the card is only ever
     /// shown at the very end, so it is built on the way into the outro.
@@ -212,45 +231,46 @@ struct ReplayCinemaView: View {
     /// the clip he sends) must never name different numbers, and the only way to guarantee
     /// that is for there to be one place the numbers come from.
     private var outroStats: ShareCardStats {
-        ShareCardStats.make(row: detail.row, title: SessionDisplay.title(detail.row),
-                            metrics: KeyMetrics.make(summary: detail.analysis.summary,
-                                                     records: detail.analysis.records),
-                            preset: .complete)
+        ShareCardStats.outro(row: detail.row, title: SessionDisplay.title(detail.row),
+                             metrics: KeyMetrics.make(summary: detail.analysis.summary,
+                                                      records: detail.analysis.records),
+                             longestFlightS: detail.analysis.summary.longestFlightS)
     }
 
     // MARK: - Body
 
+    /// The clip's own frame, staged live.
+    ///
+    /// **Why the framing is drawn and not only cropped.** ReplayKit records the glass — there
+    /// is no API that records part of it — so a 9:16 clip has to be cut out afterwards either
+    /// way. But a rider who could not *see* the frame while it recorded would be composing
+    /// blind: the pinch that centres the jibe corner on the glass would leave it half outside
+    /// the clip, and he would only find that out when he watched it back. So the replay is
+    /// drawn inside the box, the rest of the glass is painted out, and the crop that follows
+    /// is exactly the box he was looking at (`ReplayStage`, `finish`).
+    ///
+    /// The `GeometryReader` reports the *inset* size, so the glass is that plus the safe-area
+    /// insets and the stage is positioned back in glass coordinates. That matters because the
+    /// recorder captures the glass: a stage rect measured inside the insets would be a status
+    /// bar's height out, and every clip would be cropped a few pixels low.
     var body: some View {
-        ZStack {
-            // Behind the map, so a rotation or a safe-area inset shows black rather than the
-            // system background flashing through a frame of video.
-            Color.black.ignoresSafeArea()
-            map
-            bottomBand
-            // The four full-screen frames, over the map and under the transport. Each is
-            // opaque and edge-to-edge, which is what lets the one underneath it change (or
-            // disappear) without a single frame of the change reaching the video.
-            // Each takes the reveal tap itself: a card covers the map, and a rider who wants
-            // out during the four seconds of the outro must not have to wait for it.
-            if let id = stage.photoID, let photo = photos.first(where: { $0.id == id }) {
-                ReplayPhotoFrame(image: photo.image, stamp: photoStamp(for: id))
-                    .onTapGesture { revealControls() }
+        GeometryReader { proxy in
+            let insets = proxy.safeAreaInsets
+            let glass = CGSize(width: proxy.size.width + insets.leading + insets.trailing,
+                               height: proxy.size.height + insets.top + insets.bottom)
+            let box = ReplayStage.rect(in: glass, framing: framing)
+            ZStack {
+                // The letterbox. Black rather than the brand navy: a video's bars are black
+                // everywhere, and a coloured border reads as part of the picture.
+                Color.black.ignoresSafeArea()
+                staged(box: box, insets: insets, glass: glass)
+                // Outside the stage on purpose. The transport is the one thing on screen that
+                // is *not* part of the clip, and in every framing but full screen it now sits
+                // in the letterbox, where the crop cannot reach it at all.
+                transport
             }
-            if stage == .title {
-                ReplayTitleCardView(card: storyboard.title,
-                                    fallbackTitle: SessionDisplay.title(detail.row))
-                    .transition(.opacity)
-                    .onTapGesture { revealControls() }
-            }
-            if stage == .outro {
-                ReplayOutroCardView(stats: outroStats, highlights: storyboard.highlights,
-                                    thumbnail: outline)
-                    .transition(.opacity)
-                    .onTapGesture { revealControls() }
-            }
-            if case .countdown(let count) = stage { countdown(count) }
-            if stage == .wrappingUp { wrappingUp }
-            transport
+            .onGeometryChange(for: CGRect.self) { _ in box } action: { stageRect = $0 }
+            .onGeometryChange(for: CGSize.self) { _ in glass } action: { glassSize = $0 }
         }
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
@@ -292,7 +312,8 @@ struct ReplayCinemaView: View {
                                     set: { if !$0 { dismiss() } })) {
             if let url = stage.clipURL {
                 ReplayClipSheet(url: url, title: SessionDisplay.title(detail.row),
-                                wallS: recordedWallS,
+                                startedAt: detail.row.startDate,
+                                wallS: recordedWallS, note: framingNote,
                                 discard: {
                                     recorder.discard()
                                     stage = .idle
@@ -304,6 +325,53 @@ struct ReplayCinemaView: View {
                                 })
             }
         }
+    }
+
+    /// Everything that ends up in the clip, inside the box and clipped to it.
+    ///
+    /// `.position` in the reader's own (inset) coordinate space, offset back by the insets, so
+    /// the box lands where `ReplayStage` said it does *on the glass* — which is the space the
+    /// recorder captures and therefore the space the crop is computed in.
+    private func staged(box: CGRect, insets: EdgeInsets, glass: CGSize) -> some View {
+        ZStack {
+            // Opaque under the map: a rotation mid-run must show black rather than the system
+            // background flashing through a frame of video.
+            Color.black
+            map
+            // The band clears the home indicator only when the stage actually reaches the
+            // bottom of the glass — which is full screen, and nothing else. In a letterboxed
+            // frame the bar is inside the picture and there is nothing to clear.
+            bottomBand(clearance: box.maxY >= glass.height - 0.5 ? insets.bottom : 0)
+            // The four frames, over the map and under the transport. Each is opaque and fills
+            // the box, which is what lets the one underneath it change (or disappear) without
+            // a single frame of the change reaching the video.
+            // Each takes the reveal tap itself: a card covers the map, and a rider who wants
+            // out during the four seconds of the outro must not have to wait for it.
+            if let id = stage.photoID, let photo = photos.first(where: { $0.id == id }) {
+                ReplayPhotoFrame(image: photo.image, stamp: photoStamp(for: id))
+                    .onTapGesture { revealControls() }
+            }
+            if stage == .title {
+                ReplayTitleCardView(card: storyboard.title,
+                                    fallbackTitle: SessionDisplay.title(detail.row))
+                    .transition(.opacity)
+                    .onTapGesture { revealControls() }
+            }
+            if stage == .outro {
+                ReplayOutroCardView(stats: outroStats, thumbnail: outline,
+                                    isWide: framing.isWide(on: glass))
+                    .transition(.opacity)
+                    .onTapGesture { revealControls() }
+            }
+            if case .countdown(let count) = stage { countdown(count) }
+            if stage == .wrappingUp { wrappingUp }
+        }
+        .frame(width: box.width, height: box.height)
+        // Clipped, and this is load-bearing rather than tidy: MapKit draws to the edge of
+        // whatever it is given, and an unclipped map would paint straight over the letterbox
+        // the rider is composing against.
+        .clipped()
+        .position(x: box.midX - insets.leading, y: box.midY - insets.top)
     }
 
     // MARK: - The picture
@@ -360,7 +428,7 @@ struct ReplayCinemaView: View {
 
     /// Caption, clock, speed and the progress hairline — the whole of the chrome, in one band
     /// along the bottom edge where it cannot cover the dot it is about.
-    private var bottomBand: some View {
+    private func bottomBand(clearance: CGFloat) -> some View {
         VStack(spacing: 8) {
             Spacer(minLength: 0)
             if let comment {
@@ -375,13 +443,19 @@ struct ReplayCinemaView: View {
                 chip(Fmt.clock(playhead - span.lowerBound))
                 Spacer(minLength: 0)
                 // Said out loud, because a viewer who does not know the clip is sped up will
-                // read a 30× jibe as an impossible one.
-                chip("\(Int(rate))×")
+                // read a 30× jibe as an impossible one. Rounded rather than truncated: the
+                // rate is now solved from a length and lands on 105.7, not on a round number.
+                chip("\(Int(pacing.rate.rounded()))×")
             }
             .padding(.horizontal, 14)
             progressHairline
         }
-        .padding(.bottom, 6)
+        // A floor under the clearance, and it is MapKit's doing: the "Maps · Legal"
+        // attribution is drawn at the bottom of the map view and cannot be moved. On a
+        // full-screen replay the home-indicator inset lifted the band clear of it by
+        // accident; inside a letterboxed stage there is no inset, and the elapsed chip
+        // landed on top of the word "Maps". 22 pt is the attribution's own height.
+        .padding(.bottom, 6 + max(clearance, 22))
     }
 
     private func chip(_ text: String) -> some View {
@@ -668,7 +742,7 @@ struct ReplayCinemaView: View {
         stage = .wrappingUp
         do {
             if let url = try await recorder.stop(named: ReplayRecorder.clipName(for: detail.row)) {
-                stage = .clip(url)
+                stage = .clip(await framed(url))
             } else {
                 dismiss()
             }
@@ -681,6 +755,47 @@ struct ReplayCinemaView: View {
                     ?? error.localizedDescription,
                 canWatch: false)
             stage = .idle
+        }
+    }
+
+    /// Cuts the staged frame out of the full-screen recording, or hands back the recording.
+    ///
+    /// ReplayKit captures the glass, so this is the second half of the framing: the rider
+    /// composed against a box (`staged`), and this is where the box becomes the file. It runs
+    /// while `.wrappingUp` is still on screen, which is what the "Saving the clip…" spinner is
+    /// covering — an export of a forty-second clip is a second or two.
+    ///
+    /// **A failure is a fallback, not an error.** The rider has just spent the length of the
+    /// clip making it, and there is a perfectly good full-screen recording in his hand; losing
+    /// it because a re-encode failed would be the wrong trade every time. So the uncropped
+    /// file is offered with a line saying it is the wrong shape and why.
+    private func framed(_ url: URL) async -> URL {
+        // Full screen needs no export by construction, which is also what makes it the safety
+        // net: whatever else goes wrong, this path always has a file.
+        guard framing != .fullScreen, glassSize.width > 0, !stageRect.isEmpty else { return url }
+        do {
+            let asset = AVURLAsset(url: url)
+            guard let track = try await asset.loadTracks(withMediaType: .video).first else {
+                return url
+            }
+            // The *displayed* size, transform applied: a portrait capture is stored landscape
+            // with a rotation on it, and cropping against the stored size would cut the clip
+            // sideways.
+            let natural = try await track.load(.naturalSize)
+            let preferred = try await track.load(.preferredTransform)
+            let displayed = CGRect(origin: .zero, size: natural).applying(preferred).size
+            let pixels = CGSize(width: abs(displayed.width), height: abs(displayed.height))
+            let crop = ReplayStage.crop(stage: stageRect, screenPoints: glassSize,
+                                        videoPixels: pixels)
+            guard ReplayStage.needsCrop(crop, videoPixels: pixels) else { return url }
+            let output = url.deletingPathExtension()
+                .appendingPathExtension("\(framing.rawValue).mp4")
+            return try await ReplayClipCropper.crop(url, to: crop, output: output)
+        } catch {
+            framingNote = "The clip could not be cropped to \(framing.name.lowercased()) "
+                + "(\((error as? any LocalizedError)?.errorDescription ?? error.localizedDescription)), "
+                + "so this is the full-screen recording."
+            return url
         }
     }
 
@@ -729,15 +844,37 @@ struct ReplayCinemaView: View {
 /// the only way to know it came out is to watch it.
 private struct ReplayClipSheet: View {
     let url: URL
+    /// The session's readable name, which doubles as the place the share message leads with —
+    /// `SessionDisplay.title` is the only place-ish string the app has, and it is the one the
+    /// clip's own title card already prints.
     let title: String
+    /// The afternoon, for the share message's date. The same instant `ShareCardStats.dateLine`
+    /// formats on the card, so the two exports of one session are dated identically.
+    let startedAt: Date
     /// Wall seconds actually captured — the run's own measurement, not a probe of the file.
     let wallS: Double
+    /// Set when the clip is not the shape that was asked for, and why — see
+    /// `ReplayCinemaView.framed`. The rider gets the recording either way; what he must not
+    /// get is the wrong shape without being told.
+    var note: String?
     let discard: () -> Void
     let done: () -> Void
 
     /// Built once, in `onAppear`: a player rebuilt in `body` would restart from the first
     /// frame every time the size label or the share sheet caused a redraw.
     @State private var player: AVPlayer?
+    @State private var saving = SaveState.idle
+    @State private var saveFailure: PhotoLibrarySaver.Failure?
+
+    /// Where the "Save to Photos" button is in its one-way trip.
+    ///
+    /// `saved` is terminal on purpose. A button that went back to "Save to Photos" after a
+    /// second and a half would invite a second tap and a second copy in the camera roll; one
+    /// that stays "Saved" is both the confirmation and the reason not to press it again. (A
+    /// rider who genuinely wants two copies has the share sheet.)
+    private enum SaveState: Equatable {
+        case idle, saving, saved
+    }
 
     var body: some View {
         NavigationStack {
@@ -756,12 +893,21 @@ private struct ReplayClipSheet: View {
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
 
-                ShareLink(item: url, subject: Text(title), message: Text(Self.invitation)) {
+                if let note {
+                    Label(note, systemImage: "exclamationmark.triangle")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                ShareLink(item: url, subject: Text(title), message: Text(caption)) {
                     Label("Share clip", systemImage: "square.and.arrow.up")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
+
+                saveButton
 
                 Button(role: .destructive, action: discard) {
                     Label("Discard", systemImage: "trash")
@@ -781,11 +927,73 @@ private struct ReplayClipSheet: View {
                     Button("Done", action: done)
                 }
             }
+            .alert("Save to Photos",
+                   isPresented: Binding(get: { saveFailure != nil },
+                                        set: { if !$0 { saveFailure = nil } }),
+                   presenting: saveFailure) { failure in
+                // Only where there is something to open. A library error is not a permission
+                // problem and sending the rider to Settings for it would be a dead end.
+                if failure.isFixableInSettings,
+                   let settings = URL(string: UIApplication.openSettingsURLString) {
+                    Button("Open Settings") { UIApplication.shared.open(settings) }
+                }
+                Button("OK", role: .cancel) { saveFailure = nil }
+            } message: { failure in
+                Text(failure.errorDescription ?? "")
+            }
         }
     }
 
-    /// The same line the shared FIT carries, for the same reason: whoever gets the clip
-    /// should be able to find out what made it.
-    private static let invitation =
-        "\(Branding.appName) replay — \(Branding.siteURL)"
+    /// "Save to Photos" — the second thing to do with a clip, and the one the sheet was
+    /// missing.
+    ///
+    /// Secondary to Share by weight, not by importance: sharing is what a clip is *for*, and
+    /// the camera roll is where it goes when the rider wants to keep it or post it later from
+    /// somewhere else. The system share sheet does carry a "Save Video" of its own, buried
+    /// under the app row, which is exactly why this is here — that is a destination in a list,
+    /// not a button on a screen.
+    @ViewBuilder
+    private var saveButton: some View {
+        Button {
+            Task { await saveToPhotos() }
+        } label: {
+            Label(saving == .saved ? "Saved to Photos" : "Save to Photos",
+                  systemImage: saving == .saved ? "checkmark.circle.fill"
+                                                : "square.and.arrow.down")
+                .frame(maxWidth: .infinity)
+                // The spinner replaces the label rather than sitting beside it, so the button
+                // does not change width in the middle of being pressed.
+                .opacity(saving == .saving ? 0 : 1)
+                .overlay { if saving == .saving { ProgressView() } }
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.large)
+        .tint(saving == .saved ? .green : .accentColor)
+        .disabled(saving != .idle)
+    }
+
+    private func saveToPhotos() async {
+        guard saving == .idle else { return }
+        saving = .saving
+        do {
+            try await PhotoLibrarySaver.save(video: url)
+            saving = .saved
+        } catch let failure as PhotoLibrarySaver.Failure {
+            saving = .idle
+            saveFailure = failure
+        } catch {
+            saving = .idle
+            saveFailure = .library((error as NSError).localizedDescription)
+        }
+    }
+
+    /// "Torbole, 30 August 2026 — WingFoil session clip · cleanjibe.org".
+    ///
+    /// Composed in the kit (`ShareText`) alongside the FIT's and the card's, so an afternoon
+    /// exported three ways is named and dated identically all three times. Shorter than the
+    /// FIT's, though, and deliberately: a video is not a file anybody will open in a browser
+    /// tool, so it gets the credit without the analyzer pitch.
+    private var caption: String {
+        ShareText.clipMessage(place: title, startedAt: startedAt)
+    }
 }

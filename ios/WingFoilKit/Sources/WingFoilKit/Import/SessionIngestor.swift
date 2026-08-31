@@ -345,9 +345,37 @@ public struct SessionIngestor: Sendable {
         return Set(ids)
     }
 
-    public func delete(_ row: SessionRow) async throws {
+    /// Removes a session and remembers that it was removed.
+    ///
+    /// **The tombstone is the point** (`SessionTombstoneRow`). Without it the next
+    /// intervals.icu sync sees an activity that is no longer in the library, concludes it is
+    /// new, and downloads it again — which is deletion as a suggestion rather than as an
+    /// instruction.
+    ///
+    /// **Everything gets one except the example**, and the exception is not laziness about
+    /// provenance. The tombstone is *only ever consulted by the intervals.icu sync* (see
+    /// `IcuSyncService.sync`), so it never stands between a rider and a file he picks by
+    /// hand — and it therefore costs nothing on a session that only ever arrived by hand.
+    /// What it does buy is the case that is otherwise silently broken: a session imported
+    /// from a Garmin GDPR ZIP carries no intervals.icu id, but *is* on intervals.icu, so
+    /// deleting it and syncing would import it straight back under an id the library has
+    /// never seen. Tombstoning by the dedupe key as well as by the id is what catches that,
+    /// and it can only catch it if the tombstone was written.
+    ///
+    /// The bundled example is left out because it is not the rider's session and cannot come
+    /// back from intervals.icu anyway: it comes back from a button that says so
+    /// (`importExample`), and counting it in "Previously deleted: 1" would be offering to
+    /// restore something no sync was ever going to restore.
+    ///
+    /// `title` is what the library row was called — the archive directory goes with the row,
+    /// so a name that is not written down now cannot be recovered later.
+    public func delete(_ row: SessionRow, title: String? = nil) async throws {
         let id = row.id
-        _ = try await database.writer.write { db in try SessionRow.deleteOne(db, key: id) }
+        let stone = row.isExample ? nil : SessionTombstoneRow(row, title: title)
+        _ = try await database.writer.write { db -> Void in
+            try SessionRow.deleteOne(db, key: id)
+            try stone?.insert(db)
+        }
         archive.delete(id: id)
     }
 

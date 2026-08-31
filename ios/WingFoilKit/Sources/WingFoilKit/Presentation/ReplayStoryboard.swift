@@ -3,6 +3,12 @@ import Foundation
 /// The whole shape of a recorded clip: a title card, the replay `ReplayDriver` paces, the
 /// rider's own photos spliced into it at the moment they were taken, and a closing card.
 ///
+/// **The closing card's content is not here.** It used to carry
+/// `ReplayCommentary.highlights` — two or three superlatives to print under the metrics — and
+/// two of the three said what the metrics grid already said, four centimetres higher up. The
+/// card now prints numbers and only numbers (`ShareCardStats.outro`), so the storyboard's job
+/// is the *shape* of the clip and nothing that goes on the frames.
+///
 /// **Why this is not part of `ReplayDriver`.** The driver answers one question — where is the
 /// playhead one tick later — and it answers it as a function of (span, rate, milestones) with
 /// nothing else in it. The moment a clip grew bookends and photo pauses, "how long is this
@@ -107,9 +113,6 @@ public struct ReplayStoryboard: Sendable, Equatable {
     public let driver: ReplayDriver
     /// The opening card's two lines.
     public let title: ReplayTitleCard
-    /// The two or three lines the closing card carries under the metrics, straight off the
-    /// commentary — see `ReplayCommentary.highlights`.
-    public let highlights: [ReplayMilestone]
     /// Photos with a moment inside the session, in time order.
     public let splices: [Splice]
     /// Photo ids with no usable moment, in the order the rider picked them. They play as a
@@ -119,11 +122,10 @@ public struct ReplayStoryboard: Sendable, Equatable {
     public let timing: Timing
 
     public init(driver: ReplayDriver, title: ReplayTitleCard,
-                highlights: [ReplayMilestone] = [], splices: [Splice] = [],
+                splices: [Splice] = [],
                 slideshow: [String] = [], timing: Timing = .standard) {
         self.driver = driver
         self.title = title
-        self.highlights = highlights
         self.splices = splices
         self.slideshow = slideshow
         self.timing = timing
@@ -145,8 +147,10 @@ public struct ReplayStoryboard: Sendable, Equatable {
                             place: String? = nil,
                             startedAt: Date? = nil,
                             timeZone: TimeZone = .current,
-                            timing: Timing = .standard) -> ReplayStoryboard {
-        let driver = ReplayDriver(span: span, rate: rate, easeAt: milestones.map(\.t))
+                            timing: Timing = .standard,
+                            ease: ReplayDriver.Ease = .cinema) -> ReplayStoryboard {
+        let driver = ReplayDriver(span: span, rate: rate, easeAt: milestones.map(\.t),
+                                  ease: ease)
 
         // The cap is applied to the rider's own order — first six picked, not first six by
         // time. A rider who chose seven and got the six he chose first can see the rule; one
@@ -174,10 +178,32 @@ public struct ReplayStoryboard: Sendable, Equatable {
             driver: driver,
             title: ReplayTitleCard.make(place: place, startedAt: startedAt,
                                         timeZone: timeZone),
-            highlights: ReplayCommentary.highlights(milestones),
             splices: splices,
             slideshow: slideshow,
             timing: timing)
+    }
+
+    /// The same script, from a **length** the rider asked for instead of a speed.
+    ///
+    /// This is what the setup sheet calls: its picker offers 10 s / 25 s / 60 s, and the rate
+    /// (and, on a short target, a briefer ease) is worked out by `ReplayPacing`. The target is
+    /// the *replay's* length; the two cards and the photo pauses are still added on top by
+    /// `runWallS`, and still said out loud — a rider who asks for ten seconds of replay and
+    /// then adds three photos has asked for a longer clip, and the sheet's sentence has to
+    /// keep up.
+    public static func make(span: ClosedRange<Double>,
+                            targetWallS: Double,
+                            milestones: [ReplayMilestone] = [],
+                            photos: [Photo] = [],
+                            place: String? = nil,
+                            startedAt: Date? = nil,
+                            timeZone: TimeZone = .current,
+                            timing: Timing = .standard) -> ReplayStoryboard {
+        let plan = ReplayPacing.plan(span: span, targetWallS: targetWallS,
+                                     easeAt: milestones.map(\.t))
+        return make(span: span, rate: plan.rate, milestones: milestones, photos: photos,
+                    place: place, startedAt: startedAt, timeZone: timeZone, timing: timing,
+                    ease: plan.ease)
     }
 
     /// Where on the session clock a wall-clock instant falls, or nil when it falls outside
