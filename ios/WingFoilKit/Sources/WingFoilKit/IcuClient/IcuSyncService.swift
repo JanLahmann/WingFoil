@@ -10,13 +10,25 @@ public struct IcuSyncSummary: Sendable, Equatable {
     public var imported = 0
     public var duplicates = 0
     public var failed: [String] = []
+    /// Tombstones (`SessionTombstoneRow`) this sync matched and therefore did *not* import —
+    /// the sessions the rider deleted. Ids rather than a count, because "re-add" has to know
+    /// which tombstones to forget, and the tombstone's own id is the only thing that survives
+    /// both halves of the matching rule.
+    public var blockedTombstoneIds: [String] = []
 
     public init() {}
+
+    /// How many previously-deleted sessions this sync silently left alone.
+    public var tombstoned: Int { blockedTombstoneIds.count }
 
     public var shortDescription: String {
         var parts = ["\(imported) new"]
         if duplicates > 0 { parts.append("\(duplicates) duplicate\(duplicates == 1 ? "" : "s")") }
         if alreadyKnown > 0 { parts.append("\(alreadyKnown) known") }
+        // Said out loud rather than merely done: a rider who deleted a session and then
+        // wondered why the count did not move deserves to be told that the app is obeying
+        // him, not failing.
+        if tombstoned > 0 { parts.append("\(tombstoned) previously deleted") }
         if !failed.isEmpty { parts.append("\(failed.count) failed") }
         return "\(watersports) watersport session\(watersports == 1 ? "" : "s"): "
             + parts.joined(separator: ", ")
@@ -48,9 +60,21 @@ public struct IcuSyncService: Sendable {
         summary.watersports = watersports.count
 
         let known = try await ingestor.icuActivityIds()
+        // Read once for the whole run: the matcher is pure and the list is a handful of rows.
+        let tombstones = try await ingestor.library.tombstones()
         for (index, activity) in watersports.enumerated() {
             if known.contains(activity.id) {
                 summary.alreadyKnown += 1
+                continue
+            }
+            // A session the rider deleted is skipped **silently and before the download** —
+            // the whole cost of obeying a deletion should be one comparison, not a FIT off
+            // the network and a parse. Whether the rider is offered them back is not decided
+            // here: this call has no idea whether it is a pull-to-refresh or a background
+            // wake, and the difference between those two is the entire gate
+            // (`SessionTombstones.shouldOfferReAdd`). All it does is report what it skipped.
+            if let stone = SessionTombstones.blocks(activity, tombstones: tombstones) {
+                summary.blockedTombstoneIds.append(stone.id)
                 continue
             }
             let label = activity.name ?? activity.id
@@ -88,8 +112,18 @@ public struct IcuSyncService: Sendable {
     ///
     /// No `import_log` row: a wake that fetches one file is not an import the rider started,
     /// and a log full of unattended single-file entries would bury the ones he did.
+    ///
+    /// A deleted session is refused here too, and this is the half that matters most: an
+    /// **automatic** sync must never resurrect one, because there is nobody watching to
+    /// notice that it did. It is reported as `.skipped` rather than thrown — the rider
+    /// deleting a session is not an error, and the poller's tally already knows what to do
+    /// with a file it did not import.
     @discardableResult
     public func fetchOne(_ activity: IcuActivity) async throws -> IngestOutcome {
+        let tombstones = try await ingestor.library.tombstones()
+        if SessionTombstones.blocks(activity, tombstones: tombstones) != nil {
+            return .skipped(reason: "previously deleted")
+        }
         let fit = try await client.originalFit(activityID: activity.id)
         return try await ingestor.ingest(fitData: fit, filename: Self.filename(for: activity),
                                          source: .icu, icuActivityId: activity.id)

@@ -13,6 +13,7 @@ struct SettingsView: View {
             Form {
                 helpSection
                 icuSection
+                deletedSessionsSection
                 notificationsSection
                 WatchLinkSection()
                 analysisSection
@@ -109,6 +110,37 @@ struct SettingsView: View {
             Text("Downloads the original FIT of every windsurf, wing, kite, surf and SUP "
                  + "activity in your intervals.icu account, going two years back. "
                  + "Activities already in the library are never downloaded again.")
+        }
+    }
+
+    /// The quiet way out of a deletion, and the only place the tombstones
+    /// (`SessionTombstoneRow`) are ever visible.
+    ///
+    /// It is right under the sync section because that is the only thing they affect: a
+    /// deleted session is skipped by intervals.icu and by nothing else — a FIT the rider
+    /// picks by hand always imports, whatever he deleted before.
+    ///
+    /// Absent when there is nothing deleted, which is almost every install. A permanent row
+    /// reading "Previously deleted: 0" would be a feature announcing itself to people who
+    /// have never used it, on a screen that is already eight sections long.
+    @ViewBuilder
+    private var deletedSessionsSection: some View {
+        if store.deletedSessionCount > 0 {
+            Section {
+                LabeledContent("Previously deleted",
+                               value: "\(store.deletedSessionCount)")
+                Button("Restore all") {
+                    Task { await store.restoreAllDeletedSessions() }
+                }
+                .disabled(store.isBusy || store.apiKey.isEmpty)
+            } header: {
+                Text("Deleted sessions")
+            } footer: {
+                Text("Sessions you deleted stay deleted: syncing intervals.icu — by hand or "
+                     + "in the background — leaves them alone rather than downloading them "
+                     + "again. Restoring forgets that, and the next sync brings back every "
+                     + "one of them that is still on intervals.icu.")
+            }
         }
     }
 

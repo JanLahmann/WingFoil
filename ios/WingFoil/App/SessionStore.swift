@@ -26,6 +26,10 @@ final class SessionStore {
 
     /// Live counters of a running bulk import (nil when nothing is importing).
     private(set) var importProgress: ImportSummary?
+    /// How many sessions the rider has deleted and the sync is therefore refusing to bring
+    /// back. Zero on almost every install; the Settings section that offers them back only
+    /// exists when it is not.
+    private(set) var deletedSessionCount = 0
     /// Places and kit, cached for the pickers and the aggregate screens.
     private(set) var spots: [SpotAggregate] = []
     private(set) var gearAggregates: [GearAggregate] = []
@@ -70,6 +74,47 @@ final class SessionStore {
 
     private static var storedReplayCommentary: Bool {
         UserDefaults.standard.object(forKey: replayCommentaryKey) as? Bool ?? true
+    }
+
+    /// How long the last clip was asked to be (`ReplayClipLength`). Remembered because the
+    /// second clip of an afternoon is nearly always the same shape as the first, and because
+    /// a rider who has decided that 10 s is what his friends actually watch should not have
+    /// to re-decide it on every session.
+    ///
+    /// 25 s is the default: long enough to hold a jibe or two at a speed that still reads,
+    /// short enough to be watched to the end in a chat.
+    var replayClipLength: ReplayClipLength = SessionStore.storedReplayClipLength {
+        didSet {
+            guard replayClipLength != oldValue else { return }
+            UserDefaults.standard.set(replayClipLength.rawValue, forKey: Self.replayLengthKey)
+        }
+    }
+
+    static let replayLengthKey = "replayClipLength.v1"
+
+    private static var storedReplayClipLength: ReplayClipLength {
+        UserDefaults.standard.string(forKey: replayLengthKey)
+            .flatMap(ReplayClipLength.init(rawValue:)) ?? .s25
+    }
+
+    /// What shape the last clip was recorded in (`ReplayFraming`). Remembered for the same
+    /// reason the length is: a rider who posts to one place is posting to it again.
+    ///
+    /// **Full screen is the default**, and deliberately the conservative one: it is the only
+    /// framing that needs no export, it is what every clip made before the picker existed
+    /// looks like, and it is what a failed crop falls back to.
+    var replayFraming: ReplayFraming = SessionStore.storedReplayFraming {
+        didSet {
+            guard replayFraming != oldValue else { return }
+            UserDefaults.standard.set(replayFraming.rawValue, forKey: Self.replayFramingKey)
+        }
+    }
+
+    static let replayFramingKey = "replayFraming.v1"
+
+    private static var storedReplayFraming: ReplayFraming {
+        UserDefaults.standard.string(forKey: replayFramingKey)
+            .flatMap(ReplayFraming.init(rawValue:)) ?? .fullScreen
     }
 
     /// `var` because one engine parameter is the rider's to set: `defaultTurnType`.
@@ -118,6 +163,7 @@ final class SessionStore {
     func load() async {
         do {
             sessions = try await ingestor.allSessions()
+            deletedSessionCount = try await library.tombstoneCount()
             spots = try await library.spots()
             gearAggregates = try await library.gearAggregates()
             hasLoadedLibrary = true
@@ -253,9 +299,15 @@ final class SessionStore {
         sessions.first { $0.id == id }
     }
 
+    /// Deletes a session, and — through `SessionIngestor.delete` — records that it was
+    /// deleted, so the next intervals.icu sync leaves it alone.
+    ///
+    /// The title is handed down because only the app knows how to make one
+    /// (`SessionDisplay.title` reads the archived filename, and the archive goes with the
+    /// row): after this returns there is nothing left to derive a name from.
     func delete(_ row: SessionRow) async {
         do {
-            try await ingestor.delete(row)
+            try await ingestor.delete(row, title: SessionDisplay.title(row))
             thumbnails.invalidate(row.id)
             await load()
             await refreshPersonalBests(celebrate: false)
@@ -668,6 +720,12 @@ final class SessionStore {
         }
         isBusy = true
         status = "Contacting intervals.icu…"
+        // Read *before* this sync overwrites it: "when did he last pull?" is the whole of the
+        // re-add gate, and `lastSyncDate` is already exactly that fact — this method is the
+        // only thing that writes it, and only pull-to-refresh, "Sync now" and the empty
+        // library's own button reach this method. The background poller never does.
+        let previousSync = lastSyncDate
+        let startedAt = Date()
         defer { isBusy = false }
 
         let ingestor = self.ingestor
@@ -678,6 +736,7 @@ final class SessionStore {
                 return try await service.sync(oldest: oldest)
             }.value
             status = summary.shortDescription
+            await offerReAddIfAsked(summary, previousSync: previousSync, startedAt: startedAt)
             // A sync can succeed and still leave the library empty (Garmin not connected
             // in intervals.icu yet). That is a cause the setup card can name, not a crash.
             setProblem(IcuDiagnosis.describe(summary))
@@ -692,6 +751,106 @@ final class SessionStore {
             if !sessions.isEmpty { errorMessage = problem.alertText }
         }
         await load()
+    }
+
+    // MARK: - Deleted sessions, and asking for them back
+
+    /// The offer that is up: the sessions this sync skipped, ready to be picked through.
+    /// `RootView` presents it as a sheet, next to the other two questions the app owns.
+    ///
+    /// It carries the tombstones themselves rather than a count, because the answer is a
+    /// *selection*: the rider who pulled twice was almost certainly after one particular
+    /// afternoon, and an all-or-nothing question about six of them has no right answer. It is
+    /// also exactly the sessions this sync skipped and no others — "everything ever deleted"
+    /// is the Settings escape hatch, and a much larger promise.
+    struct ReAddOffer: Identifiable, Equatable {
+        let id = UUID()
+        let candidates: SessionTombstones.ReAddCandidates
+
+        var count: Int { candidates.count }
+    }
+
+    private(set) var pendingReAdd: ReAddOffer?
+
+    /// When the rider last said "Keep deleted". Persisted rather than held in memory: the
+    /// damper exists so that a refusal is not immediately followed by the same question, and
+    /// the app being relaunched between two pulls does not make the second one less annoying.
+    private static let reAddDeclinedKey = "reAddDeclinedAt.v1"
+
+    private var reAddDeclinedAt: Date? {
+        get { UserDefaults.standard.object(forKey: Self.reAddDeclinedKey) as? Date }
+        set { UserDefaults.standard.set(newValue, forKey: Self.reAddDeclinedKey) }
+    }
+
+    /// The gate Jan asked for: *pull twice, straight away, and we will ask*.
+    ///
+    /// Deleting a session is an instruction, so a sync that finds one and silently obeys is
+    /// the correct behaviour and the common case. But "I pulled and nothing came, so I pulled
+    /// again" is also a real thing to be confused about, and a second pull ten seconds after
+    /// the first one finished is a gesture nobody makes by accident. The decision itself is a
+    /// pure predicate in the kit (`SessionTombstones.shouldOfferReAdd`), which is where it can
+    /// be tested; the arranging of the list into something pickable is
+    /// `SessionTombstones.candidates`, for the same reason.
+    ///
+    /// `startedAt` and not `Date()`: the window is measured to the moment this sync *began*,
+    /// so a slow connection cannot swallow the gesture by taking longer than the window.
+    private func offerReAddIfAsked(_ summary: IcuSyncSummary, previousSync: Date?,
+                                   startedAt: Date) async {
+        guard SessionTombstones.shouldOfferReAdd(blocked: summary.tombstoned,
+                                                 previousManualSyncAt: previousSync,
+                                                 declinedAt: reAddDeclinedAt,
+                                                 now: startedAt)
+        else { return }
+        let blocked = Set(summary.blockedTombstoneIds)
+        guard let stones = try? await library.tombstones() else { return }
+        let matched = stones.filter { blocked.contains($0.id) }
+        guard !matched.isEmpty else { return }
+        pendingReAdd = ReAddOffer(candidates: SessionTombstones.candidates(matched))
+    }
+
+    /// "Restore selected" — forget those tombstones and sync again, which is the only way the
+    /// sessions can actually come back: their FITs went with the archive directories, so
+    /// intervals.icu is the only place left holding them.
+    ///
+    /// The ones that were *not* selected keep their tombstones, which is the whole point of
+    /// the picker: leaving a session out of the selection is a second, deliberate "yes, that
+    /// one really is deleted".
+    func acceptReAdd(ids: [String]) async {
+        pendingReAdd = nil
+        guard !ids.isEmpty else { return }
+        do {
+            try await library.forgetTombstones(ids: ids)
+        } catch {
+            errorMessage = "Could not restore those sessions: \(error)"
+            return
+        }
+        await syncFromIntervals()
+    }
+
+    /// "Keep deleted", and the same call the alert's own dismissal makes. The tombstones stay;
+    /// the offer stays down for `reAddWindowS`, so the very next pull — which is inside the
+    /// window by construction — does not ask the same question again.
+    func declineReAdd() {
+        pendingReAdd = nil
+        reAddDeclinedAt = Date()
+    }
+
+    /// The quiet escape hatch, from Settings: forget every tombstone and sync.
+    ///
+    /// It exists so that nobody is permanently stuck. The gate above only fires on a
+    /// deliberate double-pull within two minutes, and a rider who deleted a session in March
+    /// and wants it back in August will never trip it — this is how he gets there instead.
+    func restoreAllDeletedSessions() async {
+        guard !isBusy else { return }
+        do {
+            try await library.forgetAllTombstones()
+        } catch {
+            errorMessage = "Could not restore the deleted sessions: \(error)"
+            return
+        }
+        reAddDeclinedAt = nil
+        deletedSessionCount = 0
+        await syncFromIntervals()
     }
 
     // MARK: - New-session notifications
@@ -733,7 +892,7 @@ final class SessionStore {
     /// ending.)
     private var isPresentingSomething: Bool {
         isPresentingSheet || pendingImport != nil || errorMessage != nil || isCheckingKey
-            || isShowingWelcome
+            || isShowingWelcome || pendingReAdd != nil
     }
 
     /// Asked at every plausible moment — launch, foreground, a key that was just proved, a
@@ -1155,6 +1314,7 @@ final class SessionStore {
         Keychain.remove(Keychain.icuApiKey)
         for key in ["lastIcuSync", problemKey, pbSnapshotKey, "healthExported",
                     "healthWriteEnabled", defaultTurnTypeKey, welcomeShownKey,
+                    reAddDeclinedKey, replayLengthKey, replayFramingKey,
                     ActivityNotifier.enabledKey, ActivityNotifier.markKey,
                     ActivityNotifier.pendingImportKey, ActivityNotifier.promptedKey,
                     MapLayerVisibilityStore.defaultsKey] {

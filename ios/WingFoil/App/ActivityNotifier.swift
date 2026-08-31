@@ -156,7 +156,13 @@ final class ActivityNotifier: NSObject {
         do {
             let activities = try await client.activities(
                 oldest: NewActivityWatch.windowStart(mark: mark, now: now), newest: now)
-            let library = try await ingestor.allSessions().map(NewActivityWatch.KnownSession.init)
+            // Deleted sessions count as "already accounted for" here, which is the only
+            // honest way to file them: `IcuSyncService.fetchOne` would refuse to import a
+            // tombstoned activity anyway, so without this the poller would post a banner for
+            // a session it then declines to fetch — the resurrection happening in the
+            // notification tray instead of the library.
+            var library = try await ingestor.allSessions().map(NewActivityWatch.KnownSession.init)
+            library += try await ingestor.library.tombstones().map(\.asKnownSession)
             let decision = NewActivityWatch.evaluate(activities: activities, library: library,
                                                      mark: mark, now: now)
             return (decision, activities)
