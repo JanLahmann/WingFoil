@@ -180,12 +180,20 @@ twins, and a difference between them is a bug.
 
 ### The share card carries the same block
 
-The exported card (iOS only — the web has no composer) shows **this block and nothing
-else**, re-laid-out as cells: same keys, same order, same labels, same strings, and the
-tally's three counts kept as counts so they can wear the ladder there too. A card is the
-one artefact that leaves the phone and is read next to nothing, so it is the last place
-either app may name a different number for the same session — `ShareCardStats.make` takes
-the rendered `KeyMetrics` rather than rebuilding anything from the index row.
+The exported card shows **this block and nothing else**, re-laid-out as cells: same keys,
+same order, same labels, same strings, and the tally's three counts kept as counts so they
+can wear the ladder there too. A card is the one artefact that leaves the device and is read
+next to nothing, so it is the last place either app may name a different number for the same
+session — `ShareCardStats.make` takes the rendered `KeyMetrics` rather than rebuilding
+anything from the index row.
+
+**Both platforms compose one now.** The web's composer is `web/js/sharecard.js` (a canvas at
+the same three pixel sizes, with a live preview, Download PNG, and a Share… button wherever
+`navigator.canShare({files})` is true); its content comes from `web/js/cardstats.js`, which
+is the same move the Swift side makes and for the same reason — `keyMetricEntries` is the one
+list, `keyMetrics` in `web/js/render.js` renders its HTML from it, and `cardStats` can only
+filter it. `web/tools/verify_presentation.py` §5 asserts, per fixture, that the card's stat
+list *is* the rendered block.
 
 Two presets choose how much of it appears, and a preset may only **remove** entries:
 
@@ -206,7 +214,9 @@ is the declared promotion channel — it leaves the phone as a PNG and is read i
 else's chat by a rider who has never heard of the app — so the footer is the only part of it
 addressed to the receiver rather than to the sender, and it may not differ between the card
 the phone exports and the card the web composes. The strings come from `Branding` in the kit
-(`appName`, `callToAction`, `siteURL`), pinned by test.
+(`appName`, `callToAction`, `siteURL`), pinned by test, and from `BRANDING` in
+`web/js/cardstats.js` on the other side — one constant per platform, never a literal at a
+draw site.
 
 Two details of the QR are load-bearing rather than cosmetic and are the same on both
 platforms: it is **dark-on-light with its own light plate**, because the card's background is
@@ -216,7 +226,10 @@ because the generator emits one pixel per module and any smoothing turns every m
 into a grey ramp for a decoder to guess at after a chat app has recompressed the picture. iOS
 renders it with `CIQRCodeGenerator` (`ios/WingFoil/Features/Share/BrandQRCode.swift`) at
 correction level M — a short URL, a clean digital image, and bigger modules matter more here
-than damage tolerance.
+than damage tolerance. The web draws the same symbol from a committed 33 × 33 PNG
+(`web/icons/qr-cleanjibe.png`, one pixel per module, quiet zone included) with
+`imageSmoothingEnabled = false` at 99 px, which is the same 3× nearest-neighbour upscale: the
+URL is fixed, so a QR library in the bundle would be a dependency to draw a constant.
 
 Note the case, which is deliberate: **CleanJibe** is the brand, *wingfoil* in the call to
 action is the sport. The word WingFoil survives only as the Xcode target, the module and the

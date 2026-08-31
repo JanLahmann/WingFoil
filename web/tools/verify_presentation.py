@@ -10,7 +10,7 @@ this side of the repo, so a rule that drifts on one platform fails on both.
     lab/.venv/bin/python web/tools/verify_presentation.py
     lab/.venv/bin/python web/tools/verify_presentation.py --fast   # skip the engine run
 
-Five groups:
+Six groups:
 
 1. **Contract shape.** Every layer and record id in a presentation golden is one the
    contract knows (design/tokens.json, the same catalogue the iOS enums are checked
@@ -29,6 +29,13 @@ Five groups:
 4. **The engine path** (skipped by `--fast`): re-analyze one FIT through `web_entry`, the
    exact call the browser makes, and check the presentation facts of the document it
    produces. This is what ties the numbers to the code the site actually runs.
+5. **The share card is the block.** The exported card's stat list, for every fixture, is
+   the key-metrics block the page renders — same entries, same order, same labels, same
+   strings — with `lean` a strict subset of it and nothing from the tiles allowed in. A
+   card is a PNG in somebody else's chat thread: no re-render, no correction, nothing
+   beside it to check against. The drawing cannot be golden-tested; the content derivation
+   is a pure function (`web/js/cardstats.js`) and so it is, through
+   `web/tools/card_parity.mjs` (needs `node` — skipped without it).
 
 Exit 0 = everything matched; exit 1 = the failures are listed.
 """
@@ -37,6 +44,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
+import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
@@ -363,6 +372,130 @@ def check_engine() -> None:
     check(f"  {CIQ}: failed takeoff attempts", fresh["takeoff"]["failed"], 14)
 
 
+# --------------------------------------------- 5. the share card is the block
+
+CARD_PARITY = TOOLS / "card_parity.mjs"
+
+#: What `lean` is allowed to keep — `ShareCardStats.Preset.leanKeys`, spelled here so the
+#: JavaScript is checked against a second copy of the rule rather than against itself.
+LEAN_KEYS = ["distance", "duration", "max2s", "tally"]
+
+#: Keys that must never reach a card. They are real numbers the app shows — in the *tiles*,
+#: below the block — and a card that printed them would be a second, quieter answer to "was
+#: that a good session" travelling in a picture next to the loud one. (iOS gives its clip
+#: outro a ninth `longestFlight` cell; the exported card there does not get it either.)
+FORBIDDEN_KEYS = {"flightCount", "flights", "foilPct", "longestFlight", "best500m", "wind"}
+
+
+def _hm(sec: float) -> str:
+    """`1:25`, written out again — the Python spelling of `KeyMetrics.hoursMinutes`."""
+    m = max(0, round(sec / 60))
+    return f"{m // 60}:{m % 60:02d}"
+
+
+def expected_card_values(doc: dict) -> dict[str, str]:
+    """The block's strings, re-derived here from the analysis golden.
+
+    Deliberately a *third* implementation (Swift, JavaScript, and this): the JS card and the
+    JS block agreeing proves they share a list, which they do by construction; it does not
+    prove the list says the right thing. These do.
+    """
+    s, t, rec = doc["summary"], doc["summary"]["turns"], doc["records"]
+    out = {
+        "duration": _hm(s["durationS"]),
+        "distance": f"{s['distanceKm']:.1f} km",
+        "avgSpeed": "—" if s.get("avgSpeedKmh") is None
+                    else f"{s['avgSpeedKmh'] / 1.852:.2f} kn",
+        "max2s": f"{rec['best2sKn']:.2f} kn" if rec["best2sKn"] >= 0.05 else "—",
+    }
+    outcomes = t["jibeOutcomes"] if t["jibes"] > 0 else t["outcomes"]
+    if t["jibes"] > 0 or t["turnsCounted"] > 0:
+        out["tally"] = (f"{outcomes['flewThrough']} · {outcomes['touchdown']} · "
+                        f"{outcomes['fellIn']}")
+    if t["turnsCounted"] > 0:
+        out["streaks"] = f"{t['longestDryStreak']} dry · {t['longestFlewStreak']} flew"
+    if s.get("wetPerHour") is not None:
+        if s["jibesPerHour"] > 0 or not s["turnsPerHour"] > 0:
+            out["jph"] = f"{s['jibesPerHour']:.1f}"
+        else:
+            out["tph"] = f"{s['turnsPerHour']:.1f}"
+        out["wph"] = f"{s['wetPerHour']:.1f}"
+    return out
+
+
+def check_card() -> None:
+    """The exported card says exactly what the key-metrics block says.
+
+    A card is a PNG in somebody else's chat thread: there is no re-render, no correction and
+    nothing beside it to check against, so it is the last place the app may name a different
+    number for the same session than the page does. `web/js/cardstats.js` makes that
+    structurally true — one list, two readers — and this is what proves it stayed true, over
+    every fixture, on the *rendered markup* rather than on the array behind it.
+
+    The drawing cannot be golden-tested (a canvas is pixels). The content derivation is a
+    pure function, and therefore can be, and therefore must be.
+    """
+    section("5. the share card carries the key-metrics block, unchanged")
+
+    goldens = sorted(GOLDENS.glob(f"*{gen.SUFFIX}"))
+    node = shutil.which("node")
+    if not node:
+        print("  (skipped: node not on PATH)")
+        return
+    try:
+        raw = subprocess.run([node, str(CARD_PARITY), *[str(p) for p in goldens]],
+                             capture_output=True, text=True, check=True, cwd=REPO).stdout
+    except subprocess.CalledProcessError as exc:              # pragma: no cover
+        FAILED.append(f"  card_parity.mjs failed\n{exc.stderr.strip()}")
+        return
+    cards = json.loads(raw)
+
+    check("  every analysis golden was measured", len(cards), len(goldens))
+    for card in cards:
+        stem = Path(card["file"]).name[: -len(gen.SUFFIX)]
+        doc = json.loads(Path(REPO / card["file"]).read_text(encoding="utf-8"))
+        block = card["block"]
+        complete = card["complete"]
+        lean = card["lean"]
+
+        # 1. Complete IS the block: same entries, same order, same words, same strings.
+        check(f"  {stem}: complete == the rendered block",
+              [{"label": e["label"], "value": e["value"]} for e in complete], block)
+
+        # 2. Lean is a strict SUBSET — it may drop entries and may not reword, reorder or
+        #    substitute one. Held as keys, so a preset cannot invent a cell.
+        check(f"  {stem}: lean is the block filtered by leanKeys",
+              lean, [e for e in complete if e["key"] in LEAN_KEYS])
+        check(f"  {stem}: lean keeps the block's order",
+              [e["key"] for e in lean],
+              [e["key"] for e in complete if e["key"] in LEAN_KEYS])
+
+        # 3. Nothing the block does not carry may appear on a card.
+        keys = {e["key"] for e in complete}
+        check(f"  {stem}: no tile-only cell reached the card", keys & FORBIDDEN_KEYS, set())
+
+        # 4. The strings themselves, re-derived from the golden by a third implementation.
+        want = expected_card_values(doc)
+        check(f"  {stem}: the card's values, re-derived",
+              {e["key"]: e["value"] for e in complete}, want)
+
+        # 5. The tally's three counts stay counts, so the card can wear the ladder's inks —
+        #    and they are the same three the value string spells out.
+        tally = next((e for e in complete if e["key"] == "tally"), None)
+        if tally is not None:
+            counts = tally["tally"]
+            check(f"  {stem}: the tally cell carries its counts",
+                  f"{counts['flewThrough']} · {counts['touchdown']} · {counts['fellIn']}",
+                  tally["value"])
+            t = doc["summary"]["turns"]
+            source = t["jibeOutcomes"] if t["jibes"] > 0 else t["outcomes"]
+            check(f"  {stem}: the tally counts are the golden's own",
+                  counts, {k: source[k] for k in ("flewThrough", "touchdown", "fellIn")})
+
+    if cards:
+        check("  leanKeys is the contract's set", cards[0]["leanKeys"], LEAN_KEYS)
+
+
 # --------------------------------------------------------------------- main
 
 
@@ -389,6 +522,7 @@ def main(argv=None) -> int:
         _MARK[:] = [PASSED, len(FAILED)]
     else:
         check_engine()
+    check_card()
 
     _close_section()
     print(f"\n{PASSED} passed, {len(FAILED)} failed")
