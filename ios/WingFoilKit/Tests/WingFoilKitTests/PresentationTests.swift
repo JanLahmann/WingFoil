@@ -135,6 +135,57 @@ import Testing
         }
     }
 
+    /// The **clip's closing card** is the block plus one cell, and that cell is the one thing
+    /// the old highlight lines said that the grid did not already carry.
+    ///
+    /// The outro used to print the eight-cell grid and then, underneath it, two or three
+    /// sentences off the commentary — "Top speed — 13.47 kn over 2 s" over a max-2 s cell
+    /// saying 13.47, "New streak — 8 dry jibes" over a streaks cell saying 8. The lines are
+    /// gone; the longest flight, which really was missing, is a ninth cell, and nine cells is
+    /// a clean 3 × 3.
+    @Test func theOutroGridIsTheBlockPlusTheLongestFlight() {
+        var records = GP3SRecords()
+        records.best2sKn = 13.209
+        let block = KeyMetrics.make(summary: torboleSummary(), records: records)
+        let outro = ShareCardStats.outro(row: sampleRow(), title: "Torbole", metrics: block,
+                                         longestFlightS: 392)
+
+        #expect(outro.stats.map(\.key)
+                == ["duration", "distance", "avgSpeed", "max2s", "tally", "streaks",
+                    "jph", "wph", "longestFlight"])
+        #expect(outro.stats.count == 9)
+        // "6:32" — the same string the replay's own caption said and the flight table prints.
+        #expect(outro.stats.last?.value == FlightPairing.clock(392))
+        #expect(outro.stats.last?.value == "6:32")
+        #expect(outro.stats.last?.label == "longest flight")
+
+        // Everything before it is the complete preset, cell for cell — the outro adds, it
+        // never rewords.
+        let card = ShareCardStats.make(row: sampleRow(), title: "Torbole", metrics: block,
+                                       preset: .complete)
+        #expect(Array(outro.stats.dropLast()) == card.stats)
+        #expect(outro.disclaimer == card.disclaimer)
+        // …and the exported card itself is untouched: it stays the strict `KeyMetrics` mirror.
+        #expect(!card.stats.contains { $0.key == ShareCardStats.Key.longestFlight })
+    }
+
+    /// A session where nothing flew has an *unknown* longest flight, not a zero-second one.
+    /// The grid is then eight cells, which is what it was before.
+    @Test func theOutroOmitsTheFlightCellRatherThanPrintingZero() {
+        var records = GP3SRecords()
+        records.best2sKn = 13.209
+        let block = KeyMetrics.make(summary: torboleSummary(), records: records)
+        for seconds in [nil, 0, -1] as [Double?] {
+            let outro = ShareCardStats.outro(row: sampleRow(), title: "x", metrics: block,
+                                             longestFlightS: seconds)
+            #expect(outro.stats.count == 8)
+            #expect(!outro.stats.contains { $0.key == ShareCardStats.Key.longestFlight })
+        }
+        #expect(ShareCardStats.longestFlightStat(nil) == nil)
+        #expect(ShareCardStats.longestFlightStat(0) == nil)
+        #expect(ShareCardStats.longestFlightStat(65)?.value == "1:05")
+    }
+
     /// Lean can only *remove*. If it ever substituted or reworded a cell it would be a
     /// second vocabulary again, and the card would be free to disagree with the app.
     @Test func leanPresetIsAStrictSubsetOfComplete() {

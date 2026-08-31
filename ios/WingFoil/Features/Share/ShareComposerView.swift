@@ -166,6 +166,8 @@ struct ShareComposerView: View {
 
         if let rendered {
             ShareLink(item: rendered,
+                      subject: Text(stats.title),
+                      message: Text(cardCaption),
                       preview: SharePreview(stats.title, image: rendered)) {
                 Label("Share card", systemImage: "square.and.arrow.up")
                     .frame(maxWidth: .infinity)
@@ -217,7 +219,7 @@ struct ShareComposerView: View {
         if let fitFile {
             ShareLink(item: fitFile.url,
                       subject: Text(SessionDisplay.title(row)),
-                      message: Text(Self.invitation)) {
+                      message: Text(invitation)) {
                 Label("Share \(fitFile.url.lastPathComponent) · "
                       + "\(Fmt.bytes(Int64(fitFile.bytes)))",
                       systemImage: "square.and.arrow.up")
@@ -236,7 +238,7 @@ struct ShareComposerView: View {
             ProgressView().frame(maxWidth: .infinity, minHeight: 44)
         }
 
-        Text(Self.invitation)
+        Text(invitation)
             .font(.caption2)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
@@ -244,9 +246,20 @@ struct ShareComposerView: View {
 
     /// Goes with the file, so a receiver with no app still has somewhere to open it: the
     /// web app reads the same FIT with the same engine, in a browser, without an account.
-    private static let invitation =
-        "\(Branding.appName) session — analyze it free in the browser at "
-        + "\(Branding.siteURL) (no account needed)."
+    ///
+    /// It now leads with where and when, because the receiver is usually the friend who was
+    /// on the water at the same time and could not otherwise tell *which* afternoon he had
+    /// been sent. Composed in the kit (`ShareText`) rather than here, so the FIT, the clip and
+    /// the card cannot drift into three different ways of naming one session.
+    private var invitation: String {
+        ShareText.fitMessage(place: SessionDisplay.title(row), startedAt: row.startDate)
+    }
+
+    /// The card's own message. Short: a PNG is not something a receiver can re-analyse, and
+    /// the card already carries the site in its footer pixels.
+    private var cardCaption: String {
+        ShareText.cardMessage(place: SessionDisplay.title(row), startedAt: row.startDate)
+    }
 
     private var renderKey: String {
         "\(shape.rawValue)|\(preset.rawValue)|\(photo == nil ? "plain" : "photo")"

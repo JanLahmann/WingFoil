@@ -91,6 +91,14 @@ targets:
         NSHealthShareUsageDescription: >-
           WingFoil does not read any data from the Health app. This permission exists only
           because the workout-export feature links the HealthKit framework.
+        # The end-of-recording sheet's "Save to Photos" (App/PhotoLibrarySaver.swift). ADD
+        # ONLY: the app asks for `.addOnly` authorization and can never read an asset back,
+        # which is why there is no `NSPhotoLibraryUsageDescription` beside it. The photos a
+        # rider splices into a clip come from `PhotosPicker`, which runs out of process and
+        # needs no permission at all — so this is the only photo-library prompt the app has.
+        NSPhotoLibraryAddUsageDescription: >-
+          Saves the replay clip you just recorded to your photo library. WingFoil only adds
+          videos you ask it to save; it never reads your photos.
         # Read by the ConnectIQ SDK itself when it hands control to Garmin Connect
         # Mobile — GCM shows this name to the rider. It must exist, or device selection
         # comes back empty with no error anywhere.

@@ -12,7 +12,15 @@ struct RootView: View {
         case sessions, records, trends, gear
     }
 
+    /// Split into "the tabs", "the things the app puts on top of them" and "the moments that
+    /// decide whether to". One expression carrying all three overflowed the type checker
+    /// outright once the deleted-sessions sheet joined the other two presentations — and
+    /// three named groups are what the comments were already describing anyway.
     var body: some View {
+        hooks(presentations(tabs))
+    }
+
+    private var tabs: some View {
         TabView(selection: $selection) {
             LibraryView()
                 .tag(Tab.sessions)
@@ -30,12 +38,17 @@ struct RootView: View {
                 .tag(Tab.gear)
                 .tabItem { Label("Gear", systemImage: "bag") }
         }
-        // A tapped "new session" notification names a session, and sessions live on the
-        // first tab. The library does the pushing; this only makes sure the tab it pushes
-        // onto is the one on screen.
-        .onChange(of: store.pendingSessionID) { _, pending in
-            if pending != nil { selection = .sessions }
-        }
+    }
+
+    // MARK: - The three questions the app owns
+
+    /// Everything the app itself puts on screen, as opposed to what a tab does: whose session
+    /// is this, shall I notify you, did you mean to un-delete those — and the welcome screen.
+    /// All four live here rather than in a tab because none of them belongs to one, and they
+    /// all go through the store's single "is anything else up?" predicate, so they can never
+    /// stack on each other.
+    private func presentations(_ content: some View) -> some View {
+        content
         // "Whose session is this?" — asked here rather than on the Import screen because a
         // FIT also arrives by being tapped in another app (`onOpenURL`), with no screen of
         // ours on top. One presentation, wherever the file came from.
@@ -61,6 +74,19 @@ struct RootView: View {
             Text("When a new Garmin activity syncs, WingFoil can let you know — "
                  + "even in the background.")
         }
+        // "You have pulled twice in ten seconds and the sessions you deleted are still not
+        // here — did you mean to get any of them back?". The third question the app owns,
+        // raised here beside the other two and going through the same "is anything else up?"
+        // predicate, so it can never stack on the rider prompt or the notification offer.
+        //
+        // A sheet rather than an alert, and this is the one of the three that could not be an
+        // alert: the answer is a *selection* over several afternoons, not a yes/no — see
+        // `ReAddDeletedSheet`. It only ever appears after a deliberate immediate second pull,
+        // because the default answer is the one the rider already gave by deleting.
+        .sheet(item: Binding(get: { store.pendingReAdd },
+                             set: { if $0 == nil { store.declineReAdd() } })) { offer in
+            ReAddDeletedSheet(offer: offer)
+        }
         // The first thing a first launch shows, in front of the setup card the library
         // would otherwise open on. A cover rather than a sheet: it is one screen with three
         // answers on it and nothing behind it worth peeking at, and a half-swipe that
@@ -79,6 +105,21 @@ struct RootView: View {
                 // but get out of its way.
                 onConnect: { store.dismissWelcome() },
                 onLater: { store.dismissWelcome() })
+        }
+    }
+
+    // MARK: - When to ask them
+
+    /// Every moment at which one of the answers above can change. Each is the *same* question
+    /// asked again after a "not yet": the predicates say no while another modal is up and the
+    /// store only spends an offer when it actually appears, so the deferrals cost nothing.
+    private func hooks(_ content: some View) -> some View {
+        content
+        // A tapped "new session" notification names a session, and sessions live on the
+        // first tab. The library does the pushing; this only makes sure the tab it pushes
+        // onto is the one on screen.
+        .onChange(of: store.pendingSessionID) { _, pending in
+            if pending != nil { selection = .sessions }
         }
         .task {
             store.showWelcomeIfNeeded()

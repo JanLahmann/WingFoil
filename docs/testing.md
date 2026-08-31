@@ -272,6 +272,44 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      half adds one guard the predicate cannot: nothing is decided until the library has
      actually been read (`SessionStore.hasLoadedLibrary`), because an empty `sessions` at
      launch means "still loading", not "no sessions".
+   - `TombstoneTests` — deleting a synced session has to *stick*. Two pure rules, tested
+     apart because they fail differently. The **matcher** (`SessionTombstones.blocks`) decides
+     whether an incoming intervals.icu activity is one the rider threw away: by activity id
+     when the deleted row carried one, otherwise by the library's own ±60 s dedupe key with
+     the same **one-sided** duration comparison `NewActivityWatch.isInLibrary` uses (icu
+     reports moving time, the library stored elapsed time), which is what catches a session
+     that arrived through a Garmin GDPR ZIP, carries no icu id, and is on intervals.icu all
+     the same. The **gate** (`shouldOfferReAdd`) decides whether the rider is ever asked:
+     only on a second *manual* sync within `reAddWindowS` — ten seconds, measured to the
+     moment the second sync began — never on a background wake, never on the first sync of an
+     install, and not again for the same window after a "Keep deleted". Plus the arrangement
+     the picker needs (`candidates`: newest session first, and a "only this day" shortcut
+     that appears only when the list is long enough *and* spans more than one day, grouped by
+     the **session's** day rather than the deletion's), the v6 migration, and one round trip
+     through GRDB asserting that deleting writes a tombstone, that restoring forgets it, and
+     that the bundled example gets none — it is not the rider's session and no sync was ever
+     going to bring it back.
+   - `ShareTextTests` — the message that travels with a shared file (`ShareText`). Every one
+     of the three leads with where and when, off the share card's own `dateLine`, because the
+     receiver is usually the friend who was on the water at the same time and could not
+     otherwise tell which afternoon he had been sent. The FIT keeps the analyzer invitation
+     (it is the one attachment the receiver can actually do something with); the clip and the
+     card do not.
+   - `ReplayPacingTests` — the setup sheet asks for a **length**, not a rate. Pinned on the
+     30 Aug Torbole fixture: 10 / 25 / 60 s of replay come out at 10.00 / 25.00 / 60.00 s,
+     solved to 99.23× / 39.66× / 13.78×, with the slow-motion dips budgeted down to fit
+     (0.161 / 0.403 / 0.600 s half-widths) — the ease costs about a second per milestone, so
+     twelve of them would otherwise make a ten-second clip impossible. "Full detail" is still
+     the old constant 10× and still lands on the 77.70 s `ReplayDriverTests` pins. Both
+     saturations are covered: a four-hour session asked for ten seconds hits `maxRate` and the
+     sheet quotes the longer clip out loud, and a session shorter than the target plays in
+     real time.
+   - `ReplayStageTests` — where the clip is on the glass and where that lands in the recorded
+     file (`ReplayStage`, `ReplayClipCropper`). The box arithmetic on screen sizes that exist,
+     the points→pixels mapping done as a **fraction of the frame** rather than `× scale` (the
+     recorder reports the file's dimensions, not the panel's), even numbers for H.264, and a
+     real crop of a real synthetic movie written with `AVAssetWriter` — the one part of the
+     recording path a Mac can settle.
 
    iOS screenshot hooks (DEBUG **and** simulator only, passed as `SIMCTL_CHILD_…`
    environment variables to `xcrun simctl launch`): `UI_RESET=1` restores the fresh-install
@@ -337,11 +375,27 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    state the picker does but, unlike a tap on the picker, does **not** write the rider's
    stored choice.
    The **cinema replay** (`ReplayCinemaView`, the full-screen replay a clip is recorded from)
-   opens with `UI_REPLAY_CINEMA=<rate>` — `10`, `30` or `60` — which stands in for the record
-   button plus the setup sheet. `UI_REPLAY_SETUP=1` opens that sheet instead, which is the
-   only screen the photo picker lives on. `UI_REPLAY_RECORD=0` stages the other mode, the
+   opens with `UI_REPLAY_LENGTH=10|25|60|full`, which stands in for the record button plus the
+   setup sheet's own length picker: the setup sheet asks for a **target length** and
+   `ReplayPacing` solves the rate (and, on a short target with a talkative session, a briefer
+   ease) from it, so a hook that named a raw rate would no longer stage the control that
+   exists. `UI_REPLAY_CINEMA=<rate>` still takes a bare multiplier for checking the pacing
+   itself — that is how the 250× ceiling in `ReplayPacing.maxRate` was looked at.
+   `UI_REPLAY_FRAMING=portrait|square|landscape|fullScreen` stages the clip's **shape**: the
+   replay draws inside a 9:16 / 1:1 / 16:9 box with the rest of the glass painted black, which
+   is what the rider composes against and what the finished video is cropped to
+   (`ReplayStage`). Since ReplayKit writes nothing in the Simulator, the *staging* is what a
+   Mac can check and the *crop* is not — see `ReplayStageTests`, which exports a synthetic
+   `AVAssetWriter` movie and asserts the cropped file's pixel dimensions, and the device note
+   below. `UI_REPLAY_SETUP=1` opens the setup sheet instead, which is the only screen the
+   photo picker and the two pickers live on. `UI_REPLAY_RECORD=0` stages the other mode, the
    plain full-screen replay a rider gets when the recorder is unavailable or the permission
    was refused: no countdown, no clip, the transport says "Done".
+   **`SIMCTL_CHILD_…` really does mean the environment of `simctl` itself**, not an argument
+   after the bundle id: `xcrun simctl launch <dev> <bundle> UI_TAB=records` passes a launch
+   *argument* the app never reads, and every hook silently does nothing. Export them, or
+   prefix the command:
+   `SIMCTL_CHILD_UI_OPEN_SESSION=latest xcrun simctl launch <dev> de.lahmann.wingfoil`.
    A clip is five things in a row — title card, replay, spliced photos, leftover photos,
    outro card — and the two cards are on screen for 2.5 s and 4 s inside a run `simctl`
    cannot pause, so `UI_REPLAY_STAGE=title|outro` parks the run on one of them and leaves it
@@ -356,10 +410,16 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    `ReplayRecorder.Failure.empty` turns into an honest alert. So the capture itself is
    device-only; everything around it is not. `UI_REPLAY_CLIP=stub` short-circuits ReplayKit
    and writes a placeholder file with bytes in it, which is how the clip sheet — player,
-   size, share link, discard — gets driven on a Mac. The one thing only a device can settle
-   is whether the *first recorded frame* is the title card: the countdown is removed, a
-   `titleSettleS` beat passes and only then is `startRecording` awaited, and there is no
-   simulator capture to check it against.
+   size, share link, **Save to Photos**, discard — gets driven on a Mac. (The stub file is
+   not a playable movie, so "Save to Photos" on it exercises the add-only authorization and
+   then fails at the library, which is exactly the failure alert and the settings deep link
+   worth photographing. A successful save is device-only.)
+   **Three things only a device can settle.** Whether the *first recorded frame* is the title
+   card: the countdown is removed, a `titleSettleS` beat passes and only then is
+   `startRecording` awaited, and there is no simulator capture to check it against. Whether
+   the **crop lands on the staged box**: the arithmetic and the export are covered by
+   `ReplayStageTests` against a synthetic movie, but only a phone produces a recording *of the
+   staged screen* to crop. And whether a clip actually reaches the camera roll.
    Orientation is the one thing no hook stages: `simctl` cannot rotate a simulator and
    Simulator.app's Rotate menu is not reachable from a headless run. To photograph the
    landscape frame, temporarily cut `UISupportedInterfaceOrientations` in `ios/project.yml`

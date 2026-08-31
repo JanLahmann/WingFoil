@@ -68,6 +68,10 @@ public struct ShareCardStats: Sendable, Equatable {
         public static let maxSpeed = "max2s"
         public static let tally = "tally"
         public static let streaks = "streaks"
+        /// **The closing card's ninth cell, and nowhere else.** Not a `KeyMetrics` key: the
+        /// block does not carry the longest flight, and the exported card is a strict mirror
+        /// of the block — see `outro`.
+        public static let longestFlight = "longestFlight"
     }
 
     /// How much of the key-metrics block the card carries.
@@ -198,6 +202,47 @@ public struct ShareCardStats: Sendable, Equatable {
             preset: preset,
             disclaimer: row.sourceClass == "c"
                 ? "Speeds from a degraded source — uncertified" : nil)
+    }
+
+    /// The **closing card of a clip**: the complete block, plus the longest flight.
+    ///
+    /// **Why the clip's card gets a cell the exported card does not.** The outro used to print
+    /// the grid and then, underneath it, two or three highlight lines lifted out of the
+    /// commentary — "Top speed — 13.47 kn over 2 s", "New streak — 8 dry jibes". Two of the
+    /// three were the grid again in a sentence: the max-2 s cell and the streaks cell say
+    /// exactly those numbers, four centimetres higher up. The one highlight the grid did *not*
+    /// carry was the longest flight, and a number is better in a cell than in a caption
+    /// repeating cells around it. So the lines are gone and the number they were really about
+    /// is a cell — which also makes the grid a clean 3 × 3.
+    ///
+    /// **Only here.** `make` is unchanged and stays a strict mirror of `KeyMetrics`: the app's
+    /// key-metrics block and the PNG a rider exports must remain the same list, or the two
+    /// start disagreeing about what a session is.
+    ///
+    /// The flight is formatted with `FlightPairing.clock` — the same "6:32" the replay's own
+    /// caption said and the flight table prints, so the closing frame and the page behind it
+    /// spell one number one way.
+    public static func outro(row: SessionRow, title: String, metrics: KeyMetrics? = nil,
+                             longestFlightS: Double? = nil,
+                             timeZone: TimeZone = .current) -> ShareCardStats {
+        let base = make(row: row, title: title, metrics: metrics, preset: .complete,
+                        timeZone: timeZone)
+        guard let flight = longestFlightStat(longestFlightS) else { return base }
+        return ShareCardStats(title: base.title, dateLine: base.dateLine,
+                              stats: base.stats + [flight], preset: base.preset,
+                              disclaimer: base.disclaimer)
+    }
+
+    /// The longest flight as a cell, or nil when there was not one.
+    ///
+    /// Absent rather than "0:00": a session where nothing ever flew has an *unknown* longest
+    /// flight, not a zero-second one, and a closing card that printed 0:00 would be delivering
+    /// a verdict the analysis never reached. The grid is then eight cells, which is what it
+    /// was before.
+    public static func longestFlightStat(_ seconds: Double?) -> Stat? {
+        guard let seconds, seconds > 0 else { return nil }
+        return Stat(key: Key.longestFlight, label: "longest flight",
+                    value: FlightPairing.clock(seconds))
     }
 
     /// The key-metrics block flattened into cells, in the block's own reading order:
