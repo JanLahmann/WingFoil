@@ -123,7 +123,13 @@ def _meta(a) -> dict:
         wind_auto = None
     app_version = _num(s.get("app_version"))
     return {
-        "startUtc": start,          # UTC; the UI formats it in the viewer's timezone
+        "startUtc": start,          # UTC — the instant; `utcOffsetS` says how to read it
+        # The session's own UTC offset in seconds (engine 0.8.2). Every clock the page
+        # prints is `startUtc` shifted by this, so a session reads the way the rider's
+        # watch read it — not the way the reader's laptop happens to be set today. Null
+        # when the file carries neither an `activity` message nor a GPS fix; the page then
+        # falls back to the reader's own zone and says so.
+        "utcOffsetS": a.track.start_utc_offset_s,
         "durationS": _num(s.get("total_elapsed_time")),
         "timerTimeS": _num(s.get("total_timer_time")) or round(a.clean.timer_time_s, 1),
         "samples": int(len(df)),

@@ -5,6 +5,14 @@ Developer-field names follow docs/fit-schema.md. Both schema versions are accept
 packed session fields are expanded into the v1 names here, at the parser boundary, so the
 rest of the lab only ever sees one representation (`_unpack_session_v2`).
 
+The `activity` message is read for one field only: `local_timestamp`. FIT timestamps are
+UTC, and a session displayed in the *viewer's* current zone is right only while the viewer
+and the session share one — which stops being true on the next DST boundary and on the
+first flight to a different country. `activity.local_timestamp - activity.timestamp` is the
+UTC offset the *watch* was wearing when it saved the file, and it is what every displayed
+clock is formatted in (`RawTrack.start_utc_offset_s`, `docs/presentation.md` "Session
+time").
+
 Class-(a) files also carry the watch's SensorLogging accelerometer stream in
 `accelerometer_data` messages (batched: one message per ~25 samples, each sample timed by
 `timestamp` + `timestamp_ms` + its `sample_time_offset`). It is returned as a separate
@@ -98,6 +106,11 @@ class RawTrack:
     session: dict = field(default_factory=dict)
     capabilities: SourceCapabilities = field(default_factory=SourceCapabilities)
     accel: pd.DataFrame | None = None   # t (s, records' base) + ax/ay/az in g; None if absent
+    #: The session's own UTC offset in **seconds**, from `activity.local_timestamp` minus
+    #: `activity.timestamp`. None when the file carries no `activity` message (a converted
+    #: GPX, a partial upload) — the caller then falls back to the coarse longitude estimate
+    #: or, last of all, to the viewer's clock, flagged.
+    start_utc_offset_s: int | None = None
 
 
 _RECORD_KEEP = {
@@ -120,6 +133,7 @@ def parse_fit(path: str | Path) -> RawTrack:
     records: list[dict] = []
     laps: list[dict] = []
     session: dict = {}
+    activity: dict = {}
     accel_frames = 0
     accel_batches: list[tuple] = []
 
@@ -136,6 +150,8 @@ def parse_fit(path: str | Path) -> RawTrack:
                 laps.append(_frame_fields(frame))
             elif frame.name == "session":
                 session = _frame_fields(frame)
+            elif frame.name == "activity" and not activity:
+                activity = _frame_fields(frame)
             elif frame.name in ("accelerometer_data", "three_d_sensor_calibration"):
                 accel_frames += 1
                 if frame.name == "accelerometer_data":
@@ -182,8 +198,50 @@ def parse_fit(path: str | Path) -> RawTrack:
     caps.schema_version = int(app_ver) & 0xFF if isinstance(app_ver, (int, float)) else None
 
     accel = _accel_frame(accel_batches, epoch0)
+    offset = activity_utc_offset_s(activity)
+    if offset is None and caps.has_position and "lon" in df:
+        lon = df["lon"].dropna()
+        offset = coarse_utc_offset_s(float(lon.iloc[0])) if not lon.empty else None
     return RawTrack(path=str(path), records=df, laps=laps, session=session, capabilities=caps,
-                    accel=accel)
+                    accel=accel, start_utc_offset_s=offset)
+
+
+def activity_utc_offset_s(activity: dict) -> int | None:
+    """`activity.local_timestamp - activity.timestamp`, in whole seconds.
+
+    The watch's own answer to "what time did the rider see", and the only exact one there
+    is: both fields are written at save time from the same clock, so their difference is
+    the offset that was in force *for this session* — DST included, and unaffected by where
+    the file is read afterwards. Verified present and correct (+7200) on every fixture in
+    the corpus, native recordings and our CIQ app alike.
+
+    Returns None rather than 0 when either field is missing: "this file does not say" and
+    "this session was recorded at UTC" are different facts, and only one of them licenses a
+    fallback.
+    """
+    local, utc = activity.get("local_timestamp"), activity.get("timestamp")
+    if local is None or utc is None:
+        return None
+    try:
+        return int(round((local - utc).total_seconds()))
+    except (AttributeError, TypeError):
+        return None
+
+
+def coarse_utc_offset_s(lon: float) -> int | None:
+    """A whole-hour offset guessed from longitude — the fallback, and only ever that.
+
+    **Precision.** `round(lon / 15°)` hours is the *solar* offset, not the civil one. It is
+    right to the hour across most of Europe in winter and wrong by an hour there all summer
+    (DST), wrong by up to two hours inside wide zones (China, Spain), and knows nothing of
+    the half-hour zones (India, Newfoundland). It exists for one case: a source with GPS
+    fixes and no `activity` message, where "within an hour or two of the truth" beats
+    formatting an Italian afternoon in the reader's Californian morning. Anything that can
+    answer exactly — the FIT's own `activity`, or intervals.icu's `timezone` — wins over it.
+    """
+    if lon is None or not math.isfinite(lon):
+        return None
+    return int(round(lon / 15.0)) * 3600
 
 
 def _accel_batch(fields: dict) -> tuple | None:
