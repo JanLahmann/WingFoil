@@ -190,10 +190,18 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    - `PresentationTests` — the phase-5 UI layer's *logic*, which is exactly the code whose
      mistakes are invisible in a screenshot. Help-catalogue completeness (every
      `HelpTopicID` case has written content, no duplicate or dangling topic links, search
-     hits body and item text); the share card's content (always four stat cells, "—" rather
-     than a fabricated 0.00 kn, the uncertified disclaimer); thumbnail geometry (aspect
-     preserved — a straight-line track must land in a band, not stretched over the box; runs
-     split at the phase change and share a vertex; the sparkline bucketed by **max** so a
+     hits body and item text); the share card's content — its `complete` preset is the
+     **key-metrics block, cell for cell** (same keys, same order, same labels, same strings,
+     the tally's three counts kept as counts), `lean` a strict *subset* of it that may only
+     remove entries, no flight count on either, "—" rather than a fabricated 0.00 kn, the
+     uncertified disclaimer, and the preset preference round-tripping through
+     `UserDefaults` with an unknown stored value degrading to `complete`; thumbnail geometry
+     (aspect preserved — a straight-line track must land in a band, not stretched over the
+     box; `contentBox` reports the band rather than the square, which is what lets the card
+     fill its box; runs split at the phase change and share a vertex; the outcome/splash
+     marks come off the shared presentation rules — counted turns only, both splash
+     channels — land on the outline's own projection, and are dropped when no fix is within
+     30 s; the sparkline bucketed by **max** so a
      single fast reach survives thinning; each half degrades on its own; a degenerate track
      stays finite; the on-disk cache round-trips and a version bump invalidates it); PB
      detection (float noise is not a record, the *first* import celebrates nothing, an
@@ -299,6 +307,11 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    about the same centre; it is the only way to check the direction chevrons at a second
    scale, since their spacing is measured in screen points and therefore *changes* with the
    camera. Both are staging-only, transient, and never written back to any preference.
+   In the share sheet (`UI_SHEET=share`), `UI_SHARE=fit` flips to the recording tab,
+   `UI_SHAPE=portrait|square|landscape` picks the aspect and `UI_STATS=lean|complete` picks
+   the stat preset — three controls `simctl` likewise cannot tap. The last one sets the same
+   state the picker does but, unlike a tap on the picker, does **not** write the rider's
+   stored choice.
 3. **Monkey C units (Toybox.Test)** — the core suite lives in the `WingFoilCore` barrel
    (`garmin/barrel/WingFoilCore/tests/`) and is therefore compiled into **both** consumers'
    `--unit-test` builds: `bin/WingFoilTests.prg` (device app) and `bin/WingFoilFieldTests.prg`

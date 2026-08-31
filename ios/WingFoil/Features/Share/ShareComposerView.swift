@@ -39,6 +39,10 @@ struct ShareComposerView: View {
 
     @State private var payload = Payload.card
     @State private var shape = ShareCardStats.Shape.portrait
+    /// How much of the key-metrics block the card carries. Seeded from the last card the
+    /// rider exported (`ShareCardPresetStore`) and written back on every change — a
+    /// preference, not a per-session choice, so a rider who wants lean cards asks once.
+    @State private var preset = ShareCardPresetStore.load(from: .standard)
     @State private var pickedItem: PhotosPickerItem?
     @State private var photo: Image?
     @State private var photoFailed = false
@@ -50,8 +54,17 @@ struct ShareComposerView: View {
     @State private var fitFile: (url: URL, bytes: Int)?
     @State private var fitFailure: String?
 
+    /// The card's numbers *are* the app's key-metrics block, filtered by the preset — same
+    /// model, same strings, one source (`ShareCardStats`). `metrics` is nil only while the
+    /// analysis behind the sheet is still loading, which the card degrades for on its own.
     private var stats: ShareCardStats {
-        ShareCardStats.make(row: row, title: SessionDisplay.title(row))
+        ShareCardStats.make(row: row, title: SessionDisplay.title(row),
+                            metrics: metrics, preset: preset)
+    }
+
+    private var metrics: KeyMetrics? {
+        detail.map { KeyMetrics.make(summary: $0.analysis.summary,
+                                     records: $0.analysis.records) }
     }
 
     /// Detail geometry when the session is open, the cached list thumbnail otherwise.
@@ -103,6 +116,10 @@ struct ShareComposerView: View {
                 if environment["UI_SHARE"] == "fit" { payload = .fit }
                 if let raw = environment["UI_SHAPE"],
                    let wanted = ShareCardStats.Shape(rawValue: raw) { shape = wanted }
+                // `UI_STATS=lean|complete` photographs the other preset without writing
+                // the rider's stored choice, which a tap on the picker would.
+                if let raw = environment["UI_STATS"],
+                   let wanted = ShareCardStats.Preset(rawValue: raw) { preset = wanted }
             }
             #endif
         }
@@ -119,6 +136,31 @@ struct ShareComposerView: View {
             ForEach(ShareCardStats.Shape.allCases) { Text($0.label).tag($0) }
         }
         .pickerStyle(.segmented)
+
+        // Presets rather than eight checkboxes. The rider is choosing between "a picture
+        // with the headline on it" and "the session, reported" — and a per-stat editor
+        // would put a scrolling list of toggles in a sheet whose whole job is to be
+        // finished in four taps. `Complete` is the default because the block it mirrors is
+        // the one at the top of the session in the app.
+        VStack(spacing: 4) {
+            // The binding writes the preference itself rather than an `onChange` on the
+            // state, so only a *tap* is remembered — the screenshot hook below sets the
+            // same state and must not rewrite what the rider chose.
+            Picker("Stats", selection: Binding(get: { preset },
+                                               set: { chosen in
+                                                   preset = chosen
+                                                   ShareCardPresetStore.save(chosen,
+                                                                             to: .standard)
+                                               })) {
+                ForEach(ShareCardStats.Preset.allCases) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
+
+            Text(preset.summary)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
 
         photoControls
 
@@ -203,11 +245,12 @@ struct ShareComposerView: View {
     /// Goes with the file, so a receiver with no app still has somewhere to open it: the
     /// web app reads the same FIT with the same engine, in a browser, without an account.
     private static let invitation =
-        "WingFoil session — analyze it free in the browser at "
-        + "https://janlahmann.github.io/WingFoil (no account needed)."
+        "\(Branding.appName) session — analyze it free in the browser at "
+        + "\(Branding.siteURL) (no account needed)."
 
     private var renderKey: String {
-        "\(shape.rawValue)|\(photo == nil ? "plain" : "photo")|\(thumbnail == nil ? 0 : 1)"
+        "\(shape.rawValue)|\(preset.rawValue)|\(photo == nil ? "plain" : "photo")"
+            + "|\(thumbnail == nil ? 0 : 1)|\(metrics == nil ? 0 : 1)"
     }
 
     /// Only the two things that change the bytes: which tab is showing (so the scrub is
@@ -307,12 +350,19 @@ struct ShareComposerView: View {
 
 extension SessionDetail {
 
-    /// The card's track outline, built from the segments already in memory.
+    /// The card's track outline and its marks, built from geometry already in memory.
     ///
     /// Same normalization as the cached list thumbnails (`TrackThumbnail.outline`), so a
     /// session looks like itself in the list and on the card. The map series is thinned for
     /// MapKit (up to 6 000 vertices); a card at 1080 px wide cannot show more than a few
     /// hundred, so it is thinned again here.
+    ///
+    /// The marks come from the *same* two collections the map draws — `turnPins` (counted
+    /// turns, on the verdict ladder) and `splashMarks` (the barometer's submersion
+    /// evidence) — rather than from a second pass over the analysis, so a dot on the card
+    /// and a dot on the map can only ever be the same event. They are projected through the
+    /// outline's own projection, built from the same thinned coordinates, because a mark
+    /// normalized against a different extent lands somewhere plausible and wrong.
     var shareOutline: TrackThumbnail {
         var coordinates: [(lat: Double, lon: Double, flying: Bool)] = []
         for segment in segments {
@@ -333,6 +383,31 @@ extension SessionDetail {
             }
         }
         return TrackThumbnail(points: TrackThumbnail.outline(coordinates: thinned),
+                              marks: shareMarks(thinned),
                               speed: [], maxKn: maxSpeedKn)
+    }
+
+    private func shareMarks(
+        _ thinned: [(lat: Double, lon: Double, flying: Bool)]) -> [TrackThumbnail.Mark] {
+        guard let projection = TrackThumbnail.Projection(
+            thinned.map { (lat: $0.lat, lon: $0.lon) }) else { return [] }
+
+        func mark(_ lat: Double, _ lon: Double,
+                  _ kind: TrackThumbnail.Mark.Kind) -> TrackThumbnail.Mark {
+            let placed = projection.place(lat: lat, lon: lon)
+            return TrackThumbnail.Mark(x: placed.x, y: placed.y, kind: kind)
+        }
+
+        var out = turnPins.map { pin -> TrackThumbnail.Mark in
+            let kind: TrackThumbnail.Mark.Kind
+            switch pin.outcome {
+            case .fellIn: kind = .fellIn
+            case .touchdown: kind = .touchdown
+            case .flewThrough: kind = .flewThrough
+            }
+            return mark(pin.lat, pin.lon, kind)
+        }
+        out.append(contentsOf: splashMarks.map { mark($0.lat, $0.lon, .splash) })
+        return out
     }
 }

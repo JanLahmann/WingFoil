@@ -5,6 +5,19 @@ import Foundation
 ///
 /// Every stat is a display string, including the em-dash placeholders: a card is an image,
 /// so "—" has to be decided here rather than by an optional binding at draw time.
+///
+/// **The stats are `KeyMetrics`, re-laid-out.** They are not a second vocabulary. The card
+/// used to build its own four cells out of the index row — foil %, flight count, longest
+/// flight, best 2 s — which meant the picture a rider posted and the block at the top of
+/// the same session in the app named different numbers with different words. A reader who
+/// has both in front of them must never have to work out which one is lying. So `make`
+/// takes the *rendered* `KeyMetrics` block and turns each of its entries into a `Stat`,
+/// verbatim: same keys, same order, same labels, same strings. A change to the block flows
+/// into the card with no edit here, and the two cannot disagree because there is only one
+/// of them.
+///
+/// The preset then chooses how much of that block the card shows (`Preset`). It can only
+/// ever *drop* entries — nothing on the card is computed here that is not in the block.
 public struct ShareCardStats: Sendable, Equatable {
 
     /// One headline number with its label, in the order the card lays them out.
@@ -14,14 +27,95 @@ public struct ShareCardStats: Sendable, Equatable {
         public let value: String
         /// Shown under the value when there is something worth saying.
         public let caption: String?
+        /// Set only on the outcome-tally cell, whose three counts are drawn on the verdict
+        /// ladder's own inks. `value` already spells the same three numbers out, so a
+        /// renderer that ignores this still prints the truth — it just prints it in one
+        /// colour (docs/presentation.md, "the outcome ladder is a verdict scale").
+        public let tally: KeyMetrics.Tally?
 
         public var id: String { key }
 
-        public init(key: String, label: String, value: String, caption: String? = nil) {
+        public init(key: String, label: String, value: String, caption: String? = nil,
+                    tally: KeyMetrics.Tally? = nil) {
             self.key = key
             self.label = label
             self.value = value
             self.caption = caption
+            self.tally = tally
+        }
+
+        /// A key-metrics entry, unchanged. The card adds nothing and rewords nothing.
+        public init(_ metric: KeyMetrics.Metric) {
+            self.init(key: metric.key, label: metric.label, value: metric.value)
+        }
+
+        /// The outcome tally as one cell: the three counts as a value, and the block's own
+        /// caption ("of 50 jibes") underneath, so the numbers can never be mistaken for a
+        /// tally of some other set of turns.
+        public init(_ tally: KeyMetrics.Tally) {
+            self.init(key: Key.tally, label: "flew · touchdown · fell",
+                      value: "\(tally.flewThrough) · \(tally.touchdown) · \(tally.fellIn)",
+                      caption: tally.caption, tally: tally)
+        }
+    }
+
+    /// The stat keys the card knows by name. They are `KeyMetrics.Metric.key` values —
+    /// only the tally needs one of its own, because a `Tally` is not a `Metric`.
+    public enum Key {
+        public static let duration = "duration"
+        public static let distance = "distance"
+        public static let avgSpeed = "avgSpeed"
+        public static let maxSpeed = "max2s"
+        public static let tally = "tally"
+        public static let streaks = "streaks"
+    }
+
+    /// How much of the key-metrics block the card carries.
+    ///
+    /// Two presets rather than a checklist of eight: the rider is choosing between "a clean
+    /// picture with the headline on it" and "the session, fully reported", and every finer
+    /// distinction than that is a decision taken at the moment they least want to take one.
+    ///
+    /// `complete` is the default and shows the block entire — the new rates and streaks are
+    /// the point of asking for them, and a card that hid them by default would be a feature
+    /// nobody found. `lean` is a strict *subset*: it can only remove entries, never
+    /// substitute or reword them, which is what keeps both presets honest against the app.
+    public enum Preset: String, CaseIterable, Sendable, Identifiable, Codable {
+        /// Duration, distance, the best 2 s window, and the jibe tally.
+        case lean
+        /// The whole key-metrics block, in its own order.
+        case complete
+
+        public var id: String { rawValue }
+
+        public var label: String {
+            switch self {
+            case .lean: "Lean"
+            case .complete: "Complete"
+            }
+        }
+
+        /// One line under the picker, so the choice is legible before it is made.
+        public var summary: String {
+            switch self {
+            case .lean: "Duration, distance, max 2 s and the jibe tally."
+            case .complete: "Everything the app's key-metrics block shows."
+            }
+        }
+
+        /// What `lean` keeps — the four a rider quotes walking off the water. Held as keys
+        /// rather than as a rebuilt list so the preset cannot invent an entry: anything not
+        /// produced by `KeyMetrics` is simply never there to be kept.
+        public static let leanKeys: Set<String> = [
+            Key.duration, Key.distance, Key.maxSpeed, Key.tally,
+        ]
+
+        func keeps(_ key: String) -> Bool {
+            self == .complete || Self.leanKeys.contains(key)
+        }
+
+        public func filter(_ stats: [Stat]) -> [Stat] {
+            stats.filter { keeps($0.key) }
         }
     }
 
@@ -62,63 +156,74 @@ public struct ShareCardStats: Sendable, Equatable {
     public let title: String
     public let dateLine: String
     public let stats: [Stat]
-    /// "9 flew · 9 touch · 12 fell" — nil when no turn was classified.
-    public let turnLine: String?
+    /// The preset the stats were filtered through — carried so the renderer can size its
+    /// grid to the count without counting cases.
+    public let preset: Preset
     /// Set when the session's records cannot be certified, so the card cannot be read as
     /// a speed claim it has no right to make.
     public let disclaimer: String?
 
-    public init(title: String, dateLine: String, stats: [Stat], turnLine: String?,
-                disclaimer: String?) {
+    public init(title: String, dateLine: String, stats: [Stat],
+                preset: Preset = .complete, disclaimer: String?) {
         self.title = title
         self.dateLine = dateLine
         self.stats = stats
-        self.turnLine = turnLine
+        self.preset = preset
         self.disclaimer = disclaimer
     }
 
     // MARK: - Building
 
-    /// Builds the card content from the stored summary row.
+    /// Builds the card content from the stored summary row and the session's key-metrics
+    /// block.
     ///
     /// `title` is the caller's (the app derives a readable name from the spot or the
     /// original filename, which is presentation the kit has no business owning).
-    public static func make(row: SessionRow, title: String,
+    ///
+    /// `metrics` is nil only in the second before the analysis finishes loading behind the
+    /// share sheet. The card then falls back to the three facts the *index row* carries
+    /// that cannot possibly disagree with the block — duration, distance, best 2 s, each
+    /// formatted by `KeyMetrics`' own formatters. Everything else is omitted rather than
+    /// approximated: the row has no jibe-outcome split and no streaks, and a tally
+    /// reconstructed from the whole-turn columns would print different numbers than the
+    /// same session's block one screen away.
+    public static func make(row: SessionRow, title: String, metrics: KeyMetrics? = nil,
+                            preset: Preset = .complete,
                             timeZone: TimeZone = .current) -> ShareCardStats {
-        // Exactly four, always — the card lays them out as a 2 × 2 block at a fixed size,
-        // and a variable count would either orphan a cell or push the footer off the
-        // bottom of the exported image. The turn tally goes on its own line instead.
-        let stats: [Stat] = [
-            Stat(key: "foilPct", label: "Foil time", value: percent(row.foilPct),
-                 caption: row.foilTimeS.map(duration)),
-            Stat(key: "flights", label: "Flights", value: row.flightCount.map(String.init) ?? "—",
-                 caption: row.durationS > 0 ? duration(row.durationS) + " out" : nil),
-            Stat(key: "longestFlight", label: "Longest",
-                 value: row.longestFlightS.map(duration) ?? "—",
-                 caption: row.longestFlightM.map { meters($0) }),
-            Stat(key: "best2s", label: "Best 2 s", value: knots(row.best2sKn),
-                 caption: row.distanceKm.map { String(format: "%.1f km", $0) }),
-        ]
-
-        return ShareCardStats(
+        ShareCardStats(
             title: title,
             dateLine: dateLine(row.startDate, timeZone: timeZone),
-            stats: stats,
-            turnLine: turnLine(row),
+            stats: metrics.map { stats(from: $0, preset: preset) }
+                ?? preset.filter(rowOnlyStats(row)),
+            preset: preset,
             disclaimer: row.sourceClass == "c"
                 ? "Speeds from a degraded source — uncertified" : nil)
     }
 
-    /// "30 jibes · 9 flew · 9 touch · 12 fell" over the counted turns. The jibe count is
-    /// prefixed when there is one, because "9 flew" on its own does not say out of how many.
-    static func turnLine(_ row: SessionRow) -> String? {
-        let flew = row.turnsFlewThrough ?? 0
-        let touch = row.turnsTouchdown ?? 0
-        let fell = row.turnsFellIn ?? 0
-        guard flew + touch + fell > 0 else { return nil }
-        let outcomes = "\(flew) flew · \(touch) touch · \(fell) fell"
-        guard let jibes = row.jibes, jibes > 0 else { return outcomes }
-        return "\(jibes) jibes · " + outcomes
+    /// The key-metrics block flattened into cells, in the block's own reading order:
+    /// duration · distance · avg speed, the max 2 s window, the tally and the streaks, then
+    /// the per-hour rates. Absent entries stay absent — a session with no wind axis has no
+    /// jibe rate, and `KeyMetrics.rates` is empty rather than 0.0, so the card simply has
+    /// two fewer cells (the same rule, because it is the same list).
+    public static func stats(from metrics: KeyMetrics, preset: Preset) -> [Stat] {
+        var out = metrics.basics.map(Stat.init)
+        out.append(Stat(metrics.maxSpeed))
+        if let tally = metrics.tally { out.append(Stat(tally)) }
+        if let streaks = metrics.streaks { out.append(Stat(streaks)) }
+        out.append(contentsOf: metrics.rates.map(Stat.init))
+        return preset.filter(out)
+    }
+
+    /// The loading-state fallback — see `make`. Deliberately three cells and no tally.
+    static func rowOnlyStats(_ row: SessionRow) -> [Stat] {
+        [
+            Stat(key: Key.duration, label: "duration",
+                 value: KeyMetrics.hoursMinutes(row.durationS)),
+            Stat(key: Key.distance, label: "distance",
+                 value: row.distanceKm.map(KeyMetrics.km) ?? "—"),
+            Stat(key: Key.maxSpeed, label: "max 2 s",
+                 value: KeyMetrics.knots(row.best2sKn)),
+        ]
     }
 
     static func dateLine(_ date: Date, timeZone: TimeZone) -> String {
@@ -130,33 +235,26 @@ public struct ShareCardStats: Sendable, Equatable {
         formatter.dateFormat = "d MMMM yyyy"
         return formatter.string(from: date)
     }
+}
 
-    // MARK: - Formatting
-    //
-    // Deliberately local rather than reusing the app's `Fmt`: the card is rendered into a
-    // fixed-size image, so it must not pick up a locale's decimal comma or a 24-hour clock
-    // and reflow. Everything here is POSIX-stable.
+/// The one stored copy of the rider's preset choice — per user, not per session, so the
+/// next card comes out the way the last one did.
+///
+/// Same shape as `MapLayerVisibilityStore`, and for the same reason: a preference the
+/// composer reads and writes belongs behind a testable pair of functions rather than in a
+/// `@AppStorage` scattered through a view. An unreadable or unknown stored value falls back
+/// to `complete` — the default is "show the rider everything they asked for", and a preset
+/// added in a later version must not silently strand an older app on a blank card.
+public enum ShareCardPresetStore {
 
-    static func percent(_ value: Double?) -> String {
-        guard let value else { return "—" }
-        return String(format: "%.0f%%", value)
+    public static let defaultsKey = "shareCardPreset.v1"
+
+    public static func load(from defaults: UserDefaults) -> ShareCardStats.Preset {
+        defaults.string(forKey: defaultsKey)
+            .flatMap(ShareCardStats.Preset.init(rawValue:)) ?? .complete
     }
 
-    static func knots(_ value: Double?) -> String {
-        guard let value else { return "—" }
-        return String(format: "%.2f kn", value)
-    }
-
-    static func meters(_ value: Double) -> String {
-        value >= 1000 ? String(format: "%.2f km", value / 1000)
-                      : String(format: "%.0f m", value)
-    }
-
-    static func duration(_ seconds: Double) -> String {
-        let total = max(0, Int(seconds.rounded()))
-        let (h, m, s) = (total / 3600, (total % 3600) / 60, total % 60)
-        if h > 0 { return "\(h) h \(m) m" }
-        if m > 0 { return "\(m) m" }
-        return "\(s) s"
+    public static func save(_ preset: ShareCardStats.Preset, to defaults: UserDefaults) {
+        defaults.set(preset.rawValue, forKey: defaultsKey)
     }
 }
