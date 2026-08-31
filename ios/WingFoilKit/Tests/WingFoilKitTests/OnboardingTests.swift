@@ -252,3 +252,90 @@ import Testing
         #expect(try JSONDecoder().decode(IcuProblem.self, from: data) == problem)
     }
 }
+
+/// The screen in front of the setup card: what it says, and when it is allowed to say it.
+///
+/// The show-once rule is the whole risk here. Every other outcome of getting it wrong is
+/// invisible on a device that has been used once — which is every device the author owns.
+@Suite struct WelcomeTests {
+
+    // MARK: - What it says
+
+    @Test func theWelcomeIsWrittenRatherThanStubbed() {
+        #expect(!WelcomeGuide.headline.isEmpty)
+        #expect(WelcomeGuide.lede.count > 200, "the one paragraph is the whole pitch")
+        #expect(WelcomeGuide.highlights.count >= 4)
+        for highlight in WelcomeGuide.highlights {
+            #expect(!highlight.term.isEmpty)
+            #expect(highlight.detail.count > 40, "\(highlight.term) has a stub detail")
+        }
+        for title in [WelcomeGuide.tryExampleTitle, WelcomeGuide.connectTitle,
+                      WelcomeGuide.laterTitle] {
+            #expect(!title.isEmpty)
+        }
+        for detail in [WelcomeGuide.tryExampleDetail, WelcomeGuide.connectDetail] {
+            #expect(detail.count > 40)
+        }
+    }
+
+    /// The vocabulary the rest of the app uses. A welcome that promised something in words
+    /// the session page never repeats would teach the wrong ones.
+    @Test func theWelcomeSpeaksTheAppsOwnVocabulary() {
+        let prose = ([WelcomeGuide.headline, WelcomeGuide.lede]
+                     + WelcomeGuide.highlights.map { $0.term + " " + $0.detail })
+            .joined(separator: " ")
+            .lowercased()
+        for word in ["foil", "flight", "touchdown", "jibe", "streak", "record"] {
+            #expect(prose.contains(word), "the welcome never says \"\(word)\"")
+        }
+        // The three verdicts, in the ladder's own order.
+        #expect(WelcomeGuide.lede.contains("flew through"))
+        #expect(WelcomeGuide.lede.contains("touched down"))
+        #expect(WelcomeGuide.lede.contains("fell in"))
+    }
+
+    /// The two offers name the two things behind them, so neither button is a surprise.
+    @Test func theTwoOffersNameWhatIsBehindThem() {
+        #expect(WelcomeGuide.tryExampleDetail.contains(ExampleSession.place
+            .split(separator: ",").last!.trimmingCharacters(in: .whitespaces)))
+        #expect(WelcomeGuide.connectDetail.contains("intervals.icu"))
+    }
+
+    // MARK: - When it is allowed to say it
+
+    @Test func aFreshInstallIsWelcomed() {
+        #expect(WelcomePrompt.shouldShow(hasSeen: false, sessionCount: 0, hasKey: false))
+    }
+
+    @Test func onceIsTheWholeContract() {
+        #expect(!WelcomePrompt.shouldShow(hasSeen: true, sessionCount: 0, hasKey: false))
+        #expect(!WelcomePrompt.shouldMarkSeenSilently(hasSeen: true, sessionCount: 0,
+                                                      hasKey: false))
+    }
+
+    /// The upgrade case: a rider mid-season must not be greeted as a stranger.
+    @Test func anInstallWithAHistoryIsTreatedAsAlreadyWelcomed() {
+        #expect(WelcomePrompt.isAlreadyWelcomed(sessionCount: 12, hasKey: false))
+        #expect(WelcomePrompt.isAlreadyWelcomed(sessionCount: 0, hasKey: true))
+        #expect(!WelcomePrompt.isAlreadyWelcomed(sessionCount: 0, hasKey: false))
+        for (count, key) in [(12, false), (0, true), (12, true)] {
+            #expect(!WelcomePrompt.shouldShow(hasSeen: false, sessionCount: count,
+                                              hasKey: key))
+            // …and the flag is spent anyway, so emptying the library later cannot
+            // resurrect the screen.
+            #expect(WelcomePrompt.shouldMarkSeenSilently(hasSeen: false,
+                                                         sessionCount: count, hasKey: key))
+        }
+    }
+
+    /// Deferral, not refusal — the same etiquette the notification offer keeps.
+    @Test func aBusyScreenDefersRatherThanCancels() {
+        #expect(!WelcomePrompt.shouldShow(hasSeen: false, sessionCount: 0, hasKey: false,
+                                          isPresenting: true))
+        #expect(WelcomePrompt.shouldShow(hasSeen: false, sessionCount: 0, hasKey: false,
+                                         isPresenting: false))
+        // A deferral must not be mistaken for evidence that the rider has been welcomed.
+        #expect(!WelcomePrompt.shouldMarkSeenSilently(hasSeen: false, sessionCount: 0,
+                                                      hasKey: false))
+    }
+}

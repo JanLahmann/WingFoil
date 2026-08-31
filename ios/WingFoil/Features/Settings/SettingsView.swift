@@ -47,17 +47,35 @@ struct SettingsView: View {
 
     // MARK: - Sections
 
+    /// The two "what is this?" answers, in the order a reader needs them: what the app is
+    /// for, then what its numbers mean.
+    ///
+    /// The welcome screen lives here rather than in the Help catalogue because the
+    /// catalogue is a *glossary* — one topic per metric, deep-linked from the `?` on the
+    /// card that shows it — and "what does this app do" is not a metric. It is also the
+    /// only row in Help or Settings that is a whole screen rather than a page of prose.
     private var helpSection: some View {
         Section {
+            Button {
+                // Asked for, not re-armed: `replayWelcome` deliberately leaves the
+                // first-run flag alone. Settings has to get out of the way first, so the
+                // screen is *requested* here and raised by `RootView` once this sheet is
+                // gone — the same etiquette every other app-owned presentation keeps.
+                dismiss()
+                store.replayWelcome()
+            } label: {
+                Label("What WingFoil does", systemImage: "hand.wave")
+            }
             NavigationLink {
                 HelpIndexPage()
             } label: {
                 Label("What the numbers mean", systemImage: "questionmark.circle")
             }
         } footer: {
-            Text("Plain-language explanations of every metric — foil %, the GP3S record "
-                 + "set, turn outcomes, takeoff attempts, the wind axis and what an "
-                 + "uncertified record means.")
+            Text("The welcome screen again — what the app measures, and the example "
+                 + "session. Then plain-language explanations of every metric: foil %, the "
+                 + "GP3S record set, turn outcomes, takeoff attempts, the wind axis and "
+                 + "what an uncertified record means.")
         }
     }
 

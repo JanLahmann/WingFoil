@@ -259,6 +259,19 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      `IcuOnboarding.state` (empty + no key ⇒ setup card, key + stored problem ⇒ that cause,
      key + nothing yet ⇒ waiting, any session at all ⇒ never onboarding), with the problem
      round-tripping through JSON so the card still names the cause after a relaunch.
+   - `WelcomeTests` — the screen in *front* of that card (`WelcomeView`, raised by
+     `RootView`): that `WelcomeGuide` is actually written rather than stubbed, that it
+     speaks the app's own vocabulary (foil, flight, touchdown, jibe, streak, record, and
+     the three verdicts in the ladder's order) and that its two offers name what is behind
+     them; then the show-once rule, `WelcomePrompt`. A fresh install is welcomed; `hasSeen`
+     ends it for ever; an install with **any** session or a stored key is treated as
+     already welcomed — that is the upgrade path, and it also spends the flag silently
+     (`shouldMarkSeenSilently`) so that emptying the library years later cannot make the
+     app introduce itself to its oldest user; and a busy screen *defers* rather than
+     refusing, exactly as `NewActivityPrompt` does, without spending anything. The app
+     half adds one guard the predicate cannot: nothing is decided until the library has
+     actually been read (`SessionStore.hasLoadedLibrary`), because an empty `sessions` at
+     launch means "still loading", not "no sessions".
 
    iOS screenshot hooks (DEBUG **and** simulator only, passed as `SIMCTL_CHILD_…`
    environment variables to `xcrun simctl launch`): `UI_RESET=1` restores the fresh-install
@@ -278,6 +291,17 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    `UI_LOAD_EXAMPLE=1` taps the setup card's "Load an example session first" button, and
    `UI_SCROLL_TO=setup` parks the (screen-and-a-half tall) onboarding card on its bottom
    edge — the only way to photograph that button, which lives below the key field.
+   `UI_WELCOME=1` raises the **welcome screen** (`WelcomeView`, the full-screen cover a
+   first launch opens on) whatever the library and the `welcomeShown.v1` flag say — any
+   machine that has ever run the app has already spent the one launch that shows it. It
+   presents the same screen by the same route and never writes the flag, so it stages the
+   state without spending it. It fires **once per launch**, deliberately: the decision is
+   re-asked on every library change, and re-raising would drop the screen back on top of
+   the session its own "Try the example session" button just opened. `UI_RESET=1` clears
+   `welcomeShown.v1` along with everything else, so a reset alone also produces the screen —
+   `UI_WELCOME=1` is for photographing it on a simulator with a library in it. The three
+   buttons cannot be tapped by `simctl`; the primary one's destination is the ordinary
+   session page, reachable with `UI_LOAD_EXAMPLE=1 UI_OPEN_SESSION=example`.
    On the Trends tab `UI_SCROLL_TO=sideSuccess` parks the screen on the port/starboard
    turn-success chart. On the session page,
    `UI_SCROLL_TO=<anchor>` (`chart` for the speed chart, `replay`, `summary`, `turns` for

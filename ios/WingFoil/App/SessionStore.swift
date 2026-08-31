@@ -31,6 +31,10 @@ final class SessionStore {
     private(set) var gearAggregates: [GearAggregate] = []
     /// Bumped whenever the derived tables change, so aggregate screens can re-query.
     private(set) var libraryGeneration = 0
+    /// False until the first successful read of the session index. "No sessions" and "not
+    /// read yet" look identical in `sessions`, and exactly one first-run decision turns on
+    /// telling them apart — see `showWelcomeIfNeeded`.
+    private(set) var hasLoadedLibrary = false
 
     /// All-time records that were beaten by the most recent import. Consumed (and cleared)
     /// by the Records screen, which is where the celebration belongs.
@@ -116,6 +120,7 @@ final class SessionStore {
             sessions = try await ingestor.allSessions()
             spots = try await library.spots()
             gearAggregates = try await library.gearAggregates()
+            hasLoadedLibrary = true
             libraryGeneration += 1
             await refreshStorage()
             await publishWidgetSnapshot()
@@ -451,8 +456,14 @@ final class SessionStore {
     /// must not be pushed to Apple Health, because it is not the rider's session. Both of
     /// those are also true structurally — `library.records()` filters examples out — but a
     /// second import path that cannot reach them is cheaper than remembering why.
-    func loadExampleSession() async {
-        guard !isBusy else { return }
+    ///
+    /// Returns the id of the row the example landed on, so a caller that means "and show it
+    /// to me" (the welcome screen) does not have to go looking for it afterwards. That
+    /// search would also be wrong: on a rider who already owns this recording the dedupe
+    /// resolves in favour of *his* import, which is no longer flagged as the example.
+    @discardableResult
+    func loadExampleSession() async -> String? {
+        guard !isBusy else { return nil }
         isBusy = true
         status = "Loading the example session…"
         defer { isBusy = false }
@@ -462,11 +473,14 @@ final class SessionStore {
             let outcome = try await Task.detached(priority: .userInitiated) {
                 try await ingestor.importExample()
             }.value
+            var landed: String?
             switch outcome {
-            case .imported:
+            case .imported(let row):
+                landed = row.id
                 status = "Example session loaded — open it to look around"
             case .duplicate(let row):
                 // The example is a real recording, so the rider may already own it.
+                landed = row.id
                 status = row.isExample
                     ? "The example session is already in your library"
                     : "You already have this session — your own import kept"
@@ -474,9 +488,23 @@ final class SessionStore {
                 status = nil
             }
             await load()
+            return landed
         } catch {
             errorMessage = "Could not load the example session: \(error)"
+            return nil
         }
+    }
+
+    /// The welcome screen's primary button: load the example *and* land on it.
+    ///
+    /// Going straight into the session detail is the whole point — the replay, the
+    /// commentary and the share card are what the screen just promised, and a rider left
+    /// staring at a one-row list has been shown a library, not a session. The push itself
+    /// goes through `pendingSessionID`, the same route a tapped notification takes, so
+    /// there is one way into a session from outside the list rather than two.
+    func loadExampleSessionAndOpen() async {
+        guard let id = await loadExampleSession() else { return }
+        pendingSessionID = id
     }
 
     /// Files picker for the Garmin GDPR "Export Your Data" ZIP — the same code path as a
@@ -696,8 +724,16 @@ final class SessionStore {
     /// Anything the rider is already reading or answering. The offer is a suggestion, and
     /// a suggestion that lands on top of a question is a nuisance — `isCheckingKey`
     /// included, so the offer arrives *after* "Connected" rather than over the spinner.
+    ///
+    /// The welcome screen counts, and it is the one that would otherwise collide hardest:
+    /// it is up for the whole of a first launch, which is exactly when the notification
+    /// offer has nothing to wait for. (It cannot in fact fire behind the welcome today —
+    /// the offer needs a key and the welcome only appears without one — but that is two
+    /// rules agreeing by accident, and the accident is one setup shortcut away from
+    /// ending.)
     private var isPresentingSomething: Bool {
         isPresentingSheet || pendingImport != nil || errorMessage != nil || isCheckingKey
+            || isShowingWelcome
     }
 
     /// Asked at every plausible moment — launch, foreground, a key that was just proved, a
@@ -771,6 +807,105 @@ final class SessionStore {
         await load()
         await refreshPersonalBests(celebrate: false)
         await writeNewSessionsToHealth()
+    }
+
+    // MARK: - The welcome screen
+
+    /// Written the moment the welcome actually goes up (or the moment we notice it is not
+    /// owed at all), never when it is merely due — same discipline as the notification
+    /// offer's `promptedKey`, and for the same reason: a rider who swiped the app away
+    /// mid-screen has still been welcomed.
+    static let welcomeShownKey = "welcomeShown.v1"
+
+    /// True while `WelcomeView` is up. `RootView` presents it; whether it is owed at all is
+    /// `WelcomePrompt`, in the kit.
+    private(set) var isShowingWelcome = false
+
+    #if DEBUG && targetEnvironment(simulator)
+    /// Whether `UI_WELCOME` has already staged its one screen this launch.
+    private var didStageWelcome = false
+    #endif
+
+    /// Asked at every moment the answer can change — launch, foreground, a sheet that just
+    /// closed — and answered by the pure predicate, which says yes at most once per install
+    /// and never on an install that plainly has a history.
+    func showWelcomeIfNeeded() {
+        // Nothing may be decided from a library that has not been read: an empty `sessions`
+        // at launch means "still loading" for the first fraction of a second, and greeting
+        // a rider with three seasons in the database because the query had not come back
+        // yet is the one failure this screen must not have. A read that *failed* leaves
+        // this false as well — then the app has an error banner to show, not a welcome.
+        guard hasLoadedLibrary else { return }
+        #if DEBUG && targetEnvironment(simulator)
+        // Screenshot hook, same family as `UI_TAB` / `UI_LOAD_EXAMPLE`: `UI_WELCOME=1`
+        // raises the screen whatever the flag and the library say, because a machine that
+        // has ever run the app has spent the one launch that shows it. It stages the
+        // *same* screen by the same route — nothing is drawn here that a first run could
+        // not produce — and, like the other staging hooks, it never writes the flag: the
+        // override photographs the state, it does not spend it.
+        //
+        // Once per launch, though, and that part is load-bearing rather than tidy: this
+        // method is re-asked on every library change, and "raise it again" would put the
+        // screen straight back up over the session its own example button just opened.
+        if ProcessInfo.processInfo.environment["UI_WELCOME"] == "1", !didStageWelcome {
+            didStageWelcome = true
+            isShowingWelcome = true
+            return
+        }
+        #endif
+        let hasSeen = UserDefaults.standard.bool(forKey: Self.welcomeShownKey)
+        // The upgrade path: an install that was already in use when this screen shipped is
+        // marked as welcomed on sight, so emptying the library years later cannot make the
+        // app introduce itself to its oldest user.
+        if WelcomePrompt.shouldMarkSeenSilently(hasSeen: hasSeen,
+                                                sessionCount: sessions.count,
+                                                hasKey: !apiKey.isEmpty) {
+            UserDefaults.standard.set(true, forKey: Self.welcomeShownKey)
+            return
+        }
+        guard WelcomePrompt.shouldShow(hasSeen: hasSeen,
+                                       sessionCount: sessions.count,
+                                       hasKey: !apiKey.isEmpty,
+                                       isPresenting: isPresentingSomething)
+        else { return }
+        UserDefaults.standard.set(true, forKey: Self.welcomeShownKey)
+        isShowingWelcome = true
+    }
+
+    /// "What WingFoil does", from Settings. Deliberately does **not** touch the flag: this
+    /// is a rider asking to read the screen again, which is not the same event as the app
+    /// deciding to show it, and re-arming the first run would mean the next launch greeted
+    /// him unasked.
+    ///
+    /// It only *requests* the screen; `RootView` raises it once nothing else is up, which
+    /// is what lets the Settings sheet it was tapped in get out of the way first.
+    func replayWelcome() {
+        wantsWelcomeReplay = true
+        raiseRequestedWelcome()
+    }
+
+    /// Set between "show me that again" and the clear screen that can honour it.
+    private var wantsWelcomeReplay = false
+
+    /// The deferred half of `replayWelcome`, re-asked on the same hooks as everything else.
+    ///
+    /// The wait is the same 400-ish ms the Help sheet's "Open WingFoil Settings" takes, for
+    /// the same reason: a sheet's `isPresented` flips to false when its dismissal *starts*,
+    /// and a presentation raised into the middle of that animation is one UIKit drops on
+    /// the floor without a word. The flag is spent before the sleep, so the hooks firing
+    /// again during it cannot queue a second screen.
+    func raiseRequestedWelcome() {
+        guard wantsWelcomeReplay, !isShowingWelcome, !isPresentingSomething else { return }
+        wantsWelcomeReplay = false
+        Task {
+            try? await Task.sleep(for: .milliseconds(450))
+            isShowingWelcome = true
+        }
+    }
+
+    /// Every way off the screen — all three buttons, and the cover's own dismissal.
+    func dismissWelcome() {
+        isShowingWelcome = false
     }
 
     // MARK: - Onboarding
@@ -1019,7 +1154,7 @@ final class SessionStore {
         guard ProcessInfo.processInfo.environment["UI_RESET"] == "1" else { return }
         Keychain.remove(Keychain.icuApiKey)
         for key in ["lastIcuSync", problemKey, pbSnapshotKey, "healthExported",
-                    "healthWriteEnabled", defaultTurnTypeKey,
+                    "healthWriteEnabled", defaultTurnTypeKey, welcomeShownKey,
                     ActivityNotifier.enabledKey, ActivityNotifier.markKey,
                     ActivityNotifier.pendingImportKey, ActivityNotifier.promptedKey,
                     MapLayerVisibilityStore.defaultsKey] {
