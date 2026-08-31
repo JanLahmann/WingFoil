@@ -41,16 +41,15 @@ import Testing
                                            startedAt: torboleStart,
                                            timeZone: TimeZone(identifier: "Europe/Rome")!)
 
-        #expect(script.map(\.t) == [0, 85, 151, 255, 278, 292, 320, 362, 399, 441, 477, 571,
-                                    645])
+        #expect(script.map(\.t) == [0, 85, 151, 255, 278, 292, 320, 362, 399, 441, 477, 645])
         #expect(script.map(\.text) == [
             "Torbole, 14:07 — session start",
             // The first takeoff *is* the start of the longest flight here, so the two share
             // an instant and the plainer fact leads.
             "Flying! · Longest flight — 6:32",
             "First jibe — flew through",
-            // Jibes 3 and 5 are also streak records, and a line that said "3 jibes · New
-            // streak — 3 dry jibes" would print the number twice.
+            // The 3rd and 5th dry jibes are also streak records, and a line that said "3 dry
+            // jibes · New streak — 3 dry jibes" would print the number twice.
             "New streak — 3 dry jibes",
             "New streak — 4 dry jibes",
             "Top speed — 13.47 kn over 2 s",
@@ -59,9 +58,10 @@ import Testing
             "New streak — 7 dry jibes",
             "New streak — 8 dry jibes",
             // The swim at 467 is the jibe; the splash is its flight end ten seconds later.
+            // It is also why nothing is said at 571: that tenth attempt was swum too, so the
+            // dry count stops at eight and the session never reaches a tenth dry jibe.
             "First splash",
-            "10 jibes",
-            "Session end — 10:45 · 2.6 km · 10 jibes",
+            "Session end — 10:45 · 2.6 km · 8 dry jibes",
         ])
 
         #expect(script.map(\.t) == script.map(\.t).sorted(), "must be in time order")
@@ -71,6 +71,40 @@ import Testing
         #expect(script.first { $0.t == 85 }?.kind == .longestFlight)
         #expect(script.first { $0.t == 255 }?.kind == .streak(3))
         #expect(script.allSatisfy { !$0.text.isEmpty })
+    }
+
+    /// A jibe he swam out of never advances the count.
+    ///
+    /// The JPH rule (engine 0.7.0) said out loud: "a jibe he swam out of is one he did not
+    /// make", so a commentary that reached ten by counting two swims would be congratulating
+    /// a rider for falling. The fall is not swallowed — it is on the splash line, the
+    /// channel WPH counts — it just does not move this number.
+    @Test func aSwumJibeNeverAdvancesTheCount() throws {
+        let analysis = try torbole()
+        let counted = analysis.turns.filter { $0.counted && $0.type == "jibe" }
+        let dry = counted.filter { $0.outcome != "fell_in" }
+        #expect(counted.count == 10, "the fixture must contain ten counted jibes")
+        #expect(dry.count == 8, "two of which were swum")
+
+        let script = ReplayCommentary.make(analysis)
+        // Ten attempts but only eight dry, so the tenth ordinal is never reached — and the
+        // closing line totals the same eight the ordinals ran on.
+        #expect(!script.contains { $0.text.contains("10 dry jibes") })
+        #expect(script.last?.text.hasSuffix("· 8 dry jibes") == true)
+
+        // Only the first ordinal is visible in its own right: the 3rd and the 5th land on
+        // streak records that state the same number and absorb them.
+        let ordinals = script.compactMap { milestone -> Int? in
+            if case .jibe(let n) = milestone.kind { return n }
+            return nil
+        }
+        #expect(ordinals == [1])
+        // Whatever survives, an ordinal may only ever sit on a jibe that was flown out of.
+        let dryTimes = Set(dry.map(\.ts))
+        #expect(script.allSatisfy { milestone in
+            guard case .jibe = milestone.kind else { return true }
+            return dryTimes.contains(milestone.t)
+        })
     }
 
     /// Without a name and a clock the opening line still exists — it just says less. A
