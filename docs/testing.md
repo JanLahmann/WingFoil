@@ -8,7 +8,7 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
 
 ```json
 {
-  "engineVersion": "0.7.0",
+  "engineVersion": "0.8.0",
   "config": { "foilEntrySpeed": 12.0, "...": "params actually used" },
   "capabilities": { "hasDoppler": true, "hasDevFields": false, "hasWatchLaps": false,
                      "hasAccel": false, "hasHR": true, "sampleRateHz": 1 },
@@ -241,7 +241,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      1.5 MB, which is how a longer session swapped in for this short one gets caught); the
      analysis (2 flights, 10 jibes, > 13 kn best-2 s, HR, a wind estimate and a GPS start
      fix, with `flight`/`turn`/`record_effort` filled, and `hasAccel == true` /
-     `totalPumpStrokes == 286` because this example ships whole); and
+     `totalPumpStrokes == 31` because this example ships whole); and
      the `isExample` flag (set on import, round-tripped through SQLite, deletable, and
      invisible to `records()`, `trend()`, `sessions()`, `weeks()` and the gear rollups
      while a real session next to it still reaches all of them). Plus the v3 migration
@@ -498,7 +498,8 @@ What the example therefore shows: 645 s elapsed, **67.9 %** on foil (431 s), **2
 (the long one 392 s / 2 222 m), **2.559 km**, **10** counted jibes and no tacks — 8 flown
 through, 2 fallen, 5 port / 5 starboard — **44.7 JPH** and **11.2 WPH**, best 2 s
 **13.47 kn**, alpha 500 **11.70 kn**, wind from **196°** at full confidence, 4 takeoff
-attempts of which 2 succeeded on **286** pump strokes, and an average takeoff HR cost of
+attempts of which 2 succeeded on **31** pump strokes (286 before engine 0.8.0 taught the
+total to reject chop — docs/algorithms.md "The session total"), and an average takeoff HR cost of
 **16.5 bpm**. Being shorter than the 15-minute rate window, it is also the corpus's worked
 example of the "no flattering peak" rule: `windowRates` reports one point, the whole-session
 rate over the span it actually lasted.
@@ -533,6 +534,9 @@ scrub removed, so whichever one the archive kept produces the same numbers.
 
 Before: set wind-direction guess (watch menu or phone) + gear.
 After, into `fixtures/README.md` ground-truth table: jibes attempted/made · tacks
-attempted/made · takeoff attempts (approx) · crashes · "longest flight felt like" · wind
-direction/strength · gear · anything odd (GPS, HR, app). Compare with app output; every
+attempted/made · takeoff attempts (approx) · **pump strokes (approx — how many times you
+pumped the wing, per takeoff or for the whole session; this is the one column the corpus has
+no observed value for at all, and it is what `pumpBurstPeakG` is waiting on)** · crashes ·
+"longest flight felt like" · wind direction/strength · gear · anything odd (GPS, HR, app).
+Compare with app output; every
 discrepancy becomes a tuning issue referencing the session file. Every session grows the corpus.

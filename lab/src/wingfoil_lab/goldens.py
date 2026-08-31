@@ -518,6 +518,8 @@ def _config_dict(a: Analysis) -> dict:
         "pumpRefractory": p.refractory_s,
         "pumpStrokeMaxInterval": p.stroke_max_interval_s,
         "pumpMinStrokes": p.min_strokes,
+        "pumpBurstPeakG": p.burst_peak_g,          # PROVISIONAL (docs/algorithms.md)
+        "pumpMinSpeedKmh": p.min_speed_kmh,
         # takeoff
         "takeoffMaxRun": k.max_run_s,
         "takeoffRiseSlack": k.rise_slack_mps,
