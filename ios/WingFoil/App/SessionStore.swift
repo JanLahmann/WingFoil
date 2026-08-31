@@ -661,6 +661,56 @@ final class SessionStore {
         }
     }
 
+    // MARK: - The one-time offer
+
+    /// True while the "shall I tell you when a session lands?" alert is up. `RootView`
+    /// presents it; the decision to raise it is `NewActivityPrompt`, in the kit.
+    private(set) var isAskingAboutNewActivities = false
+
+    /// Set by whichever screen currently owns a sheet, so the offer can wait for a clear
+    /// screen. Reported rather than guessed: the sheets are `LibraryView`'s state, and the
+    /// alert is presented two levels above it.
+    var isPresentingSheet = false
+
+    /// Anything the rider is already reading or answering. The offer is a suggestion, and
+    /// a suggestion that lands on top of a question is a nuisance — `isCheckingKey`
+    /// included, so the offer arrives *after* "Connected" rather than over the spinner.
+    private var isPresentingSomething: Bool {
+        isPresentingSheet || pendingImport != nil || errorMessage != nil || isCheckingKey
+    }
+
+    /// Asked at every plausible moment — launch, foreground, a key that was just proved, a
+    /// sheet that just closed — and answered by the pure predicate, which says yes at most
+    /// once per install and only once the key exists.
+    func askAboutNewActivitiesIfNeeded() {
+        guard NewActivityPrompt.shouldAsk(
+            hasKey: !apiKey.isEmpty,
+            isEnabled: notifyOnNewActivities,
+            hasAsked: UserDefaults.standard.bool(forKey: ActivityNotifier.promptedKey),
+            isPresenting: isPresentingSomething)
+        else { return }
+        // Written down as the alert goes up rather than as it is answered: a question the
+        // rider walked away from — app swiped away, phone locked — was still asked, and
+        // asking it again on every launch until he taps something is exactly the nagging
+        // this feature must not become.
+        UserDefaults.standard.set(true, forKey: ActivityNotifier.promptedKey)
+        isAskingAboutNewActivities = true
+    }
+
+    /// "Enable" — deliberately nothing but the toggle the Settings screen writes to, so the
+    /// permission request, the fresh mark and the first background request all happen on
+    /// the one code path. A second enable path would be a second thing to keep correct.
+    func acceptNewActivityNotifications() {
+        isAskingAboutNewActivities = false
+        notifyOnNewActivities = true
+    }
+
+    /// "Not now", and the same call the alert's own dismissal makes. The offer is spent
+    /// (the flag was written when it appeared); the Settings toggle is the way in from here.
+    func declineNewActivityNotifications() {
+        isAskingAboutNewActivities = false
+    }
+
     private func enableActivityNotifications() async {
         guard await ActivityNotifier.shared.requestAuthorization() else {
             UserDefaults.standard.set(false, forKey: ActivityNotifier.enabledKey)
@@ -950,7 +1000,7 @@ final class SessionStore {
         for key in ["lastIcuSync", problemKey, pbSnapshotKey, "healthExported",
                     "healthWriteEnabled", defaultTurnTypeKey,
                     ActivityNotifier.enabledKey, ActivityNotifier.markKey,
-                    ActivityNotifier.pendingImportKey,
+                    ActivityNotifier.pendingImportKey, ActivityNotifier.promptedKey,
                     MapLayerVisibilityStore.defaultsKey] {
             UserDefaults.standard.removeObject(forKey: key)
         }

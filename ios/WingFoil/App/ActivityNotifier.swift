@@ -25,6 +25,9 @@ final class ActivityNotifier: NSObject {
     nonisolated static let taskIdentifier = "de.lahmann.wingfoil.refresh"
     /// The rider's toggle (Settings → Notifications). Off until he asks.
     nonisolated static let enabledKey = "notifyOnNewActivities"
+    /// Set the one time the app offers the feature by itself (`NewActivityPrompt`), so the
+    /// offer is made once per install and never again — whatever the answer was.
+    nonisolated static let promptedKey = "notifyPromptShown.v1"
     /// Set by a background prefetch so the next foreground knows the library moved under it.
     nonisolated static let pendingImportKey = "backgroundImportPending"
     nonisolated static let markKey = "newActivityMark.v1"

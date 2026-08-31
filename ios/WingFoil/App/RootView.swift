@@ -5,6 +5,7 @@ import WingFoilKit
 /// aggregate views phase 4 adds on top of the same GRDB tables.
 struct RootView: View {
     @Environment(SessionStore.self) private var store
+    @Environment(\.scenePhase) private var scenePhase
     @State private var selection = Tab.sessions
 
     enum Tab: String, Hashable {
@@ -42,6 +43,36 @@ struct RootView: View {
                              set: { if $0 == nil { store.cancelPendingImport() } })) { pending in
             RiderPromptView(pending: pending)
         }
+        // The one thing the app ever asks for by itself: "shall I tell you when a session
+        // lands?". An alert rather than a sheet — it is one sentence and two answers, and
+        // an alert is the one presentation that cannot be mistaken for a screen with more
+        // behind it. Raised here, next to the rider prompt, because both are questions the
+        // app owns rather than any one tab; the store makes sure only one is ever up.
+        //
+        // Every hook below is the *same* question asked again after a "not now yet": the
+        // predicate says no while another modal is up and the store only spends the offer
+        // when the alert actually appears, so the deferrals cost nothing.
+        .alert("Get notified of new sessions",
+               isPresented: Binding(get: { store.isAskingAboutNewActivities },
+                                    set: { if !$0 { store.declineNewActivityNotifications() } })) {
+            Button("Enable") { store.acceptNewActivityNotifications() }
+            Button("Not now", role: .cancel) { store.declineNewActivityNotifications() }
+        } message: {
+            Text("When a new Garmin activity syncs, WingFoil can let you know — "
+                 + "even in the background.")
+        }
+        .task { store.askAboutNewActivitiesIfNeeded() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { store.askAboutNewActivitiesIfNeeded() }
+        }
+        // The moment setup finishes: a key typed into the first-run card or into Settings,
+        // proved against intervals.icu, and the screen behind it now worth notifying about.
+        .onChange(of: store.apiKey) { _, _ in store.askAboutNewActivitiesIfNeeded() }
+        .onChange(of: store.isCheckingKey) { _, _ in store.askAboutNewActivitiesIfNeeded() }
+        // …and the moment whatever was in the way goes away: the Settings sheet the key was
+        // typed into, or the import prompt.
+        .onChange(of: store.isPresentingSheet) { _, _ in store.askAboutNewActivitiesIfNeeded() }
+        .onChange(of: store.pendingImport?.id) { _, _ in store.askAboutNewActivitiesIfNeeded() }
         #if DEBUG && targetEnvironment(simulator)
         // Headless-driving hook (see LibraryView): `simctl launch` cannot tap, so
         // `UI_TAB=records|trends|gear` parks the app on a tab for an automated screenshot.

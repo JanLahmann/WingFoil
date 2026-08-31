@@ -230,6 +230,43 @@ import Testing
     }
 }
 
+/// The one-time offer that gets the feature above discovered at all. Four booleans, so the
+/// interesting part is which combinations must stay silent: every one of them is a way of
+/// asking a rider something he has already answered.
+@Suite struct NewActivityPromptTests {
+
+    @Test func aConfiguredRiderWhoHasNotBeenAskedIsAsked() {
+        #expect(NewActivityPrompt.shouldAsk(hasKey: true, isEnabled: false, hasAsked: false))
+    }
+
+    @Test func theOfferIsNeverMadeTwiceAndNeverToSomeoneWhoAlreadySaidYes() {
+        // "Not now" (or an app swiped away with the alert up) is written down as asked.
+        #expect(!NewActivityPrompt.shouldAsk(hasKey: true, isEnabled: false, hasAsked: true))
+        // Found the Settings toggle himself: there is nothing to offer.
+        #expect(!NewActivityPrompt.shouldAsk(hasKey: true, isEnabled: true, hasAsked: false))
+        #expect(!NewActivityPrompt.shouldAsk(hasKey: true, isEnabled: true, hasAsked: true))
+    }
+
+    @Test func setupHasToBeFinishedFirst() {
+        // No key, nothing to poll — the same reason the Settings toggle is disabled there.
+        for enabled in [false, true] {
+            for asked in [false, true] {
+                #expect(!NewActivityPrompt.shouldAsk(hasKey: false, isEnabled: enabled,
+                                                     hasAsked: asked))
+            }
+        }
+    }
+
+    @Test func aBusyScreenDefersTheOfferRatherThanSpendingIt() {
+        // The only "no" that is not final: nothing is written down, and the same call on
+        // the next clear screen says yes.
+        #expect(!NewActivityPrompt.shouldAsk(hasKey: true, isEnabled: false, hasAsked: false,
+                                             isPresenting: true))
+        #expect(NewActivityPrompt.shouldAsk(hasKey: true, isEnabled: false, hasAsked: false,
+                                            isPresenting: false))
+    }
+}
+
 /// The other half of a background wake: one activity, downloaded and ingested while iOS is
 /// still granting time. Same client, same ingestor, same dedupe key as the manual sync —
 /// this proves the shortcut really is the same path and not a second one.
