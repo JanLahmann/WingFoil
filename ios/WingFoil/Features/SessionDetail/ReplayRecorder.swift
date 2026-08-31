@@ -197,7 +197,7 @@ final class ReplayRecorder {
     /// halves of the same thing.
     static func clipName(for row: SessionRow) -> String {
         FitShareFilter.filename(date: row.startDate, title: SessionDisplay.title(row),
-                                pathExtension: "mp4")
+                                pathExtension: "mp4", timeZone: row.displayZone)
     }
 
     private static func temporaryClipURL(named name: String) -> URL {

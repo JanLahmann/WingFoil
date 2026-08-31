@@ -50,7 +50,15 @@ enum ReplayPhotoLoader {
     /// An item that cannot be read is dropped rather than failing the batch: one photo saved
     /// out of a chat app in a format `ImageIO` will not open must not cost the rider the other
     /// five. The sheet reports the difference between what was picked and what came back.
-    static func load(_ items: [PhotosPickerItem]) async -> [ReplayPhoto] {
+    ///
+    /// `sessionZone` is the clock the *session* was ridden on (`SessionRow.displayZone`),
+    /// and is the fallback for a photo whose EXIF carries a wall clock with no offset
+    /// beside it. It used to be the phone's current zone, which is the same guess only
+    /// while the rider has not travelled and the calendar has not changed — and the whole
+    /// point of the fallback is a photo shot on the water beside a session shot on the
+    /// water, so the session's own answer is strictly the better one.
+    static func load(_ items: [PhotosPickerItem],
+                     sessionZone: TimeZone) async -> [ReplayPhoto] {
         var out: [ReplayPhoto] = []
         for (index, item) in items.prefix(maxCount).enumerated() {
             guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
@@ -60,7 +68,7 @@ enum ReplayPhotoLoader {
             // i.e. the main actor. Six JPEGs decoded on the main actor is a visible stutter
             // in the sheet they are being picked in.
             let decoded = await Task.detached(priority: .userInitiated) {
-                decode(data, id: id)
+                decode(data, id: id, sessionZone: sessionZone)
             }.value
             if let decoded { out.append(decoded) }
         }
@@ -71,7 +79,8 @@ enum ReplayPhotoLoader {
     ///
     /// `Data` in, `ReplayPhoto` out, no actor: the expensive half, hoisted off the main actor
     /// by its caller.
-    nonisolated static func decode(_ data: Data, id: String) -> ReplayPhoto? {
+    nonisolated static func decode(_ data: Data, id: String,
+                                   sessionZone: TimeZone) -> ReplayPhoto? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
@@ -83,7 +92,7 @@ enum ReplayPhotoLoader {
             return nil
         }
         return ReplayPhoto(id: id, image: UIImage(cgImage: cgImage),
-                           takenAt: takenAt(in: source))
+                           takenAt: takenAt(in: source, sessionZone: sessionZone))
     }
 
     // MARK: - When the shutter fired
@@ -97,16 +106,19 @@ enum ReplayPhotoLoader {
     /// 2. **The GPS timestamp.** A date and a time in UTC, straight off the satellites. Also
     ///    unambiguous, and present on almost anything shot outdoors — which a wingfoiling
     ///    photo is.
-    /// 3. **`DateTimeOriginal` alone**, read in the device's current zone. EXIF's original
-    ///    field has no zone in it at all, so this is a guess — and it is the *right* guess for
-    ///    the case that matters (a rider back from the water, phone still on the same clock
-    ///    the photos were shot on). An hour of error puts a photo an hour into a session that
-    ///    lasted eleven minutes, which the span check then sends to the slideshow rather than
-    ///    to a wrong moment.
+    /// 3. **`DateTimeOriginal` alone**, read in the **session's** zone. EXIF's original
+    ///    field has no zone in it at all, so this is a guess — but it is now the right guess
+    ///    rather than merely the convenient one. It used to be read in the *phone's* current
+    ///    zone, which is only the same answer while the rider has not travelled and the
+    ///    clocks have not changed; the photo was shot beside the session, on the session's
+    ///    clock, so the session's offset is what it should be read in. An hour of error puts
+    ///    a photo an hour into a session that lasted eleven minutes, which the span check
+    ///    then sends to the slideshow rather than to a wrong moment.
     ///
     /// Nil is a perfectly ordinary answer: a screenshot, or anything a messenger re-encoded,
     /// arrives with the metadata gone.
-    nonisolated static func takenAt(in source: CGImageSource) -> Date? {
+    nonisolated static func takenAt(in source: CGImageSource,
+                                    sessionZone: TimeZone) -> Date? {
         guard let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil)
             as? [CFString: Any] else { return nil }
 
@@ -114,7 +126,7 @@ enum ReplayPhotoLoader {
         let original = exif?[kCGImagePropertyExifDateTimeOriginal] as? String
 
         if let original, let offset = exif?[kCGImagePropertyExifOffsetTimeOriginal] as? String,
-           let date = parse(original, offset: offset) {
+           let date = parse(original, offset: offset, fallbackZone: sessionZone) {
             return date
         }
         if let gps = properties[kCGImagePropertyGPSDictionary] as? [CFString: Any],
@@ -127,25 +139,39 @@ enum ReplayPhotoLoader {
         guard let zoneless = original ?? tiff?[kCGImagePropertyTIFFDateTime] as? String else {
             return nil
         }
-        return parse(zoneless, offset: nil)
+        return parse(zoneless, offset: nil, fallbackZone: sessionZone)
     }
 
     /// `"2026:08:30 14:32:11"` — EXIF's own colon-separated date, with or without a zone.
-    private nonisolated static func parse(_ text: String, offset: String?) -> Date? {
+    /// `fallbackZone` is used only when the file carried no offset, or carried one this
+    /// cannot read.
+    private nonisolated static func parse(_ text: String, offset: String?,
+                                          fallbackZone: TimeZone) -> Date? {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy:MM:dd HH:mm:ss"
-        formatter.timeZone = offset.flatMap(zone(from:)) ?? .current
+        formatter.timeZone = offset.flatMap(zone(from:)) ?? fallbackZone
         return formatter.date(from: text)
     }
 
-    /// `"+02:00"` / `"-05:00"` / `"Z"`.
-    private nonisolated static func zone(from offset: String) -> TimeZone? {
+    /// `"+02:00"` / `"-05:00"` / `"+0200"` / `"+02"` / `"Z"`.
+    ///
+    /// The colon is optional in the wild. EXIF 2.31 specifies `±HH:MM` and Apple writes
+    /// exactly that, but a photo that has been through an editor, a messenger or an
+    /// Android camera routinely arrives as `+0200` — the ISO-8601 basic form. Failing to
+    /// read that used to drop the photo all the way down to the zoneless fallback, which
+    /// is a *guess*, when the file had stated the answer plainly one character differently.
+    nonisolated static func zone(from offset: String) -> TimeZone? {
         let trimmed = offset.trimmingCharacters(in: .whitespaces)
-        if trimmed == "Z" { return TimeZone(secondsFromGMT: 0) }
-        let parts = trimmed.dropFirst().split(separator: ":")
-        guard parts.count == 2, let hours = Int(parts[0]), let minutes = Int(parts[1]),
-              let sign = trimmed.first, sign == "+" || sign == "-" else { return nil }
+        if trimmed == "Z" || trimmed == "z" { return TimeZone(secondsFromGMT: 0) }
+        guard let sign = trimmed.first, sign == "+" || sign == "-" else { return nil }
+        let digits = trimmed.dropFirst().filter(\.isNumber)
+        guard digits.count == 2 || digits.count == 4 else { return nil }
+        // The separator is whatever was (or was not) between the two halves, so `+02:00`,
+        // `+0200` and `+02` are one rule rather than three.
+        guard let hours = Int(digits.prefix(2)) else { return nil }
+        let minutes = digits.count == 4 ? Int(digits.suffix(2)) ?? 0 : 0
+        guard hours <= 18, minutes < 60 else { return nil }
         let seconds = (hours * 3600 + minutes * 60) * (sign == "-" ? -1 : 1)
         return TimeZone(secondsFromGMT: seconds)
     }

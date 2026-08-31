@@ -191,9 +191,14 @@ public struct ShareCardStats: Sendable, Equatable {
     /// approximated: the row has no jibe-outcome split and no streaks, and a tally
     /// reconstructed from the whole-turn columns would print different numbers than the
     /// same session's block one screen away.
+    ///
+    /// `timeZone` has **no default**, on purpose. It used to default to `.current`, which
+    /// dated every card in the reader's zone rather than the session's — right only while
+    /// the two agree. Callers pass `row.displayZone`; making them say it is what turns the
+    /// question into one the compiler asks.
     public static func make(row: SessionRow, title: String, metrics: KeyMetrics? = nil,
                             preset: Preset = .complete,
-                            timeZone: TimeZone = .current) -> ShareCardStats {
+                            timeZone: TimeZone) -> ShareCardStats {
         ShareCardStats(
             title: title,
             dateLine: dateLine(row.startDate, timeZone: timeZone),
@@ -224,7 +229,7 @@ public struct ShareCardStats: Sendable, Equatable {
     /// spell one number one way.
     public static func outro(row: SessionRow, title: String, metrics: KeyMetrics? = nil,
                              longestFlightS: Double? = nil,
-                             timeZone: TimeZone = .current) -> ShareCardStats {
+                             timeZone: TimeZone) -> ShareCardStats {
         let base = make(row: row, title: title, metrics: metrics, preset: .complete,
                         timeZone: timeZone)
         guard let flight = longestFlightStat(longestFlightS) else { return base }
@@ -263,7 +268,7 @@ public struct ShareCardStats: Sendable, Equatable {
     static func rowOnlyStats(_ row: SessionRow) -> [Stat] {
         [
             Stat(key: Key.duration, label: "duration",
-                 value: KeyMetrics.hoursMinutes(row.durationS)),
+                 value: KeyMetrics.duration(row.durationS)),
             Stat(key: Key.distance, label: "distance",
                  value: row.distanceKm.map(KeyMetrics.km) ?? "—"),
             Stat(key: Key.maxSpeed, label: "max 2 s",

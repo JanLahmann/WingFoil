@@ -96,7 +96,9 @@ struct SettingsView: View {
             }
             .disabled(store.isBusy || store.apiKey.isEmpty)
             if let last = store.lastSyncDate {
-                LabeledContent("Last sync", value: Fmt.date(last))
+                // `.current` deliberately: this is when *you* last synced, on your own clock —
+                // the one date on this screen that is not about any session.
+                LabeledContent("Last sync", value: Fmt.date(last, zone: .current))
             }
             Button { setupTopic = .icuSetup } label: {
                 Label("How to get a key (4 steps)", systemImage: "list.number")

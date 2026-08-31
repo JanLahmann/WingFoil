@@ -184,7 +184,8 @@ struct SessionDetailView: View {
             // here rather than derived from a filename inside the model.
             milestones = ReplayCommentary.make(loaded.analysis, span: loaded.timeRange,
                                                place: SessionDisplay.title(row),
-                                               startedAt: row.startDate)
+                                               startedAt: row.startDate,
+                                               timeZone: row.displayZone)
         } catch {
             failure = "\(error)"
         }
@@ -268,7 +269,8 @@ struct SessionDetailView: View {
     private var header: some View {
         if let row {
             VStack(alignment: .leading, spacing: 6) {
-                Text(Fmt.date(row.startDate)).font(.title3.weight(.semibold))
+                Text(Fmt.date(row.startDate, zone: row.displayZone))
+                    .font(.title3.weight(.semibold))
                 if row.isExample { exampleNote }
                 if row.rider != nil { riderNote(row) }
                 HStack(spacing: 8) {

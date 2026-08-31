@@ -74,7 +74,9 @@ struct SpotsView: View {
             HStack(spacing: 6) {
                 Text(String(format: "%.4f, %.4f", entry.spot.lat, entry.spot.lon))
                 if let last = entry.lastVisit {
-                    Text("· last \(Fmt.shortDate(last))")
+                    // `.current`: a spot spans sessions and has no one zone of its own. The
+                    // date is "how long since I was there", asked from where you are now.
+                    Text("· last \(Fmt.shortDate(last, zone: .current))")
                 }
             }
             .font(.caption)

@@ -80,7 +80,8 @@ struct ReplayCinemaView: View {
             span: span, rate: pacing.rate, milestones: milestones,
             photos: photos.map(\.entry),
             place: SessionDisplay.title(detail.row),
-            startedAt: detail.row.startDate, ease: pacing.ease))
+            startedAt: detail.row.startDate, timeZone: detail.row.displayZone,
+            ease: pacing.ease))
     }
 
     @Environment(\.dismiss) private var dismiss
@@ -234,7 +235,8 @@ struct ReplayCinemaView: View {
         ShareCardStats.outro(row: detail.row, title: SessionDisplay.title(detail.row),
                              metrics: KeyMetrics.make(summary: detail.analysis.summary,
                                                       records: detail.analysis.records),
-                             longestFlightS: detail.analysis.summary.longestFlightS)
+                             longestFlightS: detail.analysis.summary.longestFlightS,
+                             timeZone: detail.row.displayZone)
     }
 
     // MARK: - Body
@@ -313,6 +315,7 @@ struct ReplayCinemaView: View {
             if let url = stage.clipURL {
                 ReplayClipSheet(url: url, title: SessionDisplay.title(detail.row),
                                 startedAt: detail.row.startDate,
+                                timeZone: detail.row.displayZone,
                                 wallS: recordedWallS, note: framingNote,
                                 discard: {
                                     recorder.discard()
@@ -851,6 +854,9 @@ private struct ReplayClipSheet: View {
     /// The afternoon, for the share message's date. The same instant `ShareCardStats.dateLine`
     /// formats on the card, so the two exports of one session are dated identically.
     let startedAt: Date
+    /// The session's own zone (`SessionRow.displayZone`) — so the date in the message names
+    /// the afternoon the rider had, not the one the phone is currently having.
+    let timeZone: TimeZone
     /// Wall seconds actually captured — the run's own measurement, not a probe of the file.
     let wallS: Double
     /// Set when the clip is not the shape that was asked for, and why — see
@@ -994,6 +1000,6 @@ private struct ReplayClipSheet: View {
     /// FIT's, though, and deliberately: a video is not a file anybody will open in a browser
     /// tool, so it gets the credit without the analyzer pitch.
     private var caption: String {
-        ShareText.clipMessage(place: title, startedAt: startedAt)
+        ShareText.clipMessage(place: title, startedAt: startedAt, timeZone: timeZone)
     }
 }

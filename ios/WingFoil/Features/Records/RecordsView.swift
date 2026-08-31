@@ -185,7 +185,7 @@ private struct RecordRowView: View {
                 .font(.caption.monospacedDigit())
                 .frame(width: 56, alignment: .trailing)
 
-                Text("\(Fmt.shortDate(best.achievedAt)) · \(title)")
+                Text("\(Fmt.shortDate(best.achievedAt, zone: best.displayZone)) · \(title)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

@@ -27,3 +27,13 @@ func allFixtureFITs() -> [URL] {
 func findFixtureFIT(stem: String) -> URL? {
     allFixtureFITs().first { $0.deletingPathExtension().lastPathComponent == stem }
 }
+
+/// The zone every fixture in the corpus was recorded in: CEST, +02:00.
+///
+/// Spelled once, here, because since engine 0.8.2 nothing in the presentation layer
+/// defaults its `timeZone:` to the device's any more — the defaults were removed precisely
+/// so that no caller could pick a zone by accident, and a test is a caller. Pinning it to
+/// the corpus's own offset also makes every asserted clock string independent of the
+/// machine running the suite, which is the property `presentationReadsTheSessionsOwnClock`
+/// exists to prove.
+let fixtureZone = TimeZone(secondsFromGMT: 2 * 3600)!

@@ -200,7 +200,7 @@ public enum FitShareFilter {
     /// `Replay 3.mp4` and no way to tell they are the same afternoon.
     public static func filename(date: Date, title: String,
                                 pathExtension: String = "fit",
-                                timeZone: TimeZone = .current) -> String {
+                                timeZone: TimeZone) -> String {
         let formatter = DateFormatter()
         formatter.timeZone = timeZone
         formatter.locale = Locale(identifier: "en_US_POSIX")

@@ -121,7 +121,8 @@ struct ReplaySetupSheet: View {
         return ReplayStoryboard.make(span: span, rate: plan.rate, milestones: milestones,
                                      photos: photos.map(\.entry),
                                      place: SessionDisplay.title(detail.row),
-                                     startedAt: detail.row.startDate, ease: plan.ease)
+                                     startedAt: detail.row.startDate,
+                                     timeZone: detail.row.displayZone, ease: plan.ease)
     }
 
     var body: some View {
@@ -390,7 +391,7 @@ struct ReplaySetupSheet: View {
             return
         }
         loading = true
-        let loaded = await ReplayPhotoLoader.load(picked)
+        let loaded = await ReplayPhotoLoader.load(picked, sessionZone: detail.row.displayZone)
         guard !Task.isCancelled else { return }
         photos = loaded
         unreadable = min(picked.count, ReplayPhotoLoader.maxCount) - loaded.count

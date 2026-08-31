@@ -6,23 +6,36 @@ public struct IcuActivity: Sendable, Codable, Identifiable, Equatable {
     public var id: String
     public var name: String?
     public var type: String?
+    /// Local wall clock with **no zone in it** — "2026-08-06T07:57:21". Kept for display;
+    /// never used to make an instant (see `startDate`).
     public var startDateLocal: String?
+    /// The same moment as a real UTC instant — "2026-08-06T05:57:21Z". This is the field
+    /// that identifies the activity in time.
+    public var startDateUtc: String?
+    /// The zone the athlete was in, e.g. "Europe/Rome". intervals.icu knows it because the
+    /// upload told it; it is the exact answer, and it beats every guess we could make.
+    public var timezone: String?
     public var movingTimeS: Int?
     public var distanceM: Double?
 
     enum CodingKeys: String, CodingKey {
-        case id, name, type
+        case id, name, type, timezone
         case startDateLocal = "start_date_local"
+        case startDateUtc = "start_date"
         case movingTimeS = "moving_time"
         case distanceM = "distance"
     }
 
     public init(id: String, name: String? = nil, type: String? = nil,
-                startDateLocal: String? = nil, movingTimeS: Int? = nil, distanceM: Double? = nil) {
+                startDateLocal: String? = nil, startDateUtc: String? = nil,
+                timezone: String? = nil,
+                movingTimeS: Int? = nil, distanceM: Double? = nil) {
         self.id = id
         self.name = name
         self.type = type
         self.startDateLocal = startDateLocal
+        self.startDateUtc = startDateUtc
+        self.timezone = timezone
         self.movingTimeS = movingTimeS
         self.distanceM = distanceM
     }
@@ -38,17 +51,70 @@ public struct IcuActivity: Sendable, Codable, Identifiable, Equatable {
         name = try c.decodeIfPresent(String.self, forKey: .name)
         type = try c.decodeIfPresent(String.self, forKey: .type)
         startDateLocal = try c.decodeIfPresent(String.self, forKey: .startDateLocal)
+        startDateUtc = try c.decodeIfPresent(String.self, forKey: .startDateUtc)
+        timezone = try c.decodeIfPresent(String.self, forKey: .timezone)
         movingTimeS = try c.decodeIfPresent(Int.self, forKey: .movingTimeS)
         distanceM = try c.decodeIfPresent(Double.self, forKey: .distanceM)
     }
 
-    /// `start_date_local` is local wall-clock without a zone ("2026-08-06T07:57:21").
+    /// **When this activity happened** — a real instant, from `start_date`.
+    ///
+    /// This used to be built out of `start_date_local`, which is a wall clock with no zone
+    /// attached, parsed in whatever zone the *phone* was in. On a phone that agreed with
+    /// the athlete's zone that produced the right instant by luck; on any other one it
+    /// produced an instant an hour or nine out — and this value is the library's dedupe
+    /// key (±60 s) and the new-activity watch's identity check. An hour of error there does
+    /// not make a session look slightly wrong: it makes it look like a *different session*,
+    /// so the same afternoon downloads and notifies twice.
+    ///
+    /// `start_date_local` is still decoded, and still shown — but as words, never as a
+    /// moment. Falls back to it only when `start_date` is absent, which is the old
+    /// behaviour and the old risk, and is better than having no instant at all.
     public var startDate: Date? {
+        if let raw = startDateUtc, let date = Self.parseUtc(raw) { return date }
         guard let raw = startDateLocal else { return nil }
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        formatter.timeZone = displayZone ?? .current
         return formatter.date(from: String(raw.prefix(19)))
+    }
+
+    /// The athlete's own zone for this activity, when intervals.icu named one.
+    public var displayZone: TimeZone? {
+        timezone.flatMap(TimeZone.init(identifier:))
+    }
+
+    /// The zone as a UTC offset in seconds at *this session's* instant — what the library
+    /// stores (`SessionRow.startUtcOffsetS`).
+    ///
+    /// Resolved at the session's own moment rather than as a fixed number, because that is
+    /// the only way "Europe/Rome" answers +7200 in August and +3600 in November. When there
+    /// is no zone name, the offset between the two timestamps is the same fact stated
+    /// arithmetically, and is used instead.
+    public var utcOffsetS: Int? {
+        if let zone = displayZone, let date = startDate {
+            return zone.secondsFromGMT(for: date)
+        }
+        guard let local = startDateLocal, let utc = startDateUtc,
+              let utcDate = Self.parseUtc(utc) else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        guard let localAsUtc = formatter.date(from: String(local.prefix(19))) else { return nil }
+        return Int(localAsUtc.timeIntervalSince(utcDate).rounded())
+    }
+
+    /// `start_date` with or without the trailing `Z`, and with or without fractional
+    /// seconds — intervals.icu has spelled it all three ways.
+    static func parseUtc(_ raw: String) -> Date? {
+        let text = String(raw.prefix(19))
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter.date(from: text)
     }
 }
 

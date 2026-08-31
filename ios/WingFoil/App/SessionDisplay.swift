@@ -145,15 +145,34 @@ struct ProvisionalBadge: View {
 
 enum Fmt {
 
-    static func date(_ date: Date) -> String {
-        date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).hour().minute())
+    /// "Sun 30 Aug, 14:07" — **in the zone you name**.
+    ///
+    /// The zone is required and has no default, which is the whole point of it. It used to
+    /// be the device's, implicitly, at every call site: a session's clock was formatted in
+    /// whatever zone the *reader* happened to be in, which is right only while the two
+    /// agree and silently wrong after every DST change and on every trip. A required
+    /// parameter turns that into a question the compiler asks once per call site, and each
+    /// one answers it out loud — `row.displayZone` for a session, `.current` (with a
+    /// comment) for a surface that really is about the reader's own clock.
+    static func date(_ date: Date, zone: TimeZone) -> String {
+        var style = Date.FormatStyle.dateTime
+            .weekday(.abbreviated).day().month(.abbreviated).hour().minute()
+        style.timeZone = zone
+        return date.formatted(style)
     }
 
-    static func shortDate(_ date: Date) -> String {
-        date.formatted(.dateTime.day().month(.abbreviated).year())
+    /// "30 Aug 2026", in the zone you name — see `date(_:zone:)`.
+    static func shortDate(_ date: Date, zone: TimeZone) -> String {
+        var style = Date.FormatStyle.dateTime.day().month(.abbreviated).year()
+        style.timeZone = zone
+        return date.formatted(style)
     }
 
     /// 1 h 24 m / 47 m 12 s
+    ///
+    /// The *long* spelling, for captions and sentences ("about 41 s of video", "6 m 12 s
+    /// flying"). The key-metrics block and the share card use `KeyMetrics.duration`
+    /// instead, which is the colon form both platforms have to agree on.
     static func duration(_ seconds: Double) -> String {
         let total = Int(seconds.rounded())
         let (h, m, s) = (total / 3600, (total % 3600) / 60, total % 60)

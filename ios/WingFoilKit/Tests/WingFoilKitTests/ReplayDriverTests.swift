@@ -150,7 +150,7 @@ import Testing
     /// so the three choices are about 78 s, 34 s and 23 s of video for the same afternoon —
     /// and it is *those* numbers, not "10× / 30× / 60×", that a rider is choosing between.
     @Test func theEasedTorboleRunHasAKnownLength() throws {
-        let script = ReplayCommentary.make(try torbole(), span: torboleSpan)
+        let script = ReplayCommentary.make(try torbole(), span: torboleSpan, timeZone: fixtureZone)
         #expect(script.count == 12)
 
         let expected: [Double: Double] = [10: 77.70, 30: 34.44, 60: 22.52]
@@ -169,7 +169,7 @@ import Testing
     /// The estimate and the ticking are the same run: whatever the view's tick rate, playing
     /// the driver out at 20 Hz lands on the end within a tick of what `runWallS` promised.
     @Test func tickingTheEasedRunAgreesWithTheEstimate() throws {
-        let script = ReplayCommentary.make(try torbole(), span: torboleSpan)
+        let script = ReplayCommentary.make(try torbole(), span: torboleSpan, timeZone: fixtureZone)
         let driver = ReplayDriver(span: torboleSpan, rate: 30, easeAt: script.map(\.t))
 
         let (wallS, end) = run(driver)
@@ -182,7 +182,7 @@ import Testing
     /// them. This is the assertion that would fail if the commentary's script and the cinema
     /// view's pacing ever came from two different places.
     @Test func theSlowMomentsAreExactlyTheCommentedOnes() throws {
-        let script = ReplayCommentary.make(try torbole(), span: torboleSpan)
+        let script = ReplayCommentary.make(try torbole(), span: torboleSpan, timeZone: fixtureZone)
         let driver = ReplayDriver(span: torboleSpan, rate: 30, easeAt: script.map(\.t))
 
         for milestone in script {

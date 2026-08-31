@@ -103,7 +103,7 @@ public enum ReplayCommentary {
                             span: ClosedRange<Double>? = nil,
                             place: String? = nil,
                             startedAt: Date? = nil,
-                            timeZone: TimeZone = .current) -> [ReplayMilestone] {
+                            timeZone: TimeZone) -> [ReplayMilestone] {
         var out: [ReplayMilestone] = []
         let clock = span ?? 0 ... max(analysis.summary.durationS, 0)
 

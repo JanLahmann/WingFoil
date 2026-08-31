@@ -30,7 +30,7 @@ public enum ShareText {
 
     /// "Torbole, 30 August 2026" — or just the date, when there is no name worth printing.
     public static func lead(place: String?, startedAt: Date,
-                            timeZone: TimeZone = .current) -> String {
+                            timeZone: TimeZone) -> String {
         let date = ShareCardStats.dateLine(startedAt, timeZone: timeZone)
         let trimmed = place?.trimmingCharacters(in: .whitespaces) ?? ""
         guard !trimmed.isEmpty, trimmed != unnamedPlace else { return date }
@@ -43,7 +43,7 @@ public enum ShareText {
     /// something with and has no way of knowing it: the web app reads the same file with the
     /// same engine, in a browser, without an account.
     public static func fitMessage(place: String?, startedAt: Date,
-                                  timeZone: TimeZone = .current) -> String {
+                                  timeZone: TimeZone) -> String {
         "\(lead(place: place, startedAt: startedAt, timeZone: timeZone)) — "
             + "\(Branding.appName) session. Analyze it free in the browser at "
             + "\(Branding.siteURL) (no account needed)."
@@ -57,7 +57,7 @@ public enum ShareText {
     /// The site is still named — whoever gets this should be able to find out what made it —
     /// but as a credit rather than as an offer.
     public static func clipMessage(place: String?, startedAt: Date,
-                                   timeZone: TimeZone = .current) -> String {
+                                   timeZone: TimeZone) -> String {
         "\(lead(place: place, startedAt: startedAt, timeZone: timeZone)) — "
             + "\(Branding.appName) session clip · \(Branding.site)"
     }
@@ -66,7 +66,7 @@ public enum ShareText {
     /// reason: a PNG is not something the receiver can re-analyse either, and the card already
     /// carries its own footer credit in the pixels.
     public static func cardMessage(place: String?, startedAt: Date,
-                                   timeZone: TimeZone = .current) -> String {
+                                   timeZone: TimeZone) -> String {
         "\(lead(place: place, startedAt: startedAt, timeZone: timeZone)) — "
             + "\(Branding.appName) session · \(Branding.site)"
     }

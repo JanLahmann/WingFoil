@@ -146,7 +146,7 @@ public struct ReplayStoryboard: Sendable, Equatable {
                             photos: [Photo] = [],
                             place: String? = nil,
                             startedAt: Date? = nil,
-                            timeZone: TimeZone = .current,
+                            timeZone: TimeZone,
                             timing: Timing = .standard,
                             ease: ReplayDriver.Ease = .cinema) -> ReplayStoryboard {
         let driver = ReplayDriver(span: span, rate: rate, easeAt: milestones.map(\.t),
@@ -197,7 +197,7 @@ public struct ReplayStoryboard: Sendable, Equatable {
                             photos: [Photo] = [],
                             place: String? = nil,
                             startedAt: Date? = nil,
-                            timeZone: TimeZone = .current,
+                            timeZone: TimeZone,
                             timing: Timing = .standard) -> ReplayStoryboard {
         let plan = ReplayPacing.plan(span: span, targetWallS: targetWallS,
                                      easeAt: milestones.map(\.t))
@@ -281,7 +281,7 @@ public struct ReplayTitleCard: Sendable, Equatable {
     }
 
     public static func make(place: String?, startedAt: Date?,
-                            timeZone: TimeZone = .current) -> ReplayTitleCard {
+                            timeZone: TimeZone) -> ReplayTitleCard {
         let trimmed = place?.trimmingCharacters(in: .whitespaces)
         var parts: [String] = []
         if let startedAt {
