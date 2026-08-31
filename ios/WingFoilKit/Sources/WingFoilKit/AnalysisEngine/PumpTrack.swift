@@ -17,16 +17,23 @@ public struct PumpConfig: Sendable, Equatable {
     public var strokeMaxIntervalS: Double = 1.5
     /// Burst length that means "the rider was pumping".
     public var minStrokes: Int = 4
+    /// pumpBurstPeakG — **PROVISIONAL**. A burst's tallest stroke must reach this to be
+    /// counted in the *session total*; nothing else reads it (`TakeoffAnalyzer`).
+    public var burstPeakG: Double = 0.8
+    /// pumpMinSpeedKmh — below this a stroke is a swim stroke, not a pump. Session total only.
+    public var minSpeedKmh: Double = 3.0
 
     public init() {}
 }
 
 /// Band-passed accel magnitude on a uniform grid, plus the stroke queries built on it.
 ///
-/// A wing pump is a whole-body ~1 Hz oscillation the wrist sees as a large swing in |a|;
-/// chop is faster and smaller, wing trim and arm drift are slower or smaller. The stream is
-/// orientation-free by construction (magnitude, not axes). Consumers ask questions about
-/// time windows, never about the raw signal. Mirrors `lab/src/wingfoil_lab/pump.py`.
+/// A wing pump is a whole-body oscillation the wrist sees as a large swing in |a|; wing trim
+/// and arm drift are slower or smaller, and chop — measured, since engine 0.8.0 —  is at
+/// *pumping cadence* and only about half the amplitude, which is why `burstPeakG` exists.
+/// The stream is orientation-free by construction (magnitude, not axes). Consumers ask
+/// questions about time windows, never about the raw signal.
+/// Mirrors `lab/src/wingfoil_lab/pump.py`.
 public struct PumpTrack: Sendable {
     /// Uniform grid, seconds on the records' time base.
     public let t: [Double]
@@ -45,6 +52,14 @@ public struct PumpTrack: Sendable {
                                       amp: config.strokeAmpG, refractoryS: config.refractoryS)
     }
 
+    /// Band-passed height, in g, at each of these stroke times.
+    ///
+    /// Stroke times are grid samples by construction, so this reads the peak the picker
+    /// actually fired on rather than an interpolation of it.
+    public func peakAmps(_ strokes: [Double]) -> [Double] {
+        strokes.map { linearInterp($0, t, band) }
+    }
+
     /// Stroke times grouped into bursts (runs no more than `pumpStrokeMaxInterval` apart).
     /// Bursts are reported at every length; callers apply `pumpMinStrokes` themselves.
     public func bursts(from startT: Double, to endT: Double) -> [[Double]] {
@@ -61,6 +76,20 @@ public struct PumpTrack: Sendable {
     public func isPumping(from startT: Double, to endT: Double) -> Bool {
         longestBurst(from: startT, to: endT) >= config.minStrokes
     }
+}
+
+/// `np.interp`: piecewise-linear read of (xs, ys) at `q`, clamped at both ends.
+func linearInterp(_ q: Double, _ xs: [Double], _ ys: [Double]) -> Double {
+    guard !xs.isEmpty else { return 0 }
+    if q <= xs[0] { return ys[0] }
+    if q >= xs[xs.count - 1] { return ys[ys.count - 1] }
+    var lo = 0, hi = xs.count - 1
+    while hi - lo > 1 {
+        let mid = (lo + hi) / 2
+        if xs[mid] <= q { lo = mid } else { hi = mid }
+    }
+    guard xs[hi] > xs[lo] else { return ys[lo] }
+    return ys[lo] + (q - xs[lo]) / (xs[hi] - xs[lo]) * (ys[hi] - ys[lo])
 }
 
 public enum PumpAnalyzer {

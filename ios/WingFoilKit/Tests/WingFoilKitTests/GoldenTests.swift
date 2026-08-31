@@ -82,6 +82,8 @@ import Testing
                let type = DefaultTurnType(rawValue: v) { windCfg.defaultTurnType = type }
             if let v = num(cfg["pumpStrokeAmp"]) { pumpCfg.strokeAmpG = v }
             if let v = num(cfg["pumpMinStrokes"]) { pumpCfg.minStrokes = Int(v) }
+            if let v = num(cfg["pumpBurstPeakG"]) { pumpCfg.burstPeakG = v }
+            if let v = num(cfg["pumpMinSpeedKmh"]) { pumpCfg.minSpeedKmh = v }
             if let v = num(cfg["takeoffAttemptWindow"]) { takeoffCfg.attemptWindowS = v }
             if let v = num(cfg["takeoffMinPreWindow"]) { takeoffCfg.minPreWindowS = v }
             if let v = num(cfg["hrCostPeakWindow"]) { hrCfg.peakWindowS = v }
@@ -860,7 +862,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.7.0")
+        #expect(analysis.engineVersion == "0.8.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)

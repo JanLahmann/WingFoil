@@ -295,7 +295,9 @@ import Testing
     // MARK: - Pump detection
 
     /// A clean 1 Hz oscillation inside the 0.5–2.5 Hz band is picked as one stroke per
-    /// cycle; a 5 Hz chop of the same amplitude is rejected by the band-pass.
+    /// cycle; the same amplitude at 5 Hz is rejected by the band-pass. Real lake chop is
+    /// *not* that obliging — it lands inside the band, which is what the session total's
+    /// amplitude gate is for (`theSessionTotalOnlyCountsStrokesThatEarnedIt`).
     @Test func pumpBandPassSeparatesPumpingFromChop() throws {
         func track(hz: Double, amplitudeG: Double) -> PumpTrack? {
             var t: [Double] = []
@@ -316,6 +318,42 @@ import Testing
         let chop = try #require(track(hz: 5.0, amplitudeG: 0.6))
         #expect(chop.strokes(from: 10, to: 90).isEmpty)
         #expect(!chop.isPumping(from: 10, to: 90))
+    }
+
+    /// The session total (engine 0.8.0, docs/algorithms.md "The session total") counts a
+    /// stroke only when it is in a burst of `pumpMinStrokes`, its burst peaks at
+    /// `pumpBurstPeakG`, and the board was moving. Real chop is *at* pumping cadence and
+    /// only about half the amplitude, so amplitude is the test that separates them — and
+    /// dropping a burst from the total must not touch what the takeoff run counted.
+    @Test func theSessionTotalOnlyCountsStrokesThatEarnedIt() {
+        /// The synthetic flight track with a 9 s bout of pumping at `amplitudeG`, laid over
+        /// the drift at 30–39 s (1.8 km/h ⇒ below `pumpMinSpeedKmh`) or over the flight at
+        /// 60–69 s (23 km/h ⇒ above it).
+        func analyzed(amplitudeG: Double, at t0: Double) -> SessionAnalysis {
+            var raw = syntheticFlightTrack()
+            for i in 0..<20_000 {                          // 200 s at 100 Hz
+                let t = Double(i) / 100
+                let on = t >= t0 && t <= t0 + 9
+                raw.accel.append(AccelSample(
+                    t: t, magnitudeG: 1.0 + (on ? amplitudeG * sin(2 * .pi * 1.2 * t) : 0)))
+            }
+            raw.capabilities.hasAccel = true
+            return SessionSummarizer.analyze(raw)
+        }
+
+        let pumping = analyzed(amplitudeG: 1.0, at: 60)     // in flight, tall: counted
+        let chop = analyzed(amplitudeG: 0.4, at: 60)        // in flight, short: not
+        let swimming = analyzed(amplitudeG: 1.0, at: 30)    // tall, but going nowhere
+
+        #expect(pumping.summary.takeoff.totalPumpStrokes ?? 0 >= 10)
+        #expect(chop.summary.takeoff.totalPumpStrokes == 0)
+        #expect(swimming.summary.takeoff.totalPumpStrokes == 0)
+        // The band-pass has near-unity gain here, so both amplitudes pick the *same*
+        // strokes — only the total tells them apart. Everything the turn and flight-end
+        // ladders read is deliberately blind to the difference.
+        #expect(pumping.takeoffs[0].inFlightStrokes == chop.takeoffs[0].inFlightStrokes)
+        #expect(pumping.takeoffs[0].inFlightStrokes ?? 0 > 0)
+        #expect(pumping.pumpEpisodes.count == chop.pumpEpisodes.count)
     }
 
     /// `pumpStrokeMaxInterval` splits efforts: two clusters a long silence apart are two

@@ -85,7 +85,7 @@ public struct TakeoffAnalysis: Sendable {
     public var takeoffs: [Takeoff] = []
     public var episodes: [PumpEpisode] = []
     public var hasAccel = false
-    /// Every detected stroke, bursts and singletons alike.
+    /// Every stroke that earned it: in a burst, tall enough, and moving (engine 0.8.0).
     public var totalStrokes: Int?
 }
 
@@ -97,7 +97,7 @@ public struct TakeoffSummary: Sendable, Codable, Equatable {
     public var takeoffSuccesses = 0
     /// Field 37 (×0.1 on the wire).
     public var avgPumpsToTakeoff: Double?
-    /// Field 38: every stroke in the session.
+    /// Field 38: the session's counted strokes (`TakeoffAnalyzer.sessionStrokes`).
     public var totalPumpStrokes: Int?
     /// nil without accel: failures are invisible there, and 100 % would be flattering.
     public var successPct: Double?
@@ -150,7 +150,7 @@ public enum TakeoffAnalyzer {
                                     prevEndT: prevEndT))
             prevEndT = f.endT
         }
-        let total = pump.map { $0.strokes(from: ev.t[0], to: ev.t[ev.count - 1]).count }
+        let total = pump.map { sessionStrokes($0, ev: ev) }
         return TakeoffAnalysis(takeoffs: takeoffs,
                                episodes: episodes(ev: ev, flights: flights, turns: turns,
                                                   config: config, pump: pump),
@@ -278,6 +278,34 @@ public enum TakeoffAnalyzer {
         pump.bursts(from: startT, to: endT)
             .filter { $0.count >= pump.config.minStrokes }
             .reduce(0) { $0 + $1.count }
+    }
+
+    /// The session total: every stroke that earns it (engine 0.8.0, docs/algorithms.md
+    /// "The session total").
+    ///
+    /// Until 0.8.0 this was the raw output of the peak picker — the one pump metric that
+    /// skipped `pumpMinStrokes` — and on the bundled example it read 286 against a hand
+    /// count of ~26, because chop plus the arm riding it sits at *pumping cadence* and
+    /// clears `pumpStrokeAmp` at its crests. Three tests now, in the order they cost least:
+    /// the burst-length rule the rest of this type already applies, the burst's peak
+    /// amplitude against `pumpBurstPeakG`, then the speed at each surviving stroke against
+    /// `pumpMinSpeedKmh`. The first two are properties of the *burst* — one effort is kept
+    /// or dropped whole — while the speed test is per stroke.
+    ///
+    /// Nothing else reads either threshold: `pumpsToTakeoff`, `inFlightStrokes`, the
+    /// episodes and `isPumping` are deliberately untouched.
+    private static func sessionStrokes(_ pump: PumpTrack, ev: OffFoilEvidence) -> Int {
+        var total = 0
+        for b in pump.bursts(from: ev.t[0], to: ev.t[ev.count - 1]) {
+            guard b.count >= pump.config.minStrokes else { continue }
+            guard let peak = pump.peakAmps(b).max(), peak >= pump.config.burstPeakG
+            else { continue }
+            for stroke in b
+            where linearInterp(stroke, ev.t, ev.doppler) * 3.6 >= pump.config.minSpeedKmh {
+                total += 1
+            }
+        }
+        return total
     }
 
     /// First index of the gap-free segment holding sample `i`.
