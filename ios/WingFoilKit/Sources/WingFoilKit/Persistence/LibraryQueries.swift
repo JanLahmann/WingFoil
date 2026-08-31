@@ -487,6 +487,46 @@ public struct LibraryStore: Sendable {
         }
     }
 
+    // MARK: - Deleted sessions
+
+    /// Every tombstone, newest deletion first — what the sync consults and what the Settings
+    /// escape hatch counts.
+    ///
+    /// Read whole rather than queried per activity: a rider's tombstone list is a handful of
+    /// rows, and one read per sync is cheaper than one query per listed activity as well as
+    /// being the only shape a *pure* matcher (`SessionTombstones.blocks`) can be handed.
+    public func tombstones() async throws -> [SessionTombstoneRow] {
+        try await database.writer.read { db in
+            try SessionTombstoneRow.order(Column("deletedAt").desc).fetchAll(db)
+        }
+    }
+
+    public func tombstoneCount() async throws -> Int {
+        try await database.writer.read { db in
+            try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM deleted_session") ?? 0
+        }
+    }
+
+    /// Forgets that these sessions were ever deleted, which is the whole of "re-add": the
+    /// next sync then sees them as activities it has never met and imports them normally.
+    ///
+    /// Deliberately not an import of its own. The FIT is gone — the archive directory went
+    /// with the row — so the only place the session can come back *from* is intervals.icu,
+    /// and going through the ordinary sync means a re-added session is analysed by the same
+    /// code, logged the same way and deduped against the same key as any other.
+    public func forgetTombstones(ids: [String]) async throws {
+        guard !ids.isEmpty else { return }
+        _ = try await database.writer.write { db in
+            try SessionTombstoneRow.deleteAll(db, keys: ids)
+        }
+    }
+
+    public func forgetAllTombstones() async throws {
+        _ = try await database.writer.write { db in
+            try SessionTombstoneRow.deleteAll(db)
+        }
+    }
+
     // MARK: - Import history
 
     public func importLog(limit: Int = 20) async throws -> [ImportLogRow] {
