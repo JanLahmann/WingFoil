@@ -47,6 +47,27 @@ final class SessionStore {
         }
     }
 
+    /// Whether the replay talks while it plays (`ReplayCommentary`). One setting for the
+    /// whole app, like the legend chips and for the same reason: "I don't want a running
+    /// commentary" is a statement about the rider, not about a particular ride.
+    ///
+    /// Default **on** — the feature is invisible until it speaks, and a rider who never
+    /// finds it cannot decide he dislikes it — which is why it is stored as an object and
+    /// not read with `bool(forKey:)`: that returns `false` both for "switched off" and for
+    /// "never touched", and those are opposite answers here.
+    var replayCommentary: Bool = SessionStore.storedReplayCommentary {
+        didSet {
+            guard replayCommentary != oldValue else { return }
+            UserDefaults.standard.set(replayCommentary, forKey: Self.replayCommentaryKey)
+        }
+    }
+
+    static let replayCommentaryKey = "replayCommentary"
+
+    private static var storedReplayCommentary: Bool {
+        UserDefaults.standard.object(forKey: replayCommentaryKey) as? Bool ?? true
+    }
+
     /// `var` because one engine parameter is the rider's to set: `defaultTurnType`.
     var ingestor: SessionIngestor
     /// Lazy track thumbnails for the library rows.
