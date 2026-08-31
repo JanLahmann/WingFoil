@@ -269,6 +269,49 @@ final class SessionStore {
         return detail
     }
 
+    // MARK: - Sharing the recording
+
+    enum ShareError: Swift.Error, CustomStringConvertible {
+        case notAWalkableFIT
+
+        var description: String {
+            switch self {
+            case .notAWalkableFIT:
+                "the archived file is not a plain FIT this app can rewrite safely"
+            }
+        }
+    }
+
+    /// The session's own recording, scrubbed of everything personal (`FitShareFilter`) and
+    /// written to a temp file the share sheet can hand on.
+    ///
+    /// A *file*, not bytes in memory, because that is the only thing `ShareLink` can give a
+    /// receiving app a filename for — and the filename is what a stranger sees in Files and
+    /// in a mail attachment. It lands in a directory of its own under `tmp/`, which iOS is
+    /// free to reap the moment the sheet is gone; nothing here is state the app keeps.
+    ///
+    /// Fails rather than falls back: a file we could not walk is a file we cannot promise
+    /// is scrubbed, and sharing the original instead would be exactly the wrong recovery.
+    func shareableFIT(for row: SessionRow,
+                      includeAccelerometer: Bool) async throws -> (url: URL, bytes: Int) {
+        let archive = ingestor.archive
+        let name = FitShareFilter.filename(date: row.startDate,
+                                           title: SessionDisplay.title(row))
+        return try await Task.detached(priority: .userInitiated) {
+            let original = try archive.originalData(for: row.id)
+            guard let scrubbed = FitShareFilter.filter(original,
+                                                       dropAccel: !includeAccelerometer)
+            else { throw ShareError.notAWalkableFIT }
+            let dir = URL(fileURLWithPath: NSTemporaryDirectory())
+                .appendingPathComponent("Share/\(row.id)", isDirectory: true)
+            try? FileManager.default.removeItem(at: dir)
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            let url = dir.appendingPathComponent(name)
+            try scrubbed.write(to: url, options: .atomic)
+            return (url, scrubbed.count)
+        }.value
+    }
+
     // MARK: - Import
 
     /// Reads security-scoped picker URLs and imports them. `source` is only the tag the
