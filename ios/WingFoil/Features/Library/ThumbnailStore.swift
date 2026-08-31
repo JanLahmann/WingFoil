@@ -86,8 +86,14 @@ final class ThumbnailStore {
             // Use the cached analysis when there is one; a missing one is not worth a full
             // re-analysis *here* — the thumbnail would just draw the whole track as
             // off-foil, and opening the session rebuilds it properly anyway.
-            let flights = ingestor.archive.analysis(for: row.id)?.flights ?? []
-            let thumbnail = TrackThumbnail.make(track: track, flights: flights)
+            let analysis = ingestor.archive.analysis(for: row.id)
+            let flights = analysis?.flights ?? []
+            // The marks are the share card's — the 62 × 44 row never draws them — but they
+            // are cached with the outline so a card built from the list (no session open,
+            // no analysis in memory) is the same picture as one built from the detail.
+            let thumbnail = TrackThumbnail.make(
+                track: track, flights: flights,
+                events: analysis.map(TrackThumbnail.events) ?? [])
             guard !thumbnail.isEmpty else { return nil }
             // Only cache a thumbnail whose colouring is final. Without an analysis the
             // track has no flights yet, and writing that would freeze a grey outline for

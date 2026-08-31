@@ -5,8 +5,9 @@ import WingFoilKit
 ///
 /// Kept a *view* (rather than Core Graphics drawing code) so `ImageRenderer` can export it
 /// at any scale and so it can be previewed and screenshotted like anything else. Its
-/// content comes pre-resolved from `ShareCardStats`, which is where the "—" decisions and
-/// the uncertified disclaimer are made — an image cannot fall back at draw time.
+/// content comes pre-resolved from `ShareCardStats`, which is where the "—" decisions, the
+/// preset filtering and the uncertified disclaimer are made — an image cannot fall back at
+/// draw time.
 ///
 /// Layout is expressed against `ShareCardStats.Shape.size` divided by `renderScale`, so
 /// one set of paddings works for every aspect ratio and the exported pixels land exactly
@@ -17,6 +18,13 @@ import WingFoilKit
 /// title reads as a caption under a banner. Beside the stats the same track is square-ish
 /// and the block is a readable column — same tokens, same type sizes, only the axis
 /// changes (`ShareCardStats.Shape.isWide`).
+///
+/// **The track is the card.** It used to get whatever height the fixed 2 × 2 stat block
+/// left over, and then inscribe its own square normalization into that — so a session
+/// sailed up and down one reach drew as a thin line in the middle of a small square in the
+/// middle of a wide gap. Three things fixed it: the block is denser and its column count
+/// follows the stat count, the paddings came in, and `TrackOutlineView.fillsBox` scales the
+/// *ride* to the box instead of the box it was normalized into.
 struct ShareCardView: View {
     let stats: ShareCardStats
     let shape: ShareCardStats.Shape
@@ -80,14 +88,14 @@ struct ShareCardView: View {
         Group {
             if shape.isWide { wideContent } else { tallContent }
         }
-        .padding(.horizontal, 22)
-        .padding(.top, 22)
-        .padding(.bottom, 18)
+        .padding(.horizontal, 16)
+        .padding(.top, 14)
+        .padding(.bottom, 12)
         .frame(width: size.width, height: size.height, alignment: .topLeading)
     }
 
     private var tallContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             header
             // The track absorbs whatever height is left over, so the stat block and the
             // footer are never pushed off the bottom of a fixed-size export.
@@ -102,104 +110,174 @@ struct ShareCardView: View {
     /// card as on a tall one and the track always gets the remainder — including the whole
     /// card when a recording has no positions at all.
     private var wideContent: some View {
-        HStack(alignment: .top, spacing: 22) {
+        HStack(alignment: .top, spacing: 16) {
             track
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 8) {
                 header
                 statGrid
                 Spacer(minLength: 0)
                 footer
             }
-            .frame(width: size.width * 0.42)
+            .frame(width: size.width * 0.40)
         }
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(stats.title)
-                .font(.system(size: 26, weight: .bold, design: .rounded))
+                .font(.system(size: 25, weight: .bold, design: .rounded))
                 .foregroundStyle(Brand.paper)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             Text(stats.dateLine)
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Brand.paper.opacity(0.72))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    // MARK: - The track
+
+    /// Phase tints, with one deliberate departure from `DesignTokens.Phase`.
+    ///
+    /// Off foil is `.secondary` in the tokens — a *system* semantic colour, which has no
+    /// defined value over a surface the app paints itself, so the card substitutes its own
+    /// paper at the same subordinate weight.
+    ///
+    /// Flying is brand green rather than the map's teal, and this one is load-bearing: the
+    /// splash mark's token (`Effort.splash`, #3fc4d8) and the flying phase's (#40c8e0) are
+    /// the same colour to the eye, and the whole point of drawing splashes here is that a
+    /// reader can find them. On the map the two never touch, because the splash sits on a
+    /// glyph and the phase on a line under a dozen other layers; on a 1080 px card with
+    /// three semantics and nothing else, they would be one colour.
+    private var flyingColor: Color { Brand.green }
+    private var offFoilColor: Color { Brand.paper.opacity(0.45) }
+
     @ViewBuilder
     private var track: some View {
         if let thumbnail, !thumbnail.points.isEmpty {
             TrackOutlineView(thumbnail: thumbnail,
-                             flyingColor: Brand.green,
-                             offFoilColor: Brand.paper.opacity(0.45),
-                             lineWidth: 2.4,
+                             flyingColor: flyingColor,
+                             offFoilColor: offFoilColor,
+                             lineWidth: 2.6,
                              offFoilScale: 0.5,
-                             padding: 0)
+                             padding: 4,
+                             fillsBox: true,
+                             // 3.2 pt at the card's 3× export is a 19 px dot — the size a
+                             // marker has to be to still read as a coloured verdict after a
+                             // feed has resampled the picture.
+                             markRadius: 3.2)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .shadow(color: Brand.green.opacity(0.35), radius: 8)
+                .shadow(color: flyingColor.opacity(0.35), radius: 8)
         } else {
             Spacer(minLength: 0)
         }
     }
 
+    // MARK: - The stats
+
+    /// Four across once the block is more than a headline. The complete key-metrics block
+    /// is up to eight cells; at two columns that is four rows and a card with no room left
+    /// for the ride it is about.
+    private var columnCount: Int {
+        shape.isWide || stats.stats.count <= 4 ? 2 : 4
+    }
+
+    /// Smaller type and tighter cells for the full block — the same trade the block itself
+    /// makes on the phone, where eight numbers do not get eight headlines.
+    private var isDense: Bool { stats.stats.count > 4 }
+
     private var statGrid: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 2),
-                  spacing: 10) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(),
+                                                     spacing: isDense ? 5 : 10),
+                                 count: columnCount),
+                  spacing: isDense ? 5 : 10) {
             ForEach(stats.stats) { stat in
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(stat.label.uppercased())
-                        .font(.system(size: 9, weight: .semibold))
+                    Text(stat.label)
+                        .font(.system(size: isDense ? 7.5 : 9, weight: .semibold))
                         .foregroundStyle(Brand.green.opacity(0.85))
-                        .tracking(0.6)
-                    Text(stat.value)
-                        .font(.system(size: 21, weight: .bold, design: .rounded))
-                        .foregroundStyle(Brand.paper)
-                        .minimumScaleFactor(0.6)
-                        .lineLimit(1)
-                    Text(stat.caption ?? " ")
-                        .font(.system(size: 9))
-                        .foregroundStyle(Brand.paper.opacity(0.6))
-                        .lineLimit(1)
+                        .tracking(0.3)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                    value(of: stat)
+                    if let caption = stat.caption {
+                        Text(caption)
+                            .font(.system(size: isDense ? 7 : 9))
+                            .foregroundStyle(Brand.paper.opacity(0.6))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 8)
-                .padding(.horizontal, 10)
-                .background(.white.opacity(0.10), in: .rect(cornerRadius: 12))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(.vertical, isDense ? 4 : 8)
+                .padding(.horizontal, isDense ? 6 : 10)
+                .background(.white.opacity(0.10), in: .rect(cornerRadius: isDense ? 9 : 12))
             }
         }
     }
 
-    private var footer: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let turnLine = stats.turnLine {
-                HStack(spacing: 6) {
-                    Text("TURNS")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(Brand.green.opacity(0.85))
-                        .tracking(0.6)
-                    Text(turnLine)
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Brand.paper.opacity(0.9))
-                }
+    /// The tally cell is the one that is not a string: its three counts are drawn on the
+    /// verdict ladder's own inks, the same way `KeyMetricsView` draws them in the app. Every
+    /// other cell is `stat.value` and nothing else.
+    /// How far a value may shrink before it truncates. The block's longest string by far is
+    /// the streaks pair ("11 dry · 5 flew"), and a card is an image: an ellipsis on it is
+    /// permanent, where three points of type size are only small. At the dense floor it
+    /// still exports at 21 px.
+    private var valueFloor: Double { isDense ? 0.45 : 0.6 }
+
+    @ViewBuilder
+    private func value(of stat: ShareCardStats.Stat) -> some View {
+        let font = Font.system(size: isDense ? 16 : 21, weight: .bold, design: .rounded)
+        if let tally = stat.tally {
+            HStack(spacing: 3) {
+                Text("\(tally.flewThrough)").foregroundStyle(DesignTokens.Outcome.flew)
+                Text("·").foregroundStyle(Brand.paper.opacity(0.45))
+                Text("\(tally.touchdown)").foregroundStyle(DesignTokens.Outcome.touchdown)
+                Text("·").foregroundStyle(Brand.paper.opacity(0.45))
+                Text("\(tally.fellIn)").foregroundStyle(DesignTokens.Outcome.fellIn)
             }
-            HStack(spacing: 7) {
-                Image(systemName: "water.waves")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Brand.green)
-                Text("WingFoil")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(Brand.paper.opacity(0.9))
-                Spacer()
-                if let disclaimer = stats.disclaimer {
-                    Text(disclaimer)
-                        .font(.system(size: 8))
-                        .foregroundStyle(.orange.opacity(0.9))
-                        .multilineTextAlignment(.trailing)
-                }
+            .font(font)
+            .lineLimit(1)
+            .minimumScaleFactor(valueFloor)
+        } else {
+            Text(stat.value)
+                .font(font)
+                .foregroundStyle(Brand.paper)
+                .lineLimit(1)
+                .minimumScaleFactor(valueFloor)
+        }
+    }
+
+    // MARK: - Footer
+
+    /// The mark, the name and the address — the whole point of a card someone else sees.
+    ///
+    /// `LaunchMark` is the app-icon artwork as an ordinary image asset (the launch screen
+    /// already needs it as one, because `AppIcon` cannot be loaded outside the icon slot).
+    /// Its corners are rounded in the artwork itself; the clip is belt and braces so the
+    /// square backing can never show through at an export scale.
+    private var footer: some View {
+        HStack(spacing: 7) {
+            Image("LaunchMark")
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 18, height: 18)
+                .clipShape(.rect(cornerRadius: 4))
+            Text(Branding.credit)
+                .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                .foregroundStyle(Brand.paper.opacity(0.85))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            Spacer(minLength: 4)
+            if let disclaimer = stats.disclaimer {
+                Text(disclaimer)
+                    .font(.system(size: 7.5))
+                    .foregroundStyle(.orange.opacity(0.9))
+                    .multilineTextAlignment(.trailing)
+                    .lineLimit(2)
             }
         }
-        .padding(.top, 12)
+        .padding(.top, 4)
     }
 }
