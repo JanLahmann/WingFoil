@@ -20,9 +20,17 @@ struct TrackMapView: View {
     /// The flight the chart is framing, when a flying segment has been tapped. Owned by the
     /// page so the map and the chart are the same tap (docs/presentation.md, "Pairing").
     @Binding var flightFocus: SessionDetail.FlightFocus?
+    /// The replay's commentary track (`ReplayCommentary`), or empty when the rider has the
+    /// commentary switched off. Passed in rather than derived here for the same reason
+    /// `visibility` is: the drawing stays a pure function of what it is given, and the page
+    /// owns the one preference both the scrubber's toggle and this caption answer to.
+    var milestones: [ReplayMilestone] = []
 
     /// Tap-only: nothing about the pairing renders until something is tapped.
     @State private var callout: SessionDetail.Callout?
+    /// The commentary line on screen right now, and nil the rest of the time — see
+    /// `commentaryDwellS`.
+    @State private var comment: ReplayMilestone?
     /// Bumped on every flight tap; see `SessionDetail.FlightFocus`.
     @State private var focusTick = 0
 
@@ -56,6 +64,13 @@ struct TrackMapView: View {
                     tapped(coordinate)
                 }
             }
+            // Above the tap callout, immediately under the map: the commentary is about what
+            // the dot is doing *now*, so it belongs against the picture, and a caption that
+            // jumped below a card the rider happens to have open would move as they watch.
+            if let comment {
+                ReplayCommentaryBubble(milestone: comment)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
             if let callout {
                 TrackCalloutCard(callout: callout) { self.callout = nil }
             }
@@ -66,9 +81,39 @@ struct TrackMapView: View {
             // same thing on every visit to every session forever.
             MapLegendView(detail: detail, effort: effort)
         }
+        // One caption at a time, and only for as long as it is news.
+        //
+        // The dwell is *wall clock*, which is what "two and a half seconds of playback"
+        // means at every replay speed: at 60× a line has 150 s of session to itself and at
+        // 10× only 25, and both are the same two and a half seconds of a rider watching.
+        // Keying the task on the milestone's id is what makes the replacement instant when
+        // two lines fall close together — the pending dismissal is cancelled with the task.
+        .task(id: crossedMilestone?.id) {
+            guard let crossed = crossedMilestone else {
+                // Nothing passed yet, no playhead, or the rider switched the commentary off
+                // mid-replay — all three mean "stop talking", and none of them is an error.
+                withAnimation(.easeOut(duration: 0.3)) { comment = nil }
+                return
+            }
+            withAnimation(.snappy(duration: 0.2)) { comment = crossed }
+            try? await Task.sleep(for: .seconds(Self.commentaryDwellS))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.3)) { comment = nil }
+        }
         #if DEBUG && targetEnvironment(simulator)
         .onAppear(perform: stageCalloutForScreenshot)
         #endif
+    }
+
+    /// How long a line stays up. Long enough to read a short sentence, short enough that the
+    /// next jibe is not commentated over the last one.
+    private static let commentaryDwellS = 2.5
+
+    /// The line the playhead has most recently passed. Nil with no playhead at all, so a
+    /// session that was opened and not scrubbed says nothing.
+    private var crossedMilestone: ReplayMilestone? {
+        guard let playhead, !milestones.isEmpty else { return nil }
+        return ReplayCommentary.current(at: playhead, in: milestones)
     }
 
     /// One tap, three answers, in order of how specific they are.

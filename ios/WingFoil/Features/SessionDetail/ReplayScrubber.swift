@@ -19,6 +19,10 @@ struct ReplayScrubber: View {
     let detail: SessionDetail
     @Binding var playhead: Double?
 
+    /// Only for the commentary switch — the one control on this row that is a *preference*
+    /// rather than a position, and therefore belongs to the rider and not to this session.
+    @Environment(SessionStore.self) private var store
+
     @State private var isPlaying = false
     @State private var rate = ReplayRate.x30
 
@@ -172,6 +176,8 @@ struct ReplayScrubber: View {
 
                 Spacer(minLength: 8)
 
+                commentaryToggle
+
                 Picker("Speed", selection: $rate) {
                     ForEach(ReplayRate.allCases) { Text($0.label).tag($0) }
                 }
@@ -201,6 +207,29 @@ struct ReplayScrubber: View {
 
     private func playheadOrStart(_ range: ClosedRange<Double>) -> Double {
         playhead ?? range.lowerBound
+    }
+
+    /// The commentary switch: whether the replay talks while it plays.
+    ///
+    /// It sits on the transport row and not in Settings because it is a thing you change
+    /// *while watching* — the second time a caption covers the jibe you were looking at is
+    /// when you want it gone — and it is a filled/hollow symbol rather than a labelled
+    /// toggle because the row already carries three transport buttons and a speed picker,
+    /// and "Commentary" spelled out is wider than all of them.
+    private var commentaryToggle: some View {
+        Button {
+            store.replayCommentary.toggle()
+        } label: {
+            Image(systemName: store.replayCommentary ? "text.bubble.fill" : "text.bubble")
+                .font(.title3)
+                .symbolRenderingMode(.hierarchical)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(store.replayCommentary ? AnyShapeStyle(Color.accentColor)
+                                                : AnyShapeStyle(.tertiary))
+        .accessibilityLabel("Commentary")
+        .accessibilityValue(store.replayCommentary ? "On" : "Off")
+        .accessibilityHint("Comments on the session as the replay passes them")
     }
 
     // MARK: - Beat bar

@@ -51,6 +51,10 @@ struct SessionDetailView: View {
     /// The speed chart's visible window. Owned here rather than by the chart so a trip to
     /// another tab does not reset it — see `SpeedChartView.zoom`.
     @State private var chartZoom: TimelineWindow?
+    /// What the replay says as it plays (`ReplayCommentary`). Derived once when the session
+    /// opens rather than in the map's body: playback moves the playhead twenty times a
+    /// second and every one of those re-evaluates every view on this page.
+    @State private var milestones: [ReplayMilestone] = []
     @State private var showShare = false
     #if DEBUG && targetEnvironment(simulator)
     /// Screenshot hook only (`UI_FULLSCREEN_MAP=1`): `simctl` cannot tap the link.
@@ -172,7 +176,15 @@ struct SessionDetailView: View {
     private func load() async {
         guard detail == nil, let row else { return }
         do {
-            detail = try await store.detail(for: row)
+            let loaded = try await store.detail(for: row)
+            detail = loaded
+            // The commentary needs two things the kit deliberately does not own: a readable
+            // name for the place, and the wall-clock time the recording started. Both are
+            // the app's (`ShareCardStats.make` draws the same line), so they are handed over
+            // here rather than derived from a filename inside the model.
+            milestones = ReplayCommentary.make(loaded.analysis, span: loaded.timeRange,
+                                               place: SessionDisplay.title(row),
+                                               startedAt: row.startDate)
         } catch {
             failure = "\(error)"
         }
@@ -214,7 +226,11 @@ struct SessionDetailView: View {
             noTrackNote
         } else {
             TrackMapView(detail: detail, effort: effort, playhead: $playhead,
-                         visibility: store.mapLayers, flightFocus: $flightFocus)
+                         visibility: store.mapLayers, flightFocus: $flightFocus,
+                         // The toggle on the scrubber row is one store flag away, so
+                         // switching the commentary off is an empty list rather than a
+                         // second condition inside the map.
+                         milestones: store.replayCommentary ? milestones : [])
             NavigationLink {
                 FullScreenMapView(detail: detail, effort: effort, playheadT: playhead)
             } label: {
