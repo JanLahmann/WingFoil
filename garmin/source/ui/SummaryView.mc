@@ -298,9 +298,70 @@ class SummaryView extends WatchUi.View {
     // and the ladder's green is reserved for "that maneuver flew through". The old screen
     // made a FONT_MEDIUM green "Saved!" the largest element on a page whose subject is how
     // the session went — which is the one thing the rider already knows, since he pressed it.
+    //
+    // Since 0.9.5 the brand BADGE rides beside it: a horizontal lockup, badge then word,
+    // the pair centred where the word alone used to be. Beside and not above, because there
+    // is no "above" — the eyebrow already sits as high as the top arc allows — and because a
+    // mark signing an acknowledgement is what a lockup is for. It stays subordinate by
+    // construction: the badge is cut to the height of the LINE (asserted), so the pair is one
+    // eyebrow's worth of ink on the arc over a giant that owns the middle of the page.
     hidden function drawSavedPill(dc as Dc) as Void {
+        var cx = dc.getWidth() / 2;
+        var y = savedY(dc);
+        var bw = Brand.badgeW();
+        var textW = dc.getTextWidthInPixels(SUM_SAVED, Graphics.FONT_XTINY);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(dc.getWidth() / 2, savedY(dc), Graphics.FONT_XTINY, SUM_SAVED, CV);
+        // No room for the pair: the word alone, where it has always been.
+        if (!lockupFits(dc, bw, Brand.badgeH(), textW)) {
+            dc.drawText(cx, y, Graphics.FONT_XTINY, SUM_SAVED, CV);
+            return;
+        }
+        var left = cx - lockupW(dc, bw, textW) / 2;
+        Brand.drawBadge(dc, left + bw / 2, y);
+        dc.drawText(left + bw + savedGap(dc), y, Graphics.FONT_XTINY, SUM_SAVED,
+            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+    }
+
+    // The lockup's geometry, shared with the layout test. The gap is a quarter of the line
+    // the word is set in, so badge and word sit at the same distance apart on every glass.
+    static function savedGap(dc as Dc) as Number {
+        return dc.getFontHeight(Graphics.FONT_XTINY) / 4;
+    }
+
+    static function lockupW(dc as Dc, badgeW as Number, textW as Number) as Number {
+        return badgeW + savedGap(dc) + textW;
+    }
+
+    // Is there room for the pair? Three ways there might not be, and the answer to all three
+    // is the word on its own — which is the shipped page, so the fallback is not a degraded
+    // screen, it is the previous one.
+    //
+    //   * the top of the glass, which the taller box can now reach;
+    //   * the ARC, and which half is binding is not obvious — the badge is the taller box but
+    //     the word is the further out, and the deeper corner changes with the glass, so ask
+    //     both. The page paints the foil-% arc, so the radius is the verdict page's own;
+    //   * the giant. The badge is the taller half of the pair, and it is held to the SAME
+    //     yardstick the word has always been held to
+    //     (`summaryPagesFitRoundDisplay`: an eyebrow clears `cy - fontHeight/2` of the number
+    //     font). Measuring the badge against the hero BLOCK's top edge instead would be a
+    //     stricter rule than the shipped screen already keeps — that edge is above the
+    //     eyebrow on a 454 px glass, because the block is centred with a unit line and two
+    //     sub-rows under the number and the digits themselves sit well inside their band.
+    static function lockupFits(dc as Dc, badgeW as Number, badgeH as Number,
+            textW as Number) as Boolean {
+        var cy = dc.getHeight() / 2;
+        var y = savedY(dc);
+        var half = lockupW(dc, badgeW, textW) / 2;
+        if (y - badgeH / 2 < 0) {
+            return false;
+        }
+        if (y + badgeH / 2 >= cy - dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT) / 2) {
+            return false;
+        }
+        var limit = RecordingView.fitRadius(dc, false, true).toFloat();
+        return Brand.cornerR(badgeW, badgeH, badgeW / 2 - half, y - cy) <= limit
+            && Brand.cornerR(textW, RecordingView.inkH(dc, Graphics.FONT_XTINY),
+                half - textW / 2, y - cy) <= limit;
     }
 
     // Ink centre of the SAVED pill: the TOP arc of the verdict page, mirroring where the

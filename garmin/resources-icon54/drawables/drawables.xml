@@ -5,4 +5,12 @@
          warning on every fr570 build. Resampled (Lanczos) from brand/icon-tile-1024.png,
          the same master the 65/60/40 cuts come from. -->
     <bitmap id="LauncherIcon" filename="launcher_icon.png"/>
+
+    <!-- The brand mark (source/ui/Brand.mc), 46x41 — the same cut resources-icon60 carries,
+         because the one product on this path is a 390 px AMOLED like that directory's
+         narrowest members. It is copied rather than shared because the qualifier mechanism
+         resolves a whole directory, not a file. -->
+    <bitmap id="BrandMark" filename="brand_mark.png" dithering="none"/>
+    <!-- The badge for the same audience, 28x17. See resources/drawables/drawables.xml. -->
+    <bitmap id="BrandBadge" filename="brand_badge.png" dithering="none"/>
 </drawables>

@@ -16,6 +16,17 @@ base.barrelPath = barrel/WingFoilCore/barrel.jungle
 # Resolution-specific layout overrides land here later, e.g.:
 # fenix8solar47mm.resourcePath = $(fenix8solar47mm.resourcePath);resources-mip
 
+# Everything below maps a product to a qualifier resource directory. Those directories were
+# opened for LAUNCHER ICONS at each product's native size, and since 0.9.5 they carry a second
+# bitmap: the brand mark the start page and the post-save verdict page draw (source/ui/Brand.mc).
+# The mark needs a different partition from the icon — one cut per DISPLAY CLASS and glass size,
+# not per icon size — and it does not need a new set of directories, because the partition the
+# icons already produce happens to be exactly right: resources-icon40's audience is precisely
+# the thirteen 8 bpp MIP products, resources-icon60/-icon54 are the AMOLED families whose
+# narrowest member is 390 px, and what is left on the base path is the six 454 px AMOLEDs.
+# A product moved between these lines therefore moves its mark too, which is the intended
+# behaviour and is worth knowing before adding a fourteenth MIP product to icon60.
+#
 # Launcher icons at each product's NATIVE size (compiler.json launcherIcon):
 # fenix847mm / fenix8pro47mm want 65x65 (that is what resources/ holds), fenix843mm 60x60 and
 # both Solar variants 40x40. Without these overrides monkeyc rescales the 65x65 and warns on

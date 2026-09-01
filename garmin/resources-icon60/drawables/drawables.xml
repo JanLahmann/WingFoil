@@ -3,4 +3,11 @@
          65x65 in resources/ for the products mapped to this path in the jungle; without a
          native-size source the compiler rescales and warns. -->
     <bitmap id="LauncherIcon" filename="launcher_icon.png"/>
+
+    <!-- The brand mark (source/ui/Brand.mc), 46x41. This directory's audience spans 390 to
+         454 px of AMOLED glass and one bitmap serves all of it, so the cut is sized for the
+         narrowest members (epix 2 Pro 42 mm, Descent Mk3 43 mm) rather than the widest. -->
+    <bitmap id="BrandMark" filename="brand_mark.png" dithering="none"/>
+    <!-- The badge for the same audience, 28x17. See resources/drawables/drawables.xml. -->
+    <bitmap id="BrandBadge" filename="brand_badge.png" dithering="none"/>
 </drawables>

@@ -1,3 +1,18 @@
 <drawables>
     <bitmap id="LauncherIcon" filename="launcher_icon.png"/>
+
+    <!-- The brand mark on the glass (source/ui/Brand.mc): the launcher icon's own artwork
+         WITHOUT its tile, on the black the two screens that draw it have already cleared to.
+         52x46, the cut for the six 454 px AMOLED products that take no resourcePath override
+         in the jungle. `dithering="none"` because the pixels are already exactly what should
+         be shown — garmin/tools/make_brand_mark.py does the quantising, so nothing is left
+         for the compiler to guess at (it matters on the 8 bpp cut next door, and it is
+         written on all four so the four files say the same thing). -->
+    <bitmap id="BrandMark" filename="brand_mark.png" dithering="none"/>
+    <!-- The BADGE: the same mark at the weight the post-save verdict page wants, 30x19. It
+         rides beside the SAVED eyebrow, so it is sized to that LINE rather than to the air
+         above a wordmark, and it drops the water lines — at this size they are two grey
+         hairlines, and what is left is the jibe track and the wing, which is the half of the
+         artwork that carries the name. -->
+    <bitmap id="BrandBadge" filename="brand_badge.png" dithering="none"/>
 </drawables>
