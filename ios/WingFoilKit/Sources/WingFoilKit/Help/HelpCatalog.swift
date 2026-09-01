@@ -29,6 +29,9 @@ public struct HelpTopic: Sendable, Identifiable, Equatable {
     public let summary: String
     public let body: [String]
     public let items: [Item]
+    /// A screenshot of the screen this topic describes, shown between the summary and the
+    /// prose. Nil on every definitional topic on purpose — see `HelpImage`.
+    public let image: HelpImage?
     /// Outbound links the topic offers (intervals.icu, so far).
     public let links: [HelpLink]
     /// An in-app destination the topic can send the reader to. Data rather than a
@@ -39,17 +42,44 @@ public struct HelpTopic: Sendable, Identifiable, Equatable {
     public let related: [HelpTopicID]
 
     public init(id: HelpTopicID, section: HelpSection, title: String, summary: String,
-                body: [String], items: [Item] = [], links: [HelpLink] = [],
-                action: HelpAction? = nil, related: [HelpTopicID] = []) {
+                body: [String], items: [Item] = [], image: HelpImage? = nil,
+                links: [HelpLink] = [], action: HelpAction? = nil,
+                related: [HelpTopicID] = []) {
         self.id = id
         self.section = section
         self.title = title
         self.summary = summary
         self.body = body
         self.items = items
+        self.image = image
         self.links = links
         self.action = action
         self.related = related
+    }
+}
+
+/// A picture of the screen a topic describes, and the one line that says what to look at.
+///
+/// Only the **asset name** lives here. The kit has no bundle of images of its own and the
+/// catalogue is deliberately pure data, so the picture is looked up by name in the app's
+/// asset catalogue (`ios/WingFoil/Resources/Assets.xcassets/Help/`) at render time. A
+/// misspelt name would therefore draw nothing at all and nobody would notice, which is why
+/// `PresentationTests` asserts every name in this file against the image sets actually
+/// checked in.
+///
+/// Only topics that describe a **screen** carry one. A definition — what a flight is, what
+/// a dry streak is — gets no picture, because a screenshot of a number does not explain
+/// what the number means, and a decorative image in a reference work is a tax on every
+/// reader who came for the sentence.
+public struct HelpImage: Sendable, Equatable {
+    /// The image set's name in the app's asset catalogue, without an extension.
+    public let asset: String
+    /// One line under the picture. Says what to look at, not what the picture is of.
+    public let caption: String
+
+    public init(asset: String, caption: String) {
+        self.asset = asset
+        self.caption = caption
     }
 }
 
@@ -76,7 +106,7 @@ public enum HelpAction: String, Sendable, Equatable {
 
 /// Where a topic sits in the Help index.
 public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
-    case setup, foil, records, turns, takeoff, effort, conditions, quality
+    case setup, foil, records, turns, takeoff, effort, conditions, sharing, quality
 
     public var id: String { rawValue }
 
@@ -89,6 +119,7 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
         case .takeoff: "Takeoff & pumping"
         case .effort: "Effort"
         case .conditions: "Conditions"
+        case .sharing: "Sharing"
         case .quality: "Where the numbers come from"
         }
     }
@@ -102,6 +133,7 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
         case .takeoff: "arrow.up.right"
         case .effort: "heart"
         case .conditions: "wind"
+        case .sharing: "square.and.arrow.up"
         case .quality: "checkmark.seal"
         }
     }
@@ -116,6 +148,7 @@ public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
     case takeoffAttempts, pumpsToTakeoff, pumpStrokes
     case heartRate
     case windAxis
+    case shareCard, replayClip, shareFit, riderAttribution
     case sourceClass, divergence, engineVersion
 
     public var id: String { rawValue }
@@ -155,26 +188,22 @@ public enum HelpCatalog {
                 "Nothing in CleanJibe makes sense on an empty library, and the first thing a "
                 + "new install has is an empty library. So one real recording travels inside "
                 + "the app: \(ExampleSession.blurb)",
-                "It comes from \(ExampleSession.place) and was recorded with the CleanJibe "
-                + "watch app on a fenix, which makes it a class-(a) source — the "
-                + "developer fields, the watch laps and the heart-rate stream are all "
-                + "there. The one thing left behind is the 100 Hz accelerometer stream, "
-                + "which was 96 % of the recording's size and would have been 96 % of the "
-                + "app's download, so the pump and takeoff-stroke figures show as "
-                + "unavailable on this one session — the way they do for any watch that "
-                + "does not record them.",
                 "It is not your data, and CleanJibe treats it that way: an example session "
                 + "is badged EXAMPLE in the list and at the top of its own page, and it is "
                 + "left out of Records, Trends and the gear rollups so it can never inflate "
                 + "a personal best or bend a trend line. Delete it with a swipe whenever you "
                 + "like — this screen and the setup card will both offer it again.",
-                "Every identifier was removed before it was bundled: the watch serial "
-                + "number is zeroed, and the rider profile, the paired-accessory record and "
-                + "the watch's lifetime totals are gone. What is left is the ride — track, "
-                + "speed, heart rate, laps and all of the app's own recorded fields.",
+                "It was recorded at \(ExampleSession.place) with the CleanJibe watch app, "
+                + "with every identifier removed before it was bundled. The one thing left "
+                + "out is the accelerometer stream, which alone was larger than the rest of "
+                + "the app — so pump strokes and takeoff effort show as unavailable on this "
+                + "one session.",
             ],
+            image: HelpImage(asset: "help-session-detail",
+                             caption: "The four rows at the top answer \"was that a good "
+                                 + "session\"."),
             action: .loadExampleSession,
-            related: [.icuSetup, .sourceClass, .uncertified]),
+            related: [.icuSetup, .sourceClass, .uncertified, .riderAttribution]),
 
         HelpTopic(
             id: .icuTroubleshooting, section: .setup, title: "When the sync does not work",
@@ -281,6 +310,9 @@ public enum HelpCatalog {
                 "Tap the track to move the replay playhead; tap a mark, or a flown stretch, "
                 + "for its own facts.",
             ],
+            image: HelpImage(asset: "help-map-layers",
+                             caption: "The chips above the map turn each layer on and off — "
+                                 + "here with the fell-in marks hidden."),
             related: [.foilPct, .turnOutcomes, .takeoffAttempts]),
 
         // MARK: Speed records
@@ -418,7 +450,8 @@ public enum HelpCatalog {
                 + "touchdown later on.",
                 "Inside that window three channels are read: speed (always), the barometer "
                 + "(a wrist that goes under water reads as a huge altitude drop, which is proof "
-                + "you swam), and the accelerometer on our own recordings (a pump burst can turn "
+                + "you swam), and, on a CleanJibe watch recording, the accelerometer (a pump "
+                + "burst can turn "
                 + "a fly-through into a touchdown, but only when the speed also went marginal — "
                 + "you pump for many reasons).",
             ],
@@ -433,6 +466,9 @@ public enum HelpCatalog {
                       detail: "You stopped for more than 5 s, or the barometer says your wrist "
                           + "went under."),
             ],
+            image: HelpImage(asset: "help-turn-list",
+                             caption: "Every turn, with the verdict and the evidence behind "
+                                 + "it."),
             related: [.turnSuccess, .falls, .glideOuts]),
 
         HelpTopic(
@@ -516,7 +552,8 @@ public enum HelpCatalog {
                 "This is the number no summary built from flights alone can contain — a "
                 + "session where you got up 20 times out of 22 and one where you got up 20 "
                 + "times out of 40 look identical otherwise.",
-                "It needs the wrist accelerometer, which only our own watch recordings carry. "
+                "It needs the wrist accelerometer, which only the CleanJibe watch app "
+                + "records. "
                 + "Without it your failures are invisible, so the success rate is shown as "
                 + "unknown rather than a flattering 100 %.",
             ],
@@ -599,33 +636,120 @@ public enum HelpCatalog {
             ],
             related: [.turnTypes, .portStarboard]),
 
-        // MARK: Where the numbers come from
+        // MARK: Sharing
+        //
+        // The rest of this catalogue explains *numbers*. This section explains *doors* —
+        // four things the app can do that a rider will never find by tapping around,
+        // because each of them is one button on one sheet. They are written the same way
+        // as the metric topics (what it is, then what leaves the phone) because the second
+        // half is the part somebody is actually deciding about.
 
         HelpTopic(
-            id: .sourceClass, section: .quality, title: "Source classes a, b and c",
-            summary: "What your recording could carry decides what can be measured.",
+            id: .shareCard, section: .sharing, title: "Share cards",
+            summary: "One picture of a session, made to post.",
             body: [
-                "Every metric degrades gracefully with the source rather than failing or "
-                + "guessing. What a session can report depends on which channels its file has:",
+                "Any session can become a card: the track, the numbers that matter, and a "
+                + "line saying where the analysis came from. Pick portrait, square or "
+                + "landscape to suit where it is going, and Complete or Lean depending on "
+                + "how much detail you want on it. A photo from your library can go behind "
+                + "it.",
+                "The card is made on your phone and goes nowhere until you send it.",
+            ],
+            image: HelpImage(asset: "help-share-composer",
+                             caption: "Pick a shape, pick how much detail, send it."),
+            related: [.replayClip, .shareFit]),
+
+        HelpTopic(
+            id: .replayClip, section: .sharing, title: "Replay clips",
+            summary: "Record the replay as a video.",
+            body: [
+                "The replay plays a session back on its own track, with a commentary that "
+                + "follows what is happening — a takeoff, a jibe carried through, a swim. "
+                + "Scrub to the part worth watching, then record it as a video and save it "
+                + "to your photo library or send it straight on.",
+                "Ask for a 10, 25 or 60-second clip and the app solves the playback rate to "
+                + "land on it, or take \"full detail\" and let the session run as long as it "
+                + "runs. The frame is yours too: 9:16 for a story, 1:1 for a post, 16:9 for "
+                + "a chat, or the whole screen uncropped. Photos you took that afternoon can "
+                + "be spliced in where they were taken.",
+                "You can lay your own music under it — any audio file the phone can read, "
+                + "trimmed or looped to the clip's length and faded at both ends. Nothing is "
+                + "uploaded: the video is rendered on the phone.",
+            ],
+            image: HelpImage(asset: "help-replay",
+                             caption: "The replay running: the marker on the track, the "
+                                 + "clock, and the commentary calling what just happened."),
+            related: [.shareCard, .mapLegend]),
+
+        HelpTopic(
+            id: .shareFit, section: .sharing, title: "Sending a session to a friend",
+            summary: "Share the original recording, stripped of anything identifying.",
+            body: [
+                "You can share the original .fit file of any session. Everything identifying "
+                + "— the watch serial, your rider profile, your lifetime totals — is removed "
+                + "first; the ride itself is untouched, so the analysis your friend gets is "
+                + "identical to yours.",
+                "They can open it in CleanJibe, or drop it into the free browser analyzer at "
+                + "\(Branding.site) without installing anything.",
+            ],
+            links: [HelpLink(title: "Open the browser analyzer",
+                             url: URL(string: Branding.siteURL)!)],
+            related: [.riderAttribution, .shareCard]),
+
+        HelpTopic(
+            id: .riderAttribution, section: .sharing, title: "Sessions someone else rode",
+            summary: "A friend's session is shown in full but kept out of your records.",
+            body: [
+                "When you import a file, CleanJibe asks whose session it is. A friend's "
+                + "session is saved and shown in full — map, replay, every turn — but stays "
+                + "out of your records, your trends and your gear totals, so their fast run "
+                + "never becomes your personal best.",
+                "The name you give is stored on your phone only.",
+            ],
+            related: [.shareFit, .exampleSession]),
+
+        // MARK: Where the numbers come from
+
+        // The topic that answers the question a rider actually arrives with — *do I need
+        // the watch app?* — so it is written around that question rather than around the
+        // engine's own vocabulary. The letters a/b/c survive in the code (`SessionRow
+        // .sourceClass`, `SessionDisplay.sourceClassNote`'s doc comment) because the engine
+        // and the fixtures are full of them; they no longer survive on screen, because
+        // "class b" tells a rider nothing he could act on.
+        HelpTopic(
+            id: .sourceClass, section: .quality,
+            title: "What your recording can and cannot show",
+            summary: "Everything works from any Garmin recording. Two things need the "
+                + "CleanJibe watch app.",
+            body: [
+                "CleanJibe reads whatever your watch put in the file, and every metric "
+                + "degrades gracefully rather than failing or guessing. In practice there "
+                + "are three cases:",
             ],
             items: [
-                .init(term: "Class a",
-                      detail: "A recording from the CleanJibe watch app. Doppler speed, "
-                          + "positions, the wrist accelerometer, the barometer and the watch's "
-                          + "own live summary. Everything in the app is available."),
-                .init(term: "Class b",
-                      detail: "A normal device recording with Doppler speed and positions. "
-                          + "Records are certified; pump strokes, failed takeoff attempts and "
-                          + "accelerometer-corroborated touchdowns are not available."),
-                .init(term: "Class c",
-                      detail: "A degraded source with no speed channel. Everything still "
-                          + "computes, but speed records are marked uncertified."),
+                .init(term: "Recorded with the CleanJibe watch app",
+                      detail: "Everything in the app is available: the track, the flights, "
+                          + "the turn verdicts, the speed records, the wind axis, and — "
+                          + "because this app also records the wrist accelerometer — pump "
+                          + "strokes, failed takeoff attempts and accelerometer-confirmed "
+                          + "touchdowns."),
+                .init(term: "Recorded with Garmin's own profile, or another Connect IQ app",
+                      detail: "Almost everything: the track, the flights and touchdowns, "
+                          + "every turn with its verdict, certified speed records, the wind "
+                          + "axis. Only pump strokes, failed takeoff attempts and "
+                          + "accelerometer-confirmed touchdowns are missing, because nothing "
+                          + "recorded the accelerometer."),
+                .init(term: "A file with no speed channel",
+                      detail: "Rare, and usually a converted export rather than the original "
+                          + "recording. Everything still computes from positions, but the "
+                          + "speed records are marked uncertified."),
             ],
             related: [.uncertified, .divergence, .engineVersion]),
 
         HelpTopic(
-            id: .divergence, section: .quality, title: "\"Watch and phone disagree\"",
-            summary: "The banner comparing the live watch numbers with the phone's recompute.",
+            id: .divergence, section: .quality,
+            title: "When the watch and the phone show different numbers",
+            summary: "Normal, expected, and the phone's number is the right one.",
             body: [
                 "When a session comes from the CleanJibe watch app it carries the summary the "
                 + "watch computed live, on a wrist, in one forward pass with no memory to spare. "

@@ -113,6 +113,33 @@ struct HelpTopicSheet: View {
                         .font(.headline)
                         .foregroundStyle(.secondary)
 
+                    // Between the summary and the prose, because the topics that carry one
+                    // describe a *screen*: the reader recognises the picture and then reads
+                    // the paragraphs knowing what they are about. One `Image`, fit to the
+                    // width, rounded — deliberately not a lightbox, a zoom or a carousel.
+                    // The name is a `HelpImage.asset` from the catalogue and resolves in
+                    // the app's own asset catalogue; `PresentationTests` asserts every one
+                    // of them is actually checked in, because a typo here would silently
+                    // draw nothing.
+                    if let image = topic.image {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Image(image.asset)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxWidth: .infinity)
+                                .clipShape(.rect(cornerRadius: 12))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .strokeBorder(Color(.separator), lineWidth: 0.5)
+                                }
+                                .accessibilityLabel(image.caption)
+                            Text(image.caption)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
                     ForEach(Array(topic.body.enumerated()), id: \.offset) { _, paragraph in
                         Text(paragraph)
                             .font(.callout)

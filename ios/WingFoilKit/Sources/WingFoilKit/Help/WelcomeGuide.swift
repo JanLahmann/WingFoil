@@ -53,9 +53,13 @@ public enum WelcomeGuide {
             term: "Jibe outcomes & dry streaks",
             detail: "Every turn gets a verdict, and the streak counts how many you carried "
                 + "in a row without going in."),
+        // "GP3S" and "alpha 500" are GPS-speedsurfing terms, and this is the fourth line of
+        // the first screen a wingfoiler ever sees. The windows are named instead; the
+        // Records topic can teach the vocabulary later, to somebody who asked for it.
         WelcomeHighlight(
             term: "Speed records",
-            detail: "GP3S windows off your own track — best 2 s upwards, plus alpha 500."),
+            detail: "Your fastest 2 seconds, 10 seconds, 500 m and nautical mile — the same "
+                + "windows the speedsurfing world uses."),
     ]
 
     // MARK: - The three ways on
@@ -67,15 +71,23 @@ public enum WelcomeGuide {
         "Ten real minutes on Lake Garda, already analysed — the track, the replay, the "
         + "turn outcomes and the share card, with nothing to connect first."
 
-    /// The real path. `IcuSetupCard` takes it from here, so this says only where it goes.
+    /// The real path. `IcuSetupCard` takes it from here, so this says only where it goes —
+    /// but it names intervals.icu *and* says why a third party is in the story at all. A
+    /// stranger's name on a first-run screen, with no reason beside it, reads as a catch.
     public static let connectTitle = "Connect your Garmin"
     public static let connectDetail =
-        "Four steps through intervals.icu, about five minutes, once — and every session "
+        "Garmin has no open API for a personal app, so CleanJibe collects your sessions "
+        + "through intervals.icu — free, four steps, about five minutes, once. Every session "
         + "after that arrives on its own."
 
     /// The quiet way out. Not a hidden one: a rider who wants to import a file by hand has
-    /// nothing to gain from either button above.
+    /// nothing to gain from either button above — but "Later" on its own does not tell him
+    /// that hand-importing is even possible, so the third way on gets a line like the other
+    /// two rather than a bare verb.
     public static let laterTitle = "Later"
+    public static let laterDetail =
+        "You can also open a .fit file straight from Files, Mail or a message — yours or one "
+        + "a friend sent you."
 }
 
 /// Whether to say hello, and whether this install has already been said hello to.
