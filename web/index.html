@@ -72,7 +72,7 @@
   </div>
   <div class="topbar-right">
     <a class="btn primary" href="app/">Open the analyzer</a>
-    <a class="btn ghost wide-only" href="https://github.com/JanLahmann/WingFoil" rel="noopener">GitHub</a>
+    <a class="btn ghost wide-only" href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">GitHub</a>
   </div>
 </header>
 
@@ -127,8 +127,10 @@
     <p class="cta">
       <!-- `#example` is a real route, not an anchor: js/app.js runs the bundled session on
            arrival, so this link delivers the example rather than a drop target. -->
-      <a class="btn primary" href="app/">Analyze a .fit file</a>
-      <a class="btn ghost" href="app/#example">See an example session</a>
+      <!-- The two hero CTAs are the only counted doors into the analyzer: umami's
+           declarative form, so a blocked script leaves an ordinary link behind. -->
+      <a class="btn primary" href="app/" data-umami-event="analyze-cta">Analyze a .fit file</a>
+      <a class="btn ghost" href="app/#example" data-umami-event="example-cta">See an example session</a>
       <span class="cta-note">Free. No account. Runs in your browser — the file is never uploaded.</span>
     </p>
     </div>
@@ -211,7 +213,7 @@
           <li>Counts pump strokes and takeoff attempts from the wrist accelerometer.</li>
           <li>Records as a Windsurf activity, so it no longer lands in Garmin Connect as a walk.</li>
         </ul>
-        <p class="piece-foot"><a class="btn ghost" href="invite/">Get the beta</a></p>
+        <p class="piece-foot"><a class="btn ghost" href="invite/" data-umami-event="beta-garmin">Get the beta</a></p>
       </article>
 
       <article class="panel piece">
@@ -234,7 +236,7 @@
           <li>The gear you were on, session by session.</li>
           <li>Garmin activities arrive on their own, through intervals.icu sync.</li>
         </ul>
-        <p class="piece-foot"><a class="btn ghost" href="invite/#testflight">Get the beta</a></p>
+        <p class="piece-foot"><a class="btn ghost" href="invite/#testflight" data-umami-event="beta-testflight">Get the beta</a></p>
       </article>
 
       <article class="panel piece">
@@ -495,7 +497,7 @@
        needs: where the installs are (/invite/), and where a report goes. -->
   <p>
     Source, issues and the detection thresholds:
-    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">github.com/JanLahmann/WingFoil</a>
+    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">github.com/JanLahmann/WingFoil</a>
     (Apache-2.0; the CleanJibe name and mark are not part of the license)
     · <a href="invite/">Get the beta</a>
   </p>
@@ -510,8 +512,14 @@
        identifier, so there is no consent banner to show and nothing to opt out of; saying so
        in a line is cheaper than a banner and more honest than silence. It does NOT weaken
        the analyzer's promise one section up — the .fit file is read in the browser tab and
-       still never leaves the device. What umami sees is that a page was opened. -->
-  <p class="fineprint">Anonymous, cookie-free usage stats by umami.</p>
+       still never leaves the device. What umami sees is that a page was opened.
+
+       "and feature counts" earned its two words the day the buttons started counting: a
+       handful of named events (a CTA pressed, an analysis finished, a card made) with a
+       name and nothing else — no filename, no number off a session, nothing about a rider.
+       A line that still said only "usage stats" would be true-ish, and true-ish is what
+       "No tracking" was before it came out of the sentence above. -->
+  <p class="fineprint">Anonymous, cookie-free usage stats and feature counts by umami.</p>
 </footer>
 
 </body>

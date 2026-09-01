@@ -812,6 +812,12 @@ async function download() {
   a.download = fileName();
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  // A card exists now — the PNG is rendered and the save is handed to the browser. The
+  // event is the bare name: `fileName()` two lines up is built out of the rider's own
+  // title, and that is exactly the kind of thing a counter must never be told. Guarded
+  // because the umami script is third-party and frequently absent (blocked, offline, or
+  // any host that is not cleanjibe.org).
+  window.umami?.track?.("card-created");
 }
 
 /** Feature-detected with a *file*, not with `navigator.share`: several browsers can share a
@@ -831,5 +837,8 @@ async function share() {
   const file = new File([blob], fileName(), { type: "image/png" });
   try {
     await navigator.share({ files: [file] });
+    // Inside the `try`, after the sheet resolves: a dismissal rejects and lands in the
+    // catch, and a card the rider backed out of sharing is not a card that went anywhere.
+    window.umami?.track?.("card-created");
   } catch { /* the rider dismissed the sheet — not an error, and not worth a message */ }
 }
