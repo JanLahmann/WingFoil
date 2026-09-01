@@ -503,12 +503,25 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    monkeydo /tmp/wft.prg fenix847mm -t
    ```
 
-   Run it on **two** glasses at least — one AMOLED (`fenix847mm`, 454 px) and one 8 bpp MIP
-   (`fenix8solar47mm`, 260 px, or `fenix7s`, 240 px, the narrowest shipped). The layout suite
-   reads its canvas from `System.getDeviceSettings().screenWidth`, so the same assertions are
-   genuinely different measurements per device, and every finding that has ever come out of
-   this suite came from the narrow ones. Start one simulator per run and kill it afterwards:
-   two `monkeydo` processes against one simulator hang rather than fail.
+   Run it on **four** glasses at least, one per family the product list now spans:
+
+   | device | glass | why it is in the matrix |
+   |---|---|---|
+   | `fenix847mm` | 454 px AMOLED | the widest glass and Jan's own watch |
+   | `fenix7s` | 240 px MIP | the narrowest shipped |
+   | `epix2pro42mm` | 390 px AMOLED | the size added with Tier A (0.9.4) — also marq2, marq2aviator, descentmk343mm, fr57042mm |
+   | `fr255` | 260 px MIP | the smallest memory tier (524 KB) **and** the Forerunner font set |
+
+   The layout suite reads its canvas from `System.getDeviceSettings().screenWidth`, so the same
+   assertions are genuinely different measurements per device, and every finding that has ever
+   come out of this suite came from the narrow ones — with one lesson added by Tier A: **the
+   screen size is not the whole device**. The Forerunners carry a different font set from the
+   fenix at the *same* resolution (on 260 px glass `FONT_NUMBER_MILD` is 45 px on an fr255
+   against 58 on a fenix 8 Solar; on 416 px glass `FONT_LARGE` is 67 px on an fr265 against 61
+   on an epix 2), and both of the layout findings behind 0.9.4 came from that, not from the new
+   390 px size, which passed the whole suite unchanged. So a new *family* earns a run even when
+   its resolution is already covered. Start one simulator per run and kill it afterwards: two
+   `monkeydo` processes against one simulator hang rather than fail.
 
    **Round-display layout tests.** Six pages plus the summary are measured against the chord
    at each row's own depth, at worst-case content, with the device's real font metrics:
@@ -529,9 +542,32 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      documented exception is a GRID4 value cell on the 240–280 px MIP variants, where a
      giant + a 2×2 + the bezel arc genuinely does not fit and the floor is `FONT_SMALL`.
 
-   Known failure: `lockScreenFitsRoundDisplay` fails on `fenix7s` (240 px) and has since
-   before 0.8.0 — the invite-beta lock screen's rows 1/2 collide on the narrowest glass. It is
-   pre-existing and unrelated to the recording UI.
+   **No known failures since 0.9.4.** The suite is green on all 30 products in the manifests.
+   The long-standing `lockScreenFitsRoundDisplay` failure on `fenix7s` (240 px) went with the
+   0.9.4 lock-screen fix below. It was never the row collision it was filed as: the fenix 7s
+   carries the same digits-only `BionicBold` cut, the fitter measured the code at **0 px** wide
+   and took an 84 px face on a 240 px glass, and the rows collided because of it. (Verified by
+   putting the old `LockView.mc` back: `row 2 y=108 0x84`.)
+
+   Three things the Tier A pass found, all worth knowing before touching the code they live in:
+
+   - **A vector font will happily measure glyphs it does not have.** On the epix 2 / epix 2 Pro
+     / MARQ 2 / Descent Mk3 families the face named `BionicBold` is `Bionic_Bold_Number_Only`,
+     digits only. `dc.getTextWidthInPixels("WWWWWWWW", vf)` answers **0** there, which every
+     width test in a fitter reads as "fits comfortably" — so the lock screen's fitter took the
+     largest size on its list and would have drawn the tester's request code with its letters
+     missing. `LockView.coversAlphabet` now asks each candidate face for every character of
+     `LockGate.ALPHABET` and rejects the first one that comes back empty, and faces are tried
+     one at a time rather than as a preference list so a number-only cut falls through to
+     `RobotoCondensedBold` instead of poisoning the whole size.
+   - **The GRID4 giant band is no longer exactly one `FONT_NUMBER_MILD` line.**
+     `RecordingView.giantBand(dc, paired)` lends the *paired* band one more pixel on the
+     fr255/fr955, whose MILD line (45 px) is one pixel short of a caption plus `FONT_MEDIUM`'s
+     ink (46 px). Every other watch is untouched, and the unit test asserts that.
+   - **"The shipped session's six numbers are FONT_LARGE" is now asserted as "the largest rung
+     the column can hold".** On the fr265 that rung is `FONT_MEDIUM`: its `FONT_LARGE` "63:24"
+     is 142 px in a 136 px column, and the page's one lever — shortening the row keys — buys
+     only 2 px there, because "max" is nearly as wide as "total" on that face.
 4. **Simulator integration smoke** — FIT replay of `fixtures/clips/` (60–180 s cuts around
    labeled events; replay is realtime-only, keep clips ≤ 3 min) with a documented expected
    checklist per clip: flights detected, laps emitted, PB alert fired. Plus MonkeyGraph preview

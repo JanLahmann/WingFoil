@@ -137,6 +137,14 @@ var PAIR_FONTS as Array<Graphics.FontType> = [
 ];
 const PAIR_FLOOR = 2;
 
+// Slots in the `texts` array pairFits takes the band's four strings in. They ride
+// as one array because Monkey C caps a function at nine arguments on CIQ 3.x and the
+// spelled-out left/right value/caption form made pairFits the app's only ten-argument call.
+const PAIR_LV = 0;   // left value
+const PAIR_LC = 1;   // left caption
+const PAIR_RV = 2;   // right value
+const PAIR_RC = 3;   // right caption
+
 // ---- the FOIL page's table (see drawFoilPage) ----
 // A titled 3x2: one header, two column headers, three rows of two numbers. Everything on it
 // is a foil number, so the word "foil" is said ONCE, at the top, instead of six times in six
@@ -1007,16 +1015,16 @@ class RecordingView extends WatchUi.View {
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
         var radius = fitRadius(dc, false, foilArc);
-        var hG = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
         var hL = dc.getFontHeight(Graphics.FONT_LARGE);
 
         var giant = PageModel.slotAt(page, 0);
         var hasGiant = giant != PageModel.M_NONE;
+        var partner = hasGiant ? PageModel.bandPartner(giant) : PageModel.M_NONE;
+        var hG = giantBand(dc, partner != PageModel.M_NONE);
         if (hasGiant) {
             var bias = gridBias(dc);
             var yg = gridRowY(cy, hG, hT, hL, 0, hasGiant, bias);
-            var partner = PageModel.bandPartner(giant);
             if (partner != PageModel.M_NONE) {
                 drawPairBand(dc, c, cx, cy, radius, yg, hG, giant, partner);
             } else {
@@ -1042,8 +1050,10 @@ class RecordingView extends WatchUi.View {
     // sitting there"; the distance share (61 %) says how much of the water he actually crossed
     // flying, and neither number means much without the other.
     //
-    // It moves nothing. The band is the height the single giant already reserved (hG, one
-    // FONT_NUMBER_MILD line), the caption lives in that band's own SLACK above the digits, and
+    // It moves nothing on any glass that can spare the room. The band is the height the single
+    // giant already reserved (hG, one FONT_NUMBER_MILD line — see giantBand, which lends it one
+    // more pixel on the two Forerunners whose MILD line is too short for the floor font and
+    // leaves every other watch untouched), the caption lives in that band's own SLACK, and
     // the two halves sit on the same two columns the 2x2 below them uses — so the page reads
     // as three rows of two, not as a giant with a grid under it. The slack is what picks the
     // font: a caption plus MILD's ink is taller than the band, so the pair steps one rung down
@@ -1114,27 +1124,53 @@ class RecordingView extends WatchUi.View {
         return dc.getFontHeight(Graphics.FONT_XTINY) + inkH(dc, f);
     }
 
+    // How tall the GRID4 giant row is. One FONT_NUMBER_MILD line, which is what a single giant
+    // number has always reserved and what the 2x2 below is positioned against — EXCEPT on a
+    // glass where that line is too short to hold the pair band at its floor font, in which case
+    // the band takes the pixels it needs instead of dropping a value into a label font.
+    //
+    // Only the Forerunner 255/955 have ever asked. Their FONT_NUMBER_MILD is 45 px on the same
+    // 260 px glass where the fenix 8 Solar's is 58 — a caption (19) plus FONT_MEDIUM's ink (27)
+    // is 46, one pixel over. So the page grows by that one pixel there and by nothing anywhere
+    // else, which is a better trade than a 32 px "value" a rider cannot read in spray.
+    static function giantBand(dc as Dc, paired as Boolean) as Number {
+        var h = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
+        if (!paired) {
+            return h;
+        }
+        var need = pairBandHeight(dc, PAIR_FONTS[PAIR_FLOOR]);
+        return need > h ? need : h;
+    }
+
     // Does font `f` hold the whole block? Three constraints, and every one of them has bitten:
     // the block must fit the BAND's height (or the pair shoves the 2x2 off the glass); each
     // half must fit its own COLUMN, measured at the digits' own depth; and each caption must
     // still be inside the glass a value-height higher up, where the chord is narrower — on a
     // 454 px glass the caption row has ~70 px less of it, so a word that fits beside the digits
     // does not automatically fit above them.
-    static function pairFits(dc as Dc, lv as String, lc as String, rv as String, rc as String,
-            f as Graphics.FontType, band as Number, radius as Number, y as Number,
-            cy as Number) as Boolean {
+    //
+    // The four strings travel as ONE array — `[leftValue, leftCaption, rightValue,
+    // rightCaption]` — rather than four parameters, because a Monkey C function may take at
+    // most **nine** arguments on CIQ 3.x devices and the spelled-out form was exactly ten.
+    // Nothing else in the app is pinned to CIQ 5.x, so this one signature was the whole
+    // portability cost. `PAIR_LV`/`PAIR_LC`/`PAIR_RV`/`PAIR_RC` name the slots.
+    static function pairFits(dc as Dc, texts as Array<String>, f as Graphics.FontType,
+            band as Number, radius as Number, y as Number, cy as Number) as Boolean {
         if (pairBandHeight(dc, f) > band) {
             return false;
         }
         var col = cellColumns(radius, pairRowY(dc, y, f, 1) - cy, inkH(dc, f));
         var wMax = 2 * col[1];
-        if (pairHalfWidth(dc, lv, lc, f) > wMax || pairHalfWidth(dc, rv, rc, f) > wMax) {
+        if (pairHalfWidth(dc, texts[PAIR_LV], texts[PAIR_LC], f) > wMax
+                || pairHalfWidth(dc, texts[PAIR_RV], texts[PAIR_RC], f) > wMax) {
             return false;
         }
         var capHalf = chordHalf(radius, pairRowY(dc, y, f, 0) - cy,
             inkH(dc, Graphics.FONT_XTINY));
-        return col[0] + dc.getTextWidthInPixels(lc, Graphics.FONT_XTINY) / 2 <= capHalf
-            && col[0] + dc.getTextWidthInPixels(rc, Graphics.FONT_XTINY) / 2 <= capHalf;
+        return col[0] + dc.getTextWidthInPixels(texts[PAIR_LC], Graphics.FONT_XTINY) / 2
+                <= capHalf
+            && col[0] + dc.getTextWidthInPixels(texts[PAIR_RC], Graphics.FONT_XTINY) / 2
+                <= capHalf;
     }
 
     // The band's own ladder: the single giant's font, then the two TEXT rungs a value may use.
@@ -1142,8 +1178,9 @@ class RecordingView extends WatchUi.View {
     // band would be lying about being the top of the page.
     static function pairFont(dc as Dc, lv as String, lc as String, rv as String, rc as String,
             band as Number, radius as Number, y as Number, cy as Number) as Graphics.FontType {
+        var texts = [lv, lc, rv, rc];
         for (var i = 0; i < PAIR_FLOOR; i++) {
-            if (pairFits(dc, lv, lc, rv, rc, PAIR_FONTS[i], band, radius, y, cy)) {
+            if (pairFits(dc, texts, PAIR_FONTS[i], band, radius, y, cy)) {
                 return PAIR_FONTS[i];
             }
         }
