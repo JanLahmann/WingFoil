@@ -6,6 +6,12 @@ import SwiftUI
 /// metrics page is what the rider glances at, and the controls page is a deliberate swipe
 /// away so a wet sleeve cannot end a session. Metrics is selected on entry.
 ///
+/// **Horizontal paging**, which is Apple's own Workout layout and therefore the one already in
+/// the rider's fingers — controls to the left of metrics. `.verticalPage` was the other option
+/// and is tempting because the crown drives it, but it is the Smart Stack's idiom rather than
+/// a workout's, and the crown does not help here anyway: while the screen is water-locked the
+/// crown's job is to *unlock*, not to page, and once unlocked touch works normally.
+///
 /// The screen is water-locked from the moment START is pressed, so touch does nothing until
 /// the crown is turned — which is the point. Everything here is sized to be read, not tapped.
 struct RecordingView: View {
@@ -19,7 +25,7 @@ struct RecordingView: View {
             ControlsPage().tag(Page.controls)
             MetricsPage().tag(Page.metrics)
         }
-        .tabViewStyle(.verticalPage)
+        .tabViewStyle(.page)
     }
 }
 
