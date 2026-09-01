@@ -61,13 +61,19 @@ enum ReplayClipLength: String, CaseIterable, Identifiable {
     /// where the pinned 77.7 s Torbole run comes from.
     static let fullDetailRate: Double = 10
 
-    /// The rate and ease this choice resolves to for one session.
+    /// The rate, the ease and the script this choice resolves to for one session.
+    ///
+    /// The script is part of the answer because a short clip has room for fewer things to be
+    /// said than a long one (`ReplayCommentary.budget`) — and whatever it keeps is the list the
+    /// captions *and* the slow motion both come from, which is why the three are one value.
+    /// "Full detail" is the one choice that keeps everything, because it is a pace rather than
+    /// a length and has nothing to budget against.
     func pacing(span: ClosedRange<Double>, milestones: [ReplayMilestone]) -> ReplayPacing.Plan {
         guard let targetWallS else {
-            return ReplayPacing.Plan(rate: Self.fullDetailRate, ease: .cinema)
+            return ReplayPacing.Plan(rate: Self.fullDetailRate, ease: .cinema,
+                                     milestones: milestones)
         }
-        return ReplayPacing.plan(span: span, targetWallS: targetWallS,
-                                 easeAt: milestones.map(\.t))
+        return ReplayPacing.plan(span: span, targetWallS: targetWallS, milestones: milestones)
     }
 }
 
@@ -127,7 +133,10 @@ struct ReplaySetupSheet: View {
     /// what will splice into the replay versus what plays at the end.
     private var storyboard: ReplayStoryboard {
         let plan = pacing
-        return ReplayStoryboard.make(span: span, rate: plan.rate, milestones: milestones,
+        // `plan.milestones`, not `milestones`: the length estimate has to be built from the
+        // script the clip will actually have, which on a short target is fewer lines and
+        // therefore fewer slow-motion dips than this session hands out.
+        return ReplayStoryboard.make(span: span, rate: plan.rate, milestones: plan.milestones,
                                      photos: photos.map(\.entry),
                                      place: SessionDisplay.title(detail.row),
                                      startedAt: detail.row.startDate,
@@ -215,14 +224,6 @@ struct ReplaySetupSheet: View {
             sentence += " and \(Fmt.duration(storyboard.photoWallS)) of photos"
         }
         sentence += "."
-        // The one case where the button cannot keep its promise: a very long session squeezed
-        // into a very short clip would need a speed at which the dot stops reading as a moving
-        // boat, so the rate is capped and the clip comes out longer. Said, not hidden.
-        if let target = length.targetWallS, storyboard.replayWallS > target + 0.5 {
-            sentence += " This session is too long to fit \(Fmt.duration(target)) without the "
-                + "replay becoming a slideshow, so it runs at the fastest speed the map can "
-                + "still animate."
-        }
         return sentence
     }
 

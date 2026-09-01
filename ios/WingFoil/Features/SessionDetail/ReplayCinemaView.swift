@@ -33,18 +33,23 @@ import WingFoilKit
 struct ReplayCinemaView: View {
 
     let detail: SessionDetail
-    /// The replay's commentary track — already filtered by the rider's toggle upstream, so an
-    /// empty list means "no captions", and (see `storyboard`) no slow motion and no closing
-    /// highlights either.
-    let milestones: [ReplayMilestone]
     /// The session clock, from `SessionDetail.timeRange`. Non-optional: a session with no
     /// timeline never offers the button that gets here.
     let span: ClosedRange<Double>
     /// The pace, resolved from the length the rider picked in the setup sheet
-    /// (`ReplayPacing`): session seconds per wall second, plus the slow-motion ease that rate
-    /// was solved against. The two travel together because on a short clip they are one
-    /// decision — see `ReplayScrubber.CinemaRun`.
+    /// (`ReplayPacing`): session seconds per wall second, the slow-motion ease that rate was
+    /// solved against, and the script both were solved for. The three travel together because
+    /// on a short clip they are one decision — see `ReplayScrubber.CinemaRun`.
     let pacing: ReplayPacing.Plan
+
+    /// The replay's commentary track — already filtered by the rider's toggle upstream and cut
+    /// to what a clip this long has room to say, so an empty list means "no captions", and (see
+    /// `storyboard`) no slow motion and no closing highlights either.
+    ///
+    /// Read off the plan rather than passed in beside it, which is what makes "the run is at
+    /// its slowest exactly while a caption is on screen" true by construction rather than by
+    /// two callers agreeing.
+    private var milestones: [ReplayMilestone] { pacing.milestones }
     /// Whether to capture. False when ReplayKit said no or the phone cannot record, in which
     /// case this is simply a full-screen replay with no countdown and no clip at the end.
     let record: Bool
@@ -70,11 +75,10 @@ struct ReplayCinemaView: View {
     /// that changes for the life of this screen — resolving it in a computed property would
     /// rebuild two `DateFormatter`s and re-sort the photo list on every one of the twenty
     /// body passes a second the playhead causes.
-    init(detail: SessionDetail, milestones: [ReplayMilestone], span: ClosedRange<Double>,
+    init(detail: SessionDetail, span: ClosedRange<Double>,
          pacing: ReplayPacing.Plan, record: Bool, framing: ReplayFraming = .fullScreen,
          photos: [ReplayPhoto] = [], music: URL? = nil) {
         self.detail = detail
-        self.milestones = milestones
         self.span = span
         self.pacing = pacing
         self.record = record
@@ -83,7 +87,7 @@ struct ReplayCinemaView: View {
         self.music = music
         _camera = State(initialValue: .region(detail.initialRegion))
         _storyboard = State(initialValue: ReplayStoryboard.make(
-            span: span, rate: pacing.rate, milestones: milestones,
+            span: span, rate: pacing.rate, milestones: pacing.milestones,
             photos: photos.map(\.entry),
             place: SessionDisplay.title(detail.row),
             startedAt: detail.row.startDate, timeZone: detail.row.displayZone,

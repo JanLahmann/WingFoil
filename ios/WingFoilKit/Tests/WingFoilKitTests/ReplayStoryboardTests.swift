@@ -46,6 +46,29 @@ import Testing
         }
     }
 
+    /// Asked for a **length**, the storyboard builds its driver from the script that length can
+    /// carry rather than from everything the session had to say.
+    ///
+    /// The rate-taking factory is the raw one and stays raw — a caller that hands it twelve
+    /// milestones gets twelve dips, which is what "Full detail" and the scrubber's own speeds
+    /// want. It is the target-taking one that budgets, because a target is a promise and the
+    /// twelfth dip is what used to break it (`ReplayPacing`).
+    @Test func askingForALengthBuildsTheDriverFromTheScriptThatFits() throws {
+        let milestones = try script()
+        #expect(milestones.count == 12)
+
+        #expect(ReplayStoryboard.make(span: span, rate: 30, milestones: milestones,
+                                      timeZone: fixtureZone).driver.easeAt.count == 12)
+        for (target, lines) in [(10.0, 4), (25.0, 8), (60.0, 12)] {
+            let board = ReplayStoryboard.make(span: span, targetWallS: target,
+                                              milestones: milestones, timeZone: fixtureZone)
+            #expect(board.driver.easeAt.count == lines,
+                    "\(Int(target)) s has room for \(lines) lines")
+            // The dips are on instants the session actually named, never on invented ones.
+            #expect(Set(board.driver.easeAt).isSubset(of: Set(milestones.map(\.t))))
+        }
+    }
+
     /// A session with no duration has no clip at all — not a 6.5 s clip of two cards over a
     /// replay that never moves. The cinema view reads this to know it has nothing to record.
     @Test func aSessionWithNoDurationHasNoClip() {

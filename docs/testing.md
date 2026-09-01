@@ -308,15 +308,17 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      otherwise tell which afternoon he had been sent. The FIT keeps the analyzer invitation
      (it is the one attachment the receiver can actually do something with); the clip and the
      card do not.
-   - `ReplayPacingTests` — the setup sheet asks for a **length**, not a rate. Pinned on the
-     30 Aug Torbole fixture: 10 / 25 / 60 s of replay come out at 10.00 / 25.00 / 60.00 s,
-     solved to 99.23× / 39.66× / 13.78×, with the slow-motion dips budgeted down to fit
-     (0.161 / 0.403 / 0.600 s half-widths) — the ease costs about a second per milestone, so
-     twelve of them would otherwise make a ten-second clip impossible. "Full detail" is still
-     the old constant 10× and still lands on the 77.70 s `ReplayDriverTests` pins. Both
-     saturations are covered: a four-hour session asked for ten seconds hits `maxRate` and the
-     sheet quotes the longer clip out loud, and a session shorter than the target plays in
-     real time.
+   - `ReplayPacingTests` — the setup sheet asks for a **length**, not a rate, and the length
+     it asks for is the length that comes out. Pinned on the 30 Aug Torbole fixture: 10 / 25 /
+     60 s of replay come out at 10.00 / 25.00 / 60.00 s, solved to 99.02× / 38.82× / 13.78×,
+     off a script cut to 4 / 8 / 12 lines (`ReplayCommentary.budget`) — the ease costs about a
+     second per milestone, so twelve of them would otherwise make a ten-second clip
+     impossible. Pinned again on a **synthetic two-hour afternoon with thirty milestones**,
+     which is the session that produced the bug report: 10 s of replay at 1107.69×, four lines
+     kept, 16.5 s of video. "Full detail" is still the old constant 10× and still lands on the
+     77.70 s `ReplayDriverTests` pins. There is only one saturation left — a session shorter
+     than the target plays in real time; the old 250× ceiling is gone, because it was what
+     turned a ten-second choice into a forty-second clip.
    - `ReplayStageTests` — where the clip is on the glass and where that lands in the recorded
      file (`ReplayStage`, `ReplayClipCropper`). The box arithmetic on screen sizes that exist,
      the points→pixels mapping done as a **fraction of the frame** rather than `× scale` (the
@@ -402,10 +404,15 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    The **cinema replay** (`ReplayCinemaView`, the full-screen replay a clip is recorded from)
    opens with `UI_REPLAY_LENGTH=10|25|60|full`, which stands in for the record button plus the
    setup sheet's own length picker: the setup sheet asks for a **target length** and
-   `ReplayPacing` solves the rate (and, on a short target with a talkative session, a briefer
-   ease) from it, so a hook that named a raw rate would no longer stage the control that
-   exists. `UI_REPLAY_CINEMA=<rate>` still takes a bare multiplier for checking the pacing
-   itself — that is how the 250× ceiling in `ReplayPacing.maxRate` was looked at.
+   `ReplayPacing` solves the rate, the ease and *which milestones the clip has room for* from
+   it, so a hook that named a raw rate would no longer stage the control that exists. At
+   `UI_REPLAY_LENGTH=10` the Torbole example runs at 99× and says four things — session start,
+   "Flying! · Longest flight — 6:32", "Top speed — 13.47 kn over 2 s", session end — each with
+   a dwell long enough to read. `UI_REPLAY_CINEMA=<rate>` still takes a bare multiplier for
+   checking the pacing itself, and deliberately does **not** budget the script: at
+   `UI_REPLAY_CINEMA=700` on the same 645 s example the map still draws correctly (the track is
+   static and the dot is a lookup, so nothing about the drawing is a function of the rate) but
+   the captions pile up two deep, which is the artefact the budget exists to remove.
    `UI_REPLAY_FRAMING=portrait|square|landscape|fullScreen` stages the clip's **shape**: the
    replay draws inside a 9:16 / 1:1 / 16:9 box with the rest of the glass painted black, which
    is what the rider composes against and what the finished video is cropped to

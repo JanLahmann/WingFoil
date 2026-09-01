@@ -16,49 +16,52 @@ import Foundation
 /// more than a ten-second clip has to spend. Dividing would label a 30-second clip "10 s",
 /// which is exactly the lie the inversion was supposed to remove.
 ///
-/// So there are two moves, in this order:
+/// So there are three moves, in this order:
 ///
-/// 1. **Budget the ease.** The dips may take at most `easeShare` of the clip. Over budget,
+/// 1. **Budget the milestones.** A clip of a given length has room for a given number of
+///    things to be said (`ReplayCommentary.budget`), and a long session squeezed into ten
+///    seconds has far more than that. The overflow is *selected away* rather than played
+///    faster — see step 2 for why the alternative used to be a lie.
+/// 2. **Budget the ease.** The dips may take at most `easeShare` of the clip. Over budget,
 ///    the half-width shrinks in proportion — the slow motion is still there, still on the
 ///    same milestones, just briefer. A ten-second clip cannot afford twelve one-second
 ///    ritardandos, and the honest response is shorter dips rather than a longer clip.
-/// 2. **Solve for the rate**, by bisection on the driver's own `runWallS`. It is monotone
+/// 3. **Solve for the rate**, by bisection on the driver's own `runWallS`. It is monotone
 ///    decreasing in the rate, so the search cannot go wrong, and using the driver's own
 ///    integral rather than a model of it means the quoted length and the clip that comes out
 ///    are the same number by construction.
+///
+/// **Why there is no ceiling on the rate.** There used to be one — 250×, on the theory that
+/// past it the 20 Hz playhead moves so far per frame that the dot stops reading as a boat.
+/// What it actually produced was the bug it was meant to prevent: a two-hour afternoon asked
+/// for ten seconds saturated the cap, ran for twenty-nine, and arrived as a forty-second video
+/// with the sheet relabelling the estimate rather than honouring the choice. The chosen length
+/// is the promise, so the rate is whatever the span needs. The thing the cap was really
+/// worried about — a clip too dense to read — is step 1's job, and step 1 can do it without
+/// breaking the number on the button.
 public enum ReplayPacing {
 
-    /// What the sheet hands the cinema view: a rate, and the ease that rate was solved with.
+    /// What the sheet hands the cinema view: a rate, the ease that rate was solved with, and
+    /// the milestones both were solved *for*.
+    ///
+    /// The three travel together because they are one decision. The pruned list is the script
+    /// the clip actually has — the captions the viewer reads and the instants the run slows
+    /// through are the same array, which is the property `ReplayDriverTests` pins and the one
+    /// a clip whose slow motion happened somewhere other than its captions would have lost.
     public struct Plan: Sendable, Equatable {
         public var rate: Double
         public var ease: ReplayDriver.Ease
+        /// The script this plan was solved against, already cut to the target's budget. **The**
+        /// list: captions and dips both, never one of each.
+        public var milestones: [ReplayMilestone]
 
-        public init(rate: Double, ease: ReplayDriver.Ease) {
+        public init(rate: Double, ease: ReplayDriver.Ease,
+                    milestones: [ReplayMilestone] = []) {
             self.rate = rate
             self.ease = ease
+            self.milestones = milestones
         }
     }
-
-    /// The fastest the replay is allowed to run, whatever length was asked for.
-    ///
-    /// The cinema view ticks the playhead 20 times a second, so at rate R the dot moves R/20
-    /// session-seconds per frame — and *that*, not the rate, is what decides whether the
-    /// replay reads as a boat travelling or as a slideshow of positions.
-    ///
-    /// **What was actually looked at** (docs/testing.md, `UI_REPLAY_LENGTH`): the 30 Aug
-    /// Torbole fixture at a 10 s target, which solves to 99×, in the Simulator. Five session
-    /// seconds a frame, roughly fifty metres at planing speed: the dot is plainly moving and
-    /// the track draws smoothly behind it. 250× is two and a half times that — twelve and a
-    /// half seconds and a couple of hundred metres a frame — which is the point at which a
-    /// jibe becomes a single displaced dot rather than a turn. It is a ceiling with headroom
-    /// over what was observed to work, not a measured failure point; if a rider ever reports a
-    /// four-hour clip stuttering, this is the number to lower.
-    ///
-    /// It only ever binds on a very long session with a very short target — a four-hour
-    /// afternoon squeezed into ten seconds would want 1400×. The clip is then longer than the
-    /// label, which the sheet says out loud rather than hiding, because the alternative is a
-    /// clip in which nothing recognisable happens.
-    public static let maxRate: Double = 250
 
     /// Real time. Slower than this is not a replay, and a target longer than the session
     /// itself simply gets the session.
@@ -82,19 +85,27 @@ public enum ReplayPacing {
     /// Splitting it that way is what keeps the sheet's sentence true when the rider adds a
     /// photo, which changes the clip's length and must not change the replay's.
     public static func plan(span: ClosedRange<Double>, targetWallS: Double,
-                            easeAt: [Double] = [],
+                            milestones: [ReplayMilestone] = [],
                             ease: ReplayDriver.Ease = .cinema) -> Plan {
+        // Step 1, and it comes first because the other two are functions of what survives it:
+        // dropping eight of twelve lines takes eight dips out of the ease budget, which lets
+        // the four that are left keep a readable width.
+        let script = ReplayCommentary.pruned(milestones, forTargetWallS: targetWallS)
+        let easeAt = script.map(\.t)
+
         let spanS = max(span.upperBound - span.lowerBound, 0)
         // A recording with no duration has no replay to pace, and a nonsensical target is not
         // worth a search. Either way the driver's own clamping does the rest.
-        guard spanS > 0, targetWallS > 0 else { return Plan(rate: minRate, ease: ease) }
+        guard spanS > 0, targetWallS > 0 else {
+            return Plan(rate: minRate, ease: ease, milestones: script)
+        }
 
-        // The two steps are interleaved rather than sequential, because each moves the other:
+        // Steps 2 and 3 are interleaved rather than sequential, because each moves the other:
         // shorter dips let the rate come down, and a different rate changes what the dips
         // cost. Four passes is far more than the fixed point needs — it converges from above
         // and monotonically (see `budget`) — and it costs four integrals of a 4096-sample sum.
         var budgeted = ease
-        var rate = min(max(spanS / targetWallS, minRate), maxRate)
+        var rate = max(spanS / targetWallS, minRate)
         for _ in 0..<4 {
             guard let tighter = budget(budgeted, span: span, targetWallS: targetWallS,
                                        easeAt: easeAt, spanS: spanS, rate: rate)
@@ -103,11 +114,15 @@ public enum ReplayPacing {
             rate = solve(span: span, targetWallS: targetWallS, easeAt: easeAt, ease: budgeted)
         }
         rate = solve(span: span, targetWallS: targetWallS, easeAt: easeAt, ease: budgeted)
-        return Plan(rate: rate, ease: budgeted)
+        return Plan(rate: rate, ease: budgeted, milestones: script)
     }
 
-    /// Step 1: shrink the dips until they fit their share of the clip. Returns nil once they
+    /// Step 2: shrink the dips until they fit their share of the clip. Returns nil once they
     /// already do, which is what ends the loop above.
+    ///
+    /// With the milestone budget in front of it this rarely has much left to do — four dips in
+    /// ten seconds are close to their allowance already — which is the point: the width it
+    /// arrives at is a width that can still be watched.
     ///
     /// The overhead is measured rather than modelled — one `runWallS`, minus what the same run
     /// would take with no ease at all — because overlapping dips take the deepest rather than
@@ -130,21 +145,29 @@ public enum ReplayPacing {
                                  halfWidthWallS: ease.halfWidthWallS * allowance / overhead)
     }
 
-    /// Step 2: bisect the rate. `runWallS` falls monotonically as the rate rises, so forty
-    /// halvings of [1, 250] settle it to well under a millisecond of clip.
+    /// Step 3: bisect the rate. `runWallS` falls monotonically as the rate rises, so forty
+    /// halvings settle it to well under a millisecond of clip.
     ///
-    /// Both saturations are real answers, not failures. A target longer than the session at
-    /// real time gets `minRate` — you cannot stretch four minutes into ten by playing it back
-    /// faster. A target that would need more than `maxRate` gets the cap, and a clip longer
-    /// than it asked for, which the sheet quotes honestly.
+    /// **The bracket is derived rather than declared.** The pace never falls below
+    /// `ease.floor`, so the run can never take longer than `spanS / (rate × floor)` — which
+    /// makes `spanS / (target × floor)` a rate that is provably fast enough, whatever the
+    /// session and however much of it is slow motion. That is the upper end of the search, and
+    /// it is why there is no ceiling to saturate against: the bracket adapts to the afternoon
+    /// instead of the afternoon being trimmed to fit the bracket.
+    ///
+    /// The one remaining saturation is a real answer rather than a failure: a target longer
+    /// than the session at real time gets `minRate`, because you cannot stretch four minutes
+    /// into ten by playing them back faster.
     private static func solve(span: ClosedRange<Double>, targetWallS: Double,
                               easeAt: [Double], ease: ReplayDriver.Ease) -> Double {
         func runWallS(_ rate: Double) -> Double {
             ReplayDriver(span: span, rate: rate, easeAt: easeAt, ease: ease).runWallS
         }
         guard runWallS(minRate) > targetWallS else { return minRate }
-        guard runWallS(maxRate) < targetWallS else { return maxRate }
-        var slow = minRate, fast = maxRate
+        let spanS = max(span.upperBound - span.lowerBound, 0)
+        let enough = max(spanS / (targetWallS * max(ease.floor, 0.01)), minRate)
+        guard runWallS(enough) < targetWallS else { return enough }
+        var slow = minRate, fast = enough
         for _ in 0..<40 {
             let middle = (slow + fast) / 2
             if runWallS(middle) > targetWallS { slow = middle } else { fast = middle }

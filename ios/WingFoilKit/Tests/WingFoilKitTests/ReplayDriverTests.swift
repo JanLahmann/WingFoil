@@ -195,6 +195,37 @@ import Testing
         #expect(driver.rate(at: 200) == 30)
     }
 
+    /// The same property with a **budget** in front of it, which is where it could most easily
+    /// have been lost: a ten-second clip says four of this afternoon's twelve lines, and the
+    /// four dips have to be on those four and nowhere else.
+    ///
+    /// A clip that slowed down for a caption it had dropped would be a held moment with
+    /// nothing in it; one that captioned a moment it did not slow for would put the words up
+    /// and take the jibe away in the same frame. Both are what `ReplayPacing.Plan` carrying the
+    /// pruned list — rather than a caller carrying a second copy — is for.
+    @Test func theBudgetedScriptIsStillTheOneTheRunSlowsFor() throws {
+        let full = ReplayCommentary.make(try torbole(), span: torboleSpan,
+                                         timeZone: fixtureZone)
+        let plan = ReplayPacing.plan(span: torboleSpan, targetWallS: 10, milestones: full)
+        #expect(plan.milestones.count == 4)
+
+        let driver = ReplayDriver(span: torboleSpan, rate: plan.rate,
+                                  easeAt: plan.milestones.map(\.t), ease: plan.ease)
+        let kept = Set(plan.milestones.map(\.t))
+        for milestone in plan.milestones {
+            #expect(driver.pace(at: milestone.t) == 0.25,
+                    "\(milestone.text) is captioned, so it must be slowed for")
+        }
+        // And the eight that were cut are neither said nor slowed for. 255 s is the nearest
+        // dropped milestone to a kept one (292 s), and at 99× the dips are ±58 s of session,
+        // so this is a real check rather than an arithmetic accident.
+        for milestone in full where !kept.contains(milestone.t) {
+            #expect(driver.pace(at: milestone.t) > 0.25,
+                    "\(milestone.text) was cut, so nothing may dwell on it")
+        }
+        #expect(!kept.contains(255))
+    }
+
     // MARK: - Helpers
 
     /// Plays a driver out at the view's own 20 Hz and reports (wall seconds, final position).
