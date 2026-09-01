@@ -13,8 +13,9 @@ import Foundation
 /// **The name here is the brand, not the sport.** `appName` is "CleanJibe"; the word
 /// *wingfoil* survives all over the copy as the thing a rider does, lowercase, and in the
 /// Xcode target, the module and the bundle ids, which are identifiers and not read by
-/// anyone. The Garmin watch app is still called WingFoil, and screens that mean *that* app
-/// say so on purpose.
+/// anyone. The Garmin watch app was renamed too — as of 0.9.3 the store listing, the
+/// manifests and `strings.xml` all say **CleanJibe** — so a screen that means *that* app
+/// says "the CleanJibe watch app", never "the WingFoil watch app".
 ///
 /// Kept in the kit rather than in `Brand` (the app's colour palette) because it is content,
 /// not styling, and because `ShareCardStats` — which is testable and has no SwiftUI — is one

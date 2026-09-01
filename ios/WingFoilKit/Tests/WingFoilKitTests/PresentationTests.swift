@@ -67,6 +67,127 @@ import Testing
         #expect(HelpCatalog.topic(id: "not-a-topic") == nil)
     }
 
+    // MARK: - Help pictures
+
+    /// The app's asset catalogue, found from this file rather than from a bundle.
+    ///
+    /// `HelpImage` carries only a *name*, and the picture it names lives in the app target's
+    /// catalogue, which the kit's test bundle cannot load. A misspelt name would therefore
+    /// compile, ship, and draw nothing at all — a blank gap in a help topic that nobody
+    /// notices because nobody re-reads help. So the check is made against the checked-in
+    /// image sets on disk, which is the thing the name actually has to agree with.
+    private static let helpAssetsDirectory: URL = {
+        URL(filePath: #filePath)                       // …/Tests/WingFoilKitTests/this file
+            .deletingLastPathComponent()               // …/Tests/WingFoilKitTests
+            .deletingLastPathComponent()               // …/Tests
+            .deletingLastPathComponent()               // …/WingFoilKit
+            .deletingLastPathComponent()               // …/ios
+            .appending(path: "WingFoil/Resources/Assets.xcassets/Help")
+    }()
+
+    @Test func everyHelpImageNamesAnImageSetThatExists() {
+        let root = Self.helpAssetsDirectory
+        #expect(FileManager.default.fileExists(atPath: root.path()),
+                "the Help asset folder moved — \(root.path())")
+
+        let withImages = HelpCatalog.topics.compactMap { topic in
+            topic.image.map { (topic.id, $0) }
+        }
+        #expect(!withImages.isEmpty, "no topic carries a picture any more")
+
+        for (id, image) in withImages {
+            let set = root.appending(path: "\(image.asset).imageset")
+            #expect(FileManager.default.fileExists(atPath: set.path()),
+                    "\(id.rawValue) names \"\(image.asset)\", which is not an image set")
+            #expect(FileManager.default
+                        .fileExists(atPath: set.appending(path: "Contents.json").path()),
+                    "\(image.asset).imageset has no Contents.json")
+            // An empty image set draws nothing just as silently as a misspelt name does.
+            let files = (try? FileManager.default.contentsOfDirectory(atPath: set.path())) ?? []
+            #expect(files.contains { $0.lowercased().hasSuffix(".png") },
+                    "\(image.asset).imageset holds no PNG")
+            #expect(!image.caption.isEmpty, "\(id.rawValue)'s picture has no caption")
+            #expect(image.caption.count > 20, "\(id.rawValue)'s caption is a stub")
+        }
+    }
+
+    /// Pictures belong on the topics that describe a *screen*. A definition — what a flight
+    /// is, what "uncertified" means — is not made clearer by a photograph of a number, and
+    /// a decorative screenshot in a reference work costs every reader who came for the
+    /// sentence. This is the rule written down, so adding a picture to a definition has to
+    /// be a decision rather than a habit.
+    @Test func onlyScreenTopicsCarryPictures() {
+        let illustrated = Set(HelpCatalog.topics.filter { $0.image != nil }.map(\.id))
+        #expect(illustrated == [.exampleSession, .mapLegend, .turnOutcomes,
+                                .replayClip, .shareCard])
+    }
+
+    // MARK: - Sharing
+
+    /// The four doors a rider would otherwise never find, and the promise each of them
+    /// makes about what leaves the phone.
+    @Test func theSharingSectionIsWrittenAndSaysWhereThingsGo() {
+        #expect(HelpCatalog.topics(in: .sharing).map(\.id)
+                == [.shareCard, .replayClip, .shareFit, .riderAttribution])
+
+        // The card and the clip are both rendered locally, and both say so — that is the
+        // half of each topic a rider is actually deciding on.
+        for id in [HelpTopicID.shareCard, .replayClip] {
+            let prose = HelpCatalog.topic(id).body.joined(separator: " ").lowercased()
+            #expect(prose.contains("phone"), "\(id.rawValue) never says where it is made")
+        }
+        // The clip topic covers the two choices the setup sheet asks for and nothing else
+        // explains: how long, what shape, and the rider's own music.
+        let clip = HelpCatalog.topic(.replayClip).body.joined(separator: " ").lowercased()
+        for word in ["9:16", "music", "second"] {
+            #expect(clip.contains(word), "the clip topic never mentions \(word)")
+        }
+        // The shared FIT is scrubbed, and the topic names the analyzer that can open it.
+        let fit = HelpCatalog.topic(.shareFit)
+        #expect(fit.body.joined(separator: " ").contains(Branding.site))
+        #expect(fit.links.contains { $0.url.absoluteString == Branding.siteURL })
+        // A friend's session is shown but never counted — the whole point of the prompt.
+        let rider = HelpCatalog.topic(.riderAttribution).body.joined(separator: " ")
+        #expect(rider.lowercased().contains("records"))
+        #expect(rider.lowercased().contains("trends"))
+    }
+
+    /// The de-jargoned source topic. The engine's letters are allowed to survive in the
+    /// code; they are not allowed to survive in the copy, because "class b" names a bucket
+    /// in somebody else's taxonomy and answers nothing a rider asked.
+    @Test func theSourceTopicAnswersDoINeedTheWatchApp() {
+        let topic = HelpCatalog.topic(.sourceClass)
+        let all = ([topic.title, topic.summary] + topic.body
+                   + topic.items.flatMap { [$0.term, $0.detail] }).joined(separator: " ")
+        for jargon in ["class a", "class b", "class c", "Class a", "Class b", "Class c"] {
+            #expect(!all.contains(jargon), "the source topic still says \"\(jargon)\"")
+        }
+        #expect(topic.summary.contains("CleanJibe watch app"))
+        #expect(topic.items.count == 3)
+    }
+
+    /// The app says *you* and *CleanJibe*, never *we*. A help catalogue is the one place
+    /// the author slips into the first person, because he is describing his own work —
+    /// and "our own recordings" tells a rider nothing about which of his files qualifies.
+    @Test func theHelpCatalogueNeverSpeaksInTheFirstPerson() {
+        // Whole words: "your own" and "your watch" both contain the letters of the slips,
+        // and both are exactly the voice the app is supposed to be in.
+        let firstPerson = try! Regex(#"\b(our|we|we've|us)\b"#).ignoresCase()
+        for topic in HelpCatalog.topics {
+            let prose = ([topic.title, topic.summary] + topic.body
+                         + topic.items.flatMap { [$0.term, $0.detail] }
+                         + [topic.image?.caption].compactMap { $0 })
+                .joined(separator: " ")
+            #expect(prose.firstMatch(of: firstPerson) == nil,
+                    "\(topic.id.rawValue) speaks in the first person")
+            // And the watch app has one name.
+            let lower = prose.lowercased()
+            #expect(!lower.contains("wingfoil watch"), "\(topic.id.rawValue) uses the old name")
+            #expect(!lower.contains("wingfoil connect iq"),
+                    "\(topic.id.rawValue) uses the old name")
+        }
+    }
+
     // MARK: - Share card
 
     private func sampleRow(sourceClass: String = "b") -> SessionRow {

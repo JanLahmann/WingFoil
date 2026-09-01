@@ -40,7 +40,10 @@ struct GearView: View {
                     Section {
                         let items = aggregates(for: kind)
                         if items.isEmpty {
-                            Text("No \(kind.label.lowercased()) yet")
+                            // Plural: this is an empty *collection*, and "No wing yet"
+                            // under a "Wing" header reads as a missing thing rather than
+                            // an empty shelf. All three kinds pluralise with an s.
+                            Text("No \(kind.label.lowercased())s yet")
                                 .foregroundStyle(.secondary)
                                 .font(.footnote)
                         } else {

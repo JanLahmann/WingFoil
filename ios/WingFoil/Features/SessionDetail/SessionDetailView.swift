@@ -156,7 +156,18 @@ struct SessionDetailView: View {
                 if environment["UI_OPEN_TURNS"] == "1" { tab = .turns }
                 if let anchor = environment["UI_SCROLL_TO"] {
                     if let home = SessionSection.section(owning: anchor) { tab = home }
+                    // Two beats, not one. Selecting the tab above only *schedules* that
+                    // tab's subtree; on the same turn of the runloop the anchor does not
+                    // exist yet, so `scrollTo` silently reaches nothing and the shot comes
+                    // out parked at the top of the page — which is how `turnList` and
+                    // `tally` were quietly unphotographable. Scroll once now (for an
+                    // anchor on the tab that was already selected) and once after the
+                    // switch has laid out.
                     proxy.scrollTo(anchor, anchor: .top)
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(400))
+                        proxy.scrollTo(anchor, anchor: .top)
+                    }
                 }
             }
             #endif
