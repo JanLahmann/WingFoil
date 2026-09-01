@@ -1000,7 +1000,18 @@ final class SessionStore {
         var exported = Set(UserDefaults.standard.stringArray(forKey: "healthExported") ?? [])
         // A friend's session is not a workout the reader did. Health is the one place
         // where getting that wrong leaves a mark outside this app.
-        let pending = sessions.filter { !exported.contains($0.id) && $0.rider == nil }
+        //
+        // Nor is an Apple Watch recording: the watch already saved that workout to Health
+        // itself, live, with the heart-rate samples and the ring credit that an
+        // after-the-fact `HKWorkoutBuilder` stub cannot give. Writing it again would put two
+        // overlapping `.surfingSports` workouts on the same afternoon, and nothing would
+        // collapse them — `HKMetadataKeyExternalUUID` carries the watch's session id on one
+        // and the library's row id on the other, so they are not even recognisably the same
+        // session. The watch's copy is strictly the better one, so the phone stands down.
+        let pending = sessions.filter {
+            !exported.contains($0.id) && $0.rider == nil
+                && !ImportSource.appleWatch.isNamed(in: $0.importSource)
+        }
         guard !pending.isEmpty else { return }
         var written = 0
         for row in pending {
@@ -1493,6 +1504,36 @@ final class SessionStore {
             return stored ?? 225
         }
         set { UserDefaults.standard.set(newValue, forKey: "windToSend") }
+    }
+
+    // MARK: - Apple Watch recordings
+
+    /// Starts listening for `.cjw` containers from the CleanJibe watch app and imports
+    /// anything already waiting.
+    ///
+    /// Called once at launch. The receiver may have taken delivery of a file hours ago while
+    /// this app was not running — WatchConnectivity launches it in the background to do that
+    /// — so the sweep runs unconditionally rather than only on an arrival.
+    func watchForAppleWatchSessions() async {
+        WatchSessionReceiver.shared.onArrival = { [weak self] in
+            Task { await self?.importWatchInbox() }
+        }
+        WatchSessionReceiver.shared.activate()
+        await importWatchInbox()
+    }
+
+    /// Imports every container sitting in the watch inbox, then deletes it.
+    ///
+    /// Deleting only after `importFiles` has returned is deliberate: the file is the only
+    /// copy on this device, and the library's own dedupe (±60 s on start and duration) makes
+    /// importing the same container twice cost nothing. Losing it costs an afternoon.
+    private func importWatchInbox() async {
+        let pending = WatchSessionReceiver.pending()
+        guard !pending.isEmpty else { return }
+        // `.appleWatch`, never `.watch` — that one is the Garmin BLE card, and a row tagged
+        // with it would claim a provenance this session does not have.
+        await importFiles(urls: pending, source: .appleWatch)
+        for url in pending { try? FileManager.default.removeItem(at: url) }
     }
 
     /// Runs for the life of the app: one `for await` over every card the watch sends.
