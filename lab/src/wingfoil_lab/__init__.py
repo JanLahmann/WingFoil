@@ -1,7 +1,8 @@
 """WingFoil lab — parse real session FITs, tune detectors, freeze goldens.
 
 Module map (mirrors the analysis pipeline in docs/plan.md §3.3):
-    parse    FIT/GPX -> RawTrack + SourceCapabilities
+    parse    FIT -> RawTrack + SourceCapabilities (`parse_track` is the door)
+    gpx      GPX 1.1 -> the same RawTrack, class (c)              [engine 0.9.0]
     filters  sample hygiene (GP3S gates, projection, hybrid speed)   [phase 1]
     flight   foil/flight segmentation (hysteresis)                    [phase 1]
     turns    turn detection + scoring + classification                [phase 2]
@@ -15,4 +16,4 @@ Module map (mirrors the analysis pipeline in docs/plan.md §3.3):
 Canonical parameters live in docs/algorithms.md — keep code defaults in sync.
 """
 
-ENGINE_VERSION = "0.8.2"
+ENGINE_VERSION = "0.9.0"

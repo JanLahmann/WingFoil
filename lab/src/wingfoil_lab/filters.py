@@ -92,10 +92,19 @@ def clean(track: RawTrack, config: FilterConfig | None = None) -> CleanTrack:
     med = float(np.median(dts)) if dts.size else 0.0
     thr = max(cfg.gap_min_s, cfg.gap_factor * med) if med > 0 else cfg.gap_min_s
 
+    # A source may *know* about a break the clock cannot show: a GPX `<trkseg>` boundary is
+    # the recorder saying it stopped, and two segments can abut in time and still not be one
+    # motion (gpx.py). The parser marks those rows; the spike rule resets on them and the
+    # gap rule ORs them in. A FIT carries no such column and is unaffected.
+    hint = (df["gap_before"].fillna(False).to_numpy(bool)
+            if "gap_before" in df.columns else None)
+
     # Doppler acceleration spike rejection, dt-scaled: |dv/dt| > max_accel_1hz -> drop row.
-    keep = _spike_keep(t, v, cfg.max_accel_1hz, thr)
+    keep = _spike_keep(t, v, cfg.max_accel_1hz, thr, hint)
     dropped_spike = int((~keep).sum())
     df = df[keep]
+    if hint is not None:
+        hint = hint[keep]
 
     out = pd.DataFrame({"t": df["t"].to_numpy(float),
                         "doppler_mps": df["speed_mps"].to_numpy(float)})
@@ -114,7 +123,7 @@ def clean(track: RawTrack, config: FilterConfig | None = None) -> CleanTrack:
     else:
         out["lat"] = out["lon"] = out["x"] = out["y"] = np.nan
 
-    out, timer = _assemble(out, thr)
+    out, timer = _assemble(out, thr, hint)
     return CleanTrack(track.path, out[_COLUMNS], track.capabilities, cfg,
                       median_dt_s=med, gap_threshold_s=thr, timer_time_s=timer,
                       dropped_gate=dropped_gate, dropped_nan=dropped_nan,
@@ -186,8 +195,14 @@ def _empty_frame() -> pd.DataFrame:
     return pd.DataFrame({c: pd.Series(dtype=float) for c in _COLUMNS}).astype({"segment": int})
 
 
-def _spike_keep(t: np.ndarray, v: np.ndarray, max_accel: float, gap_thr: float) -> np.ndarray:
-    """Forward pass vs last good sample; resets across gaps (self-recovering on spike runs)."""
+def _spike_keep(t: np.ndarray, v: np.ndarray, max_accel: float, gap_thr: float,
+                hint: np.ndarray | None = None) -> np.ndarray:
+    """Forward pass vs last good sample; resets across gaps (self-recovering on spike runs).
+
+    `hint` resets it too: across a break the source itself declared there is no "last good
+    sample" to accelerate away from, and judging the first sample of a new segment against
+    the last of the old one would throw away the very rows that mark the seam.
+    """
     n = len(t)
     keep = np.ones(n, dtype=bool)
     if n == 0:
@@ -195,7 +210,7 @@ def _spike_keep(t: np.ndarray, v: np.ndarray, max_accel: float, gap_thr: float) 
     tg, vg = t[0], v[0]
     for i in range(1, n):
         d = t[i] - tg
-        if d > gap_thr:                       # new segment: accept unconditionally
+        if d > gap_thr or (hint is not None and hint[i]):   # new segment: accept unconditionally
             tg, vg = t[i], v[i]
             continue
         if d <= 0 or abs(v[i] - vg) / d > max_accel:
@@ -205,14 +220,22 @@ def _spike_keep(t: np.ndarray, v: np.ndarray, max_accel: float, gap_thr: float) 
     return keep
 
 
-def _assemble(df: pd.DataFrame, gap_thr: float) -> tuple[pd.DataFrame, float]:
-    """Add dt / gap_before / segment / pos_mps; return (df, timer_time_s)."""
+def _assemble(df: pd.DataFrame, gap_thr: float,
+              hint: np.ndarray | None = None) -> tuple[pd.DataFrame, float]:
+    """Add dt / gap_before / segment / pos_mps; return (df, timer_time_s).
+
+    `hint` is a per-row "the source says a break starts here" flag, ORed into the dt rule
+    (never subtracted from it): a declared break is evidence the clock does not carry, and
+    a long dt is a break whatever the source declared.
+    """
     t = df["t"].to_numpy(float)
     n = len(t)
     dt = np.concatenate([[np.nan], np.diff(t)]) if n else np.array([])
     gap = np.zeros(n, dtype=bool)
     if n > 1:
         gap[1:] = dt[1:] > gap_thr
+        if hint is not None and len(hint) == n:
+            gap[1:] |= hint[1:]
     df["dt"] = dt
     df["gap_before"] = gap
     df["segment"] = np.cumsum(gap).astype(int)

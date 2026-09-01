@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 """Regenerate golden files for the whole fixture corpus.
 
-Runs parse -> clean -> flights -> records over every FIT under fixtures/sessions/**
-and fixtures/synthetic/, writes fixtures/goldens/<stem>.expected.json, and prints a
-summary table.
+Runs parse -> clean -> flights -> records over every FIT **and GPX** under
+fixtures/sessions/** and fixtures/synthetic/, writes fixtures/goldens/<stem>.expected.json,
+and prints a summary table. Since engine 0.9.0 the corpus holds both formats; `analyze`
+dispatches on the file itself (`parse.parse_track`), so nothing here needs to know which
+is which beyond the glob — and the `cls` column in the table is where the difference shows.
 
 Usage: cd lab && uv run python tools/make_goldens.py [--fixtures DIR] [--out DIR] [--dry-run]
 """
@@ -17,6 +19,10 @@ from pathlib import Path
 from wingfoil_lab.goldens import analyze, build_golden, golden_path, write_golden
 
 REPO = Path(__file__).resolve().parents[2]
+
+#: What counts as a session recording. Extensions only — `analyze` confirms by
+#: content, so a mislabelled file is still read for what it is.
+TRACK_SUFFIXES = {".fit", ".gpx"}
 
 HEADER = (f"{'file':<52} {'cls':>3} {'hz':>4} {'foil%':>6} {'fl':>4} {'long_s':>7} "
           f"{'2s':>6} {'10s':>6} {'5x10s':>6} {'500m':>6} {'alpha':>6} {'km':>7} "
@@ -42,8 +48,10 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     out_dir = args.out or args.fixtures / "goldens"
 
-    fits = sorted((args.fixtures / "sessions").rglob("*.fit"))
-    fits += sorted((args.fixtures / "synthetic").glob("*.fit"))
+    fits = sorted(p for p in (args.fixtures / "sessions").rglob("*")
+                  if p.suffix.lower() in TRACK_SUFFIXES)
+    fits += sorted(p for p in (args.fixtures / "synthetic").glob("*")
+                   if p.suffix.lower() in TRACK_SUFFIXES)
     if not fits:
         print(f"no fixtures under {args.fixtures}", file=sys.stderr)
         return 1
