@@ -603,7 +603,9 @@ function gridPairBandFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var cy = screenPx() / 2;
     var radius = RecordingView.fitRadius(dc, false, true);
     var limit = radius.toFloat();
-    var hG = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
+    // the PAIRED band, which on a glass whose FONT_NUMBER_MILD line is too short for a caption
+    // plus a FONT_MEDIUM's ink (fr255, fr955) is one pixel taller than a single giant's
+    var hG = RecordingView.giantBand(dc, true);
     var hT = dc.getFontHeight(Graphics.FONT_XTINY);
     var hL = dc.getFontHeight(Graphics.FONT_LARGE);
     var bias = RecordingView.gridBias(dc);
@@ -627,6 +629,14 @@ function gridPairBandFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var worst = PageModel.worstValue(PageModel.M_FOIL_PCT);
     Test.assertEqual(worst, PageModel.worstValue(PageModel.M_FOIL_DIST_PCT));
     var f = RecordingView.pairFont(dc, worst, lc, worst, rc, hG, radius, y, cy);
+    // The band takes its extra pixel only where it has to: on every other glass it is exactly
+    // the FONT_NUMBER_MILD line a single giant reserves, and the 2x2 below has not moved.
+    var mild = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
+    Test.assertMessage(hG >= mild && hG - mild <= RecordingView.inkH(dc, Graphics.FONT_XTINY),
+        "the paired band grew " + (hG - mild).toString() + "px past the giant's own line");
+    logger.debug("pair band: " + hG.toString() + "px band (MILD line is " + mild.toString()
+        + "px), floor needs "
+        + RecordingView.pairBandHeight(dc, Graphics.FONT_MEDIUM).toString() + "px");
 
     // a value in a label font is not a value: FONT_MEDIUM is the floor for this band
     Test.assertMessage(dc.getFontHeight(f) >= dc.getFontHeight(Graphics.FONT_MEDIUM),
@@ -639,7 +649,7 @@ function gridPairBandFitsRoundDisplay(logger as Test.Logger) as Boolean {
     // ...and the font the renderer picked must be one that actually fits, by the renderer's
     // own three-part rule
     Test.assertMessage(
-        RecordingView.pairFits(dc, worst, lc, worst, rc, f, hG, radius, y, cy),
+        RecordingView.pairFits(dc, [worst, lc, worst, rc], f, hG, radius, y, cy),
         "the fitter returned a font that does not fit");
     var dx = RecordingView.pairColumn(dc, f, radius, y, cy);
     var wl = RecordingView.pairHalfWidth(dc, worst, lc, f);
@@ -680,7 +690,7 @@ function gridPairBandFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var realF = RecordingView.pairFont(dc, "56%", lc, "61%", rc, hG, radius, y, cy);
     Test.assertMessage(dc.getFontHeight(realF) >= dc.getFontHeight(f),
         "a real session's band is smaller than the worst case");
-    Test.assertMessage(RecordingView.pairFits(dc, "56%", lc, "61%", rc, realF, hG,
+    Test.assertMessage(RecordingView.pairFits(dc, ["56%", lc, "61%", rc], realF, hG,
         radius, y, cy), "the shipped session's own band does not fit");
     // ...and shorter numbers must SPREAD, not huddle: the columns are fixed, so the gap
     // between the two readings is what grows.
@@ -827,12 +837,35 @@ function foilPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
         "a real session's foil table is smaller than the worst case");
     // 0.9.2's whole point: the shipped session's six numbers are FONT_LARGE, the top of the
     // value ladder. Before the headers moved below the matrix they were FONT_MEDIUM.
-    Test.assertMessage(dc.getFontHeight(realV) >= dc.getFontHeight(Graphics.FONT_LARGE)
-        && dc.getFontHeight(realP) >= dc.getFontHeight(Graphics.FONT_LARGE),
-        "the foil matrix did not reach FONT_LARGE on a real session: shares "
-            + dc.getFontHeight(realP).toString() + ", values "
-            + dc.getFontHeight(realV).toString() + " in a " + col[3].toString()
-            + "px column");
+    // ...and they take the LARGEST rung their column can hold — asserted as that, rather than
+    // as the literal FONT_LARGE, because a column's capacity is a property of the glass's face
+    // and not only of its width. On every fenix, epix, MARQ, Descent and every other Forerunner
+    // the answer IS FONT_LARGE, which was 0.9.2's whole point (before the headers moved below
+    // the matrix the shipped session's six numbers were FONT_MEDIUM). The one watch where it is
+    // not is the Forerunner 265, whose FONT_LARGE is 67 px tall and correspondingly wide: its
+    // "63:24" measures 142 px in a 136 px column and needs six more. The page's one lever,
+    // shortening the row keys, cannot find them — "max" is 55 px of XTINY on that face against
+    // "total"'s 59, so dropping to "tot" buys the two columns 2 px each and the fitter rightly
+    // keeps the longer word. It takes FONT_MEDIUM, 58 px on a 416 px glass, and the shares above
+    // it still reach FONT_LARGE.
+    var rungs = [Graphics.FONT_LARGE, Graphics.FONT_MEDIUM];
+    for (var i = 0; i < rungs.size(); i++) {
+        var fits = dc.getTextWidthInPixels("63:24", rungs[i]) <= col[3]
+            && dc.getTextWidthInPixels("14.1", rungs[i]) <= col[3];
+        Test.assertMessage(!fits
+            || dc.getFontHeight(realV) >= dc.getFontHeight(rungs[i]),
+            "the foil matrix stopped at " + dc.getFontHeight(realV).toString()
+                + "px when " + dc.getFontHeight(rungs[i]).toString()
+                + "px fits a " + col[3].toString() + "px column");
+        var fitsP = dc.getTextWidthInPixels("61%", rungs[i]) <= col[3];
+        Test.assertMessage(!fitsP
+            || dc.getFontHeight(realP) >= dc.getFontHeight(rungs[i]),
+            "the foil shares stopped at " + dc.getFontHeight(realP).toString()
+                + "px when " + dc.getFontHeight(rungs[i]).toString() + "px fits");
+    }
+    // the shares are never the SMALLER half of a table whose two halves say the same thing
+    Test.assertMessage(dc.getFontHeight(realP) >= dc.getFontHeight(realV),
+        "the foil shares read smaller than the values under them");
     // the header says "time", not a unit the cells never print
     Test.assertEqual(FOIL_COL_TIME, "time");
     // the km column is ON-FOIL distance, so it is formatted from metres like any other
@@ -2311,6 +2344,16 @@ function lockScreenFitsRoundDisplay(logger as Test.Logger) as Boolean {
     Test.assertMessage(codeH > dc.getFontHeight(Graphics.FONT_SMALL),
         "request code font " + codeH.toString() + "px is no bigger than FONT_SMALL");
     // ...and the real code must be no wider than the worst case just measured.
+    // The font must be able to DRAW the code, not merely be willing to measure it. A face
+    // without the glyphs answers 0 px, which reads as "fits" to every width test in the
+    // fitter — that is how the digits-only `Bionic_Bold_Number_Only` cut on the epix 2 /
+    // MARQ 2 / Descent Mk3 families got picked at the largest size on the list and would
+    // have drawn the tester's code with its letters missing. Every letter, on its own:
+    for (var i = 0; i < LockGate.ALPHABET.length(); i++) {
+        var ch = LockGate.ALPHABET.substring(i, i + 1);
+        Test.assertMessage(dc.getTextWidthInPixels(ch, fonts[2]) > 0,
+            "the request-code font cannot draw '" + ch + "'");
+    }
     Test.assertMessage(
         dc.getTextWidthInPixels(LockGate.requestCode(), fonts[2])
             <= dc.getTextWidthInPixels(code, fonts[2]), "WWWWWWWW is the widest case");
