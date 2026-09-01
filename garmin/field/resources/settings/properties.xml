@@ -8,4 +8,18 @@
     <property id="useKnots" type="boolean">false</property>
     <!-- wind the turn classifier splits tacks from jibes on; -1 = unset -->
     <property id="windDirDeg" type="number">-1</property>
+
+    <!-- 0.9.5: which metric each configurable row of a small or wide cell carries. The values
+         are FieldMetrics ids and the DEFAULTS ARE THE 0.9.4 ROWS — foil % over the flight
+         line in a 3/4-field cell, the same pair over the turn line in a 2-field one — so an
+         install that never opens this page sees exactly what it saw before the setting
+         existed. The full-screen cell has no setting: it draws the device app's Main page
+         while riding and the session summary once the timer stops.
+
+         2 = MetFoilPct, 22 = MetFlightLine. Code defaults in FieldSettings.load() match, but
+         on a real device THESE win (docs/plan.md records the trap), so the two must move
+         together. -->
+    <property id="smallSlot" type="number">2</property>
+    <property id="widePrimary" type="number">2</property>
+    <property id="wideSecondary" type="number">22</property>
 </properties>
