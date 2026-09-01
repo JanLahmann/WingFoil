@@ -12,8 +12,18 @@ import Toybox.WatchUi;
 // glass — measured through the same chord helpers the recording pages use, and asserted by
 // lockScreenFitsRoundDisplay in the unit suite.
 class LockView extends WatchUi.View {
-    // Vector faces the fenix 8 family ships (simulator.json); getVectorFont returns null for
-    // anything it does not have, which drops us onto the bitmap ladder below.
+    // Vector faces to try, best first; getVectorFont returns null for anything a device does
+    // not have, which drops us onto the bitmap ladder below.
+    //
+    // They are tried ONE AT A TIME rather than handed to getVectorFont as a preference list,
+    // because "the device has a face by this name" and "that face can draw this string" are
+    // different questions. On the epix 2 / epix 2 Pro / MARQ 2 / Descent Mk3 families the
+    // face named `BionicBold` is `Bionic_Bold_Number_Only` — a DIGITS-ONLY cut. Ask it for
+    // the width of "WWWWWWWW" and it answers 0, which every width test in a fitter reads as
+    // "fits comfortably", so the fitter would hand back the largest size on the list and the
+    // lock screen would draw the tester's request code with its five letters missing. The
+    // request code is the one string a human has to transcribe, so a face is only accepted
+    // if it can draw every character LockGate.ALPHABET can produce (see coversAlphabet).
     static const VEC_FACES = ["BionicBold", "BionicMedium", "RobotoCondensedBold"];
     static const VEC_MAX = 84;
     static const VEC_MIN = 42;
@@ -64,24 +74,52 @@ class LockView extends WatchUi.View {
         if (Graphics has :getVectorFont) {
             var floor = dc.getFontHeight(best);
             for (var size = VEC_MAX; size >= VEC_MIN; size -= VEC_STEP) {
-                var vf = Graphics.getVectorFont({:face => VEC_FACES, :size => size});
-                if (vf == null) {
-                    break;      // no vector faces on this device — take the bitmap ladder
+                var anyTaller = false;
+                for (var i = 0; i < VEC_FACES.size(); i++) {
+                    var vf = Graphics.getVectorFont(
+                        {:face => VEC_FACES[i], :size => size});
+                    if (vf == null) {
+                        continue;   // this device does not have that face
+                    }
+                    // FULL font height, not the ink height the recording pages fit on: this
+                    // row has one job and can afford the margin, and it keeps the fitter and
+                    // lockScreenFitsRoundDisplay measuring the same box.
+                    var h = dc.getFontHeight(vf);
+                    if (h <= floor) {
+                        continue;   // the ladder already beats this face at this size
+                    }
+                    anyTaller = true;
+                    if (!coversAlphabet(dc, vf)) {
+                        continue;   // a number-only cut — see VEC_FACES
+                    }
+                    if (dc.getTextWidthInPixels(code, vf)
+                            <= RecordingView.rowBudget(radius, dy, h) * CODE_FIT_PCT / 100) {
+                        return vf;
+                    }
                 }
-                // FULL font height, not the ink height the recording pages fit on: this
-                // row has one job and can afford the margin, and it keeps the fitter and
-                // lockScreenFitsRoundDisplay measuring the same box.
-                var h = dc.getFontHeight(vf);
-                if (h <= floor) {
-                    break;      // the ladder already wins, and only gets better from here
-                }
-                if (dc.getTextWidthInPixels(code, vf)
-                        <= RecordingView.rowBudget(radius, dy, h) * CODE_FIT_PCT / 100) {
-                    return vf;
+                if (!anyTaller) {
+                    break;      // every face here is shorter than the ladder, and smaller
+                                // sizes only get shorter
                 }
             }
         }
         return best;
+    }
+
+    // Can `f` actually draw a request code? A font a device does not have the glyphs for
+    // measures its missing characters at zero width, and zero width sails through every fit
+    // test there is — so the fitter has to ask the question outright, one character of
+    // LockGate.ALPHABET at a time, and bail at the first one that comes back empty. A
+    // digits-only face fails on 'A', the eleventh character, so this costs eleven width
+    // lookups on the devices it exists for, on a screen that is drawn once.
+    static function coversAlphabet(dc as Dc, f as Graphics.VectorFont) as Boolean {
+        var a = LockGate.ALPHABET;
+        for (var i = 0; i < a.length(); i++) {
+            if (dc.getTextWidthInPixels(a.substring(i, i + 1), f) <= 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     function onUpdate(dc as Dc) as Void {

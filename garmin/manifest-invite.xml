@@ -35,6 +35,31 @@
             <iq:product id="fenix7spro"/>
             <iq:product id="fenix7xpro"/>
             <iq:product id="fenix7xpronowifi"/>
+            <!-- Tier A (docs/decisions.md ADR-014): every other CIQ >= 5.x sports watch
+                 the current code runs on UNCHANGED. 786 KB of app memory each (fr255 is the
+                 floor at 524 KB and still only 15% used), 100 Hz accelerometer, and one of
+                 the screen sizes the round-display layout suite measures. epix2pro51mm also
+                 covers tactix 7 - AMOLED Edition and D2 Mach 1 Pro, epix2 covers quatix 7
+                 Sapphire, and fenix7x has always covered Enduro 2, tactix 7 and quatix 7X
+                 Solar. Deliberately NOT here: the 128 KB fenix 5/6 bases, the 1 bpp
+                 semi-octagon Instinct family, and the rectangles. -->
+            <iq:product id="epix2"/>
+            <iq:product id="epix2pro42mm"/>
+            <iq:product id="epix2pro47mm"/>
+            <iq:product id="epix2pro51mm"/>
+            <iq:product id="fr955"/>
+            <iq:product id="fr965"/>
+            <iq:product id="fr970"/>
+            <iq:product id="fr255"/>
+            <iq:product id="fr265"/>
+            <iq:product id="fr57042mm"/>
+            <iq:product id="fr57047mm"/>
+            <iq:product id="marq2"/>
+            <iq:product id="marq2aviator"/>
+            <iq:product id="enduro3"/>
+            <iq:product id="d2mach1"/>
+            <iq:product id="d2mach2"/>
+            <iq:product id="descentmk343mm"/>
         </iq:products>
         <iq:permissions>
             <iq:uses-permission id="Communications"/>
