@@ -25,6 +25,16 @@ class FieldEngine {
     const BARO_EMA = 0.02;
     const RAD2DEG = 57.29578;
 
+    // The outcome ladder's memory: one OUTCOME_* per counted turn, oldest first, capped and
+    // dropping the OLDEST on overflow. The device app keeps 64 in SessionHistory; the field
+    // keeps fewer because the widest strip a 454 px glass can draw is 28 dots and a data field
+    // has 128 KB for everything. Anything past the cap is already off the end of the strip.
+    // An enum and not a const so it is class-static (FieldEngine.TURN_LOG), the way the
+    // barrel's detectors declare theirs — the layout suite sizes the dot strip against it.
+    enum {
+        TURN_LOG = 40
+    }
+
     var detector as FlightDetector;
     var turns as TurnDetector;
     var records as SpeedRecords;
@@ -36,6 +46,11 @@ class FieldEngine {
     var timerS as Float = 0.0;
     var submerged as Boolean = false;
     var running as Boolean = false;     // activity timer is on
+    // Activity.Info.currentHeartRate, or null when the watch has no reading. Null and not 0:
+    // a strap that has not found a pulse has measured nothing, not a resting heart of zero.
+    var hr as Number? = null;
+    var outcomes as Array<Number>;      // OUTCOME_* per counted turn, oldest first
+    var outcomeCount as Number = 0;
 
     hidden var _cfg as WingFoilCore.Config;
     hidden var _lastTimerMs as Number = -1;
@@ -50,6 +65,10 @@ class FieldEngine {
         detector = new FlightDetector(cfg);
         turns = new TurnDetector(cfg);
         records = new SpeedRecords();
+        outcomes = new Array<Number>[TURN_LOG];
+        for (var i = 0; i < TURN_LOG; i++) {
+            outcomes[i] = TurnDetector.OUTCOME_NONE;
+        }
     }
 
     // A fresh activity (onTimerReset): drop every counter, keep the config.
@@ -62,6 +81,11 @@ class FieldEngine {
         distM = 0.0;
         timerS = 0.0;
         submerged = false;
+        hr = null;
+        outcomeCount = 0;
+        for (var i = 0; i < TURN_LOG; i++) {
+            outcomes[i] = TurnDetector.OUTCOME_NONE;
+        }
         _lastTimerMs = -1;
         _odo = new Odometer();
         _tickCount = 0;
@@ -76,6 +100,11 @@ class FieldEngine {
     function onCompute(info as Activity.Info) as Number {
         var st = info.timerState;
         running = (st != null) && (st == Activity.TIMER_STATE_ON);
+
+        // Read outside the running gate: a paused rider still has a pulse, and the heart-rate
+        // slot going stale the moment he stops would read as a lost strap.
+        hr = (info has :currentHeartRate) && info.currentHeartRate != null
+            ? (info.currentHeartRate as Number) : null;
 
         var tms = info.timerTime;
         var dt = 1.0;
@@ -146,7 +175,35 @@ class FieldEngine {
         var pbEvents = records.tick(speed);
         var turnEvent = turns.tick(dt, cogDeg, speed, distDelta,
             detector.state == FlightDetector.STATE_ON, submerged);
+        logOutcome(turnEvent);
         return flightEvent | (pbEvents << 4) | (turnEvent << 8);
+    }
+
+    // The dot ladder's memory. A turn joins the strip when its OUTCOME resolves, not when the
+    // sweep is confirmed (EVENT_TURN): a dot with no verdict yet would have to be drawn in the
+    // no-verdict grey and then change colour under the rider's eye seconds later, which is a
+    // strip that argues with itself. TurnDetector holds the outcome window open until the
+    // rider has recovered or gone in, so the wait is the honest one.
+    function logOutcome(turnEvent as Number) as Void {
+        var o = TurnDetector.OUTCOME_NONE;
+        if (turnEvent == TurnDetector.EVENT_FLEW) {
+            o = TurnDetector.OUTCOME_FLEW;
+        } else if (turnEvent == TurnDetector.EVENT_TOUCHDOWN) {
+            o = TurnDetector.OUTCOME_TOUCHDOWN;
+        } else if (turnEvent == TurnDetector.EVENT_FELL) {
+            o = TurnDetector.OUTCOME_FELL;
+        } else {
+            return;
+        }
+        if (outcomeCount < TURN_LOG) {
+            outcomes[outcomeCount] = o;
+            outcomeCount++;
+            return;
+        }
+        for (var i = 1; i < TURN_LOG; i++) {
+            outcomes[i - 1] = outcomes[i];
+        }
+        outcomes[TURN_LOG - 1] = o;
     }
 
     function tickCount() as Number {

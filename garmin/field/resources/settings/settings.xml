@@ -23,4 +23,83 @@
     <setting propertyKey="@Properties.windDirDeg" title="@Strings.SetWindDir">
         <settingConfig type="numeric" min="-1" max="359"/>
     </setting>
+
+    <!-- 0.9.5: the rows of a small or wide cell. A 3- or 4-field cell shows the first of
+         these over the flight line; a 2-field cell shows the first two over the turn line.
+         The bottom row of each is not a setting on purpose — it is the field's signature, the
+         thing it knows that the watch's own data fields do not. The full-screen cell is not
+         here either: it draws the device app's Main page while the timer runs and the session
+         summary once it stops, and a rider who gave the field the whole glass asked for the
+         app's face, not for a form to fill in.
+
+         The list is what a DATA FIELD can compute. Pump strokes, takeoffs and takeoff cost
+         are missing because Sensor.* crashes a data field (docs/fit-schema.md), not because
+         they were forgotten. Ids and wording are the device app's wherever both have the
+         metric, so the two settings pages read as one vocabulary. -->
+    <setting propertyKey="@Properties.smallSlot" title="@Strings.SetSmallSlot">
+        <settingConfig type="list">
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnLast</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="22">@Strings.MetFlightLine</listEntry>
+            <listEntry value="23">@Strings.MetTackJibe</listEntry>
+            <listEntry value="24">@Strings.MetOutcomes</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.widePrimary" title="@Strings.SetWidePrimary">
+        <settingConfig type="list">
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnLast</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="22">@Strings.MetFlightLine</listEntry>
+            <listEntry value="23">@Strings.MetTackJibe</listEntry>
+            <listEntry value="24">@Strings.MetOutcomes</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.wideSecondary" title="@Strings.SetWideSecondary">
+        <settingConfig type="list">
+            <listEntry value="1">@Strings.MetSpeed</listEntry>
+            <listEntry value="2">@Strings.MetFoilPct</listEntry>
+            <listEntry value="3">@Strings.MetFlights</listEntry>
+            <listEntry value="4">@Strings.MetFlightTimer</listEntry>
+            <listEntry value="5">@Strings.MetFoilTime</listEntry>
+            <listEntry value="6">@Strings.MetLongest</listEntry>
+            <listEntry value="7">@Strings.MetDistance</listEntry>
+            <listEntry value="8">@Strings.MetTimer</listEntry>
+            <listEntry value="9">@Strings.MetHr</listEntry>
+            <listEntry value="10">@Strings.MetBest2s</listEntry>
+            <listEntry value="11">@Strings.MetBest10s</listEntry>
+            <listEntry value="12">@Strings.MetTurns</listEntry>
+            <listEntry value="13">@Strings.MetTurnLast</listEntry>
+            <listEntry value="14">@Strings.MetClock</listEntry>
+            <listEntry value="20">@Strings.MetStreak</listEntry>
+            <listEntry value="22">@Strings.MetFlightLine</listEntry>
+            <listEntry value="23">@Strings.MetTackJibe</listEntry>
+            <listEntry value="24">@Strings.MetOutcomes</listEntry>
+        </settingConfig>
+    </setting>
 </settings>

@@ -11,6 +11,35 @@
     <string id="SetUseKnots">Show speed in knots</string>
     <string id="SetWindDir">Wind direction (deg from, -1 = unset)</string>
 
+    <!-- 0.9.5 slot settings. The row wording says WHERE the metric lands, because a data
+         field's user is looking at a cell whose size he chose in the activity's own layout
+         menu, not at a page number. -->
+    <string id="SetSmallSlot">Small cell: top row</string>
+    <string id="SetWidePrimary">Wide cell: top row</string>
+    <string id="SetWideSecondary">Wide cell: middle row</string>
+
+    <!-- Metric names, same wording as the device app's Met* strings wherever both have the
+         metric (garmin/resources/strings/strings.xml). The last three are the field's own
+         composite rows. -->
+    <string id="MetSpeed">Speed</string>
+    <string id="MetFoilPct">Foil %</string>
+    <string id="MetFlights">Flight count</string>
+    <string id="MetFlightTimer">Current flight timer</string>
+    <string id="MetFoilTime">Foil time</string>
+    <string id="MetLongest">Longest flight</string>
+    <string id="MetDistance">Distance</string>
+    <string id="MetTimer">Session timer</string>
+    <string id="MetHr">Heart rate</string>
+    <string id="MetBest2s">Best 2s</string>
+    <string id="MetBest10s">Best 10s</string>
+    <string id="MetTurns">Turn count</string>
+    <string id="MetTurnLast">Last turn (outcome + score)</string>
+    <string id="MetClock">Time of day</string>
+    <string id="MetStreak">Dry run (now/best)</string>
+    <string id="MetFlightLine">Flights + flight timer</string>
+    <string id="MetTackJibe">Tacks / jibes</string>
+    <string id="MetOutcomes">Outcomes (flew/touch/swim)</string>
+
     <!-- FIT developer-field labels (Garmin Connect rendering) -->
     <string id="FitFoilStateChart">Foil state</string>
     <string id="FitFoilStateLabel">Foil state</string>
