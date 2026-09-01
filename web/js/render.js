@@ -39,9 +39,9 @@ const el = (id) => document.getElementById(id);
  * When it is present the map and the speed strip mark exactly those windows. It is an
  * annotation on data already in the document: nothing about it is recomputed here.
  */
-export function render(result, { highlight = null } = {}) {
+export function render(result, { highlight = null, isExample = false } = {}) {
   const g = result.golden, v = result.view, meta = result.meta;
-  renderSummary(result);
+  renderSummary(result, isExample);
   renderFigures(result, highlight);
   renderTakeoffs(el("takeoff-body"), g, meta);
   renderTurns(el("turns-table"), el("turns-caption"), g, v, meta);
@@ -93,7 +93,7 @@ export function keyMetrics(g) {
 
 /* -------------------------------------------------------------------- header */
 
-function renderSummary(result) {
+function renderSummary(result, isExample = false) {
   const g = result.golden, meta = result.meta, caps = g.capabilities;
   const s = g.summary, rec = g.records, w = g.wind;
 
@@ -110,6 +110,14 @@ function renderSummary(result) {
     (meta.startUtc ? clockNote : "");
 
   const badges = [];
+  // First badge, and a disclaimer rather than a category: the bundled session is somebody
+  // else's ride, and a first-time visitor reading these numbers has to know that before
+  // reading anything else. Plain ink, like the library list's own EXAMPLE tag — the accent
+  // is reserved for what the *file* is, not for what it is not.
+  if (isExample) {
+    badges.push(["Example session", false,
+                 "The bundled demonstration session — not your own data"]);
+  }
   if (meta.discipline) badges.push([meta.discipline, true]);
   badges.push([{ a: "CIQ dev fields", b: "native FIT", c: "degraded source" }[meta.sourceClass],
                meta.sourceClass === "a"]);
@@ -118,7 +126,8 @@ function renderSummary(result) {
   if (caps.hasWatchLaps) badges.push([`${meta.laps} laps`, false]);
   if (caps.hasHR) badges.push(["HR", false]);
   el("session-badges").innerHTML = badges
-    .map(([t, accent]) => `<span class="badge${accent ? " accent" : ""}">${esc(t)}</span>`).join("");
+    .map(([t, accent, title]) => `<span class="badge${accent ? " accent" : ""}"` +
+         (title ? ` title="${esc(title)}"` : "") + `>${esc(t)}</span>`).join("");
 
   el("key-metrics").innerHTML = keyMetrics(g);
 

@@ -41,7 +41,7 @@ struct ImportView: View {
                     Button {
                         showFileImporter = true
                     } label: {
-                        Label("FIT, GPX or ZIP…", systemImage: "doc.badge.plus")
+                        Label("FIT or ZIP…", systemImage: "doc.badge.plus")
                     }
                     .disabled(store.isBusy)
                     Button {
@@ -54,7 +54,8 @@ struct ImportView: View {
                     Text("Single sessions")
                 } footer: {
                     Text("Garmin Connect → activity → \"Export Original\" gives one FIT; "
-                         + "AirDrop and the share sheet land here too.")
+                         + "AirDrop and the share sheet land here too. "
+                         + "GPX isn't supported yet.")
                 }
 
                 if !log.isEmpty {

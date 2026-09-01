@@ -211,7 +211,7 @@ struct TurnsAnalysisView: View {
     private var footnote: some View {
         let rejected = detail.analysis.summary.turns.rejected
         return VStack(alignment: .leading, spacing: 3) {
-            Text("Score is how much of the turn he carried through, 0–100. "
+            Text("Score is how much of the turn you carried through, 0–100. "
                  + "Flew through / touchdown / fell in is the engine's outcome ladder.")
             if rejected > 0 {
                 Text("\(rejected) course change\(rejected == 1 ? "" : "s") "

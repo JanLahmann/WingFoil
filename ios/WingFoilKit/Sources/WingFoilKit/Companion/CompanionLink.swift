@@ -76,10 +76,9 @@ extension CompanionLinkState {
         case .noConnectMobile: "Garmin Connect not installed"
         case .noDevice: "No watch chosen"
         case .deviceOffline(let name): "\(name) — not connected"
-        // "WingFoil" here is the *watch* app, which keeps that name; this app is CleanJibe.
         // Spelling out "watch app" is what stops the row reading as a complaint about the
-        // phone app that is drawing it.
-        case .appNotRunning(let name): "\(name) — WingFoil watch app not running"
+        // phone app that is drawing it: both are called CleanJibe.
+        case .appNotRunning(let name): "\(name) — CleanJibe watch app not running"
         case .ready(let name): "\(name) — ready"
         }
     }
@@ -96,7 +95,7 @@ extension CompanionLinkState {
             "Sessions still reach the library through the FIT file — the watch link only "
             + "makes them arrive sooner. Bring the watch into range to send wind to it."
         case .appNotRunning:
-            "Open the WingFoil app on the watch: it only listens while it is running. "
+            "Open CleanJibe on the watch: it only listens while it is running. "
             + "Session summaries are sent when you save, whether this app is open or not."
         case .ready:
             "Your watch sends a session summary the moment you save, and accepts a wind "

@@ -46,7 +46,6 @@
         </iq:permissions>
         <iq:languages>
             <iq:language>eng</iq:language>
-            <iq:language>deu</iq:language>
         </iq:languages>
         <iq:barrels>
             <iq:depends name="WingFoilCore" version="1.0.0"/>

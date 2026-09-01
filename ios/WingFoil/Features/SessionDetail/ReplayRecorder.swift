@@ -53,8 +53,7 @@ final class ReplayRecorder {
                 "Screen recording was not allowed, so there is no clip. You can still watch "
                     + "the replay."
             case .empty:
-                "The recording came back empty, so there is no clip. Screen recording does "
-                    + "not work in the iOS Simulator; on a phone, try again."
+                "The recording came back empty, so there is no clip. Try again."
             case .recorder(let message):
                 "The recording could not be made: \(message)"
             }

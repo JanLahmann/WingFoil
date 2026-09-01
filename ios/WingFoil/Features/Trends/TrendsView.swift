@@ -146,8 +146,8 @@ struct TrendsView: View {
         TrendChart(title: "Pumps to takeoff", unit: "strokes", points: points,
                    tone: DesignTokens.Effort.window,
                    value: \.avgPumpsToTakeoff,
-                   note: "Needs the wrist accelerometer — only our own CIQ recordings "
-                       + "carry it.")
+                   note: "Needs the wrist accelerometer — only CleanJibe watch "
+                       + "recordings carry it.")
         TrendChart(title: "Port / starboard", unit: "% port", points: points,
                    tone: DesignTokens.Side.port,
                    value: \.portSharePct, domain: 0...100, reference: 50,

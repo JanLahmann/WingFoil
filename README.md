@@ -1,4 +1,6 @@
-# WingFoil
+# CleanJibe
+
+*(The repository keeps its original name, `WingFoil` — the apps and the site are CleanJibe.)*
 
 Wingfoil tracking for Garmin Fenix 8 + iPhone: a Connect IQ watch app that records
 wingfoil-native metrics (flights, GP3S speed records, turns, takeoff pumping) into standard FIT
