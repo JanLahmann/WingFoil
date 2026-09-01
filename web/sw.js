@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v27";     // v26: the motif is a real excerpt now, not a drawing of one
+const VERSION = "v29";     // v29: the swim measurement is withdrawn — it read a drifting board as swimming
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
