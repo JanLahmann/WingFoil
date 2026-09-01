@@ -13,10 +13,17 @@
  */
 
 import { ask } from "./rpc.js";
+import { sportCorrected } from "./cardstats.js";
 import { C, esc, figureWidth, hideTip, hms, int, isNarrow, nf, showTip, svg,
          zonedFormat } from "./render.js";
 
 const el = (id) => document.getElementById(id);
+
+/** What a session is called in a record row or a chart tooltip. The digest's `spot` is
+ *  derived from the filename, so it needs the same one correction the library list and the
+ *  share card's headline apply — see `sportCorrected`. */
+const sessionLabel = (s, ...fallbacks) =>
+  sportCorrected(s?.spot || "") || fallbacks.find((f) => f) || "";
 
 // A line's `role` (set in lab_bundle/library.py) picks its ink. `primary`/`secondary` are
 // the app's own two blues for a metric with no vocabulary of its own; the two `side.*`
@@ -158,7 +165,7 @@ function renderRecords(table, records) {
         <td class="l stack-lead" data-th="record">${esc(r.label)}</td>
         <td data-th="value"><strong>${nf(r.value, 2)}</strong> <span class="dim">${esc(r.unit)}</span>${
           r.certified === false ? UNCERTIFIED : ""}</td>
-        <td class="l" data-th="session">${esc(r.spot || r.fileName || r.id)}</td>
+        <td class="l" data-th="session">${esc(sessionLabel(r, r.fileName, r.id))}</td>
         <td class="l dim" data-th="date">${esc(localDate(r) || "—")}</td>
         <td class="l stack-actions" data-th=""><button class="ghost small-btn" data-act="record"
           data-id="${esc(r.id)}">Show the window</button></td>
@@ -238,7 +245,7 @@ function drawChart(host, chart, sessions) {
       dot.dataset.session = p.id;
       dot.style.cursor = "pointer";
       const s = sessions[p.i] || {};
-      const html = `<b>${esc(s.spot || s.id)}</b><br>${esc(localDate(s))}<br>` +
+      const html = `<b>${esc(sessionLabel(s, s.id))}</b><br>${esc(localDate(s))}<br>` +
                    `${esc(chart.label)} · ${esc(line.label)}: ` +
                    `<b>${nf(p.v, 2)}</b> ${esc(chart.unit)}`;
       dot.addEventListener("pointerenter", (ev) => showTip(ev, html));

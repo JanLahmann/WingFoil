@@ -45,9 +45,54 @@ public enum SessionNaming {
     ///
     /// `derived` is the caller's fallback and is used verbatim — the kit has no business
     /// deriving a readable name out of a filename, which is presentation that depends on how
-    /// the app happens to have stored the recording.
+    /// the app happens to have stored the recording. The one rule it *does* own about a
+    /// derived name is `sportCorrected(_:)`, which the caller applies while deriving.
     public static func title(custom: String?, derived: String) -> String {
         customTitle(custom) ?? derived
+    }
+
+    /// The sport this app is about. One word, one spelling, one place.
+    public static let sport = "Wingfoil"
+
+    /// The words a Garmin watch puts there instead, lower-cased for the comparison.
+    ///
+    /// Garmin has no wingfoil profile, so a session is recorded under the windsurf one
+    /// (docs/fit-schema.md: sport 43 alone does not mean wingfoil) and the watch names the
+    /// activity after it — in the watch's own locale, which is why the German word is on this
+    /// list beside the two English ones.
+    private static let garminSportWords: Set<String> = [
+        "windsurfen", "windsurfing", "windsurf",
+    ]
+
+    /// A **derived** name with Garmin's sport word swapped for this app's.
+    ///
+    /// "Nago-Torbole Windsurfen" is what a session synced back from the watch is called: the
+    /// activity name is the spot plus the *profile it was recorded under*, and that word then
+    /// travels — into the filename the sync writes, into the derived title every surface
+    /// shows, and onto the share card's headline, where a rider publishes a picture of a
+    /// wingfoil session captioned with somebody else's sport.
+    ///
+    /// **Display only, and deliberately so.** The recording keeps its name, the archive keeps
+    /// its filename and the FIT keeps its sport code: all three are records of what the watch
+    /// actually did, and rewriting them would be a lie about provenance. What changes is the
+    /// derived title, which was only ever a guess made out of a filename.
+    ///
+    /// **A typed title is never touched.** `title(custom:derived:)` prefers the rider's own
+    /// name whole, and this is applied to the derived branch only — a rider who wants to call
+    /// an afternoon "Windsurfen" has named his afternoon.
+    ///
+    /// The word has to stand alone: "Windsurfen" becomes "Wingfoil", "Windsurfschule" stays
+    /// itself. The boundary is the space the derivation already split on, and the swap keeps
+    /// the case of the position it lands in — a capitalised word stays capitalised, a
+    /// lower-case one stays lower-case — because the derivation capitalises and other callers
+    /// may not.
+    public static func sportCorrected(_ derived: String) -> String {
+        derived.split(separator: " ", omittingEmptySubsequences: false)
+            .map { word -> String in
+                guard garminSportWords.contains(word.lowercased()) else { return String(word) }
+                return word.first?.isUppercase == true ? sport : sport.lowercased()
+            }
+            .joined(separator: " ")
     }
 
     /// A typed title as it should be stored: trimmed, capped, and nil rather than blank.

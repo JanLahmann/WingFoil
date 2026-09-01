@@ -84,6 +84,56 @@ import Testing
         #expect(SessionNaming.customTitle(long)?.count == SessionNaming.titleLimit)
     }
 
+    // MARK: - Garmin's word for it
+
+    /// The watch has no wingfoil profile, so every session it records is named after the
+    /// windsurf one — in the watch's own locale. The swap is display-only and it is the
+    /// derived branch's alone.
+    @Test func garminsSportWordBecomesTheOneTheAppIsAbout() {
+        #expect(SessionNaming.sport == "Wingfoil")
+        // The three spellings that arrive: a German watch, an English one, and the bare
+        // profile name.
+        #expect(SessionNaming.sportCorrected("Nago Torbole Windsurfen") == "Nago Torbole Wingfoil")
+        #expect(SessionNaming.sportCorrected("Nago Torbole Windsurfing") == "Nago Torbole Wingfoil")
+        #expect(SessionNaming.sportCorrected("Windsurf") == "Wingfoil")
+        // The case of the position is kept, because the callers differ: the app's derivation
+        // capitalises every word and nothing says the next caller will.
+        #expect(SessionNaming.sportCorrected("torbole windsurfen") == "torbole wingfoil")
+        // Standalone, not a substring. A windsurf school is still a windsurf school.
+        #expect(SessionNaming.sportCorrected("Windsurfschule Torbole")
+                == "Windsurfschule Torbole")
+        #expect(SessionNaming.sportCorrected("Kitesurfing") == "Kitesurfing")
+        // A name with nothing of Garmin's in it comes back untouched, spacing included.
+        #expect(SessionNaming.sportCorrected("Nago  Torbole") == "Nago  Torbole")
+        #expect(SessionNaming.sportCorrected("") == "")
+    }
+
+    /// The rider's own name is never corrected: he is naming his afternoon, and this app does
+    /// not have opinions about what he calls it.
+    @Test func aTypedTitleKeepsGarminsWordIfThatIsWhatHeTyped() {
+        #expect(SessionNaming.title(custom: "Windsurfen mit Tobi",
+                                    derived: "Nago Torbole Wingfoil") == "Windsurfen mit Tobi")
+        #expect(SessionNaming.title(custom: nil, derived: SessionNaming
+            .sportCorrected("Nago Torbole Windsurfen")) == "Nago Torbole Wingfoil")
+    }
+
+    /// The other end of the chain: the word is in the *filename* the sync writes, which is
+    /// what the app's `SessionDisplay.derivedTitle` reads and corrects. Pinned here so a
+    /// change to the slug cannot quietly move the word out of the part of the name the
+    /// derivation uses.
+    @Test func theIcuFilenameCarriesGarminsWordIntoTheDerivedPart() {
+        let activity = IcuActivity(id: "i123", name: "Nago-Torbole Windsurfen")
+        let name = IcuSyncService.filename(for: activity)
+        #expect(name == "i123_nago-torbole-windsurfen_icu.fit")
+        // What the app then makes of it, in the app's own two steps: the middle
+        // underscore-part, hyphens to spaces, capitalised — and corrected.
+        let stem = name.split(separator: "_")[1]
+        let words = stem.replacingOccurrences(of: "-", with: " ").split(separator: " ")
+            .map { String($0.prefix(1)).uppercased() + String($0.dropFirst()) }
+        #expect(SessionNaming.sportCorrected(words.joined(separator: " "))
+                == "Nago Torbole Wingfoil")
+    }
+
     // MARK: - The caption
 
     /// The cap is content, not chrome: a caption is drawn into a PNG, so the length at which
