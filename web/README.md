@@ -16,9 +16,24 @@ file — verified against all 15 corpus fixtures (see *Verification* below).
 ```
 web/
 ├── index.html                  the PROJECT HOMEPAGE (cleanjibe.org/) — what CleanJibe is,
-│                               the WingFoil watch app, the iPhone app, this analyzer. No JS.
-├── app/index.html              the ANALYZER, "CleanJibe Lab" (cleanjibe.org/app/): page
-│                               shell, three views (analyze / library / trends)
+│                               the watch app, the iPhone app, this analyzer, and what a
+│                               rider actually needs to own to use any of them. No JS.
+├── invite/index.html           the BETA PAGE (cleanjibe.org/invite/): the Garmin request
+│                               code -> unlock key flow and the TestFlight ask, in one
+│                               place the store listing and the invite mail can link to.
+│                               No JS, and deliberately NOT in the sw.js precache.
+├── app/index.html              the ANALYZER (cleanjibe.org/app/): page shell, three views
+│                               (analyze / library / trends). Called "CleanJibe session
+│                               analyzer" on the page — "Lab" and the module name are gone
+│                               from every rider-visible string.
+├── img/                        screenshots, all of them real captures, quantized the same
+│                               way social-card.png is (see "The social card")
+│   ├── watch-main.png          the watch's riding page, from brand/store-shots-08
+│   ├── phone-session.png       the iOS session detail, from the simulator's UI_* hooks
+│   ├── web-report.png          this analyzer on the bundled example
+│   └── peek-{track,speed,turns}.png
+│                               the dropzone's "what you get" strip — the only images in
+│                               the precache, because they are on the app's first screen
 ├── social-card.png             the 1200x630 Open Graph tile both pages point at, by
 │                               ABSOLUTE URL (scrapers do not resolve relative ones)
 ├── tools/social_card.html      the tile's source; rasterize with headless Chrome to
@@ -133,12 +148,14 @@ up anywhere — use *Download all (.zip)* if you want a copy you own.
 ```bash
 cd web
 python3 -m http.server 8765
-# open http://127.0.0.1:8765/       the project homepage
-# open http://127.0.0.1:8765/app/   the analyzer
+# open http://127.0.0.1:8765/         the project homepage
+# open http://127.0.0.1:8765/invite/  the beta / unlock page
+# open http://127.0.0.1:8765/app/     the analyzer
 ```
 
-> The site has two documents. `/` is the project homepage (static HTML, one extra
-> stylesheet, no JavaScript at all); `/app/` is this analyzer. Everything the analyzer
+> The site has three documents. `/` is the project homepage and `/invite/` the beta page
+> (both static HTML, one extra stylesheet, no JavaScript at all); `/app/` is this
+> analyzer. Everything the analyzer
 > loads — `css/`, `js/`, `icons/`, `example/`, `lab_bundle/` — stays at the site root and is
 > reached with `../`, so the two pages share one copy of the aesthetic and one service
 > worker. `js/app.js` resolves the example FIT and `sw.js` against `import.meta.url` rather
@@ -431,12 +448,19 @@ choices above are made from the documented behaviour, not from a measured device
   *Reload to update*. Bump `VERSION` in `sw.js` whenever anything under `web/` changes; the
   old caches are deleted on activate. **This is not optional for a CSS or JS edit**: the
   shell is served cache-first, so without the bump every already-installed client keeps the
-  old stylesheet indefinitely. Current value: `v14` (the CleanJibe rename, which changed both
-  page shells).
+  old stylesheet indefinitely. Current value: `v17` (the rider-facing copy pass, the
+  dropzone's preview strip, and `/invite/`).
 
 The worker precaches **both** documents — `/` and `/app/` — and its offline navigation
 fallback picks between them by path, so an offline deep link to `/app/#/library` gets the
 analyzer's shell and not the front door.
+
+**Images are precached only when they are on a first screen.** The dropzone's three
+`img/peek-*.png` (~58 KB) are, so they are in `APP_SHELL`; the homepage's three card
+screenshots (~97 KB) are below the fold, `loading="lazy"`, and sit in boxes sized by
+`aspect-ratio`, so offline they leave tidy empty plates and cost nobody anything on
+install. `/invite/` is not precached at all — it is a page you read once, at a desk, with
+a watch in your hand.
 
 Icons live in `web/icons/`, copied from `brand/` (`icon-tile-*` for the normal icon,
 `icon-square-*` full-bleed for the maskable one). Nothing outside `web/` is referenced.
@@ -492,11 +516,18 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
 ### Manual browser test checklist
 
 0. **The homepage.** `cd web && python3 -m http.server 8765`, open
-   <http://127.0.0.1:8765/>. Static HTML: the hero, the three cards, the vocabulary list,
-   the track motif in the outcome colours. The wordmark reads **CleanJibe**; the two app
-   cards keep their own names (*WingFoil for Garmin*, *WingFoil for iPhone*), because the
-   site is branded and the apps are not renamed. Both *Open the analyzer* buttons must land
-   on `/app/`, and the analyzer's own wordmark must come back here.
+   <http://127.0.0.1:8765/>. Static HTML: the hero, the three cards each with a real
+   screenshot above its bullets, the *What you need* honesty block (no watch app / Android /
+   another brand), the vocabulary list, the two build claims, and the track motif in the
+   outcome colours. Everything is named **CleanJibe** — the wordmark, both app cards. The
+   *Open the analyzer* buttons land on `/app/`; *See an example session* lands on
+   `/app/#example` and must **run the bundled session on arrival**, not just show the drop
+   zone; *Get the beta* lands on `/invite/`; and the analyzer's own wordmark comes back here.
+0a. **The beta page.** <http://127.0.0.1:8765/invite/>. The five-step Garmin flow reads in
+   order at both widths, the store links open apps.garmin.com, and the Garmin Connect path
+   says **CleanJibe - Invite Beta** (not the pre-0.9.3 *WingFoil* name). Three screenshot
+   slots are marked in the source with `<!-- SLOT: … -->` and still need a real watch and a
+   phone with Garmin Connect.
 0b. **The social card** (the link preview — not the rider's share card below). View source
    on both documents: `og:image` must be the absolute
    `https://cleanjibe.org/social-card.png`, with `og:image:width`/`:height` and
@@ -508,10 +539,12 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    ~20 s on a warm connection. Open DevTools → Console: there must be no errors, only
    Pyodide's own "Loading/Loaded micropip, numpy, pandas…" lines.
 3. **Drop** `fixtures/sessions/ciq/2026-08-07-0754_nago-torbole-windsurfen_ciq.fit` on the
-   drop zone. The progress list should walk *runtime → wingfoil_lab → parsing → analyzing*
+   drop zone. The progress list should walk *starting the analyzer → loading the analysis
+   engine → reading the FIT file → analyzing*
    and the page must stay responsive the whole time (the analysis is in a worker; scrolling
    must not stutter).
-3b. **The example button.** Reload, then click *…or try the example session* instead of
+3b. **The example button.** Reload, then click *…or open the example session* — or any of
+   the three *What you get* thumbnails beside it, which fire the same action — instead of
    dropping anything. It must fetch `example/ExampleSession.fit` (the 2026-08-30 recording
    the iOS app bundles — docs/testing.md "The bundled example session") and walk the same
    progress list. Expect the short-session numbers: **2 flights**, 68 % on foil, 2.56 km,

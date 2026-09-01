@@ -44,8 +44,8 @@ export function mountTrends(options) {
 export async function showTrends(entries) {
   const host = el("trends-body");
   if (!entries.length) {
-    host.innerHTML = `<p class="note">No saved sessions yet. Records and trends appear
-      once the library has something in it.</p>`;
+    host.innerHTML = `<p class="note">No saved sessions yet. Save a couple of sessions to
+      the library and your all-time records and season trends appear here.</p>`;
     return;
   }
   const signature = entries.map((e) => e.id).join("|");

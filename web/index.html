@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>CleanJibe — open wingfoil tracking, from the watch to the numbers</title>
-<meta name="description" content="CleanJibe is an open wingfoil tracking system: a Garmin watch app that records flights, jibes and swims, an iOS companion, and a browser analyzer that runs the same engine on your own .fit file — locally, with nothing uploaded.">
+<title>CleanJibe — wingfoil session analysis, free in your browser</title>
+<meta name="description" content="Drop a .fit file and see how much of the session you spent on the foil, how long each flight lasted, your speed records, and whether you flew through each jibe, touched down or fell in. Free, no account, nothing uploaded. Plus a Garmin watch app and an iPhone app.">
 <meta name="theme-color" content="#101010">
 <meta name="color-scheme" content="dark">
 
@@ -27,8 +27,8 @@
      social-card.png, 1200x630 — see web/tools/social_card.html for the source it is
      rasterized from. -->
 <meta property="og:site_name" content="CleanJibe">
-<meta property="og:title" content="CleanJibe — open wingfoil tracking">
-<meta property="og:description" content="A Garmin watch app that records the flights, the jibes and the swims; an iPhone companion; and a browser analyzer that runs the same engine on your own .fit file.">
+<meta property="og:title" content="CleanJibe — wingfoil session analysis">
+<meta property="og:description" content="Drop a .fit file in your browser and get the session back: foil time, flights, speed records, and a verdict on every jibe. Free, no account, nothing uploaded.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cleanjibe.org/">
 <meta property="og:image" content="https://cleanjibe.org/social-card.png">
@@ -36,8 +36,8 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="CleanJibe — open wingfoil tracking">
-<meta name="twitter:description" content="A Garmin watch app that records the flights, the jibes and the swims; an iPhone companion; and a browser analyzer that runs the same engine on your own .fit file.">
+<meta name="twitter:title" content="CleanJibe — wingfoil session analysis">
+<meta name="twitter:description" content="Drop a .fit file in your browser and get the session back: foil time, flights, speed records, and a verdict on every jibe. Free, no account, nothing uploaded.">
 <meta name="twitter:image" content="https://cleanjibe.org/social-card.png">
 <meta name="twitter:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
 </head>
@@ -61,27 +61,31 @@
 
   <!-- ------------------------------------------------------------------ hero -->
   <section class="hero">
-    <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Watch · phone · browser · open source</p>
-    <h1>What your session actually did.</h1>
+    <!-- The hook is the free thing that works in ten seconds, not the architecture. A
+         stranger arrives holding (at most) a .fit file and one question; the headline asks
+         it back, and the first CTA answers it without an install, an account or a watch.
+         "Read the source" moved to the footer, where the two people who want it will find
+         it: it was competing with the only button that matters. -->
+    <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Free browser analyzer · Garmin watch app · iPhone app · open source</p>
+    <h1>Did you fly through that jibe?</h1>
     <p class="lede">
-      CleanJibe is an open tracking system for wing foiling. A Garmin watch app records the
-      flights, the jibes and the swims while they happen; an iPhone app and this site take
-      the recording apart afterwards. All three run the same analysis, and the rules it
-      applies are published rather than guessed at.
+      CleanJibe reads a wingfoil session off your watch and tells you what actually happened:
+      how much of it you spent on the foil, how long each flight lasted, your speed records,
+      and — for every turn — whether you flew through it, touched down, or fell in.
     </p>
-
-    <!-- The name is not decoration: "flew through" is literally an outcome the engine
-         assigns to every turn it finds, and the dry streak is built out of them. -->
-    <p class="pun">
-      A clean jibe is one you fly all the way through, carrying your speed — without
-      touching down and without swimming. That is the verdict this project puts on every
-      turn you make — so the name is a number, not a slogan.
+    <p class="lede">
+      Start with the browser analyzer. Drop in a <code>.fit</code> file from any Garmin
+      watch — the CleanJibe app, or Garmin's own Windsurf profile — and you get the whole
+      session back in a few seconds. There is also a watch app that shows the same numbers
+      live on your wrist, and an iPhone app that keeps every session. Each one works on its own.
     </p>
 
     <p class="cta">
+      <!-- `#example` is a real route, not an anchor: js/app.js runs the bundled session on
+           arrival, so this link delivers the example rather than a drop target. -->
       <a class="btn primary" href="app/">Analyze a .fit file</a>
-      <a class="btn ghost" href="https://github.com/JanLahmann/WingFoil" rel="noopener">Read the source</a>
-      <span class="cta-note">Runs in your browser. Nothing is uploaded. No account.</span>
+      <a class="btn ghost" href="app/#example">See an example session</a>
+      <span class="cta-note">Free. No account. Runs in your browser — the file is never uploaded.</span>
     </p>
 
     <!-- The motif is the page's only graphic, and it is the vocabulary rather than
@@ -133,11 +137,20 @@
   <section class="home-section">
     <h2>The three pieces</h2>
     <p class="section-lede">
-      CleanJibe is the home of the <b>WingFoil</b> apps: the watch does the recording and the
-      live numbers, the phone and the browser do the deep analysis. You can use any one of
-      them on its own.
+      The watch records and shows the live numbers; the phone and the browser do the full
+      analysis afterwards. All three run the same analysis code, so a session means the same
+      thing wherever you read it. Use any one of them on its own.
     </p>
 
+    <!-- One picture per card, above the bullets. The page had no photograph or screenshot
+         of anything, so a stranger could read every word of it and still not know what
+         they would be looking at. Each shot is real and unretouched: the watch page comes
+         from the Connect IQ simulator harness (garmin/screenshots), the phone from the iOS
+         simulator's own example session (UI_LOAD_EXAMPLE / UI_OPEN_SESSION, docs/testing.md),
+         and the browser one from the analyzer running that same example. All three are
+         square so the row stays a row; all three are quantized to a small palette (the
+         social-card recipe in web/README.md) and lazily loaded, because none of them is
+         above the fold. -->
     <div class="pieces">
 
       <article class="panel piece">
@@ -145,14 +158,22 @@
           <h3>CleanJibe for Garmin</h3>
           <span class="status">beta · by invite</span>
         </div>
-        <p class="what">Connect IQ device app, Fenix-class watches</p>
+        <p class="what">Connect IQ watch app — fenix 8 and fenix 7 families</p>
+        <figure class="shot">
+          <img src="img/watch-main.png" width="454" height="454" loading="lazy" decoding="async"
+               alt="The watch's riding page: best 10 s speed 24.5 km/h, a turn tally of 35 flew,
+                    8 touched down, 8 fell in, and a dry streak of 7 of 11.">
+          <figcaption>On the water: speed, turn tally, no-fall streak.</figcaption>
+        </figure>
         <ul>
           <li>Knows when the board is up on the foil, and counts every flight and touchdown as you ride.</li>
-          <li>Scores each jibe as flew through, touched down or fell in — and keeps the dry streak running.</li>
-          <li>Speed records live on the wrist, best 2 s upwards.</li>
-          <li>Works the wind direction out for itself, from the way you are sailing.</li>
-          <li>Reads pump and takeoff effort from the accelerometer.</li>
+          <li>Scores each jibe as flew through, touched down or fell in — and keeps your no-fall streak running.</li>
+          <li>Speed records live on the wrist: best 2 s and best 10 s.</li>
+          <li>Works out the wind direction by itself after a few minutes of riding.</li>
+          <li>Counts pump strokes and takeoff attempts from the wrist accelerometer.</li>
+          <li>Records as a Windsurf activity, so it no longer lands in Garmin Connect as a walk.</li>
         </ul>
+        <p class="piece-foot"><a class="btn ghost" href="invite/">Get the beta</a></p>
       </article>
 
       <article class="panel piece">
@@ -160,14 +181,22 @@
           <h3>CleanJibe for iPhone</h3>
           <span class="status">beta · TestFlight</span>
         </div>
-        <p class="what">The library, the replay and the season</p>
+        <p class="what">Your library, the replay and the season</p>
+        <figure class="shot">
+          <img src="img/phone-session.png" width="560" height="560" loading="lazy" decoding="async"
+               alt="A session on the phone: duration, distance, average and best 2 s speed, the
+                    flew / touched down / fell in tally, best streaks, and dry jibes per hour.">
+          <figcaption>Every session, re-analysed on the phone.</figcaption>
+        </figure>
         <ul>
           <li>Every session in one library, each one re-analyzed on the phone.</li>
-          <li>Replay the track with commentary as the session plays back.</li>
-          <li>Trends and records across everything you have ridden.</li>
+          <li>Replay the track with commentary — and record the replay as a video, with a soundtrack, to post.</li>
+          <li>A share card for any session: the numbers, the track, and a link back here.</li>
+          <li>Records and trends across everything you have ridden.</li>
           <li>The gear you were on, session by session.</li>
           <li>Garmin activities arrive on their own, through intervals.icu sync.</li>
         </ul>
+        <p class="piece-foot"><a class="btn ghost" href="invite/#testflight">Get the beta</a></p>
       </article>
 
       <article class="panel piece">
@@ -175,16 +204,62 @@
           <h3>Web analyzer</h3>
           <span class="status live">live now</span>
         </div>
-        <p class="what">Any browser — nothing to install</p>
+        <p class="what">Any browser, any phone — nothing to install</p>
+        <figure class="shot">
+          <img src="img/web-report.png" width="560" height="560" loading="lazy" decoding="async"
+               alt="The analyzer's report in a browser: the session's key numbers above the
+                    track, drawn with the flown stretches picked out and every turn marked.">
+          <figcaption>The same analysis, free, in any browser.</figcaption>
+        </figure>
         <ul>
-          <li>Drop in any <code>.fit</code> file. Garmin's own Windsurf recordings work too.</li>
-          <li>The analysis runs inside your browser tab: the file is never uploaded to any server.</li>
+          <li>Drop in a <code>.fit</code> file. Garmin's own Windsurf recordings work, and so do
+              files from other wingfoil Connect IQ apps.</li>
+          <li>Keep a library of your sessions, with records and trends across all of them.</li>
+          <li>Make a share card, or hand a friend the analysis of the file they sent you —
+              their sessions stay out of your records.</li>
+          <li>The analysis runs inside your browser tab — the file is never uploaded to any server.</li>
           <li>Free, no account, no sign-up.</li>
-          <li>No file to hand? There is a bundled example session one click inside.</li>
+          <li>No file to hand? There is an example session one click inside.</li>
         </ul>
         <p class="piece-foot"><a class="btn primary" href="app/">Open the analyzer</a></p>
       </article>
 
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------- what you need -->
+  <!-- The honesty block. Every question below was one a stranger had to guess the answer
+       to, and the guess ("I need the watch app", "there is nothing here for Android") sent
+       them away from a free thing that would have worked for them. -->
+  <section class="home-section">
+    <h2>What you need</h2>
+    <div class="claims">
+      <article class="panel claim">
+        <h3>No watch app? Still works</h3>
+        <p>
+          The analyzer reads any <code>.fit</code> file. A session recorded with Garmin's own
+          Windsurf profile, or with another wingfoil Connect IQ app, gives you the track, the
+          flights, the jibe outcomes, the speed records and the wind axis. Only pump strokes
+          and takeoff effort need the CleanJibe watch app, because only it records the wrist
+          accelerometer.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>Android</h3>
+        <p>
+          There is no Android app, and the analyzer does not need one — open
+          <a href="app/">cleanjibe.org/app</a> in your phone browser and it works the same,
+          library and trends included. They are stored in that browser, on that phone.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>Another watch brand</h3>
+        <p>
+          The engine reads standard <code>.fit</code> files, but every file it has been tested
+          against came off a Garmin. If your watch exports <code>.fit</code>, try it — it costs
+          one drag and nothing is uploaded. <code>.gpx</code> is not supported yet.
+        </p>
+      </article>
     </div>
   </section>
 
@@ -206,11 +281,15 @@
       </div>
       <div class="term">
         <dt>Jibe outcomes</dt>
+        <!-- Where the name is explained, now that the hero's aside about it is gone. One
+             clause, in the entry that already defines the three verdicts, rather than a
+             paragraph of its own between the headline and the button. -->
         <dd>
           Every turn gets a verdict:
           <span class="swatch" style="background: var(--good)" aria-hidden="true"></span>flew through,
           <span class="swatch" style="background: var(--warn)" aria-hidden="true"></span>touched down,
           <span class="swatch" style="background: var(--bad)" aria-hidden="true"></span>fell in.
+          A clean jibe is one you fly all the way through, carrying your speed.
         </dd>
       </div>
       <div class="term">
@@ -239,28 +318,22 @@
   <!-- --------------------------------------------------------------- claims -->
   <section class="home-section">
     <h2>How it is built</h2>
+    <!-- Two cards, not three. "One engine, everywhere" is now the first thing the pieces
+         section says, and a claim made twice on one page reads as a claim being sold. -->
     <div class="claims">
-      <article class="panel claim">
-        <h3>One engine, everywhere</h3>
-        <p>
-          The phone and this site run the same analysis code — the browser literally runs the
-          project's Python, compiled to WebAssembly. A number that differs between them is a
-          bug, and there are tests that say so.
-        </p>
-      </article>
-      <article class="panel claim">
-        <h3>Thresholds in the open</h3>
-        <p>
-          What counts as a flight, a touchdown or a fallen jibe is written down in the
-          repository, not hidden in a product. The values are tunable, and the reasoning
-          behind them is there to argue with.
-        </p>
-      </article>
       <article class="panel claim">
         <h3>Your file stays yours</h3>
         <p>
-          The analyzer has no backend to upload to. Your recording is read, analyzed and drawn
+          The analyzer has no server to upload to. Your recording is read, analyzed and drawn
           inside your own browser tab: no account, no upload, no tracking.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>The thresholds are published</h3>
+        <p>
+          What counts as a flight, a touchdown or a fallen jibe is written down in the public
+          repository rather than hidden in a product, so you can check the numbers against
+          what you remember and argue with the ones that are wrong.
         </p>
       </article>
     </div>
@@ -269,10 +342,15 @@
 </main>
 
 <footer>
-  <p>CleanJibe — an open wing foiling tracking project: the watch app, the iPhone app and the browser analyzer.</p>
+  <p>CleanJibe — open wingfoil tracking. Watch app, iPhone app, browser analyzer.</p>
+  <!-- Both betas are invite-only, and until now the page said so three times without ever
+       saying how to get one. The address is the developer's own; /invite/ is the page that
+       walks the unlock through. -->
   <p>
     Source, issues and the detection thresholds:
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">github.com/JanLahmann/WingFoil</a>
+    · <a href="invite/">Get the beta</a>
+    · Beta invites and questions: <a href="mailto:jan@lahmann-online.de">jan@lahmann-online.de</a>
   </p>
 </footer>
 

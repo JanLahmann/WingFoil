@@ -105,9 +105,12 @@ function renderSummary(result, isExample = false) {
   const clockNote = meta.utcOffsetS === null || meta.utcOffsetS === undefined
     ? " · no timezone in this file — times shown on your own clock"
     : " · times as recorded on the water";
+  // The file's name and what clock its times are on. The sample count and the sample rate
+  // used to sit between them; neither changes anything a rider would do next, and "9 214
+  // samples @ 1 Hz" as the second line of your own session report reads like a log entry.
+  // Both are still in the JSON, under `meta`.
   el("session-sub").innerHTML =
-    `${esc(result.file.name)} · ${int(meta.samples)} samples @ ${nf(caps.sampleRateHz, 0)} Hz` +
-    (meta.startUtc ? clockNote : "");
+    `${esc(result.file.name)}` + (meta.startUtc ? clockNote : "");
 
   const badges = [];
   // First badge, and a disclaimer rather than a category: the bundled session is somebody
@@ -119,10 +122,19 @@ function renderSummary(result, isExample = false) {
                  "The bundled demonstration session — not your own data"]);
   }
   if (meta.discipline) badges.push([meta.discipline, true]);
-  badges.push([{ a: "CIQ dev fields", b: "native FIT", c: "degraded source" }[meta.sourceClass],
-               meta.sourceClass === "a"]);
+  // What the recording is, said in the words the rider owns. The three source classes are
+  // parse.py's (`a` our watch app's developer fields, `b` a standard FIT with speed, `c`
+  // something degraded) and their internal names were on the page verbatim — "CIQ dev
+  // fields" names a Garmin SDK concept, and "degraded source" sounds like an accusation
+  // about the rider rather than a note about the file. The title carries the detail.
+  badges.push([{ a: "CleanJibe recording", b: "standard FIT", c: "limited data" }[meta.sourceClass],
+               meta.sourceClass === "a",
+               { a: "Recorded by the CleanJibe watch app — every metric available",
+                 b: "A standard FIT recording — everything but pump and takeoff effort",
+                 c: "This file is missing channels the analysis wants; some numbers are absent"
+               }[meta.sourceClass]]);
   if (meta.sport) badges.push([meta.sport, false]);
-  if (caps.hasAccel) badges.push(["accel", false]);
+  if (caps.hasAccel) badges.push(["accelerometer", false]);
   if (caps.hasWatchLaps) badges.push([`${meta.laps} laps`, false]);
   if (caps.hasHR) badges.push(["HR", false]);
   el("session-badges").innerHTML = badges
