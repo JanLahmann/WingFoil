@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v29";     // v29: the swim measurement is withdrawn — it read a drifting board as swimming
+const VERSION = "v30";     // v30: the share card can put a map behind the track, if asked
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
@@ -43,6 +43,7 @@ const APP_SHELL = [
   "css/style.css",
   "css/home.css",
   "js/app.js",
+  "js/cardmap.js",
   "js/cardstats.js",
   "js/icu.js",
   "js/library.js",
@@ -147,8 +148,11 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   // Everything else third-party is passed straight through, never stored: intervals.icu
-  // (a cached activity list is not something a privacy-first app should keep) and
-  // cloud.umami.is (nothing depends on it, so offline it is simply allowed to fail).
+  // (a cached activity list is not something a privacy-first app should keep),
+  // cloud.umami.is (nothing depends on it, so offline it is simply allowed to fail), and
+  // tile.openstreetmap.org — the share card's optional map background, which the browser's
+  // own HTTP cache handles perfectly well and which this worker has no business keeping a
+  // second copy of. Offline the tiles simply fail and the card comes out plain.
   if (url.origin !== self.location.origin) return;
   event.respondWith(staleWhileRevalidate(req, SHELL));
 });

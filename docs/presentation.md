@@ -471,6 +471,41 @@ tinted by foil state, a dot per **counted** turn on the verdict ladder's inks, a
 barometer's submersion evidence as a cyan **diamond** — shape as well as colour, because a
 splash usually sits on the fell-in verdict it belongs to. Course changes get no dot, by the
 same rule the map draws by. Nothing else from the map's eleven layers survives the shrink.
+**The ground under it is optional, and off.** A switch on both composers — "Map background",
+remembered per device (`ShareCardMapStore`, `wingfoil.shareCard.map.v1`) — puts a map behind
+the whole card: `MKMapSnapshotter` on iOS, OpenStreetMap raster tiles composited on a canvas
+on the web (`ios/WingFoil/Features/Share/ShareCardMap.swift`, `web/js/cardmap.js`). Five rules
+hold it together, and the first is the one everything else serves.
+
+- **Default off, byte for byte.** A rider who never touches the switch gets exactly the card
+  described above — same pixels, and, on the web, not one request to anybody. The map is the
+  only part of making a card that reaches a third party, so any stored value that is not the
+  switch's own is read as off.
+- **The ride does not move.** The snapshot (or the tile grid) is *framed* so the track fills
+  precisely the box the layout already gave it, and the card's own margins are what become
+  map. Flipping the switch shows one card with and without ground under it, never two cards.
+- **The breadcrumb is placed through the map's projection**, not the card's. The plain card
+  fits a normalized outline to a box — a projection about the session, which does not know
+  where the water is. With a map behind it every vertex goes through
+  `MKMapSnapshot.point(for:)` / Web Mercator instead, or the line would sit near the water
+  rather than on it.
+- **A scrim, and dark stat plates.** A navy wash plus a vertical gradient heavy at both ends
+  (and, on the wide shape, a panel under the word column), and the stat cells invert from
+  white-at-a-tenth to black-at-a-third: a translucent white plate over a town's building fill
+  is not a plate. Tuned against the busiest ground either platform produces, not against open
+  water.
+- **Attribution is printed on the card.** `© OpenStreetMap contributors` on the web (ODbL
+  requires it) and `Maps © Apple` on iOS, at 6.5 pt in the corner opposite the title on the
+  tall shapes and bottom-leading on the wide one — never in the QR's corner, and never under
+  the footer. `MKMapSnapshotter` burns its own badge into the bottom-left of the image, which
+  on this card lands under the brand mark; the snapshot is taken a band taller than the card
+  and cropped so that half-covered badge never ships.
+
+Everything about it degrades to the plain card, silently: no fixes in the recording, a
+document analysed before the geographic anchor existed (`view.geo`, added by
+`web/lab_bundle/web_entry.py`), no network, a tile server that will not answer, a tainted
+canvas. A rider on a beach still gets a card.
+
 **The footer is a contract of its own, and both platforms print it identically**: the app's
 mark, the wordmark **CleanJibe**, the call to action `analyze your wingfoil sessions free —
 cleanjibe.org`, and a **QR code to `https://cleanjibe.org`** in the trailing corner. The card

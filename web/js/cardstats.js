@@ -466,24 +466,37 @@ export function saveCardText(key, { title, note }) {
 
 const LS_SHAPE = "wingfoil.shareCard.shape.v1";
 const LS_PRESET = "wingfoil.shareCard.preset.v1";
+/** The map background, per device — the rider's habit, like the shape and the preset.
+ *
+ * **Off unless the stored value is exactly `"1"`.** Nothing else counts: an absent key, a
+ * key somebody else wrote, a storage that throws — all of them are a plain card, which is
+ * the card this project has always exported and the one it must keep exporting for anybody
+ * who never asks for anything else. The map costs a handful of third-party requests, and a
+ * default that quietly made them would be a promise broken in the one place ("your file
+ * never leaves this tab") the analyzer makes it loudest. */
+const LS_MAP = "wingfoil.shareCard.map.v1";
 
 /** An unreadable or unknown stored value falls back to the defaults: portrait (the shape a
- *  feed and a chat both show whole) and complete (the numbers are the point of the card). */
+ *  feed and a chat both show whole), complete (the numbers are the point of the card) and no
+ *  map (the card as it has always been). */
 export function loadCardChoice() {
-  let shape = null, preset = null;
+  let shape = null, preset = null, map = null;
   try {
     shape = localStorage.getItem(LS_SHAPE);
     preset = localStorage.getItem(LS_PRESET);
+    map = localStorage.getItem(LS_MAP);
   } catch { /* no storage: the defaults are perfectly good */ }
   return {
     shape: SHAPES[shape] ? shape : "portrait",
     preset: PRESETS[preset] ? preset : "complete",
+    map: map === "1",
   };
 }
 
-export function saveCardChoice({ shape, preset }) {
+export function saveCardChoice({ shape, preset, map }) {
   try {
     localStorage.setItem(LS_SHAPE, shape);
     localStorage.setItem(LS_PRESET, preset);
+    localStorage.setItem(LS_MAP, map ? "1" : "0");
   } catch { /* nothing to do about it, and nothing worth telling the rider */ }
 }

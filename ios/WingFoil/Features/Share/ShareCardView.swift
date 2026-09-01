@@ -33,9 +33,22 @@ struct ShareCardView: View {
     var thumbnail: TrackThumbnail?
     /// Rider-picked background. Without one the card uses the brand gradient.
     var photo: Image?
+    /// The optional map background and the track already projected onto it
+    /// (`ShareCardMap`). Nil is the card this app has always exported.
+    var map: ShareCardMap?
+    /// Where the layout put the track, reported back so the *next* snapshot can be framed to
+    /// land in exactly that rectangle. See `ShareCardMap` for why the card measures instead
+    /// of recomputing: SwiftUI's own arithmetic is the only copy of it that is certainly
+    /// right, and a map framed against a second copy of the layout would drift a few points
+    /// every time the stat block changed.
+    var onTrackFrame: ((CGRect) -> Void)?
 
     /// Points per exported pixel. The card is laid out at 360 pt wide and rendered at 3×.
     static let renderScale: CGFloat = 3
+
+    /// The card's own coordinate space, so the track's frame can be reported in the same
+    /// points the snapshot is drawn in.
+    static let cardSpace = "shareCard"
 
     var size: CGSize {
         CGSize(width: shape.size.width / Self.renderScale,
@@ -45,8 +58,14 @@ struct ShareCardView: View {
     var body: some View {
         ZStack {
             background
+            // Above the ground and below the words: the breadcrumb runs past its own box
+            // into the map's margins, where the header and the footer have to stay on top
+            // of it.
+            if let map { mapTrack(map) }
             content
+            if map != nil { credit }
         }
+        .coordinateSpace(.named(Self.cardSpace))
         .frame(width: size.width, height: size.height)
         // The card is a fixed-size artwork: it must not pick up the reader's Dynamic Type
         // setting and reflow off the edge of an exported PNG.
@@ -58,7 +77,18 @@ struct ShareCardView: View {
 
     @ViewBuilder
     private var background: some View {
-        if let photo {
+        if let map {
+            // Sized to the snapshot and then cropped to the card, top-pinned: the extra band
+            // at the bottom carries Apple's burnt-in attribution, which the card prints for
+            // itself where nothing covers it. See `ShareCardMapper.attributionBand`.
+            Image(uiImage: map.image)
+                .resizable()
+                .frame(width: size.width,
+                       height: size.height + ShareCardMapper.attributionBand)
+                .frame(width: size.width, height: size.height, alignment: .top)
+                .clipped()
+            mapScrim
+        } else if let photo {
             photo
                 .resizable()
                 .scaledToFill()
@@ -79,6 +109,122 @@ struct ShareCardView: View {
                            center: .init(x: 0.5, y: 0.34),
                            startRadius: 0, endRadius: size.width * 0.75)
         }
+    }
+
+    /// What keeps the card readable over a photograph of a coastline.
+    ///
+    /// Two layers, and both earn their place. A flat navy wash first, so the map's own greens
+    /// and ochres are pulled towards the card's palette and the phase tints — brand green for
+    /// flying, paper for off foil — are again the only saturated thing on the picture. Then a
+    /// vertical gradient, heavier at the two ends where every word actually sits and lightest
+    /// across the middle, where the track is and where a rider wants to see the shore he
+    /// sailed off.
+    ///
+    /// The wide shape gets a third pass, because its words are a column on the right rather
+    /// than two bands. It is a *panel*, not a ramp: a gradient still brightening at the
+    /// right-hand edge leaves the last stat cell and the QR sitting on whatever the map put
+    /// there. It fades in over 70 points so the panel's edge is not a seam down the middle of
+    /// the picture.
+    ///
+    /// The opacities are the twins of `drawScrim` in web/js/sharecard.js, set by eye against
+    /// the worst ground either platform produces — a town's white building fill under the
+    /// footer — and not against open water, which needs about half of this.
+    @ViewBuilder
+    private var mapScrim: some View {
+        Brand.navy.opacity(0.34)
+        LinearGradient(
+            stops: [.init(color: .black.opacity(0.70), location: 0),
+                    .init(color: .black.opacity(0.34), location: 0.30),
+                    .init(color: .black.opacity(0.38), location: 0.62),
+                    .init(color: .black.opacity(0.80), location: 1)],
+            startPoint: .top, endPoint: .bottom)
+        if shape.isWide {
+            let edge = (size.width * (1 - Self.wideColumn) - 16) / size.width
+            LinearGradient(
+                stops: [.init(color: .black.opacity(0), location: max(edge - 70 / size.width, 0)),
+                        .init(color: .black.opacity(0.55), location: edge),
+                        .init(color: .black.opacity(0.55), location: 1)],
+                startPoint: .leading, endPoint: .trailing)
+        }
+    }
+
+    /// The wide shape's word column, as a fraction of the card — the number `wideContent`
+    /// lays out against, named so the scrim can darken exactly that strip.
+    static let wideColumn: CGFloat = 0.40
+
+    /// The breadcrumb, in the map's own projection, over the whole card.
+    ///
+    /// Deliberately *not* `TrackOutlineView`: that view fits a normalized outline to a box,
+    /// which is the one thing a mapped track may not do. The vocabulary is shared instead —
+    /// `markPath` and `markColor` are the same static functions the library row and the plain
+    /// card draw through, so a dot means the same thing on every surface.
+    private func mapTrack(_ map: ShareCardMap) -> some View {
+        Canvas(opaque: false) { context, _ in
+            for run in map.runs {
+                var path = Path()
+                path.addLines(run.points)
+                let width = run.flying ? 2.6 : 2.6 * 0.5
+                if map.needsHalo {
+                    // Over photography only, and by the map's own rule: a foil-green line on
+                    // sunlit chop is not legible without a dark outer edge.
+                    context.stroke(path, with: .color(TrackHalo.ink),
+                                   style: StrokeStyle(lineWidth: TrackHalo.width(under: width),
+                                                      lineCap: .round, lineJoin: .round))
+                }
+                context.stroke(
+                    path,
+                    with: .color(run.flying ? flyingColor : offFoilColor.opacity(0.55)),
+                    style: StrokeStyle(lineWidth: width, lineCap: .round, lineJoin: .round))
+            }
+            // Splashes last, so the one mark that is *evidence* rather than a verdict sits on
+            // top of the verdict it belongs to instead of hiding under it.
+            let ordered = map.marks.sorted { ($0.kind == .splash ? 1 : 0)
+                                           < ($1.kind == .splash ? 1 : 0) }
+            for mark in ordered {
+                let shape = TrackOutlineView.markPath(mark.kind, at: mark.point,
+                                                      radius: Self.markRadius)
+                context.stroke(shape, with: .color(.black.opacity(0.55)),
+                               style: StrokeStyle(lineWidth: Self.markRadius * 0.75))
+                context.fill(shape, with: .color(TrackOutlineView.markColor(mark.kind)))
+            }
+        }
+        .frame(width: size.width, height: size.height)
+        .shadow(color: flyingColor.opacity(0.35), radius: 8)
+        .accessibilityHidden(true)
+    }
+
+    /// 3.2 pt at the card's 3× export is a 19 px dot — the size a marker has to be to still
+    /// read as a coloured verdict after a feed has resampled the picture.
+    static let markRadius: Double = 3.2
+
+    /// The map's required credit, where it costs the card nothing.
+    ///
+    /// **Top-trailing on the tall shapes.** The bottom-trailing corner is the QR's, and a
+    /// decoder that has to find three finder patterns in a photograph of a phone screen does
+    /// not need six points of grey type against its quiet zone; the bottom-leading corner is
+    /// the mark and the call to action, which is the line the whole card exists to carry. That
+    /// leaves the corner opposite the title, and the title is told to stop short of it
+    /// (`header`) so the two can never collide — a card is a PNG, and overlapping type on one
+    /// is permanent.
+    ///
+    /// **Bottom-leading on the wide shape**, where every word is in the right-hand column and
+    /// the corner under the track is empty. Its header has 40 % of the card to work in and
+    /// cannot afford to give a credit any of it.
+    private var credit: some View {
+        Text(ShareCardMap.credit)
+            .font(.system(size: 6.5, weight: .medium))
+            .foregroundStyle(Brand.paper.opacity(0.62))
+            .padding(.horizontal, 16)
+            .padding(.vertical, shape.isWide ? 12 : 14)
+            .frame(maxWidth: .infinity, maxHeight: .infinity,
+                   alignment: shape.isWide ? .bottomLeading : .topTrailing)
+    }
+
+    /// The room the credit needs beside the title, on the shapes where it sits in the top
+    /// corner. Reserved as padding rather than measured, because the credit is one fixed
+    /// string at one fixed size and a card is not a place to discover a collision.
+    private var titleTrailingInset: CGFloat {
+        map != nil && !shape.isWide ? 54 : 0
     }
 
     // MARK: - Content
@@ -118,7 +264,7 @@ struct ShareCardView: View {
                 Spacer(minLength: 0)
                 footer
             }
-            .frame(width: size.width * 0.40)
+            .frame(width: size.width * Self.wideColumn)
         }
     }
 
@@ -143,6 +289,9 @@ struct ShareCardView: View {
                 .foregroundStyle(Brand.paper)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
+                // Room for the map credit in the corner above it. It shrinks the title rather
+                // than moving it, by the rule the whole card follows.
+                .padding(.trailing, titleTrailingInset)
             Text(stats.dateLine)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Brand.paper.opacity(0.72))
@@ -178,19 +327,29 @@ struct ShareCardView: View {
     @ViewBuilder
     private var track: some View {
         if let thumbnail, !thumbnail.points.isEmpty {
-            TrackOutlineView(thumbnail: thumbnail,
-                             flyingColor: flyingColor,
-                             offFoilColor: offFoilColor,
-                             lineWidth: 2.6,
-                             offFoilScale: 0.5,
-                             padding: 4,
-                             fillsBox: true,
-                             // 3.2 pt at the card's 3× export is a 19 px dot — the size a
-                             // marker has to be to still read as a coloured verdict after a
-                             // feed has resampled the picture.
-                             markRadius: 3.2)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .shadow(color: flyingColor.opacity(0.35), radius: 8)
+            Group {
+                if map == nil {
+                    TrackOutlineView(thumbnail: thumbnail,
+                                     flyingColor: flyingColor,
+                                     offFoilColor: offFoilColor,
+                                     lineWidth: 2.6,
+                                     offFoilScale: 0.5,
+                                     padding: 4,
+                                     fillsBox: true,
+                                     markRadius: Self.markRadius)
+                        .shadow(color: flyingColor.opacity(0.35), radius: 8)
+                } else {
+                    // Drawn by `mapTrack` instead, over the whole card and in the map's own
+                    // projection. The slot stays, at exactly the size it had, because the
+                    // header, the stat block and the footer must not move when the switch is
+                    // flipped — and because the snapshot is framed against this rectangle.
+                    Color.clear
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onGeometryChange(for: CGRect.self) {
+                $0.frame(in: .named(Self.cardSpace))
+            } action: { onTrackFrame?($0) }
         } else {
             Spacer(minLength: 0)
         }
@@ -234,7 +393,13 @@ struct ShareCardView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .padding(.vertical, isDense ? 4 : 8)
                 .padding(.horizontal, isDense ? 6 : 10)
-                .background(.white.opacity(0.10), in: .rect(cornerRadius: isDense ? 9 : 12))
+                                // White at a tenth over the brand gradient — which is how the card has
+                // always drawn it — but the *opposite* direction over a map: a translucent
+                // white plate over a town's white building fill is not a plate at all, and
+                // the eight numbers are the half of the card a reader actually reads.
+                .background(map == nil ? AnyShapeStyle(.white.opacity(0.10))
+                                       : AnyShapeStyle(.black.opacity(0.34)),
+                            in: .rect(cornerRadius: isDense ? 9 : 12))
             }
         }
     }

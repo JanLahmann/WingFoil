@@ -483,6 +483,12 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    stored choice. `UI_TITLE=…` and `UI_CAPTION=…` (schema v9) fill the composer's two text
    fields, which `simctl` cannot type into: they seed the drafts *and* the committed values,
    so the sheet photographs a named session without renaming the one in the library.
+   `UI_MAP=1|0` flips the card's **map background** — the `MKMapSnapshotter` ground under the
+   track — which is off by default and, like `UI_STATS`, is set here without writing the
+   rider's stored choice. It is drawn on whatever `UI_MAP_STYLE` selected, so the two hooks
+   pair: `UI_MAP=1 UI_MAP_STYLE=satellite` photographs the case the scrim was tuned against.
+   A simulator with no network renders the plain card instead, silently, which is exactly what
+   a rider on a beach gets.
    The **cinema replay** (`ReplayCinemaView`, the full-screen replay a clip is recorded from)
    opens with `UI_REPLAY_LENGTH=10|25|60|full`, which stands in for the record button plus the
    setup sheet's own length picker: the setup sheet asks for a **target length** and

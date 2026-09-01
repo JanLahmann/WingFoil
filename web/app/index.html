@@ -458,6 +458,18 @@
       <button type="button" class="seg-btn" data-preset="lean" aria-pressed="false">Lean</button>
     </div>
     <p class="note" id="card-preset-note"></p>
+    <!-- The map background. Off by default, and hidden outright for a recording with no
+         geographic anchor — the only control on this dialog that reaches the network, which
+         is why it says so on its own line rather than in the fine print at the bottom. -->
+    <div class="card-map" id="card-map-row" hidden>
+      <label class="card-switch">
+        <input type="checkbox" id="card-map">
+        <span>Map background</span>
+      </label>
+      <p class="muted small">Draws the track over OpenStreetMap. This is the one thing on
+        this page that fetches anything: map tiles for the area you sailed, nothing about
+        your session. Offline it is skipped and you still get the card.</p>
+    </div>
     <p class="muted small">PNG · <span id="card-size"></span> · nothing leaves this device
       until you send it.</p>
     <div class="ask-actions">

@@ -628,6 +628,21 @@ button.ghost.danger:hover { background: #2a1414; border-color: #6b2626; color: #
    reads as a filename. */
 .card-field input { width: 100%; font: 13.5px var(--sans); }
 #card-text-hint { color: var(--ink-3); }
+
+/* The map background's switch and the sentence that has to sit under it. It gets a plate of
+   its own rather than a third row in the picker stack because it is not the same *kind* of
+   choice: the shape and the detail rearrange pixels the page already has, and this one goes
+   out to a tile server. A rider is owed that in a place they cannot skim past. */
+.card-map {
+  display: grid; gap: 4px; padding: 10px 12px; border-radius: 8px;
+  background: var(--surface-2); border: 1px solid var(--line-soft);
+}
+.card-switch {
+  display: flex; align-items: center; gap: 8px;
+  font: 600 13px/1.2 var(--sans); color: var(--ink);
+}
+.card-switch input { width: 16px; height: 16px; margin: 0; accent-color: var(--good); }
+.card-map p { margin: 0; }
 /* The counter rides at the end of the hint sentence rather than under the field, so nothing
    moves when it appears at twenty characters from the cap. */
 #card-note-count { margin-left: 6px; font-variant-numeric: tabular-nums; }

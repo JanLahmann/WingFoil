@@ -46,6 +46,16 @@ struct ShareComposerView: View {
     @State private var pickedItem: PhotosPickerItem?
     @State private var photo: Image?
     @State private var photoFailed = false
+    /// Whether the rider wants the ground under his track. Seeded from the last card he
+    /// exported (`ShareCardMapStore`) and written back on every tap — a preference, not a
+    /// per-session choice. Off until asked: it is the only part of making a card that talks
+    /// to a server.
+    @State private var wantsMap = ShareCardMapStore.load(from: .standard)
+    /// The snapshot and the track projected onto it, once it has arrived.
+    @State private var map: ShareCardMap?
+    /// Where the card's own layout put the track, reported by the preview. Zero until the
+    /// first layout pass, and the snapshot waits for it — see `ShareCardMap`.
+    @State private var trackBox: CGRect = .zero
     @State private var rendered: Image?
     /// Width the sheet has for the preview; 0 until the first layout pass.
     @State private var availableWidth: CGFloat = 0
@@ -103,7 +113,17 @@ struct ShareComposerView: View {
     }
 
     private var card: ShareCardView {
-        ShareCardView(stats: stats, shape: shape, thumbnail: thumbnail, photo: photo)
+        ShareCardView(stats: stats, shape: shape, thumbnail: thumbnail, photo: photo,
+                      map: photo == nil ? map : nil,
+                      onTrackFrame: { trackBox = $0 })
+    }
+
+    /// The track and its marks as **coordinates**, for the map snapshot: the same two
+    /// collections `shareOutline` normalizes into the card's unit box, one step earlier.
+    /// Nil when the session's geometry is not in memory — the cached list thumbnail has no
+    /// degrees left in it, and a card cannot be given a map it cannot place a track on.
+    private var mapSource: ShareCardMapSource? {
+        detail?.shareGeography
     }
 
     var body: some View {
@@ -165,6 +185,7 @@ struct ShareComposerView: View {
             // on a shape flip rather than caching two of them.
             .task(id: renderKey) { render() }
             .task(id: pickedItem) { await loadPhoto() }
+            .task(id: mapKey) { await loadMap() }
             // The scrub is a full FIT rewrite, so it runs off the main actor and only for
             // the tab that needs it — opening the sheet on the card must not pay for it.
             .task(id: fitKey) { await prepareFIT() }
@@ -180,6 +201,9 @@ struct ShareComposerView: View {
                 // the rider's stored choice, which a tap on the picker would.
                 if let raw = environment["UI_STATS"],
                    let wanted = ShareCardStats.Preset(rawValue: raw) { preset = wanted }
+                // `UI_MAP=1|0` photographs the card with and without the ground under it
+                // without writing the rider's stored choice, which a tap on the switch would.
+                if let raw = environment["UI_MAP"] { wantsMap = raw == "1" }
                 // `UI_TITLE` / `UI_CAPTION` photograph a *named* session without renaming the
                 // rider's own: they seed the drafts and, by seeding `committed…` with the
                 // same values, guarantee no commit follows. `simctl` cannot type.
@@ -329,6 +353,8 @@ struct ShareComposerView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
 
+        mapToggle
+
         photoControls
 
         if let rendered {
@@ -433,7 +459,20 @@ struct ShareComposerView: View {
     private var renderKey: String {
         "\(shape.rawValue)|\(preset.rawValue)|\(photo == nil ? "plain" : "photo")"
             + "|\(thumbnail == nil ? 0 : 1)|\(metrics == nil ? 0 : 1)"
+            + "|\(map == nil ? 0 : 1)"
             + "|\(displayTitle)|\(noteDraft)"
+    }
+
+    /// Everything one snapshot depends on: whether it is wanted, the aspect it has to fill,
+    /// the ground the rider chose for every other map in the app, whether the geometry has
+    /// finished loading, and the rectangle the layout gave the track.
+    ///
+    /// The box is rounded to whole points on purpose. It is measured from a *scaled* preview,
+    /// so a sub-point wobble as the sheet resizes would otherwise re-run the snapshotter for a
+    /// framing no eye could tell from the last one.
+    private var mapKey: String {
+        "\(wantsMap && photo == nil)|\(shape.rawValue)|\(store.mapStyle.rawValue)"
+            + "|\(mapSource == nil ? 0 : 1)|\(trackBox.integral)"
     }
 
     /// Which tab is showing (so the scrub is never paid for on the card), whether the
@@ -475,6 +514,43 @@ struct ShareComposerView: View {
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.bordered)
+    }
+
+    /// The map background's switch, and the sentence that has to sit under it.
+    ///
+    /// **Hidden outright when the session's geometry is not in memory**, rather than shown
+    /// greyed out: a switch that cannot be flipped is a question about a feature the rider
+    /// then has to go and find out about, and this one has nothing to explain — the sheet was
+    /// opened before the detail finished loading, and it appears a moment later.
+    ///
+    /// **Below the two pickers and above the photo**, because that is the order of the
+    /// decisions: what shape, how much detail, what is behind it. And the photo wins if there
+    /// is one — a rider who picked a shot of his own has already answered the background
+    /// question, and rendering a map underneath it would be work nobody can see.
+    @ViewBuilder
+    private var mapToggle: some View {
+        if mapSource != nil {
+            VStack(alignment: .leading, spacing: 4) {
+                Toggle(isOn: Binding(get: { wantsMap },
+                                     set: { wanted in
+                                         wantsMap = wanted
+                                         ShareCardMapStore.save(wanted, to: .standard)
+                                     })) {
+                    Text("Map background")
+                }
+                .disabled(photo != nil)
+
+                Text(photo == nil
+                     ? "Draws the track over the map, on the ground you picked for the "
+                       + "session map. Needs a connection; without one the card comes out "
+                       + "plain."
+                     : "The photo you picked is the background. Remove it to use the map.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 
     @ViewBuilder
@@ -522,6 +598,23 @@ struct ShareComposerView: View {
         }
     }
 
+    /// The snapshot, when it is wanted and everything it needs is to hand.
+    ///
+    /// A failure of any kind — no geometry, no layout yet, a snapshotter that could not reach
+    /// Apple's servers — leaves `map` nil, which is the plain card. Nothing is said about it:
+    /// the rider asked for a background, not for a report on one, and the card he is looking
+    /// at is still the card he can send.
+    private func loadMap() async {
+        // `photo == nil` is not only a display rule: a rider whose background is a shot of
+        // his own must not pay for a snapshot nothing will ever show.
+        guard wantsMap, photo == nil, let source = mapSource, trackBox.width > 1 else {
+            map = nil
+            return
+        }
+        map = await ShareCardMapper.make(source: source, size: card.size,
+                                         trackBox: trackBox, style: store.mapStyle)
+    }
+
     private func loadPhoto() async {
         guard let pickedItem else { return }
         photoFailed = false
@@ -550,15 +643,29 @@ extension SessionDetail {
     /// outline's own projection, built from the same thinned coordinates, because a mark
     /// normalized against a different extent lands somewhere plausible and wrong.
     var shareOutline: TrackThumbnail {
+        let thinned = shareCoordinates
+        guard thinned.count >= 2 else {
+            return TrackThumbnail(points: [], speed: [], maxKn: 0)
+        }
+        return TrackThumbnail(points: TrackThumbnail.outline(coordinates: thinned),
+                              marks: shareMarks(thinned),
+                              speed: [], maxKn: maxSpeedKn)
+    }
+
+    /// The same polyline, thinned the same way, **before** it is normalized into a unit box.
+    ///
+    /// Split out because the card's optional map background needs the degrees back: a
+    /// snapshot has to be framed on the earth, and the outline above has thrown the earth
+    /// away by design. One thinning, two readers, so the mapped track and the plain one are
+    /// the same vertices.
+    var shareCoordinates: [(lat: Double, lon: Double, flying: Bool)] {
         var coordinates: [(lat: Double, lon: Double, flying: Bool)] = []
         for segment in segments {
             for point in segment.points {
                 coordinates.append((point.lat, point.lon, segment.flying))
             }
         }
-        guard coordinates.count >= 2 else {
-            return TrackThumbnail(points: [], speed: [], maxKn: 0)
-        }
+        guard coordinates.count >= 2 else { return [] }
         let budget = TrackThumbnail.maxPoints * 2      // a card can carry more than a row
         let stride = max(1, (coordinates.count + budget - 1) / budget)
         var thinned: [(lat: Double, lon: Double, flying: Bool)] = []
@@ -568,9 +675,31 @@ extension SessionDetail {
                 thinned.append(point)
             }
         }
-        return TrackThumbnail(points: TrackThumbnail.outline(coordinates: thinned),
-                              marks: shareMarks(thinned),
-                              speed: [], maxKn: maxSpeedKn)
+        return thinned
+    }
+
+    /// What the map background is drawn from: the thinned polyline and the same two marker
+    /// collections `shareMarks` normalizes, still in degrees. Nil when there is no track.
+    var shareGeography: ShareCardMapSource? {
+        let thinned = shareCoordinates
+        guard thinned.count >= 2 else { return nil }
+        var marks = turnPins.map { pin -> ShareCardMapSource.Mark in
+            let kind: TrackThumbnail.Mark.Kind
+            switch pin.outcome {
+            case .fellIn: kind = .fellIn
+            case .touchdown: kind = .touchdown
+            case .flewThrough: kind = .flewThrough
+            }
+            return ShareCardMapSource.Mark(lat: pin.lat, lon: pin.lon, kind: kind)
+        }
+        marks.append(contentsOf: splashMarks.map {
+            ShareCardMapSource.Mark(lat: $0.lat, lon: $0.lon, kind: .splash)
+        })
+        return ShareCardMapSource(
+            points: thinned.map {
+                ShareCardMapSource.Point(lat: $0.lat, lon: $0.lon, flying: $0.flying)
+            },
+            marks: marks)
     }
 
     private func shareMarks(

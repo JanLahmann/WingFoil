@@ -36,6 +36,14 @@ Six groups:
    beside it to check against. The drawing cannot be golden-tested; the content derivation
    is a pure function (`web/js/cardstats.js`) and so it is, through
    `web/tools/card_parity.mjs` (needs `node` — skipped without it).
+5b. **The rider's own title and caption.** The normalizers, the per-session key, the
+   `localStorage` round trip and the one piece of the card's geometry that depends on what
+   was typed.
+5c. **The optional map background.** That it is **off** unless the switch itself wrote the
+   preference — it is the only part of making a card that reaches a third-party server — and
+   that its framing puts the ride in exactly the box the plain card gives it. The tiles are
+   not fetched and no canvas is drawn: what could be wrong here is the arithmetic, and the
+   arithmetic is pure (`web/js/cardmap.js`).
 
 Exit 0 = everything matched; exit 1 = the failures are listed.
 """
@@ -44,6 +52,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import shutil
 import subprocess
@@ -787,6 +796,107 @@ def check_card_text() -> None:
     check("  THE CAPTION IS NOT A CELL: the stats are untouched", c["statsUnchanged"], True)
     check("  and so is the disclaimer", c["disclaimerUnchanged"], True)
     check("  and so is the date line", c["dateUnchanged"], True)
+
+    check_card_map(got)
+
+
+# ------------------------------------------------ 5c. the optional map background
+
+#: Where the map switch is remembered, and the one value that means "on". Spelled here rather
+#: than read out of the JavaScript, so the default is checked against a second copy of the
+#: rule: the map is the only part of making a card that reaches a third-party server, and a
+#: build that shipped it on by default would break the promise the analyzer makes loudest.
+MAP_KEY = "wingfoil.shareCard.map.v1"
+MAP_ON = "1"
+
+#: ODbL's required credit for the web card's tiles, exactly as the OSM Foundation asks for it.
+#: A card is a PNG in somebody else's chat thread: if this string is wrong, every copy of it
+#: already sent is wrong for ever.
+OSM_CREDIT = "© OpenStreetMap contributors"
+
+
+def _world_point(lat: float, lon: float) -> tuple[float, float]:
+    """Web Mercator's unit square, re-derived — the second implementation of
+    `worldPoint` in web/js/cardmap.js. x east from the anti-meridian, y **south** from the
+    top, both 0…1, which is the frame every raster tile scheme is cut out of."""
+    clamped = max(-85.05112878, min(85.05112878, lat))
+    s = math.sin(math.radians(clamped))
+    return ((lon + 180) / 360, 0.5 - math.log((1 + s) / (1 - s)) / (4 * math.pi))
+
+
+def check_card_map(got: dict) -> None:
+    """The optional map background: off unless asked, and the ride where it always was.
+
+    Two promises, and both of them are about a picture nobody can take back.
+
+    **Off.** The plain card is the card this project has exported since the beginning, and a
+    rider who never opens the switch must keep getting it — including the part where making
+    one asks nothing of anybody's server. So every way of reading the preference that is not
+    an explicit `"1"` written by the switch itself resolves to off.
+
+    **In place.** The whole design of the map background is that the layout does not know it
+    arrived: the framing is chosen so the ride fills exactly the box the card would have
+    fitted it into anyway, and only the margins around it become map. That is asserted here
+    on the arithmetic — the track's own bounding box, projected and placed, has to land on
+    the inset track box to a hundredth of a point.
+
+    The tiles themselves are not fetched and the canvas is not drawn: `mapBackdrop` needs a
+    DOM and a network, and neither is what could be wrong here.
+    """
+    section("5c. the card's optional map background")
+
+    s = got["choice"]
+    check("  nothing stored: portrait, complete, no map", s["defaultsBeforeAnythingIsWritten"],
+          {"shape": "portrait", "preset": "complete", "map": False})
+    check("  the switch remembers on", s["afterTurningOn"],
+          {"shape": "landscape", "preset": "lean", "map": True})
+    check("  and stores it as the contract's value", s["storedOn"], MAP_ON)
+    check("  and remembers off", s["afterTurningOff"]["map"], False)
+    check("  which is stored, not deleted", s["storedOff"], "0")
+    # The three ways a truthy-looking value could turn the map on behind the rider's back.
+    check("  a foreign truthy value is still off", s["foreignTruthyValue"], False)
+    check("  and so is garbage under the key", s["garbageValue"], False)
+    check("  a browser with no storage gets the defaults", s["withoutStorage"],
+          {"shape": "portrait", "preset": "complete", "map": False})
+    check("  and writing to one is a silent no-op", s["writeThrewWithoutStorage"], False)
+
+    check("  the OSM credit is the contract's string", got["credit"], OSM_CREDIT)
+
+    p = got["projection"]
+    want = [_world_point(0, 0), _world_point(0, -180), _world_point(0, 180)]
+    check("  the world square's three fixed points",
+          [[round(v["x"], 9), round(v["y"], 9)] for v in p["world"]],
+          [[round(x, 9), round(y, 9)] for x, y in want])
+    spot_x, spot_y = _world_point(45.8647, 10.8751)
+    check("  and Torbole, re-projected",
+          [round(p["spot"]["x"], 9), round(p["spot"]["y"], 9)],
+          [round(spot_x, 9), round(spot_y, 9)])
+
+    # THE RIDE LANDS WHERE IT ALWAYS DID — the whole promise of the feature, as arithmetic.
+    # One axis binds and puts the ride on the inset box's own edges; the other is centred in
+    # what is left. Which one binds is a fact about the session, not about the rule, so the
+    # assertion is written not to care: centred on both axes, inside the box on both, and
+    # touching on one.
+    box, inset = p["box"], p["inset"]
+    nw, se = p["northWest"], p["southEast"]
+    check("  the ride is centred on the track box horizontally",
+          round((nw[0] + se[0]) / 2, 2), round(box["x"] + box["w"] / 2, 2))
+    check("  and vertically", round((nw[1] + se[1]) / 2, 2),
+          round(box["y"] + box["h"] / 2, 2))
+    slack_x = round(nw[0] - (box["x"] + inset), 2)
+    slack_y = round(nw[1] - (box["y"] + inset), 2)
+    check("  it is inside the inset box on both axes", slack_x >= 0 and slack_y >= 0, True)
+    check("  and touches it on the binding one", min(slack_x, slack_y), 0.0)
+    check("  the far corner mirrors the near one",
+          [round(box["x"] + box["w"] - inset - se[0], 2),
+           round(box["y"] + box["h"] - inset - se[1], 2)], [slack_x, slack_y])
+
+    # The map is a *drawing* option. It has no way into the content, and this is the proof:
+    # the function that resolves everything the card says does not take it.
+    c = got["content"]
+    check("  a document with no view carries no anchor", c["geoWithoutAView"], None)
+    check("  and one with a view carries it verbatim", c["geoFromTheView"],
+          {"lat": 45.86, "lon": 10.87, "x": 1, "y": 2})
 
 
 # --------------------------------------------------------------------- main

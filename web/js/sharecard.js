@@ -26,8 +26,17 @@
  * groups to people who have never heard of the analyzer, so the bottom line says what the
  * site does, and the QR beside it lets someone looking at the picture on a friend's phone
  * get there without typing. Both strings live in `BRANDING` (js/cardstats.js), once.
+ *
+ * **The map is optional, and off.** With it on, `js/cardmap.js` composites OpenStreetMap
+ * tiles behind everything, a scrim goes over them, the breadcrumb is re-placed through the
+ * *map's* projection so it sits on the water rather than near it, and the required credit is
+ * drawn. With it off — the default, and what a rider who never opens the switch gets — not
+ * one line of that runs and the card is identical to the card this file has always drawn.
+ * Anything that goes wrong in between (offline, a tile server that will not answer, a
+ * tainted canvas) lands in the same place: the plain card, no message, no missing PNG.
  */
 
+import { CREDIT, frameTrack, mapBackdrop, placeOn } from "./cardmap.js";
 import {
   BRANDING, CAPTION_SEP, NOTE_LIMIT, PRESETS, SHAPES, TITLE_LIMIT, cardDateLine,
   cardDisclaimer, cardKey, cardStats, cardTitle, cardTitleDraft, cleanNote, cleanTitle,
@@ -190,20 +199,31 @@ function extent(track) {
   return Number.isFinite(x0) ? { x0, y0, x1, y1 } : null;
 }
 
+/** Radius of an outcome dot, in layout points. 3.2 pt at the card's 3× export is a 19 px
+ *  dot — the size a marker has to be to still read as a coloured verdict after a feed has
+ *  resampled the picture. */
+const MARK_R = 3.2;
+/** The inset the track box reserves. It carries the mark radius as well as the stroke's: a
+ *  dot on the outermost vertex is centred *on* the fitted edge and would otherwise lose its
+ *  outer half. Named rather than inlined because the map framing has to reserve exactly the
+ *  same margin, or a mapped track would come out a different size from a plain one. */
+const TRACK_INSET = 4 + MARK_R;
+
 /**
- * Draw the outline into `box` (layout points), fitting the ride to it.
+ * Where a track coordinate lands, fitting the ride to `box` (layout points).
  *
  * `y` is metres north, so the vertical axis is flipped — north up, the same way the map
  * figure draws it. The scale is uniform: a track stretched to fill both axes is a
  * different-shaped session.
+ *
+ * This is the card's *own* projection, and it knows only about the session: the track is
+ * placed against itself, which is all a card on a plain background has ever needed. With a
+ * map behind the card it is replaced outright (`buildMap`) — see the file comment.
  */
-function drawTrack(ctx, track, box) {
+function fittedPlacer(track, box) {
   const ext = extent(track);
-  if (!ext) return;
-  const markR = 3.2;
-  // The inset carries the mark radius as well as the stroke's: a dot on the outermost
-  // vertex is centred *on* the fitted edge and would otherwise lose its outer half.
-  const inset = 4 + markR;
+  if (!ext) return null;
+  const inset = TRACK_INSET;
   const w = Math.max(box.w - inset * 2, 1), h = Math.max(box.h - inset * 2, 1);
   const dx = ext.x1 - ext.x0, dy = ext.y1 - ext.y0;
   // A perfectly straight leg has zero extent on one axis; that axis then imposes no limit,
@@ -211,8 +231,13 @@ function drawTrack(ctx, track, box) {
   const s = Math.min(dx > 0.01 ? w / dx : Infinity, dy > 0.01 ? h / dy : Infinity);
   const scale = Number.isFinite(s) ? s : 1;
   const cx = (ext.x0 + ext.x1) / 2, cy = (ext.y0 + ext.y1) / 2;
-  const X = (x) => box.x + box.w / 2 + (x - cx) * scale;
-  const Y = (y) => box.y + box.h / 2 - (y - cy) * scale;
+  return (x, y) => ({ x: box.x + box.w / 2 + (x - cx) * scale,
+                      y: box.y + box.h / 2 - (y - cy) * scale });
+}
+
+/** Draw the outline through `place`, a metres → layout-points projection. */
+function drawTrack(ctx, track, place) {
+  const markR = MARK_R;
 
   ctx.save();
   ctx.lineCap = "round";
@@ -220,8 +245,12 @@ function drawTrack(ctx, track, box) {
   for (const run of track.runs) {
     if (run.pts.length < 2) continue;
     ctx.beginPath();
-    ctx.moveTo(X(run.pts[0][0]), Y(run.pts[0][1]));
-    for (let i = 1; i < run.pts.length; i++) ctx.lineTo(X(run.pts[i][0]), Y(run.pts[i][1]));
+    const first = place(run.pts[0][0], run.pts[0][1]);
+    ctx.moveTo(first.x, first.y);
+    for (let i = 1; i < run.pts.length; i++) {
+      const p = place(run.pts[i][0], run.pts[i][1]);
+      ctx.lineTo(p.x, p.y);
+    }
     ctx.strokeStyle = run.flying ? FLYING : OFF_FOIL;
     ctx.lineWidth = run.flying ? 2.6 : 2.6 * 0.5;
     if (run.flying) {
@@ -237,7 +266,7 @@ function drawTrack(ctx, track, box) {
   // the verdict it belongs to instead of hiding under it.
   const ordered = [...track.marks].sort((a, b) => (a.splash ? 1 : 0) - (b.splash ? 1 : 0));
   for (const m of ordered) {
-    const x = X(m.x), y = Y(m.y);
+    const { x, y } = place(m.x, m.y);
     ctx.beginPath();
     if (m.splash) {
       // Shape is a channel of its own: a splash usually sits on the fell-in verdict it
@@ -256,6 +285,149 @@ function drawTrack(ctx, track, box) {
     ctx.stroke();
     ctx.fillStyle = m.color;
     ctx.fill();
+  }
+  ctx.restore();
+}
+
+/* ------------------------------------------------------------------- the map
+ *
+ * Everything below runs only when the rider turned the map on. See js/cardmap.js for the
+ * tiles, the policy and the credit; what lives here is the one thing that is about the
+ * *card* — getting the breadcrumb onto the same earth the tiles are pictures of.
+ */
+
+/** The engine's own metres-per-degree, from `wingfoil_lab.filters`. Repeated rather than
+ *  imported because they arrive here as part of an already-computed document: these two
+ *  numbers are what `view.geo` is an anchor *for*. */
+const M_PER_DEG_LAT = 110540, M_PER_DEG_LON_EQ = 111320;
+
+/** The engine's local metres back to degrees, around the view's anchor sample. The inverse
+ *  of the forward projection the analysis did, to well under a metre — see `_geo_anchor` in
+ *  web/lab_bundle/web_entry.py for why one row is enough. */
+function toLatLon(geo, x, y) {
+  const lat = geo.lat + (y - geo.y) / M_PER_DEG_LAT;
+  const lon = geo.lon
+    + (x - geo.x) / (Math.cos(geo.lat * Math.PI / 180) * M_PER_DEG_LON_EQ);
+  return { lat, lon };
+}
+
+/**
+ * The map under one card: a bitmap and the projection that agrees with it.
+ *
+ * The framing is asked for the *track box* — the rectangle the card would have fitted the
+ * ride into anyway — so the ride comes out at the size and in the place it occupies on a
+ * plain card, and the map simply extends outwards to the card's own edges. Nothing in the
+ * layout moves, which is the point: a rider comparing the two switch positions is looking at
+ * one card with and without ground under it, not at two cards.
+ *
+ * `null` for every failure, and the caller draws the plain card.
+ */
+async function buildMap(content, box, W, H, scale) {
+  const { geo, track } = content;
+  if (!geo || !track) return null;
+  const ext = extent(track);
+  if (!ext) return null;
+  const frame = frameTrack({
+    min: toLatLon(geo, ext.x0, ext.y0),
+    max: toLatLon(geo, ext.x1, ext.y1),
+    box, inset: TRACK_INSET,
+  });
+  if (!frame) return null;
+  const image = await mapBackdrop(frame, W, H, scale);
+  if (!image) return null;
+  return {
+    image,
+    place: (x, y) => {
+      const c = toLatLon(geo, x, y);
+      return placeOn(frame, c.lat, c.lon);
+    },
+  };
+}
+
+/**
+ * What keeps the card readable over a photograph of a coastline.
+ *
+ * Two layers, and both earn their place. A flat navy wash first, so the map's own greens and
+ * ochres are pulled towards the card's palette and the phase tints — brand green for flying,
+ * paper for off foil — are again the only saturated thing on the picture. Then a vertical
+ * gradient, heavier at the two ends where every word actually sits and lightest across the
+ * middle, where the track is and where a rider wants to see the shore he sailed off.
+ *
+ * The wide shape gets a third pass: its words are a column on the right rather than two
+ * bands, so the darkness has to run the other way for them.
+ *
+ * The opacities were set by eye against the worst case the standard OSM layer produces — a
+ * town's white building fill under the footer — and not against open water, which needs
+ * about half of this.
+ */
+function drawScrim(ctx, W, H, wide) {
+  ctx.fillStyle = alpha(BRAND.navy, 0.34);
+  ctx.fillRect(0, 0, W, H);
+
+  const v = ctx.createLinearGradient(0, 0, 0, H);
+  v.addColorStop(0, "rgba(0, 0, 0, 0.70)");
+  v.addColorStop(0.30, "rgba(0, 0, 0, 0.34)");
+  v.addColorStop(0.62, "rgba(0, 0, 0, 0.38)");
+  v.addColorStop(1, "rgba(0, 0, 0, 0.80)");
+  ctx.fillStyle = v;
+  ctx.fillRect(0, 0, W, H);
+
+  if (!wide) return;
+  // The wide shape's words are a column, not two bands, so they need their own darkness
+  // running the other way — and a *panel* rather than a ramp: a gradient that is still
+  // brightening at the right-hand edge leaves the last stat cell and the QR sitting on
+  // whatever the map put there. It ramps in over 70 points so the edge of the panel is not
+  // a visible seam down the middle of the picture.
+  const x0 = W * (1 - WIDE_COLUMN) - PAD_X;
+  const h = ctx.createLinearGradient(x0 - 70, 0, x0, 0);
+  h.addColorStop(0, "rgba(0, 0, 0, 0)");
+  h.addColorStop(1, "rgba(0, 0, 0, 0.55)");
+  ctx.fillStyle = h;
+  ctx.fillRect(x0 - 70, 0, 70, H);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+  ctx.fillRect(x0, 0, W - x0, H);
+}
+
+/** What a stat cell is filled with. White at a tenth over the brand gradient — which is how
+ *  the card has always drawn it, and how `ShareCardView` draws it — but the *opposite*
+ *  direction over a map: a translucent white plate over a town's white building fill is not
+ *  a plate at all, and the eight numbers are the half of the card a reader actually reads. */
+const cellFill = (mapped) => (mapped ? "rgba(0, 0, 0, 0.34)" : "rgba(255, 255, 255, 0.10)");
+
+/** How much of the header's width the credit takes on a tall card, in layout points, so the
+ *  title can be told to stop short of it. Measured once at the credit's own size. */
+function creditWidth(ctx, family) {
+  ctx.font = `500 ${CREDIT_SIZE}px ${family}`;
+  return ctx.measureText(CREDIT).width;
+}
+
+const CREDIT_SIZE = 6.5;
+
+/**
+ * The map credit — required by ODbL, and drawn where it costs the card nothing.
+ *
+ * **Top-right on the tall shapes.** The bottom-right corner is the QR's, and a decoder that
+ * has to find three finder patterns in a photograph of a phone screen does not need six
+ * points of grey type against its quiet zone; the bottom-left is the brand mark and the call
+ * to action, which is the line the whole card exists to carry. That leaves the top corner
+ * opposite the title, and the title is told to stop short of it (`drawHeader`) so the two
+ * can never collide — a card is a PNG, and overlapping type on one is permanent.
+ *
+ * **Bottom-left on the wide shape**, where every word is in the right-hand column and the
+ * corner under the track is empty. Its header has 40 % of the card to work in and cannot
+ * afford to give a credit any of it.
+ */
+function drawCredit(ctx, inner, wide, family) {
+  ctx.save();
+  ctx.font = `500 ${CREDIT_SIZE}px ${family}`;
+  ctx.fillStyle = alpha(BRAND.paper, 0.62);
+  ctx.textBaseline = "alphabetic";
+  if (wide) {
+    ctx.textAlign = "left";
+    ctx.fillText(CREDIT, inner.x, inner.y + inner.h);
+  } else {
+    ctx.textAlign = "right";
+    ctx.fillText(CREDIT, inner.x + inner.w, inner.y + CREDIT_SIZE);
   }
   ctx.restore();
 }
@@ -344,9 +516,12 @@ export const headerHeight = (content) => HEADER_BASE_H + (content?.note ? NOTE_L
  * tightest and a full-length caption lands there around 6.5 pt, which is 19 px in an exported
  * 1920-pixel image.
  */
-function drawHeader(ctx, { title, dateLine, note }, box, family) {
+function drawHeader(ctx, { title, dateLine, note }, box, family, titleInset = 0) {
   ctx.textBaseline = "alphabetic";
-  drawFitted(ctx, title, box.x, box.y + 22, box.w, 25, 700, family, BRAND.paper);
+  // `titleInset` is the room the map credit needs in the top-right corner. It shrinks the
+  // title rather than moving it, by the rule the whole card follows.
+  drawFitted(ctx, title, box.x, box.y + 22, Math.max(box.w - titleInset, 40), 25, 700,
+             family, BRAND.paper);
   ctx.font = `500 12px ${family}`;
   ctx.fillStyle = alpha(BRAND.paper, 0.72);
   ctx.fillText(dateLine, box.x, box.y + 38);
@@ -389,13 +564,13 @@ function gridHeight(stats, shape) {
   return rows * m.cellH + (rows - 1) * m.gap;
 }
 
-function drawGrid(ctx, stats, box, shape, family) {
+function drawGrid(ctx, stats, box, shape, family, mapped = false) {
   const m = gridMetrics(stats, shape);
   const cellW = (box.w - m.gap * (m.cols - 1)) / m.cols;
   stats.forEach((stat, i) => {
     const cx = box.x + (i % m.cols) * (cellW + m.gap);
     const cy = box.y + Math.floor(i / m.cols) * (m.cellH + m.gap);
-    ctx.fillStyle = "rgba(255, 255, 255, 0.10)";
+    ctx.fillStyle = cellFill(mapped);
     roundRect(ctx, cx, cy, cellW, m.cellH, m.radius);
     ctx.fill();
 
@@ -572,7 +747,7 @@ function drawFooter(ctx, { disclaimer }, box, art, family) {
  * Layout is in points throughout — the context is scaled by `SCALE` once, at the top — so
  * the paddings below can be read against `ShareCardView` directly.
  */
-export async function drawCard(canvas, content, shape) {
+export async function drawCard(canvas, content, shape, options = {}) {
   const size = SHAPES[shape];
   const family = sansStack();
   await ensureFonts(family);
@@ -583,10 +758,49 @@ export async function drawCard(canvas, content, shape) {
   const ctx = canvas.getContext("2d");
   ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
   const W = size.w / SCALE, H = size.h / SCALE;
+  const wide = isWide(shape);
+  const boxes = cardBoxes(content, shape, W, H);
 
-  drawBackground(ctx, W, H);
+  // The one await between the layout and the ink. Off — the default — it is not reached at
+  // all, and everything below draws the card this file has always drawn.
+  const map = options.map && boxes.track
+    ? await buildMap(content, boxes.track, W, H, SCALE) : null;
+
+  if (map) {
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(map.image, 0, 0, size.w, size.h);
+    ctx.restore();
+    drawScrim(ctx, W, H, wide);
+  } else {
+    drawBackground(ctx, W, H);
+  }
   ctx.textBaseline = "alphabetic";
 
+  // The track goes down before the words on every shape, mapped or not: on the tall shapes
+  // the two do not overlap, and on a mapped card the breadcrumb runs past its own box into
+  // the map's margins, where the header and the footer must stay on top of it.
+  if (content.track) {
+    const place = map ? map.place : fittedPlacer(content.track, boxes.track);
+    if (place) drawTrack(ctx, content.track, place);
+  }
+
+  const titleInset = map && !wide ? creditWidth(ctx, family) + 8 : 0;
+  drawHeader(ctx, content, boxes.header, family, titleInset);
+  drawGrid(ctx, content.stats, boxes.grid, shape, family, Boolean(map));
+  drawFooter(ctx, content, boxes.footer, art, family);
+  if (map) drawCredit(ctx, boxes.inner, wide, family);
+  return canvas;
+}
+
+/**
+ * Where the four pieces sit, in layout points.
+ *
+ * Pulled out of `drawCard` because the map framing needs the *track box* before anything is
+ * drawn: the whole promise of the map background is that the ride lands where it would have
+ * landed anyway, and that can only be kept by asking the layout first and painting second.
+ */
+function cardBoxes(content, shape, W, H) {
   const stats = content.stats;
   const footH = footerHeight(content.disclaimer);
   const gridH = gridHeight(stats, shape);
@@ -599,27 +813,25 @@ export async function drawCard(canvas, content, shape) {
     // under a banner.
     const colW = W * WIDE_COLUMN;
     const trackW = inner.w - colW - STACK_GAP * 2;
-    if (content.track) {
-      drawTrack(ctx, content.track, { x: inner.x, y: inner.y, w: trackW, h: inner.h });
-    }
     const cx = inner.x + trackW + STACK_GAP * 2;
-    drawHeader(ctx, content, { x: cx, y: inner.y, w: colW }, family);
-    drawGrid(ctx, stats, { x: cx, y: inner.y + headH + STACK_GAP, w: colW }, shape, family);
-    drawFooter(ctx, content, { x: cx, y: inner.y + inner.h - footH, w: colW, h: footH },
-               art, family);
-  } else {
-    drawHeader(ctx, content, { x: inner.x, y: inner.y, w: inner.w }, family);
-    const trackY = inner.y + headH + STACK_GAP;
-    const gridY = inner.y + inner.h - footH - STACK_GAP - gridH;
-    if (content.track) {
-      drawTrack(ctx, content.track,
-                { x: inner.x, y: trackY, w: inner.w, h: gridY - STACK_GAP - trackY });
-    }
-    drawGrid(ctx, stats, { x: inner.x, y: gridY, w: inner.w }, shape, family);
-    drawFooter(ctx, content, { x: inner.x, y: inner.y + inner.h - footH, w: inner.w, h: footH },
-               art, family);
+    return {
+      inner,
+      track: content.track ? { x: inner.x, y: inner.y, w: trackW, h: inner.h } : null,
+      header: { x: cx, y: inner.y, w: colW },
+      grid: { x: cx, y: inner.y + headH + STACK_GAP, w: colW },
+      footer: { x: cx, y: inner.y + inner.h - footH, w: colW, h: footH },
+    };
   }
-  return canvas;
+  const trackY = inner.y + headH + STACK_GAP;
+  const gridY = inner.y + inner.h - footH - STACK_GAP - gridH;
+  return {
+    inner,
+    track: content.track
+      ? { x: inner.x, y: trackY, w: inner.w, h: gridY - STACK_GAP - trackY } : null,
+    header: { x: inner.x, y: inner.y, w: inner.w },
+    grid: { x: inner.x, y: gridY, w: inner.w },
+    footer: { x: inner.x, y: inner.y + inner.h - footH, w: inner.w, h: footH },
+  };
 }
 
 /**
@@ -637,12 +849,16 @@ export function cardContent(result, preset, text = {}) {
     stats: cardStats(result.golden, preset),
     disclaimer: cardDisclaimer(result.meta),
     track: buildTrack(result),
+    // The key back to the globe, for the optional map background and for nothing else. Null
+    // on a document analysed before the anchor existed (one re-opened from the library) and
+    // on any recording with no fixes — both of which simply cannot offer a map.
+    geo: result.view?.geo || null,
   };
 }
 
 /* ------------------------------------------------------------------ the dialog */
 
-const state = { result: null, key: "", shape: "portrait", preset: "complete",
+const state = { result: null, key: "", shape: "portrait", preset: "complete", map: false,
                 title: "", note: "", blob: null, seq: 0 };
 
 /** The offscreen canvas the PNG comes off. One per page: a 1920×1080 bitmap is 8 MB, and
@@ -663,6 +879,7 @@ export function mountShareCard() {
   for (const b of dialog.querySelectorAll("[data-preset]")) {
     b.addEventListener("click", () => choose({ preset: b.dataset.preset }));
   }
+  el("card-map").addEventListener("change", (ev) => choose({ map: ev.target.checked }));
   // `input`, not `change`: the preview is the point of the field, so it follows the typing.
   // The seq guard in `refresh` already throws away every draw but the newest, and the write
   // behind it is one `localStorage.setItem` of a small object.
@@ -701,6 +918,10 @@ export function openShareCard(result) {
   const saved = loadCardChoice();
   state.shape = saved.shape;
   state.preset = saved.preset;
+  // Remembered, but only where it can be honoured: a document with no geographic anchor
+  // (no fixes, or one analysed by a build that predates it) has no map to offer, and a
+  // switch that is on and does nothing is worse than a switch that is not there.
+  state.map = saved.map && mapAvailable(result);
   // The rider's own words for *this* session, if he wrote any here before.
   //
   // The title field opens **filled in** with what the card is currently headlined
@@ -727,11 +948,14 @@ export function openShareCard(result) {
   refresh();
 }
 
+/** Whether this document can carry a map at all — see `cardContent`'s `geo`. */
+const mapAvailable = (result) => Boolean(result?.view?.geo);
+
 function choose(next) {
   Object.assign(state, next);
-  // Two stores, two scopes: the shape and the preset are the rider's habit and belong to the
-  // device, the title and caption belong to this one session (`cardKey`).
-  saveCardChoice({ shape: state.shape, preset: state.preset });
+  // Two stores, two scopes: the shape, the preset and the map are the rider's habit and
+  // belong to the device, the title and caption belong to this one session (`cardKey`).
+  saveCardChoice({ shape: state.shape, preset: state.preset, map: state.map });
   saveCardText(state.key, { title: state.title, note: state.note });
   syncChoices();
   refresh();
@@ -746,6 +970,11 @@ function syncChoices() {
     b.setAttribute("aria-pressed", String(b.dataset.preset === state.preset));
   }
   el("card-preset-note").textContent = PRESETS[state.preset].summary;
+  const offered = mapAvailable(state.result);
+  const box = el("card-map");
+  box.checked = state.map;
+  box.disabled = !offered;
+  el("card-map-row").hidden = !offered;
 }
 
 /**
@@ -762,7 +991,8 @@ async function refresh() {
   if (!full) full = document.createElement("canvas");
   const size = SHAPES[state.shape];
   await drawCard(full, cardContent(state.result, state.preset,
-                                   { title: state.title, note: state.note }), state.shape);
+                                   { title: state.title, note: state.note }), state.shape,
+                 { map: state.map });
   if (seq !== state.seq) return;
 
   // The preview IS the PNG, scaled — not a second rendering of it, so what the rider

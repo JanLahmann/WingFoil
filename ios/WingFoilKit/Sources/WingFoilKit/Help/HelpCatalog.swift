@@ -700,6 +700,10 @@ public enum HelpCatalog {
                 + "landscape to suit where it is going, and Complete or Lean depending on "
                 + "how much detail you want on it. A photo from your library can go behind "
                 + "it.",
+                "Or turn on the map background and the track is drawn over the water you "
+                + "sailed, on whatever ground you picked for the session map. That one needs "
+                + "a connection — it is the only part of making a card that does — and "
+                + "without one the card simply comes out plain.",
                 "The card is made on your phone and goes nowhere until you send it.",
             ],
             image: HelpImage(asset: "help-share-composer",
