@@ -145,6 +145,30 @@ def elapsed(t: np.ndarray, gap: np.ndarray, a: int, b: int) -> float:
     return float(dt[~gap[a + 1:b + 1]].sum())
 
 
+def travelled(t: np.ndarray, gap: np.ndarray, v: np.ndarray, a: int, b: int) -> float:
+    """Distance covered from sample `a` to `b` on speed channel `v`, in metres.
+
+    Trapezoid-integrated over recorded intervals only -- the twin of `elapsed`, which
+    integrates the same intervals against 1 -- so a recording gap contributes no distance
+    for the same reason it contributes no time: nothing was measured across it.
+
+    The *channel* is the caller's choice and it matters. `off_foil_evidence` carries two,
+    and for anything measured while the rider is off the foil the honest one is `speed`
+    (= min(Doppler, positional)), not `doppler`: both channels over-read a rider who is not
+    being carried -- wrist Doppler picks up swim strokes, positional picks up GPS jitter --
+    so the lower of the two is a distance he certainly covered rather than one the sensors
+    could have invented. It is the same argument `flying_mask` and `longest_stop` already
+    make, and using one channel for the verdict and a looser one for the number it carries
+    would be two measurements of one swim.
+    """
+    if b <= a:
+        return 0.0
+    dt = np.diff(t[a:b + 1])
+    mid = (v[a + 1:b + 1] + v[a:b]) / 2.0
+    keep = ~gap[a + 1:b + 1]
+    return float((dt[keep] * mid[keep]).sum())
+
+
 def longest_stop(t: np.ndarray, gap: np.ndarray, v: np.ndarray, a: int, b: int,
                  floor: float) -> float:
     """Longest contiguous spell below `floor` in [a, b], in recorded seconds.

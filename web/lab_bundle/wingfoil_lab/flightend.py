@@ -46,6 +46,21 @@ window is still explained by that course change, not by a straight-line loss.
 
 The session split that falls out of this -- falls in turns vs straight-line falls, the same
 for touchdowns -- is what `summarize_flight_ends` and `split_outcomes` report.
+
+**Swim distance** (engine 0.9.2, docs/algorithms.md "Swim distance"). A `fell_in` end says
+the rider got wet; it never said *how far he then had to travel*. The off-foil run is
+already measured for the verdict, but it is measured over the **judging** window
+(`outcomeWindow`, 60 s) because that is all the evidence a verdict needs -- and a swim is
+not over when the evidence is in. So the swim gets a second, uncapped walk of the same run:
+from the first sample not flying to the sample foiling resumes, or, when it never does, to
+the last sample of the recording. That last case is the whole point of the pass. A rider who
+loses the foil for good 200 m out swims the longest distance of his afternoon *after* the
+part any window was watching, and on the 60 s cap it read as 48 m of a 1.8 km swim home.
+
+Only `fell_in` ends get one. A glide-out is a rider still making way and a touchdown is one
+back up inside three seconds; neither is a swim, and giving them a distance would put a
+number on the screen for something that did not happen (`swim_m` stays None, which is a
+different statement from 0.0).
 """
 
 from __future__ import annotations
@@ -55,7 +70,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from .evidence import (KMH_TO_MPS, OffFoilEvidence, elapsed, longest_stop,
-                       off_foil_evidence, off_foil_run, recovery_end)
+                       off_foil_evidence, off_foil_run, recovery_end, travelled)
 from .filters import CleanTrack
 from .flight import FlightResult
 from .pump import PumpTrack
@@ -105,6 +120,10 @@ class FlightEnd:
     window_s: float = 0.0            # evidence actually available past the flight end
     truncated: bool = False          # the recording ended, not the flight: no evidence
     owned_by_turn: int | None = None  # index into the turn list, when a turn explains it
+    # The swim itself (engine 0.9.2, `fell_in` ends only -- see "Swim distance" below).
+    swim_start_t: float | None = None  # first sample not flying after the end
+    swim_end_t: float | None = None    # foiling again, or the last sample of the recording
+    swim_m: float | None = None        # distance covered between the two, on `speed`
 
     @property
     def in_turn(self) -> bool:
@@ -132,12 +151,31 @@ class FlightEndCounts:
 
 
 @dataclass
+class SwimSummary:
+    """How far the session's swims came to (module docstring, "Swim distance").
+
+    `distance_m` totals **every** swim, turn-owned or not, on the same channel `wetPerHour`
+    counts: one `fell_in` flight end is one time the rider got in the water, whatever
+    started it. `longest_m` and its window are the one worth telling him about.
+
+    A session with no swims in it reports 0.0 and no window -- and that is a measured zero,
+    not an absence: the ends were classified and none of them was a swim.
+    """
+
+    distance_m: float = 0.0
+    longest_m: float = 0.0
+    longest_start_t: float | None = None
+    longest_end_t: float | None = None
+
+
+@dataclass
 class FlightEndSummary:
     """Every flight end, split by whether a turn already owns it."""
 
     all_ends: FlightEndCounts = field(default_factory=FlightEndCounts)
     straight: FlightEndCounts = field(default_factory=FlightEndCounts)   # not in a turn
     in_turn: FlightEndCounts = field(default_factory=FlightEndCounts)
+    swim: SwimSummary = field(default_factory=SwimSummary)
 
 
 @dataclass
@@ -190,11 +228,29 @@ def classify_flight_ends(clean: CleanTrack, flights: FlightResult,
 
 
 def summarize_flight_ends(ends: list[FlightEnd]) -> FlightEndSummary:
-    """Tally all flight ends and split them into turn-owned and straight-line."""
+    """Tally all flight ends, split them turn-owned/straight-line, and total the swims."""
     s = FlightEndSummary()
     for end in ends:
         s.all_ends.add(end)
         (s.in_turn if end.in_turn else s.straight).add(end)
+    s.swim = summarize_swims(ends)
+    return s
+
+
+def summarize_swims(ends: list[FlightEnd]) -> SwimSummary:
+    """Total the measured swims and pick the longest one.
+
+    Ties go to the **earlier** swim, so the answer is a function of the session and not of
+    list order -- the same tie-break the record windows and the longest flight use.
+    """
+    s = SwimSummary()
+    for end in sorted(ends, key=lambda e: e.t):
+        if end.swim_m is None:
+            continue
+        s.distance_m += end.swim_m
+        if end.swim_m > s.longest_m:
+            s.longest_m = end.swim_m
+            s.longest_start_t, s.longest_end_t = end.swim_start_t, end.swim_end_t
     return s
 
 
@@ -238,6 +294,8 @@ def _classify(index: int, end_t: float, ev: OffFoilEvidence, cfg: FlightEndConfi
 
     if end.submerged or end.stopped_s > cfg.fall_stop_s:
         end.outcome = FELL_IN
+        if lost.size:
+            _measure_swim(end, t, ev, int(lost[0]))
     elif end.min_speed_mps < cfg.stop_speed_floor_mps:
         end.outcome = TOUCHDOWN
         end.borderline = end.stopped_s > cfg.touchdown_max_stop_s
@@ -248,6 +306,26 @@ def _classify(index: int, end_t: float, ev: OffFoilEvidence, cfg: FlightEndConfi
         # has to pump a burst out of it did not glide out by choice, he touched down.
         end.outcome = TOUCHDOWN
     return end
+
+
+def _measure_swim(end: FlightEnd, t: np.ndarray, ev: OffFoilEvidence, a: int) -> None:
+    """Fill the swim window and its distance, in place (module docstring, "Swim distance").
+
+    Deliberately **uncapped**: `off_foil_run` is handed `inf` rather than the judging
+    window's `outcomeWindow`, so the run ends where the swim does -- the rider flying again,
+    or the recording stopping. `off_foil_run` already clamps to the last sample, so the
+    end-of-session case needs no special arm here; what it needs is for nothing to cut the
+    walk short before it, which is what the missing cap is.
+
+    Note this walk is not stopped by a recording gap either, and that is right: flights hard-
+    break at gaps, so a swim that spans one reads as "still not flying" on both sides and it
+    is the same swim. The gap contributes no distance and no time (`travelled` skips it), so
+    what is reported is what was recorded, not what was interpolated across.
+    """
+    _, last = off_foil_run(t, ev.flying, a, float("inf"))
+    end.swim_start_t = float(t[a])
+    end.swim_end_t = float(t[last])
+    end.swim_m = travelled(t, ev.gap, ev.speed, a, last)
 
 
 def _recover_threshold(ev: OffFoilEvidence, end_t: float, cfg: FlightEndConfig) -> float:
@@ -282,5 +360,5 @@ def _assign_ownership(ends: list[FlightEnd], turns: list[Turn]) -> None:
 
 __all__ = ["FELL_IN", "FLIGHT_END_OUTCOMES", "GLIDE_OUT", "TOUCHDOWN", "UNKNOWN",
            "FlightEnd", "FlightEndConfig", "FlightEndCounts", "FlightEndSummary",
-           "OutcomeSplit", "classify_flight_ends", "split_outcomes",
-           "summarize_flight_ends"]
+           "OutcomeSplit", "SwimSummary", "classify_flight_ends", "split_outcomes",
+           "summarize_flight_ends", "summarize_swims"]
