@@ -6,7 +6,7 @@ import Toybox.WatchUi;
 
 // File scope so the static layout helpers (shared with the layout test) can reach them —
 // class consts are instance-scoped in Monkey C.
-const START_TITLE = "WingFoil";
+const START_TITLE = "CleanJibe";
 const START_HINT = "START to record";
 // Nominal fonts as TEXT_FONTS indices: FONT_MEDIUM for the title and — since 0.9.2 — for the
 // GPS STATE row, FONT_SMALL for the wind and hint rows. fitFont() shrinks any of them when the

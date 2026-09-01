@@ -155,8 +155,8 @@ public enum HelpCatalog {
                 "Nothing in CleanJibe makes sense on an empty library, and the first thing a "
                 + "new install has is an empty library. So one real recording travels inside "
                 + "the app: \(ExampleSession.blurb)",
-                "It comes from \(ExampleSession.place) and was recorded with the WingFoil "
-                + "Connect IQ app on a fenix, which makes it a class-(a) source — the "
+                "It comes from \(ExampleSession.place) and was recorded with the CleanJibe "
+                + "watch app on a fenix, which makes it a class-(a) source — the "
                 + "developer fields, the watch laps and the heart-rate stream are all "
                 + "there. The one thing left behind is the 100 Hz accelerometer stream, "
                 + "which was 96 % of the recording's size and would have been 96 % of the "
@@ -604,7 +604,7 @@ public enum HelpCatalog {
             ],
             items: [
                 .init(term: "Class a",
-                      detail: "A recording from the WingFoil watch app. Doppler speed, "
+                      detail: "A recording from the CleanJibe watch app. Doppler speed, "
                           + "positions, the wrist accelerometer, the barometer and the watch's "
                           + "own live summary. Everything in the app is available."),
                 .init(term: "Class b",
@@ -621,7 +621,7 @@ public enum HelpCatalog {
             id: .divergence, section: .quality, title: "\"Watch and phone disagree\"",
             summary: "The banner comparing the live watch numbers with the phone's recompute.",
             body: [
-                "When a session comes from the WingFoil watch app it carries the summary the "
+                "When a session comes from the CleanJibe watch app it carries the summary the "
                 + "watch computed live, on a wrist, in one forward pass with no memory to spare. "
                 + "The phone then recomputes the same session properly, and the two are compared.",
                 "The banner appears when foil time differs by more than 5 %, any speed record by "

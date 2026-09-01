@@ -86,7 +86,8 @@ struct SessionDetailView: View {
                     // about one metric, and it was the most prominent element on the screen
                     // after the title (§1.3).
                     if !detail.divergences.isEmpty {
-                        DivergenceBanner(divergences: detail.divergences)
+                        DivergenceBanner(sessionID: sessionID,
+                                         divergences: detail.divergences)
                     }
                     Section {
                         VStack(alignment: .leading, spacing: 20) {
@@ -97,9 +98,22 @@ struct SessionDetailView: View {
                         switcher
                     }
                 } else if let failure {
-                    ContentUnavailableView("Could not open this session",
-                                           systemImage: "exclamationmark.triangle",
-                                           description: Text(failure))
+                    // The rider gets a sentence they can act on; the raw error text stays,
+                    // smaller and underneath, because it is the only thing that makes a
+                    // report about this session actionable — it is just not the message.
+                    ContentUnavailableView {
+                        Label("Could not open this session",
+                              systemImage: "exclamationmark.triangle")
+                    } description: {
+                        VStack(spacing: 8) {
+                            Text("The recording could not be read. It may still be "
+                                 + "downloading, or the stored file is damaged — try "
+                                 + "importing the session again.")
+                            Text(failure)
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
                 } else {
                     ProgressView("Analyzing…")
                         .frame(maxWidth: .infinity, minHeight: 200)
@@ -396,14 +410,42 @@ private struct WindRow: View {
 }
 
 /// Watch-vs-phone divergence banner (docs/plan.md §5, thresholds in docs/algorithms.md).
-/// A standing field-regression alarm on every class-(a) import: the phone recompute is
-/// authoritative, so a divergence is a tuning issue to file against the session fixture,
-/// not an error the rider has to act on.
+/// A standing field-regression signal on every class-(a) import: the phone recompute is
+/// authoritative, so a divergence is a note about where a number came from, not an error the
+/// rider has to act on — which is why the text says so in the rider's words and why the
+/// banner can be sent away. Dismissal is per session and per *divergence*
+/// (`DivergenceDismissal`): a later re-analysis that says something different comes back.
 private struct DivergenceBanner: View {
+    let sessionID: String
     let divergences: [Divergence]
     @State private var expanded = false
+    @AppStorage(DivergenceDismissal.defaultsKey) private var dismissedRaw = ""
+
+    /// The store as an array. `@AppStorage` cannot hold `[String]`, so the fingerprints ride
+    /// in one newline-joined string — they are hex and a session id, so neither can contain
+    /// the separator.
+    private var dismissed: [String] {
+        dismissedRaw.split(separator: "\n").map(String.init)
+    }
+
+    private var isDismissed: Bool {
+        DivergenceDismissal.isDismissed(sessionID: sessionID, divergences: divergences,
+                                        dismissed: dismissed)
+    }
+
+    /// True when the only things that disagree are the takeoff counts. That is the expected
+    /// disagreement — the watch counts strokes and attempts as they happen, the phone reads
+    /// the whole session back — so it gets a calmer sentence than a speed or a foil time.
+    private var takeoffOnly: Bool {
+        !divergences.isEmpty
+            && divergences.allSatisfy { $0.metric.hasPrefix("Takeoff") }
+    }
 
     var body: some View {
+        if !isDismissed { banner }
+    }
+
+    private var banner: some View {
         VStack(alignment: .leading, spacing: 8) {
             Button { expanded.toggle() } label: {
                 HStack(spacing: 8) {
@@ -418,6 +460,7 @@ private struct DivergenceBanner: View {
                 .foregroundStyle(.orange)
             }
             .buttonStyle(.plain)
+            .overlay(alignment: .topTrailing) { dismissButton }
 
             if expanded {
                 VStack(alignment: .leading, spacing: 4) {
@@ -433,8 +476,7 @@ private struct DivergenceBanner: View {
                         .font(.caption2.monospacedDigit())
                     }
                     HStack(spacing: 6) {
-                        Text("The phone recompute is authoritative — file this against the "
-                             + "session fixture as a tuning issue.")
+                        Text(advice)
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                         HelpButton(topic: .divergence)
@@ -446,6 +488,35 @@ private struct DivergenceBanner: View {
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.orange.opacity(0.12), in: .rect(cornerRadius: 12))
+    }
+
+    /// The X. Deliberately quiet — tertiary, no label — because it is an escape hatch on a
+    /// footnote, not one of the two things the banner is for.
+    private var dismissButton: some View {
+        Button {
+            let next = DivergenceDismissal.dismissing(sessionID: sessionID,
+                                                      divergences: divergences,
+                                                      in: dismissed)
+            dismissedRaw = next.joined(separator: "\n")
+        } label: {
+            Image(systemName: "xmark")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.tertiary)
+                .padding(6)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Hide this note")
+        .offset(x: 6, y: -6)
+    }
+
+    private var advice: String {
+        let base = "The phone's numbers are the ones to trust: it reads the whole session "
+            + "back afterwards, while the watch has to work these out live on your wrist, "
+            + "as you ride. Nothing is wrong with your session."
+        guard takeoffOnly else { return base }
+        return base + " Takeoff and pump counting is where the two differ most; keeping the "
+            + "watch app up to date narrows the gap."
     }
 
     private var list: String {

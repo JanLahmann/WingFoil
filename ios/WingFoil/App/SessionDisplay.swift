@@ -79,7 +79,7 @@ enum SessionDisplay {
     /// a = our CIQ FIT (everything) · b = native Doppler FIT · c = degraded source.
     static func sourceClassNote(_ sourceClass: String) -> String {
         switch sourceClass {
-        case "a": "Class a — WingFoil CIQ recording (developer fields present)"
+        case "a": "Class a — CleanJibe watch recording (all metrics available)"
         case "b": "Class b — device FIT with Doppler speed"
         default: "Class c — degraded source, records are uncertified"
         }

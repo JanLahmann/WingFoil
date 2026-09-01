@@ -172,7 +172,7 @@ function showResult(result, { digest = null, bytes = null, fromLibrary = false,
   // Track and Speed panels are on screen when render() draws into them. A new document
   // also starts on Map · Speed the way a new session view starts unzoomed.
   resetSections();
-  render(result, { highlight });
+  render(result, { highlight, isExample });
   updateSaveButton();
   showHighlightNote(highlight);
   showView("analyze");
@@ -409,7 +409,11 @@ async function openStored(id, record = null) {
       ? { label: record.label, value: record.value, unit: record.unit,
           windows: record.windows }
       : null;
-    showResult(await openStoredSession(id), { fromLibrary: true, highlight });
+    // The example keeps its badge when it is reopened from the library, not only when it
+    // is first analyzed: the list says EXAMPLE beside it, and the report has to agree.
+    const entry = (await listEntries()).find((e) => e.id === id);
+    showResult(await openStoredSession(id),
+               { fromLibrary: true, highlight, isExample: !!entry?.example });
   } catch (err) {
     fail(err.message);
   }
@@ -508,7 +512,7 @@ function wireReflow() {
     clearTimeout(timer);
     timer = setTimeout(() => {
       if (state.last && !el("results").hidden && !el("view-analyze").hidden) {
-        render(state.last, { highlight: state.highlight });
+        render(state.last, { highlight: state.highlight, isExample: state.isExample });
       }
       if (!el("view-trends").hidden) redrawTrends();
     }, 180);

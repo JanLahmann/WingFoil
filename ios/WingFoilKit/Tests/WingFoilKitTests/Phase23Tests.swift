@@ -611,6 +611,52 @@ import Testing
         #expect(DivergenceCheck.compare(watch: WatchSummary(), phone: analysis).isEmpty)
     }
 
+    /// Dismissing the banner hides *that* divergence, not the session: a re-analysis that
+    /// says something different is a new statement and shows again.
+    @Test func dismissingABannerHidesOnlyTheDivergenceThatWasRead() {
+        let one = [Divergence(metric: "Foil time", watch: "20:00", phone: "16:00", delta: "-20 %")]
+        let other = [Divergence(metric: "Flights", watch: "10", phone: "14", delta: "+4")]
+
+        #expect(!DivergenceDismissal.isDismissed(sessionID: "s1", divergences: one,
+                                                 dismissed: []))
+
+        let store = DivergenceDismissal.dismissing(sessionID: "s1", divergences: one, in: [])
+        #expect(DivergenceDismissal.isDismissed(sessionID: "s1", divergences: one,
+                                                dismissed: store))
+        // A different divergence on the same session comes back...
+        #expect(!DivergenceDismissal.isDismissed(sessionID: "s1", divergences: other,
+                                                 dismissed: store))
+        // ...and the same divergence on another session was never dismissed.
+        #expect(!DivergenceDismissal.isDismissed(sessionID: "s2", divergences: one,
+                                                 dismissed: store))
+
+        // Order of the checks cannot change the key, and the delta is not part of it.
+        let reordered = [other[0], one[0]]
+        let both = DivergenceDismissal.dismissing(sessionID: "s3",
+                                                  divergences: [one[0], other[0]], in: [])
+        #expect(DivergenceDismissal.isDismissed(sessionID: "s3", divergences: reordered,
+                                                dismissed: both))
+
+        // Re-analysis replaces a session's earlier fingerprint rather than stacking on it.
+        let again = DivergenceDismissal.dismissing(sessionID: "s1", divergences: other,
+                                                   in: store)
+        #expect(again.filter { $0.hasPrefix("s1:") }.count == 1)
+        #expect(!DivergenceDismissal.isDismissed(sessionID: "s1", divergences: one,
+                                                 dismissed: again))
+
+        // No banner is never a dismissed banner.
+        #expect(!DivergenceDismissal.isDismissed(sessionID: "s1", divergences: [],
+                                                 dismissed: store))
+
+        // The store is capped, oldest first.
+        var many: [String] = (0..<DivergenceDismissal.cap).map { "old\($0):x" }
+        many = DivergenceDismissal.dismissing(sessionID: "new", divergences: one, in: many)
+        #expect(many.count == DivergenceDismissal.cap)
+        #expect(many.first == "old1:x")
+        #expect(DivergenceDismissal.isDismissed(sessionID: "new", divergences: one,
+                                                dismissed: many))
+    }
+
     /// A `0`/`0` turn pair with no `wind_dir_user` means the watch could not classify, not
     /// that it saw no turns — docs/fit-schema.md. Reading it literally produced banners like
     /// "Jibes: watch 0 vs phone 50" on a session of fifty clean jibes.
