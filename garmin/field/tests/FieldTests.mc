@@ -1,3 +1,4 @@
+import Toybox.Activity;
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.System;
@@ -313,13 +314,17 @@ const CELLS_454 = [
 const CELLS_260 = [
     ["1 field",        260, 260, 15, FieldLayout.SIZE_FULL,  0],
     ["2F upper",       260, 129,  7, FieldLayout.SIZE_WIDE,  0],
-    ["2F lower",       260, 129, 13, FieldLayout.SIZE_SMALL, 0],
+    // 0.9.5: this one keeps its three rows where the 454 px glass gives them up. Both
+    // stacks bottom out at the same font here, so the centred/leaned choice is decided on FIT
+    // rather than on ink (FieldLayout.fitStack), and leaning up off the bottom rim is enough
+    // chord for the turn row on a 260 px circle.
+    ["2F lower",       260, 129, 13, FieldLayout.SIZE_WIDE,  0],
     ["3A upper",       260,  83,  7, FieldLayout.SIZE_WIDE,  0],
     ["3A middle",      260,  91,  5, FieldLayout.SIZE_WIDE,  0],
     ["3A lower",       260,  82, 13, FieldLayout.SIZE_SMALL, 0],
     ["3B upper",       260,  90,  7, FieldLayout.SIZE_WIDE,  0],
     ["3B middle",      260,  74,  5, FieldLayout.SIZE_SMALL, 0],
-    ["3B lower",       260,  93, 13, FieldLayout.SIZE_SMALL, 0],
+    ["3B lower",       260,  93, 13, FieldLayout.SIZE_WIDE,  0],
     ["3C lower left",  129, 129,  9, FieldLayout.SIZE_SMALL, 0],
     ["3C lower right", 129, 129, 12, FieldLayout.SIZE_SMALL, 0],
     ["4A upper",       260,  64,  7, FieldLayout.SIZE_SMALL, 0],
@@ -328,7 +333,7 @@ const CELLS_260 = [
     ["4B upper",       260,  92,  7, FieldLayout.SIZE_WIDE,  0],
     ["4B mid left",    129,  77,  1, FieldLayout.SIZE_SMALL, 0],
     ["4B mid right",   129,  77,  4, FieldLayout.SIZE_SMALL, 0],
-    ["4B lower",       260,  87, 13, FieldLayout.SIZE_SMALL, 0],
+    ["4B lower",       260,  87, 13, FieldLayout.SIZE_WIDE,  0],
     ["4C upper left",  129, 129,  3, FieldLayout.SIZE_SMALL, 0],
     ["4C upper right", 129, 129,  6, FieldLayout.SIZE_SMALL, 0],
     ["5F mid left",    129,  63,  1, FieldLayout.SIZE_SMALL, 0],
@@ -435,15 +440,18 @@ function layoutRowsNeverClip(logger as Test.Logger) as Boolean {
         Test.assertMessage(want < 0 || size == want,
             name + " came out SIZE " + size + ", the simulator says it must be " + want);
         var texts = FieldLayout.WIDEST[size];
-        var heights = FieldLayout.heightsOf(dc, cell[1] as Array<Graphics.FontType>);
+        var fonts = cell[1] as Array<Graphics.FontType>;
+        var caps = cell[3] as Array<Array<String> >;
+        var heights = FieldLayout.heightsOf(dc, fonts);
         var lean = cell[2] as Number;
         var blind = 0;
         var prevBottom = 0;
         for (var i = 0; i < texts.size(); i++) {
             var y = FieldLayout.stackY(h, heights, i, lean);
             var win = FieldLayout.rowWindow(w, y, heights[i], g);
-            var tw = dc.getTextWidthInPixels(texts[i],
-                (cell[1] as Array<Graphics.FontType>)[i]);
+            // the row's INK, not just its string: a caption riding beside the value is width
+            // the glass has to give it too
+            var tw = FieldLayout.rowInk(dc, texts[i], fonts[i], caps[i]);
             Test.assertMessage(y - heights[i] / 2 >= 0 && y + heights[i] / 2 <= h,
                 name + " row " + i + " is outside its cell");
             Test.assertMessage(y - heights[i] / 2 >= prevBottom,
@@ -465,7 +473,7 @@ function layoutRowsNeverClip(logger as Test.Logger) as Boolean {
         Test.assertMessage(blind == (cells[c][5] as Number),
             name + " has " + blind + " row(s) with no window, expected " + cells[c][5]);
         logger.debug(name + " " + w + "x" + h + " -> size " + size + " lean " + lean
-            + " heights " + heights.toString());
+            + " caps " + (caps[0].size() > 0) + " heights " + heights.toString());
     }
     return true;
 }
@@ -475,16 +483,20 @@ function layoutRowsNeverClip(logger as Test.Logger) as Boolean {
 // The lower half of a 2-field page is the bottom of the circle. Fitted to its own rectangle it
 // takes the three-row layout and draws "TOUCH 100% · 99/99" across 420 px of a chord that is
 // nothing like that wide down there — which is what the store screenshots caught: FLEW and the
-// last of the tack/jibe split were both eaten by the bezel. It must now step down to the two
-// rows it can hold, and hold them.
+// last of the tack/jibe split were both eaten by the bezel.
+//
+// What it does INSTEAD is glass-dependent, and deliberately not pinned here: on a 454 px fenix
+// 8 it steps down to the two rows it can hold, and on a 260 px fr255 it keeps all three by
+// leaning up off the rim (0.9.5 — where the centred and leaned stacks tie on font size, the
+// one that FITS wins). Both are the machinery working. What is pinned is the part that is not
+// allowed to vary: the old rule overflowed, and whatever this cell ends up with, it fits.
 (:test)
 function bottomBezelCellsGiveUpTheTurnRow(logger as Test.Logger) as Boolean {
     var s = System.getDeviceSettings();
     if (s.screenShape != System.SCREEN_SHAPE_ROUND) {
         return true;
     }
-    var ref = Graphics.createBufferedBitmap({:width => 8, :height => 8});
-    var dc = (ref.get() as Graphics.BufferedBitmap).getDc();
+    var dc = scratchDc();
     var w = s.screenWidth;
     var h = s.screenHeight - s.screenHeight / 2;
     var g = FieldLayout.place(w, h, s.screenWidth, s.screenHeight,
@@ -492,9 +504,10 @@ function bottomBezelCellsGiveUpTheTurnRow(logger as Test.Logger) as Boolean {
     Test.assertMessage(FieldLayout.classify(w, h, s.screenWidth, s.screenHeight)
         == FieldLayout.SIZE_WIDE, "room alone still says WIDE");
 
-    // What the old rule did: three rows fitted to the full rectangle, turn row last.
+    // What the old rule did: three rows fitted to the full rectangle, centred, turn row last.
     var old = FieldLayout.fitRows(dc, w, h, FieldLayout.WIDEST[FieldLayout.SIZE_WIDE],
-        FieldLayout.LADDERS[FieldLayout.SIZE_WIDE], null, 0);
+        FieldLayout.LADDERS[FieldLayout.SIZE_WIDE],
+        FieldLayout.noCaps(FieldLayout.WIDEST[FieldLayout.SIZE_WIDE].size()), null, 0, -1);
     var heights = FieldLayout.heightsOf(dc, old);
     var y = FieldLayout.stackY(h, heights, 2, 0);
     var wide = dc.getTextWidthInPixels("TOUCH 100% · 99/99", old[2]);
@@ -503,12 +516,371 @@ function bottomBezelCellsGiveUpTheTurnRow(logger as Test.Logger) as Boolean {
     Test.assertMessage(wide > glass,
         "the bug: the turn row was " + wide + " px and the chord there is " + glass);
 
-    // What the new one does: the cell cannot carry three rows, so it carries two.
+    // What the new one does: whichever trade it makes, the result holds.
     var cell = FieldLayout.fitCell(dc, w, h, s.screenWidth, s.screenHeight, g);
-    Test.assertMessage((cell[0] as Number) == FieldLayout.SIZE_SMALL,
-        "the bottom half steps down to two rows");
-    Test.assertMessage((cell[2] as Number) == -1,
-        "and leans up, away from the bezel it is sitting on");
+    var size = cell[0] as Number;
+    logger.debug("bottom half -> size " + size + " lean " + cell[2]);
+    Test.assertMessage(size == FieldLayout.SIZE_SMALL || (cell[2] as Number) == -1,
+        "a cell that kept three rows down there must be leaning up off the bezel");
+    assertStackHolds(dc, "2-field lower half", w, h, size,
+        cell[3] as Array<Array<String> >, [cell[1], cell[2]] as Array, g);
+    return true;
+}
+
+// ---- 0.9.5: the app's face, and the slots under it ----
+
+// A scratch Dc to measure real device fonts on. Deliberately 8x8: font metrics do not depend
+// on the canvas they are measured on, and a data field has 128 KB — a screen-sized buffer is
+// enough to take the whole heap with it, which is how the layout tests first killed the
+// simulator.
+function scratchDc() as Graphics.Dc {
+    var ref = Graphics.createBufferedBitmap({:width => 8, :height => 8});
+    return (ref.get() as Graphics.BufferedBitmap).getDc();
+}
+
+// Every row of a fitted stack, checked the way layoutRowsNeverClip checks a cell's: inside the
+// cell, not overlapping its neighbour, and its INK (value plus caption) inside the chord. The
+// return is how many rows had no window at all.
+function assertStackHolds(dc as Graphics.Dc, name as String, w as Number, h as Number,
+        idx as Number, caps as Array<Array<String> >, stack as Array,
+        g as FieldLayout.Glass?) as Number {
+    var texts = FieldLayout.WIDEST[idx];
+    var fonts = stack[0] as Array<Graphics.FontType>;
+    var lean = stack[1] as Number;
+    var heights = FieldLayout.heightsOf(dc, fonts);
+    var blind = 0;
+    var prevBottom = 0;
+    for (var i = 0; i < texts.size(); i++) {
+        var y = FieldLayout.stackY(h, heights, i, lean);
+        var win = FieldLayout.rowWindow(w, y, heights[i], g);
+        Test.assertMessage(y - heights[i] / 2 >= 0 && y + heights[i] / 2 <= h,
+            name + " row " + i + " is outside its cell");
+        Test.assertMessage(y - heights[i] / 2 >= prevBottom,
+            name + " row " + i + " overlaps the row above it");
+        prevBottom = y + heights[i] / 2;
+        if (win[1] == 0) {
+            blind++;
+            continue;
+        }
+        var ink = FieldLayout.rowInk(dc, texts[i], fonts[i], caps[i]);
+        Test.assertMessage(ink <= win[1], name + " row " + i + ": \"" + texts[i]
+            + "\" + caption " + caps[i].toString() + " is " + ink + " px, the glass gives it "
+            + win[1] + " at y " + y + " (font " + fonts[i] + ", lean " + lean + ")");
+    }
+    return blind;
+}
+
+// The face itself. A 1-field page must carry the whole Main-page composition at worst case —
+// five rows, the two-line caption beside the giant, and a dot ladder with room for a strip
+// worth calling one.
+(:test)
+function fullScreenCarriesTheAppMainPage(logger as Test.Logger) as Boolean {
+    var dc = scratchDc();
+    var s = System.getDeviceSettings();
+    var w = s.screenWidth;
+    var h = s.screenHeight;
+    var round = s.screenShape == System.SCREEN_SHAPE_ROUND;
+    var g = FieldLayout.place(w, h, w, h, 15, round);
+    var cell = FieldLayout.fitCell(dc, w, h, w, h, g);
+    Test.assertMessage((cell[0] as Number) == FieldLayout.SIZE_FULL,
+        "the 1-field page is FULL");
+    var caps = cell[3] as Array<Array<String> >;
+    Test.assertMessage(FieldLayout.hasCaps(caps),
+        "and it keeps its captions — this is the cell that has room for them");
+    var stack = [cell[1], cell[2]] as Array;
+    var blind = assertStackHolds(dc, "1 field", w, h, FieldLayout.SIZE_FULL, caps,
+        stack, g);
+    Test.assertMessage(blind == 0, "no row of the main page is blind");
+
+    // the giant is a NUMBER font, i.e. the row really is giant and not a text line
+    var fonts = cell[1] as Array<Graphics.FontType>;
+    var ladder = "";
+    for (var i = 0; i < FieldLayout.NUM_FONTS.size(); i++) {
+        ladder += FieldLayout.NUM_FONTS[i] + ":"
+            + dc.getFontHeight(FieldLayout.NUM_FONTS[i]) + " ";
+    }
+    logger.debug("number ladder heights " + ladder);
+    Test.assertMessage(fonts[1] == Graphics.FONT_NUMBER_THAI_HOT
+        || fonts[1] == Graphics.FONT_NUMBER_HOT
+        || fonts[1] == Graphics.FONT_NUMBER_MEDIUM
+        || fonts[1] == Graphics.FONT_NUMBER_MILD,
+        "the giant walks the number ladder, got font " + fonts[1]);
+    // the giant's caption is the two-line block, and it fits its row
+    Test.assertMessage(FieldLayout.capLines(dc, caps[1], dc.getFontHeight(fonts[1])) == 2,
+        "the giant carries both the unit and the word");
+
+    // and the dot ladder has a usable strip: the band is a real font's height and the chord at
+    // that depth holds a double-figure run of turns
+    var heights = FieldLayout.heightsOf(dc, fonts);
+    var y = FieldLayout.stackY(h, heights, 2, cell[2] as Number);
+    var win = FieldLayout.rowWindow(w, y, heights[2], g);
+    var r = FieldLayout.dotRadius(heights[2], w);
+    var gap = FieldLayout.dotGap(w);
+    var shown = FieldLayout.dotsShown(FieldEngine.TURN_LOG,
+        win[1] - FieldLayout.capWidth(dc, caps[2]), r, gap);
+    logger.debug("main page " + w + "x" + h + " heights " + heights.toString()
+        + ", dots r " + r + " gap " + gap + " -> " + shown + " of "
+        + FieldEngine.TURN_LOG);
+    Test.assertMessage(r >= 2, "the dots are big enough to be dots, r = " + r);
+    Test.assertMessage(shown >= 10,
+        "the strip holds a readable run of turns, got " + shown);
+    return true;
+}
+
+// The two pages a stopped rider sees. Same assertions, at the same worst case: the summary is
+// the screen most likely to be read at length, so it is the last one allowed to clip.
+(:test)
+function summaryPagesFitTheFullScreenCell(logger as Test.Logger) as Boolean {
+    var dc = scratchDc();
+    var s = System.getDeviceSettings();
+    var w = s.screenWidth;
+    var h = s.screenHeight;
+    var round = s.screenShape == System.SCREEN_SHAPE_ROUND;
+    var g = FieldLayout.place(w, h, w, h, 15, round);
+    var pages = [FieldLayout.REND_SUM_A, FieldLayout.REND_SUM_B] as Array<Number>;
+    for (var p = 0; p < pages.size(); p++) {
+        var idx = pages[p];
+        var stack = FieldLayout.fitRendition(dc, w, h, idx, g);
+        Test.assertMessage(stack != null,
+            "summary page " + idx + " does not survive the 1-field cell");
+        var blind = assertStackHolds(dc, "summary " + idx, w, h, idx, FieldLayout.CAPS[idx],
+            stack as Array, g);
+        Test.assertMessage(blind == 0, "no summary row is blind");
+        logger.debug("summary " + idx + " heights "
+            + FieldLayout.heightsOf(dc, (stack as Array)[0]
+                as Array<Graphics.FontType>).toString());
+        // every summary row is labelled: this is the page a stranger reads
+        var caps = FieldLayout.CAPS[idx];
+        for (var i = 0; i < caps.size(); i++) {
+            Test.assertMessage(caps[i].size() > 0,
+                "summary page " + idx + " row " + i + " has no word to say what it is");
+        }
+    }
+    return true;
+}
+
+// The cadence: page A, then page B, then A again, every SUMMARY_TICKS paused seconds. A data
+// field has no buttons, so this counter is the only paging there is.
+(:test)
+function summaryPagesAlternateWhilePaused(logger as Test.Logger) as Boolean {
+    var n = FieldLayout.SUMMARY_TICKS;
+    Test.assertMessage(FieldLayout.summaryPage(0) == FieldLayout.REND_SUM_A,
+        "a stop opens on the session page");
+    Test.assertMessage(FieldLayout.summaryPage(n - 1) == FieldLayout.REND_SUM_A,
+        "and holds it for the whole dwell");
+    Test.assertMessage(FieldLayout.summaryPage(n) == FieldLayout.REND_SUM_B,
+        "then the turns page");
+    Test.assertMessage(FieldLayout.summaryPage(2 * n) == FieldLayout.REND_SUM_A,
+        "and back");
+    return true;
+}
+
+// The timer state is what chooses between them, and it comes off Activity.Info — the only
+// input a data field has. TIMER_STATE_ON is riding; everything else (paused, stopped, never
+// started) is a rider who is looking at the watch, and gets the summary.
+(:test)
+function timerStateChoosesTheFace(logger as Test.Logger) as Boolean {
+    var e = new FieldEngine(fieldCfg());
+    var info = new Activity.Info();
+    var states = [Activity.TIMER_STATE_ON, Activity.TIMER_STATE_PAUSED,
+        Activity.TIMER_STATE_STOPPED, Activity.TIMER_STATE_OFF]
+        as Array<Activity.TimerState>;
+    var wantRunning = [true, false, false, false] as Array<Boolean>;
+    for (var i = 0; i < states.size(); i++) {
+        info.timerState = states[i];
+        info.timerTime = 1000 * (i + 1);
+        info.currentSpeed = 6.0;
+        e.onCompute(info);
+        Test.assertMessage(e.running == wantRunning[i],
+            "timerState " + states[i] + " -> running " + e.running);
+    }
+    // and a paused tick must not move the counters: the summary is a picture of a session
+    // that has stopped happening
+    info.timerState = Activity.TIMER_STATE_PAUSED;
+    var flights = e.detector.flightCount;
+    for (var i = 0; i < 30; i++) {
+        info.timerTime = 10000 + i * 1000;
+        e.onCompute(info);
+    }
+    Test.assertMessage(e.detector.flightCount == flights, "a paused activity gains no flight");
+    return true;
+}
+
+// Heart rate reaches the field the same way, and its absence is a null rather than a zero.
+(:test)
+function heartRateComesThroughActivityInfo(logger as Test.Logger) as Boolean {
+    var e = new FieldEngine(fieldCfg());
+    var info = new Activity.Info();
+    info.timerState = Activity.TIMER_STATE_ON;
+    info.timerTime = 1000;
+    info.currentHeartRate = 142;
+    e.onCompute(info);
+    Test.assertMessage(e.hr != null && e.hr == 142, "the pulse arrives");
+    Test.assertMessage(FieldMetrics.value(FieldMetrics.M_HR, e, fieldCfg()).equals("142 bpm"),
+        "and reads as a heart rate");
+    info.timerTime = 2000;
+    info.currentHeartRate = null;
+    e.onCompute(info);
+    Test.assertMessage(e.hr == null, "a lost strap is null, not zero");
+    Test.assertMessage(FieldMetrics.value(FieldMetrics.M_HR, e, fieldCfg()).equals("-- bpm"),
+        "and says so");
+    return true;
+}
+
+// The outcome ladder's memory: one entry per RESOLVED turn, oldest dropped past the cap.
+(:test)
+function outcomeLogFeedsTheDotLadder(logger as Test.Logger) as Boolean {
+    var e = new FieldEngine(fieldCfg());
+    Test.assertMessage(e.outcomeCount == 0, "nothing before the first turn");
+    // drive the log directly through the event word the detector returns, which is what feed()
+    // hands it — the detector's own semantics are the barrel suite's business
+    var events = [TurnDetector.EVENT_TURN, TurnDetector.EVENT_FLEW,
+        TurnDetector.EVENT_TOUCHDOWN, TurnDetector.EVENT_NONE,
+        TurnDetector.EVENT_FELL] as Array<Number>;
+    for (var i = 0; i < events.size(); i++) {
+        e.logOutcome(events[i]);
+    }
+    Test.assertMessage(e.outcomeCount == 3,
+        "only resolved outcomes join the strip, got " + e.outcomeCount);
+    Test.assertMessage(e.outcomes[0] == TurnDetector.OUTCOME_FLEW
+        && e.outcomes[1] == TurnDetector.OUTCOME_TOUCHDOWN
+        && e.outcomes[2] == TurnDetector.OUTCOME_FELL, "in the order they happened");
+    // past the cap the OLDEST goes, so the strip is always the most recent turns
+    for (var i = 0; i < FieldEngine.TURN_LOG + 5; i++) {
+        e.logOutcome(TurnDetector.EVENT_FLEW);
+    }
+    Test.assertMessage(e.outcomeCount == FieldEngine.TURN_LOG, "the log is capped");
+    Test.assertMessage(e.outcomes[FieldEngine.TURN_LOG - 1] == TurnDetector.OUTCOME_FLEW,
+        "newest last");
+    e.reset();
+    Test.assertMessage(e.outcomeCount == 0, "and a new activity starts with an empty strip");
+    return true;
+}
+
+// The catalog behind the slot settings. Every id the settings list offers must have a word, a
+// worst case and a ladder — a slot the field cannot fill would draw an empty row, which reads
+// as a crashed field.
+(:test)
+function metricCatalogIsComplete(logger as Test.Logger) as Boolean {
+    var dc = scratchDc();
+    var cfg = fieldCfg();
+    var e = new FieldEngine(cfg);
+    e.timerS = 6793.0;
+    e.distM = 23100.0;
+    e.speedMps = 24.5 / 3.6;
+    e.detector.flightCount = 31;
+    e.detector.foilTimeS = 3804.0;
+    e.detector.longestS = 424.0;
+    e.records.best2sMps = 25.5 / 3.6;
+    e.records.best10sMps = 24.3 / 3.6;
+    e.turns.turnCount = 51;
+    e.turns.tackCount = 27;
+    e.turns.jibeCount = 24;
+    e.turns.flewCount = 35;
+    e.turns.touchdownCount = 8;
+    e.turns.fellCount = 8;
+    e.turns.lastOutcome = TurnDetector.OUTCOME_TOUCHDOWN;
+    e.turns.lastScorePct = 61;
+    for (var i = 0; i < FieldMetrics.LIST.size(); i++) {
+        var id = FieldMetrics.LIST[i];
+        var worst = FieldMetrics.worst(id);
+        var label = FieldMetrics.label(id);
+        var live = FieldMetrics.value(id, e, cfg);
+        Test.assertMessage(worst.length() > 0, "metric " + id + " has no worst case");
+        Test.assertMessage(label.length() > 0, "metric " + id + " has no word");
+        Test.assertMessage(live.length() > 0, "metric " + id + " draws nothing");
+        Test.assertMessage(FieldMetrics.sanitize(id) == id, "metric " + id + " is in LIST");
+        // the seeded session must not be wider than the table says it can be, or the fit is
+        // measuring one string and the field is drawing another
+        var lw = dc.getTextWidthInPixels(live, Graphics.FONT_MEDIUM);
+        var ww = dc.getTextWidthInPixels(worst, Graphics.FONT_MEDIUM);
+        Test.assertMessage(lw <= ww, "metric " + id + ": \"" + live + "\" (" + lw
+            + " px) is wider than its worst case \"" + worst + "\" (" + ww + " px)");
+        logger.debug("metric " + id + " \"" + label + "\" -> \"" + live + "\" worst \""
+            + worst + "\"");
+    }
+    // and an id from a build that no longer exists falls back rather than blanking a row
+    Test.assertMessage(FieldMetrics.sanitize(999) == FieldMetrics.FALLBACK, "junk id");
+    Test.assertMessage(FieldMetrics.sanitize(16) == FieldMetrics.FALLBACK,
+        "the app's pump metrics are not offered here: Sensor.* crashes a data field");
+    return true;
+}
+
+// The never-clip promise, kept for every slot the rider can actually choose. This is
+// layoutRowsNeverClip's loop run once per metric, with that metric in EVERY configurable slot
+// at once — the widest configuration it can produce — across every cell of every layout.
+//
+// The tabled SIZE is not asserted here and must not be: a wider metric legitimately steps a
+// cell down, which is the machinery working. What is asserted is the invariant that survives
+// any configuration — nothing is drawn outside its cell, over its neighbour, or off the glass.
+(:test)
+function configuredSlotsNeverClip(logger as Test.Logger) as Boolean {
+    var dc = scratchDc();
+    var s = System.getDeviceSettings();
+    var round = s.screenShape == System.SCREEN_SHAPE_ROUND;
+    var cells = cellsFor(s.screenWidth, s.screenHeight);
+    var wasSmall = FieldSettings.smallSlot;
+    var wasPri = FieldSettings.widePrimary;
+    var wasSec = FieldSettings.wideSecondary;
+    var capped = 0;
+    var bare = 0;
+
+    for (var m = 0; m < FieldMetrics.LIST.size(); m++) {
+        var id = FieldMetrics.LIST[m];
+        FieldSettings.smallSlot = id;
+        FieldSettings.widePrimary = id;
+        FieldSettings.wideSecondary = id;
+        FieldSettings.applySlots();
+        for (var c = 0; c < cells.size(); c++) {
+            var name = "metric " + id + " in " + (cells[c][0] as String);
+            var w = cells[c][1] as Number;
+            var h = cells[c][2] as Number;
+            var g = FieldLayout.place(w, h, s.screenWidth, s.screenHeight,
+                cells[c][3] as Number, round);
+            var cell = FieldLayout.fitCell(dc, w, h, s.screenWidth, s.screenHeight, g);
+            var size = cell[0] as Number;
+            if (size == FieldLayout.SIZE_FULL) {
+                continue;       // not configurable, and its own test covers it
+            }
+            if (FieldLayout.hasCaps(cell[3] as Array<Array<String> >)) {
+                capped++;
+            } else {
+                bare++;
+            }
+            assertStackHolds(dc, name, w, h, size, cell[3] as Array<Array<String> >,
+                [cell[1], cell[2]] as Array, g);
+        }
+    }
+
+    FieldSettings.smallSlot = wasSmall;
+    FieldSettings.widePrimary = wasPri;
+    FieldSettings.wideSecondary = wasSec;
+    FieldSettings.applySlots();
+    logger.debug(FieldMetrics.LIST.size() + " metrics x " + cells.size() + " cells: "
+        + capped + " captioned, " + bare + " bare");
+    // both halves of the caption trade must actually happen somewhere on this glass, or the
+    // rule that decides it is untested in the only place it runs
+    Test.assertMessage(capped > 0, "no configuration anywhere kept its words");
+    Test.assertMessage(bare > 0, "no configuration anywhere gave them up");
+    return true;
+}
+
+// The defaults are the 0.9.4 rows, character for character. This is the promise the release
+// makes to an install that never opens the settings page.
+(:test)
+function slotDefaultsAreTheOldRows(logger as Test.Logger) as Boolean {
+    Test.assertMessage(FieldSettings.smallSlot == FieldMetrics.M_FOIL_PCT, "small = foil %");
+    Test.assertMessage(FieldSettings.widePrimary == FieldMetrics.M_FOIL_PCT, "wide 1 = foil %");
+    Test.assertMessage(FieldSettings.wideSecondary == FieldMetrics.M_FLIGHT_LINE,
+        "wide 2 = the flight line");
+    FieldSettings.applySlots();
+    var small = FieldLayout.WIDEST[FieldLayout.SIZE_SMALL];
+    var wide = FieldLayout.WIDEST[FieldLayout.SIZE_WIDE];
+    Test.assertMessage(small[0].equals("100%") && small[1].equals("99 · 88:88"),
+        "the SMALL worst case is 0.9.4's: " + small.toString());
+    Test.assertMessage(wide[0].equals("100%") && wide[1].equals("99 · 88:88")
+        && wide[2].equals("TOUCH 100% · 99/99"),
+        "and so is the WIDE one: " + wide.toString());
     return true;
 }
 
