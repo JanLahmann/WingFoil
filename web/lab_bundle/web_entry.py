@@ -218,6 +218,7 @@ def _view(a) -> dict:
         "count": int(len(t[sl])),
         "stride": stride,
         "hasPositions": has_pos,
+        "geo": _geo_anchor(df) if has_pos else None,
         "t": _round_list(t[sl], 1),
         "x": _round_list(x[sl], 1) if has_pos else [],
         "y": _round_list(y[sl], 1) if has_pos else [],
@@ -233,6 +234,46 @@ def _view(a) -> dict:
         "turnMarkers": [_turn_marker(i, turn, t, x, y) for i, turn in enumerate(a.turns)],
         "endMarkers": [_end_marker(i, e, t, x, y) for i, e in enumerate(a.flight_ends)],
     }
+
+
+def _geo_anchor(df) -> dict | None:
+    """One sample that carries **both** its metres and its degrees — the key back to the globe.
+
+    `x`/`y` are metres in the engine's own equirectangular frame, centred on the track: they
+    are all the map figure and the speed strip have ever needed, because both draw the session
+    against itself. The share card's optional map background is the one surface that has to
+    place the same track on the *earth*, and for that a local frame is not enough.
+
+    So rather than shipping a second pair of arrays (lat/lon for every sample, ~90 KB of JSON
+    on a long session, all of it redundant), the view carries one row of the four columns the
+    cleaned track already holds. Inverting the projection from it is two divisions:
+
+        lat = geo.lat + (y - geo.y) / 110540
+        lon = geo.lon + (x - geo.x) / (cos(geo.lat) * 111320)
+
+    The one approximation is `cos(geo.lat)` standing in for the `cos(lat0)` the forward
+    projection used (`wingfoil_lab.filters`), and a session spans hundredths of a degree — the
+    error over a 2 km track is well under a metre, which is smaller than the GPS fixes it
+    places. Nothing but the card's map framing reads it.
+
+    None when no row has all four (a track whose positions are entirely absent never gets
+    here, but a single all-NaN row must not become an anchor of NaNs — the document is
+    serialized with `allow_nan=False`).
+    """
+    need = ("lat", "lon", "x", "y")
+    if any(c not in df.columns for c in need):
+        return None
+    values = {c: df[c].to_numpy(float) for c in need}
+    finite = np.ones(len(df), dtype=bool)
+    for c in need:
+        finite &= np.isfinite(values[c])
+    if not finite.any():
+        return None
+    k = int(np.argmax(finite))
+    return {"lat": round(float(values["lat"][k]), 7),
+            "lon": round(float(values["lon"][k]), 7),
+            "x": round(float(values["x"][k]), 2),
+            "y": round(float(values["y"][k]), 2)}
 
 
 def _extent(fn, arr, places: int = 1):

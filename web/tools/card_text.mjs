@@ -41,6 +41,7 @@ globalThis.localStorage = {
 
 const JS = new URL("../js/", import.meta.url);
 const cs = await import(new URL("cardstats.js", JS).href);
+const cm = await import(new URL("cardmap.js", JS).href);
 const { cardContent, headerHeight } = await import(new URL("sharecard.js", JS).href);
 
 /* ------------------------------------------------------------------ normalizing */
@@ -158,6 +159,84 @@ function roundTrip() {
   return out;
 }
 
+/* ------------------------------------------------------------- the map switch
+ *
+ * The rider's habit, per device — the same store the shape and the preset live in, one key
+ * wider. What is proved here is mostly one thing: **the map is off** unless somebody wrote
+ * exactly the value this switch writes. It is the only control on the card that reaches the
+ * network, so an absent key, a foreign key, a truthy-looking string and a browser with no
+ * storage at all must every one of them come back false.
+ */
+
+function choiceRoundTrip() {
+  store.clear();
+  const out = {};
+  out.defaultsBeforeAnythingIsWritten = cs.loadCardChoice();
+
+  cs.saveCardChoice({ shape: "landscape", preset: "lean", map: true });
+  out.afterTurningOn = cs.loadCardChoice();
+  out.storedOn = store.get("wingfoil.shareCard.map.v1");
+  cs.saveCardChoice({ shape: "landscape", preset: "lean", map: false });
+  out.afterTurningOff = cs.loadCardChoice();
+  out.storedOff = store.get("wingfoil.shareCard.map.v1");
+
+  // Anything that is not this switch's own "1" is off. `"true"` is the one worth naming: it
+  // is what a hand-edited value or another implementation would most plausibly put there.
+  store.set("wingfoil.shareCard.map.v1", "true");
+  out.foreignTruthyValue = cs.loadCardChoice().map;
+  store.set("wingfoil.shareCard.map.v1", "{not json");
+  out.garbageValue = cs.loadCardChoice().map;
+  store.delete?.("wingfoil.shareCard.map.v1");
+
+  // No storage at all: the defaults, and a write that is a silent no-op.
+  store.clear();
+  throwing = true;
+  out.withoutStorage = cs.loadCardChoice();
+  let threw = false;
+  try {
+    cs.saveCardChoice({ shape: "square", preset: "lean", map: true });
+  } catch { threw = true; }
+  out.writeThrewWithoutStorage = threw;
+  throwing = false;
+  store.clear();
+  return out;
+}
+
+/* --------------------------------------------------------------- the projection
+ *
+ * The map background's whole promise, as two numbers a test can hold: the breadcrumb is
+ * placed through **Web Mercator** rather than through the card's own fit, and the framing is
+ * chosen so the ride still lands in exactly the box the layout gave it. Both halves are pure
+ * functions in js/cardmap.js — nothing below fetches a tile or touches a canvas.
+ */
+
+/** A box roughly the size the portrait card's track slot gets, in layout points. */
+const TRACK_BOX = { x: 16, y: 64, w: 328, h: 250 };
+const TRACK_INSET = 7.2;
+/** Lake Garda, about the extent of the bundled example session. */
+const SPOT = { min: { lat: 45.860, lon: 10.869 }, max: { lat: 45.869, lon: 10.877 } };
+
+function projection() {
+  const frame = cm.frameTrack({ ...SPOT, box: TRACK_BOX, inset: TRACK_INSET });
+  const corner = (lat, lon) => {
+    const p = cm.placeOn(frame, lat, lon);
+    return [Number(p.x.toFixed(4)), Number(p.y.toFixed(4))];
+  };
+  return {
+    // The world square, at the three points every Mercator implementation agrees on.
+    world: [cm.worldPoint(0, 0), cm.worldPoint(0, -180), cm.worldPoint(0, 180)],
+    // Torbole, to six places, against a second implementation of the same formula.
+    spot: cm.worldPoint(45.8647, 10.8751),
+    // The two corners of the ride, on the card. One axis binds and lands on the inset box's
+    // own edges; the other is centred in what is left. Which one binds depends on the shape
+    // of the session against the shape of the box, and the assertion is written not to care.
+    northWest: corner(SPOT.max.lat, SPOT.min.lon),
+    southEast: corner(SPOT.min.lat, SPOT.max.lon),
+    box: TRACK_BOX,
+    inset: TRACK_INSET,
+  };
+}
+
 /* ----------------------------------------------------------------- the geometry */
 
 const golden = JSON.parse(readFileSync(process.argv[2], "utf8"));
@@ -179,6 +258,9 @@ process.stdout.write(JSON.stringify({
     [remembered ?? null, name, cs.cardTitleDraft(remembered, name)]),
   keys: KEY_CASES.map((r) => cs.cardKey(r)),
   storage: roundTrip(),
+  choice: choiceRoundTrip(),
+  projection: projection(),
+  credit: cm.CREDIT,
   header: { plain: headerHeight(plain), named: headerHeight(named),
             cleared: headerHeight(cleared) },
   content: {
@@ -189,5 +271,11 @@ process.stdout.write(JSON.stringify({
     statsUnchanged: JSON.stringify(named.stats) === JSON.stringify(plain.stats),
     disclaimerUnchanged: named.disclaimer === plain.disclaimer,
     dateUnchanged: named.dateLine === plain.dateLine,
+    // The map background is a *drawing* option, not content: `cardContent` does not take it
+    // and has nowhere to put it, which is why turning it on cannot move a number. What the
+    // content does carry is the key back to the globe, and only when the document has one.
+    geoWithoutAView: plain.geo,
+    geoFromTheView: cardContent(
+      { ...result, view: { geo: { lat: 45.86, lon: 10.87, x: 1, y: 2 } } }, "complete").geo,
   },
 }));
