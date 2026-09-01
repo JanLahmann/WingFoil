@@ -457,7 +457,9 @@ def expected_card_values(doc: dict) -> dict[str, str]:
         out["tally"] = (f"{outcomes['flewThrough']} · {outcomes['touchdown']} · "
                         f"{outcomes['fellIn']}")
     if t["turnsCounted"] > 0:
-        out["streaks"] = f"{t['longestDryStreak']} dry · {t['longestFlewStreak']} flew"
+        # Flying leads the pair: the harder run first, and `longestFlewStreak` is always
+        # the smaller of the two.
+        out["streaks"] = f"{t['longestFlewStreak']} flew · {t['longestDryStreak']} dry"
     if s.get("wetPerHour") is not None:
         if s["jibesPerHour"] > 0 or not s["turnsPerHour"] > 0:
             out["jph"] = f"{s['jibesPerHour']:.1f}"

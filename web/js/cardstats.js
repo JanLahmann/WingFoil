@@ -170,8 +170,17 @@ export function keyMetricEntries(g) {
   // all, and an empty ladder over an afternoon of turns would read as "nothing happened" —
   // so it falls back to every counted turn, the same way the rate row falls back to TPH.
   // The caption says which, so the three numbers can never be read as the other set.
-  const tally = t.jibes > 0 ? { o: t.jibeOutcomes, of: `of ${t.jibes} jibes` }
-    : (t.turnsCounted > 0 ? { o: t.outcomes, of: `of ${t.turnsCounted} turns` } : null);
+  // The caption also carries the CLEAN count — the jibes he flew all the way through
+  // carrying his speed (the engine's `success` flag against `turnSuccessPct`). It is the
+  // stricter verdict laid over the same set of turns the three counts describe, and it
+  // rides in the caption rather than in a cell of its own because row 3 has no fifth cell
+  // to give it that the streaks pair would not lose.
+  const tally = t.jibes > 0
+    ? { o: t.jibeOutcomes, of: `of ${t.jibes} jibes · ${int(t.jibesSuccessful)} clean` }
+    : (t.turnsCounted > 0
+        ? { o: t.outcomes,
+            of: `of ${t.turnsCounted} turns · ${int(t.turnsSuccessful)} clean` }
+        : null);
 
   const out = [
     { key: "duration", label: "duration", value: hm(s.durationS), row: 0 },
@@ -194,8 +203,11 @@ export function keyMetricEntries(g) {
     });
   }
   if (t.turnsCounted > 0) {
+    // Flying leads: it is the harder of the two runs and the one the rider is chasing,
+    // and `longestFlewStreak <= longestDryStreak` always, so the pair reads
+    // strict-then-lenient in both halves.
     out.push({ key: "streaks", label: "best streaks",
-               value: `${int(t.longestDryStreak)} dry · ${int(t.longestFlewStreak)} flew`,
+               value: `${int(t.longestFlewStreak)} flew · ${int(t.longestDryStreak)} dry`,
                row: 2 });
   }
 

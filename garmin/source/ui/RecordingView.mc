@@ -8,8 +8,8 @@ import WingFoilCore;
 // Turns-page metrics, file scope so the static width helpers (shared with the layout
 // test) can reach them — class consts are instance-scoped in Monkey C.
 const TURNS_TALLY_SEP = " · ";
-// Space between the coloured flew/touchdown/swim tally and the session success rate that
-// shares its row. Wider than the tally's own separator so the two read as two groups.
+// Space between the coloured flew/touchdown/swim tally and the "% flew" share that shares
+// its row. Wider than the tally's own separator so the two read as two groups.
 const TURNS_OK_GAP = 14;
 
 // The tally row never goes below TEXT_FONTS[TALLY_FLOOR] = FONT_SMALL. Below it a count is
@@ -1696,9 +1696,10 @@ class RecordingView extends WatchUi.View {
     // bottom row prints. Empty until there is a turn to divide by, because "0% flew" before the
     // first jibe reads like a verdict on a session that has not happened.
     //
-    // It used to be the carried-speed success score. That number left the watch in 0.8.2: it
-    // mixes speed retention into an outcome and could disagree with the coloured counts beside
-    // it, which is a page arguing with itself. The strict score lives in the phone analysis.
+    // It used to be the carried-speed score — what the apps now call the CLEAN JIBE count.
+    // That number left the watch in 0.8.2: it mixes speed retention into an outcome and could
+    // disagree with the coloured counts beside it, which is a page arguing with itself. The
+    // strict verdict lives in the phone analysis, where it has a caption to explain itself.
     static function flewText(turns as Number, flew as Number) as String {
         if (turns <= 0) {
             return "";

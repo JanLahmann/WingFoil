@@ -33,6 +33,37 @@ the summary's track; green is the verdict and nothing else. Heart rate left the 
 for the effort indigo (a pulse is not a swim), and the PB celebration left green for the
 effort orange (a record is something the rider *did*, not a verdict).
 
+## Clean jibe — the name of the strict verdict, and how it is spelled
+
+**A clean jibe is a counted jibe you fly all the way through, carrying your speed — no
+touchdown, no swim, at or above the success threshold of your entry speed.**
+
+That is not a new measurement. It is the engine's existing per-turn `success` flag —
+`score >= turnSuccessPct` **and** the foil never lost across the scored window
+(`docs/algorithms.md`, "Turn detection & classification") — given the name every surface
+now uses for it. No parameter moved, no golden moved; the metric was called "turn success"
+or "carried through" or "held speed" on four screens and is called one thing on all of
+them from here on.
+
+**The spelling is a contract, both halves of it:**
+
+| context | spelling | example |
+|---|---|---|
+| the product | **CleanJibe**, one word, camel-cased | "CleanJibe for Garmin" |
+| the metric / the sport term | **clean jibe**, two words, lowercase | "7 of 10 clean", "12 clean" |
+| a label position that capitalizes | **Clean jibes** | the session card's title, the trends chart |
+
+Never "CleanJibes" for the metric and never "clean jibe" for the app. A sentence that
+means the count is lowercase even when it opens with the word.
+
+**It is not the ladder's green, and no surface may let the two blur.** "Flew through" is
+how the turn *ended*; clean is what it *cost*. They disagree on purpose — a jibe carved
+cleanly through the sweep stays clean even when the foil is lost later in the recovery
+tail, which is exactly what the outcome records — and on the corpus session the two read
+30 % and 13 %. So the clean count never wears the outcome ladder's inks, never sits inside
+the three-count tally, and never borrows the word "flew". It is drawn beside them, in
+neutral ink, as the stricter reading of the same set of turns.
+
 ## Layers
 
 | id | shows | default | notes |
@@ -164,17 +195,28 @@ The rules, which are the only thing the two implementations can disagree about:
 - **Row 2 names the window, not the peak.** "max 2 s", the same rule the record picker's
   chip follows; "max speed" over a 2 s window would be the overclaim that rule exists to
   prevent.
-- **Row 3 is the jibe ladder**, and the caption says what the three numbers are out of
-  ("of 50 jibes"). A session whose wind axis never resolved has no jibes at all, so it
-  falls back to every counted turn ("of 51 turns") — an empty ladder over an afternoon of
-  turns would read as "nothing happened". The tally is a verdict, so it may wear the
+- **Row 3 is the jibe ladder**, and the caption says what the three numbers are out of and
+  how many were **clean** ("of 50 jibes · 12 clean"). A session whose wind axis never
+  resolved has no jibes at all, so it falls back to every counted turn ("of 51 turns ·
+  12 clean") — an empty ladder over an afternoon of turns would read as "nothing
+  happened". The tally is a verdict, so it may wear the
   ladder, and the **library row** wears it too — over every counted turn there, which is
   what a row scanned against its neighbours has to be. The web rows carried no tally at all
   until §5.6, on the more prominent of the two library surfaces; a row from a digest
   written before the field existed renders "—" rather than three zeroes.
-- **Streaks are `summary.turns.longestDryStreak` / `longestFlewStreak`**, rendered
-  `11 dry · 5 flew` — the first time either app draws them. They are over counted turns,
+  - **The clean count rides in the caption, not in a cell.** It is `jibesSuccessful`
+    against the jibe ladder and `turnsSuccessful` against the turn fallback, so it is
+    always about the same set the three counts are about. A fifth cell on row 3 is a cell
+    the streaks pair would lose, and the count is a *qualification* of the tally rather
+    than a metric standing beside it. It stays in neutral ink — see "Clean jibe" above.
+- **Streaks are `summary.turns.longestFlewStreak` / `longestDryStreak`**, rendered
+  `5 flew · 11 dry` — the first time either app draws them. They are over counted turns,
   which is what the engine measures them over; nothing is re-derived here.
+  - **Flying leads the pair.** The flew run is the harder of the two and the one the rider
+    is chasing, and `longestFlewStreak <= longestDryStreak` always — so the pair reads
+    strict-then-lenient, the same order the watch's Turns page has always drawn it in
+    (`drawStreakRow2`: green run, then orange run). The block used to lead with dry, which
+    put the two surfaces in different orders for one fact.
 - **JPH is dry jibes, and the label says so.** The engine's `jibesPerHour` counts the jibes
   he came out of still sailing (`docs/algorithms.md` "Session rates", engine 0.7.0), so the
   cell is captioned **"JPH · dry jibes per hour"**. A rate that counted the swims too could

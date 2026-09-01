@@ -6,7 +6,7 @@ import WingFoilKit
 /// pumps-to-takeoff, port/starboard"). Everything is read from the denormalized `session`
 /// columns, so a range switch is a query, not a re-analysis.
 ///
-/// A metric a session cannot know — pumps without an accelerometer, jibe success without
+/// A metric a session cannot know — pumps without an accelerometer, clean jibes without
 /// a wind axis — is **absent**, not zero: those sessions drop out of their chart and the
 /// chart says how many are missing rather than plotting a flat, flattering line.
 struct TrendsView: View {
@@ -156,8 +156,14 @@ struct TrendsView: View {
         weeklyChart
     }
 
-    /// Turn success split by the tack he *entered* on — the "am I one-sided?" chart that
-    /// the share chart above can only hint at.
+    /// The flew-through share split by the tack he *entered* on — the "am I one-sided?"
+    /// chart that the share chart above can only hint at.
+    ///
+    /// **It is not the clean-jibe rate**, and since the naming pass the title no longer
+    /// says "success", which used to imply it was. `TurnSideSplit` counts outcomes, so
+    /// the two lines are the ladder's green over the entries on each tack; the clean count
+    /// (the engine's `success` flag) is the stricter, and different, number the session
+    /// screen reports.
     ///
     /// Two series rather than one difference line: a rider whose port jibes are at 40 %
     /// and starboard at 20 % and one at 80/60 have the same gap and completely different
@@ -182,7 +188,7 @@ struct TrendsView: View {
         let total = series.reduce(0) { $0 + $1.values.count }
         return VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Turn success by entry tack").font(.subheadline.weight(.semibold))
+                Text("Flew through by entry tack").font(.subheadline.weight(.semibold))
                 Spacer()
                 Text("% flew through").font(.caption).foregroundStyle(.secondary)
             }

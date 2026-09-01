@@ -109,12 +109,12 @@ import Testing
             #expect(cell?.label == metric.label)
             #expect(cell?.value == metric.value)
         }
-        #expect(stats.stats.first { $0.key == "streaks" }?.value == "11 dry · 5 flew")
+        #expect(stats.stats.first { $0.key == "streaks" }?.value == "5 flew · 11 dry")
         // The tally keeps its three counts *as counts*, so the card can draw them on the
         // ladder's inks, and carries the block's own caption.
         let tally = stats.stats.first { $0.key == "tally" }
         #expect(tally?.value == "35 · 8 · 7")
-        #expect(tally?.caption == "of 50 jibes")
+        #expect(tally?.caption == "of 50 jibes · 12 clean")
         #expect(tally?.tally == block.tally)
         #expect(stats.disclaimer == nil)
     }
@@ -342,6 +342,11 @@ import Testing
                                    dryJibes: 43, fellIn: 25))
         summary.turns.turnsCounted = 51
         summary.turns.jibes = 50
+        // The strict verdict: 12 of the 50 jibes were flown all the way through with the
+        // speed carried. Deliberately far below the ladder's 35 fly-throughs — the two
+        // numbers answer different questions and the block prints both.
+        summary.turns.jibesSuccessful = 12
+        summary.turns.turnsSuccessful = 12
         summary.turns.longestDryStreak = 11
         summary.turns.longestFlewStreak = 5
         summary.turns.outcomes = outcomes(35, 8, 8)
@@ -364,8 +369,8 @@ import Testing
         #expect(block.tally?.flewThrough == 35)
         #expect(block.tally?.touchdown == 8)
         #expect(block.tally?.fellIn == 7)
-        #expect(block.tally?.caption == "of 50 jibes")
-        #expect(block.streaks?.value == "11 dry · 5 flew")
+        #expect(block.tally?.caption == "of 50 jibes · 12 clean")
+        #expect(block.streaks?.value == "5 flew · 11 dry")
         #expect(block.rates.map(\.key) == ["jph", "wph"])
         // 43 dry jibes of 50 over 1:57 — the rate counts the ones he sailed out of, and the
         // label says so, because 50/h would be a different number under the same word.
@@ -402,6 +407,7 @@ import Testing
         summary.apply(SessionRates(durationS: 3600, distanceM: 5000, turnsCounted: 12,
                                    dryJibes: 0, fellIn: 3))
         summary.turns.turnsCounted = 12
+        summary.turns.turnsSuccessful = 4
         summary.turns.unclassified = 12
         summary.turns.longestDryStreak = 4
         summary.turns.longestFlewStreak = 2
@@ -411,7 +417,7 @@ import Testing
         #expect(block.rates.map(\.key) == ["tph", "wph"])
         #expect(block.rates[0].label == "TPH · turns per hour")
         #expect(block.rates[0].value == "12.0")
-        #expect(block.tally?.caption == "of 12 turns")
+        #expect(block.tally?.caption == "of 12 turns · 4 clean")
         #expect(block.tally?.flewThrough == 6)
     }
 
@@ -1206,8 +1212,11 @@ import Testing
                      outcome: "flew_through", score: 0.82),
             try turn(200, type: "jibe", side: "port", direction: "starboard",
                      outcome: "fell_in", score: 0.31),
+            // Carried its speed (0.78 clears the threshold) and still touched down: the
+            // one turn where "clean" and "flew through" disagree, which is the whole
+            // reason they are two numbers.
             try turn(300, type: "jibe", side: "starboard", direction: "port",
-                     outcome: "touchdown", score: 0.55),
+                     outcome: "touchdown", score: 0.78),
             try turn(400, type: "jibe", side: "starboard", direction: "port",
                      outcome: "flew_through", score: 0.9, submerged: true),
             try turn(500, type: "tack", side: "port", direction: "port",
@@ -1286,6 +1295,11 @@ import Testing
         #expect(all.total == 6)
         #expect(all.flewThroughPct.map { Int($0.rounded()) } == 50)
         #expect(all.caption == "3 flew · 2 touch · 1 fell")
+        // The stricter verdict over the same six turns: the four that cleared the success
+        // threshold (0.82, 0.78, 0.90, 0.75). Deliberately *not* the flew-through count —
+        // the 0.78 jibe carried its speed and still touched down.
+        #expect(all.clean == 4)
+        #expect(all.cleanCaption == "4 of 6 clean")
 
         let portJibes = TurnAnalytics.tally(turns, filter: TurnFilter(type: .jibes,
                                                                       side: .port))
@@ -1307,6 +1321,9 @@ import Testing
         #expect(noTacks.total == 0)
         #expect(noTacks.flewThroughPct == nil)
         #expect(noTacks.caption == "nothing matches this filter")
+        // Nothing to be clean out of, so the strict line is absent rather than "0 of 0".
+        #expect(noTacks.clean == 0)
+        #expect(noTacks.cleanCaption == "")
     }
 
     /// The row is the whole formatting contract: the view prints no number itself.
@@ -1320,9 +1337,11 @@ import Testing
         #expect(submerged.sideLabel == "starboard entry")
         #expect(submerged.outcome == .flewThrough)
         #expect(submerged.scoreText == "90")
+        #expect(submerged.clean, "0.90 clears the success threshold")
         #expect(submerged.detail.contains("wrist under"))
         #expect(submerged.accessibilityText.contains("Jibe, starboard entry"))
         #expect(submerged.accessibilityText.contains("flew through"))
+        #expect(submerged.accessibilityText.contains("clean"))
 
         // Every outcome gets a distinct shape as well as a distinct colour.
         let symbols = TurnOutcomeKind.allCases.map(\.symbolName)
@@ -1340,7 +1359,7 @@ import Testing
             == "tacks entered on starboard")
     }
 
-    // MARK: - Trends: turn success by entry tack
+    // MARK: - Trends: flew through by entry tack
 
     /// The two series the Trends chart plots. Built from per-turn rows because the session
     /// summary counts the sides but not their outcomes.

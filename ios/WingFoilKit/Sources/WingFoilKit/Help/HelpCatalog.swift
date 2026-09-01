@@ -436,16 +436,22 @@ public enum HelpCatalog {
             related: [.turnSuccess, .falls, .glideOuts]),
 
         HelpTopic(
-            id: .turnSuccess, section: .turns, title: "Carried through (turn success)",
-            summary: "Speed kept through the turn — the continuous score behind the outcome.",
+            id: .turnSuccess, section: .turns, title: "Clean jibes",
+            summary: "A jibe you fly all the way through, carrying your speed.",
             body: [
-                "A turn is scored successful when your minimum speed through it stays at or "
-                + "above 70 % of the speed you entered with, and you never dropped below the "
-                + "foil exit speed during the sweep.",
-                "Outcome says what happened; success says what it cost. They can disagree on "
-                + "purpose: a turn carved cleanly through the sweep stays successful even if "
-                + "the foil is lost afterwards in the recovery — the outcome is what records "
-                + "that.",
+                "A clean jibe is one you fly all the way through, carrying your speed — no "
+                + "touchdown, no swim, and at or above the success threshold of the speed "
+                + "you entered with. That threshold is a published, configurable parameter "
+                + "(`turnSuccessPct`), 70 % by default.",
+                "Both halves have to hold: your minimum speed through the turn stays at or "
+                + "above that share of your entry speed, and you never drop below the foil "
+                + "exit speed during the sweep. The score under each turn in the list is the "
+                + "first half of that as a number, 0–100.",
+                "Outcome says what happened; clean says what it cost. They can disagree on "
+                + "purpose: a jibe carved cleanly through the sweep stays clean even if the "
+                + "foil is lost afterwards in the recovery — the outcome is what records "
+                + "that. So the clean count is always the stricter of the two, and it is "
+                + "normally the smaller number.",
             ],
             related: [.turnOutcomes, .alpha500]),
 

@@ -13,7 +13,9 @@ import Foundation
 /// 1. `basics` — duration (`10:45 min` / `1:57 h`), distance, average speed.
 /// 2. `maxSpeed` — the best 2 s record, labelled with the window it is, never "top speed".
 /// 3. `tally` + `streaks` — the outcome ladder's own three counts, plus the two streaks
-///    §5.1 flagged as computed-and-never-shown on either platform.
+///    §5.1 flagged as computed-and-never-shown on either platform. The tally's caption
+///    carries the **clean jibe** count as well as the total, so the one number a rider
+///    quotes about his turns is in the block rather than three screens down.
 /// 4. `rates` — the per-hour rates (`docs/algorithms.md` "Session rates"); JPH counts
 ///    **dry** jibes since 0.7.0, and its label says so.
 ///
@@ -48,8 +50,15 @@ public struct KeyMetrics: Sendable, Equatable {
         public let flewThrough: Int
         public let touchdown: Int
         public let fellIn: Int
-        /// What the three numbers are out of — "of 50 jibes", or "of 51 turns" on a
-        /// session whose wind axis never resolved and which therefore has no jibes.
+        /// What the three numbers are out of, and how many of them were **clean** —
+        /// "of 50 jibes · 12 clean", or "of 51 turns · 12 clean" on a session whose wind
+        /// axis never resolved and which therefore has no jibes.
+        ///
+        /// A *clean jibe* is a counted jibe flown all the way through with the speed
+        /// carried — the engine's `success` flag (`docs/algorithms.md`, `turnSuccessPct`).
+        /// It is a stricter verdict than the ladder's green and deliberately a different
+        /// number: the three counts say how each turn ended, the clean count says how many
+        /// of them the rider actually got right.
         public let caption: String
 
         public var total: Int { flewThrough + touchdown + fellIn }
@@ -68,7 +77,9 @@ public struct KeyMetrics: Sendable, Equatable {
     public let maxSpeed: Metric
     /// nil when no turn was counted: a tally of three zeros is not a verdict.
     public let tally: Tally?
-    /// "11 dry · 5 flew", nil with no counted turns.
+    /// "5 flew · 11 dry", nil with no counted turns. Flying leads: it is the harder of
+    /// the two runs and the one the rider is chasing, and `longestFlewStreak` is always
+    /// the smaller number, so the pair reads strict-then-lenient in both halves.
     public let streaks: Metric?
     /// JPH (or TPH) and WPH. **Empty** when `durationS <= 0` — the engine reports the
     /// rates as null there, and "no hour to divide by" is an absence, not a 0.0.
@@ -102,7 +113,7 @@ public struct KeyMetrics: Sendable, Equatable {
             tally: tally(t),
             streaks: t.turnsCounted > 0
                 ? Metric(key: "streaks", label: "best streaks",
-                         value: "\(t.longestDryStreak) dry · \(t.longestFlewStreak) flew")
+                         value: "\(t.longestFlewStreak) flew · \(t.longestDryStreak) dry")
                 : nil,
             rates: rates(summary))
     }
@@ -116,16 +127,22 @@ public struct KeyMetrics: Sendable, Equatable {
     /// read as "nothing happened" — so it falls back to every counted turn, exactly the
     /// way the rate row falls back from JPH to TPH. The caption says which, so the three
     /// numbers can never be mistaken for the other set.
+    ///
+    /// The caption also carries the **clean** count — the jibes he flew all the way
+    /// through carrying his speed (`turnSuccessPct`). It rides in the caption rather than
+    /// in a cell of its own because it is about the same set of turns the three counts are
+    /// about, and because a fifth cell on row 3 is a cell the streaks pair would lose.
     static func tally(_ t: TurnSummary) -> Tally? {
         if t.jibes > 0 {
             let o = t.jibeOutcomes
             return Tally(flewThrough: o.flewThrough, touchdown: o.touchdown,
-                         fellIn: o.fellIn, caption: "of \(t.jibes) jibes")
+                         fellIn: o.fellIn,
+                         caption: "of \(t.jibes) jibes · \(t.jibesSuccessful) clean")
         }
         guard t.turnsCounted > 0 else { return nil }
         let o = t.outcomes
         return Tally(flewThrough: o.flewThrough, touchdown: o.touchdown, fellIn: o.fellIn,
-                     caption: "of \(t.turnsCounted) turns")
+                     caption: "of \(t.turnsCounted) turns · \(t.turnsSuccessful) clean")
     }
 
     /// JPH · WPH, one decimal.
