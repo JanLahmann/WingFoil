@@ -163,6 +163,11 @@ public struct TurnListItem: Sendable, Equatable, Identifiable {
     public let score: Double
     /// "67" — the score as the row prints it, percent-shaped without the sign.
     public let scoreText: String
+    /// A **clean jibe**: the score cleared `turnSuccessPct` and the foil was never lost
+    /// across the scored window. The engine's `success` flag, under the name the app
+    /// gives it — not the same thing as `outcome == .flewThrough`, which is about how the
+    /// turn *ended*.
+    public let clean: Bool
     /// A touchdown that only just missed being a fall (or vice versa).
     public let borderline: Bool
     public let submerged: Bool
@@ -172,7 +177,9 @@ public struct TurnListItem: Sendable, Equatable, Identifiable {
 
     public init(id: Int, ts: Double, endTs: Double, typeLabel: String, side: String,
                 sideLabel: String, outcome: TurnOutcomeKind, score: Double, scoreText: String,
-                borderline: Bool, submerged: Bool, pumped: Bool, detail: String) {
+                clean: Bool = false, borderline: Bool, submerged: Bool, pumped: Bool,
+                detail: String) {
+        self.clean = clean
         self.id = id
         self.ts = ts
         self.endTs = endTs
@@ -192,6 +199,7 @@ public struct TurnListItem: Sendable, Equatable, Identifiable {
     /// column.
     public var accessibilityText: String {
         var parts = ["\(typeLabel), \(sideLabel)", outcome.label, "score \(scoreText)"]
+        if clean { parts.append("clean") }
         if borderline { parts.append("borderline") }
         if submerged { parts.append("wrist under water") }
         return parts.joined(separator: ", ")
@@ -203,11 +211,11 @@ public struct TurnListItem: Sendable, Equatable, Identifiable {
 /// The outcome counts under the current filter, plus the one rate the rider actually asks
 /// about.
 ///
-/// **The rate is the flew-through share, and it is labelled as such.** The session
-/// summary's "Carried through" card reports a *different* number — the engine's
-/// score-based `success` flag against `turnSuccessPct` — and on the corpus session the two
-/// are 30 % and 13 %. Both are true; they answer different questions, so this one never
-/// borrows the other's name.
+/// **The rate is the flew-through share, and it is labelled as such.** The **clean jibe**
+/// count beside it is a *different* number — the engine's score-based `success` flag
+/// against `turnSuccessPct` — and on the corpus session the two are 30 % and 13 %. Both
+/// are true; they answer different questions ("how did it end" against "did you carry it
+/// through"), so neither ever borrows the other's name.
 ///
 /// nil rather than 0 when nothing survives the filter: "you have never tacked" and "you
 /// fail every tack" are opposite facts and must not print the same.
@@ -215,11 +223,16 @@ public struct TurnOutcomeTally: Sendable, Equatable {
     public let flewThrough: Int
     public let touchdown: Int
     public let fellIn: Int
+    /// How many of the filtered turns were **clean** — flown all the way through with the
+    /// speed carried (`turnSuccessPct`). Not one of the three counts and never drawn on
+    /// the ladder's inks: it is the stricter verdict laid over the same set.
+    public let clean: Int
 
-    public init(flewThrough: Int = 0, touchdown: Int = 0, fellIn: Int = 0) {
+    public init(flewThrough: Int = 0, touchdown: Int = 0, fellIn: Int = 0, clean: Int = 0) {
         self.flewThrough = flewThrough
         self.touchdown = touchdown
         self.fellIn = fellIn
+        self.clean = clean
     }
 
     public var total: Int { flewThrough + touchdown + fellIn }
@@ -242,6 +255,13 @@ public struct TurnOutcomeTally: Sendable, Equatable {
     public var caption: String {
         guard total > 0 else { return "nothing matches this filter" }
         return "\(flewThrough) flew · \(touchdown) touch · \(fellIn) fell"
+    }
+
+    /// "7 of 10 clean" — the strict verdict, in the words the rest of the app uses for it.
+    /// Empty when nothing survives the filter, for the same reason `flewThroughPct` is nil.
+    public var cleanCaption: String {
+        guard total > 0 else { return "" }
+        return "\(clean) of \(total) clean"
     }
 }
 
@@ -276,21 +296,24 @@ public enum TurnAnalytics {
                      sideLabel: sideLabel(turn.side),
                      outcome: TurnOutcomeKind(turn.outcome),
                      score: turn.score, scoreText: scoreText(turn.score),
+                     clean: turn.success,
                      borderline: turn.borderline, submerged: turn.submerged,
                      pumped: turn.pumped, detail: detail(turn))
     }
 
     /// The outcome counts over already-filtered rows.
     public static func tally(_ items: [TurnListItem]) -> TurnOutcomeTally {
-        var flew = 0, touch = 0, fell = 0
+        var flew = 0, touch = 0, fell = 0, clean = 0
         for item in items {
             switch item.outcome {
             case .flewThrough: flew += 1
             case .touchdown: touch += 1
             case .fellIn: fell += 1
             }
+            if item.clean { clean += 1 }
         }
-        return TurnOutcomeTally(flewThrough: flew, touchdown: touch, fellIn: fell)
+        return TurnOutcomeTally(flewThrough: flew, touchdown: touch, fellIn: fell,
+                                clean: clean)
     }
 
     /// Filter and tally in one step — what the header uses.
@@ -343,8 +366,12 @@ public enum TurnAnalytics {
 
 // MARK: - Trends
 
-/// Turn success split by the tack the turn was entered on — one session's contribution to
-/// the two Trends series.
+/// The flew-through share split by the tack the turn was entered on — one session's
+/// contribution to the two Trends series.
+///
+/// **Not the clean-jibe rate**, despite the `…SuccessPct` property names it has carried
+/// since before the metric had a name: these count `flewThrough`, the outcome, not the
+/// engine's `success` flag. The chart's title says "flew through" for that reason.
 ///
 /// Built from the per-turn rows rather than from the session summary because the summary
 /// counts port and starboard turns but not their *outcomes* (docs: `TurnSummary`), and

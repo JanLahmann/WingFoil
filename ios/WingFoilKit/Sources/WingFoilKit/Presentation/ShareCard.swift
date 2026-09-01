@@ -50,8 +50,8 @@ public struct ShareCardStats: Sendable, Equatable {
         }
 
         /// The outcome tally as one cell: the three counts as a value, and the block's own
-        /// caption ("of 50 jibes") underneath, so the numbers can never be mistaken for a
-        /// tally of some other set of turns.
+        /// caption ("of 50 jibes · 12 clean") underneath, so the numbers can never be
+        /// mistaken for a tally of some other set of turns.
         public init(_ tally: KeyMetrics.Tally) {
             self.init(key: Key.tally, label: "flew · touchdown · fell",
                       value: "\(tally.flewThrough) · \(tally.touchdown) · \(tally.fellIn)",

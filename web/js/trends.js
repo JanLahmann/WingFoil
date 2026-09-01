@@ -122,7 +122,7 @@ function renderTotals(host, t) {
     ["On foil", `${nf(t.foilPct, 1)} %`],
     ["Flights", int(t.flightCount)],
     ["Turns counted", int(t.turnsCounted)],
-    ["Turns held", `${int(t.turnsSuccessful)} (${nf(t.turnSuccessPct, 0)} %)`],
+    ["Clean jibes", `${int(t.turnsSuccessful)} (${nf(t.turnSuccessPct, 0)} %)`],
     ["Port / starboard entries",
      `${int(t.turnsBySide.port.entries)} / ${int(t.turnsBySide.starboard.entries)}`],
   ];

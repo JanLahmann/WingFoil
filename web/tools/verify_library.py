@@ -307,12 +307,12 @@ def check_digest_fidelity() -> None:
     check("  hand-counted starboard successes", by["starboard"]["successes"],
           hand["starboard"][1])
     # Explicit, so a change to the counting rule cannot quietly re-baseline the test.
-    check("  known: port 14 entries / 2 held", (by["port"]["entries"], by["port"]["successes"]),
+    check("  known: port 14 entries / 2 clean", (by["port"]["entries"], by["port"]["successes"]),
           (14, 2))
-    check("  known: starboard 16 entries / 2 held",
+    check("  known: starboard 16 entries / 2 clean",
           (by["starboard"]["entries"], by["starboard"]["successes"]), (16, 2))
-    check("  known: port success 14.29 %", by["port"]["successPct"], 14.29)
-    check("  known: starboard success 12.5 %", by["starboard"]["successPct"], 12.5)
+    check("  known: port clean 14.29 %", by["port"]["successPct"], 14.29)
+    check("  known: starboard clean 12.5 %", by["starboard"]["successPct"], 12.5)
     # The two sides must add up to the engine's own counted total.
     check("  sides sum to turnsCounted",
           by["port"]["entries"] + by["starboard"]["entries"] + by["unknown"]["entries"],

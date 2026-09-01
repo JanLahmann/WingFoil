@@ -221,7 +221,7 @@ struct ShareCardView: View {
     /// verdict ladder's own inks, the same way `KeyMetricsView` draws them in the app. Every
     /// other cell is `stat.value` and nothing else.
     /// How far a value may shrink before it truncates. The block's longest string by far is
-    /// the streaks pair ("11 dry · 5 flew"), and a card is an image: an ellipsis on it is
+    /// the streaks pair ("5 flew · 11 dry"), and a card is an image: an ellipsis on it is
     /// permanent, where three points of type size are only small. At the dense floor it
     /// still exports at 21 px.
     private var valueFloor: Double { isDense ? 0.45 : 0.6 }

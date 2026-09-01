@@ -102,6 +102,13 @@ Entry/minimum speeds come from `speedChannelManeuvers` (positional); the "never 
 foil" half of the success test stays on Doppler so it agrees with flight segmentation.
 Overlapping candidates are non-maximum-suppressed by net angle, widest sweep wins.
 
+**Glossary — "clean jibe" is this criterion, under the name the UIs use.** A *clean jibe*
+is a counted jibe whose `success` flag is set: `score >= turnSuccessPct` **and** the speed
+never dropped to `foilExitSpeed` across the scored window. Nothing here changes with the
+name — same flag, same parameters, same goldens; `docs/presentation.md` ("Clean jibe")
+holds the spelling contract and the rule that it is never conflated with the outcome
+ladder's `flew_through`, which is a different, looser verdict about how the turn *ended*.
+
 ### Spatial gate — "real movement around the curve" (Jan)
 
 A COG sweep is not a maneuver. A rider swimming beside the board, or drifting while he sorts

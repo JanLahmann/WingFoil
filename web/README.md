@@ -343,8 +343,8 @@ One Python call (`library.aggregate`) over the stored digests produces the whole
   *Show the window* opens that session with **that record's exact window** marked in orange
   (the effort ink, one token for both apps) on the track and on the speed strip — the provenance is already in every analysis document
   under `records.windows`, so nothing is recomputed to draw it. Best 5×10 s marks all five.
-- **Session by session** — on-foil %, longest flight, turn success rate, average pumps to
-  takeoff, and turn success split by the tack the turn was *entered* on. Oldest first; click
+- **Session by session** — on-foil %, longest flight, clean jibe rate, average pumps to
+  takeoff, and clean jibes split by the tack the turn was *entered* on. Oldest first; click
   a point to open that session. A **gap in a line is a missing measurement, not a zero** —
   a session with no wrist accelerometer has no pump number, and drawing that as 0 would be a
   lie.
@@ -484,7 +484,7 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
 |---|---|
 | 1. dedupe | ±59 s matches on either axis, ±61 s does not, exactly 60 s does; a missing start never matches; the *closest* candidate wins so a replace lands on the right recording |
 | 1b. spot names | the corpus filename convention, plus filenames that ignore it |
-| 2. digest fidelity | every digest field equals the golden it was projected from, and the port/starboard split is checked against a hand count off the golden's own turn rows: **port 14 entries / 2 held (14.29 %), starboard 16 / 2 (12.5 %)** for the CIQ session, summing to the engine's own 30 counted / 4 held |
+| 2. digest fidelity | every digest field equals the golden it was projected from, and the port/starboard split is checked against a hand count off the golden's own turn rows: **port 14 entries / 2 clean (14.29 %), starboard 16 / 2 (12.5 %)** for the CIQ session, summing to the engine's own 30 counted / 4 clean |
 | 3. records | the winner of every kind, over all 15 corpus FITs, matched independently *and* named: best 2 s **14.99 kn on 2026-08-01**, best 1 NM **11.451 kn on 2026-08-05**, alpha 500 **11.994 kn on 2026-08-05**; best hour is dropped because nobody set one; every record carries a window that lies inside its session |
 | 4. trends | one point per session per line, indices and ids aligned with the session list, oldest first, values equal to the digests in order, and pumps `null` (not 0) for the accelerometer-less sessions |
 | 5. zip export | the archive unzips, FIT bytes survive byte-for-byte, JSON is deflated, an aborted export cannot leak into the next one |
@@ -517,16 +517,18 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    progress list. Expect the short-session numbers: **2 flights**, 68 % on foil, 2.56 km,
    Turns 10 (all jibes), Outcomes 8 / 0 / 2, wind 196°, best 2 s 13.47 kn, and the same
    four badges — `accel` included, because this example ships whole. Key metrics read
-   `0:10 · 2.6 km · 7.71 kn`, `13.47 kn` under **max 2 s**, `8 · 0 · 2` (of 10 jibes) on
-   the ladder's colours beside `8 dry · 8 flew`, then `44.7` **JPH** and `11.2 WPH`. Being
+   `0:10 · 2.6 km · 7.71 kn`, `13.47 kn` under **max 2 s**, `8 · 0 · 2`
+   (of 10 jibes · 5 clean) on the ladder's colours beside `8 flew · 8 dry`, then `44.7`
+   **JPH** and `11.2 WPH`. Being
    under the 15-minute window, the JPH/WPH peaks equal the whole-session rates.
 4. **Check the numbers** against the golden above: 23 flights, 60 % on foil, 12.76 km,
    Turns 30, Outcomes 9/9/12, wind 36°, best 2 s 11.36 kn. Badges: `wingfoil`,
    `CIQ dev fields`, `accel`, `HR`.
 4b. **Key metrics**, the four rows above the tiles (`docs/presentation.md`, "Key metrics").
    On this file: `1:25 · 12.8 km · 4.89 kn`, then `11.36 kn` under **max 2 s**, then
-   `9 · 9 · 12` on the ladder's own green/amber/red *(this is the only place either app
-   draws the tally in colour outside the map)* beside `4 dry · 2 flew`, then `12.8` under
+   `9 · 9 · 12` (of 30 jibes · 4 clean) on the ladder's own green/amber/red *(this is the
+   only place either app draws the tally in colour outside the map)* beside
+   `2 flew · 4 dry`, then `12.8` under
    **JPH · dry jibes per hour** (the 18 jibes he sailed out of, not all 30 — engine 0.7.0)
    and `11.3 WPH`. It must read identically to the iOS app's block on the same session —
    the two halves are `web/js/render.js` `keyMetrics` and `KeyMetrics.swift`, and the

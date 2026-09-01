@@ -154,7 +154,7 @@ function renderSummary(result, isExample = false) {
     { k: "Best 5×10 s", v: nf(rec.best5x10sKn, 2), unit: "kn", n: `1 NM ${nf(rec.bestNmKn, 2)} kn` },
     { k: "Alpha 500", v: nf(rec.alpha500Kn, 2), unit: "kn", n: `250 m ${nf(rec.best250mKn, 2)} kn` },
     { k: "Turns", v: int(s.turns.turnsCounted),
-      n: `${s.turns.jibes} jibes · ${s.turns.tacks} tacks · ${nf(s.turns.successPct, 0)}% held speed` },
+      n: `${s.turns.jibes} jibes · ${s.turns.tacks} tacks · ${nf(s.turns.successPct, 0)}% clean` },
     { k: "Outcomes", v: `${s.turns.outcomes.flewThrough}/${s.turns.outcomes.touchdown}/${s.turns.outcomes.fellIn}`,
       n: "flew through / touchdown / fell in" },
     windTile,
@@ -211,10 +211,10 @@ function renderTurns(table, caption, g, v, meta) {
   const s = g.summary.turns;
   caption.textContent =
     `${s.turnsCounted} counted (${s.jibes} jibes, ${s.tacks} tacks), ${s.rejected} bear-aways rejected · ` +
-    `${s.turnsSuccessful} held ≥ 70 % of entry speed (${nf(s.successPct, 0)} %) · ` +
+    `${s.turnsSuccessful} clean — carried ≥ 70 % of entry speed (${nf(s.successPct, 0)} %) · ` +
     `port/starboard ${s.port}/${s.starboard}`;
 
-  const head = ["#", "time", "type", "turn", "tack", "entry kn", "min kn", "score", "held",
+  const head = ["#", "time", "type", "turn", "tack", "entry kn", "min kn", "score", "clean",
                 "outcome", "stop s", "off foil s", "pump", "wet", "arc m", "R m"];
   table.innerHTML = `<thead><tr>${head
     .map((h, i) => `<th${i <= 4 || i === 9 ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>

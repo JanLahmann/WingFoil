@@ -285,7 +285,7 @@ function buildModel(result) {
         ["outcome", `${OUTCOME_LABEL[turn.outcome] || turn.outcome}` +
                     (turn.borderline ? " (borderline)" : "")],
         ["speed", `${nf(turn.entryKn, 2)} → ${nf(turn.minKn, 2)} kn`],
-        ["score", `${nf(turn.score * 100, 0)} % · ${turn.success ? "held" : "lost"}`],
+        ["score", `${nf(turn.score * 100, 0)} % · ${turn.success ? "clean" : "not clean"}`],
         ["stopped", `${nf(turn.stoppedS, 1)} s · off foil ${nf(turn.offFoilS, 1)} s`],
         ["arc", `${nf(turn.arcM, 0)} m · R ${nf(turn.radiusM, 0)} m`],
       ],

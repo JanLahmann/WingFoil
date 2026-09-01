@@ -377,10 +377,12 @@ function drawGrid(ctx, stats, box, shape, family) {
     y += m.valueSize + 2;
     drawValue(ctx, stat, cx + m.padH, y, inner, m.valueSize, family);
     if (caption) {
+      // Fitted like the label above it rather than drawn raw: the tally's caption grew a
+      // clean count ("of 50 jibes · 12 clean") and a card is a PNG — a caption that runs
+      // out of its cell is permanent, where a point of type size is only small.
       y += m.captionSize + 4;
-      ctx.font = `400 ${m.captionSize}px ${family}`;
-      ctx.fillStyle = alpha(BRAND.paper, 0.6);
-      ctx.fillText(caption, cx + m.padH, y);
+      drawFitted(ctx, caption, cx + m.padH, y, inner, m.captionSize, 400, family,
+                 alpha(BRAND.paper, 0.6));
     }
   });
 }

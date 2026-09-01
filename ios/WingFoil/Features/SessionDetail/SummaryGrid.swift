@@ -199,9 +199,9 @@ struct SessionTurnsSection: View {
                         StatCard(title: "Unclassified turns", value: "\(t.unclassified)",
                                  caption: "no usable wind axis", help: .windAxis)
                     }
-                    StatCard(title: "Carried through",
+                    StatCard(title: "Clean jibes",
                              value: Fmt.pct(t.successPct),
-                             caption: "\(t.turnsSuccessful) of \(t.turnsCounted) turns",
+                             caption: "\(t.turnsSuccessful) clean of \(t.turnsCounted) turns",
                              help: .turnSuccess)
                     StatCard(title: "Port / starboard",
                              value: "\(t.port) / \(t.starboard)",
