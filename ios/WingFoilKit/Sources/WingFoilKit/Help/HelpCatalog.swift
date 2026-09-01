@@ -141,7 +141,7 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
 
 /// Every explainable metric, as an enum so a `?` button cannot point at a missing topic.
 public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
-    case icuSetup, exampleSession, icuTroubleshooting, icuPrivacy
+    case icuSetup, exampleSession, icuTroubleshooting, icuPrivacy, libraryBackup
     case foilPct, flights, longestFlight, distance, mapLegend
     case recordSet, best2s, best10s, best5x10s, best500m, bestNm, alpha500, uncertified
     case turnTypes, turnOutcomes, turnSuccess, portStarboard, falls, touchdowns, glideOuts
@@ -230,6 +230,52 @@ public enum HelpCatalog {
                 + "here — the old key stops working the moment you regenerate.",
             ],
             related: [.icuSetup, .icuTroubleshooting]),
+
+        // The topic that exists because of the one thing this app cannot get back for you.
+        // The recordings are recoverable — intervals.icu still has them, and so does Garmin
+        // — but what you *called* a session, what you wanted said about it, whose it was,
+        // which wing it was on and which sessions you deliberately threw away live in one
+        // database on one phone and nowhere else at all.
+        HelpTopic(
+            id: .libraryBackup, section: .setup, title: "Backing up your library",
+            summary: "A new phone carries everything by itself. A fresh start needs a file.",
+            body: [
+                "Your library — the database and every original recording — lives inside "
+                + "CleanJibe's own storage, so it is covered by the two things iOS already "
+                + "does: setting up a new iPhone from your old one carries it across, and an "
+                + "iCloud or Finder device backup holds it. If you are replacing a phone the "
+                + "ordinary way, there is nothing to do here.",
+                "What neither of those covers is a fresh start: a phone set up as new rather "
+                + "than restored, the app deleted and installed again, or a second device "
+                + "that is not a migration. Then the recordings could still be fetched back "
+                + "from intervals.icu one by one — but the names you gave your sessions, the "
+                + "captions, who rode them, the gear on each one, the spot names you typed "
+                + "and the sessions you deleted on purpose exist in exactly one place, and "
+                + "that place is gone. Settings → Library backup writes all of it to a "
+                + "single zip you can put in iCloud Drive, on a Mac, or anywhere else Files "
+                + "can reach.",
+                "The file holds the library database, every recording you have imported, and "
+                + "a short manifest saying which version wrote it. The recordings inside are "
+                + "your own .fit and .gpx files, exactly as they arrived — unlike a session "
+                + "you share with a friend, nothing is stripped out of them, because this "
+                + "file is for you. It is also the largest part of it: a session recorded "
+                + "with the CleanJibe watch app carries a 100 Hz accelerometer stream that "
+                + "is around 95 % of its size, so a library full of those runs to gigabytes. "
+                + "The app tells you roughly how big the file will be before it starts.",
+                "Restoring is additive and can be repeated. Every session in the file goes "
+                + "back in through the ordinary import, with the same duplicate check, so "
+                + "restoring twice — or restoring onto a phone that already has some of "
+                + "those sessions — adds nothing a second time. Nothing is ever deleted or "
+                + "overwritten: a session already in your library keeps its own analysis, "
+                + "and a detail you have since changed is left alone while an empty one is "
+                + "filled in from the backup. Sessions you deleted after taking the backup "
+                + "stay deleted; Settings → Deleted sessions is the way to change your mind "
+                + "about those.",
+                "A backup from a newer version of CleanJibe is refused rather than partly "
+                + "read — update the app and try it again. An older one is fine, and is "
+                + "brought up to date as it is read.",
+            ],
+            related: [.icuSetup, .riderAttribution, .shareFit, .icuPrivacy]),
 
         // MARK: On the foil
 
