@@ -44,6 +44,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -592,6 +593,137 @@ def check_card() -> None:
         check("  leanKeys is the contract's set", cards[0]["leanKeys"], LEAN_KEYS)
 
 
+CARD_TEXT = TOOLS / "card_text.mjs"
+
+#: The caption's cap, and the title's — `SessionNaming.noteLimit` / `.titleLimit` on iOS,
+#: spelled here so the JavaScript is checked against a second copy of the rule rather than
+#: against itself. Eighty is about one line of chat, and about what the card's header sets on
+#: one line at a size a chat thumbnail still resolves.
+NOTE_LIMIT = 80
+TITLE_LIMIT = 60
+
+#: The header with no caption on it, in layout points, and what one costs — the only piece of
+#: the card's geometry that depends on its content. `HEADER_BASE_H` is the number the card has
+#: always laid out against, and the point of asserting it is that a card *without* a caption
+#: must be the card it was before the field existed, down to the point.
+HEADER_BASE_H = 42
+NOTE_LINE_H = 14
+
+
+def check_card_text() -> None:
+    """The rider's own title and caption: normalized, remembered, and out of the numbers.
+
+    Three promises, and the failure mode of each is a card in somebody else's chat thread:
+    a caption that ran off the edge, a session whose caption came back attached to the wrong
+    afternoon, and — the one that matters most — a caption that displaced a metric. The last
+    is why `statsUnchanged` is asserted here rather than trusted: §5 proves the card's cells
+    are the block's cells, and this proves the caption did not quietly become a cell.
+
+    The dialog itself is a `<dialog>` with a canvas in it and is not scriptable from here
+    (`verify_library.py` covers the Python library, not the DOM). What is asserted instead is
+    everything the dialog calls, which is where all the rules live.
+    """
+    section("5b. the rider's own title and caption")
+
+    goldens = sorted(GOLDENS.glob(f"*{gen.SUFFIX}"))
+    node = shutil.which("node")
+    if not node:
+        print("  (skipped: node not on PATH)")
+        return
+    if not goldens:
+        print("  (skipped: no analysis goldens)")
+        return
+    try:
+        raw = subprocess.run([node, str(CARD_TEXT), *[str(p) for p in goldens]],
+                             capture_output=True, text=True, check=True, cwd=REPO).stdout
+    except subprocess.CalledProcessError as exc:              # pragma: no cover
+        FAILED.append(f"  card_text.mjs failed\n{exc.stderr.strip()}")
+        return
+    got = json.loads(raw)
+
+    check("  the caps are the contract's", got["limits"],
+          {"note": NOTE_LIMIT, "title": TITLE_LIMIT})
+
+    # 1. A caption is one trimmed, capped line. Re-derived here rather than copied out of the
+    #    JavaScript's answer: trim, fold every run of newlines to one space, cap, trim again.
+    for raw_text, want_js in got["notes"]:
+        folded = " ".join(part for part in re.split(r"[\r\n]+", raw_text))
+        want = folded.strip()
+        if len(want) > NOTE_LIMIT:
+            want = want[:NOTE_LIMIT].strip()
+        check(f"  cleanNote({raw_text[:24]!r}…)", want_js, want)
+        check("  a stored caption never ends in whitespace", want_js.strip(), want_js)
+
+    for raw_text, want_js in got["titles"]:
+        want = raw_text.strip()
+        if len(want) > TITLE_LIMIT:
+            want = want[:TITLE_LIMIT].strip()
+        check(f"  cleanTitle({raw_text[:24]!r}…)", want_js, want)
+
+    # 2. The per-session key is the digest's own id, re-derived from `meta` — so a document
+    #    opened out of the library and the same document freshly analysed remember one
+    #    caption between them rather than two.
+    start = datetime(2026, 8, 30, 12, 7, tzinfo=timezone.utc).timestamp()
+    try:
+        import library as lib                                # noqa: PLC0415
+        want_id = lib._session_id(start, 5000.4, "a.fit")
+    except Exception:                                        # pragma: no cover
+        want_id = f"s{int(start)}-{round(5000.4)}"           # the rule, second copy
+    check("  the key is the digest's session id", got["keys"][0], want_id)
+    check("  the timer time is the duration's fallback", got["keys"][1], "s1788091620-120")
+    # A recording with no clock cannot be identified by one. The two implementations need not
+    # spell that branch the same way — nothing but the browser's own storage reads it — but it
+    # must be stable and it must not collide with the dated form.
+    check("  a clockless recording keys on its filename", got["keys"][2], "xno-clock.fit")
+    check("  and never on the dated form", got["keys"][2].startswith("s"), False)
+
+    # 3. The round trip, including every way `localStorage` fails.
+    s = got["storage"]
+    empty = {"title": "", "note": ""}
+    check("  nothing remembered reads as the empty pair",
+          s["emptyBeforeAnythingIsWritten"], empty)
+    check("  what comes back is what went in, normalized",
+          s["afterWriting"], {"title": "First 20 kn", "note": "cold and glassy at last"})
+    check("  it is stored normalized, not normalized on the way out",
+          s["storedRaw"], s["afterWriting"])
+    check("  a second session is a second entry", s["otherSession"],
+          {"title": "Другое", "note": ""})
+    check("  and does not disturb the first", s["firstStillThere"], s["afterWriting"])
+    check("  clearing both fields reads back empty", s["afterClearing"], empty)
+    check("  and removes the entry rather than storing two blanks",
+          s["keysAfterClearing"], ["s9-9"])
+    check("  the map is bounded", s["boundedTo"], 50)
+    check("  the oldest entry is the one evicted", s["oldestStillThere"], False)
+    check("  the newest is kept", s["newestStillThere"], True)
+    # A share dialog that could not open because a preference could not be read would be the
+    # worst possible trade — so every one of these is the empty pair, and none of them throws.
+    check("  somebody else's JSON under our key reads as nothing",
+          s["arrayUnderTheKey"], empty)
+    check("  and so does unparseable text", s["garbageUnderTheKey"], empty)
+    check("  a browser with no storage reads as nothing", s["withoutStorage"], empty)
+    check("  and writing to one is a silent no-op", s["writeThrewWithoutStorage"], False)
+
+    # 4. The geometry. Absent, the header is the header the card has always had.
+    h = got["header"]
+    check("  no caption: the header is unchanged", h["plain"], HEADER_BASE_H)
+    check("  a cleared caption is no caption", h["cleared"], HEADER_BASE_H)
+    check("  a caption costs one line", h["named"], HEADER_BASE_H + NOTE_LINE_H)
+
+    # 5. The content. A typed title replaces the one derived from the filename; a cleared one
+    #    gives it back; and neither field may touch a single number on the card.
+    c = got["content"]
+    check("  the derived title is the default", c["plain"]["title"], "Nago Torbole")
+    check("  and carries no caption", c["plain"]["note"], None)
+    check("  a typed title wins", c["named"]["title"], "First 20 kn")
+    check("  a typed caption is carried, trimmed", c["named"]["note"], "cold and glassy")
+    check("  a cleared title gives the derived one back", c["cleared"]["title"],
+          "Nago Torbole")
+    check("  a cleared caption is no caption", c["cleared"]["note"], None)
+    check("  THE CAPTION IS NOT A CELL: the stats are untouched", c["statsUnchanged"], True)
+    check("  and so is the disclaimer", c["disclaimerUnchanged"], True)
+    check("  and so is the date line", c["dateUnchanged"], True)
+
+
 # --------------------------------------------------------------------- main
 
 
@@ -619,6 +751,7 @@ def main(argv=None) -> int:
     else:
         check_engine()
     check_card()
+    check_card_text()
 
     _close_section()
     print(f"\n{PASSED} passed, {len(FAILED)} failed")

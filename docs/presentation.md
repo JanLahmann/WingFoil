@@ -366,6 +366,27 @@ Two presets choose how much of it appears, and a preset may only **remove** entr
 | `complete` (default) | the whole block: duration · distance · avg speed · max 2 s · tally · streaks · JPH/TPH · WPH |
 | `lean` | duration · distance · max 2 s · tally |
 
+**The rider gets a title and one caption, and neither is a cell** (schema v9). The card's
+header is the session's name, its date, and — when he wrote one — a single line of his own
+under the date. Everything else on the card is a measurement or the footer's offer; the
+caption is the only thing on it addressed by the *sender* to the reader, which is why it sits
+in the header rather than joining a grid whose whole contract is that it is the app's own
+block. It is capped at **80 characters** (`SessionNaming.noteLimit`, `NOTE_LIMIT`), folded to
+one line, and it shrinks rather than truncating — an ellipsis in a PNG is permanent, three
+points of type size are only small. Absent, the header is exactly the two lines it always was:
+42 layout points, unchanged, and the caption's 14 come out of the track's remainder.
+
+The two platforms differ in *what is being named*, and only there. On iOS the title field is a
+**rename of the session**: it writes `SessionRow.customTitle`, and every surface follows —
+library row, detail header, card, clip title card, share messages, and the name the scrubbed
+FIT and the clip arrive under (`SessionNaming.title`, which `SessionDisplay.title` applies
+once). The caption is `SessionRow.shareNote`, shown on the card and on the clip's *opening*
+frame — not on the closing one, where the same sentence would be printed twice in forty
+seconds, and never in a library row or on the detail page, because it is a message to an
+audience rather than metadata. The analyzer has no session record to rename, so both fields
+are transient there: they feed one render and are remembered per session digest id in
+`localStorage`.
+
 The card's outline carries three semantics and no more (`TrackThumbnail.Mark`): the track
 tinted by foil state, a dot per **counted** turn on the verdict ladder's inks, and the
 barometer's submersion evidence as a cyan **diamond** — shape as well as colour, because a

@@ -174,6 +174,22 @@ longest flight) ever reaches a card, that the tally's three counts are the golde
 in a third spelling of the same rules, written in Python — that the value strings themselves
 are right. It needs `node` on PATH and skips itself with a note when there is none.
 
+`web/tools/card_text.mjs` covers the other half of the same card — the **rider's own title and
+caption** (§5b, schema v9). A rider can name the session and add one line for whoever he sends
+the picture to; on iOS the title is a *rename* that writes to the session row, and in the
+analyzer, which has no session record to rename, both fields are transient and remembered per
+session in `localStorage`. What the dialog itself does cannot be driven from a test (it is a
+`<dialog>` with a canvas in it), so what is asserted is everything the dialog *calls*: the two
+normalizers (one trimmed, capped line; blank means none), the per-session key — re-derived from
+`meta` and required to equal the Python digest's own `_session_id`, so a document opened out of
+the library and the same document freshly analysed remember one caption between them — the
+storage round trip including every way `localStorage` fails (a private window, somebody else's
+JSON under the key, no storage at all: all of them read as "nothing remembered" and none of them
+throws), the header's height with and without a caption (**absent must be the 42 pt header the
+card has always had**), and — the one that matters most — that a caption never becomes a *cell*:
+§5 proves the card's cells are the block's cells, and §5b proves the caption did not quietly
+join them. Same `node` requirement, same skip.
+
 `web/tools/clock_note.mjs` is the same trick for the **header's clock note** (§4, engine
 0.9.1): it runs `render.js`'s own `clockNoteFor` over one `meta` per rung of the UTC-offset
 ladder — `activity`, `icu`, `longitude`, `device`, plus a document with no source at all —
@@ -431,7 +447,9 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    `UI_SHAPE=portrait|square|landscape` picks the aspect and `UI_STATS=lean|complete` picks
    the stat preset — three controls `simctl` likewise cannot tap. The last one sets the same
    state the picker does but, unlike a tap on the picker, does **not** write the rider's
-   stored choice.
+   stored choice. `UI_TITLE=…` and `UI_CAPTION=…` (schema v9) fill the composer's two text
+   fields, which `simctl` cannot type into: they seed the drafts *and* the committed values,
+   so the sheet photographs a named session without renaming the one in the library.
    The **cinema replay** (`ReplayCinemaView`, the full-screen replay a clip is recorded from)
    opens with `UI_REPLAY_LENGTH=10|25|60|full`, which stands in for the record button plus the
    setup sheet's own length picker: the setup sheet asks for a **target length** and

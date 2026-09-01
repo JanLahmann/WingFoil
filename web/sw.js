@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v19";     // v19: engine 0.9.1 — the clock note says when the offset was guessed
+const VERSION = "v20";     // v20: the share card takes a title and a caption from the rider
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
