@@ -193,7 +193,7 @@ public struct AppDatabase: Sendable {
         var found: [String: Int] = [:]
         for id in ids {
             guard let data = try? archive.originalData(for: id),
-                  let track = try? FitSessionParser.parse(data: data),
+                  let track = try? TrackParser.parse(data: data),
                   let offset = track.startUtcOffsetS else { continue }
             found[id] = offset
         }

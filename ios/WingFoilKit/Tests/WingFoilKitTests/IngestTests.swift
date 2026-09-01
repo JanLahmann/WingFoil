@@ -150,4 +150,73 @@ import Testing
         #expect(try await ingestor.allSessions().isEmpty)
         #expect(!FileManager.default.fileExists(atPath: ingestor.archive.directory(for: row.id).path))
     }
+
+    // MARK: - GPX (engine 0.9.0, input class c)
+
+    /// A GPX walks the same path a FIT does — and comes out labelled for what it is.
+    ///
+    /// The end-to-end claim of engine 0.9.0, asserted where it can actually be broken: the
+    /// row carries `sourceClass` "c", so every consumer that reads that column reaches the
+    /// uncertified treatment without being told about GPX at all.
+    @Test func aGpxIngestsAsAClassCSession() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        let url = try #require(findFixtureTrack(stem: "2026-08-30-1407_nago-torbole"),
+                               "no GPX fixture available")
+        let data = try Data(contentsOf: url)
+
+        guard case .imported(let row) = try await ingestor.ingest(
+            fitData: data, filename: url.lastPathComponent, source: .file) else {
+            Issue.record("expected a fresh import")
+            return
+        }
+
+        #expect(row.sourceClass == "c")
+        #expect(row.engineVersion == AnalysisEngine.version)
+        #expect(row.flightCount == 2)
+        #expect(row.durationS > 0)
+        #expect((row.best2sKn ?? 0) > 0)
+        // No accelerometer, so no pump answer at all — never a zero, which would read as
+        // "he got up without pumping".
+        #expect(row.totalPumpStrokes == nil || row.totalPumpStrokes == 0)
+
+        // The archive keeps the recording under its own extension: these bytes get handed
+        // back out, and a GPX filed as `original.fit` is a lie that reaches a mailbox.
+        let archive = ingestor.archive
+        #expect(archive.originalURL(for: row.id).lastPathComponent == "original.gpx")
+        #expect(try archive.originalData(for: row.id) == data)
+        #expect(archive.originalFormat(for: row.id) == .gpx)
+        // …and re-reading it produces the same track, so lazy re-analysis works from disk.
+        let reread = try archive.rawTrack(for: row.id)
+        #expect(reread.capabilities.sourceClass == "c")
+        #expect(reread.samples.count == 640)
+    }
+
+    /// The uncertified treatment, end to end from the ingested row.
+    ///
+    /// A share card is the one surface that leaves the app, so it is the one that must
+    /// carry the disclaimer; `certified` is what keeps a class-(c) effort out of the
+    /// personal-best celebration. Both read the same column the ingest just wrote.
+    @Test func aGpxSessionsRecordsAreTreatedAsUncertified() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        let url = try #require(findFixtureTrack(stem: "2026-08-30-1407_nago-torbole"))
+        guard case .imported(let row) = try await ingestor.ingest(
+            fitData: try Data(contentsOf: url), filename: url.lastPathComponent,
+            source: .file) else { return }
+
+        let card = ShareCardStats.make(row: row, title: "Nago-Torbole",
+                                       timeZone: row.displayZone)
+        #expect(card.disclaimer == "Speeds from a degraded source — uncertified")
+
+        let best = try await LibraryStore(database: ingestor.database).records()
+        #expect(!best.isEmpty)
+        #expect(best.allSatisfy { $0.sourceClass == "c" })
+        #expect(best.allSatisfy { !$0.certified })
+        // A class-(c) effort is never celebrated as a personal best, even against a
+        // snapshot it beats outright — a degraded source can read high, and confetti is
+        // exactly the wrong answer to a bad speed sample.
+        let previous = PersonalBestSnapshot(bestByKind: ["best2s": 1.0, "best10s": 1.0])
+        #expect(PersonalBestDetector.improvements(previous: previous, current: best).isEmpty)
+    }
 }

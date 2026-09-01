@@ -402,9 +402,10 @@ public enum HelpCatalog {
             summary: "The recording could not prove the speed was Doppler.",
             body: [
                 "Speed records are only trustworthy when they come from the receiver's Doppler "
-                + "speed channel. A recording that carries positions but no speed channel — a "
-                + "GPX-grade source, or a converted file — gets its speed differentiated from "
-                + "positions instead, and that is systematically noisier and can read high.",
+                + "speed channel. A recording that carries positions but no speed channel — "
+                + "every GPX, and the occasional converted export — gets its speed "
+                + "differentiated from positions instead, and that is systematically noisier "
+                + "and can read high.",
                 "Those records are still shown, because they are still your session, but they "
                 + "are labelled uncertified so you never post one as a personal best by "
                 + "accident. Nothing recorded by your watch directly is affected.",
@@ -739,10 +740,12 @@ public enum HelpCatalog {
                           + "axis. Only pump strokes, failed takeoff attempts and "
                           + "accelerometer-confirmed touchdowns are missing, because nothing "
                           + "recorded the accelerometer."),
-                .init(term: "A file with no speed channel",
-                      detail: "Rare, and usually a converted export rather than the original "
-                          + "recording. Everything still computes from positions, but the "
-                          + "speed records are marked uncertified."),
+                .init(term: "A GPX, or any file with no speed channel",
+                      detail: "GPX imports work: the track, the flights, every turn with its "
+                          + "verdict, the wind axis. But a GPX carries no speed channel, so "
+                          + "speed is estimated from positions and the speed records are "
+                          + "marked uncertified — and no GPX carries an accelerometer, so "
+                          + "pump strokes and takeoff effort are missing too."),
             ],
             related: [.uncertified, .divergence, .engineVersion]),
 

@@ -59,10 +59,10 @@ public struct ImportSummary: Sendable, Equatable {
     }
 }
 
-/// FIT bytes → analysis → archive + `session` row + the schema-v2 child tables. Dedupe
-/// key per plan §3.3: start within ±60 s **and** duration within ±60 s (the same session
-/// reaches us from intervals.icu, a GDPR bulk ZIP and AirDrop with slightly different
-/// rounding).
+/// Recording bytes (FIT or GPX) → analysis → archive + `session` row + the schema-v2
+/// child tables. Dedupe key per plan §3.3: start within ±60 s **and** duration within
+/// ±60 s (the same session reaches us from intervals.icu, a GDPR bulk ZIP and AirDrop
+/// with slightly different rounding).
 public struct SessionIngestor: Sendable {
 
     /// Sports we accept during bulk (ZIP) import. Everything else needs our developer
@@ -92,8 +92,10 @@ public struct SessionIngestor: Sendable {
 
     // MARK: - Ingest
 
-    /// Ingests one FIT. `requireWatersport` gates bulk imports (ZIP walking); a file the
-    /// user picked by hand is always accepted.
+    /// Ingests one recording — a FIT, or since engine 0.9.0 a GPX (`TrackParser` decides
+    /// from the bytes). `requireWatersport` gates bulk imports (ZIP walking); a file the
+    /// user picked by hand is always accepted, which is also the only way a GPX gets in:
+    /// it carries no sport and no discipline, so nothing about it can pass a sport gate.
     ///
     /// `rider` is whose session this is — nil for the app owner's own, a friend's name for
     /// a FIT they shared. Only the hand-picked paths ever pass a name: an intervals.icu
@@ -110,7 +112,9 @@ public struct SessionIngestor: Sendable {
                        rider: String? = nil,
                        utcOffsetS: Int? = nil,
                        requireWatersport: Bool = false) async throws -> IngestOutcome {
-        let track = try FitSessionParser.parse(data: fitData)
+        // FIT or GPX, decided by the bytes (engine 0.9.0). Everything below this line is
+        // written against `RawTrack` + `SourceCapabilities` and never asks which.
+        let track = try TrackParser.parse(data: fitData)
         let caps = track.capabilities
         if requireWatersport, !Self.isWatersport(caps) {
             return .skipped(reason: caps.sport ?? "unknown sport")
@@ -217,7 +221,7 @@ public struct SessionIngestor: Sendable {
         // A hand-picked single FIT keeps its sport whatever it is; anything unpacked from
         // a real container is gated on sport, so a GDPR export of runs stays out.
         let gate: Bool
-        if case .fit = ZipWalker.classify(data) { gate = false } else { gate = true }
+        if case .track = ZipWalker.classify(data) { gate = false } else { gate = true }
         let box = SummaryBox()
         let walk = await ZipWalker.walk(data: data, name: name) { fit in
             let short = (fit.name as NSString).lastPathComponent

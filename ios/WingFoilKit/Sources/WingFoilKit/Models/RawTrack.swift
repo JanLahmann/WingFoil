@@ -18,6 +18,15 @@ public struct RecordSample: Sendable, Equatable {
     public var turnMarker: Int?
     /// Rolling 0–255 counter; its only job is to defeat smart-recording collapse.
     public var tick: Int?
+    /// The source itself says a break starts here — a GPX `<trkseg>` boundary
+    /// (`GpxSessionParser`), which is the recorder saying it stopped.
+    ///
+    /// `TrackCleaner` ORs it into the dt-aware gap rule and resets the spike filter on it,
+    /// never subtracts from either: a declared break is evidence the clock does not carry,
+    /// and a long dt is a break whatever the source declared. Always false for a FIT, which
+    /// has no way to declare one. Mirrors the `gap_before` column
+    /// `lab/src/wingfoil_lab/gpx.py` puts on its record frame.
+    public var gapBefore = false
 
     public init(t: Double, timestamp: Date) {
         self.t = t

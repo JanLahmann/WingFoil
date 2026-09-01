@@ -224,4 +224,8 @@ extension UTType {
     /// FIT has no system-declared type; the Info.plist imports it so files picked from
     /// iCloud Drive/Files resolve here instead of a dynamic `dyn.*` identifier.
     static let fitActivity = UTType(filenameExtension: "fit", conformingTo: .data) ?? .data
+    /// Nor does GPX, on iOS. Same treatment (ios/project.yml declares both), except that
+    /// this one conforms to `.xml` — a GPX *is* XML, and saying so lets a picker show it
+    /// under any app that already claims XML rather than only under ours.
+    static let gpxTrack = UTType(filenameExtension: "gpx", conformingTo: .xml) ?? .xml
 }

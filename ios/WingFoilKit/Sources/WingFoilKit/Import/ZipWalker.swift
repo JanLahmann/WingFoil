@@ -44,8 +44,13 @@ public enum ZipWalker {
     public static let maxDepth = 4
 
     /// What one blob turned out to be, after gzip is peeled off.
+    ///
+    /// `.track` covers both recording formats (engine 0.9.0): the walker's job is to find
+    /// sessions, and which parser reads one is `TrackParser`'s business, decided from the
+    /// same bytes further down. Keeping the two apart here would only mean every caller
+    /// had to remember to handle both.
     enum Layer {
-        case fit(Data)
+        case track(Data)
         case archive(Data)
         case ignored
         case unreadable
@@ -57,7 +62,8 @@ public enum ZipWalker {
             guard let inflated = try? Gzip.decompress(payload) else { return .unreadable }
             payload = inflated
         }
-        if IcuPayload.isFit(payload) { return .fit(payload) }
+        if IcuPayload.isFit(payload) { return .track(payload) }
+        if GpxSessionParser.isGpx(payload) { return .track(payload) }
         if IcuPayload.isZip(payload) { return .archive(payload) }
         return .ignored
     }
@@ -77,7 +83,7 @@ public enum ZipWalker {
 
     private static func visit(data: Data, name: String, depth: Int, into result: inout ZipWalkResult) {
         switch classify(data) {
-        case .fit(let payload):
+        case .track(let payload):
             result.fits.append(DiscoveredFit(name: name, data: payload))
             result.fitCount += 1
         case .ignored:
@@ -111,7 +117,7 @@ public enum ZipWalker {
                               onFit: (DiscoveredFit) async -> Void) async -> ZipWalkResult {
         var result = ZipWalkResult()
         switch classify(data) {
-        case .fit(let payload):
+        case .track(let payload):
             result.fitCount += 1
             await onFit(DiscoveredFit(name: name, data: payload))
         case .ignored:
