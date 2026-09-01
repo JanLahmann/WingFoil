@@ -109,11 +109,19 @@ enum SessionDisplay {
     /// names a bucket in someone else's taxonomy, and the rider's question is what he can
     /// and cannot see on this session. The `?` beside it opens `.sourceClass`, which answers
     /// the same question at length.
-    static func sourceClassNote(_ sourceClass: String) -> String {
+    /// `importSource` is consulted before the letter because for one source the letter
+    /// understates the file. An Apple Watch recording is class (b) — Doppler speed, no
+    /// developer fields — but unlike every other class (b) it ships a 50 Hz accelerometer, so
+    /// pump strokes and takeoff effort are all there. Printing the standard class-(b)
+    /// sentence over a session that visibly *has* a pump chart would read as a bug.
+    static func sourceClassNote(_ sourceClass: String, importSource: String? = nil) -> String {
+        if sourceClass == "b", ImportSource.appleWatch.isNamed(in: importSource) {
+            return "Recorded on your Apple Watch — GPS speed, heart rate and pump effort"
+        }
         switch sourceClass {
-        case "a": "Recorded with the CleanJibe watch app — all metrics available"
-        case "b": "Standard Garmin recording — everything except pump and takeoff effort"
-        default: "No speed channel in this file — speed records are uncertified"
+        case "a": return "Recorded with the CleanJibe watch app — all metrics available"
+        case "b": return "Standard Garmin recording — everything except pump and takeoff effort"
+        default: return "No speed channel in this file — speed records are uncertified"
         }
     }
 }

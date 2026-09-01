@@ -390,7 +390,8 @@ struct SessionDetailView: View {
             + (detail.row.importSource.map { " · via \($0)" } ?? "")
         return VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 5) {
-                Text(SessionDisplay.sourceClassNote(detail.row.sourceClass))
+                Text(SessionDisplay.sourceClassNote(detail.row.sourceClass,
+                                                    importSource: detail.row.importSource))
                 HelpButton(topic: .sourceClass, size: .caption2)
             }
             Text(provenance)
