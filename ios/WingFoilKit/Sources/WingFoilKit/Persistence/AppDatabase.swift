@@ -32,7 +32,7 @@ public struct AppDatabase: Sendable {
 
     /// Every migration this build knows, oldest first — the migration test asserts a v1
     /// database moves through all of them.
-    public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8"]
+    public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9"]
 
     /// Public so a caller (and the migration test) can migrate a writer only part of the
     /// way — `migrator.migrate(writer, upTo: "v1")` reproduces a shipped v1 library.
@@ -182,6 +182,36 @@ public struct AppDatabase: Sendable {
         migrator.registerMigration("v8") { db in
             try db.alter(table: "session") { t in
                 t.add(column: "startUtcOffsetSource", .text)
+            }
+        }
+
+        // v9: what the *rider* calls this session, and what he wants said about it.
+        //
+        // Until now a session's name was derived — `SessionDisplay.title` reads a readable
+        // string out of the recording's filename — which is a good guess and nothing more.
+        // "Nago Torbole Windsurfen" is what the watch wrote down; it is not "First 20-knot
+        // run" or "Cold and glassy, finally got the tack". A rider who wants to send somebody
+        // that afternoon has, until this column, no way to say so.
+        //
+        // **Two columns, because they are two different facts.** `customTitle` renames the
+        // *session*: one mental model, so the library row, the detail header, the card, the
+        // clip's title card, the share messages and the shared filename all follow it
+        // (`SessionNaming.title`). `shareNote` is a **caption for the audience** — a short
+        // line under the title on the card and on the clip's opening frame, and nowhere else.
+        // It is deliberately not shown in the library or on the detail page: it is not
+        // metadata about the session, it is what the sender wants the receiver to read.
+        //
+        // Both nullable, and NULL is the whole of the default state: an untouched session
+        // keeps its derived title and carries no caption, which is exactly every row that
+        // exists today. Clearing a field writes NULL back rather than an empty string, so
+        // "he cleared it" and "he never set it" are one state with one meaning.
+        //
+        // No re-analysis is triggered: nothing derived changes. This is the one pair of
+        // columns in the schema the *engine* never writes and never reads.
+        migrator.registerMigration("v9") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "customTitle", .text)
+                t.add(column: "shareNote", .text)
             }
         }
         return migrator
@@ -535,6 +565,24 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// version degrades to "unrecorded" instead of failing to decode the row; read it
     /// through `utcOffsetSource`.
     public var startUtcOffsetSource: String?
+
+    // MARK: schema v9
+    /// The name the **rider** gave this session, or nil while it is still the derived one.
+    ///
+    /// Read it through `SessionNaming.title(custom:derived:)` rather than directly: the
+    /// preference chain (custom wins, blank falls back) belongs in one place, because every
+    /// surface in the app follows it — the library row, the detail header, the share card,
+    /// the clip's title card, the share messages and the shared file's own name.
+    public var customTitle: String?
+
+    /// The one-line caption the rider wants **on the card and on the clip's opening frame**,
+    /// or nil for none.
+    ///
+    /// Not metadata: it is a message to whoever is sent the picture, which is why it appears
+    /// on exactly the two surfaces that leave the phone and on no screen inside the app.
+    /// Capped and normalized by `SessionNaming.note` on the way in — a card is a PNG, and a
+    /// caption that does not fit is permanent.
+    public var shareNote: String?
 
     /// `startUtcOffsetSource` as the closed vocabulary, or nil for "unrecorded" — which
     /// includes a stored string this version has never heard of.

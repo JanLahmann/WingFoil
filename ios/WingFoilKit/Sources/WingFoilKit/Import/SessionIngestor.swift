@@ -170,6 +170,14 @@ public struct SessionIngestor: Sendable {
         // rider has tapped "a friend's", and an empty string in the column would exclude
         // the session from every aggregate while showing an empty badge.
         row.rider = Self.riderName(rider) ?? existing?.rider
+        // What the *rider* called it, and what he wanted said about it (schema v9). Carried
+        // across the provisional-row upgrade for the same reason the gear and the id are:
+        // the watch's card can sit in the library for an hour before the FIT syncs, that is
+        // long enough to name the session, and a name that vanished when the recording
+        // arrived would look exactly like the app losing it. Nothing here derives them —
+        // they are the one pair of columns no import ever writes.
+        row.customTitle = existing?.customTitle
+        row.shareNote = existing?.shareNote
         if let fix = track.samples.first(where: { $0.lat != nil && $0.lon != nil }) {
             row.startLat = fix.lat
             row.startLon = fix.lon

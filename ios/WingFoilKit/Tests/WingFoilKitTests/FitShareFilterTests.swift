@@ -163,4 +163,42 @@ import Testing
         #expect(FitShareFilter.filename(date: date, title: String(repeating: "a", count: 90),
                                         timeZone: utc).count == "2026-08-30-".count + 40 + 4)
     }
+
+    /// The title is now the **rider's** (schema v9): he types it into the share composer and
+    /// the scrubbed FIT leaves under it. That turns this function from "tidy up a string the
+    /// app derived from a filename" into the only thing standing between free text and a
+    /// filename — so the hostile cases are pinned here rather than assumed.
+    ///
+    /// Nothing below is rejected: every one of them produces a legal, readable name, because
+    /// refusing to share a recording over its *title* would be an absurd place to fail.
+    @Test func shareFilenameSurvivesAnythingTheRiderCanType() {
+        let date = Date(timeIntervalSince1970: 1_788_048_000)   // 2026-08-30 UTC
+        let utc = TimeZone(identifier: "UTC")!
+        func name(_ title: String) -> String {
+            FitShareFilter.filename(date: date, title: title, timeZone: utc)
+        }
+
+        // Path separators are the whole reason this function exists: a title straight into a
+        // path would be a directory that does not exist, or worse, one that does.
+        #expect(name("../../etc/passwd") == "2026-08-30-etc-passwd.fit")
+        #expect(name("Torbole/Nago") == "2026-08-30-torbole-nago.fit")
+        // A leading dot would make the file invisible in a Files list; a trailing one is
+        // silently dropped by some filesystems, taking the extension's separator with it.
+        #expect(name(".hidden.") == "2026-08-30-hidden.fit")
+        // Emoji and non-Latin scripts carry no ASCII to slug, so the date stands alone —
+        // "unnamed", never a mangled transliteration of somebody's own language.
+        #expect(name("🏄‍♂️🌊") == "2026-08-30.fit")
+        #expect(name("Гарда") == "2026-08-30.fit")
+        // A cap that lands mid-word must not leave the dash it cut at.
+        #expect(!name(String(repeating: "ab ", count: 40)).contains("-.fit"))
+        // Whitespace-only and empty are the same answer as "nothing nameable".
+        #expect(name("   ") == "2026-08-30.fit")
+        #expect(name("") == "2026-08-30.fit")
+        // The clip is the same name with a different tail, which is the point of the
+        // `pathExtension` parameter — one afternoon arrives in a chat as two halves of one
+        // thing even when the rider renamed it.
+        #expect(FitShareFilter.filename(date: date, title: "First 20 kn!",
+                                        pathExtension: "mp4", timeZone: utc)
+                == "2026-08-30-first-20-kn.mp4")
+    }
 }

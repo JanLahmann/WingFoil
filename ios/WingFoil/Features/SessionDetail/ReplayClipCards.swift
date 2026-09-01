@@ -72,13 +72,29 @@ struct ReplayTitleCardView: View {
                             .font(.system(size: 19 * scale, weight: .medium))
                             .foregroundStyle(Brand.paper.opacity(0.78))
                     }
+                    // The rider's own caption, under the date — the same sentence the
+                    // exported card prints under its own. Two lines here rather than the
+                    // card's one: this frame is a whole screen held for two and a half
+                    // seconds, so the constraint that makes the card's caption a single
+                    // shrinking line (a 42-pt header slot) simply does not apply.
+                    if let note = card.note {
+                        Text(note)
+                            .font(.system(size: 15 * scale, weight: .medium))
+                            .foregroundStyle(Brand.paper.opacity(0.88))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.6)
+                            .padding(.top, 2 * scale)
+                    }
                 }
                 .padding(.horizontal, 32 * scale)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityElement()
-        .accessibilityLabel("\(card.place ?? fallbackTitle), \(card.dateLine)")
+        .accessibilityLabel(
+            [card.place ?? fallbackTitle, card.dateLine, card.note ?? ""]
+                .filter { !$0.isEmpty }.joined(separator: ", "))
     }
 }
 

@@ -147,6 +147,7 @@ public struct ReplayStoryboard: Sendable, Equatable {
                             place: String? = nil,
                             startedAt: Date? = nil,
                             timeZone: TimeZone,
+                            note: String? = nil,
                             timing: Timing = .standard,
                             ease: ReplayDriver.Ease = .cinema) -> ReplayStoryboard {
         let driver = ReplayDriver(span: span, rate: rate, easeAt: milestones.map(\.t),
@@ -177,7 +178,7 @@ public struct ReplayStoryboard: Sendable, Equatable {
         return ReplayStoryboard(
             driver: driver,
             title: ReplayTitleCard.make(place: place, startedAt: startedAt,
-                                        timeZone: timeZone),
+                                        timeZone: timeZone, note: note),
             splices: splices,
             slideshow: slideshow,
             timing: timing)
@@ -204,12 +205,13 @@ public struct ReplayStoryboard: Sendable, Equatable {
                             place: String? = nil,
                             startedAt: Date? = nil,
                             timeZone: TimeZone,
+                            note: String? = nil,
                             timing: Timing = .standard) -> ReplayStoryboard {
         let plan = ReplayPacing.plan(span: span, targetWallS: targetWallS,
                                      milestones: milestones)
         return make(span: span, rate: plan.rate, milestones: plan.milestones, photos: photos,
-                    place: place, startedAt: startedAt, timeZone: timeZone, timing: timing,
-                    ease: plan.ease)
+                    place: place, startedAt: startedAt, timeZone: timeZone, note: note,
+                    timing: timing, ease: plan.ease)
     }
 
     /// Where on the session clock a wall-clock instant falls, or nil when it falls outside
@@ -280,14 +282,23 @@ public struct ReplayTitleCard: Sendable, Equatable {
     /// "30 August 2026 · 14:07". One line, because a card held for two and a half seconds
     /// gets one thing to read after the place.
     public let dateLine: String
+    /// The rider's own caption, under the date, or nil for the card as it has always been —
+    /// the same `SessionRow.shareNote` the exported card prints under its own date line.
+    ///
+    /// The clip and the card are two exports of one afternoon, so the sentence the rider
+    /// wrote for whoever receives it has to be on both or the two disagree about what he
+    /// meant to say. Third and last line: a frame held for two and a half seconds gets a
+    /// place, a time and a thought, and nothing after that gets read.
+    public let note: String?
 
-    public init(place: String?, dateLine: String) {
+    public init(place: String?, dateLine: String, note: String? = nil) {
         self.place = place
         self.dateLine = dateLine
+        self.note = SessionNaming.note(note)
     }
 
-    public static func make(place: String?, startedAt: Date?,
-                            timeZone: TimeZone) -> ReplayTitleCard {
+    public static func make(place: String?, startedAt: Date?, timeZone: TimeZone,
+                            note: String? = nil) -> ReplayTitleCard {
         let trimmed = place?.trimmingCharacters(in: .whitespaces)
         var parts: [String] = []
         if let startedAt {
@@ -295,6 +306,7 @@ public struct ReplayTitleCard: Sendable, Equatable {
             parts.append(ReplayCommentary.hourMinute(startedAt, timeZone: timeZone))
         }
         return ReplayTitleCard(place: (trimmed?.isEmpty ?? true) ? nil : trimmed,
-                               dateLine: parts.joined(separator: " · "))
+                               dateLine: parts.joined(separator: " · "),
+                               note: note)
     }
 }
