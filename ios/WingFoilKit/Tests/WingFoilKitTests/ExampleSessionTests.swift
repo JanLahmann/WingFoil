@@ -303,9 +303,14 @@ import Testing
         #expect(topic.body.count >= 3)
         let prose = topic.body.joined(separator: " ")
         // The three facts a reader needs: it is real, it is not theirs, and it is scrubbed.
+        // Which identifiers were zeroed used to be listed here; that is a note to the
+        // author, and it went with the rest of the interiority in the copy pass.
         #expect(prose.contains("EXAMPLE"))
         #expect(prose.lowercased().contains("records"))
-        #expect(prose.lowercased().contains("serial"))
+        #expect(prose.lowercased().contains("identifier"))
         #expect(HelpCatalog.search("example").contains { $0.id == .exampleSession })
+
+        // The topic that says "look around" shows what there is to look at.
+        #expect(topic.image != nil)
     }
 }

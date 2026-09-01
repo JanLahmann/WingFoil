@@ -462,6 +462,36 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    `AVAudioSession.playback` for exactly that, and a Mac has no ring switch to check it
    against); `ReplayClipSoundtrackTests` settles the schedule and the mux, not the listening.
    And whether a clip actually reaches the camera roll.
+   **The Help pictures are made with these hooks** (ADR-010). Five topics carry a
+   screenshot, and each one is a crop of one staged launch on the `iPhone 17 Pro Max`
+   simulator with the bundled example session loaded — so the picture is of a session every
+   reader can open for themselves, and nothing in it is Jan's data:
+
+   | asset | launch | crop |
+   |---|---|---|
+   | `help-session-detail` | `UI_LOAD_EXAMPLE=1 UI_OPEN_SESSION=example` | header + key-metrics block |
+   | `help-turn-list` | `UI_OPEN_SESSION=example UI_SCROLL_TO=turnList` | the turn rows |
+   | `help-replay` | `UI_OPEN_SESSION=example UI_REPLAY_LENGTH=60 UI_REPLAY_RECORD=0` | track + commentary bubble + progress bar |
+   | `help-share-composer` | `UI_OPEN_SESSION=example UI_SHEET=share UI_SHAPE=portrait UI_STATS=complete` | the whole sheet |
+   | `help-map-layers` | `UI_OPEN_SESSION=example UI_FULLSCREEN_MAP=1 UI_HIDE_LAYERS=fellIn` | track + both chip rows |
+
+   Two traps found while making them. `UI_SHEET=help` and `UI_HELP_TOPIC=…` are **mutually
+   exclusive** — the first raises `HelpView`, the second raises a `HelpTopicSheet` directly,
+   and UIKit drops the second of two sheets presented on the same turn; pass `UI_HELP_TOPIC`
+   alone to photograph one topic. And `UI_SCROLL_TO` on an anchor that lives on a *different*
+   tab now scrolls twice, once immediately and once 400 ms after the tab switch, because the
+   anchor does not exist on the first turn of the runloop — before that fix `turnList` and
+   `tally` silently produced a shot of the top of the page.
+
+   **Three pictures are still owed, and only Jan can take them** — the intervals.icu setup
+   guide's steps happen inside someone else's website and behind his account
+   (`scratchpad/copy-review/pictures.md` §H5). The slots, in the order the guide reads:
+   (1) intervals.icu → Settings with the Developer Settings / API key section circled;
+   (2) the copy-key state; (3) CleanJibe's own Settings with a key pasted and the check
+   green. Number 3 needs a live key and a successful call, so it cannot be staged with
+   `UI_ICU_KEY` alone. Until they exist, `IcuSetupGuide` stays text-only — the catalogue
+   names no asset it does not have, and `PresentationTests` would fail if it did.
+
    Orientation is the one thing no hook stages: `simctl` cannot rotate a simulator and
    Simulator.app's Rotate menu is not reachable from a headless run. To photograph the
    landscape frame, temporarily cut `UISupportedInterfaceOrientations` in `ios/project.yml`

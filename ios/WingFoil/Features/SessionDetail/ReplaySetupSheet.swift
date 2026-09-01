@@ -155,6 +155,12 @@ struct ReplaySetupSheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
+                // Length, framing, music, photos — four choices whose consequences are one
+                // paragraph each, and this sheet has no room for four paragraphs. Same `?`
+                // the cards use, pointing at the topic that has the room.
+                ToolbarItem(placement: .primaryAction) {
+                    HelpButton(topic: .replayClip, size: .body)
+                }
             }
             .task(id: picked.map(\.hashValue)) { await loadPhotos() }
             // Every audio type the phone knows, which is what `UTType.audio` means: an m4a out

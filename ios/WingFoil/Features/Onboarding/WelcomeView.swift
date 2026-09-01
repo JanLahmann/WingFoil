@@ -169,11 +169,21 @@ struct WelcomeView: View {
 
             // Quiet, but present. A rider who came here to import a file by hand has
             // nothing to gain from either button above, and hiding his way out would make
-            // the screen a gate rather than a greeting.
-            Button(WelcomeGuide.laterTitle, action: onLater)
-                .font(.subheadline)
-                .foregroundStyle(Brand.paper.opacity(0.6))
-                .padding(.top, 2)
+            // the screen a gate rather than a greeting. It carries a detail line like the
+            // other two, because "Later" alone does not tell the rider holding a .fit file
+            // that opening it by hand is a supported way in rather than a postponement.
+            VStack(spacing: 6) {
+                Button(WelcomeGuide.laterTitle, action: onLater)
+                    .font(.subheadline)
+                    .foregroundStyle(Brand.paper.opacity(0.6))
+
+                Text(WelcomeGuide.laterDetail)
+                    .font(.caption2)
+                    .foregroundStyle(Brand.paper.opacity(0.55))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.top, 2)
         }
     }
 

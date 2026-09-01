@@ -29,6 +29,24 @@ import Testing
         #expect(steps[2].detail.lowercased().contains("free"))
     }
 
+    /// intervals.icu is the *easiest* way in, not the only one. The rationale used to open
+    /// "CleanJibe reads your sessions through intervals.icu", which is false — a shared
+    /// `.fit` and a Garmin export ZIP both work — and read to a rider who does not want a
+    /// third-party account as a wall with no door in it.
+    @Test func theRationaleOffersTheManualWayInAsWellAsTheAutomaticOne() {
+        let rationale = IcuSetupGuide.rationale
+        #expect(rationale.contains("no open API"), "the reason for the detour is missing")
+        #expect(rationale.lowercased().contains("easiest"),
+                "intervals.icu is stated as the only way in")
+        // The alternatives, by name, in the sentence a first-timer actually reads.
+        #expect(rationale.contains(".fit"))
+        #expect(rationale.contains("ZIP"))
+        #expect(rationale.contains("Files"))
+        // The short form on the setup card keeps the reason but not the alternatives —
+        // that card's reader has already chosen this path.
+        #expect(IcuSetupGuide.rationaleShort.contains("no open API"))
+    }
+
     @Test func privacyNoteNamesTheKeychainAndTheOnlyRecipient() {
         let note = IcuSetupGuide.privacyNote
         #expect(note.contains("Keychain"))
@@ -273,9 +291,28 @@ import Testing
                       WelcomeGuide.laterTitle] {
             #expect(!title.isEmpty)
         }
-        for detail in [WelcomeGuide.tryExampleDetail, WelcomeGuide.connectDetail] {
+        for detail in [WelcomeGuide.tryExampleDetail, WelcomeGuide.connectDetail,
+                       WelcomeGuide.laterDetail] {
             #expect(detail.count > 40)
         }
+    }
+
+    /// The first screen a wingfoiler ever sees must not open in a neighbouring sport's
+    /// vocabulary. "GP3S" and "alpha 500" are GPS-speedsurfing terms; the Records topic is
+    /// where somebody who asked for them can learn them.
+    @Test func theWelcomeUsesNoSpeedsurfingJargon() {
+        let prose = ([WelcomeGuide.headline, WelcomeGuide.lede]
+                     + WelcomeGuide.highlights.map { $0.term + " " + $0.detail }
+                     + [WelcomeGuide.tryExampleDetail, WelcomeGuide.connectDetail,
+                        WelcomeGuide.laterDetail])
+            .joined(separator: " ")
+            .lowercased()
+        for jargon in ["gp3s", "alpha 500", "ciq", "connect iq", "class a", "class b"] {
+            #expect(!prose.contains(jargon), "the welcome says \"\(jargon)\"")
+        }
+        // The windows are named in seconds and metres instead.
+        #expect(prose.contains("2 seconds"))
+        #expect(prose.contains("nautical mile"))
     }
 
     /// The vocabulary the rest of the app uses. A welcome that promised something in words
@@ -294,11 +331,16 @@ import Testing
         #expect(WelcomeGuide.lede.contains("fell in"))
     }
 
-    /// The two offers name the two things behind them, so neither button is a surprise.
-    @Test func theTwoOffersNameWhatIsBehindThem() {
+    /// All three offers name the thing behind them, so no button is a surprise. "Later"
+    /// used to be a bare verb, which told a rider holding a `.fit` file nothing at all.
+    @Test func theThreeOffersNameWhatIsBehindThem() {
         #expect(WelcomeGuide.tryExampleDetail.contains(ExampleSession.place
             .split(separator: ",").last!.trimmingCharacters(in: .whitespaces)))
         #expect(WelcomeGuide.connectDetail.contains("intervals.icu"))
+        // …and says *why* a stranger's name is on a first-run screen.
+        #expect(WelcomeGuide.connectDetail.contains("no open API"))
+        #expect(WelcomeGuide.laterDetail.contains(".fit"))
+        #expect(WelcomeGuide.laterDetail.contains("Files"))
     }
 
     // MARK: - When it is allowed to say it

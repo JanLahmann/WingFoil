@@ -122,6 +122,25 @@ parts of a UI change whose mistakes are invisible in a screenshot — a card tha
 "0.00 kn" where it means "unknown", a thumbnail that silently stretches, a confetti burst on
 the first import.
 
+**Pictures, added later, on the same terms.** Some help topics describe a *screen* rather
+than a number, and those are the ones that are genuinely hard to follow in words — the
+session page's key-metrics block, the turn list, the replay, the share composer, the map's
+layer chips. A topic may therefore carry one optional `HelpImage`: an **asset name** and a
+one-line caption, nothing else. The kit has no image bundle of its own, so `HelpView`
+resolves the name in the app's catalogue
+(`ios/WingFoil/Resources/Assets.xcassets/Help/`) and draws it between the summary and the
+prose — one `Image`, fit to the width, rounded, no lightbox and no carousel. The cost of
+keeping only a name in the kit is that a typo draws *nothing*, silently, in a screen nobody
+re-reads; so `PresentationTests` walks the checked-in image sets on disk and fails on a name
+that has no `.imageset`, on an `.imageset` with no PNG, and on a caption that is a stub.
+A second test pins **which** topics are allowed a picture, because the rule is the decision:
+a screenshot of a number does not explain a definition, and a decorative image in a
+reference work is a tax on every reader who came for the sentence. The images are captured
+from the simulator with the `UI_*` hooks (`docs/testing.md`), cropped to the region the
+caption talks about, and kept under 150 KB each — full colour where the budget allows,
+because on the two legend shots a shifted chip colour would be a wrong answer rather than a
+compression artefact.
+
 ## ADR-009 · Data-field companion **in addition to** the device app, sharing a barrel
 ADR-002 chose a device app and that stands — it is the only way to control recording, laps and
 the accelerometer. But it forces an either/or on the water: launching it means *not* using the

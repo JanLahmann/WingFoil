@@ -100,6 +100,14 @@ struct ShareComposerView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
                 }
+                // The same `?` the session page's cards carry, following the switcher: a
+                // rider on the card tab is asking about cards, one on the recording tab is
+                // asking what leaves the phone. Both are topics nobody would ever go
+                // looking for in the Help index, because you only wonder once you are here.
+                ToolbarItem(placement: .primaryAction) {
+                    HelpButton(topic: payload == .fit ? .shareFit : .shareCard,
+                               size: .body)
+                }
             }
             // Re-render whenever anything visible changes. `ImageRenderer` is main-actor
             // work, but a card is a handful of shapes and some text — cheap enough to redo
