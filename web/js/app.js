@@ -227,7 +227,12 @@ export async function analyzeFile(file, { isExample = false } = {}) {
   if (state.busy) return;
   const name = file.name || "session.fit";
   if (!/\.(fit|zip)$/i.test(name)) {
-    fail(`"${name}" is not a .fit or .zip file.`);
+    // Say what to bring instead. The rejection used to state the rule and stop, which
+    // leaves the commonest two cases — a .gpx export, and a track from a phone app — with
+    // nowhere to go next.
+    fail(`"${name}" is not a .fit or .zip file. CleanJibe reads the .fit file a watch ` +
+         `records — from the CleanJibe watch app, Garmin's own Windsurf profile, or ` +
+         `another wingfoil Connect IQ app. .gpx and .tcx are not supported.`);
     return;
   }
   state.busy = true;
@@ -323,27 +328,35 @@ function wireDropzone() {
  * and, unlike a friend's file, the example is never asked about: there is only one
  * possible answer to "whose session is this?" for a recording nobody here rode.
  */
+/** Every control that means "run the bundled session": the link in the dropzone and each
+ *  of the three preview thumbnails beside it. They all disable together while it runs, so
+ *  a second press cannot queue a second analysis behind the first. */
+const exampleTriggers = () =>
+  [...document.querySelectorAll("#try-example, .drop-peek [data-example]")];
+
+async function runExample() {
+  if (state.busy) return;
+  const buttons = exampleTriggers();
+  for (const b of buttons) b.disabled = true;
+  try {
+    // Resolved against this module, not against the document: the page lives at /app/
+    // while the example (like css/, icons/ and lab_bundle/) stays at the site root,
+    // shared with the homepage. js/worker.js reaches lab_bundle/ the same way.
+    const url = new URL("../example/ExampleSession.fit", import.meta.url);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`example/ExampleSession.fit: HTTP ${res.status}`);
+    await analyzeFile(new File([await res.arrayBuffer()],
+                               "example-nago-torbole-2026-08-30.fit"),
+                      { isExample: true });
+  } catch (err) {
+    fail(`Could not load the example session: ${err.message}`);
+  } finally {
+    for (const b of buttons) b.disabled = false;
+  }
+}
+
 function wireExample() {
-  el("try-example").addEventListener("click", async () => {
-    const button = el("try-example");
-    if (state.busy) return;
-    button.disabled = true;
-    try {
-      // Resolved against this module, not against the document: the page lives at /app/
-      // while the example (like css/, icons/ and lab_bundle/) stays at the site root,
-      // shared with the homepage. js/worker.js reaches lab_bundle/ the same way.
-      const url = new URL("../example/ExampleSession.fit", import.meta.url);
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`example/ExampleSession.fit: HTTP ${res.status}`);
-      await analyzeFile(new File([await res.arrayBuffer()],
-                                 "example-nago-torbole-2026-08-30.fit"),
-                        { isExample: true });
-    } catch (err) {
-      fail(`Could not load the example session: ${err.message}`);
-    } finally {
-      button.disabled = false;
-    }
-  });
+  for (const b of exampleTriggers()) b.addEventListener("click", runExample);
 }
 
 function wireDownload() {
@@ -573,5 +586,11 @@ mountLibrary({
   },
 });
 
+// `/app/#example` runs the bundled session on arrival. The homepage's second CTA points
+// here, and a link that promised an example and delivered a drop target would be the
+// worst version of this page's first impression. Read BEFORE showView, which normalizes
+// the hash to `#/analyze` on its way past.
+const openExampleOnLoad = location.hash === "#example";
 showView(location.hash.replace("#/", ""));
 warmUp();
+if (openExampleOnLoad) runExample();

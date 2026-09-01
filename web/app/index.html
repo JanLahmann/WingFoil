@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>CleanJibe Lab — session analyzer</title>
-<meta name="description" content="Drop a .fit file and run the CleanJibe analysis engine in your browser. Nothing is uploaded.">
+<title>CleanJibe — session analyzer</title>
+<meta name="description" content="Drop a wingfoil .fit file and get the session back: foil time, flights, jibe outcomes, speed records, wind axis. Free, no account, nothing uploaded.">
 <meta name="theme-color" content="#101010">
 
 <!-- The share card. og:image is absolute on purpose: scrapers fetch the tag's value as-is
@@ -52,8 +52,12 @@
   <a class="brand" href="../">
     <span class="mark" aria-hidden="true"></span>
     <div>
-      <h1>CleanJibe Lab</h1>
-      <p class="sub">The <code>wingfoil_lab</code> Python engine, running in your browser.</p>
+      <!-- The name and one line of what this page is. Neither says "Lab" and neither names
+           a Python module: the first tells a rider nothing and reads as unfinished, the
+           second is repo interiority in the second line of the page. What the engine is
+           made of is a fact for the README, not for someone holding a .fit file. -->
+      <h1>CleanJibe</h1>
+      <p class="sub">Wingfoil session analyzer</p>
     </div>
   </a>
   <div class="topbar-right">
@@ -71,7 +75,7 @@
 </header>
 
 <div id="update-banner" class="update-banner" role="status" hidden>
-  <span>A new version of CleanJibe Lab has been downloaded.</span>
+  <span>A new version is ready.</span>
   <span class="update-actions">
     <button class="primary" id="update-reload" type="button">Reload to update</button>
     <button class="ghost" id="update-dismiss" type="button">Later</button>
@@ -108,11 +112,49 @@
            and it goes through the ordinary analysis path so what it shows is what a real
            file shows. Labelled as an example everywhere it appears, because a demo whose
            numbers read as yours is worse than no demo. -->
+      <!-- The file size is gone: it is noise to a rider deciding whether to click, and the
+           duration is the part that says how much session is in there. -->
       <p class="drop-alt">
-        …or <button class="linkish" id="try-example" type="button">try the example
-        session</button> <span class="dim">— Lago di Garda, 30 Aug · 10 m 45 s · 942 KB</span>
+        …or <button class="linkish" id="try-example" type="button">open the example
+        session</button> <span class="dim">— Lago di Garda, 30 Aug · 10 m 45 s</span>
       </p>
-      <p class="privacy">Your file never leaves this browser tab — the analysis runs locally in WebAssembly.</p>
+
+      <!-- What you get, before you have given anything. A first visitor used to see an
+           upload arrow and nothing else, and had no way to know whether the thing on the
+           other side of the drop was worth the drag. Three crops of the example report,
+           each one a button that runs it — the same action the link above fires, wired in
+           js/app.js. Decorative in the accessibility tree (the link already says what they
+           do); ~30 KB the whole strip, lazily loaded. -->
+      <div class="drop-peek">
+        <p class="peek-title">What you get</p>
+        <div class="peek-strip">
+          <button class="peek" type="button" data-example>
+            <img src="../img/peek-track.png" alt="" width="260" height="180" loading="lazy" decoding="async">
+            <span>The track</span>
+          </button>
+          <button class="peek" type="button" data-example>
+            <img src="../img/peek-speed.png" alt="" width="260" height="180" loading="lazy" decoding="async">
+            <span>Every flight</span>
+          </button>
+          <button class="peek" type="button" data-example>
+            <img src="../img/peek-turns.png" alt="" width="260" height="180" loading="lazy" decoding="async">
+            <span>Every turn, judged</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- What actually works, stated where the decision is made. "Any .fit file" was a
+           promise the intake cannot keep (js/app.js accepts .fit and .zip, and the parser
+           has no GPX reader at all), so the list is the recordings that have really been
+           read, and the one format people ask for is refused by name rather than by
+           silence. -->
+      <p class="drop-what">
+        Garmin <code>.fit</code> files work: from the CleanJibe watch app, from Garmin's own
+        Windsurf profile, or from another wingfoil Connect IQ app. A <code>.zip</code> of
+        several is fine too. <code>.gpx</code> is not supported yet. Pump strokes and takeoff
+        effort need the CleanJibe watch app; everything else works from any of them.
+      </p>
+      <p class="privacy">Free, no account. Your file never leaves this browser tab — the analysis runs on your own device.</p>
     </div>
   </section>
 
@@ -120,9 +162,10 @@
   <section id="icu-panel" class="panel icu" hidden>
     <h2>intervals.icu <span class="tag">optional</span></h2>
     <p class="muted">
-      Pull a session straight from intervals.icu instead of exporting it by hand.
-      Your API key is stored <strong>only in this browser's localStorage</strong> and is sent
-      <strong>only to <code>api.intervals.icu</code></strong> — never to this site's host, never anywhere else.
+      If your Garmin activities already sync to intervals.icu, pull a session straight from
+      there instead of exporting it by hand. Your API key is stored <strong>only in this
+      browser</strong> and is sent <strong>only to <code>api.intervals.icu</code></strong>
+      — never to this site's host, never anywhere else.
     </p>
     <div class="icu-form">
       <label>Athlete ID <input id="icu-athlete" type="text" value="0" placeholder="0 = the key's own athlete" autocomplete="off" spellcheck="false"></label>
@@ -142,22 +185,32 @@
        alive; the button is the exit that is not "force-quit Safari". -->
   <section id="progress" class="panel progress" hidden aria-live="polite">
     <ol class="steps" id="steps">
-      <li data-step="runtime"><span class="dot"></span><span class="label">Loading Python runtime</span><span class="detail"></span></li>
-      <li data-step="engine"><span class="dot"></span><span class="label">Loading wingfoil_lab</span><span class="detail"></span></li>
-      <li data-step="parse"><span class="dot"></span><span class="label">Parsing FIT</span><span class="detail"></span></li>
+      <!-- Step labels a rider can read while waiting. They name what is happening to the
+           file, not which module is being imported: "wingfoil_lab" told the one person who
+           already knew nothing new, and told everyone else that they had opened a
+           developer tool by mistake. -->
+      <li data-step="runtime"><span class="dot"></span><span class="label">Starting the analyzer</span><span class="detail"></span></li>
+      <li data-step="engine"><span class="dot"></span><span class="label">Loading the analysis engine</span><span class="detail"></span></li>
+      <li data-step="parse"><span class="dot"></span><span class="label">Reading the FIT file</span><span class="detail"></span></li>
       <li data-step="analyze"><span class="dot"></span><span class="label">Analyzing</span><span class="detail"><span class="elapsed" id="elapsed" hidden></span></span></li>
     </ol>
     <div class="progress-foot">
       <div>
-        <p class="muted small" id="progress-note">The runtime (~12 MB) loads once and is then cached by the browser.</p>
-        <p class="muted small" id="progress-expect">A large CIQ recording with its accelerometer stream takes several minutes. The tab is working, not stuck.</p>
+        <p class="muted small" id="progress-note">The engine (~12 MB) downloads once, then stays cached — the next file starts straight away.</p>
+        <p class="muted small" id="progress-expect">A long session recorded with the accelerometer can take several minutes. The tab is working, not stuck.</p>
       </div>
       <button class="ghost" id="cancel-analysis" type="button" hidden>Cancel</button>
     </div>
   </section>
 
   <section id="error" class="panel error" hidden role="alert">
-    <h2>That didn't work</h2>
+    <h2>That file could not be analyzed</h2>
+    <!-- The commonest cause by a distance, and the fix, stated before the technical text:
+         a rider who exported from a tool that re-wrote the file gets a FIT the engine
+         cannot read, and "Download original file" is the one instruction that helps. -->
+    <p class="muted small">Most often the file is not a FIT recording, or it is a converted
+      export rather than the original file from the watch. On intervals.icu or Garmin
+      Connect, choose <em>Download original file</em>.</p>
     <pre id="error-text"></pre>
   </section>
 
@@ -262,10 +315,13 @@
     <!-- "Data" rather than "Raw output" on the chip: the chip is a place to go, and three
          words of heading do not fit a quarter of a 390 px row. The panel keeps its title. -->
     <section class="panel" data-section="data">
-      <div class="panel-head"><h2>Raw output</h2></div>
+      <div class="panel-head"><h2>The full analysis</h2></div>
+      <!-- What the file IS, in a rider's terms. The old line named a path inside the test
+           fixtures directory, which is true, useful to exactly one reader, and a strange
+           thing to meet at the bottom of your own session report. -->
       <p class="muted small">
-        The <code>golden</code> block below is byte-identical to
-        <code>fixtures/goldens/&lt;stem&gt;.expected.json</code> for this file — same engine, same numbers.
+        Every number on this page, plus the ones that did not fit, as one JSON file — the
+        same document the iPhone app and the tests read.
       </p>
       <p><button class="ghost" id="download-json" type="button">Download analysis JSON</button></p>
     </section>
@@ -385,10 +441,13 @@
 </dialog>
 
 <footer>
+  <!-- The footer of a rider's page, not of a build. What it runs on is in web/README.md;
+       what a visitor needs here is that it costs nothing, keeps nothing, and where to go
+       next. -->
   <p>
-    Runs <code>lab/src/wingfoil_lab</code> unchanged via
-    <a href="https://pyodide.org/" rel="noopener">Pyodide</a>. No server, no upload, no tracking.
-    <br><a href="../">About the CleanJibe project</a>
+    Free and open source. No server, no upload, no tracking.
+    <br><a href="../">About CleanJibe</a> ·
+    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">Source and thresholds</a>
   </p>
 </footer>
 
