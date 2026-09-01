@@ -3,4 +3,21 @@
          65x65 in resources/ for the products mapped to this path in the jungle; without a
          native-size source the compiler rescales and warns. -->
     <bitmap id="LauncherIcon" filename="launcher_icon.png"/>
+
+    <!-- The brand mark (source/ui/Brand.mc), 36x22 and FLAT. This directory's audience is
+         exactly the thirteen 8 bpp MIP products — both fenix 8 Solars, the whole fenix 7
+         family, fr955/fr255/enduro3 — on 240 to 280 px of reflective glass with a 64-entry
+         palette. Three things are different about this cut, all of them in
+         garmin/tools/make_brand_mark.py: the gradient is a three-step ramp of exact palette
+         entries (a smooth one would be dithered into mush at 36 px), those entries avoid
+         every collision DesignTokens.mc lists (the brand's own cyan quantises to 0x55AAFF,
+         which on 8 bpp is already three tokens at once), and the two water lines are gone —
+         at this size they are a 1 px smear that reads as dirt, not as sea. The mark is
+         therefore the jibe track and the wing, which is the half of the artwork that carries
+         the name. -->
+    <bitmap id="BrandMark" filename="brand_mark.png" dithering="none"/>
+    <!-- The badge, 26x16 and flat, on the same 64-entry palette. It is the smallest thing
+         either screen draws, which is why it is the jibe track and the wing and nothing
+         else: at 26 px there is no room for a detail that is not the shape of the name. -->
+    <bitmap id="BrandBadge" filename="brand_badge.png" dithering="none"/>
 </drawables>

@@ -52,6 +52,9 @@ class StartView extends WatchUi.View {
             _timer.stop();
             _timer = null;
         }
+        // The mark is decoration on a page nobody is looking at once the session starts, and
+        // the session is the long-running thing. Give the bytes back with the timer.
+        Brand.release();
     }
 
     function onTick() as Void {
@@ -85,6 +88,23 @@ class StartView extends WatchUi.View {
         if (row == 1) { return y; }
         y += hState / 2 + gap + hBody / 2;
         return row == 2 ? y : y + hBody + gap;
+    }
+
+    // Ink centre of the brand mark, which rides in the air ABOVE the stack rather than inside
+    // it (0.9.5). That is a deliberate choice and not laziness about the arithmetic: the stack
+    // is required to leave a quarter of the glass empty — "this is a four-line page, not a
+    // data screen", asserted — and on the narrowest glass in the manifest it is already within
+    // 27 px of that limit, so a mark given a row of its own would have had to be 18 px tall to
+    // be legal and would have pushed the page past the rule it exists under at any size worth
+    // drawing. The air above the title is 44 px on a 240 px fenix 7S and 88 px on a 454 px
+    // fenix 8, it was empty, and it is where a logo belongs anyway.
+    //
+    // It is hung off the TITLE, one stack gap above it, so the mark and the wordmark read as
+    // one lockup and the gap between them is smaller than the gap to the GPS row — the same
+    // hBody/3 the rows use, so this too breathes with the font the device actually has.
+    static function markY(cy as Number, hTitle as Number, hState as Number, hBody as Number,
+            markH as Number) as Number {
+        return rowY(cy, hTitle, hState, hBody, 0) - hTitle / 2 - hBody / 3 - markH / 2;
     }
 
     // The GPS row: one line whose WORD and COLOUR together carry what the four dots used to.
@@ -129,6 +149,13 @@ class StartView extends WatchUi.View {
         var hTitle = dc.getFontHeight(TEXT_FONTS[START_TITLE_FONT]);
         var hState = dc.getFontHeight(TEXT_FONTS[START_STATE_FONT]);
         var hBody = dc.getFontHeight(TEXT_FONTS[START_BODY_FONT]);
+
+        // The mark above the wordmark. Skipped rather than clipped when the air will not hold
+        // it, exactly as a row drops content rather than shrinking past the floor.
+        var yMark = markY(cy, hTitle, hState, hBody, Brand.h());
+        if (Brand.fits(dc, radius, 0, yMark - cy)) {
+            Brand.draw(dc, cx, yMark);
+        }
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hState, hBody, 0), START_TITLE_FONT,

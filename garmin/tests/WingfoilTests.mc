@@ -1134,9 +1134,31 @@ function startPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     AppSettings.storeWindDirection(before);
     AppSettings.windEverSet = wasSet;
 
+    // 0.9.5: the brand mark, in the air above the wordmark. It is the first thing on either
+    // watch screen that is a PICTURE, and a picture cannot shed content or step down a rung
+    // the way a row of text can — a bitmap is the size it is. So the fit is asserted rather
+    // than arranged: inside the page's radius, inside the glass, clear of the title, and
+    // small enough that the page it decorates is still a page and not a splash screen.
+    var markW = Brand.w();
+    var markH = Brand.h();
+    var yMark = StartView.markY(cy, hTitle, hState, hBody, markH);
+    Test.assertMessage(Brand.fits(dc, radius, 0, yMark - cy),
+        "the brand mark (" + markW.toString() + "x" + markH.toString() + " at y "
+            + yMark.toString() + ") runs off a " + screenPx().toString() + "px glass");
+    Test.assertMessage(yMark + markH / 2 <= yTitle - hTitle / 2,
+        "the brand mark overprints the wordmark");
+    // the mark is hung off the title by the stack's own gap, so it belongs to the wordmark
+    // and not to the page: the space between them must be the smallest on the screen
+    Test.assertMessage((yTitle - hTitle / 2) - (yMark + markH / 2) <= yState - yTitle,
+        "the mark sits further from the wordmark than the wordmark does from the GPS row");
+    Test.assertMessage((yHint + hBody / 2) - (yMark - markH / 2) <= screenPx() * 7 / 8,
+        "mark plus rows fill more than seven eighths of the glass");
+
     logger.debug("start rows " + yTitle.toString() + "/" + yState.toString() + "/"
         + yWind.toString() + "/" + yHint.toString() + " on " + screenPx().toString()
         + "px, state font height " + hState.toString() + " over body " + hBody.toString());
+    logger.debug("brand mark " + markW.toString() + "x" + markH.toString() + " at y "
+        + yMark.toString() + ", top " + (yMark - markH / 2).toString());
     return true;
 }
 
@@ -2996,6 +3018,30 @@ function summaryPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
     Test.assertMessage(SummaryView.savedY(dc) + dc.getFontHeight(Graphics.FONT_XTINY) / 2
         < cy - dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT) / 2,
         "SAVED pill reaches the verdict giant");
+    // 0.9.5: the pill is a LOCKUP — the brand mark, a gap, the word — centred where the word
+    // alone used to be. Both halves have to clear the arc (the mark is the taller box, the
+    // word the further out, and which corner is binding changes with the glass), and the
+    // mark, being the tallest thing on the top arc, has to stay clear of the giant.
+    Test.assertMessage(SummaryView.lockupFits(dc, Brand.badgeW(), Brand.badgeH(), savedW),
+        "the SAVED lockup (" + Brand.badgeW().toString() + "+"
+            + SummaryView.savedGap(dc).toString() + "+" + savedW.toString()
+            + ") does not fit the verdict page's top arc");
+    // the badge is the taller half of the pair, so it is the half that has to clear the number
+    Test.assertMessage(SummaryView.savedY(dc) + Brand.badgeH() / 2
+        < cy - dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT) / 2,
+        "the brand badge reaches the verdict giant");
+    Test.assertMessage(SummaryView.savedY(dc) - Brand.badgeH() / 2 >= 0,
+        "the SAVED lockup runs off the top of the glass");
+    // it is a badge and not a second headline: the eyebrow it signs must stay an eyebrow, so
+    // the mark beside the word may not be taller than the LINE that word is set in
+    Test.assertMessage(Brand.badgeH() <= dc.getFontHeight(Graphics.FONT_XTINY),
+        "the SAVED badge is taller than the line it rides on");
+    Test.assertMessage(Brand.badgeH() < Brand.h(),
+        "the badge is not lighter than the start page's mark");
+    logger.debug("SAVED lockup " + SummaryView.lockupW(dc, Brand.badgeW(), savedW).toString()
+        + "px wide, badge " + Brand.badgeW().toString() + "x" + Brand.badgeH().toString()
+        + " at y " + SummaryView.savedY(dc).toString() + " on a "
+        + dc.getFontHeight(Graphics.FONT_XTINY).toString() + "px line");
     var dr = SummaryView.dotRadius(dc);
     var dotN = 7;                                   // every page the summary can produce
     var dotW = dotN * (2 * dr + SUM_DOT_GAP) - SUM_DOT_GAP;
