@@ -203,23 +203,25 @@ struct WelcomeView: View {
 /// an image: it costs less than an asset, and it follows the tokens if they move instead of
 /// quietly disagreeing with them.
 ///
-/// The shape is the bundled example session's — the reaches, their lengths, which end each
-/// jibe sits at, and where the fall and the swim after it come in the order all read out of
-/// `fixtures/sessions/ciq/2026-08-30-1407_nago-torbole-windsurfen_ciq.fit`; only the spacing
-/// between the reaches is drawn by hand, because at true scale 240 m of reach inside 67 m of
-/// drift crosses into a knot.
+/// The drawing is not a drawing. It is 6 min 40 s of a real session, traced: seconds
+/// 1145–1545 of Nago-Torbole, 1 September 2026, 16:11 — the third and last ride of that
+/// day, 75 minutes and 54 jibes of it. Nine of those jibes are in this window, and the
+/// track is the track: 1715 m of sailing over 277 × 57 m of water.
 ///
-/// Every reach rises in the direction it is sailed and the session ladders upwind across the
-/// frame — you gain upwind along the reach, not in the turn. 4.3 degrees is the most a
-/// 640 × 128 box will hold: the climb a ladder shows is (distance sailed) × tan(angle), so the
-/// whole ride has 108 units of height to spend and every unit of reach costs some of it. What
-/// buys the 4.3 is squeezing everything that is not a reach — the loops gain 3 across a turn
-/// and dip 12, the swim drifts 11, the margins are 10 top and bottom — which leaves 85 for
-/// 1131 of sailing. Steeper, and the last reach leaves the top of the box.
+/// What was done to it: rotated (the frame's left-to-right is 284.5° true, so the reaches
+/// lie across the box), scaled by one number in both axes — 0.547 m per unit, no vertical
+/// exaggeration, the loops are as round as they were — and simplified with Douglas–Peucker
+/// at 1.2 m, which is about the width of the board. Nothing was moved. The earlier version
+/// of this motif laid the reaches on even bands and spaced the loops by hand; this one
+/// does not, because the uneven spacing *is* the realism — a rider recognises his own
+/// water by it, and a drawn ladder is the one thing that reads as clip art.
 ///
-/// The loops are teardrops rather than U-turns: a jibe
-/// exits heading back up, so the exit cuts across the entry short of the tip, and that
-/// crossover is what makes the pattern read as wingfoil at all.
+/// The teardrop loops, the crossovers, the reach that runs three-quarters of the frame and
+/// the one that gives up early are all in the file. So are the marks: seven jibes flown
+/// through, the touchdown at second 1379, and the fall at 1268. Both greys are real too —
+/// the long one at the left is the 26 seconds off the foil after that touchdown, and the
+/// shorter one under the middle, mostly overdrawn by later reaches, is the 81-second swim
+/// out of the fall. Every mark sits where it happened.
 private struct WelcomeTrackMotif: View {
 
     /// The web motif's viewBox. Keeping the coordinates identical is what makes the two
@@ -231,25 +233,38 @@ private struct WelcomeTrackMotif: View {
     // `grep` for any of these strings is the drift check. Regenerate all three together or
     // not at all; hand-editing one of them is how the front doors start disagreeing.
 
-    /// The whole ride, off the foil.
-    private static let trackD = "M24 118L243 102L264 100Q267 100 269 101Q271 102 271 104Q272 105 272 107Q271 110 269 111Q267 112 265 112Q262 112 260 111L241 100Q236 97 231 97L185 94L164 92Q161 92 159 93Q157 94 157 96Q156 97 156 99Q157 102 159 103Q161 104 163 104Q166 104 168 103L187 92Q192 89 197 89L415 73L436 71Q439 71 441 72Q443 73 443 75Q444 76 444 78Q443 81 441 82Q439 83 437 83Q434 83 432 82L413 71Q408 68 403 68L357 65L336 63Q333 63 331 64Q329 65 329 67Q328 68 328 70Q329 73 331 74Q333 75 335 75Q338 75 340 74L359 63Q364 60 369 60L608 42Q616 41 611 39L563 33Q553 32 543 31L264 10"
+    /// The whole excerpt, off the foil.
+    private static let trackD = "M416 72Q466 66 475 69Q485 72 488 77Q492 82 492 87Q492 92 487 99Q483 107 465 111Q447 116 378 94Q309 72 278 59Q247 47 232 46Q217 45 212 46Q208 48 205 51Q203 55 204 64Q206 73 208 76Q211 80 219 82Q228 85 232 84Q237 84 292 67Q347 50 366 48Q386 46 393 53Q401 61 401 69Q402 78 399 82Q397 86 388 89Q380 93 369 92Q359 91 323 80Q288 69 272 66Q256 63 222 48Q188 34 167 29Q147 24 137 25Q128 26 124 30Q120 34 119 39Q119 45 125 52Q131 60 135 61Q140 63 150 61Q161 60 208 42Q256 24 288 18Q321 12 331 14Q342 17 346 20Q351 24 353 29Q355 34 349 55Q343 76 338 83Q333 90 330 85Q328 80 330 76Q332 73 332 74Q333 76 338 73Q344 70 341 68Q339 66 337 67Q335 68 334 71Q333 74 330 74Q328 75 318 75Q308 75 300 72Q292 70 276 68Q261 67 245 71Q230 75 221 72Q213 70 183 55Q153 40 127 31Q102 23 92 22Q83 22 78 23Q74 25 71 29Q68 33 68 45Q69 58 78 68Q87 79 99 83Q112 88 119 89Q127 90 144 98Q161 107 174 109Q187 112 201 110Q216 109 237 100Q258 92 272 90Q286 88 310 80Q334 72 381 59Q428 47 472 41Q516 36 526 36Q536 37 544 42Q553 47 555 51Q557 56 554 65Q552 74 546 78Q540 82 527 83Q514 84 491 80Q469 77 417 63Q366 50 341 47Q317 45 298 38Q280 32 260 29Q241 26 236 27Q231 29 228 33Q226 37 227 44Q228 52 238 58Q248 65 257 67Q267 69 312 56Q358 44 389 39Q420 34 435 28Q450 22 500 18Q550 15 555 17Q561 19 567 28Q573 37 569 57Q566 77 557 82Q548 87 537 88Q527 90 510 84Q494 79 464 74Q435 70 426 66L418 62"
 
-    /// …and the parts of it that were flown: the long flight that ends in the water, then
-    /// the reach home after the swim.
+    /// …and the parts of it he was flying: the run that ends in the fall, the short one
+    /// that ends in the touchdown, and the long one that runs the window out.
     private static let foilDs = [
-        "M24 118L243 102L264 100Q267 100 269 101Q271 102 271 104Q272 105 272 107Q271 110 269 111Q267 112 265 112Q262 112 260 111L241 100Q236 97 231 97L185 94L164 92Q161 92 159 93Q157 94 157 96Q156 97 156 99Q157 102 159 103Q161 104 163 104Q166 104 168 103L187 92Q192 89 197 89L415 73L436 71Q439 71 441 72Q443 73 443 75Q444 76 444 78Q443 81 441 82Q439 83 437 83Q434 83 432 82L413 71Q408 68 403 68L357 65L336 63Q333 63 331 64Q329 65 329 67Q328 68 328 70Q329 73 331 74Q333 75 335 75Q338 75 340 74L359 63Q364 60 369 60L608 42",
-        "M543 31L264 10",
+        "M416 72Q466 66 475 69Q485 72 488 77Q492 82 492 87Q492 92 487 99Q483 107 465 111Q447 116 378 94Q309 72 278 59Q247 47 232 46Q217 45 212 46Q208 48 205 51Q203 55 204 64Q206 73 208 76Q211 80 219 82Q228 85 232 84Q237 84 292 67Q347 50 366 48Q386 46 393 53Q401 61 401 69Q402 78 399 82Q397 86 388 89Q380 93 369 92Q359 91 323 80Q288 69 272 66Q256 63 222 48Q188 34 167 29Q147 24 137 25Q128 26 124 30Q120 34 119 39Q119 45 125 52Q131 60 135 61Q140 63 150 61Q161 60 208 42Q256 24 288 18Q321 12 331 14Q342 17 346 20Q351 24 353 29Q355 34 349 55L343 76",
+        "M251 69Q230 75 225 74Q221 73 187 56Q153 40 123 31Q93 22 83 23Q74 25 71 29Q68 33 68 45Q69 58 73 64L77 70",
+        "M155 104Q177 111 196 110Q216 109 237 100Q258 92 272 90Q286 88 332 73Q378 59 403 53Q428 47 477 41Q526 35 535 37Q545 40 549 43Q553 47 555 51Q557 56 554 65Q552 74 546 78Q540 82 527 83Q514 84 491 80Q469 77 417 63Q366 50 341 47Q317 45 298 38Q280 32 260 29Q241 26 236 27Q231 29 228 33Q226 37 227 44Q228 52 238 58Q248 65 257 67Q267 69 312 56Q358 44 389 39Q420 34 435 28Q450 22 500 18Q550 15 555 17Q561 19 567 28Q573 37 569 57Q566 77 557 82Q548 87 537 88Q527 90 510 84Q494 79 464 74Q435 70 426 66L418 62",
     ]
 
     /// The jibes carried, on the apex of the loop each one made.
-    private static let flew = [CGPoint(x: 264, y: 92), CGPoint(x: 336, y: 55)]
-    /// The touchdown. This session flew through every jibe it did not fall in, so this one
-    /// mark is the key's third verdict rather than a reading of the track.
-    private static let touchdown = CGPoint(x: 437, y: 64)
-    /// Where the long flight ended.
-    private static let fellIn = CGPoint(x: 608, y: 42)
-    /// Which way he went, set off the lines: (x, y, pointing left?).
-    private static let arrows: [(CGFloat, CGFloat, Bool)] = [(150, 120, false), (450, 12, true)]
+    private static let flew = [
+        CGPoint(x: 483, y: 107),
+        CGPoint(x: 211, y: 80),
+        CGPoint(x: 402, y: 78),
+        CGPoint(x: 119, y: 45),
+        CGPoint(x: 547, y: 79),
+        CGPoint(x: 234, y: 58),
+        CGPoint(x: 566, y: 77),
+    ]
+    /// The touchdown at second 1379, at the far end of the reach it happened on.
+    private static let touchdown = CGPoint(x: 76, y: 66)
+    /// The jibe he fell in, second 1268; the 81-second swim out of it is the grey the
+    /// later reaches cross over.
+    private static let fellIn = CGPoint(x: 351, y: 55)
+    /// Which way he went, set off the lines: (x, y, heading in degrees). Position and
+    /// heading are the track's; only the two moments are chosen, for the emptiest stretch.
+    private static let arrows: [(CGFloat, CGFloat, CGFloat)] = [
+        (170, 99, 3.2),
+        (422, 97, -172.8),
+    ]
 
     var body: some View {
         Canvas { context, size in
@@ -272,13 +287,15 @@ private struct WelcomeTrackMotif: View {
 
             // Which way he went — off the line rather than on it, where a chevron inside a
             // 5 pt stroke just reads as a nick in the paint.
-            for (x, y, left) in Self.arrows {
+            for (x, y, heading) in Self.arrows {
                 var chevron = Path()
-                let s: CGFloat = left ? -1 : 1
-                chevron.move(to: CGPoint(x: x - 4 * s, y: y - 5))
-                chevron.addLine(to: CGPoint(x: x + 2 * s, y: y))
-                chevron.addLine(to: CGPoint(x: x - 4 * s, y: y + 5))
-                draw(chevron, DesignTokens.Direction.ink.opacity(0.45), width: 2)
+                chevron.move(to: CGPoint(x: -4, y: -5))
+                chevron.addLine(to: CGPoint(x: 2, y: 0))
+                chevron.addLine(to: CGPoint(x: -4, y: 5))
+                let placed = chevron.applying(
+                    CGAffineTransform(translationX: x, y: y)
+                        .rotated(by: heading * .pi / 180))
+                draw(placed, DesignTokens.Direction.ink.opacity(0.45), width: 2)
             }
 
             // Flew through — a green disc on each jibe's apex.
@@ -298,7 +315,7 @@ private struct WelcomeTrackMotif: View {
             context.fill(triangle.applying(transform),
                          with: .color(DesignTokens.Outcome.touchdown))
 
-            // Fell in — the red cross where the long flight stops.
+            // Fell in — the red cross on the jibe he swam out of.
             var cross = Path()
             cross.move(to: CGPoint(x: Self.fellIn.x - 6, y: Self.fellIn.y - 6))
             cross.addLine(to: CGPoint(x: Self.fellIn.x + 6, y: Self.fellIn.y + 6))
@@ -307,10 +324,10 @@ private struct WelcomeTrackMotif: View {
             draw(cross, DesignTokens.Outcome.fellIn, width: 3.5)
         }
         .accessibilityElement()
-        .accessibilityLabel("A wingfoil session's track: five cross-wind reaches with "
-                            + "teardrop jibe loops at their ends, two jibes flown through, "
-                            + "one touched down, and a fall with a swim before the last "
-                            + "reach.")
+        .accessibilityLabel("A six-and-a-half minute excerpt from a real session's track: "
+                            + "nine jibes in one stretch of water, seven flown through, "
+                            + "one touched down, and one fallen in with the swim that "
+                            + "followed.")
     }
 
     /// The slice of SVG path data the motif uses — absolute `M x y`, `L x y`, `Q cx cy x y`
