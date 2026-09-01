@@ -11,3 +11,4 @@ base.resourcePath = ../resources
 base.barrelPath = ../../barrel/WingFoilCore/barrel.jungle
 
 fenix843mm.resourcePath = $(fenix843mm.resourcePath);../resources-icon60
+fr255.resourcePath = $(fr255.resourcePath);../resources-icon40

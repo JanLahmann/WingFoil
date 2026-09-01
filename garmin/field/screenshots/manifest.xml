@@ -9,6 +9,10 @@
         <iq:products>
             <iq:product id="fenix843mm"/>
             <iq:product id="fenix847mm"/>
+            <!-- fr255 is the smallest round glass in the product list (260 px MIP). It takes
+                 no store shot, but the layout survey is walked on it too: a 2x2 cell there is
+                 130 px wide, which is where a wide row stops being a wide row. -->
+            <iq:product id="fr255"/>
         </iq:products>
         <iq:permissions>
             <iq:uses-permission id="FitContributor"/>
