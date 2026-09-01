@@ -7,7 +7,7 @@
     <property id="minFlightS" type="number">5</property>
     <property id="useKnots" type="boolean">false</property>
     <property id="sportChoice" type="number">0</property>
-    <property id="accelLogging" type="boolean">true</property>
+    <property id="accelLogging" type="boolean">false</property>
     <!-- Feature 4: live pump/takeoff detection off the same accelerometer -->
     <property id="pumpDetection" type="boolean">true</property>
     <property id="alertPb" type="boolean">true</property>
