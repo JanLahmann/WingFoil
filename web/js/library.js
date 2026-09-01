@@ -152,9 +152,9 @@ const shortDate = (e) => (e && e.startUtc
 function renderRows(entries) {
   const host = el("lib-body");
   if (!entries.length) {
-    host.innerHTML = `<p class="note">Nothing saved yet. Analyze a FIT file and press
-      <strong>Save to library</strong> — the file and its analysis are written to this
-      browser's private storage, and never leave the device.</p>`;
+    host.innerHTML = `<p class="note">Nothing saved yet. Analyze a file and press
+      <strong>Save to library</strong>. Saved sessions build up your records and trends,
+      and stay in this browser — they are never uploaded.</p>`;
     return;
   }
 
