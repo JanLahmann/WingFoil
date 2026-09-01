@@ -43,3 +43,9 @@ in the session), and it is the number that exposed the engine's 286 as an artifa
 is why that parameter is still marked PROVISIONAL — **a counted-on-the-water number for any
 session would replace it.** The on-water protocol (docs/testing.md) now asks for one:
 a rough count of how many times you pumped the wing, per takeoff or for the session.
+
+**First on-water confirmation (2026-09-01, session i182133074, Nago-Torbole 16:11).** The
+engine reported 39 takeoff attempts at a median 10 pumps each; Jan, same evening: "10 pumps
+seems OK." Not a stroke-by-stroke count, but the first rider-confirmed number under the
+0.8.0 rules — `pumpBurstPeakG = 0.8` stays PROVISIONAL until a second session confirms, but
+it is no longer only a derived target.
