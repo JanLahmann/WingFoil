@@ -327,18 +327,48 @@ the phone exports and the card the web composes. The strings come from `Branding
 `web/js/cardstats.js` on the other side — one constant per platform, never a literal at a
 draw site.
 
-Two details of the QR are load-bearing rather than cosmetic and are the same on both
+Three details of the QR are load-bearing rather than cosmetic and are the same on both
 platforms: it is **dark-on-light with its own light plate**, because the card's background is
-navy or somebody's photo and a decoder needs the light half to be light; and it is drawn at
+navy or somebody's photo and a decoder needs the light half to be light; it is drawn at
 **~96 px at 1080 width** from a **nearest-neighbour** upscale with a four-module quiet zone,
 because the generator emits one pixel per module and any smoothing turns every module edge
-into a grey ramp for a decoder to guess at after a chat app has recompressed the picture. iOS
-renders it with `CIQRCodeGenerator` (`ios/WingFoil/Features/Share/BrandQRCode.swift`) at
+into a grey ramp for a decoder to guess at after a chat app has recompressed the picture; and
+it carries the **brand mark in its centre**, below. iOS renders it with `CIQRCodeGenerator`
+(`BrandQRImage` in the kit, drawn by `ios/WingFoil/Features/Share/BrandQRCode.swift`) at
 correction level M — a short URL, a clean digital image, and bigger modules matter more here
 than damage tolerance. The web draws the same symbol from a committed 33 × 33 PNG
 (`web/icons/qr-cleanjibe.png`, one pixel per module, quiet zone included) with
 `imageSmoothingEnabled = false` at 99 px, which is the same 3× nearest-neighbour upscale: the
 URL is fixed, so a QR library in the bundle would be a dependency to draw a constant.
+
+**The mark in the middle, and why it is exactly five modules.** An unbranded code in the
+corner of a picture is an anonymous grey square; the app's own icon on a small rounded white
+plate at its centre makes it visibly *this* app's link, which is the entire job of a footer
+that exists to be followed. The plate is **5 modules** across the centre of the 25-module
+version-2 symbol — 25 of its 625 cells, **4 % of the symbol's area**, against the ~15 % of
+codewords level M's parity can rebuild — and the mark itself is three quarters of that, so a
+white rim keeps the artwork's dark edge off the dark modules it abuts. Three constraints fix
+the number, and all three were measured rather than assumed:
+
+- **Parity.** 4 % is a quarter of the budget, and the rest is left for the real enemy, which
+  is a chat app's recompression of a photograph of a phone screen.
+- **The alignment pattern.** Version 2 puts its 5 × 5 alignment block at module 16, and
+  parity cannot substitute for it: a decoder that cannot find that landmark never reaches
+  error correction. Five modules stops a clear module short of it, which is why decoding
+  fails *abruptly* at six modules rather than degrading — the measured cliff is 5.75 (every
+  export size decodes) to 6.0 (a fifth of them stop).
+- **Odd.** The symbol's centre is the middle of a module, so only an odd-width plate lands on
+  module boundaries; an even one would leave a rim of half-covered cells for a decoder to
+  threshold.
+
+The number lives in `BrandQRImage.markModules` and `QR_MARK_MODULES` in
+`web/js/sharecard.js`, and the two must agree. The **committed PNG stays unmarked**: at one
+pixel per module a baked-in mark would be a five-pixel square, so the web composites the
+plate at draw time and it scales with the render. What makes this safe is not the arithmetic
+but the decode: `BrandQRTests` renders the code at every size the app exports it — as PNG and
+through JPEG q50/q35 — and reads it back with `CIDetector`, each marked case paired with the
+unmarked control and with an oversized-mark case that must *fail*; the web's six card renders
+(3 shapes × 2 presets) are decoded the same way with OpenCV, PNG and JPEG q50.
 
 Note the case, which is deliberate: **CleanJibe** is the brand, *wingfoil* in the call to
 action is the sport. The word WingFoil survives only as the Xcode target, the module and the
