@@ -1,5 +1,6 @@
 import PhotosUI
 import SwiftUI
+import UniformTypeIdentifiers
 import WingFoilKit
 
 /// Playback speeds for the **scrubber's** inline picker — the one on the session page, next
@@ -90,9 +91,9 @@ struct ReplaySetupSheet: View {
     /// computed from.
     let milestones: [ReplayMilestone]
     let span: ClosedRange<Double>
-    /// Called with the resolved pacing, the chosen frame and the loaded photos. The sheet
-    /// dismisses itself first.
-    let start: (ReplayPacing.Plan, ReplayFraming, [ReplayPhoto]) -> Void
+    /// Called with the resolved pacing, the chosen frame, the loaded photos and the track to
+    /// lay under the clip (nil for silence). The sheet dismisses itself first.
+    let start: (ReplayPacing.Plan, ReplayFraming, [ReplayPhoto], ReplayMusicTrack?) -> Void
 
     @Environment(\.dismiss) private var dismiss
     /// Only for the remembered length — the one thing on this sheet that belongs to the rider
@@ -107,6 +108,14 @@ struct ReplaySetupSheet: View {
     /// Set when the picker handed back more items than could be read — see
     /// `ReplayPhotoLoader.load`.
     @State private var unreadable = 0
+    /// The track this clip will carry. Starts nil on every sheet — see `store.replayMusic` for
+    /// why the remembered one is offered by name rather than pre-selected.
+    @State private var music: ReplayMusicTrack?
+    @State private var choosingMusic = false
+    /// Set while the picked file is being copied and measured, and set again if it turns out
+    /// not to be music.
+    @State private var adoptingMusic = false
+    @State private var musicProblem: String?
 
     /// What the chosen length comes out at on *this* session — a rate, and (on a short target
     /// with a talkative afternoon) briefer slow-motion dips. See `ReplayPacing`.
@@ -131,6 +140,7 @@ struct ReplaySetupSheet: View {
                 VStack(alignment: .leading, spacing: 20) {
                     lengthSection
                     framingSection
+                    musicSection
                     photoSection
                     availabilityNote
                 }
@@ -147,12 +157,28 @@ struct ReplaySetupSheet: View {
                 }
             }
             .task(id: picked.map(\.hashValue)) { await loadPhotos() }
+            // Every audio type the phone knows, which is what `UTType.audio` means: an m4a out
+            // of Voice Memos, an mp3 in iCloud Drive, a wav somebody AirDropped. Narrowing it
+            // to a list of four would only ever exclude a file the exporter could have read.
+            .fileImporter(isPresented: $choosingMusic, allowedContentTypes: [.audio],
+                          onCompletion: adopt)
             // The sheet opens on the length the last clip was made at — the second clip of an
             // afternoon is nearly always the same shape as the first.
             .onAppear {
                 length = store.replayClipLength
                 framing = store.replayFraming
             }
+            #if DEBUG && targetEnvironment(simulator)
+            // `UI_REPLAY_MUSIC=<path>` stages a chosen track, since the document picker runs
+            // out of process and `simctl` can no more tap it than it can tap `PhotosPicker`.
+            // The path is read exactly as a picked file would be — copied, measured, refused
+            // if it is not music — so this stages the row, not a pretend version of it.
+            .task {
+                guard let path = ProcessInfo.processInfo.environment["UI_REPLAY_MUSIC"],
+                      !path.isEmpty else { return }
+                adopt(.success(URL(fileURLWithPath: path)))
+            }
+            #endif
         }
         .presentationDetents([.medium, .large])
     }
@@ -232,6 +258,133 @@ struct ReplaySetupSheet: View {
             "\(framing.name) — the replay plays inside a \(framing.label) frame and the rest "
                 + "of the screen is painted out, so you can see what the clip will be while "
                 + "you record it. The video is cropped to that frame afterwards."
+        }
+    }
+
+    // MARK: - Music
+
+    /// One row, three states: none, choosing, chosen.
+    ///
+    /// **Why the rider's own file and nothing else.** A clip is made to be posted, and a
+    /// soundtrack is the difference between a map animation and something anybody watches to
+    /// the end. What the app cannot do is *supply* the music: a track shipped inside an app and
+    /// then posted to social networks by its riders needs a licence written for exactly that,
+    /// and nothing from a commercial streaming service can ever be one (DRM'd files, APIs that
+    /// hand out stream handles rather than samples, terms that forbid redistribution outright).
+    /// So the picker asks for a file, and the caption says the one thing the rider is
+    /// responsible for. See `ReplayMusicStore` for the seam a bundled track would arrive on.
+    ///
+    /// **Why it defaults to none on every sheet**, unlike the length and the shape: a clip that
+    /// quietly turned up with a song under it because the last one had one is a surprise the
+    /// rider finds out about in somebody else's chat. The remembered track is offered by name
+    /// instead — one tap, and the tap is his.
+    @ViewBuilder
+    private var musicSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Music").font(.headline)
+
+            if let music {
+                chosenMusic(music)
+            } else {
+                Button {
+                    choosingMusic = true
+                } label: {
+                    Label(adoptingMusic ? "Reading the file…" : "Choose file…",
+                          systemImage: "music.note")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .disabled(adoptingMusic)
+
+                if let last = ReplayMusicStore.remembered(store.replayMusic) {
+                    Button {
+                        self.music = last
+                    } label: {
+                        Label("Use last: \(last.name)", systemImage: "clock.arrow.circlepath")
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .font(.subheadline)
+                }
+
+                Text("None — the clip plays silent. Anything the phone can open: a file from "
+                     + "Files, iCloud Drive, or one you saved out of another app.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if let musicProblem {
+                Label(musicProblem, systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Text("Use music you have the rights to share.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func chosenMusic(_ track: ReplayMusicTrack) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "music.note")
+                .foregroundStyle(.tint)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(track.name)
+                    .font(.subheadline)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Text(musicNote(track))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            Button("Remove") {
+                music = nil
+                musicProblem = nil
+            }
+            .font(.caption)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 10))
+    }
+
+    /// The length of the file, and the one thing about it the rider cannot work out for
+    /// himself: whether it will be cut or played twice. Both are fine — that is what the
+    /// fades are for — but a rider who chose an eight-second loop should know it is a loop
+    /// before he spends the clip finding out.
+    private func musicNote(_ track: ReplayMusicTrack) -> String {
+        let clipS = storyboard.runWallS
+        if track.durationS >= clipS {
+            return "\(Fmt.duration(track.durationS)) — the first "
+                + "\(Fmt.duration(clipS)) plays, fading out at the end."
+        }
+        return "\(Fmt.duration(track.durationS)) — repeats to fill the "
+            + "\(Fmt.duration(clipS)) clip, fading out at the end."
+    }
+
+    /// Copies what the picker handed back into the app's own container, because the URL it
+    /// gives is security-scoped and this sheet is about to go away — see `ReplayMusicStore`.
+    private func adopt(_ result: Result<URL, any Error>) {
+        musicProblem = nil
+        guard case .success(let picked) = result else {
+            if case .failure(let error) = result { musicProblem = error.localizedDescription }
+            return
+        }
+        adoptingMusic = true
+        Task {
+            do {
+                music = try await ReplayMusicStore.adopt(picked)
+            } catch {
+                musicProblem = (error as? any LocalizedError)?.errorDescription
+                    ?? error.localizedDescription
+            }
+            adoptingMusic = false
         }
     }
 
@@ -362,13 +515,16 @@ struct ReplaySetupSheet: View {
         Button {
             let chosen = photos
             let plan = pacing
+            let track = music
             // Remembered here rather than on every tap of the picker: a rider who opened the
             // sheet, tried the three lengths and cancelled has not changed his mind about
-            // anything. The choice is made by starting.
+            // anything. The choice is made by starting. Starting with no music is a choice
+            // too — it forgets the remembered track and sweeps its copy.
             store.replayClipLength = length
             store.replayFraming = framing
+            store.replayMusic = track
             dismiss()
-            start(plan, framing, chosen)
+            start(plan, framing, chosen, track)
         } label: {
             Label(ReplayRecorder.isAvailable
                   ? "Record · about \(Fmt.duration(storyboard.runWallS))"

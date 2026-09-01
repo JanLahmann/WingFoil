@@ -56,6 +56,11 @@ struct ReplayCinemaView: View {
     /// The rider's own pictures, already loaded and dated by the setup sheet. Empty is the
     /// ordinary case and the whole photo path then costs nothing.
     var photos: [ReplayPhoto] = []
+    /// The track to lay under the finished clip, or nil for silence. Nothing is played *while*
+    /// the replay runs — the music is muxed onto the recording afterwards (`finish`), which is
+    /// the only way it can be a clean track rather than a room recording, and also the only way
+    /// it can be there at all with the microphone off.
+    var music: URL?
 
     /// Written by hand for two pieces of state that must be right on the *first* frame.
     ///
@@ -67,7 +72,7 @@ struct ReplayCinemaView: View {
     /// body passes a second the playhead causes.
     init(detail: SessionDetail, milestones: [ReplayMilestone], span: ClosedRange<Double>,
          pacing: ReplayPacing.Plan, record: Bool, framing: ReplayFraming = .fullScreen,
-         photos: [ReplayPhoto] = []) {
+         photos: [ReplayPhoto] = [], music: URL? = nil) {
         self.detail = detail
         self.milestones = milestones
         self.span = span
@@ -75,6 +80,7 @@ struct ReplayCinemaView: View {
         self.record = record
         self.framing = framing
         self.photos = photos
+        self.music = music
         _camera = State(initialValue: .region(detail.initialRegion))
         _storyboard = State(initialValue: ReplayStoryboard.make(
             span: span, rate: pacing.rate, milestones: milestones,
@@ -761,43 +767,70 @@ struct ReplayCinemaView: View {
         }
     }
 
-    /// Cuts the staged frame out of the full-screen recording, or hands back the recording.
+    /// Cuts the staged frame out of the full-screen recording, lays the rider's music under it,
+    /// or hands back the recording untouched.
     ///
     /// ReplayKit captures the glass, so this is the second half of the framing: the rider
     /// composed against a box (`staged`), and this is where the box becomes the file. It runs
     /// while `.wrappingUp` is still on screen, which is what the "Saving the clip…" spinner is
     /// covering — an export of a forty-second clip is a second or two.
     ///
+    /// **Music forces the export even on a full-screen clip.** Full screen used to mean "no
+    /// export at all", which is still true when there is nothing to add; a track to mux is a
+    /// second reason to re-encode, and then the crop is simply absent from the same pass rather
+    /// than being a second one (`ReplayClipCropper.export`).
+    ///
     /// **A failure is a fallback, not an error.** The rider has just spent the length of the
     /// clip making it, and there is a perfectly good full-screen recording in his hand; losing
-    /// it because a re-encode failed would be the wrong trade every time. So the uncropped
-    /// file is offered with a line saying it is the wrong shape and why.
+    /// it because a re-encode failed would be the wrong trade every time. So the plain file is
+    /// offered with a line saying what it is missing and why.
     private func framed(_ url: URL) async -> URL {
-        // Full screen needs no export by construction, which is also what makes it the safety
-        // net: whatever else goes wrong, this path always has a file.
-        guard framing != .fullScreen, glassSize.width > 0, !stageRect.isEmpty else { return url }
+        let wantsCrop = framing != .fullScreen && glassSize.width > 0 && !stageRect.isEmpty
+        // Nothing to crop and nothing to add: the recorder's own file is the clip. This is also
+        // the safety net — whatever else goes wrong, this path always has a file.
+        guard wantsCrop || music != nil else { return url }
         do {
             let asset = AVURLAsset(url: url)
             guard let track = try await asset.loadTracks(withMediaType: .video).first else {
                 return url
             }
-            // The *displayed* size, transform applied: a portrait capture is stored landscape
-            // with a rotation on it, and cropping against the stored size would cut the clip
-            // sideways.
-            let natural = try await track.load(.naturalSize)
-            let preferred = try await track.load(.preferredTransform)
-            let displayed = CGRect(origin: .zero, size: natural).applying(preferred).size
-            let pixels = CGSize(width: abs(displayed.width), height: abs(displayed.height))
-            let crop = ReplayStage.crop(stage: stageRect, screenPoints: glassSize,
-                                        videoPixels: pixels)
-            guard ReplayStage.needsCrop(crop, videoPixels: pixels) else { return url }
+            var crop: CGRect?
+            if wantsCrop {
+                // The *displayed* size, transform applied: a portrait capture is stored
+                // landscape with a rotation on it, and cropping against the stored size would
+                // cut the clip sideways.
+                let natural = try await track.load(.naturalSize)
+                let preferred = try await track.load(.preferredTransform)
+                let displayed = CGRect(origin: .zero, size: natural).applying(preferred).size
+                let pixels = CGSize(width: abs(displayed.width), height: abs(displayed.height))
+                let wanted = ReplayStage.crop(stage: stageRect, screenPoints: glassSize,
+                                              videoPixels: pixels)
+                crop = ReplayStage.needsCrop(wanted, videoPixels: pixels) ? wanted : nil
+            }
+            guard crop != nil || music != nil else { return url }
             let output = url.deletingPathExtension()
                 .appendingPathExtension("\(framing.rawValue).mp4")
-            return try await ReplayClipCropper.crop(url, to: crop, output: output)
+            let exported = try await ReplayClipCropper.export(url, crop: crop, music: music,
+                                                              output: output)
+            // A track that turned out to be silent — an empty file, something that is not audio
+            // at all — costs the music and not the clip, which is the same trade the crop makes
+            // below. The rider is told, because a silent clip he expected to have a song under
+            // it is otherwise a mystery.
+            if music != nil,
+               (try? await AVURLAsset(url: exported).loadTracks(withMediaType: .audio))?.isEmpty
+                   != false {
+                framingNote = "The music could not be read, so this clip is silent."
+            }
+            return exported
         } catch {
-            framingNote = "The clip could not be cropped to \(framing.name.lowercased()) "
-                + "(\((error as? any LocalizedError)?.errorDescription ?? error.localizedDescription)), "
-                + "so this is the full-screen recording."
+            let reason = (error as? any LocalizedError)?.errorDescription
+                ?? error.localizedDescription
+            // One export, so one failure loses whatever was asked of it — and the note has to
+            // say which, or the rider is left wondering what he is looking at.
+            let lost = [wantsCrop ? "cropped to \(framing.name.lowercased())" : nil,
+                        music != nil ? "given its music" : nil].compactMap { $0 }
+            framingNote = "The clip could not be \(lost.joined(separator: " or ")) (\(reason)), "
+                + "so this is the recording as it was captured."
             return url
         }
     }
@@ -925,7 +958,22 @@ private struct ReplayClipSheet: View {
             }
             .padding(.horizontal)
             .padding(.top, 8)
-            .onAppear { if player == nil { player = AVPlayer(url: url) } }
+            .onAppear {
+                if player == nil { player = AVPlayer(url: url) }
+                // `.playback` so a clip with music under it is audible with the ring switch
+                // set to silent — which is where a phone that has just been out on the water
+                // usually is. Without it the preview is mute and the rider concludes the mux
+                // failed. The category is claimed here and given back on the way out, so the
+                // app never holds the audio session while it is not playing anything.
+                let session = AVAudioSession.sharedInstance()
+                try? session.setCategory(.playback, mode: .moviePlayback)
+                try? session.setActive(true)
+            }
+            .onDisappear {
+                player?.pause()
+                try? AVAudioSession.sharedInstance()
+                    .setActive(false, options: .notifyOthersOnDeactivation)
+            }
             .navigationTitle("Replay clip")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
