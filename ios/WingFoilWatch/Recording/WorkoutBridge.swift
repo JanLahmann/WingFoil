@@ -17,8 +17,14 @@ import OSLog
 /// "Surfing" for a Garmin session and something else for a watch session would reasonably
 /// conclude the app could not make up its mind.
 ///
-/// `@unchecked Sendable`: `HKHealthStore` and the session objects are touched only from the
-/// main actor; the delegate callbacks hop out through `@Sendable` closures.
+/// `@unchecked Sendable`, and the reasoning behind the annotation rather than a wave at it:
+/// `start`, `pause` and `resume` are only ever called from `SessionRecorder`, which is
+/// `@MainActor`; `end` is `async` and therefore runs off it; and the delegate callbacks arrive
+/// on whatever queue HealthKit chooses and leave immediately through `@Sendable` closures.
+/// What keeps `session` and `builder` safe across those three is not isolation but the
+/// recorder's phase machine, which cannot reach `start` and `end` concurrently — `stop()`
+/// moves to `.saving` before awaiting, and `start()` refuses any phase but `.idle`/`.finished`.
+/// `HKWorkoutSession.end()` is itself documented as safe to call from any thread.
 final class WorkoutBridge: NSObject, HKWorkoutSessionDelegate, HKLiveWorkoutBuilderDelegate,
                            @unchecked Sendable {
 
