@@ -2,6 +2,11 @@
 
 *(The repository keeps its original name, `WingFoil` — the apps and the site are CleanJibe.)*
 
+**License:** [Apache-2.0](LICENSE) for all code and documentation. The CleanJibe name, wordmark
+and logo are trademarks and are **not** licensed for reuse (Apache-2.0 §6 grants no trademark
+rights — stated here so nobody has to read §6). The session recordings under `fixtures/` are
+the author's own scrubbed data, provided for testing the engine.
+
 Wingfoil tracking for Garmin Fenix 8 + iPhone: a Connect IQ watch app that records
 wingfoil-native metrics (flights, GP3S speed records, turns, takeoff pumping) into standard FIT
 activities, and an iOS app that imports and deeply analyzes them.
