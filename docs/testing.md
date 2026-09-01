@@ -668,6 +668,44 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    and took an 84 px face on a 240 px glass, and the rows collided because of it. (Verified by
    putting the old `LockView.mc` back: `row 2 y=108 0x84`.)
 
+   **The data field's own layout suite** (`garmin/field/tests/FieldTests.mc`) is the same idea
+   on a canvas nobody chose: a data field is handed whatever rectangle the rider's activity
+   layout leaves it, so `layoutRowsNeverClip` walks the *measured* cell rectangles of all
+   twelve Garmin layouts (read off the simulator with `garmin/field/screenshots` running — it
+   prints `CELL wxh flags n` on every change) and asserts every row of every cell sits inside
+   its cell, clear of its neighbour, and inside the chord at its own depth. 0.9.5 added four
+   more: `fullScreenCarriesTheAppMainPage` (the 1-field page really does carry the device
+   app's Main composition — a NUMBER-font giant, the two-line caption beside it and a dot
+   ladder with room for a double-figure run of turns), `summaryPagesFitTheFullScreenCell`
+   (both paused pages, every row labelled), `configuredSlotsNeverClip` (the same never-clip
+   loop run once per metric in the settings list, with that metric in every configurable slot
+   at once — 18 metrics x 33 cells on a fenix 8) and `slotDefaultsAreTheOldRows` (the promise
+   that an install which never opens the settings page sees what it saw in 0.9.4). Counts:
+   **57/57** on `fenix847mm`, `fr255` and `epix2pro42mm`.
+
+   `configuredSlotsNeverClip` deliberately does **not** assert the tabled SIZE per cell: a
+   wider metric legitimately steps a cell down, and pinning the size would pin the
+   configuration rather than the invariant. What it does pin is that both halves of the
+   caption trade happen somewhere on the glass — 197 captioned / 379 bare on a fenix 8, 239 /
+   211 on an fr255 — because a rule that never fires is a rule nobody is testing.
+
+   **Two simulator facts 0.9.5 had to establish by experiment**, neither documented anywhere:
+
+   - A data field's `compute()` and `onUpdate()` run whether or not an activity is recording,
+     and `Activity.Info.timerState` is the only thing that says which is happening. With no
+     activity started the simulator reports **0** (`TIMER_STATE_OFF`) and still draws every
+     second — which is what the paused summary face hangs off. The harness prints
+     `TIMERSTATE n` on every change so this stays checkable.
+   - On an AMOLED product the simulator renders the display's **black as transparent**, so the
+     watch-body art underneath (bezel, tick marks, the 50/40/20 numerals) shows through every
+     pixel a dark app paints — and a store screenshot cropped straight out of the window has a
+     fenix bezel drawn across it. The capture script therefore shoots one extra frame per
+     layout with the field cleared and nothing else on it, and composites: a pixel that still
+     equals that frame is one the field left black, a pixel that differs is ink. It also
+     calibrates the crop rather than hard-coding it (a white background makes the display disc
+     the one bright thing in the window), because the simulator's zoom of the watch image is
+     not stable between launches.
+
    Three things the Tier A pass found, all worth knowing before touching the code they live in:
 
    - **A vector font will happily measure glyphs it does not have.** On the epix 2 / epix 2 Pro

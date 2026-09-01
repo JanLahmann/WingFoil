@@ -44,6 +44,7 @@ class ShotsField extends WingFoilDataField {
     hidden var _cellW as Number = 0;
     hidden var _cellH as Number = 0;
     hidden var _cellFlags as Number = -1;
+    hidden var _timerState as Number = -99;
 
     function initialize() {
         WingFoilDataField.initialize();
@@ -55,6 +56,17 @@ class ShotsField extends WingFoilDataField {
     // timer and print 100 %.
     function compute(info as Activity.Info) as Void {
         _tick++;
+        // What the SYSTEM says about the activity clock, printed once per change. This is the
+        // answer 0.9.5 needed and could not find in the documentation: a data field's compute()
+        // and onUpdate() are called by the simulator whether or not an activity is recording,
+        // and info.timerState is what tells the two apart — which is what the summary face
+        // hangs off. See the release notes in docs/.
+        var st = info.timerState;
+        var stn = st == null ? -1 : st as Number;
+        if (stn != _timerState) {
+            _timerState = stn;
+            System.println("TIMERSTATE " + stn);
+        }
         var want = (_tick / DWELL) % FieldShotSeed.COUNT;
         if (want != _shot) {
             show(want);
@@ -78,6 +90,12 @@ class ShotsField extends WingFoilDataField {
             _cellFlags = flags;
             System.println("CELL " + w + "x" + h + " flags " + flags);
         }
+        if (_shot == FieldShotSeed.SHOT_BLANK) {
+            var bg = getBackgroundColor();
+            dc.setColor(bg, bg);
+            dc.clear();
+            return;
+        }
         WingFoilDataField.onUpdate(dc);
     }
 
@@ -96,10 +114,39 @@ module FieldShotSeed {
     // vocabulary lives in the difference between them: SHOT_FLYING is green twice (on the
     // foil, and the jibe before it flew through), SHOT_TOUCH is white and orange (back on
     // the water, the jibe after it touched down).
+    // Three moments of the same session. The first two are three minutes apart and carry the
+    // field's whole colour vocabulary between them: SHOT_FLYING is green twice (on the foil,
+    // and the jibe before it flew through), SHOT_TOUCH is white and orange (back on the water,
+    // the jibe after it touched down). The third is the same session with the activity timer
+    // stopped, which is the face 0.9.5 added — the summary a rider reads at the beach.
     enum {
         SHOT_FLYING = 0,
         SHOT_TOUCH = 1,
-        COUNT = 2
+        SHOT_PAUSED = 2,
+        // Not a screenshot: a frame with nothing on it but the cleared background. The
+        // simulator renders an AMOLED product's black as TRANSPARENT, so the watch-body art
+        // under the display shows through everywhere the field paints black — bezel ticks and
+        // all — and a store screenshot has to be composited back onto real black. One blank
+        // frame is the mask that says which pixels were the device and which were ours.
+        SHOT_BLANK = 3,
+        COUNT = 4
+    }
+
+    // The dot ladder's content: the last 40 turns of the session, in the proportion the tally
+    // claims (35 flew, 8 touched down, 8 went in) and interleaved rather than sorted, because
+    // the whole point of the strip is that it shows how the outcomes ARRIVED.
+    const PATTERN = [TurnDetector.OUTCOME_FLEW, TurnDetector.OUTCOME_FLEW,
+        TurnDetector.OUTCOME_FLEW, TurnDetector.OUTCOME_TOUCHDOWN,
+        TurnDetector.OUTCOME_FLEW, TurnDetector.OUTCOME_FLEW,
+        TurnDetector.OUTCOME_FLEW, TurnDetector.OUTCOME_FELL,
+        TurnDetector.OUTCOME_FLEW, TurnDetector.OUTCOME_FLEW];
+
+    function seedOutcomes(e as FieldEngine) as Void {
+        e.outcomeCount = 0;
+        for (var i = 0; i < FieldEngine.TURN_LOG; i++) {
+            e.outcomes[i] = PATTERN[i % PATTERN.size()];
+            e.outcomeCount = i + 1;
+        }
     }
 
     function seed(e as FieldEngine, shot as Number) as Void {
@@ -130,7 +177,24 @@ module FieldShotSeed {
         t.successCount = 25;
         t.lastKind = TurnDetector.KIND_JIBE;
         t.bestScorePct = 96;
+        t.dryStreak = 7;
+        t.bestDryStreak = 12;
+        seedOutcomes(e);
 
+        if (shot == SHOT_BLANK) {
+            return;             // nothing is drawn from it; see SHOT_BLANK
+        }
+        if (shot == SHOT_PAUSED) {
+            // Ashore: the timer is off, so the full-screen cell shows the session summary
+            // instead of the live page. Everything else is the same session.
+            e.speedMps = 0.0;
+            e.running = false;
+            d.state = FlightDetector.STATE_OFF;
+            d.currentFlightS = 0.0;
+            t.lastOutcome = TurnDetector.OUTCOME_FLEW;
+            t.lastScorePct = 88;
+            return;
+        }
         if (shot == SHOT_TOUCH) {
             // Off the foil: the % goes white, the flight timer goes --:--, and the jibe that
             // just ended is the orange one. Its touchdown is already in the tally (9 now).
