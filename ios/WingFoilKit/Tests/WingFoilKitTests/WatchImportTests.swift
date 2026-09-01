@@ -1,4 +1,5 @@
 import Foundation
+import GRDB
 import Testing
 @testable import WingFoilKit
 
@@ -321,6 +322,77 @@ struct WatchImportTests {
         #expect(analysis.capabilities.hasAccel)
         #expect(analysis.capabilities.hasHR)
         #expect(analysis.engineVersion == AnalysisEngine.version)
+    }
+
+    // MARK: - All the way into the library
+
+    private func makeIngestor() throws -> (SessionIngestor, URL) {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("watch-ingest-\(UUID().uuidString)/Sessions", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        return (SessionIngestor(database: try AppDatabase.inMemory(),
+                                archive: SessionArchive(root: root)), root)
+    }
+
+    /// **The test that matters, and the one whose absence hid a real bug.**
+    ///
+    /// Every file the app imports — a hand-picked one exactly as much as a GDPR ZIP — goes
+    /// through `SessionIngestor.ingestContainer`, which asks `ZipWalker.classify` what the
+    /// bytes are before anything else looks at them. A format missing from that ladder is not
+    /// merely unclassified: it is dropped as `.ignored`, and the rider is told "no FIT found"
+    /// about a file `WatchSessionParser` can read perfectly well. Parsing correctly is not
+    /// the same as importing, and only this test knows the difference.
+    @Test func aWatchContainerImportsThroughTheOrdinaryFileDoor() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        let data = try Self.fixtureData(minutes: 4)
+
+        let summary = await ingestor.ingestContainer(data: data, name: "session.cjw",
+                                                     source: .appleWatch)
+        #expect(summary.found == 1)
+        #expect(summary.imported == 1)
+        #expect(summary.failed.isEmpty)
+
+        let sessions = try await ingestor.allSessions()
+        #expect(sessions.count == 1)
+        let row = try #require(sessions.first)
+        #expect(row.sourceClass == "b")                 // certified
+        #expect(row.importSource == "applewatch")
+        #expect(row.discipline == "wingfoil")
+        #expect(row.durationS > 0)
+        #expect(row.startLat != nil && row.startLon != nil)
+
+        // The archive keeps the container under its own extension and can re-parse it, which
+        // is what makes this session survive the next engine bump.
+        #expect(ingestor.archive.originalFormat(for: row.id) == .watch)
+        #expect(try ingestor.archive.originalData(for: row.id) == data)
+        let reanalysed = try await ingestor.reanalyze(row)
+        #expect(reanalysed.capabilities.hasAccel)
+        #expect(reanalysed.capabilities.hasDoppler)
+    }
+
+    @Test func classifyRecognisesAWatchContainer() throws {
+        let data = try Self.fixtureData(minutes: 1)
+        guard case .track(let payload) = ZipWalker.classify(data) else {
+            Issue.record("a watch container must classify as a track, not as ignored")
+            return
+        }
+        #expect(payload == data)
+    }
+
+    /// The same session sent twice — a re-queued transfer, or a phone that took delivery
+    /// after the watch gave up waiting — must not appear twice.
+    @Test func thePhoneDedupesARepeatedTransfer() async throws {
+        let (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        let data = try Self.fixtureData(minutes: 3)
+
+        let first = await ingestor.ingestContainer(data: data, name: "a.cjw", source: .appleWatch)
+        let second = await ingestor.ingestContainer(data: data, name: "a.cjw", source: .appleWatch)
+        #expect(first.imported == 1)
+        #expect(second.imported == 0)
+        #expect(second.duplicates == 1)
+        #expect(try await ingestor.allSessions().count == 1)
     }
 
     // MARK: - Provenance
