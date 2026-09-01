@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Get the CleanJibe beta — the invite and unlock steps</title>
-<meta name="description" content="Both CleanJibe apps are invite-only betas. Here is the whole flow: install the watch app from the Connect IQ store, send the request code it shows, and enter the unlock key in Garmin Connect. Plus how to get on the iPhone TestFlight.">
+<title>Get the beta — CleanJibe for Garmin and iPhone</title>
+<meta name="description" content="Both CleanJibe betas are open. Install the watch app from the Connect IQ store and the iPhone app from a public TestFlight link — no invite, no request code, no waiting. And where to send what you find.">
 <meta name="theme-color" content="#101010">
 <meta name="color-scheme" content="dark">
 
@@ -24,7 +24,7 @@
 
 <meta property="og:site_name" content="CleanJibe">
 <meta property="og:title" content="Get the CleanJibe beta">
-<meta property="og:description" content="Install the watch app, send the request code it shows, enter the unlock key in Garmin Connect. And how to get on the iPhone TestFlight.">
+<meta property="og:description" content="Both betas are open: the watch app from the Connect IQ store, the iPhone app from a public TestFlight link. Free, and nothing to request.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cleanjibe.org/invite/">
 <meta property="og:image" content="https://cleanjibe.org/social-card.png">
@@ -33,7 +33,7 @@
 <meta property="og:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Get the CleanJibe beta">
-<meta name="twitter:description" content="Install the watch app, send the request code it shows, enter the unlock key in Garmin Connect. And how to get on the iPhone TestFlight.">
+<meta name="twitter:description" content="Both betas are open: the watch app from the Connect IQ store, the iPhone app from a public TestFlight link. Free, and nothing to request.">
 <meta name="twitter:image" content="https://cleanjibe.org/social-card.png">
 <meta name="twitter:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
 </head>
@@ -56,18 +56,24 @@
 <main>
 
   <!-- ------------------------------------------------------------------ hero -->
+  <!-- This page used to be the invite desk: install, read an 8-character request code off
+       the watch, mail it in, wait for a key. The betas are open now, so the page has two
+       jobs instead — hand over two install links, and tell a tester where to send what
+       they find. The one thing that survives from the old flow is the transitional note
+       under the Garmin steps, because the store's current build really does still ask for
+       a key until 0.9.4 clears review, and a page that pretended otherwise would strand
+       whoever installs it today. -->
   <section class="hero">
-    <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Invite-only beta · free · one mail</p>
+    <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Open beta · free · nothing to request</p>
     <h1>Get the beta</h1>
     <p class="lede">
-      Both CleanJibe apps are free invite-only betas. The Connect IQ store will let anyone
-      install the watch app, but it starts locked and needs a key that is issued per watch;
-      the iPhone app is on TestFlight, which needs your address on the tester list. Neither
-      takes long, and neither costs anything.
+      Both CleanJibe apps are free, open betas. The watch app installs from the Connect IQ
+      store; the iPhone app installs from a public TestFlight link. There is no invite to
+      apply for, no code to send in, and nobody to wait on.
     </p>
     <p class="lede">
       <strong>Not sure you want either yet?</strong> The
-      <a href="../app/">browser analyzer</a> is not a beta and needs no invite — it reads a
+      <a href="../app/">browser analyzer</a> is not a beta at all — it reads a
       <code>.fit</code> file from any Garmin watch and gives you the whole session back.
       There is an example inside if you have no file to hand.
     </p>
@@ -77,8 +83,7 @@
   <section class="home-section" id="garmin">
     <h2>The Garmin watch app</h2>
     <p class="section-lede">
-      Five steps, and the middle one is a mail to a person. The lock is per watch and
-      permanent: once a key is entered it stays entered, including after an app update.
+      Two steps, and neither of them is a mail to a person.
     </p>
 
     <ol class="steps-flow">
@@ -87,81 +92,47 @@
         <h3>Install it from the Connect IQ store</h3>
         <p>
           <a href="https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806" rel="noopener">CleanJibe
-          Wingfoil Tracker&nbsp;— Invite Beta</a> on apps.garmin.com. The store lets you
-          install it without a key; it is the app itself that is locked, not the download.
+          Wingfoil Tracker&nbsp;(Beta)</a> on apps.garmin.com — install it from the web
+          store or from Connect IQ on your phone, the same way as any other watch app.
         </p>
         <p class="note">
           Watches: the fenix 8 family (43&nbsp;mm, 47&nbsp;mm, Solar 47/51&nbsp;mm, Pro
-          47&nbsp;mm) and the fenix 7 family (7 / 7S / 7X and every Pro variant). If your
-          watch is not on that list the store will not offer the install.
+          47&nbsp;mm) and the fenix 7 family (7 / 7S / 7X and every Pro variant), with
+          0.9.4 widening that to thirty products — the epix 2 and Forerunner families,
+          MARQ 2, Enduro 3, D2 and Descent Mk3 among them. If the store does not offer
+          your watch the install button will say so.
         </p>
-      </li>
-
-      <li>
-        <h3>Start the app and note the request code</h3>
-        <p>
-          Open CleanJibe on the watch. Instead of the start screen it shows an
-          <strong>8-character request code</strong>. The code is derived from that watch, so
-          it is different on every watch and the key you get back only works on the one that
-          asked.
-        </p>
-        <!-- SLOT: the watch's lock screen with the request code on it. Not captured here:
-             the lock screen only exists in the invite build, which compiles the unlock
-             pepper from UNLOCK_SECRET (lab/.env, gitignored) — see docs/decisions.md
-             ADR-012 — so this shot has to come off a real watch or an invite-jungle
-             simulator run. Add it as img/watch-request-code.png with the same <figure
-             class="shot"> markup the homepage cards use. -->
-      </li>
-
-      <li>
-        <h3>Send the code to the developer</h3>
-        <p>
-          Mail it to
-          <a href="mailto:jan@lahmann-online.de?subject=CleanJibe%20beta%20unlock%20key&amp;body=My%20request%20code%20is%3A%20">jan@lahmann-online.de</a>
-          — or use <em>Contact Developer</em> on the store page, which arrives in the same
-          place. A sentence about what you ride and where is welcome but not required.
-          You get a personal unlock key back.
-        </p>
-      </li>
-
-      <li>
-        <h3>Enter the key in Garmin Connect</h3>
-        <p>
-          On your phone: <strong>Garmin Connect → Connect IQ →
-          CleanJibe&nbsp;-&nbsp;Invite&nbsp;Beta → Settings → &ldquo;Unlock key&rdquo;</strong>.
-          Paste the key and save; Connect pushes the setting to the watch the next time they
-          sync.
-        </p>
-        <p class="note">
-          The app was called <em>WingFoil&nbsp;-&nbsp;Invite&nbsp;Beta</em> before 0.9.3. If
-          an older invite mail or store description sends you looking for that name, it is
-          the same app under the new one.
-        </p>
-        <!-- SLOT: the Garmin Connect settings screen with the "Unlock key" field visible.
-             This one needs a phone with Garmin Connect and a paired watch, so it is Jan's
-             to take. Same markup as above, img/gcm-unlock-key.png. -->
       </li>
 
       <li>
         <h3>Ride</h3>
         <p>
-          The app unlocks immediately and permanently on that watch — no restart, no
-          reinstall. From then on it opens on the ordinary start screen and records as a
-          Windsurf activity.
+          Open CleanJibe on the watch and start. It records as a <strong>Windsurf</strong>
+          activity — so it lands in Garmin Connect as what it is rather than as a walk —
+          and it works out the wind direction for itself after a few minutes of riding.
         </p>
-        <!-- SLOT: the unlocked start screen. Same caveat as the lock screen above;
-             img/watch-unlocked.png. -->
       </li>
 
     </ol>
 
     <p class="note">
+      <strong>One transitional note.</strong> The build on the store right now is still the
+      invite one: it opens on a lock screen showing an 8-character request code, and needs
+      a key entered in <em>Garmin Connect → Connect IQ → CleanJibe → Settings → &ldquo;Unlock
+      key&rdquo;</em>. Version 0.9.4 drops the lock entirely and is waiting on Garmin's
+      review. Until it clears, mail the code the watch shows to
+      <a href="mailto:jan@lahmann-online.de?subject=CleanJibe%20beta%20unlock%20key&amp;body=My%20request%20code%20is%3A%20">jan@lahmann-online.de</a>
+      and you get a key back — and if you already have one, keep it: existing keys go on
+      working, on that watch, through every update.
+    </p>
+
+    <p class="note">
       There is a second Connect IQ listing,
       <a href="https://apps.garmin.com/apps/8dad33d4-e367-45a6-a4bb-9647fd6b5402" rel="noopener">CleanJibe
-      Field&nbsp;— Invite Beta</a>: a data field that adds the live foil numbers to Garmin's
-      own Windsurf profile, for riders who would rather keep the native activity. It is
-      locked the same way and has its own request code and its own key — the watch app's key
-      will not open it.
+      Field</a>: a data field that adds the live foil numbers to Garmin's own Windsurf
+      profile, for riders who would rather keep the native activity. It is on the same
+      release train, so the note above applies to it too — and it has its own key, which
+      the watch app's will not open.
     </p>
   </section>
 
@@ -169,25 +140,23 @@
   <section class="home-section" id="testflight">
     <h2>The iPhone app</h2>
     <p class="section-lede">
-      CleanJibe for iPhone is in TestFlight. There is no public link: Apple sends the invite
-      to a named address, so the address has to be on the list first.
+      TestFlight, on a public link. Open it on the phone and you are in.
     </p>
 
     <ol class="steps-flow">
       <li>
-        <h3>Mail for an invite</h3>
+        <h3>Open the TestFlight link</h3>
         <p>
-          <a href="mailto:jan@lahmann-online.de?subject=CleanJibe%20iPhone%20TestFlight%20invite">jan@lahmann-online.de</a>,
-          with the Apple ID address you want the invite sent to. It is free and there is no
-          limit worth worrying about.
+          <a href="https://testflight.apple.com/join/nygqGGcn" rel="noopener">testflight.apple.com/join/nygqGGcn</a>
+          — on the iPhone itself. No address to submit and no invite mail to wait for.
         </p>
       </li>
       <li>
-        <h3>Accept it in TestFlight</h3>
+        <h3>Install and open</h3>
         <p>
-          Apple mails you a link. Install Apple's <strong>TestFlight</strong> app from the
-          App Store if you do not have it, open the link on the phone, and CleanJibe installs
-          from there. TestFlight builds expire, so it will ask you to update every so often.
+          You need Apple's <strong>TestFlight</strong> app from the App Store if you do not
+          have it; the link installs CleanJibe through it. TestFlight builds expire, so it
+          will ask you to update every so often.
         </p>
       </li>
       <li>
@@ -208,12 +177,53 @@
     </p>
   </section>
 
+  <!-- --------------------------------------------------------------- feedback -->
+  <!-- The page's second job, and the reason an open beta is worth running at all: a tester
+       who hits something and has nowhere obvious to put it just uninstalls. Two doors, and
+       both of them go to the same person — mail for a sentence, an issue for anything that
+       wants a file, a screenshot or a thread. -->
+  <section class="home-section" id="feedback">
+    <h2>It&rsquo;s a beta — tell us what&rsquo;s wrong and what&rsquo;s missing</h2>
+    <p class="section-lede">
+      Every report lands with the one developer. A rough sentence beats a polished bug
+      report you never send, and &ldquo;this number looks wrong&rdquo; is a perfectly good
+      one.
+    </p>
+    <div class="claims">
+      <article class="panel claim">
+        <h3>Mail</h3>
+        <p>
+          <a href="mailto:jan@lahmann-online.de?subject=CleanJibe%20beta%20feedback">jan@lahmann-online.de</a>
+          — the fastest door. What you rode, what the app said, and what you expected it to
+          say. If a session was read wrong, attach the <code>.fit</code> file: with the file
+          the detection can be re-run and fixed, without it there is only guesswork.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>GitHub issues</h3>
+        <p>
+          <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">github.com/JanLahmann/WingFoil/issues</a>
+          — better for anything with a screenshot, a file or a discussion in it, and it
+          stays visible instead of ending up in one inbox.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>What is most useful</h3>
+        <p>
+          Turns scored wrong, flights the watch missed or invented, a wind direction that
+          disagrees with the day, and anything that stopped, froze or drained the battery.
+          Which watch and which app version, if you have them to hand.
+        </p>
+      </article>
+    </div>
+  </section>
+
   <!-- ---------------------------------------------------------------- no beta -->
   <section class="home-section">
     <h2>If neither is for you</h2>
     <div class="claims">
       <article class="panel claim">
-        <h3>The analyzer needs no invite</h3>
+        <h3>The analyzer needs nothing</h3>
         <p>
           <a href="../app/">cleanjibe.org/app</a> is free, has no account and is not a beta.
           Drop in a <code>.fit</code> file from any Garmin watch and you get the session
@@ -230,7 +240,7 @@
         </p>
       </article>
       <article class="panel claim">
-        <h3>Questions before you commit</h3>
+        <h3>Questions before you install</h3>
         <p>
           Mail <a href="mailto:jan@lahmann-online.de">jan@lahmann-online.de</a>, or read the
           code and the detection thresholds first:
@@ -247,7 +257,7 @@
   <p>
     <a href="../">About CleanJibe</a> ·
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">github.com/JanLahmann/WingFoil</a>
-    · Beta invites and questions: <a href="mailto:jan@lahmann-online.de">jan@lahmann-online.de</a>
+    · Beta feedback and questions: <a href="mailto:jan@lahmann-online.de">jan@lahmann-online.de</a>
   </p>
 </footer>
 

@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v22";     // v22: the mark turned and took the water back; the topbar wears it
+const VERSION = "v23";     // v23: the beta opened its doors, and the ladder climbs 4.3 degrees
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.

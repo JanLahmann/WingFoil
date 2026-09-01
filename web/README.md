@@ -18,9 +18,9 @@ web/
 ├── index.html                  the PROJECT HOMEPAGE (cleanjibe.org/) — what CleanJibe is,
 │                               the watch app, the iPhone app, this analyzer, and what a
 │                               rider actually needs to own to use any of them. No JS.
-├── invite/index.html           the BETA PAGE (cleanjibe.org/invite/): the Garmin request
-│                               code -> unlock key flow and the TestFlight ask, in one
-│                               place the store listing and the invite mail can link to.
+├── invite/index.html           the BETA PAGE (cleanjibe.org/invite/): both open-beta
+│                               installs — the Connect IQ store link and the public
+│                               TestFlight link — and where a tester sends what they find.
 │                               No JS, and deliberately NOT in the sw.js precache.
 ├── app/index.html              the ANALYZER (cleanjibe.org/app/): page shell, three views
 │                               (analyze / library / trends). Called "CleanJibe session
@@ -158,7 +158,7 @@ up anywhere — use *Download all (.zip)* if you want a copy you own.
 cd web
 python3 -m http.server 8765
 # open http://127.0.0.1:8765/         the project homepage
-# open http://127.0.0.1:8765/invite/  the beta / unlock page
+# open http://127.0.0.1:8765/invite/  the beta page (both installs + feedback)
 # open http://127.0.0.1:8765/app/     the analyzer
 ```
 
@@ -538,11 +538,12 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    *Open the analyzer* buttons land on `/app/`; *See an example session* lands on
    `/app/#example` and must **run the bundled session on arrival**, not just show the drop
    zone; *Get the beta* lands on `/invite/`; and the analyzer's own wordmark comes back here.
-0a. **The beta page.** <http://127.0.0.1:8765/invite/>. The five-step Garmin flow reads in
-   order at both widths, the store links open apps.garmin.com, and the Garmin Connect path
-   says **CleanJibe - Invite Beta** (not the pre-0.9.3 *WingFoil* name). Three screenshot
-   slots are marked in the source with `<!-- SLOT: … -->` and still need a real watch and a
-   phone with Garmin Connect.
+0a. **The beta page.** <http://127.0.0.1:8765/invite/>. Both installs read in order at both
+   widths: the Connect IQ store link opens apps.garmin.com and the TestFlight link opens
+   testflight.apple.com. Nothing on the page asks anyone to request an invite — the one
+   surviving mention of the request code is the transitional note under the Garmin steps,
+   which comes out the day 0.9.4 clears review. The feedback section carries both doors,
+   the mailto and github.com/JanLahmann/WingFoil/issues.
 0b. **The social card** (the link preview — not the rider's share card below). View source
    on both documents: `og:image` must be the absolute
    `https://cleanjibe.org/social-card.png`, with `og:image:width`/`:height` and

@@ -210,9 +210,12 @@ struct WelcomeView: View {
 /// drift crosses into a knot.
 ///
 /// Every reach rises in the direction it is sailed and the session ladders upwind across the
-/// frame — you gain upwind along the reach, not in the turn. 3.4 degrees is the most a
-/// 640 × 128 box will hold: the climb a ladder shows is (distance sailed) × tan(angle), and
-/// six frame-spanning reaches travel far enough that anything steeper runs out of the top.
+/// frame — you gain upwind along the reach, not in the turn. 4.3 degrees is the most a
+/// 640 × 128 box will hold: the climb a ladder shows is (distance sailed) × tan(angle), so the
+/// whole ride has 108 units of height to spend and every unit of reach costs some of it. What
+/// buys the 4.3 is squeezing everything that is not a reach — the loops gain 3 across a turn
+/// and dip 12, the swim drifts 11, the margins are 10 top and bottom — which leaves 85 for
+/// 1131 of sailing. Steeper, and the last reach leaves the top of the box.
 ///
 /// The loops are teardrops rather than U-turns: a jibe
 /// exits heading back up, so the exit cuts across the entry short of the tip, and that
@@ -229,24 +232,24 @@ private struct WelcomeTrackMotif: View {
     // not at all; hand-editing one of them is how the front doors start disagreeing.
 
     /// The whole ride, off the foil.
-    private static let trackD = "M24 115L259 101L280 100Q283 100 285 101Q287 102 287 105Q288 107 288 109Q287 112 285 113Q283 115 281 115Q278 115 276 113L257 100Q252 96 247 96L173 92L152 91Q149 90 147 92Q145 93 144 95Q143 98 144 100Q145 102 147 104Q149 105 151 105Q153 105 155 104L175 90Q180 87 185 87L429 72L450 71Q453 71 455 72Q457 74 458 76Q459 78 458 81Q457 83 455 84Q453 86 451 86Q449 86 447 85L427 71Q422 68 417 67L339 63L317 62Q315 61 313 63Q311 64 310 66Q309 69 310 71Q310 73 312 75Q314 76 317 76Q319 76 321 75L341 61Q345 58 351 58L608 43Q616 42 611 40L563 32Q553 31 543 30L249 13"
+    private static let trackD = "M24 118L243 102L264 100Q267 100 269 101Q271 102 271 104Q272 105 272 107Q271 110 269 111Q267 112 265 112Q262 112 260 111L241 100Q236 97 231 97L185 94L164 92Q161 92 159 93Q157 94 157 96Q156 97 156 99Q157 102 159 103Q161 104 163 104Q166 104 168 103L187 92Q192 89 197 89L415 73L436 71Q439 71 441 72Q443 73 443 75Q444 76 444 78Q443 81 441 82Q439 83 437 83Q434 83 432 82L413 71Q408 68 403 68L357 65L336 63Q333 63 331 64Q329 65 329 67Q328 68 328 70Q329 73 331 74Q333 75 335 75Q338 75 340 74L359 63Q364 60 369 60L608 42Q616 41 611 39L563 33Q553 32 543 31L264 10"
 
     /// …and the parts of it that were flown: the long flight that ends in the water, then
     /// the reach home after the swim.
     private static let foilDs = [
-        "M24 115L259 101L280 100Q283 100 285 101Q287 102 287 105Q288 107 288 109Q287 112 285 113Q283 115 281 115Q278 115 276 113L257 100Q252 96 247 96L173 92L152 91Q149 90 147 92Q145 93 144 95Q143 98 144 100Q145 102 147 104Q149 105 151 105Q153 105 155 104L175 90Q180 87 185 87L429 72L450 71Q453 71 455 72Q457 74 458 76Q459 78 458 81Q457 83 455 84Q453 86 451 86Q449 86 447 85L427 71Q422 68 417 67L339 63L317 62Q315 61 313 63Q311 64 310 66Q309 69 310 71Q310 73 312 75Q314 76 317 76Q319 76 321 75L341 61Q345 58 351 58L608 43",
-        "M543 30L249 13",
+        "M24 118L243 102L264 100Q267 100 269 101Q271 102 271 104Q272 105 272 107Q271 110 269 111Q267 112 265 112Q262 112 260 111L241 100Q236 97 231 97L185 94L164 92Q161 92 159 93Q157 94 157 96Q156 97 156 99Q157 102 159 103Q161 104 163 104Q166 104 168 103L187 92Q192 89 197 89L415 73L436 71Q439 71 441 72Q443 73 443 75Q444 76 444 78Q443 81 441 82Q439 83 437 83Q434 83 432 82L413 71Q408 68 403 68L357 65L336 63Q333 63 331 64Q329 65 329 67Q328 68 328 70Q329 73 331 74Q333 75 335 75Q338 75 340 74L359 63Q364 60 369 60L608 42",
+        "M543 31L264 10",
     ]
 
     /// The jibes carried, on the apex of the loop each one made.
-    private static let flew = [CGPoint(x: 281, y: 92), CGPoint(x: 317, y: 54)]
+    private static let flew = [CGPoint(x: 264, y: 92), CGPoint(x: 336, y: 55)]
     /// The touchdown. This session flew through every jibe it did not fall in, so this one
     /// mark is the key's third verdict rather than a reading of the track.
-    private static let touchdown = CGPoint(x: 451, y: 64)
+    private static let touchdown = CGPoint(x: 437, y: 64)
     /// Where the long flight ended.
-    private static let fellIn = CGPoint(x: 608, y: 43)
+    private static let fellIn = CGPoint(x: 608, y: 42)
     /// Which way he went, set off the lines: (x, y, pointing left?).
-    private static let arrows: [(CGFloat, CGFloat, Bool)] = [(142, 120, false), (396, 10, true)]
+    private static let arrows: [(CGFloat, CGFloat, Bool)] = [(150, 120, false), (450, 12, true)]
 
     var body: some View {
         Canvas { context, size in

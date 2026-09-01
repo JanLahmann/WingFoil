@@ -107,11 +107,15 @@
          across the frame. That is the one thing the first drawing got wrong: it stacked the
          reaches on even horizontal bands and let the climb happen in the jibes, which is
          not what wingfoiling looks like — you gain upwind along the reach, not in the turn.
-         The angle is 3.4 degrees, which is the most this frame will hold: the climb a
-         ladder shows is (total distance sailed) x tan(angle), and six reaches that span a
-         640x128 box travel far enough that anything steeper runs out of the top. The
-         reaches were shortened and the ladder set marching to the right to buy even that
-         much. A real 10-15 degree reach needs a frame nearer square than 5:1.
+         The angle is 4.3 degrees, and that is the frame's ceiling rather than a taste: the
+         climb a ladder shows is (total distance sailed) x tan(angle), so in a 640x128 box
+         the whole ride has 108 units of height to spend and every unit of reach costs some
+         of it. Everything that could be squeezed has been — the drawing starts 3 lower and
+         ends 3 higher, the two short reaches are a third shorter, the jibe loops gain 3
+         across a turn instead of 4 and dip 12 instead of 15, and the swim drifts 11 — which
+         leaves 85 for the six reaches over 1131 of sailing: 4.30 degrees. Steeper than that
+         and the last reach leaves the top of the box. A real 10-15 degree reach needs a
+         frame nearer square than 5:1.
 
          The jibe is a TEARDROP, not a U-turn. You bear away, carve, and come out heading
          back up, so the exit cuts across the entry a short way back from the tip — every
@@ -133,28 +137,28 @@
            one table, three renditions, so `grep` catches any drift. -->
       <svg viewBox="0 0 640 128" role="img" aria-label="A wingfoil session's track: five cross-wind reaches with teardrop jibe loops at their ends, two jibes flown through, one touched down, and a fall with a swim before the last reach.">
         <!-- the whole ride, off foil -->
-        <path class="m-track" d="M24 115L259 101L280 100Q283 100 285 101Q287 102 287 105Q288 107 288 109Q287 112 285 113Q283 115 281 115Q278 115 276 113L257 100Q252 96 247 96L173 92L152 91Q149 90 147 92Q145 93 144 95Q143 98 144 100Q145 102 147 104Q149 105 151 105Q153 105 155 104L175 90Q180 87 185 87L429 72L450 71Q453 71 455 72Q457 74 458 76Q459 78 458 81Q457 83 455 84Q453 86 451 86Q449 86 447 85L427 71Q422 68 417 67L339 63L317 62Q315 61 313 63Q311 64 310 66Q309 69 310 71Q310 73 312 75Q314 76 317 76Q319 76 321 75L341 61Q345 58 351 58L608 43Q616 42 611 40L563 32Q553 31 543 30L249 13"/>
+        <path class="m-track" d="M24 118L243 102L264 100Q267 100 269 101Q271 102 271 104Q272 105 272 107Q271 110 269 111Q267 112 265 112Q262 112 260 111L241 100Q236 97 231 97L185 94L164 92Q161 92 159 93Q157 94 157 96Q156 97 156 99Q157 102 159 103Q161 104 163 104Q166 104 168 103L187 92Q192 89 197 89L415 73L436 71Q439 71 441 72Q443 73 443 75Q444 76 444 78Q443 81 441 82Q439 83 437 83Q434 83 432 82L413 71Q408 68 403 68L357 65L336 63Q333 63 331 64Q329 65 329 67Q328 68 328 70Q329 73 331 74Q333 75 335 75Q338 75 340 74L359 63Q364 60 369 60L608 42Q616 41 611 39L563 33Q553 32 543 31L264 10"/>
 
         <!-- the long flight: four reaches, four jibes carried, and then the water -->
-        <path class="m-foil" d="M24 115L259 101L280 100Q283 100 285 101Q287 102 287 105Q288 107 288 109Q287 112 285 113Q283 115 281 115Q278 115 276 113L257 100Q252 96 247 96L173 92L152 91Q149 90 147 92Q145 93 144 95Q143 98 144 100Q145 102 147 104Q149 105 151 105Q153 105 155 104L175 90Q180 87 185 87L429 72L450 71Q453 71 455 72Q457 74 458 76Q459 78 458 81Q457 83 455 84Q453 86 451 86Q449 86 447 85L427 71Q422 68 417 67L339 63L317 62Q315 61 313 63Q311 64 310 66Q309 69 310 71Q310 73 312 75Q314 76 317 76Q319 76 321 75L341 61Q345 58 351 58L608 43"/>
+        <path class="m-foil" d="M24 118L243 102L264 100Q267 100 269 101Q271 102 271 104Q272 105 272 107Q271 110 269 111Q267 112 265 112Q262 112 260 111L241 100Q236 97 231 97L185 94L164 92Q161 92 159 93Q157 94 157 96Q156 97 156 99Q157 102 159 103Q161 104 163 104Q166 104 168 103L187 92Q192 89 197 89L415 73L436 71Q439 71 441 72Q443 73 443 75Q444 76 444 78Q443 81 441 82Q439 83 437 83Q434 83 432 82L413 71Q408 68 403 68L357 65L336 63Q333 63 331 64Q329 65 329 67Q328 68 328 70Q329 73 331 74Q333 75 335 75Q338 75 340 74L359 63Q364 60 369 60L608 42"/>
         <!-- up again after the swim, and this reach runs the frame out -->
-        <path class="m-foil" d="M543 30L249 13"/>
+        <path class="m-foil" d="M543 31L264 10"/>
 
         <!-- which way he went — set off the lines rather than on them, where a 2 px chevron
              inside a 5 px stroke just reads as a nick in the paint -->
         <g class="m-dir">
-          <path d="M-4 -5 L2 0 L-4 5" transform="translate(142,120)"/>
-          <path d="M-4 -5 L2 0 L-4 5" transform="translate(396,10) rotate(180)"/>
+          <path d="M-4 -5 L2 0 L-4 5" transform="translate(150,120)"/>
+          <path d="M-4 -5 L2 0 L-4 5" transform="translate(450,12) rotate(180)"/>
         </g>
 
         <!-- flew through -->
-        <circle class="m-flew" cx="281" cy="92" r="7"/>
-        <circle class="m-flew" cx="317" cy="54" r="7"/>
+        <circle class="m-flew" cx="264" cy="92" r="7"/>
+        <circle class="m-flew" cx="336" cy="55" r="7"/>
         <!-- touched down -->
-        <path class="m-touch" d="M451 57 L458 70 L444 70 Z"/>
+        <path class="m-touch" d="M437 57 L444 70 L430 70 Z"/>
         <!-- fell in -->
         <g class="m-fell">
-          <path d="M602 37 L614 49"/><path d="M614 37 L602 49"/>
+          <path d="M602 36 L614 48"/><path d="M614 36 L602 48"/>
         </g>
       </svg>
       <p class="motif-key">
@@ -189,7 +193,7 @@
       <article class="panel piece">
         <div class="piece-head">
           <h3>CleanJibe for Garmin</h3>
-          <span class="status">beta · by invite</span>
+          <span class="status">open beta · Connect IQ</span>
         </div>
         <p class="what">Connect IQ watch app — fenix 8 and fenix 7 families</p>
         <figure class="shot">
@@ -212,7 +216,7 @@
       <article class="panel piece">
         <div class="piece-head">
           <h3>CleanJibe for iPhone</h3>
-          <span class="status">beta · TestFlight</span>
+          <span class="status">open beta · TestFlight</span>
         </div>
         <p class="what">Your library, the replay and the season</p>
         <figure class="shot">
@@ -411,15 +415,15 @@
 
 <footer>
   <p>CleanJibe — open wingfoil tracking. Watch app, iPhone app, browser analyzer.</p>
-  <!-- Both betas are invite-only, and until now the page said so three times without ever
-       saying how to get one. The address is the developer's own; /invite/ is the page that
-       walks the unlock through. -->
+  <!-- Both betas are open now — the watch app from the Connect IQ store, the phone app
+       from a public TestFlight link — so the footer's job is the two doors a stranger
+       needs: where the installs are (/invite/), and where a report goes. -->
   <p>
     Source, issues and the detection thresholds:
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">github.com/JanLahmann/WingFoil</a>
     (Apache-2.0; the CleanJibe name and mark are not part of the license)
     · <a href="invite/">Get the beta</a>
-    · Beta invites and questions: <a href="mailto:jan@lahmann-online.de">jan@lahmann-online.de</a>
+    · Beta feedback and questions: <a href="mailto:jan@lahmann-online.de">jan@lahmann-online.de</a>
   </p>
 </footer>
 
