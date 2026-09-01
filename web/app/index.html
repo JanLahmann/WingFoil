@@ -419,6 +419,22 @@
     <div class="card-preview">
       <canvas id="card-canvas" aria-label="Preview of the share card"></canvas>
     </div>
+    <!-- The rider's own words. Both are for THIS card and this browser: the analyzer has no
+         session record to rename, so they are remembered per session in localStorage and
+         nothing else on the page changes. (The iOS app does have one, and there the title
+         field renames the session outright.) -->
+    <div class="card-text">
+      <label class="card-field">Title
+        <input type="text" id="card-title-input" autocomplete="off" spellcheck="false">
+      </label>
+      <label class="card-field">Caption (optional)
+        <input type="text" id="card-note-input" autocomplete="off"
+               placeholder="One line under the date">
+      </label>
+      <p class="muted small" id="card-text-hint">Empty keeps the name read off the
+        recording, and no caption. Both are remembered on this device for this session.
+        <span id="card-note-count" hidden></span></p>
+    </div>
     <div class="seg" role="group" aria-label="Shape">
       <button type="button" class="seg-btn" data-shape="portrait" aria-pressed="true">Portrait</button>
       <button type="button" class="seg-btn" data-shape="square" aria-pressed="false">Square</button>

@@ -609,6 +609,23 @@ button.ghost.danger:hover { background: #2a1414; border-color: #6b2626; color: #
 #card-sub { color: var(--ink-2); }
 #card-preset-note { color: var(--ink-3); }
 
+/* The rider's own two lines, in the same labelled-field shape the "whose session is this?"
+   prompt already uses — the dialog vocabulary is taught once. Both fields are full width
+   because both hold a sentence, not a token. */
+.card-text { display: grid; gap: 10px; }
+.card-field {
+  display: grid; gap: 5px; font: 600 11px/1 var(--sans);
+  text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3);
+}
+/* The sans face, not the mono the page gives text inputs by default: what goes in here is
+   prose that will be set in the card's own rounded sans, and a monospaced preview of it
+   reads as a filename. */
+.card-field input { width: 100%; font: 13.5px var(--sans); }
+#card-text-hint { color: var(--ink-3); }
+/* The counter rides at the end of the hint sentence rather than under the field, so nothing
+   moves when it appears at twenty characters from the cap. */
+#card-note-count { margin-left: 6px; font-variant-numeric: tabular-nums; }
+
 #rider-friend { display: grid; gap: 10px; }
 .rider-name {
   display: grid; gap: 5px; font: 600 11px/1 var(--sans);

@@ -287,6 +287,117 @@ export function cardDisclaimer(meta) {
   return meta?.sourceClass === "c" ? "Speeds from a degraded source — uncertified" : null;
 }
 
+/* ------------------------------------------------------- what the rider calls it
+ *
+ * The analyzer has no rename. A page here is one file somebody dropped on a dropzone, and
+ * the library stores the digest the engine produced — there is no session *record* to carry
+ * a name, and inventing one would mean a second source of truth for what a session is
+ * called, in the half of the project that deliberately keeps none.
+ *
+ * So the two fields are transient: they feed this render, and they are remembered per
+ * session on this device so that re-opening the dialog does not throw the sentence away.
+ * That is the same promise `loadCardChoice` makes about the shape and the preset, one scope
+ * narrower — those are about the rider, these are about one afternoon.
+ *
+ * (iOS does have a session record, and there the title field is a *rename*: it writes to the
+ * row and every surface follows. The two platforms differ here because the thing being named
+ * differs, not because they disagree about what a card should say.)
+ */
+
+/** The most characters a caption may carry — `SessionNaming.noteLimit` on iOS, and the same
+ *  number for the same reason: it is about what fits in the card's header on one line at a
+ *  size a chat thumbnail still resolves, and a card is a PNG. */
+export const NOTE_LIMIT = 80;
+/** The most characters a title may carry — `SessionNaming.titleLimit`. */
+export const TITLE_LIMIT = 60;
+
+/** A typed caption as it is stored and drawn: one line, trimmed, capped, and "" for nothing.
+ *  Newlines are folded to spaces rather than rejected — the only way one arrives is a paste,
+ *  and a rider who pasted two lines meant both of them. */
+export function cleanNote(raw) {
+  return clamp(String(raw ?? "").split(/[\r\n]+/).join(" "), NOTE_LIMIT);
+}
+
+/** A typed title, same rules, its own cap. Interior spacing is left exactly as typed. */
+export function cleanTitle(raw) {
+  return clamp(String(raw ?? ""), TITLE_LIMIT);
+}
+
+/** Trim, cap, trim again — the second trim matters, because a cap landing mid-space would
+ *  otherwise leave a caption with a trailing one, which draws as a gap before nothing. */
+function clamp(text, limit) {
+  const trimmed = text.trim();
+  return (trimmed.length > limit ? trimmed.slice(0, limit).trim() : trimmed);
+}
+
+/**
+ * A stable key for the session on screen — the twin of the Python digest's `id`
+ * (`web/lab_bundle/library.py`, `_session_id`), so a document opened out of the library and
+ * the same document freshly analysed remember the same title.
+ *
+ * The digest itself is not always to hand — a session re-opened from the library arrives as
+ * an analysis document with no digest beside it — so the id is re-derived from the two facts
+ * it is made of, which are both in `meta`. A recording that cannot say when it started falls
+ * back to its filename, exactly as the Python does; the two need not agree on that branch's
+ * spelling, because nothing but this file's own storage ever reads the result.
+ */
+export function cardKey(result) {
+  const meta = result?.meta || {};
+  const start = Date.parse(meta.startUtc || "");
+  const dur = Number(meta.durationS ?? meta.timerTimeS);
+  if (Number.isFinite(start) && Number.isFinite(dur)) {
+    return `s${Math.floor(start / 1000)}-${Math.round(dur)}`;
+  }
+  return `x${String(result?.file?.name || "session").slice(0, 60)}`;
+}
+
+/** Where the per-session title and caption live: one object keyed by `cardKey`, under one
+ *  key, so the whole thing is read, written and pruned in one call. */
+const LS_TEXT = "wingfoil.shareCard.text.v1";
+/** How many sessions' worth to keep. A rider who has captioned two hundred sessions in one
+ *  browser has captioned two hundred sessions; what he has not done is want the earliest of
+ *  them back, and `localStorage` is a small, shared, throwable budget. Most recently written
+ *  wins, which is the only ordering the map can honestly claim. */
+const TEXT_KEEP = 50;
+
+function readText() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(LS_TEXT) || "{}");
+    return (raw && typeof raw === "object" && !Array.isArray(raw)) ? raw : {};
+  } catch { return {}; }        // no storage, or somebody else's JSON under our key
+}
+
+/** The remembered title and caption for one session, or a pair of empty strings.
+ *
+ * Empty is not "no answer" here: an empty title means the derived one, which is exactly what
+ * `cardTitle` produces, so a caller can use both fields verbatim. */
+export function loadCardText(key) {
+  const entry = readText()[key];
+  return {
+    title: cleanTitle(entry?.title),
+    note: cleanNote(entry?.note),
+  };
+}
+
+/** Remember (or forget) one session's pair. Both blank removes the entry rather than storing
+ *  two empty strings — a rider who cleared both fields has asked for the card he started
+ *  with, and a map full of `{title: "", note: ""}` is a map of nothing. */
+export function saveCardText(key, { title, note }) {
+  const t = cleanTitle(title), n = cleanNote(note);
+  const map = readText();
+  // Deleted before it is re-inserted, so a re-edited session moves to the *end* of the
+  // insertion order rather than keeping the position it had when it was first captioned.
+  delete map[key];
+  if (t || n) map[key] = { title: t, note: n };
+  // Oldest-first eviction by that insertion order — good enough for a convenience cache, and
+  // it can never evict the entry just written, which is by construction the last one.
+  const keys = Object.keys(map);
+  for (const stale of keys.slice(0, Math.max(0, keys.length - TEXT_KEEP))) delete map[stale];
+  try {
+    localStorage.setItem(LS_TEXT, JSON.stringify(map));
+  } catch { /* nothing to do about it, and nothing worth telling the rider */ }
+}
+
 /* ------------------------------------------------------------------- the store
  *
  * The rider's last shape and preset, per device — so the second card comes out the way the

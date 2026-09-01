@@ -29,8 +29,9 @@
  */
 
 import {
-  BRANDING, CAPTION_SEP, PRESETS, SHAPES, cardDateLine, cardDisclaimer, cardStats,
-  cardTitle, isWide, loadCardChoice, saveCardChoice,
+  BRANDING, CAPTION_SEP, NOTE_LIMIT, PRESETS, SHAPES, TITLE_LIMIT, cardDateLine,
+  cardDisclaimer, cardKey, cardStats, cardTitle, cleanNote, cleanTitle, isWide,
+  loadCardChoice, loadCardText, saveCardChoice, saveCardText,
 } from "./cardstats.js";
 import { indexAt, phaseRuns } from "./session.js";
 import { C, OUTCOME_COLOR } from "./viz.js";
@@ -313,14 +314,46 @@ function drawBackground(ctx, w, h) {
   ctx.fillRect(0, 0, w, h);
 }
 
-const HEADER_H = 42;
+/** The header with no caption on it: a 25-pt title on a 22-pt baseline, a 12-pt date on a
+ *  38-pt one, and four points of air under it. Unchanged, and deliberately so — a card
+ *  without a caption has to lay out exactly as it always did, down to the point. */
+const HEADER_BASE_H = 42;
+/** What the rider's own line costs when there is one. 10.5 pt of type plus its leading, on a
+ *  baseline 12 pt below the date's — which is the whole price of the feature, paid by the
+ *  track in the tall layouts and by the word column's slack in the wide one. */
+const NOTE_LINE_H = 14;
 
-function drawHeader(ctx, { title, dateLine }, box, family) {
+/**
+ * How tall the header is for *this* card. Exported because it is the only piece of the
+ * card's geometry that now depends on the content, and therefore the only piece worth a
+ * test: `web/tools/card_parity.mjs` dumps it with and without a caption, and
+ * `verify_presentation.py` §5 asserts both numbers against a second copy of the rule.
+ */
+export const headerHeight = (content) => HEADER_BASE_H + (content?.note ? NOTE_LINE_H : 0);
+
+/**
+ * Name, date, and — when the rider wrote one — his own caption.
+ *
+ * The caption is the only thing on this card addressed by the sender to the reader, so it
+ * sits directly under the two lines that say which afternoon this is, a shade brighter than
+ * the date because it is the newer information.
+ *
+ * It is drawn with `drawFitted`, so it shrinks rather than truncating, by the rule the whole
+ * card follows: an ellipsis in a PNG is permanent, three points of type size are only small.
+ * At `NOTE_LIMIT` characters the shrink never gets far — the wide shape's 40 % column is the
+ * tightest and a full-length caption lands there around 6.5 pt, which is 19 px in an exported
+ * 1920-pixel image.
+ */
+function drawHeader(ctx, { title, dateLine, note }, box, family) {
   ctx.textBaseline = "alphabetic";
   drawFitted(ctx, title, box.x, box.y + 22, box.w, 25, 700, family, BRAND.paper);
   ctx.font = `500 12px ${family}`;
   ctx.fillStyle = alpha(BRAND.paper, 0.72);
   ctx.fillText(dateLine, box.x, box.y + 38);
+  if (note) {
+    drawFitted(ctx, note, box.x, box.y + 50, box.w, 10.5, 500, family,
+               alpha(BRAND.paper, 0.88));
+  }
 }
 
 /** Four across once the block is more than a headline. The complete block is up to eight
@@ -557,6 +590,7 @@ export async function drawCard(canvas, content, shape) {
   const stats = content.stats;
   const footH = footerHeight(content.disclaimer);
   const gridH = gridHeight(stats, shape);
+  const headH = headerHeight(content);
   const inner = { x: PAD_X, y: PAD_TOP, w: W - PAD_X * 2, h: H - PAD_TOP - PAD_BOTTOM };
 
   if (isWide(shape)) {
@@ -570,12 +604,12 @@ export async function drawCard(canvas, content, shape) {
     }
     const cx = inner.x + trackW + STACK_GAP * 2;
     drawHeader(ctx, content, { x: cx, y: inner.y, w: colW }, family);
-    drawGrid(ctx, stats, { x: cx, y: inner.y + HEADER_H + STACK_GAP, w: colW }, shape, family);
+    drawGrid(ctx, stats, { x: cx, y: inner.y + headH + STACK_GAP, w: colW }, shape, family);
     drawFooter(ctx, content, { x: cx, y: inner.y + inner.h - footH, w: colW, h: footH },
                art, family);
   } else {
     drawHeader(ctx, content, { x: inner.x, y: inner.y, w: inner.w }, family);
-    const trackY = inner.y + HEADER_H + STACK_GAP;
+    const trackY = inner.y + headH + STACK_GAP;
     const gridY = inner.y + inner.h - footH - STACK_GAP - gridH;
     if (content.track) {
       drawTrack(ctx, content.track,
@@ -588,11 +622,18 @@ export async function drawCard(canvas, content, shape) {
   return canvas;
 }
 
-/** Everything the card prints, resolved from one analysis document. */
-export function cardContent(result, preset) {
+/**
+ * Everything the card prints, resolved from one analysis document.
+ *
+ * `text` is the rider's own pair — a title that overrides the one derived from the filename,
+ * and a caption that has no derived form at all. Both default to nothing, so every caller
+ * that predates them (and every test) gets the card exactly as it was.
+ */
+export function cardContent(result, preset, text = {}) {
   return {
-    title: cardTitle(result.file?.name),
+    title: cleanTitle(text.title) || cardTitle(result.file?.name),
     dateLine: cardDateLine(result.meta),
+    note: cleanNote(text.note) || null,
     stats: cardStats(result.golden, preset),
     disclaimer: cardDisclaimer(result.meta),
     track: buildTrack(result),
@@ -601,7 +642,8 @@ export function cardContent(result, preset) {
 
 /* ------------------------------------------------------------------ the dialog */
 
-const state = { result: null, shape: "portrait", preset: "complete", blob: null, seq: 0 };
+const state = { result: null, key: "", shape: "portrait", preset: "complete",
+                title: "", note: "", blob: null, seq: 0 };
 
 /** The offscreen canvas the PNG comes off. One per page: a 1920×1080 bitmap is 8 MB, and
  *  a phone that has just run an analysis does not need three of them. */
@@ -621,8 +663,29 @@ export function mountShareCard() {
   for (const b of dialog.querySelectorAll("[data-preset]")) {
     b.addEventListener("click", () => choose({ preset: b.dataset.preset }));
   }
+  // `input`, not `change`: the preview is the point of the field, so it follows the typing.
+  // The seq guard in `refresh` already throws away every draw but the newest, and the write
+  // behind it is one `localStorage.setItem` of a small object.
+  el("card-title-input").maxLength = TITLE_LIMIT;
+  el("card-note-input").maxLength = NOTE_LIMIT;
+  el("card-title-input").addEventListener("input", (ev) => {
+    choose({ title: ev.target.value });
+  });
+  el("card-note-input").addEventListener("input", (ev) => {
+    choose({ note: ev.target.value });
+    syncNoteCount();
+  });
   el("card-download").addEventListener("click", download);
   el("card-share").addEventListener("click", share);
+}
+
+/** The remaining-characters line, shown only once the limit is in sight — a counter under an
+ *  empty field announces a limit before anybody has approached it. */
+function syncNoteCount() {
+  const used = el("card-note-input").value.length;
+  const out = el("card-note-count");
+  out.hidden = used < NOTE_LIMIT - 20;
+  out.textContent = `${used}/${NOTE_LIMIT}`;
 }
 
 /** Open the composer for the document currently on screen. */
@@ -630,9 +693,21 @@ export function openShareCard(result) {
   const dialog = el("card-dialog");
   if (!dialog || !result) return;
   state.result = result;
+  state.key = cardKey(result);
   const saved = loadCardChoice();
   state.shape = saved.shape;
   state.preset = saved.preset;
+  // The rider's own words for *this* session, if he wrote any here before. The title field is
+  // left blank rather than pre-filled with the derived name: an empty field with the derived
+  // name in its placeholder says "this is what it will be called unless you say otherwise",
+  // where a pre-filled one invites a rider to delete text he never wrote.
+  const text = loadCardText(state.key);
+  state.title = text.title;
+  state.note = text.note;
+  el("card-title-input").value = state.title;
+  el("card-title-input").placeholder = cardTitle(result.file?.name);
+  el("card-note-input").value = state.note;
+  syncNoteCount();
   el("card-sub").textContent =
     `${cardTitle(result.file?.name)} · ${cardDateLine(result.meta)}`;
   // Only offered where it works: `canShare` with a file is the WhatsApp path on a phone,
@@ -646,7 +721,10 @@ export function openShareCard(result) {
 
 function choose(next) {
   Object.assign(state, next);
+  // Two stores, two scopes: the shape and the preset are the rider's habit and belong to the
+  // device, the title and caption belong to this one session (`cardKey`).
   saveCardChoice({ shape: state.shape, preset: state.preset });
+  saveCardText(state.key, { title: state.title, note: state.note });
   syncChoices();
   refresh();
 }
@@ -675,7 +753,8 @@ async function refresh() {
   const preview = el("card-canvas");
   if (!full) full = document.createElement("canvas");
   const size = SHAPES[state.shape];
-  await drawCard(full, cardContent(state.result, state.preset), state.shape);
+  await drawCard(full, cardContent(state.result, state.preset,
+                                   { title: state.title, note: state.note }), state.shape);
   if (seq !== state.seq) return;
 
   // The preview IS the PNG, scaled — not a second rendering of it, so what the rider
@@ -700,9 +779,16 @@ async function refresh() {
   el("card-size").textContent = `${size.w} × ${size.h}`;
 }
 
-const fileName = () =>
-  `${cardTitle(state.result?.file?.name).toLowerCase().replace(/[^a-z0-9]+/g, "-")}` +
-  `-${state.shape}.png`;
+/** The download's name, from whatever the card is actually titled — the rider's own words if
+ *  he gave any, reduced to a slug that is safe in a Downloads folder on every platform (the
+ *  twin of `FitShareFilter.filename` on iOS). A title of nothing but emoji slugs to nothing,
+ *  which is why the stem falls back rather than producing a file called `-portrait.png`. */
+const fileName = () => {
+  const title = cleanTitle(state.title) || cardTitle(state.result?.file?.name);
+  const slug = title.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40).replace(/-+$/, "");
+  return `${slug || "session"}-${state.shape}.png`;
+};
 
 async function toBlob() {
   if (state.blob) return state.blob;
