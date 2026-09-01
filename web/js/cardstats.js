@@ -26,10 +26,8 @@ import { int, nf, zonedFormat } from "./viz.js";
  * across a renderer and a dialog would mean a card already out in the world as a PNG
  * pointing somewhere the site no longer is.
  *
- * Divergence from iOS, deliberate and recorded in docs/presentation.md: `Branding.credit`
- * over there still reads "WingFoil · cleanjibe.org", the old app name. The web app *is*
- * CleanJibe (both page shells, the manifest and the service worker were renamed in v14), so
- * a card exported from the browser says CleanJibe.
+ * There is no branding divergence from iOS any more: both platforms are CleanJibe and
+ * docs/presentation.md states the footer as one shared contract — mark, wordmark, CTA, QR.
  *
  * And the footer is a *call to action*, not a credit line: the card is how a rider's friends
  * find out the analyzer exists, so the line has to say what the site does, in one line, at
