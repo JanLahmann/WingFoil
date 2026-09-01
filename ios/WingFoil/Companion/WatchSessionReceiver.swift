@@ -3,6 +3,26 @@ import OSLog
 import WatchConnectivity
 import WingFoilKit
 
+/// File-scope rather than static members on the class below. Both are reached from
+/// `nonisolated` `WCSessionDelegate` callbacks, and anything declared inside a `@MainActor`
+/// type inherits that isolation — so a `static let log` cannot be read from a delegate, and a
+/// `static func inbox()` cannot be called from one. `Logger` is `Sendable` and `inboxURL` is a
+/// pure path computation, so neither needs the main actor for safety; they only had it by
+/// accident of where they were written.
+private let log = Logger(subsystem: "de.lahmann.wingfoil", category: "watchlink")
+
+/// Where received containers wait to be imported. Application Support rather than Caches: the
+/// system may evict Caches under pressure, and this holds the only copy of a session between
+/// the transfer completing and the import running.
+private func watchInboxURL() throws -> URL {
+    let base = try FileManager.default.url(for: .applicationSupportDirectory,
+                                           in: .userDomainMask,
+                                           appropriateFor: nil, create: true)
+    let url = base.appendingPathComponent("WatchInbox", isDirectory: true)
+    try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+    return url
+}
+
 /// Receives `.cjw` session containers from the CleanJibe watch app.
 ///
 /// **The delegate callback copies and gets out of the way.** WatchConnectivity hands over a
@@ -23,8 +43,6 @@ import WingFoilKit
 @MainActor
 final class WatchSessionReceiver: NSObject {
 
-    private static let log = Logger(subsystem: "de.lahmann.wingfoil", category: "watchlink")
-
     static let shared = WatchSessionReceiver()
 
     /// Fires after a file lands, so a foregrounded app imports it immediately rather than at
@@ -35,20 +53,8 @@ final class WatchSessionReceiver: NSObject {
         super.init()
     }
 
-    /// Where received containers wait to be imported. Application Support rather than
-    /// Caches: the system may evict Caches under pressure, and this holds the only copy of a
-    /// session between the transfer completing and the import running.
-    static func inbox() throws -> URL {
-        let base = try FileManager.default.url(for: .applicationSupportDirectory,
-                                               in: .userDomainMask,
-                                               appropriateFor: nil, create: true)
-        let url = base.appendingPathComponent("WatchInbox", isDirectory: true)
-        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        return url
-    }
-
     static func pending() -> [URL] {
-        guard let inbox = try? inbox(),
+        guard let inbox = try? watchInboxURL(),
               let files = try? FileManager.default.contentsOfDirectory(
                 at: inbox, includingPropertiesForKeys: nil) else { return [] }
         return files.filter { $0.pathExtension == TrackFormat.watch.fileExtension }.sorted {
@@ -58,7 +64,7 @@ final class WatchSessionReceiver: NSObject {
 
     func activate() {
         guard WCSession.isSupported() else {
-            Self.log.info("WatchConnectivity is unavailable — no Apple Watch on this phone")
+            log.info("WatchConnectivity is unavailable — no Apple Watch on this phone")
             return
         }
         let session = WCSession.default
@@ -73,10 +79,10 @@ extension WatchSessionReceiver: WCSessionDelegate {
                              activationDidCompleteWith state: WCSessionActivationState,
                              error: (any Error)?) {
         if let error {
-            Self.log.error("WCSession activation failed: \(error.localizedDescription)")
+            log.error("WCSession activation failed: \(error.localizedDescription)")
             return
         }
-        Self.log.info("WCSession active (paired watch app installed: \(session.isWatchAppInstalled))")
+        log.info("WCSession active (paired watch app installed: \(session.isWatchAppInstalled))")
         // A file may already have been delivered while the app was not running.
         Task { @MainActor in self.onArrival?() }
     }
@@ -93,7 +99,7 @@ extension WatchSessionReceiver: WCSessionDelegate {
         // Synchronous and before returning: `file.fileURL` is gone the moment this method
         // exits, and there is no second delivery.
         do {
-            let inbox = try WatchSessionReceiver.inbox()
+            let inbox = try watchInboxURL()
             // Named for the transfer, not for the session, so two containers that describe
             // the same afternoon still both land — the library's dedupe decides what to do
             // with them, and it is much better at that than a filename is.
@@ -102,9 +108,9 @@ extension WatchSessionReceiver: WCSessionDelegate {
                 name.isEmpty ? "\(UUID().uuidString).cjw" : name)
             try? FileManager.default.removeItem(at: destination)
             try FileManager.default.copyItem(at: file.fileURL, to: destination)
-            Self.log.info("received watch session \(name) (\(file.metadata?.description ?? "no metadata"))")
+            log.info("received watch session \(name) (\(file.metadata?.description ?? "no metadata"))")
         } catch {
-            Self.log.error("could not take delivery of a watch session: \(error.localizedDescription)")
+            log.error("could not take delivery of a watch session: \(error.localizedDescription)")
             return
         }
         Task { @MainActor in self.onArrival?() }
