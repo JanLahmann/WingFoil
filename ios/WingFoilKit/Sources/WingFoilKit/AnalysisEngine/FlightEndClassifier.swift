@@ -52,6 +52,14 @@ public struct FlightEnd: Sendable, Equatable {
     public var truncated = false
     /// Index into the turn list, when a turn's outcome window already explains this.
     public var ownedByTurn: Int?
+    /// First sample not flying after the end — a swim's start. Nil unless this is a swim.
+    public var swimStartT: Double?
+    /// Foiling again, or the last sample of the recording. Nil unless this is a swim.
+    public var swimEndT: Double?
+    /// Distance covered between the two, on the `speed` channel. Nil unless this is a swim —
+    /// which is a different statement from 0.0 (engine 0.9.2, docs/algorithms.md
+    /// "Swim distance").
+    public var swimM: Double?
 
     public var inTurn: Bool { ownedByTurn != nil }
 }
@@ -91,6 +99,23 @@ public struct FlightEndSummary: Sendable, Codable, Equatable {
     public init() {}
 
     enum CodingKeys: String, CodingKey { case all, straight, inTurn }
+}
+
+/// How far the session's swims came to (docs/algorithms.md "Swim distance").
+///
+/// `distanceM` totals **every** swim, turn-owned or not, on the same channel `wetPerHour`
+/// counts: one `fell_in` flight end is one time the rider got in the water, whatever started
+/// it. `longestM` and its window are the one worth telling him about.
+///
+/// A session with no swims reports 0.0 and no window — a measured zero, not an absence: the
+/// ends were classified and none of them was a swim.
+public struct SwimSummary: Sendable, Equatable {
+    public var distanceM: Double = 0
+    public var longestM: Double = 0
+    public var longestStartT: Double?
+    public var longestEndT: Double?
+
+    public init() {}
 }
 
 /// The rider-facing session split: where did the falls and touchdowns happen?
@@ -151,6 +176,23 @@ public enum FlightEndClassifier {
         return s
     }
 
+    /// Total the measured swims and pick the longest one.
+    ///
+    /// Ties go to the **earlier** swim, so the answer is a function of the session and not of
+    /// list order — the same tie-break the record windows and the longest flight use.
+    public static func summarizeSwims(_ ends: [FlightEnd]) -> SwimSummary {
+        var s = SwimSummary()
+        for end in ends.sorted(by: { $0.t < $1.t }) {
+            guard let m = end.swimM else { continue }
+            s.distanceM += m
+            if m > s.longestM {
+                s.longestM = m
+                (s.longestStartT, s.longestEndT) = (end.swimStartT, end.swimEndT)
+            }
+        }
+        return s
+    }
+
     /// Combine the two channels into the falls/touchdowns split for a session summary.
     public static func split(turns: TurnSummary, ends: FlightEndSummary) -> OutcomeSplit {
         var s = OutcomeSplit()
@@ -200,6 +242,7 @@ public enum FlightEndClassifier {
 
         if end.submerged || end.stoppedS > config.fallStopS {
             end.outcome = .fellIn
+            if let a = win.first(where: { !ev.flying[$0] }) { measureSwim(&end, t: t, ev: ev, a: a) }
         } else if (end.minSpeedMps ?? .infinity) < config.stopSpeedFloorMps {
             end.outcome = .touchdown
             end.borderline = end.stoppedS > config.touchdownMaxStopS
@@ -211,6 +254,24 @@ public enum FlightEndClassifier {
             end.outcome = .touchdown
         }
         return end
+    }
+
+    /// Fill the swim window and its distance (docs/algorithms.md "Swim distance").
+    ///
+    /// Deliberately **uncapped**: `offFoilRun` is handed `.infinity` rather than the judging
+    /// window's `outcomeWindowS`, so the run ends where the swim does — the rider flying
+    /// again, or the recording stopping. `offFoilRun` already clamps to the last sample, so
+    /// the end-of-session case needs no special arm; what it needs is for nothing to cut the
+    /// walk short before it, which is what the missing cap is. A recording gap does not end
+    /// it either — flights hard-break at gaps, so a swim spanning one reads as "still not
+    /// flying" on both sides and is one swim — and contributes no distance, because
+    /// `travelled` skips it.
+    private static func measureSwim(_ end: inout FlightEnd, t: [Double], ev: OffFoilEvidence,
+                                    a: Int) {
+        let (_, last) = Evidence.offFoilRun(t: t, flying: ev.flying, a: a, capT: .infinity)
+        end.swimStartT = t[a]
+        end.swimEndT = t[last]
+        end.swimM = Evidence.travelled(t: t, gap: ev.gap, v: ev.speed, a: a, b: last)
     }
 
     /// Doppler that means "flying again": `recoverPct` of the speed the flight was carrying,
