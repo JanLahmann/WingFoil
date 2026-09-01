@@ -387,6 +387,26 @@ audience rather than metadata. The analyzer has no session record to rename, so 
 are transient there: they feed one render and are remembered per session digest id in
 `localStorage`.
 
+**The derived name says Wingfoil, whatever the watch called it.** Garmin has no wingfoil
+profile, so a session is recorded under the windsurf one and the watch names the activity
+after that profile in the watch's own locale — "Nago-Torbole Windsurfen" on a German Fenix.
+The word rides the filename into the app (and into `<id>_<slug>_icu.fit` when the session
+comes back through intervals.icu), so both platforms swap it on the way to the screen: a
+**standalone** `Windsurfen` / `Windsurfing` / `Windsurf` becomes `Wingfoil`, keeping the case
+of the position it lands in (`SessionNaming.sportCorrected`, `sportCorrected` in
+`js/cardstats.js`). On iOS that is one call site — `SessionDisplay.derivedTitle`, which every
+surface already asks. On the analyzer it is applied to the card's headline and to the three
+places that print the Python digest's filename-derived `spot`: the library list, the records
+table and the trends tooltip. The digest itself is not rewritten (`library.py` is engine-side
+and its goldens stand); the swap happens in the view. Three limits, all deliberate: it is
+applied to the **derived** title only,
+so a rider who types "Windsurfen mit Tobi" keeps it; it never touches a stored name, a
+filename or the FIT's sport code, which are records of what the watch actually did; and the
+word has to stand alone, so "Windsurfschule Torbole" is left as it is. The discipline **badge**
+is not covered by it either — `SessionDisplay.sportLabel` still reports what the file says,
+because a badge that renamed the sport code would be reporting something the recording does
+not contain.
+
 The card's outline carries three semantics and no more (`TrackThumbnail.Mark`): the track
 tinted by foil state, a dot per **counted** turn on the verdict ladder's inks, and the
 barometer's submersion evidence as a cyan **diamond** — shape as well as colour, because a

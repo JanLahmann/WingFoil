@@ -11,6 +11,7 @@
  */
 
 import { ask, askBytes } from "./rpc.js";
+import { sportCorrected } from "./cardstats.js";
 import { esc, hms, int, nf, sessionDate, zonedFormat } from "./render.js";
 import { askRider } from "./rider.js";
 import {
@@ -149,6 +150,13 @@ const shortDate = (e) => (e && e.startUtc
       { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })
   : "—");
 
+/** What a row is *called*. The Python digest's `spot` is derived from the filename, and the
+ *  watch that wrote the filename records wingfoil under Garmin's windsurf profile — so the
+ *  one correction the derived name needs is applied here, on the way to the screen, exactly
+ *  as `cardTitle` applies it to the card's headline. The stored digest keeps its own word;
+ *  the filename under the label prints verbatim, and remains the row's identity. */
+const spotLabel = (entry) => sportCorrected(entry.spot || "") || "Session";
+
 function renderRows(entries) {
   const host = el("lib-body");
   if (!entries.length) {
@@ -171,7 +179,7 @@ function renderRows(entries) {
     <tbody>${entries.map((e) => `
       <tr data-id="${esc(e.id)}">
         <td class="l stack-lead"${th(0)}>${esc(shortDate(e))}</td>
-        <td class="l stack-block"${th(1)}><span class="lib-spot">${esc(e.spot || "Session")}
+        <td class="l stack-block"${th(1)}><span class="lib-spot">${esc(spotLabel(e))}
           ${tags(e)}</span>
           <span class="lib-file">${esc(e.fileName || "")}</span></td>
         <td${th(2)}>${nf(e.foilPct, 0)} %</td>
@@ -258,7 +266,8 @@ async function onRowClick(ev) {
       break;
     case "delete":
       if (window.confirm(
-        `Delete “${entry.spot || entry.fileName}” (${shortDate(entry)})?\n\n` +
+        `Delete “${sportCorrected(entry.spot || "") || entry.fileName}” ` +
+        `(${shortDate(entry)})?\n\n` +
         `The stored FIT and its analysis are removed from this browser. ` +
         `This cannot be undone.`)) {
         await removeSession(id);

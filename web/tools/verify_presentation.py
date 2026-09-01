@@ -609,6 +609,32 @@ TITLE_LIMIT = 60
 HEADER_BASE_H = 42
 NOTE_LINE_H = 14
 
+#: The sport, and the words a Garmin watch writes instead of it — `SessionNaming.sport` and
+#: `SessionNaming.sportCorrected` on iOS, spelled here so the JavaScript is checked against a
+#: second copy of the rule. The watch has no wingfoil profile, so it records under the windsurf
+#: one and names the activity after it, in the watch's own locale; the word then rides the
+#: filename into every derived title on both platforms.
+SPORT = "Wingfoil"
+GARMIN_SPORT_WORDS = {"windsurfen", "windsurfing", "windsurf"}
+
+
+def _derived_title(file_name: str) -> str:
+    """`cardTitle`, re-derived: the middle underscore-part, hyphens to spaces, every all-digit
+    word dropped, each word capitalised — and Garmin's sport word swapped for ours where it
+    stands alone."""
+    stem = re.sub(r"\.[^./\\]+$", "", file_name)
+    parts = stem.split("_")
+    if len(parts) >= 2:
+        stem = parts[1]
+    words = [w for w in stem.replace("-", " ").split(" ") if w and not w.isdigit()]
+    if not words:
+        return "Session"
+    out = []
+    for word in words:
+        capped = word[0].upper() + word[1:]
+        out.append(SPORT if capped.lower() in GARMIN_SPORT_WORDS else capped)
+    return " ".join(out)
+
 
 def check_card_text() -> None:
     """The rider's own title and caption: normalized, remembered, and out of the numbers.
@@ -659,6 +685,23 @@ def check_card_text() -> None:
         if len(want) > TITLE_LIMIT:
             want = want[:TITLE_LIMIT].strip()
         check(f"  cleanTitle({raw_text[:24]!r}…)", want_js, want)
+
+    # 1b. The derived name, and its one correction. A card exported from the browser must not
+    #     caption a wingfoil session with the profile Garmin happened to record it under —
+    #     the same swap `SessionDisplay.derivedTitle` makes on the phone, on the same words.
+    check("  the sport is spelled one way", got["sport"], SPORT)
+    for name, want_js in got["derived"]:
+        check(f"  cardTitle({name[:34]!r})", want_js, _derived_title(name))
+    derived = dict(got["derived"])
+    check("  Garmin's German word is displayed as the sport",
+          derived["2026-08-30-1407_nago-torbole-windsurfen_ciq.fit"], "Nago Torbole Wingfoil")
+    check("  and so is the English one",
+          derived["2026-08-30-1407_nago-torbole-windsurfing_native.fit"],
+          "Nago Torbole Wingfoil")
+    check("  and so does a session synced from intervals.icu",
+          derived["i123_nago-torbole-windsurfen_icu.fit"], "Nago Torbole Wingfoil")
+    check("  the word has to stand alone", derived["windsurfschule-torbole.fit"],
+          "Windsurfschule Torbole")
 
     # 2. The per-session key is the digest's own id, re-derived from `meta` — so a document
     #    opened out of the library and the same document freshly analysed remember one

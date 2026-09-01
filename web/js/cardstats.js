@@ -258,6 +258,8 @@ export function cardStats(g, preset = "complete") {
  * is the name and iOS's rule yields "Example Nago Torbole 08 30" — a date, half-eaten,
  * printed 75 px high on the card most likely to be somebody's first sight of this project.
  * A number in a session filename is a date or a clock; a spot is words. So all of them go.
+ *
+ * The last step is the guess's one correction — see `sportCorrected`.
  */
 export function cardTitle(fileName) {
   let stem = String(fileName || "").replace(/\.[^./\\]+$/, "");
@@ -266,7 +268,44 @@ export function cardTitle(fileName) {
   const words = stem.replace(/-/g, " ").split(" ")
     .filter((w) => w && !/^\d+$/.test(w));
   if (!words.length) return "Session";
-  return words.map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
+  return sportCorrected(words.map((w) => w[0].toUpperCase() + w.slice(1)).join(" "));
+}
+
+/** The sport this app is about. One word, one spelling, one place. */
+export const SPORT = "Wingfoil";
+
+/** The words a Garmin watch puts there instead, lower-cased for the comparison. Garmin has no
+ *  wingfoil profile, so a session is recorded under the windsurf one (docs/fit-schema.md:
+ *  sport 43 alone does not mean wingfoil) and the watch names the activity after it — in the
+ *  watch's own locale, which is why the German word is on this list beside the two English
+ *  ones. */
+const GARMIN_SPORT_WORDS = new Set(["windsurfen", "windsurfing", "windsurf"]);
+
+/**
+ * A **derived** name with Garmin's sport word swapped for this app's — the port of
+ * `SessionNaming.sportCorrected` (iOS), so the two platforms rename the same session the same
+ * way.
+ *
+ * `Nago Torbole Windsurfen` → `Nago Torbole Wingfoil`. A file dropped on this page was written
+ * by the same watch that syncs to the phone, so it arrives under the same word, and a card
+ * exported from the browser must not caption a wingfoil session with somebody else's sport.
+ *
+ * **Display only.** The file keeps its name — the report's own header prints `result.file.name`
+ * verbatim, and the download slug is built from what the card is *titled*, which is this. And a
+ * title the rider typed wins over this whole function: `cardContent` prefers `cleanTitle(text)`
+ * and only falls through to the derived branch.
+ *
+ * The word has to stand alone: `Windsurfen` becomes `Wingfoil`, `Windsurfschule` stays itself.
+ * The boundary is the space `cardTitle` already split on, and the swap keeps the case of the
+ * position it lands in.
+ */
+export function sportCorrected(derived) {
+  return String(derived ?? "").split(" ")
+    .map((w) => {
+      if (!GARMIN_SPORT_WORDS.has(w.toLowerCase())) return w;
+      return w[0] === w[0].toUpperCase() ? SPORT : SPORT.toLowerCase();
+    })
+    .join(" ");
 }
 
 /** `7 August 2026`, on the **session's** own clock — the same line `ShareCardStats.dateLine`

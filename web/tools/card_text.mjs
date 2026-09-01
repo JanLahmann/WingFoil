@@ -57,6 +57,23 @@ const NOTE_CASES = [
 
 const TITLE_CASES = ["  Torbole  ", "", "\t \n", "First  20 kn", "a".repeat(100)];
 
+/* ------------------------------------------------------------- the derived name
+ *
+ * What a dropped file is called before anybody types anything — including the correction the
+ * name needs, since the watch that wrote the file has no wingfoil profile and names every
+ * session after the windsurf one, in its own locale. */
+
+const DERIVED_CASES = [
+  "2026-08-30-1407_nago-torbole-windsurfen_ciq.fit",   // a German Fenix, via the app
+  "i123_nago-torbole-windsurfen_icu.fit",              // the same, synced from intervals.icu
+  "2026-08-30-1407_nago-torbole-windsurfing_native.fit",
+  "2026-08-30-1407_windsurf_native.fit",               // the bare profile name
+  "example-nago-torbole-2026-08-30.fit",               // no underscore: the whole stem
+  "windsurfschule-torbole.fit",                        // standalone only — not a substring
+  "2026-08-30-1407__ciq.fit",                          // nothing left to name it with
+  "",
+];
+
 /* ------------------------------------------------------------------------ keys */
 
 const KEY_CASES = [
@@ -132,6 +149,8 @@ process.stdout.write(JSON.stringify({
   limits: { note: cs.NOTE_LIMIT, title: cs.TITLE_LIMIT },
   notes: NOTE_CASES.map((raw) => [raw, cs.cleanNote(raw)]),
   titles: TITLE_CASES.map((raw) => [raw, cs.cleanTitle(raw)]),
+  derived: DERIVED_CASES.map((name) => [name, cs.cardTitle(name)]),
+  sport: cs.SPORT,
   keys: KEY_CASES.map((r) => cs.cardKey(r)),
   storage: roundTrip(),
   header: { plain: headerHeight(plain), named: headerHeight(named),

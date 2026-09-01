@@ -18,11 +18,18 @@ enum SessionDisplay {
         SessionNaming.title(custom: row.customTitle, derived: derivedTitle(row))
     }
 
-    /// "2026-08-03-1440_nago-torbole-windsurfen_native.fit" → "Nago Torbole Windsurfen".
+    /// "2026-08-03-1440_nago-torbole-windsurfen_native.fit" → "Nago Torbole Wingfoil".
     ///
     /// The fallback, and what a rider sees in the title field before he types: a guess made
     /// from how the watch happened to name the file, which is a good guess and never a
     /// statement.
+    ///
+    /// The last step is the guess's one correction (`SessionNaming.sportCorrected`): the watch
+    /// files a wingfoil session under Garmin's windsurf profile and names it after that
+    /// profile, in the watch's own locale, so a German Fenix hands this function
+    /// "…-windsurfen-…" for every afternoon the rider has ever flown. The stored filename is
+    /// left exactly as it arrived — this is the *display* title, and the swap happens here so
+    /// that all eleven surfaces get it at once.
     static func derivedTitle(_ row: SessionRow) -> String {
         guard let file = row.originalFilename else { return "Session" }
         var stem = (file as NSString).deletingPathExtension
@@ -32,8 +39,9 @@ enum SessionDisplay {
             .split(separator: " ")
             .filter { !($0.allSatisfy(\.isNumber) && $0.count >= 4) }
         guard !words.isEmpty else { return "Session" }
-        return words.map { String($0.prefix(1)).uppercased() + String($0.dropFirst()) }
+        let title = words.map { String($0.prefix(1)).uppercased() + String($0.dropFirst()) }
             .joined(separator: " ")
+        return SessionNaming.sportCorrected(title)
     }
 
     /// Discipline badge: the `discipline` developer field wins over the FIT sport code
