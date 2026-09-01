@@ -399,7 +399,15 @@ def _stamp(d: dict) -> dict:
     """The bit of a digest every records row / trend point needs to name its session."""
     return {"id": d.get("id"), "fileName": d.get("fileName"), "spot": d.get("spot"),
             "startUtc": d.get("startUtc"), "dateUtc": d.get("dateUtc"),
-            "dateLocal": d.get("dateLocal"), "utcOffsetS": d.get("utcOffsetS")}
+            "dateLocal": d.get("dateLocal"), "utcOffsetS": d.get("utcOffsetS"),
+            # Which recording set it, in the one word the records table needs (engine
+            # 0.9.0). A class-(c) session — a GPX, or any file with no speed channel —
+            # had its speed differentiated from positions, and a differentiated speed can
+            # read high. The record still stands in the table, because it is still the
+            # rider's session; it stands there *marked*, because an all-time best is
+            # exactly where an unverifiable number does the most damage.
+            "sourceClass": d.get("sourceClass"),
+            "certified": d.get("sourceClass") != "c"}
 
 
 def _records(ds: list) -> list:

@@ -8,7 +8,7 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
 
 ```json
 {
-  "engineVersion": "0.8.2",
+  "engineVersion": "0.9.0",
   "config": { "foilEntrySpeed": 12.0, "...": "params actually used" },
   "capabilities": { "hasDoppler": true, "hasDevFields": false, "hasWatchLaps": false,
                      "hasAccel": false, "hasHR": true, "sampleRateHz": 1 },
@@ -113,6 +113,29 @@ events and so are never below the series they sit beside. Its peaks obey the **m
 the zero rule — never a flattering *peak*: only windows lying wholly inside the session
 count, and a session shorter than the window reports its own whole-session rate over the span
 it lasted rather than a fragment scaled up to the hour.
+
+### Fixture provenance — one converted recording, and why
+
+Every fixture in `fixtures/sessions/**` is one of Jan's own recordings kept as it came off
+the watch. Two are touched, and both are the same afternoon: the bundled example is
+*scrubbed* (see below), and **one is not a recording at all**.
+`fixtures/sessions/gpx/2026-08-30-1407_nago-torbole.gpx` is that same 2026-08-30 CIQ
+session converted by `lab/tools/fit_to_gpx.py`
+(track points, `<ele>`, `<time>`, and heart rate in Garmin's `TrackPointExtension`; the
+speed channel, the accelerometer, the developer fields, the laps and the session summary
+deliberately not carried, because no GPX carries them).
+
+A real GPX from some other afternoon would have tested the parser and proved nothing about
+the **degradation**, because there would have been no FIT to compare it against. Converting
+one fixture makes the comparison exact — same positions, same clock, same rider — so every
+difference between the two goldens is the source class and nothing else. On this pair:
+flights 2/2, longest flight 392.0 s both, all ten turns with identical type, side and
+outcome, wind axis to the degree; foil % 67.9 → 67.3; speed records within 0.18 kn (2 s
+13.472 → 13.655 — positional differentiation reads *high*, which is the whole reason those
+records are marked uncertified); every pump field null and `pumpEpisodes` empty.
+
+`fixtures/README.md` carries the row; `make_goldens.py` picks up `.fit` and `.gpx` alike and
+`analyze` routes on the file itself, so nothing in the tooling needs to know which is which.
 
 ## Presentation goldens
 

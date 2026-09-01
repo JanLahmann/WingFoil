@@ -65,6 +65,16 @@ total of 31 beside an in-flight 60 -- a part larger than its whole, on the very 
 chop hurts most. It now takes the same `pumpBurstPeakG` gate (not the speed one: the window
 is a flight, so the test could never fire). 60 -> 5, 293 -> 127, 430 -> 153, and
 `summary.takeoff.inFlightPumpStrokes` follows; nothing else on any fixture moves.
+
+Engine 0.9.0 opens the door to **GPX** (`gpx.py`, docs/plan.md's input class (c)). No field
+is added, no rule is changed and no number on any existing fixture moves — the whole of the
+change is that a second kind of file can now reach this writer, and that it arrives honestly
+labelled: `capabilities.hasDoppler` is **false** for a GPX because its speed is
+differentiated from positions rather than measured, which is the flag every surface reads
+to mark those speed records *uncertified*. `pumps`/`takeoffPumps`/`pumpEpisodes` degrade to
+their accel-less nulls and empties exactly as the twelve accel-less FIT goldens already do.
+`ENGINE_VERSION` bumps because a stored 0.8.2 document was written by an engine that could
+not have produced this one, and because that is the signal the apps re-derive on.
 """
 
 from __future__ import annotations
@@ -83,7 +93,7 @@ from .flightend import (FlightEnd, FlightEndConfig, FlightEndSummary, OutcomeSpl
 from .gp3s import GP3SRecords, RecordWindow
 from .hrcost import (Coverage, FatigueBin, HrAnalysis, HrConfig, HrEvent, HrSummary,
                      PumpCruiseHr, analyze_hr)
-from .parse import RawTrack, parse_fit
+from .parse import RawTrack, parse_track
 from .pump import PumpConfig, PumpTrack, pump_track
 from .takeoff import (PumpEpisode, Takeoff, TakeoffAnalysis, TakeoffConfig, TakeoffSummary,
                       analyze_takeoffs, summarize_takeoffs)
@@ -156,7 +166,7 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
     hcfg = hr_config or HrConfig()
     rcfg = rate_config or RateConfig()
 
-    track = parse_fit(path)
+    track = parse_track(path)
     ct = clean(track, fcfg)
     fr = segment_flights(ct, flcfg)
     rec = gp3s.records(ct)

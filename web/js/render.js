@@ -131,7 +131,8 @@ function renderSummary(result, isExample = false) {
                meta.sourceClass === "a",
                { a: "Recorded by the CleanJibe watch app — every metric available",
                  b: "A standard FIT recording — everything but pump and takeoff effort",
-                 c: "This file is missing channels the analysis wants; some numbers are absent"
+                 c: "A GPX or another source with no speed channel — speed records are "
+                    + "estimated from positions and uncertified, and there is no pump data"
                }[meta.sourceClass]]);
   if (meta.sport) badges.push([meta.sport, false]);
   if (caps.hasAccel) badges.push(["accelerometer", false]);

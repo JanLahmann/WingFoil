@@ -1,4 +1,4 @@
-"""Browser entry point: FIT bytes -> analysis JSON. Runs inside Pyodide.
+"""Browser entry point: recording bytes (FIT or GPX) -> analysis JSON. Runs inside Pyodide.
 
 This is the *only* code the web app adds on the Python side. Every number it reports comes
 from `wingfoil_lab` unchanged — `goldens.analyze()` + `goldens.build_golden()` are the same
@@ -51,30 +51,44 @@ def _as_bytes(data) -> bytes:
 
 
 def _unzip(raw: bytes) -> tuple[bytes, str | None]:
-    """A .zip holding exactly one .fit (what intervals.icu and Garmin exports hand out)."""
+    """A .zip holding exactly one recording (what intervals.icu and Garmin exports give)."""
     with zipfile.ZipFile(io.BytesIO(raw)) as zf:
         fits = [n for n in zf.namelist()
-                if n.lower().endswith(".fit") and not n.startswith("__MACOSX/")]
+                if n.lower().endswith((".fit", ".gpx")) and not n.startswith("__MACOSX/")]
         if not fits:
-            raise ValueError("zip contains no .fit file")
+            raise ValueError("zip contains no .fit or .gpx file")
         if len(fits) > 1:
-            raise ValueError(f"zip contains {len(fits)} .fit files; expected exactly one")
+            raise ValueError(f"zip contains {len(fits)} recordings; expected exactly one")
         return zf.read(fits[0]), os.path.basename(fits[0])
 
 
+def _is_gpx(raw: bytes) -> bool:
+    """Content sniff, mirroring `wingfoil_lab.gpx.is_gpx`."""
+    head = raw[:512].lstrip(b"\xef\xbb\xbf \t\r\n")
+    return head.startswith(b"<") and b"<gpx" in raw[:2048].lower()
+
+
 def analyze_bytes(data, name: str = "session.fit") -> dict:
-    """FIT (or single-FIT zip) bytes -> the full result document (plain Python dict)."""
+    """Recording bytes -> the full result document (plain Python dict).
+
+    FIT, GPX (engine 0.9.0), or a zip holding exactly one of either. Which it is comes off
+    the bytes, not the name: a browser hands us whatever the rider dragged in, and the two
+    formats have unmistakable signatures — `.FIT` at byte 8, a `<gpx` root element.
+    """
     raw = _as_bytes(data)
     inner = None
     if raw[:2] == b"\x1f\x8b":          # intervals.icu /file sometimes hands back gzip
         raw = gzip.decompress(raw)
     if raw[:2] == b"PK":
         raw, inner = _unzip(raw)
-    if len(raw) < 14 or raw[8:12] != b".FIT":
-        raise ValueError("not a FIT file (missing .FIT signature)")
+    gpx = _is_gpx(raw)
+    if not gpx and (len(raw) < 14 or raw[8:12] != b".FIT"):
+        raise ValueError("not a FIT or GPX file (no .FIT signature, no <gpx> root)")
 
+    suffix = ".gpx" if gpx else ".fit"
     tmpdir = tempfile.mkdtemp(prefix="wingfoil-")
-    path = os.path.join(tmpdir, inner or (name if name.lower().endswith(".fit") else "session.fit"))
+    fallback = name if name.lower().endswith(suffix) else f"session{suffix}"
+    path = os.path.join(tmpdir, inner or fallback)
     try:
         with open(path, "wb") as fh:
             fh.write(raw)
@@ -83,7 +97,7 @@ def analyze_bytes(data, name: str = "session.fit") -> dict:
             "schema": SCHEMA,
             "engineVersion": ENGINE_VERSION,
             "file": {"name": inner or name, "bytes": len(raw),
-                     "container": "zip" if inner else "fit"},
+                     "container": "zip" if inner else suffix.lstrip(".")},
             "meta": _meta(a),
             "golden": build_golden(a),
             "view": _view(a),

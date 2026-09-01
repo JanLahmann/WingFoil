@@ -57,6 +57,53 @@ session only sets the origin, so joining an odometer that already reads 9 km add
 Symptom that found it: the simulator's FIT replay opens at the default location and jumps to
 the clip's, which showed **37 986 km** on the session page.
 
+## GPX import — input class (c) (phone/web, engine ≥ 0.9.0)
+
+`lab/src/wingfoil_lab/gpx.py` · `ios/…/GpxImport/GpxSessionParser.swift`
+
+A GPX carries positions and a clock, and none of the three channels the analysis would like
+to have. Each absence is recorded as a fact about the *source* rather than papered over, and
+the whole of the degradation follows from `SourceCapabilities` exactly as it already does
+for a native FIT.
+
+| what is read | from | notes |
+|---|---|---|
+| position | `trkpt/@lat`, `@lon` | a point without both is skipped |
+| time | `trkpt/time` | ISO 8601; **a point without one is not a sample at all** — every phase of the analysis is a function of time |
+| altitude | `trkpt/ele` | feeds `turnBaroDrop` where the exporter wrote a barometric value |
+| heart rate | `extensions/…/hr` | Garmin `TrackPointExtension`, matched on the local tag name so any prefix works |
+
+**Speed is differentiated from positions**, over the same local-meter projection
+`speedChannelManeuvers` already uses — deliberately the arithmetic that produces `pos_mps`,
+so a GPX session's two speed channels agree instead of disagreeing about the same metres.
+Haversine would be marginally more correct over a session's *extent* and no more correct at
+all over the one-second steps this actually measures.
+
+The derived channel then *becomes* `doppler_mps`, and `capabilities.hasDoppler` is
+nevertheless **false**. That pair is the point: the column says the analysis has a number
+to work with, the flag says the file could not prove it was measured. `hasDoppler` is what
+makes `source_class` `c`, and class (c) is what every surface reads to mark these speed
+records **uncertified** (docs/presentation.md). Positional differentiation is noisier than
+Doppler and biased *upward* on a bad fix — on the converted fixture it reads 13.65 kn
+against the FIT's 13.47 over 2 s — which is why the mark is on the record and not merely in
+a footnote.
+
+No accelerometer means `pump.py` and `takeoff.py` take their speed-only paths (every stroke
+count null, `pumpEpisodes` empty), exactly as they do on a native FIT. No developer fields
+means no watch summary and so no divergence check.
+
+**Segments.** A `<trkseg>` boundary is the recorder saying it stopped, so the two sides are
+not one motion and a speed differentiated across the join would be a fiction. Each segment
+is differentiated on its own and the join is marked `gap_before`, which `filters.clean` ORs
+into the dt-aware gap rule *and* resets the spike filter on — the break survives even when
+the clock happens to be continuous across it, which is the one case the dt rule alone cannot
+see. Several `<trk>`s are several activities, not several segments: the first is analysed
+and the count is reported (`session["gpxTracks"]`).
+
+**Time zone.** A `Z` timestamp states an *instant* and nothing about the rider's clock, so it
+yields no offset and the longitude rung of the ladder below takes over. A timestamp written
+with a numeric offset (`+02:00`) is the exporter naming the local clock, and wins.
+
 ## Speed records (GP3S set)
 
 2 s peak · 10 s peak · 5×10 s (mean of best 5 **disjoint** 10 s windows) · 100 m · 250 m ·
