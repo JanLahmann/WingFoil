@@ -55,6 +55,10 @@ targets:
         product: ConnectIQ
       - target: WingFoilWidgets
         embed: true
+      # The watch app ships inside the phone app's bundle. `embed: true` is what puts it
+      # there; without it the target builds and installs nothing.
+      - target: WingFoilWatch
+        embed: true
     settings:
       base:
         PRODUCT_NAME: WingFoil
@@ -252,3 +256,102 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+
+  # The Apple Watch recorder (ios/WingFoilWatch/).
+  #
+  # RECORDER ONLY, BY DESIGN. It captures GPS + heart rate + a 50 Hz wrist accelerometer and
+  # hands the phone a `.cjw` container over `WCSession.transferFile`; every number the rider
+  # eventually reads is computed by WingFoilKit's analysis engine on the phone. There is no
+  # flight, turn or record detection on the wrist and there must not be a second one — see
+  # docs/watch-session-schema.md.
+  #
+  # NO COMPLICATIONS, NO WIDGETS. A complication would be a fourth surface making claims
+  # about a session, and the MVP has nothing to claim that the phone does not say better.
+  #
+  # DEPLOYMENT TARGET 11.0. Every Apple Watch Apple currently sells — Series 10 and 11,
+  # Ultra 2 and 3, SE 3 — runs watchOS 11 or later (Ultra 2 shipped on 10 and updates past
+  # it), so this costs no watch on sale today and buys back two generations riders already
+  # own. Nothing in the recorder needs a newer API: `@Observable` is watchOS 10,
+  # `HKLiveWorkoutBuilder` is watchOS 5, and `enableWaterLock()` is watchOS 4. Building
+  # against the 26.5 SDK, so raising it later is a one-line change, not a port.
+  WingFoilWatch:
+    type: application
+    platform: watchOS
+    deploymentTarget: "11.0"
+    sources:
+      - path: WingFoilWatch
+        excludes:
+          - "Info.plist"
+      # SHARED SOURCE, NOT A LINKED LIBRARY — the same arrangement `WingFoilWidgets` uses for
+      # `WidgetSnapshot.swift`, and for the same reason. Linking WingFoilKit would drag GRDB,
+      # FitFileParser and ZIPFoundation onto a wrist in order to write four floats at a time.
+      # `WatchSessionContainer.swift` depends on Foundation and nothing else precisely so it
+      # can be compiled into both sides of the transfer, which is what guarantees the writer
+      # and the reader can never disagree about the format.
+      #
+      # The brand palette is NOT shared this way, and the reason is mechanical rather than a
+      # matter of taste: `WingFoil/App/Brand.swift` already sits inside the WingFoil target's
+      # own source tree, so XcodeGen emits one file reference with a group-relative path and
+      # puts it in two groups at different depths — the second one resolves to
+      # `WingFoil/App/WingFoil/App/Brand.swift` and the build fails on a missing input. The
+      # WatchImport file above has no such problem because no target claims its directory.
+      # The watch therefore carries its own five colours in `Views/WatchBrand.swift`, which
+      # names `design/tokens.json` as the source of truth.
+      - path: WingFoilKit/Sources/WingFoilKit/WatchImport/WatchSessionContainer.swift
+        group: Shared
+    settings:
+      base:
+        PRODUCT_NAME: WingFoilWatch
+        PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.watchkitapp
+        MARKETING_VERSION: "0.12.0"
+        CURRENT_PROJECT_VERSION: "14"
+        TARGETED_DEVICE_FAMILY: "4"          # Apple Watch
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 685X8YLYSB
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
+    # Same entitlement as the phone, for the same framework. The watch app writes the workout
+    # (rings credit) and reads heart rate off the live builder — the only place in this
+    # project that reads anything from Health at all, and unavoidable: a live workout builder
+    # is the only route to heart rate on the wrist.
+    entitlements:
+      path: WingFoilWatch/WingFoilWatch.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
+    info:
+      path: WingFoilWatch/Info.plist
+      properties:
+        CFBundleDisplayName: CleanJibe
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # Names the phone app this watch app belongs to. Wrong or missing, the watch app
+        # installs as a standalone and `WCSession` never finds a counterpart.
+        WKCompanionAppBundleIdentifier: de.lahmann.wingfoil
+        WKApplication: true
+        WKRunsIndependentlyOfCompanionApp: false
+        # `workout-processing` is what keeps the app running for two hours on a wet wrist in
+        # a pocket — the `HKWorkoutSession` is the extended-runtime mechanism, and there is
+        # deliberately no `WKExtendedRuntimeSession` beside it (they are alternatives).
+        # `location` is what makes `allowsBackgroundLocationUpdates` legal; without it
+        # CoreLocation throws the moment the recorder sets it.
+        WKBackgroundModes:
+          - workout-processing
+          - location
+        # Real sentences. These are what the rider reads on the watch when the prompt appears,
+        # and a placeholder here is both a review rejection and a rudeness.
+        NSHealthUpdateUsageDescription: >-
+          Saves your wingfoil session to the Health app as a workout, so it counts toward your
+          activity rings.
+        NSHealthShareUsageDescription: >-
+          Reads your heart rate while you ride, so the session CleanJibe sends to your iPhone
+          includes it. Nothing else is read, and nothing leaves your devices.
+        NSLocationWhenInUseUsageDescription: >-
+          Records your track and speed while you ride. CleanJibe uses the watch's GPS only
+          during a session you started, and the recording is sent straight to your iPhone.
+        NSMotionUsageDescription: >-
+          Records wrist motion while you ride, so CleanJibe can measure your pumping and how
+          much effort each takeoff cost.
+        ITSAppUsesNonExemptEncryption: false
