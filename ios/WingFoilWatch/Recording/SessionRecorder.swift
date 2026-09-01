@@ -304,8 +304,13 @@ final class SessionRecorder {
         Task {
             await workout?.end(at: end)
             workout = nil
-            let queued = assembleAndQueue(id: id, start: started, durationS: duration,
-                                          directory: dir)
+            // A failure here has to *stay* a failure. Reporting a summary over it would tell
+            // the rider his afternoon was saved and queued when the file does not exist.
+            guard let queued = assembleAndQueue(id: id, start: started, durationS: duration,
+                                                directory: dir) else {
+                phase = .failed("Could not save the session file — no space on the watch?")
+                return
+            }
             summary = RecordedSummary(durationS: duration,
                                       distanceM: distanceM,
                                       maxSpeedMps: maxSpeedMps,
@@ -422,9 +427,15 @@ final class SessionRecorder {
     }
 
     /// Builds the container from the stream files and hands it to WatchConnectivity.
+    ///
+    /// **nil and false are different answers.** nil means the session could not be written at
+    /// all, and the caller must keep that a failure rather than show a summary claiming an
+    /// afternoon was saved when the file does not exist. `false` means the file is safe on
+    /// the watch but WatchConnectivity would not take it — which the summary screen says out
+    /// loud, and the next launch's sweep retries.
     private func assembleAndQueue(id: String, start: Date, durationS: Double,
-                                  directory: URL?) -> Bool {
-        guard let directory else { return false }
+                                  directory: URL?) -> Bool? {
+        guard let directory else { return nil }
         do {
             let file = try assemble(id: id, start: start, durationS: durationS,
                                     directory: directory)
@@ -435,8 +446,7 @@ final class SessionRecorder {
             return queued
         } catch {
             Self.log.error("could not assemble \(id): \(error.localizedDescription)")
-            phase = .failed("Could not save the session file.")
-            return false
+            return nil
         }
     }
 
