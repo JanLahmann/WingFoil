@@ -1,0 +1,8 @@
+<drawables>
+    <!-- Launcher icon at 54x54, which is what exactly one product's compiler.json asks for:
+         Forerunner 570 42mm. Its 47mm sibling wants 65 and every other AMOLED in the list
+         wants 60, so the odd size gets its own qualifier directory rather than a rescale
+         warning on every fr570 build. Resampled (Lanczos) from brand/icon-tile-1024.png,
+         the same master the 65/60/40 cuts come from. -->
+    <bitmap id="LauncherIcon" filename="launcher_icon.png"/>
+</drawables>

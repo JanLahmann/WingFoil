@@ -47,9 +47,15 @@ Analyze your sessions in any browser, free: https://janlahmann.github.io/WingFoi
    but it is not the address on the share cards, in the app, or on the site itself.
 
 Also stale, less costly: the description still leads with "New in 0.9.0" three versions on.
-And the opening line offers "Enduro 2 and tactix 7/8", which neither invite manifest
-declares — the shipped product list is fenix 8 and fenix 7 only, so those two watches cannot
-install it.
+
+The opening line's "Enduro 2 and tactix 7/8" was filed here as a false claim and is **not**
+one — checked against the SDK, not the manifest. Garmin has no `enduro2`, `tactix7` or
+`tactix8` product id: those watches share part numbers with ones the manifests already
+declare. `fenix7x`'s own `compiler.json` calls itself *"fēnix 7X / tactix 7 / quatix 7X Solar /
+Enduro 2"*, and `fenix847mm` is *"fēnix 8 47/51mm / tactix 8 47/51mm / quatix 8"*. Both are in
+every invite manifest, so both watches can install the beta today. (0.9.4 adds `epix2pro51mm`,
+which is also tactix 7 – AMOLED Edition, and `epix2`, which is also quatix 7 Sapphire.) What
+the listing text should gain instead is the rest of the 0.9.4 device list — see ADR-014.
 
 ### What's New (live text)
 
@@ -144,7 +150,11 @@ field. Dates are the commit dates; a store release usually follows by a day.
 | 0.1.0 | 2026-08-11 | `cc64066` | First invite-beta release, alongside the `WingFoilCore` barrel it shares with the watch app. |
 
 The field's What's New makes the same "Enduro 2 and tactix 7/8" claim as the watch app's
-description, and its manifest does not declare them either.
+description, and it is true for the same reason (`fenix7x` and `fenix847mm` are those
+watches). The field's **release** manifest was the one with a real gap: it declared only the
+five fenix 8 products, so a fenix 7 could install the invite field but not the public one.
+0.9.4 puts the fenix 7 family and all seventeen Tier A products on all three field channels,
+matching the watch app.
 
 ## Store assets
 
