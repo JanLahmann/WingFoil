@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<iq:manifest version="3" xmlns:iq="http://www.garmin.com/xml/connectiq">
+    <!-- Screenshot harness for the DATA FIELD. Same field, different entry point, a seeded
+         engine and an inert compute(). Never uploaded anywhere; the store UUID stays in
+         ../manifest.xml. Sibling of garmin/screenshots/, which does the same for the app. -->
+    <iq:application id="185c4ffd-aee5-482c-9a33-58de8caa4718" type="datafield"
+        name="@Strings.AppName" entry="ShotsFieldApp"
+        launcherIcon="@Drawables.LauncherIcon" minApiLevel="5.0.0">
+        <iq:products>
+            <iq:product id="fenix843mm"/>
+            <iq:product id="fenix847mm"/>
+        </iq:products>
+        <iq:permissions>
+            <iq:uses-permission id="FitContributor"/>
+        </iq:permissions>
+        <iq:languages>
+            <iq:language>eng</iq:language>
+            <iq:language>deu</iq:language>
+        </iq:languages>
+        <iq:barrels>
+            <iq:depends name="WingFoilCore" version="1.0.0"/>
+        </iq:barrels>
+    </iq:application>
+</iq:manifest>

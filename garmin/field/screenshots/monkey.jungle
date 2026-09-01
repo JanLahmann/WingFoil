@@ -1,0 +1,13 @@
+# Screenshot harness for the data field — not part of any shipped build, not in the release
+# path (../monkey.jungle never names this directory). Reuses the field's real source,
+# resources and barrel; adds one file (source/ShotsFieldApp.mc) that subclasses
+# WingFoilDataField, seeds the engine with a real session and then makes compute() inert so
+# the seeded numbers hold still while the simulator's Data Fields > Layout menu is walked.
+project.manifest = manifest.xml
+
+# Same four roots ../monkey.jungle uses, minus tests/, plus this harness's own source.
+base.sourcePath = ../source;../../source/lock/LockGate.mc;../../source-nopepper;source
+base.resourcePath = ../resources
+base.barrelPath = ../../barrel/WingFoilCore/barrel.jungle
+
+fenix843mm.resourcePath = $(fenix843mm.resourcePath);../resources-icon60
