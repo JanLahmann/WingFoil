@@ -320,19 +320,6 @@ import Testing
             if let v = num(exp["stoppedS"]) {
                 #expect(abs(act.stoppedS - v) <= 1.0, "\(stem) flightEnds[\(i)].stoppedS")
             }
-            // The swim (engine 0.9.2). Null and nil have to agree as well as the numbers do:
-            // a distance on an end the lab called dry is a swim this platform invented.
-            #expect((num(exp["swimM"]) == nil) == (act.swimM == nil),
-                    "\(stem) flightEnds[\(i)].swimM: \(describe(act.swimM)) vs \(describe(num(exp["swimM"])))")
-            if let v = num(exp["swimM"]), let a = act.swimM {
-                #expect(abs(a - v) <= 0.5, "\(stem) flightEnds[\(i)].swimM: \(a) vs \(v)")
-            }
-            if let v = num(exp["swimStartTs"]), let a = act.swimStartTs {
-                #expect(abs(a - v) <= 0.1, "\(stem) flightEnds[\(i)].swimStartTs")
-            }
-            if let v = num(exp["swimEndTs"]), let a = act.swimEndTs {
-                #expect(abs(a - v) <= 0.1, "\(stem) flightEnds[\(i)].swimEndTs")
-            }
         }
     }
 
@@ -648,29 +635,6 @@ import Testing
             #expect(abs(wet - Double(ends.all.fellIn) / hours) < 1e-9,
                     "\(stem) summary.wetPerHour \(wet) is not every fell-in end over the hour")
         }
-        // The swim distances (engine 0.9.2). Both are always written — a session with no
-        // swim in it swam a measured 0 m — and both are the flight ends' own measurements
-        // totalled here, so a mismatch is a mismatch of the ends and not of the summary.
-        if let v = num(expSummary["swimDistanceM"]) {
-            #expect(abs(analysis.summary.swimDistanceM - v) <= 0.5,
-                    "\(stem) summary.swimDistanceM: \(analysis.summary.swimDistanceM) vs \(v)")
-        }
-        if let v = num(expSummary["longestSwimM"]) {
-            #expect(abs(analysis.summary.longestSwimM - v) <= 0.5,
-                    "\(stem) summary.longestSwimM: \(analysis.summary.longestSwimM) vs \(v)")
-        }
-        expectOptional(stem, "summary.longestSwimStartTs", num(expSummary["longestSwimStartTs"]),
-                       analysis.summary.longestSwimStartTs, tolerance: 0.1)
-        expectOptional(stem, "summary.longestSwimEndTs", num(expSummary["longestSwimEndTs"]),
-                       analysis.summary.longestSwimEndTs, tolerance: 0.1)
-        let swims = analysis.flightEnds.compactMap(\.swimM)
-        #expect(swims.count == analysis.summary.flightEnds.all.fellIn,
-                "\(stem) a swim distance on an end that was not a swim, or one missing")
-        #expect(abs(analysis.summary.swimDistanceM - swims.reduce(0, +)) < 1e-6,
-                "\(stem) summary.swimDistanceM is not the sum of the ends")
-        #expect(abs(analysis.summary.longestSwimM - (swims.max() ?? 0)) < 1e-9,
-                "\(stem) summary.longestSwimM is not the longest of the ends")
-
         // The 0.7.0 numerator: **dry** jibes, the ones he came out of still sailing. A jibe
         // he swam out of is one he did not make, so it may not raise the headline rate.
         if analysis.summary.durationS > 0, let jph = analysis.summary.jibesPerHour {
@@ -901,7 +865,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.9.2")
+        #expect(analysis.engineVersion == "0.9.1")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)
@@ -963,19 +927,11 @@ import Testing
         #expect(windows["alpha500"] == nil, "no positions ⇒ no alpha ⇒ absent key")
 
         let summary = try #require(obj["summary"] as? [String: Any])
-        // The two swim windows are absent rather than null here, exactly as a nil
-        // `avgSpeedKmh` would be: `SessionSummary` encodes with the synthesized coder and
-        // this synthetic never swam. The two *distances* are present, because a session with
-        // no swim in it swam a measured 0 m (docs/algorithms.md "Swim distance").
         #expect(Set(summary.keys) == ["foilTimeS", "foilPct", "flightCount",
                                       "longestFlightS", "longestFlightM", "distanceKm",
                                       "durationS", "avgSpeedKmh", "turnsPerHour",
-                                      "jibesPerHour", "wetPerHour", "swimDistanceM",
-                                      "longestSwimM", "windowRates",
+                                      "jibesPerHour", "wetPerHour", "windowRates",
                                       "turns", "flightEnds", "outcomeSplit", "takeoff"])
-        #expect(num(summary["swimDistanceM"]) == 0)
-        #expect(num(summary["longestSwimM"]) == 0)
-        #expect(analysis.summary.longestSwimStartTs == nil)
         // 120 s of synthetic, one flight, no turns: the duration is real and the rates are
         // real zeroes — "he did no jibes in that hour", not "unknown".
         #expect(abs((num(summary["durationS"]) ?? 0) - 120) <= 0.1)

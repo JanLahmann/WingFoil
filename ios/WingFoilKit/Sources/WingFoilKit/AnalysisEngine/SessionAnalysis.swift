@@ -76,18 +76,7 @@ public enum AnalysisEngine {
     /// usually states no zone at all. The ladder is unchanged; what was missing was the
     /// qualification, and a stored 0.9.0 document cannot supply it retroactively, which is
     /// what the bump is for (docs/presentation.md, "Session time").
-    ///
-    /// 0.9.2 measures the **swim** (docs/algorithms.md "Swim distance"). A `fell_in` end has
-    /// always known the rider got wet and never how far he then had to travel, and the one
-    /// number that looked like it might — `offFoilS` — is cut at the 60 s judging window,
-    /// which is right for a verdict and wrong for a swim. Flight ends gain `swimM` and the
-    /// window it was measured over; the summary gains `swimDistanceM`, `longestSwimM` and
-    /// that swim's window. The run is walked **uncapped** — until the rider is flying again
-    /// or the recording stops — which is the end-of-session case the cap could not see at
-    /// all: on 2026-09-01 pm the last swim read 48 m of 1847. No pre-existing number moves,
-    /// but a 0.9.1 document has no way to answer for the new one, and `null` there means
-    /// "not a swim" rather than "unmeasured".
-    public static let version = "0.9.2"
+    public static let version = "0.9.1"
 }
 
 /// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's
@@ -325,14 +314,6 @@ public struct FlightEndRecord: Sendable, Codable, Equatable {
     public var truncated: Bool
     /// Index of the turn whose outcome window already explains this end.
     public var ownedByTurn: Int?
-    /// The swim, on `fell_in` ends only (engine 0.9.2, docs/algorithms.md "Swim distance").
-    /// Nil on every other outcome — a glide-out is a rider still making way, and 0.0 would
-    /// say he swam nowhere.
-    public var swimM: Double?
-    /// The window `swimM` was measured over: the first sample not flying, and the sample
-    /// foiling resumed — or, when it never did, the last sample of the recording.
-    public var swimStartTs: Double?
-    public var swimEndTs: Double?
 
     public init(_ end: FlightEnd) {
         flightIndex = end.flightIndex
@@ -347,15 +328,11 @@ public struct FlightEndRecord: Sendable, Codable, Equatable {
         windowS = end.windowS
         truncated = end.truncated
         ownedByTurn = end.ownedByTurn
-        swimM = end.swimM
-        swimStartTs = end.swimStartT
-        swimEndTs = end.swimEndT
     }
 
     enum CodingKeys: String, CodingKey {
         case flightIndex, ts, outcome, borderline, offFoilS, stoppedS, minKn
         case pumped, submerged, windowS, truncated, ownedByTurn
-        case swimM, swimStartTs, swimEndTs
     }
 
     public init(from decoder: any Decoder) throws {
@@ -372,11 +349,6 @@ public struct FlightEndRecord: Sendable, Codable, Equatable {
         windowS = try c.decode(Double.self, forKey: .windowS)
         truncated = try c.decode(Bool.self, forKey: .truncated)
         ownedByTurn = try c.decodeIfPresent(Int.self, forKey: .ownedByTurn)
-        // Absent in a document written before 0.9.2, which reads the same as "not a swim".
-        // Such a row is stale by `engineVersion` anyway and `reanalyzeStale()` re-derives it.
-        swimM = try c.decodeIfPresent(Double.self, forKey: .swimM)
-        swimStartTs = try c.decodeIfPresent(Double.self, forKey: .swimStartTs)
-        swimEndTs = try c.decodeIfPresent(Double.self, forKey: .swimEndTs)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -393,9 +365,6 @@ public struct FlightEndRecord: Sendable, Codable, Equatable {
         try c.encode(windowS, forKey: .windowS)
         try c.encode(truncated, forKey: .truncated)
         try c.encode(ownedByTurn, forKey: .ownedByTurn)     // explicit null
-        try c.encode(swimM, forKey: .swimM)                 // explicit null
-        try c.encode(swimStartTs, forKey: .swimStartTs)     // explicit null
-        try c.encode(swimEndTs, forKey: .swimEndTs)         // explicit null
     }
 }
 
@@ -822,14 +791,6 @@ public struct SessionSummary: Sendable, Codable, Equatable {
     public var turnsPerHour: Double?
     public var jibesPerHour: Double?
     public var wetPerHour: Double?
-    /// How far the swims came to (engine 0.9.2, docs/algorithms.md "Swim distance"). Metres,
-    /// and a session with no swims reports a **measured** 0.0 — the ends were classified and
-    /// none of them was one — so these are not optional the way the rates are.
-    public var swimDistanceM: Double = 0
-    public var longestSwimM: Double = 0
-    /// The window the longest swim was measured over; nil when there was no swim.
-    public var longestSwimStartTs: Double?
-    public var longestSwimEndTs: Double?
     /// The rolling 15-minute view of the same two events (engine 0.7.0).
     public var windowRates = SessionWindowRates()
     public var turns = TurnSummary()
@@ -854,14 +815,6 @@ public struct SessionSummary: Sendable, Codable, Equatable {
         turnsPerHour = rates.turnsPerHour
         jibesPerHour = rates.jibesPerHour
         wetPerHour = rates.wetPerHour
-    }
-
-    /// Fills the four swim fields from the flight ends' own measurements.
-    public mutating func apply(_ swims: SwimSummary) {
-        swimDistanceM = swims.distanceM
-        longestSwimM = swims.longestM
-        longestSwimStartTs = swims.longestStartT
-        longestSwimEndTs = swims.longestEndT
     }
 }
 
@@ -1027,9 +980,6 @@ public enum SessionSummarizer {
                                                  startT: clean.samples.first?.t ?? 0,
                                                  durationS: clean.spanS,
                                                  config: ratesConfig)
-        // How far those swims came to (docs/algorithms.md "Swim distance"): the ends' own
-        // measurements totalled, not a second measurement of them.
-        summary.apply(FlightEndClassifier.summarizeSwims(ends))
 
         var pumpsByFlight = [Int?](repeating: nil, count: segmentation.flights.count)
         for t in takeoffs.takeoffs where segmentation.flights.indices.contains(t.flightIndex) {
