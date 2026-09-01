@@ -127,6 +127,24 @@ public enum Evidence {
         return sum
     }
 
+    /// Distance covered from sample `a` to `b` on speed channel `v`, in metres.
+    ///
+    /// Trapezoid-integrated over recorded intervals only — the twin of `elapsed`, which
+    /// integrates the same intervals against 1 — so a recording gap contributes no distance
+    /// for the same reason it contributes no time: nothing was measured across it.
+    ///
+    /// The *channel* is the caller's choice and it matters. For anything measured while the
+    /// rider is off the foil the honest one is `speed` (= min(Doppler, positional)), not
+    /// `doppler`: both over-read a rider who is not being carried — wrist Doppler picks up
+    /// swim strokes, positional picks up GPS jitter — so the lower of the two is a distance
+    /// he certainly covered. Mirrors `travelled` in `lab/src/wingfoil_lab/evidence.py`.
+    static func travelled(t: [Double], gap: [Bool], v: [Double], a: Int, b: Int) -> Double {
+        guard b > a, a >= 0, b < t.count else { return 0 }
+        var sum = 0.0
+        for i in (a + 1)...b where !gap[i] { sum += (t[i] - t[i - 1]) * (v[i] + v[i - 1]) / 2 }
+        return sum
+    }
+
     /// Longest contiguous spell below `floor` in [a, b], in recorded seconds.
     /// An interval counts only when *both* of its end samples are below the floor and no gap
     /// separates them — the same "hold" convention flight segmentation uses.
