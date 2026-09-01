@@ -84,19 +84,7 @@ itself is unchanged; what was missing was the qualification, and without it a pa
 hour out under DST. That is a claim about the data, so it is engine-side, and a stored
 document written before it cannot say which rung it used — which is why the version moves
 and every golden is rewritten with the new stamp and identical numbers.
-
-Engine 0.9.2 measures the **swim** (docs/algorithms.md "Swim distance"). Every `fell_in`
-flight end has always known the rider got wet and never how far he then had to travel, and
-the one number that was there to be read -- `offFoilS` -- is cut at the 60 s judging window,
-which is right for a verdict and wrong for a swim. `flightEnds[]` gains `swimM` with the
-window it was measured over (`swimStartTs`/`swimEndTs`), null on every outcome that is not a
-swim; `summary` gains `swimDistanceM`, `longestSwimM` and that swim's window. The run is
-walked **uncapped** -- until the rider is flying again or the recording stops -- which is the
-end-of-session case the cap could not see at all: on 2026-09-01 pm the last swim read 48 m of
-1847. No pre-existing number moves on any fixture, but the ends now carry a measurement they
-did not, and a 0.9.1 document has no honest way to answer for it -- `null` there means "not a
-swim", and a reader that took a missing key for the same thing would read every swim in the
-corpus as dry."""
+"""
 
 from __future__ import annotations
 
@@ -425,7 +413,6 @@ def build_golden(a: Analysis) -> dict:
     windows = window_rates(dry_ts, wet_ts, session_start_t(a.clean), duration_s,
                            a.rate_config)
     pumps = {k.flight_index: k.pumps_to_takeoff for k in a.takeoffs.takeoffs}
-    swims = a.flight_end_summary.swim
     return {
         "engineVersion": ENGINE_VERSION,
         "config": _config_dict(a),
@@ -474,13 +461,6 @@ def build_golden(a: Analysis) -> dict:
             "turnsPerHour": _round(rates.turns_per_hour, 1),
             "jibesPerHour": _round(rates.jibes_per_hour, 1),   # DRY jibes (engine 0.7.0)
             "wetPerHour": _round(rates.wet_per_hour, 1),
-            # How far the swims came to (engine 0.9.2, docs/algorithms.md "Swim distance").
-            # Flat rather than inside `flightEnds`, which is a counts object: these are
-            # metres, and a distance filed under a tally reads as one more count.
-            "swimDistanceM": round(swims.distance_m, 1),
-            "longestSwimM": round(swims.longest_m, 1),
-            "longestSwimStartTs": _round(swims.longest_start_t, 2),
-            "longestSwimEndTs": _round(swims.longest_end_t, 2),
             "windowRates": _window_rates_json(windows),
             "turns": _turn_summary_json(a.turn_summary),
             "flightEnds": _end_summary_json(a.flight_end_summary),
@@ -663,11 +643,6 @@ def _end_json(e: FlightEnd) -> dict:
         "windowS": round(e.window_s, 2),
         "truncated": bool(e.truncated),
         "ownedByTurn": e.owned_by_turn,
-        # The swim, on `fell_in` ends only (engine 0.9.2). Null on every other outcome:
-        # a glide-out is a rider still making way, and 0.0 would say he swam nowhere.
-        "swimM": _round(e.swim_m, 1),
-        "swimStartTs": _round(e.swim_start_t, 2),
-        "swimEndTs": _round(e.swim_end_t, 2),
     }
 
 

@@ -30,8 +30,7 @@ RECORD_KEYS = {"best2sKn", "best10sKn", "best5x10sKn", "best100mKn", "best250mKn
                "best500mKn", "bestNmKn", "bestHourKn", "alpha500Kn", "windows"}
 SUMMARY_KEYS = {"foilTimeS", "foilPct", "flightCount", "longestFlightS",
                 "longestFlightM", "distanceKm", "durationS", "avgSpeedKmh",
-                "turnsPerHour", "jibesPerHour", "wetPerHour", "swimDistanceM",
-                "longestSwimM", "longestSwimStartTs", "longestSwimEndTs", "windowRates",
+                "turnsPerHour", "jibesPerHour", "wetPerHour", "windowRates",
                 "turns", "flightEnds", "outcomeSplit", "takeoff"}
 WINDOW_RATE_KEYS = {"windowMin", "bestJph", "bestJphStartTs", "bestWph", "bestWphStartTs",
                     "series"}
@@ -40,9 +39,6 @@ TURN_SUMMARY_KEYS = {"tacks", "tacksSuccessful", "jibes", "jibesSuccessful", "un
                      "starboard", "unknownSide", "longestDryStreak", "longestFlewStreak",
                      "outcomes", "tackOutcomes", "jibeOutcomes"}
 END_COUNT_KEYS = {"glideOut", "touchdown", "fellIn", "unknown", "borderline"}
-END_KEYS = {"flightIndex", "ts", "outcome", "borderline", "offFoilS", "stoppedS", "minKn",
-            "pumped", "submerged", "windowS", "truncated", "ownedByTurn", "swimM",
-            "swimStartTs", "swimEndTs"}
 TAKEOFF_SUMMARY_KEYS = {"takeoffAttempts", "takeoffSuccesses", "avgPumpsToTakeoff",
                         "totalPumpStrokes", "successPct", "failedAttempts", "unknownAttempts",
                         "recoveryEpisodes", "inFlightEpisodes", "inFlightPumpStrokes",
@@ -78,7 +74,7 @@ def smoke_golden():
 def test_schema_shape(smoke_golden):
     g = smoke_golden
     assert list(g.keys()) == TOP_KEYS
-    assert g["engineVersion"] == "0.9.2"
+    assert g["engineVersion"] == "0.9.1"
     assert set(g["capabilities"].keys()) == CAP_KEYS
     assert set(g["records"].keys()) == RECORD_KEYS
     assert set(g["summary"].keys()) == SUMMARY_KEYS
@@ -120,7 +116,6 @@ def test_schema_shape(smoke_golden):
     # the block" must not look the same, which is the whole reason the key is written.
     assert g["pumpEpisodes"] == []
     for e in g["flightEnds"]:
-        assert set(e.keys()) == END_KEYS
         assert e["outcome"] in {"glide_out", "touchdown", "fell_in", "unknown"}
 
 
@@ -208,36 +203,6 @@ def test_wet_per_hour_counts_straight_falls_as_well_as_turn_falls():
     dry = turns["jibes"] - turns["jibeOutcomes"]["fellIn"]
     assert s["jibesPerHour"] == pytest.approx(dry / hours, abs=0.05)
     assert s["avgSpeedKmh"] == pytest.approx(s["distanceKm"] / hours, abs=0.05)
-
-
-@pytest.mark.skipif(not CIQ_LONG.exists(), reason="ciq fixture missing")
-def test_swim_distance_reconciles_with_the_ends_it_came_from():
-    """The summary's two swim numbers are the flight ends' own, totalled and maximised.
-
-    On a real session, where the sanity checks bite: every `fell_in` end has a distance and
-    nothing else does, the window sits inside the recording, and the total is the sum rather
-    than a second measurement of it. 2026-08-29 swam 25 times, which is enough of them that
-    an off-by-one in either direction shows.
-    """
-    g = build_golden(analyze(CIQ_LONG))
-    s, ends = g["summary"], g["flightEnds"]
-    swims = [e for e in ends if e["swimM"] is not None]
-
-    assert [e["outcome"] for e in swims] == ["fell_in"] * len(swims)
-    assert len(swims) == s["flightEnds"]["all"]["fellIn"] > 0
-    for e in swims:
-        assert e["swimStartTs"] >= e["ts"] and e["swimEndTs"] >= e["swimStartTs"]
-        assert e["swimEndTs"] <= s["durationS"]
-        # Past the judging window is the point: the longest swims outrun `offFoilS`.
-        assert e["swimM"] >= 0.0
-    assert s["swimDistanceM"] == pytest.approx(sum(e["swimM"] for e in swims), abs=0.2)
-    assert s["longestSwimM"] == pytest.approx(max(e["swimM"] for e in swims), abs=0.05)
-    longest = max(swims, key=lambda e: e["swimM"])
-    assert (s["longestSwimStartTs"], s["longestSwimEndTs"]) == (longest["swimStartTs"],
-                                                                longest["swimEndTs"])
-    # The session swam a long way further than any 60 s window could have seen.
-    assert s["longestSwimM"] > 100.0
-    assert longest["swimEndTs"] - longest["swimStartTs"] > g["config"]["turnOutcomeWindow"]
 
 
 @pytest.mark.skipif(not CIQ_LONG.exists(), reason="ciq fixture missing")

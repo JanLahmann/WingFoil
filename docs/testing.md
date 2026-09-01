@@ -23,8 +23,7 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
   "flightEnds": [ { "flightIndex": 0, "ts": 0, "borderline": false,
                     "outcome": "glide_out|touchdown|fell_in|unknown", "offFoilS": 0.0,
                     "stoppedS": 0.0, "minKn": null, "pumped": false, "submerged": false,
-                    "windowS": 0.0, "truncated": false, "ownedByTurn": null,
-                    "swimM": null, "swimStartTs": null, "swimEndTs": null } ],
+                    "windowS": 0.0, "truncated": false, "ownedByTurn": null } ],
   "records": { "best2sKn": 0.0, "best10sKn": 0.0, "best5x10sKn": 0.0, "best100mKn": 0.0,
                "best250mKn": 0.0, "best500mKn": 0.0, "bestNmKn": 0.0, "bestHourKn": 0.0,
                "alpha500Kn": 0.0, "windows": { "best2s": {"startTs": 0, "durS": 2} } },
@@ -62,8 +61,6 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
                "longestFlightM": 0.0, "distanceKm": 0.0,
                "durationS": 0.0, "avgSpeedKmh": null, "turnsPerHour": null,
                "jibesPerHour": null, "wetPerHour": null,
-               "swimDistanceM": 0.0, "longestSwimM": 0.0,
-               "longestSwimStartTs": null, "longestSwimEndTs": null,
                "windowRates": { "windowMin": 15, "bestJph": null, "bestJphStartTs": null,
                                 "bestWph": null, "bestWphStartTs": null,
                                 "series": [ { "ts": 0, "jph": 0.0, "wph": 0.0 } ] },
@@ -116,13 +113,6 @@ events and so are never below the series they sit beside. Its peaks obey the **m
 the zero rule — never a flattering *peak*: only windows lying wholly inside the session
 count, and a session shorter than the window reports its own whole-session rate over the span
 it lasted rather than a fragment scaled up to the hour.
-The **swim distance** (engine 0.9.2, docs/algorithms.md "Swim distance") reads `null` on every
-flight end that is not a `fell_in` — a glide-out is a rider still making way, and 0.0 would say
-he swam nowhere — while `summary.swimDistanceM` on a session with no swims is a genuine
-measured **0.0**, because the ends were classified and none of them was one. Its window is the
-off-foil run walked **uncapped**, so `swimEndTs` is the sample foiling resumed or, when it
-never did, the last sample of the recording: the end-of-session swim is the case the 60 s
-judging window could not see at all.
 
 ### Fixture provenance — one converted recording, and why
 
@@ -228,8 +218,6 @@ and the Pages deploy).
 | foil time | ± 2 % |
 | session duration (`durationS`) | ± 0.1 s |
 | session rates (`avgSpeedKmh`, `turnsPerHour`, `jibesPerHour`, `wetPerHour`) | ± 0.05 |
-| swim distance (`swimM`, `swimDistanceM`, `longestSwimM`) | ± 0.5 m |
-| swim window (`swimStartTs`, `swimEndTs`, `longestSwim*Ts`) | ± 0.1 s |
 | window rates (`windowRates` peaks and every series `jph`/`wph`) | ± 0.05 |
 | window starts (`bestJphStartTs`, `bestWphStartTs`, series `ts`) | ± 0.1 s |
 | watch live vs phone recompute | ± 0.2 kn, counts exact on clean clips |
