@@ -23,10 +23,12 @@ RECORD_TOL = {"best2sKn": 0.05, "best10sKn": 0.05, "best5x10sKn": 0.05,
 
 
 def _fixture_for(stem: str) -> Path | None:
+    """The recording a golden was written from — `.fit`, or since engine 0.9.0 `.gpx`."""
     for sub in ("sessions", "synthetic"):
-        hits = sorted((FIXTURES / sub).rglob(f"{stem}.fit"))
-        if hits:
-            return hits[0]
+        for suffix in (".fit", ".gpx"):
+            hits = sorted((FIXTURES / sub).rglob(f"{stem}{suffix}"))
+            if hits:
+                return hits[0]
     return None
 
 

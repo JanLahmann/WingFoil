@@ -1,4 +1,7 @@
-"""Parse FIT activity files into a RawTrack (records DataFrame + laps + session + capabilities).
+"""Parse activity files into a RawTrack (records DataFrame + laps + session + capabilities).
+
+`parse_track` is the door: FIT here, GPX in `gpx.py` (engine 0.9.0, docs/plan.md's input
+class (c)). Everything below concerns the FIT half.
 
 Fail-soft by design: missing channels/dev fields reduce SourceCapabilities, never raise.
 Developer-field names follow docs/fit-schema.md. Both schema versions are accepted: v2's
@@ -204,6 +207,26 @@ def parse_fit(path: str | Path) -> RawTrack:
         offset = coarse_utc_offset_s(float(lon.iloc[0])) if not lon.empty else None
     return RawTrack(path=str(path), records=df, laps=laps, session=session, capabilities=caps,
                     accel=accel, start_utc_offset_s=offset)
+
+
+def parse_track(path: str | Path) -> RawTrack:
+    """Parse whatever this file is — FIT or GPX — into one `RawTrack`.
+
+    The single door every consumer should come through (engine 0.9.0). The format is
+    decided by extension and confirmed by content: a `.gpx` is XML and a FIT carries the
+    `.FIT` signature at byte 8, so a mislabelled file is read for what it *is* rather than
+    for what it is called. Everything downstream — clean, flights, turns, records — is
+    already written against `RawTrack` plus `SourceCapabilities` and needs to know nothing
+    about which door the track came in by; that is the whole point of the class (a)/(b)/(c)
+    split (docs/plan.md §3.3).
+    """
+    path = Path(path)
+    from .gpx import is_gpx, parse_gpx        # local: gpx imports this module
+    if path.suffix.lower() == ".gpx":
+        return parse_gpx(path)
+    with open(path, "rb") as fh:
+        head = fh.read(2048)
+    return parse_gpx(path) if is_gpx(head) else parse_fit(path)
 
 
 def activity_utc_offset_s(activity: dict) -> int | None:
