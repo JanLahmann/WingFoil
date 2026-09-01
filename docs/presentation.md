@@ -214,6 +214,7 @@ screens below a map, ten legend chips and three paragraphs of legend documentati
 | 2 | the best 2 s record, labelled **"max 2 s"** |
 | 3 | the outcome tally on the ladder's inks · the two turn streaks |
 | 4 | **JPH** (dry jibes) and **WPH** (`docs/algorithms.md` "Session rates"), one decimal |
+| — | and, on a minority of sessions, one caption under row 4: the swim (below) |
 
 The rules, which are the only thing the two implementations can disagree about:
 
@@ -277,6 +278,60 @@ The rules, which are the only thing the two implementations can disagree about:
 - **No duration, no row.** `durationS <= 0` makes the engine report all four rates as
   null, and row 4 disappears — the general rule ("a missing value is absent, never 0")
   applied to the one place where a 0.0 would read as a verdict on the rider.
+
+### The swim — the one line in this block that is not a metric
+
+Under row 4, on a minority of sessions, one quiet caption:
+
+> longest swim — 385 m back to the board
+
+It is the session's `summary.longestSwimM` (`docs/algorithms.md` "Swim distance", engine
+≥ 0.9.2) and it hangs off WPH, which is the cell that counted the fall it came out of. Four
+rules, and every one of them is about keeping it from becoming a fifth rate:
+
+- **It appears only at 100 m or more** (`KeyMetrics.minSwimM`, `MIN_SWIM_M` in
+  `web/js/render.js`). Below that the line is **absent** — not shortened, not greyed. A
+  forty-metre swim is what every session has several of and no rider remembers one of, and
+  a caption that was always there would be a number he learns to stop reading. On the
+  corpus it fires on seven fixtures of seventeen and stays silent on the bundled example,
+  whose longest swim is 47 m. That silence is the feature: this is something a rider finds
+  on his own page, once, on the afternoon that earned it.
+- **Metres under a kilometre, kilometres above it** — `385 m`, `1.8 km`. The one place
+  either app prints a distance in metres. The block's own `km` would render this session's
+  most memorable number as `0.4 km`, three characters of nothing where the point of the
+  line is the size of the number.
+- **"home" only when the recording stopped while he was still in the water.** The swim's
+  window runs to the last sample, so nothing came after it. That is stricter than "the last
+  swim of the session" on purpose: a rider who swam, got back up and rode on for another
+  hour did not swim home, and a caption saying so would be the engine putting words in his
+  mouth. Everything else is "back to the board".
+- **No emoji.** Neither app carries one anywhere — not a glyph, not a label, not a caption —
+  and a swimmer in the middle of a page of SF Symbols would read as a different product. The
+  replay's line uses `figure.pool.swim`, which is the same idea in the vocabulary the rest
+  of the app already speaks.
+
+**The share card does not get it, and that is a decision rather than an omission.** Every
+other cell in this block *is* the card (below, "The share card carries the same block"): one
+list, two readers, which is what keeps a PNG in somebody else's chat thread from naming a
+different number than the page. This line is deliberately outside that arrangement. A card is
+curated — it carries the numbers a rider quotes about his afternoon, and "I swam 1.8 km home"
+is not one of them; it is the part of the day he tells in person, if at all. So it is a
+*caption* on both platforms rather than a `KeyMetrics.Metric` (`ShareCardStats.stats(from:)`
+reads the five members by name and cannot see it) and it lives in `web/js/render.js` rather
+than in `js/cardstats.js`, which is the same statement in the file layout.
+`verify_presentation.py` §5c asserts both halves — that the page prints it when the swim
+earned it, and that no preset of the card ever carries it.
+
+**The replay says it too, once.** `ReplayCommentary` emits a `.swim` milestone at the swim's
+own start — "A 385 m swim back to the board" — for the *longest* swim only, on the same
+100 m gate, sharing `KeyMetrics.swimDistance`/`swimDestination` with the caption so the two
+cannot round differently. It is not a rung of the splash ladder: a splash ordinal says how
+often he got wet, and this says what one of those cost him. At a shared instant it reads
+"First splash · A 385 m swim back to the board" — count, then consequence — and it is drawn
+in splash-cyan rather than the ladder's red, because it is evidence about the fall and not a
+second verdict on it. In a clip's budget it ranks with the record streak, above the two
+firsts: a twenty-five-second clip that cut the kilometre and a half the rider swam home
+would have thrown away the only thing in the script he had not already guessed.
 
 ## Session time — the clock a session is drawn on
 
@@ -393,7 +448,8 @@ twins, and a difference between them is a bug.
 
 The exported card shows **this block and nothing else**, re-laid-out as cells: same keys,
 same order, same labels, same strings, and the tally's three counts kept as counts so they
-can wear the ladder there too. A card is the one artefact that leaves the device and is read
+can wear the ladder there too. "This block" means the block's *entries*: the swim caption
+above is not one, and the card does not get it (see "The swim"). A card is the one artefact that leaves the device and is read
 next to nothing, so it is the last place either app may name a different number for the same
 session — `ShareCardStats.make` takes the rendered `KeyMetrics` rather than rebuilding
 anything from the index row.

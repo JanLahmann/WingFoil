@@ -178,6 +178,114 @@ import Testing
         #expect(splashes.allSatisfy(ReplayCommentary.isSplashMilestone))
     }
 
+    // MARK: - The swim (docs/presentation.md, "The swim")
+
+    /// The easter egg on a session that earned it: one line, at the fall it belongs to.
+    ///
+    /// 2026-08-29 swam 25 times and one of those cost it 385 m. That is the line — not a
+    /// swim ordinal, which says how *often* he got wet, but how far one of them cost him.
+    @Test func theLongestSwimGetsALineOfItsOwn() throws {
+        let analysis = try golden("2026-08-29-1440_nago-torbole-windsurfen_ciq")
+        #expect(analysis.summary.longestSwimM > KeyMetrics.minSwimM)
+        let script = ReplayCommentary.make(analysis, timeZone: fixtureZone)
+        let swims = script.filter { $0.text.contains("swim") }
+        #expect(swims.count == 1, "one swim line, for the longest one, or none at all")
+        let swim = try #require(swims.first)
+        #expect(swim.id == "swim")
+        #expect(swim.text == "A 385 m swim back to the board")
+        // At the swim's own start, which is the fall it came out of — a caption adrift of
+        // the splash it belongs to reads as a caption about something else.
+        #expect(swim.t == analysis.summary.longestSwimStartTs)
+        // And the block on the page says the same number the same way. A replay that
+        // rounded differently from the caption six inches above it would be a second,
+        // disagreeing measurement of one afternoon.
+        #expect(KeyMetrics.make(summary: analysis.summary, records: analysis.records)
+                .swimNote == "longest swim — 385 m back to the board")
+    }
+
+    /// The bundled example says nothing about swimming, and that is the gate working.
+    ///
+    /// Its longest swim is 47 m — what every session has several of. A line there would turn
+    /// the surprise into a fourth rate, which is the one thing this must never become.
+    @Test func aSessionWithNoSwimWorthMentioningNeverBringsItUp() throws {
+        let analysis = try torbole()
+        #expect(analysis.summary.longestSwimM < KeyMetrics.minSwimM)
+        #expect(analysis.summary.longestSwimM > 0, "it did swim — just not far")
+        let script = ReplayCommentary.make(analysis, timeZone: fixtureZone)
+        #expect(!script.contains { $0.kind == .swim })
+        #expect(!script.contains { $0.text.contains("swim") })
+    }
+
+    /// The end-of-session swim — the case the engine's 60 s judging window could not see and
+    /// the only one that says "home".
+    ///
+    /// 2026-09-01 pm is the session that found this: its last flight ended at 735 s and the
+    /// recording ran to 2890, so the swim *is* the rest of the afternoon. Reconstructed here
+    /// rather than bundled, because a 4 MB FIT is not a fixture.
+    @Test func aSwimTheRecordingEndedOnSwamHome() throws {
+        var analysis = try torbole()
+        analysis.summary.swimDistanceM = 2086.6
+        analysis.summary.longestSwimM = 1846.7
+        analysis.summary.longestSwimStartTs = 300
+        analysis.summary.longestSwimEndTs = analysis.summary.durationS
+        let script = ReplayCommentary.make(analysis, timeZone: fixtureZone)
+        let swim = try #require(script.first { $0.kind == .swim })
+        #expect(swim.text == "A 1.8 km swim home")
+        #expect(swim.t == 300)
+
+        // He got back up with a minute to spare: no longer home, and the wording follows the
+        // recording rather than the ordinal.
+        analysis.summary.longestSwimEndTs = analysis.summary.durationS - 60
+        let after = ReplayCommentary.make(analysis, timeZone: fixtureZone)
+        #expect(after.first { $0.kind == .swim }?.text == "A 1.8 km swim back to the board")
+    }
+
+    /// The swim survives a clip's budget — it sits with the record streak, above the firsts
+    /// and above every ordinal.
+    ///
+    /// A twenty-five-second clip has room for eight lines out of a talkative afternoon's
+    /// twelve. The four cut are ordinals and run-up streaks; the kilometre and a half the
+    /// rider swam home is not one of them, because it is the only thing in the script he had
+    /// not already guessed. (At four lines — a ten-second clip — the budget is the two
+    /// bookends and the two superlatives, and nothing else survives at all.)
+    @Test func theSwimOutlivesAClipsBudget() throws {
+        var analysis = try torbole()
+        analysis.summary.longestSwimM = 1846.7
+        analysis.summary.longestSwimStartTs = 300
+        analysis.summary.longestSwimEndTs = analysis.summary.durationS
+        let script = ReplayCommentary.make(analysis, timeZone: fixtureZone)
+        #expect(script.count > 8, "the session must have more to say than the budget allows")
+        let short = ReplayCommentary.pruned(script, forTargetWallS: 25)
+        #expect(short.count == 8)
+        #expect(short.contains { $0.kind == .swim })
+        #expect(short.map(\.t) == short.map(\.t).sorted())
+        // Ordinals and the run-up to the record are what got cut, which is the ordering
+        // this rests on: nothing that survived is one, and nothing that was cut is not.
+        let keptIds = Set(short.map(\.id))
+        let best = analysis.summary.turns.longestDryStreak
+        for milestone in script where !keptIds.contains(milestone.id) {
+            switch milestone.kind {
+            case .jibe, .firstTakeoff: break
+            case .streak(let n): #expect(n < best, "the record streak was cut")
+            default: Issue.record("\(milestone.text) should have outlived the budget")
+            }
+        }
+    }
+
+    /// At one instant the count leads and the consequence follows.
+    @Test func aSwimSharingAnInstantWithItsSplashReadsCountThenConsequence() throws {
+        var analysis = try torbole()
+        let splash = try #require(analysis.flightEnds.first { $0.outcome == "fell_in" })
+        analysis.summary.longestSwimM = 212.0
+        analysis.summary.longestSwimStartTs = splash.ts
+        analysis.summary.longestSwimEndTs = splash.ts + 60
+        let script = ReplayCommentary.make(analysis, timeZone: fixtureZone)
+        let line = try #require(script.first { $0.t == splash.ts })
+        #expect(line.text == "First splash · A 212 m swim back to the board")
+        // The merged line keeps the more specific kind, which is what its ink reads.
+        #expect(line.kind == .swim)
+    }
+
     /// A recording that has a span but nothing in it still gets its two bookends: "you were
     /// out for eleven minutes and nothing was detected" is a fact, and an empty commentary
     /// would look like a broken feature rather than a quiet session.

@@ -19,6 +19,10 @@ import Foundation
 /// 4. `rates` — the per-hour rates (`docs/algorithms.md` "Session rates"); JPH counts
 ///    **dry** jibes since 0.7.0, and its label says so.
 ///
+/// …and under them, on a minority of sessions, one caption: `swimNote`. It is the only
+/// thing here that is not a `Metric`, and that is what keeps it off the share card
+/// (`docs/presentation.md`, "The swim").
+///
 /// Everything resolves to a display string here so both platforms format one way and so
 /// the *content* is testable without a renderer — the same arrangement `ShareCardStats`
 /// uses, and for the same reason: a block that prints "0.0 JPH" where it means "there is
@@ -84,14 +88,19 @@ public struct KeyMetrics: Sendable, Equatable {
     /// JPH (or TPH) and WPH. **Empty** when `durationS <= 0` — the engine reports the
     /// rates as null there, and "no hour to divide by" is an absence, not a 0.0.
     public let rates: [Metric]
+    /// The swim caption that hangs under the rates, or nil — which is most sessions. A
+    /// *caption*, not a `Metric`, so `ShareCardStats.stats(from:)` cannot pick it up: the
+    /// card is curated and this is not one of the numbers a rider quotes (see `swimNote`).
+    public let swimNote: String?
 
     public init(basics: [Metric], maxSpeed: Metric, tally: Tally?, streaks: Metric?,
-                rates: [Metric]) {
+                rates: [Metric], swimNote: String? = nil) {
         self.basics = basics
         self.maxSpeed = maxSpeed
         self.tally = tally
         self.streaks = streaks
         self.rates = rates
+        self.swimNote = swimNote
     }
 
     // MARK: - Building
@@ -115,7 +124,8 @@ public struct KeyMetrics: Sendable, Equatable {
                 ? Metric(key: "streaks", label: "best streaks",
                          value: "\(t.longestFlewStreak) flew · \(t.longestDryStreak) dry")
                 : nil,
-            rates: rates(summary))
+            rates: rates(summary),
+            swimNote: swimNote(summary))
     }
 
     /// The jibe ladder when the session named jibes, the whole counted-turn ladder when it
@@ -227,5 +237,52 @@ public struct KeyMetrics: Sendable, Equatable {
     static func knFromKmh(_ value: Double?) -> Double? {
         guard let value else { return nil }
         return value / 1.852
+    }
+
+    // MARK: - The swim (docs/presentation.md, "The swim")
+
+    /// The shortest swim worth mentioning at all, in metres.
+    ///
+    /// Below this the line does not appear — not shortened, not greyed, **absent**. A swim
+    /// of forty metres is what every session has several of and no rider remembers one of;
+    /// printing it would turn a surprise into a row of the dashboard, which is the one thing
+    /// this line must not become. On the corpus it fires on seven fixtures of seventeen and
+    /// stays silent on the bundled example, whose longest swim is 47 m.
+    public static let minSwimM: Double = 100
+
+    /// "longest swim — 385 m back to the board", or nil when nothing was worth saying.
+    ///
+    /// **Not a `Metric`, and that is the design.** The block's cells are the share card's
+    /// stat list (`ShareCardStats`, one list and two readers), so anything added there
+    /// travels in a PNG into somebody else's chat thread. A card is curated: it carries the
+    /// numbers a rider quotes, and "I swam 1.8 km home" is not one of them — it is a thing
+    /// he finds on his own page, once, and grins at. So this rides beside the rates as a
+    /// *caption* and the card never sees it (docs/presentation.md, "The swim").
+    public static func swimNote(_ s: SessionSummary) -> String? {
+        guard s.longestSwimM >= minSwimM else { return nil }
+        return "longest swim — \(swimDistance(s.longestSwimM)) \(swimDestination(s))"
+    }
+
+    /// Metres under a kilometre, kilometres above it — `385 m`, `1.8 km`.
+    ///
+    /// The one place either app prints a distance in metres. `km` (the block's own format)
+    /// would render this session's most memorable number as **`0.4 km`**, which is three
+    /// characters of nothing where the point of the line is the size of the number.
+    static func swimDistance(_ metres: Double) -> String {
+        metres < 1000 ? "\(Int(metres.rounded())) m" : km(metres / 1000)
+    }
+
+    /// Where the swim ended: the beach, or his board.
+    ///
+    /// "home" only when the **recording stopped while he was still in the water** — the
+    /// swim's window runs to the last sample, so nothing came after it. That is stricter
+    /// than "the last swim of the session" on purpose: a rider who swam, got back up and
+    /// rode on for another hour did not swim home, and a caption that said so would be the
+    /// engine putting words in his mouth.
+    static func swimDestination(_ s: SessionSummary) -> String {
+        guard let end = s.longestSwimEndTs, end >= s.durationS - 0.5 else {
+            return "back to the board"
+        }
+        return "home"
     }
 }

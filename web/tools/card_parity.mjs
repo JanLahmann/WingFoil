@@ -27,7 +27,7 @@ import { readFileSync } from "node:fs";
 globalThis.window = { addEventListener() {} };
 
 const JS = new URL("../js/", import.meta.url);
-const { keyMetrics } = await import(new URL("render.js", JS).href);
+const { keyMetrics, swimNote } = await import(new URL("render.js", JS).href);
 const { LEAN_KEYS, cardStats } = await import(new URL("cardstats.js", JS).href);
 
 /**
@@ -56,9 +56,15 @@ for (const path of process.argv.slice(2)) {
   const g = JSON.parse(readFileSync(path, "utf8"));
   const pair = (e) => ({ key: e.key, label: normalize(e.label), value: normalize(e.value),
                          tally: e.tally ?? null });
+  const html = keyMetrics(g);
   out.push({
     file: path,
-    block: parseBlock(keyMetrics(g)),
+    block: parseBlock(html),
+    // The swim caption (docs/presentation.md, "The swim"): the one line in the block that is
+    // deliberately *not* an entry, so §5c can prove both halves of that — that the page
+    // prints it, and that the card never sees it.
+    swimNote: swimNote(g.summary),
+    noteInBlock: /<div class="key-note">/.test(html),
     complete: cardStats(g, "complete").map(pair),
     lean: cardStats(g, "lean").map(pair),
     leanKeys: [...LEAN_KEYS].sort(),

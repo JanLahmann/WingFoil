@@ -29,6 +29,10 @@ Six groups:
 4. **The engine path** (skipped by `--fast`): re-analyze one FIT through `web_entry`, the
    exact call the browser makes, and check the presentation facts of the document it
    produces. This is what ties the numbers to the code the site actually runs.
+5c. **The swim caption.** The one line in the key-metrics block that is *not* an entry
+   (docs/presentation.md "The swim"): asserted to appear exactly when the session's longest
+   swim clears 100 m, to be worded the way a third re-derivation of the rule words it, and
+   never to reach the exported card, which stays curated.
 5. **The share card is the block.** The exported card's stat list, for every fixture, is
    the key-metrics block the page renders — same entries, same order, same labels, same
    strings — with `lean` a strict subset of it and nothing from the tiles allowed in. A
@@ -591,6 +595,59 @@ def check_card() -> None:
 
     if cards:
         check("  leanKeys is the contract's set", cards[0]["leanKeys"], LEAN_KEYS)
+
+    check_swim_note(cards)
+
+
+#: The shortest swim worth a line, in metres — `KeyMetrics.minSwimM` on iOS, `MIN_SWIM_M`
+#: in js/render.js, spelled a third time here so the rule is checked against a copy of
+#: itself rather than against the implementation under test.
+MIN_SWIM_M = 100.0
+
+
+def _expected_swim_note(doc: dict) -> str | None:
+    """`swimNote`, re-derived from the analysis document (docs/presentation.md "The swim")."""
+    s = doc["summary"]
+    metres = s.get("longestSwimM") or 0.0
+    if metres < MIN_SWIM_M:
+        return None
+    distance = f"{round(metres)} m" if metres < 1000 else f"{metres / 1000:.1f} km"
+    end = s.get("longestSwimEndTs")
+    home = end is not None and end >= s["durationS"] - 0.5
+    return f"longest swim — {distance} {'home' if home else 'back to the board'}"
+
+
+def check_swim_note(cards: list[dict]) -> None:
+    """The swim caption: on the page when it earned a line, never on the card.
+
+    Both halves matter and they pull opposite ways. A line that never appeared would be an
+    easter egg nobody ever finds; a line that reached the card would be the *curated* PNG
+    growing a cell the block calls a caption — and §5 above only proves the card equals the
+    **entry list**, which this line is deliberately not in. So the appearance is asserted
+    against a re-derivation of the rule, and the absence against the card's own strings.
+    """
+    section("5c. the swim caption is on the page and not on the card")
+
+    fired = 0
+    for card in cards:
+        stem = Path(card["file"]).name[: -len(gen.SUFFIX)]
+        doc = json.loads(Path(REPO / card["file"]).read_text(encoding="utf-8"))
+        want = _expected_swim_note(doc)
+        check(f"  {stem}: the swim caption, re-derived", card["swimNote"], want)
+        check(f"  {stem}: the block prints it iff there is one",
+              card["noteInBlock"], want is not None)
+        # The caption may not reach the card — not as a cell, not folded into one. Tested
+        # on the *caption's own words*: "swims" alone would hit the WPH label, which is the
+        # cell this line hangs under and belongs on the card exactly as it is.
+        text = " ".join(f"{e['label']} {e['value']}" for e in card["complete"]).lower()
+        check(f"  {stem}: the caption did not reach the card",
+              "longest swim" in text or (want is not None and want.lower() in text), False)
+        fired += int(want is not None)
+
+    # The gate has to be a gate: on this corpus it must both fire and stay silent, or the
+    # check would pass just as happily on a rule that never says anything.
+    check("  the corpus exercises both sides of the gate", (fired > 0, fired < len(cards)),
+          (True, True))
 
 
 CARD_TEXT = TOOLS / "card_text.mjs"

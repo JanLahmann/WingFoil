@@ -500,6 +500,85 @@ import Testing
         #expect(block.rates[1].value == "12.8")
     }
 
+    // MARK: - The swim (docs/presentation.md, "The swim")
+
+    /// A swim worth a line gets one, under the rates, in the caption slot.
+    @Test func theSwimCaptionAppearsWhenTheSwimEarnedIt() {
+        var summary = torboleSummary()
+        summary.apply(swim(385.3, start: 6476, end: 6852))
+        let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
+        #expect(block.swimNote == "longest swim — 385 m back to the board")
+        // He got back up and rode on, so the recording did not end on it: not "home".
+        #expect(summary.longestSwimEndTs! < summary.durationS - 0.5)
+    }
+
+    /// The end-of-session swim: the recording stopped with him still in the water.
+    @Test func theSwimCaptionSaysHomeOnlyWhenTheRecordingEndedOnIt() {
+        var summary = torboleSummary()
+        summary.apply(swim(1846.7, start: 735, end: summary.durationS))
+        let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
+        // Kilometres past a kilometre — "1.8 km", not "1847 m" and certainly not "1.8 km"
+        // rendered by `km` as the block's other distances are, which would read "0.4 km"
+        // on the 385 m case above.
+        #expect(block.swimNote == "longest swim — 1.8 km home")
+    }
+
+    /// Under the gate the line is **absent**, not shortened: a forty-metre swim is what
+    /// every session has several of, and printing it would make this a fifth rate.
+    @Test func aShortSwimSaysNothingAtAll() {
+        var summary = torboleSummary()
+        summary.apply(swim(46.8, start: 100, end: 160))
+        #expect(KeyMetrics.make(summary: summary, records: GP3SRecords()).swimNote == nil)
+
+        // And the boundary itself is inclusive, so the constant means what it says.
+        summary.apply(swim(KeyMetrics.minSwimM, start: 100, end: 160))
+        #expect(KeyMetrics.make(summary: summary, records: GP3SRecords()).swimNote
+                == "longest swim — 100 m back to the board")
+
+        // A session that never swam has no window at all, and still no line.
+        #expect(KeyMetrics.make(summary: torboleSummary(), records: GP3SRecords())
+                .swimNote == nil)
+    }
+
+    /// The caption may not become a cell — which is the whole reason it is not a `Metric`.
+    ///
+    /// The card is curated: it carries the numbers a rider quotes, and it travels as a PNG
+    /// into somebody else's chat thread where nothing can correct it. `stats(from:)` reads
+    /// the five members by name, so the only way this could regress is somebody promoting
+    /// the caption to a `Metric` — which is exactly what this catches.
+    @Test func theSwimCaptionNeverReachesTheShareCard() {
+        var summary = torboleSummary()
+        summary.apply(swim(1846.7, start: 735, end: summary.durationS))
+        let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
+        #expect(block.swimNote != nil)
+        for preset in ShareCardStats.Preset.allCases {
+            let stats = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block,
+                                            preset: preset, timeZone: fixtureZone)
+            let text = stats.stats.map { "\($0.label) \($0.value)" }.joined(separator: " ")
+            #expect(!text.lowercased().contains("longest swim"),
+                    "\(preset.rawValue) grew a swim cell")
+            #expect(!stats.stats.contains { $0.key == "swim" })
+        }
+        // The clip's outro card gets one cell the exported card does not — and it is the
+        // longest *flight*, not this.
+        let outro = ShareCardStats.outro(row: sampleRow(), title: "x", metrics: block,
+                                         longestFlightS: 424, timeZone: fixtureZone)
+        // "swims" alone would hit the WPH label, which is the cell this caption hangs
+        // under and belongs on the card exactly as it is; the caption's own words are the
+        // test.
+        #expect(!outro.stats.map { "\($0.label) \($0.value)" }.joined()
+                .lowercased().contains("longest swim"))
+    }
+
+    private func swim(_ metres: Double, start: Double, end: Double) -> SwimSummary {
+        var s = SwimSummary()
+        s.distanceM = metres
+        s.longestM = metres
+        s.longestStartT = start
+        s.longestEndT = end
+        return s
+    }
+
     /// No duration ⇒ the engine reports every rate as null, and the row disappears rather
     /// than printing "0.0 JPH" over a rider who was never given an hour to divide by.
     @Test func keyMetricsHideTheRateRowWithoutADuration() {
