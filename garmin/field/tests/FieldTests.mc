@@ -1,5 +1,6 @@
 import Toybox.Graphics;
 import Toybox.Lang;
+import Toybox.System;
 import Toybox.Position;
 import Toybox.Test;
 import WingFoilCore;
@@ -261,6 +262,102 @@ function tickCounterRollsBelowTheFitSentinel(logger as Test.Logger) as Boolean {
 }
 
 // ---- adaptive layout ----
+//
+// The cell rectangles below are not invented, and that matters: guessing them from "half of
+// 454" is exactly how a clipped turn row survived this suite for two releases. They are what
+// Garmin's own layouts really hand a data field, read off the simulator by walking
+// Data Fields > Layout with the screenshot harness (garmin/field/screenshots) running — it
+// prints "CELL wxh flags n" on every change for this purpose. The bottom cell of a 2-field
+// page is 226 px tall and starts at y 228, not 227 and 227; a 4-field quadrant is 225 px
+// wide, not 227; and the flags are how the field knows which of those edges is bezel.
+//
+// Both ends of the product list are tabled: fenix847mm, the largest glass (454 px), and
+// fr255, the smallest round one (260 px). Columns are
+//   label, w, h, obscurity flags, the SIZE_* the cell must end up with, and how many of its
+//   rows may come out with no window at all (see layoutRowsNeverClip).
+const CELLS_454 = [
+    ["1 field",        454, 454, 15, FieldLayout.SIZE_FULL,  0],
+    ["2F upper",       454, 225,  7, FieldLayout.SIZE_WIDE,  0],
+    ["2F lower",       454, 226, 13, FieldLayout.SIZE_SMALL, 0],
+    ["3A upper",       454, 158,  7, FieldLayout.SIZE_WIDE,  0],
+    ["3A middle",      454, 128,  5, FieldLayout.SIZE_SMALL, 0],
+    ["3A lower",       454, 163, 13, FieldLayout.SIZE_SMALL, 0],
+    ["3B upper",       454, 146,  7, FieldLayout.SIZE_WIDE,  0],
+    ["3B middle",      454, 157,  5, FieldLayout.SIZE_WIDE,  0],
+    ["3B lower",       454, 145, 13, FieldLayout.SIZE_SMALL, 0],
+    ["3C upper",       454, 225,  7, FieldLayout.SIZE_WIDE,  0],
+    ["3C lower left",  225, 226,  9, FieldLayout.SIZE_SMALL, 0],
+    ["3C lower right", 225, 226, 12, FieldLayout.SIZE_SMALL, 0],
+    ["4A upper",       454, 161,  7, FieldLayout.SIZE_WIDE,  0],
+    ["4A mid left",    225, 135,  1, FieldLayout.SIZE_SMALL, 0],
+    ["4A mid right",   225, 135,  4, FieldLayout.SIZE_SMALL, 0],
+    ["4A lower",       454, 152, 13, FieldLayout.SIZE_SMALL, 0],
+    ["4B upper left",  225, 225,  3, FieldLayout.SIZE_SMALL, 0],
+    ["4B upper right", 225, 225,  6, FieldLayout.SIZE_SMALL, 0],
+    ["4B lower left",  225, 226,  9, FieldLayout.SIZE_SMALL, 0],
+    ["4B lower right", 225, 226, 12, FieldLayout.SIZE_SMALL, 0],
+    ["4C upper",       454, 113,  7, FieldLayout.SIZE_SMALL, 0],
+    ["4C second",      454, 109,  5, FieldLayout.SIZE_SMALL, 0],
+    ["4C third",       454, 112,  5, FieldLayout.SIZE_SMALL, 0],
+    ["4C lower",       454, 111, 13, FieldLayout.SIZE_SMALL, 0],
+    ["5F mid left",    225, 112,  1, FieldLayout.SIZE_SMALL, 0],
+    ["5F mid right",   225, 112,  4, FieldLayout.SIZE_SMALL, 0],
+    ["6F 2nd left",    225, 109,  1, FieldLayout.SIZE_SMALL, 0],
+    ["6F 2nd right",   225, 109,  4, FieldLayout.SIZE_SMALL, 0],
+    ["7F upper",       454,  78,  7, FieldLayout.SIZE_SMALL, 1],
+    ["7F 2nd left",    225,  94,  1, FieldLayout.SIZE_SMALL, 0],
+    ["7F 2nd right",   225,  94,  4, FieldLayout.SIZE_SMALL, 0],
+    ["7F fourth",      454,  82,  5, FieldLayout.SIZE_SMALL, 0],
+    ["7F lower",       454,  78, 13, FieldLayout.SIZE_SMALL, 1]
+];
+const CELLS_260 = [
+    ["1 field",        260, 260, 15, FieldLayout.SIZE_FULL,  0],
+    ["2F upper",       260, 129,  7, FieldLayout.SIZE_WIDE,  0],
+    ["2F lower",       260, 129, 13, FieldLayout.SIZE_SMALL, 0],
+    ["3A upper",       260,  83,  7, FieldLayout.SIZE_WIDE,  0],
+    ["3A middle",      260,  91,  5, FieldLayout.SIZE_WIDE,  0],
+    ["3A lower",       260,  82, 13, FieldLayout.SIZE_SMALL, 0],
+    ["3B upper",       260,  90,  7, FieldLayout.SIZE_WIDE,  0],
+    ["3B middle",      260,  74,  5, FieldLayout.SIZE_SMALL, 0],
+    ["3B lower",       260,  93, 13, FieldLayout.SIZE_SMALL, 0],
+    ["3C lower left",  129, 129,  9, FieldLayout.SIZE_SMALL, 0],
+    ["3C lower right", 129, 129, 12, FieldLayout.SIZE_SMALL, 0],
+    ["4A upper",       260,  64,  7, FieldLayout.SIZE_SMALL, 0],
+    ["4A middle",      260,  63,  5, FieldLayout.SIZE_SMALL, 0],
+    ["4A lower",       260,  64, 13, FieldLayout.SIZE_SMALL, 0],
+    ["4B upper",       260,  92,  7, FieldLayout.SIZE_WIDE,  0],
+    ["4B mid left",    129,  77,  1, FieldLayout.SIZE_SMALL, 0],
+    ["4B mid right",   129,  77,  4, FieldLayout.SIZE_SMALL, 0],
+    ["4B lower",       260,  87, 13, FieldLayout.SIZE_SMALL, 0],
+    ["4C upper left",  129, 129,  3, FieldLayout.SIZE_SMALL, 0],
+    ["4C upper right", 129, 129,  6, FieldLayout.SIZE_SMALL, 0],
+    ["5F mid left",    129,  63,  1, FieldLayout.SIZE_SMALL, 0],
+    ["5F mid right",   129,  63,  4, FieldLayout.SIZE_SMALL, 0],
+    ["7F upper",       260,  44,  7, FieldLayout.SIZE_SMALL, 1],
+    ["7F 2nd left",    129,  54,  1, FieldLayout.SIZE_SMALL, 0],
+    ["7F fourth",      260,  47,  5, FieldLayout.SIZE_SMALL, 0],
+    ["7F lower",       260,  44, 13, FieldLayout.SIZE_SMALL, 1]
+];
+
+// The cells to drive on the glass this binary was built for. Off the two tabled glasses the
+// invariants still run, on a synthetic 1/2/4-field split, but without the expected sizes:
+// those are readings, not predictions, and inventing them for an untested watch would be the
+// original sin of this file all over again.
+function cellsFor(screenW as Number, screenH as Number) as Array {
+    if (screenW == 454 && screenH == 454) {
+        return CELLS_454;
+    }
+    if (screenW == 260 && screenH == 260) {
+        return CELLS_260;
+    }
+    return [
+        ["1 field", screenW, screenH, 15, -1, 0],
+        ["upper half", screenW, screenH / 2, 7, -1, 0],
+        ["lower half", screenW, screenH - screenH / 2, 13, -1, 0],
+        ["upper left quadrant", screenW / 2, screenH / 2, 3, -1, 0],
+        ["lower right quadrant", screenW / 2, screenH - screenH / 2, 12, -1, 0]
+    ] as Array;
+}
 
 (:test)
 function layoutClassifiesCellSizes(logger as Test.Logger) as Boolean {
@@ -274,68 +371,144 @@ function layoutClassifiesCellSizes(logger as Test.Logger) as Boolean {
         "a 3-field row is still WIDE");
     Test.assertMessage(FieldLayout.classify(227, 113, w, h) == FieldLayout.SIZE_SMALL,
         "a quarter cell is SMALL");
-    Test.assertMessage(FieldLayout.isRoundFull(w, h, w, h), "the full round screen is round");
-    Test.assertMessage(!FieldLayout.isRoundFull(w, 227, w, h),
-        "a carved-out cell is a plain rectangle");
+    // classify() is height-only above SMALL and always has been: a quadrant is half the
+    // screen tall, so it asks for the three-row layout however narrow it is. That is the
+    // question fitCell() exists to overrule, and layoutRowsNeverClip is where it does.
+    Test.assertMessage(FieldLayout.classify(227, 227, w, h) == FieldLayout.SIZE_WIDE,
+        "a 2x2 quadrant asks for WIDE on room alone");
     return true;
 }
 
-// Every row of every layout must sit inside its cell — and inside the GLASS when the cell is
-// the whole round screen. This is the headless twin of eyeballing a screenshot, and unlike a
-// screenshot it runs for every cell size the user can drop the field into.
+(:test)
+function layoutReadsTheObscurityFlags(logger as Test.Logger) as Boolean {
+    // The whole glass: both rims, so nothing to lean towards.
+    var g = FieldLayout.place(454, 454, 454, 454, 15, true);
+    Test.assertMessage(g != null && g.y0 == 0 && g.lean == 0 && g.cx == 227.0,
+        "the 1-field cell is the glass itself");
+    // Upper half: y0 0, and a stack in it leans DOWN, away from the top rim.
+    g = FieldLayout.place(454, 225, 454, 454, 7, true);
+    Test.assertMessage(g != null && g.y0 == 0 && g.lean == 1, "upper half leans down");
+    // Lower half: the system says 226 tall against the bottom, so it starts at 228.
+    g = FieldLayout.place(454, 226, 454, 454, 13, true);
+    Test.assertMessage(g != null && g.y0 == 228 && g.lean == -1, "lower half leans up");
+    // A right-hand quadrant: the glass's centre is off to the LEFT of the cell's own.
+    g = FieldLayout.place(225, 226, 454, 454, 12, true);
+    Test.assertMessage(g != null && g.y0 == 228 && (g.cx - -2.0).abs() < 0.01,
+        "a right quadrant starts at x 229, so the glass centre is 2 px left of its edge");
+    g = FieldLayout.place(225, 226, 454, 454, 9, true);
+    Test.assertMessage(g != null && (g.cx - 227.0).abs() < 0.01, "and 227 in for a left one");
+    // A band that touches neither rim cannot be located, and is not guessed at.
+    Test.assertMessage(FieldLayout.place(454, 128, 454, 454, 5, true) == null,
+        "a middle band keeps its rectangle");
+    // Nor is a square screen corrected for at all.
+    Test.assertMessage(FieldLayout.place(454, 226, 454, 454, 13, false) == null,
+        "a rectangular glass has no missing corners");
+    return true;
+}
+
+// Every row of every cell of every layout the user can actually pick must sit inside its cell
+// and inside the GLASS. This is the headless twin of eyeballing a screenshot, and unlike a
+// screenshot it runs against the worst-case strings — the counts that turn up at the end of a
+// long session, not the ones on the shot.
 (:test)
 function layoutRowsNeverClip(logger as Test.Logger) as Boolean {
-    // A tiny scratch bitmap: font metrics do not depend on the canvas it is measured on, and
-    // a data field only has 128 KB — a screen-sized buffer (454x454) is enough to take the
+    // A tiny scratch bitmap: font metrics do not depend on the canvas they are measured on,
+    // and a data field only has 128 KB — a screen-sized buffer (454x454) is enough to take the
     // whole heap with it, which is exactly how this test first killed the simulator.
     var ref = Graphics.createBufferedBitmap({:width => 8, :height => 8});
-    var bmp = ref.get();
-    Test.assertMessage(bmp != null, "buffered bitmap");
-    var dc = (bmp as Graphics.BufferedBitmap).getDc();
-
-    var cells = [[454, 454, true], [454, 227, false], [454, 151, false],
-        [227, 113, false]] as Array<Array>;
-    var widest = ["88.8 km/h", "100%", "99 · 88:88", "TOUCH 100%",
-        "99/99 · 99·99·99"] as Array<String>;
-    var ladders = [FieldLayout.TEXT_FONTS, FieldLayout.NUM_FONTS, FieldLayout.TEXT_FONTS,
-        FieldLayout.TEXT_FONTS, FieldLayout.TEXT_FONTS] as Array;
+    var dc = (ref.get() as Graphics.BufferedBitmap).getDc();
+    var s = System.getDeviceSettings();
+    var round = s.screenShape == System.SCREEN_SHAPE_ROUND;
+    var cells = cellsFor(s.screenWidth, s.screenHeight);
+    logger.debug("glass " + s.screenWidth + "x" + s.screenHeight + " round=" + round
+        + ", " + cells.size() + " cells");
 
     for (var c = 0; c < cells.size(); c++) {
-        var w = cells[c][0] as Number;
-        var h = cells[c][1] as Number;
-        var round = cells[c][2] as Boolean;
-        var size = FieldLayout.classify(w, h, 454, 454);
-        var rows = size == FieldLayout.SIZE_FULL
-            ? 5 : (size == FieldLayout.SIZE_WIDE ? 3 : 2);
-        // the layouts use the first `rows` of the widest-string list, biggest first
-        var texts = [] as Array<String>;
-        var lad = [] as Array;
-        for (var i = 0; i < rows; i++) {
-            var k = size == FieldLayout.SIZE_FULL ? i : i + 1;
-            texts.add(widest[k]);
-            lad.add(ladders[k]);
+        var name = cells[c][0] as String;
+        var w = cells[c][1] as Number;
+        var h = cells[c][2] as Number;
+        var g = FieldLayout.place(w, h, s.screenWidth, s.screenHeight,
+            cells[c][3] as Number, round);
+        var cell = FieldLayout.fitCell(dc, w, h, s.screenWidth, s.screenHeight, g);
+        var size = cell[0] as Number;
+        var want = cells[c][4] as Number;
+        Test.assertMessage(want < 0 || size == want,
+            name + " came out SIZE " + size + ", the simulator says it must be " + want);
+        var texts = FieldLayout.WIDEST[size];
+        var heights = FieldLayout.heightsOf(dc, cell[1] as Array<Graphics.FontType>);
+        var lean = cell[2] as Number;
+        var blind = 0;
+        var prevBottom = 0;
+        for (var i = 0; i < texts.size(); i++) {
+            var y = FieldLayout.stackY(h, heights, i, lean);
+            var win = FieldLayout.rowWindow(w, y, heights[i], g);
+            var tw = dc.getTextWidthInPixels(texts[i],
+                (cell[1] as Array<Graphics.FontType>)[i]);
+            Test.assertMessage(y - heights[i] / 2 >= 0 && y + heights[i] / 2 <= h,
+                name + " row " + i + " is outside its cell");
+            Test.assertMessage(y - heights[i] / 2 >= prevBottom,
+                name + " row " + i + " overlaps the row above it");
+            prevBottom = y + heights[i] / 2;
+            // A window of zero means the row's font BOX has no overlap with the glass at all,
+            // which is not the same as the row being invisible: the box is a good deal taller
+            // than the ink in it. It happens only in the 78 px end bands of a 7-field page, the
+            // fitter has already walked to the smallest font it has, and there is nothing left
+            // to trade — so it is counted rather than asserted, and the count is pinned.
+            if (win[1] == 0) {
+                blind++;
+                continue;
+            }
+            Test.assertMessage(tw <= win[1], name + " row " + i + ": \"" + texts[i]
+                + "\" is " + tw + " px wide, the glass gives it " + win[1]
+                + " at y " + y);
         }
-        var fonts = FieldLayout.fitRows(dc, w, h, texts, lad, round);
-        var heights = FieldLayout.heightsOf(dc, fonts);
-        var prevBottom = -1;
-        for (var i = 0; i < rows; i++) {
-            var y = FieldLayout.stackY(h, heights, i);
-            var tw = dc.getTextWidthInPixels(texts[i], fonts[i]);
-            var top = y - heights[i] / 2;
-            var bottom = y + heights[i] / 2;
-            Test.assertMessage(top >= 0 && bottom <= h,
-                "cell " + w.toString() + "x" + h.toString() + " row " + i.toString()
-                + " outside the cell (" + top.toString() + ".." + bottom.toString() + ")");
-            Test.assertMessage(tw <= FieldLayout.rowWidth(w, h, y, heights[i], round),
-                "cell " + w.toString() + "x" + h.toString() + " row " + i.toString()
-                + " is " + tw.toString() + " px wide, budget "
-                + FieldLayout.rowWidth(w, h, y, heights[i], round).toString());
-            Test.assertMessage(top >= prevBottom, "rows must not overlap");
-            prevBottom = bottom;
-        }
-        logger.debug("cell " + w.toString() + "x" + h.toString() + " -> " + rows.toString()
-            + " rows, heights " + heights.toString());
+        Test.assertMessage(blind == (cells[c][5] as Number),
+            name + " has " + blind + " row(s) with no window, expected " + cells[c][5]);
+        logger.debug(name + " " + w + "x" + h + " -> size " + size + " lean " + lean
+            + " heights " + heights.toString());
     }
+    return true;
+}
+
+// The defect this geometry exists for, stated as an assertion.
+//
+// The lower half of a 2-field page is the bottom of the circle. Fitted to its own rectangle it
+// takes the three-row layout and draws "TOUCH 100% · 99/99" across 420 px of a chord that is
+// nothing like that wide down there — which is what the store screenshots caught: FLEW and the
+// last of the tack/jibe split were both eaten by the bezel. It must now step down to the two
+// rows it can hold, and hold them.
+(:test)
+function bottomBezelCellsGiveUpTheTurnRow(logger as Test.Logger) as Boolean {
+    var s = System.getDeviceSettings();
+    if (s.screenShape != System.SCREEN_SHAPE_ROUND) {
+        return true;
+    }
+    var ref = Graphics.createBufferedBitmap({:width => 8, :height => 8});
+    var dc = (ref.get() as Graphics.BufferedBitmap).getDc();
+    var w = s.screenWidth;
+    var h = s.screenHeight - s.screenHeight / 2;
+    var g = FieldLayout.place(w, h, s.screenWidth, s.screenHeight,
+        FieldLayout.EDGE_LEFT | FieldLayout.EDGE_RIGHT | FieldLayout.EDGE_BOTTOM, true);
+    Test.assertMessage(FieldLayout.classify(w, h, s.screenWidth, s.screenHeight)
+        == FieldLayout.SIZE_WIDE, "room alone still says WIDE");
+
+    // What the old rule did: three rows fitted to the full rectangle, turn row last.
+    var old = FieldLayout.fitRows(dc, w, h, FieldLayout.WIDEST[FieldLayout.SIZE_WIDE],
+        FieldLayout.LADDERS[FieldLayout.SIZE_WIDE], null, 0);
+    var heights = FieldLayout.heightsOf(dc, old);
+    var y = FieldLayout.stackY(h, heights, 2, 0);
+    var wide = dc.getTextWidthInPixels("TOUCH 100% · 99/99", old[2]);
+    var glass = FieldLayout.rowWindow(w, y, heights[2], g)[1];
+    logger.debug("old turn row: " + wide + " px at y " + y + ", glass gives " + glass);
+    Test.assertMessage(wide > glass,
+        "the bug: the turn row was " + wide + " px and the chord there is " + glass);
+
+    // What the new one does: the cell cannot carry three rows, so it carries two.
+    var cell = FieldLayout.fitCell(dc, w, h, s.screenWidth, s.screenHeight, g);
+    Test.assertMessage((cell[0] as Number) == FieldLayout.SIZE_SMALL,
+        "the bottom half steps down to two rows");
+    Test.assertMessage((cell[2] as Number) == -1,
+        "and leans up, away from the bezel it is sitting on");
     return true;
 }
 

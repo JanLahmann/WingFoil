@@ -41,6 +41,9 @@ class ShotsField extends WingFoilDataField {
 
     hidden var _tick as Number = 0;
     hidden var _shot as Number = -1;
+    hidden var _cellW as Number = 0;
+    hidden var _cellH as Number = 0;
+    hidden var _cellFlags as Number = -1;
 
     function initialize() {
         WingFoilDataField.initialize();
@@ -57,6 +60,25 @@ class ShotsField extends WingFoilDataField {
             show(want);
             WatchUi.requestUpdate();
         }
+    }
+
+    // The cell the system just handed us, printed on every layout change. This is where the
+    // FieldLayout geometry tests get their numbers from: walk the simulator's
+    // Data Fields > Layout menu with this build running and the log names, for every layout
+    // the device offers, the exact rectangle and the exact obscurity flags the shipped field
+    // will see. Guessing them from "half of 454" is how the bottom-bezel clipping survived a
+    // whole suite of unit tests.
+    function onUpdate(dc as Dc) as Void {
+        var w = dc.getWidth();
+        var h = dc.getHeight();
+        var flags = getObscurityFlags();
+        if (w != _cellW || h != _cellH || flags != _cellFlags) {
+            _cellW = w;
+            _cellH = h;
+            _cellFlags = flags;
+            System.println("CELL " + w + "x" + h + " flags " + flags);
+        }
+        WingFoilDataField.onUpdate(dc);
     }
 
     hidden function show(shot as Number) as Void {

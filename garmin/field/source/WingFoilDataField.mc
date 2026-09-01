@@ -6,7 +6,8 @@ import Toybox.WatchUi;
 import WingFoilCore;
 
 // The on-water face of the data field. Three layouts, chosen from the cell the system gives
-// us (FieldLayout.classify), all built from the same numbers:
+// us (FieldLayout.fitCell — how much room it has AND how much of that room is glass), all
+// built from the same numbers:
 //
 //   SMALL (3-4 field cell)  foil %            + flights · flight timer
 //   WIDE  (2 field cell)    foil %            + flights · flight timer + outcome · tally
@@ -25,6 +26,7 @@ class WingFoilDataField extends WatchUi.DataField {
     hidden var _fit as FieldFit?;
     hidden var _screenW as Number = 0;
     hidden var _screenH as Number = 0;
+    hidden var _round as Boolean = false;
 
     function initialize() {
         DataField.initialize();
@@ -37,6 +39,10 @@ class WingFoilDataField extends WatchUi.DataField {
         var s = System.getDeviceSettings();
         _screenW = s.screenWidth;
         _screenH = s.screenHeight;
+        // Only a round glass eats the corners of a cell. Every product in the manifest is
+        // round today, so this is a guard rather than a branch anyone exercises — but the
+        // chord maths is nonsense on a rectangle and must not run there.
+        _round = s.screenShape == System.SCREEN_SHAPE_ROUND;
         try {
             _fit = new FieldFit(self);
         } catch (e) {
@@ -96,19 +102,18 @@ class WingFoilDataField extends WatchUi.DataField {
         dc.setColor(bg, bg);
         dc.clear();
 
-        var size = FieldLayout.classify(w, h, _screenW, _screenH);
-        var round = FieldLayout.isRoundFull(w, h, _screenW, _screenH);
+        // getObscurityFlags() is documented as valid only inside onUpdate(), which is also
+        // the only place the cell rectangle is known — so the geometry is rebuilt here every
+        // frame rather than cached in initialize(). It costs one object and no measurement.
+        var g = FieldLayout.place(w, h, _screenW, _screenH, getObscurityFlags(), _round);
+        var cell = FieldLayout.fitCell(dc, w, h, _screenW, _screenH, g);
+        var size = cell[0] as Number;
         if (!unlocked()) {
-            drawLocked(dc, w, h, bg, size, round);
+            drawLocked(dc, w, h, bg, size, g);
             return;
         }
-        if (size == FieldLayout.SIZE_FULL) {
-            drawFull(dc, w, h, bg, round);
-        } else if (size == FieldLayout.SIZE_WIDE) {
-            drawWide(dc, w, h, bg);
-        } else {
-            drawSmall(dc, w, h, bg);
-        }
+        drawStack(dc, w, h, rowTexts(size), rowColors(size, bg),
+            cell[1] as Array<Graphics.FontType>, cell[2] as Number, g);
     }
 
     const CV = Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER;
@@ -118,53 +123,44 @@ class WingFoilDataField extends WatchUi.DataField {
         return bg == Graphics.COLOR_BLACK ? Graphics.COLOR_WHITE : Graphics.COLOR_BLACK;
     }
 
-    // 3- and 4-field cells: the two numbers that decide whether the session is going well.
-    hidden function drawSmall(dc as Dc, w as Number, h as Number,
-            bg as Graphics.ColorType) as Void {
-        var texts = [pctText(), flightText()] as Array<String>;
-        var fonts = FieldLayout.fitRows(dc, w, h, ["100%", "99 · 88:88"] as Array<String>,
-            [FieldLayout.NUM_FONTS, FieldLayout.TEXT_FONTS] as Array, false);
-        var heights = FieldLayout.heightsOf(dc, fonts);
-        drawRow(dc, w, h, heights, fonts, 0, texts[0], stateColor(bg));
-        drawRow(dc, w, h, heights, fonts, 1, texts[1], fg(bg));
+    // SMALL (3-4 field cell) is the two numbers that decide whether the session is going well;
+    // WIDE (2-field cell) adds the turn line; FULL (1-field page) is everything, biggest first.
+    // The rows of one of those three, in order: the strings to draw, and the colour each one
+    // carries. The fonts come from FieldLayout's worst-case table for that layout — the very
+    // table fitCell() used to decide this cell could carry it — so what is drawn is what was
+    // measured.
+    hidden function rowTexts(size as Number) as Array<String> {
+        if (size == FieldLayout.SIZE_FULL) {
+            return [speedText(), pctText(), flightText(), outcomeText(),
+                tallyText()] as Array<String>;
+        }
+        if (size == FieldLayout.SIZE_WIDE) {
+            return [pctText(), flightText(), turnLine()] as Array<String>;
+        }
+        return [pctText(), flightText()] as Array<String>;
     }
 
-    // 2-field cell: room for the turn line as well.
-    hidden function drawWide(dc as Dc, w as Number, h as Number,
-            bg as Graphics.ColorType) as Void {
-        var widest = ["100%", "99 · 88:88", "TOUCH 100% · 99/99"] as Array<String>;
-        var fonts = FieldLayout.fitRows(dc, w, h, widest,
-            [FieldLayout.NUM_FONTS, FieldLayout.TEXT_FONTS,
-             FieldLayout.TEXT_FONTS] as Array, false);
-        var heights = FieldLayout.heightsOf(dc, fonts);
-        drawRow(dc, w, h, heights, fonts, 0, pctText(), stateColor(bg));
-        drawRow(dc, w, h, heights, fonts, 1, flightText(), fg(bg));
-        drawRow(dc, w, h, heights, fonts, 2, turnLine(), outcomeColor(bg));
-    }
-
-    // 1-field page: everything, biggest first.
-    hidden function drawFull(dc as Dc, w as Number, h as Number, bg as Graphics.ColorType,
-            round as Boolean) as Void {
-        var widest = ["88.8 km/h", "100%", "99 · 88:88", "TOUCH 100%",
-            "99/99 · 99·99·99"] as Array<String>;
-        var fonts = FieldLayout.fitRows(dc, w, h, widest,
-            [FieldLayout.TEXT_FONTS, FieldLayout.NUM_FONTS, FieldLayout.TEXT_FONTS,
-             FieldLayout.TEXT_FONTS, FieldLayout.TEXT_FONTS] as Array, round);
-        var heights = FieldLayout.heightsOf(dc, fonts);
-        drawRow(dc, w, h, heights, fonts, 0, speedText(), fg(bg));
-        drawRow(dc, w, h, heights, fonts, 1, pctText(), stateColor(bg));
-        drawRow(dc, w, h, heights, fonts, 2, flightText(), fg(bg));
-        drawRow(dc, w, h, heights, fonts, 3, outcomeText(), outcomeColor(bg));
-        drawRow(dc, w, h, heights, fonts, 4, tallyText(), fg(bg));
+    hidden function rowColors(size as Number, bg as Graphics.ColorType)
+            as Array<Graphics.ColorType> {
+        if (size == FieldLayout.SIZE_FULL) {
+            return [fg(bg), stateColor(bg), fg(bg), outcomeColor(bg),
+                fg(bg)] as Array<Graphics.ColorType>;
+        }
+        if (size == FieldLayout.SIZE_WIDE) {
+            return [stateColor(bg), fg(bg), outcomeColor(bg)] as Array<Graphics.ColorType>;
+        }
+        return [stateColor(bg), fg(bg)] as Array<Graphics.ColorType>;
     }
 
     // Invite build, no key yet. The request code is the only thing the tester has to
     // transcribe and mail back, so it is the row that must survive the smallest cell: in a
     // 3- or 4-field cell the word LOCKED is dropped and the code gets the whole box. The
-    // rows go through the same fitRows() ladder as every other layout — a data field has no
-    // idea how big its cell is, and a hard-coded font would clip on the 240 px fenix 7.
+    // rows go through the same fitStack() ladder as every other layout — a data field has no
+    // idea how big its cell is, and a hard-coded font would clip on the 240 px fenix 7. The
+    // `size` handed in is fitCell's, so a cell that had to step down to two rows for the live
+    // display drops the word here too, and the code keeps the box to itself.
     hidden function drawLocked(dc as Dc, w as Number, h as Number, bg as Graphics.ColorType,
-            size as Number, round as Boolean) as Void {
+            size as Number, g as FieldLayout.Glass?) as Void {
         var texts = [] as Array<String>;
         var colors = [] as Array<Graphics.ColorType>;
         if (size != FieldLayout.SIZE_SMALL) {
@@ -185,18 +181,26 @@ class WingFoilDataField extends WatchUi.DataField {
         for (var i = 0; i < texts.size(); i++) {
             ladders.add(FieldLayout.TEXT_FONTS);
         }
-        var fonts = FieldLayout.fitRows(dc, w, h, texts, ladders, round);
-        var heights = FieldLayout.heightsOf(dc, fonts);
-        for (var i = 0; i < texts.size(); i++) {
-            drawRow(dc, w, h, heights, fonts, i, texts[i], colors[i]);
-        }
+        var stack = FieldLayout.fitStack(dc, w, h, texts, ladders, g);
+        drawStack(dc, w, h, texts, colors, stack[0] as Array<Graphics.FontType>,
+            stack[1] as Number, g);
     }
 
-    hidden function drawRow(dc as Dc, w as Number, h as Number, heights as Array<Number>,
-            fonts as Array<Graphics.FontType>, row as Number, text as String,
-            color as Graphics.ColorType) as Void {
-        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, FieldLayout.stackY(h, heights, row), fonts[row], text, CV);
+    // Draw a fitted stack. Each row is centred on its own window rather than on the cell: on a
+    // corner cell the glass runs out on the inboard side first, so a row that stayed glued to
+    // the middle of its cell would lose characters it could have kept by sliding a few pixels
+    // towards the middle of the watch. Where the window is the whole cell — every full-width
+    // cell, and every cell away from the rim — that centre IS w / 2.
+    hidden function drawStack(dc as Dc, w as Number, h as Number, texts as Array<String>,
+            colors as Array<Graphics.ColorType>, fonts as Array<Graphics.FontType>,
+            lean as Number, g as FieldLayout.Glass?) as Void {
+        var heights = FieldLayout.heightsOf(dc, fonts);
+        for (var i = 0; i < texts.size(); i++) {
+            var y = FieldLayout.stackY(h, heights, i, lean);
+            var window = FieldLayout.rowWindow(w, y, heights[i], g);
+            dc.setColor(colors[i], Graphics.COLOR_TRANSPARENT);
+            dc.drawText(window[0], y, fonts[i], texts[i], CV);
+        }
     }
 
     // ---- the numbers ----
