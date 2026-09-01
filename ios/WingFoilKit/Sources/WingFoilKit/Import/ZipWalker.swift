@@ -64,6 +64,12 @@ public enum ZipWalker {
         }
         if IcuPayload.isFit(payload) { return .track(payload) }
         if GpxSessionParser.isGpx(payload) { return .track(payload) }
+        // A CleanJibe watch container. Every file import in the app comes through here —
+        // `SessionStore.runImport` calls `ingestContainer` for a hand-picked file exactly as
+        // it does for a GDPR ZIP — so a format missing from this ladder is not merely
+        // unclassified, it is silently dropped as `.ignored` and the rider is told "no FIT
+        // found" about a file the parser two modules away can read perfectly well.
+        if WatchSessionContainer.isContainer(payload) { return .track(payload) }
         if IcuPayload.isZip(payload) { return .archive(payload) }
         return .ignored
     }

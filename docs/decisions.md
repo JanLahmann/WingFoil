@@ -2,6 +2,46 @@
 
 Newest first. One paragraph each: context → decision → consequence.
 
+## ADR-016 · The Apple Watch recorder is class (b) and **certifies**, and it detects nothing
+An Apple Watch is the one recording device a rider already owns that can reach the library
+without an account, a cable or anybody's cloud: the watch writes a file, `WCSession.transferFile`
+queues it, the phone imports it. That removes the Garmin→Connect→intervals.icu chain from the
+funnel entirely, so the MVP's job is to be a **recorder** and nothing else — GPS, heart rate, and
+the wrist accelerometer at 50 Hz, into a versioned `.cjw` container (docs/watch-session-schema.md)
+that `TrackParser` recognises by its first four bytes exactly as it already recognises a GPX.
+Nothing downstream of `RawTrack` + `SourceCapabilities` learns that an Apple Watch exists.
+**No detection on the wrist.** ADR-005 says the watch approximates and the phone is
+authoritative, and that division earns its keep on Garmin because the Garmin watch is also the
+*display* — a rider mid-session wants a flight count on his wrist. Here it buys nothing: the
+recording reaches the phone in seconds, so a second implementation of flight, turn and record
+detection would be a second answer to every question with no way to tell which one the app meant.
+Phase 2 can add it; the MVP declines it on purpose, and `hasDevFields` is false because there
+genuinely are none.
+**Class (b), certified, and no new letter.** The rule in docs/presentation.md is about
+*provenance* — a speed record is trustworthy when it came off the receiver's Doppler channel —
+and `CLLocation.speed` is exactly that, the GNSS chip's own solution rather than a difference of
+positions. A GPX is class (c) because the file cannot prove where its speed came from; this
+container can, because we write it and it carries speed and position as two separate channels.
+That is the same claim already made for a native Garmin FIT, and it is **not** a GP3S validity
+claim, which this app has never made for any source. A dedicated letter was considered and
+rejected: (d) is spoken for by ADR-009, so a watch class would be (e), and it would have to be
+taught to six Swift switch sites, `web/js/render.js`'s letter dictionary, `HelpCatalog`'s
+three-case prose and `lab/parse.py` — to express a distinction `certified` does not draw.
+Provenance survives in `session.importSource` (`applewatch`) instead.
+Consequence: the letter now understates one source, and two places had to learn that. A watch
+session has class (b)'s Doppler **and** class (a)'s accelerometer, so pump strokes and takeoff
+effort are all present — the pipeline degrading on capabilities rather than on formats, which is
+what that design was always for. `SessionDisplay.sourceClassNote` therefore reads `importSource`
+as well as the class, because the standard class-(b) line ("everything except pump and takeoff
+effort") would otherwise print over a session that visibly has a pump chart.
+**`.surfingSports`, and the phone stands down from Health.** HealthKit has no wingfoil type;
+`HealthWriter` already chose `.surfingSports` and the watch matches it, or a rider's Health
+timeline would name one sport two ways. Because the watch saves the workout live — with the
+heart-rate samples and ring credit an after-the-fact `HKWorkoutBuilder` stub cannot give —
+`SessionStore.writeNewSessionsToHealth` skips rows tagged `applewatch`; nothing downstream would
+have collapsed the duplicate, since `HKMetadataKeyExternalUUID` carries the watch's session id on
+one copy and the library's row id on the other.
+
 ## ADR-015 · The library backup restores through the **ingest path**, never as a file copy
 The library lives in Application Support, so an iPhone migration and an iCloud device backup
 already carry it and nothing here replaces that. What neither covers is a *fresh* start — a

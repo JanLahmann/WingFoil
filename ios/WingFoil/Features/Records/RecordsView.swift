@@ -118,7 +118,8 @@ struct RecordsView: View {
     private var footnote: String {
         let certified = records.filter(\.certified).count
         return "Doppler speed, GP3S windows. \(certified) of \(records.count) from certified "
-            + "sources (device FIT); class (c) sources are marked. The dot on the record's "
+            + "sources (a recording device's own speed channel); class (c) sources are "
+            + "marked. The dot on the record's "
             + "name says how fresh it is — filled within a month, hollow within the season, "
             + "faint when it is older than six months."
     }

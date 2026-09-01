@@ -41,6 +41,11 @@ struct WingFoilApp: App {
                 // task from the load above because it never finishes: it is a stream, not
                 // a step, and it must not delay the library appearing.
                 .task { await store.watchForCompanionCards() }
+                // The Apple Watch recorder's own link. A separate WCSession delegate from
+                // the Garmin one above and unrelated to it: this one receives whole
+                // recordings over WatchConnectivity, that one receives summary cards through
+                // Garmin Connect Mobile.
+                .task { await store.watchForAppleWatchSessions() }
                 // Two kinds of URL land here: Garmin Connect returning the watch the rider
                 // picked, and the share sheet handing us a FIT or a ZIP. The companion
                 // link answers only on its own scheme, so it gets first refusal.
