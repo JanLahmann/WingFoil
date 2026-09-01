@@ -45,7 +45,8 @@ web/
 │                               so one registration covers homepage and app alike.
 ├── icons/                      copied from brand/ — nothing is hotlinked outside web/
 │   └── qr-cleanjibe.png        33 x 33, one pixel per module: the share card's QR, drawn
-│                               nearest-neighbour so a decoder sees hard edges
+│                               nearest-neighbour so a decoder sees hard edges. Unmarked -
+│                               the brand mark is composited at draw time (sharecard.js)
 ├── css/tokens.css              GENERATED from design/tokens.json — do not edit
 ├── css/style.css               dark styling + the data-viz palette (reads the tokens)
 ├── css/home.css                the homepage's own layout, layered on top of style.css
@@ -276,7 +277,12 @@ Three details worth knowing before changing anything here:
   prints (`docs/presentation.md`), and every string in it comes from `BRANDING` in
   `js/cardstats.js`, once. The QR is a committed 33 x 33 PNG, one pixel per module, drawn
   with `imageSmoothingEnabled = false` at 99 px (a whole 3x nearest-neighbour upscale): the
-  URL is fixed, so a QR library in the bundle would be a dependency to draw a constant.
+  URL is fixed, so a QR library in the bundle would be a dependency to draw a constant. The
+  brand mark in its centre is composited at draw time, not baked into the asset (at one pixel
+  per module it would be a five-pixel square), on a plate `QR_MARK_MODULES` = 5 modules
+  across - 4% of the symbol's area against level M's ~15% budget, and a clear module short of
+  the version-2 alignment pattern. Same number as `BrandQRImage.markModules` on iOS; see
+  `docs/presentation.md`, which also records how both are decoded back.
 
 ## Refreshing `lab_bundle/` — do this after every lab change
 

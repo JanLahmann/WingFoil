@@ -419,6 +419,61 @@ function drawValue(ctx, stat, x, y, maxWidth, size, family) {
 const QR_SIZE = 33;                                  // layout points → 99 exported px
 const footerHeight = (disclaimer) => QR_SIZE + (disclaimer ? 8 : 0);
 
+/** The asset's module count: a 25-module version-2 symbol plus the four modules of quiet
+ *  zone the spec wants, baked into the PNG. One module is therefore exactly 1 layout point,
+ *  which is what lets the mark below be measured in modules. */
+const QR_MODULES = 33;
+/** The side of the brand mark's white plate, **in modules** — the twin of
+ *  `BrandQRImage.markModules` in the kit, and the number has to stay the same on both
+ *  platforms or one of the two cards ships a code that does not scan.
+ *
+ *  Five, for three reasons. It is 25 of the symbol's 625 cells — **4 % of its area**, a
+ *  quarter of what level M's parity can rebuild, leaving the rest for the recompression a
+ *  chat app applies to a photograph of a phone screen. It stops a clear module short of the
+ *  version-2 **alignment pattern** at module 16, which parity cannot substitute for: a
+ *  decoder that cannot find that landmark never gets as far as error correction, which is
+ *  why decoding fails abruptly at six modules rather than degrading. And it is odd — the
+ *  symbol's centre is the middle of a module, so only an odd-width plate lands on module
+ *  boundaries and costs whole cells instead of leaving a rim of half-covered ones. */
+const QR_MARK_MODULES = 5;
+/** The mark's own side inside the plate: three quarters of it, so a white rim about an
+ *  eighth of the plate wide separates the artwork's dark edge from the dark modules it
+ *  abuts. Without it the mark reads as a blot in the code rather than as a badge on it. */
+const QR_MARK_INNER = 0.75;
+
+/**
+ * The brand mark on its white plate, in the middle of the code.
+ *
+ * **Why the plate is composited here and not baked into the PNG.** `icons/qr-cleanjibe.png`
+ * is one pixel per module, so a mark drawn into it would be a five-pixel square — the
+ * artwork would be gone, and every rounded corner would be a stair. Drawn at *this* size
+ * instead, the plate and the icon are vector-and-bitmap at the card's own 3× scale and the
+ * asset stays what it is: the code, and only the code, at its natural resolution.
+ *
+ * `mark` null (the icon failed to load) simply leaves the bare code, which still scans.
+ */
+function drawQrMark(ctx, mark, x, y, size) {
+  if (!mark) return;
+  const module = size / QR_MODULES;
+  const plate = QR_MARK_MODULES * module;
+  const px = x + (size - plate) / 2, py = y + (size - plate) / 2;
+  ctx.save();
+  ctx.fillStyle = "#fff";
+  roundRect(ctx, px, py, plate, plate, plate * 0.22);
+  ctx.fill();
+  const inner = plate * QR_MARK_INNER;
+  const ix = x + (size - inner) / 2, iy = y + (size - inner) / 2;
+  // The icon's own corners are rounded, but it is a square PNG and the clip is what keeps a
+  // hairline of its navy backing off the white plate at an export scale.
+  roundRect(ctx, ix, iy, inner, inner, inner * 0.24);
+  ctx.clip();
+  // Smoothing back on — unlike the code, this is real artwork being reduced, and it is
+  // inside the plate where softening an edge cannot soften a module.
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(mark, ix, iy, inner, inner);
+  ctx.restore();
+}
+
 /**
  * The mark, the name, the offer and the QR — the whole point of a card someone else sees.
  *
@@ -444,6 +499,7 @@ function drawFooter(ctx, { disclaimer }, box, art, family) {
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(art.qr, box.x + box.w - qr, top, qr, qr);
     ctx.restore();
+    drawQrMark(ctx, art.mark, box.x + box.w - qr, top, qr);
   }
 
   let textX = x;

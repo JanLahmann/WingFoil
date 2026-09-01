@@ -1,5 +1,4 @@
-import CoreImage
-import CoreImage.CIFilterBuiltins
+import CoreGraphics
 import SwiftUI
 import UIKit
 import WingFoilKit
@@ -18,14 +17,20 @@ import WingFoilKit
 /// the payload is one short constant URL. A dependency for twenty-one characters would be a
 /// dependency to audit at every Xcode bump.
 ///
+/// **Where the bitmap comes from.** `BrandQRImage` in the kit — including the brand mark in
+/// the middle of it, which is why it is there: a code with a hole punched in it is a code
+/// that can stop scanning, and only a testable pure function over `CGImage` can be *decoded
+/// back* (`BrandQRTests`, at every export size and through a chat app's JPEG). This view is
+/// the white plate, the sizing and the cache.
+///
 /// **Why the rendering fusses.** A QR that does not scan is worse than no QR, and two things
 /// break one at this size:
 ///
-/// - **Resampling.** The generator emits one *pixel* per module — a 25 × 25 image. Scaled up
-///   with the default (bilinear) sampling, every module edge becomes a grey ramp, and after a
-///   chat app has re-compressed the card those ramps are what a decoder has to threshold.
-///   `samplingNearest()` before the transform keeps the modules square, and the transform is
-///   a whole-number factor so no module lands on a half pixel.
+/// - **Resampling.** The generator emits one *pixel* per module — a 27 × 27 image for this
+///   payload. Scaled up with the default (bilinear) sampling, every module edge becomes a
+///   grey ramp, and after a chat app has re-compressed the card those ramps are what a
+///   decoder has to threshold. `BrandQRImage` therefore upscales nearest, by a whole-number
+///   factor, and this view keeps `interpolation(.none)` on the way to the screen.
 /// - **The quiet zone.** The spec wants four modules of blank around the symbol, and the
 ///   generator gives one. The white plate this view draws underneath supplies the rest, which
 ///   is also what makes a dark-on-light code possible on a card whose background is navy or
@@ -75,29 +80,21 @@ struct BrandQRCode: View {
 
     @MainActor static func render(_ string: String) -> UIImage? {
         if let hit = cache[string] { return hit }
-        guard let made = make(string) else { return nil }
-        cache[string] = made
-        return made
+        guard let made = BrandQRImage.make(string, mark: mark()) else { return nil }
+        let image = UIImage(cgImage: made)
+        cache[string] = image
+        return image
     }
 
-    private static func make(_ string: String) -> UIImage? {
-        let filter = CIFilter.qrCodeGenerator()
-        filter.message = Data(string.utf8)
-        // "M" — 15 % recovery. "H" would survive more damage but costs two versions of extra
-        // modules, and on a 96 px code smaller modules is exactly the failure mode we are
-        // avoiding. The card is a clean digital image, not a sticker on a wet boom.
-        filter.correctionLevel = "M"
-        guard let output = filter.outputImage else { return nil }
-
-        // 24 px per module: enough that the symbol is already larger than any size it is
-        // drawn at, so the only resampling left is a downscale, which cannot break a module.
-        let upscale: CGFloat = 24
-        let crisp = output
-            .samplingNearest()
-            .transformed(by: CGAffineTransform(scaleX: upscale, y: upscale))
-        guard let cgImage = CIContext().createCGImage(crisp, from: crisp.extent)
-        else { return nil }
-        return UIImage(cgImage: cgImage)
+    /// The app icon as artwork, for the centre of the code.
+    ///
+    /// `LaunchMark` is the icon as an ordinary image asset — the launch screen already needs
+    /// one, because `AppIcon` cannot be loaded outside the icon slot — and it is the same
+    /// picture the card's footer draws beside the wordmark, so the code reads as the same
+    /// thing at a glance. nil (an asset catalogue that somehow lost it) simply draws the bare
+    /// code: a QR without a logo still scans, which is the only property that matters.
+    @MainActor private static func mark() -> CGImage? {
+        UIImage(named: "LaunchMark")?.cgImage
     }
 }
 
