@@ -92,7 +92,9 @@ struct ReplayScrubber: View {
                 }
             }
             .fullScreenCover(item: $cinema) { run in
-                ReplayCinemaView(detail: detail, milestones: milestones, span: range,
+                // No milestone list beside the pacing: the plan carries the script the clip
+                // will actually say, already cut to the chosen length — see `ReplayPacing.Plan`.
+                ReplayCinemaView(detail: detail, span: range,
                                  pacing: run.pacing, record: run.record,
                                  framing: run.framing, photos: run.photos, music: run.music)
             }
@@ -130,7 +132,8 @@ struct ReplayScrubber: View {
                 }
                 guard let raw = environment["UI_REPLAY_CINEMA"],
                       let speed = Double(raw) else { return }
-                cinema = CinemaRun(pacing: ReplayPacing.Plan(rate: speed, ease: .cinema),
+                cinema = CinemaRun(pacing: ReplayPacing.Plan(rate: speed, ease: .cinema,
+                                                             milestones: milestones),
                                    record: record, framing: framing)
             }
             #endif
@@ -295,10 +298,11 @@ struct ReplayScrubber: View {
     /// new run rather than reusing the state of the last one.
     private struct CinemaRun: Identifiable {
         let id = UUID()
-        /// The rate and the ease, already resolved from the length the rider picked
-        /// (`ReplayPacing`). Carried as a pair because on a short clip the two are one
-        /// decision — the dips had to be shortened to make that rate reach that length, and a
-        /// run given the rate without the ease would be a different, longer clip.
+        /// The rate, the ease and the script, already resolved from the length the rider
+        /// picked (`ReplayPacing`). Carried as one value because on a short clip the three are
+        /// one decision — the list was cut and the dips shortened to make that rate reach that
+        /// length, and a run given the rate without the other two would be a different, longer
+        /// clip saying things it has no time for.
         let pacing: ReplayPacing.Plan
         /// False when ReplayKit cannot capture — the replay still plays, it just plays for an
         /// audience of one.

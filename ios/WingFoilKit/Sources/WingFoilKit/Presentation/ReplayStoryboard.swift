@@ -185,12 +185,18 @@ public struct ReplayStoryboard: Sendable, Equatable {
 
     /// The same script, from a **length** the rider asked for instead of a speed.
     ///
-    /// This is what the setup sheet calls: its picker offers 10 s / 25 s / 60 s, and the rate
-    /// (and, on a short target, a briefer ease) is worked out by `ReplayPacing`. The target is
-    /// the *replay's* length; the two cards and the photo pauses are still added on top by
-    /// `runWallS`, and still said out loud — a rider who asks for ten seconds of replay and
-    /// then adds three photos has asked for a longer clip, and the sheet's sentence has to
-    /// keep up.
+    /// This is what the setup sheet calls: its picker offers 10 s / 25 s / 60 s, and the rate,
+    /// the ease and the script that survives at that length are worked out by `ReplayPacing`.
+    /// The target is the *replay's* length; the two cards and the photo pauses are still added
+    /// on top by `runWallS`, and still said out loud — a rider who asks for ten seconds of
+    /// replay and then adds three photos has asked for a longer clip, and the sheet's sentence
+    /// has to keep up.
+    ///
+    /// **The milestones handed in are the whole session's; the ones that come out are the
+    /// clip's.** A ten-second clip has room for four things to be said (`ReplayCommentary
+    /// .budget`) and the driver is built from those four, not from all twelve — which is what
+    /// keeps the dips on exactly the instants the captions land on. A caller that needs to
+    /// know *which* four survived asks `ReplayPacing.plan` for the plan and reads its script.
     public static func make(span: ClosedRange<Double>,
                             targetWallS: Double,
                             milestones: [ReplayMilestone] = [],
@@ -200,8 +206,8 @@ public struct ReplayStoryboard: Sendable, Equatable {
                             timeZone: TimeZone,
                             timing: Timing = .standard) -> ReplayStoryboard {
         let plan = ReplayPacing.plan(span: span, targetWallS: targetWallS,
-                                     easeAt: milestones.map(\.t))
-        return make(span: span, rate: plan.rate, milestones: milestones, photos: photos,
+                                     milestones: milestones)
+        return make(span: span, rate: plan.rate, milestones: plan.milestones, photos: photos,
                     place: place, startedAt: startedAt, timeZone: timeZone, timing: timing,
                     ease: plan.ease)
     }

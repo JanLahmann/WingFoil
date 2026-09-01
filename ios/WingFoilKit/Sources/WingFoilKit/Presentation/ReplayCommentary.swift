@@ -341,6 +341,115 @@ public enum ReplayCommentary {
         }
     }
 
+    // MARK: - The budget
+
+    /// How many lines a clip of this length has room for, or nil for "all of them".
+    ///
+    /// **Why a short clip says less.** `collapse` already answers "one caption per instant";
+    /// this answers the other question a ten-second clip asks, which is *how many instants*.
+    /// Twelve lines over ten seconds is a caption every eight tenths of a second — nobody
+    /// reads that, and it is worse than unread: every line is also a slow-motion dip
+    /// (`ReplayDriver.Ease`), so a talkative afternoon squeezed into ten seconds is one
+    /// continuous ritardando with a flicker of text over it. Cutting the list is what lets the
+    /// survivors keep a dwell long enough to be read at all.
+    ///
+    /// **Where the numbers come from.** A caption needs something like two and a half seconds
+    /// on screen to be read, which is where the four comes from: ten seconds, four moments,
+    /// two and a half seconds each. The longer targets deliberately do *not* keep that ratio —
+    /// twenty-five seconds could hold ten by the same arithmetic and sixty could hold
+    /// twenty-four — because past a handful of lines the limit stops being reading speed and
+    /// starts being appetite. Eight and twelve are what a clip can say before it reads as a
+    /// ticker tape rather than as a friend on the beach pointing things out.
+    ///
+    /// **Full detail is nil, not a big number.** It is the one choice that is a *pace* rather
+    /// than a length (`ReplayClipLength`), so its clip grows with the session and there is
+    /// nothing to budget against: a rider watching his own afternoon at 10× asked for the
+    /// afternoon, all of it, with everything it had to say.
+    public static func budget(forTargetWallS targetWallS: Double?) -> Int? {
+        guard let targetWallS, targetWallS > 0 else { return nil }
+        return switch targetWallS {
+        case ..<15: 4
+        case ..<40: 8
+        case ..<90: 12
+        default: nil
+        }
+    }
+
+    /// The script a clip of `targetWallS` seconds has room for — `budget` applied by `pruned`.
+    public static func pruned(_ milestones: [ReplayMilestone],
+                              forTargetWallS targetWallS: Double?) -> [ReplayMilestone] {
+        pruned(milestones, keeping: budget(forTargetWallS: targetWallS))
+    }
+
+    /// The `limit` most worth saying, back in time order. Nil keeps everything.
+    ///
+    /// **A selection, not a thinning.** The obvious cut — every other line, or one per N
+    /// seconds — would drop the top speed of the session because it happened to fall next to
+    /// a jibe ordinal, and a highlight reel that cannot promise the highlights is not one. So
+    /// the order is by *what a moment is*, and it is the order a rider would read the session
+    /// back in:
+    ///
+    /// 1. **The two bookends**, always, whatever the limit. They are the frame the clip sits
+    ///    in — where and when it began, and what it added up to — and a replay that opened
+    ///    mid-afternoon on an unnamed lake would not be a session replay.
+    /// 2. **The top speed**, then **the longest flight**. The two superlatives, and the two
+    ///    numbers a rider quotes about his own afternoon.
+    /// 3. **The best streak** — the record itself, not the run-up to it. A session that went
+    ///    3, 5, 8 has one piece of news in it and it is the eight.
+    /// 4. **The first splash and the first jibe.** Firsts, which is the one thing an ordinal
+    ///    can be that is not a count.
+    /// 5. Everything else.
+    ///
+    /// Inside a tier — and that includes the two firsts, which share one — the order is the
+    /// same `rank` the collision rule already uses, so the tie between two leftovers is settled
+    /// by the same statement of specificity that decides which of two coincident lines leads,
+    /// rather than by a second opinion about it. Below that, the earlier instant, which makes
+    /// the choice a function of the session and not of array order.
+    public static func pruned(_ milestones: [ReplayMilestone],
+                              keeping limit: Int?) -> [ReplayMilestone] {
+        guard let limit, milestones.count > limit else { return milestones }
+
+        // Resolved once rather than per comparison: "the best streak" is a fact about the
+        // whole script, and a `max` inside a sort predicate is a quadratic way to say it.
+        let bestStreak = milestones
+            .filter { if case .streak = $0.kind { true } else { false } }
+            .max { (count($0.kind) ?? 0) < (count($1.kind) ?? 0) }?
+            .id
+
+        let ordered = milestones.enumerated().sorted { first, second in
+            let (a, b) = (tier(first.element, bestStreak: bestStreak),
+                          tier(second.element, bestStreak: bestStreak))
+            if a != b { return a < b }
+            let (ra, rb) = (rank(first.element.kind), rank(second.element.kind))
+            if ra != rb { return ra > rb }
+            if first.element.t != second.element.t { return first.element.t < second.element.t }
+            return first.offset < second.offset
+        }
+
+        // The bookends outlive the budget rather than competing for it: a limit of one would
+        // otherwise open a clip that never closed.
+        let bookends = milestones
+            .filter { $0.kind == .sessionStart || $0.kind == .sessionEnd }.count
+        return ordered.prefix(max(limit, bookends))
+            .sorted { $0.offset < $1.offset }
+            .map(\.element)
+    }
+
+    /// Selection priority — see `pruned`. Lower survives longer. Distinct from `rank`, which
+    /// settles which of two lines *at one instant* leads; this settles which instants are in
+    /// the clip at all, and the two disagree on purpose (a bookend outranks everything in both,
+    /// but a streak record beats a first jibe here and loses to nothing there).
+    private static func tier(_ milestone: ReplayMilestone, bestStreak: String?) -> Int {
+        switch milestone.kind {
+        case .sessionStart, .sessionEnd: 0
+        case .topSpeed: 1
+        case .longestFlight: 2
+        case .streak: milestone.id == bestStreak ? 3 : 5
+        case .jibe(let n), .splash(let n): n == 1 ? 4 : 5
+        case .firstTakeoff: 5
+        }
+    }
+
     // MARK: - The two bookends
 
     /// "Torbole, 14:07 — session start", degrading a piece at a time.

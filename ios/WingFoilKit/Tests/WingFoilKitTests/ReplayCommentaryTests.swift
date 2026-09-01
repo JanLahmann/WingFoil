@@ -203,6 +203,99 @@ import Testing
         #expect(ReplayCommentary.make(analysis, timeZone: fixtureZone).isEmpty)
     }
 
+    // MARK: - What a short clip has room to say
+
+    /// The budget ladder, spelled out. The picker's three lengths are the only values that
+    /// reach it in the app, but the boundaries are where an off-by-one would live.
+    @Test func theBudgetIsAFunctionOfTheLengthAsked() {
+        #expect(ReplayCommentary.budget(forTargetWallS: 10) == 4)
+        #expect(ReplayCommentary.budget(forTargetWallS: 25) == 8)
+        #expect(ReplayCommentary.budget(forTargetWallS: 60) == 12)
+        // Below the first rung and above the last.
+        #expect(ReplayCommentary.budget(forTargetWallS: 1) == 4)
+        #expect(ReplayCommentary.budget(forTargetWallS: 14.99) == 4)
+        #expect(ReplayCommentary.budget(forTargetWallS: 15) == 8)
+        #expect(ReplayCommentary.budget(forTargetWallS: 39.99) == 8)
+        #expect(ReplayCommentary.budget(forTargetWallS: 40) == 12)
+        #expect(ReplayCommentary.budget(forTargetWallS: 89.99) == 12)
+        #expect(ReplayCommentary.budget(forTargetWallS: 90) == nil)
+        // "Full detail" is a pace, not a length, and budgets nothing away.
+        #expect(ReplayCommentary.budget(forTargetWallS: nil) == nil)
+        #expect(ReplayCommentary.budget(forTargetWallS: 0) == nil)
+    }
+
+    /// **The order the session gets cut in**, watched one line at a time on the Torbole
+    /// afternoon. Twelve down to one: the two bookends outlive every limit, then the top
+    /// speed, the longest flight, the best streak of the day, the first splash and the first
+    /// jibe — and only then the run-up streaks, earliest first.
+    ///
+    /// Pinned as a sequence rather than as three spot checks because the property that matters
+    /// is that it is a *priority*: what survives at four must be a subset of what survives at
+    /// five, or "keep the best four" would mean something different at every length.
+    @Test func theScriptIsCutInAKnownOrder() throws {
+        let script = try torbole()
+        let full = ReplayCommentary.make(script, timeZone: fixtureZone)
+        #expect(full.count == 12)
+
+        let byLimit = (0...12).map { ReplayCommentary.pruned(full, keeping: $0).map(\.id) }
+
+        // The bookends survive a limit of zero: a clip that opened and never closed would be
+        // worse than a silent one.
+        #expect(byLimit[0] == ["start", "end"])
+        #expect(byLimit[1] == ["start", "end"])
+        #expect(byLimit[2] == ["start", "end"])
+        #expect(byLimit[3] == ["start", "top-speed", "end"])
+        #expect(byLimit[4] == ["start", "longest-flight", "top-speed", "end"])
+        #expect(byLimit[5] == ["start", "longest-flight", "top-speed", "streak-8", "end"])
+        // The two firsts are one tier, and the tie inside it goes the way the collision rule
+        // already ranks them: a swim is a more specific thing to say than a count.
+        #expect(byLimit[6] == ["start", "longest-flight", "top-speed", "streak-8", "splash-1",
+                               "end"])
+        #expect(byLimit[7] == ["start", "longest-flight", "jibe-1", "top-speed", "streak-8",
+                               "splash-1", "end"])
+        // From here it is the leftovers, by the collision rule's own rank and then by time:
+        // the four remaining streak records, earliest first.
+        #expect(byLimit[8] == ["start", "longest-flight", "jibe-1", "streak-3", "top-speed",
+                               "streak-8", "splash-1", "end"])
+        #expect(byLimit[12] == full.map(\.id))
+
+        // Monotone: every list is a subset of the next one up.
+        for (smaller, larger) in zip(byLimit, byLimit.dropFirst()) {
+            #expect(Set(smaller).isSubset(of: Set(larger)),
+                    "\(smaller) must survive into \(larger)")
+        }
+        // And always in time order, whatever the limit — the cut selects, it never reorders.
+        for kept in byLimit {
+            let times = full.filter { kept.contains($0.id) }.map(\.t)
+            #expect(times == times.sorted())
+        }
+    }
+
+    /// A limit at or above the count is not a cut at all — the same array back, identical.
+    @Test func aScriptThatFitsIsLeftAlone() throws {
+        let full = ReplayCommentary.make(try torbole(), timeZone: fixtureZone)
+        #expect(ReplayCommentary.pruned(full, keeping: 12) == full)
+        #expect(ReplayCommentary.pruned(full, keeping: 99) == full)
+        #expect(ReplayCommentary.pruned(full, keeping: nil) == full)
+        #expect(ReplayCommentary.pruned([], keeping: 4).isEmpty)
+    }
+
+    /// The best streak is the one that survives, not the first or the nearest — a session that
+    /// went 3, 5, 8 has one piece of news in it and it is the eight.
+    @Test func theStreakThatSurvivesIsTheRecord() throws {
+        let full = ReplayCommentary.make(try torbole(), timeZone: fixtureZone)
+        let kept = ReplayCommentary.pruned(full, keeping: 5)
+        let streaks = kept.compactMap { milestone -> Int? in
+            if case .streak(let n) = milestone.kind { return n }
+            return nil
+        }
+        #expect(streaks == [8])
+        #expect(full.compactMap { milestone -> Int? in
+            if case .streak(let n) = milestone.kind { return n }
+            return nil
+        } == [3, 4, 5, 6, 7, 8])
+    }
+
     /// What the bubble shows: the line the playhead has most recently passed, never one it
     /// is about to reach — a caption that arrived before its jibe would be a spoiler.
     @Test func theCurrentLineIsTheOneAlreadyPassed() throws {
