@@ -53,12 +53,11 @@
   box-shadow: 0 0 0 3px #40c8e02e;   /* the same teal at 18 %, spelled out for old engines */
 }
 
-/* What the name means. A quieter register than the lede — it is an aside, and it must not
-   compete with the headline — but set on the accent so it still reads as a claim. */
-.hero .pun {
-  color: var(--ink-3); font-size: 14.5px; line-height: 1.5; max-width: 58ch;
-  border-left: 2px solid var(--foil); padding-left: 14px;
-}
+/* The hero's aside about the name is gone: the clause now lives in the "Jibe outcomes"
+   entry of the vocabulary list, which is where a reader who wants a definition looks.
+   Nothing on either page uses `.pun` any more, so the rule went with it. */
+
+.hero .lede + .lede { margin-top: -6px; }
 
 .cta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .cta .btn { text-decoration: none; }
@@ -128,6 +127,20 @@
 .piece-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .piece h3 { font-size: 17px; letter-spacing: -0.01em; }
 .piece .what { color: var(--ink-3); font-size: 12.5px; }
+
+/* The card's screenshot. All three sources are square, so the box is square too and no
+   image is cropped or stretched to fit the row — `contain` is the safety net, not the
+   plan. The plate underneath is the app's own second surface, which the watch shot (black
+   circle on black) sits in without a seam and the two light screenshots read as a screen
+   against. `aspect-ratio` plus intrinsic width/height on the <img> means the row reserves
+   its space before a single byte of image arrives, so nothing below it jumps. */
+.piece .shot { margin: 0; display: grid; gap: 7px; }
+.piece .shot img {
+  display: block; width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: contain;
+  background: var(--surface-2); border: 1px solid var(--line-soft);
+  border-radius: calc(var(--radius) - 4px);
+}
+.piece .shot figcaption { color: var(--ink-3); font-size: 12px; line-height: 1.4; }
 .piece ul {
   margin: 0; padding: 0; list-style: none;
   display: grid; gap: 7px; font-size: 14px; color: var(--ink-2);
@@ -167,6 +180,42 @@
   margin-right: 7px; vertical-align: 1px;
 }
 
+/* -------------------------------------------------------- numbered flows (/invite/) */
+
+/* The unlock flow is the highest-friction moment of the whole product, and it is a flow:
+   five things in an order, three of which happen somewhere that is not this page (a watch,
+   a mail client, Garmin Connect). Numbers rather than bullets, because a reader who loses
+   their place in it has to start again — and a rule down the left so the list still reads
+   as one sequence when a step runs to three paragraphs and a screenshot. */
+.steps-flow {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: 0; counter-reset: step;
+}
+.steps-flow > li {
+  counter-increment: step;
+  position: relative; padding: 14px 0 14px 42px;
+  border-top: 1px solid var(--line-soft);
+}
+.steps-flow > li:first-child { border-top: 0; }
+.steps-flow > li::before {
+  content: counter(step);
+  position: absolute; left: 0; top: 14px;
+  width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center;
+  font: 650 12.5px/1 var(--mono); color: var(--ink-2);
+  background: var(--surface-2); border: 1px solid var(--line);
+}
+.steps-flow h3 { font-size: 15px; margin-bottom: 5px; letter-spacing: -0.005em; }
+.steps-flow p { color: var(--ink-2); font-size: 14px; }
+.steps-flow p + p { margin-top: 8px; }
+.steps-flow .note { margin-top: 8px; }
+.home-section > .note { margin-top: 16px; }
+
+@media (max-width: 560px) {
+  .steps-flow > li { padding-left: 36px; }
+  .steps-flow > li::before { width: 24px; height: 24px; font-size: 12px; }
+}
+
 /* ------------------------------------------------------------------- claims */
 
 .claims { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
@@ -183,7 +232,10 @@
 @media (min-width: 761px) {
   .hero { padding: 44px 0 40px; gap: 24px; }
   .pieces { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .claims { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* `auto-fit` rather than a fixed three: the claim rows are two cards in one place and
+     three in another, and a fixed grid leaves the two-card row with a visible hole where
+     the third would have been. */
+  .claims { grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); }
   .home-section { padding-top: 46px; }
   /* Two columns of definitions, with the rule between rows still reading left to right. */
   .terms { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; }
