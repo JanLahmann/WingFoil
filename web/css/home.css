@@ -23,11 +23,61 @@
 
 /* ---------------------------------------------------------------------- hero */
 
+/* Two halves at desktop, one stacked column on a phone. The section is the outer grid and
+   `.hero-copy` is the inner one, so the copy keeps its own rhythm whichever way the page
+   is shaped — and so `.hero .lede + .lede` below still sees two adjacent siblings. */
 .hero {
   padding: 26px 0 30px;
   display: grid;
   gap: 20px;
 }
+.hero-copy { display: grid; gap: 20px; align-content: start; }
+
+/* The brand at a size that reads as a brand. The tile shares `.mark`'s background rule
+   (style.css) rather than an <img>: the URL resolves against the stylesheet, so the one
+   artwork serves the 26 px topbar tile and this one without two relative paths, and it can
+   never drift from the icon the installed app shows. It rides on the eyebrow's line, which
+   is why the hero costs no extra height for it. `aspect-ratio` rather than a second length,
+   so the clamp is stated once. */
+.hero-brand { display: flex; align-items: center; gap: 14px; }
+.hero-mark {
+  width: clamp(64px, 15vw, 84px); aspect-ratio: 1; flex: none;
+  border-radius: 21%;
+  background: #0A1E30 url(../icons/icon.svg) center/cover no-repeat;
+  box-shadow: inset 0 0 0 1px #ffffff26, 0 10px 26px #00000059;
+}
+.hero-brand .eyebrow { min-width: 0; }
+
+/* -------------------------------------------------------------- the hero card
+
+   The page's hero image is the product's own output: the bundled example session exported
+   through the analyzer's real share dialog. Three things govern its size.
+
+   It is never drawn WIDER than its 440 native pixels — 340 on a phone, 400 from the first
+   breakpoint, 420 at the widest. The cap is about the QR rather than about sharpness: the
+   code is 33 modules at one image pixel per module, and a decoder that meets a blurred
+   module edge simply declines. 420 is the largest that still reads across a desk.
+
+   It is capped in PIXELS rather than given a column fraction for the same reason it always
+   was: a share card printed larger than a phone screen stops reading as something a phone
+   made.
+
+   `aspect-ratio` off the intrinsic 440x550 reserves the box before the bytes land, so the
+   headline beside it never jumps. */
+.hero-card {
+  margin: 0; display: grid; gap: 10px; justify-items: center;
+}
+.hero-card img {
+  display: block; width: 100%; max-width: 340px; height: auto; aspect-ratio: 440 / 550;
+  background: var(--surface-2); border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  box-shadow: 0 18px 44px #00000073;
+}
+.hero-card figcaption {
+  color: var(--ink-3); font-size: 13px; line-height: 1.5; max-width: 46ch;
+  text-align: center;
+}
+.hero-card figcaption b { color: var(--ink-2); }
 
 /* style.css sizes h1 for a topbar (18px). The page's actual headline is its own thing. */
 .hero h1 {
@@ -68,7 +118,11 @@
 /* The track breadcrumb: an off-foil line with two flying segments on it and the three
    outcome markers, drawn in the presentation tokens themselves. It is a picture of what
    the apps record, and it is also the legend for the vocabulary the rest of the page uses,
-   which is why the labels are real text rather than part of the drawing. */
+   which is why the labels are real text rather than part of the drawing.
+
+   It lives in the "What it counts" section now rather than in the hero, so it needs the
+   margin the hero's grid gap used to give it. */
+.home-section > .motif { margin-bottom: 20px; }
 .motif {
   border: 1px solid var(--line-soft); border-radius: var(--radius);
   background:
@@ -157,29 +211,10 @@
 .piece .piece-foot { margin-top: auto; padding-top: 2px; }
 .piece .piece-foot .btn { text-decoration: none; }
 
-/* --------------------------------------------------------------- the share card
-
-   The row's output, under the row. One panel, one picture, one paragraph: the image is
-   the argument, so the words beside it stay short. It is a 4:5 portrait rather than the
-   row's squares, and it is capped in PIXELS rather than given a column fraction — a share
-   card printed larger than a phone screen stops reading as something a phone made. On a
-   phone the two stack and the picture centres, still capped, because a full-bleed 4:5
-   would push the paragraph a screen and a half down. `aspect-ratio` with the intrinsic
-   width/height reserves the box before the bytes land, as the row above does. */
-.sharecard {
-  margin: 14px 0 0; display: grid; gap: 14px; align-items: center;
-  grid-template-columns: minmax(0, 1fr);
-}
-.sharecard img {
-  display: block; width: 100%; max-width: 260px; height: auto; aspect-ratio: 440 / 550;
-  margin: 0 auto;
-  background: var(--surface-2); border: 1px solid var(--line-soft);
-  border-radius: calc(var(--radius) - 4px);
-}
-.sharecard figcaption {
-  color: var(--ink-2); font-size: 14px; line-height: 1.55; max-width: 56ch;
-}
-.sharecard figcaption b { color: var(--ink-1); }
+/* The sentence that used to sit under the share card, now that the card itself is the hero.
+   It is a `.section-lede` after the row rather than before it, which is the one place on
+   the page a lede runs last: it is the row's conclusion, not its introduction. */
+.pieces-foot { margin: 16px 0 0; }
 
 /* The card's status line: "open beta, Connect IQ" is a fact, and it belongs beside the name. */
 .status {
@@ -254,12 +289,19 @@
 /* ---------------------------------------------------------------- wider than a phone */
 
 @media (min-width: 761px) {
-  .hero { padding: 44px 0 40px; gap: 24px; }
+  /* The hero splits. The right column is the card's own cap, so the grid never stretches
+     the picture past its native pixels; `start` rather than `center` keeps the headline at
+     the top of the fold on a short window, with the taller card hanging below it. */
+  .hero {
+    padding: 44px 0 40px; gap: 20px 40px;
+    grid-template-columns: minmax(0, 1fr) 400px;
+    align-items: start;
+  }
+  .hero-copy { gap: 24px; }
+  .hero-card { justify-items: stretch; }
+  .hero-card img { max-width: 400px; }
+  .hero-card figcaption { text-align: left; }
   .pieces { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  /* Picture beside its paragraph once there is room for both. The first column is the
-     image's own cap, so the panel never stretches it. */
-  .sharecard { grid-template-columns: 260px minmax(0, 1fr); gap: 22px; margin-top: 16px; }
-  .sharecard img { margin: 0; }
   /* `auto-fit` rather than a fixed three: the claim rows are two cards in one place and
      three in another, and a fixed grid leaves the two-card row with a visible hole where
      the third would have been. */
@@ -268,6 +310,13 @@
   /* Two columns of definitions, with the rule between rows still reading left to right. */
   .terms { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; }
   .term:nth-child(2) { border-top: 0; }
+}
+
+/* The card's last 20 px, and its native size: 440 is all there is, so this is where it
+   stops. The QR is at its most legible here — one screen pixel per module on a 1x display. */
+@media (min-width: 1040px) {
+  .hero { grid-template-columns: minmax(0, 1fr) 420px; gap: 20px 48px; }
+  .hero-card img { max-width: 420px; }
 }
 
 @media (max-width: 760px) {

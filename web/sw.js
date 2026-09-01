@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v23";     // v23: the beta opened its doors, and the ladder climbs 4.3 degrees
+const VERSION = "v24";     // v24: the share card takes the hero, the motif goes to the glossary
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
@@ -71,12 +71,21 @@ const APP_SHELL = [
   // worse empty state than the one they replaced.
   //
   // The homepage's four pictures (img/watch-main, img/phone-session, img/web-report and
-  // img/share-card, ~196 KB) are deliberately NOT here. They are below the fold on a page
-  // that is precached only as a way back out of the app, they are `loading="lazy"`, and
-  // the boxes they sit in are sized by `aspect-ratio` — so offline they leave four tidy
-  // empty plates rather than a broken layout, and nobody pays for them on install. The
-  // share card is the largest of the four and the furthest down, which settles it twice.
-  // /invite/ is not precached either: it is read once, at a desk, next to a watch.
+  // img/share-card, ~196 KB) are deliberately NOT here. Three of them are below the fold on
+  // a page that is precached only as a way back out of the app, they are `loading="lazy"`,
+  // and the boxes they sit in are sized by `aspect-ratio` — so offline they leave tidy
+  // empty plates rather than a broken layout, and nobody pays for them on install.
+  //
+  // img/share-card.png is the exception worth naming, because it moved: it is the
+  // HOMEPAGE'S HERO now, above the fold and `loading="eager"`, so the old "furthest down"
+  // argument for excluding it is gone. It stays out anyway, on the argument that always
+  // did the real work — it is 99 KB, the largest of the four, and the person paying for it
+  // on install is the one installing the ANALYZER, who reaches the homepage only on the way
+  // back out and reaches it online. Its box is still reserved by `aspect-ratio`, so offline
+  // the hero is one tidy empty plate beside a headline that says the same thing in words.
+  // /invite/ is not precached either: it is read once, at a desk, next to a watch. Neither
+  // is the umami script — it is a third-party URL, nothing calls into it, and an offline
+  // page renders whole without it.
   "img/peek-track.png",
   "img/peek-speed.png",
   "img/peek-turns.png",
@@ -137,7 +146,10 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(cacheFirst(req, RUNTIME));
     return;
   }
-  if (url.origin !== self.location.origin) return;      // e.g. intervals.icu: never cached
+  // Everything else third-party is passed straight through, never stored: intervals.icu
+  // (a cached activity list is not something a privacy-first app should keep) and
+  // cloud.umami.is (nothing depends on it, so offline it is simply allowed to fail).
+  if (url.origin !== self.location.origin) return;
   event.respondWith(staleWhileRevalidate(req, SHELL));
 });
 

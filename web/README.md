@@ -32,9 +32,12 @@ web/
 │   ├── phone-session.png       the iOS session detail, from the simulator's UI_* hooks
 │   ├── web-report.png          this analyzer on the bundled example
 │   ├── share-card.png          the bundled example's own SHARE CARD, 440x550 - the
-│                               portrait/complete export reduced from 1080x1350. Sits under
-│                               the three pieces because it is what all three make. Rendered
-│                               headlessly through js/sharecard.js, not screenshotted
+│                               portrait/complete export reduced from 1080x1350. The
+│                               homepage's HERO image: the product's real output, with a
+│                               working QR, standing where the drawn motif used to. Never
+│                               rendered wider than 440 (420 at the top breakpoint) so the
+│                               33-module QR stays decodable. Rendered headlessly through
+│                               js/sharecard.js, not screenshotted
 │   └── peek-{track,speed,turns}.png
 │                               the dropzone's "what you get" strip — the only images in
 │                               the precache, because they are on the app's first screen
@@ -120,10 +123,10 @@ needs a number the document does not carry, the number goes into `lab_bundle/`.
 
 ## Privacy
 
-**Nothing leaves the browser.** There is no backend, no upload endpoint, no analytics, no
-cookies. The FIT file is read with the File API, handed to a Web Worker, and analyzed inside
-the WebAssembly sandbox. Saved sessions live in this browser's private per-origin storage.
-The only outbound requests the page ever makes are:
+**No session data leaves the browser.** There is no backend and no upload endpoint. The FIT
+file is read with the File API, handed to a Web Worker, and analyzed inside the WebAssembly
+sandbox. Saved sessions live in this browser's private per-origin storage. The only outbound
+requests the pages ever make are:
 
 | Request | When | Why |
 |---|---|---|
@@ -131,12 +134,40 @@ The only outbound requests the page ever makes are:
 | `pypi.org` / `files.pythonhosted.org` | first load | the `fitdecode` wheel (pure Python, ~120 KB) |
 | same-origin `web/…` | first load, then on update | the app shell and `lab_bundle/*.py`, precached by the service worker |
 | `intervals.icu/api/v1/…` | only if you use the intervals.icu panel | your own activity list / FIT |
+| `cloud.umami.is/script.js` + one page-view beacon | every page load on `cleanjibe.org` | anonymous, cookieless page counts — see below |
+
+### The one measurement
+
+All three documents carry a `<script defer>` for **umami** (Umami Cloud). It counts page
+views: URL, referrer, screen size, and the browser's own language and user-agent string. It
+sets **no cookie**, stores no identifier that survives the visit, and has no access to a
+session — the FIT file is read in the tab, by a worker, and is never sent anywhere. Nothing
+in `js/` calls into it; removing the tag removes the feature entirely.
+
+Three details that are deliberate rather than incidental:
+
+- **`data-domains="cleanjibe.org"`** pins the beacon to the production hostname, so a local
+  `python3 -m http.server` and every preview build stay silent. A developer's reload must
+  never land in the numbers.
+- **The `data-website-id` is shared** with the fun-with-quantum family of sites — that Umami
+  Cloud plan is at its website limit — and the dashboard separates them by hostname.
+- **It is not precached** (see `sw.js`). It is a third-party URL nothing depends on, so an
+  offline visit simply fails the request and the page renders whole. Verified by killing the
+  local server with the worker installed: both `/` and `/app/` come back from the cache.
+
+It is disclosed on the pages themselves — one line in the homepage and analyzer footers,
+*Anonymous, cookie-free usage stats by umami.* — rather than behind a consent banner, because
+there is nothing here to consent to. The analyzer's footer promise was **edited** the same
+day rather than left standing: it used to read *No server, no upload, no tracking* and now
+reads *No server, no upload, no account — your file never leaves this tab*. A promise that is
+nearly true is worth nothing.
 
 **The service worker adds no request of its own.** It stores responses the page was already
-fetching, and only from those three origins plus this site's own. intervals.icu is
-explicitly excluded from caching — a cached activity list is not something a privacy-first
-app should leave lying around. There is still no cookie, no analytics, no beacon, and no
-`localStorage` beyond the intervals.icu key.
+fetching, and only from the Pyodide/PyPI hosts plus this site's own. Every other third-party
+request is passed straight through and never stored — intervals.icu, because a cached
+activity list is not something a privacy-first app should leave lying around, and umami,
+because nothing depends on it and offline it should simply be allowed to fail. There is
+still no cookie and no `localStorage` beyond the intervals.icu key.
 
 The intervals.icu API key is stored **only in this browser's `localStorage`** and is attached
 **only** to requests to `intervals.icu`. It is never sent to the site's host and never appears
@@ -462,8 +493,8 @@ choices above are made from the documented behaviour, not from a measured device
   *Reload to update*. Bump `VERSION` in `sw.js` whenever anything under `web/` changes; the
   old caches are deleted on activate. **This is not optional for a CSS or JS edit**: the
   shell is served cache-first, so without the bump every already-installed client keeps the
-  old stylesheet indefinitely. Current value: `v21` (the redrawn brand mark — every icon in
-  the shell is a new file — and the homepage's share-card picture).
+  old stylesheet indefinitely. Current value: `v24` (the share card takes the hero, the
+  motif moves down to the glossary, and umami goes into all three heads).
 
 The worker precaches **both** documents — `/` and `/app/` — and its offline navigation
 fallback picks between them by path, so an offline deep link to `/app/#/library` gets the
@@ -471,11 +502,19 @@ analyzer's shell and not the front door.
 
 **Images are precached only when they are on a first screen.** The dropzone's three
 `img/peek-*.png` (~58 KB) are, so they are in `APP_SHELL`; the homepage's four pictures
-(~196 KB — three card screenshots and the share card) are below the fold, `loading="lazy"`,
-and sit in boxes sized by
-`aspect-ratio`, so offline they leave tidy empty plates and cost nobody anything on
-install. `/invite/` is not precached at all — it is a page you read once, at a desk, with
-a watch in your hand.
+(~196 KB — three card screenshots and the share card) are not. Three of them are below the
+fold, `loading="lazy"`, and sit in boxes sized by `aspect-ratio`, so offline they leave tidy
+empty plates and cost nobody anything on install.
+
+`img/share-card.png` is the exception worth naming, because it moved: it is the homepage's
+hero now, above the fold and `loading="eager" fetchpriority="high"`, so the old "furthest
+down the page" argument no longer applies to it. It stays out anyway on the argument that
+always did the real work — it is the largest of the four at 99 KB, and the person paying for
+it on install is the one installing the *analyzer*, who reaches the homepage only on the way
+back out and reaches it online. Its box is still reserved by `aspect-ratio`.
+
+`/invite/` is not precached at all — it is a page you read once, at a desk, with a watch in
+your hand. Neither is the umami script; see **Privacy** above.
 
 Icons live in `web/icons/`, copied from `brand/` (`icon-tile-*` for the normal icon,
 `icon-square-*` full-bleed for the maskable one). Nothing outside `web/` is referenced.
@@ -531,19 +570,30 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
 ### Manual browser test checklist
 
 0. **The homepage.** `cd web && python3 -m http.server 8765`, open
-   <http://127.0.0.1:8765/>. Static HTML: the hero, the three cards each with a real
-   screenshot above its bullets, the *What you need* honesty block (no watch app / Android /
-   another brand), the vocabulary list, the two build claims, and the track motif in the
-   outcome colours. Everything is named **CleanJibe** — the wordmark, both app cards. The
-   *Open the analyzer* buttons land on `/app/`; *See an example session* lands on
-   `/app/#example` and must **run the bundled session on arrival**, not just show the drop
-   zone; *Get the beta* lands on `/invite/`; and the analyzer's own wordmark comes back here.
+   <http://127.0.0.1:8765/>. Static HTML: the hero — the brand mark at 64–84 px beside the
+   eyebrow, the headline, and `img/share-card.png` as the hero image, beside the copy from
+   761 px up and under it below — then the three cards each with a real screenshot above its
+   bullets, the *What you need* honesty block (no watch app / Android / another brand), the
+   vocabulary list with **the track motif and its colour key above it**, and the two build
+   claims. The card is never drawn wider than its 440 native pixels; hold a phone camera to
+   the QR at 1280 and it must open cleanjibe.org. Everything is named **CleanJibe** — the
+   wordmark, both app cards. The *Open the analyzer* buttons land on `/app/`; *See an example
+   session* lands on `/app/#example` and must **run the bundled session on arrival**, not just
+   show the drop zone; *Get the beta* lands on `/invite/`; the "all three make the card at the
+   top of this page" line under the row jumps to `#card`; and the analyzer's own wordmark
+   comes back here. The footer carries the issue link before the mail address, and one line
+   naming umami.
 0a. **The beta page.** <http://127.0.0.1:8765/invite/>. Both installs read in order at both
    widths: the Connect IQ store link opens apps.garmin.com and the TestFlight link opens
    testflight.apple.com. Nothing on the page asks anyone to request an invite — the one
    surviving mention of the request code is the transitional note under the Garmin steps,
-   which comes out the day 0.9.4 clears review. The feedback section carries both doors,
-   the mailto and github.com/JanLahmann/WingFoil/issues.
+   which comes out the day 0.9.4 clears review. The feedback section carries both doors **in
+   this order** — github.com/JanLahmann/WingFoil/issues first, `info@cleanjibe.org` second —
+   plus one line naming the stores' own channels (TestFlight's screenshot form, Connect IQ's
+   *Contact Developer*), because both really do reach the same developer and a page that
+   listed only its own two doors would be implying otherwise. Every mail address on the site
+   is `info@cleanjibe.org`; grepping the `.html` files for the old personal address must come
+   back empty.
 0b. **The social card** (the link preview — not the rider's share card below). View source
    on both documents: `og:image` must be the absolute
    `https://cleanjibe.org/social-card.png`, with `og:image:width`/`:height` and

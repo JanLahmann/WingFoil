@@ -42,6 +42,15 @@
      values from these custom properties, so it must come second. -->
 <link rel="stylesheet" href="../css/tokens.css">
 <link rel="stylesheet" href="../css/style.css">
+<!-- Usage analytics: umami, cloud-hosted and cookieless — it sees that this page was
+     opened, never who opened it, and it stores no identifier that survives the visit. It
+     never sees a session: the .fit file is read inside this tab, by the worker, and still
+     never leaves the device — the footer's promise is unchanged and stated there. Nothing
+     in js/ calls into it. `data-domains` pins it to the production hostname so a local
+     `python3 -m http.server` and every preview stay silent, and the script is external and
+     deliberately NOT in sw.js's precache, so the installed app opens offline without it.
+     Full note in web/index.html. -->
+<script defer src="https://cloud.umami.is/script.js" data-website-id="97f347ac-e7ba-4be3-b26f-ab4b328bdbf2" data-domains="cleanjibe.org"></script>
 <!-- The analyzer's favicon is INLINE, unlike the homepage's: it is the one asset a
      cold tab would otherwise fetch before anything is on screen, and at 64 px it is
      cheaper as bytes in this file than as a request. It is brand/icon-tile-64.png,
@@ -465,11 +474,17 @@
   <!-- The footer of a rider's page, not of a build. What it runs on is in web/README.md;
        what a visitor needs here is that it costs nothing, keeps nothing, and where to go
        next. -->
+  <!-- "No tracking" came out of this line the day umami went into the head, because it was
+       no longer strictly true and a promise that is nearly true is worth nothing. What it
+       protected is intact and now says exactly what it means: no server, no upload, no
+       account — the file itself never leaves this tab. The page count is named on its own
+       line below, where a reader can weigh it. -->
   <p>
-    Free and open source. No server, no upload, no tracking.
+    Free and open source. No server, no upload, no account — your file never leaves this tab.
     <br><a href="../">About CleanJibe</a> ·
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">Source and thresholds</a>
   </p>
+  <p class="fineprint">Anonymous, cookie-free usage stats by umami.</p>
 </footer>
 
 <script type="module" src="../js/app.js"></script>
