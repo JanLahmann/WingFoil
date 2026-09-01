@@ -13,8 +13,17 @@
         "Field-variant FIT (class d)".
       minApiLevel 5.0.0 and the product list match the device app.
     -->
+    <!--
+      Release version. It is an ATTRIBUTE the SDK validates (an unknown one fails the build),
+      and 0.9.5 is the first field build to carry one at all — the field's version used to live
+      only in the store's upload form, which is why garmin/store/listing.md had to be the
+      record of what shipped. It moves together with FieldFit.APP_MINOR, the high byte of the
+      FIT session's `app_version`, for the reason the device app's manifest states: a watch
+      that says 0.9.5 here and writes a 1 there is a watch nobody can identify from its own
+      files.
+    -->
     <iq:application id="22002da3-f7ef-40fc-acfb-72668ee8173d" type="datafield"
-        name="@Strings.AppName" entry="WingFoilFieldApp"
+        name="@Strings.AppName" entry="WingFoilFieldApp" version="0.9.5"
         launcherIcon="@Drawables.LauncherIcon" minApiLevel="5.0.0">
         <iq:products>
             <iq:product id="fenix843mm"/>

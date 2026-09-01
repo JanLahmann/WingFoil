@@ -13,7 +13,13 @@ import WingFoilCore;
 // Field IDs shared with the device app carry exactly the app's meaning and type.
 class FieldFit {
     const SCHEMA_VERSION = 1;
-    const APP_MINOR = 1;
+    // High byte of the session's `app_version`: the MINOR of the manifest's release version,
+    // the way the device app's FitSchema.APP_MINOR is. It was 1 for as long as the field's
+    // manifests carried no version at all and there was nothing for it to agree with; 0.9.5
+    // gave them one, so it is 9. Only the LOW byte (SCHEMA_VERSION) has a reader downstream —
+    // lab/parse.py and WingFoilKit both take the wire format from it — so this is the half
+    // that says which build wrote the file, and it must move with the manifest.
+    const APP_MINOR = 9;
 
     // record turn_marker enum — the docs/fit-schema.md record field 3 contract, byte for
     // byte the device app's FitFields enum (a parser must not care which app wrote it).

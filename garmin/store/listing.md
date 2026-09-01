@@ -74,7 +74,8 @@ Note: Garmin keeps your stored page settings on update - existing installs can p
 ## Data field — `CleanJibe Field - Invite Beta`
 
 * Store page: <https://apps.garmin.com/apps/8dad33d4-e367-45a6-a4bb-9647fd6b5402>
-* Type: data field · Version **0.9.3** · first submitted 2026-08-13, current version released 2026-08-31
+* Type: data field · Version **0.9.5** · first submitted 2026-08-13, current version released 2026-08-31
+  (0.9.4 and 0.9.5 are prepared here; the upload is the coordinator's)
 * Permissions: FitContributor
 * Devices (`garmin/field/manifest-invite.xml`): fenix 8 (43 mm, 47 mm), fenix 8 Solar
   (47 mm, 51 mm), fenix 8 Pro (47 mm), fenix 7 / 7S / 7X, fenix 7 Pro / 7 Pro (no WiFi) /
@@ -89,7 +90,9 @@ Add it to any activity profile (Windsurf is the one wingfoilers usually use) and
 
 It shares its detection core with the WingFoil watch app: the same flight detection with tunable thresholds, the same turn detection with tack/jibe classification and flew / touchdown / fell-in outcomes. What it cannot do is pumping and takeoff analysis - Connect IQ forbids a data field from touching the accelerometer, so those metrics live in the watch app only.
 
-Layouts adapt to the cell you give it: a 3 or 4 field screen shows foil percentage with the flight count and timer, a 2 field screen adds the turn outcome and tally, and a full-screen field shows everything including speed.
+Layouts adapt to the cell you give it. Give it the whole screen and it draws the CleanJibe app's own main page: foil percentage, a giant speed, every counted turn as a coloured dot, the flew/touchdown/swim tally and your dry run - each with a small word beside it saying what it is. Pause or stop the activity and the same cell shows your session summary, two pages that alternate: foil share, flights, foil time against total, longest flight and distance, then the turn count, the tack/jibe split, the outcomes and your best speeds. Smaller cells stay compact, and you choose what they show: one metric for a 3 or 4 field cell, two for a 2 field one, out of speed, foil percentage, flights, flight timer, foil time, longest flight, distance, timer, heart rate, best 2s and 10s, turns, last turn, tacks/jibes, outcomes, dry run and the clock (Garmin Connect > CleanJibe Field > Settings).
+
+A word of honesty: the field is newer and less tested than the CleanJibe app. If you use it, your feedback is doubly welcome (github.com/JanLahmann/WingFoil/issues or info@cleanjibe.org). Where your watch supports it, we still recommend the full CleanJibe app.
 
 THIS BETA IS INVITE-ONLY. On the first activity the field shows an 8-character request code instead of metrics. Send that code to the developer (Contact Developer on this page) and you will receive your personal unlock key. Enter it in Garmin Connect under Connect IQ, WingFoil Field - Invite Beta, Settings, "Unlock key" - it takes effect immediately, mid-activity, and permanently on that watch. Without a key the field records nothing at all - please request a key instead of leaving a review about the lock.
 
@@ -113,6 +116,8 @@ paragraph, which should be `https://cleanjibe.org`.
 ### What's New (live text)
 
 ```
+0.9.5: the full-screen cell now shows the app's main page — giant speed, the colour ladder, tally and streak — and you can choose what smaller cells display (Garmin Connect > CleanJibe Field > Settings). Pause the activity and the field shows your session summary. A word of honesty: the field is newer and less tested than the CleanJibe app — if you use it, your feedback is doubly welcome (github.com/JanLahmann/WingFoil/issues or info@cleanjibe.org). Where your watch supports it, we still recommend the full CleanJibe app.
+
 0.9.3: the field is now called CleanJibe Field (same field, new name — cleanjibe.org). No functional changes; version now tracks the CleanJibe app family.
 
 0.1.0: first invite-beta release. Data field companion to the watch app - live foil state, foil time and percentage, flights, turn outcomes and tack/jibe tally, all written to the FIT as developer fields. fenix 8, fenix 7, Enduro 2 and tactix 7/8.
@@ -146,6 +151,8 @@ field. Dates are the commit dates; a store release usually follows by a day.
 
 | Version | Date | Commit | What it was |
 |---|---|---|---|
+| 0.9.5 | 2026-09-01 | this release | The full-screen cell became the app's main page (labelled), a session summary took over while the timer is stopped, and the smaller cells' rows became settings. First field build whose manifests carry a `version` attribute at all. |
+| 0.9.4 | 2026-09-01 | `8d014dc` | The chord-placement fix (no cell clips at the bezel any more) and the fenix 7 / Tier A product list on all three channels. |
 | 0.9.3 | 2026-08-31 | `442ffbe` | Renamed to CleanJibe Field; the version now tracks the app family. No functional change. |
 | 0.1.0 | 2026-08-11 | `cc64066` | First invite-beta release, alongside the `WingFoilCore` barrel it shares with the watch app. |
 

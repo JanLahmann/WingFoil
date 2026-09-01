@@ -8,8 +8,17 @@
       minted by lab/tools/make_unlock.py. Build it only through monkey-invite.jungle, which
       supplies the pepper that arms the lock.
     -->
+    <!--
+      Release version. It is an ATTRIBUTE the SDK validates (an unknown one fails the build),
+      and 0.9.5 is the first field build to carry one at all — the field's version used to live
+      only in the store's upload form, which is why garmin/store/listing.md had to be the
+      record of what shipped. It moves together with FieldFit.APP_MINOR, the high byte of the
+      FIT session's `app_version`, for the reason the device app's manifest states: a watch
+      that says 0.9.5 here and writes a 1 there is a watch nobody can identify from its own
+      files.
+    -->
     <iq:application id="f562bd43-9974-4625-af99-218df0d306d5" type="datafield"
-        name="@Strings.AppNameInvite" entry="WingFoilFieldApp"
+        name="@Strings.AppNameInvite" entry="WingFoilFieldApp" version="0.9.5"
         launcherIcon="@Drawables.LauncherIcon" minApiLevel="5.0.0">
         <iq:products>
             <iq:product id="fenix843mm"/>
