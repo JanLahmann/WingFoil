@@ -30,7 +30,8 @@
             <listEntry value="2">@Strings.SportGeneric</listEntry>
         </settingConfig>
     </setting>
-    <setting propertyKey="@Properties.accelLogging" title="@Strings.SetAccelLogging">
+    <setting propertyKey="@Properties.accelLogging" title="@Strings.SetAccelLogging"
+             prompt="@Strings.SetAccelLoggingNote">
         <settingConfig type="boolean"/>
     </setting>
     <setting propertyKey="@Properties.pumpDetection" title="@Strings.SetPumpDetection">

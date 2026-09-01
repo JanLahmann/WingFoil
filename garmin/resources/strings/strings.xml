@@ -16,6 +16,7 @@
     <string id="SportKitesurf">Kitesurf</string>
     <string id="SportGeneric">Generic</string>
     <string id="SetAccelLogging">Log accelerometer (pump analysis)</string>
+    <string id="SetAccelLoggingNote">Records full wrist motion for pump analysis on the phone. The activity file gets roughly 20x larger, so the transfer to Garmin Connect after saving can take several minutes. Leave off for fast transfers.</string>
     <string id="SetPumpDetection">Detect pumping + takeoffs</string>
     <string id="SetAlertTakeoff">Vibrate on pumped takeoff</string>
     <string id="SetAlertPb">Vibrate on speed PB</string>
