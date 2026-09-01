@@ -157,6 +157,30 @@
 .piece .piece-foot { margin-top: auto; padding-top: 2px; }
 .piece .piece-foot .btn { text-decoration: none; }
 
+/* --------------------------------------------------------------- the share card
+
+   The row's output, under the row. One panel, one picture, one paragraph: the image is
+   the argument, so the words beside it stay short. It is a 4:5 portrait rather than the
+   row's squares, and it is capped in PIXELS rather than given a column fraction — a share
+   card printed larger than a phone screen stops reading as something a phone made. On a
+   phone the two stack and the picture centres, still capped, because a full-bleed 4:5
+   would push the paragraph a screen and a half down. `aspect-ratio` with the intrinsic
+   width/height reserves the box before the bytes land, as the row above does. */
+.sharecard {
+  margin: 14px 0 0; display: grid; gap: 14px; align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+}
+.sharecard img {
+  display: block; width: 100%; max-width: 260px; height: auto; aspect-ratio: 440 / 550;
+  margin: 0 auto;
+  background: var(--surface-2); border: 1px solid var(--line-soft);
+  border-radius: calc(var(--radius) - 4px);
+}
+.sharecard figcaption {
+  color: var(--ink-2); font-size: 14px; line-height: 1.55; max-width: 56ch;
+}
+.sharecard figcaption b { color: var(--ink-1); }
+
 /* The card's status line: "beta, by invite" is a fact, and it belongs beside the name. */
 .status {
   font: 600 10.5px/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase;
@@ -232,6 +256,10 @@
 @media (min-width: 761px) {
   .hero { padding: 44px 0 40px; gap: 24px; }
   .pieces { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* Picture beside its paragraph once there is room for both. The first column is the
+     image's own cap, so the panel never stretches it. */
+  .sharecard { grid-template-columns: 260px minmax(0, 1fr); gap: 22px; margin-top: 16px; }
+  .sharecard img { margin: 0; }
   /* `auto-fit` rather than a fixed three: the claim rows are two cards in one place and
      three in another, and a fixed grid leaves the two-card row with a visible hole where
      the third would have been. */

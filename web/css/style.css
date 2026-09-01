@@ -109,9 +109,15 @@ a.brand { color: inherit; text-decoration: none; }
 a.brand:hover .mark { box-shadow: inset 0 0 0 1px #ffffff55; }
 a.brand:focus-visible { outline: 2px solid var(--series-1); outline-offset: 3px; border-radius: 8px; }
 .brand .sub { font-size: 12.5px; color: var(--ink-3); }
+/* The brand mark itself, not a stand-in for it. As a BACKGROUND rather than an <img>:
+   the URL then resolves against this stylesheet, so the one rule serves the homepage, the
+   analyzer a directory down and the invite page without three different relative paths —
+   and an inset box-shadow paints over a background but under a replaced element, so the
+   hover ring below keeps working. The navy under the image is the tile's own #0A1E30,
+   which lets border-radius do the corner instead of the artwork's slightly tighter one. */
 .mark {
   width: 26px; height: 26px; border-radius: 7px; flex: none;
-  background: linear-gradient(140deg, var(--series-1), #1c5fae);
+  background: #0A1E30 url(../icons/icon.svg) center/cover no-repeat;
   box-shadow: inset 0 0 0 1px #ffffff22;
 }
 .topbar-right { display: flex; align-items: center; gap: 10px; }

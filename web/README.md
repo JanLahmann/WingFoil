@@ -31,6 +31,10 @@ web/
 │   ├── watch-main.png          the watch's riding page, from brand/store-shots-08
 │   ├── phone-session.png       the iOS session detail, from the simulator's UI_* hooks
 │   ├── web-report.png          this analyzer on the bundled example
+│   ├── share-card.png          the bundled example's own SHARE CARD, 440x550 - the
+│                               portrait/complete export reduced from 1080x1350. Sits under
+│                               the three pieces because it is what all three make. Rendered
+│                               headlessly through js/sharecard.js, not screenshotted
 │   └── peek-{track,speed,turns}.png
 │                               the dropzone's "what you get" strip — the only images in
 │                               the precache, because they are on the app's first screen
@@ -458,16 +462,17 @@ choices above are made from the documented behaviour, not from a measured device
   *Reload to update*. Bump `VERSION` in `sw.js` whenever anything under `web/` changes; the
   old caches are deleted on activate. **This is not optional for a CSS or JS edit**: the
   shell is served cache-first, so without the bump every already-installed client keeps the
-  old stylesheet indefinitely. Current value: `v17` (the rider-facing copy pass, the
-  dropzone's preview strip, and `/invite/`).
+  old stylesheet indefinitely. Current value: `v21` (the redrawn brand mark — every icon in
+  the shell is a new file — and the homepage's share-card picture).
 
 The worker precaches **both** documents — `/` and `/app/` — and its offline navigation
 fallback picks between them by path, so an offline deep link to `/app/#/library` gets the
 analyzer's shell and not the front door.
 
 **Images are precached only when they are on a first screen.** The dropzone's three
-`img/peek-*.png` (~58 KB) are, so they are in `APP_SHELL`; the homepage's three card
-screenshots (~97 KB) are below the fold, `loading="lazy"`, and sit in boxes sized by
+`img/peek-*.png` (~58 KB) are, so they are in `APP_SHELL`; the homepage's four pictures
+(~196 KB — three card screenshots and the share card) are below the fold, `loading="lazy"`,
+and sit in boxes sized by
 `aspect-ratio`, so offline they leave tidy empty plates and cost nobody anything on
 install. `/invite/` is not precached at all — it is a page you read once, at a desk, with
 a watch in your hand.

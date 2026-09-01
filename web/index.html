@@ -101,7 +101,17 @@
          which end its jibe sits at, and where in the order the fall and the swim after it
          come. What it draws by hand is the spacing: laid out at true scale the reaches
          cross into a knot, because 240 m of reach inside 67 m of drift is unreadable at
-         5:1, so they sit on even bands instead.
+         5:1.
+
+         Every reach RISES in the direction it is sailed, and the session ladders upwind
+         across the frame. That is the one thing the first drawing got wrong: it stacked the
+         reaches on even horizontal bands and let the climb happen in the jibes, which is
+         not what wingfoiling looks like — you gain upwind along the reach, not in the turn.
+         The angle is 3.4 degrees, which is the most this frame will hold: the climb a
+         ladder shows is (total distance sailed) x tan(angle), and six reaches that span a
+         640x128 box travel far enough that anything steeper runs out of the top. The
+         reaches were shortened and the ladder set marching to the right to buy even that
+         much. A real 10-15 degree reach needs a frame nearer square than 5:1.
 
          The jibe is a TEARDROP, not a U-turn. You bear away, carve, and come out heading
          back up, so the exit cuts across the entry a short way back from the tip — every
@@ -123,28 +133,28 @@
            one table, three renditions, so `grep` catches any drift. -->
       <svg viewBox="0 0 640 128" role="img" aria-label="A wingfoil session's track: five cross-wind reaches with teardrop jibe loops at their ends, two jibes flown through, one touched down, and a fall with a swim before the last reach.">
         <!-- the whole ride, off foil -->
-        <path class="m-track" d="M133 102L354 101Q364 101 374 101L562 104Q572 104 581 100L590 96Q598 92 605 98L607 100Q614 106 606 109L601 111Q592 116 583 112L541 96Q532 93 522 93L387 90Q377 90 367 90L192 87Q182 87 173 83L164 78Q156 75 149 80L147 82Q140 88 148 91L153 94Q162 98 171 94L213 78Q222 75 232 75L344 72Q354 71 364 72L517 75Q527 75 536 71L545 67Q553 63 559 68L562 70Q569 76 561 79L556 82Q547 86 537 82L496 67Q487 63 477 63L362 61Q352 61 342 60L188 57Q178 57 169 53L160 49Q152 45 145 51L143 53Q136 58 144 62L149 64Q158 68 167 65L209 49Q218 45 228 45L282 42Q292 42 302 42L397 45Q407 45 417 45L421 45Q431 45 421 43L361 32Q351 30 341 31L203 31Q193 31 183 31L68 28Q58 28 48 28L34 28"/>
+        <path class="m-track" d="M24 115L259 101L280 100Q283 100 285 101Q287 102 287 105Q288 107 288 109Q287 112 285 113Q283 115 281 115Q278 115 276 113L257 100Q252 96 247 96L173 92L152 91Q149 90 147 92Q145 93 144 95Q143 98 144 100Q145 102 147 104Q149 105 151 105Q153 105 155 104L175 90Q180 87 185 87L429 72L450 71Q453 71 455 72Q457 74 458 76Q459 78 458 81Q457 83 455 84Q453 86 451 86Q449 86 447 85L427 71Q422 68 417 67L339 63L317 62Q315 61 313 63Q311 64 310 66Q309 69 310 71Q310 73 312 75Q314 76 317 76Q319 76 321 75L341 61Q345 58 351 58L608 43Q616 42 611 40L563 32Q553 31 543 30L249 13"/>
 
         <!-- the long flight: four reaches, four jibes carried, and then the water -->
-        <path class="m-foil" d="M133 102L354 101Q364 101 374 101L562 104Q572 104 581 100L590 96Q598 92 605 98L607 100Q614 106 606 109L601 111Q592 116 583 112L541 96Q532 93 522 93L387 90Q377 90 367 90L192 87Q182 87 173 83L164 78Q156 75 149 80L147 82Q140 88 148 91L153 94Q162 98 171 94L213 78Q222 75 232 75L344 72Q354 71 364 72L517 75Q527 75 536 71L545 67Q553 63 559 68L562 70Q569 76 561 79L556 82Q547 86 537 82L496 67Q487 63 477 63L362 61Q352 61 342 60L188 57Q178 57 169 53L160 49Q152 45 145 51L143 53Q136 58 144 62L149 64Q158 68 167 65L209 49Q218 45 228 45L282 42Q292 42 302 42L397 45Q407 45 417 45L431 45"/>
+        <path class="m-foil" d="M24 115L259 101L280 100Q283 100 285 101Q287 102 287 105Q288 107 288 109Q287 112 285 113Q283 115 281 115Q278 115 276 113L257 100Q252 96 247 96L173 92L152 91Q149 90 147 92Q145 93 144 95Q143 98 144 100Q145 102 147 104Q149 105 151 105Q153 105 155 104L175 90Q180 87 185 87L429 72L450 71Q453 71 455 72Q457 74 458 76Q459 78 458 81Q457 83 455 84Q453 86 451 86Q449 86 447 85L427 71Q422 68 417 67L339 63L317 62Q315 61 313 63Q311 64 310 66Q309 69 310 71Q310 73 312 75Q314 76 317 76Q319 76 321 75L341 61Q345 58 351 58L608 43"/>
         <!-- up again after the swim, and this reach runs the frame out -->
-        <path class="m-foil" d="M351 30L203 31Q193 31 183 31L68 28Q58 28 48 28L34 28"/>
+        <path class="m-foil" d="M543 30L249 13"/>
 
         <!-- which way he went — set off the lines rather than on them, where a 2 px chevron
              inside a 5 px stroke just reads as a nick in the paint -->
         <g class="m-dir">
-          <path d="M-4 -5 L2 0 L-4 5" transform="translate(330,113)"/>
-          <path d="M-4 -5 L2 0 L-4 5" transform="translate(190,20) rotate(180)"/>
+          <path d="M-4 -5 L2 0 L-4 5" transform="translate(142,120)"/>
+          <path d="M-4 -5 L2 0 L-4 5" transform="translate(396,10) rotate(180)"/>
         </g>
 
         <!-- flew through -->
-        <circle class="m-flew" cx="598" cy="92" r="7"/>
-        <circle class="m-flew" cx="152" cy="45" r="7"/>
+        <circle class="m-flew" cx="281" cy="92" r="7"/>
+        <circle class="m-flew" cx="317" cy="54" r="7"/>
         <!-- touched down -->
-        <path class="m-touch" d="M553 56 L560 69 L546 69 Z"/>
+        <path class="m-touch" d="M451 57 L458 70 L444 70 Z"/>
         <!-- fell in -->
         <g class="m-fell">
-          <path d="M425 39 L437 51"/><path d="M437 39 L425 51"/>
+          <path d="M602 37 L614 49"/><path d="M614 37 L602 49"/>
         </g>
       </svg>
       <p class="motif-key">
@@ -248,6 +258,38 @@
       </article>
 
     </div>
+
+    <!-- The one thing all three pieces make, and the page had never shown one: two of the
+         cards above promise a "share card" and left a stranger to picture it.
+
+         It is the BUNDLED EXAMPLE's own card — the same session the phone shot beside it
+         shows, which is why the two carry the same name — exported through the analyzer's
+         real share dialog (portrait, complete) at its full 1080x1350 and reduced to 440 here.
+         The only thing typed into it is the title; everything else is what the analysis
+         produced. Anyone can make this one: "try the example session" inside the analyzer,
+         then Share card.
+
+         It sits after the row rather than inside it because it is the row's OUTPUT, not a
+         fourth piece — and because a 4:5 portrait in a row of squares would have to be
+         cropped to join it. Quantized and lazy like every other picture on the page, and
+         out of the service worker's precache for the same reason they are: below the fold. -->
+    <figure class="panel sharecard">
+      <img src="img/share-card.png" width="440" height="550" loading="lazy" decoding="async"
+           alt="A CleanJibe share card for the example session, titled Nago Torbole Wingfoil,
+                30 August 2026: the whole track with every jibe marked, green where it was
+                flown through and red where it was not; then eight tiles - 10:45 min, 2.6 km,
+                7.71 kn average, 13.47 kn best 2 s, 8 flew and 0 touched down and 2 fell in of
+                10 jibes, best streaks 8 flew and 8 dry, 44.7 dry jibes per hour, 11.2 swims
+                per hour - and a footer carrying the CleanJibe mark, the offer, and a QR code
+                to cleanjibe.org.">
+      <figcaption>
+        <b>And then you post it.</b>
+        Any session, from the watch, the phone or the browser, becomes one picture: the
+        track with every jibe judged, the numbers that session actually did, and — for
+        whoever it lands in front of — a code back to here. Nothing leaves your device to
+        make it.
+      </figcaption>
+    </figure>
   </section>
 
   <!-- ---------------------------------------------------------- what you need -->

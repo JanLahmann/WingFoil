@@ -1,17 +1,47 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<!-- The CleanJibe mark: ONE jibe, drawn the way a jibe actually plots.
+
+     A jibe is not a U-turn. You come out of it heading back UPWIND, so the exit leg
+     cuts across the entry leg and the track closes a teardrop with a real CROSSOVER —
+     the one thing that tells it apart from a tack, and the reason the loop below is
+     traversed the long way round rather than doubled back. Same shape the breadcrumb
+     motif draws at every jibe (web/index.html, ios WelcomeView, web/tools/social_card.html);
+     this is one of those loops, alone and bold.
+
+     Geometry: loop centre O with radius 20, the crossover X on the axis at
+     20/sin(27 deg) out from it, and both legs the TANGENTS from X — so they meet at a
+     54 deg X that still reads at 40 px, and the hole they close with the arc is round
+     at the turn and pointed at the cross.
+
+     The whole figure is turned 22 deg (not the 36 it was first drawn at), which is
+     5 deg short of the 27 that would lay the entry leg flat: the approach comes in
+     from the left RISING slightly, the way a reach is sailed, and the exit leaves
+     up-left — upwind — with the wing on its tip.
+
+     The wing is turned -30 deg: canopy up, leading edge high, crossing the stroke at
+     its base only. A wing at the exit, not a head on a snake.
+
+     Two water lines sit LOW, below the whole mark — the loop bottom is at y 81 and the
+     upper line crests at y 83.5. They are the surface the track is drawn on, and they
+     stay out of the loop; the pair this mark first carried ran at y 74/88 and cut the
+     loop in half.
+
+     brand/icon-square.svg is this artwork full-bleed (rx 0) for maskable/App Store use.
+     garmin/tools/make_brand_mark.py transcribes these paths - keep the two in step. -->
 <defs>
 <linearGradient id="track" x1="0" y1="0" x2="1" y2="0">
-<stop offset="0" stop-color="#35C4F0"/><stop offset="0.6" stop-color="#2EE6A8"/><stop offset="1" stop-color="#B9FF66"/></linearGradient>
+<stop offset="0" stop-color="#35C4F0"/><stop offset="0.6" stop-color="#2EE6A8"/>
+<stop offset="1" stop-color="#B9FF66"/></linearGradient>
 <linearGradient id="wing" x1="0" y1="0" x2="1" y2="0">
 <stop offset="0" stop-color="#2EE6A8"/><stop offset="1" stop-color="#B9FF66"/></linearGradient>
 </defs>
 <rect width="100" height="100" rx="22" fill="#0A1E30"/>
-<path d="M 14 24 L 54 20 Q 82 18 82 38 Q 82 58 54 56 L 34 54"
- stroke="url(#track)" stroke-width="8" fill="none" stroke-linecap="round"/>
-<g transform="translate(30,55) rotate(-10) scale(0.56) translate(-50,-36)">
+<path d="M 10 88 Q 28 83.5 46 88 Q 64 92.5 82 88 Q 88 86.4 92 87.2" stroke="#F4FAFF" stroke-width="4.5" fill="none" stroke-linecap="round" opacity="0.85"/>
+<path d="M 20 94.8 Q 36 91.5 52 94.8 Q 66 97.2 78 94.8" stroke="#F4FAFF" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.35"/>
+<path d="M 16.83 52.55 L 71.77 47.75 Q 76.81 47.3 81 50.13 Q 85.19 52.96 86.67 57.79 Q 88.14 62.63 86.25 67.32 Q 84.36 72 79.94 74.45 Q 75.51 76.91 70.53 76.03 Q 65.56 75.15 62.24 71.33 L 29.81 34.03"
+ stroke="url(#track)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<g transform="translate(25.12,28.64) rotate(-30) scale(0.51) translate(-50,-36)">
 <path d="M 50 20 Q 74 22 92 46 Q 70 38 58 42 Q 52 44 50 52 Q 48 44 42 42 Q 30 38 8 46 Q 26 22 50 20 Z" fill="url(#wing)"/>
 <line x1="50" y1="23" x2="50" y2="49" stroke="#0A1E30" stroke-width="3" stroke-linecap="round" opacity="0.75"/>
 </g>
-<path d="M 12 74 Q 28 68 44 74 Q 60 80 76 74 Q 86 70 92 72" stroke="#F4FAFF" stroke-width="4.5" fill="none" stroke-linecap="round" opacity="0.9"/>
-<path d="M 20 88 Q 34 83 48 88 Q 62 93 78 88" stroke="#F4FAFF" stroke-width="3" fill="none" opacity="0.4" stroke-linecap="round"/>
 </svg>
