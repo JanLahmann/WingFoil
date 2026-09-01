@@ -162,7 +162,7 @@ final class SessionRecorder {
         if locationAuthorization == .notDetermined { location?.requestAuthorization() }
         // Fixes before START, so the rider can see whether the watch knows where it is
         // rather than finding out thirty seconds into the first run.
-        location?.startUpdating(background: false)
+        location?.startUpdating()
 
         Task { await requestHealthAuthorization() }
         SessionTransfer.shared.activate()
@@ -235,7 +235,7 @@ final class SessionRecorder {
             return
         }
 
-        location?.startUpdating(background: true)
+        location?.startUpdating()
         // The handler captures the writer, the clock origin and the gate directly — never
         // `self`. Nothing on this path touches the main actor, which is the only way a 50 Hz
         // sensor and a SwiftUI view can share a process without one of them suffering.
@@ -294,7 +294,7 @@ final class SessionRecorder {
         accelGate.set(false)
         motion.stop()
         location?.stopUpdating()
-        location?.startUpdating(background: false)
+        location?.startUpdating()
 
         let counts = closeWriters()
         let dir = directory
@@ -336,7 +336,7 @@ final class SessionRecorder {
     private func handle(authorization status: CLAuthorizationStatus) {
         locationAuthorization = status
         if status == .authorizedWhenInUse || status == .authorizedAlways {
-            location?.startUpdating(background: phase == .recording)
+            location?.startUpdating()
         }
     }
 
