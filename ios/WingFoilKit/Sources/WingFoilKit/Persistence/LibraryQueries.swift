@@ -491,6 +491,39 @@ public struct LibraryStore: Sendable {
         }
     }
 
+    // MARK: - Naming a session
+
+    /// Renames one session, or gives it its derived name back.
+    ///
+    /// Nil (and blank, and whitespace) all write NULL, which is what makes "he cleared it"
+    /// and "he never named it" one state: the row falls back to `SessionDisplay.title` and
+    /// every surface follows, because every surface asks the same function
+    /// (`SessionNaming.title`).
+    ///
+    /// Normalized on the way in rather than on the way out — `SessionNaming.customTitle` caps
+    /// and trims — so the stored value is the value, and a reader never has to wonder whether
+    /// what it fetched has been through the rules yet.
+    public func renameSession(id: String, to title: String?) async throws {
+        let stored = SessionNaming.customTitle(title)
+        try await database.writer.write { db in
+            try db.execute(sql: "UPDATE session SET customTitle = ? WHERE id = ?",
+                           arguments: [stored, id])
+        }
+    }
+
+    /// Sets (or clears) the one-line caption the card and the clip's opening frame carry.
+    ///
+    /// Same shape and same rules as `renameSession`, and capped at `SessionNaming.noteLimit`
+    /// here as well as in the field the rider types into: a card is a PNG, so the length at
+    /// which a caption stops fitting is a fact about the content, not about the text field.
+    public func setShareNote(id: String, to note: String?) async throws {
+        let stored = SessionNaming.note(note)
+        try await database.writer.write { db in
+            try db.execute(sql: "UPDATE session SET shareNote = ? WHERE id = ?",
+                           arguments: [stored, id])
+        }
+    }
+
     // MARK: - Riders
 
     /// The friends whose sessions are already in the library, alphabetically.

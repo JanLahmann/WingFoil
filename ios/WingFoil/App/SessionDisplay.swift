@@ -6,8 +6,24 @@ import WingFoilKit
 /// until then a session is identified by its date and its source filename.
 enum SessionDisplay {
 
-    /// "2026-08-03-1440_nago-torbole-windsurfen_native.fit" → "Nago Torbole Windsurfen".
+    /// **The** name of a session: the rider's, if he has given it one, and the one derived
+    /// from the recording's filename otherwise (`SessionNaming.title`).
+    ///
+    /// Every surface in the app already asked this function — the library row, the detail
+    /// header, the share card, the clip's title card, the share messages, the shared file's
+    /// own name, the widget, the records list, the map screen, the tombstone a delete leaves
+    /// behind — which is exactly why the rename goes *here*. One mental model: you are naming
+    /// the session, not decorating one export of it.
     static func title(_ row: SessionRow) -> String {
+        SessionNaming.title(custom: row.customTitle, derived: derivedTitle(row))
+    }
+
+    /// "2026-08-03-1440_nago-torbole-windsurfen_native.fit" → "Nago Torbole Windsurfen".
+    ///
+    /// The fallback, and what a rider sees in the title field before he types: a guess made
+    /// from how the watch happened to name the file, which is a good guess and never a
+    /// statement.
+    static func derivedTitle(_ row: SessionRow) -> String {
         guard let file = row.originalFilename else { return "Session" }
         var stem = (file as NSString).deletingPathExtension
         let parts = stem.split(separator: "_")

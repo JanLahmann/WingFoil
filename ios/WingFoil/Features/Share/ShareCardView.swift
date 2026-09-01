@@ -122,6 +122,20 @@ struct ShareCardView: View {
         }
     }
 
+    /// Name, date, and — when the rider wrote one — his own caption.
+    ///
+    /// **The caption is the only thing on this card addressed by the sender to the reader.**
+    /// Everything else is either a measurement or the footer's offer. So it sits directly
+    /// under the two lines that say which afternoon this is, in the same subordinate ink as
+    /// the date, and it costs the track about fourteen points of height — which the tall
+    /// layout takes out of the track's remainder and the wide layout out of the column's
+    /// slack. Absent, the header is the two lines it has always been and nothing moves.
+    ///
+    /// It shrinks rather than truncating, by the rule the whole card follows: an ellipsis in
+    /// a PNG is permanent, three points of type size are only small. At the 80-character cap
+    /// (`SessionNaming.noteLimit`) the floor is never reached on any shape — the wide card's
+    /// 40 % column is the tightest, and a full-length caption lands there around 6.5 pt,
+    /// which is 19 px in an exported 1920-pixel image.
     private var header: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(stats.title)
@@ -132,6 +146,14 @@ struct ShareCardView: View {
             Text(stats.dateLine)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Brand.paper.opacity(0.72))
+            if let note = stats.note {
+                Text(note)
+                    .font(.system(size: 10.5, weight: .medium))
+                    .foregroundStyle(Brand.paper.opacity(0.88))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.45)
+                    .padding(.top, 1)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

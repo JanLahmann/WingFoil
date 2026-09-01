@@ -159,6 +159,16 @@ public struct ShareCardStats: Sendable, Equatable {
 
     public let title: String
     public let dateLine: String
+    /// The rider's own caption, under the date line, or nil for the card as it has always
+    /// been. `SessionRow.shareNote`, already trimmed and capped by `SessionNaming.note`.
+    ///
+    /// **A second line of identity, not a ninth stat.** Everything in `stats` is the
+    /// key-metrics block and may not be added to (see `Preset`); this is the sender talking
+    /// to the receiver — "first 20 kn run", "cold and glassy" — which is a thing a picture in
+    /// a chat thread wants and a metrics block cannot carry. It sits in the header where a
+    /// caption belongs, so the contract that the card's *numbers* are the app's numbers is
+    /// untouched by it.
+    public let note: String?
     public let stats: [Stat]
     /// The preset the stats were filtered through — carried so the renderer can size its
     /// grid to the count without counting cases.
@@ -167,10 +177,11 @@ public struct ShareCardStats: Sendable, Equatable {
     /// a speed claim it has no right to make.
     public let disclaimer: String?
 
-    public init(title: String, dateLine: String, stats: [Stat],
+    public init(title: String, dateLine: String, note: String? = nil, stats: [Stat],
                 preset: Preset = .complete, disclaimer: String?) {
         self.title = title
         self.dateLine = dateLine
+        self.note = SessionNaming.note(note)
         self.stats = stats
         self.preset = preset
         self.disclaimer = disclaimer
@@ -196,12 +207,20 @@ public struct ShareCardStats: Sendable, Equatable {
     /// dated every card in the reader's zone rather than the session's — right only while
     /// the two agree. Callers pass `row.displayZone`; making them say it is what turns the
     /// question into one the compiler asks.
+    ///
+    /// `note` is passed rather than read off the row, and defaults to none. The composer is
+    /// the one surface that builds an exported card, and while the caption field is open it
+    /// holds a *draft* the row has not been given yet — so the preview follows the keystrokes
+    /// and the row follows the commit. A caller with no caption to offer gets a card with no
+    /// caption on it, which is every card that existed before this parameter did.
     public static func make(row: SessionRow, title: String, metrics: KeyMetrics? = nil,
                             preset: Preset = .complete,
+                            note: String? = nil,
                             timeZone: TimeZone) -> ShareCardStats {
         ShareCardStats(
             title: title,
             dateLine: dateLine(row.startDate, timeZone: timeZone),
+            note: note,
             stats: metrics.map { stats(from: $0, preset: preset) }
                 ?? preset.filter(rowOnlyStats(row)),
             preset: preset,
@@ -227,13 +246,19 @@ public struct ShareCardStats: Sendable, Equatable {
     /// The flight is formatted with `FlightPairing.clock` — the same "6:32" the replay's own
     /// caption said and the flight table prints, so the closing frame and the page behind it
     /// spell one number one way.
+    ///
+    /// **No caption here, deliberately.** The rider's own line opens the clip — it is the
+    /// third line of `ReplayTitleCard`, over the whole glass, held while nothing else is
+    /// moving. Repeating it on the closing frame would print one sentence twice in forty
+    /// seconds, and would take a line out of a 16:9 outro that is already three rows of cells
+    /// in a 242-pt box. The exported PNG gets it because a PNG has no opening frame.
     public static func outro(row: SessionRow, title: String, metrics: KeyMetrics? = nil,
                              longestFlightS: Double? = nil,
                              timeZone: TimeZone) -> ShareCardStats {
         let base = make(row: row, title: title, metrics: metrics, preset: .complete,
                         timeZone: timeZone)
         guard let flight = longestFlightStat(longestFlightS) else { return base }
-        return ShareCardStats(title: base.title, dateLine: base.dateLine,
+        return ShareCardStats(title: base.title, dateLine: base.dateLine, note: base.note,
                               stats: base.stats + [flight], preset: base.preset,
                               disclaimer: base.disclaimer)
     }

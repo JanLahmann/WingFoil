@@ -140,7 +140,8 @@ struct ReplaySetupSheet: View {
                                      photos: photos.map(\.entry),
                                      place: SessionDisplay.title(detail.row),
                                      startedAt: detail.row.startDate,
-                                     timeZone: detail.row.displayZone, ease: plan.ease)
+                                     timeZone: detail.row.displayZone,
+                                     note: detail.row.shareNote, ease: plan.ease)
     }
 
     var body: some View {
@@ -152,6 +153,7 @@ struct ReplaySetupSheet: View {
                     musicSection
                     photoSection
                     availabilityNote
+                    namingNote
                 }
                 .padding(.horizontal)
                 .padding(.top, 6)
@@ -505,6 +507,30 @@ struct ReplaySetupSheet: View {
 
     /// The one thing the rider has to be told before tapping start, and it is different on a
     /// phone that cannot capture.
+    /// Where the words on the opening card come from.
+    ///
+    /// **Why this line exists and a fifth field does not.** The clip's title card prints the
+    /// session's name and, under the date, the rider's own caption — both stored on the
+    /// session and both edited on the Share screen. A rider who wants to rename the afternoon
+    /// before recording it has no way to guess that from here, and the fix that first suggests
+    /// itself — put the two fields on this sheet as well — is the wrong one: it would make the
+    /// name look like a property of *this clip*, and two rider-editable copies of one string
+    /// is exactly the confusion the single stored title was chosen to avoid. So the sheet says
+    /// where they live instead, in one line, and stays a sheet about length, shape, music and
+    /// pictures.
+    ///
+    /// Shown on every session rather than only on named ones: on a named session it explains
+    /// the words already on the opening frame, and on an unnamed one it is the only place the
+    /// rider is ever told he could name it. Those are the two readers, and one caption line
+    /// under an existing caption line serves both.
+    private var namingNote: some View {
+        Label("The title and caption on the opening card come from the Share screen.",
+              systemImage: "textformat")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
     private var availabilityNote: some View {
         Text(ReplayRecorder.isAvailable
              ? "The replay plays itself full screen and the screen is recorded. The countdown "

@@ -54,13 +54,42 @@ struct ShareComposerView: View {
     @State private var fitFile: (url: URL, bytes: Int)?
     @State private var fitFailure: String?
 
+    /// The title being typed, seeded with whatever the session is currently called. It drives
+    /// the preview directly, so the card follows the keystrokes; the *row* follows the commit
+    /// (`commit`), because a write per keystroke would be a database transaction per letter
+    /// and a library reload behind it.
+    @State private var titleDraft = ""
+    /// The caption being typed, seeded from the row and clamped to `SessionNaming.noteLimit`
+    /// as it is typed — the field refuses the 81st character rather than accepting it and
+    /// silently dropping it on the way to the card.
+    @State private var noteDraft = ""
+    /// The last pair actually written through. Kept so `commit` can tell a real edit from the
+    /// three or four times a focus change asks it to run — and so the FIT tab, whose work is a
+    /// whole file rewrite, is keyed on *committed* names rather than on keystrokes.
+    @State private var committedTitle = ""
+    @State private var committedNote = ""
+    /// Which field has the keyboard, watched only so that leaving one commits it: a rider who
+    /// types a name and taps straight on "Share card" must not lose it, and `onSubmit` alone
+    /// fires for neither a tap elsewhere nor a dismissed sheet.
+    @FocusState private var focus: Field?
+
+    private enum Field: Hashable { case title, note }
+
     /// The card's numbers *are* the app's key-metrics block, filtered by the preset — same
     /// model, same strings, one source (`ShareCardStats`). `metrics` is nil only while the
     /// analysis behind the sheet is still loading, which the card degrades for on its own.
     private var stats: ShareCardStats {
-        ShareCardStats.make(row: row, title: SessionDisplay.title(row),
+        ShareCardStats.make(row: row, title: displayTitle,
                             metrics: metrics, preset: preset,
-                            timeZone: row.displayZone)
+                            note: noteDraft, timeZone: row.displayZone)
+    }
+
+    /// What the card is titled *right now* — the draft while it is being typed, the session's
+    /// own name the moment it is emptied. Cleared means "give me the derived name back", and
+    /// the preview has to show that immediately or a rider deleting a title watches the card
+    /// go blank and puts the old one back.
+    private var displayTitle: String {
+        SessionNaming.title(custom: titleDraft, derived: SessionDisplay.derivedTitle(row))
     }
 
     private var metrics: KeyMetrics? {
@@ -81,6 +110,8 @@ struct ShareComposerView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
+                    naming
+
                     Picker("Share", selection: $payload) {
                         ForEach(Payload.allCases) { Text($0.label).tag($0) }
                     }
@@ -109,6 +140,18 @@ struct ShareComposerView: View {
                                size: .body)
                 }
             }
+            // The drafts are the row's, until the rider changes them. Seeded here rather than
+            // in the property initializers because `row` is not available there.
+            .onAppear {
+                titleDraft = row.customTitle ?? ""
+                noteDraft = row.shareNote ?? ""
+                committedTitle = titleDraft
+                committedNote = noteDraft
+            }
+            // Leaving a field is a commit. So is submitting one (below), and so is closing
+            // the sheet — between them there is no way to type a name and not have it kept.
+            .onChange(of: focus) { _, _ in commit() }
+            .onDisappear { commit() }
             // Re-render whenever anything visible changes. `ImageRenderer` is main-actor
             // work, but a card is a handful of shapes and some text — cheap enough to redo
             // on a shape flip rather than caching two of them.
@@ -129,8 +172,103 @@ struct ShareComposerView: View {
                 // the rider's stored choice, which a tap on the picker would.
                 if let raw = environment["UI_STATS"],
                    let wanted = ShareCardStats.Preset(rawValue: raw) { preset = wanted }
+                // `UI_TITLE` / `UI_CAPTION` photograph a *named* session without renaming the
+                // rider's own: they seed the drafts and, by seeding `committed…` with the
+                // same values, guarantee no commit follows. `simctl` cannot type.
+                if let title = environment["UI_TITLE"] {
+                    titleDraft = title
+                    committedTitle = title
+                }
+                if let caption = environment["UI_CAPTION"] {
+                    noteDraft = caption
+                    committedNote = caption
+                }
             }
             #endif
+        }
+    }
+
+    // MARK: - Naming the session
+
+    /// Two fields, above the switcher, because they belong to **both** things below it.
+    ///
+    /// **The title is a rename, not a card option.** Whatever is typed here becomes the
+    /// session's name everywhere — the library row, the page header, the card, the clip's
+    /// opening frame, the message that travels with the file, and the filename the file
+    /// arrives under. One mental model: you are naming the afternoon. That is why the field
+    /// sits above the Card/FIT switcher rather than inside the card tab, where it would read
+    /// as a caption on one export.
+    ///
+    /// **The caption is not.** It is a line for whoever receives the picture, so it appears on
+    /// the two artefacts that leave the phone — the card, under the date, and the clip's
+    /// opening frame — and on no screen inside the app. A rider does not want "cold and
+    /// glassy, finally got the tack" in his session list for ever.
+    ///
+    /// Empty means the derived name and no caption. Nothing here can leave the session
+    /// nameless: clearing the title puts the recording's own name back in the placeholder, and
+    /// the card follows immediately.
+    private var naming: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 4) {
+                TextField(SessionDisplay.derivedTitle(row), text: $titleDraft)
+                    .font(.headline)
+                    .textInputAutocapitalization(.words)
+                    .submitLabel(.done)
+                    .focused($focus, equals: .title)
+                    .onSubmit { commit() }
+                    .onChange(of: titleDraft) { _, new in
+                        titleDraft = String(new.prefix(SessionNaming.titleLimit))
+                    }
+                Text("Names the session — the list, the card, the clip and the shared file "
+                     + "all follow.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                TextField("Caption (optional)", text: $noteDraft)
+                    .textInputAutocapitalization(.sentences)
+                    .submitLabel(.done)
+                    .focused($focus, equals: .note)
+                    .onSubmit { commit() }
+                    // Clamped as it is typed rather than on the way to the store: a field that
+                    // accepts an 81st character and then drops it is a field that lies.
+                    .onChange(of: noteDraft) { _, new in
+                        noteDraft = String(new.prefix(SessionNaming.noteLimit))
+                    }
+                HStack(alignment: .firstTextBaseline) {
+                    Text("One line on the card and on the clip's opening frame.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 8)
+                    // Only once it is worth knowing. A counter under an empty field is a
+                    // limit announced before anybody has approached it.
+                    if noteDraft.count >= SessionNaming.noteLimit - 20 {
+                        Text("\(noteDraft.count)/\(SessionNaming.noteLimit)")
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(noteDraft.count >= SessionNaming.noteLimit
+                                             ? .orange : .secondary)
+                    }
+                }
+            }
+        }
+        .textFieldStyle(.roundedBorder)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Writes both drafts through to the session row, if either has moved.
+    ///
+    /// Both store calls are no-ops when the normalized value already matches, so committing on
+    /// every focus change, every submit and the sheet's dismissal costs nothing and means
+    /// there is no path out of this screen that loses what was typed.
+    private func commit() {
+        let title = titleDraft, note = noteDraft
+        guard title != committedTitle || note != committedNote else { return }
+        committedTitle = title
+        committedNote = note
+        Task { @MainActor in
+            await store.renameSession(row, to: title)
+            await store.setShareNote(row, to: note)
         }
     }
 
@@ -227,7 +365,7 @@ struct ShareComposerView: View {
 
         if let fitFile {
             ShareLink(item: fitFile.url,
-                      subject: Text(SessionDisplay.title(row)),
+                      subject: Text(displayTitle),
                       message: Text(invitation)) {
                 Label("Share \(fitFile.url.lastPathComponent) · "
                       + "\(Fmt.bytes(Int64(fitFile.bytes)))",
@@ -261,25 +399,29 @@ struct ShareComposerView: View {
     /// been sent. Composed in the kit (`ShareText`) rather than here, so the FIT, the clip and
     /// the card cannot drift into three different ways of naming one session.
     private var invitation: String {
-        ShareText.fitMessage(place: SessionDisplay.title(row), startedAt: row.startDate,
+        ShareText.fitMessage(place: displayTitle, startedAt: row.startDate,
                             timeZone: row.displayZone)
     }
 
     /// The card's own message. Short: a PNG is not something a receiver can re-analyse, and
     /// the card already carries the site in its footer pixels.
     private var cardCaption: String {
-        ShareText.cardMessage(place: SessionDisplay.title(row), startedAt: row.startDate,
+        ShareText.cardMessage(place: displayTitle, startedAt: row.startDate,
                              timeZone: row.displayZone)
     }
 
     private var renderKey: String {
         "\(shape.rawValue)|\(preset.rawValue)|\(photo == nil ? "plain" : "photo")"
             + "|\(thumbnail == nil ? 0 : 1)|\(metrics == nil ? 0 : 1)"
+            + "|\(displayTitle)|\(noteDraft)"
     }
 
-    /// Only the two things that change the bytes: which tab is showing (so the scrub is
-    /// never paid for on the card) and whether the high-rate stream stays in.
-    private var fitKey: String { "\(payload.rawValue)|\(includeAccelerometer)" }
+    /// Which tab is showing (so the scrub is never paid for on the card), whether the
+    /// high-rate stream stays in — and the title, because it is the file's *name*: a rider who
+    /// renames the session and then shares the recording must not send it under the old one.
+    private var fitKey: String {
+        "\(payload.rawValue)|\(includeAccelerometer)|\(committedTitle)"
+    }
 
     /// The card at whatever size the sheet has room for.
     ///
@@ -353,7 +495,7 @@ struct ShareComposerView: View {
         fitFile = nil
         fitFailure = nil
         do {
-            fitFile = try await store.shareableFIT(for: row,
+            fitFile = try await store.shareableFIT(for: row, title: displayTitle,
                                                    includeAccelerometer: includeAccelerometer)
         } catch {
             fitFailure = "This recording cannot be shared: \(error)"

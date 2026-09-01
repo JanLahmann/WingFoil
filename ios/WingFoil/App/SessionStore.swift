@@ -329,6 +329,39 @@ final class SessionStore {
         sessions.first { $0.id == id }
     }
 
+    // MARK: - Naming a session
+
+    /// Renames a session, or — with a blank string — gives it its derived name back.
+    ///
+    /// A reload rather than a targeted patch, for the same reason `renameSpot` does one: the
+    /// name is on eleven surfaces, several of them (the widget snapshot, the library list,
+    /// the records screen) built from the whole array, and a rename is a once-a-session
+    /// action nobody is going to notice paying a query for.
+    func renameSession(_ row: SessionRow, to title: String?) async {
+        guard SessionNaming.customTitle(title) != row.customTitle else { return }
+        do {
+            try await library.renameSession(id: row.id, to: title)
+            await load()
+        } catch {
+            errorMessage = "Could not rename this session: \(error)"
+        }
+    }
+
+    /// Sets or clears the caption the share card and the clip's opening frame carry.
+    ///
+    /// Same reload, and deliberately so even though no *list* shows the note: the composer
+    /// reads its draft back off the row when it is reopened, and a stale array there would
+    /// mean the rider's own caption disappearing the second time he opens the sheet.
+    func setShareNote(_ row: SessionRow, to note: String?) async {
+        guard SessionNaming.note(note) != row.shareNote else { return }
+        do {
+            try await library.setShareNote(id: row.id, to: note)
+            await load()
+        } catch {
+            errorMessage = "Could not save this caption: \(error)"
+        }
+    }
+
     /// Deletes a session, and — through `SessionIngestor.delete` — records that it was
     /// deleted, so the next intervals.icu sync leaves it alone.
     ///
@@ -409,13 +442,20 @@ final class SessionStore {
     ///
     /// Fails rather than falls back: a file we could not walk is a file we cannot promise
     /// is scrubbed, and sharing the original instead would be exactly the wrong recovery.
-    func shareableFIT(for row: SessionRow,
+    ///
+    /// `title` is the caller's, and defaults to the session's own. The composer passes the
+    /// name currently in its title field instead: the rider is renaming the session in the
+    /// same sheet the file leaves from, and a scrubbed FIT that arrived under the *previous*
+    /// name would be the one place the rename visibly did not take.
+    /// `FitShareFilter.filename` reduces whatever it is given to a filesystem-safe slug, so a
+    /// title full of slashes, emoji or Cyrillic cannot reach a filename.
+    func shareableFIT(for row: SessionRow, title: String? = nil,
                       includeAccelerometer: Bool) async throws -> (url: URL, bytes: Int) {
         let archive = ingestor.archive
         // The session's own zone, not the phone's: a file named after the afternoon it
         // records must not change its name because the rider flew home.
         let name = FitShareFilter.filename(date: row.startDate,
-                                           title: SessionDisplay.title(row),
+                                           title: title ?? SessionDisplay.title(row),
                                            timeZone: row.displayZone)
         return try await Task.detached(priority: .userInitiated) {
             let original = try archive.originalData(for: row.id)

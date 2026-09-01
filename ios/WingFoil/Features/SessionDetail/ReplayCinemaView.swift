@@ -91,6 +91,9 @@ struct ReplayCinemaView: View {
             photos: photos.map(\.entry),
             place: SessionDisplay.title(detail.row),
             startedAt: detail.row.startDate, timeZone: detail.row.displayZone,
+            // The caption the rider wrote on the share screen. The clip reads the stored
+            // value rather than asking again: he is naming the session, not this export.
+            note: detail.row.shareNote,
             ease: pacing.ease))
     }
 
