@@ -525,7 +525,9 @@ td.dim { color: var(--ink-3); }
 
 /* ----------------------------------------------------------------- the library */
 
-.head-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+/* `.panel-head > div` (grid) would win on specificity and stretch these buttons full-width,
+   which also deadened the phone split rules below — hence the parent-qualified selector. */
+.panel-head > .head-right, .head-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 
 button.small-btn { font-size: 12px; padding: 5px 9px; }
 button.ghost.danger { color: #ee8b8b; }
