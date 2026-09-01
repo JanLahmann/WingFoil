@@ -142,8 +142,16 @@ struct ShareComposerView: View {
             }
             // The drafts are the row's, until the rider changes them. Seeded here rather than
             // in the property initializers because `row` is not available there.
+            //
+            // The title opens *filled in* with whatever the session is called right now —
+            // his own name if he has given one, the derived one otherwise — because renaming
+            // a session is nearly always editing its name rather than replacing it, and the
+            // placeholder this used to rely on disappears the moment a rider touches the
+            // field. `committedTitle` is seeded with the same string, so a sheet that is
+            // opened and closed writes nothing: only a keystroke is a rename.
             .onAppear {
-                titleDraft = row.customTitle ?? ""
+                titleDraft = SessionNaming.titleDraft(custom: row.customTitle,
+                                                      derived: SessionDisplay.derivedTitle(row))
                 noteDraft = row.shareNote ?? ""
                 committedTitle = titleDraft
                 committedNote = noteDraft
@@ -204,9 +212,15 @@ struct ShareComposerView: View {
     /// opening frame — and on no screen inside the app. A rider does not want "cold and
     /// glassy, finally got the tack" in his session list for ever.
     ///
+    /// **The title field opens filled in, not empty.** It carries the session's current name
+    /// as editable text (`SessionNaming.titleDraft`), because a rider naming an afternoon is
+    /// nearly always *editing* what it is already called — adding "— first 20 kn" to the spot —
+    /// and a field that starts blank makes him retype the spot first. The derived name stays on
+    /// as the placeholder for the one moment it is now visible: after he selects all and
+    /// deletes.
+    ///
     /// Empty means the derived name and no caption. Nothing here can leave the session
-    /// nameless: clearing the title puts the recording's own name back in the placeholder, and
-    /// the card follows immediately.
+    /// nameless: clearing the title puts the recording's own name straight back on the card.
     private var naming: some View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
@@ -266,8 +280,14 @@ struct ShareComposerView: View {
         guard title != committedTitle || note != committedNote else { return }
         committedTitle = title
         committedNote = note
+        // A draft that still reads exactly like the derived name is **not** a rename — it is
+        // the prefill, untouched — so it is written through as "" and the session stays
+        // derived. Without this, typing a caption on a session nobody had renamed would
+        // silently give it a custom title identical to the name it already showed. Clearing
+        // the field says the same thing and takes the same path.
+        let rename = title == SessionDisplay.derivedTitle(row) ? "" : title
         Task { @MainActor in
-            await store.renameSession(row, to: title)
+            await store.renameSession(row, to: rename)
             await store.setShareNote(row, to: note)
         }
     }

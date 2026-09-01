@@ -51,6 +51,26 @@ public enum SessionNaming {
         customTitle(custom) ?? derived
     }
 
+    /// What the composer's title field **opens containing** — the session's current name, as
+    /// editable text.
+    ///
+    /// It is `title(custom:derived:)`, and the point of giving it a name of its own is that it
+    /// must stay that way. The field used to open *empty*, with the derived name greyed out
+    /// behind it as a placeholder, which looks like a prefill and is not one: a placeholder
+    /// vanishes on the first keystroke, so a rider who wanted "Nago Torbole Wingfoil — first
+    /// 20 kn" had to type all six words, and every rename started from nothing.
+    ///
+    /// Prefilling with anything *else* would be worse than the placeholder. The custom title
+    /// alone would open blank on every session nobody has renamed — which is nearly all of
+    /// them — and a name the card is not currently showing would invite the rider to edit a
+    /// string that was never on his card.
+    ///
+    /// The caller seeds its *committed* value with this too, so opening the sheet and closing
+    /// it is not a rename: only a keystroke can be one.
+    public static func titleDraft(custom: String?, derived: String) -> String {
+        title(custom: custom, derived: derived)
+    }
+
     /// The sport this app is about. One word, one spelling, one place.
     public static let sport = "Wingfoil"
 

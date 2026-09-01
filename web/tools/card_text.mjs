@@ -87,6 +87,20 @@ const KEY_CASES = [
   { file: {} },
 ];
 
+/* ------------------------------------------------------------------- the prefill
+ *
+ * What the title field opens *containing*. A placeholder is not a prefill — it vanishes on the
+ * first keystroke — so the value the dialog writes into the field is its own rule, and this is
+ * it. `[remembered, fileName]` in, the field's opening text out. */
+
+const DRAFT_CASES = [
+  ["", "2026-08-30-1407_nago-torbole-windsurfen_ciq.fit"],   // nothing typed here before
+  ["  First 20 kn  ", "2026-08-30-1407_nago-torbole-windsurfen_ciq.fit"],
+  ["   ", "2026-08-30-1407_nago-torbole-windsurfen_ciq.fit"], // remembered whitespace is nothing
+  [null, "2026-08-30-1407_nago-torbole_ciq.fit"],
+  [undefined, ""],                                           // no file, no name to derive
+];
+
 /* ---------------------------------------------------------------- the round trip */
 
 function roundTrip() {
@@ -116,6 +130,16 @@ function roundTrip() {
   out.boundedTo = kept.length;
   out.oldestStillThere = kept.includes("s0");
   out.newestStillThere = kept.includes("s59");
+
+  // Opening the dialog on a session nobody has titled prefills the field and writes nothing:
+  // the prefill is a convenience for the typing, never a title the rider is recorded as having
+  // given. Only a keystroke writes.
+  store.clear();
+  const key = "s-prefill";
+  const opened = cs.cardTitleDraft(cs.loadCardText(key).title,
+                                   "2026-08-30-1407_nago-torbole-windsurfen_ciq.fit");
+  out.prefillOnAnUntitledSession = opened;
+  out.prefillWroteNothing = store.get("wingfoil.shareCard.text.v1") === undefined;
 
   // Somebody else's JSON under our key, and an outright hostile value: both read as "nothing
   // remembered" rather than throwing on the way into a dialog the rider asked to open.
@@ -151,6 +175,8 @@ process.stdout.write(JSON.stringify({
   titles: TITLE_CASES.map((raw) => [raw, cs.cleanTitle(raw)]),
   derived: DERIVED_CASES.map((name) => [name, cs.cardTitle(name)]),
   sport: cs.SPORT,
+  drafts: DRAFT_CASES.map(([remembered, name]) =>
+    [remembered ?? null, name, cs.cardTitleDraft(remembered, name)]),
   keys: KEY_CASES.map((r) => cs.cardKey(r)),
   storage: roundTrip(),
   header: { plain: headerHeight(plain), named: headerHeight(named),
