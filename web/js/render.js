@@ -61,6 +61,10 @@ export function render(result, { highlight = null, isExample = false } = {}) {
  *      streaks the engine has computed since 0.4.0 and neither app ever drew
  *   4  JPH (or TPH) and WPH — the per-hour rates, JPH over *dry* jibes since 0.7.0
  *
+ * …and, under them and only sometimes, one caption line: the swim (`swimNote`). It is the
+ * one thing in this block that is not in `keyMetricEntries`, which is the whole point — see
+ * that function.
+ *
  * **This function is now layout only.** Every rule the two platforms have to agree on —
  * which entries exist, in what order, with which labels and which strings — moved to
  * `keyMetricEntries` in js/cardstats.js when the share card arrived, because the card has
@@ -87,8 +91,43 @@ export function keyMetrics(g) {
   for (const e of keyMetricEntries(g)) {
     (rows[e.row] || (rows[e.row] = [])).push(e);
   }
-  return rows.filter(Boolean)
+  const html = rows.filter(Boolean)
     .map((cells) => `<div class="key-row">${cells.map(cell).join("")}</div>`).join("");
+  const swim = swimNote(g.summary);
+  return swim ? `${html}<div class="key-note">${esc(swim)}</div>` : html;
+}
+
+/** The shortest swim worth mentioning, in metres — the twin of `KeyMetrics.minSwimM`. */
+export const MIN_SWIM_M = 100;
+
+/**
+ * "longest swim — 385 m back to the board", or null on the sessions that had nothing to say.
+ *
+ * **Why this lives here and not in js/cardstats.js.** Everything in that file is the share
+ * card's list as well as the block's — one list, two readers, which is what keeps a PNG in
+ * somebody else's chat thread from naming a different number than the page. This line is
+ * deliberately *outside* that arrangement: the card is curated, it carries the numbers a
+ * rider quotes, and "I swam 1.8 km home" is not one of them. It is a thing he finds on his
+ * own page, once, and grins at. Putting it in `cardstats.js` would put it on the card, so it
+ * is here, in the layout half, and `verify_presentation.py` §5 keeps proving the card is
+ * still exactly the entry list (docs/presentation.md, "The swim").
+ *
+ * Below `MIN_SWIM_M` the line is **absent**, not shortened: forty metres is what every
+ * session has several of and no rider remembers one of, and printing it would turn a
+ * surprise into a fifth rate. Twin of `KeyMetrics.swimNote` in `ios/WingFoilKit`.
+ */
+export function swimNote(s) {
+  const m = s.longestSwimM;
+  if (!(m >= MIN_SWIM_M)) return null;
+  // Metres under a kilometre: `0.4 km` is three characters of nothing where the point of
+  // the line is the size of the number. Twin of `KeyMetrics.swimDistance`.
+  const distance = m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
+  // "home" only when the recording stopped while he was still in the water — stricter than
+  // "the last swim of the session" on purpose. A rider who swam, got back up and rode on for
+  // another hour did not swim home.
+  const home = s.longestSwimEndTs !== null && s.longestSwimEndTs !== undefined
+    && s.longestSwimEndTs >= s.durationS - 0.5;
+  return `longest swim — ${distance} ${home ? "home" : "back to the board"}`;
 }
 
 /* -------------------------------------------------------------------- header */

@@ -25,6 +25,10 @@ public struct ReplayMilestone: Sendable, Equatable, Identifiable {
         case streak(Int)
         /// The nth swim.
         case splash(Int)
+        /// The session's longest swim, when it was long enough to be worth a line — the
+        /// one milestone that is an *aside* rather than a score (docs/presentation.md,
+        /// "The swim").
+        case swim
         /// The session's fastest measured window.
         case topSpeed
         /// The start of the longest flight.
@@ -172,6 +176,28 @@ public enum ReplayCommentary {
             guard isSplashMilestone(n) else { continue }
             out.append(ReplayMilestone(id: "splash-\(n)", t: t, kind: .splash(n),
                                        text: n == 1 ? "First splash" : "\(n) splashes"))
+        }
+
+        // MARK: the swim
+        //
+        // The easter egg. Not a rung of the splash ladder — a splash ordinal says how often
+        // he got wet, and this says how far one of those cost him — so it gets its own kind,
+        // its own instant (the swim's start, which is the splash it belongs to), and a line
+        // only when the distance clears `KeyMetrics.minSwimM`. Below that the session says
+        // nothing about swimming at all, which is what keeps it a surprise instead of a
+        // fourth rate.
+        //
+        // It is emitted at most once, for the *longest* swim, for the same reason the streak
+        // line is only the record: a session that swam 120 m, then 160 m, then 385 m has one
+        // piece of news in it. Sharing `KeyMetrics.swimDistance`/`swimDestination` with the
+        // caption on the page is the same discipline the rest of this file follows — the
+        // replay may not round a number differently from the block six inches above it.
+        if let start = analysis.summary.longestSwimStartTs,
+           analysis.summary.longestSwimM >= KeyMetrics.minSwimM {
+            let distance = KeyMetrics.swimDistance(analysis.summary.longestSwimM)
+            out.append(ReplayMilestone(
+                id: "swim", t: start, kind: .swim,
+                text: "A \(distance) swim \(KeyMetrics.swimDestination(analysis.summary))"))
         }
 
         // MARK: the two superlatives
@@ -322,11 +348,14 @@ public enum ReplayCommentary {
     /// session's first and last frame are about the session, not about an event in it.
     private static func rank(_ kind: ReplayMilestone.Kind) -> Int {
         switch kind {
-        case .sessionEnd: 7
-        case .sessionStart: 6
-        case .topSpeed: 5
-        case .longestFlight: 4
-        case .streak: 3
+        case .sessionEnd: 8
+        case .sessionStart: 7
+        case .topSpeed: 6
+        case .longestFlight: 5
+        case .streak: 4
+        // Above the splash it shares an instant with, so "First splash · A 385 m swim back
+        // to the board" reads count-then-consequence rather than the other way round.
+        case .swim: 3
         case .splash: 2
         case .jibe: 1
         case .firstTakeoff: 0
@@ -395,7 +424,8 @@ public enum ReplayCommentary {
     /// 2. **The top speed**, then **the longest flight**. The two superlatives, and the two
     ///    numbers a rider quotes about his own afternoon.
     /// 3. **The best streak** — the record itself, not the run-up to it. A session that went
-    ///    3, 5, 8 has one piece of news in it and it is the eight.
+    ///    3, 5, 8 has one piece of news in it and it is the eight — and, beside it, **the
+    ///    swim**, on the sessions that had one worth a line at all.
     /// 4. **The first splash and the first jibe.** Firsts, which is the one thing an ordinal
     ///    can be that is not a count.
     /// 5. Everything else.
@@ -445,6 +475,10 @@ public enum ReplayCommentary {
         case .topSpeed: 1
         case .longestFlight: 2
         case .streak: milestone.id == bestStreak ? 3 : 5
+        // With the record streak, and above the two firsts: a ten-second clip has room for
+        // four lines, and if one of them is not the 1.8 km the rider swam home then the
+        // budget threw away the only thing about that afternoon he had not already guessed.
+        case .swim: 3
         case .jibe(let n), .splash(let n): n == 1 ? 4 : 5
         case .firstTakeoff: 5
         }
