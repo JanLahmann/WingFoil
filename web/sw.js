@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v24";     // v24: the share card takes the hero, the motif goes to the glossary
+const VERSION = "v25";     // v25: the funnel counts itself — umami events on the CTAs and the finishes
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.

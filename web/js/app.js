@@ -258,6 +258,14 @@ export async function analyzeFile(file, { isExample = false } = {}) {
     state.busy = false;
     showResult(JSON.parse(msg.json),
                { digest: JSON.parse(msg.digestJson), bytes: keep, isExample });
+    // Counted here and nowhere earlier: the question worth answering is how many sessions
+    // the analyzer actually finished, not how many files were picked — a FIT that failed to
+    // parse is not a conversion. The event carries its NAME and nothing else: no filename,
+    // no size, no number out of the session. The optional chain is not decoration — the
+    // umami script is third-party, `defer`, pinned to one hostname, and blocked outright by
+    // plenty of browsers, so on a local server and for a good share of real visitors
+    // `window.umami` is simply never there and the analyzer must not care.
+    window.umami?.track?.(isExample ? "example-run" : "analyze-file");
   } catch (err) {
     // A cancel is the user getting what they asked for, not a failure: the Cancel handler
     // has already put the page back, and an "That didn't work" panel on top of it would
@@ -402,6 +410,10 @@ function wireSave() {
         invalidateTrends();
         state.fromLibrary = true;
         button.textContent = outcome.replaced ? "Replaced in the library" : "Saved";
+        // After the write, and only on `saved` — the two questions `saveSession` can ask
+        // ("whose session is this?", "replace it?") both have a No that lands here as
+        // `saved: false`, and a cancelled save is not a save.
+        window.umami?.track?.("fit-saved-to-library");
       } else {
         button.textContent = "Save to library";
         button.disabled = false;

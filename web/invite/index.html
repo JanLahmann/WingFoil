@@ -98,7 +98,8 @@
       <li>
         <h3>Install it from the Connect IQ store</h3>
         <p>
-          <a href="https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806" rel="noopener">CleanJibe
+          <a href="https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806" rel="noopener"
+             data-umami-event="invite-garmin-store">CleanJibe
           Wingfoil Tracker&nbsp;(Beta)</a> on apps.garmin.com — install it from the web
           store or from Connect IQ on your phone, the same way as any other watch app.
         </p>
@@ -135,7 +136,8 @@
 
     <p class="note">
       There is a second Connect IQ listing,
-      <a href="https://apps.garmin.com/apps/8dad33d4-e367-45a6-a4bb-9647fd6b5402" rel="noopener">CleanJibe
+      <a href="https://apps.garmin.com/apps/8dad33d4-e367-45a6-a4bb-9647fd6b5402" rel="noopener"
+         data-umami-event="invite-garmin-store">CleanJibe
       Field</a>: a data field that adds the live foil numbers to Garmin's own Windsurf
       profile, for riders who would rather keep the native activity. It is on the same
       release train, so the note above applies to it too — and it has its own key, which
@@ -154,7 +156,8 @@
       <li>
         <h3>Open the TestFlight link</h3>
         <p>
-          <a href="https://testflight.apple.com/join/nygqGGcn" rel="noopener">testflight.apple.com/join/nygqGGcn</a>
+          <a href="https://testflight.apple.com/join/nygqGGcn" rel="noopener"
+             data-umami-event="invite-testflight">testflight.apple.com/join/nygqGGcn</a>
           — on the iPhone itself. No address to submit and no invite mail to wait for.
         </p>
       </li>
@@ -205,7 +208,8 @@
       <article class="panel claim">
         <h3>A GitHub issue — best</h3>
         <p>
-          <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">github.com/JanLahmann/WingFoil/issues</a>
+          <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener"
+             data-umami-event="invite-feedback-github">github.com/JanLahmann/WingFoil/issues</a>
           — the preferred door. It takes a screenshot or a <code>.fit</code> file, it holds a
           thread, and it stays visible to the next rider who hits the same thing instead of
           disappearing into one inbox.
@@ -214,7 +218,8 @@
       <article class="panel claim">
         <h3>Mail — also fine</h3>
         <p>
-          <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20beta%20feedback">info@cleanjibe.org</a>
+          <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20beta%20feedback"
+             data-umami-event="invite-feedback-mail">info@cleanjibe.org</a>
           — no account needed. What you rode, what the app said, and what you expected it to
           say. If a session was read wrong, attach the <code>.fit</code> file: with the file
           the detection can be re-run and fixed, without it there is only guesswork.
@@ -266,8 +271,10 @@
         <h3>Questions before you install</h3>
         <p>
           Ask in an
-          <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">issue</a>
-          — or mail <a href="mailto:info@cleanjibe.org">info@cleanjibe.org</a> if you would
+          <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener"
+             data-umami-event="invite-feedback-github">issue</a>
+          — or mail <a href="mailto:info@cleanjibe.org"
+             data-umami-event="invite-feedback-mail">info@cleanjibe.org</a> if you would
           rather not. The code and the detection thresholds are readable first, either way:
           <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">github.com/JanLahmann/WingFoil</a>.
         </p>
@@ -281,10 +288,15 @@
   <p>CleanJibe — open wingfoil tracking. Watch app, iPhone app, browser analyzer.</p>
   <p>
     <a href="../">About CleanJibe</a> ·
-    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">github.com/JanLahmann/WingFoil</a>
+    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">github.com/JanLahmann/WingFoil</a>
     · Beta feedback: <a href="#feedback">open an issue</a>, or mail
-    <a href="mailto:info@cleanjibe.org">info@cleanjibe.org</a>
+    <a href="mailto:info@cleanjibe.org" data-umami-event="invite-feedback-mail">info@cleanjibe.org</a>
   </p>
+  <!-- The same line the homepage and the analyzer carry, and it was missing here: this page
+       has loaded umami since it was written, and now it counts which of the two install
+       doors a tester walks through. A page that measures something and says so nowhere is
+       the one page of the three that would have to be argued for. -->
+  <p class="fineprint">Anonymous, cookie-free usage stats and feature counts by umami.</p>
 </footer>
 
 </body>
