@@ -266,85 +266,6 @@ def test_counts_add_up():
     assert summary.all_ends.total == summary.straight.total + summary.in_turn.total
 
 
-# --- swim distance (engine 0.9.2) ----------------------------------------------------------
-
-def test_the_swim_is_measured_past_the_judging_window():
-    """A 120 s swim, judged over 60 s: the verdict is capped, the distance is not.
-
-    This is the whole point of the second walk. `off_foil_s` stops at `outcomeWindow`
-    because that is all a verdict needs; a rider still in the water at second 61 is still
-    swimming, and the distance has to say so.
-    """
-    _, _, ends = _ends(*_reach(_fly(40), _fly(120, 0.5), _fly(40)))
-    end = ends[0]
-    assert end.outcome == FELL_IN
-    assert end.off_foil_s <= FlightEndConfig().outcome_window_s + 1.0
-    assert end.swim_end_t - end.swim_start_t == pytest.approx(120.0, abs=2.0)
-    assert end.swim_m == pytest.approx(60.0, rel=0.05)      # 120 s at half a metre a second
-
-
-def test_a_swim_the_recording_ends_on_is_measured_to_the_last_sample():
-    """The end-of-session swim: he never gets going again, so the track's end ends it.
-
-    Nothing here is a special arm -- `off_foil_run` already clamps to the last sample. What
-    the case needs is for no cap to cut the walk short first, which is what the uncapped
-    call is. Before 0.9.2 this swim was reported as its first 60 s and nothing else.
-    """
-    _, flights, ends = _ends(*_reach(_fly(40), _fly(200, 0.5)))
-    assert flights.flight_count == 1
-    end = ends[0]
-    assert end.outcome == FELL_IN and not end.truncated
-    assert end.swim_end_t == pytest.approx(239.0)            # the last sample, 1 Hz
-    assert end.swim_m == pytest.approx(100.0, rel=0.05)      # ~200 s at half a metre a second
-
-
-def test_only_a_swim_gets_a_distance():
-    """A glide-out and a touchdown carry None, which is not the same claim as 0.0."""
-    _, _, glide = _ends(*_reach(_fly(40), _fly(25, 1.8)))
-    assert glide[0].outcome == GLIDE_OUT
-    assert glide[0].swim_m is None and glide[0].swim_start_t is None
-
-    _, _, touch = _ends(*_reach(_fly(40), SETTLE, _fly(3, 0.5), _fly(40)))
-    assert touch[0].outcome == TOUCHDOWN
-    assert touch[0].swim_m is None
-    assert touch[1].outcome == UNKNOWN and touch[1].swim_m is None
-
-
-def test_a_swim_across_a_recording_gap_counts_only_what_was_recorded():
-    """Flights break at gaps, so a swim spanning one is one swim -- but the hole is not
-    distance. `travelled` skips the gap interval exactly as `elapsed` does."""
-    t = np.concatenate([np.arange(0.0, 100.0), np.arange(400.0, 460.0)])
-    speed = np.concatenate([np.full(40, 6.0), np.full(60, 0.5), np.full(60, 0.5)])
-    _, _, ends = _ends([90.0] * len(t), speed, t=t)
-    end = ends[0]
-    assert end.outcome == FELL_IN
-    assert end.swim_start_t == pytest.approx(40.0) and end.swim_end_t == pytest.approx(459.0)
-    # 59 s + 59 s of recorded swimming at 0.5 m/s -- not the 300 s hole between them.
-    assert end.swim_m == pytest.approx(59.0, rel=0.1)
-
-
-def test_the_summary_totals_every_swim_and_keeps_the_longest():
-    course, speed = _reach(_fly(40), _fly(40, 0.5), _fly(40), _fly(120, 0.5), _fly(40),
-                           _fly(25, 1.8))
-    ct = _track(course, speed)
-    ends = classify_flight_ends(ct, segment_flights(ct))
-    swims = [e for e in ends if e.swim_m is not None]
-    assert len(swims) == 2                                  # the glide-out is not one
-    swim = summarize_flight_ends(ends).swim
-    assert swim.distance_m == pytest.approx(sum(e.swim_m for e in swims))
-    assert swim.longest_m == pytest.approx(max(e.swim_m for e in swims))
-    longest = max(swims, key=lambda e: e.swim_m)
-    assert (swim.longest_start_t, swim.longest_end_t) == (longest.swim_start_t,
-                                                          longest.swim_end_t)
-
-
-def test_a_session_with_no_swim_reports_a_measured_zero():
-    ct = _track(*_reach(_fly(40), _fly(25, 1.8)))
-    swim = summarize_flight_ends(classify_flight_ends(ct, segment_flights(ct))).swim
-    assert swim.distance_m == 0.0 and swim.longest_m == 0.0
-    assert swim.longest_start_t is None and swim.longest_end_t is None
-
-
 # --- real fixture --------------------------------------------------------------------------
 
 @pytest.mark.skipif(not TODAY.exists(), reason="ciq fixture missing")
@@ -386,35 +307,6 @@ def test_real_session_flight_ends():
     assert split.falls == split.turn_falls + split.straight_falls
     assert split.straight_falls >= 1        # falls outside a maneuver are real and counted
     assert split.turn_falls >= split.straight_falls
-
-
-@pytest.mark.skipif(not TODAY.exists(), reason="ciq fixture missing")
-def test_the_swim_is_measured_on_the_conservative_channel():
-    """`speed` = min(Doppler, positional), so a swim never over-reads either channel.
-
-    Both over-read a rider who is not being carried -- wrist Doppler picks up his strokes,
-    positional picks up GPS jitter -- so the number reported is a distance he certainly
-    covered. On a real session it must therefore come in at or under the track's own path
-    length between the same two samples, and under the Doppler integral too.
-    """
-    track = parse_fit(TODAY)
-    ct = clean(track)
-    flights = segment_flights(ct)
-    ends = classify_flight_ends(ct, flights)
-    df = ct.records
-    t = df["t"].to_numpy(float)
-    gap = df["gap_before"].to_numpy(bool)
-    x, y = df["x"].to_numpy(float), df["y"].to_numpy(float)
-    step = np.hypot(np.diff(x), np.diff(y))
-
-    swims = [e for e in ends if e.swim_m is not None]
-    assert len(swims) >= 5
-    for end in swims:
-        a = int(np.searchsorted(t, end.swim_start_t))
-        b = int(np.searchsorted(t, end.swim_end_t))
-        path = float(step[a:b][~gap[a + 1:b + 1]].sum())
-        assert 0.0 <= end.swim_m <= path + 1e-6
-    assert sum(e.swim_m for e in swims) > 0.0
 
 
 def test_shared_off_foil_evidence_matches_building_it_per_consumer():
