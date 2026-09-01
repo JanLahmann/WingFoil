@@ -8,7 +8,7 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
 
 ```json
 {
-  "engineVersion": "0.9.0",
+  "engineVersion": "0.9.1",
   "config": { "foilEntrySpeed": 12.0, "...": "params actually used" },
   "capabilities": { "hasDoppler": true, "hasDevFields": false, "hasWatchLaps": false,
                      "hasAccel": false, "hasHR": true, "sampleRateHz": 1 },
@@ -173,6 +173,14 @@ by the four contract keys and nothing else, that no tile-only cell (flight count
 longest flight) ever reaches a card, that the tally's three counts are the golden's own, and —
 in a third spelling of the same rules, written in Python — that the value strings themselves
 are right. It needs `node` on PATH and skips itself with a note when there is none.
+
+`web/tools/clock_note.mjs` is the same trick for the **header's clock note** (§4, engine
+0.9.1): it runs `render.js`'s own `clockNoteFor` over one `meta` per rung of the UTC-offset
+ladder — `activity`, `icu`, `longitude`, `device`, plus a document with no source at all —
+and §4 asserts the six sentences against a second copy of the contract written in Python.
+That note is the only place the page tells a reader whether to *trust* a clock, and until
+0.9.1 it said "times as recorded on the water" over an offset that could be a solar guess
+from longitude, an hour out under DST. Same `node` requirement, same skip.
 
 The presentation *values* — colours and glyph names — are enforced separately, by
 `design/tokens.json` plus `design/check_tokens.py --check` (CI: `.github/workflows/tokens.yml`

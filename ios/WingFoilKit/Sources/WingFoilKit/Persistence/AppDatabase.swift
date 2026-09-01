@@ -32,7 +32,7 @@ public struct AppDatabase: Sendable {
 
     /// Every migration this build knows, oldest first — the migration test asserts a v1
     /// database moves through all of them.
-    public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7"]
+    public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8"]
 
     /// Public so a caller (and the migration test) can migrate a writer only part of the
     /// way — `migrator.migrate(writer, upTo: "v1")` reproduces a shipped v1 library.
@@ -165,6 +165,25 @@ public struct AppDatabase: Sendable {
                 t.add(column: "startUtcOffsetS", .integer)
             }
         }
+
+        // v8: *which rung* of that ladder answered (engine 0.9.1).
+        //
+        // v7 stored the offset and threw away where it came from, and the two are not the
+        // same fact: +7200 from the FIT's `activity` message is the clock the rider's watch
+        // was wearing, +7200 from `round(lon / 15°)` is the *solar* offset for that
+        // longitude — an hour out under DST, which is most of a wingfoil season. Every
+        // surface printed both as the session's own time, and engine 0.9.0's GPX door made
+        // the guess routine rather than exotic: a GPX usually carries no zone at all.
+        //
+        // Text, not an enum column: an unknown string read back from a future version must
+        // degrade to "unrecorded" rather than fail to decode a row. NULL is exactly that —
+        // written before the question was asked, and read as neither exact nor estimated.
+        // No re-analysis: nothing derived changes, only what a caption is allowed to claim.
+        migrator.registerMigration("v8") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "startUtcOffsetSource", .text)
+            }
+        }
         return migrator
     }
 
@@ -183,27 +202,46 @@ public struct AppDatabase: Sendable {
     /// current zone would have written today's guess into history — and written it as fact.
     @discardableResult
     public func backfillStartUtcOffsets(archive: SessionArchive) async throws -> Int {
-        let ids = try await writer.read { db in
-            try String.fetchAll(db, sql: """
-                SELECT id FROM session WHERE startUtcOffsetS IS NULL ORDER BY startDate DESC
-                """)
+        // Since engine 0.9.1 a row with an offset but no *source* is also unfinished
+        // business: it is the schema-v7 state, where the number was kept and the fact of
+        // whether it had been measured or guessed was thrown away.
+        let rows = try await writer.read { db in
+            try Row.fetchAll(db, sql: """
+                SELECT id, startUtcOffsetS FROM session
+                 WHERE startUtcOffsetS IS NULL OR startUtcOffsetSource IS NULL
+                 ORDER BY startDate DESC
+                """).map { row -> (String, Int?) in
+                    let id: String = row["id"]
+                    let stored: Int? = row["startUtcOffsetS"]
+                    return (id, stored)
+                }
         }
-        guard !ids.isEmpty else { return 0 }
+        guard !rows.isEmpty else { return 0 }
 
-        var found: [String: Int] = [:]
-        for id in ids {
+        var found: [String: (offset: Int, source: String?)] = [:]
+        for (id, stored) in rows {
             guard let data = try? archive.originalData(for: id),
                   let track = try? TrackParser.parse(data: data),
                   let offset = track.startUtcOffsetS else { continue }
-            found[id] = offset
+            // The recording declares its own offset, so the rung is the top one — but only
+            // for a row whose stored offset *is* that number. A row that already carries a
+            // different one got it from intervals.icu or from the longitude guess, and the
+            // archive cannot say which; that stays NULL, which reads as "unrecorded" rather
+            // than as a provenance we made up.
+            let source = (stored == nil || stored == offset) ? UtcOffsetSource.activity.rawValue
+                                                             : nil
+            guard stored == nil || source != nil else { continue }
+            found[id] = (offset, source)
         }
         guard !found.isEmpty else { return 0 }
 
         let resolved = found
         return try await writer.write { db in
-            for (id, offset) in resolved {
-                try db.execute(sql: "UPDATE session SET startUtcOffsetS = ? WHERE id = ?",
-                               arguments: [offset, id])
+            for (id, fill) in resolved {
+                try db.execute(sql: """
+                    UPDATE session SET startUtcOffsetS = ?, startUtcOffsetSource = ?
+                     WHERE id = ?
+                    """, arguments: [fill.offset, fill.source, id])
             }
             return resolved.count
         }
@@ -489,6 +527,21 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// which is the behaviour every session had before this column existed.
     public var startUtcOffsetS: Int?
 
+    // MARK: schema v8
+    /// Which rung of the ladder produced `startUtcOffsetS` — `UtcOffsetSource`'s raw value,
+    /// or nil on a row written before engine 0.9.1 asked (or backfilled and unresolvable).
+    ///
+    /// Stored as text rather than as the enum so an unrecognised value from a future
+    /// version degrades to "unrecorded" instead of failing to decode the row; read it
+    /// through `utcOffsetSource`.
+    public var startUtcOffsetSource: String?
+
+    /// `startUtcOffsetSource` as the closed vocabulary, or nil for "unrecorded" — which
+    /// includes a stored string this version has never heard of.
+    public var utcOffsetSource: UtcOffsetSource? {
+        startUtcOffsetSource.flatMap(UtcOffsetSource.init(rawValue:))
+    }
+
     /// **The** zone every clock and calendar date this session is drawn in.
     ///
     /// One accessor, deliberately, and the reason the presentation types no longer default
@@ -508,6 +561,17 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// Whether `displayZone` is the session's own answer or the device's stand-in — so a
     /// surface that wants to say "times on your own clock" can know to say it.
     public var hasKnownZone: Bool { startUtcOffsetS != nil }
+
+    /// Whether `displayZone` is the session's own zone but only **guessed** — the longitude
+    /// rung, `round(lon / 15°)` hours, which is the solar offset and an hour out under DST
+    /// (engine 0.9.1).
+    ///
+    /// A surface showing a time in this zone may not call it the time on the water; it says
+    /// the times are estimated from the track's position instead (docs/presentation.md
+    /// "Session time"). False for an unrecorded source, which is the pre-0.9.1 behaviour and
+    /// the honest reading of "we no longer know": inventing a caveat is as wrong as
+    /// inventing a certainty.
+    public var zoneIsEstimated: Bool { utcOffsetSource == .longitude }
 
     public init(id: String = UUID().uuidString, startDate: Date, durationS: Double, sourceClass: String) {
         self.id = id

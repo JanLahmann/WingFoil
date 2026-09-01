@@ -154,12 +154,16 @@ import Testing
     // MARK: - Time zones
 
     /// `Z` says *when*, never *what the rider's clock read*. The parser therefore states no
-    /// offset and `SessionIngestor.resolveUtcOffsetS` drops to the longitude rung of the
-    /// 0.8.2 ladder.
+    /// offset and `SessionIngestor.resolveUtcOffset` drops to the longitude rung of the
+    /// 0.8.2 ladder — labelled as the guess it is, which is the common GPX case and the
+    /// reason engine 0.9.1 records the rung at all.
     @Test func aZTimestampStatesAnInstantAndNoClock() throws {
         let track = try GpxSessionParser.parse(data: doc("<trk><trkseg>\(line(3))</trkseg></trk>"))
         #expect(track.startUtcOffsetS == nil)
-        #expect(SessionIngestor.resolveUtcOffsetS(track: track, fallback: nil) == 3600)
+        #expect(track.startUtcOffsetSource == nil)
+        let rung = SessionIngestor.resolveUtcOffset(track: track, fallback: nil)
+        #expect(rung.offset == 3600)
+        #expect(rung.source == .longitude)
         #expect(track.startDate == Date(timeIntervalSince1970: 1_788_091_200))
     }
 
@@ -172,7 +176,11 @@ import Testing
             + "</trkseg></trk>"
         let track = try GpxSessionParser.parse(data: doc(body))
         #expect(track.startUtcOffsetS == 7200)
-        #expect(SessionIngestor.resolveUtcOffsetS(track: track, fallback: nil) == 7200)
+        // The file said so, so it ranks with a FIT's `activity` message, not with a guess.
+        #expect(track.startUtcOffsetSource == .activity)
+        let rung = SessionIngestor.resolveUtcOffset(track: track, fallback: nil)
+        #expect(rung.offset == 7200)
+        #expect(rung.source == .activity)
         // The instant is still the instant, exactly as a FIT's is.
         #expect(track.startDate == Date(timeIntervalSince1970: 1_788_091_200))
     }
@@ -236,7 +244,12 @@ import Testing
         // …and the two agree about the clock from opposite ends of the ladder: the FIT's
         // `activity` message says +2 h outright, the GPX gets +1 h from longitude alone.
         #expect(fit.startUtcOffsetS == 7200)
+        #expect(fit.startUtcOffsetSource == .activity)
         #expect(gpx.startUtcOffsetS == nil)
-        #expect(SessionIngestor.resolveUtcOffsetS(track: gpx, fallback: nil) == 3600)
+        // The pair is the whole argument for engine 0.9.1: same afternoon, same rider, two
+        // offsets an hour apart, and only the provenance tells a reader which to believe.
+        let rung = SessionIngestor.resolveUtcOffset(track: gpx, fallback: nil)
+        #expect(rung.offset == 3600)
+        #expect(rung.source == .longitude)
     }
 }

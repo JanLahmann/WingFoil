@@ -66,7 +66,17 @@ public enum AnalysisEngine {
     /// as they already do on a native FIT. Existing sessions re-derive to numbers identical
     /// to 0.8.2's; the bump is what makes them re-derive at all, and what keeps a stored
     /// document from claiming an engine that could not have read half the corpus.
-    public static let version = "0.9.0"
+    ///
+    /// 0.9.1 moves no metric either, and adds one field for an honesty reason. The
+    /// UTC-offset ladder 0.8.2 built never recorded **which rung answered**
+    /// (`RawTrack.startUtcOffsetSource`, `session.startUtcOffsetSource` on schema v8,
+    /// `meta.utcOffsetSource`), so a page printed "times as recorded on the water" over an
+    /// offset that might be `round(lon / 15°)` — the *solar* offset, an hour out under DST.
+    /// 0.9.0's GPX door made that the common case rather than the exotic one, because a GPX
+    /// usually states no zone at all. The ladder is unchanged; what was missing was the
+    /// qualification, and a stored 0.9.0 document cannot supply it retroactively, which is
+    /// what the bump is for (docs/presentation.md, "Session time").
+    public static let version = "0.9.1"
 }
 
 /// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's

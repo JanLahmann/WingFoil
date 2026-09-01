@@ -245,17 +245,64 @@ session's time is a fact about the session, so it is stored with the session.
 - **What is stored** is a UTC offset in **seconds**, not a zone name: what a source can
   tell us is an offset, and a name we had to guess would be inventing a fact.
   `session.startUtcOffsetS` (GRDB schema v7), `meta.utcOffsetS` in the web digest.
-- **Where it comes from**, best answer first:
-  1. the FIT's own `activity` message — `local_timestamp − timestamp`, the offset the watch
-     was wearing at save time. Exact, DST included, and present on every file in the corpus;
-  2. intervals.icu's `timezone` for the activity, resolved at the session's own instant.
-     Also exact;
-  3. a coarse guess from the first GPS longitude, `round(lon / 15°)` hours. This is the
-     *solar* offset, not the civil one — an hour out under DST, up to two inside a wide
-     zone, blind to the half-hour zones — and it exists only for a source that carries
-     position and nothing else;
-  4. nothing. The column stays NULL, the display falls back to the device's zone, and the
-     surface is allowed to say so (`SessionRow.hasKnownZone`; the web page's header note).
+- **Where it comes from**, best answer first — and, since engine **0.9.1**, *which of these
+  answered* is stored beside it (`session.startUtcOffsetSource`, schema v8;
+  `meta.utcOffsetSource`; `RawTrack.start_utc_offset_source`; digest schema 4):
+  1. `activity` — the recording said so itself: the FIT's own `activity` message,
+     `local_timestamp − timestamp`, the offset the watch was wearing at save time (exact,
+     DST included, present on every file in the corpus), or a GPX timestamp written with a
+     numeric offset, which is the exporter stating the same fact;
+  2. `icu` — intervals.icu's `timezone` for the activity, resolved at the session's own
+     instant. Also exact; second only because it is a fact about the athlete's account
+     rather than about this recording. Set on the sync path, the only caller with an
+     account to ask;
+  3. `longitude` — a coarse guess from the first GPS longitude, `round(lon / 15°)` hours.
+     This is the *solar* offset, not the civil one — an hour out under DST, up to two inside
+     a wide zone, blind to the half-hour zones — and it exists only for a source that
+     carries position and nothing else;
+  4. `device` — nothing could say. The offset column stays NULL, the display falls back to
+     the device's zone, and the surface is allowed to say so (`SessionRow.hasKnownZone`;
+     the web page's header note).
+
+  A **NULL source** is a fifth state and means *unrecorded*: a row written before schema v8,
+  or one the v8 backfill could not resolve. It reads as neither exact nor estimated and
+  keeps the pre-0.9.1 wording — inventing a caveat is as wrong as inventing a certainty.
+
+- **Why the rung had to be stored** (the 0.9.1 change). `+7200` because the watch wrote it
+  down and `+7200` because the first fix was at 11° E are the same number and different
+  facts, and only the first licenses a page to say *times as recorded on the water*. Engine
+  0.9.0's GPX door made the difference routine rather than exotic: a GPX usually carries no
+  zone at all, so rung 3 is the *normal* answer for the whole of that input class — and rung
+  3 is an hour wrong in Torbole every summer, which is when people wingfoil there. The
+  ladder itself did not change; what was missing was the qualification.
+- **What each rung is allowed to say.** Wherever a time is shown **in the session's own
+  zone**, the wording follows the source, and there are exactly two:
+
+  | source | wording |
+  |---|---|
+  | `activity`, `icu`, or unrecorded | **times as recorded on the water** (web header note); no caption on iOS |
+  | `longitude` | **times estimated from the track's position** (web header note; iOS `SessionDetailView.estimatedClockNote`, "Times estimated from the track's position — this recording carries no time zone.") |
+  | `device` / offset NULL | the existing **no timezone in this file — times shown on your own clock**, which is already the honest sentence: this is not the session's zone at all |
+
+  A **library row or a trend tick is not annotated** either, and for a different reason
+  again: they print a *date*, and a whole-hour guess moves a date only for a session that
+  starts within an hour of midnight. A caveat on every row of a list is noise on all of them
+  to be right about one.
+
+  The soft caption appears **only** on the `longitude` rung. A reassurance printed on every
+  page is noise, and noise is what a reader learns to skip past on the one page where it
+  says something — which is why iOS shows nothing for an exact source rather than a
+  "recorded" badge, and why the web keeps its one-line note either way.
+- **The replay clip's title card carries no caveat**, deliberately. The rule above is about
+  a surface that makes a *data claim*: a report page states the session's facts and is read
+  as a record of them. A clip is presentation — a 30-second video with a date on its opening
+  frame, watched once, usually without sound, by somebody who was not there. There is no
+  room for a qualifier that would be on screen for a second and a half, no reader in a
+  position to act on it, and no claim being made beyond "this was that afternoon", which the
+  guess supports to within an hour. The same reasoning is why the share card's date line is
+  uncaptioned: both are the *picture*, and the page behind them is where the qualification
+  lives. (`ReplayTitleCard` and `ShareCardStats.dateLine` still take the session's zone, and
+  still get it from `row.displayZone` — the estimate is used, it is simply not annotated.)
 - **One accessor, no defaults.** `SessionRow.displayZone` is the only answer, and the
   `timeZone:` parameters on `ReplayCommentary.make`, `ReplayStoryboard.make`,
   `ReplayTitleCard.make`, `ShareCardStats.make`/`outro`, `ShareText.*` and
@@ -270,8 +317,8 @@ session's time is a fact about the session, so it is stored with the session.
 - **On the web** every clock goes through `zonedFormat` (web/js/viz.js): shift the instant
   by `meta.utcOffsetS`, then format in UTC. `clockAt` and `sessionDate` take the whole
   `meta` rather than a bare `startUtc`, so a caller cannot pair the two up wrongly. The
-  header note says **"times as recorded on the water"**, and only names the reader's own
-  zone when the file could not say.
+  header note is written by `clockNoteFor` in `web/js/render.js` from the table above, and
+  only names the reader's own zone when the file could not say.
 - **Calendar dates too.** A session that starts at 00:30 in Torbole is a 22:30 UTC session
   on the *previous* day, so a library row, a trend x-axis tick and a share card dated on
   the UTC day would name a day the rider did not have. The digest carries `dateLocal`
@@ -281,6 +328,14 @@ session's time is a fact about the session, so it is stored with the session.
   the bookend, title card, share-card date line and shared filename all still read `14:07` /
   `30 August 2026`; and by `verify_presentation.py` §4, which does the same arithmetic on
   the web's `meta`. `TZ=UTC swift test` is the stronger form and is what CI runs.
+
+  The **rungs** are pinned separately, one assertion per rung on each side, because the bug
+  0.9.1 fixed was not a wrong number but a missing qualification and a ladder that quietly
+  reordered would otherwise still pass: `SessionTimeZoneTests.theLadderFallsThroughInOrder`
+  and `onlyAnExactRungLetsARowClaimTheSessionsClock` (iOS), `GpxParseTests` for the
+  GPX-shaped cases, `test_parse.test_the_ladder_records_which_rung_answered` and
+  `test_gpx` (lab), and `verify_presentation.py` §4, which asserts the two note wordings
+  come out of the same `meta` the browser reads.
 
 Implemented once per platform: `KeyMetrics` in `ios/WingFoilKit/…/Presentation/`, whose
 strings `PresentationTests.keyMetrics*` pin, and `keyMetrics` in `web/js/render.js`. The

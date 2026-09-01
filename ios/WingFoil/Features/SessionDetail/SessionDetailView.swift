@@ -296,6 +296,7 @@ struct SessionDetailView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(Fmt.date(row.startDate, zone: row.displayZone))
                     .font(.title3.weight(.semibold))
+                if row.zoneIsEstimated { estimatedClockNote }
                 if row.isExample { exampleNote }
                 if row.rider != nil { riderNote(row) }
                 HStack(spacing: 8) {
@@ -314,6 +315,31 @@ struct SessionDetailView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    /// Said under the date when the session's clock was **guessed** — the longitude rung of
+    /// the offset ladder (`SessionRow.zoneIsEstimated`, engine 0.9.1).
+    ///
+    /// Every time on this page is drawn in `row.displayZone`, and for a recording that
+    /// stated its own offset that zone is a fact. For one that did not — a GPX, almost
+    /// always — it is `round(lon / 15°)` hours: the *solar* offset, an hour out under DST,
+    /// which is most of a wingfoil season in Europe. The times are still far better than
+    /// the reader's own zone, so the page keeps showing them; what it may not do is let
+    /// them read as the clock the rider was actually looking at.
+    ///
+    /// Shown only in that one case. A session whose watch wrote the offset down gets no
+    /// caption at all: a reassurance printed on every page is noise, and noise is what a
+    /// reader learns to skip past on the one page where it says something.
+    private var estimatedClockNote: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "clock.badge.questionmark")
+                .foregroundStyle(.secondary)
+            Text("Times estimated from the track's position — this recording carries no "
+                 + "time zone.")
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
     }
 
     /// Said once, at the top, where the reader starts: this page is a demonstration.

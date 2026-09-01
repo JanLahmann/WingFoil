@@ -75,6 +75,15 @@ to mark those speed records *uncertified*. `pumps`/`takeoffPumps`/`pumpEpisodes`
 their accel-less nulls and empties exactly as the twelve accel-less FIT goldens already do.
 `ENGINE_VERSION` bumps because a stored 0.8.2 document was written by an engine that could
 not have produced this one, and because that is the signal the apps re-derive on.
+
+Engine 0.9.1 changes no number either. It adds one field *outside* the golden —
+`RawTrack.start_utc_offset_source`, surfaced as `meta.utcOffsetSource` (docs/presentation.md
+"Session time") — which records **which rung** of the UTC-offset ladder answered. The ladder
+itself is unchanged; what was missing was the qualification, and without it a page printed
+"times as recorded on the water" over an offset that was a solar guess from longitude, an
+hour out under DST. That is a claim about the data, so it is engine-side, and a stored
+document written before it cannot say which rung it used — which is why the version moves
+and every golden is rewritten with the new stamp and identical numbers.
 """
 
 from __future__ import annotations
