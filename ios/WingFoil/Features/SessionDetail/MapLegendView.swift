@@ -62,6 +62,12 @@ struct MapLegendView: View {
                      label: effort.label.lowercased())
             }
             if !visibility.isEverythingVisible { showAllButton }
+            // The map's *ground*, not one of its layers — which is why it is a menu rather
+            // than a fifth kind of chip, and why it comes after the toggles rather than among
+            // them. It is here at all because this row is where a rider already comes to
+            // change what the map shows, and "I cannot recognise this bay" is the same
+            // impulse as "I do not want to see course changes".
+            MapStyleChip()
             // Last in the flow rather than in a heading of its own: it is a chip-sized
             // affordance among chips, it wraps with them on a narrow phone, and it costs
             // one line where the prose it replaced cost three paragraphs (§1.2).

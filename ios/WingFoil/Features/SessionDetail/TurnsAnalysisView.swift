@@ -25,6 +25,11 @@ import WingFoilKit
 struct TurnsAnalysisView: View {
     let detail: SessionDetail
 
+    /// Read here rather than passed in, for the one thing this page shares with the session
+    /// map: the ground it is drawn on (`MapStyleChoice`). Everything else about this map is
+    /// deliberately its own.
+    @Environment(SessionStore.self) private var store
+
     @State private var filter = TurnFilter()
     /// The row the reader tapped, drawn larger on the map. Transient, like the record
     /// window picker — it is a way of pointing, not a preference.
@@ -161,11 +166,31 @@ struct TurnsAnalysisView: View {
     private var map: some View {
         VStack(alignment: .leading, spacing: 6) {
             Map(initialPosition: .region(detail.region), interactionModes: [.zoom, .pan]) {
+                // Over photography the neutral grey route would be the first thing to
+                // disappear — it is *meant* to recede, and a photograph gives it far more to
+                // recede into than a vector map does. So it gets the same dark outer edge the
+                // session map's track gets, from the same place (`TrackHalo`).
+                if store.mapStyle.isImagery {
+                    ForEach(detail.segments) { segment in
+                        MapPolyline(coordinates: segment.points.map {
+                            CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
+                        })
+                        .stroke(TrackHalo.ink,
+                                style: StrokeStyle(
+                                    lineWidth: TrackHalo.width(under: segment.flying ? 3 : 1.5),
+                                    lineCap: .round, lineJoin: .round))
+                    }
+                }
                 ForEach(detail.segments) { segment in
                     MapPolyline(coordinates: segment.points.map {
                         CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
                     })
-                    .stroke(Color.secondary.opacity(segment.flying ? 0.45 : 0.22),
+                    // Neutral grey is "recede" said in the app's own ink, and over a photograph
+                    // of deep water it recedes all the way out of sight. Same intent, read
+                    // against what is actually underneath (`TrackHalo.ink`).
+                    .stroke(TrackHalo.ink(Color.secondary, on: store.mapStyle,
+                                          opacity: segment.flying ? 0.45 : 0.22,
+                                          overImagery: segment.flying ? 0.8 : 0.45),
                             style: StrokeStyle(lineWidth: segment.flying ? 3 : 1.5,
                                                lineCap: .round, lineJoin: .round))
                 }
@@ -173,21 +198,31 @@ struct TurnsAnalysisView: View {
                     Annotation("", coordinate: CLLocationCoordinate2D(latitude: pin.lat,
                                                                       longitude: pin.lon),
                                anchor: .center) {
-                        TurnOutcomeStyle.pin(pin.outcome, focused: focused == pin.id)
+                        TrackHalo.around(TurnOutcomeStyle.pin(pin.outcome,
+                                                              focused: focused == pin.id),
+                                         on: store.mapStyle)
                             .accessibilityHidden(true)
                     }
                     .annotationTitles(.hidden)
                 }
             }
-            .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
+            .mapStyle(store.mapStyle.mapStyle)
             .figureHeight(regular: 240, compact: 180)
             .clipShape(.rect(cornerRadius: 14))
-            Text(pins.isEmpty
-                 ? "Nothing to mark — widen the filters."
-                 : "\(pins.count) turn\(pins.count == 1 ? "" : "s") marked · "
-                     + "tap a row below to enlarge one.")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+            // The caption, and the map's one control. This page has no legend to put the style
+            // chip in — the filters above are about the turns, not the map — so it sits with
+            // the line that is already about the picture.
+            HStack(alignment: .firstTextBaseline) {
+                Text(pins.isEmpty
+                     ? "Nothing to mark — widen the filters."
+                     : "\(pins.count) turn\(pins.count == 1 ? "" : "s") marked · "
+                         + "tap a row below to enlarge one.")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                Spacer(minLength: 8)
+                MapStyleChip()
+                    .font(.caption2)
+            }
         }
         .id("turnsMap")
     }

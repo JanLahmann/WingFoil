@@ -417,9 +417,13 @@ struct ReplayCinemaView: View {
     private var map: some View {
         Map(position: $camera, interactionModes: [.pan, .zoom]) {
             TrackContent(detail: detail, effort: effort, visibility: store.mapLayers,
+                         style: store.mapStyle,
                          playhead: detail.moment(at: playhead), direction: direction)
         }
-        .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
+        // Whatever ground the rider chose, including into the recording — a clip of a session
+        // is a clip of *his* map. Apple's attribution is drawn by MapKit and stays visible on
+        // imagery, so a satellite clip carries it (docs/presentation.md, "Map style").
+        .mapStyle(store.mapStyle.mapStyle)
         // Still `.onEnd`, and now it earns its keep: the chevron spacing is measured in
         // screen points, so a rider who zooms in mid-clip gets the arrows re-decimated for
         // the scale he zoomed to rather than the one the clip opened on.

@@ -17,6 +17,8 @@ struct TrackMapView: View {
     /// Which categories the legend chips are currently showing. Passed in rather than read
     /// here so the drawing stays a pure function of it.
     let visibility: MapLayerVisibility
+    /// What the map is drawn on. Passed in for the same reason `visibility` is.
+    let mapStyle: MapStyleChoice
     /// The flight the chart is framing, when a flying segment has been tapped. Owned by the
     /// page so the map and the chart are the same tap (docs/presentation.md, "Pairing").
     @Binding var flightFocus: SessionDetail.FlightFocus?
@@ -44,11 +46,11 @@ struct TrackMapView: View {
             MapReader { proxy in
                 Map(initialPosition: .region(detail.initialRegion), interactionModes: []) {
                     TrackContent(detail: detail, effort: effort,
-                                 visibility: visibility,
+                                 visibility: visibility, style: mapStyle,
                                  playhead: playhead.flatMap(detail.moment),
                                  direction: direction)
                 }
-                .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
+                .mapStyle(mapStyle.mapStyle)
                 .figureHeight(regular: 260, compact: 190)
                 .clipShape(.rect(cornerRadius: 14))
                 .onMapCameraChange(frequency: .onEnd) { context in
@@ -239,10 +241,14 @@ struct FullScreenMapView: View {
     var body: some View {
         Map(initialPosition: .region(detail.initialRegion)) {
             TrackContent(detail: detail, effort: effort, visibility: store.mapLayers,
+                         style: store.mapStyle,
                          playhead: playheadT.flatMap(detail.moment),
                          direction: direction)
         }
-        .mapStyle(.standard(elevation: .flat))
+        // The same ground as every other map, points of interest included: this screen used to
+        // be the one place they were drawn, which made the big map a slightly different map
+        // rather than a bigger one.
+        .mapStyle(store.mapStyle.mapStyle)
         // The big map pans, zooms *and rotates*, and all three change the answer: how far
         // apart the chevrons should be, which of them are on screen, and which way "north"
         // points on the glyph.
@@ -277,15 +283,35 @@ struct TrackContent: MapContent {
     let detail: SessionDetail
     let effort: SessionDetail.RecordEffort?
     let visibility: MapLayerVisibility
+    /// What the ground is. The drawing reads exactly one thing off it — whether the ground is
+    /// photography, and therefore whether every stroke and mark needs its dark outer edge
+    /// (`TrackHalo`). The phase inks themselves never change: they are the contract.
+    var style: MapStyleChoice = .standard
     let playhead: SessionDetail.TimelinePoint?
     let direction: DirectionField
 
+    /// One flag, read here so the four map surfaces cannot disagree about it.
+    private var halo: Bool { style.isImagery }
+
     var body: some MapContent {
+        // The halo is a **second pass over the whole track**, drawn before any of it: a
+        // per-segment outline would be overdrawn by the next segment's line at every join,
+        // which shows up as a dark tick every few hundred metres. Under everything, so nothing
+        // above it is dimmed by it.
+        if halo {
+            ForEach(detail.segments) { segment in
+                let line = visibility.lineStyle(flying: segment.flying)
+                MapPolyline(coordinates: segment.points.map(Self.coordinate))
+                    .stroke(TrackHalo.ink,
+                            style: StrokeStyle(lineWidth: TrackHalo.width(under: Self.width(line)),
+                                               lineCap: .round, lineJoin: .round))
+            }
+        }
         ForEach(detail.segments) { segment in
-            let style = visibility.lineStyle(flying: segment.flying)
+            let line = visibility.lineStyle(flying: segment.flying)
             MapPolyline(coordinates: segment.points.map(Self.coordinate))
-                .stroke(Self.color(style),
-                        style: StrokeStyle(lineWidth: Self.width(style),
+                .stroke(Self.color(line, on: style),
+                        style: StrokeStyle(lineWidth: Self.width(line),
                                            lineCap: .round, lineJoin: .round))
         }
         // Under the effort glow and under the markers: a pumping attempt is context for
@@ -306,8 +332,11 @@ struct TrackContent: MapContent {
             ForEach(direction.chevrons) { chevron in
                 Annotation("", coordinate: Self.coordinate(chevron.lat, chevron.lon),
                            anchor: .center) {
-                    DirectionChevron(bearingDeg: chevron.bearingDeg - direction.headingDeg,
-                                     style: visibility.lineStyle(flying: chevron.flying))
+                    TrackHalo.around(
+                        DirectionChevron(bearingDeg: chevron.bearingDeg - direction.headingDeg,
+                                         style: visibility.lineStyle(flying: chevron.flying),
+                                         ground: style),
+                        on: style)
                 }
                 .annotationTitles(.hidden)
             }
@@ -323,7 +352,7 @@ struct TrackContent: MapContent {
             ForEach(detail.takeoffMarks) { mark in
                 Annotation("", coordinate: Self.coordinate(mark.lat, mark.lon),
                            anchor: .center) {
-                    EventMarkerStyle.takeoffMark(mark)
+                    TrackHalo.around(EventMarkerStyle.takeoffMark(mark), on: style)
                         .accessibilityLabel("\(mark.title), \(mark.detail)")
                 }
                 .annotationTitles(.hidden)
@@ -333,7 +362,7 @@ struct TrackContent: MapContent {
             ForEach(detail.splashMarks) { mark in
                 Annotation("", coordinate: Self.coordinate(mark.lat, mark.lon),
                            anchor: .center) {
-                    EventMarkerStyle.splashMark()
+                    TrackHalo.around(EventMarkerStyle.splashMark(), on: style)
                         .accessibilityLabel("\(mark.title), \(mark.detail)")
                 }
                 .annotationTitles(.hidden)
@@ -342,7 +371,7 @@ struct TrackContent: MapContent {
         ForEach(detail.visibleMarkers(visibility)) { marker in
             Annotation("", coordinate: Self.coordinate(marker.lat, marker.lon),
                        anchor: .center) {
-                EventMarkerStyle.dot(marker)
+                TrackHalo.around(EventMarkerStyle.dot(marker), on: style)
                     .accessibilityLabel("\(marker.title), \(marker.detail)")
             }
             .annotationTitles(.hidden)
@@ -350,7 +379,7 @@ struct TrackContent: MapContent {
         // Drawn last so it sits above the outcome dots — it is the thing being moved.
         if let playhead, let lat = playhead.lat, let lon = playhead.lon {
             Annotation("", coordinate: Self.coordinate(lat, lon), anchor: .center) {
-                PlayheadDot(flying: playhead.flying)
+                TrackHalo.around(PlayheadDot(flying: playhead.flying), on: style)
                     .accessibilityLabel(String(format: "Replay position, %.1f knots",
                                                playhead.kn))
             }
@@ -361,11 +390,19 @@ struct TrackContent: MapContent {
     /// A hidden *line* category keeps its route as a thin neutral line: the chips filter
     /// what the colours claim, not where the rider went. Losing the track to a legend tap
     /// would be a much worse surprise than an unwanted tint.
-    private static func color(_ style: TrackLineStyle) -> Color {
-        switch style {
+    ///
+    /// Foil-teal is the same teal on every ground — it is the contract. The other two are
+    /// **ink**, not hue, so over photography they resolve to the light end rather than the
+    /// dark one; see `TrackHalo.ink`.
+    private static func color(_ line: TrackLineStyle, on style: MapStyleChoice) -> Color {
+        switch line {
         case .flying: return DesignTokens.Phase.flying
-        case .offFoil: return DesignTokens.Phase.offFoil.opacity(0.65)
-        case .neutral: return DesignTokens.Phase.offFoil.opacity(0.3)
+        case .offFoil:
+            return TrackHalo.ink(DesignTokens.Phase.offFoil, on: style,
+                                 opacity: 0.65, overImagery: 0.85)
+        case .neutral:
+            return TrackHalo.ink(DesignTokens.Phase.offFoil, on: style,
+                                 opacity: 0.3, overImagery: 0.45)
         }
     }
 
@@ -396,6 +433,10 @@ struct TrackContent: MapContent {
 private struct DirectionChevron: View {
     let bearingDeg: Double
     let style: TrackLineStyle
+    /// What the arrow is drawn on. The chevron is pure ink (`DesignTokens.Direction.ink` is
+    /// `Color.primary`), which is the one thing a photograph turns invisible — see
+    /// `TrackHalo.ink`.
+    var ground: MapStyleChoice = .standard
 
     var body: some View {
         Image(systemName: "chevron.up")
@@ -415,6 +456,17 @@ private extension DirectionChevron {
     /// teal flying track would be invisible, and this stays phase-coloured while separating
     /// from the line in both light and dark mode.
     var tint: Color {
+        // Over photography the label colour is the wrong end of the scale: it is dark in light
+        // mode, and an arrow that had to lose every contest with the event dots would instead
+        // lose to the water. Mixed towards white there, on the same ladder of weights.
+        if ground.isImagery {
+            switch style {
+            case .flying:
+                return DesignTokens.Phase.flying.mix(with: .white, by: 0.5).opacity(0.85)
+            case .offFoil: return Color.white.opacity(0.6)
+            case .neutral: return Color.white.opacity(0.4)
+            }
+        }
         switch style {
         case .flying:
             return DesignTokens.Phase.flying.mix(with: Color(.label), by: 0.55).opacity(0.62)
