@@ -865,7 +865,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.9.0")
+        #expect(analysis.engineVersion == "0.9.1")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)

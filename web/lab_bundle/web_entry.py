@@ -144,6 +144,13 @@ def _meta(a) -> dict:
         # when the file carries neither an `activity` message nor a GPS fix; the page then
         # falls back to the reader's own zone and says so.
         "utcOffsetS": a.track.start_utc_offset_s,
+        # **Which rung of the ladder answered** (engine 0.9.1): "activity" | "icu" |
+        # "longitude" | "device". The offset alone cannot be read honestly — "+7200 because
+        # the watch said so" and "+7200 because the first fix was at 11°E" are the same
+        # number and different facts — and only the exact rungs license the header's "times
+        # as recorded on the water". A GPX is usually the guess, and the guess is *solar*:
+        # an hour out under DST. `render.js` switches the note's wording on this.
+        "utcOffsetSource": a.track.start_utc_offset_source,
         "durationS": _num(s.get("total_elapsed_time")),
         "timerTimeS": _num(s.get("total_timer_time")) or round(a.clean.timer_time_s, 1),
         "samples": int(len(df)),

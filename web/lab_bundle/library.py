@@ -38,8 +38,11 @@ from datetime import datetime, timezone
 # and reads as the rider's own, which is what it always was. v3 (engine 0.8.2) added the
 # session's own UTC offset and the *local* calendar date it implies — `dateUtc` was, and
 # still is, the UTC day, which is a different day from the rider's for every session
-# either side of midnight and the wrong one to bucket a trend by.
-SCHEMA = 3
+# either side of midnight and the wrong one to bucket a trend by. v4 (engine 0.9.1) adds
+# `utcOffsetSource`: which rung of the ladder produced that offset, so a stored row can
+# still tell an exact answer from a solar guess after the recording itself is long gone.
+# Null on every row written before it, which reads as "unrecorded", not as "exact".
+SCHEMA = 4
 
 # The project-wide "same session" rule, in one place: a session start within +/-60 s AND a
 # duration within +/-60 s of an existing entry is the same session recorded twice (watch
@@ -262,6 +265,11 @@ def digest(doc, file_name: str | None = None) -> dict:
         # dated and clocked the way the rider saw it without re-reading the FIT. Null on a
         # digest written before the field existed, and on a source that could not say.
         "utcOffsetS": _offset(meta.get("utcOffsetS")),
+        # Where that offset came from (engine 0.9.1, schema 4): "activity" | "icu" |
+        # "longitude" | "device", or null on a digest written before the field existed.
+        # A stored row outlives the file it was made from, so the qualification has to be
+        # stored with it — an offset whose provenance was dropped reads as exact for ever.
+        "utcOffsetSource": meta.get("utcOffsetSource"),
         "dateUtc": (str(start_utc)[:10] if start_utc else None),
         # The rider's own calendar day. A session that starts at 23:30 in Torbole is a
         # 21:30 UTC session on the *previous* day two months of the year, and a trend

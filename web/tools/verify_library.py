@@ -220,7 +220,7 @@ def check_attribution() -> None:
         e.pop("schema")
     check("  a schema-1 library is unchanged", library.aggregate(old)["count"], 2)
     check("  digest stamps the current schema",
-          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 3)
+          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 4)
 
     # Schema 3 (engine 0.8.2): the session's own UTC offset, and the local calendar date it
     # implies. `dateUtc` stays what it always was — the UTC day — so an entry written before
@@ -235,6 +235,21 @@ def check_attribution() -> None:
                           "unknown.fit")
     check("  no offset -> no local date rather than a guessed one", none["dateLocal"], None)
     check("  no offset -> null, never a zero that reads as UTC", none["utcOffsetS"], None)
+
+    # Schema 4 (engine 0.9.1): *which rung* of the ladder produced that offset. A stored row
+    # outlives the recording it was made from, so the qualification has to be stored with
+    # it — an offset whose provenance was dropped reads as exact for ever, and the guess it
+    # may actually have been is an hour out under DST.
+    def rung(source):
+        meta = {"startUtc": "2026-08-30T22:40:00+00:00", "utcOffsetS": 7200}
+        if source is not None:
+            meta["utcOffsetSource"] = source
+        return library.digest({"golden": {}, "meta": meta}, "s.fit")["utcOffsetSource"]
+
+    for source in ("activity", "icu", "longitude", "device"):
+        check(f"  digest keeps the `{source}` rung", rung(source), source)
+    check("  a digest written before schema 4 says nothing rather than 'exact'",
+          rung(None), None)
 
 
 # --------------------------------------------------------------- 2-4. the FIT corpus

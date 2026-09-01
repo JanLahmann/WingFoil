@@ -9,10 +9,12 @@ is pure dict work, and encoding FITs to exercise it would only test fitdecode.
 import datetime as dt
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
-from wingfoil_lab.parse import (_unpack_session_v2, activity_utc_offset_s,
-                                coarse_utc_offset_s, parse_fit, summarize)
+from wingfoil_lab.parse import (UTC_OFFSET_SOURCES, SourceCapabilities, _unpack_session_v2,
+                                activity_utc_offset_s, coarse_utc_offset_s, parse_fit,
+                                resolve_utc_offset, summarize)
 
 FIXTURES = Path(__file__).resolve().parents[2] / "fixtures" / "sessions"
 
@@ -180,6 +182,42 @@ def test_coarse_offset_from_longitude_is_solar_and_says_so():
     assert coarse_utc_offset_s(float("nan")) is None
 
 
+def _ladder(declared, lons):
+    """`resolve_utc_offset` with the smallest inputs that exercise a rung."""
+    df = pd.DataFrame({"lon": lons}) if lons is not None else pd.DataFrame()
+    caps = SourceCapabilities(has_position=lons is not None)
+    return resolve_utc_offset(declared, df, caps)
+
+
+def test_the_ladder_records_which_rung_answered():
+    """Engine 0.9.1: the offset and its provenance, together, always.
+
+    The offset alone cannot be read honestly. +7200 from an `activity` message and +7200
+    from a longitude at 30°E are the same number and different facts, and only the first
+    licenses a surface to print "times as recorded on the water" — the second is the
+    *solar* offset and is an hour out under DST. Every rung is pinned here because the bug
+    this fixes was not a wrong number, it was a missing qualification.
+    """
+    # 1. the recording said so itself, and it wins even where the guess disagrees
+    assert _ladder(7200, [10.87]) == (7200, "activity")
+    # A real 0 is an answer, not an absence: it must not fall through to the guess.
+    assert _ladder(0, [10.87]) == (0, "activity")
+    # 2. nothing declared, but there are fixes -> the solar guess, labelled as one
+    assert _ladder(None, [10.87]) == (3600, "longitude")
+    assert _ladder(None, [-118.24]) == (-8 * 3600, "longitude")
+    # 3. no fixes at all -> nobody could say, and that is itself the answer
+    assert _ladder(None, None) == (None, "device")
+    # A position column with nothing in it is the same "could not say".
+    assert _ladder(None, [float("nan")]) == (None, "device")
+
+
+def test_every_source_name_is_one_the_contract_knows():
+    """The vocabulary is closed, and shared with the Swift and JS mirrors."""
+    assert UTC_OFFSET_SOURCES == ("activity", "icu", "longitude", "device")
+    for declared, lons in [(7200, [10.87]), (None, [10.87]), (None, None)]:
+        assert _ladder(declared, lons)[1] in UTC_OFFSET_SOURCES
+
+
 def test_every_fixture_carries_its_recorded_offset():
     """The corpus was ridden in CEST, and every file in it says so — CIQ and native alike.
 
@@ -190,4 +228,8 @@ def test_every_fixture_carries_its_recorded_offset():
     if not fits:
         pytest.skip("no session fixtures downloaded yet (see lab/tools/download_icu.py)")
     for f in fits:
-        assert parse_fit(f).start_utc_offset_s == 7200, f"{f.name}: lost its recorded offset"
+        track = parse_fit(f)
+        assert track.start_utc_offset_s == 7200, f"{f.name}: lost its recorded offset"
+        # …and says so: every FIT in the corpus answers on the top rung, so nothing in the
+        # corpus is entitled to the softened wording (engine 0.9.1).
+        assert track.start_utc_offset_source == "activity", f"{f.name}: wrong rung"

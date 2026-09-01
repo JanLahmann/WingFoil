@@ -404,6 +404,56 @@ def check_session_clock(result: dict) -> None:
           shown.strftime("%H:%M"), clock)
     check("  …and dates it on the session's calendar day",
           shown.strftime("%Y-%m-%d"), day)
+    # Engine 0.9.1: *which rung* answered. This fixture's watch wrote the offset down, so
+    # the page is entitled to state the clock as fact — and the assertion is worth making
+    # because the same +7200 could have come off the longitude guess, which for this
+    # longitude would have said +3600 and been an hour wrong.
+    check("  …and says which rung of the ladder answered", meta["utcOffsetSource"], "activity")
+    check_clock_note()
+
+
+#: The exact sentences the header may print, per source (docs/presentation.md "Session
+#: time"). Written here rather than imported so the JavaScript is checked against a second
+#: copy of the contract instead of against itself — the same rule §5 follows for the card.
+EXACT_NOTE = " \u00b7 times as recorded on the water"
+ESTIMATED_NOTE = " \u00b7 times estimated from the track's position"
+NO_ZONE_NOTE = " \u00b7 no timezone in this file \u2014 times shown on your own clock"
+
+CLOCK_NOTE = TOOLS / "clock_note.mjs"
+
+
+def check_clock_note() -> None:
+    """The note the page prints under the title, one case per rung of the ladder.
+
+    This is the only sentence on the page that tells a reader whether to *trust* a clock,
+    and until engine 0.9.1 it said "times as recorded on the water" over an offset that
+    could be a solar guess from longitude — an hour out under DST, and the normal case for
+    a GPX, which carries no zone at all. The wording now follows `meta.utcOffsetSource`,
+    and the strings come out of `render.js` itself (via `clock_note.mjs`) so this cannot
+    pass against a copy of the rule that the browser does not run.
+    """
+    node = shutil.which("node")
+    if not node:
+        print("  (skipped: node not on PATH — clock note unchecked)")
+        return
+    try:
+        raw = subprocess.run([node, str(CLOCK_NOTE)], capture_output=True, text=True,
+                             check=True, cwd=REPO).stdout
+    except (subprocess.CalledProcessError, OSError) as exc:                 # pragma: no cover
+        check("  clock_note.mjs runs", f"failed: {exc}", "ok")
+        return
+    notes = json.loads(raw)
+    # The two exact rungs make the same claim, because they are the same kind of fact.
+    check("  an `activity` offset states the clock", notes["activity"], EXACT_NOTE)
+    check("  an `icu` offset states it too", notes["icu"], EXACT_NOTE)
+    # The one that had been over-claiming.
+    check("  a `longitude` offset softens to an estimate", notes["longitude"], ESTIMATED_NOTE)
+    # Not the session's zone at all — the reader has to be told whose clock this is.
+    check("  `device` names the reader's own clock", notes["device"], NO_ZONE_NOTE)
+    check("  …and so does a missing offset", notes["absent"], NO_ZONE_NOTE)
+    # A pre-0.9.1 document cannot say which rung it used. Inventing a caveat there would be
+    # as wrong as inventing a certainty, so it keeps the wording it always had.
+    check("  an unrecorded source keeps the old wording", notes["unrecorded"], EXACT_NOTE)
 
 
 # --------------------------------------------- 5. the share card is the block

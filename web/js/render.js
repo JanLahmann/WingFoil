@@ -93,18 +93,45 @@ export function keyMetrics(g) {
 
 /* -------------------------------------------------------------------- header */
 
+/**
+ * What clock the times on this page are on — and, since engine 0.9.1, how well we know it.
+ *
+ * Engine 0.8.2 gave the page the *session's* own offset instead of the reader's, and the
+ * note changed from an apology to a statement: "times as recorded on the water". The
+ * statement was true whenever the recording had said so itself — and it was also printed
+ * over an offset **guessed from longitude**, which is the solar offset, an hour out under
+ * DST and up to two inside a wide zone. For a GPX that guess is the normal case, not the
+ * exception, so the over-claim was the common one: a July session in Torbole read an hour
+ * early with the page insisting it was as recorded.
+ *
+ * `meta.utcOffsetSource` (docs/presentation.md "Session time") names the rung that
+ * answered, and the note is written from it:
+ *
+ *   activity | icu   exact — the recording or the athlete's account said so
+ *   longitude        a guess from where the track is, and the note says so
+ *   device | null    nothing could say; the reader's own clock, which they must be told
+ *
+ * A document with no `utcOffsetSource` at all predates 0.9.1 and keeps the old wording:
+ * every analysis this page shows is produced by the bundled engine milliseconds earlier,
+ * so the case exists only for a hand-made fixture.
+ */
+export function clockNoteFor(meta) {
+  if (meta.utcOffsetS === null || meta.utcOffsetS === undefined
+      || meta.utcOffsetSource === "device") {
+    return " · no timezone in this file — times shown on your own clock";
+  }
+  return meta.utcOffsetSource === "longitude"
+    ? " · times estimated from the track's position"
+    : " · times as recorded on the water";
+}
+
+
 function renderSummary(result, isExample = false) {
   const g = result.golden, meta = result.meta, caps = g.capabilities;
   const s = g.summary, rec = g.records, w = g.wind;
 
   el("session-title").textContent = sessionDate(meta);
-  // What clock the times on this page are on. Since engine 0.8.2 that is the *session's*
-  // own — the offset its watch was wearing — so the note states the fact rather than the
-  // old apology, and only falls back to naming the reader's zone when the file could not
-  // say (`utcOffsetS` null), which is the one case where the reader has to know.
-  const clockNote = meta.utcOffsetS === null || meta.utcOffsetS === undefined
-    ? " · no timezone in this file — times shown on your own clock"
-    : " · times as recorded on the water";
+  const clockNote = clockNoteFor(meta);
   // The file's name and what clock its times are on. The sample count and the sample rate
   // used to sit between them; neither changes anything a rider would do next, and "9 214
   // samples @ 1 Hz" as the second line of your own session report reads like a log entry.

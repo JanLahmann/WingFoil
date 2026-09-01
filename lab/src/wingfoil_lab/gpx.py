@@ -39,9 +39,12 @@ the first".
 
 **Time zone.** GPX timestamps are ISO 8601 and usually `Z`. `Z` is a statement about the
 *instant* and none at all about the rider's clock, so it yields no offset and the
-longitude fallback (`parse.coarse_utc_offset_s`) takes over — the same resolution ladder
-engine 0.8.2 built for FITs. A timestamp written with a numeric offset (`+02:00`) *is* the
-exporter telling us the local clock, and wins over the guess.
+longitude fallback takes over — the same resolution ladder engine 0.8.2 built for FITs,
+shared as `parse.resolve_utc_offset`. A timestamp written with a numeric offset (`+02:00`)
+*is* the exporter telling us the local clock, and wins over the guess. Which rung answered
+is recorded (`RawTrack.start_utc_offset_source`, engine 0.9.1), and this format is why it
+had to be: for a GPX the guess is the *normal* case, and it is a solar guess an hour out
+under DST — a page that prints it as "times as recorded on the water" is over-claiming.
 
 Fail-soft like the FIT parser: a `trkpt` without a time cannot be placed on the timeline
 and is skipped; a malformed number is dropped rather than raised on.
@@ -58,7 +61,7 @@ import numpy as np
 import pandas as pd
 
 from .filters import M_PER_DEG_LAT, M_PER_DEG_LON_EQ
-from .parse import RawTrack, SourceCapabilities, coarse_utc_offset_s
+from .parse import RawTrack, SourceCapabilities, resolve_utc_offset
 
 #: Garmin's per-point extension, the one place a GPX may carry heart rate. Matched on the
 #: local tag name (`hr`) so both TrackPointExtension v1 and v2 — and the handful of
@@ -139,12 +142,13 @@ def _track_from_root(root: ET.Element, path: str) -> RawTrack:
     if len(df):
         session["total_elapsed_time"] = round(float(df["t"].iloc[-1] - df["t"].iloc[0]), 3)
 
-    offset = _declared_offset(offsets)
-    if offset is None and caps.has_position:
-        lon = df["lon"].dropna()
-        offset = coarse_utc_offset_s(float(lon.iloc[0])) if not lon.empty else None
+    # The same ladder the FIT parser climbs (`parse.resolve_utc_offset`), entered one rung
+    # lower: a GPX's own `<time>` is the file stating the offset, exactly as a FIT's
+    # `activity` message does, and most GPX files state none — which is why the honest
+    # source label matters more here than anywhere (engine 0.9.1).
+    offset, source = resolve_utc_offset(_declared_offset(offsets), df, caps)
     return RawTrack(path=path, records=df, laps=[], session=session, capabilities=caps,
-                    accel=None, start_utc_offset_s=offset)
+                    accel=None, start_utc_offset_s=offset, start_utc_offset_source=source)
 
 
 def _declared_offset(offsets: list[int]) -> int | None:

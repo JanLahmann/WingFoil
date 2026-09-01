@@ -105,7 +105,7 @@ public struct SessionIngestor: Sendable {
     /// `utcOffsetS` is what the *caller* knows about the session's timezone — intervals.icu
     /// states one per activity, and it is an exact answer where our own fallback is a
     /// guess. It is consulted only when the FIT itself cannot say (see
-    /// `resolveUtcOffsetS`); a hand-picked file passes nil and simply has one fewer rung.
+    /// `resolveUtcOffset`); a hand-picked file passes nil and simply has one fewer rung.
     @discardableResult
     public func ingest(fitData: Data, filename: String?, source: ImportSource,
                        icuActivityId: String? = nil,
@@ -151,12 +151,16 @@ public struct SessionIngestor: Sendable {
         row.sport = caps.sport
         row.discipline = caps.discipline
         row.originalFilename = filename
-        // What clock this session's times are drawn on — see `resolveUtcOffsetS`. It
-        // survives a provisional-row upgrade the same way the id does: the FIT is a better
-        // source than anything the BLE card could imply, so it overwrites rather than
-        // defers, and only an answer of "nothing" leaves the existing value standing.
-        row.startUtcOffsetS = Self.resolveUtcOffsetS(track: track, fallback: utcOffsetS)
-            ?? existing?.startUtcOffsetS
+        // What clock this session's times are drawn on, and how well we know it — see
+        // `resolveUtcOffset`. It survives a provisional-row upgrade the same way the id
+        // does: the FIT is a better source than anything the BLE card could imply, so it
+        // overwrites rather than defers, and only an answer of "nothing" leaves the
+        // existing value standing — the two fields together, so a kept offset never ends up
+        // wearing this file's provenance.
+        let resolved = Self.resolveUtcOffset(track: track, fallback: utcOffsetS)
+        row.startUtcOffsetS = resolved.offset ?? existing?.startUtcOffsetS
+        row.startUtcOffsetSource = resolved.offset == nil
+            ? existing?.startUtcOffsetSource : resolved.source.rawValue
         // The card's "watch" tag survives the upgrade: the row really did reach the
         // library over BLE first, and that is worth being able to see afterwards.
         row.importSource = Self.merge(sources: existing?.importSource, adding: source)
@@ -424,11 +428,21 @@ public struct SessionIngestor: Sendable {
     /// 4. **Nothing.** nil is stored, and `SessionRow.displayZone` falls back to the
     ///    device's zone — flagged by `hasKnownZone`, so a surface can say so rather than
     ///    passing the guess off as the session's.
-    static func resolveUtcOffsetS(track: RawTrack, fallback: Int?) -> Int? {
-        if let exact = track.startUtcOffsetS { return exact }
-        if let fallback { return fallback }
-        guard let lon = track.samples.first(where: { $0.lon != nil })?.lon else { return nil }
-        return FitSessionParser.coarseUtcOffsetS(lon)
+    ///
+    /// Since engine 0.9.1 it returns **which rung answered** alongside the number, because
+    /// rungs 1–2 and rung 3 are the same `Int` and different facts: only an exact answer
+    /// licenses a surface to state the session's clock, and rung 3's guess is an hour out
+    /// under DST. "Nothing" is `.device` rather than a silence — a stored row can then tell
+    /// a session that asked and got nowhere from one written before the question existed.
+    static func resolveUtcOffset(track: RawTrack,
+                                 fallback: Int?) -> (offset: Int?, source: UtcOffsetSource) {
+        if let exact = track.startUtcOffsetS {
+            return (exact, track.startUtcOffsetSource ?? .activity)
+        }
+        if let fallback { return (fallback, .icu) }
+        guard let lon = track.samples.first(where: { $0.lon != nil })?.lon,
+              let guess = FitSessionParser.coarseUtcOffsetS(lon) else { return (nil, .device) }
+        return (guess, .longitude)
     }
 
     func duplicate(startDate: Date, durationS: Double,

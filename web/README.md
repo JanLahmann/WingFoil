@@ -86,6 +86,10 @@ web/
 │                               against the key-metrics block
 ├── tools/card_parity.mjs       the Node half of that last check — runs keyMetrics and
 │                               cardStats over every golden and dumps them as JSON
+├── tools/clock_note.mjs        the same trick for the header's clock note: runs
+│                               render.js's clockNoteFor over one meta per rung of the
+│                               UTC-offset ladder, so verify_presentation asserts the
+│                               sentence the browser actually prints
 └── .nojekyll                   GitHub Pages: serve files verbatim
 ```
 

@@ -38,7 +38,7 @@ import Foundation
 ///
 /// **Time zone.** GPX timestamps are usually `Z`, which states an *instant* and nothing at
 /// all about the rider's clock, so it yields no offset and the longitude rung of the 0.8.2
-/// ladder takes over (`SessionIngestor.resolveUtcOffsetS`). A timestamp written with a
+/// ladder takes over (`SessionIngestor.resolveUtcOffset`). A timestamp written with a
 /// numeric offset (`+02:00`) *is* the exporter naming the local clock, and wins.
 ///
 /// Fail-soft like the FIT parser: a `trkpt` with no time cannot be placed on the timeline
@@ -129,6 +129,12 @@ public enum GpxSessionParser {
         }
         track.capabilities = caps
         track.startUtcOffsetS = c.statedOffsets.first
+        // A GPX timestamp written `+02:00` is the exporter stating the rider's clock, which
+        // ranks with a FIT's `activity` message rather than with a guess. Most GPX files
+        // state nothing, and then the rung is decided further down the ladder
+        // (`SessionIngestor.resolveUtcOffset`) — usually as `.longitude`, which is exactly
+        // why engine 0.9.1 records it (docs/presentation.md "Session time").
+        track.startUtcOffsetSource = track.startUtcOffsetS == nil ? nil : .activity
         return track
     }
 

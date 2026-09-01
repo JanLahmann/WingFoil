@@ -16,7 +16,7 @@ import Testing
 /// time on the watch at Torbole, and the time in the filename. On the old code every
 /// assertion here says `12:07`.
 ///
-/// It also pins the resolution ladder itself (`SessionIngestor.resolveUtcOffsetS`) and the
+/// It also pins the resolution ladder itself (`SessionIngestor.resolveUtcOffset`) and the
 /// v7 backfill, because those are the two places a session can quietly lose its zone.
 @Suite(.serialized) struct SessionTimeZoneTests {
 
@@ -159,37 +159,87 @@ import Testing
             let track = try FitSessionParser.parse(url: url)
             #expect(track.startUtcOffsetS == 7200,
                     "\(url.lastPathComponent) lost its recorded offset")
+            // …and says which rung answered (engine 0.9.1): nothing in the corpus is
+            // entitled to the softened caption, because every file states its own clock.
+            #expect(track.startUtcOffsetSource == .activity,
+                    "\(url.lastPathComponent) lost its rung")
             seen += 1
         }
         #expect(seen >= 10, "the corpus shrank; this assertion is no longer worth much")
     }
 
-    /// Sources 2, 3 and 4, in order — what happens when the file cannot say.
+    /// Sources 2, 3 and 4, in order — what happens when the file cannot say — **and which
+    /// rung each answer came off** (engine 0.9.1).
+    ///
+    /// The rung is pinned beside the number on every line because that is the whole of the
+    /// 0.9.1 change: rungs 1–2 and rung 3 return the same `Int` and license different
+    /// sentences, and a ladder that silently reordered would otherwise still pass.
     @Test func theLadderFallsThroughInOrder() throws {
         var bare = RawTrack()
         bare.samples = [RecordSample(t: 0, timestamp: Date())]
 
-        // 4: nothing at all. nil, not 0 — "we do not know" is not "this was UTC".
-        #expect(SessionIngestor.resolveUtcOffsetS(track: bare, fallback: nil) == nil)
+        // 4: nothing at all. nil, not 0 — "we do not know" is not "this was UTC". The rung
+        // is named all the same: `.device` is an answer, and a row can tell it from a row
+        // written before the question existed.
+        var step = SessionIngestor.resolveUtcOffset(track: bare, fallback: nil)
+        #expect(step.offset == nil)
+        #expect(step.source == .device)
 
-        // 2: what the caller was told (intervals.icu's `timezone`) beats no answer.
-        #expect(SessionIngestor.resolveUtcOffsetS(track: bare, fallback: 3600) == 3600)
+        // 2: what the caller was told (intervals.icu's `timezone`) beats no answer, and is
+        // exact — the athlete's account really does know the zone.
+        step = SessionIngestor.resolveUtcOffset(track: bare, fallback: 3600)
+        #expect(step.offset == 3600)
+        #expect(step.source == .icu)
+        #expect(step.source.isExact)
 
-        // 3: a GPS fix alone gives the coarse solar guess — Torbole is 10.87° E.
+        // 3: a GPS fix alone gives the coarse solar guess — Torbole is 10.87° E, so the
+        // guess is +1 h on a day the rider's watch read +2 h. Labelled, and NOT exact.
         var positioned = bare
         positioned.samples[0].lat = 45.87
         positioned.samples[0].lon = 10.87
-        #expect(SessionIngestor.resolveUtcOffsetS(track: positioned, fallback: nil) == 3600)
+        step = SessionIngestor.resolveUtcOffset(track: positioned, fallback: nil)
+        #expect(step.offset == 3600)
+        #expect(step.source == .longitude)
+        #expect(!step.source.isExact)
         // …and is still beaten by anything exact.
-        #expect(SessionIngestor.resolveUtcOffsetS(track: positioned, fallback: 7200) == 7200)
+        step = SessionIngestor.resolveUtcOffset(track: positioned, fallback: 7200)
+        #expect(step.offset == 7200)
+        #expect(step.source == .icu)
 
-        // 1: the file's own answer beats both.
+        // 1: the file's own answer beats both, and keeps the parser's own label.
         var recorded = positioned
         recorded.startUtcOffsetS = 7200
-        #expect(SessionIngestor.resolveUtcOffsetS(track: recorded, fallback: -28800) == 7200)
+        recorded.startUtcOffsetSource = .activity
+        step = SessionIngestor.resolveUtcOffset(track: recorded, fallback: -28800)
+        #expect(step.offset == 7200)
+        #expect(step.source == .activity)
     }
 
-    // MARK: - The v7 backfill
+    /// What a stored row is allowed to claim, per rung — the reason the column exists.
+    @Test func onlyAnExactRungLetsARowClaimTheSessionsClock() {
+        func row(_ offset: Int?, _ source: UtcOffsetSource?) -> SessionRow {
+            var r = SessionRow(id: "r", startDate: Date(), durationS: 60, sourceClass: "a")
+            r.startUtcOffsetS = offset
+            r.startUtcOffsetSource = source?.rawValue
+            return r
+        }
+        #expect(row(7200, .activity).hasKnownZone)
+        #expect(!row(7200, .activity).zoneIsEstimated)
+        #expect(!row(7200, .icu).zoneIsEstimated)
+        #expect(row(3600, .longitude).zoneIsEstimated)
+        #expect(row(3600, .longitude).hasKnownZone)   // it *is* the session's zone, guessed
+        #expect(!row(nil, .device).hasKnownZone)
+        // A row from before the column, and a row carrying a string this version has never
+        // heard of, are both "unrecorded": no claim either way, which is the old behaviour.
+        #expect(!row(7200, nil).zoneIsEstimated)
+        #expect(row(7200, nil).utcOffsetSource == nil)
+        var future = row(7200, nil)
+        future.startUtcOffsetSource = "satellite"
+        #expect(future.utcOffsetSource == nil)
+        #expect(!future.zoneIsEstimated)
+    }
+
+    // MARK: - The v7/v8 backfill
 
     /// A row that predates the column is filled from its own archived recording, not from
     /// whatever zone the phone happens to be in when the app is next opened.
@@ -218,10 +268,51 @@ import Testing
             try SessionRow.fetchOne(db, key: row.id)
         }
         #expect(after?.startUtcOffsetS == 7200)
+        // ...and the rung it came off, which is the whole of schema v8: the archive *told*
+        // us, so this row is entitled to state its clock.
+        #expect(after?.utcOffsetSource == .activity)
 
         // Idempotent: a second pass has nothing left to do.
         let again = try await harness.database.backfillStartUtcOffsets(archive: harness.archive)
         #expect(again == 0)
+    }
+
+    /// The v8 half of that backfill: a row that kept its offset and lost its provenance.
+    ///
+    /// Schema v7 stored the number and threw away where it came from, so every v7 row is
+    /// ambiguous - `+7200` from the FIT's `activity` message and `+7200` from a longitude
+    /// guess are the same column. Where the archive can settle it, it is settled; where it
+    /// cannot, the row stays NULL rather than being stamped with a provenance we invented.
+    @Test func theBackfillStampsARungOnlyWhenTheArchiveCanSettleIt() async throws {
+        let harness = try makeHarness()
+        defer { cleanup(harness) }
+        let row = try await Self.ingestExample(harness.ingestor)
+
+        // A v7 row: the right offset, no source.
+        try await harness.database.writer.write { db in
+            try db.execute(sql: "UPDATE session SET startUtcOffsetSource = NULL")
+        }
+        #expect(try await harness.database.backfillStartUtcOffsets(archive: harness.archive) == 1)
+        var after = try await harness.database.writer.read { db in
+            try SessionRow.fetchOne(db, key: row.id)
+        }
+        #expect(after?.startUtcOffsetS == 7200)
+        #expect(after?.utcOffsetSource == .activity)
+
+        // A v7 row whose offset is NOT the recording's own - it came from intervals.icu, or
+        // from the longitude guess, and the archive cannot say which. Unrecorded is the
+        // honest answer, and the pass leaves it alone rather than claiming `activity`.
+        try await harness.database.writer.write { db in
+            try db.execute(sql: "UPDATE session SET startUtcOffsetS = 3600, "
+                              + "startUtcOffsetSource = NULL")
+        }
+        #expect(try await harness.database.backfillStartUtcOffsets(archive: harness.archive) == 0)
+        after = try await harness.database.writer.read { db in
+            try SessionRow.fetchOne(db, key: row.id)
+        }
+        #expect(after?.startUtcOffsetS == 3600, "a stored offset must not be overwritten")
+        #expect(after?.utcOffsetSource == nil)
+        #expect(!(after?.zoneIsEstimated ?? true))
     }
 
     // MARK: - intervals.icu

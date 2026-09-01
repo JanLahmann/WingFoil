@@ -169,7 +169,47 @@ public struct RawTrack: Sendable {
     /// Mirrors `RawTrack.start_utc_offset_s` in lab/src/wingfoil_lab/parse.py.
     public var startUtcOffsetS: Int?
 
+    /// **Which rung of the ladder produced that offset** (engine 0.9.1). See
+    /// `UtcOffsetSource`; nil where this parser could not answer at all and the rung is
+    /// still to be decided by `SessionIngestor`, which owns the rest of the ladder.
+    ///
+    /// Mirrors `RawTrack.start_utc_offset_source` in lab/src/wingfoil_lab/parse.py.
+    public var startUtcOffsetSource: UtcOffsetSource?
+
     public init() {}
+}
+
+/// Which rung of the UTC-offset ladder answered for a session — the vocabulary shared by
+/// `RawTrack.startUtcOffsetSource`, `session.startUtcOffsetSource` in the library,
+/// `meta.utcOffsetSource` in the web document and `UTC_OFFSET_SOURCES` in
+/// lab/src/wingfoil_lab/parse.py.
+///
+/// **Why the offset alone was not enough** (engine 0.9.1). +7200 because the watch wrote it
+/// down and +7200 because the first fix was at 11°E are the same number and different
+/// facts. The second is the *solar* offset: an hour out under DST, up to two inside a wide
+/// zone, blind to the half-hour zones. Until this existed every surface printed both as
+/// "times as recorded on the water", and since a GPX carries no zone at all the guess was
+/// the *normal* answer for the whole of engine 0.9.0's new input class.
+public enum UtcOffsetSource: String, Sendable, CaseIterable, Codable {
+    /// The recording said so itself: a FIT `activity` message's `local_timestamp -
+    /// timestamp`, or a GPX timestamp that carried a numeric offset. Exact, DST included,
+    /// and a fact about *this session* rather than about where it is read.
+    case activity
+    /// intervals.icu's `timezone` for the activity, resolved at the session's own instant.
+    /// Also exact; second only because it is a fact about the athlete's account rather than
+    /// about the recording. Set on the sync path, the only caller with an account to ask.
+    case icu
+    /// `round(lon / 15°)` hours from the first fix — a guess, and the reason this type
+    /// exists.
+    case longitude
+    /// Nothing could say. The offset is nil and every clock falls back to the reader's own,
+    /// which is what `SessionRow.displayZone` has always done.
+    case device
+
+    /// Whether a surface may state the session's clock as fact. Only the two rungs that
+    /// were *told* the answer qualify; `longitude` is a guess and `device` is not the
+    /// session's clock at all.
+    public var isExact: Bool { self == .activity || self == .icu }
 }
 
 public enum Units {

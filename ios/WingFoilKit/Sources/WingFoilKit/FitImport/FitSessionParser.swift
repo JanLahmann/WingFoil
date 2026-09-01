@@ -143,6 +143,8 @@ public enum FitSessionParser {
         // further down a ladder `SessionIngestor` owns, because intervals.icu's `timezone`
         // sits between the two and the parser has never heard of intervals.icu.
         track.startUtcOffsetS = utcOffsetS(fit)
+        // …and if it answered, the rung is named: this is the top one (engine 0.9.1).
+        track.startUtcOffsetSource = track.startUtcOffsetS == nil ? nil : .activity
         return track
     }
 

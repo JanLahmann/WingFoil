@@ -14,7 +14,9 @@ and the session share one — which stops being true on the next DST boundary an
 first flight to a different country. `activity.local_timestamp - activity.timestamp` is the
 UTC offset the *watch* was wearing when it saved the file, and it is what every displayed
 clock is formatted in (`RawTrack.start_utc_offset_s`, `docs/presentation.md` "Session
-time").
+time"). Since engine 0.9.1 the parser also records **which rung of the ladder answered**
+(`RawTrack.start_utc_offset_source`), because an offset guessed from longitude is a solar
+guess that can be an hour out under DST and a page that prints it as fact is over-claiming.
 
 Class-(a) files also carry the watch's SensorLogging accelerometer stream in
 `accelerometer_data` messages (batched: one message per ~25 samples, each sample timed by
@@ -114,6 +116,19 @@ class RawTrack:
     #: GPX, a partial upload) — the caller then falls back to the coarse longitude estimate
     #: or, last of all, to the viewer's clock, flagged.
     start_utc_offset_s: int | None = None
+    #: **Which rung of the ladder answered** (engine 0.9.1). See `UTC_OFFSET_SOURCES`.
+    #:
+    #: The offset alone cannot be read honestly: "+7200 because the watch said so" and
+    #: "+7200 because the first fix was at 11°E" are the same number and different facts,
+    #: and only the first licenses a surface to say *times as recorded on the water*. A GPX
+    #: makes the difference routine rather than exotic — it usually carries no zone at all,
+    #: so the longitude guess is the normal answer for it, and that guess is **solar**: an
+    #: hour out under DST, and it is summer in half of every GPX corpus.
+    #:
+    #: None only on a track this parser did not fill in — a hand-built `RawTrack` in a test,
+    #: or a document written before 0.9.1. "No source could say" is `"device"`, which is a
+    #: statement, not an absence.
+    start_utc_offset_source: str | None = None
 
 
 _RECORD_KEEP = {
@@ -201,12 +216,9 @@ def parse_fit(path: str | Path) -> RawTrack:
     caps.schema_version = int(app_ver) & 0xFF if isinstance(app_ver, (int, float)) else None
 
     accel = _accel_frame(accel_batches, epoch0)
-    offset = activity_utc_offset_s(activity)
-    if offset is None and caps.has_position and "lon" in df:
-        lon = df["lon"].dropna()
-        offset = coarse_utc_offset_s(float(lon.iloc[0])) if not lon.empty else None
+    offset, source = resolve_utc_offset(activity_utc_offset_s(activity), df, caps)
     return RawTrack(path=str(path), records=df, laps=laps, session=session, capabilities=caps,
-                    accel=accel, start_utc_offset_s=offset)
+                    accel=accel, start_utc_offset_s=offset, start_utc_offset_source=source)
 
 
 def parse_track(path: str | Path) -> RawTrack:
@@ -227,6 +239,46 @@ def parse_track(path: str | Path) -> RawTrack:
     with open(path, "rb") as fh:
         head = fh.read(2048)
     return parse_gpx(path) if is_gpx(head) else parse_fit(path)
+
+
+#: The rungs of the UTC-offset ladder, best answer first — the vocabulary of
+#: `RawTrack.start_utc_offset_source`, `meta.utcOffsetSource` in the web document, and
+#: `session.startUtcOffsetSource` in the iOS library (engine 0.9.1).
+#:
+#: * ``"activity"`` — the recording said so itself: a FIT `activity` message's
+#:   `local_timestamp - timestamp`, or a GPX timestamp that carried a local offset. Exact,
+#:   DST included, and a fact about *this session* rather than about where it is read.
+#: * ``"icu"`` — intervals.icu's `timezone` for the activity, resolved at the session's own
+#:   instant. Also exact; second only because it is a fact about the athlete's account.
+#:   Set by the iOS ingest path, which is the only one with an intervals.icu to ask.
+#: * ``"longitude"`` — `round(lon / 15°)` hours from the first fix. A **guess**: the solar
+#:   offset, not the civil one.
+#: * ``"device"`` — nothing could say, `start_utc_offset_s` is None, and whoever displays
+#:   this falls back to the reader's own clock.
+UTC_OFFSET_SOURCES = ("activity", "icu", "longitude", "device")
+
+
+def resolve_utc_offset(declared, df, caps) -> tuple[int | None, str]:
+    """The ladder, in one place: the offset **and** the rung that produced it.
+
+    `declared` is whatever the file itself stated — a FIT `activity` offset, a GPX
+    timestamp's own offset — or None. The longitude fallback is tried next, and "nothing"
+    is an answer with a name (`"device"`) rather than a silence, so a reader can tell a
+    document that never asked from one that asked and got nowhere.
+
+    Returning the two together is the point. Two call sites (FIT and GPX) used to run the
+    same two rungs independently, and neither recorded which one won — which is exactly how
+    a solar guess ended up printed as "times as recorded on the water".
+    """
+    if declared is not None:
+        return declared, "activity"
+    if caps.has_position and "lon" in df:
+        lon = df["lon"].dropna()
+        if not lon.empty:
+            guess = coarse_utc_offset_s(float(lon.iloc[0]))
+            if guess is not None:
+                return guess, "longitude"
+    return None, "device"
 
 
 def activity_utc_offset_s(activity: dict) -> int | None:

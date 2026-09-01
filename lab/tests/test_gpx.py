@@ -185,6 +185,9 @@ def test_a_z_timestamp_states_an_instant_and_falls_back_to_longitude():
     — the 0.8.2 resolution ladder, one rung down (docs/algorithms.md "Session time")."""
     track = parse_gpx_bytes(_doc(f"<trk><trkseg>{_line(3)}</trkseg></trk>"))
     assert track.start_utc_offset_s == 3600      # lon 10.87° -> round(10.87/15) = 1 h
+    # …and it is labelled a guess (engine 0.9.1). This is the common GPX case and the one
+    # the honest wording exists for: the true answer that day was +2 h.
+    assert track.start_utc_offset_source == "longitude"
     assert str(track.records["timestamp"].iloc[0]) == "2026-08-30 12:00:00+00:00"
 
 
@@ -195,6 +198,8 @@ def test_a_stated_offset_beats_the_longitude_guess():
             f'{_pt(45.8601, 10.87, time="2026-08-30T14:00:01+02:00")}</trkseg></trk>')
     track = parse_gpx_bytes(_doc(body))
     assert track.start_utc_offset_s == 7200
+    # The file said so, so it ranks with a FIT's `activity` message, not with the guess.
+    assert track.start_utc_offset_source == "activity"
     # The instant is still stored in UTC, exactly as a FIT's is.
     assert str(track.records["timestamp"].iloc[0]) == "2026-08-30 12:00:00+00:00"
 
@@ -205,6 +210,7 @@ def test_a_naive_timestamp_is_read_as_utc_and_claims_no_clock():
     track = parse_gpx_bytes(_doc(body))
     assert str(track.records["timestamp"].iloc[0]) == "2026-08-30 12:00:00+00:00"
     assert track.start_utc_offset_s == 3600      # no claim -> the longitude fallback
+    assert track.start_utc_offset_source == "longitude"
 
 
 # ------------------------------------------------------------------------- the fixture
@@ -245,3 +251,7 @@ def test_the_converted_fixture_still_describes_the_same_afternoon():
     # `activity` message says +2 h outright, the GPX gets +1 h from longitude alone.
     assert fit.start_utc_offset_s == 7200
     assert gpx.start_utc_offset_s == 3600
+    # The pair is the whole argument for engine 0.9.1: same afternoon, same rider, two
+    # offsets an hour apart, and only the provenance tells a reader which to believe.
+    assert fit.start_utc_offset_source == "activity"
+    assert gpx.start_utc_offset_source == "longitude"
