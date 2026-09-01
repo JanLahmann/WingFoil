@@ -84,6 +84,61 @@ import Testing
         #expect(SessionNaming.customTitle(long)?.count == SessionNaming.titleLimit)
     }
 
+    // MARK: - What the composer's title field opens with
+
+    /// The share composer prefills its title field, and this is the value it prefills with.
+    /// It has to be the name the card is showing, or the rider is editing a string he has
+    /// never seen; and it must never be blank, or the "prefill" is the empty field this
+    /// replaced.
+    @Test func theTitleFieldOpensOnWhateverTheSessionIsCurrentlyCalled() {
+        // Nobody has renamed this one: the field opens on the derived name — corrected, so it
+        // says Wingfoil and not the word the watch wrote.
+        #expect(SessionNaming.titleDraft(custom: nil, derived: "Nago Torbole Wingfoil")
+                == "Nago Torbole Wingfoil")
+        // He has: the field opens on his own words, not on the derivation underneath them.
+        #expect(SessionNaming.titleDraft(custom: "First 20 kn", derived: "Nago Torbole Wingfoil")
+                == "First 20 kn")
+        // A stored blank is "never named", the same as nil — and still opens on the derived
+        // name rather than on nothing.
+        #expect(SessionNaming.titleDraft(custom: "", derived: "Nago Torbole Wingfoil")
+                == "Nago Torbole Wingfoil")
+        #expect(SessionNaming.titleDraft(custom: "  \n ", derived: "Nago Torbole Wingfoil")
+                == "Nago Torbole Wingfoil")
+        // A recording that says nothing about itself still opens on a word.
+        #expect(SessionNaming.titleDraft(custom: nil, derived: "Session") == "Session")
+
+        // The draft and the title are one rule, deliberately: the field the rider edits and
+        // the headline he is editing may not resolve differently.
+        for custom in [nil, "", "  ", "First 20 kn"] {
+            #expect(SessionNaming.titleDraft(custom: custom, derived: "Nago Torbole Wingfoil")
+                    == SessionNaming.title(custom: custom, derived: "Nago Torbole Wingfoil"))
+        }
+    }
+
+    /// The other half of the prefill: a sheet that is opened and closed is not a rename.
+    /// `ShareComposerView` seeds its *committed* value with the same draft, so nothing is
+    /// written unless a key is pressed — and a draft still equal to the derived name is
+    /// written through as "", which is what leaves the row derived.
+    @Test func aPrefilledFieldLeftAloneLeavesTheSessionDerived() async throws {
+        let (store, database) = try harness()
+        try await insert(database)
+        let row = try await read(database)
+        #expect(row.customTitle == nil)
+
+        let derived = "Nago Torbole"                 // what the app derives from this filename
+        let draft = SessionNaming.titleDraft(custom: row.customTitle, derived: derived)
+        #expect(draft == derived)
+
+        // The composer's rule, applied to an untouched draft.
+        try await store.renameSession(id: "s1", to: draft == derived ? "" : draft)
+        #expect(try await read(database).customTitle == nil)
+
+        // One keystroke on the end of the prefill, and it *is* a rename.
+        let edited = draft + " — first 20 kn"
+        try await store.renameSession(id: "s1", to: edited == derived ? "" : edited)
+        #expect(try await read(database).customTitle == "Nago Torbole — first 20 kn")
+    }
+
     // MARK: - Garmin's word for it
 
     /// The watch has no wingfoil profile, so every session it records is named after the

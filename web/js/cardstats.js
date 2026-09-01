@@ -418,6 +418,25 @@ export function loadCardText(key) {
   };
 }
 
+/**
+ * What the dialog's title field **opens containing** — the card's current headline, as
+ * editable text. The twin of `SessionNaming.titleDraft` on iOS.
+ *
+ * The field used to open *empty*, with the derived name greyed out behind it as a
+ * placeholder. That looks like a prefill and is not one: a placeholder vanishes on the first
+ * keystroke, so a rider who wanted "Nago Torbole Wingfoil — first 20 kn" had to type all six
+ * words. He is nearly always editing what the card already says, not replacing it.
+ *
+ * It resolves the same way the card's headline does (`cardContent`) — remembered title first,
+ * derived name otherwise — because the only prefill worth editing is the one that matches
+ * what he is looking at. `state.title` is deliberately *not* seeded from it: an untouched
+ * field leaves the session remembering nothing, exactly as before, and only a keystroke
+ * writes.
+ */
+export function cardTitleDraft(remembered, fileName) {
+  return cleanTitle(remembered) || cardTitle(fileName);
+}
+
 /** Remember (or forget) one session's pair. Both blank removes the entry rather than storing
  *  two empty strings — a rider who cleared both fields has asked for the card he started
  *  with, and a map full of `{title: "", note: ""}` is a map of nothing. */

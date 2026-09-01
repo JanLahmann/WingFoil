@@ -387,6 +387,18 @@ audience rather than metadata. The analyzer has no session record to rename, so 
 are transient there: they feed one render and are remembered per session digest id in
 `localStorage`.
 
+**The title field opens filled in, on both platforms.** It carries the session's current name
+as editable text — the rider's own if he has given one, the derived one otherwise, resolved
+exactly the way the card's headline resolves (`SessionNaming.titleDraft`, `cardTitleDraft`).
+It used to open empty with the derived name greyed out behind it, and a placeholder is not a
+prefill: it vanishes on the first keystroke, so every rename started from nothing even though
+renaming is nearly always *editing* the name — adding "— first 20 kn" to the spot. The
+placeholder stays on for the one moment it is now visible, after a select-all and delete. Two
+consequences follow and both are load-bearing: the prefill is never blank, and a draft still
+equal to the derived name is **not** a rename — it is written through as empty on iOS and
+remembered as nothing on the web, so a sheet that is opened, captioned and closed leaves the
+session derived. Only a keystroke in that field names a session.
+
 **The derived name says Wingfoil, whatever the watch called it.** Garmin has no wingfoil
 profile, so a session is recorded under the windsurf one and the watch names the activity
 after that profile in the watch's own locale — "Nago-Torbole Windsurfen" on a German Fenix.

@@ -703,6 +703,23 @@ def check_card_text() -> None:
     check("  the word has to stand alone", derived["windsurfschule-torbole.fit"],
           "Windsurfschule Torbole")
 
+    # 1c. The prefill. A placeholder is not a prefill — it vanishes on the first keystroke —
+    #     so the field opens *containing* what the card is headlined, and a rider renaming a
+    #     session edits that instead of retyping it. Same rule as `SessionNaming.titleDraft`
+    #     on iOS, and it resolves the way the headline resolves: remembered title first, the
+    #     derived name otherwise.
+    for remembered, name, want_js in got["drafts"]:
+        want = (remembered or "").strip()[:TITLE_LIMIT].strip() or _derived_title(name)
+        check(f"  cardTitleDraft({(remembered or '')[:20]!r}, {name[:28]!r})", want_js, want)
+    drafts = {(r or "", n): got_draft for r, n, got_draft in got["drafts"]}
+    check("  an untitled session opens on its derived name — corrected",
+          drafts[("", "2026-08-30-1407_nago-torbole-windsurfen_ciq.fit")],
+          "Nago Torbole Wingfoil")
+    check("  a session he has titled opens on his own words",
+          drafts[("  First 20 kn  ", "2026-08-30-1407_nago-torbole-windsurfen_ciq.fit")],
+          "First 20 kn")
+    check("  and the prefill is never blank", all(d for *_, d in got["drafts"]), True)
+
     # 2. The per-session key is the digest's own id, re-derived from `meta` — so a document
     #    opened out of the library and the same document freshly analysed remember one
     #    caption between them rather than two.
@@ -743,6 +760,11 @@ def check_card_text() -> None:
     check("  somebody else's JSON under our key reads as nothing",
           s["arrayUnderTheKey"], empty)
     check("  and so does unparseable text", s["garbageUnderTheKey"], empty)
+    # The prefill is a convenience for the typing, not a title the rider is recorded as having
+    # given: opening the dialog on a session nobody has named must leave the store untouched.
+    check("  opening an untitled session prefills the derived name",
+          s["prefillOnAnUntitledSession"], "Nago Torbole Wingfoil")
+    check("  and writes nothing — only a keystroke does", s["prefillWroteNothing"], True)
     check("  a browser with no storage reads as nothing", s["withoutStorage"], empty)
     check("  and writing to one is a silent no-op", s["writeThrewWithoutStorage"], False)
 

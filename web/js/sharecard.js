@@ -30,8 +30,8 @@
 
 import {
   BRANDING, CAPTION_SEP, NOTE_LIMIT, PRESETS, SHAPES, TITLE_LIMIT, cardDateLine,
-  cardDisclaimer, cardKey, cardStats, cardTitle, cleanNote, cleanTitle, isWide,
-  loadCardChoice, loadCardText, saveCardChoice, saveCardText,
+  cardDisclaimer, cardKey, cardStats, cardTitle, cardTitleDraft, cleanNote, cleanTitle,
+  isWide, loadCardChoice, loadCardText, saveCardChoice, saveCardText,
 } from "./cardstats.js";
 import { indexAt, phaseRuns } from "./session.js";
 import { C, OUTCOME_COLOR } from "./viz.js";
@@ -669,7 +669,11 @@ export function mountShareCard() {
   el("card-title-input").maxLength = TITLE_LIMIT;
   el("card-note-input").maxLength = NOTE_LIMIT;
   el("card-title-input").addEventListener("input", (ev) => {
-    choose({ title: ev.target.value });
+    // A field that still reads exactly like the derived name is the prefill, not a title of
+    // the rider's own, so it is remembered as nothing — the twin of what `commit()` does on
+    // iOS. The card is headlined identically either way.
+    const typed = ev.target.value;
+    choose({ title: typed === cardTitle(state.result?.file?.name) ? "" : typed });
   });
   el("card-note-input").addEventListener("input", (ev) => {
     choose({ note: ev.target.value });
@@ -697,14 +701,18 @@ export function openShareCard(result) {
   const saved = loadCardChoice();
   state.shape = saved.shape;
   state.preset = saved.preset;
-  // The rider's own words for *this* session, if he wrote any here before. The title field is
-  // left blank rather than pre-filled with the derived name: an empty field with the derived
-  // name in its placeholder says "this is what it will be called unless you say otherwise",
-  // where a pre-filled one invites a rider to delete text he never wrote.
+  // The rider's own words for *this* session, if he wrote any here before.
+  //
+  // The title field opens **filled in** with what the card is currently headlined
+  // (`cardTitleDraft`), because a rider titling a card is nearly always editing that headline
+  // — adding "— first 20 kn" to the spot — and a blank field with the name greyed out behind
+  // it made him retype the spot first. `state.title` stays whatever was remembered, so an
+  // untouched field still means "no title of my own" and only a keystroke writes one; the
+  // placeholder stays on for the one moment it is now visible, after a select-all and delete.
   const text = loadCardText(state.key);
   state.title = text.title;
   state.note = text.note;
-  el("card-title-input").value = state.title;
+  el("card-title-input").value = cardTitleDraft(state.title, result.file?.name);
   el("card-title-input").placeholder = cardTitle(result.file?.name);
   el("card-note-input").value = state.note;
   syncNoteCount();
