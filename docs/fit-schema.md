@@ -74,6 +74,15 @@ Native lap fields (start time, elapsed, distance, avg/max speed) come free from 
 | 15 | `turn_count` | uint8 | count | laps | turns confirmed inside this lap (bear-aways excluded) |
 | 16 | `best_turn_score` | uint8 | % | — | best min/entry ratio among turns whose outcome **resolved** in this lap |
 
+> **Why Garmin Connect's feed card shows "-- Runs / -- longest":** that card reads native
+> `split`/`split_summary` messages (FIT 312/313) that only Garmin's own activity apps can
+> write — Connect IQ has no API for them, and GC deliberately ignores `:nativeNum`
+> (staff-confirmed). Every CIQ windsurf app dashes those slots, and Garmin's own Windsurf
+> profile does too in ~30% of real sessions (verified across the fixture corpus,
+> 2026-09-01). Our per-run data lives in the developer fields on the activity detail page.
+> The one improvable gap: `longest_flight_m` is bit-packed (field 56) and packed fields get
+> no GC summary row — unpacking it costs a 17th session field against the 16-field limit.
+
 ## SESSION message (written once at save) — **schema v2**: 16 fields / 50 bytes
 
 The binding constraint is the **16-field limit** (see the box at the top), not the 256 B
