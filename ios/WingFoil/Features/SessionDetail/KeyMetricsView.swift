@@ -11,7 +11,7 @@ import WingFoilKit
 ///
 /// Nothing is decided here: `KeyMetrics` resolves every string and the tally's three
 /// counts, so this file is layout and the ladder's inks and nothing else. Same four rows,
-/// same order — and the same swim caption under them — on the web (`web/js/render.js`).
+/// same order, on the web (`web/js/render.js`).
 struct KeyMetricsView: View {
     let metrics: KeyMetrics
 
@@ -37,18 +37,6 @@ struct KeyMetricsView: View {
                 HStack(alignment: .top, spacing: 12) {
                     ForEach(metrics.rates) { cell($0) }
                 }
-            }
-
-            // The swim, under WPH, which is the cell that counted the falls it came out of
-            // (docs/presentation.md, "The swim"). Caption type and no number of its own in
-            // the big row: it is an aside a rider finds once and grins at, not a fifth rate,
-            // and on most sessions it is simply not here.
-            if let note = metrics.swimNote {
-                Text(note)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(14)
