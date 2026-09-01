@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.9.1",
+  "engineVersion": "0.9.2",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -339,7 +339,10 @@
       "submerged": false,
       "windowS": 12.0,
       "truncated": false,
-      "ownedByTurn": 8
+      "ownedByTurn": 8,
+      "swimM": 52.4,
+      "swimStartTs": 477.0,
+      "swimEndTs": 541.0
     },
     {
       "flightIndex": 1,
@@ -353,7 +356,10 @@
       "submerged": false,
       "windowS": 12.0,
       "truncated": false,
-      "ownedByTurn": 9
+      "ownedByTurn": 9,
+      "swimM": 30.2,
+      "swimStartTs": 580.0,
+      "swimEndTs": 645.0
     }
   ],
   "records": {
@@ -603,6 +609,10 @@
     "turnsPerHour": 55.8,
     "jibesPerHour": 44.7,
     "wetPerHour": 11.2,
+    "swimDistanceM": 82.6,
+    "longestSwimM": 52.4,
+    "longestSwimStartTs": 477.0,
+    "longestSwimEndTs": 541.0,
     "windowRates": {
       "windowMin": 15.0,
       "bestJph": 44.7,

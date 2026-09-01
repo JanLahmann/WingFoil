@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.9.1",
+  "engineVersion": "0.9.2",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -1415,7 +1415,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 1,
@@ -1429,7 +1432,10 @@
       "submerged": false,
       "windowS": 11.0,
       "truncated": false,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": 44.9,
+      "swimStartTs": 216.0,
+      "swimEndTs": 303.0
     },
     {
       "flightIndex": 2,
@@ -1443,7 +1449,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 3,
@@ -1457,7 +1466,10 @@
       "submerged": false,
       "windowS": 6.0,
       "truncated": false,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": 67.5,
+      "swimStartTs": 361.0,
+      "swimEndTs": 449.0
     },
     {
       "flightIndex": 4,
@@ -1471,7 +1483,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 1
+      "ownedByTurn": 1,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 5,
@@ -1485,7 +1500,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 6,
@@ -1499,7 +1517,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 2
+      "ownedByTurn": 2,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 7,
@@ -1513,7 +1534,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 8,
@@ -1527,7 +1551,10 @@
       "submerged": false,
       "windowS": 5.0,
       "truncated": false,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": 35.2,
+      "swimStartTs": 835.0,
+      "swimEndTs": 886.0
     },
     {
       "flightIndex": 9,
@@ -1541,7 +1568,10 @@
       "submerged": false,
       "windowS": 11.0,
       "truncated": false,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 10,
@@ -1555,7 +1585,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 11,
@@ -1569,7 +1602,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 3
+      "ownedByTurn": 3,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 12,
@@ -1583,7 +1619,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 13,
@@ -1597,7 +1636,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 14,
@@ -1611,7 +1653,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 15,
@@ -1625,7 +1670,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 16,
@@ -1639,7 +1687,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 17,
@@ -1653,7 +1704,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 18,
@@ -1667,7 +1721,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 19,
@@ -1681,7 +1738,10 @@
       "submerged": false,
       "windowS": 5.0,
       "truncated": false,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 20,
@@ -1695,7 +1755,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 21,
@@ -1709,7 +1772,10 @@
       "submerged": false,
       "windowS": 9.0,
       "truncated": false,
-      "ownedByTurn": 6
+      "ownedByTurn": 6,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 22,
@@ -1723,7 +1789,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 23,
@@ -1737,7 +1806,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 24,
@@ -1751,7 +1823,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 25,
@@ -1765,7 +1840,10 @@
       "submerged": false,
       "windowS": 9.0,
       "truncated": false,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": 65.6,
+      "swimStartTs": 1691.0,
+      "swimEndTs": 1788.0
     },
     {
       "flightIndex": 26,
@@ -1779,7 +1857,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 27,
@@ -1793,7 +1874,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 28,
@@ -1807,7 +1891,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 29,
@@ -1821,7 +1908,10 @@
       "submerged": false,
       "windowS": 11.0,
       "truncated": false,
-      "ownedByTurn": 8
+      "ownedByTurn": 8,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 30,
@@ -1835,7 +1925,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 9
+      "ownedByTurn": 9,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 31,
@@ -1849,7 +1942,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 32,
@@ -1863,7 +1959,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 33,
@@ -1877,7 +1976,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 34,
@@ -1891,7 +1993,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 35,
@@ -1905,7 +2010,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 10
+      "ownedByTurn": 10,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 36,
@@ -1919,7 +2027,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 11
+      "ownedByTurn": 11,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 37,
@@ -1933,7 +2044,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 12
+      "ownedByTurn": 12,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 38,
@@ -1947,7 +2061,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 13
+      "ownedByTurn": 13,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 39,
@@ -1961,7 +2078,10 @@
       "submerged": false,
       "windowS": 3.0,
       "truncated": false,
-      "ownedByTurn": 14
+      "ownedByTurn": 14,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 40,
@@ -1975,7 +2095,10 @@
       "submerged": false,
       "windowS": 10.0,
       "truncated": false,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": 24.1,
+      "swimStartTs": 3803.0,
+      "swimEndTs": 3865.0
     },
     {
       "flightIndex": 41,
@@ -1989,7 +2112,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 42,
@@ -2003,7 +2129,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 43,
@@ -2017,7 +2146,10 @@
       "submerged": false,
       "windowS": 4.0,
       "truncated": false,
-      "ownedByTurn": 16
+      "ownedByTurn": 16,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 44,
@@ -2031,7 +2163,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 17
+      "ownedByTurn": 17,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 45,
@@ -2045,7 +2180,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 46,
@@ -2059,7 +2197,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 47,
@@ -2073,7 +2214,10 @@
       "submerged": false,
       "windowS": 9.0,
       "truncated": false,
-      "ownedByTurn": 18
+      "ownedByTurn": 18,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 48,
@@ -2087,7 +2231,10 @@
       "submerged": false,
       "windowS": 9.0,
       "truncated": false,
-      "ownedByTurn": 19
+      "ownedByTurn": 19,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 49,
@@ -2101,7 +2248,10 @@
       "submerged": false,
       "windowS": 11.0,
       "truncated": false,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": 59.0,
+      "swimStartTs": 4659.0,
+      "swimEndTs": 4740.0
     },
     {
       "flightIndex": 50,
@@ -2115,7 +2265,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 51,
@@ -2129,7 +2282,10 @@
       "submerged": false,
       "windowS": 3.0,
       "truncated": false,
-      "ownedByTurn": 23
+      "ownedByTurn": 23,
+      "swimM": 146.9,
+      "swimStartTs": 4923.0,
+      "swimEndTs": 5172.0
     },
     {
       "flightIndex": 52,
@@ -2143,7 +2299,10 @@
       "submerged": false,
       "windowS": 9.0,
       "truncated": false,
-      "ownedByTurn": 24
+      "ownedByTurn": 24,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 53,
@@ -2157,7 +2316,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 54,
@@ -2171,7 +2333,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 25
+      "ownedByTurn": 25,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 55,
@@ -2185,7 +2350,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 56,
@@ -2199,7 +2367,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 57,
@@ -2213,7 +2384,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 26
+      "ownedByTurn": 26,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 58,
@@ -2227,7 +2401,10 @@
       "submerged": false,
       "windowS": 4.0,
       "truncated": false,
-      "ownedByTurn": 27
+      "ownedByTurn": 27,
+      "swimM": 61.7,
+      "swimStartTs": 5641.0,
+      "swimEndTs": 5766.0
     },
     {
       "flightIndex": 59,
@@ -2241,7 +2418,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 60,
@@ -2255,7 +2435,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 61,
@@ -2269,7 +2452,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 62,
@@ -2283,7 +2469,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 63,
@@ -2297,7 +2486,10 @@
       "submerged": false,
       "windowS": 3.0,
       "truncated": false,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": 62.7,
+      "swimStartTs": 6079.0,
+      "swimEndTs": 6133.0
     },
     {
       "flightIndex": 64,
@@ -2311,7 +2503,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 65,
@@ -2325,7 +2520,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 31
+      "ownedByTurn": 31,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 66,
@@ -2339,7 +2537,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 67,
@@ -2353,7 +2554,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 32
+      "ownedByTurn": 32,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 68,
@@ -2367,7 +2571,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 69,
@@ -2381,7 +2588,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 70,
@@ -2395,7 +2605,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 34
+      "ownedByTurn": 34,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 71,
@@ -2409,7 +2622,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 35
+      "ownedByTurn": 35,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     },
     {
       "flightIndex": 72,
@@ -2423,7 +2639,10 @@
       "submerged": false,
       "windowS": 12.0,
       "truncated": false,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": 578.9,
+      "swimStartTs": 6816.0,
+      "swimEndTs": 7723.0
     },
     {
       "flightIndex": 73,
@@ -2437,7 +2656,10 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": null,
+      "swimM": null,
+      "swimStartTs": null,
+      "swimEndTs": null
     }
   ],
   "records": {
@@ -5041,6 +5263,10 @@
     "turnsPerHour": 16.7,
     "jibesPerHour": 13.4,
     "wetPerHour": 4.6,
+    "swimDistanceM": 1146.6,
+    "longestSwimM": 578.9,
+    "longestSwimStartTs": 6816.0,
+    "longestSwimEndTs": 7723.0,
     "windowRates": {
       "windowMin": 15.0,
       "bestJph": 24.0,

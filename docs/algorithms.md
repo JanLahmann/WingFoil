@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.8.2** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.9.2** (bump on any change that alters outputs; triggers phone re-analysis)
 
 ## Flight (foil) detection — hysteresis state machine
 
@@ -534,6 +534,50 @@ Pump corroboration carries over unchanged: accel promotes `glide_out` → `touch
 the speed channels also went marginal. At a flight end that test is near-vacuous (the flight
 ended *because* speed fell below `foilExitSpeed`), and that is intended — a rider who has to
 pump a burst out of it did not glide out by choice.
+
+### Swim distance — `flightEnds[].swimM` · `summary.swimDistanceM` · `longestSwimM` (engine ≥ 0.9.2)
+
+A `fell_in` end says the rider got wet. It never said **how far he then had to travel**, and
+the one number that looked like it might — `offFoilS` — cannot: it is measured over the
+*judging* window (`turnOutcomeWindow`, 60 s), which is the right length for a verdict and the
+wrong one for a swim. So a `fell_in` end gets a **second, uncapped walk** of the same off-foil
+run.
+
+| field | definition |
+|---|---|
+| `flightEnds[].swimStartTs` | first sample not flying at or after the flight end — the same sample the verdict's run opens on |
+| `flightEnds[].swimEndTs` | the sample foiling resumes; when it never does, the **last sample of the recording** |
+| `flightEnds[].swimM` | distance covered between the two, `null` on every outcome that is not `fell_in` |
+| `summary.swimDistanceM` | every swim totalled — turn-owned and straight-line alike, the channel `wetPerHour` counts |
+| `summary.longestSwimM` | the longest single swim, with `longestSwimStartTs` / `longestSwimEndTs` |
+
+Four choices are load-bearing:
+
+- **Uncapped, and that is the end-of-session case.** The run is walked to recovery or to the
+  end of the track (`off_foil_run` already clamps there; what the case needed was for no cap
+  to cut it short first). A rider who loses the foil for good 200 m out swims the longest
+  distance of his afternoon *after* the part any window was watching — 2026-09-01 pm read
+  **48 m of 1847**, because its last flight ended at 735 s and the recording ran to 2890 s.
+- **Measured on `speed` = min(Doppler, positional), not on either channel alone.** Both
+  over-read a rider who is not being carried — wrist Doppler picks up his swim strokes,
+  positional picks up GPS jitter — so the lower of the two is a distance he *certainly*
+  covered. It is the same argument the stop measure and `flying_mask` already make, and using
+  one channel for the verdict and a looser one for the number it carries would be two
+  measurements of one swim. On the corpus the min channel comes in ≈ 12 % under the raw path
+  length (2026-08-29: 2022 m against 2275 m).
+- **`null`, not 0.0, on a glide-out or a touchdown.** A rider still making way did not swim
+  nowhere; he did not swim. `summary.swimDistanceM` on a session with no swims is a genuine
+  measured 0.0 — the ends were classified and none of them was one.
+- **A recording gap does not end a swim, and contributes nothing to it.** Flights hard-break
+  at gaps, so a swim spanning one reads as "still not flying" on both sides and is one swim;
+  the hole itself is skipped by the integral exactly as `elapsed` skips it. What is reported
+  is what was recorded, never what was interpolated across.
+
+Corpus, longest swim per fixture: 2026-08-02 am **579 m** · 2026-08-29 pm **385 m** ·
+2026-08-05 pm **339 m** · 2026-08-07 am **227 m** · 2026-07-31 pm **167 m** · 2026-08-04 pm
+**149 m** · 2026-08-03 pm **113 m**, and eight fixtures under 100 m — including the bundled
+2026-08-30 example at **47 m**. Presentation gates on that number
+(`docs/presentation.md`, "The swim").
 
 ## Session rates (phone, engine ≥ 0.6.0) — `durationS` · `avgSpeedKmh` · `turnsPerHour` · `jibesPerHour` · `wetPerHour` · `windowRates`
 
