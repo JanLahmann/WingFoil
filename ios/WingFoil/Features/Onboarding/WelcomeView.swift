@@ -194,19 +194,52 @@ struct WelcomeView: View {
     }
 }
 
-/// The screen's one graphic: a track with two flights on it and the three turn verdicts
-/// marked, in the presentation tokens themselves.
+/// The screen's one graphic: a session's track with its flights on it and the turn
+/// verdicts marked, in the presentation tokens themselves.
 ///
 /// It is the vocabulary rather than decoration — the same drawing the homepage carries as
 /// inline SVG (web/index.html, the hero motif), in the same 640 × 128 frame and with the
 /// same colours, so the two front doors show the same picture. Drawn rather than shipped as
-/// an image: at ~40 lines it costs less than an asset, and it follows the tokens if they
-/// move instead of quietly disagreeing with them.
+/// an image: it costs less than an asset, and it follows the tokens if they move instead of
+/// quietly disagreeing with them.
+///
+/// The shape is the bundled example session's — the reaches, their lengths, which end each
+/// jibe sits at, and where the fall and the swim after it come in the order all read out of
+/// `fixtures/sessions/ciq/2026-08-30-1407_nago-torbole-windsurfen_ciq.fit`; only the even
+/// spacing between the reaches is drawn by hand, because at true scale 240 m of reach inside
+/// 67 m of drift crosses into a knot. The loops are teardrops rather than U-turns: a jibe
+/// exits heading back up, so the exit cuts across the entry short of the tip, and that
+/// crossover is what makes the pattern read as wingfoil at all.
 private struct WelcomeTrackMotif: View {
 
     /// The web motif's viewBox. Keeping the coordinates identical is what makes the two
     /// renditions comparable at all — every number below is readable against the SVG.
     private static let box = CGSize(width: 640, height: 128)
+
+    // The generated geometry, verbatim from web/index.html's `<path d="…">` attributes —
+    // one table in three files (here, the homepage, web/tools/social_card.html), so a
+    // `grep` for any of these strings is the drift check. Regenerate all three together or
+    // not at all; hand-editing one of them is how the front doors start disagreeing.
+
+    /// The whole ride, off the foil.
+    private static let trackD = "M133 102L354 101Q364 101 374 101L562 104Q572 104 581 100L590 96Q598 92 605 98L607 100Q614 106 606 109L601 111Q592 116 583 112L541 96Q532 93 522 93L387 90Q377 90 367 90L192 87Q182 87 173 83L164 78Q156 75 149 80L147 82Q140 88 148 91L153 94Q162 98 171 94L213 78Q222 75 232 75L344 72Q354 71 364 72L517 75Q527 75 536 71L545 67Q553 63 559 68L562 70Q569 76 561 79L556 82Q547 86 537 82L496 67Q487 63 477 63L362 61Q352 61 342 60L188 57Q178 57 169 53L160 49Q152 45 145 51L143 53Q136 58 144 62L149 64Q158 68 167 65L209 49Q218 45 228 45L282 42Q292 42 302 42L397 45Q407 45 417 45L421 45Q431 45 421 43L361 32Q351 30 341 31L203 31Q193 31 183 31L68 28Q58 28 48 28L34 28"
+
+    /// …and the parts of it that were flown: the long flight that ends in the water, then
+    /// the reach home after the swim.
+    private static let foilDs = [
+        "M133 102L354 101Q364 101 374 101L562 104Q572 104 581 100L590 96Q598 92 605 98L607 100Q614 106 606 109L601 111Q592 116 583 112L541 96Q532 93 522 93L387 90Q377 90 367 90L192 87Q182 87 173 83L164 78Q156 75 149 80L147 82Q140 88 148 91L153 94Q162 98 171 94L213 78Q222 75 232 75L344 72Q354 71 364 72L517 75Q527 75 536 71L545 67Q553 63 559 68L562 70Q569 76 561 79L556 82Q547 86 537 82L496 67Q487 63 477 63L362 61Q352 61 342 60L188 57Q178 57 169 53L160 49Q152 45 145 51L143 53Q136 58 144 62L149 64Q158 68 167 65L209 49Q218 45 228 45L282 42Q292 42 302 42L397 45Q407 45 417 45L431 45",
+        "M351 30L203 31Q193 31 183 31L68 28Q58 28 48 28L34 28",
+    ]
+
+    /// The jibes carried, on the apex of the loop each one made.
+    private static let flew = [CGPoint(x: 598, y: 92), CGPoint(x: 152, y: 45)]
+    /// The touchdown. This session flew through every jibe it did not fall in, so this one
+    /// mark is the key's third verdict rather than a reading of the track.
+    private static let touchdown = CGPoint(x: 553, y: 63)
+    /// Where the long flight ended.
+    private static let fellIn = CGPoint(x: 431, y: 45)
+    /// Which way he went, set off the lines: (x, y, pointing left?).
+    private static let arrows: [(CGFloat, CGFloat, Bool)] = [(330, 113, false), (190, 20, true)]
 
     var body: some View {
         Canvas { context, size in
@@ -222,61 +255,96 @@ private struct WelcomeTrackMotif: View {
                 context.stroke(path.applying(transform), with: .color(color), style: style)
             }
 
-            // The whole ride, off the foil…
-            var track = Path()
-            track.move(to: CGPoint(x: 20, y: 100))
-            track.addLine(to: CGPoint(x: 120, y: 46))
-            track.addQuadCurve(to: CGPoint(x: 172, y: 44), control: CGPoint(x: 150, y: 32))
-            track.addLine(to: CGPoint(x: 268, y: 96))
-            track.addQuadCurve(to: CGPoint(x: 318, y: 96), control: CGPoint(x: 296, y: 110))
-            track.addLine(to: CGPoint(x: 414, y: 44))
-            track.addQuadCurve(to: CGPoint(x: 464, y: 42), control: CGPoint(x: 442, y: 30))
-            track.addLine(to: CGPoint(x: 560, y: 94))
-            track.addLine(to: CGPoint(x: 620, y: 74))
-            draw(track, DesignTokens.Phase.offFoil, width: 5)
-
-            // …and the parts of it that were flown, laid over the top.
-            var first = Path()
-            first.move(to: CGPoint(x: 20, y: 100))
-            first.addLine(to: CGPoint(x: 120, y: 46))
-            first.addQuadCurve(to: CGPoint(x: 172, y: 44), control: CGPoint(x: 150, y: 32))
-            first.addLine(to: CGPoint(x: 268, y: 96))
-            first.addQuadCurve(to: CGPoint(x: 305, y: 103), control: CGPoint(x: 296, y: 110))
-            var second = Path()
-            second.move(to: CGPoint(x: 340, y: 86))
-            second.addLine(to: CGPoint(x: 414, y: 44))
-            second.addQuadCurve(to: CGPoint(x: 452, y: 35), control: CGPoint(x: 442, y: 30))
-            var third = Path()
-            third.move(to: CGPoint(x: 566, y: 91))
-            third.addLine(to: CGPoint(x: 620, y: 74))
-            for flight in [first, second, third] {
-                draw(flight, DesignTokens.Phase.flying, width: 5)
+            draw(Self.path(Self.trackD), DesignTokens.Phase.offFoil, width: 3)
+            for d in Self.foilDs {
+                draw(Self.path(d), DesignTokens.Phase.flying, width: 5)
             }
 
-            // Flew through — a green disc on the apex of the first jibe.
-            let flew = Path(ellipseIn: CGRect(x: 156, y: 29, width: 14, height: 14))
-            context.fill(flew.applying(transform),
-                         with: .color(DesignTokens.Outcome.flew))
+            // Which way he went — off the line rather than on it, where a chevron inside a
+            // 5 pt stroke just reads as a nick in the paint.
+            for (x, y, left) in Self.arrows {
+                var chevron = Path()
+                let s: CGFloat = left ? -1 : 1
+                chevron.move(to: CGPoint(x: x - 4 * s, y: y - 5))
+                chevron.addLine(to: CGPoint(x: x + 2 * s, y: y))
+                chevron.addLine(to: CGPoint(x: x - 4 * s, y: y + 5))
+                draw(chevron, DesignTokens.Direction.ink.opacity(0.45), width: 2)
+            }
 
-            // Touched down — the amber triangle where the first flight ends.
-            var touchdown = Path()
-            touchdown.move(to: CGPoint(x: 305, y: 94))
-            touchdown.addLine(to: CGPoint(x: 313, y: 108))
-            touchdown.addLine(to: CGPoint(x: 297, y: 108))
-            touchdown.closeSubpath()
-            context.fill(touchdown.applying(transform),
+            // Flew through — a green disc on each jibe's apex.
+            for centre in Self.flew {
+                let disc = Path(ellipseIn: CGRect(x: centre.x - 7, y: centre.y - 7,
+                                                  width: 14, height: 14))
+                context.fill(disc.applying(transform),
+                             with: .color(DesignTokens.Outcome.flew))
+            }
+
+            // Touched down — the amber triangle.
+            var triangle = Path()
+            triangle.move(to: CGPoint(x: Self.touchdown.x, y: Self.touchdown.y - 7))
+            triangle.addLine(to: CGPoint(x: Self.touchdown.x + 7, y: Self.touchdown.y + 6))
+            triangle.addLine(to: CGPoint(x: Self.touchdown.x - 7, y: Self.touchdown.y + 6))
+            triangle.closeSubpath()
+            context.fill(triangle.applying(transform),
                          with: .color(DesignTokens.Outcome.touchdown))
 
-            // Fell in — the red cross where the second one does.
-            var fell = Path()
-            fell.move(to: CGPoint(x: 446, y: 29))
-            fell.addLine(to: CGPoint(x: 458, y: 41))
-            fell.move(to: CGPoint(x: 458, y: 29))
-            fell.addLine(to: CGPoint(x: 446, y: 41))
-            draw(fell, DesignTokens.Outcome.fellIn, width: 3.5)
+            // Fell in — the red cross where the long flight stops.
+            var cross = Path()
+            cross.move(to: CGPoint(x: Self.fellIn.x - 6, y: Self.fellIn.y - 6))
+            cross.addLine(to: CGPoint(x: Self.fellIn.x + 6, y: Self.fellIn.y + 6))
+            cross.move(to: CGPoint(x: Self.fellIn.x + 6, y: Self.fellIn.y - 6))
+            cross.addLine(to: CGPoint(x: Self.fellIn.x - 6, y: Self.fellIn.y + 6))
+            draw(cross, DesignTokens.Outcome.fellIn, width: 3.5)
         }
         .accessibilityElement()
-        .accessibilityLabel("A wingfoil track: two flights on the foil, a jibe flown "
-                            + "through, a touchdown, and a fall.")
+        .accessibilityLabel("A wingfoil session's track: five cross-wind reaches with "
+                            + "teardrop jibe loops at their ends, two jibes flown through, "
+                            + "one touched down, and a fall with a swim before the last "
+                            + "reach.")
+    }
+
+    /// The slice of SVG path data the motif uses — absolute `M x y`, `L x y`, `Q cx cy x y`
+    /// and nothing else. Reading the strings rather than transcribing them into Swift
+    /// literals is the point: the homepage, the share card and this screen then hold the
+    /// *same* characters, and no hand-copied number can go quietly out of step.
+    private static func path(_ d: String) -> Path {
+        var path = Path()
+        var numbers: [CGFloat] = []
+        var digits = ""
+        var command: Character = " "
+
+        func flush() {
+            if let value = Double(digits) { numbers.append(CGFloat(value)) }
+            digits = ""
+        }
+        func apply() {
+            switch (command, numbers.count) {
+            case ("M", 2):
+                path.move(to: CGPoint(x: numbers[0], y: numbers[1]))
+            case ("L", 2):
+                path.addLine(to: CGPoint(x: numbers[0], y: numbers[1]))
+            case ("Q", 4):
+                path.addQuadCurve(to: CGPoint(x: numbers[2], y: numbers[3]),
+                                  control: CGPoint(x: numbers[0], y: numbers[1]))
+            default:
+                break
+            }
+            numbers = []
+        }
+
+        for character in d {
+            if character.isNumber || character == "." {
+                digits.append(character)
+            } else if character == " " {
+                flush()
+            } else {
+                flush()
+                apply()
+                command = character
+            }
+        }
+        flush()
+        apply()
+        return path
     }
 }
