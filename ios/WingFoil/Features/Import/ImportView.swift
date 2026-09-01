@@ -53,9 +53,13 @@ struct ImportView: View {
                 } header: {
                     Text("Single sessions")
                 } footer: {
+                    // The picker above says FIT or ZIP, so the next question is why not
+                    // GPX — answered here rather than left to be discovered as a greyed-out
+                    // file in a document picker.
                     Text("Garmin Connect → activity → \"Export Original\" gives one FIT; "
-                         + "AirDrop and the share sheet land here too. "
-                         + "GPX isn't supported yet.")
+                         + "AirDrop and the share sheet land here too. GPX is not supported "
+                         + "— the analysis needs the recording's speed channel, which a GPX "
+                         + "export does not carry.")
                 }
 
                 if !log.isEmpty {
@@ -150,7 +154,9 @@ private struct ImportLogRowView: View {
 
     private var summary: String {
         var parts = ["\(entry.found) found", "\(entry.imported) imported"]
-        if entry.duplicates > 0 { parts.append("\(entry.duplicates) duplicate") }
+        if entry.duplicates > 0 {
+            parts.append("\(entry.duplicates) duplicate\(entry.duplicates == 1 ? "" : "s")")
+        }
         if entry.skipped > 0 { parts.append("\(entry.skipped) skipped") }
         if entry.failed > 0 { parts.append("\(entry.failed) failed") }
         return parts.joined(separator: " · ")

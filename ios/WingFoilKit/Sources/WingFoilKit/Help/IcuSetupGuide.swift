@@ -33,12 +33,19 @@ public enum IcuSetupGuide {
     public static let intervalsURL = URL(string: "https://intervals.icu")!
 
     /// Why the detour through intervals.icu exists at all — Garmin has no open API for a
-    /// personal app, so this is the supported way to get your own FITs onto the phone.
+    /// personal app, so this is the *automatic* way to get your own FITs onto the phone.
+    ///
+    /// It used to open "CleanJibe reads your sessions through intervals.icu", which is not
+    /// true: a shared `.fit` and a Garmin export ZIP both work, and a rider who does not
+    /// want a third-party account read that sentence as a wall. The alternatives are named
+    /// here rather than left to a troubleshooting item at the bottom of a different topic.
     public static let rationale =
-        "CleanJibe reads your sessions through intervals.icu. Garmin has no open API for a "
-        + "personal app, so intervals.icu is the bridge: it receives every activity from "
-        + "Garmin Connect automatically and hands CleanJibe the original recording. It is "
-        + "free, it takes about five minutes to set up, and you only do it once."
+        "The easiest way to get your sessions into CleanJibe is intervals.icu. Garmin has no "
+        + "open API for a personal app, so intervals.icu is the bridge: it receives every "
+        + "activity from Garmin Connect automatically and hands CleanJibe the original "
+        + "recording. It is free, it takes about five minutes to set up, and you only do it "
+        + "once. You can also skip it entirely and open a .fit file by hand — from Files, "
+        + "Mail, a message, or a Garmin export ZIP."
 
     /// The same point in one breath, for the setup card — where the four steps below it
     /// are what the reader is actually there for.
