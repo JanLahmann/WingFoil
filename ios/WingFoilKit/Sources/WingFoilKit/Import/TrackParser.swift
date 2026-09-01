@@ -8,6 +8,11 @@ import Foundation
 public enum TrackFormat: String, Sendable, CaseIterable {
     case fit
     case gpx
+    /// The CleanJibe watch container (`docs/watch-session-schema.md`) — what the watchOS app
+    /// hands the phone over `WCSession.transferFile`. Named for the extension it is stored
+    /// under rather than for the watch, because like the other two this is a *format* and the
+    /// pipeline past this point does not know what wrote it.
+    case watch = "cjw"
 
     /// The extension the archive stores this format under.
     public var fileExtension: String { rawValue }
@@ -24,15 +29,19 @@ public enum TrackFormat: String, Sendable, CaseIterable {
 /// Mirrors `parse_track` in lab/src/wingfoil_lab/parse.py.
 public enum TrackParser {
 
-    /// FIT until the bytes say GPX. The FIT signature (`.FIT` at byte 8) is the stronger
-    /// test, but a GPX's leading `<` is unambiguous and cheaper, so it goes first.
+    /// FIT until the bytes say otherwise. The FIT signature (`.FIT` at byte 8) is the
+    /// stronger test, but the other two announce themselves in their first four bytes —
+    /// `CJWS` for a watch container, a leading `<` for a GPX — so both go first and FIT
+    /// stays the fallback it has always been.
     public static func format(_ data: Data) -> TrackFormat {
-        GpxSessionParser.isGpx(data) ? .gpx : .fit
+        if WatchSessionContainer.isContainer(data) { return .watch }
+        return GpxSessionParser.isGpx(data) ? .gpx : .fit
     }
 
     public static func parse(data: Data) throws -> RawTrack {
         switch format(data) {
         case .gpx: try GpxSessionParser.parse(data: data)
+        case .watch: try WatchSessionParser.parse(data: data)
         case .fit: try FitSessionParser.parse(data: data)
         }
     }

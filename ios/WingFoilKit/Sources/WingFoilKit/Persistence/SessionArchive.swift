@@ -58,13 +58,15 @@ public struct SessionArchive: Sendable {
     /// stranger sees. A `.gpx` written under a `.fit` name would be a small lie that
     /// eventually reaches somebody else's mailbox.
     ///
-    /// A directory holds exactly one of the two, so the lookup prefers whatever is on
+    /// A directory holds exactly one original, so the lookup returns whichever is on
     /// disk and falls back to `.fit` — which is what every session archived before 0.9.0
     /// is, and what a caller asking for the path of a session it is about to write means.
     public func originalURL(for id: String) -> URL {
         let dir = directory(for: id)
-        let gpx = dir.appendingPathComponent("original.gpx")
-        if FileManager.default.fileExists(atPath: gpx.path) { return gpx }
+        for format in TrackFormat.allCases where format != .fit {
+            let candidate = dir.appendingPathComponent("original.\(format.fileExtension)")
+            if FileManager.default.fileExists(atPath: candidate.path) { return candidate }
+        }
         return dir.appendingPathComponent("original.fit")
     }
 

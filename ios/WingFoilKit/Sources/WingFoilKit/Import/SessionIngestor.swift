@@ -14,7 +14,33 @@ public enum ImportSource: String, Sendable, CaseIterable {
     case example
     /// The watch's BLE card (phase 5, `CompanionSummary`). The only source that carries
     /// no FIT, so the only one that can leave a row `isProvisional`.
+    ///
+    /// "Watch" unqualified means **Garmin** throughout this app, which predates the Apple
+    /// Watch recorder by four phases; `appleWatch` below is the other one, deliberately
+    /// spelled out.
     case watch
+    /// A `.cjw` container handed over by the CleanJibe watchOS app
+    /// (docs/watch-session-schema.md). Distinct from `.watch` because the two are not the
+    /// same event: that one is a Garmin summary card with no recording behind it, this one
+    /// is a complete recording that arrived without ever touching an account, a cable or
+    /// anybody's cloud.
+    ///
+    /// Read by `SessionDisplay.sourceClassNote` (a watch session is class (b) but *does*
+    /// have an accelerometer, so the standard class-(b) sentence would understate it) and by
+    /// `SessionStore.writeNewSessionsToHealth` (the watch already filed this workout with
+    /// Health itself, live, with the ring credit the phone's after-the-fact stub cannot give).
+    case appleWatch = "applewatch"
+
+    /// Whether a merged `session.importSource` names this source.
+    ///
+    /// The column is a `+`-joined set (`"applewatch+icu"` once a sync has seen the same
+    /// session), so membership is a split-and-search rather than a comparison — and
+    /// emphatically not a substring test, which would have `.watch` matching `"applewatch"`
+    /// and quietly conflating a Garmin BLE card with an Apple Watch recording.
+    public func isNamed(in importSource: String?) -> Bool {
+        guard let importSource else { return false }
+        return importSource.split(separator: "+").contains(Substring(rawValue))
+    }
 }
 
 public enum IngestOutcome: Sendable {
