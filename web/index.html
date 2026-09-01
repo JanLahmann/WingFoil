@@ -40,6 +40,25 @@
 <meta name="twitter:description" content="Drop a .fit file in your browser and get the session back: foil time, flights, speed records, and a verdict on every jibe. Free, no account, nothing uploaded.">
 <meta name="twitter:image" content="https://cleanjibe.org/social-card.png">
 <meta name="twitter:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
+
+<!-- Usage analytics: umami, cloud-hosted, cookieless. What it records is that a page was
+     opened, from roughly where and on roughly what — no cookie, no fingerprint, no
+     identifier that survives the visit, so there is nothing to consent to and nothing to
+     opt out of. It does NOT see a rider's session: the .fit file is read inside the
+     analyzer's own tab and still never leaves the device, which is why "the file is never
+     uploaded" is exactly as true after this line as before it. Said out loud in the footer
+     rather than buried here.
+
+     `data-domains` pins it to the production hostname, so a local `python3 -m http.server`
+     and every preview build stay silent — a developer's reload must never land in the
+     numbers. The website-id is shared with the fun-with-quantum family of sites (that Umami
+     Cloud plan is at its website limit); the dashboard separates them by hostname, so
+     cleanjibe.org still reads as its own site.
+
+     External and `defer`, and deliberately NOT in the service worker's precache: nothing on
+     any page calls into it, so an offline visit simply fails the request and renders
+     whole. -->
+<script defer src="https://cloud.umami.is/script.js" data-website-id="97f347ac-e7ba-4be3-b26f-ab4b328bdbf2" data-domains="cleanjibe.org"></script>
 </head>
 <body class="home">
 
@@ -60,13 +79,38 @@
 <main>
 
   <!-- ------------------------------------------------------------------ hero -->
+  <!-- Two halves once there is room for two: the argument on the left, and on the right the
+       thing the argument produces. The drawing that used to sit here was a diagram of what
+       CleanJibe measures; the share card is an actual session that CleanJibe measured, made
+       by the free analyzer in a browser, and it carries its own way in — a QR that a phone
+       camera opens. A stranger now sees the OUTPUT before the prose, which is the order they
+       would meet it in the wild anyway: somebody posts a card, they scan it, they land here.
+       The motif did not go away — it moved to "What it counts", which is where its key was
+       always doing its real work. -->
   <section class="hero">
+    <div class="hero-copy">
     <!-- The hook is the free thing that works in ten seconds, not the architecture. A
          stranger arrives holding (at most) a .fit file and one question; the headline asks
          it back, and the first CTA answers it without an install, an account or a watch.
          "Read the source" moved to the footer, where the two people who want it will find
          it: it was competing with the only button that matters. -->
-    <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Free browser analyzer · Garmin watch app · iPhone app · open source</p>
+    <!-- The mark at a size you can actually see it, beside the eyebrow rather than above
+         the headline: the topbar's 26 px tile is navigation furniture and reads as a
+         favicon, and this page had no brand presence of its own between it and the footer.
+         It sits on the eyebrow's line so it costs no vertical space in the fold, and it is
+         the same background-image rule as `.mark` (one artwork, one path, three sizes), so
+         it can never drift from the icon the installed app shows. Decorative: the wordmark
+         is three centimetres above it in the topbar and the H1 is under it, so an
+         alternative text here would only be read out twice. -->
+    <div class="hero-brand">
+      <span class="hero-mark" aria-hidden="true"></span>
+      <!-- The four items are held together with non-breaking spaces so the line can only
+           break at a "·". Sharing its row with an 84 px tile leaves this line too narrow to
+           fit at 1280, and left to itself it broke inside "OPEN SOURCE" — a list that
+           breaks mid-item reads as a mistake, one that breaks between items reads as a
+           list. -->
+      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Free&nbsp;browser&nbsp;analyzer · Garmin&nbsp;watch&nbsp;app · iPhone&nbsp;app · open&nbsp;source</p>
+    </div>
     <h1>Did you fly through that jibe?</h1>
     <p class="lede">
       CleanJibe reads a wingfoil session off your watch and tells you what actually happened:
@@ -87,87 +131,44 @@
       <a class="btn ghost" href="app/#example">See an example session</a>
       <span class="cta-note">Free. No account. Runs in your browser — the file is never uploaded.</span>
     </p>
-
-    <!-- The motif is the page's only graphic, and it is the vocabulary rather than
-         decoration: an off-foil track with the flights drawn on it and the three turn
-         outcomes marked in the presentation tokens themselves (design/tokens.json —
-         green disc flew, amber triangle touched down, red cross fell in), exactly as the
-         apps draw them. Inline SVG, ~2 KB, no request, no image to scale badly.
-
-         The SHAPE is the bundled example session's, not an invention:
-         fixtures/sessions/ciq/2026-08-30-1407_nago-torbole-windsurfen_ciq.fit, rotated so
-         its reaches lie across the frame. What the drawing takes from the file is
-         everything that carries meaning — five cross-wind reaches, how long each one is,
-         which end its jibe sits at, and where in the order the fall and the swim after it
-         come. What it draws by hand is the spacing: laid out at true scale the reaches
-         cross into a knot, because 240 m of reach inside 67 m of drift is unreadable at
-         5:1.
-
-         Every reach RISES in the direction it is sailed, and the session ladders upwind
-         across the frame. That is the one thing the first drawing got wrong: it stacked the
-         reaches on even horizontal bands and let the climb happen in the jibes, which is
-         not what wingfoiling looks like — you gain upwind along the reach, not in the turn.
-         The angle is 4.3 degrees, and that is the frame's ceiling rather than a taste: the
-         climb a ladder shows is (total distance sailed) x tan(angle), so in a 640x128 box
-         the whole ride has 108 units of height to spend and every unit of reach costs some
-         of it. Everything that could be squeezed has been — the drawing starts 3 lower and
-         ends 3 higher, the two short reaches are a third shorter, the jibe loops gain 3
-         across a turn instead of 4 and dip 12 instead of 15, and the swim drifts 11 — which
-         leaves 85 for the six reaches over 1131 of sailing: 4.30 degrees. Steeper than that
-         and the last reach leaves the top of the box. A real 10-15 degree reach needs a
-         frame nearer square than 5:1.
-
-         The jibe is a TEARDROP, not a U-turn. You bear away, carve, and come out heading
-         back up, so the exit cuts across the entry a short way back from the tip — every
-         turn in that file does it. The crossover is the thing that makes the pattern read
-         "wingfoil" rather than "boat" or "snake", so the motif exaggerates it enough to
-         survive at 190 px wide.
-
-         The one mark the drawing places rather than reads is the amber triangle: this
-         session flew through every jibe it did not fall in, and the motif has to carry all
-         three verdicts because it is also the key below it. -->
-    <div class="motif">
-      <!-- The colours come from classes in css/home.css rather than from `stroke="var(…)"`:
-           a custom property in an SVG *presentation attribute* is not reliably honoured,
-           whereas the same property applied by a stylesheet rule always is.
-
-           The three path strings below are generated, and the iOS welcome screen
-           (ios/WingFoil/Features/Onboarding/WelcomeView.swift) and the share card
-           (web/tools/social_card.html) carry the same strings character for character —
-           one table, three renditions, so `grep` catches any drift. -->
-      <svg viewBox="0 0 640 128" role="img" aria-label="A wingfoil session's track: five cross-wind reaches with teardrop jibe loops at their ends, two jibes flown through, one touched down, and a fall with a swim before the last reach.">
-        <!-- the whole ride, off foil -->
-        <path class="m-track" d="M24 118L243 102L264 100Q267 100 269 101Q271 102 271 104Q272 105 272 107Q271 110 269 111Q267 112 265 112Q262 112 260 111L241 100Q236 97 231 97L185 94L164 92Q161 92 159 93Q157 94 157 96Q156 97 156 99Q157 102 159 103Q161 104 163 104Q166 104 168 103L187 92Q192 89 197 89L415 73L436 71Q439 71 441 72Q443 73 443 75Q444 76 444 78Q443 81 441 82Q439 83 437 83Q434 83 432 82L413 71Q408 68 403 68L357 65L336 63Q333 63 331 64Q329 65 329 67Q328 68 328 70Q329 73 331 74Q333 75 335 75Q338 75 340 74L359 63Q364 60 369 60L608 42Q616 41 611 39L563 33Q553 32 543 31L264 10"/>
-
-        <!-- the long flight: four reaches, four jibes carried, and then the water -->
-        <path class="m-foil" d="M24 118L243 102L264 100Q267 100 269 101Q271 102 271 104Q272 105 272 107Q271 110 269 111Q267 112 265 112Q262 112 260 111L241 100Q236 97 231 97L185 94L164 92Q161 92 159 93Q157 94 157 96Q156 97 156 99Q157 102 159 103Q161 104 163 104Q166 104 168 103L187 92Q192 89 197 89L415 73L436 71Q439 71 441 72Q443 73 443 75Q444 76 444 78Q443 81 441 82Q439 83 437 83Q434 83 432 82L413 71Q408 68 403 68L357 65L336 63Q333 63 331 64Q329 65 329 67Q328 68 328 70Q329 73 331 74Q333 75 335 75Q338 75 340 74L359 63Q364 60 369 60L608 42"/>
-        <!-- up again after the swim, and this reach runs the frame out -->
-        <path class="m-foil" d="M543 31L264 10"/>
-
-        <!-- which way he went — set off the lines rather than on them, where a 2 px chevron
-             inside a 5 px stroke just reads as a nick in the paint -->
-        <g class="m-dir">
-          <path d="M-4 -5 L2 0 L-4 5" transform="translate(150,120)"/>
-          <path d="M-4 -5 L2 0 L-4 5" transform="translate(450,12) rotate(180)"/>
-        </g>
-
-        <!-- flew through -->
-        <circle class="m-flew" cx="264" cy="92" r="7"/>
-        <circle class="m-flew" cx="336" cy="55" r="7"/>
-        <!-- touched down -->
-        <path class="m-touch" d="M437 57 L444 70 L430 70 Z"/>
-        <!-- fell in -->
-        <g class="m-fell">
-          <path d="M602 36 L614 48"/><path d="M614 36 L602 48"/>
-        </g>
-      </svg>
-      <p class="motif-key">
-        <span class="k-foil"><i></i>on the foil</span>
-        <span class="k-flew"><i></i>flew through</span>
-        <span class="k-touch"><i></i>touched down</span>
-        <span class="k-fell"><i></i>fell in</span>
-      </p>
     </div>
+
+    <!-- The bundled example's own share card — the same session the phone shot further down
+         shows, which is why the two carry the same name — exported through the analyzer's
+         real share dialog (portrait, complete) at its full 1080x1350 and reduced to 440.
+         The only thing typed into it is the title; everything else is what the analysis
+         produced. Anyone can make this one: "see an example session", then Share card.
+         Rendered headlessly through js/sharecard.js, so it is the product's output rather
+         than a screenshot of it.
+
+         Above the fold now, so the three attributes that kept it cheap down the page are
+         inverted: `loading="eager"` and `fetchpriority="high"` instead of lazy, because it
+         is the largest-contentful paint and deferring it would leave the hero a hole.
+         `aspect-ratio` off the intrinsic 440x550 still reserves the box before the bytes
+         land, so nothing reflows underneath it.
+
+         It is never rendered WIDER than its 440 native pixels (420 at the top breakpoint),
+         and that cap is about the QR rather than about sharpness: the code is 33 modules
+         drawn one image pixel per module, so upscaling it past 1:1 is what makes a phone
+         camera hesitate. 420 keeps it decodable across a desk. -->
+    <figure class="hero-card" id="card">
+      <img src="img/share-card.png" width="440" height="550" loading="eager"
+           fetchpriority="high" decoding="async"
+           alt="What CleanJibe makes: a share card for the example session, titled Nago
+                Torbole Wingfoil, 30 August 2026. The whole track with every jibe marked,
+                green where it was flown through and red where it was not; then eight tiles
+                - 10:45 min, 2.6 km, 7.71 kn average, 13.47 kn best 2 s, 8 flew and 0 touched
+                down and 2 fell in of 10 jibes, best streaks 8 flew and 8 dry, 44.7 dry jibes
+                per hour, 11.2 swims per hour - and a footer carrying the CleanJibe mark, the
+                offer, and a QR code to cleanjibe.org.">
+      <figcaption>
+        <b>This is what comes out.</b>
+        One real session, read in a browser: every jibe judged, the numbers it actually did,
+        and a code back to here for whoever it lands in front of. Nothing left the device to
+        make it.
+      </figcaption>
+    </figure>
+
   </section>
 
   <!-- --------------------------------------------------------------- pieces -->
@@ -263,37 +264,17 @@
 
     </div>
 
-    <!-- The one thing all three pieces make, and the page had never shown one: two of the
-         cards above promise a "share card" and left a stranger to picture it.
-
-         It is the BUNDLED EXAMPLE's own card — the same session the phone shot beside it
-         shows, which is why the two carry the same name — exported through the analyzer's
-         real share dialog (portrait, complete) at its full 1080x1350 and reduced to 440 here.
-         The only thing typed into it is the title; everything else is what the analysis
-         produced. Anyone can make this one: "try the example session" inside the analyzer,
-         then Share card.
-
-         It sits after the row rather than inside it because it is the row's OUTPUT, not a
-         fourth piece — and because a 4:5 portrait in a row of squares would have to be
-         cropped to join it. Quantized and lazy like every other picture on the page, and
-         out of the service worker's precache for the same reason they are: below the fold. -->
-    <figure class="panel sharecard">
-      <img src="img/share-card.png" width="440" height="550" loading="lazy" decoding="async"
-           alt="A CleanJibe share card for the example session, titled Nago Torbole Wingfoil,
-                30 August 2026: the whole track with every jibe marked, green where it was
-                flown through and red where it was not; then eight tiles - 10:45 min, 2.6 km,
-                7.71 kn average, 13.47 kn best 2 s, 8 flew and 0 touched down and 2 fell in of
-                10 jibes, best streaks 8 flew and 8 dry, 44.7 dry jibes per hour, 11.2 swims
-                per hour - and a footer carrying the CleanJibe mark, the offer, and a QR code
-                to cleanjibe.org.">
-      <figcaption>
-        <b>And then you post it.</b>
-        Any session, from the watch, the phone or the browser, becomes one picture: the
-        track with every jibe judged, the numbers that session actually did, and — for
-        whoever it lands in front of — a code back to here. Nothing leaves your device to
-        make it.
-      </figcaption>
-    </figure>
+    <!-- The share card used to sit here, as the row's output under the row. It is the hero
+         now, so the picture is not repeated: one 99 KB image twice on one page buys nothing
+         and costs a stranger the download twice on a cold cache. What stays is the sentence
+         that connected it to the row, because "all three make the same card" is a claim
+         about the three pieces and the hero cannot make it from up there. -->
+    <p class="section-lede pieces-foot">
+      All three make <a href="#card">the card at the top of this page</a>: any session, from
+      the watch, the phone or the browser, becomes one picture — the track with every jibe
+      judged, the numbers that session actually did, and a code back to here for whoever it
+      lands in front of. Nothing leaves your device to make it.
+    </p>
   </section>
 
   <!-- ---------------------------------------------------------- what you need -->
@@ -342,6 +323,94 @@
       The same handful of numbers on the wrist, on the phone and on this site — so a session
       means the same thing wherever you read it.
     </p>
+
+    <!-- The motif came down from the hero to sit here, above the list it is the key to. It
+         was never decoration: it is a drawn sentence in the same vocabulary the eight
+         entries below define, and the four labels under it are the legend for every mark
+         the apps draw. In the hero it had to argue for the product; here it only has to
+         explain a word, which is the job it was always doing. The share card that replaced
+         it upstairs shows the same three verdicts on a real map — one picture of the idea,
+         one of the thing.
+
+         What it draws: an off-foil track with the flights drawn on it and the three turn
+         outcomes marked in the presentation tokens themselves (design/tokens.json —
+         green disc flew, amber triangle touched down, red cross fell in), exactly as the
+         apps draw them. Inline SVG, ~2 KB, no request, no image to scale badly.
+
+         The SHAPE is the bundled example session's, not an invention:
+         fixtures/sessions/ciq/2026-08-30-1407_nago-torbole-windsurfen_ciq.fit, rotated so
+         its reaches lie across the frame. What the drawing takes from the file is
+         everything that carries meaning — five cross-wind reaches, how long each one is,
+         which end its jibe sits at, and where in the order the fall and the swim after it
+         come. What it draws by hand is the spacing: laid out at true scale the reaches
+         cross into a knot, because 240 m of reach inside 67 m of drift is unreadable at
+         5:1.
+
+         Every reach RISES in the direction it is sailed, and the session ladders upwind
+         across the frame. That is the one thing the first drawing got wrong: it stacked the
+         reaches on even horizontal bands and let the climb happen in the jibes, which is
+         not what wingfoiling looks like — you gain upwind along the reach, not in the turn.
+         The angle is 4.3 degrees, and that is the frame's ceiling rather than a taste: the
+         climb a ladder shows is (total distance sailed) x tan(angle), so in a 640x128 box
+         the whole ride has 108 units of height to spend and every unit of reach costs some
+         of it. Everything that could be squeezed has been — the drawing starts 3 lower and
+         ends 3 higher, the two short reaches are a third shorter, the jibe loops gain 3
+         across a turn instead of 4 and dip 12 instead of 15, and the swim drifts 11 — which
+         leaves 85 for the six reaches over 1131 of sailing: 4.30 degrees. Steeper than that
+         and the last reach leaves the top of the box. A real 10-15 degree reach needs a
+         frame nearer square than 5:1.
+
+         The jibe is a TEARDROP, not a U-turn. You bear away, carve, and come out heading
+         back up, so the exit cuts across the entry a short way back from the tip — every
+         turn in that file does it. The crossover is the thing that makes the pattern read
+         "wingfoil" rather than "boat" or "snake", so the motif exaggerates it enough to
+         survive at 190 px wide.
+
+         The one mark the drawing places rather than reads is the amber triangle: this
+         session flew through every jibe it did not fall in, and the motif has to carry all
+         three verdicts because it is also the key below it. -->
+    <div class="motif">
+      <!-- The colours come from classes in css/home.css rather than from `stroke="var(…)"`:
+           a custom property in an SVG *presentation attribute* is not reliably honoured,
+           whereas the same property applied by a stylesheet rule always is.
+
+           The three path strings below are generated, and the iOS welcome screen
+           (ios/WingFoil/Features/Onboarding/WelcomeView.swift) and the share card
+           (web/tools/social_card.html) carry the same strings character for character —
+           one table, three renditions, so `grep` catches any drift. -->
+      <svg viewBox="0 0 640 128" role="img" aria-label="A wingfoil session's track: five cross-wind reaches with teardrop jibe loops at their ends, two jibes flown through, one touched down, and a fall with a swim before the last reach.">
+        <!-- the whole ride, off foil -->
+        <path class="m-track" d="M24 118L243 102L264 100Q267 100 269 101Q271 102 271 104Q272 105 272 107Q271 110 269 111Q267 112 265 112Q262 112 260 111L241 100Q236 97 231 97L185 94L164 92Q161 92 159 93Q157 94 157 96Q156 97 156 99Q157 102 159 103Q161 104 163 104Q166 104 168 103L187 92Q192 89 197 89L415 73L436 71Q439 71 441 72Q443 73 443 75Q444 76 444 78Q443 81 441 82Q439 83 437 83Q434 83 432 82L413 71Q408 68 403 68L357 65L336 63Q333 63 331 64Q329 65 329 67Q328 68 328 70Q329 73 331 74Q333 75 335 75Q338 75 340 74L359 63Q364 60 369 60L608 42Q616 41 611 39L563 33Q553 32 543 31L264 10"/>
+
+        <!-- the long flight: four reaches, four jibes carried, and then the water -->
+        <path class="m-foil" d="M24 118L243 102L264 100Q267 100 269 101Q271 102 271 104Q272 105 272 107Q271 110 269 111Q267 112 265 112Q262 112 260 111L241 100Q236 97 231 97L185 94L164 92Q161 92 159 93Q157 94 157 96Q156 97 156 99Q157 102 159 103Q161 104 163 104Q166 104 168 103L187 92Q192 89 197 89L415 73L436 71Q439 71 441 72Q443 73 443 75Q444 76 444 78Q443 81 441 82Q439 83 437 83Q434 83 432 82L413 71Q408 68 403 68L357 65L336 63Q333 63 331 64Q329 65 329 67Q328 68 328 70Q329 73 331 74Q333 75 335 75Q338 75 340 74L359 63Q364 60 369 60L608 42"/>
+        <!-- up again after the swim, and this reach runs the frame out -->
+        <path class="m-foil" d="M543 31L264 10"/>
+
+        <!-- which way he went — set off the lines rather than on them, where a 2 px chevron
+             inside a 5 px stroke just reads as a nick in the paint -->
+        <g class="m-dir">
+          <path d="M-4 -5 L2 0 L-4 5" transform="translate(150,120)"/>
+          <path d="M-4 -5 L2 0 L-4 5" transform="translate(450,12) rotate(180)"/>
+        </g>
+
+        <!-- flew through -->
+        <circle class="m-flew" cx="264" cy="92" r="7"/>
+        <circle class="m-flew" cx="336" cy="55" r="7"/>
+        <!-- touched down -->
+        <path class="m-touch" d="M437 57 L444 70 L430 70 Z"/>
+        <!-- fell in -->
+        <g class="m-fell">
+          <path d="M602 36 L614 48"/><path d="M614 36 L602 48"/>
+        </g>
+      </svg>
+      <p class="motif-key">
+        <span class="k-foil"><i></i>on the foil</span>
+        <span class="k-flew"><i></i>flew through</span>
+        <span class="k-touch"><i></i>touched down</span>
+        <span class="k-fell"><i></i>fell in</span>
+      </p>
+    </div>
     <dl class="terms">
       <div class="term">
         <dt>Foil&nbsp;%</dt>
@@ -397,7 +466,13 @@
         <h3>Your file stays yours</h3>
         <p>
           The analyzer has no server to upload to. Your recording is read, analyzed and drawn
-          inside your own browser tab: no account, no upload, no tracking.
+          inside your own browser tab: no account, no upload, nothing to sign up for.
+          <!-- This used to end "no tracking", which stopped being exactly true the day a
+               cookieless page counter went into the head. The sentence it is making —
+               nothing about your ride goes anywhere — is untouched, and the counter is
+               named in the footer rather than quietly excluded from a claim. -->
+          These pages count visits with a cookie-free page counter that never sees your
+          session; nothing about your ride goes anywhere.
         </p>
       </article>
       <article class="panel claim">
@@ -423,8 +498,20 @@
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">github.com/JanLahmann/WingFoil</a>
     (Apache-2.0; the CleanJibe name and mark are not part of the license)
     · <a href="invite/">Get the beta</a>
-    · Beta feedback and questions: <a href="mailto:jan@lahmann-online.de">jan@lahmann-online.de</a>
   </p>
+  <!-- Issue first, mail second, the same order /invite/ puts them in: an issue is a report
+       the next rider can read, a mail is one only the developer ever sees. -->
+  <p>
+    Beta feedback and questions:
+    <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">open an issue</a>
+    — or mail <a href="mailto:info@cleanjibe.org">info@cleanjibe.org</a>
+  </p>
+  <!-- The one measurement this site takes, said out loud. umami is cookieless and stores no
+       identifier, so there is no consent banner to show and nothing to opt out of; saying so
+       in a line is cheaper than a banner and more honest than silence. It does NOT weaken
+       the analyzer's promise one section up — the .fit file is read in the browser tab and
+       still never leaves the device. What umami sees is that a page was opened. -->
+  <p class="fineprint">Anonymous, cookie-free usage stats by umami.</p>
 </footer>
 
 </body>

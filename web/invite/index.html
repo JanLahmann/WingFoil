@@ -36,6 +36,13 @@
 <meta name="twitter:description" content="Both betas are open: the watch app from the Connect IQ store, the iPhone app from a public TestFlight link. Free, and nothing to request.">
 <meta name="twitter:image" content="https://cleanjibe.org/social-card.png">
 <meta name="twitter:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
+
+<!-- Usage analytics: umami, cloud-hosted and cookieless — it sees that a page was opened,
+     never who opened it, and it stores no identifier that survives the visit. It does not
+     touch a rider's data. `data-domains` pins it to the production hostname so local
+     servers and previews stay silent, and the script is external and deliberately NOT
+     precached, so an offline visit just renders without it. Full note in web/index.html. -->
+<script defer src="https://cloud.umami.is/script.js" data-website-id="97f347ac-e7ba-4be3-b26f-ab4b328bdbf2" data-domains="cleanjibe.org"></script>
 </head>
 <body class="home">
 
@@ -121,7 +128,7 @@
       a key entered in <em>Garmin Connect → Connect IQ → CleanJibe → Settings → &ldquo;Unlock
       key&rdquo;</em>. Version 0.9.4 drops the lock entirely and is waiting on Garmin's
       review. Until it clears, mail the code the watch shows to
-      <a href="mailto:jan@lahmann-online.de?subject=CleanJibe%20beta%20unlock%20key&amp;body=My%20request%20code%20is%3A%20">jan@lahmann-online.de</a>
+      <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20beta%20unlock%20key&amp;body=My%20request%20code%20is%3A%20">info@cleanjibe.org</a>
       and you get a key back — and if you already have one, keep it: existing keys go on
       working, on that watch, through every update.
     </p>
@@ -180,31 +187,37 @@
   <!-- --------------------------------------------------------------- feedback -->
   <!-- The page's second job, and the reason an open beta is worth running at all: a tester
        who hits something and has nowhere obvious to put it just uninstalls. Two doors, and
-       both of them go to the same person — mail for a sentence, an issue for anything that
-       wants a file, a screenshot or a thread. -->
+       both of them go to the same person.
+
+       An ISSUE FIRST, mail second — the order was the other way round and it was the wrong
+       one. Both land with one developer, but an issue lands somewhere a second tester can
+       read it, add to it, and see that it was answered; a mail lands in an inbox where the
+       reply is the only trace anyone else ever gets. Mail is still here, and still first
+       for anyone who does not have a GitHub account, which is most riders. -->
   <section class="home-section" id="feedback">
     <h2>It&rsquo;s a beta — tell us what&rsquo;s wrong and what&rsquo;s missing</h2>
     <p class="section-lede">
-      Every report lands with the one developer. A rough sentence beats a polished bug
-      report you never send, and &ldquo;this number looks wrong&rdquo; is a perfectly good
-      one.
+      Every report lands with the one developer. An issue is the best place for it; a mail
+      is fine too. A rough sentence beats a polished bug report you never send, and
+      &ldquo;this number looks wrong&rdquo; is a perfectly good one.
     </p>
     <div class="claims">
       <article class="panel claim">
-        <h3>Mail</h3>
+        <h3>A GitHub issue — best</h3>
         <p>
-          <a href="mailto:jan@lahmann-online.de?subject=CleanJibe%20beta%20feedback">jan@lahmann-online.de</a>
-          — the fastest door. What you rode, what the app said, and what you expected it to
-          say. If a session was read wrong, attach the <code>.fit</code> file: with the file
-          the detection can be re-run and fixed, without it there is only guesswork.
+          <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">github.com/JanLahmann/WingFoil/issues</a>
+          — the preferred door. It takes a screenshot or a <code>.fit</code> file, it holds a
+          thread, and it stays visible to the next rider who hits the same thing instead of
+          disappearing into one inbox.
         </p>
       </article>
       <article class="panel claim">
-        <h3>GitHub issues</h3>
+        <h3>Mail — also fine</h3>
         <p>
-          <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">github.com/JanLahmann/WingFoil/issues</a>
-          — better for anything with a screenshot, a file or a discussion in it, and it
-          stays visible instead of ending up in one inbox.
+          <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20beta%20feedback">info@cleanjibe.org</a>
+          — no account needed. What you rode, what the app said, and what you expected it to
+          say. If a session was read wrong, attach the <code>.fit</code> file: with the file
+          the detection can be re-run and fixed, without it there is only guesswork.
         </p>
       </article>
       <article class="panel claim">
@@ -216,6 +229,16 @@
         </p>
       </article>
     </div>
+    <!-- Both stores have a report button, both of them reach the same developer, and a
+         page that only listed its own two doors would be quietly telling testers those
+         buttons go nowhere. They do not. -->
+    <p class="note">
+      The stores&rsquo; own channels reach us too: in <strong>TestFlight</strong>, take a
+      screenshot inside the app and send it — the built-in feedback form arrives here with
+      the build and the device attached; on the Connect IQ store, <strong>Contact
+      Developer</strong> on either listing does the same. Handy on the beach; an issue is
+      still easier to answer.
+    </p>
   </section>
 
   <!-- ---------------------------------------------------------------- no beta -->
@@ -242,8 +265,10 @@
       <article class="panel claim">
         <h3>Questions before you install</h3>
         <p>
-          Mail <a href="mailto:jan@lahmann-online.de">jan@lahmann-online.de</a>, or read the
-          code and the detection thresholds first:
+          Ask in an
+          <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">issue</a>
+          — or mail <a href="mailto:info@cleanjibe.org">info@cleanjibe.org</a> if you would
+          rather not. The code and the detection thresholds are readable first, either way:
           <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">github.com/JanLahmann/WingFoil</a>.
         </p>
       </article>
@@ -257,7 +282,8 @@
   <p>
     <a href="../">About CleanJibe</a> ·
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">github.com/JanLahmann/WingFoil</a>
-    · Beta feedback and questions: <a href="mailto:jan@lahmann-online.de">jan@lahmann-online.de</a>
+    · Beta feedback: <a href="#feedback">open an issue</a>, or mail
+    <a href="mailto:info@cleanjibe.org">info@cleanjibe.org</a>
   </p>
 </footer>
 
