@@ -269,10 +269,11 @@ targets:
   # about a session, and the MVP has nothing to claim that the phone does not say better.
   #
   # DEPLOYMENT TARGET 11.0. Every Apple Watch Apple currently sells — Series 10 and 11,
-  # Ultra 2 and 3, SE 3 — shipped on watchOS 11 or later, so this costs no supported device
-  # and buys back two generations of watches riders already own. Nothing in the recorder
-  # needs a newer API: `@Observable` is watchOS 10, `HKLiveWorkoutBuilder` is watchOS 5, and
-  # `enableWaterLock()` is watchOS 4.
+  # Ultra 2 and 3, SE 3 — runs watchOS 11 or later (Ultra 2 shipped on 10 and updates past
+  # it), so this costs no watch on sale today and buys back two generations riders already
+  # own. Nothing in the recorder needs a newer API: `@Observable` is watchOS 10,
+  # `HKLiveWorkoutBuilder` is watchOS 5, and `enableWaterLock()` is watchOS 4. Building
+  # against the 26.5 SDK, so raising it later is a one-line change, not a port.
   WingFoilWatch:
     type: application
     platform: watchOS
