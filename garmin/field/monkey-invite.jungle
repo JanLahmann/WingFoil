@@ -10,7 +10,7 @@ project.manifest = manifest-invite.xml
 #
 # The gate itself is the device app's file, compiled in verbatim (see field/monkey.jungle for
 # why it is the single LockGate.mc and not the whole ../source/lock directory).
-base.sourcePath = source;tests;../source/lock/LockGate.mc;../gen
+base.sourcePath = source;tests;../source/lock/LockGate.mc;../source-nopepper
 base.barrelPath = ../barrel/WingFoilCore/barrel.jungle
 base.resourcePath = $(base.resourcePath);resources-invite
 

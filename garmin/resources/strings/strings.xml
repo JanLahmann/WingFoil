@@ -1,7 +1,7 @@
 <strings>
     <string id="AppName">CleanJibe</string>
     <string id="AppNameBeta">CleanJibe Beta</string>
-    <string id="AppNameInvite">CleanJibe - Invite Beta</string>
+    <string id="AppNameInvite">CleanJibe Beta</string>
 
     <!-- settings titles -->
     <string id="SetFoilEntry">Foil entry speed (km/h)</string>

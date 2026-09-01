@@ -7,7 +7,7 @@ project.manifest = manifest-invite.xml
 #   resources-invite the `unlockKey` GCM setting the tester types the key into
 # and NOT source-nopepper/, whose all-zero pepper disables the gate in every other build.
 # Exactly one of the two supplies module UnlockPepper, so there is never a duplicate symbol.
-base.sourcePath = source;tests;gen
+base.sourcePath = source;tests;source-nopepper
 base.barrelPath = barrel/WingFoilCore/barrel.jungle
 base.resourcePath = $(base.resourcePath);resources-invite
 
