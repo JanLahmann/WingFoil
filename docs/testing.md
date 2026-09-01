@@ -349,6 +349,33 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      through GRDB asserting that deleting writes a tombstone, that restoring forgets it, and
      that the bundled example gets none — it is not the rider's session and no sync was ever
      going to bring it back.
+   - `LibraryBackupTests` — the library leaves the phone in one zip and comes back into a
+     *different* store, with its own archive root, because "it worked where it was written"
+     is the one thing a backup may not be (ADR-015). The round trip builds a real library
+     from two corpus FITs — one renamed and captioned, one credited to a friend, a wing and
+     a board linked, a spot named by hand, one session deliberately deleted — packs it,
+     unpacks it into an empty store and asserts the columns nothing can re-derive:
+     `customTitle`, `shareNote`, `rider`, the unioned `importSource`, the UTC offset and its
+     provenance, the gear combo by name, the spot's rider-given name, the tombstone and its
+     title — plus that the recording came back **byte for byte** and was analysed by *this*
+     build's engine. Then the four rules that decide whether it is safe to run twice, or on
+     a phone in use: **idempotency** (a second restore reports nothing and the rows, gear,
+     spots and tombstones compare equal, object for object); **never overwrite a newer local
+     edit** (a locally-renamed session keeps its name and gains only the caption it never
+     had; a locally-chosen wing survives while the empty board slot is filled); **a session
+     deleted since the backup stays deleted** (a live tombstone is the newer instruction);
+     **a row with no recording is counted in the manifest and skipped on the way in**
+     (a provisional watch card has nothing to re-ingest, and a session row invented from
+     summary columns is the blind copy this design avoids); and **a future schema is
+     refused** with the sentence the rider reads, leaving no rows,
+     no archive directories and no import-log entry behind. An **older** backup is the
+     ordinary case and gets its own test: a hand-built schema-v6 database, packed with a
+     manifest that says 6, restores through the migrator — the v9 columns come back nil
+     rather than invented, and the offset v6 could not store is re-read from the recording.
+     Plus the pure rules on their own — the size warning's 200 MB threshold and its
+     accelerometer sentence, the provenance union, `example` winning the primary-source
+     pick, gear's case-insensitive natural key, and `AppDatabase.schemaVersion` pinned to
+     the migration list so the manifest's number cannot drift from the schema it describes.
    - `ShareTextTests` — the message that travels with a shared file (`ShareText`). Every one
      of the three leads with where and when, off the share card's own `dateLine`, because the
      receiver is usually the friend who was on the water at the same time and could not
