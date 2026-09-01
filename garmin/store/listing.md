@@ -74,8 +74,7 @@ Note: Garmin keeps your stored page settings on update - existing installs can p
 ## Data field — `CleanJibe Field - Invite Beta`
 
 * Store page: <https://apps.garmin.com/apps/8dad33d4-e367-45a6-a4bb-9647fd6b5402>
-* Type: data field · Version **0.9.5** · first submitted 2026-08-13, current version released 2026-08-31
-  (0.9.4 and 0.9.5 are prepared here; the upload is the coordinator's)
+* Type: data field · Version **0.9.5** · first submitted 2026-08-13, 0.9.5 published 2026-09-01
 * Permissions: FitContributor
 * Devices (`garmin/field/manifest-invite.xml`): fenix 8 (43 mm, 47 mm), fenix 8 Solar
   (47 mm, 51 mm), fenix 8 Pro (47 mm), fenix 7 / 7S / 7X, fenix 7 Pro / 7 Pro (no WiFi) /
@@ -84,39 +83,28 @@ Note: Garmin keeps your stored page settings on update - existing installs can p
 ### Description (live text)
 
 ```
-Wingfoil metrics as a DATA FIELD, for riders who want to keep recording with a native Garmin activity profile - invite-only beta.
+Wingfoil metrics as a DATA FIELD inside a native Garmin activity profile — open beta, free, no key and no account.
 
-Add it to any activity profile (Windsurf is the one wingfoilers usually use) and the field shows live foil state, foil time and percentage, flight count and flight timer, the last turn's outcome and score, and the tack/jibe tally. Everything it computes is also written into the FIT file as developer fields, so the session can be analysed properly afterwards. Garmin owns the recording, the sport code, the laps and the GPS - this field only adds the wingfoil numbers on top.
+OUR RECOMMENDATION: if your watch can run the full CleanJibe app (search "CleanJibe" in this store), use that instead — it records the session itself, with live speed records, auto wind estimation, a map page, pump and takeoff metrics, and a multi-page summary. This data field is the right choice only if you specifically want to keep recording with Garmin's NATIVE activity profile — for example for Garmin's own windsurf features or a profile you have customized.
 
-It shares its detection core with the WingFoil watch app: the same flight detection with tunable thresholds, the same turn detection with tack/jibe classification and flew / touchdown / fell-in outcomes. What it cannot do is pumping and takeoff analysis - Connect IQ forbids a data field from touching the accelerometer, so those metrics live in the watch app only.
+What the field shows, live in your activity screens: foil state, foil time and percentage, flight count and flight timer, the last turn's outcome and score, and the tack/jibe tally. Layouts adapt to the cell you give it, from a single field up to full screen. Everything it computes is also written into the FIT file as developer fields, so the session can be analysed properly afterwards. Garmin owns the recording, the sport code, the laps and the GPS — this field only adds the wingfoil numbers on top. One limit: Connect IQ forbids a data field from touching the accelerometer, so pumping and takeoff metrics live in the CleanJibe app only.
 
-Layouts adapt to the cell you give it. Give it the whole screen and it draws the CleanJibe app's own main page: foil percentage, a giant speed, every counted turn as a coloured dot, the flew/touchdown/swim tally and your dry run - each with a small word beside it saying what it is. Pause or stop the activity and the same cell shows your session summary, two pages that alternate: foil share, flights, foil time against total, longest flight and distance, then the turn count, the tack/jibe split, the outcomes and your best speeds. Smaller cells stay compact, and you choose what they show: one metric for a 3 or 4 field cell, two for a 2 field one, out of speed, foil percentage, flights, flight timer, foil time, longest flight, distance, timer, heart rate, best 2s and 10s, turns, last turn, tacks/jibes, outcomes, dry run and the clock (Garmin Connect > CleanJibe Field > Settings).
+AFTERWARDS, FREE, IN ANY BROWSER: open cleanjibe.org and drop the .fit in — the full analysis (every flight, every turn's verdict, speed records, wind axis, share card) runs locally in your browser, nothing uploaded, no account. Works on Android phones too.
 
-A word of honesty: the field is newer and less tested than the CleanJibe app. If you use it, your feedback is doubly welcome (github.com/JanLahmann/WingFoil/issues or info@cleanjibe.org). Where your watch supports it, we still recommend the full CleanJibe app.
-
-THIS BETA IS INVITE-ONLY. On the first activity the field shows an 8-character request code instead of metrics. Send that code to the developer (Contact Developer on this page) and you will receive your personal unlock key. Enter it in Garmin Connect under Connect IQ, WingFoil Field - Invite Beta, Settings, "Unlock key" - it takes effect immediately, mid-activity, and permanently on that watch. Without a key the field records nothing at all - please request a key instead of leaving a review about the lock.
-
-Beta: metrics are under active tuning and thresholds may change between versions.
-
-Analyze your sessions in any browser, free: https://janlahmann.github.io/WingFoil - the same analysis engine running locally on your device, nothing uploaded, with a session library, records and trends. Works on Android phones too.
+It's a beta — tell us what's wrong and what's missing at github.com/JanLahmann/WingFoil/issues or info@cleanjibe.org.
 ```
 
-**TODO (pending edit), two lines above:**
+The richer "Layouts adapt to the cell" paragraph (full-screen app-Main face, alternating
+summary pages, the configurable-cell metric list) is currently only in the 0.9.5 What's New
+below — fold it into the description on the next details edit if it feels missing.
 
-1. `Connect IQ, WingFoil Field - Invite Beta, Settings, "Unlock key"` — the field is now
-   **CleanJibe Field - Invite Beta** in Garmin Connect. Same dead end as the watch app's
-   unlock line.
-2. `It shares its detection core with the WingFoil watch app` — that app is now **CleanJibe
-   Wingfoil Tracker**; there is nothing in the store called WingFoil for a reader to go and
-   find.
-
-Also stale: the same `https://janlahmann.github.io/WingFoil` analyzer URL in the last
-paragraph, which should be `https://cleanjibe.org`.
+Note for form edits: Garmin's edit form rejects `<` and `>` anywhere in Description/What's
+New — write settings breadcrumbs with `→`.
 
 ### What's New (live text)
 
 ```
-0.9.5: the full-screen cell now shows the app's main page — giant speed, the colour ladder, tally and streak — and you can choose what smaller cells display (Garmin Connect > CleanJibe Field > Settings). Pause the activity and the field shows your session summary. A word of honesty: the field is newer and less tested than the CleanJibe app — if you use it, your feedback is doubly welcome (github.com/JanLahmann/WingFoil/issues or info@cleanjibe.org). Where your watch supports it, we still recommend the full CleanJibe app.
+0.9.5: the full-screen cell now shows the app's main page — giant speed, the colour ladder, tally and streak, all labeled — and you can choose what smaller cells display (Garmin Connect → CleanJibe Field → Settings). Pause the activity and the field shows your session summary. A word of honesty: the field is newer and less tested than the CleanJibe app — if you use it, your feedback is doubly welcome (github.com/JanLahmann/WingFoil/issues or info@cleanjibe.org). Where your watch supports it, we still recommend the full CleanJibe app.
 
 0.9.3: the field is now called CleanJibe Field (same field, new name — cleanjibe.org). No functional changes; version now tracks the CleanJibe app family.
 
