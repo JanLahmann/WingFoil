@@ -2,6 +2,27 @@
 
 Newest first. One paragraph each: context → decision → consequence.
 
+## ADR-014 · The device list stops at CIQ ≥ 5.x sports watches (Tier A), and stops there on purpose
+The app shipped on the fenix 8 and fenix 7 families and nothing else, which is a small slice of
+the watches that could run it. A survey of the whole SDK device catalogue against the built
+app's own footprint (the scratchpad's `device-table.txt` / `app-headroom.txt`) sorted the rest
+into tiers, and 0.9.4 takes the top one whole. Decision: **Tier A** is every remaining CIQ ≥ 5.x
+round sports watch — epix 2 and epix 2 Pro (42/47/51 mm), Forerunner 255/265/570 (42/47 mm)/955/
+965/970, MARQ 2 and MARQ 2 Aviator, Enduro 3, D2 Mach 1 and Mach 2, Descent Mk3 43 mm — because
+each of them runs the *current* code unchanged: ≥ 524 KB of watch-app memory against a 67 KB
+build, a 100 Hz accelerometer, a round glass at one of the four sizes the layout suite measures,
+and the same `has`-guarded GNSS fallback the fenix 7 already exercises. Everything below that
+line stays out, and each for its own reason: the **128 KB fenix 5/6 and Enduro 1 bases** would
+need the app cut roughly in half (a 108 KB build against a 131 KB ceiling was the survey's
+finding — buildable, but with nothing left for a session); the **Instinct family** is a 1 bpp
+semi-octagon with a second sub-screen, which is a different UI, not a rescaled one; and the
+**rectangles** (Venu X1, epix Gen 1) would need every round-display fitter in `RecordingView`
+replaced, since the whole layout suite measures chords. Venu 3 and Vivoactive 5 are excluded on
+top of that as non-sports watches. Consequence: 30 products across the app, the field and the
+barrel, all four `.iq` exports green with the compiler's per-device memory gate passing; two
+real layout bugs surfaced on the way in (see `docs/testing.md` — a digits-only vector face and
+the Forerunner font metrics), both fixed for every watch including the ones already shipped.
+
 ## ADR-013 · The companion link carries a **card**, not data — and reuses the import dedupe rule
 Phase 5 asks for a session summary on the phone before the FIT has finished its trip through
 Garmin Connect. The channel for that is `Communications.transmit` to a companion app over BLE,
