@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v20";     // v20: the share card takes a title and a caption from the rider
+const VERSION = "v22";     // v22: the mark turned and took the water back; the topbar wears it
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
@@ -70,11 +70,12 @@ const APP_SHELL = [
   // exactly the one who has nothing else to look at, and three broken image frames is a
   // worse empty state than the one they replaced.
   //
-  // The homepage's three card screenshots (img/watch-main, img/phone-session,
-  // img/web-report, ~97 KB) are deliberately NOT here. They are below the fold on a page
+  // The homepage's four pictures (img/watch-main, img/phone-session, img/web-report and
+  // img/share-card, ~196 KB) are deliberately NOT here. They are below the fold on a page
   // that is precached only as a way back out of the app, they are `loading="lazy"`, and
-  // the boxes they sit in are sized by `aspect-ratio` — so offline they leave three tidy
-  // empty plates rather than a broken layout, and nobody pays for them on install.
+  // the boxes they sit in are sized by `aspect-ratio` — so offline they leave four tidy
+  // empty plates rather than a broken layout, and nobody pays for them on install. The
+  // share card is the largest of the four and the furthest down, which settles it twice.
   // /invite/ is not precached either: it is read once, at a desk, next to a watch.
   "img/peek-track.png",
   "img/peek-speed.png",

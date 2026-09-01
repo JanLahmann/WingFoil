@@ -8,20 +8,24 @@ display class's own size, in that class's own colours.
 
 TWO SCREENS, TWO WEIGHTS. `brand_mark` is the start page's, sized to the air above the
 wordmark. `brand_badge` is the post-save verdict page's, sized to the LINE it sits on — it
-rides beside the SAVED eyebrow — and it drops the two water lines even on AMOLED, because at
-30 px they are a pair of grey hairlines rather than a sea and the badge reads cleaner as the
-jibe track and the wing alone. What is left is the half of the artwork that carries the name.
+rides beside the SAVED eyebrow. Both are the TRACK AND WING ONLY.
 
-Two flavours as well, because the shipped products are not one display family
+The master carries two water lines again, low in the tile under the whole mark. They do not
+come here. They are the tile's horizon — they read as the surface the track is drawn on
+because the tile gives them a ground to sit on, and this cut has no tile: it is the mark's
+own ink on a page the app already cleared to black. Two white lines under it would be two
+white lines, not water. And the badge is 16-19 px TALL; there is no size at which a 3-unit
+hairline under it survives, least of all on 8 bpp where white is 0xFFFFFF and shouts.
+
+Two flavours, because the shipped products are not one display family
 (garmin/source/ui/Ink.mc):
 
-  amoled  16 bpp, 390-454 px glass. The master, gradients and all, plus the two water lines.
+  amoled  16 bpp, 390-454 px glass. The master, gradients and all.
   mip      8 bpp, 240-280 px glass, {00,55,AA,FF}^3 and no true black. A FLAT cut: the
-           gradient becomes a three-step ramp of exact palette entries, the water lines are
-           dropped (a 4.5/100 stroke is 1.3 px at 30 px and reads as debris, not as water),
-           and the whole thing is quantised here — nearest entry, NO dither — so the
-           firmware has nothing left to guess at. `dithering="none"` in drawables.xml is the
-           belt to this file's braces.
+           gradient becomes a three-step ramp of exact palette entries, and the whole thing
+           is quantised here — nearest entry, NO dither — so the firmware has nothing left
+           to guess at. `dithering="none"` in drawables.xml is the belt to this file's
+           braces.
 
 Both cuts are OPAQUE on #000000 rather than transparent. Every screen that draws the mark
 has already cleared to COLOR_BLACK, so the black is the page; and the MIP products report
@@ -50,11 +54,18 @@ SS = 12                      # supersample factor: the 100-unit artwork is raste
 FLAT = 48                    # segments per quadratic bezier
 
 # ---- the artwork, transcribed from brand/icon-tile.svg (viewBox 0 0 100 100) ----
-# Kept as data rather than parsed: this is four paths that have not changed since the icon
-# was drawn, and a general SVG parser to read them would be the larger thing to maintain.
+# Kept as data rather than parsed: this is two paths, and a general SVG parser to read them
+# would be the larger thing to maintain. They must be copied over verbatim whenever the SVG
+# changes — the SVG's own header says so from the other side.
+#
+# The track is one jibe: an entry leg, the loop taken the LONG way round, and an exit leg
+# that crosses the entry and leaves upwind. Both legs are tangents to the loop, so the
+# flattened polyline below joins them smoothly and a round-joined stroke needs no help.
 
-TRACK = ("M", (14, 24), "L", (54, 20), "Q", (82, 18), (82, 38), "Q", (82, 58), (54, 56),
-         "L", (34, 54))
+TRACK = ("M", (16.83, 52.55), "L", (71.77, 47.75), "Q", (76.81, 47.3), (81, 50.13),
+         "Q", (85.19, 52.96), (86.67, 57.79), "Q", (88.14, 62.63), (86.25, 67.32),
+         "Q", (84.36, 72), (79.94, 74.45), "Q", (75.51, 76.91), (70.53, 76.03),
+         "Q", (65.56, 75.15), (62.24, 71.33), "L", (29.81, 34.03))
 TRACK_W = 8.0
 TRACK_STOPS = [(0.0, (0x35, 0xC4, 0xF0)), (0.6, (0x2E, 0xE6, 0xA8)), (1.0, (0xB9, 0xFF, 0x66))]
 
@@ -66,15 +77,8 @@ MAST_W = 3.0
 MAST_RGB = (0x0A, 0x1E, 0x30)
 MAST_A = 0.75
 
-WATER = [
-    (("M", (12, 74), "Q", (28, 68), (44, 74), "Q", (60, 80), (76, 74), "Q", (86, 70), (92, 72)),
-     4.5, 0.9),
-    (("M", (20, 88), "Q", (34, 83), (48, 88), "Q", (62, 93), (78, 88)), 3.0, 0.4),
-]
-WATER_RGB = (0xF4, 0xFA, 0xFF)
-
-# group transform: translate(30,55) rotate(-10) scale(0.56) translate(-50,-36)
-WING_XFORM = (30.0, 55.0, -10.0, 0.56, -50.0, -36.0)
+# group transform: translate(25.12,28.64) rotate(-30) scale(0.51) translate(-50,-36)
+WING_XFORM = (25.12, 28.64, -30.0, 0.51, -50.0, -36.0)
 
 # The 8 bpp palette every MIP product snaps to, and the flat ramp the mark uses inside it.
 MIP_LEVELS = (0x00, 0x55, 0xAA, 0xFF)
@@ -84,29 +88,33 @@ MIP_MAST_RGB = (0x00, 0x00, 0x00)
 
 # Where each cut goes, and how big. The directories are the launcher-icon qualifier dirs the
 # jungle already maps every product to, and that mapping happens to be exactly the partition
-# the mark needs (see garmin/monkey.jungle). The size is ~12.5 % of the SMALLEST glass in each
-# directory's audience, because one bitmap serves all of them and a bitmap does not scale.
-# The mark is cropped to its own ink first (the tile's rounded-square padding is the tile's,
-# not the mark's), so the cut is WIDER than it is tall and the size below is its WIDTH. That
-# is worth saying twice, because the binding constraint on both screens is the vertical air:
-# every pixel the crop takes off the top and bottom is a pixel the page keeps.
+# the mark needs (see garmin/monkey.jungle). The mark is cropped to its own ink first (the
+# tile's rounded-square padding is the tile's, not the mark's).
+#
+# THE NUMBER BELOW IS THE CUT'S HEIGHT, and it used to be its width. The old artwork was a
+# flat hairpin, half again as wide as it was tall; the jibe loop drawn upright was very
+# nearly square, and turning it down to 22 deg has laid it back out to 1.34:1. Through all
+# of that the binding constraint on both screens has been the VERTICAL air — that is what
+# `Brand.fits()` measures and what the layout suite asserts. Sizing by height keeps the one
+# dimension the pages were laid out against exactly where it was, on every product, and lets
+# the width be whatever the artwork currently is.
 #
 # TWO cuts per directory, not one, because the two screens want different weights and a
 # bitmap does not scale. `brand_mark` is the start page's, sized to the air above the
 # wordmark; `brand_badge` is the verdict page's, sized to the LINE it sits on — the SAVED
 # eyebrow — so the pair reads as one piece of ink at the height of the word rather than as a
 # logo that has wandered into the number's space. Measured on the fenix 8: the 46 px mark
-# centred on that eyebrow reaches the top of the giant's digits, and the 27 px badge sits
+# centred on that eyebrow reaches the top of the giant's digits, and the 19 px badge sits
 # exactly inside the word's own band.
 TARGETS = [
-    ("resources",        "brand_mark",  52, "amoled"),   # the six 454 px AMOLED products
-    ("resources",        "brand_badge", 30, "amoled"),
-    ("resources-icon60", "brand_mark",  46, "amoled"),   # epix 2 / MARQ 2 / fenix 8 43 mm
-    ("resources-icon60", "brand_badge", 28, "amoled"),
-    ("resources-icon54", "brand_mark",  46, "amoled"),   # fr570 42 mm, 390 px
-    ("resources-icon54", "brand_badge", 28, "amoled"),
-    ("resources-icon40", "brand_mark",  36, "mip"),      # the thirteen 8 bpp, 240-280 px
-    ("resources-icon40", "brand_badge", 26, "mip"),
+    ("resources",        "brand_mark",  46, "amoled"),   # the six 454 px AMOLED products
+    ("resources",        "brand_badge", 19, "amoled"),
+    ("resources-icon60", "brand_mark",  41, "amoled"),   # epix 2 / MARQ 2 / fenix 8 43 mm
+    ("resources-icon60", "brand_badge", 17, "amoled"),
+    ("resources-icon54", "brand_mark",  41, "amoled"),   # fr570 42 mm, 390 px
+    ("resources-icon54", "brand_badge", 17, "amoled"),
+    ("resources-icon40", "brand_mark",  22, "mip"),      # the thirteen 8 bpp, 240-280 px
+    ("resources-icon40", "brand_badge", 16, "mip"),
 ]
 
 
@@ -197,7 +205,7 @@ def paint(img, mask, rgb_img, alpha=1.0):
     img.paste(rgb_img, (0, 0), mask)
 
 
-def render(side, flavour, water):
+def render(tall, flavour):
     size = 100 * SS
     img = Image.new("RGB", (size, size), (0, 0, 0))
 
@@ -219,15 +227,10 @@ def render(side, flavour, water):
     paint(img, mask_stroke(size, xform(list(MAST), WING_XFORM), MAST_W * WING_XFORM[3]),
           mast, 1.0 if flavour == "mip" else MAST_A)
 
-    if water:
-        ink = Image.new("RGB", (size, size), WATER_RGB)
-        for path, w, a in WATER:
-            paint(img, mask_stroke(size, flatten(path), w), ink, a)
-
     box = img.getbbox()                    # the ink, without the tile's own padding
     img = img.crop(box)
-    h = max(1, int(round(side * img.height / float(img.width))))
-    img = img.resize((side, h), Image.LANCZOS)
+    w = max(1, int(round(tall * img.width / float(img.height))))
+    img = img.resize((w, tall), Image.LANCZOS)
     if flavour == "mip":
         img = quantise(img)
     return img
@@ -242,9 +245,9 @@ def quantise(img):
 
 
 def main():
-    for d, name, side, flavour in TARGETS:
+    for d, name, tall, flavour in TARGETS:
         out = os.path.join(GARMIN, d, "drawables", name + ".png")
-        img = render(side, flavour, flavour == "amoled" and name == "brand_mark")
+        img = render(tall, flavour)
         img.save(out, optimize=True)
         print(f"{out}  {img.width}x{img.height}  {flavour}  {os.path.getsize(out)} B")
     return 0

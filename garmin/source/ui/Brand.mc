@@ -12,7 +12,7 @@ import Toybox.WatchUi;
 // where attention is not idle.
 //
 // WHY A BITMAP AND NOT PRIMITIVES. The mark is the launcher icon's own artwork
-// (brand/icon-tile.svg) — a gradient stroke, a filled wing and two water lines. Redrawing it
+// (brand/icon-tile.svg) — one gradient stroke that draws a jibe, and a filled wing. Redrawing it
 // with Dc calls would be a second, drifting copy of the brand, and the app already has one
 // generated-from-the-source rule for exactly that reason (DesignTokens.mc). It ships as a
 // cut of the master instead, made by garmin/tools/make_brand_mark.py.
@@ -22,9 +22,11 @@ import Toybox.WatchUi;
 // exactly the partition the mark needs: the six 454 px AMOLED products take the base
 // `resources/` cut, `resources-icon60`/`-icon54` hold the smaller AMOLED cut for the 390 px
 // members of their families, and `resources-icon40`'s audience is precisely the thirteen
-// 8 bpp MIP products — where the cut is flat, quantised to {00,55,AA,FF}^3 here rather than
-// on the watch, and drops the water lines, which at that size are a 1 px smear (ADR: the
-// generator's own header carries the palette reasoning).
+// 8 bpp MIP products — where the cut is flat, quantised to {00,55,AA,FF}^3 in the generator
+// rather than on the watch (ADR: the generator's own header carries the palette reasoning).
+//
+// EACH CUT IS SIZED BY ITS HEIGHT, not its width: the artwork is very nearly square since
+// the mark learned to jibe, and the vertical air is the dimension both pages are short of.
 //
 // NOTHING HERE ASSUMES THE MARK FITS. Both callers ask `fits()` first and simply do not draw
 // it when the answer is no — the same "drop content, never size" rule the text rows follow.
