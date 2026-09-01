@@ -252,7 +252,8 @@ struct SessionDetailView: View {
             noTrackNote
         } else {
             TrackMapView(detail: detail, effort: effort, playhead: $playhead,
-                         visibility: store.mapLayers, flightFocus: $flightFocus,
+                         visibility: store.mapLayers, mapStyle: store.mapStyle,
+                         flightFocus: $flightFocus,
                          // The toggle on the scrubber row is one store flag away, so
                          // switching the commentary off is an empty list rather than a
                          // second condition inside the map.

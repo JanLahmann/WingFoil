@@ -55,6 +55,17 @@ final class SessionStore {
         }
     }
 
+    /// What the maps are drawn **on** (`MapStyleChoice`). One setting for the whole app, like
+    /// the legend chips and for the same reason — "I want to see the water" is a statement
+    /// about the rider — and it reaches all four map surfaces: the inline map, the full-screen
+    /// map, the Turns tab's map and the cinema replay. Persisted on every change.
+    var mapStyle: MapStyleChoice = SessionStore.initialMapStyle() {
+        didSet {
+            guard mapStyle != oldValue else { return }
+            MapStyleStore.save(mapStyle, to: .standard)
+        }
+    }
+
     /// Whether the replay talks while it plays (`ReplayCommentary`). One setting for the
     /// whole app, like the legend chips and for the same reason: "I don't want a running
     /// commentary" is a statement about the rider, not about a particular ride.
@@ -924,6 +935,18 @@ final class SessionStore {
         return stored
     }
 
+    private static func initialMapStyle() -> MapStyleChoice {
+        let stored = MapStyleStore.load(from: .standard)
+        #if DEBUG && targetEnvironment(simulator)
+        // Screenshot hook, same family as `UI_HIDE_LAYERS`: `simctl` cannot open a menu, so
+        // `UI_MAP_STYLE=satellite` starts the app on that ground. Applied *after* the load and
+        // never written back — the override stages a screenshot, it does not edit the setting.
+        if let raw = ProcessInfo.processInfo.environment["UI_MAP_STYLE"],
+           let wanted = MapStyleChoice(rawValue: raw) { return wanted }
+        #endif
+        return stored
+    }
+
     // MARK: - Analysis settings
 
     static let defaultTurnTypeKey = "defaultTurnType"
@@ -1601,7 +1624,7 @@ final class SessionStore {
                     reAddDeclinedKey, replayLengthKey, replayFramingKey, replayMusicKey,
                     ActivityNotifier.enabledKey, ActivityNotifier.markKey,
                     ActivityNotifier.pendingImportKey, ActivityNotifier.promptedKey,
-                    MapLayerVisibilityStore.defaultsKey] {
+                    MapLayerVisibilityStore.defaultsKey, MapStyleStore.defaultsKey] {
             UserDefaults.standard.removeObject(forKey: key)
         }
         let fm = FileManager.default

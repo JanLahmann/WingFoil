@@ -91,6 +91,53 @@ The one exception is `effort`, whose chip is labelled with the *selected* window
 because that is what it is currently highlighting; the catalogue's "best effort" is the
 fallback for a session with no achieved window.
 
+## Map style — the ground under the track
+
+Four grounds, one choice, **iOS only** (the analyzer draws its track on a canvas, not on a
+map): `standard` · `muted` · `satellite` · `hybrid`, persisted per rider in `mapStyle.v1`
+(`MapStyleChoice`, `MapStyleStore`). Standard is the default and is what every map used to be.
+The reason the other three exist is that a rider at his home spot wants the track to be the
+loudest thing on screen, and a rider looking at somewhere new wants to see the shore — the
+launch, the pier he jibed around, the shallows he stayed off — which only photography shows.
+
+| choice | MapKit | points of interest | track halo |
+|---|---|---|---|
+| `standard` | `.standard(elevation: .flat)` | excluded | no |
+| `muted` | `.standard(elevation: .flat, emphasis: .muted)` | excluded | no |
+| `satellite` | `.imagery(elevation: .flat)` | (no label layer) | **yes** |
+| `hybrid` | `.hybrid(elevation: .flat)` | excluded | **yes** |
+
+The table is `MapStyleChoice.recipe` and the view builds its `MapStyle` *from* it, because
+`MapStyle` is opaque and cannot be asserted once built. All four are **flat**: a GPS trace is a
+plan view of a plane of water. Points of interest are excluded wherever the argument exists —
+including on the full-screen map, which used to be the one place they were drawn.
+
+**One setting, four surfaces.** The session's inline map, the full-screen map, the Turns tab's
+map and the cinema replay all read it. The control is a menu chip in the legend row — the
+map's control strip — and, on the Turns tab, which has no legend, in the caption line under
+the map.
+
+**Over photography the track is redrawn to survive it, and the vector styles keep today's
+rendering exactly.** Two rules, both in the shared drawing path (`TrackHalo`,
+`TrackContent`):
+
+1. **A dark outer edge** on every stroke and every mark — 55 % black, 3 pt either side, one
+   pass under the whole track so no join is overdrawn. Soft on purpose: a hard keyline reads
+   as a second, wider track and turns a busy corner into a smear.
+2. **The inks flip; the hues never do.** Foil-teal, the outcome ladder, splash-cyan and the
+   effort orange mean the same thing on every ground and are drawn identically. But the
+   *inks* — off-foil and neutral track (`Color.secondary`), the direction chevrons
+   (`Color.primary`), the Turns map's quiet route — are semantic label colours that assume the
+   app's background is behind them: dark grey in light mode, invisible on deep water, and a
+   dark halo under a dark grey line only merges the two. Over imagery they resolve to the
+   light end at their own weights (`TrackHalo.ink`). Same intent, read against what is
+   actually underneath.
+
+**The replay clip keeps whatever ground was chosen** — a clip of a session is a clip of the
+rider's own map. Note that MapKit draws Apple's attribution itself, so a satellite or hybrid
+clip carries the "Apple Maps · Legal" mark in its corner for the whole recording. That is
+correct and required; a rider who wants a clip without it records on `standard` or `muted`.
+
 ## Colour and glyph vocabulary
 
 **The outcome ladder is a verdict scale and nothing else may borrow it:**

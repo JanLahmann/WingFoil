@@ -451,7 +451,13 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    or one of the layers added later — `pumping`, `takeoff`, `splash`, `direction`), which
    is the only way to photograph a filtered map without a finger. It is applied *after* the stored
    preference and never written back — the override stages a screenshot, it does not edit
-   the setting. `UI_RECORD=<window key>` (`best10s`, `best250m`, `bestNm`, …) preselects a
+   the setting. `UI_MAP_STYLE=standard|muted|satellite|hybrid` does the same for the **ground**
+   the track is drawn on (`MapStyleChoice`, docs/presentation.md "Map style"): the control is a
+   menu, which `simctl` can no more open than it can tap a chip, and the two photographic
+   styles are where the track's halo and its flipped inks are worth looking at. It reaches all
+   four map surfaces at once, so one launch photographs the inline map, `UI_FULLSCREEN_MAP=1`
+   the big one and `UI_SCROLL_TO=turnsMap` the Turns tab's. Same rules as the layer override:
+   applied after the stored preference, never written back. `UI_RECORD=<window key>` (`best10s`, `best250m`, `bestNm`, …) preselects a
    non-default GP3S window so the map glow and the chart shading can be photographed on
    something other than the best 2 s. `UI_OPEN_TURNS=1` selects the **Turns** section (it
    pushed a page until the drill-in was folded inline, app-ui-review.md §2.1) and

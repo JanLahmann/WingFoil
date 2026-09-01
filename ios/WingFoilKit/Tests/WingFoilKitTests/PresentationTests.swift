@@ -1007,6 +1007,89 @@ import Testing
         #expect(decoded.hiddenLayers == [.fellIn], "an unknown layer is dropped, not fatal")
     }
 
+    // MARK: - The ground under the track
+
+    /// The mapping table. `MapStyle` is opaque and not `Equatable`, so what a view asks MapKit
+    /// for cannot be inspected once it is built — which is exactly why `MapStyleChoice.recipe`
+    /// exists and why the view builds its `MapStyle` from it rather than from a second
+    /// `switch`. This is the table; the view is the reader.
+    @Test func everyMapStyleResolvesToTheArgumentsItClaims() {
+        #expect(MapStyleChoice.allCases == [.standard, .muted, .satellite, .hybrid])
+
+        #expect(MapStyleChoice.standard.recipe
+                == MapStyleRecipe(base: .standard, isMuted: false,
+                                  excludesPointsOfInterest: true))
+        // Muted is the *same* base map with its own colour turned down, not a fourth map.
+        #expect(MapStyleChoice.muted.recipe
+                == MapStyleRecipe(base: .standard, isMuted: true,
+                                  excludesPointsOfInterest: true))
+        // Imagery takes no points-of-interest argument: there is no label layer to exclude.
+        #expect(MapStyleChoice.satellite.recipe
+                == MapStyleRecipe(base: .imagery, isMuted: false,
+                                  excludesPointsOfInterest: nil))
+        #expect(MapStyleChoice.hybrid.recipe
+                == MapStyleRecipe(base: .hybrid, isMuted: false,
+                                  excludesPointsOfInterest: true))
+
+        // A session map is about one track: wherever the argument exists it excludes the
+        // restaurants and the car parks, on every style, including the full-screen map — which
+        // used to be the one place they were drawn.
+        for choice in MapStyleChoice.allCases {
+            #expect(choice.recipe.excludesPointsOfInterest != false,
+                    "\(choice.rawValue) would draw points of interest over the track")
+            // A GPS trace is a plan view of a plane of water.
+            #expect(choice.recipe.isFlat)
+        }
+        // Only the vector map can be muted.
+        #expect(MapStyleChoice.allCases.filter(\.recipe.isMuted) == [.muted])
+    }
+
+    /// The one thing the drawing code reads off the style. Photography needs the halo; the
+    /// vector styles keep today's rendering exactly, which is what stops the halo from
+    /// thickening every line on the map most riders will never leave.
+    @Test func onlyThePhotographicStylesAskForTheTrackHalo() {
+        #expect(MapStyleChoice.allCases.filter(\.isImagery) == [.satellite, .hybrid])
+        for choice in MapStyleChoice.allCases {
+            #expect(choice.isImagery == choice.recipe.needsTrackHalo,
+                    "the halo rule and the ground disagree on \(choice.rawValue)")
+        }
+        #expect(!MapStyleChoice.standard.recipe.needsTrackHalo)
+        #expect(!MapStyleChoice.muted.recipe.needsTrackHalo)
+    }
+
+    /// Four names in a menu, and a rider has to be able to tell which one he is on.
+    @Test func everyMapStyleIsNamedGlyphedAndSpokenDistinctly() {
+        let labels = MapStyleChoice.allCases.map(\.label)
+        #expect(Set(labels).count == labels.count, "two entries would read the same")
+        #expect(labels.allSatisfy { !$0.isEmpty })
+        let symbols = MapStyleChoice.allCases.map(\.symbolName)
+        #expect(Set(symbols).count == symbols.count, "two entries would look the same")
+        let nouns = MapStyleChoice.allCases.map(\.accessibilityNoun)
+        #expect(Set(nouns).count == nouns.count, "two entries would be spoken the same")
+        #expect(nouns.allSatisfy { !$0.isEmpty })
+    }
+
+    /// Survives a relaunch — the whole point of storing it — and degrades to the plain map
+    /// rather than to a blank one when the stored value makes no sense here.
+    @Test func theMapStyleRoundTripsThroughUserDefaults() throws {
+        let defaults = try scratchDefaults()
+        #expect(MapStyleStore.defaultsKey == "mapStyle.v1")
+        #expect(MapStyleStore.load(from: defaults) == .standard,
+                "an untouched install opens on Apple's plain map")
+
+        for choice in MapStyleChoice.allCases {
+            MapStyleStore.save(choice, to: defaults)
+            #expect(MapStyleStore.load(from: defaults) == choice)
+        }
+
+        // A preference written by a later build — one that offers a style this one does not —
+        // must come back as the default rather than as a crash or an empty map.
+        defaults.set("terrain", forKey: MapStyleStore.defaultsKey)
+        #expect(MapStyleStore.load(from: defaults) == .standard)
+        defaults.set(Data("not a style".utf8), forKey: MapStyleStore.defaultsKey)
+        #expect(MapStyleStore.load(from: defaults) == .standard)
+    }
+
     @Test func visibilityEncodesAsSortedRawValues() throws {
         let data = try JSONEncoder().encode(MapLayerVisibility(hidden: [.touchdown, .flying]))
         #expect(String(decoding: data, as: UTF8.self) == #"["flying","touchdown"]"#)
