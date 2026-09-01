@@ -93,10 +93,6 @@ struct ReplayCommentaryBubble: View {
         case .jibe: "arrow.triangle.turn.up.right.circle"
         case .streak: "flame"
         case .splash: DesignTokens.Glyph.splash
-        // The one line that is about the rider rather than about the session. No emoji: the
-        // two apps carry none anywhere, and a swimmer in the middle of a page of SF Symbols
-        // would read as a different product (docs/presentation.md, "The swim").
-        case .swim: "figure.pool.swim"
         case .topSpeed: "speedometer"
         case .longestFlight: "wind"
         }
@@ -109,10 +105,6 @@ struct ReplayCommentaryBubble: View {
         // A swim *is* a verdict on a flight end — the ladder's own red, the same one the
         // marker under it is drawn in.
         case .splash: DesignTokens.Outcome.fellIn
-        // Splash-cyan, not the ladder's red: the swim is *evidence* about what the fall
-        // cost, not a second verdict on it, and the map draws submersion in this ink for
-        // exactly that reason (docs/presentation.md, "Colour and glyph vocabulary").
-        case .swim: DesignTokens.Effort.splash
         case .topSpeed: DesignTokens.Effort.window
         case .longestFlight: DesignTokens.Phase.flying
         case .jibe, .streak: .primary
