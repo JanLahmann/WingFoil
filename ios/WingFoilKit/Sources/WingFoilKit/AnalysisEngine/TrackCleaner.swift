@@ -16,6 +16,8 @@ public enum TrackCleaner {
         // larger dts — and hard gaps once past the threshold.
         struct Row {
             var t: Double; var v: Double; var lat: Double?; var lon: Double?; var alt: Double?
+            /// The source's own "a break starts here" (`RecordSample.gapBefore`).
+            var declaredBreak: Bool
         }
         let hasPos = raw.samples.contains { $0.lat != nil && $0.lon != nil }
         var rows: [Row] = []
@@ -23,7 +25,8 @@ public enum TrackCleaner {
         for s in raw.samples {
             guard let v = s.speedMps else { track.droppedNaN += 1; continue }
             if hasPos, s.lat == nil || s.lon == nil { track.droppedNaN += 1; continue }
-            rows.append(Row(t: s.t, v: v, lat: s.lat, lon: s.lon, alt: s.altitudeM))
+            rows.append(Row(t: s.t, v: v, lat: s.lat, lon: s.lon, alt: s.altitudeM,
+                            declaredBreak: s.gapBefore))
         }
         // Stable sort by t, drop duplicate timestamps (keep first).
         rows = rows.enumerated()
@@ -53,7 +56,11 @@ public enum TrackCleaner {
         var vg = rows[0].v
         for i in 1..<rows.count {
             let d = rows[i].t - tg
-            if d > track.gapThresholdS {              // new segment: accept unconditionally
+            // A declared break resets the filter too: across a seam the source itself
+            // named there is no "last good sample" to accelerate away from, and judging
+            // the first row of a new segment against the last of the old one would throw
+            // away the very rows that mark it.
+            if d > track.gapThresholdS || rows[i].declaredBreak {   // new segment: accept
                 tg = rows[i].t
                 vg = rows[i].v
                 kept.append(rows[i])
@@ -84,7 +91,9 @@ public enum TrackCleaner {
         for (i, r) in rows.enumerated() {
             let dt = i == 0 ? 0 : r.t - rows[i - 1].t
             var c = CleanSample(t: r.t, dt: dt,
-                                gapBefore: i > 0 && dt > track.gapThresholdS,
+                                // dt rule OR the source's own declaration — never one
+                                // instead of the other (`RecordSample.gapBefore`).
+                                gapBefore: i > 0 && (dt > track.gapThresholdS || r.declaredBreak),
                                 dopplerMps: r.v, altM: r.alt)
             if hasPos, let la = r.lat, let lo = r.lon {
                 c.x = (lo - lon0) * cosLat0 * 111_320

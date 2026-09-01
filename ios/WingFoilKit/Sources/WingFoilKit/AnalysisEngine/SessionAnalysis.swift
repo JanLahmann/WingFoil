@@ -56,7 +56,17 @@ public enum AnalysisEngine {
     /// device would render the same instant (docs/presentation.md, "Session time"). The
     /// analysis numbers are byte-identical to 0.8.1's; the bump is here because the
     /// document gained a field and stored rows have to pick it up.
-    public static let version = "0.8.2"
+    ///
+    /// 0.9.0 moves no metric either — it opens a door. **GPX** now reaches the pipeline
+    /// (`GpxSessionParser`, docs/plan.md's input class (c)), and it arrives honestly
+    /// labelled: a GPX carries no speed channel, so its speed is differentiated from
+    /// positions and `capabilities.hasDoppler` is false, which is what `sourceClass` "c"
+    /// and every "uncertified" surface downstream already read. Pump strokes, failed
+    /// attempts and the episode list degrade to their accel-less nulls and empties exactly
+    /// as they already do on a native FIT. Existing sessions re-derive to numbers identical
+    /// to 0.8.2's; the bump is what makes them re-derive at all, and what keeps a stored
+    /// document from claiming an engine that could not have read half the corpus.
+    public static let version = "0.9.0"
 }
 
 /// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's

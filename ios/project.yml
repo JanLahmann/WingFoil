@@ -171,12 +171,29 @@ targets:
                 - fit
               public.mime-type:
                 - application/vnd.ant.fit
+          # GPX has no system-declared type on iOS either (engine 0.9.0). Imported, not
+          # exported: the format is topografix.com's, not ours, and claiming to own it
+          # would be wrong even though we are the only app on the phone that declares it.
+          # It conforms to public.xml as well as public.data — a GPX *is* XML, and saying
+          # so is what lets "Open in" offer CleanJibe for a file another app wrote.
+          - UTTypeIdentifier: de.lahmann.wingfoil.gpx
+            UTTypeDescription: GPX track file
+            UTTypeConformsTo:
+              - public.xml
+              - public.data
+              - public.content
+            UTTypeTagSpecification:
+              public.filename-extension:
+                - gpx
+              public.mime-type:
+                - application/gpx+xml
         CFBundleDocumentTypes:
           - CFBundleTypeName: Activity recording
             CFBundleTypeRole: Viewer
             LSHandlerRank: Alternate
             LSItemContentTypes:
               - de.lahmann.wingfoil.fit
+              - de.lahmann.wingfoil.gpx
               - public.zip-archive
     scheme:
       environmentVariables:

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Standard on-device locations (plan §3.1): `Application Support/wingfoil.sqlite` plus
-/// `Application Support/Sessions/<uuid>/{original.fit,analysis.json}`.
+/// `Application Support/Sessions/<uuid>/{original.fit|original.gpx,analysis.json}`.
 public enum AppPaths {
 
     public static func applicationSupport() throws -> URL {
@@ -21,7 +21,7 @@ public enum AppPaths {
     }
 }
 
-/// The immutable per-session file archive. The original FIT is never rewritten; the
+/// The immutable per-session file archive. The original recording is never rewritten; the
 /// analysis JSON is a cache that can be dropped and recomputed at any time
 /// (engine-version bump ⇒ lazy re-analysis).
 public struct SessionArchive: Sendable {
@@ -31,7 +31,7 @@ public struct SessionArchive: Sendable {
 
         public var description: String {
             switch self {
-            case .missingOriginal(let id): "no original.fit archived for session \(id)"
+            case .missingOriginal(let id): "no original recording archived for session \(id)"
             }
         }
     }
@@ -50,8 +50,29 @@ public struct SessionArchive: Sendable {
         root.appendingPathComponent(id, isDirectory: true)
     }
 
+    /// Where this session's untouched recording lives.
+    ///
+    /// `original.fit` for a FIT and `original.gpx` for a GPX (engine 0.9.0) — the extension
+    /// is part of the promise the archive makes, because these bytes are handed back out:
+    /// to the re-analysis path, and to the share sheet, where the filename is what a
+    /// stranger sees. A `.gpx` written under a `.fit` name would be a small lie that
+    /// eventually reaches somebody else's mailbox.
+    ///
+    /// A directory holds exactly one of the two, so the lookup prefers whatever is on
+    /// disk and falls back to `.fit` — which is what every session archived before 0.9.0
+    /// is, and what a caller asking for the path of a session it is about to write means.
     public func originalURL(for id: String) -> URL {
-        directory(for: id).appendingPathComponent("original.fit")
+        let dir = directory(for: id)
+        let gpx = dir.appendingPathComponent("original.gpx")
+        if FileManager.default.fileExists(atPath: gpx.path) { return gpx }
+        return dir.appendingPathComponent("original.fit")
+    }
+
+    /// The format the archived original is in, or nil when there is nothing archived.
+    /// Read from the bytes, not from the name — the name is derived from them.
+    public func originalFormat(for id: String) -> TrackFormat? {
+        guard let data = try? originalData(for: id) else { return nil }
+        return TrackParser.format(data)
     }
 
     public func analysisURL(for id: String) -> URL {
@@ -59,9 +80,17 @@ public struct SessionArchive: Sendable {
     }
 
     public func storeOriginal(_ data: Data, id: String) throws {
-        try FileManager.default.createDirectory(at: directory(for: id),
-                                                withIntermediateDirectories: true)
-        try data.write(to: originalURL(for: id), options: .atomic)
+        let dir = directory(for: id)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let format = TrackParser.format(data)
+        // One original per session: a re-import that changed format would otherwise leave
+        // the old file beside the new one and `originalURL` would keep finding the wrong one.
+        for other in TrackFormat.allCases where other != format {
+            try? FileManager.default.removeItem(
+                at: dir.appendingPathComponent("original.\(other.fileExtension)"))
+        }
+        try data.write(to: dir.appendingPathComponent("original.\(format.fileExtension)"),
+                       options: .atomic)
     }
 
     public func originalData(for id: String) throws -> Data {
@@ -70,10 +99,11 @@ public struct SessionArchive: Sendable {
         return data
     }
 
-    /// Re-parses the archived FIT. Samples (lat/lon/speed) are deliberately not stored in
-    /// the DB — the map and the chart re-parse on demand (plan §3.3).
+    /// Re-parses the archived recording — FIT or GPX, decided by its bytes. Samples
+    /// (lat/lon/speed) are deliberately not stored in the DB: the map and the chart
+    /// re-parse on demand (plan §3.3).
     public func rawTrack(for id: String) throws -> RawTrack {
-        try FitSessionParser.parse(data: try originalData(for: id))
+        try TrackParser.parse(data: try originalData(for: id))
     }
 
     public func writeAnalysis(_ analysis: SessionAnalysis, id: String) throws {

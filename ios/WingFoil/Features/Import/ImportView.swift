@@ -41,7 +41,7 @@ struct ImportView: View {
                     Button {
                         showFileImporter = true
                     } label: {
-                        Label("FIT or ZIP…", systemImage: "doc.badge.plus")
+                        Label("FIT, GPX or ZIP…", systemImage: "doc.badge.plus")
                     }
                     .disabled(store.isBusy)
                     Button {
@@ -53,13 +53,15 @@ struct ImportView: View {
                 } header: {
                     Text("Single sessions")
                 } footer: {
-                    // The picker above says FIT or ZIP, so the next question is why not
-                    // GPX — answered here rather than left to be discovered as a greyed-out
-                    // file in a document picker.
+                    // The picker offers GPX (engine 0.9.0), so the next question is what it
+                    // costs — answered here, before the rider imports one and wonders why
+                    // the pump section is missing, rather than after.
                     Text("Garmin Connect → activity → \"Export Original\" gives one FIT; "
-                         + "AirDrop and the share sheet land here too. GPX is not supported "
-                         + "— the analysis needs the recording's speed channel, which a GPX "
-                         + "export does not carry.")
+                         + "AirDrop and the share sheet land here too. GPX works as well, "
+                         + "with two limits: it carries no speed channel, so its speed "
+                         + "records are estimated from positions and marked uncertified, "
+                         + "and it carries no accelerometer, so there is no pump or takeoff "
+                         + "effort.")
                 }
 
                 if !log.isEmpty {
@@ -83,7 +85,7 @@ struct ImportView: View {
                 }
             }
             .fileImporter(isPresented: $showFileImporter,
-                          allowedContentTypes: [.fitActivity, .zip, .gzip],
+                          allowedContentTypes: [.fitActivity, .gpxTrack, .zip, .gzip],
                           allowsMultipleSelection: true) { result in
                 if case .success(let urls) = result {
                     Task { await store.importPicked(urls: urls) }

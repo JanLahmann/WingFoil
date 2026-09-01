@@ -4,7 +4,8 @@ import Testing
 
 /// Cross-implementation golden tests (docs/testing.md): for every
 /// `fixtures/goldens/<stem>.expected.json` written by the lab, run the full Swift
-/// pipeline on the matching FIT and assert within tolerances — counts exact,
+/// pipeline on the matching recording — FIT, or since engine 0.9.0 GPX — and assert
+/// within tolerances — counts exact,
 /// speeds ± 0.05 kn (alpha ± 0.1), timestamps ± 1 s, angles ± 1°, percentages ± 0.5,
 /// foil time ± 2 %.
 ///
@@ -35,8 +36,9 @@ import Testing
 
     private func check(golden url: URL) throws {
         let stem = String(url.lastPathComponent.dropLast(".expected.json".count))
-        guard let fitURL = findFixtureFIT(stem: stem) else {
-            Issue.record("golden \(stem): no \(stem).fit under fixtures/sessions or fixtures/synthetic")
+        guard let fitURL = findFixtureTrack(stem: stem) else {
+            let where_ = "fixtures/sessions or fixtures/synthetic"
+            Issue.record("golden \(stem): no \(stem).fit or \(stem).gpx under \(where_)")
             return
         }
         guard let json = try JSONSerialization.jsonObject(with: Data(contentsOf: url))
@@ -99,7 +101,8 @@ import Testing
             if let v = num(cfg["hrMaxSampleGap"]) { hrCfg.maxSampleGapS = v }
             if let v = num(cfg["windowRateMin"]) { ratesCfg.windowRateMin = v }
         }
-        let raw = try FitSessionParser.parse(url: fitURL)
+        // The same door `make_goldens.py` uses: FIT or GPX, decided by the file itself.
+        let raw = try TrackParser.parse(url: fitURL)
         let analysis = SessionSummarizer.analyze(raw, filterConfig: filter,
                                                  flightConfig: flight, recordsConfig: recCfg,
                                                  turnConfig: turnCfg, windConfig: windCfg,
@@ -862,7 +865,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.8.2")
+        #expect(analysis.engineVersion == "0.9.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)

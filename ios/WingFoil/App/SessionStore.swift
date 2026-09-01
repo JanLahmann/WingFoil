@@ -383,11 +383,18 @@ final class SessionStore {
 
     enum ShareError: Swift.Error, CustomStringConvertible {
         case notAWalkableFIT
+        /// The archived recording is a GPX. `FitShareFilter` scrubs FIT messages, and there
+        /// is nothing for it to walk here — so the file is not offered rather than handed
+        /// on unscrubbed, which is the one recovery that would be worse than refusing.
+        case notAFit
 
         var description: String {
             switch self {
             case .notAWalkableFIT:
                 "the archived file is not a plain FIT this app can rewrite safely"
+            case .notAFit:
+                "this session was imported from a GPX, and only FIT recordings can be "
+                    + "scrubbed for sharing"
             }
         }
     }
@@ -412,6 +419,7 @@ final class SessionStore {
                                            timeZone: row.displayZone)
         return try await Task.detached(priority: .userInitiated) {
             let original = try archive.originalData(for: row.id)
+            guard TrackParser.format(original) == .fit else { throw ShareError.notAFit }
             guard let scrubbed = FitShareFilter.filter(original,
                                                        dropAccel: !includeAccelerometer)
             else { throw ShareError.notAWalkableFIT }
