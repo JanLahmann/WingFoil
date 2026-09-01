@@ -136,7 +136,7 @@
    verdicts. Shape carries the state — disc / triangle / cross — and colour reinforces it,
    which is the rule the whole project draws by. */
 .motif .m-track {
-  fill: none; stroke: var(--track); stroke-width: 3; opacity: 0.55;
+  fill: none; stroke: var(--track); stroke-width: 4.5; opacity: 0.75;
   stroke-linecap: round; stroke-linejoin: round;
 }
 .motif .m-foil {

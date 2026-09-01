@@ -234,36 +234,31 @@ private struct WelcomeTrackMotif: View {
     // not at all; hand-editing one of them is how the front doors start disagreeing.
 
     /// The whole excerpt, off the foil.
-    private static let trackD = "M416 72Q466 66 475 69Q485 72 488 77Q492 82 492 87Q492 92 487 99Q483 107 465 111Q447 116 378 94Q309 72 278 59Q247 47 232 46Q217 45 212 46Q208 48 205 51Q203 55 204 64Q206 73 208 76Q211 80 219 82Q228 85 232 84Q237 84 292 67Q347 50 366 48Q386 46 393 53Q401 61 401 69Q402 78 399 82Q397 86 388 89Q380 93 369 92Q359 91 323 80Q288 69 272 66Q256 63 222 48Q188 34 167 29Q147 24 137 25Q128 26 124 30Q120 34 119 39Q119 45 125 52Q131 60 135 61Q140 63 150 61Q161 60 208 42Q256 24 288 18Q321 12 331 14Q342 17 346 20Q351 24 353 29Q355 34 349 55Q343 76 338 83Q333 90 330 85Q328 80 330 76Q332 73 332 74Q333 76 338 73Q344 70 341 68Q339 66 337 67Q335 68 334 71Q333 74 330 74Q328 75 318 75Q308 75 300 72Q292 70 276 68Q261 67 245 71Q230 75 221 72Q213 70 183 55Q153 40 127 31Q102 23 92 22Q83 22 78 23Q74 25 71 29Q68 33 68 45Q69 58 78 68Q87 79 99 83Q112 88 119 89Q127 90 144 98Q161 107 174 109Q187 112 201 110Q216 109 237 100Q258 92 272 90Q286 88 310 80Q334 72 381 59Q428 47 472 41Q516 36 526 36Q536 37 544 42Q553 47 555 51Q557 56 554 65Q552 74 546 78Q540 82 527 83Q514 84 491 80Q469 77 417 63Q366 50 341 47Q317 45 298 38Q280 32 260 29Q241 26 236 27Q231 29 228 33Q226 37 227 44Q228 52 238 58Q248 65 257 67Q267 69 312 56Q358 44 389 39Q420 34 435 28Q450 22 500 18Q550 15 555 17Q561 19 567 28Q573 37 569 57Q566 77 557 82Q548 87 537 88Q527 90 510 84Q494 79 464 74Q435 70 426 66L418 62"
+    private static let trackD = "M215 69Q162 89 140 94Q118 100 111 101Q105 102 91 100Q77 98 71 95Q65 93 62 87Q60 82 60 75Q60 69 63 64Q67 59 89 47Q112 35 130 34Q149 34 180 37Q211 40 248 38Q286 37 355 52Q424 67 455 67Q487 67 499 63Q511 60 515 55Q520 51 522 45Q524 39 523 33Q523 28 519 24Q516 20 507 16Q498 12 479 13Q461 15 447 18Q433 22 360 55Q287 88 273 91Q260 95 253 96Q247 98 232 97Q218 96 205 89Q192 83 189 75Q187 68 187 61Q188 54 197 45Q207 37 218 35Q230 33 243 35Q256 37 290 49Q324 62 375 71Q427 81 466 94Q506 108 527 112Q548 116 560 114Q573 112 576 107Q580 102 580 96Q580 91 577 87Q575 83 557 71Q539 59 525 54Q512 50 489 54Q467 58 396 81Q326 104 306 107Q286 111 266 110Q246 109 224 111Q203 114 196 110Q189 107 183 101Q178 95 178 82Q179 70 182 66Q186 62 205 54Q224 47 236 46Q249 46 270 48Q292 51 309 57Q326 64 330 68Q334 72 328 67Q323 62 312 60Q302 58 299 45Q296 33 299 35Q303 38 304 36Q306 34 300 28Q294 23 296 25Q298 27 296 28Q295 30 298 30Q301 30 305 29Q309 28 313 22Q317 17 324 18Q332 19 339 16Q346 14 360 13L374 13"
 
     /// …and the parts of it he was flying: the run that ends in the fall, the short one
     /// that ends in the touchdown, and the long one that runs the window out.
     private static let foilDs = [
-        "M416 72Q466 66 475 69Q485 72 488 77Q492 82 492 87Q492 92 487 99Q483 107 465 111Q447 116 378 94Q309 72 278 59Q247 47 232 46Q217 45 212 46Q208 48 205 51Q203 55 204 64Q206 73 208 76Q211 80 219 82Q228 85 232 84Q237 84 292 67Q347 50 366 48Q386 46 393 53Q401 61 401 69Q402 78 399 82Q397 86 388 89Q380 93 369 92Q359 91 323 80Q288 69 272 66Q256 63 222 48Q188 34 167 29Q147 24 137 25Q128 26 124 30Q120 34 119 39Q119 45 125 52Q131 60 135 61Q140 63 150 61Q161 60 208 42Q256 24 288 18Q321 12 331 14Q342 17 346 20Q351 24 353 29Q355 34 349 55L343 76",
-        "M251 69Q230 75 225 74Q221 73 187 56Q153 40 123 31Q93 22 83 23Q74 25 71 29Q68 33 68 45Q69 58 73 64L77 70",
-        "M155 104Q177 111 196 110Q216 109 237 100Q258 92 272 90Q286 88 332 73Q378 59 403 53Q428 47 477 41Q526 35 535 37Q545 40 549 43Q553 47 555 51Q557 56 554 65Q552 74 546 78Q540 82 527 83Q514 84 491 80Q469 77 417 63Q366 50 341 47Q317 45 298 38Q280 32 260 29Q241 26 236 27Q231 29 228 33Q226 37 227 44Q228 52 238 58Q248 65 257 67Q267 69 312 56Q358 44 389 39Q420 34 435 28Q450 22 500 18Q550 15 555 17Q561 19 567 28Q573 37 569 57Q566 77 557 82Q548 87 537 88Q527 90 510 84Q494 79 464 74Q435 70 426 66L418 62",
+        "M215 69Q162 89 140 94Q118 100 111 101Q105 102 91 100Q77 98 71 95Q65 93 62 87Q60 82 60 75Q60 69 63 64Q67 59 89 47Q112 35 130 34Q149 34 180 37Q211 40 248 38Q286 37 355 52Q424 67 455 67Q487 67 499 63Q511 60 515 55Q520 51 522 45Q524 39 523 33Q523 28 519 24Q516 20 507 16Q498 12 479 13Q461 15 447 18Q433 22 360 55Q287 88 273 91Q260 95 253 96Q247 98 232 97Q218 96 205 89Q192 83 189 75Q187 68 187 61Q188 54 197 45Q207 37 218 35Q230 33 243 35Q256 37 290 49Q324 62 375 71Q427 81 466 94Q506 108 527 112Q548 116 560 114Q573 112 576 107Q580 102 580 96Q580 91 577 87Q575 83 557 71Q539 59 525 54Q512 50 489 54Q467 58 396 81Q326 104 306 107Q286 111 266 110Q246 109 224 111Q203 114 196 110Q189 107 183 101Q178 95 177 88Q177 82 178 76Q179 70 182 66Q186 62 197 56Q209 51 223 48Q238 45 257 47Q277 49 301 56Q326 64 330 68L334 72",
     ]
 
     /// The jibes carried, on the apex of the loop each one made.
     private static let flew = [
-        CGPoint(x: 483, y: 107),
-        CGPoint(x: 211, y: 80),
-        CGPoint(x: 402, y: 78),
-        CGPoint(x: 119, y: 45),
-        CGPoint(x: 547, y: 79),
-        CGPoint(x: 234, y: 58),
-        CGPoint(x: 566, y: 77),
+        CGPoint(x: 67, y: 59),
+        CGPoint(x: 508, y: 15),
+        CGPoint(x: 207, y: 37),
+        CGPoint(x: 179, y: 70),
     ]
     /// The touchdown at second 1379, at the far end of the reach it happened on.
-    private static let touchdown = CGPoint(x: 76, y: 66)
+    private static let touchdown = CGPoint(x: 560, y: 73)
     /// The jibe he fell in, second 1268; the 81-second swim out of it is the grey the
     /// later reaches cross over.
-    private static let fellIn = CGPoint(x: 351, y: 55)
+    private static let fellIn = CGPoint(x: 334, y: 72)
     /// Which way he went, set off the lines: (x, y, heading in degrees). Position and
     /// heading are the track's; only the two moments are chosen, for the emptiest stretch.
     private static let arrows: [(CGFloat, CGFloat, CGFloat)] = [
-        (170, 99, 3.2),
-        (422, 97, -172.8),
+        (98, 53, -33.2),
+        (435, 32, 168.1),
     ]
 
     var body: some View {
@@ -280,7 +275,7 @@ private struct WelcomeTrackMotif: View {
                 context.stroke(path.applying(transform), with: .color(color), style: style)
             }
 
-            draw(Self.path(Self.trackD), DesignTokens.Phase.offFoil, width: 3)
+            draw(Self.path(Self.trackD), DesignTokens.Phase.offFoil, width: 4.5)
             for d in Self.foilDs {
                 draw(Self.path(d), DesignTokens.Phase.flying, width: 5)
             }
@@ -324,10 +319,9 @@ private struct WelcomeTrackMotif: View {
             draw(cross, DesignTokens.Outcome.fellIn, width: 3.5)
         }
         .accessibilityElement()
-        .accessibilityLabel("A six-and-a-half minute excerpt from a real session's track: "
-                            + "nine jibes in one stretch of water, seven flown through, "
-                            + "one touched down, and one fallen in with the swim that "
-                            + "followed.")
+        .accessibilityLabel("A four-minute excerpt from a real session's track: "
+                            + "five jibes flown through, one touched down, and one "
+                            + "fallen in with the swim that followed.")
     }
 
     /// The slice of SVG path data the motif uses — absolute `M x y`, `L x y`, `Q cx cy x y`
