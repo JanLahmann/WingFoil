@@ -87,14 +87,14 @@ struct ReplayScrubber: View {
             // see `ReplaySetupSheet`.
             .sheet(isPresented: $settingUp) {
                 ReplaySetupSheet(detail: detail, milestones: milestones, span: range) {
-                    pacing, framing, photos in
-                    start(with: pacing, framing: framing, photos: photos)
+                    pacing, framing, photos, music in
+                    start(with: pacing, framing: framing, photos: photos, music: music)
                 }
             }
             .fullScreenCover(item: $cinema) { run in
                 ReplayCinemaView(detail: detail, milestones: milestones, span: range,
                                  pacing: run.pacing, record: run.record,
-                                 framing: run.framing, photos: run.photos)
+                                 framing: run.framing, photos: run.photos, music: run.music)
             }
             .task(id: detail.row.id) { beats = ReplayBeats.make(detail.analysis) }
             #if DEBUG && targetEnvironment(simulator)
@@ -111,6 +111,9 @@ struct ReplayScrubber: View {
             // whether the length arithmetic is right, and the length is now the control.
             // `UI_REPLAY_FRAMING=portrait|square|landscape|fullScreen` stages the letterbox,
             // which is otherwise behind the setup sheet's third picker.
+            // `UI_REPLAY_MUSIC=<path>` belongs to the sheet (`ReplaySetupSheet`) rather than
+            // here — the document picker is out of process, like `PhotosPicker`, so the row it
+            // fills in is the only part a Mac can be shown.
             .task {
                 let environment = ProcessInfo.processInfo.environment
                 if environment["UI_REPLAY_SETUP"] == "1" { settingUp = true }
@@ -305,6 +308,9 @@ struct ReplayScrubber: View {
         /// Already loaded and dated by the setup sheet, so the cinema view never waits on the
         /// photo library with a recording running.
         var photos: [ReplayPhoto] = []
+        /// The track to lay under the finished clip, already copied into the app's own
+        /// container by the sheet (`ReplayMusicStore`). Nil is silence and the ordinary case.
+        var music: URL?
     }
 
     /// "Record replay" — see the type comment for why it lives here.
@@ -328,9 +334,9 @@ struct ReplayScrubber: View {
     }
 
     private func start(with pacing: ReplayPacing.Plan, framing: ReplayFraming,
-                       photos: [ReplayPhoto]) {
+                       photos: [ReplayPhoto], music: ReplayMusicTrack?) {
         cinema = CinemaRun(pacing: pacing, record: ReplayRecorder.isAvailable,
-                           framing: framing, photos: photos)
+                           framing: framing, photos: photos, music: music?.url)
     }
 
     // MARK: - Beat bar

@@ -117,6 +117,31 @@ final class SessionStore {
             .flatMap(ReplayFraming.init(rawValue:)) ?? .fullScreen
     }
 
+    /// The last track a clip was recorded with (`ReplayMusicTrack`), or nil for none.
+    ///
+    /// Remembered unlike the other two: the sheet does **not** open on it. Music is a louder
+    /// decision than a length — a clip that quietly arrived with a song under it because the
+    /// last one had one is the kind of surprise that gets found out in somebody else's chat —
+    /// so the sheet opens silent and offers the remembered track by name instead.
+    ///
+    /// Setting it sweeps every other copy out of the container (`ReplayMusicStore.keepOnly`),
+    /// which is what keeps a rider who has tried six songs from carrying six of them around.
+    var replayMusic: ReplayMusicTrack? = SessionStore.storedReplayMusic {
+        didSet {
+            guard replayMusic != oldValue else { return }
+            ReplayMusicStore.keepOnly(replayMusic)
+            let data = replayMusic.flatMap { try? JSONEncoder().encode($0) }
+            UserDefaults.standard.set(data, forKey: Self.replayMusicKey)
+        }
+    }
+
+    static let replayMusicKey = "replayMusic.v1"
+
+    private static var storedReplayMusic: ReplayMusicTrack? {
+        guard let data = UserDefaults.standard.data(forKey: replayMusicKey) else { return nil }
+        return try? JSONDecoder().decode(ReplayMusicTrack.self, from: data)
+    }
+
     /// `var` because one engine parameter is the rider's to set: `defaultTurnType`.
     var ingestor: SessionIngestor
     /// Lazy track thumbnails for the library rows.
@@ -1322,7 +1347,7 @@ final class SessionStore {
         Keychain.remove(Keychain.icuApiKey)
         for key in ["lastIcuSync", problemKey, pbSnapshotKey, "healthExported",
                     "healthWriteEnabled", defaultTurnTypeKey, welcomeShownKey,
-                    reAddDeclinedKey, replayLengthKey, replayFramingKey,
+                    reAddDeclinedKey, replayLengthKey, replayFramingKey, replayMusicKey,
                     ActivityNotifier.enabledKey, ActivityNotifier.markKey,
                     ActivityNotifier.pendingImportKey, ActivityNotifier.promptedKey,
                     MapLayerVisibilityStore.defaultsKey] {
@@ -1332,6 +1357,8 @@ final class SessionStore {
         for url in [try? AppPaths.databaseURL(), try? AppPaths.sessionsRoot()] {
             if let url { try? fm.removeItem(at: url) }
         }
+        // The copy of whatever song the last clip was made with — a fresh install has none.
+        ReplayMusicStore.keepOnly(nil)
         // `UI_ICU_KEY=…` seeds a key through the real keychain path afterwards, which is
         // how the "key stored, sync failed" card gets driven without typing.
         if let seed = ProcessInfo.processInfo.environment["UI_ICU_KEY"], !seed.isEmpty {

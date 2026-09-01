@@ -323,6 +323,18 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      recorder reports the file's dimensions, not the panel's), even numbers for H.264, and a
      real crop of a real synthetic movie written with `AVAssetWriter` — the one part of the
      recording path a Mac can settle.
+   - `ReplayClipSoundtrackTests` — how the rider's own track is cut to fit a clip whose length
+     he did not choose (`ReplayClipSoundtrack`, `ReplayClipCropper.export`). The schedule is
+     pure and pinned: a long track is trimmed to one piece, a short one repeats from the top
+     with the last copy cut mid-phrase, an exact fit stays one piece, the pieces tile the clip
+     with no gap and no overlap on six track/clip pairs, anything under a second is refused
+     outright, and the 0.8 s / 1.5 s fades shrink together — never overlapping — on a clip too
+     short to hold them. Then the same two-layer trick `ReplayStageTests` uses: a synthetic
+     `AVAssetWriter` movie plus a 440 Hz tone written with `AVAudioFile`, muxed for real, and
+     the exported file asserted to have exactly one audio track as long as the video — with a
+     crop and without one. A file that is not audio at all leaves the clip silent rather than
+     failing the export, which is the trade the whole path is built on: the recording took as
+     long to make as it lasts, and a bad pick must not cost it.
 
    iOS screenshot hooks (DEBUG **and** simulator only, passed as `SIMCTL_CHILD_…`
    environment variables to `xcrun simctl launch`): `UI_RESET=1` restores the fresh-install
@@ -401,7 +413,19 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    Mac can check and the *crop* is not — see `ReplayStageTests`, which exports a synthetic
    `AVAssetWriter` movie and asserts the cropped file's pixel dimensions, and the device note
    below. `UI_REPLAY_SETUP=1` opens the setup sheet instead, which is the only screen the
-   photo picker and the two pickers live on. `UI_REPLAY_RECORD=0` stages the other mode, the
+   photo picker and the two pickers live on. On that sheet `UI_REPLAY_MUSIC=<path>` stages the
+   **Music** row: the document picker runs out of process, exactly like `PhotosPicker`, so
+   `simctl` can no more tap it than it can pick a photo. The path is read by the same code a
+   picked file goes through — copied into `Application Support/ReplayMusic/`, measured, refused
+   if it turns out not to be audio — so the row it fills in is the real one, not a mock. Put
+   the file inside the app's own container first
+   (`xcrun simctl get_app_container booted de.lahmann.wingfoil data`), since the simulator's
+   sandbox does not reach an arbitrary host path. Both states are worth a look: with the hook,
+   the chosen row (name, length, "repeats to fill the 32 s clip"); without it after a clip has
+   been started with one, the "Use last: <name>" offer, which is how the remembered track
+   comes back — the sheet deliberately opens **silent** every time, because a clip that quietly
+   arrived with a song under it is a surprise the rider would find out about in somebody else's
+   chat. `UI_REPLAY_RECORD=0` stages the other mode, the
    plain full-screen replay a rider gets when the recorder is unavailable or the permission
    was refused: no countdown, no clip, the transport says "Done".
    **`SIMCTL_CHILD_…` really does mean the environment of `simctl` itself**, not an argument
@@ -427,12 +451,17 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    not a playable movie, so "Save to Photos" on it exercises the add-only authorization and
    then fails at the library, which is exactly the failure alert and the settings deep link
    worth photographing. A successful save is device-only.)
-   **Three things only a device can settle.** Whether the *first recorded frame* is the title
+   **Four things only a device can settle.** Whether the *first recorded frame* is the title
    card: the countdown is removed, a `titleSettleS` beat passes and only then is
    `startRecording` awaited, and there is no simulator capture to check it against. Whether
    the **crop lands on the staged box**: the arithmetic and the export are covered by
    `ReplayStageTests` against a synthetic movie, but only a phone produces a recording *of the
-   staged screen* to crop. And whether a clip actually reaches the camera roll.
+   staged screen* to crop. Whether the **music sounds right on the finished clip** — that it is
+   there at all, that the fades land, that the loop seam is not audible, and that the preview
+   in the clip sheet plays out loud with the ring switch on silent (the sheet claims
+   `AVAudioSession.playback` for exactly that, and a Mac has no ring switch to check it
+   against); `ReplayClipSoundtrackTests` settles the schedule and the mux, not the listening.
+   And whether a clip actually reaches the camera roll.
    Orientation is the one thing no hook stages: `simctl` cannot rotate a simulator and
    Simulator.app's Rotate menu is not reachable from a headless run. To photograph the
    landscape frame, temporarily cut `UISupportedInterfaceOrientations` in `ios/project.yml`

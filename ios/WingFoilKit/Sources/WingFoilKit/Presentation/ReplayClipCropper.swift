@@ -20,7 +20,13 @@ import Foundation
 /// without a phone. ReplayKit writes nothing in the Simulator (`ReplayRecorder` says so at
 /// length), but `AVAssetWriter` will happily make a synthetic movie on a Mac, and the crop is
 /// then a checkable claim about pixel dimensions rather than something only a device can
-/// settle — see `ReplayClipCropperTests`.
+/// settle — see `ReplayStageTests`.
+///
+/// **Why the music comes through here too.** A soundtrack is the same export: one pass, one
+/// re-encode, one file. Muxing it separately would mean encoding the video twice on a phone
+/// that has just spent the length of the clip recording. So `export` below takes both the crop
+/// and the track, either of which may be absent, and the source's *own* audio is never carried
+/// across — see the note on it.
 public enum ReplayClipCropper {
 
     public enum Failure: LocalizedError, Equatable {
@@ -48,6 +54,29 @@ public enum ReplayClipCropper {
     public static func crop(_ url: URL, to crop: CGRect, output: URL,
                             preset: String = AVAssetExportPresetHighestQuality) async throws
         -> URL {
+        try await export(url, crop: crop, music: nil, output: output, preset: preset)
+    }
+
+    /// The one export the recording path has: crop the frame, lay the rider's music under it,
+    /// or both.
+    ///
+    /// `crop` nil means the whole frame (a "Full screen" clip that is only here for the music);
+    /// `music` nil means silence. With both nil there is nothing to do and the caller should not
+    /// have come — it still produces a correct file, just a pointlessly re-encoded one.
+    ///
+    /// **The recording's own audio is dropped, always.** The microphone is off (`ReplayRecorder`
+    /// says why), so in practice there is nothing on that track — but "in practice" is not good
+    /// enough for a file that gets posted. Building the output from a fresh `AVMutableComposition`
+    /// and copying only the video track means a stray system sound cannot leak into a shared clip
+    /// by construction, rather than by a setting somewhere staying right.
+    ///
+    /// A music file that turns out to have no sound in it, or to be too short to loop, is *not*
+    /// an error: the clip comes out silent and the caller says so. Losing a recording over a bad
+    /// pick would be the wrong trade every time.
+    @discardableResult
+    public static func export(_ url: URL, crop: CGRect?, music: URL?, output: URL,
+                              preset: String = AVAssetExportPresetHighestQuality) async throws
+        -> URL {
         let asset = AVURLAsset(url: url)
         // A file AVFoundation refuses to open and a movie with no video in it are the same
         // thing here — a recording there is nothing to crop — and the simulator's own
@@ -58,6 +87,54 @@ public enum ReplayClipCropper {
         let (naturalSize, preferred) = try await track.load(.naturalSize, .preferredTransform)
         let duration = try await asset.load(.duration)
 
+        let composition = AVMutableComposition()
+        guard let video = composition.addMutableTrack(
+            withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
+            throw Failure.export("the composition would not take a video track")
+        }
+        do {
+            try video.insertTimeRange(CMTimeRange(start: .zero, duration: duration),
+                                      of: track, at: .zero)
+        } catch {
+            throw Failure.export((error as NSError).localizedDescription)
+        }
+        // Carried on the track when nothing is being cropped, so an upright recording stays
+        // upright with no video composition in the way. When there *is* a crop the same
+        // rotation is folded into the layer instruction below instead, and a transform in both
+        // places would apply it twice.
+        if crop == nil { video.preferredTransform = preferred }
+
+        var mix: AVAudioMix?
+        if let music {
+            mix = try await ReplayClipSoundtrack.lay(music, over: composition, clip: duration)
+        }
+
+        guard let session = AVAssetExportSession(asset: composition, presetName: preset) else {
+            throw Failure.export("the export session could not be created")
+        }
+        if let crop {
+            // The source's own frame rate, when it will say — a screen recording is 60 fps on
+            // a ProMotion phone and 30 on everything else, and re-timing it here would either
+            // drop frames or duplicate them.
+            let fps = try await track.load(.nominalFrameRate)
+            session.videoComposition = cropComposition(crop, of: video, naturalSize: naturalSize,
+                                                       preferred: preferred, fps: fps,
+                                                       duration: duration)
+        }
+        session.audioMix = mix
+        try? FileManager.default.removeItem(at: output)
+        do {
+            try await session.export(to: output, as: .mp4)
+        } catch {
+            throw Failure.export((error as NSError).localizedDescription)
+        }
+        return output
+    }
+
+    /// The composition that writes the wanted rectangle and discards the rest.
+    private static func cropComposition(_ crop: CGRect, of track: AVCompositionTrack,
+                                        naturalSize: CGSize, preferred: CGAffineTransform,
+                                        fps: Float, duration: CMTime) -> AVVideoComposition {
         // The recording's own orientation is baked into `preferredTransform`, and the crop was
         // computed against what the rider *saw* — i.e. the displayed frame, not the stored
         // one. Composing the display transform first and the crop translation after it means
@@ -76,23 +153,9 @@ public enum ReplayClipCropper {
 
         let composition = AVMutableVideoComposition()
         composition.renderSize = crop.size
-        // The source's own frame rate, when it will say — a screen recording is 60 fps on a
-        // ProMotion phone and 30 on everything else, and re-timing it here would either drop
-        // frames or duplicate them.
-        let fps = try await track.load(.nominalFrameRate)
-        composition.frameDuration = CMTime(value: 1, timescale: fps > 0 ? CMTimeScale(fps.rounded()) : 30)
+        composition.frameDuration = CMTime(value: 1,
+                                           timescale: fps > 0 ? CMTimeScale(fps.rounded()) : 30)
         composition.instructions = [instruction]
-
-        guard let session = AVAssetExportSession(asset: asset, presetName: preset) else {
-            throw Failure.export("the export session could not be created")
-        }
-        session.videoComposition = composition
-        try? FileManager.default.removeItem(at: output)
-        do {
-            try await session.export(to: output, as: .mp4)
-        } catch {
-            throw Failure.export((error as NSError).localizedDescription)
-        }
-        return output
+        return composition
     }
 }

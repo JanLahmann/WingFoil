@@ -307,6 +307,25 @@ which the phone app still refers to by that name where it means that app.
 The same footer closes a replay clip (`ReplayClipCards`), which is the frame a viewer is left
 staring at while the clip loops — the one frame worth pointing a camera at.
 
+### A clip can carry the rider's own music, and only his own
+
+The replay clip is muxed after recording, never during (iOS: `ReplayClipSoundtrack`,
+`ReplayClipCropper.export`): the microphone is off and stays off, the recording's own audio
+track is dropped by construction rather than by a setting, and the track the rider chose is laid
+under the finished video — trimmed if it is longer than the clip, repeated from the top if it is
+shorter, with a 0.8 s fade in and a 1.5 s fade out. The setup sheet's Music row defaults to
+**None** on every clip (unlike the length and the shape, which open where the last one left
+them) and carries one line: *"Use music you have the rights to share."*
+
+**The seam for bundled tracks is deliberate and unfilled.** Everything below the sheet takes a
+file URL and asks nothing about where it came from, so a "pick one of ours" row would be a
+second way of producing that URL and no other code would change. What is missing is not code
+but licensed audio: a track shipped inside an app whose riders then post the results to social
+networks needs a licence written for exactly that use, and nothing from a commercial streaming
+service can ever be one — those files are DRM'd, the APIs hand out stream handles rather than
+samples, and the terms forbid redistribution outright. Hence the rider's own file, and the
+caption saying whose responsibility the rights are.
+
 ## Sections — how a session divides
 
 Both apps open on the key-metrics block and then **switch between four sections**, in this
