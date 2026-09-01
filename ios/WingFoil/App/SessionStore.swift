@@ -694,6 +694,209 @@ final class SessionStore {
         func send(_ summary: ImportSummary) { sink(summary) }
     }
 
+    /// The same trick for the two library-backup jobs, which report different shapes.
+    private final class Relay<Value>: @unchecked Sendable {
+        private let sink: @Sendable (Value) -> Void
+
+        init(_ sink: @escaping @Sendable (Value) -> Void) { self.sink = sink }
+
+        func send(_ value: Value) { sink(value) }
+    }
+
+    // MARK: - Library backup & restore
+    //
+    // The one thing an iPhone migration does not cover (`LibraryBackup`). Both directions
+    // are long jobs over a file the rider chose, so both are held as tasks the UI can
+    // cancel, and both refuse to start while anything else is using the library.
+
+    struct BackupProgress: Sendable, Equatable {
+        var packed = 0
+        var total = 0
+    }
+
+    /// A finished backup, waiting for the rider to say where it goes.
+    ///
+    /// It lives in `tmp/` and is offered through the share sheet, which is what lets him
+    /// pick iCloud Drive — the natural destination and the one this app must never write to
+    /// on its own, because "the app put a 3 GB file in your iCloud" is not a surprise
+    /// anybody enjoys.
+    struct BackupFile: Identifiable, Equatable {
+        let id = UUID()
+        let url: URL
+        let manifest: LibraryBackupManifest
+        let bytes: Int64
+
+        var filename: String { url.lastPathComponent }
+    }
+
+    /// A picked backup that has been read far enough to say what it is, waiting for a yes.
+    struct RestoreOffer: Identifiable, Equatable {
+        let id = UUID()
+        let url: URL
+        let manifest: LibraryBackupManifest
+    }
+
+    /// How big the next backup would be. nil until Settings asks for it.
+    private(set) var backupEstimate: LibraryBackupSize?
+    private(set) var backupProgress: BackupProgress?
+    private(set) var backupFile: BackupFile?
+    private(set) var restoreProgress: LibraryRestore.RestoreProgress?
+    var restoreOffer: RestoreOffer?
+
+    private var backupWork: Task<LibraryBackupManifest, Error>?
+    private var restoreWork: Task<LibraryRestore.Summary, Error>?
+
+    /// `CFBundleShortVersionString (CFBundleVersion)` — written into the manifest so a
+    /// backup can say which build made it. Read here rather than in the kit, whose
+    /// `Bundle.main` in a test is the test runner.
+    static var appVersion: String {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "0"
+        let build = info?["CFBundleVersion"] as? String ?? "0"
+        return "\(version) (\(build))"
+    }
+
+    private var backupWriter: LibraryBackupWriter {
+        LibraryBackupWriter(database: ingestor.database, archive: ingestor.archive,
+                            databaseURL: databaseURL, appVersion: Self.appVersion)
+    }
+
+    /// Cheap enough to run every time Settings appears: one directory walk and two counts.
+    func refreshBackupEstimate() async {
+        backupEstimate = try? await backupWriter.estimate()
+    }
+
+    /// Writes the whole library to a zip in `tmp/`, ready for the share sheet.
+    func makeBackup() {
+        guard !isBusy, backupWork == nil else { return }
+        Task { await runBackup() }
+    }
+
+    private func runBackup() async {
+        isBusy = true
+        status = "Packing your library…"
+        backupFile = nil
+        let total = backupEstimate?.sessionCount ?? sessions.count
+        backupProgress = BackupProgress(packed: 0, total: total)
+        defer {
+            isBusy = false
+            backupProgress = nil
+            backupWork = nil
+        }
+
+        // Its own directory under tmp/, wiped first: a previous backup still sitting there
+        // is a file iOS may reap at any moment and a name collision the moment it does not.
+        let directory = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("LibraryBackup", isDirectory: true)
+        try? FileManager.default.removeItem(at: directory)
+        let url = directory.appendingPathComponent(LibraryBackupWriter.suggestedFilename())
+
+        let writer = backupWriter
+        let relay = Relay<BackupProgress> { [weak self] progress in
+            Task { @MainActor in self?.backupProgress = progress }
+        }
+        let work = Task.detached(priority: .userInitiated) {
+            try await writer.write(to: url) { packed, total in
+                relay.send(BackupProgress(packed: packed, total: total))
+            }
+        }
+        backupWork = work
+        do {
+            let manifest = try await work.value
+            let bytes = Int64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
+            backupFile = BackupFile(url: url, manifest: manifest, bytes: bytes)
+            status = "Backup ready — \(Fmt.bytes(bytes))"
+        } catch is CancellationError {
+            status = "Backup stopped"
+        } catch {
+            errorMessage = "Could not write the backup: \(error)"
+        }
+    }
+
+    func cancelBackup() { backupWork?.cancel() }
+
+    /// Drops the finished file once the rider has sent it somewhere (or decided not to).
+    func discardBackup() {
+        if let url = backupFile?.url {
+            try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
+        }
+        backupFile = nil
+    }
+
+    // MARK: Restore
+
+    /// Reads the picked zip's manifest and nothing else, so the confirmation sheet can say
+    /// what it is — and so a backup from a newer build is refused *before* anything starts.
+    func offerRestore(urls: [URL]) async {
+        guard let url = urls.first, !isBusy else { return }
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        do {
+            restoreOffer = RestoreOffer(url: url, manifest: try LibraryRestore.inspect(url))
+        } catch {
+            errorMessage = Self.restoreMessage(error)
+        }
+    }
+
+    /// "Restore" on the confirmation sheet.
+    func confirmRestore() {
+        guard let offer = restoreOffer, !isBusy else { return }
+        restoreOffer = nil
+        Task { await runRestore(offer) }
+    }
+
+    func cancelRestore() { restoreWork?.cancel() }
+
+    private func runRestore(_ offer: RestoreOffer) async {
+        isBusy = true
+        status = "Restoring your library…"
+        restoreProgress = LibraryRestore.RestoreProgress(done: 0,
+                                                         total: offer.manifest.sessionCount)
+        defer {
+            isBusy = false
+            restoreProgress = nil
+            restoreWork = nil
+        }
+
+        let ingestor = self.ingestor
+        let url = offer.url
+        let relay = Relay<LibraryRestore.RestoreProgress> { [weak self] progress in
+            Task { @MainActor in self?.restoreProgress = progress }
+        }
+        // Detached and held, because cancellation has to reach *this* task: a detached
+        // child does not inherit its parent's cancellation, and "Stop" has to mean stop.
+        let work = Task.detached(priority: .userInitiated) {
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            return try await LibraryRestore(ingestor: ingestor)
+                .restore(from: url) { relay.send($0) }
+        }
+        restoreWork = work
+        do {
+            let summary = try await work.value
+            status = summary.shortDescription
+            if !summary.failed.isEmpty {
+                errorMessage = summary.failed.prefix(5).joined(separator: "\n")
+            }
+        } catch is CancellationError {
+            status = "Restore stopped — the sessions already restored are in your library"
+        } catch {
+            errorMessage = Self.restoreMessage(error)
+        }
+        await load()
+        // Restored sessions are the rider's own history, not new achievements: a backup
+        // must not fire nine personal-best celebrations for records he set last summer.
+        await refreshPersonalBests(celebrate: false)
+        await writeNewSessionsToHealth()
+    }
+
+    /// `LibraryRestore.Failure` already carries a sentence written for a rider; anything
+    /// else is a surprise and says so in its own words.
+    private static func restoreMessage(_ error: any Error) -> String {
+        (error as? LibraryRestore.Failure)?.description
+            ?? "Could not read that backup: \(error)"
+    }
+
     // MARK: - Map legend
 
     /// Tapping a legend chip. Kept on the store rather than in a view's `@State` because

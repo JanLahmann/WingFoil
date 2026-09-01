@@ -19,6 +19,10 @@ struct SettingsView: View {
                 analysisSection
                 healthSection
                 storageSection
+                // Right under Storage, which is the section that just told the rider how
+                // many megabytes his library is: "and here is how to keep a copy of it"
+                // is the next sentence, not a separate topic.
+                LibraryBackupSection()
                 #if DEBUG
                 debugSection
                 #endif
@@ -263,19 +267,12 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         Section {
-            LabeledContent("App", value: Self.appVersion)
+            LabeledContent("App", value: SessionStore.appVersion)
             LabeledContent("Analysis engine", value: AnalysisEngine.version)
         } header: {
             Text("About")
         } footer: {
             Text("Wind data by Open-Meteo.com, CC BY 4.0.")
         }
-    }
-
-    private static var appVersion: String {
-        let info = Bundle.main.infoDictionary
-        let version = info?["CFBundleShortVersionString"] as? String ?? "0"
-        let build = info?["CFBundleVersion"] as? String ?? "0"
-        return "\(version) (\(build))"
     }
 }

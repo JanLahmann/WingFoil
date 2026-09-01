@@ -82,10 +82,31 @@ import Testing
         let privacy = HelpCatalog.topic(.icuPrivacy)
         #expect(privacy.body.contains(IcuSetupGuide.privacyNote))
 
-        // The setup section is reachable from the index and holds exactly these four —
-        // the example session sits second, right after the path it is an alternative to.
+        // The setup section is reachable from the index and holds exactly these five —
+        // the example session sits second, right after the path it is an alternative to,
+        // and the backup topic sits last because it is the one a rider reads before he
+        // leaves a phone rather than when he arrives on one.
         #expect(HelpCatalog.topics(in: .setup).map(\.id)
-                == [.icuSetup, .exampleSession, .icuTroubleshooting, .icuPrivacy])
+                == [.icuSetup, .exampleSession, .icuTroubleshooting, .icuPrivacy,
+                    .libraryBackup])
+    }
+
+    /// The backup topic has to answer three questions in order, because a rider who reads
+    /// it is deciding whether he needs to do anything at all: does an ordinary phone swap
+    /// already cover this (yes), what is actually irrecoverable without it (the metadata),
+    /// and can restoring hurt what is already on the phone (no).
+    @Test func theBackupTopicSaysWhatIsCoveredAlreadyAndWhatIsNot() {
+        let topic = HelpCatalog.topic(.libraryBackup)
+        #expect(topic.section == .setup)
+        let prose = topic.body.joined(separator: " ").lowercased()
+        for phrase in ["new iphone", "icloud", "deleted", "gear", "accelerometer",
+                       "additive", "refused"] {
+            #expect(prose.contains(phrase), "the backup topic never mentions \(phrase)")
+        }
+        // The recordings inside are the rider's own, unscrubbed — the opposite promise
+        // from `shareFit`, and the one a reader could otherwise get wrong.
+        #expect(prose.contains(".fit"))
+        #expect(HelpCatalog.search("backup").contains { $0.id == .libraryBackup })
     }
 
     @Test func setupTopicIsSearchable() {
