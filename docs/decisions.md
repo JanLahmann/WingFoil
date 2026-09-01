@@ -2,6 +2,46 @@
 
 Newest first. One paragraph each: context → decision → consequence.
 
+## ADR-015 · The library backup restores through the **ingest path**, never as a file copy
+The library lives in Application Support, so an iPhone migration and an iCloud device backup
+already carry it and nothing here replaces that. What neither covers is a *fresh* start — a
+phone set up as new, the app deleted and reinstalled — and the loss is asymmetric: the
+recordings can be re-fetched from intervals.icu with some pain, but `customTitle`, `shareNote`,
+the rider attribution, the gear links, the spot names and the tombstones exist in one SQLite
+file on one phone and nowhere else. Decision: **one zip** — `manifest.json`, `library.sqlite`,
+`Sessions/<uuid>/{original.fit|gpx,analysis.json}` — written to `tmp/` and handed to the share
+sheet, so the rider picks the destination (iCloud Drive being the obvious one) and the app never
+writes to his storage on its own.
+Two decisions inside that carry the weight. **The database snapshot is `VACUUM INTO`, not a
+file copy.** Copying a live SQLite file is the classic way to ship a corrupt backup: the `-wal`
+and `-shm` sidecars hold committed pages the main file has not absorbed, and copying all three
+is not atomic either. `VACUUM INTO` runs on GRDB's serialized writer connection inside SQLite's
+own read transaction, so it sees one consistent snapshot with the WAL folded in, writes a single
+sidecar-free file, and compacts on the way — `DatabasePool.backup(to:)` plus the compaction, and
+unlike `PRAGMA wal_checkpoint(TRUNCATE)` + copy it cannot race a writer that commits between the
+two steps. **And restore never puts that file back.** Copying it over the live database would
+delete every session imported since the backup, undo every rename since, and resurrect
+everything deleted since. Instead the snapshot is opened *beside* the live library, migrated
+forward by the ordinary `AppDatabase.migrator` when it is older, and read as a source of facts:
+each session goes back in through `SessionIngestor.ingest` — the same door icu, GDPR and AirDrop
+use, same ±60 s dedupe key — and the metadata is merged with one rule, *fill what is missing,
+never overwrite what is there*. Gear merges by natural key (kind + name, case-insensitive) so a
+second restore does not double the kit list; spots carry over only a name the rider typed, onto
+a live spot still auto-named within the backup spot's radius; tombstones union by id.
+Consequences, all of them deliberate. **Restore is idempotent by construction** rather than by a
+"already restored" flag — the second pass finds every session by dedupe key and every field
+already filled, and writes nothing (asserted). **It never resurrects a session deleted since the
+backup**: a live tombstone is the newer instruction, and those are counted and reported rather
+than silently obeyed or silently overruled. **A provisional row cannot be restored** — the
+watch's BLE card carries no recording, and inventing a session row from summary columns is the
+blind copy this whole design avoids. **A future schema is refused by name**, because a backup
+from a newer build can hold columns this one has never heard of; an older one is the ordinary
+case and is migrated. Size is stated before the work starts and warns above 200 MB naming the
+accelerometer, which is ~95 % of any CIQ recording that has one. ZIPFoundation was already a
+dependency for the GDPR nested-ZIP reader, so the write path cost nothing new; unlike the import
+side it opens the archive **by URL** rather than from `Data`, because a season's backup is
+gigabytes and the GDPR reader's whole-file-in-memory shape does not survive that.
+
 ## ADR-014 · The device list stops at CIQ ≥ 5.x sports watches (Tier A), and stops there on purpose
 The app shipped on the fenix 8 and fenix 7 families and nothing else, which is a small slice of
 the watches that could run it. A survey of the whole SDK device catalogue against the built

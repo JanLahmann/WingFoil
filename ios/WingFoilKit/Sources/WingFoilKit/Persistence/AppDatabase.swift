@@ -34,6 +34,15 @@ public struct AppDatabase: Sendable {
     /// database moves through all of them.
     public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9"]
 
+    /// The schema version this build writes — the `N` of the last `vN` migration.
+    ///
+    /// It exists because a library can now leave the phone (`LibraryBackupWriter`) and come
+    /// back on another one, possibly to an older build. A number in the backup's manifest
+    /// is what lets that build **refuse** rather than half-import a schema it has never
+    /// seen. Derived from the list rather than typed a second time: two places to bump is
+    /// one place to forget, and the migration test pins the two together.
+    public static var schemaVersion: Int { migrationNames.count }
+
     /// Public so a caller (and the migration test) can migrate a writer only part of the
     /// way — `migrator.migrate(writer, upTo: "v1")` reproduces a shipped v1 library.
     public static var migrator: DatabaseMigrator {
