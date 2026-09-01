@@ -349,6 +349,29 @@ which the phone app still refers to by that name where it means that app.
 The same footer closes a replay clip (`ReplayClipCards`), which is the frame a viewer is left
 staring at while the clip loops — the one frame worth pointing a camera at.
 
+### Uncertified speed — the one mark a degraded source always wears
+
+A speed record is only trustworthy when it came off the receiver's Doppler channel. A source
+that carries positions but no speed channel — **every GPX** (engine 0.9.0), and the occasional
+converted export — has its speed differentiated from positions instead, which is noisier and
+biased upward on a bad fix. Those records are still shown, because they are still the rider's
+session; they are shown **marked**, because an all-time best is exactly where a number nobody
+can verify does the most damage.
+
+The rule is read from one field, `sourceClass == "c"`, and nothing downstream of the parser
+knows the word GPX:
+
+| surface | mark |
+|---|---|
+| session badge | `limited data` (web `render.js`), `SessionDisplay.sourceClassNote` (iOS) — the title/subtitle names both absences: estimated speed, no pump data |
+| records table | an `uncertified` chip beside the **value** (web `trends.js`, iOS `RecordsView`) — beside the claim, not beside the session |
+| personal bests | a class-(c) effort never fires the celebration (`PersonalBestDetector.improvements`) |
+| share card | `disclaimer` — "Speeds from a degraded source — uncertified" (`ShareCardStats`, `cardDisclaimer`) — the card leaves the device, so it cannot be read as a speed claim |
+
+The same source class also has no accelerometer, so the pump and takeoff-effort figures are
+absent rather than zero, by the never-a-flattering-zero rule the goldens already follow
+(docs/testing.md).
+
 ### A clip can carry the rider's own music, and only his own
 
 The replay clip is muxed after recording, never during (iOS: `ReplayClipSoundtrack`,

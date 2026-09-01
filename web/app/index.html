@@ -87,7 +87,7 @@
 <div id="view-analyze">
 
   <!-- ------------------------------------------------------------------ drop -->
-  <section id="dropzone" class="dropzone" tabindex="0" aria-label="Drop a FIT file here">
+  <section id="dropzone" class="dropzone" tabindex="0" aria-label="Drop a FIT or GPX file here">
     <div class="drop-inner">
       <svg class="drop-icon" viewBox="0 0 48 48" aria-hidden="true">
         <path d="M24 32V10m0 0-8 8m8-8 8 8" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -95,7 +95,7 @@
         <path d="M8 30v6a2 2 0 0 0 2 2h28a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor"
               stroke-width="2.5" stroke-linecap="round"/>
       </svg>
-      <p class="drop-title">Drop a <strong>.fit</strong> file (or a .zip containing one)</p>
+      <p class="drop-title">Drop a <strong>.fit</strong> or <strong>.gpx</strong> file (or a .zip containing one)</p>
       <p class="drop-hint">
         <!-- A real <label for> — not a button calling input.click() — so the picker opens
              even where scripted activation is restricted. iPhone Safari has no drag & drop,
@@ -103,7 +103,7 @@
              visually hidden rather than `hidden`, because a display:none control is not a
              reliable label target. -->
         <label class="btn primary" id="pick" for="file">Choose a file…</label>
-        <input id="file" type="file" accept=".fit,.zip,application/zip" class="sr-only">
+        <input id="file" type="file" accept=".fit,.gpx,.zip,application/gpx+xml,application/zip" class="sr-only">
       </p>
       <!-- A first visitor with no .fit file to hand had nothing to look at but a drop
            target. This is the same recording the iOS app bundles as its example (the
@@ -144,15 +144,16 @@
       </div>
 
       <!-- What actually works, stated where the decision is made. "Any .fit file" was a
-           promise the intake cannot keep (js/app.js accepts .fit and .zip, and the parser
-           has no GPX reader at all), so the list is the recordings that have really been
-           read, and the one format people ask for is refused by name rather than by
-           silence. -->
+           promise the intake cannot keep, so the list is the recordings that have really
+           been read. Since engine 0.9.0 that list includes GPX — and the sentence that
+           used to refuse it now names what it costs instead, in the same breath, because
+           a rider who drops one should learn that here and not from an absent section. -->
       <p class="drop-what">
         Garmin <code>.fit</code> files work: from the CleanJibe watch app, from Garmin's own
         Windsurf profile, or from another wingfoil Connect IQ app. A <code>.zip</code> of
-        several is fine too. <code>.gpx</code> is not supported yet. Pump strokes and takeoff
-        effort need the CleanJibe watch app; everything else works from any of them.
+        several is fine too. <code>.gpx</code> works as well — speed records are estimates
+        there, and there's no pump data. Pump strokes and takeoff effort need the CleanJibe
+        watch app; everything else works from any of them.
       </p>
       <p class="privacy">Free, no account. Your file never leaves this browser tab — the analysis runs on your own device.</p>
     </div>

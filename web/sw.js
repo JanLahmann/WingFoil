@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v17";     // v17: the rider-facing copy pass, the empty-state preview strip, /invite/
+const VERSION = "v18";     // v18: engine 0.9.0 — GPX import, and the copy that stops refusing it
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.

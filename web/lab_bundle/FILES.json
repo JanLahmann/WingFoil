@@ -8,6 +8,7 @@
   "wingfoil_lab/flightend.py",
   "wingfoil_lab/goldens.py",
   "wingfoil_lab/gp3s.py",
+  "wingfoil_lab/gpx.py",
   "wingfoil_lab/hrcost.py",
   "wingfoil_lab/jump.py",
   "wingfoil_lab/parse.py",

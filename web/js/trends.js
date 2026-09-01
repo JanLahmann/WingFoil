@@ -131,6 +131,17 @@ function renderTotals(host, t) {
     .join("");
 }
 
+/** The mark on a record no recording could certify (engine 0.9.0, `library.py._stamp`).
+ *
+ *  It sits beside the *value*, not beside the session, because the value is the claim: a
+ *  class-(c) session had its speed differentiated from positions rather than measured by
+ *  the receiver, and a differentiated speed is noisier and can read high. The record is
+ *  still shown — it is still the rider's afternoon — and it is shown marked, because an
+ *  all-time best is exactly where an unverifiable number does the most damage. */
+const UNCERTIFIED = ' <span class="badge" title="This session carried no speed channel — a '
+  + 'GPX, or another degraded source. Its speed was differentiated from positions, which is '
+  + 'noisier and can read high, so this record cannot be certified.">uncertified</span>';
+
 function renderRecords(table, records) {
   if (!records.length) {
     table.innerHTML = "";
@@ -145,7 +156,8 @@ function renderRecords(table, records) {
     <tbody>${records.map((r) => `
       <tr data-record="${esc(r.key)}">
         <td class="l stack-lead" data-th="record">${esc(r.label)}</td>
-        <td data-th="value"><strong>${nf(r.value, 2)}</strong> <span class="dim">${esc(r.unit)}</span></td>
+        <td data-th="value"><strong>${nf(r.value, 2)}</strong> <span class="dim">${esc(r.unit)}</span>${
+          r.certified === false ? UNCERTIFIED : ""}</td>
         <td class="l" data-th="session">${esc(r.spot || r.fileName || r.id)}</td>
         <td class="l dim" data-th="date">${esc(localDate(r) || "—")}</td>
         <td class="l stack-actions" data-th=""><button class="ghost small-btn" data-act="record"
