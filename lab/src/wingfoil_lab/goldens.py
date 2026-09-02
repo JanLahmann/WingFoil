@@ -216,7 +216,7 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
 
     # `ends` because the streaks span both channels: a straight-line swim ends a run of
     # clean turns too (docs/algorithms.md "Turn streaks").
-    turn_summary = summarize_turns(turns, ends)
+    turn_summary = summarize_turns(turns, ends, tcfg)
     end_summary = summarize_flight_ends(ends)
     return Analysis(
         track=track, clean=ct, flights=fr, records=rec,
@@ -512,6 +512,17 @@ def _config_dict(a: Analysis) -> dict:
     fcfg, flcfg = a.filter_config, a.flight_config
     w, t, p, k = a.wind_config, a.turn_config, a.pump_config, a.takeoff_config
     h, r = a.hr_config, a.rate_config
+    # Experimental parameters are echoed only when they were actually in force. The config
+    # block is a record of what produced *this* document, and a `detectThreeSixty: false`
+    # printed on every golden would be an announcement of a feature the engine did not run
+    # -- and a change to every committed file for a detector that changed no number in one.
+    three_sixty = {
+        "detectThreeSixty": t.detect_three_sixty,          # EXPERIMENTAL, UNVALIDATED
+        "threeSixtyMinDeg": t.three_sixty_min_deg,
+        "threeSixtyMaxS": t.three_sixty_max_s,
+        "threeSixtyReversalDeg": t.three_sixty_reversal_deg,
+        "threeSixtyMinKmh": t.three_sixty_min_kmh,
+    } if t.detect_three_sixty else {}
     return {
         "foilEntrySpeed": flcfg.foil_entry_speed_kmh,
         "entryHold": flcfg.entry_hold_s,
@@ -543,6 +554,7 @@ def _config_dict(a: Analysis) -> dict:
         "entrySpeedWindow": t.entry_speed_window_s,
         "minSpeedLag": t.min_speed_lag_s,
         "turnSuccessPct": t.success_pct,
+        **three_sixty,
         # 3-way outcome ladder (shared with the flight ends)
         "turnStopSpeedFloor": t.stop_speed_floor_mps,
         "turnTouchdownMaxStop": t.touchdown_max_stop_s,
@@ -843,7 +855,12 @@ def _outcome_counts_json(c: OutcomeCounts) -> dict:
 
 
 def _turn_summary_json(s: TurnSummary) -> dict:
-    return {
+    """The turn tallies. `threeSixties` appears **only** when the 360 detector ran
+    (`detectThreeSixty`, docs/algorithms.md "360 spins"): the field is experimental, so a
+    document written with the detector down carries no trace of it and stays identical to
+    every golden committed before it existed. `None` is therefore spelled as *absence*
+    rather than as null -- a key that is present is a key a consumer may start reading."""
+    out = {
         "tacks": s.tacks,
         "tacksSuccessful": s.tacks_successful,
         "jibes": s.jibes,
@@ -862,6 +879,9 @@ def _turn_summary_json(s: TurnSummary) -> dict:
         "tackOutcomes": _outcome_counts_json(s.tack_outcomes),
         "jibeOutcomes": _outcome_counts_json(s.jibe_outcomes),
     }
+    if s.three_sixties is not None:
+        out["threeSixties"] = s.three_sixties
+    return out
 
 
 def _end_counts_json(c) -> dict:
