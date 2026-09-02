@@ -33,15 +33,35 @@ enum EventMarkerStyle {
     /// telling red from blue.
     static let failedTakeoff = DesignTokens.Effort.failedTakeoff
 
-    /// The dot itself, at a size that stays legible on a zoomed-out track.
+    /// The **clean jibe**'s own ink — a green that is deliberately not the ladder's.
+    ///
+    /// "Flew through" is how the turn ended; clean is what it cost, and the two disagree on
+    /// purpose (docs/presentation.md, "Clean jibe"). A star drawn in `Outcome.flew` would
+    /// quietly claim they are the same reading of the same jibe.
+    static let cleanJibe = DesignTokens.Clean.jibe
+
+    /// The dot itself, at a size that stays legible on a zoomed-out track — or a **star**,
+    /// when the jibe was clean.
+    ///
+    /// The star *replaces* the dot rather than sitting beside it: two marks on one turn at
+    /// map scale is two events to the eye. Shape carries it, so nothing here depends on
+    /// telling one green from another; the outcome is still one tap away in the callout,
+    /// and still governs whether the mark is drawn at all.
     @ViewBuilder
     static func dot(_ marker: SessionDetail.EventMarker, size: CGFloat = 11) -> some View {
-        let tint = color(marker.tone)
-        Circle()
-            .fill(marker.filled ? tint : Color.clear)
-            .stroke(marker.filled ? Color.white.opacity(0.9) : tint, lineWidth: 2)
-            .frame(width: size, height: size)
-            .shadow(radius: 1)
+        if marker.isCleanJibe {
+            Image(systemName: DesignTokens.Glyph.cleanJibe)
+                .font(.system(size: size + 2, weight: .semibold))
+                .foregroundStyle(cleanJibe)
+                .shadow(radius: 1)
+        } else {
+            let tint = color(marker.tone)
+            Circle()
+                .fill(marker.filled ? tint : Color.clear)
+                .stroke(marker.filled ? Color.white.opacity(0.9) : tint, lineWidth: 2)
+                .frame(width: size, height: size)
+                .shadow(radius: 1)
+        }
     }
 
     /// Takeoffs and splashes are glyphs, not dots, so they can never be mistaken for an
@@ -94,4 +114,13 @@ extension SessionDetail.EventMarker {
         case .course: return .courseChange
         }
     }
+
+    /// Every chip that has to be on for this mark to be drawn.
+    ///
+    /// A clean jibe answers to **two**: its outcome, because it is still a turn that ended
+    /// some way, and `cleanJibe`, because that is the question the star answers. Hiding
+    /// either hides the mark — the clean layer cuts across the ladder rather than sitting on
+    /// it, and a star that survived "hide touchdowns" would be a touchdown the rider asked
+    /// not to see.
+    var layers: [MapLayer] { isCleanJibe ? [layer, .cleanJibe] : [layer] }
 }

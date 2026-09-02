@@ -37,7 +37,7 @@ const el = (id) => document.getElementById(id);
 
 /** Draw order on the map and in the chart: context first, verdicts over it, the two
  *  glyph layers last so a busy stretch still reads. */
-const MARK_ORDER = ["courseChange", "flewThrough", "touchdown", "fellIn",
+const MARK_ORDER = ["cleanJibe", "courseChange", "flewThrough", "touchdown", "fellIn",
                     "splash", "takeoff"];
 
 /** Chip text, from the generated token catalogue — the same strings the iOS `MapLayer.label`
@@ -53,17 +53,21 @@ const LABEL = Object.fromEntries(TOKENS.layers.map((l) => [l.id, l.label]));
  * twice and made this app count flew-throughs differently from the iOS one.
  */
 const LAYERS = [
-  { id: "flying",       swatch: () => lineSwatch(C.foil) },
-  { id: "offFoil",      swatch: () => lineSwatch(C.track) },
-  { id: "pumping",      swatch: () => lineSwatch(C.pump, 4.5) },
-  { id: "direction",    swatch: () => chevronSwatch() },
-  { id: "effort",       swatch: () => lineSwatch(C.effort, 2.8) },
-  { id: "flewThrough",  swatch: () => glyphSwatch("disc", C.good) },
-  { id: "touchdown",    swatch: () => glyphSwatch("triangle", C.warn) },
-  { id: "fellIn",       swatch: () => glyphSwatch("cross", C.bad) },
-  { id: "courseChange", swatch: () => glyphSwatch("hairline", C.reject) },
-  { id: "takeoff",      swatch: () => glyphSwatch("arrow-up", C.takeoff) },
-  { id: "splash",       swatch: () => glyphSwatch("drop", C.splash) },
+  { id: "flying",       group: "route",  swatch: () => lineSwatch(C.foil) },
+  { id: "offFoil",      group: "route",  swatch: () => lineSwatch(C.track) },
+  { id: "pumping",      group: "route",  swatch: () => lineSwatch(C.pump, 4.5) },
+  { id: "direction",    group: "route",  swatch: () => chevronSwatch() },
+  { id: "effort",       group: "route",  swatch: () => lineSwatch(C.effort, 2.8) },
+  // The events. Clean jibe leads: it is the mark a rider opens the map to find, and it is
+  // the one here that is not a rung of the ladder — filing it after "fell in" would read as
+  // the ladder's fourth outcome, which is exactly what it is not.
+  { id: "cleanJibe",    group: "marker", swatch: () => glyphSwatch("star", C.clean) },
+  { id: "flewThrough",  group: "marker", swatch: () => glyphSwatch("disc", C.good) },
+  { id: "touchdown",    group: "marker", swatch: () => glyphSwatch("triangle", C.warn) },
+  { id: "fellIn",       group: "marker", swatch: () => glyphSwatch("cross", C.bad) },
+  { id: "courseChange", group: "marker", swatch: () => glyphSwatch("hairline", C.reject) },
+  { id: "takeoff",      group: "marker", swatch: () => glyphSwatch("arrow-up", C.takeoff) },
+  { id: "splash",       group: "marker", swatch: () => glyphSwatch("drop", C.splash) },
 ];
 
 const OUTCOME_LAYER = { flew_through: "flewThrough", touchdown: "touchdown",
@@ -272,8 +276,15 @@ function buildModel(result) {
     const turn = g.turns[m.i];
     const layer = m.counted && m.maneuver ? (OUTCOME_LAYER[m.outcome] || "courseChange")
                                           : "courseChange";
+    // A CLEAN jibe (the engine's own `success` flag on a counted jibe) is drawn as a star
+    // and answers to TWO chips: its outcome, because it is still a turn that ended some
+    // way, and `cleanJibe`, because that is the question the star answers. Clean cuts
+    // across the ladder rather than sitting on it, so hiding either chip hides the mark —
+    // the same rule as the iOS `EventMarker.layers`.
+    const clean = !!(m.counted && turn.type === "jibe" && turn.success);
     marks.push({
-      layer, t: m.t, x: m.x, y: m.y, kn: m.kn, style: turnStyle(m), n: m.n,
+      layer, layers: clean ? [layer, "cleanJibe"] : [layer],
+      t: m.t, x: m.x, y: m.y, kn: m.kn, style: turnStyle({ ...m, clean }), n: m.n,
       title: `#${m.n} ${m.kind}${m.counted ? "" : " (not counted)"}`,
       tip: `<b>#${m.n} ${clockAt(meta, m.t)}</b> — ${esc(m.kind)}<br>` +
            `${OUTCOME_LABEL[m.outcome] || m.outcome} · ${nf(turn.entryKn, 1)} → ` +
@@ -416,7 +427,11 @@ function buildModel(result) {
 function tally(model, highlight) {
   const counts = {};
   for (const id of MARK_ORDER) counts[id] = 0;
-  for (const mk of model.marks) counts[mk.layer] = (counts[mk.layer] || 0) + 1;
+  // Counted per *chip*, not per mark: a clean jibe answers to two, so it is one on the
+  // ladder's chip and one on the star's — which is what makes both chips live toggles.
+  for (const mk of model.marks) {
+    for (const id of mk.layers || [mk.layer]) counts[id] = (counts[id] || 0) + 1;
+  }
   counts.flying = model.v.flights.length;
   counts.offFoil = model.v.count ? 1 : 0;
   counts.pumping = model.pumpSpans.length;
@@ -429,6 +444,10 @@ function tally(model, highlight) {
 }
 
 const visible = (id) => !state.hidden.has(id);
+
+/** Whether a mark survives the chips. Every layer it answers to has to be on: a clean jibe
+ *  carries two (its outcome and `cleanJibe`), everything else exactly one. */
+const markVisible = (mk) => (mk.layers || [mk.layer]).every(visible);
 
 /* ------------------------------------------------------------------ the entry point */
 
@@ -583,11 +602,12 @@ function drawMap() {
   }
 
   for (const mk of model.marks) {
-    if (!visible(mk.layer) || mk.x === null || mk.x === undefined) continue;
+    if (!markVisible(mk) || mk.x === null || mk.x === undefined) continue;
     const node = marker(root, mk.style, X(mk.x), Y(mk.y));
     annotate(node, mk, "map");
-    if (mk.n !== null && visible(mk.layer)) label(root, X(mk.x), Y(mk.y), mk.n, mk.style.color,
-                                                  mk.n % 2 === 1);
+    // The number is the mark's row in the Turns table, so it rides with the mark and
+    // disappears with it — a numbered label over no marker would point at nothing.
+    if (mk.n !== null) label(root, X(mk.x), Y(mk.y), mk.n, mk.style.color, mk.n % 2 === 1);
   }
 
   if (model.g.wind) windArrow(root, model.g.wind, W, narrow);
@@ -1116,7 +1136,7 @@ function drawStrip() {
   series(plot, v, v.dopplerKn, X, Y, C.series, 1.5, 1, t0, t1);
 
   for (const mk of state.model.marks) {
-    if (!visible(mk.layer) || !inView(mk.t)) continue;
+    if (!markVisible(mk) || !inView(mk.t)) continue;
     const node = marker(plot, mk.style, X(mk.t), Y(mk.kn), 0.85);
     annotate(node, mk, "strip");
     if (mk.n !== null) label(plot, X(mk.t), Y(mk.kn), mk.n, mk.style.color, mk.n % 2 === 1);
@@ -1629,47 +1649,68 @@ function onZoomButton(ev) {
  * The legend, which is also the filter. A chip with nothing to show is not a button at
  * all — it stays as a subdued caption, because the vocabulary is worth reading even when
  * this session has no instance of it (same rule as the iOS legend).
+ *
+ * **Three groups, one question each**, and the utilities are not one of the questions:
+ *
+ *   1. the **route** — how the track itself is drawn;
+ *   2. the **events on it** — the clean-jibe star first, then the ladder, then the effort
+ *      marks. A visible gap (`.chip-group + .chip-group`) separates it from the route, so
+ *      the wrap reads as two sentences rather than eleven unrelated words;
+ *   3. the **utilities** — Show all (only while something is hidden) and the zoom bar,
+ *      trailing-aligned, because neither of them toggles a layer.
+ *
+ * The legend note stays last, under all three. iOS's `MapLegendView` groups the identical
+ * three, in the same order.
  */
 function drawChips() {
   const host = el("map-legend");
   const counts = tally(state.model, state.highlight);
-  const chips = LAYERS
-    .filter((layer) => layer.id !== "effort" || counts.effort)
-    .map((layer) => {
-      const n = counts[layer.id] || 0;
-      const on = visible(layer.id);
-      // The effort chip is labelled with the window it is currently highlighting ("best
-      // 2 s"), which is what the iOS chip says; the catalogue's "best effort" is the
-      // fallback. Every other chip is the catalogue's word, verbatim.
-      const text = layer.id === "effort" && state.highlight?.label
-        ? state.highlight.label.toLowerCase() : LABEL[layer.id];
-      // Two chips are properties of the route rather than tallies of events, and "1" beside
-      // them would read as "one off-foil thing" — they carry no number.
-      const count = layer.id === "offFoil" || layer.id === "direction"
-        ? "" : `<span class="n">${n}</span>`;
-      if (!n) {
-        return `<span class="item chip off-empty" data-layer="${layer.id}">` +
-               `${layer.swatch()}<span>${esc(text)}</span></span>`;
-      }
-      return `<button type="button" class="item chip chip-btn${on ? "" : " off"}" ` +
-             `data-layer="${layer.id}" aria-pressed="${on}" ` +
-             `aria-label="${on ? "Hide" : "Show"} ${esc(text)}, ${n}">` +
-             `${layer.swatch()}<span>${esc(text)}</span>${count}</button>`;
-    }).join("");
+  const chip = (layer) => {
+    const n = counts[layer.id] || 0;
+    const on = visible(layer.id);
+    // The effort chip is labelled with the window it is currently highlighting ("best
+    // 2 s"), which is what the iOS chip says; the catalogue's "best effort" is the
+    // fallback. Every other chip is the catalogue's word, verbatim.
+    const text = layer.id === "effort" && state.highlight?.label
+      ? state.highlight.label.toLowerCase() : LABEL[layer.id];
+    // Two chips are properties of the route rather than tallies of events, and "1" beside
+    // them would read as "one off-foil thing" — they carry no number.
+    const count = layer.id === "offFoil" || layer.id === "direction"
+      ? "" : `<span class="n">${n}</span>`;
+    if (!n) {
+      return `<span class="item chip off-empty" data-layer="${layer.id}">` +
+             `${layer.swatch()}<span>${esc(text)}</span></span>`;
+    }
+    return `<button type="button" class="item chip chip-btn${on ? "" : " off"}" ` +
+           `data-layer="${layer.id}" aria-pressed="${on}" ` +
+           `aria-label="${on ? "Hide" : "Show"} ${esc(text)}, ${n}">` +
+           `${layer.swatch()}<span>${esc(text)}</span>${count}</button>`;
+  };
+  const group = (name) => {
+    const inner = LAYERS
+      .filter((layer) => layer.group === name)
+      .filter((layer) => layer.id !== "effort" || counts.effort)
+      .map(chip).join("");
+    return inner ? `<span class="chip-group">${inner}</span>` : "";
+  };
 
   const showAll = state.hidden.size
     ? `<button type="button" class="ghost small-btn" id="show-all-layers">Show all</button>` : "";
   const zoomed = !!state.camera;
-  host.innerHTML = chips + showAll
+  const utilities = showAll
     + (state.model.positioned
         ? zoomBar("map", zoomed
             ? `showing ${camera().k.toFixed(1)}×`
             : "pinch, scroll or double-tap to zoom", zoomed)
-        : "")
+        : "");
+  host.innerHTML = group("route") + group("marker")
+    + (utilities ? `<span class="chip-group chip-utilities">${utilities}</span>` : "")
     + `<p class="legend-note">Tap a chip to hide or show it on the map <em>and</em> in the
-      speed strip. Chevrons point the way you were riding. Solid shape = manoeuvre outcome ·
+      speed strip. Chevrons point the way you were riding. Star = a clean jibe, the ones you
+      flew all the way through carrying your speed · solid shape = manoeuvre outcome ·
       hollow square = straight-line flight end, on the same colour ladder · arrow = takeoff,
-      red u-turn = a failed attempt. Tap either figure to move the playhead; tap a mark —
+      red u-turn = a failed attempt. A starred jibe needs both its chips: hide its outcome
+      and the star goes with it. Tap either figure to move the playhead; tap a mark —
       or a flown stretch of track — for which flight it belongs to. Zoomed in, a drag on the
       map pans it.</p>`;
 

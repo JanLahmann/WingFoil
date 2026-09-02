@@ -48,6 +48,11 @@ struct SessionDetail: Sendable {
         var lon: Double
         var tone: Tone
         var filled: Bool
+        /// A **clean jibe** — the strict verdict (docs/presentation.md, "Clean jibe"). It is
+        /// drawn as a filled star in the clean ink instead of the outcome dot, and it answers
+        /// to the `cleanJibe` chip *as well as* to its outcome chip: clean cuts across the
+        /// ladder rather than sitting on it, so hiding either one hides the mark.
+        var isCleanJibe: Bool = false
         var title: String
         var detail: String
         /// The flight this mark ends, when it is a straight-line flight end — tap-only, and
@@ -443,12 +448,13 @@ struct SessionDetail: Sendable {
         var nextID = 0
 
         func add(t: Double, tone: EventMarker.Tone, filled: Bool, title: String, detail: String,
-                 flightIndex: Int? = nil) {
+                 flightIndex: Int? = nil, isCleanJibe: Bool = false) {
             guard let sample = nearest(positioned, t: t),
                   let lat = sample.lat, let lon = sample.lon else { return }
             let flight = flightIndex.flatMap { FlightPairing.flight(at: $0, in: pairings) }
             out.append(EventMarker(id: nextID, t: t, lat: lat, lon: lon, tone: tone,
-                                   filled: filled, title: title, detail: detail,
+                                   filled: filled, isCleanJibe: isCleanJibe,
+                                   title: title, detail: detail,
                                    pairing: flight.map(FlightPairing.flightEndLine),
                                    flightIndex: flight?.index))
             nextID += 1
@@ -460,8 +466,11 @@ struct SessionDetail: Sendable {
             if turn.stoppedS > 0 { detail += String(format: " · stopped %.0f s", turn.stoppedS) }
             if turn.submerged { detail += " · wrist under" }
             if turn.pumped { detail += " · pumped out" }
+            // A clean jibe is a counted jibe the engine's own `success` flag passed — the
+            // same flag the tally's caption counts, never re-derived here.
             add(t: turn.ts, tone: tone, filled: true,
-                title: turnTitle(turn), detail: detail)
+                title: turnTitle(turn), detail: detail,
+                isCleanJibe: turn.counted && turn.type == "jibe" && turn.success)
         }
         for end in PresentationRules.drawnFlightEnds(analysis) {
             var detail = "straight-line"

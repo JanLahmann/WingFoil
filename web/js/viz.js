@@ -50,6 +50,10 @@ export const C = {
   // (docs/presentation.md "Entry tack"). Before these tokens existed the trend chart drew
   // the pair in the ladder's green and an unowned magenta — app-ui-review.md §5.2/§5.3.
   sidePort: TOKENS.side.port.hex, sideStarboard: TOKENS.side.starboard.hex,
+  // The strict verdict's own ink. "Flew through" is how a jibe ENDED; clean is what it
+  // COST, and the two disagree on purpose — so the star carries a green of its own and
+  // never the ladder's (docs/presentation.md "Clean jibe").
+  clean: TOKENS.clean.jibe.hex,
 };
 
 // `glide_out` is the *green* end of the ladder: a flight that ended without drama. It is
@@ -158,6 +162,19 @@ export function svg(tag, attrs = {}, parent = null) {
   return node;
 }
 
+/** A five-pointed star centred on (0,0), first point straight up — the clean-jibe mark.
+ *  Written out rather than computed at draw time: it is the same eleven numbers on every
+ *  marker, and a path string is what the DOM wants anyway. */
+const STAR_PATH = (() => {
+  const pts = [];
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? 5.4 : 2.2;
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    pts.push(`${(Math.cos(a) * r).toFixed(2)},${(Math.sin(a) * r).toFixed(2)}`);
+  }
+  return `M${pts.join(" L")} Z`;
+})();
+
 /** The marker shapes, drawn centred on (0,0) and translated into place. */
 export function marker(parent, kind, x, y, scale = 1) {
   const g = svg("g", { transform: `translate(${x.toFixed(2)} ${y.toFixed(2)}) scale(${scale})` }, parent);
@@ -212,15 +229,30 @@ export function marker(parent, kind, x, y, scale = 1) {
       svg("path", { d: "M0,-5 C2.6,-1.6 4,-0.2 4,1.6 A4,4 0 0 1 -4,1.6 C-4,-0.2 -2.6,-1.6 0,-5 Z",
                     fill: color, stroke: C.surface, "stroke-width": 1 }, g);
       break;
+    // A CLEAN jibe, drawn instead of that turn's outcome dot. A star rather than a fourth
+    // dot colour because it is not a rung of the ladder — shape carries it, so it survives
+    // a colour-blind reading and a zoomed-out track alike (the iOS map draws `star.fill`
+    // at the same size). Five points, outer 5.4 / inner 2.2, first point straight up.
+    case "star":
+      svg("path", { d: STAR_PATH, fill: color, stroke: C.surface, "stroke-width": 1,
+                    "stroke-linejoin": "round" }, g);
+      break;
   }
   return g;
 }
 
 /** Marker style for a turn: bear-aways/round-ups are not manoeuvres, so they stay a
- *  recessive hairline whatever their outcome was (same rule as plot_turns.py). */
+ *  recessive hairline whatever their outcome was (same rule as plot_turns.py).
+ *
+ *  A **clean jibe** takes the star instead of its outcome dot — the strict verdict, in its
+ *  own ink, replacing rather than joining the ladder's mark, because two marks on one turn
+ *  at map scale reads as two events. The outcome is still in the callout, and still decides
+ *  whether the mark is drawn at all (`session.js`, the two-chip rule). */
 export const turnStyle = (m) => (m.maneuver
-  ? { shape: { flew_through: "disc", touchdown: "triangle", fell_in: "cross" }[m.outcome] || "disc",
-      color: OUTCOME_COLOR[m.outcome] || C.reject }
+  ? (m.clean
+      ? { shape: "star", color: C.clean }
+      : { shape: { flew_through: "disc", touchdown: "triangle", fell_in: "cross" }[m.outcome] || "disc",
+          color: OUTCOME_COLOR[m.outcome] || C.reject })
   : { shape: "hairline", color: C.reject });
 
 export const endStyle = (e) => ({ shape: "square", color: OUTCOME_COLOR[e.outcome] || C.ink3 });

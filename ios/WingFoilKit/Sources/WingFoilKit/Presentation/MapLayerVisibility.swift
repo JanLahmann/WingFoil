@@ -17,6 +17,13 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
     /// The takeoff runs he pumped through, tinted along the track and shaded in the chart.
     /// A span, not a moment, which is why it is a line category.
     case pumping
+    /// **The clean jibes**, as filled stars over the outcome dots they replace: a counted
+    /// jibe flown all the way through carrying its speed (docs/presentation.md, "Clean
+    /// jibe"). Its own chip because it is its own question — "where did it go right" — and
+    /// it cuts across the ladder rather than sitting on it, which is why a starred jibe
+    /// also still answers to its outcome chip. Hidden, the star goes back to being the dot
+    /// its outcome says it is.
+    case cleanJibe
     case flewThrough
     case touchdown
     case fellIn
@@ -40,7 +47,8 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
     public var isLine: Bool {
         switch self {
         case .flying, .offFoil, .effort, .pumping: return true
-        case .flewThrough, .touchdown, .fellIn, .courseChange, .takeoff, .splash, .direction:
+        case .cleanJibe, .flewThrough, .touchdown, .fellIn, .courseChange, .takeoff,
+             .splash, .direction:
             return false
         }
     }
@@ -55,6 +63,7 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
         case .offFoil: return "off foil"
         case .effort: return "best effort"
         case .pumping: return "pumping"
+        case .cleanJibe: return "clean jibe"
         case .flewThrough: return "flew through"
         case .touchdown: return "touchdown"
         case .fellIn: return "fell in"
@@ -72,6 +81,7 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
         case .offFoil: return "off foil track"
         case .effort: return "best effort highlight"
         case .pumping: return "pumping runs"
+        case .cleanJibe: return "clean jibe stars"
         case .flewThrough: return "flew through markers"
         case .touchdown: return "touchdown markers"
         case .fellIn: return "fell in markers"

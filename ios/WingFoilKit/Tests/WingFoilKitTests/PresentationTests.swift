@@ -1113,8 +1113,8 @@ import Testing
         let lines = MapLayer.allCases.filter(\.isLine)
         let markers = MapLayer.allCases.filter(\.isMarker)
         #expect(Set(lines) == [.flying, .offFoil, .effort, .pumping])
-        #expect(Set(markers) == [.flewThrough, .touchdown, .fellIn, .courseChange,
-                                 .takeoff, .splash, .direction])
+        #expect(Set(markers) == [.cleanJibe, .flewThrough, .touchdown, .fellIn,
+                                 .courseChange, .takeoff, .splash, .direction])
         #expect(lines.count + markers.count == MapLayer.allCases.count)
         let labels = MapLayer.allCases.map(\.label)
         #expect(Set(labels).count == labels.count, "two chips would read the same")
@@ -2381,6 +2381,7 @@ import Testing
 
         let fixture: String
         let flightCount: Int
+        let cleanJibes: Int
         let markers: Markers
         let flightEnds: FlightEnds
         let takeoff: Takeoff
@@ -2425,6 +2426,10 @@ import Testing
             #expect(got.markers.fellIn == want.markers.fellIn, "\(name): fell-in markers")
             #expect(got.markers.courseChange == want.markers.courseChange,
                     "\(name): course-change markers")
+            // The star layer, which lies *across* the ladder rather than inside it: every
+            // clean jibe is also counted above under the outcome it ended on.
+            #expect(got.cleanJibes == want.cleanJibes, "\(name): clean jibes")
+            #expect(got.cleanJibes <= got.markers.total, "\(name): more clean than counted")
 
             #expect(got.takeoff.pumped == want.takeoff.pumped, "\(name): pumped takeoffs")
             #expect(got.takeoff.free == want.takeoff.free, "\(name): free takeoffs")
@@ -2484,7 +2489,47 @@ import Testing
             #expect(tally.count(.fellIn) == want.markers.fellIn)
             #expect(tally.count(.takeoff) == want.takeoff.total)
             #expect(tally.isToggleable(.splash) == (want.splash > 0))
+            // The star chip counts the marks it toggles, like every other chip.
+            #expect(tally.count(.cleanJibe) == want.cleanJibes)
+            #expect(tally.isToggleable(.cleanJibe) == (want.cleanJibes > 0))
         }
+    }
+
+    /// The star layer: which turns get one, and what it may never be confused with.
+    ///
+    /// A clean jibe is a *counted* jibe the engine's own `success` flag passed — not a
+    /// re-derivation, and deliberately not the ladder's "flew through", which is a different
+    /// reading of the same turn (docs/presentation.md, "Clean jibe"). On the corpus session
+    /// the two are 25 and 35 of 50 jibes, which is the whole argument for two marks.
+    @Test func theStarLayerIsTheStrictVerdictAndNotTheLaddersGreen() throws {
+        let url = testFixturesDir.appendingPathComponent(
+            "goldens/2026-08-29-1440_nago-torbole-windsurfen_ciq.expected.json")
+        let analysis = try JSONDecoder().decode(SessionAnalysis.self,
+                                                from: Data(contentsOf: url))
+        let clean = PresentationRules.cleanJibes(analysis)
+
+        #expect(!clean.isEmpty, "the fixture must contain a clean jibe to prove anything")
+        #expect(clean.allSatisfy { $0.counted && $0.type == "jibe" && $0.success })
+        // It agrees with the engine's own tally — one definition, counted twice over.
+        #expect(clean.count == analysis.summary.turns.jibesSuccessful)
+        // …and it is NOT the flew-through count. A jibe carved cleanly through the sweep
+        // stays clean when the foil is lost later in the recovery tail, which is exactly
+        // what the outcome records, so the two sets genuinely differ.
+        let flew = analysis.turns.filter {
+            $0.counted && $0.type == "jibe" && TurnOutcomeKind($0.outcome) == .flewThrough
+        }
+        #expect(clean.count != flew.count,
+                "clean and flew-through must not be the same number on this fixture")
+        // A bear-away can never be starred, whatever its score: it is not a maneuver.
+        #expect(!clean.contains { !$0.counted })
+
+        // The star does not join the ladder — the four marker counts still partition the
+        // turns and the drawn flight ends one mark each, which is the invariant that would
+        // break the moment somebody made "clean" a fifth outcome.
+        let facts = PresentationFacts(analysis)
+        #expect(facts.cleanJibes == clean.count)
+        #expect(facts.markers.total
+                == analysis.turns.count + PresentationRules.drawnFlightEnds(analysis).count)
     }
 
     /// The uncounted turns are the reason the rule exists: a bear-away is drawn as a
