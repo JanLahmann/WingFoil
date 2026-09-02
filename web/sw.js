@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v31";     // v31: the privacy page, and a link to it in all three footers
+const VERSION = "v32";     // v32: the Impressum, and a link to it beside Privacy in every footer
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.

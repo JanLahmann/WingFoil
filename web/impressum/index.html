@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="de" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Impressum — CleanJibe</title>
+<meta name="description" content="Impressum für cleanjibe.org.">
+<meta name="theme-color" content="#101010">
+<meta name="color-scheme" content="dark">
+
+<!-- Same reasoning as /privacy/: no manifest (the analyzer at /app/ is the PWA), not in
+     the service worker's precache — this page is read once, at a desk, and never offline. -->
+<link rel="icon" type="image/svg+xml" href="../icons/icon.svg">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+
+<!-- The same three-layer stack as every other page; this one adds no stylesheet of its
+     own either. -->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/home.css">
+
+<!-- No og:image, same as /privacy/: nobody shares an Impressum. -->
+<meta property="og:site_name" content="CleanJibe">
+<meta property="og:title" content="Impressum — CleanJibe">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://cleanjibe.org/impressum/">
+
+<script defer src="https://cloud.umami.is/script.js" data-website-id="97f347ac-e7ba-4be3-b26f-ab4b328bdbf2" data-domains="cleanjibe.org"></script>
+</head>
+<body class="home">
+
+<header class="topbar">
+  <a class="brand" href="../">
+    <span class="mark" aria-hidden="true"></span>
+    <div>
+      <h1>CleanJibe</h1>
+      <p class="sub">Wing foiling, measured.</p>
+    </div>
+  </a>
+  <div class="topbar-right">
+    <a class="btn primary" href="../app/">Open the analyzer</a>
+    <a class="btn ghost wide-only" href="../">About CleanJibe</a>
+  </div>
+</header>
+
+<main>
+
+  <section class="section">
+    <h2>Impressum</h2>
+    <p>
+      CleanJibe ist ein nicht-kommerzielles Open-Source-Projekt —
+      kostenlos, ohne Werbung, ohne Konto und ohne Einnahmen.
+    </p>
+    <p>
+      Jan-Rainer Lahmann<br>
+      E-Mail: <a href="mailto:info@cleanjibe.org">info@cleanjibe.org</a>
+    </p>
+    <p>
+      Der schnellste Weg für Fragen, Fehler und Ideen ist
+      <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">github.com/JanLahmann/WingFoil/issues</a>;
+      E-Mail funktioniert genauso.
+    </p>
+    <p>
+      Zum Umgang mit Daten: <a href="../privacy/">Privacy</a> (englisch) —
+      Kurzfassung: die Analyse läuft auf deinem eigenen Gerät, es gibt keinen
+      CleanJibe-Server und keine Konten.
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  <p>CleanJibe — open wingfoil tracking. Watch app, iPhone app, browser analyzer.</p>
+  <p>
+    <a href="../">About CleanJibe</a> ·
+    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">github.com/JanLahmann/WingFoil</a>
+    · Questions: <a href="mailto:info@cleanjibe.org">info@cleanjibe.org</a>
+  </p>
+  <p class="fineprint">Anonymous, cookie-free usage stats and feature counts by umami. · <a href="../privacy/">Privacy</a></p>
+</footer>
+
+</body>
+</html>
