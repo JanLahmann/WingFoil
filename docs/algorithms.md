@@ -222,6 +222,28 @@ inventing turns):
   rider sets the axis stay generic for the rest of the session.
 - **GPS below `Position.QUALITY_USABLE` freezes the detector**, including any open outcome
   window, matching how the other watch detectors treat a gap.
+- **CPH divides by the session clock, not by a cleaned track** (device app ≥ 0.9.5). The watch
+  shows *clean jibes per hour* on the Turns page and on the post-save turns screen —
+  `TurnDetector.cleanJibeCount` over `SessionController.elapsedNowS()`, which is the engine's
+  own timer while recording and the FIT's `total_elapsed_time` (pauses included) once saved.
+  The phone's rates divide by `durationS`, the elapsed span of the **cleaned** track, so the
+  two denominators differ by whatever the cleaner trims off the ends plus, live, by any time
+  the rider spent paused. Neither number is wrong; they answer the same question over slightly
+  different afternoons, and the watch has no cleaned track to offer. The **no-rate floor** is
+  60 s rather than the engine's `durationS <= 0`: the watch is asked the question live, and one
+  clean jibe forty seconds in is not "ninety an hour". Below the floor it prints `--`, never a
+  number and never a flattering zero.
+- **A clean jibe is `cleanJibeCount`, and the auto-wind backfill does not fill it in.**
+  `backfillWindSplit` replays the logged sweeps to recover the tack/jibe split that happened
+  before the estimator locked, but the sweep log is written when a sweep *closes* — before its
+  outcome window has resolved — and carries geometry only. So a turn backfilled into
+  `jibeCount` is never backfilled into `cleanJibeCount`, and the watch's CPH under-reads for
+  the opening minutes of a session with no manual axis. Conservative, like every other item on
+  this list, and visible only as a rate that climbs once the axis is known.
+- **No pump corroboration reaches the clean flag either.** Success is the score pair only
+  (`score >= turnSuccessPct` and the minimum stayed above `foilExitSpeed`), read off the
+  firmware's smoothed Doppler, so the watch calls slightly *more* jibes clean than the phone
+  does — the same Doppler-only caveat two bullets up, inherited by the stricter metric.
 
 ## Pumping (accelerometer)
 

@@ -182,20 +182,22 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var hK = dc.getFontHeight(Graphics.FONT_MEDIUM);
     var hD = RecordingView.stripBandH(dc);
     var hS = dc.getFontHeight(TEXT_FONTS[VERDICT_FROM]);
+    // 0.9.5: the clean-jibe row's band, between the giant and the streaks.
+    var hC = dc.getFontHeight(TEXT_FONTS[CLEAN_FROM]);
 
     // row 0: header, widest with a wind axis set
     // The widest form the header can take: 0.9.0 marks an axis the watch estimated with a
     // leading "~", so the worst case gained a character.
     var header = "tack / jibe  ~NNE";
     var r = cornerRadius(dc.getTextWidthInPixels(header, Graphics.FONT_XTINY), hT,
-        RecordingView.turnsRowY(cy, hT, hG, hK, hD, hS, 0), cy);
+        RecordingView.turnsRowY(cy, hT, hG, hC, hK, hD, hS, 0), cy);
     Test.assertMessage(r <= radius, "header corner " + r.format("%.0f") + " > " + radius);
 
     // row 1: the GIANT is the tally itself — flew · touched · swam, three counts in the three
     // ladder colours. Measured at its worst case (three two-digit counts) and at the shipped
     // session's own (35/8/8), because the first says it never clips and the second says the
     // page a rider actually sees is not permanently stepped down.
-    var y1 = RecordingView.turnsRowY(cy, hT, hG, hK, hD, hS, 1);
+    var y1 = RecordingView.turnsRowY(cy, hT, hG, hC, hK, hD, hS, 1);
     var gBudget = RecordingView.rowBudget(pageR, y1 - cy,
         RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM));
     var worstF = RecordingView.giantTallyFont(dc, "99", "99", "99", gBudget);
@@ -225,15 +227,60 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     logger.debug("turns giant: worst " + dc.getFontHeight(worstF).toString() + "px, real "
         + dc.getFontHeight(realF).toString() + "px (NUMBER_MEDIUM is " + hG.toString() + ")");
 
-    // row 2: BOTH streaks — "streak: 99/99  99/99". ONE grey caption for the row now, the two
+    // row 2: the CLEAN JIBE row — "★ 99  99.9 CPH". Worst case is a three-figure session's
+    // two-digit count beside a two-digit rate; the rate half is DROPPED rather than shrunk,
+    // and, like the verdict row's side split, that decision is made at the FLOOR font.
+    var y2 = RecordingView.turnsRowY(cy, hT, hG, hC, hK, hD, hS, 2);
+    var gs = Glyphs.size(dc);
+    var cBudget = RecordingView.rowBudget(pageR, y2 - cy,
+        RecordingView.inkH(dc, TEXT_FONTS[CLEAN_FROM]));
+    var cRate = RecordingView.cleanRowWidth(dc, gs, "99", "99.9", true,
+        TEXT_FONTS[TALLY_FLOOR]) <= cBudget;
+    var cf = RecordingView.cleanRowFont(dc, gs, "99", "99.9", cRate, cBudget);
+    r = cornerRadius(RecordingView.cleanRowWidth(dc, gs, "99", "99.9", cRate, cf),
+        RecordingView.inkH(dc, cf), y2, cy);
+    Test.assertMessage(r <= pageR,
+        "clean row corner " + r.format("%.0f") + " > " + pageR.toString());
+    // a count is a value: this row keeps the same floor every other count on the watch keeps
+    Test.assertMessage(dc.getFontHeight(cf) >= dc.getFontHeight(Graphics.FONT_SMALL),
+        "the clean-jibe row fell below FONT_SMALL");
+    Test.assertMessage(dc.getFontHeight(cf) <= hC,
+        "the clean-jibe row is taller than the band it was stacked with");
+    // the MARK AND THE COUNT must always fit — they are the row's reason to exist, and the
+    // rate is what it gives up to keep them
+    Test.assertMessage(
+        RecordingView.cleanRowWidth(dc, gs, "99", "99.9", false, TEXT_FONTS[TALLY_FLOOR])
+            <= cBudget, "not even the star and the count fit the clean-jibe row");
+    Test.assertMessage(
+        RecordingView.cleanRowWidth(dc, gs, "12", "4.6", false, cf)
+            < RecordingView.cleanRowWidth(dc, gs, "12", "4.6", true, cf),
+        "dropping the rate must save width");
+    // ...and on every glass wide enough to be an AMOLED product the RATE has to survive: CPH
+    // is the number 0.9.5 exists to put on the wrist, and the shipped session's own form
+    // ("★ 12  4.6 CPH") is far short of the worst case measured above.
+    if (screenPx() >= 416) {
+        Test.assertMessage(
+            RecordingView.cleanRowWidth(dc, gs, "12", "4.6", true, TEXT_FONTS[TALLY_FLOOR])
+                <= cBudget,
+            "CPH does not fit a " + screenPx().toString() + "px glass: "
+                + RecordingView.cleanRowWidth(dc, gs, "12", "4.6", true,
+                    TEXT_FONTS[TALLY_FLOOR]).toString()
+                + "px of " + cBudget.toString());
+    }
+    logger.debug("clean row: "
+        + RecordingView.cleanRowWidth(dc, gs, "12", "4.6", cRate, cf).toString() + "px of "
+        + cBudget.toString() + " at font height " + dc.getFontHeight(cf).toString()
+        + ", rate " + (cRate ? "on" : "dropped"));
+
+    // row 3: BOTH streaks — "streak: 99/99  99/99". ONE grey caption for the row now, the two
     // runs told apart by the ladder's own inks rather than by two words. Worst case is four
     // two-digit numbers, and it is strictly narrower than the two-caption row it replaced.
-    var y2 = RecordingView.turnsRowY(cy, hT, hG, hK, hD, hS, 2);
-    var kBudget = RecordingView.rowBudget(pageR, y2 - cy,
+    var y3 = RecordingView.turnsRowY(cy, hT, hG, hC, hK, hD, hS, 3);
+    var kBudget = RecordingView.rowBudget(pageR, y3 - cy,
         RecordingView.inkH(dc, Graphics.FONT_MEDIUM));
     var kf = RecordingView.streakRow2Font(dc, "99", "99", "99", "99", kBudget, true);
     r = cornerRadius(RecordingView.streakRow2Width(dc, "99", "99", "99", "99", kf, true),
-        RecordingView.inkH(dc, kf), y2, cy);
+        RecordingView.inkH(dc, kf), y3, cy);
     Test.assertMessage(r <= pageR,
         "streak row corner " + r.format("%.0f") + " > " + pageR.toString());
     Test.assertMessage(dc.getFontHeight(kf) >= dc.getFontHeight(Graphics.FONT_SMALL),
@@ -244,22 +291,22 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
             < RecordingView.streakRow2Width(dc, "99", "99", "99", "99", kf, true),
         "dropping the live run must save width");
 
-    // row 3: the outcome strip. It is a texture, not a census — it shows the most recent dots
+    // row 4: the outcome strip. It is a texture, not a census — it shows the most recent dots
     // that fit — so what is asserted is that the band it reserves clears the glass and that a
     // long session really does drop the oldest rather than overflow.
-    var y3 = RecordingView.turnsRowY(cy, hT, hG, hK, hD, hS, 3);
-    var stripW = RecordingView.rowBudget(pageR, y3 - cy, hD);
+    var y4 = RecordingView.turnsRowY(cy, hT, hG, hC, hK, hD, hS, 4);
+    var stripW = RecordingView.rowBudget(pageR, y4 - cy, hD);
     var shown = RecordingView.dotsShown(64, stripW);
     Test.assertMessage(shown >= 8,
         "the strip row holds only " + shown.toString() + " dots");
     Test.assertMessage(shown <= 64, "the strip claims more dots than the log holds");
     var pitch = 2 * TL_DOT_R + TL_DOT_GAP;
-    r = cornerRadius(shown * pitch - TL_DOT_GAP, 2 * TL_DOT_R, y3, cy);
+    r = cornerRadius(shown * pitch - TL_DOT_GAP, 2 * TL_DOT_R, y4, cy);
     Test.assertMessage(r <= pageR,
         "strip corner " + r.format("%.0f") + " > " + pageR.toString());
     Test.assertEqual(RecordingView.dotsShown(3, stripW), 3);   // short sessions show them all
 
-    // row 4: the verdict and the port/starboard entry split, at its widest — "100% flew" with
+    // row 5: the verdict and the port/starboard entry split, at its widest — "100% flew" with
     // two two-digit side counts. The word grew by two glyphs in 0.8.2 (the row now prints the
     // flew-through share, which agrees with the tally above it by construction), so the 416 px
     // assertion below is exactly the one that had to be re-measured. The P/S half is DROPPED
@@ -268,14 +315,14 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     // The row's values step down from TEXT_FONTS[VERDICT_FROM] (0.9.2 — they used to be pinned
     // at the FONT_SMALL floor on a row that had already been given a FONT_MEDIUM band), and
     // whether the P/S half is kept is decided at the FLOOR: content first, then size.
-    var y4 = RecordingView.turnsRowY(cy, hT, hG, hK, hD, hS, 4);
+    var y5 = RecordingView.turnsRowY(cy, hT, hG, hC, hK, hD, hS, 5);
     var floorF = TEXT_FONTS[TALLY_FLOOR];
-    var vBudget = RecordingView.rowBudget(pageR, y4 - cy,
+    var vBudget = RecordingView.rowBudget(pageR, y5 - cy,
         RecordingView.inkH(dc, TEXT_FONTS[VERDICT_FROM]));
     var sides = RecordingView.verdictWidth(dc, "100", "99", "99", true, floorF) <= vBudget;
     var vf = RecordingView.verdictFont(dc, "100", "99", "99", sides, vBudget);
     r = cornerRadius(RecordingView.verdictWidth(dc, "100", "99", "99", sides, vf),
-        RecordingView.inkH(dc, vf), y4, cy);
+        RecordingView.inkH(dc, vf), y5, cy);
     Test.assertMessage(r <= pageR,
         "verdict corner " + r.format("%.0f") + " > " + pageR.toString());
     Test.assertMessage(dc.getFontHeight(vf) >= dc.getFontHeight(floorF),
@@ -312,16 +359,22 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
         + (sides ? "on" : "dropped"));
 
     // the rows must not collide, and the block must be centred
-    var y0 = RecordingView.turnsRowY(cy, hT, hG, hK, hD, hS, 0);
+    var y0 = RecordingView.turnsRowY(cy, hT, hG, hC, hK, hD, hS, 0);
     Test.assertMessage(y1 - y0 >= (hT + hG) / 2, "header/giant gap");
-    Test.assertMessage(y2 - y1 >= (hG + hK) / 2, "giant/streak gap");
-    Test.assertMessage(y3 - y2 >= (hK + hD) / 2, "streak/strip gap");
-    Test.assertMessage(y4 - y3 >= (hD + hS) / 2, "strip/verdict gap");
-    Test.assertMessage((((cy - (y0 - hT / 2)) - ((y4 + hS / 2) - cy)).abs() <= 1),
+    Test.assertMessage(y2 - y1 >= (hG + hC) / 2, "giant/clean gap");
+    Test.assertMessage(y3 - y2 >= (hC + hK) / 2, "clean/streak gap");
+    Test.assertMessage(y4 - y3 >= (hK + hD) / 2, "streak/strip gap");
+    Test.assertMessage(y5 - y4 >= (hD + hS) / 2, "strip/verdict gap");
+    Test.assertMessage((((cy - (y0 - hT / 2)) - ((y5 + hS / 2) - cy)).abs() <= 1),
         "turns block off centre: " + (cy - (y0 - hT / 2)).toString() + " vs "
-            + ((y4 + hS / 2) - cy).toString());
+            + ((y5 + hS / 2) - cy).toString());
+    // the whole six-row stack has to be on the glass, top and bottom — the row it gained in
+    // 0.9.5 is paid for out of the page's air, and on the narrowest product there is not much
+    Test.assertMessage(y0 - hT / 2 >= 0 && y5 + hS / 2 <= screenPx(),
+        "the turns stack runs off the glass: " + (y0 - hT / 2).toString() + ".."
+            + (y5 + hS / 2).toString() + " of " + screenPx().toString());
     logger.debug("turns page rows y=" + y0.toString() + "," + y1.toString() + ","
-        + y2.toString() + "," + y3.toString() + "," + y4.toString());
+        + y2.toString() + "," + y3.toString() + "," + y4.toString() + "," + y5.toString());
     return true;
 }
 
@@ -1204,13 +1257,45 @@ function everyMetricHasADrawableGlyph(logger as Test.Logger) as Boolean {
     Test.assertEqual(PageModel.glyph(PageModel.M_NONE), Glyphs.G_NONE);
     Test.assertEqual(seen, Glyphs.G_BATTERY);   // no glyph in the catalog is dead code
 
-    // and the outcome symbols, including the triangle's polygon scratch reused twice
-    for (var o = Glyphs.O_DASH; o <= Glyphs.O_CROSS; o++) {
+    // and the outcome symbols, including the triangle's polygon scratch reused twice and the
+    // star's ten-vertex one (0.9.5)
+    for (var o = Glyphs.O_DASH; o <= Glyphs.O_STAR; o++) {
         Glyphs.drawOutcome(dc, o, 60, 100, 24, Graphics.COLOR_GREEN);
         Glyphs.drawOutcome(dc, o, 60, 140, 18, Graphics.COLOR_RED);
     }
-    logger.debug("glyphs: " + Glyphs.G_BATTERY.toString() + " metric symbols + 4 outcomes at "
-        + s.toString() + "px");
+
+    // The STAR is the only glyph drawn beside a number rather than as a row's symbol, so its
+    // box contract is load-bearing in a way the others' is not — `cleanRowWidth` reserves
+    // exactly `Glyphs.size(dc)` for it and lays the count out from there. Assert the geometry
+    // the table encodes: ten vertices, alternating out and in, all of them inside the s x s
+    // box the contract promises, at the floor size where a star has least room to be wrong.
+    Glyphs.drawStar(dc, 60, 180, Glyphs.MIN_PX);
+    Glyphs.drawStar(dc, 120, 180, Glyphs.MAX_PX);
+    Test.assertEqual(Glyphs._starU.size(), 10);
+    Test.assertEqual(Glyphs._star.size(), 10);
+    var box = 0;
+    for (var i = 0; i < 10; i++) {
+        var ux = Glyphs._starU[i][0];
+        var uy = Glyphs._starU[i][1];
+        Test.assertMessage(ux >= -1000 && ux <= 1000 && uy >= -1000 && uy <= 1000,
+            "star vertex " + i.toString() + " is outside the s x s box every glyph promises");
+        // the outer ring is at the full radius, the inner ring strictly inside it: a star
+        // whose waist crept out to the points is a pentagon nobody would notice in a diff
+        var reach = ux.abs() > uy.abs() ? ux.abs() : uy.abs();
+        if (i % 2 == 0) {
+            Test.assertMessage(reach == 1000 || ux.abs() == 951 || uy.abs() == 809,
+                "outer star vertex " + i.toString() + " is not on the outer ring");
+        } else {
+            Test.assertMessage(reach < 500,
+                "inner star vertex " + i.toString() + " reaches " + reach.toString()
+                    + " — the waist has to stay well inside the points");
+        }
+        if (reach > box) { box = reach; }
+    }
+    Test.assertEqual(box, 1000);   // the star really does fill the box it is given
+
+    logger.debug("glyphs: " + Glyphs.G_BATTERY.toString() + " metric symbols + 5 outcomes at "
+        + s.toString() + "px (star " + Glyphs._starU.size().toString() + " vertices)");
     return true;
 }
 
@@ -3195,8 +3280,9 @@ function summaryPagesBuildAndRenderHeadless(logger as Test.Logger) as Boolean {
 // shared timestamp made the more informative of the two silently disappear.
 (:test)
 function alertDebounceIsPerChannelNotGlobal(logger as Test.Logger) as Boolean {
-    // Six channels since 0.9.0: PB · flight · interval · takeoff · turn · auto wind.
-    Test.assertEqual(AlertManager.CH_COUNT, 6);
+    // Seven channels since 0.9.5: PB · flight · interval · takeoff · turn · auto wind ·
+    // clean jibe.
+    Test.assertEqual(AlertManager.CH_COUNT, 7);
     Test.assertMessage(AlertManager._lastMs.size() == AlertManager.CH_COUNT,
         "the timestamp array must have a slot per channel — a short one writes out of bounds "
         + "the first time the new channel fires, on the water and nowhere else");
@@ -3237,11 +3323,99 @@ function alertDebounceIsPerChannelNotGlobal(logger as Test.Logger) as Boolean {
     AlertManager.takeoff();
     AlertManager.interval();
     AlertManager.autoWindLocked();
+    AlertManager.cleanJibeBuzz();
     AppSettings.alertPb = pb;
     AppSettings.alertTurn = turn;
     AlertManager.reset();
     logger.debug("debounce: " + AlertManager.DEBOUNCE_MS.toString() + " ms per channel, "
         + AlertManager.GLOBAL_FLOOR_MS.toString() + " ms global floor");
+    return true;
+}
+
+// ---- One turn, one buzz (0.9.5) ----
+// A clean jibe is ALSO a fly-through, so the naive wiring — fire the ladder rhythm, then fire
+// the clean-jibe flourish — asks for two profiles inside the same second and GLOBAL_FLOOR_MS
+// throws the second away. The rider would get the plain tick every time and nothing anywhere
+// would say why. `turnResolved` is the fix: it CHOOSES, and this is the test that it chooses.
+(:test)
+function cleanJibeBuzzReplacesTheFlyThroughTick(logger as Test.Logger) as Boolean {
+    var turn = AppSettings.alertTurn;
+    var clean = AppSettings.alertCleanJibe;
+
+    // toggle ON: the clean channel is the one that fires, and the turn channel stays untouched
+    AlertManager.reset();
+    AppSettings.alertTurn = true;
+    AppSettings.alertCleanJibe = true;
+    AlertManager.turnResolved(TurnDetector.OUTCOME_FLEW, true);
+    Test.assertMessage(AlertManager._lastMs[AlertManager.CH_CLEAN] > 0,
+        "a clean jibe did not reach its own channel");
+    Test.assertMessage(AlertManager._lastMs[AlertManager.CH_TURN] == 0,
+        "the ladder rhythm fired as well — the flourish would be eaten by the global floor");
+
+    // toggle OFF: the 0.9.4 behaviour comes back. "Off" means the ordinary turn buzz, NOT
+    // silence — a rider who dislikes the new rhythm is not asking to lose his verdicts.
+    AlertManager.reset();
+    AppSettings.alertCleanJibe = false;
+    AlertManager.turnResolved(TurnDetector.OUTCOME_FLEW, true);
+    Test.assertMessage(AlertManager._lastMs[AlertManager.CH_TURN] > 0,
+        "with the clean-jibe toggle off a clean jibe must still buzz as a fly-through");
+    Test.assertMessage(AlertManager._lastMs[AlertManager.CH_CLEAN] == 0,
+        "the clean channel fired with its toggle off");
+
+    // an ordinary fly-through never reaches the clean channel, toggle or no toggle
+    AlertManager.reset();
+    AppSettings.alertCleanJibe = true;
+    AlertManager.turnResolved(TurnDetector.OUTCOME_FLEW, false);
+    Test.assertMessage(AlertManager._lastMs[AlertManager.CH_CLEAN] == 0,
+        "a turn that was not a clean jibe reached the clean channel");
+    Test.assertMessage(AlertManager._lastMs[AlertManager.CH_TURN] > 0,
+        "an ordinary fly-through lost its tick");
+
+    AlertManager.reset();
+    AppSettings.alertTurn = turn;
+    AppSettings.alertCleanJibe = clean;
+    logger.debug("clean-jibe buzz: channel " + AlertManager.CH_CLEAN.toString()
+        + " of " + AlertManager.CH_COUNT.toString() + ", replaces CH_TURN on a clean jibe");
+    return true;
+}
+
+// ---- CPH arithmetic (0.9.5) ----
+// The rate the Turns page and the post-save summary print. Two rules and they are the whole
+// metric: no hour, no rate; and after that it is clean jibes / hours, to one decimal.
+(:test)
+function cphIsNullBeforeAMinuteAndAValueAfter(logger as Test.Logger) as Boolean {
+    // NOTHING before the floor. One clean jibe forty seconds in is not "ninety an hour" — the
+    // same never-a-flattering-number rule the engine applies at durationS <= 0, moved up to
+    // where the watch needs it, because the watch is asked live and the first minute is where
+    // the answer is silliest.
+    Test.assertMessage(PageModel.cleanPerHour(1, 0.0) < 0.0, "a zero clock is not an hour");
+    Test.assertMessage(PageModel.cleanPerHour(1, 40.0) < 0.0,
+        "40 s of session is not enough afternoon to divide by");
+    Test.assertMessage(PageModel.cleanPerHour(1, 59.9) < 0.0, "the floor is 60 s, exclusive");
+    Test.assertEqual(PageModel.fmtCph(1, 40.0), PageModel.CPH_NONE);
+    Test.assertEqual(PageModel.fmtCph(0, 0.0), PageModel.CPH_NONE);
+
+    // ...and a real value the moment there is an hour to divide by. One clean jibe in the
+    // first minute really is 60 an hour, and saying so is exactly why the floor is a minute
+    // and not a second.
+    Test.assertMessage((PageModel.cleanPerHour(1, 60.0) - 60.0).abs() < 0.01,
+        "one clean jibe in the first minute is 60 an hour");
+    Test.assertEqual(PageModel.fmtCph(1, 60.0), "60.0");
+    // the corpus shape: 12 clean jibes in 1:45:00 is 6.9 an hour
+    Test.assertMessage((PageModel.cleanPerHour(12, 6300.0) - 6.857).abs() < 0.01,
+        "12 clean jibes in 1:45 is 6.86 an hour, got "
+            + PageModel.cleanPerHour(12, 6300.0).format("%.3f"));
+    Test.assertEqual(PageModel.fmtCph(12, 6300.0), "6.9");
+    // a session with no clean jibe in it has a rate, and the rate is zero — that is a fact
+    // about the afternoon, not a missing measurement, so it is NOT the "--" above
+    Test.assertEqual(PageModel.fmtCph(0, 3600.0), "0.0");
+    // the rate falls as the session lengthens under a fixed count, which is the whole point
+    Test.assertMessage(PageModel.cleanPerHour(10, 7200.0) < PageModel.cleanPerHour(10, 3600.0),
+        "the same ten jibes over twice the time must read as half the rate");
+
+    logger.debug("CPH: floor " + PageModel.CPH_MIN_ELAPSED_S.format("%.0f") + " s, "
+        + "12 in 1:45 = " + PageModel.fmtCph(12, 6300.0)
+        + ", below the floor = " + PageModel.fmtCph(1, 40.0));
     return true;
 }
 
@@ -3464,7 +3638,11 @@ function manualWindAlwaysBeatsTheEstimate(logger as Test.Logger) as Boolean {
 // 0.7.0 while the byte still said 1) and nothing noticed, because nothing held them together.
 (:test)
 function appVersionAgreesWithTheFitByte(logger as Test.Logger) as Boolean {
-    Test.assertEqual(FitSchema.APP_VERSION, "0.9.0");
+    // 0.9.5: the string had been left at 0.9.0 through four releases while the manifests moved
+    // on without it, which is the same drift this test was written for one field over. It is
+    // the source tree's ONE answer to "what is this build", so it now says what the manifests
+    // say — and the parse below is what keeps it honest about the byte.
+    Test.assertEqual(FitSchema.APP_VERSION, "0.9.5");
     Test.assertEqual(FitSchema.APP_MINOR, 9);
     // the string's minor field, parsed rather than assumed
     var v = FitSchema.APP_VERSION;

@@ -30,10 +30,11 @@ module AlertManager {
         CH_TAKEOFF = 3,
         CH_TURN = 4,
         CH_WIND = 5,
-        CH_COUNT = 6
+        CH_CLEAN = 6,
+        CH_COUNT = 7
     }
 
-    var _lastMs as Array<Number> = [0, 0, 0, 0, 0, 0];
+    var _lastMs as Array<Number> = [0, 0, 0, 0, 0, 0, 0];
     var _lastAnyMs as Number = 0;
 
     // Pure decision half, so the debounce rules are testable without a vibration motor.
@@ -115,6 +116,40 @@ module AlertManager {
             new Attention.VibeProfile(50, 120),
             new Attention.VibeProfile(0, 90),
             new Attention.VibeProfile(100, 200)
+        ]);
+    }
+
+    // A turn resolved — the ONE entry point SessionController uses, because a turn has one
+    // verdict and must therefore make one noise.
+    //
+    // A clean jibe is always also a fly-through, so firing both would mean asking for two
+    // profiles inside the same second, and `GLOBAL_FLOOR_MS` would silently swallow the
+    // second of them: the rider would get the plain tick and never the flourish, with nothing
+    // anywhere to say why. So the clean-jibe buzz REPLACES the fly-through tick rather than
+    // joining it — and only when the rider left its toggle on. With `alertCleanJibe` off the
+    // turn falls through to the ordinary ladder rhythm, which is what "off" should mean: the
+    // old behaviour, not silence.
+    function turnResolved(outcome as Number, cleanJibe as Boolean) as Void {
+        if (cleanJibe && AppSettings.alertCleanJibe) {
+            cleanJibeBuzz();
+            return;
+        }
+        turnOutcome(outcome);
+    }
+
+    // The clean jibe: three quick ticks RISING in strength (50 / 75 / 100), the "that one
+    // counted" shape. Deliberately unlike everything else on the wrist — the fell-in triple is
+    // three hard ticks at constant strength and twice the length, the PB is a double, the
+    // auto-wind lock is a rising PAIR — so the one rhythm a rider most wants to recognise
+    // through a hood is the one that sounds like nothing else. On a channel of its own, so a
+    // PB or an interval alert in the same five seconds cannot debounce it away.
+    function cleanJibeBuzz() as Void {
+        _fire(CH_CLEAN, [
+            new Attention.VibeProfile(50, 80),
+            new Attention.VibeProfile(0, 60),
+            new Attention.VibeProfile(75, 80),
+            new Attention.VibeProfile(0, 60),
+            new Attention.VibeProfile(100, 120)
         ]);
     }
 

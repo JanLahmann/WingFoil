@@ -13,6 +13,9 @@
     <property id="alertPb" type="boolean">true</property>
     <property id="alertFlight" type="boolean">true</property>
     <property id="alertTurn" type="boolean">true</property>
+    <!-- 0.9.5: a rhythm of its own for a clean jibe, REPLACING the plain fly-through tick
+         (AlertManager.turnResolved). Off = the 0.9.4 turn-outcome buzz, not silence. -->
+    <property id="alertCleanJibe" type="boolean">true</property>
     <property id="alertTakeoff" type="boolean">true</property>
     <!-- wind the turn classifier splits tacks from jibes on; -1 = unset -->
     <property id="windDirDeg" type="number">-1</property>

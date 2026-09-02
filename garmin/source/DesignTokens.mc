@@ -81,4 +81,10 @@ module DesignTokens {
     // starboard ENTRY tack — the same hue at a second lightness, plus a dashed stroke
     const SIDE_STARBOARD = 0xD9B9A3;
     const SIDE_STARBOARD_MIP = 0xFFAAAA;
+
+    // ---- clean: The clean jibe. A STRICTER question than the ladder's top rung, so it
+    // gets its own ink and never the ladder's green.
+    // clean jibe — the strict verdict, deliberately OUTSIDE the outcome ladder: it asks a stricter question than flew_through, so it may not borrow the ladder's green
+    const CLEAN_JIBE = 0xFFD84D;
+    const CLEAN_JIBE_MIP = 0xFFFF55;
 }
