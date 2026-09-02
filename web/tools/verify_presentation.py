@@ -177,6 +177,15 @@ def check_rules() -> None:
             "courseChange": turns["course"],
         }
         check(f"  {stem}: markers per layer", facts["markers"], want)
+        # The star layer, re-derived rather than trusted: a counted jibe the engine's own
+        # `success` flag passed. It lies *across* the ladder above, never inside it — every
+        # clean jibe is also counted under the outcome it ended on, which is why the marker
+        # total below still comes out as turns + drawn ends.
+        clean = sum(1 for t in doc.get("turns", [])
+                    if t["counted"] and t["type"] == "jibe" and t["success"])
+        check(f"  {stem}: clean jibes are the star layer", facts["cleanJibes"], clean)
+        check(f"  {stem}: never more clean jibes than counted turns",
+              facts["cleanJibes"] <= sum(want.values()), True)
         # An end with no verdict is a recording that stopped, not an event; if one ever
         # survives the ownership filter the ladder above would silently paint it green.
         check(f"  {stem}: no drawn flight end has an unknown outcome", ends["unknown"], 0)
@@ -523,6 +532,9 @@ def expected_card_values(doc: dict) -> dict[str, str]:
     if s.get("wetPerHour") is not None:
         if s["jibesPerHour"] > 0 or not s["turnsPerHour"] > 0:
             out["jph"] = f"{s['jibesPerHour']:.1f}"
+            # CPH beside JPH since engine 0.10.0 — and only beside it: a session whose wind
+            # axis named no jibes gets the TPH fallback and no jibe rate of any kind.
+            out["cph"] = f"{s['cleanJibesPerHour']:.1f}"
         else:
             out["tph"] = f"{s['turnsPerHour']:.1f}"
         out["wph"] = f"{s['wetPerHour']:.1f}"

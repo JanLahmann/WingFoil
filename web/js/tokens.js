@@ -74,6 +74,12 @@ export const TOKENS = {
       "swiftUI": "brown"
     }
   },
+  "clean": {
+    "jibe": {
+      "hex": "#2ee6a8",
+      "swiftUI": "mint"
+    }
+  },
   "opacity": {
     "directionWeb": 0.42,
     "directionFlying": 0.62,
@@ -96,6 +102,10 @@ export const TOKENS = {
     "splash": {
       "sfSymbol": "drop.fill",
       "webShape": "drop"
+    },
+    "cleanJibe": {
+      "sfSymbol": "star.fill",
+      "webShape": "star"
     }
   },
   "recordWindows": {
@@ -154,6 +164,11 @@ export const TOKENS = {
     {
       "id": "pumping",
       "label": "pumping",
+      "defaultVisible": true
+    },
+    {
+      "id": "cleanJibe",
+      "label": "clean jibe",
       "defaultVisible": true
     },
     {

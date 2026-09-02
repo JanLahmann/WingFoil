@@ -621,6 +621,8 @@ import Testing
                        analysis.summary.turnsPerHour, tolerance: 0.05)
         expectOptional(stem, "summary.jibesPerHour", num(expSummary["jibesPerHour"]),
                        analysis.summary.jibesPerHour, tolerance: 0.05)
+        expectOptional(stem, "summary.cleanJibesPerHour", num(expSummary["cleanJibesPerHour"]),
+                       analysis.summary.cleanJibesPerHour, tolerance: 0.05)
         expectOptional(stem, "summary.wetPerHour", num(expSummary["wetPerHour"]),
                        analysis.summary.wetPerHour, tolerance: 0.05)
         // The wet rate counts *every* fell-in flight end — the straight-line swims and the
@@ -654,6 +656,18 @@ import Testing
                 #expect(dryRows.count == dry,
                         "\(stem) \(dryRows.count) dry jibe rows vs a numerator of \(dry)")
             }
+        }
+
+        // The 0.10.0 numerator: **clean** jibes, `turns.jibesSuccessful` over the same hour.
+        // It is the strict reading of a set the dry rate already narrowed, so it can never
+        // stand above JPH — a jibe he rode is a jibe he came out of.
+        if analysis.summary.durationS > 0, let cph = analysis.summary.cleanJibesPerHour {
+            let hours = analysis.summary.durationS / 3600
+            let t = analysis.summary.turns
+            #expect(abs(cph - Double(t.jibesSuccessful) / hours) < 1e-9,
+                    "\(stem) summary.cleanJibesPerHour \(cph) is not jibesSuccessful over the hour")
+            #expect(cph <= (analysis.summary.jibesPerHour ?? 0) + 1e-9,
+                    "\(stem) CPH \(cph) stands above JPH — a clean jibe is a dry one")
         }
 
         expectWindowRates(stem, expSummary["windowRates"], analysis.summary.windowRates)
@@ -865,7 +879,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.9.1")
+        #expect(analysis.engineVersion == "0.10.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)
@@ -930,13 +944,15 @@ import Testing
         #expect(Set(summary.keys) == ["foilTimeS", "foilPct", "flightCount",
                                       "longestFlightS", "longestFlightM", "distanceKm",
                                       "durationS", "avgSpeedKmh", "turnsPerHour",
-                                      "jibesPerHour", "wetPerHour", "windowRates",
+                                      "jibesPerHour", "cleanJibesPerHour",
+                                      "wetPerHour", "windowRates",
                                       "turns", "flightEnds", "outcomeSplit", "takeoff"])
         // 120 s of synthetic, one flight, no turns: the duration is real and the rates are
         // real zeroes — "he did no jibes in that hour", not "unknown".
         #expect(abs((num(summary["durationS"]) ?? 0) - 120) <= 0.1)
         #expect(num(summary["turnsPerHour"]) == 0)
         #expect(num(summary["jibesPerHour"]) == 0)
+        #expect(num(summary["cleanJibesPerHour"]) == 0)
         #expect(analysis.summary.avgSpeedKmh != nil)
 
         // The rolling block is written whole, like the HR block: this session is two minutes
@@ -963,23 +979,26 @@ import Testing
     /// 44 dry jibes and 9 swims: 30 turns/h, 22 jibes/h, 4.5 swims/h, 20 km/h.
     @Test func sessionRatesDivideByTheElapsedHour() {
         let r = SessionRates(durationS: 7200, distanceM: 40_000,
-                             turnsCounted: 60, dryJibes: 44, fellIn: 9)
+                             turnsCounted: 60, dryJibes: 44, fellIn: 9, cleanJibes: 22)
         #expect(r.durationS == 7200)
         #expect(abs((r.avgSpeedKmh ?? 0) - 20) < 1e-9)
         #expect(abs((r.turnsPerHour ?? 0) - 30) < 1e-9)
         #expect(abs((r.jibesPerHour ?? 0) - 22) < 1e-9)
+        // CPH is the strict reading of the same set: 22 clean in 2 h is 11/h.
+        #expect(abs((r.cleanJibesPerHour ?? 0) - 11) < 1e-9)
         #expect(abs((r.wetPerHour ?? 0) - 4.5) < 1e-9)
 
         // No elapsed time ⇒ no hour to divide by. Every rate is nil, never a 0 that would
         // read as "he did nothing in an hour on the water".
         for empty in [SessionRates(durationS: 0, distanceM: 1234,
-                                   turnsCounted: 7, dryJibes: 5, fellIn: 2),
+                                   turnsCounted: 7, dryJibes: 5, fellIn: 2, cleanJibes: 3),
                       SessionRates(durationS: -12, distanceM: 1234,
-                                   turnsCounted: 7, dryJibes: 5, fellIn: 2)] {
+                                   turnsCounted: 7, dryJibes: 5, fellIn: 2, cleanJibes: 3)] {
             #expect(empty.durationS == 0)
             #expect(empty.avgSpeedKmh == nil)
             #expect(empty.turnsPerHour == nil)
             #expect(empty.jibesPerHour == nil)
+            #expect(empty.cleanJibesPerHour == nil)
             #expect(empty.wetPerHour == nil)
         }
     }

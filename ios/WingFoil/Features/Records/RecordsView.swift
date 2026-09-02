@@ -22,6 +22,10 @@ struct RecordsView: View {
     @State private var confetti: Int?
     /// Kinds beaten by the last import, so their rows can say so.
     @State private var freshlyBeaten: Set<RecordKind> = []
+    /// The clean-jibe records beaten by the same import (engine 0.10.0). They have no row in
+    /// a table of knots, so they get a line of their own above it — a burst nobody can read
+    /// is a burst nobody believes.
+    @State private var freshCleanJibes: [NewCleanJibeBest] = []
 
     var body: some View {
         NavigationStack {
@@ -31,6 +35,12 @@ struct RecordsView: View {
                         .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                 }
                 .listRowBackground(Color.clear)
+
+                if !freshCleanJibes.isEmpty {
+                    Section { cleanJibeBanner }
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16,
+                                                  bottom: 8, trailing: 16))
+                }
 
                 if records.isEmpty && sessionRecords.isEmpty {
                     emptyState
@@ -81,7 +91,7 @@ struct RecordsView: View {
             .navigationDestination(for: String.self) { SessionDetailView(sessionID: $0) }
             .refreshable { await reload() }
             .task(id: reloadKey) { await reload() }
-            .task(id: store.celebration.count) { celebrateIfNeeded() }
+            .task(id: store.celebrationCount) { celebrateIfNeeded() }
             .overlay { ConfettiBurst(trigger: confetti) }
             #if DEBUG && targetEnvironment(simulator)
             // Headless-driving hook: a real burst needs an import that beats a standing
@@ -107,13 +117,39 @@ struct RecordsView: View {
     }
 
     /// One burst per import, on arrival at the screen that owns the number.
+    ///
+    /// **One burst for both kinds.** A speed record and a clean-jibe record are the same
+    /// moment to a rider — "that was my best ever" — and two confetti bursts in a row would
+    /// make the second one furniture. The line above the table says which it was.
     private func celebrateIfNeeded() {
         let beaten = store.celebration
-        guard !beaten.isEmpty else { return }
+        let clean = store.cleanJibeCelebration
+        guard !beaten.isEmpty || !clean.isEmpty else { return }
         freshlyBeaten = Set(beaten.map(\.kind))
+        freshCleanJibes = clean
         confetti = (confetti ?? 0) + 1
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         store.clearCelebration()
+    }
+
+    /// What the clean-jibe half of the celebration was, in the words the rest of the app
+    /// uses for it. Not a row in the table: the table is knots, and a count of jibes in a
+    /// column headed "kn" would be the one thing a records screen may never do.
+    private var cleanJibeBanner: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Label("New personal best", systemImage: "star.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Brand.green)
+            ForEach(freshCleanJibes) { best in
+                Text(best.headline)
+                    .font(.subheadline.weight(.medium))
+            }
+            Text("Your best afternoon of clean jibes — the jibes you flew all the way "
+                 + "through carrying your speed.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var emptyState: some View {

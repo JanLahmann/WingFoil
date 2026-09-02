@@ -37,10 +37,27 @@ struct MapLegendView: View {
             || !detail.splashMarks.isEmpty
     }
 
+    /// **Three rows, one question each** — and the utilities are not one of the questions.
+    ///
+    /// Until the clean-jibe star arrived the rows were "route layers, plus show-all, plus
+    /// the map-style menu, plus the `?`" and then "markers", which put three controls that
+    /// are about the *map* in among the chips that are about the *ride*: on a narrow phone
+    /// the style menu wrapped between "direction" and "best 2 s", and the row read as a list
+    /// of eight unrelated things. The rows now split by what a tap changes:
+    ///
+    /// 1. **the route** — how the track itself is drawn;
+    /// 2. **the events on it** — the clean-jibe star first, because it is the mark the rider
+    ///    came to find, then the ladder, then the effort marks;
+    /// 3. **the utilities** — show-all (only while something is hidden), the ground the map
+    ///    is drawn on, and the help sheet. Trailing-aligned, so they read as the block's
+    ///    right-hand furniture rather than as a third kind of layer.
+    ///
+    /// The web's `drawChips` groups the identical three (`web/js/session.js`).
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            lineRow
+            routeRow
             if hasMarkers { markerRow }
+            utilityRow
         }
         .font(.caption2)
         .foregroundStyle(.secondary)
@@ -48,12 +65,12 @@ struct MapLegendView: View {
 
     // MARK: - Rows
 
-    private var lineRow: some View {
+    private var routeRow: some View {
         WrapRow(spacing: 6) {
             chip(.flying, swatch: .line(DesignTokens.Phase.flying))
             chip(.offFoil, swatch: .line(DesignTokens.Phase.offFoil))
             chip(.pumping, swatch: .line(EventMarkerStyle.pumping))
-            // Sits with the line chips rather than the marker ones because that is what it
+            // Sits with the route chips rather than the marker ones because that is what it
             // is about — the route, not the events on it — even though hiding it removes
             // the arrows outright the way a marker layer does.
             chip(.direction, swatch: .glyph("chevron.up", DesignTokens.Direction.ink))
@@ -61,28 +78,43 @@ struct MapLegendView: View {
                 chip(.effort, swatch: .line(DesignTokens.Effort.window),
                      label: effort.label.lowercased())
             }
-            if !visibility.isEverythingVisible { showAllButton }
-            // The map's *ground*, not one of its layers — which is why it is a menu rather
-            // than a fifth kind of chip, and why it comes after the toggles rather than among
-            // them. It is here at all because this row is where a rider already comes to
-            // change what the map shows, and "I cannot recognise this bay" is the same
-            // impulse as "I do not want to see course changes".
-            MapStyleChip()
-            // Last in the flow rather than in a heading of its own: it is a chip-sized
-            // affordance among chips, it wraps with them on a narrow phone, and it costs
-            // one line where the prose it replaced cost three paragraphs (§1.2).
-            if !compact { HelpButton(topic: .mapLegend, size: .caption) }
         }
     }
 
+    /// The events, clean jibe first.
+    ///
+    /// It leads because it is the mark a rider opens the map to find, and because it is the
+    /// one mark here that is not a rung of the ladder: putting it after "fell in" would file
+    /// the strict verdict as the ladder's fourth outcome, which is precisely what it is not
+    /// (docs/presentation.md, "Clean jibe").
     private var markerRow: some View {
         WrapRow(spacing: 6) {
+            chip(.cleanJibe, swatch: .glyph(DesignTokens.Glyph.cleanJibe,
+                                            EventMarkerStyle.cleanJibe))
             chip(.flewThrough, swatch: .dot(EventMarkerStyle.color(.flew)))
             chip(.touchdown, swatch: .dot(EventMarkerStyle.color(.touchdown)))
             chip(.fellIn, swatch: .dot(EventMarkerStyle.color(.fell)))
             chip(.courseChange, swatch: .dot(EventMarkerStyle.color(.course)))
             chip(.takeoff, swatch: .glyph("arrow.up.circle.fill", EventMarkerStyle.takeoff))
             chip(.splash, swatch: .glyph("drop.fill", EventMarkerStyle.splash))
+        }
+    }
+
+    /// Show-all, the map's ground, and the help sheet — trailing-aligned.
+    ///
+    /// None of the three toggles a layer. The style menu is the map's *ground* rather than
+    /// one of its layers, "show all" is a reset that only exists while there is something to
+    /// reset, and the `?` is a sheet. They live together, at the end, so the chips above are
+    /// all and only the answer to "what is drawn".
+    private var utilityRow: some View {
+        HStack(spacing: 8) {
+            Spacer(minLength: 0)
+            if !visibility.isEverythingVisible { showAllButton }
+            MapStyleChip()
+            // A chip-sized affordance among chips, and it costs one line where the prose it
+            // replaced cost three paragraphs (§1.2). Dropped on the full-screen map, where
+            // the sheet would cover the water the rider went full-screen to look at.
+            if !compact { HelpButton(topic: .mapLegend, size: .caption) }
         }
     }
 
@@ -277,7 +309,10 @@ extension SessionDetail {
         // draw is a question about the *camera*, and the chip has to be live or inert
         // before anything has been laid out.
         tally.add(.direction, segments.count)
-        for marker in markers { tally.add(marker.layer) }
+        for marker in markers {
+            tally.add(marker.layer)
+            if marker.isCleanJibe { tally.add(.cleanJibe) }
+        }
         tally.add(.pumping, pumpSpans.count)
         tally.add(.takeoff, takeoffMarks.count)
         tally.add(.splash, splashMarks.count)
@@ -289,6 +324,6 @@ extension SessionDetail {
     /// The markers left after the legend's filter — the one list the map and the chart both
     /// draw, so the two can never disagree about what is on screen.
     func visibleMarkers(_ visibility: MapLayerVisibility) -> [EventMarker] {
-        markers.filter { visibility.isVisible($0.layer) }
+        markers.filter { marker in marker.layers.allSatisfy(visibility.isVisible) }
     }
 }

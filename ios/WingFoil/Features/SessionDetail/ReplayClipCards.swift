@@ -112,8 +112,9 @@ struct ReplayTitleCardView: View {
 /// three sentences under it, lifted out of the commentary: "Top speed — 13.47 kn over 2 s"
 /// under a max-2 s cell reading 13.47, "New streak — 8 dry jibes" under a streaks cell reading
 /// 8. Two thirds of the closing card was the closing card again, in words. The one superlative
-/// the grid did *not* carry was the longest flight — so it became the ninth cell, the lines
-/// went, and the grid came out square.
+/// the grid did *not* carry was the longest flight — so it became a cell, the lines went, and
+/// the grid came out square at nine. Engine 0.10.0 put CPH on the rate row beside JPH, which
+/// makes it ten; `columns` below is what keeps that from becoming a fourth row.
 ///
 /// **It lays out for the frame it is in, not for the phone.** A clip can now be 9:16, 1:1,
 /// 16:9 or the whole glass (`ReplayFraming`), and a 16:9 box on an upright phone is 242 pt
@@ -130,10 +131,23 @@ struct ReplayOutroCardView: View {
     /// this view never has to know which framing produced it.
     var isWide = false
 
-    /// Three across, whatever the shape: nine cells is three rows of three in a tall frame and
-    /// three rows of three beside the track in a wide one. Two columns would be five rows of
-    /// large type; four would put "flew · touchdown · fell" in a column 60 pt wide.
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 3)
+    /// Three across, four once the block outgrows nine cells.
+    ///
+    /// **The binding constraint is rows, not columns.** A 16:9 clip on an upright phone is a
+    /// 242 pt box, and three rows of cells under a title is what fits in it — the first
+    /// version of this card lost its credit line off the bottom by assuming otherwise. Nine
+    /// cells is three rows of three; the tenth (CPH, engine 0.10.0) would open a fourth row
+    /// holding one cell, so the grid goes four across and stays three rows deep.
+    ///
+    /// Two columns is never right: it would be five rows of large type. Four is only right
+    /// *because* the block is now long enough to fill them — at nine cells it would put
+    /// "flew · touchdown · fell" in a 60 pt column for no gain, which is why the count is
+    /// asked rather than fixed. It is the same question the exported card asks
+    /// (`ShareCardView.columnCount`), and it is asked of the same list.
+    private var columns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: 8),
+              count: stats.stats.count > 9 ? 4 : 3)
+    }
 
     /// The box the card was designed against — an upright phone's glass. Everything below is
     /// scaled by how much of it this frame actually has, so a 16:9 letterbox gets the same

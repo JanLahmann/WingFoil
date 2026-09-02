@@ -123,7 +123,7 @@ import Testing
     /// chip shows in the finished video — two numbers a viewer can check against each other.
     @Test func theTorboleRatesAreKnown() throws {
         let milestones = try script()
-        let expected: [Double: Double] = [10: 99.020, 25: 38.819, 60: 13.781]
+        let expected: [Double: Double] = [10: 99.020, 25: 38.834, 60: 13.781]
         for (target, rate) in expected {
             let plan = ReplayPacing.plan(span: span, targetWallS: target,
                                          milestones: milestones)
@@ -138,8 +138,8 @@ import Testing
     /// already pin, which is the point of leaving it as a rate.
     @Test func fullDetailIsStillThePinnedTenTimes() throws {
         let board = ReplayStoryboard.make(span: span, rate: 10, milestones: try script(), timeZone: fixtureZone)
-        #expect(abs(board.replayWallS - 77.70) < 0.05)
-        #expect(abs(board.runWallS - 84.20) < 0.05)
+        #expect(abs(board.replayWallS - 78.90) < 0.05)
+        #expect(abs(board.runWallS - 85.40) < 0.05)
     }
 
     // MARK: - What each length has room to say
@@ -147,8 +147,9 @@ import Testing
     /// **Which four survive on the Torbole afternoon**, verbatim — the assertion that says the
     /// pruning kept the session's headlines rather than its first four seconds. The two
     /// bookends frame the clip; between them, the longest flight and the fastest two seconds.
-    /// At twenty-five seconds the firsts and the best streak come back; at sixty nothing is
-    /// cut at all, because twelve lines is what a minute has room for.
+    /// At twenty-five seconds the firsts and the best streak come back; at sixty all but one
+    /// line survives, because twelve lines is what a minute has room for and the clean-jibe
+    /// beat made this afternoon thirteen.
     @Test func eachLengthKeepsTheMomentsItHasRoomFor() throws {
         let milestones = try script()
 
@@ -166,14 +167,17 @@ import Testing
         #expect(ReplayPacing.plan(span: span, targetWallS: 25, milestones: milestones)
             .milestones.map(\.id) == [
                 // The two bookends, the two superlatives, the best streak of the day and the
-                // three firsts — and one leftover streak record, the earliest of the five that
-                // were tied on rank.
-                "start", "longest-flight", "jibe-1", "streak-3", "top-speed", "streak-8",
+                // three firsts — which since engine 0.10.0 includes the first **clean** jibe,
+                // and it takes the slot the earliest leftover streak record used to have.
+                "start", "longest-flight", "jibe-1", "clean-1", "top-speed", "streak-8",
                 "splash-1", "end",
             ])
 
+        // A minute has room for twelve lines and this afternoon now has thirteen to say, so
+        // the one thing a sixty-second clip leaves out is the seventh streak record — the
+        // lowest-ranked line of the run-up to the eight it does keep.
         #expect(ReplayPacing.plan(span: span, targetWallS: 60, milestones: milestones)
-            .milestones == milestones)
+            .milestones.map(\.id) == milestones.map(\.id).filter { $0 != "streak-7" })
     }
 
     /// A rider who picked "Full detail" is watching rather than posting, and hears everything.

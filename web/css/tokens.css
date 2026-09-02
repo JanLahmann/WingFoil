@@ -27,6 +27,8 @@
   /* side */
   --wf-side-port: #a38054;
   --wf-side-starboard: #d9b9a3;
+  /* clean */
+  --wf-clean-jibe: #2ee6a8;
   /* opacity */
   --wf-opacity-direction-web: 0.42;
   --wf-opacity-direction-flying: 0.62;
