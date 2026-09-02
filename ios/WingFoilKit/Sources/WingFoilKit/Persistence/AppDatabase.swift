@@ -33,7 +33,7 @@ public struct AppDatabase: Sendable {
     /// Every migration this build knows, oldest first — the migration test asserts a v1
     /// database moves through all of them.
     public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
-                                        "v10", "v11"]
+                                        "v10", "v11", "v12"]
 
     /// The schema version this build writes — the `N` of the last `vN` migration.
     ///
@@ -268,6 +268,26 @@ public struct AppDatabase: Sendable {
         migrator.registerMigration("v11") { db in
             try db.alter(table: "session") { t in
                 t.add(column: "engineCleanJibesPerHour", .double)
+            }
+            try db.execute(sql: "UPDATE session SET engineVersion = NULL")
+        }
+
+        // v12: the two facts a *period* needs that a session row never carried.
+        //
+        // `rateDurationS` is the engine's own cleaned span — the denominator all four
+        // session rates already divide by — and `durationS` beside it is the raw sample
+        // span, which is what the library row prints and what the dedupe key is built from.
+        // A period's hours and its CPH divide by this one, because a month holding a single
+        // afternoon must report that afternoon's CPH and not a second opinion about it.
+        //
+        // `wetExits` is every fell-in flight end, straight-line swims included — what WPH
+        // counts. The `turn` table cannot supply it: most of a session's falls happen
+        // outside a counted turn, which is the whole reason `turnsFellIn` is a different
+        // number.
+        migrator.registerMigration("v12") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "rateDurationS", .double)
+                t.add(column: "wetExits", .integer)
             }
             try db.execute(sql: "UPDATE session SET engineVersion = NULL")
         }
@@ -663,6 +683,22 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// lives, and it is the only thing any screen should ask.
     public var engineCleanJibesPerHour: Double?
 
+    // MARK: schema v12
+    /// The engine's own **cleaned** session span in seconds (`summary.durationS`) — the
+    /// denominator every per-hour rate divides by, and what a period's hours are summed
+    /// from. nil on a row this build has not re-derived yet; read `rateSeconds`, which
+    /// falls back to `durationS`.
+    public var rateDurationS: Double?
+    /// Every fell-in flight end this session (`summary.flightEnds.all.fellIn`) — what WPH
+    /// counts, and deliberately not `turnsFellIn`: most of a session's swims happen outside
+    /// a counted turn, and the water does not care. nil, never 0, on a row without it.
+    public var wetExits: Int?
+
+    /// The seconds a rate over this session divides by. The engine's own span where the row
+    /// has it (v12), the raw sample span otherwise — the closest thing an un-refilled row
+    /// stores, and the number this layer used before the column existed.
+    public var rateSeconds: Double { rateDurationS ?? durationS }
+
     /// `startUtcOffsetSource` as the closed vocabulary, or nil for "unrecorded" — which
     /// includes a stored string this version has never heard of.
     public var utcOffsetSource: UtcOffsetSource? {
@@ -796,6 +832,8 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
         // Copied, never recomputed: the engine owns every per-hour rate and the denominator
         // they share (docs/algorithms.md "Session rates").
         engineCleanJibesPerHour = s.cleanJibesPerHour
+        rateDurationS = s.durationS
+        wetExits = s.flightEnds.all.fellIn
 
         let k = s.takeoff
         takeoffAttempts = k.takeoffAttempts

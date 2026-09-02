@@ -172,8 +172,8 @@ import Testing
         }
         #expect(columns.isSuperset(of: ["longestDryStreak", "longestFlewStreak"]))
         #expect(stale == harness.v1Ids.count)
-        #expect(AppDatabase.migrationNames.last == "v11")
-        #expect(AppDatabase.schemaVersion == 11)
+        #expect(AppDatabase.migrationNames.last == "v12")
+        #expect(AppDatabase.schemaVersion == 12)
 
         _ = try await harness.ingestor.reanalyzeStale()
         for session in try await harness.ingestor.allSessions() {
@@ -213,6 +213,36 @@ import Testing
         let divided = try #require(orphan.cleanJibesPerHour)
         #expect(divided == Double(orphan.jibesSuccessful ?? 0) * 3600 / orphan.durationS)
         #expect(abs(divided - engine) >= 0)
+    }
+
+    /// v12 adds the two facts a period needs and a session row never carried. Same sweep,
+    /// same reason: the rate denominator is the engine's cleaned span and not the row's own
+    /// duration, and the swim count is every fell-in flight end — neither is recoverable from
+    /// anything already stored, which is why the columns exist rather than a query.
+    @Test func v12FillsTheRateSpanAndTheSwimCount() async throws {
+        let harness = try migratedV1Library()
+        defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
+
+        let columns = try await harness.database.writer.read { db in
+            Set(try db.columns(in: "session").map(\.name))
+        }
+        #expect(columns.isSuperset(of: ["rateDurationS", "wetExits"]))
+
+        _ = try await harness.ingestor.reanalyzeStale()
+        var sawADifference = false
+        for session in try await harness.ingestor.allSessions() {
+            let summary = try await harness.ingestor.analysis(for: session).summary
+            #expect(session.rateDurationS == summary.durationS)
+            #expect(session.wetExits == summary.flightEnds.all.fellIn)
+            #expect(session.rateSeconds == summary.durationS)
+            // And it is the rate the engine published, to the decimal — which is the whole
+            // claim: WPH over a period is this count over these hours.
+            if let wet = session.wetExits, let wph = summary.wetPerHour, summary.durationS > 0 {
+                #expect(abs(Double(wet) / (summary.durationS / 3600) - wph) < 1e-9)
+            }
+            if session.rateDurationS != session.durationS { sawADifference = true }
+        }
+        #expect(sawADifference, "the corpus must contain a session the two spans disagree about")
     }
 
     @Test func deletingASessionCascadesToItsDerivedRows() async throws {
