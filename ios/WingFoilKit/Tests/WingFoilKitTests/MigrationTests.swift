@@ -172,8 +172,8 @@ import Testing
         }
         #expect(columns.isSuperset(of: ["longestDryStreak", "longestFlewStreak"]))
         #expect(stale == harness.v1Ids.count)
-        #expect(AppDatabase.migrationNames.last == "v10")
-        #expect(AppDatabase.schemaVersion == 10)
+        #expect(AppDatabase.migrationNames.last == "v11")
+        #expect(AppDatabase.schemaVersion == 11)
 
         _ = try await harness.ingestor.reanalyzeStale()
         for session in try await harness.ingestor.allSessions() {
@@ -182,6 +182,37 @@ import Testing
             #expect(session.longestFlewStreak == turns.longestFlewStreak)
             #expect(session.jibesSuccessful == turns.jibesSuccessful)
         }
+    }
+
+    /// v11 denormalizes the engine's own CPH, and the point of it is that the number is
+    /// **not** the one this layer used to compute: the engine divides by its own cleaned
+    /// session span and the row's `durationS` is the raw sample span. The sweep must
+    /// therefore actually fill the column — a NULL left standing would silently keep the
+    /// old arithmetic for ever.
+    @Test func v11FillsCphFromTheEngineRatherThanDividingForItself() async throws {
+        let harness = try migratedV1Library()
+        defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
+
+        let columns = try await harness.database.writer.read { db in
+            Set(try db.columns(in: "session").map(\.name))
+        }
+        #expect(columns.contains("engineCleanJibesPerHour"))
+
+        _ = try await harness.ingestor.reanalyzeStale()
+        for session in try await harness.ingestor.allSessions() {
+            let summary = try await harness.ingestor.analysis(for: session).summary
+            #expect(session.engineCleanJibesPerHour == summary.cleanJibesPerHour)
+            #expect(session.cleanJibesPerHour == summary.cleanJibesPerHour)
+        }
+
+        // The fallback, and that it is a *different* answer — which is what makes the
+        // column worth a migration rather than a rename.
+        var orphan = try #require(try await harness.ingestor.allSessions().first)
+        let engine = try #require(orphan.cleanJibesPerHour)
+        orphan.engineCleanJibesPerHour = nil
+        let divided = try #require(orphan.cleanJibesPerHour)
+        #expect(divided == Double(orphan.jibesSuccessful ?? 0) * 3600 / orphan.durationS)
+        #expect(abs(divided - engine) >= 0)
     }
 
     @Test func deletingASessionCascadesToItsDerivedRows() async throws {

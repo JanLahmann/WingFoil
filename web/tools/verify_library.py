@@ -159,6 +159,9 @@ def counted_entry(ident: str, best2s: float, **extra) -> dict:
         "startUtc": "2026-08-01T08:00:00Z", "startEpoch": 1_785_916_800.0,
         "dateUtc": "2026-08-01", "durationS": 3600.0, "distanceKm": 10.0,
         "foilPct": 50.0, "foilTimeS": 1800.0, "flightCount": 5, "longestFlightS": 60.0,
+        # Three clean jibes in one hour — the engine's own rate (schema 6), stated rather
+        # than left for `_cph` to divide, exactly as a stored digest carries it.
+        "cleanJibesPerHour": 3.0,
         "records": {"best2sKn": best2s}, "recordWindows": {"best2sKn": []},
         "turns": {"counted": 10, "successful": 4, "successPct": 40.0,
                   "jibes": 8, "jibesSuccessful": 3,
@@ -231,7 +234,7 @@ def check_attribution() -> None:
         e.pop("schema")
     check("  a schema-1 library is unchanged", library.aggregate(old)["count"], 2)
     check("  digest stamps the current schema",
-          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 5)
+          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 6)
 
     # Schema 3 (engine 0.8.2): the session's own UTC offset, and the local calendar date it
     # implies. `dateUtc` stays what it always was — the UTC day — so an entry written before
@@ -287,6 +290,10 @@ def check_digest_fidelity() -> None:
     s, rec = golden["summary"], golden["records"]
     check("  distanceKm == golden", d["distanceKm"], s["distanceKm"])
     check("  foilPct == golden", d["foilPct"], s["foilPct"])
+    # Schema 6: CPH is the engine's rate, copied like every other number on this row. The
+    # library used to divide the count by the hour itself, which was the same arithmetic
+    # in a second place — and a second place is where two answers come from.
+    check("  cleanJibesPerHour == golden", d["cleanJibesPerHour"], s["cleanJibesPerHour"])
     check("  flightCount == golden", d["flightCount"], s["flightCount"])
     check("  longestFlightS == golden", d["longestFlightS"], s["longestFlightS"])
     check("  turns.counted == golden", d["turns"]["counted"], s["turns"]["turnsCounted"])
@@ -458,13 +465,32 @@ def check_session_records(digests: list[dict]) -> None:
     check(f"  {library.MIN_JIBES_FOR_RATE} jibes do", rate_of(library.MIN_JIBES_FOR_RATE, 4),
           round(100.0 * 4 / library.MIN_JIBES_FOR_RATE, 1))
 
-    # CPH is clean jibes over elapsed hours, and the winner is the session that maximises
+    # CPH is the engine's own rate (0.10.0), and the winner is the session that maximises
     # it — not the one with the most clean jibes.
-    cph = max((d["turns"]["jibesSuccessful"] * 3600.0 / d["durationS"], d["id"])
-              for d in digests)
-    check("  CPH is jibesSuccessful / (durationS/3600)", rows["bestCph"]["value"],
+    cph = max((d["cleanJibesPerHour"], d["id"]) for d in digests)
+    check("  CPH is the engine's summary.cleanJibesPerHour", rows["bestCph"]["value"],
           round(cph[0], 2))
     check("  CPH names the session that maximises it", rows["bestCph"]["id"], cph[1])
+    # …and it is **not** the division the library used to do for itself, which is why the
+    # switch was worth making rather than a rename. The engine divides by its own *cleaned*
+    # session span — the denominator every per-hour rate in this project shares
+    # (docs/algorithms.md "Session rates") — and the digest's `durationS` is the FIT's
+    # `total_elapsed_time`. On the Rheinstetten afternoon those are 7742 s and 10338 s, and
+    # the library's own arithmetic reported a CPH a third too low on the page next door.
+    naive = [round(d["turns"]["jibesSuccessful"] * 3600.0 / d["durationS"], 1)
+             for d in digests]
+    engine = [round(d["cleanJibesPerHour"], 1) for d in digests]
+    check("  the corpus contains sessions the two denominators disagree about",
+          sum(1 for a, b in zip(naive, engine) if a != b) > 0, True)
+    check("  and the record follows the engine, not the old division",
+          rows["bestCph"]["value"] in {round(v, 2) for v in
+                                       (d["cleanJibesPerHour"] for d in digests)}, True)
+    # A row saved before schema 6 has no rate to read, and the fallback division answers
+    # for it — otherwise every afternoon in a library saved last month would drop out of
+    # the CPH record and the CPH trend line.
+    old = counted_entry("pre-v6", 10.0)
+    old.pop("cleanJibesPerHour", None)
+    check("  a pre-schema-6 row still has a CPH", library._cph(old), 3.0)
 
     # Ties go to the earliest session. Two synthetic entries with the same duration: the
     # older one holds the record, and adding a later equal never takes it away.
@@ -480,6 +506,9 @@ def check_session_records(digests: list[dict]) -> None:
     old["turns"] = {"counted": 10, "successful": 4, "successPct": 40.0, "jibes": 8,
                     "bySide": {"port": {"entries": 5, "successes": 2},
                                "starboard": {"entries": 5, "successes": 2}}}
+    # Schema 6's rate is the same clean count over the hour, so a row that predates the
+    # count predates the rate too — there is nothing for the fallback to divide either.
+    old.pop("cleanJibesPerHour")
     keys = {r["key"] for r in library.aggregate([old])["sessionRecords"]}
     check("  a pre-schema-5 digest sets no jibe record",
           keys & {"mostCleanJibes", "bestCph", "bestCleanJibeRate",
@@ -538,12 +567,11 @@ def check_trends(digests: list[dict]) -> None:
     check("  single-session library still charts",
           len(library.aggregate([digests[0]])["trends"]["charts"]), 7)
 
-    # The CPH series is the arithmetic the CPH record uses, session by session.
+    # The CPH series reads the same engine field the CPH record does, session by session.
     cph = next(c for c in tr["charts"] if c["key"] == "cph")["lines"][0]
-    check("  cph == clean jibes over session hours",
+    check("  cph == the engine's summary.cleanJibesPerHour",
           [p["v"] for p in cph["points"]],
-          [None if d["turns"]["jibesSuccessful"] is None
-           else round(d["turns"]["jibesSuccessful"] * 3600.0 / d["durationS"], 3)
+          [None if d["cleanJibesPerHour"] is None else round(d["cleanJibesPerHour"], 3)
            for d in ordered])
 
     # Weeks: ISO Monday buckets in the session's own local time, zero-filled.
