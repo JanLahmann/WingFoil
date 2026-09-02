@@ -59,8 +59,7 @@ export function render(result, { highlight = null, isExample = false } = {}) {
  *   2  the best 2 s record, labelled with the window it is
  *   3  the outcome ladder's three counts on the ladder's own inks, plus the two turn
  *      streaks the engine has computed since 0.4.0 and neither app ever drew
- *   4  CPH (or TPH) and WPH — the per-hour rates; CPH is *clean* jibes per hour since
- *      engine 0.10.0, the verdict the rider is chasing rather than the one that forgives
+ *   4  JPH (or TPH) and WPH — the per-hour rates, JPH over *dry* jibes since 0.7.0
  *
  * **This function is now layout only.** Every rule the two platforms have to agree on —
  * which entries exist, in what order, with which labels and which strings — moved to
@@ -250,19 +249,10 @@ const yn = (b) => (b ? "yes" : "–");
 
 function renderTurns(table, caption, g, v, meta) {
   const s = g.summary.turns;
-  const r = g.summary;
-  // The clean count is split the way the tally is: clean jibes and clean **tacks** (the
-  // engine's `tacksSuccessful`, counted all along and never printed until engine 0.10.0).
-  // JPH lives here too — the key-metrics block prints CPH now, and the dry rate belongs
-  // beside the ladder whose "came out of it still sailing" reading it is.
-  const rates = r.cleanJibesPerHour === null || r.cleanJibesPerHour === undefined
-    ? ""
-    : ` · ${nf(r.cleanJibesPerHour, 1)} clean jibes/h · ${nf(r.jibesPerHour, 1)} dry jibes/h`;
   caption.textContent =
     `${s.turnsCounted} counted (${s.jibes} jibes, ${s.tacks} tacks), ${s.rejected} bear-aways rejected · ` +
-    `${s.turnsSuccessful} clean — ${s.jibesSuccessful} jibes, ${s.tacksSuccessful} tacks — ` +
-    `carried ≥ 70 % of entry speed (${nf(s.successPct, 0)} %) · ` +
-    `port/starboard ${s.port}/${s.starboard}${rates}`;
+    `${s.turnsSuccessful} clean — carried ≥ 70 % of entry speed (${nf(s.successPct, 0)} %) · ` +
+    `port/starboard ${s.port}/${s.starboard}`;
 
   const head = ["#", "time", "type", "turn", "tack", "entry kn", "min kn", "score", "clean",
                 "outcome", "stop s", "off foil s", "pump", "wet", "arc m", "R m"];
