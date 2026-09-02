@@ -489,6 +489,10 @@ twins, and a difference between them is a bug.
 
 ### The share card carries the same block
 
+*(There is a second card kind — the **period card** — which is this card describing a week
+rather than an afternoon. Everything below holds for it unchanged; what differs is set out
+under "Periods".)*
+
 The exported card shows **this block and nothing else**, re-laid-out as cells: same keys,
 same order, same labels, same strings, and the tally's three counts kept as counts so they
 can wear the ladder there too. A card is the one artefact that leaves the device and is read
@@ -804,6 +808,173 @@ the environment's calendar and a Sunday-first locale would draw every bar a day 
 analyzer cuts them in `library._weeks`, in Python, and `js/trends.js` only places rectangles.
 The boundary both sides pin is the same one: a Saturday and the Monday after it are two
 different weeks, and the Sunday between them belongs to the **earlier** one.
+
+## Periods — a month, a season, a trip, or a range you type
+
+A session is an afternoon. Everything above describes one. **A period is a set of them**,
+and the four ways of naming a set are all answered by one block of numbers in one order —
+because "how was August" and "how was Garda" and "how has the season gone" are the same
+question asked of different afternoons, and answering them in three different vocabularies
+would be three different apps.
+
+**Python is the reference implementation.** `web/lab_bundle/library.py` (`periods`,
+`period_block`, `custom_period`) decides which afternoons belong to which period and what
+the block says about them; `LibraryStore.periods` / `periodBlock(from:to:)` and
+`PeriodBlock` say the same things in Swift. The two are pinned against one file —
+`fixtures/periods/periods.expected.json`, ten synthetic afternoons and Python's answer
+about them — read by `PeriodTests` on iOS and re-derived by `verify_library.py` §6b. Two
+hand-written test suites agreeing today is not two implementations that cannot drift.
+
+### The four kinds
+
+| kind | rule | title |
+|---|---|---|
+| **month** | the calendar month of the session's **own local day** | `August 2026` |
+| **season** | **1 April → 31 March**, named for the year it opened in | `Season 2026/27` |
+| **trip** | one spot, no gap wider than **3 days**, at least **2 sessions** | `Nago Torbole · 31 Jul – 6 Aug` |
+| **custom** | any start/end day, **inclusive at both ends** | `31 Jul – 6 Aug 2026` |
+
+- **The local day, not the UTC one** — the `dateLocal` rule the trend weeks already follow.
+  A session that starts at 22:30 UTC on 31 August at +02:00 is a **September** afternoon
+  where the rider was standing, and a month bucketed on the instant would file it under the
+  month before it happened. iOS cuts on `SessionRow.displayZone`; the analyzer on the
+  digest's `dateLocal`.
+- **The season cut is the one the Trends range picker has always used** (`TrendRange.season`),
+  reused rather than invented a second time: one Northern-hemisphere water year, so a
+  February afternoon still counts towards the winter it belongs to. A season that **has not
+  crossed a year** is just `2026`; the second half of the name appears once there is a
+  second half of the season to name.
+- **A trip is detected, not filed.** Three days, because a holiday has rest days, blown-out
+  days and travel days in it and a Tuesday off does not end a week at Garda; four days apart
+  is a second visit. Two sessions, because one afternoon somewhere is a session and a
+  heading has to be worth a heading.
+- **A trip clusters on coordinates, never on the spot's name.** This project's own corpus
+  spells one beach three ways — `nago-torbole-windsurfen`, `-foilmotion`, `-wingfoiling`,
+  because the analyzer derives a spot from the filename — so a trip detected by name would
+  turn one week at Garda into three holidays. The radius is **3 km**, deliberately looser
+  than the phone's 500 m spot radius (`SpotClusterer.defaultRadiusM`) because the question
+  is different: the spot table is naming *launches* and wants the beach, and a trip is asking
+  whether two afternoons were the same holiday. Torbole and Malcesine are one week at Garda
+  and 15 km apart. The clusterer itself is shared — `SpotClusterer.cluster` on iOS,
+  the same greedy single-link assignment against a moving centroid in `library._spot_clusters`.
+  - A session with **no anchor fix** (a recording with no positions, or a digest written
+    before schema 7) cannot be placed, and falls back to the spot it already answers to:
+    its `spotId` on iOS, its filename-derived name in the analyzer. Weaker, and the reason
+    the coordinates were added — but a library saved last month must still produce trips.
+  - A cluster is **named** by the spot name most of its afternoons carry, ties to the
+    earliest, because the first name a place was given is the one the rider has been reading.
+- **Same exclusions as the records tables** (`counts_towards_records`, `LibraryStore.clause`):
+  the bundled example, a provisional watch row and a friend's afternoon are in nobody's
+  holiday. The existing `LibraryFilter` (spot / gear / since) applies on top.
+
+### The aggregate block — one list, one order, both platforms
+
+| # | key | label | how it is derived |
+|---|---|---|---|
+| 1 | `sessions` | sessions | count |
+| 2 | `hours` | hours on the water | Σ `summary.durationS` (the engine's cleaned span) |
+| 3 | `distance` | distance | Σ `distanceKm` |
+| 4 | `flights` | flights | Σ `flightCount` |
+| 5 | `foilPct` | on foil | Σ foil time ÷ Σ **on-water** time |
+| 6 | `cleanJibes` | clean jibes | Σ `jibesSuccessful` |
+| 7 | `cph` | CPH · clean jibes per hour | clean jibes ÷ hours |
+| 8 | `turns` | turns | Σ counted turns |
+| 9 | `cleanJibeRate` | clean-jibe rate | Σ clean ÷ Σ jibes, ≥ 5 jibes |
+| 10 | `wph` | WPH · swims per hour | Σ fell-in flight ends ÷ hours |
+| 11 | `best2s` | best 2 s | max |
+| 12 | `best10s` | best 10 s | max |
+| 13 | `longestFlight` | longest flight | max |
+| 14 | `longestDryStreak` | longest dry streak | max |
+| 15 | `spots` | spots visited | distinct clusters |
+
+- **Rates over a period use the summed denominators, never the mean of the per-session
+  rates.** Ten minutes with one clean jibe and three hours with three is not "6.0 and 1.0,
+  so 3.5 an hour"; it is four clean jibes in three hours and ten minutes. The same rule
+  already governs the library totals' on-foil share and the gear rollup's.
+- **The hours are the engine's own session spans** — `summary.durationS`, the *cleaned*
+  first-to-last span every per-session rate divides by (docs/algorithms.md "Session rates").
+  It is deliberately **not** the row's other duration: the analyzer's `durationS` is the
+  FIT's `total_elapsed_time` and the iOS row's is the raw sample span, and on the corpus's
+  Rheinstetten afternoon those are 10338 s against 7742 s. A month holding a single session
+  has to report that session's CPH and not a second opinion about it, so both platforms
+  store the engine's span beside the other one (digest schema 7 `rateDurationS`, GRDB v12).
+- **On-foil share is weighted by time on the water**, not by elapsed time and not as a mean
+  of the percentages: the engine divides by its own cleaned timer time, which excludes the
+  gaps and the parked stretches, and summing elapsed time instead reports a library-wide
+  share about 19 points below every session in it.
+- **WPH counts every fell-in flight end**, straight-line swims and turn swims alike — what
+  `summary.wetPerHour` counts, and emphatically not the turn ladder's `fellIn`: most of a
+  session's falls happen outside a counted turn, and the water does not care. Both platforms
+  store the count (digest `wetExits`, GRDB v12).
+- **The clean-jibe rate keeps its ≥ 5 jibes floor**, over the *period's* total: four clean
+  out of four is a good week and it is still not a rate. One constant on each side
+  (`SessionRecordKind.minJibesForRate`, `library.MIN_JIBES_FOR_RATE`).
+- **An entry the period cannot supply is omitted** — never a dash, never a zero. That is the
+  block's half of "a missing value is absent, never 0", and it is also what lets a card
+  preset be a strict subset: anything the block did not produce was never there to keep. A
+  measured zero is still a value and prints as one (`0.0` swims per hour).
+- The formatters are the key-metrics block's own (`KeyMetrics.duration` / `km` / `knots` /
+  `rate`, and their Python twins), so a duration on a period card reads the way a duration
+  reads on a session card.
+
+### The period card
+
+**A second card kind, and deliberately the same card.** Same three shapes at the same pixel
+sizes, same footer — mark, wordmark, `analyze your wingfoil sessions free — cleanjibe.org`,
+QR — same title-and-one-caption header, same two presets. Everything in "The share card
+carries the same block" above holds here unchanged; what differs is only what is being
+described.
+
+| | session card | period card |
+|---|---|---|
+| stats | the key-metrics block | the aggregate block |
+| `lean` | duration · distance · max 2 s · tally | sessions · hours · clean jibes · CPH · best 2 s |
+| date line | the session's day | the period's span |
+| title default | the session's name | the period's title |
+| artwork | the track outline | **the period's outlines, stacked** |
+| map background | optional, off by default | **not offered** — see below |
+| speed disclaimer | on a class-(c) source | never |
+
+- **A preset may only drop entries**, held as keys (`PeriodBlock.leanKeys`,
+  `library.PERIOD_LEAN_KEYS`, `PERIOD_LEAN_KEYS` in `js/cardstats.js`) — the same rule and
+  the same reason as the session card's.
+- **No disclaimer.** "Speeds from a degraded source" is a claim about *one* recording's
+  speed channel; a period spans several, and marking a whole holiday because one afternoon
+  came from a GPX would answer a question nobody asked. The one speed on the card is a
+  record, and the records table is where a record's certification is stated.
+- **The artwork is every session's outline, laid on one another**, faint, with no marks: a
+  period has no single ride and picking one would be picking a favourite, while a week at
+  one spot laid over itself is recognisably that beach. Fifty outcome dots per session times
+  a dozen sessions is confetti, and the card's own numbers already say how the maneuvers
+  went. The opacity falls with the count so a dozen read as one shape rather than a scribble.
+  - The two platforms stack the same outlines by slightly different arithmetic, and this is
+    the one place they knowingly differ. The web fits **one placer to the union of the
+    tracks' extents**, so they share a true metres scale and a short session draws small
+    inside a long one. iOS stacks `TrackThumbnail`s, which are normalized per session, so
+    they share a box and a centre but not a scale — carrying the extent in the thumbnail is
+    the follow-up.
+- **No map background in this first version.** A period has no single ground: the sessions
+  in it may be 15 km apart, the framing question ("which rectangle of the earth?") has no
+  answer the card can take for granted, and the tile fetch would be per-session. The switch
+  is therefore not offered rather than offered and inert. A follow-up.
+- **Entry points**: the Periods screen on iOS (a share button on every period and on the
+  custom range), and the Periods section of the Records tab on the web (a "Share card"
+  button per period), both opening the composer the session card already uses.
+- **The rider's title and caption are transient on both platforms** here, unlike the session
+  card's on iOS: a period is not a row in the library, so there is nothing to rename. The web
+  remembers them per period key in `localStorage`, the way it already does per session.
+
+### Enforcement
+
+`fixtures/periods/periods.expected.json` (ten synthetic afternoons + Python's answer) is
+asserted by `PeriodTests` on iOS and re-derived by `verify_library.py` §6b, so a stale file
+cannot pin the phone to an answer the analyzer no longer gives. `verify_library.py` §6 asks
+the third question neither can — handed the fifteen real recordings in `fixtures/sessions/`,
+does the rule find the week a person would name? (It finds one Garda week of twelve
+afternoons, 31 July to 7 August 2026.) `card_parity.mjs` dumps the period card beside the
+session card and `verify_presentation.py` §5d asserts, per period, that `complete` **is** the
+block and `lean` is that block filtered — the same two assertions §5 makes about the session
+card.
 
 ## Marker eligibility
 
