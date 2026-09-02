@@ -30,7 +30,8 @@ RECORD_KEYS = {"best2sKn", "best10sKn", "best5x10sKn", "best100mKn", "best250mKn
                "best500mKn", "bestNmKn", "bestHourKn", "alpha500Kn", "windows"}
 SUMMARY_KEYS = {"foilTimeS", "foilPct", "flightCount", "longestFlightS",
                 "longestFlightM", "distanceKm", "durationS", "avgSpeedKmh",
-                "turnsPerHour", "jibesPerHour", "wetPerHour", "windowRates",
+                "turnsPerHour", "jibesPerHour", "cleanJibesPerHour", "wetPerHour",
+                "windowRates",
                 "turns", "flightEnds", "outcomeSplit", "takeoff"}
 WINDOW_RATE_KEYS = {"windowMin", "bestJph", "bestJphStartTs", "bestWph", "bestWphStartTs",
                     "series"}
@@ -74,7 +75,7 @@ def smoke_golden():
 def test_schema_shape(smoke_golden):
     g = smoke_golden
     assert list(g.keys()) == TOP_KEYS
-    assert g["engineVersion"] == "0.9.1"
+    assert g["engineVersion"] == "0.10.0"
     assert set(g["capabilities"].keys()) == CAP_KEYS
     assert set(g["records"].keys()) == RECORD_KEYS
     assert set(g["summary"].keys()) == SUMMARY_KEYS
@@ -139,11 +140,14 @@ def test_session_rates_on_a_synthetic_session():
     Every rate is per hour of *elapsed* session, so the arithmetic is deliberately trivial
     and hand-checkable: 60 turns in 2 h is 30/h, 9 swims is 4.5/h, 40 km in 2 h is 20 km/h.
     """
-    r = session_rates(7200.0, 40_000.0, turns_counted=60, dry_jibes=44, fell_in=9)
+    r = session_rates(7200.0, 40_000.0, turns_counted=60, dry_jibes=44, fell_in=9,
+                      clean_jibes=22)
     assert r.duration_s == 7200.0
     assert r.avg_speed_kmh == pytest.approx(20.0)
     assert r.turns_per_hour == pytest.approx(30.0)
     assert r.jibes_per_hour == pytest.approx(22.0)
+    # CPH is the strict reading of the same set, over the same hour: 22 clean in 2 h is 11/h.
+    assert r.clean_jibes_per_hour == pytest.approx(11.0)
     assert r.wet_per_hour == pytest.approx(4.5)
 
     # Unrounded inputs, rounded only for JSON: a half-hour session divides by 0.5, not by 1.
@@ -157,11 +161,13 @@ def test_session_rates_on_a_synthetic_session():
 def test_session_rates_without_a_duration_are_none_not_zero(duration):
     """A one-sample track has no hour to divide by. Every rate is null -- 0.0 would read as
     "he did nothing in an hour on the water", which is a different (and wrong) claim."""
-    r = session_rates(duration, 1234.0, turns_counted=7, dry_jibes=5, fell_in=2)
+    r = session_rates(duration, 1234.0, turns_counted=7, dry_jibes=5, fell_in=2,
+                      clean_jibes=3)
     assert r.duration_s == 0.0
     assert r.avg_speed_kmh is None
     assert r.turns_per_hour is None
     assert r.jibes_per_hour is None
+    assert r.clean_jibes_per_hour is None
     assert r.wet_per_hour is None
 
 
@@ -173,6 +179,8 @@ def test_rates_reconcile_with_the_numbers_beside_them(smoke_golden):
     assert s["turnsPerHour"] == pytest.approx(s["turns"]["turnsCounted"] / hours, abs=0.05)
     dry = s["turns"]["jibes"] - s["turns"]["jibeOutcomes"]["fellIn"]
     assert s["jibesPerHour"] == pytest.approx(dry / hours, abs=0.05)
+    assert s["cleanJibesPerHour"] == pytest.approx(
+        s["turns"]["jibesSuccessful"] / hours, abs=0.05)
     assert s["wetPerHour"] == pytest.approx(s["flightEnds"]["all"]["fellIn"] / hours, abs=0.05)
 
 
@@ -232,6 +240,14 @@ def test_jibes_per_hour_counts_only_the_jibes_he_sailed_out_of():
     # `turnsPerHour` is untouched: it answers "how busy", not "how well".
     assert s["turnsPerHour"] == pytest.approx(s["turns"]["turnsCounted"] / hours, abs=0.05)
     assert s["jibesPerHour"] < jibes / hours
+
+    # And CPH (engine 0.10.0) is the stricter reading of the same 50 jibes: 25 he rode all
+    # the way through, 12.8 an hour against the dry 22.0. Never above JPH -- a clean jibe is
+    # a dry one by construction.
+    clean = s["turns"]["jibesSuccessful"]
+    assert clean == 25
+    assert s["cleanJibesPerHour"] == pytest.approx(clean / hours, abs=0.05) == 12.8
+    assert s["cleanJibesPerHour"] < s["jibesPerHour"]
 
 
 def test_window_peak_never_scales_a_partial_window_up():

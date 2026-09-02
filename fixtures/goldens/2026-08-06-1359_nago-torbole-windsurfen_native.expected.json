@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.9.1",
+  "engineVersion": "0.10.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -2734,6 +2734,7 @@
     "avgSpeedKmh": 9.58,
     "turnsPerHour": 13.3,
     "jibesPerHour": 12.3,
+    "cleanJibesPerHour": 4.1,
     "wetPerHour": 4.1,
     "windowRates": {
       "windowMin": 15.0,
