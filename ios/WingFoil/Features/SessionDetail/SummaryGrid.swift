@@ -192,9 +192,13 @@ struct SessionTurnsSection: View {
             VStack(alignment: .leading, spacing: 20) {
                 cardSection("Turns & losses", anchor: "turns", help: .turnOutcomes) {
                     StatCard(title: "Jibes", value: "\(t.jibes)",
-                             caption: outcomeCaption(t.jibeOutcomes), help: .turnTypes)
+                             caption: outcomeCaption(t.jibeOutcomes,
+                                                     clean: t.jibesSuccessful),
+                             help: .turnTypes)
                     StatCard(title: "Tacks", value: "\(t.tacks)",
-                             caption: outcomeCaption(t.tackOutcomes), help: .turnTypes)
+                             caption: outcomeCaption(t.tackOutcomes,
+                                                     clean: t.tacksSuccessful),
+                             help: .turnTypes)
                     if t.unclassified > 0 {
                         StatCard(title: "Unclassified turns", value: "\(t.unclassified)",
                                  caption: "no usable wind axis", help: .windAxis)
@@ -203,6 +207,17 @@ struct SessionTurnsSection: View {
                              value: Fmt.pct(t.successPct),
                              caption: "\(t.turnsSuccessful) clean of \(t.turnsCounted) turns",
                              help: .turnSuccess)
+                    // The key-metrics block prints CPH now (engine 0.10.0); JPH is still
+                    // measured and belongs here, beside the ladder whose "he came out of it
+                    // still sailing" reading it is. The two are never a substitute for one
+                    // another, so both are printed and both say which set they count.
+                    if let jph = summary.jibesPerHour, let cph = summary.cleanJibesPerHour {
+                        StatCard(title: "Jibes per hour",
+                                 value: String(format: "%.1f", cph),
+                                 caption: String(format: "clean · %.1f dry", jph)
+                                     + " · over \(Fmt.duration(summary.durationS)) on the water",
+                                 help: .turnSuccess)
+                    }
                     StatCard(title: "Port / starboard",
                              value: "\(t.port) / \(t.starboard)",
                              caption: t.rejected > 0
@@ -234,9 +249,17 @@ struct SessionTurnsSection: View {
         }
     }
 
-    private func outcomeCaption(_ counts: OutcomeCounts) -> String {
+    /// The ladder's three counts, and the **clean** count of the same set beside them.
+    ///
+    /// The clean number rides last and in the caption's own neutral ink rather than joining
+    /// the three: it is the stricter verdict over the same turns, not a fourth rung of the
+    /// ladder (docs/presentation.md, "Clean jibe"). It is what makes the tack card carry
+    /// `tacksSuccessful` — "clean tacks" — which the engine has counted all along and no
+    /// screen had ever printed.
+    private func outcomeCaption(_ counts: OutcomeCounts, clean: Int) -> String {
         guard counts.total > 0 else { return "none detected" }
         return "\(counts.flewThrough) flew · \(counts.touchdown) touch · \(counts.fellIn) fell"
+            + " · \(clean) clean"
     }
 }
 

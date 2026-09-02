@@ -619,9 +619,10 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    Turns 10 (all jibes), Outcomes 8 / 0 / 2, wind 196°, best 2 s 13.47 kn, and the same
    four badges — `accel` included, because this example ships whole. Key metrics read
    `0:10 · 2.6 km · 7.71 kn`, `13.47 kn` under **max 2 s**, `8 · 0 · 2`
-   (of 10 jibes · 5 clean) on the ladder's colours beside `8 flew · 8 dry`, then `44.7`
-   **JPH** and `11.2 WPH`. Being
-   under the 15-minute window, the JPH/WPH peaks equal the whole-session rates.
+   (of 10 jibes · 5 clean) on the ladder's colours beside `8 flew · 8 dry`, then `27.9`
+   **CPH** and `11.2 WPH` — the 5 clean jibes over the hour, the same 5 the tally's caption
+   names one row up. Being under the 15-minute window, the JPH/WPH peaks equal the
+   whole-session rates.
 4. **Check the numbers** against the golden above: 23 flights, 60 % on foil, 12.76 km,
    Turns 30, Outcomes 9/9/12, wind 36°, best 2 s 11.36 kn. Badges: `wingfoil`,
    `CIQ dev fields`, `accel`, `HR`.
@@ -629,8 +630,9 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    On this file: `1:25 · 12.8 km · 4.89 kn`, then `11.36 kn` under **max 2 s**, then
    `9 · 9 · 12` (of 30 jibes · 4 clean) on the ladder's own green/amber/red *(this is the
    only place either app draws the tally in colour outside the map)* beside
-   `2 flew · 4 dry`, then `12.8` under
-   **JPH · dry jibes per hour** (the 18 jibes he sailed out of, not all 30 — engine 0.7.0)
+   `2 flew · 4 dry`, then `2.8` under
+   **CPH · clean jibes per hour** (the 4 jibes he rode all the way through, not the 18 he
+   merely sailed out of — engine 0.10.0; the dry rate, 12.8, moved down to the Turns table)
    and `11.3 WPH`. It must read identically to the iOS app's block on the same session —
    the two halves are `web/js/render.js` `keyMetrics` and `KeyMetrics.swift`, and the
    Swift half is pinned by `PresentationTests.keyMetrics*`.

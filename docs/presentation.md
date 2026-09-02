@@ -264,16 +264,26 @@ The rules, which are the only thing the two implementations can disagree about:
     strict-then-lenient, the same order the watch's Turns page has always drawn it in
     (`drawStreakRow2`: green run, then orange run). The block used to lead with dry, which
     put the two surfaces in different orders for one fact.
-- **JPH is dry jibes, and the label says so.** The engine's `jibesPerHour` counts the jibes
-  he came out of still sailing (`docs/algorithms.md` "Session rates", engine 0.7.0), so the
-  cell is captioned **"JPH · dry jibes per hour"**. A rate that counted the swims too could
-  be raised by falling more often, and a caption reading "jibes per hour" over a number that
-  excludes seven of them would name a different figure than the one printed.
-- **Row 4 degrades JPH to TPH, not to zero.** When `jibesPerHour` is 0 while
-  `turnsPerHour` is positive — turns the wind axis could not name — the row shows
-  `turnsPerHour` labelled TPH. WPH needs no fallback: a fell-in flight end is a fall
-  whatever the wind was doing. A session with a duration and genuinely no turns keeps JPH
-  at `0.0`, because that is a measured zero.
+- **The rate row prints CPH, and the label says so.** The engine's `cleanJibesPerHour`
+  counts the jibes he flew all the way through carrying his speed (`docs/algorithms.md`
+  "Session rates", engine 0.10.0), so the cell is captioned **"CPH · clean jibes per
+  hour"**. It replaced JPH here in 0.10.0: the dry rate forgives every touchdown, and a
+  headline a rider can hold by getting away with things is a headline that stops moving.
+  CPH is also the same verdict the tally's caption counts one row up, so the two lines of
+  the block now agree about what a good session is. **JPH is not deleted** — it is still
+  computed, still in the golden, and still shown in the turn analytics beside the outcome
+  ladder it belongs to; it is simply not the number on the front of the card.
+- **Row 4 degrades CPH to TPH, not to zero — and on the tally's test.** When the session
+  named **no jibes at all** (`turns.jibes == 0`) while `turnsPerHour` is positive — turns
+  the wind axis could not name — the row shows `turnsPerHour` labelled TPH, exactly as the
+  tally above it falls back to the counted-turn ladder. The test is the tally's rather than
+  the rate's own value on purpose: a session that jibed fifteen times and rode none of them
+  keeps a **measured `0.0` CPH**, because that is a verdict the block is entitled to print
+  and TPH would hide it behind a busy-ness number (2026-08-03 pm is exactly that session:
+  15 jibes, 0 clean, 7.6 turns an hour). It also keeps the two rows describing one set of
+  turns in every case, which the old rate-valued test did not. WPH needs no fallback: a
+  fell-in flight end is a fall whatever the wind was doing. A session with a duration and
+  genuinely no turns keeps CPH at `0.0`, because that too is a measured zero.
 - **No duration, no row.** `durationS <= 0` makes the engine report all four rates as
   null, and row 4 disappears — the general rule ("a missing value is absent, never 0")
   applied to the one place where a 0.0 would read as a verdict on the rider.
@@ -410,7 +420,7 @@ Two presets choose how much of it appears, and a preset may only **remove** entr
 
 | preset | cells |
 |---|---|
-| `complete` (default) | the whole block: duration · distance · avg speed · max 2 s · tally · streaks · JPH/TPH · WPH |
+| `complete` (default) | the whole block: duration · distance · avg speed · max 2 s · tally · streaks · CPH/TPH · WPH |
 | `lean` | duration · distance · max 2 s · tally |
 
 **The rider gets a title and one caption, and neither is a cell** (schema v9). The card's
