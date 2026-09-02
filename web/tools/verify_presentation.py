@@ -521,11 +521,8 @@ def expected_card_values(doc: dict) -> dict[str, str]:
         # the smaller of the two.
         out["streaks"] = f"{t['longestFlewStreak']} flew · {t['longestDryStreak']} dry"
     if s.get("wetPerHour") is not None:
-        # CPH since engine 0.10.0, on the tally's own fallback test: a session that named no
-        # jibes at all has no jibe rate to print, and one that jibed and rode none of them
-        # keeps a measured 0.0 rather than hiding behind TPH.
-        if t["jibes"] > 0 or not s["turnsPerHour"] > 0:
-            out["cph"] = f"{s['cleanJibesPerHour']:.1f}"
+        if s["jibesPerHour"] > 0 or not s["turnsPerHour"] > 0:
+            out["jph"] = f"{s['jibesPerHour']:.1f}"
         else:
             out["tph"] = f"{s['turnsPerHour']:.1f}"
         out["wph"] = f"{s['wetPerHour']:.1f}"

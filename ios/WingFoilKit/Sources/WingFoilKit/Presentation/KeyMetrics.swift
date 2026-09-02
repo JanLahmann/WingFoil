@@ -16,12 +16,12 @@ import Foundation
 ///    §5.1 flagged as computed-and-never-shown on either platform. The tally's caption
 ///    carries the **clean jibe** count as well as the total, so the one number a rider
 ///    quotes about his turns is in the block rather than three screens down.
-/// 4. `rates` — the per-hour rates (`docs/algorithms.md` "Session rates"); CPH counts the
-///    **clean** jibes since 0.10.0, and its label says so.
+/// 4. `rates` — the per-hour rates (`docs/algorithms.md` "Session rates"); JPH counts
+///    **dry** jibes since 0.7.0, and its label says so.
 ///
 /// Everything resolves to a display string here so both platforms format one way and so
 /// the *content* is testable without a renderer — the same arrangement `ShareCardStats`
-/// uses, and for the same reason: a block that prints "0.0 CPH" where it means "there is
+/// uses, and for the same reason: a block that prints "0.0 JPH" where it means "there is
 /// no hour to divide by" is a mistake no screenshot shows.
 ///
 /// Mirrored in `web/js/render.js` (`keyMetrics`). A difference between the two is a bug.
@@ -81,7 +81,7 @@ public struct KeyMetrics: Sendable, Equatable {
     /// the two runs and the one the rider is chasing, and `longestFlewStreak` is always
     /// the smaller number, so the pair reads strict-then-lenient in both halves.
     public let streaks: Metric?
-    /// CPH (or TPH) and WPH. **Empty** when `durationS <= 0` — the engine reports the
+    /// JPH (or TPH) and WPH. **Empty** when `durationS <= 0` — the engine reports the
     /// rates as null there, and "no hour to divide by" is an absence, not a 0.0.
     public let rates: [Metric]
 
@@ -121,12 +121,12 @@ public struct KeyMetrics: Sendable, Equatable {
     /// The jibe ladder when the session named jibes, the whole counted-turn ladder when it
     /// could not.
     ///
-    /// Jibes are what the rider asked for and what CPH counts one row below, so the two
+    /// Jibes are what the rider asked for and what JPH counts one row below, so the two
     /// have to be about the same turns. But a session with no usable wind axis has no
     /// jibes at all (`unclassified`), and an empty tally on a screen full of turns would
     /// read as "nothing happened" — so it falls back to every counted turn, exactly the
-    /// way the rate row falls back from CPH to TPH, and on the very same test. The caption
-    /// says which, so the three numbers can never be mistaken for the other set.
+    /// way the rate row falls back from JPH to TPH. The caption says which, so the three
+    /// numbers can never be mistaken for the other set.
     ///
     /// The caption also carries the **clean** count — the jibes he flew all the way
     /// through carrying his speed (`turnSuccessPct`). It rides in the caption rather than
@@ -145,27 +145,23 @@ public struct KeyMetrics: Sendable, Equatable {
                      caption: "of \(t.turnsCounted) turns · \(t.turnsSuccessful) clean")
     }
 
-    /// CPH · WPH, one decimal.
+    /// JPH · WPH, one decimal.
     ///
-    /// CPH is **clean** jibes per hour (engine 0.10.0), and the label says so: the jibes he
-    /// flew all the way through carrying his speed, which is the verdict the rider is
-    /// actually chasing and the one the tally's caption counts a row up. It replaced JPH
-    /// here in 0.10.0 — the dry rate forgives every touchdown, and a headline that forgives
-    /// is a headline that stops moving. JPH is still measured and still shown, in the turn
-    /// analytics where the ladder it belongs to lives.
+    /// JPH is **dry** jibes per hour (engine 0.7.0), and the label says so: the number
+    /// counts the jibes he came out of still sailing, so it cannot be raised by falling
+    /// more often, and a caption reading "jibes per hour" over it would name a different
+    /// number than the one printed.
     ///
-    /// It degrades to TPH rather than to 0.0 — and on the **tally's** test, not on its own
-    /// value: a session whose wind axis never resolved has turns and no jibes at all, and
-    /// naming a jibe rate over it would be naming a set that does not exist. A session that
-    /// *did* jibe and rode none of them keeps CPH at `0.0`, because that is a measured
-    /// verdict and TPH would hide it. WPH needs no fallback — a fell-in flight end is a
-    /// fall whatever the wind was doing.
+    /// It degrades to TPH rather than to 0.0: a session whose wind axis never resolved
+    /// has turns and no jibes, and "0.0 jibes per hour" would be a verdict on a rider who
+    /// jibed all afternoon. WPH needs no such fallback — a fell-in flight end is a fall
+    /// whatever the wind was doing.
     static func rates(_ s: SessionSummary) -> [Metric] {
         guard let wet = s.wetPerHour else { return [] }
         var out: [Metric] = []
-        if s.turns.jibes > 0 || (s.turnsPerHour ?? 0) <= 0 {
-            out.append(Metric(key: "cph", label: "CPH · clean jibes per hour",
-                              value: rate(s.cleanJibesPerHour ?? 0)))
+        if let jibes = s.jibesPerHour, jibes > 0 || (s.turnsPerHour ?? 0) <= 0 {
+            out.append(Metric(key: "jph", label: "JPH · dry jibes per hour",
+                              value: rate(jibes)))
         } else if let turns = s.turnsPerHour {
             out.append(Metric(key: "tph", label: "TPH · turns per hour",
                               value: rate(turns)))

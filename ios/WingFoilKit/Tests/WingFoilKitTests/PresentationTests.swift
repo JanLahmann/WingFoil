@@ -223,7 +223,7 @@ import Testing
         #expect(stats.title == "Torbole")
         #expect(stats.stats.map(\.key)
                 == ["duration", "distance", "avgSpeed", "max2s", "tally", "streaks",
-                    "cph", "wph"])
+                    "jph", "wph"])
         // Labels and values verbatim from the block — no rewording, no reformatting.
         for metric in block.basics + [block.maxSpeed] + block.rates {
             let cell = stats.stats.first { $0.key == metric.key }
@@ -273,7 +273,7 @@ import Testing
 
         #expect(outro.stats.map(\.key)
                 == ["duration", "distance", "avgSpeed", "max2s", "tally", "streaks",
-                    "cph", "wph", "longestFlight"])
+                    "jph", "wph", "longestFlight"])
         #expect(outro.stats.count == 9)
         // "6:32" — the same string the replay's own caption said and the flight table prints.
         #expect(outro.stats.last?.value == FlightPairing.clock(392))
@@ -338,7 +338,7 @@ import Testing
         let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
         let stats = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block, timeZone: fixtureZone)
         #expect(stats.stats.map(\.key) == ["duration", "distance", "avgSpeed", "max2s"])
-        #expect(!stats.stats.contains { $0.key == "cph" || $0.key == "wph" })
+        #expect(!stats.stats.contains { $0.key == "jph" || $0.key == "wph" })
         // Nothing measured is "—", never a fabricated 0.00 kn.
         #expect(stats.stats.allSatisfy { !$0.value.contains("0.00") })
         #expect(stats.stats.first { $0.key == "max2s" }?.value == "—")
@@ -460,7 +460,7 @@ import Testing
                                      longestFlightS: 424, longestFlightM: 1580,
                                      distanceKm: 22.985)
         summary.apply(SessionRates(durationS: 7029, distanceM: 22_985, turnsCounted: 51,
-                                   dryJibes: 43, fellIn: 25, cleanJibes: 12))
+                                   dryJibes: 43, fellIn: 25))
         summary.turns.turnsCounted = 51
         summary.turns.jibes = 50
         // The strict verdict: 12 of the 50 jibes were flown all the way through with the
@@ -492,17 +492,16 @@ import Testing
         #expect(block.tally?.fellIn == 7)
         #expect(block.tally?.caption == "of 50 jibes · 12 clean")
         #expect(block.streaks?.value == "5 flew · 11 dry")
-        #expect(block.rates.map(\.key) == ["cph", "wph"])
-        // 12 clean jibes of 50 over 1:57 — the strict verdict, the same 12 the tally's
-        // caption names one row up, and the label says which set it is. The dry rate over
-        // the same session reads 22.0 and is still measured; it is simply not the headline.
-        #expect(block.rates[0].label == "CPH · clean jibes per hour")
-        #expect(block.rates[0].value == "6.1")
+        #expect(block.rates.map(\.key) == ["jph", "wph"])
+        // 43 dry jibes of 50 over 1:57 — the rate counts the ones he sailed out of, and the
+        // label says so, because 50/h would be a different number under the same word.
+        #expect(block.rates[0].label == "JPH · dry jibes per hour")
+        #expect(block.rates[0].value == "22.0")
         #expect(block.rates[1].value == "12.8")
     }
 
     /// No duration ⇒ the engine reports every rate as null, and the row disappears rather
-    /// than printing "0.0 CPH" over a rider who was never given an hour to divide by.
+    /// than printing "0.0 JPH" over a rider who was never given an hour to divide by.
     @Test func keyMetricsHideTheRateRowWithoutADuration() {
         var summary = SessionSummary(foilTimeS: 0, foilPct: 0, flightCount: 0,
                                      longestFlightS: 0, longestFlightM: 0, distanceKm: 0)
@@ -519,9 +518,9 @@ import Testing
         #expect(block.streaks == nil)
     }
 
-    /// A session whose wind axis never resolved has turns and no jibes. A jibe rate over
-    /// it would name a set that does not exist, so both the rate and the tally fall back to
-    /// the turn channel — on the same test, and both say so in their own label.
+    /// A session whose wind axis never resolved has turns and no jibes. JPH would read
+    /// 0.0 over an afternoon of jibing, so both the rate and the tally fall back to the
+    /// turn channel — and both say so in their own label.
     @Test func keyMetricsFallBackToTurnsWhenNoJibeWasNamed() {
         var summary = SessionSummary(foilTimeS: 600, foilPct: 30, flightCount: 4,
                                      longestFlightS: 60, longestFlightM: 300,
@@ -544,44 +543,18 @@ import Testing
     }
 
     /// A measured zero is a value: a session with a duration and no turns really did do
-    /// 0.0 clean jibes an hour, and that is CPH — not the TPH fallback, which exists only
-    /// for turns the wind axis could not name.
-    @Test func keyMetricsKeepCPHWhenThereWereNoTurnsAtAll() {
+    /// 0.0 jibes an hour, and that is JPH — not the TPH fallback, which exists only for
+    /// turns the wind axis could not name.
+    @Test func keyMetricsKeepJPHWhenThereWereNoTurnsAtAll() {
         var summary = SessionSummary(foilTimeS: 30, foilPct: 50, flightCount: 1,
                                      longestFlightS: 30, longestFlightM: 100,
                                      distanceKm: 0.226)
         summary.apply(SessionRates(durationS: 59, distanceM: 226, turnsCounted: 0,
                                    dryJibes: 0, fellIn: 0))
         let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
-        #expect(block.rates.map(\.key) == ["cph", "wph"])
+        #expect(block.rates.map(\.key) == ["jph", "wph"])
         #expect(block.rates[0].value == "0.0")
         #expect(block.tally == nil)
-    }
-
-    /// An afternoon of jibes he did not ride keeps a **measured** 0.0 CPH.
-    ///
-    /// This is the case the old JPH row got wrong once CPH took its place: the fallback was
-    /// written against the rate's own value, so a session with fifteen jibes and no clean
-    /// one would have flipped to TPH and printed a busy-ness number where a verdict belongs.
-    /// The test is the tally's — "did the session name any jibes at all" — so the rate row
-    /// and the tally above it always describe the same set of turns.
-    /// 2026-08-03 pm is that session in the corpus: 15 jibes, 0 clean, 7.6 turns an hour.
-    @Test func keyMetricsKeepAMeasuredZeroCPHOverJibesHeDidNotRide() {
-        var summary = SessionSummary(foilTimeS: 600, foilPct: 30, flightCount: 4,
-                                     longestFlightS: 60, longestFlightM: 300, distanceKm: 5)
-        summary.apply(SessionRates(durationS: 3600, distanceM: 5000, turnsCounted: 15,
-                                   dryJibes: 9, fellIn: 6, cleanJibes: 0))
-        summary.turns.turnsCounted = 15
-        summary.turns.jibes = 15
-        summary.turns.jibesSuccessful = 0
-        summary.turns.outcomes = outcomes(4, 5, 6)
-        summary.turns.jibeOutcomes = outcomes(4, 5, 6)
-        let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
-
-        #expect(block.rates.map(\.key) == ["cph", "wph"])
-        #expect(block.rates[0].value == "0.0")
-        // …and the tally above it names the same set, so the two rows cannot disagree.
-        #expect(block.tally?.caption == "of 15 jibes · 0 clean")
     }
 
     // MARK: - Thumbnail geometry
