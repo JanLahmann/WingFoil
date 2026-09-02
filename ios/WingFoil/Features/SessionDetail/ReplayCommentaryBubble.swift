@@ -10,8 +10,10 @@ import WingFoilKit
 ///
 /// **Why the ink is mostly neutral.** `docs/presentation.md` — the outcome ladder is a
 /// verdict scale and nothing else may borrow it. "10 jibes" and "New streak — 5 dry jibes"
-/// are *counts*, not verdicts, so they get the plain foreground; the four lines that really
-/// are the thing a token names (a takeoff, a swim, the record window, a flight) use it.
+/// are *counts*, not verdicts, so they get the plain foreground; the lines that really are
+/// the thing a token names (a takeoff, a swim, the record window, a flight) use it. The
+/// clean-jibe line is the one addition: it is a verdict, and it wears the clean ink the map
+/// star wears — never the ladder's green, for the reason spelled out under "Clean jibe".
 ///
 /// **Why there are two sizes.** The inline bubble is read by the rider, on his own phone,
 /// six inches away, under a map he is scrubbing — `.footnote` is right and anything larger
@@ -91,6 +93,9 @@ struct ReplayCommentaryBubble: View {
         case .sessionEnd: "flag.checkered"
         case .firstTakeoff: DesignTokens.Glyph.takeoffPumped
         case .jibe: "arrow.triangle.turn.up.right.circle"
+        // The same star the map draws over a clean jibe — one mark, one meaning, wherever
+        // the strict verdict appears (docs/presentation.md, "Clean jibe").
+        case .cleanJibe: DesignTokens.Glyph.cleanJibe
         case .streak: "flame"
         case .splash: DesignTokens.Glyph.splash
         case .topSpeed: "speedometer"
@@ -107,6 +112,9 @@ struct ReplayCommentaryBubble: View {
         case .splash: DesignTokens.Outcome.fellIn
         case .topSpeed: DesignTokens.Effort.window
         case .longestFlight: DesignTokens.Phase.flying
+        // The clean jibe's own ink, which is the map star's — and, like it, deliberately
+        // not the outcome ladder's green.
+        case .cleanJibe: DesignTokens.Clean.jibe
         case .jibe, .streak: .primary
         }
     }
