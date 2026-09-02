@@ -403,6 +403,20 @@ input:focus-visible, button:focus-visible, .btn:focus-visible, .dropzone:focus-v
   flex: 1 1 100%; font-size: 12px; line-height: 1.5; color: var(--ink-3); margin: 2px 0 0;
 }
 
+/* --- the legend's three groups: route, then the events on it, then the utilities.
+   Each group wraps as a unit, so a narrow phone breaks BETWEEN the questions rather than
+   through the middle of one; the extra left margin is the visible seam. The utilities
+   (Show all, the zoom bar) are neither a route layer nor an event, so they push to the
+   trailing edge — the same arrangement the iOS `MapLegendView` lays out as its third row. */
+.legend .chip-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.legend .chip-group + .chip-group { margin-left: 10px; }
+.legend .chip-utilities { margin-left: auto; gap: 8px 14px; }
+@media (max-width: 560px) {
+  /* No room to push anything right: the utilities become a row of their own, still last. */
+  .legend .chip-group { flex: 1 1 100%; }
+  .legend .chip-group + .chip-group { margin-left: 0; }
+}
+
 /* --- legend chips: the map/chart filter.
    Three states, deliberately distinguishable without colour vision (the iOS legend makes
    the same split): ON = filled capsule; OFF = dimmed, struck-through label, dashed

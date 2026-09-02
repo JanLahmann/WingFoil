@@ -177,6 +177,15 @@ def check_rules() -> None:
             "courseChange": turns["course"],
         }
         check(f"  {stem}: markers per layer", facts["markers"], want)
+        # The star layer, re-derived rather than trusted: a counted jibe the engine's own
+        # `success` flag passed. It lies *across* the ladder above, never inside it — every
+        # clean jibe is also counted under the outcome it ended on, which is why the marker
+        # total below still comes out as turns + drawn ends.
+        clean = sum(1 for t in doc.get("turns", [])
+                    if t["counted"] and t["type"] == "jibe" and t["success"])
+        check(f"  {stem}: clean jibes are the star layer", facts["cleanJibes"], clean)
+        check(f"  {stem}: never more clean jibes than counted turns",
+              facts["cleanJibes"] <= sum(want.values()), True)
         # An end with no verdict is a recording that stopped, not an event; if one ever
         # survives the ownership filter the ladder above would silently paint it green.
         check(f"  {stem}: no drawn flight end has an unknown outcome", ends["unknown"], 0)

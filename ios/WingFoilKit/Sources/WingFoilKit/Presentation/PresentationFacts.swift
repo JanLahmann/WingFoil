@@ -53,6 +53,16 @@ public enum PresentationRules {
         analysis.pumpEpisodes.filter { $0.outcome == .success || $0.outcome == .failed }
     }
 
+    /// The **clean jibes**: counted, named a jibe, and passed the engine's own `success`
+    /// flag (docs/presentation.md, "Clean jibe"). The map draws each of these as a star
+    /// instead of its outcome dot, and the same list is what the `cleanJibe` chip counts.
+    ///
+    /// One definition, spelled once — the web's `session.js` reads the same three fields off
+    /// the same rows, and the tally's caption counts the same set from the engine's summary.
+    public static func cleanJibes(_ analysis: SessionAnalysis) -> [TurnRecord] {
+        analysis.turns.filter { $0.counted && $0.type == "jibe" && $0.success }
+    }
+
     /// Turns whose swim the barometer actually saw. Evidence, not a census — and the UI
     /// never re-derives it.
     public static func splashTurns(_ analysis: SessionAnalysis) -> [TurnRecord] {
@@ -177,6 +187,12 @@ public struct PresentationFacts: Sendable, Equatable {
     /// (docs/presentation.md "Enforcement" 3).
     public let flightCount: Int
     public let markers: MarkerCounts
+    /// **Clean jibes** — the star layer (docs/presentation.md, "Clean jibe"). Deliberately
+    /// *not* one of `markers`: those partition the turns and the drawn flight ends one mark
+    /// each, and a clean jibe is already counted there under whatever outcome it ended on.
+    /// This is the second, stricter reading laid over the same set, and adding it to the
+    /// ladder's counts would break the one invariant they are worth pinning for.
+    public let cleanJibes: Int
     public let flightEnds: FlightEndCounts
     public let takeoff: TakeoffCounts
     public let splash: Int
@@ -204,6 +220,7 @@ public struct PresentationFacts: Sendable, Equatable {
             markers.add(PresentationRules.layer(forOutcome: end.outcome))
         }
         self.markers = markers
+        cleanJibes = PresentationRules.cleanJibes(analysis).count
 
         let free = analysis.takeoffs.filter(\.free).count
         takeoff = TakeoffCounts(pumped: analysis.takeoffs.count - free, free: free,
@@ -236,6 +253,7 @@ public struct PresentationFacts: Sendable, Equatable {
         tally.add(.touchdown, markers.touchdown)
         tally.add(.fellIn, markers.fellIn)
         tally.add(.courseChange, markers.courseChange)
+        tally.add(.cleanJibe, cleanJibes)
         tally.add(.takeoff, takeoff.total)
         tally.add(.splash, splash)
         tally.add(.pumping, pumpingSpans)

@@ -63,6 +63,14 @@ public enum DesignTokens {
         public static let starboard = Color.brown.opacity(0.55)
     }
 
+    /// The strict verdict's own ink. Clean is what a jibe *cost*; the ladder's green is
+    /// how it *ended*, and the two disagree on purpose — so the clean mark carries a
+    /// green of its own and never the ladder's.
+    public enum Clean {
+        /// clean jibe — the strict verdict's own ink: a green deliberately NOT the ladder's flew-through green, because clean is what a jibe cost and flew through is how it ended
+        public static let jibe = Color.mint
+    }
+
     /// Opacities the chevrons are drawn at, per phase (web uses its own).
     public enum Opacity {
         public static let directionWeb: Double = 0.42
@@ -81,6 +89,8 @@ public enum DesignTokens {
         public static let takeoffFailed = "arrow.uturn.down.circle"
         /// drop glyph — submersion evidence
         public static let splash = "drop.fill"
+        /// filled star — a clean jibe, drawn instead of that turn's outcome dot
+        public static let cleanJibe = "star.fill"
     }
 
     /// The hex half of every colour token — what the web renders. Not used
@@ -100,6 +110,7 @@ public enum DesignTokens {
         public static let directionInk = "#c3c2b7"
         public static let sidePort = "#a38054"
         public static let sideStarboard = "#d9b9a3"
+        public static let cleanJibe = "#2ee6a8"
     }
 
     /// The record picker: canonical order, display labels, and the window every
@@ -127,6 +138,7 @@ public enum DesignTokens {
             DesignTokenEntry(id: "offFoil", label: "off foil"),
             DesignTokenEntry(id: "effort", label: "best effort"),
             DesignTokenEntry(id: "pumping", label: "pumping"),
+            DesignTokenEntry(id: "cleanJibe", label: "clean jibe"),
             DesignTokenEntry(id: "flewThrough", label: "flew through"),
             DesignTokenEntry(id: "touchdown", label: "touchdown"),
             DesignTokenEntry(id: "fellIn", label: "fell in"),
@@ -141,6 +153,7 @@ public enum DesignTokens {
             "offFoil",
             "effort",
             "pumping",
+            "cleanJibe",
             "flewThrough",
             "touchdown",
             "fellIn",

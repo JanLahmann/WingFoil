@@ -61,8 +61,12 @@ how the turn *ended*; clean is what it *cost*. They disagree on purpose — a ji
 cleanly through the sweep stays clean even when the foil is lost later in the recovery
 tail, which is exactly what the outcome records — and on the corpus session the two read
 30 % and 13 %. So the clean count never wears the outcome ladder's inks, never sits inside
-the three-count tally, and never borrows the word "flew". It is drawn beside them, in
-neutral ink, as the stricter reading of the same set of turns.
+the three-count tally, and never borrows the word "flew". Where it is a *count* beside the
+tally it is drawn in neutral ink, as the stricter reading of the same set of turns; where it
+is a *mark of its own* — the map's star — it carries the clean ink
+(`DesignTokens.Clean.jibe` / `--wf-clean-jibe`), a green chosen to be nothing on the ladder.
+Either way the rule is the same one: the two verdicts are two readings, and no ink may say
+they are one.
 
 ## Layers
 
@@ -71,6 +75,7 @@ neutral ink, as the stricter reading of the same set of turns.
 | `flying` | track tinted on-foil | visible | phase tint, not a marker |
 | `offFoil` | track tinted off-foil | visible | |
 | `effort` | the selected GP3S record window glowing on track + shaded on chart | visible | window choice is the record picker's (below) |
+| `cleanJibe` | **clean jibes, as filled stars** in place of their outcome dot | visible | cuts *across* the ladder — see below |
 | `flewThrough` | turn outcome markers, flew | visible | |
 | `touchdown` | turn outcome markers, touchdown | visible | |
 | `fellIn` | turn outcome markers, fell in | visible | |
@@ -84,8 +89,59 @@ Layer visibility persists on iOS (hidden-set, `mapLayerVisibility.v1`; unknown i
 decode harmlessly so old prefs survive new layers) and is transient on web. Legend chips are
 the only toggle surface; a struck-through chip means hidden.
 
+### The clean jibe is a star, and it needs two chips
+
+A counted jibe the engine's `success` flag passed is drawn as a **filled star** — SF Symbol
+`star.fill` on iOS, the `star` shape in `viz.js` — in the clean-jibe ink
+(`DesignTokens.Clean.jibe` / `--wf-clean-jibe`, `#2ee6a8`). Three rules, and all three are
+the same rule read from different sides:
+
+- **It replaces the outcome dot; it does not join it.** Two marks on one turn at map scale
+  is two events to the eye, and the turn is one.
+- **It is a green of its own, never `Outcome.flew`.** "Flew through" is how a jibe *ended*;
+  clean is what it *cost*, and the two disagree on purpose (see "Clean jibe" above). A star
+  drawn in the ladder's green would quietly claim they are one reading. Shape carries the
+  distinction anyway, so nothing here depends on telling one green from another.
+- **A starred jibe answers to two chips**, its outcome's and `cleanJibe`'s, and is drawn only
+  when **both** are visible. Clean cuts across the ladder rather than sitting on it: a star
+  that survived "hide touchdowns" would be a touchdown the rider asked not to see. Hiding
+  `cleanJibe` alone leaves the jibe on the map as the outcome dot it always was.
+- **Counts follow the chips, not the marks.** A clean jibe is one on its outcome chip and one
+  on the star's, which is what makes both live toggles. It is deliberately *not* a fifth
+  entry in `PresentationFacts.markers` — those partition the turns and the drawn flight ends
+  one mark each — but a fact of its own, `cleanJibes`, pinned per fixture in
+  `fixtures/presentation/`.
+
+The speed strip shares the visibility model, so a star hidden on the map is hidden there too,
+and the web keeps its numbered marks in step with the Turns table: the number rides with the
+mark and disappears with it.
+
+### The option row under the map: three groups, one question each
+
+Both platforms lay the row out the same way, and the split is by *what a tap changes*:
+
+| group | holds |
+|---|---|
+| route | flying · off foil · pumping · direction · the effort window |
+| events | **clean jibe** · flew through · touchdown · fell in · course change · takeoff · splash |
+| utilities | "show all" (only while something is hidden) · the map-style menu (iOS) or the zoom bar (web) · the `?` (iOS, and not on the full-screen map) |
+
+- **Clean jibe leads the event group.** It is the mark a rider opens the map to find, and it
+  is the one mark there that is not a rung of the ladder — putting it after "fell in" would
+  file the strict verdict as the ladder's fourth outcome.
+- **The utilities are last and trailing-aligned**, because none of them toggles a layer: the
+  style menu is the map's *ground*, "show all" is a reset, the zoom bar is a camera and the
+  `?` is a sheet. They used to sit in the middle of the route chips, which on a narrow phone
+  wrapped the style menu between "direction" and "best 2 s" and made the row read as a list
+  of eight unrelated things.
+- iOS draws the three as three rows (`MapLegendView.routeRow` / `markerRow` / `utilityRow`);
+  web draws them as three `.chip-group` spans with a visible seam between them, wrapping as
+  units so a narrow screen breaks between the questions rather than through one. The legend
+  note stays last, under all three.
+
 **Chip text is the layer catalogue's `label` in `design/tokens.json`** — flying · off foil ·
-pumping · direction · flew through · touchdown · fell in · course change · takeoff · splash
+pumping · direction · clean jibe · flew through · touchdown · fell in · course change ·
+takeoff · splash
 — read from the generated constants on both platforms, never written as a literal in a view.
 The one exception is `effort`, whose chip is labelled with the *selected* window ("best 2 s")
 because that is what it is currently highlighting; the catalogue's "best effort" is the
