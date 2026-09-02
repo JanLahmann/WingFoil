@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Privacy — CleanJibe</title>
+<meta name="description" content="What the CleanJibe iPhone app and cleanjibe.org do with your data. Short version: the analysis runs on your own device, there is no CleanJibe account and no CleanJibe server, and your sessions are never uploaded.">
+<meta name="theme-color" content="#101010">
+<meta name="color-scheme" content="dark">
+
+<!-- No manifest, exactly as on the homepage and /invite/: the analyzer at /app/ is the
+     installable PWA, and "add to home screen" from here must not install a front door.
+     This page is also NOT in the service worker's precache (web/sw.js): it is read once,
+     at a desk, before an install — precaching it would cost every visitor bytes for a page
+     almost none of them will open, and none of them offline. -->
+<link rel="icon" type="image/svg+xml" href="../icons/icon.svg">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+
+<!-- The same three-layer stack as the homepage, the analyzer and /invite/, in the same
+     order. This page is a sibling of the homepage, not a design of its own, and it adds no
+     stylesheet: every class below already exists in style.css or home.css. -->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/home.css">
+
+<!-- Deliberately no og:image and no twitter:card. The other three pages are things you
+     would send someone; a privacy policy is a thing you read before deciding, and a link
+     preview promising a share card in front of it would be selling where it should be
+     explaining. `robots` stays default — this page should be findable. -->
+<meta property="og:site_name" content="CleanJibe">
+<meta property="og:title" content="Privacy — CleanJibe">
+<meta property="og:description" content="The analysis runs on your own device. No account, no CleanJibe server, and your sessions are never uploaded. Here is every exception, named.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://cleanjibe.org/privacy/">
+
+<!-- Usage analytics: umami, cloud-hosted and cookieless — the same script the other three
+     pages carry, disclosed in full further down THIS page rather than only in a comment.
+     `data-domains` pins it to the production hostname so local servers and previews stay
+     silent, and the script is external and deliberately not precached. -->
+<script defer src="https://cloud.umami.is/script.js" data-website-id="97f347ac-e7ba-4be3-b26f-ab4b328bdbf2" data-domains="cleanjibe.org"></script>
+</head>
+<body class="home">
+
+<header class="topbar">
+  <a class="brand" href="../">
+    <span class="mark" aria-hidden="true"></span>
+    <div>
+      <h1>CleanJibe</h1>
+      <p class="sub">Wing foiling, measured.</p>
+    </div>
+  </a>
+  <div class="topbar-right">
+    <a class="btn primary" href="../app/">Open the analyzer</a>
+    <a class="btn ghost wide-only" href="../">About CleanJibe</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- ------------------------------------------------------------------ hero -->
+  <!-- The short version goes first and in full, because it is the only part most people
+       will read, and because it is short enough to be true without a footnote. Everything
+       below it exists to name the exceptions rather than to qualify the promise. -->
+  <section class="hero">
+    <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Effective 2 September 2026</p>
+    <h1>Privacy</h1>
+    <p class="lede">
+      CleanJibe analyses your wingfoil sessions on the device you are holding. There is no
+      CleanJibe account, no CleanJibe login, and no CleanJibe server that your sessions are
+      sent to — because there is no CleanJibe server at all.
+    </p>
+    <p class="lede">
+      That is the whole policy. The rest of this page names every exception to it, because a
+      privacy promise with an unnamed exception in it is not a promise.
+    </p>
+  </section>
+
+  <!-- ------------------------------------------------------- app: what stays -->
+  <section class="home-section" id="app">
+    <h2>The iPhone app — what stays on your phone</h2>
+    <p class="section-lede">
+      Everything, unless a line further down says otherwise.
+    </p>
+
+    <div class="pieces">
+      <article class="panel claim">
+        <h3>The analysis runs on the phone</h3>
+        <p>
+          When you import a <code>.fit</code> or <code>.gpx</code> file, the app reads it and
+          works out the flights, the turn verdicts, the speed records and the wind axis
+          itself, on the device. Nothing is sent anywhere to be analysed, and there is
+          nowhere it could be sent to.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>Your library is a file in the app</h3>
+        <p>
+          Sessions live in a database and a file archive inside the app's own storage on your
+          phone. No other app can read them. If you delete CleanJibe, they go with it.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>There is no account</h3>
+        <p>
+          You are never asked for an email address, a password, a name or a phone number.
+          CleanJibe has no user record for you anywhere, because it keeps no records
+          anywhere.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------------- app: what leaves -->
+  <!-- Three entries, and the honest thing about them is that two are Apple's own services
+       reached through the system frameworks — a map is a network request whether or not the
+       app that draws it thinks of itself as making one. Naming them costs nothing and
+       leaving them out would make the "nothing leaves your phone" line quietly false. -->
+  <section class="home-section" id="app-network">
+    <h2>The iPhone app — what leaves your phone</h2>
+    <p class="section-lede">
+      Three things, all of them either something you switched on or something a map needs.
+      There is no fourth.
+    </p>
+
+    <dl class="terms">
+      <div class="term">
+        <dt>intervals.icu — only if you connect it</dt>
+        <dd>
+          If you paste your own intervals.icu API key into Settings, the app uses it to
+          <strong>download</strong> your Garmin activities from intervals.icu so they arrive
+          without you exporting files by hand. The key is stored in the iOS Keychain, is
+          never copied into iCloud, and is sent only to intervals.icu, only as the login
+          header on those requests. The traffic is one-way: CleanJibe reads your activity
+          list and your original files, and never uploads a session, an analysis or anything
+          about you. Clear the key in Settings and every request stops. Connect nothing and
+          none is ever made.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>Apple Maps — when a map is on screen</dt>
+        <dd>
+          The session map, the full-screen map, the replay and the share card's optional map
+          background are all drawn by Apple's MapKit, which fetches map imagery for the area
+          you sailed in. Apple therefore sees roughly where the session was, under Apple's
+          own privacy policy and with no identifier of ours attached. The share card's map
+          background is <strong>off unless you turn it on</strong>; the session maps you can
+          simply not open.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>Apple's place-name lookup — once per new spot</dt>
+        <dd>
+          When the app meets a sailing spot it has not seen before, it asks Apple's geocoding
+          service what that place is called, so your spots read "Nago-Torbole" instead of
+          "Spot 3". What is sent is one coordinate, rounded, for that spot's centre —
+          nothing else, and never again for a spot that already has a name.
+        </dd>
+      </div>
+    </dl>
+
+    <p class="note">
+      <strong>And nothing else.</strong> The app contains no analytics, no crash reporter, no
+      advertising, and no third-party tracking code of any kind. It never asks for the App
+      Tracking Transparency permission because it has nothing to ask for. Your data is not
+      sold, rented or shared with anyone, and there is no one to share it with.
+    </p>
+  </section>
+
+  <!-- --------------------------------------------------------- app: permissions -->
+  <section class="home-section" id="permissions">
+    <h2>What the app asks permission for</h2>
+    <p class="section-lede">
+      Four prompts exist, all of them optional, and none of them appears until you use the
+      feature behind it.
+    </p>
+
+    <dl class="terms">
+      <div class="term">
+        <dt>Health — write only, off by default</dt>
+        <dd>
+          If you turn on workout export, CleanJibe adds your imported sessions to the Health
+          app as workouts. It asks for permission to <em>write</em> only; it requests no
+          read access to your health data at all and never reads any.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>Photos — add only</dt>
+        <dd>
+          Asked only when you save a replay clip you just recorded to your camera roll.
+          CleanJibe holds add-only access: it can put that one video in and cannot read your
+          photo library. Photos you choose to splice into a clip are handed over by the
+          system picker one at a time, without granting the app library access.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>Bluetooth — for the Garmin handoff</dt>
+        <dd>
+          Used to receive a session summary from a CleanJibe watch app when you stop
+          recording, and to send the wind direction back. It goes through the Garmin Connect
+          app; CleanJibe pairs with nothing itself.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>Notifications — only if you switch them on</dt>
+        <dd>
+          Asked only when you enable the background check for new intervals.icu activities.
+          Leave it off and the app schedules no background work.
+        </dd>
+      </div>
+    </dl>
+
+    <p class="note">
+      <strong>The app never asks for your location.</strong> It has no location permission
+      and never turns on your phone's GPS. Every coordinate it shows was already inside a
+      file you imported.
+    </p>
+  </section>
+
+  <!-- ------------------------------------------------------------- the website -->
+  <section class="home-section" id="website">
+    <h2>The website — cleanjibe.org</h2>
+    <p class="section-lede">
+      The analyzer at <a href="../app/">cleanjibe.org/app</a> is the same engine as the phone
+      app, running inside your browser tab.
+    </p>
+
+    <div class="pieces">
+      <article class="panel claim">
+        <h3>Your file is never uploaded</h3>
+        <p>
+          When you drop a <code>.fit</code> file into the analyzer, it is read in the tab and
+          analysed there. It is not sent to cleanjibe.org, and cleanjibe.org has no server
+          that could receive it — the site is static files. Sessions you keep are stored in
+          your own browser's storage on your own machine.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>Still no account</h3>
+        <p>
+          Nothing on the site asks you to register, and there is nothing to register with.
+          Clearing your browser's data for cleanjibe.org erases your library completely.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>Your intervals.icu key, if you use one</h3>
+        <p>
+          The analyzer can hold an intervals.icu API key so it can fetch your own activities.
+          On the web that key is kept in ordinary browser storage on your device — not in a
+          keychain, and not as securely as on the phone. It is sent only to intervals.icu.
+          "Forget key" removes it.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------ website: what it loads -->
+  <!-- The analyzer is a page that downloads a Python runtime to do its work, so it makes
+       more third-party requests than the app does, and every one of them is somebody
+       else's server. The table is longer than the app's for that reason and not because
+       the website is less careful. -->
+  <section class="home-section" id="website-network">
+    <h2>The website — what your browser loads</h2>
+    <p class="section-lede">
+      A web page is a set of requests. These are all of them, and what each one can see.
+    </p>
+
+    <dl class="terms">
+      <div class="term">
+        <dt>umami — anonymous, cookie-free page counts</dt>
+        <dd>
+          Every page here loads a small counter from Umami Cloud. It sets no cookie and
+          stores no identifier that survives your visit, so there is nothing to consent to
+          and nothing to opt out of. What it records is that a page was opened, which page,
+          roughly from where, on roughly what kind of browser — and a handful of named button
+          events such as "a card was made", with no data attached to them. Like any web
+          request, it necessarily reaches Umami Cloud's servers with your IP address and
+          browser user-agent, which is how "roughly from where" is derived; Umami does not
+          store the IP itself. It never sees your session, your file, or any number off a
+          ride. If you would rather it did not run, any content blocker stops it and the site
+          works identically without it.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>The analysis runtime — jsDelivr and PyPI</dt>
+        <dd>
+          The analyzer's engine is Python compiled to WebAssembly. The first time you analyse
+          something, your browser downloads it — about 12 MB — from the jsDelivr CDN and one
+          package from PyPI, then caches it for good. Those two see a download request from
+          your IP address, as any file download does. They receive nothing about your
+          session, which has not been read yet when they are asked.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>OpenStreetMap — only for a share card's map background</dt>
+        <dd>
+          The share card can draw your track over a map. That background is
+          <strong>off unless you turn it on</strong>, and when you do, your browser fetches
+          map tiles for that area from the OpenStreetMap Foundation, which therefore sees the
+          area and your IP address. Leave it off and no tile is ever requested. (The iPhone
+          app uses Apple Maps for the same job, as above.)
+        </dd>
+      </div>
+      <div class="term">
+        <dt>intervals.icu — only if you paste a key</dt>
+        <dd>
+          Same as on the phone: your key, your activities, download only.
+        </dd>
+      </div>
+    </dl>
+
+    <p class="note">
+      There is nothing else. No advertising, no tracking pixels, no social widgets, no
+      embedded fonts from anyone, no consent-management vendor, and no request that carries
+      anything about a ride of yours.
+    </p>
+  </section>
+
+  <!-- --------------------------------------------------------- keeping, deleting -->
+  <section class="home-section" id="retention">
+    <h2>Keeping it, and getting rid of it</h2>
+    <p class="section-lede">
+      There is no retention period, because there is nowhere for anything to be retained.
+      What exists is on your device, and you control all of it.
+    </p>
+
+    <dl class="terms">
+      <div class="term">
+        <dt>On the phone</dt>
+        <dd>
+          Swipe a session in the library to delete it — the row, the analysis and the
+          original file all go. Clear your intervals.icu key in Settings to stop every
+          network request the app can make. Deleting the app removes the whole library at
+          once. One thing worth knowing: because the library is ordinary app data, an
+          <strong>encrypted iPhone backup — iCloud or a computer — contains it</strong>, and
+          restoring that backup brings it back. That backup is Apple's, under Apple's terms;
+          CleanJibe cannot see it.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>In the browser</dt>
+        <dd>
+          Delete a session from the library, or clear site data for cleanjibe.org in your
+          browser's settings to erase everything the analyzer has kept, key included.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>Your rights, and why they are quick to exercise</dt>
+        <dd>
+          Under the GDPR you have the right to access, correct, export, delete and object to
+          the processing of your personal data. Because CleanJibe holds none of it — no
+          account, no server, no copy of any session — there is nothing for us to hand over
+          or erase on request, and the delete controls above are the whole of it. If you
+          think that is wrong, write to us and we will look. You can also complain to a data
+          protection authority in your country.
+        </dd>
+      </div>
+    </dl>
+  </section>
+
+  <!-- ------------------------------------------------------------------- the rest -->
+  <section class="home-section" id="contact">
+    <h2>Children, changes and contact</h2>
+
+    <dl class="terms">
+      <div class="term">
+        <dt>Children</dt>
+        <dd>
+          CleanJibe is a sports tool suitable for all ages and collects nothing from anyone,
+          including children. It contains no advertising, no purchases and no way to reach
+          another person.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>Changes to this policy</dt>
+        <dd>
+          If what the app or the site does with data changes, this page changes with it and
+          the effective date at the top moves. Because this page lives in the project's
+          public repository, every past version of it is readable there too.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>Who to write to</dt>
+        <dd>
+          CleanJibe is made by Jan-Rainer Lahmann in Germany. Questions about this policy, or
+          about anything on this page you think is inaccurate, go to
+          <a href="mailto:info@cleanjibe.org">info@cleanjibe.org</a> — or, if you would
+          rather ask in public, as an
+          <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">issue on
+          GitHub</a>.
+        </dd>
+      </div>
+    </dl>
+
+    <p class="note">
+      The claims on this page can be checked rather than taken on faith: the app and the
+      site are open source at
+      <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">github.com/JanLahmann/WingFoil</a>,
+      and every network request either of them can make is in that code.
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  <p>CleanJibe — open wingfoil tracking. Watch app, iPhone app, browser analyzer.</p>
+  <p>
+    <a href="../">About CleanJibe</a> ·
+    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">github.com/JanLahmann/WingFoil</a>
+    · Questions: <a href="mailto:info@cleanjibe.org">info@cleanjibe.org</a>
+  </p>
+  <p class="fineprint">Anonymous, cookie-free usage stats and feature counts by umami.</p>
+</footer>
+
+</body>
+</html>
