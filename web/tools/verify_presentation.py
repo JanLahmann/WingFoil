@@ -566,7 +566,8 @@ def check_card() -> None:
     except subprocess.CalledProcessError as exc:              # pragma: no cover
         FAILED.append(f"  card_parity.mjs failed\n{exc.stderr.strip()}")
         return
-    cards = json.loads(raw)
+    dumped = json.loads(raw)
+    cards = dumped["cards"]
 
     check("  every analysis golden was measured", len(cards), len(goldens))
     for card in cards:
@@ -612,6 +613,83 @@ def check_card() -> None:
 
     if cards:
         check("  leanKeys is the contract's set", cards[0]["leanKeys"], LEAN_KEYS)
+
+    # Stashed rather than checked here, so the period card's section prints after the
+    # session card's two — one `card_parity.mjs` run answers both questions.
+    _CARD_DUMP.append(dumped)
+
+
+#: What the **period** card's `lean` keeps — `PeriodBlock.leanKeys` on iOS and
+#: `library.PERIOD_LEAN_KEYS` in the analyzer, spelled here so the JavaScript is checked
+#: against a third copy of the rule rather than against itself.
+PERIOD_LEAN_KEYS = ["sessions", "hours", "cleanJibes", "cph", "best2s"]
+
+#: What `card_parity.mjs` last dumped, so `check_period_card` can read it without a second
+#: node run. Empty when node is not on PATH, which is the same skip the session card takes.
+_CARD_DUMP: list[dict] = []
+
+
+def check_period_card() -> None:
+    """The period card is the period's block, and its presets can only drop from it.
+
+    Exactly the contract the session card is held to one section above, asked of the second
+    card kind. The block itself is re-derived here from `library.periods` — so the
+    JavaScript agreeing with the shared fixture is checked against what `library` produces
+    *now*, and not against a file that may have been left behind by an edit to it.
+    """
+    if not _CARD_DUMP:
+        return
+    dumped = _CARD_DUMP[-1]
+    section("5d. the period card carries the period's block, unchanged")
+    sys.path.insert(0, str(WEB / "lab_bundle"))
+    sys.path.insert(0, str(WEB / "tools"))
+    import library                                                       # noqa: PLC0415
+    import make_presentation_goldens as periods_gen                      # noqa: PLC0415
+
+    periods = dumped.get("periods") or []
+    check("  the fixture's periods were all measured", len(periods) > 0, True)
+    check("  periodLeanKeys is the contract's set",
+          dumped.get("periodLeanKeys"), PERIOD_LEAN_KEYS)
+    check("  ...and it is a subset of the block, so a preset can only drop",
+          set(PERIOD_LEAN_KEYS) <= {k for k, _l, _f in library.PERIOD_BLOCK}, True)
+
+    digests = [periods_gen.period_digest(s) for s in periods_gen.PERIOD_SESSIONS]
+    fresh = library.periods(digests)
+    by_key = {p["key"]: p for group in ("trips", "months", "seasons")
+              for p in fresh[group]}
+    for r in periods_gen.PERIOD_RANGES:
+        custom = library.custom_period(digests, r["start"], r["end"])
+        by_key[custom["key"]] = custom
+
+    for card in periods:
+        key = card["key"]
+        want = by_key.get(key)
+        if want is None:
+            FAILED.append(f"  period {key} is on a card and not in the library")
+            continue
+        block = [{"key": e["key"], "label": e["label"], "value": e["value"]}
+                 for e in want["block"]]
+
+        # 1. Complete IS the block: same entries, same order, same words, same strings.
+        check(f"  {key}: complete == the period's block", card["complete"], block)
+
+        # 2. Lean is a strict SUBSET, in the block's own order.
+        check(f"  {key}: lean is the block filtered by its lean keys",
+              card["lean"], [e for e in block if e["key"] in PERIOD_LEAN_KEYS])
+
+        # 3. Nothing outside the catalogue may reach a card, and the order is the
+        #    catalogue's.
+        keys = [e["key"] for e in card["complete"]]
+        catalogue = [k for k, _l, _f in library.PERIOD_BLOCK]
+        check(f"  {key}: every cell is in the catalogue", set(keys) <= set(catalogue), True)
+        check(f"  {key}: in the catalogue's order",
+              keys, [k for k in catalogue if k in set(keys)])
+
+        # 4. The heading and the span are the period's own, not re-derived at draw time.
+        check(f"  {key}: the card's headline is the period's title",
+              card["title"], want["title"])
+        check(f"  {key}: the date line is the period's span", card["dateLine"],
+              want["dateLine"])
 
 
 CARD_TEXT = TOOLS / "card_text.mjs"
@@ -939,6 +1017,7 @@ def main(argv=None) -> int:
         check_engine()
     check_card()
     check_card_text()
+    check_period_card()
 
     _close_section()
     print(f"\n{PASSED} passed, {len(FAILED)} failed")

@@ -11,7 +11,7 @@ import { mountLibrary, openStoredSession, refresh as refreshLibrary, saveSession
 import { closePopover, render, renderFigures, resetSession } from "./render.js";
 import { CANCELLED, analyze as runAnalysis, cancel as cancelWorker, on, warmUp } from "./rpc.js";
 import { mountSections, resetSections } from "./sections.js";
-import { mountShareCard, openShareCard } from "./sharecard.js";
+import { mountShareCard, openPeriodCard, openShareCard } from "./sharecard.js";
 import { listEntries } from "./store.js";
 import { invalidateTrends, mountTrends, redrawTrends, showTrends } from "./trends.js";
 
@@ -588,6 +588,9 @@ mountIcu({ analyzeBuffer });
 mountTrends({
   openSession: (id) => openStored(id),
   openRecord: (record) => openStored(record.id, record),
+  // The period card opens the same composer the session card does — same shapes, same
+  // footer, same export — with a week's block on it instead of an afternoon's.
+  openPeriodCard: (period, entries) => { if (period) openPeriodCard(period, entries); },
 });
 // The library lists and stores; opening comes back through `openStored` so there is one
 // code path for "a document is on screen", whether it arrived by drop or from disk.

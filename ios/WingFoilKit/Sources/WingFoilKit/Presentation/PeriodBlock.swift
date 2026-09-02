@@ -128,3 +128,45 @@ public enum PeriodBlock {
     /// `59.7 %`, with the space the rest of both apps prints — `library._f_pct`'s twin.
     static func percent(_ value: Double) -> String { String(format: "%.1f %%", value) }
 }
+
+// MARK: - The period card
+
+extension ShareCardStats {
+
+    /// **A period as a card** — the second card kind, and the same card.
+    ///
+    /// Everything the session card contracts for holds here unchanged: the three shapes, the
+    /// footer with its mark, wordmark, call to action and QR, the two presets, the rider's own
+    /// title and one caption. What differs is only what is being *described* — a week rather
+    /// than an afternoon — so the stats are the aggregate block and the date line is the
+    /// period's span.
+    ///
+    /// The stats are the block **verbatim**, exactly as `make(row:…)` takes the rendered
+    /// `KeyMetrics` verbatim, and for the same reason: a card is read next to nothing, so it
+    /// is the last place either app may name a different number than the screen behind it.
+    /// A preset can only drop an entry (`PeriodBlock.leanKeys`), never reword or add one.
+    ///
+    /// **No disclaimer.** The speed disclaimer is a claim about one recording's speed channel;
+    /// a period spans several, and marking a whole holiday because one afternoon came from a
+    /// GPX would be answering a question nobody asked. The one speed on the card — best 2 s —
+    /// is a record, and the records screen is where a record's certification is stated.
+    public static func make(period: Period, preset: Preset = .complete,
+                            title: String? = nil, note: String? = nil) -> ShareCardStats {
+        ShareCardStats(title: (title?.isEmpty == false ? title! : period.title),
+                       dateLine: period.dateLine,
+                       note: note,
+                       stats: periodStats(period.block, preset: preset),
+                       preset: preset,
+                       disclaimer: nil)
+    }
+
+    /// The block as cells, filtered by the preset. Held as keys so the preset cannot invent
+    /// one: anything `PeriodBlock` did not produce was never there to keep.
+    public static func periodStats(_ block: [PeriodBlock.Entry],
+                                   preset: Preset) -> [Stat] {
+        let stats = block.map { Stat(key: $0.key, label: $0.label, value: $0.value) }
+        guard preset == .lean else { return stats }
+        let keep = Set(PeriodBlock.leanKeys)
+        return stats.filter { keep.contains($0.key) }
+    }
+}
