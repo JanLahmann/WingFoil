@@ -1,72 +1,68 @@
 # The Connect IQ store listings
 
 **Archival, not a draft.** This file is the source of truth for what the two Connect IQ
-listings say *today* — transcribed verbatim from the live store on 1 September 2026, at
-0.9.3, because until now the only copy of this text lived in the Connect IQ developer
+listings say *today* — transcribed verbatim from the live store (app on 2 September 2026 at
+0.9.4, field on 1 September at 0.9.5), because until now the only copy of this text lived in the Connect IQ developer
 console and nowhere in git. Edit it when the store is edited, in the same commit; do not
 rewrite it here and leave the store behind.
 
-Rewrite drafts are a separate thing and are not in this file. Two lines in each listing are
-already known to be wrong and are marked `TODO (pending edit)` inline below — they are
-transcribed *as they stand*, wrong, because that is what this file is for.
+Rewrite drafts are a separate thing and are not in this file.
 
 Both apps: developer **JanRL** (`7d829c3a-3343-46f5-b946-4556e4579f53`), support
 `jan@lahmann-online.de`, website `https://github.com/JanLahmann/WingFoil`, free,
-invite-only beta, English only.
+open beta, English only.
 
 ---
 
 ## Watch app — `CleanJibe Wingfoil Tracker (Beta)`
 
 * Store page: <https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806>
-* Type: device app · Version **0.9.3** · first submitted 2026-08-12, current version released 2026-08-31
+* Type: device app · Version **0.9.4** (Internal 12) · first submitted 2026-08-12, 0.9.4 released 2026-09-01
 * Permissions: Fit, SensorLogging, Communications, Positioning, FitContributor, Sensor
-* Devices (`garmin/manifest-invite.xml`): fenix 8 (43 mm, 47 mm), fenix 8 Solar (47 mm,
-  51 mm), fenix 8 Pro (47 mm), fenix 7 / 7S / 7X, fenix 7 Pro / 7 Pro (no WiFi) / 7S Pro /
-  7X Pro / 7X Pro (no WiFi)
+* Devices (`garmin/manifest-invite.xml`): the full Tier A list — fenix 8 family, fenix 7
+  family, epix 2 / 2 Pro, Forerunner 255 / 265 / 955 / 965 / 970 / 570, MARQ 2, Enduro 2 / 3,
+  D2 Mach 1 / 2, Descent Mk3 43 mm (and the tactix / quatix twins those product ids cover)
+* Open beta since 0.9.4: no unlock key. The invite lock (ADR-012) is compiled out of every
+  channel now; the invite UUID `28942317…` is simply the public listing's UUID.
+
+Transcribed from the live store on 2026-09-02. The earlier "TODO (pending edit)" items (the
+`WingFoil - Invite Beta` breadcrumb and the old GitHub Pages URL) no longer exist in the live
+text — the whole description was rewritten for the open beta.
 
 ### Description (live text)
 
 ```
-Wingfoil tracking for fenix 8, fenix 7, Enduro 2 and tactix 7/8 - invite-only beta. Records sessions as Windsurf sport with live flight detection (tunable thresholds), per-flight laps, speed records (2s/10s live), turn detection with tack/jibe classification and outcome markers, pump-stroke and takeoff-attempt counting, configurable data screens (speed, session, records, turns, map with track, on-foil timeline, clock), auto-pause, PB alerts, GNSS at 1s recording (multiband where the watch supports it), and accelerometer logging for detailed pump analysis on the phone.
+CleanJibe tells you what your wingfoil session actually did: how much of it you spent on the foil, how long each flight lasted, your speed records, and — for every turn — whether you flew through it, touched down, or fell in.
 
-THIS BETA IS INVITE-ONLY. On first start the watch shows an 8-character request code. Send that code to the developer (Contact Developer on this page) and you will receive your personal unlock key. Enter the key in Garmin Connect under Connect IQ, WingFoil - Invite Beta, Settings, "Unlock key". The app unlocks immediately and permanently on your watch. Without a key the app only shows the lock screen - please request a key instead of leaving a review about it.
+OPEN BETA, FREE. Install and ride — no key, no account. It's a beta: tell us what's wrong and what's missing at cleanjibe.org/invite, or use Contact Developer on this page. The detection thresholds are still being tuned and may change between versions; they are published, with the reasoning, at github.com/JanLahmann/WingFoil.
 
-New in 0.9.0: the watch now works out the wind direction by itself after a few minutes of riding (a ~ marks the estimate; the wind menu always overrides) and then classifies tacks, jibes and port/starboard entries live. Redesigned screens from a rider's review: best-10s as the main number, turn outcomes and your no-fall streak at a glance, a foil min/km table, a map page with breadcrumb, and a full multi-page summary after saving. Raw accelerometer logging is now OFF by default in this beta so transfers stay fast - turn it on in settings if you want deep pump analysis on the phone.
+ON THE WATER
+- Live foil state: it knows when the board is up on the foil, and counts every flight and touchdown while you ride.
+- Every turn scored as you make it — flew through, touched down, or fell in — with your no-fall streak and your tack/jibe tally on screen.
+- Speed records live on the wrist: best 2 s and best 10 s, with a PB alert.
+- The watch works out the wind direction by itself after a few minutes of riding (a ~ marks the estimate; the wind menu always overrides it).
+- Pump strokes and takeoff attempts, counted from the wrist accelerometer. Optional raw accelerometer logging for deep phone analysis is off by default — it makes the activity file about 20x larger and the transfer after saving takes several minutes.
+- Seven configurable pages: speed, session, records, turns, map with breadcrumb, on-foil timeline, clock. A full multi-page summary after you save.
+- Records as a Windsurf activity with per-flight laps, so your sessions stop showing up in Garmin Connect as a walk. 1 s GNSS, multiband where the watch supports it. Auto-pause.
 
-Analyze your sessions in any browser, free: https://janlahmann.github.io/WingFoil - the same analysis engine running locally on your device, nothing uploaded, with a session library, records and trends. Works on Android phones too. An iPhone companion app with the full analysis - maps, turn forensics, records and trends - is in TestFlight beta; contact the developer for an invite.
+AFTERWARDS, FREE, IN ANY BROWSER
+Open cleanjibe.org and drop the .fit file in. The same analysis engine runs locally in your browser — nothing is uploaded and there is no account — and gives you the track, every flight, every turn with its verdict, speed records, wind axis, and a share card you can post. Keep a library there and it builds your all-time records and season trends. It works on an Android phone just as well, and it also reads sessions recorded with Garmin's own Windsurf profile or a GPX, so you can try it before you ever install anything.
+
+An iPhone app with the full analysis — maps, turn forensics, replay with commentary and music, records, trends and library backup — is in open TestFlight beta: testflight.apple.com/join/nygqGGcn
 ```
-
-**TODO (pending edit), two lines above:**
-
-1. `Connect IQ, WingFoil - Invite Beta, Settings, "Unlock key"` — the app was renamed in
-   0.9.3 and appears in Garmin Connect as **CleanJibe - Invite Beta**. A new tester follows
-   this line, finds no such entry, and cannot enter the key they were just sent.
-2. `https://janlahmann.github.io/WingFoil` — the analyzer moved to **https://cleanjibe.org**
-   (`Branding.siteURL`, pinned in `PresentationTests`). The old Pages URL still resolves,
-   but it is not the address on the share cards, in the app, or on the site itself.
-
-Also stale, less costly: the description still leads with "New in 0.9.0" three versions on.
-
-The opening line's "Enduro 2 and tactix 7/8" was filed here as a false claim and is **not**
-one — checked against the SDK, not the manifest. Garmin has no `enduro2`, `tactix7` or
-`tactix8` product id: those watches share part numbers with ones the manifests already
-declare. `fenix7x`'s own `compiler.json` calls itself *"fēnix 7X / tactix 7 / quatix 7X Solar /
-Enduro 2"*, and `fenix847mm` is *"fēnix 8 47/51mm / tactix 8 47/51mm / quatix 8"*. Both are in
-every invite manifest, so both watches can install the beta today. (0.9.4 adds `epix2pro51mm`,
-which is also tactix 7 – AMOLED Edition, and `epix2`, which is also quatix 7 Sapphire.) What
-the listing text should gain instead is the rest of the 0.9.4 device list — see ADR-014.
 
 ### What's New (live text)
 
 ```
-0.9.3: the app is now called CleanJibe (same app, new name — cleanjibe.org). Pump strokes are now counted only in real pumping bursts, so totals drop to realistic numbers and match the phone analysis.
+0.9.4: THE BETA IS NOW OPEN — no unlock key needed. Install and ride. Also new: 17 more watches supported (epix 2 family, Forerunner 955/965/970/255/265/570, MARQ 2, Enduro 3, D2 Mach, Descent Mk3), the CleanJibe mark on the start screen, "clean jibe" labels for turns you fly through carrying your speed, and the accelerometer-logging setting now explains its transfer cost (off by default).
 
-0.9.2: bigger and brighter - all text full white, larger numbers on nearly every page, the foil page's numbers in a larger table, and the map page is drawn by the app itself (teal where you flew, grey where you did not) so it works on every watch and while paused.
+0.9.3: the app is now called CleanJibe (same app, new name — cleanjibe.org). Pump strokes are counted only in real pumping bursts, so totals drop to realistic numbers and match the phone and browser analysis.
+
+0.9.2: bigger and brighter - all text full white, larger numbers on nearly every page, and the map page drawn by the app itself so it works on every watch and while paused.
 
 0.9.0: the watch works out the wind direction by itself after a few minutes of riding (~ marks the estimate, the wind menu always overrides) and classifies tacks, jibes and port/starboard entries live.
 
-Note: Garmin keeps your stored page settings on update - existing installs can pick the new layouts in Garmin Connect settings or reinstall.
+Garmin keeps your stored page settings across updates — existing installs can pick new layouts in Garmin Connect settings or reinstall.
 ```
 
 ---
@@ -150,7 +146,9 @@ What these listings are, and what the dashboard will not tell you:
    invite UUIDs; the release UUID `b1ef484c…` is reserved for the eventual non-beta public
    listing and has no store listing yet.
 
-Both carry `brand/cover-500-private.png` as cover — the current mark with the red PRIVATE
+Their descriptions were rewritten 2026-09-02 to say what they are (developer-only builds of
+the two public listings, full device list, no lock) rather than "Private beta of WingFoil";
+support e-mail there is still `jan@lahmann-online.de`. Both carry `brand/cover-500-private.png` as cover — the current mark with the red PRIVATE
 ribbon, regenerated 2026-09-02 (the old file still had the pre-September mark).
 
 Naming trap in `garmin/bin/`: files called `*-beta-*.iq` from 0.9.4 on (`CleanJibe-beta-0.9.4.iq`,
