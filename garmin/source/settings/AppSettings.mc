@@ -19,6 +19,10 @@ module AppSettings {
     var alertPb as Boolean = true;
     var alertFlight as Boolean = true;
     var alertTurn as Boolean = true;
+    // 0.9.5: its own rhythm for a clean jibe, in place of the plain fly-through tick
+    // (AlertManager.turnResolved). Default ON — it is the metric the app is named after, and a
+    // rider who does not want it turns it off and gets the 0.9.4 buzz back, not silence.
+    var alertCleanJibe as Boolean = true;
     var alertTakeoff as Boolean = true;
     var alertIntervalMin as Number = 0;     // 0 = off
     var alertIntervalKm as Float = 0.0;     // 0 = off
@@ -78,6 +82,7 @@ module AppSettings {
         alertPb = _bool("alertPb", true);
         alertFlight = _bool("alertFlight", true);
         alertTurn = _bool("alertTurn", true);
+        alertCleanJibe = _bool("alertCleanJibe", true);
         alertTakeoff = _bool("alertTakeoff", true);
         alertIntervalMin = _num("alertIntervalMin", 0.0).toNumber();
         alertIntervalKm = _num("alertIntervalKm", 0.0);

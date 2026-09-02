@@ -13,7 +13,7 @@
       `appVersionAgreesWithTheFitByte` holds the two together.
     -->
     <iq:application id="953f7547-c152-42c2-8d33-69fb59ad0bf6" type="watch-app"
-        name="@Strings.AppNameBeta" entry="WingfoilApp" version="0.9.4" launcherIcon="@Drawables.LauncherIcon"
+        name="@Strings.AppNameBeta" entry="WingfoilApp" version="0.9.5" launcherIcon="@Drawables.LauncherIcon"
         minApiLevel="5.0.0">
         <iq:products>
             <iq:product id="fenix843mm"/>

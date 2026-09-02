@@ -49,6 +49,10 @@
     <setting propertyKey="@Properties.alertTurn" title="@Strings.SetAlertTurn">
         <settingConfig type="boolean"/>
     </setting>
+    <setting propertyKey="@Properties.alertCleanJibe" title="@Strings.SetAlertCleanJibe"
+             prompt="@Strings.SetAlertCleanJibeNote">
+        <settingConfig type="boolean"/>
+    </setting>
     <setting propertyKey="@Properties.windDirDeg" title="@Strings.SetWindDir">
         <settingConfig type="numeric" min="-1" max="359"/>
     </setting>

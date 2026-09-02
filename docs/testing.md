@@ -676,6 +676,20 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    and took an 84 px face on a 240 px glass, and the rows collided because of it. (Verified by
    putting the old `LockView.mc` back: `row 2 y=108 0x84`.)
 
+   **0.9.5: 92/92 on all four glasses** (`fenix847mm`, `fenix7s`, `epix2pro42mm`, `fr255`),
+   three tests added — `cleanJibeBuzzReplacesTheFlyThroughTick`,
+   `cphIsNullBeforeAMinuteAndAValueAfter` and, in the barrel,
+   `cleanJibesAreSuccessfulJibesAndNothingElse`. The release earned its own entry in the
+   list of findings this suite has produced, and it is the usual one: the Turns page gained a
+   **sixth row** (the clean jibes and their CPH), and because the stack is centred, the band
+   that row reserves pushes every row under it deeper into the arc. At `FONT_MEDIUM` on a
+   454 px glass that cost the verdict row its port/starboard split by **six pixels** — 304 px
+   of ink into a 298 px budget — which is the one number on the page a rider can act on
+   tomorrow, and it would have been invisible in a screenshot of a session with a wind axis
+   nobody looked twice at. Pinning the new row at the `FONT_SMALL` floor (`CLEAN_FROM`) buys
+   it back with room over: the split is on again at 454 px and 390 px, and the 240 px fenix 7s
+   drops it exactly as it did in 0.9.4, for the same reason.
+
    **The data field's own layout suite** (`garmin/field/tests/FieldTests.mc`) is the same idea
    on a canvas nobody chose: a data field is handed whatever rectangle the rider's activity
    layout leaves it, so `layoutRowsNeverClip` walks the *measured* cell rectangles of all
