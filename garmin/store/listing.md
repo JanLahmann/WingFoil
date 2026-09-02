@@ -16,7 +16,7 @@ invite-only beta, English only.
 
 ---
 
-## Watch app — `CleanJibe Wingfoil Tracker - Invite Beta`
+## Watch app — `CleanJibe Wingfoil Tracker (Beta)`
 
 * Store page: <https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806>
 * Type: device app · Version **0.9.3** · first submitted 2026-08-12, current version released 2026-08-31
@@ -71,7 +71,12 @@ Note: Garmin keeps your stored page settings on update - existing installs can p
 
 ---
 
-## Data field — `CleanJibe Field - Invite Beta`
+## Data field — `CleanJibe Wingfoil Field (Beta)`
+
+Title since 2026-09-02 (was `CleanJibe Field (Beta)`): "Wingfoil" belongs in both public titles
+because store search shows the two side by side and the tiny DATA FIELD / DEVICE APP label is
+easy to miss; "Field" stays because in the Connect IQ phone app the two would otherwise be
+told apart by that label alone.
 
 * Store page: <https://apps.garmin.com/apps/8dad33d4-e367-45a6-a4bb-9647fd6b5402>
 * Type: data field · Version **0.9.5** · first submitted 2026-08-13, 0.9.5 published 2026-09-01
@@ -113,16 +118,18 @@ New — write settings breadcrumbs with `→`.
 
 ---
 
-## The two developer-only listings (`… (private dev)`)
+## The two developer-only listings (`… - private`)
 
 Not store listings in any public sense, but they live on the same dashboard and cost a day
 of confusion once, so they are written down here.
 
-* `WingFoil (private dev)` — <https://apps.garmin.com/apps/8f4efc35-ad13-46b9-ae9d-f01f444fe05f>,
+* `CleanJibe - private` (until 2026-09-02 `WingFoil (private dev)`) —
+  <https://apps.garmin.com/apps/8f4efc35-ad13-46b9-ae9d-f01f444fe05f>,
   bound to the **developer-beta** UUID `953f7547-c152-42c2-8d33-69fb59ad0bf6`
   (`garmin/manifest-beta.xml`, built with `monkey-beta.jungle`). Version **0.9.4** since
   2026-09-02; before that 0.9.2 (2026-08-07 … 08-31).
-* `WingFoil Field (private dev)` — <https://apps.garmin.com/apps/da0c6cb5-502b-4623-81ed-54ae40a3bf84>,
+* `CleanJibe Field - private` (until 2026-09-02 `WingFoil Field (private dev)`) —
+  <https://apps.garmin.com/apps/da0c6cb5-502b-4623-81ed-54ae40a3bf84>,
   bound to `7e614501-d311-49c6-a68b-992b946e3d21` (`garmin/field/manifest-beta.xml`).
   Version **0.9.5** since 2026-09-02; before that 0.1.0 from 2026-08-12.
 
@@ -142,6 +149,9 @@ What these listings are, and what the dashboard will not tell you:
    full-device-list build, nothing more. The public CleanJibe listings above carry the
    invite UUIDs; the release UUID `b1ef484c…` is reserved for the eventual non-beta public
    listing and has no store listing yet.
+
+Both carry `brand/cover-500-private.png` as cover — the current mark with the red PRIVATE
+ribbon, regenerated 2026-09-02 (the old file still had the pre-September mark).
 
 Naming trap in `garmin/bin/`: files called `*-beta-*.iq` from 0.9.4 on (`CleanJibe-beta-0.9.4.iq`,
 `CleanJibeField-beta-0.9.x.iq`) carry the **invite** UUID, not the dev-beta one — "beta" there
