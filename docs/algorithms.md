@@ -144,6 +144,12 @@ with a numeric offset (`+02:00`) is the exporter naming the local clock, and win
 | `turnOutcomeWindow` | 60 | s | cap on following the recovery, so a turn taken before a break does not absorb it |
 | classification | | | tack = COG crosses wind axis through upwind; jibe = through downwind; requires wind axis; bear-away/round-up (no axis crossing) excluded from counts |
 | port/starboard | | | side before the turn, from sign of TWA |
+| `detectThreeSixty` | **false** | | **EXPERIMENTAL, UNVALIDATED.** Runs the 360 pass below. Off: with it down nothing detects a spin and the serialized document is byte-identical to one written before the detector existed — no `threeSixties`, no parameter echo |
+| `threeSixtyMinDeg` | 300 | deg | net rotation that makes a sweep a full turn. Not 360: the COG at the entry and the exit of a spin is the *board's* heading, and a rider who exits a rotation 40° off the line he entered on has still been all the way round. Below ~300° the shape stops being distinguishable from a wide round-up into a bear-away |
+| `threeSixtyMaxS` | 10 | s | window the rotation must fit in. A spin is a single continuous carve; at the 30–40°/s a jibe already reaches (Richterich), 360° takes 9–12 s, and the cap is what stops two maneuvers a minute apart from summing into one. Deliberately wider than `turnMaxDuration` (8 s), which is sized for a 180 |
+| `threeSixtyReversalDeg` | 25 | deg | largest back-swing off the running extreme still called monotone. This is the parameter that refuses a tack-then-jibe pair: two same-direction sweeps that add to 360 are only a spin if nothing between them turns back, and 25° is the steering wobble a carve carries without changing its mind |
+| `threeSixtyMinKmh` | 5 | km/h | Doppler floor **inside** the sweep — the gate that exists because a stopped rider's COG spins freely: with no way on, the bearing between fixes is decided by a metre of GPS noise and a rider sitting on his board produces a perfect monotone 360 out of nothing. Well below foiling speed on purpose: a spin ridden on the foil and dropped halfway is still a spin |
+| 360 entry | `foilEntrySpeed` | km/h | Doppler at the sweep's first sample — "entered on foil". The stricter half of the same guard |
 
 Entry/minimum speeds come from `speedChannelManeuvers` (positional); the "never dropped off
 foil" half of the success test stays on Doppler so it agrees with flight segmentation.
@@ -184,6 +190,56 @@ half — arc alone cannot separate a slow 8 s wallow (16 m) from a tight real tu
 Stricter settings cost real turns and were rejected: 15 m/6 m kills the 2026-08-07 06:32:50
 round-up (14.4 m of arc at 4.8 m/s), 18 m/8 m kills two more 2026-08-04 jibes, and 25 m/6 m
 kills 10 including five ground-truthed jibes.
+
+### 360 spins — EXPERIMENTAL, off by default, unvalidated
+
+A 360 is a full rotation ridden as one carve. It is **not** a maneuver in the sense the rest
+of this section uses: it crosses the wind axis and the downwind line by construction, so
+tack/jibe says nothing about it, and it is neither an attempt the rider made at a maneuver
+nor a course change he failed to complete. It therefore gets its own kind (`three_sixty`),
+its own count (`summary.turns.threeSixties`), and touches **nothing** else: not
+`turnsCounted`, not `rejected`, not the outcome ladder, not the streaks, not the rates.
+
+The detector (`lab/src/wingfoil_lab/turns.py`, `detect_three_sixties`) takes a sweep of the
+unwrapped COG that turns `threeSixtyMinDeg` **one way** inside `threeSixtyMaxS`, never backing
+off its own running extreme by more than `threeSixtyReversalDeg`, entered on foil
+(`foilEntrySpeed` at the first sample) and never below `threeSixtyMinKmh` inside the sweep.
+The monotonicity test is what refuses a tack and a jibe that happen to add up to a circle;
+the speed gates are there because **a stopped rider's COG spins freely** — with no way on,
+the bearing between fixes is a metre of GPS noise, and a rider sitting on his board draws a
+perfect monotone 360 out of nothing at all. The pass is purely additive: it never removes or
+renames a turn the main scan reported, so a spin that overlaps a detected jibe leaves that
+jibe exactly where it was.
+
+**`detectThreeSixty` is false and the whole thing is dark.** With the flag down nothing
+detects a spin, `threeSixties` is absent from the document (absent, not null — a key that is
+present is a key a consumer starts reading), the parameters are not echoed in `config`, and
+every committed golden is byte-for-byte what it was. That is deliberate, because:
+
+**Corpus evidence — the detector finds no ridden 360 anywhere.** Over the 16 fixture sessions
+(`lab/tools/report_360.py`) the defaults yield **3 candidates**, one each in 2026-08-29 ciq,
+2026-08-01 native and 2026-08-03 native. All three are the *same shape*, and it is not a spin:
+the rider enters a real maneuver at 20–22 km/h, the detector's own tack/jibe scan reports it
+(+293°, +161°, +102°), the foil stalls mid-turn, and the board keeps pivoting through the last
+100–150° at 5–7 km/h with 1–2.5 m between fixes before he goes in. **Every one of them ends
+`fell_in`**, with stops of 8, 10 and 32 s. They are botched maneuvers with a spin-out on the
+end — a fourth false-positive shape, between "stopped and drifting" and "GPS noise at low
+speed", and one the speed gates as specified do not catch because the *entry* is genuinely
+fast.
+
+The sensitivity is one-sided and says the same thing. `threeSixtyMinKmh` at `foilExitSpeed`
+(8 km/h) removes all three and leaves **zero**; at 2 km/h the count goes to **9**, and the six
+that appear are unmistakable pivots (radius down to 1.4 m, arc down to 8 m) — again all nine
+`fell_in`. `threeSixtyMaxS` at 8 s (the `turnMaxDuration` value) also leaves zero: all three
+take the full ten seconds, which is itself evidence that they are collapses rather than
+carves. `threeSixtyReversalDeg` is not binding at all — at 60° the count is still 3.
+
+So the honest reading of this corpus is that it contains **no 360 to calibrate against**, only
+spin-outs that resemble one, and that 5 km/h is probably too permissive a floor. It is left at
+5 anyway: raising it to 8 on evidence made entirely of false positives would be tuning the
+detector to report nothing, which is not the same as tuning it to report spins. The parameter
+that decides this is `threeSixtyMinKmh`, the fixture that would decide it is a session with a
+deliberately ridden 360 in it, and until one exists the flag stays down.
 
 ### Watch approximation (garmin/source/detectors/TurnDetector.mc)
 

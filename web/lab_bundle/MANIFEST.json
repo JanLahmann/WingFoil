@@ -8,7 +8,7 @@
     "filters.py": "52094d6045b5a27c",
     "flight.py": "621f9422258baa15",
     "flightend.py": "75076566ed44f4c5",
-    "goldens.py": "fb205604364ebac8",
+    "goldens.py": "a0cac2f2d08ba5d5",
     "gp3s.py": "c18edc1780d81574",
     "gpx.py": "91b3e813275c9039",
     "hrcost.py": "c40bf313a7a5ae7b",
@@ -16,7 +16,7 @@
     "parse.py": "23edd28a9136213f",
     "pump.py": "cdf0d9feed317327",
     "takeoff.py": "833baf6be42e70a4",
-    "turns.py": "6b71509a782cccff",
+    "turns.py": "dcb2f7cc8d304bf3",
     "wind.py": "ca13761adbd2aa97"
   }
 }
