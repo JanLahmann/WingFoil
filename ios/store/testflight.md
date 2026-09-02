@@ -6,6 +6,14 @@ to ASC so the two never drift.
 
 Last synced to ASC: 2026-09-01 — beta app description (en-US), build 12 / 0.10.0 "What to Test".
 
+> **This file is the TestFlight half only.** Since 2026-09-02 the public App Store listing
+> has its own source of truth in **`ios/store/appstore.md`** — app name, subtitle,
+> promotional text, description, keywords, URLs, category, age rating, review notes and the
+> App Privacy nutrition-label answers — with the screenshots in
+> `ios/store/screenshots-1.0/`. The two do not overlap: beta app description, "What to Test"
+> and the beta review contact stay here; everything a public listing needs lives there. If
+> you are about to edit App Store copy, you are in the wrong file.
+
 ---
 
 ## Beta app description
@@ -50,7 +58,11 @@ Report anything to jan@lahmann-online.de or as a GitHub issue at github.com/JanL
 
 ## App Store subtitle candidates
 
-Not yet set in ASC — for the public listing, once the app leaves TestFlight. 30-character limit.
+**Decided — see `ios/store/appstore.md`.** The public listing takes
+`Foil time, jibes, GPS speed` (27), because the subtitle is indexed for search and the two
+candidates below spend their words on terms the app name already carries. They are kept
+here as the alternates: `Wingfoil sessions, measured` (27) is the one to reach for if the
+listing is ever rewritten to lead with tone rather than search.
 
 - `Wingfoil sessions, measured` (27)
 - `Foil time, flights, jibes` (25)
@@ -61,6 +73,6 @@ Not yet set in ASC — for the public listing, once the app leaves TestFlight. 3
 | --- | --- |
 | Feedback email | `jan@lahmann-online.de` (pre-existing, left as is) |
 | Marketing URL | `https://cleanjibe.org` |
-| Privacy policy URL | `https://cleanjibe.org` |
+| Privacy policy URL | `https://cleanjibe.org` — **stale, change to `https://cleanjibe.org/privacy/`.** There was no privacy page when this was set, so it pointed at the homepage; there is one now, and the App Store listing requires the real URL anyway. |
 | Beta review contact | Jan-Rainer Lahmann, `jan@lahmann-online.de` (pre-existing, left as is) |
 | Demo account | not required — the bundled example session covers review |
