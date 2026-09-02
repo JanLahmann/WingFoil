@@ -15,8 +15,8 @@ from wingfoil_lab.flightend import GLIDE_OUT, UNKNOWN, FlightEnd, classify_fligh
 from wingfoil_lab.parse import parse_fit
 from wingfoil_lab.pump import pump_track_from_arrays
 from wingfoil_lab.turns import (BEAR_AWAY, COUNTED_TYPES, FELL_IN, FLEW_THROUGH, JIBE,
-                                OUTCOMES, TACK, TOUCHDOWN, UNCLASSIFIED, Turn, TurnConfig,
-                                detect_turns, streaks, summarize_turns)
+                                OUTCOMES, TACK, THREE_SIXTY, TOUCHDOWN, UNCLASSIFIED, Turn,
+                                TurnConfig, detect_turns, streaks, summarize_turns)
 from wingfoil_lab.wind import WindEstimate, estimate_wind
 
 FIXTURES = Path(__file__).resolve().parents[2] / "fixtures"
@@ -711,3 +711,114 @@ def test_real_session_streaks_match_the_merged_event_sequence():
     turn_only = streaks(turns)
     assert s.longest_dry_streak <= turn_only[0]
     assert s.longest_flew_streak <= turn_only[1]
+
+
+# --- 360 spins (EXPERIMENTAL, dark unless detectThreeSixty is set) ---------------------
+
+SPIN_ON = TurnConfig(detect_three_sixty=True)
+SPIN_KMH = 15.0                                   # the speed the synthetic spins are ridden at
+
+
+def _spin(deg=360.0, secs=6, kmh=SPIN_KMH, before=30, after=30):
+    """A constant-rate `deg` sweep ridden at `kmh`, entered and left on a straight leg."""
+    v = kmh / 3.6
+    return _join(_leg(90.0, before, speed=v),
+                 _ramp(90.0, 90.0 + deg, secs + 1, [v] * (secs + 1)),
+                 _leg(90.0 + deg, after, speed=v))
+
+
+def _spins(course, speed, config=SPIN_ON):
+    ct = _track(course, speed)
+    return [t for t in detect_turns(ct, segment_flights(ct), WIND_N, config)
+            if t.kind == THREE_SIXTY]
+
+
+def test_full_rotation_on_foil_is_a_three_sixty():
+    turns = _spins(*_spin())
+    assert len(turns) == 1
+    spin = turns[0]
+    assert spin.kind == THREE_SIXTY
+    assert not spin.counted                       # never a tack, never a jibe
+    assert spin.net_deg == pytest.approx(360.0, abs=25.0)
+    assert spin.end_t - spin.start_t <= SPIN_ON.three_sixty_max_s
+    assert spin.direction == "starboard"
+
+
+def test_the_same_rotation_at_walking_pace_is_not_a_three_sixty():
+    """The gate the whole detector rests on: a stopped rider's COG spins freely.
+
+    Same geometry, same 360 deg, ridden at 3 km/h -- under `foilEntrySpeed` at the sweep
+    start and under `threeSixtyMinKmh` inside it, so nothing about the shape can save it.
+    """
+    assert _spins(*_spin(kmh=3.0)) == []
+
+
+def test_a_jibe_is_not_a_three_sixty():
+    assert _spins(*_clean_jibe()) == []
+
+
+def test_a_tack_and_a_jibe_around_a_straight_are_not_merged_into_one():
+    """Two same-direction sweeps with three seconds of sailing between them.
+
+    Refused twice over: they sum to 220 deg, under `threeSixtyMinDeg`, and the eleven
+    seconds from the first sweep's start to the second's end are over `threeSixtyMaxS`.
+    The straight between them is the point -- it is monotone, so monotonicity alone would
+    have let the pair through.
+    """
+    v = SPIN_KMH / 3.6
+    course, speed = _join(_leg(90.0, 30, speed=v),
+                          _ramp(90.0, 200.0, 5, [v] * 5),        # ~a tack, 110 deg
+                          _leg(200.0, 3, speed=v),               # 3 s straight
+                          _ramp(200.0, 310.0, 5, [v] * 5),       # ~a jibe, same direction
+                          _leg(310.0, 30, speed=v))
+    assert _spins(course, speed) == []
+
+
+def test_a_rotation_that_backs_off_mid_sweep_is_not_monotone():
+    """`threeSixtyReversalDeg`: a spin does not change its mind halfway round."""
+    v = SPIN_KMH / 3.6
+    course, speed = _join(_leg(90.0, 30, speed=v),
+                          _ramp(90.0, 290.0, 5, [v] * 5),        # 200 deg clockwise
+                          _ramp(290.0, 250.0, 2, [v] * 2),       # 40 deg back the other way
+                          _ramp(250.0, 450.0, 5, [v] * 5),       # 200 deg on round again
+                          _leg(450.0, 30, speed=v))
+    assert _spins(course, speed) == []
+
+
+def test_the_detector_is_dark_by_default():
+    """The same track, the shipped config: no spin exists at all."""
+    course, speed = _spin()
+    assert [t.kind for t in _detect(course, speed)].count(THREE_SIXTY) == 0
+    assert _spins(course, speed, config=TurnConfig()) == []
+
+
+def test_a_three_sixty_feeds_its_own_count_and_nothing_else():
+    ct = _track(*_spin())
+    flights = segment_flights(ct)
+    turns = detect_turns(ct, flights, WIND_N, SPIN_ON)
+    dark = detect_turns(ct, flights, WIND_N)
+
+    spun, plain = summarize_turns(turns, config=SPIN_ON), summarize_turns(dark)
+    assert spun.three_sixties == 1
+    assert plain.three_sixties is None            # not 0: nobody looked
+    # Every maneuver tally reads exactly as it did with the detector down.
+    assert (spun.turns_counted, spun.rejected) == (plain.turns_counted, plain.rejected)
+    assert (spun.tacks, spun.jibes) == (plain.tacks, plain.jibes)
+    assert spun.outcomes.total == plain.outcomes.total
+    assert (spun.longest_dry_streak, spun.longest_flew_streak) == \
+           (plain.longest_dry_streak, plain.longest_flew_streak)
+
+
+def test_the_count_is_zero_not_absent_when_the_detector_ran_and_found_nothing():
+    turns = _detect(*_clean_jibe(), config=SPIN_ON)
+    assert summarize_turns(turns, config=SPIN_ON).three_sixties == 0
+
+
+def test_the_spin_pass_leaves_the_maneuvers_it_overlaps_alone():
+    """Additive by construction: whatever the main scan said about the same water stands."""
+    ct = _track(*_spin())
+    flights = segment_flights(ct)
+    plain = [(t.kind, t.start_t, t.end_t) for t in detect_turns(ct, flights, WIND_N)]
+    both = [(t.kind, t.start_t, t.end_t)
+            for t in detect_turns(ct, flights, WIND_N, SPIN_ON) if t.kind != THREE_SIXTY]
+    assert both == plain

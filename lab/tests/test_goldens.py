@@ -10,7 +10,9 @@ from wingfoil_lab.goldens import (RateConfig, _hr_json, analyze, build_golden, d
                                   golden_path, load_golden, session_rates, window_rates,
                                   write_golden)
 from wingfoil_lab.hrcost import HrAnalysis
+from wingfoil_lab.turns import TurnConfig
 
+FIXTURES = Path(__file__).resolve().parents[2] / "fixtures"
 SMOKE = Path(__file__).resolve().parents[2] / "fixtures" / "synthetic" / "smoke-60s.fit"
 CIQ = (Path(__file__).resolve().parents[2] / "fixtures" / "sessions" / "ciq"
        / "2026-08-07-0754_nago-torbole-windsurfen_ciq.fit")
@@ -386,6 +388,38 @@ def test_pump_episodes_are_serialized_whole():
         assert e["lookaheadS"] == g["config"]["takeoffAttemptWindow"]
         assert e["flightIndex"] is None and e["turnIndex"] is None
         assert span[0] - 600.0 <= e["startTs"] <= span[1] + 600.0
+
+
+def test_the_360_detector_is_dark_in_the_document():
+    """`detectThreeSixty` off ⇒ the serialized document is the committed golden, exactly.
+
+    Byte-for-byte, not "the numbers agree": the point of a dark detector is that a consumer
+    cannot tell it exists. The fixture is chosen for teeth — it is one of the three sessions
+    that *does* yield a candidate with the flag up (docs/algorithms.md "360 spins"), so the
+    second half of the test proves the first half is not passing by accident.
+    """
+    golden = load_golden(golden_path(CIQ_LONG, FIXTURES / "goldens"))
+    assert build_golden(analyze(CIQ_LONG)) == golden               # shipped defaults
+    off = TurnConfig(detect_three_sixty=False)
+    assert build_golden(analyze(CIQ_LONG, turn_config=off)) == golden
+
+    on = build_golden(analyze(CIQ_LONG, turn_config=TurnConfig(detect_three_sixty=True)))
+    assert on["summary"]["turns"]["threeSixties"] == 1
+    assert "threeSixties" not in golden["summary"]["turns"]        # absent, never null
+    assert on["config"]["detectThreeSixty"] is True
+    assert not set(golden["config"]) & {"detectThreeSixty", "threeSixtyMinDeg",
+                                        "threeSixtyMaxS", "threeSixtyReversalDeg",
+                                        "threeSixtyMinKmh"}
+    # The spin is an extra turn in the list and nothing else: every maneuver tally, the
+    # ladders, the streaks and the rates read exactly as they do with the flag down.
+    assert len(on["turns"]) == len(golden["turns"]) + 1
+    assert [t for t in on["turns"] if t["type"] != "three_sixty"] == golden["turns"]
+    assert {k: v for k, v in on["summary"]["turns"].items() if k != "threeSixties"} \
+        == golden["summary"]["turns"]
+    assert on["summary"]["outcomeSplit"] == golden["summary"]["outcomeSplit"]
+    assert on["summary"]["flightEnds"] == golden["summary"]["flightEnds"]
+    for key in ("turnsPerHour", "jibesPerHour", "wetPerHour", "windowRates"):
+        assert on["summary"][key] == golden["summary"][key]
 
 
 def test_roundtrip(tmp_path, smoke_golden):
