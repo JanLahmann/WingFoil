@@ -134,6 +134,7 @@ requests the pages ever make are:
 | `pypi.org` / `files.pythonhosted.org` | first load | the `fitdecode` wheel (pure Python, ~120 KB) |
 | same-origin `web/…` | first load, then on update | the app shell and `lab_bundle/*.py`, precached by the service worker |
 | `intervals.icu/api/v1/…` | only if you use the intervals.icu panel | your own activity list / FIT |
+| `tile.openstreetmap.org/…` | only when the share card's *Map background* switch is on | the map tiles under the track; never cached by the service worker, plain card offline |
 | `cloud.umami.is/script.js` + one page-view beacon | every page load on `cleanjibe.org` | anonymous, cookieless page counts — see below |
 
 ### The one measurement
@@ -178,6 +179,7 @@ in a URL. "Forget key" deletes it.
 | Saved sessions (original FIT + analysis JSON) | OPFS, or IndexedDB where OPFS is unavailable | *Delete* on the row, or clear this site's data |
 | The library index | the same place, as `index.json` | same |
 | intervals.icu API key | `localStorage` | *Forget key* |
+| Share-card choices (stat preset, shape, map on/off) | `localStorage` (`wingfoil.shareCard.*` keys, via `cardstats.js`) | clear this site's data |
 | Pyodide runtime, app shell | HTTP cache + service-worker `CacheStorage` | clear this site's data |
 
 Clearing site data, or using a private window, wipes all of it. Nothing is synced or backed
