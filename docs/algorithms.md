@@ -535,14 +535,14 @@ the speed channels also went marginal. At a flight end that test is near-vacuous
 ended *because* speed fell below `foilExitSpeed`), and that is intended — a rider who has to
 pump a burst out of it did not glide out by choice.
 
-## Session rates (phone, engine ≥ 0.6.0) — `durationS` · `avgSpeedKmh` · `turnsPerHour` · `jibesPerHour` · `wetPerHour` · `windowRates`
+## Session rates (phone, engine ≥ 0.6.0) — `durationS` · `avgSpeedKmh` · `turnsPerHour` · `jibesPerHour` · `cleanJibesPerHour` · `wetPerHour` · `windowRates`
 
 A tally answers "how many"; a rate answers "how busy". Forty jibes is a good session in an
 hour and a slow one in four, and until 0.6.0 nothing in the summary could tell those apart —
 the document carried counts and a foil percentage, and every "per hour" a screen wanted had
 to be improvised from `foilTimeS`, which is the wrong denominator for all of them.
 
-Six fields in `summary`, all phone/web analysis outputs — **nothing here is written to the
+Seven fields in `summary`, all phone/web analysis outputs — **nothing here is written to the
 FIT** (docs/fit-schema.md is untouched by this version):
 
 | field | definition | units |
@@ -551,6 +551,7 @@ FIT** (docs/fit-schema.md is untouched by this version):
 | `avgSpeedKmh` | `records.distanceM / durationS × 3.6` | km/h, 2 dp |
 | `turnsPerHour` | `turns.turnsCounted / (durationS/3600)` | 1/h, 1 dp |
 | `jibesPerHour` | **dry** jibes: `(turns.jibes − turns.jibeOutcomes.fellIn) / (durationS/3600)` | 1/h, 1 dp |
+| `cleanJibesPerHour` | **clean** jibes: `turns.jibesSuccessful / (durationS/3600)` | 1/h, 1 dp |
 | `wetPerHour` | `flightEnds.all.fellIn / (durationS/3600)` | 1/h, 1 dp |
 | `windowRates` | the rolling `windowRateMin`-minute view of the same two events (below) | object |
 
@@ -571,10 +572,21 @@ jibe he did not. The alternative is a headline number a rider can raise by falli
 often, which is the one thing a rate on the front screen must never reward. On 2026-08-29
 that is 43 of 50 jibes: **22.0** an hour where the all-jibes count read 25.6.
 
-`turnsPerHour` beside it is deliberately **all** counted turns, outcome and all. The two
-answer different questions — "how busy was the afternoon" and "how well did it go" — and
-filtering the busy-ness number by quality would leave the session with no honest measure of
-activity at all. Wet turns are already counted twice over, by `wetPerHour` and by the
+**CPH counts the jibes he *rode*** (engine ≥ 0.10.0). `cleanJibesPerHour` is
+`turns.jibesSuccessful` over the same hour — the strict verdict, a counted jibe flown all the
+way through carrying its speed (docs/presentation.md "Clean jibe"), which is the engine's
+per-turn `success` flag and not a new measurement. Same denominator, same 1 dp, same
+null-on-no-duration rule. The two jibe rates are deliberately both here because they answer
+questions a rider asks in that order: JPH says he got away with it, CPH says he rode it. On
+2026-08-29 that is 25 of 50 jibes, **12.8** an hour against JPH's 22.0; on 2026-08-07 it is 4
+of 30, **2.8** against 12.8 — a 4.6× gap between the two sessions where the dry number,
+which forgives every touchdown, sees only 1.7×. CPH is the harder number to move and the
+one the front screen carries (docs/presentation.md, key metrics).
+
+`turnsPerHour` beside them is deliberately **all** counted turns, outcome and all. The three
+answer different questions — "how busy was the afternoon", "how much of it did I sail out
+of", "how much of it did I ride" — and filtering the busy-ness number by quality would leave
+the session with no honest measure of activity at all. Wet turns are already counted twice over, by `wetPerHour` and by the
 outcome ladder; JPH is the only place they are *subtracted*, and only because the word
 "jibe" in a rider's mouth means one he came out of.
 
@@ -590,7 +602,7 @@ falls against 9 fell-in ends while 2026-08-29 reads 8 against 25. The rider-faci
 is "how often did I get in the water", so the flight-end channel — one event per actual
 swim — is the one that answers it.
 
-**No duration, no rate.** `durationS ≤ 0` (a one-sample track, an empty clean) makes all four
+**No duration, no rate.** `durationS ≤ 0` (a one-sample track, an empty clean) makes all five
 derived values **null**, never 0.0 — and both window peaks with them, over an empty series.
 Zero would claim "he did nothing in an hour on the water"; null says there is no hour to
 divide by. `durationS` itself stays 0.0. Rates are computed from unrounded inputs and
@@ -598,10 +610,10 @@ rounded only on the way into JSON.
 
 Corpus, for scale — the two CIQ sessions:
 
-| session | `durationS` | `avgSpeedKmh` | `turnsPerHour` | `jibesPerHour` | `wetPerHour` |
-|---|---|---|---|---|---|
-| 2026-08-07 am (30 counted turns, 30 jibes of which 12 wet, 16 fell-in ends) | 5080.0 | 9.05 | 21.3 | 12.8 | 11.3 |
-| 2026-08-29 pm (51 counted, 50 jibes of which 7 wet, 25 fell-in ends) | 7029.0 | 11.77 | 26.1 | 22.0 | 12.8 |
+| session | `durationS` | `avgSpeedKmh` | `turnsPerHour` | `jibesPerHour` | `cleanJibesPerHour` | `wetPerHour` |
+|---|---|---|---|---|---|---|
+| 2026-08-07 am (30 counted turns, 30 jibes of which 12 wet, 4 clean, 16 fell-in ends) | 5080.0 | 9.05 | 21.3 | 12.8 | 2.8 | 11.3 |
+| 2026-08-29 pm (51 counted, 50 jibes of which 7 wet, 25 clean, 25 fell-in ends) | 7029.0 | 11.77 | 26.1 | 22.0 | 12.8 | 12.8 |
 
 The afternoon session is the busier *and* the faster one, and it is wetter per hour despite
 a far better turn success rate — because it is long enough that the straight-line swims

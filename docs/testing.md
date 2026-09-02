@@ -8,7 +8,7 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
 
 ```json
 {
-  "engineVersion": "0.9.1",
+  "engineVersion": "0.10.0",
   "config": { "foilEntrySpeed": 12.0, "...": "params actually used" },
   "capabilities": { "hasDoppler": true, "hasDevFields": false, "hasWatchLaps": false,
                      "hasAccel": false, "hasHR": true, "sampleRateHz": 1 },
@@ -60,7 +60,7 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
   "summary": { "foilTimeS": 0, "foilPct": 0.0, "flightCount": 0, "longestFlightS": 0,
                "longestFlightM": 0.0, "distanceKm": 0.0,
                "durationS": 0.0, "avgSpeedKmh": null, "turnsPerHour": null,
-               "jibesPerHour": null, "wetPerHour": null,
+               "jibesPerHour": null, "cleanJibesPerHour": null, "wetPerHour": null,
                "windowRates": { "windowMin": 15, "bestJph": null, "bestJphStartTs": null,
                                 "bestWph": null, "bestWphStartTs": null,
                                 "series": [ { "ts": 0, "jph": 0.0, "wph": 0.0 } ] },
@@ -101,12 +101,14 @@ its *instants* attached, which is what lets iOS place a failed attempt on the ma
 apologizing for it. It degrades like `turns` — a source with no accelerometer has no bursts to
 classify and gets `[]`, written rather than omitted. The **session rates** (engine 0.6.0,
 docs/algorithms.md "Session rates") share the same never-a-flattering-zero rule: `durationS`
-is the elapsed span of the cleaned track, gaps included, and when it is ≤ 0 all four derived
+is the elapsed span of the cleaned track, gaps included, and when it is ≤ 0 all five derived
 rates are explicit **null** — "there is no hour to divide by", not "he did nothing in one".
 `wetPerHour` is every `fell_in` *flight end*, straight-line and turn-owned alike, which is a
 different (and on this corpus a much larger) number than the turn ladder's fallen turns;
 `jibesPerHour` is the **dry** jibes only (engine 0.7.0) — `jibes - jibeOutcomes.fellIn` —
-because a rate a rider can raise by falling more often is not a measure of his afternoon.
+because a rate a rider can raise by falling more often is not a measure of his afternoon, and
+`cleanJibesPerHour` (engine 0.10.0) is the strict reading of the same set, `jibesSuccessful`
+over the same hour — the one the key-metrics block prints.
 `windowRates` (engine 0.7.0) is the same two event channels over a rolling 15-minute window:
 a 60 s series of full windows, and the two exact sliding peaks, which are anchored on the
 events and so are never below the series they sit beside. Its peaks obey the **mirror** of
@@ -217,7 +219,7 @@ and the Pages deploy).
 | bpm per stroke (a ratio of two of the above) | ± 0.005 |
 | foil time | ± 2 % |
 | session duration (`durationS`) | ± 0.1 s |
-| session rates (`avgSpeedKmh`, `turnsPerHour`, `jibesPerHour`, `wetPerHour`) | ± 0.05 |
+| session rates (`avgSpeedKmh`, `turnsPerHour`, `jibesPerHour`, `cleanJibesPerHour`, `wetPerHour`) | ± 0.05 |
 | window rates (`windowRates` peaks and every series `jph`/`wph`) | ± 0.05 |
 | window starts (`bestJphStartTs`, `bestWphStartTs`, series `ts`) | ± 0.1 s |
 | watch live vs phone recompute | ± 0.2 kn, counts exact on clean clips |
