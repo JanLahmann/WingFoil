@@ -406,9 +406,11 @@ class SummaryView extends WatchUi.View {
     }
 
     // Wall clock for the session, with the engine's own timer as the fallback: elapsedS is
-    // captured at save from Activity.Info and is 0 on a run that reported none.
+    // captured at save from Activity.Info and is 0 on a run that reported none. It now lives
+    // on the controller, because the live Turns page needs the same number for CPH and two
+    // screens dividing by two different clocks is how one session grows two rates.
     static function elapsed(c as SessionController) as Float {
-        return c.elapsedS > 0 ? c.elapsedS.toFloat() : c.engine.timerS;
+        return c.elapsedNowS();
     }
 }
 
