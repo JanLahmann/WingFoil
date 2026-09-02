@@ -41,21 +41,27 @@ import Testing
                                            startedAt: torboleStart,
                                            timeZone: TimeZone(identifier: "Europe/Rome")!)
 
-        #expect(script.map(\.t) == [0, 85, 151, 255, 278, 292, 320, 362, 399, 441, 477, 645])
+        #expect(script.map(\.t)
+                == [0, 85, 151, 222, 255, 278, 292, 320, 362, 399, 441, 477, 645])
         #expect(script.map(\.text) == [
             "Torbole, 14:07 — session start",
             // The first takeoff *is* the start of the longest flight here, so the two share
             // an instant and the plainer fact leads.
             "Flying! · Longest flight — 6:32",
             "First jibe — flew through",
+            // The strict verdict, on its own instant: 5 of this session's 10 jibes were
+            // clean, and the first of them is a line the dry count cannot say.
+            "First clean jibe!",
             // The 3rd and 5th dry jibes are also streak records, and a line that said "3 dry
             // jibes · New streak — 3 dry jibes" would print the number twice.
             "New streak — 3 dry jibes",
             "New streak — 4 dry jibes",
             "Top speed — 13.47 kn over 2 s",
-            "New streak — 5 dry jibes",
+            // Where a clean ordinal lands on a streak record they share the frame, strict
+            // first: the run is over dry maneuvers, the count beside it is over ridden ones.
+            "3 clean jibes · New streak — 5 dry jibes",
             "New streak — 6 dry jibes",
-            "New streak — 7 dry jibes",
+            "5 clean jibes · New streak — 7 dry jibes",
             "New streak — 8 dry jibes",
             // The swim at 467 is the jibe; the splash is its flight end ten seconds later.
             // It is also why nothing is said at 571: that tenth attempt was swum too, so the
@@ -235,9 +241,9 @@ import Testing
     @Test func theScriptIsCutInAKnownOrder() throws {
         let script = try torbole()
         let full = ReplayCommentary.make(script, timeZone: fixtureZone)
-        #expect(full.count == 12)
+        #expect(full.count == 13)
 
-        let byLimit = (0...12).map { ReplayCommentary.pruned(full, keeping: $0).map(\.id) }
+        let byLimit = (0...13).map { ReplayCommentary.pruned(full, keeping: $0).map(\.id) }
 
         // The bookends survive a limit of zero: a clip that opened and never closed would be
         // worse than a silent one.
@@ -251,13 +257,19 @@ import Testing
         // already ranks them: a swim is a more specific thing to say than a count.
         #expect(byLimit[6] == ["start", "longest-flight", "top-speed", "streak-8", "splash-1",
                                "end"])
-        #expect(byLimit[7] == ["start", "longest-flight", "jibe-1", "top-speed", "streak-8",
+        // The firsts are one tier and it now holds three of them, split by the collision
+        // rule's own rank: the swim, then the **clean** jibe, then the dry one. A clip with
+        // room for seven lines says "First clean jibe!" before it says "First jibe" — which
+        // is the whole point of putting the clean count in the commentary at all.
+        #expect(byLimit[7] == ["start", "longest-flight", "clean-1", "top-speed", "streak-8",
                                "splash-1", "end"])
+        #expect(byLimit[8] == ["start", "longest-flight", "jibe-1", "clean-1", "top-speed",
+                               "streak-8", "splash-1", "end"])
         // From here it is the leftovers, by the collision rule's own rank and then by time:
         // the four remaining streak records, earliest first.
-        #expect(byLimit[8] == ["start", "longest-flight", "jibe-1", "streak-3", "top-speed",
-                               "streak-8", "splash-1", "end"])
-        #expect(byLimit[12] == full.map(\.id))
+        #expect(byLimit[9] == ["start", "longest-flight", "jibe-1", "clean-1", "streak-3",
+                               "top-speed", "streak-8", "splash-1", "end"])
+        #expect(byLimit[13] == full.map(\.id))
 
         // Monotone: every list is a subset of the next one up.
         for (smaller, larger) in zip(byLimit, byLimit.dropFirst()) {
@@ -274,7 +286,7 @@ import Testing
     /// A limit at or above the count is not a cut at all — the same array back, identical.
     @Test func aScriptThatFitsIsLeftAlone() throws {
         let full = ReplayCommentary.make(try torbole(), timeZone: fixtureZone)
-        #expect(ReplayCommentary.pruned(full, keeping: 12) == full)
+        #expect(ReplayCommentary.pruned(full, keeping: 13) == full)
         #expect(ReplayCommentary.pruned(full, keeping: 99) == full)
         #expect(ReplayCommentary.pruned(full, keeping: nil) == full)
         #expect(ReplayCommentary.pruned([], keeping: 4).isEmpty)

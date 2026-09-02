@@ -269,11 +269,53 @@ The rules, which are the only thing the two implementations can disagree about:
   cell is captioned **"JPH · dry jibes per hour"**. A rate that counted the swims too could
   be raised by falling more often, and a caption reading "jibes per hour" over a number that
   excludes seven of them would name a different figure than the one printed.
-- **Row 4 degrades JPH to TPH, not to zero.** When `jibesPerHour` is 0 while
-  `turnsPerHour` is positive — turns the wind axis could not name — the row shows
-  `turnsPerHour` labelled TPH. WPH needs no fallback: a fell-in flight end is a fall
-  whatever the wind was doing. A session with a duration and genuinely no turns keeps JPH
-  at `0.0`, because that is a measured zero.
+- **CPH sits beside JPH, never instead of it** (engine 0.10.0). `cleanJibesPerHour` is the
+  strict verdict per hour — the jibes he flew all the way through carrying his speed — and
+  the cell is captioned **"CPH · clean jibes per hour"**. The two are on the row together
+  because they answer the two questions a rider asks in exactly that order: *did I come out
+  of it still sailing*, and *did I ride it*. Neither is derivable from the other. 2026-08-03
+  pm is the session that makes the point — **4.5 JPH beside 0.0 CPH**, fifteen jibes he
+  mostly stayed out of the water on and did not ride one of — and a block printing either
+  number alone would be answering half the question. The pair reads lenient-then-strict, the
+  same direction the tally reads when its caption qualifies the three counts with the clean
+  number.
+  - **CPH never wears the outcome ladder's inks**, here or anywhere — see "Clean jibe"
+    above. It is a rate in the block's ordinary type, like every other cell on the row.
+
+**The clean jibe is a personal best, and it gets the celebration.** Until engine 0.10.0 every
+record the app celebrated was a speed. The two that were missing are the ones a wingfoiler
+actually chases, and they are kept beside the nine (`CleanJibeRecordKind`,
+`PersonalBestDetector.cleanJibeBests`):
+
+| record | what it is | why it is separate |
+|---|---|---|
+| **Clean jibes** | most clean jibes in one session (`SessionRow.jibesSuccessful`) | the afternoon he rode the most |
+| **Best CPH** | best `jibesSuccessful / (durationS/3600)` | the afternoon he rode them *fastest*, which a short evening in good wind wins |
+
+- **A session must last one rate window (15 min) to hold the CPH record.** The rolling
+  window's "never a flattering peak" rule (docs/algorithms.md) applied to a session: one
+  clean jibe in a four-minute sail is fifteen an hour, and a personal best a rider can set by
+  going home early is not one. The *count* takes no such floor.
+- **Ties keep the earlier session**, the way the window peak keeps the earliest window.
+- **One burst for both kinds.** A speed record and a clean-jibe record are the same moment to
+  a rider, so `RecordsView` fires one confetti burst and one haptic for either, with a line
+  above the table naming what was beaten — the two records have no row in a table of knots,
+  and a count of jibes in a column headed `kn` is the one thing a records screen may never
+  print. A snapshot written before the pair existed celebrates nothing, exactly as an empty
+  snapshot does: the first measurement beats nothing.
+- **The replay says it too.** `ReplayCommentary` gains a `cleanJibe` beat on the same
+  ordinals the dry count uses — "First clean jibe!", "5 clean jibes" — ranked *above* the dry
+  line, so a jibe that is both the fifth dry and the third clean is announced as the clean
+  one. It survives a tighter clip budget than an ordinary jibe ordinal and never outranks a
+  streak record.
+- **Row 4 degrades JPH to TPH, not to zero — and CPH goes with JPH.** When `jibesPerHour`
+  is 0 while `turnsPerHour` is positive — turns the wind axis could not name — the row shows
+  `turnsPerHour` labelled TPH, **and no clean-jibe cell at all**: CPH is a jibe rate, and
+  "0.0 clean jibes per hour" over a session that named no jibes would be the precise lie the
+  TPH fallback exists to avoid. Where jibes *were* named, a `0.0` CPH is a measured verdict
+  and is printed as one. WPH needs no fallback: a fell-in flight end is a fall whatever the
+  wind was doing. A session with a duration and genuinely no turns keeps JPH and CPH at
+  `0.0`, because those are measured zeroes.
 - **No duration, no row.** `durationS <= 0` makes the engine report all four rates as
   null, and row 4 disappears — the general rule ("a missing value is absent, never 0")
   applied to the one place where a 0.0 would read as a verdict on the rider.
@@ -410,7 +452,7 @@ Two presets choose how much of it appears, and a preset may only **remove** entr
 
 | preset | cells |
 |---|---|
-| `complete` (default) | the whole block: duration · distance · avg speed · max 2 s · tally · streaks · JPH/TPH · WPH |
+| `complete` (default) | the whole block: duration · distance · avg speed · max 2 s · tally · streaks · JPH/TPH · CPH · WPH |
 | `lean` | duration · distance · max 2 s · tally |
 
 **The rider gets a title and one caption, and neither is a cell** (schema v9). The card's
@@ -585,7 +627,7 @@ knows the word GPX:
 |---|---|
 | session badge | `limited data` (web `render.js`), `SessionDisplay.sourceClassNote` (iOS) — the title/subtitle names both absences: estimated speed, no pump data |
 | records table | an `uncertified` chip beside the **value** (web `trends.js`, iOS `RecordsView`) — beside the claim, not beside the session |
-| personal bests | a class-(c) effort never fires the celebration (`PersonalBestDetector.improvements`) |
+| personal bests | a class-(c) effort never fires the celebration (`PersonalBestDetector.improvements`). The clean-jibe records are exempt: a jibe count is not a speed and a bad fix cannot inflate it |
 | share card | `disclaimer` — "Speeds from a degraded source — uncertified" (`ShareCardStats`, `cardDisclaimer`) — the card leaves the device, so it cannot be read as a speed claim |
 
 The same source class also has no accelerometer, so the pump and takeoff-effort figures are

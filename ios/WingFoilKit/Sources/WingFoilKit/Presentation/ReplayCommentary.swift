@@ -21,6 +21,10 @@ public struct ReplayMilestone: Sendable, Equatable, Identifiable {
         /// The nth **dry** jibe — the JPH count, the one a fall never advances — at one of
         /// the counts worth saying out loud.
         case jibe(Int)
+        /// The nth **clean** jibe — the strict verdict, the one the rider is chasing
+        /// (docs/presentation.md, "Clean jibe"). Rarer than the dry count and worth more,
+        /// so it outranks it when the same jibe is both.
+        case cleanJibe(Int)
         /// A new session-best run of dry maneuvers, at the maneuver that set it.
         case streak(Int)
         /// The nth swim.
@@ -75,6 +79,11 @@ public enum ReplayCommentary {
     static func isJibeMilestone(_ n: Int) -> Bool {
         n == 1 || n == 3 || n == 5 || (n >= 10 && n % 10 == 0)
     }
+
+    /// Clean-jibe ordinals — the same shape as the dry ones, because they are the same
+    /// milestones a rider counts, just harder to reach. On the corpus's best afternoon that
+    /// is four lines in two hours, which is a celebration and not a running commentary.
+    static func isCleanJibeMilestone(_ n: Int) -> Bool { isJibeMilestone(n) }
 
     /// Splash ordinals: the first, the fifth, then every tenth. Sparser than the jibes at
     /// the bottom end — nobody wants their third swim announced.
@@ -156,6 +165,25 @@ public enum ReplayCommentary {
                 // one he came out of sailing, and the outcome is right there in the line.
                 text: n == 1 ? "First jibe — \(outcome.label)" : "\(n) dry jibes"))
         }
+        // MARK: the clean ones
+        //
+        // The *strict* verdict over the same set: `turn.success`, the jibes he flew all the
+        // way through carrying his speed. A clean jibe is a dry jibe by construction, so
+        // every line here lands on a turn the dry count already passed — and when the two
+        // ordinals coincide, `collapse` keeps this one, because "5 clean jibes" is the
+        // sentence a rider wants and "5 dry jibes" is the one he settles for.
+        //
+        // Not the outcome ladder's green: "flew through" is how the turn ended, clean is
+        // what it cost, and the two disagree on purpose (docs/presentation.md, "Clean jibe").
+        let cleanJibes = jibes.filter { $0.element.success }
+        for (ordinal, entry) in cleanJibes.enumerated() {
+            let n = ordinal + 1
+            guard isCleanJibeMilestone(n) else { continue }
+            out.append(ReplayMilestone(
+                id: "clean-\(n)", t: entry.element.ts, kind: .cleanJibe(n),
+                text: n == 1 ? "First clean jibe!" : "\(n) clean jibes"))
+        }
+
         out.append(contentsOf: streakMilestones(analysis))
 
         // MARK: splashes
@@ -322,12 +350,15 @@ public enum ReplayCommentary {
     /// session's first and last frame are about the session, not about an event in it.
     private static func rank(_ kind: ReplayMilestone.Kind) -> Int {
         switch kind {
-        case .sessionEnd: 7
-        case .sessionStart: 6
-        case .topSpeed: 5
-        case .longestFlight: 4
-        case .streak: 3
-        case .splash: 2
+        case .sessionEnd: 8
+        case .sessionStart: 7
+        case .topSpeed: 6
+        case .longestFlight: 5
+        case .streak: 4
+        case .splash: 3
+        // Above the dry count and below the streak: when one jibe is both the 5th dry and
+        // the 5th clean, the strict sentence is the one worth the frame.
+        case .cleanJibe: 2
         case .jibe: 1
         case .firstTakeoff: 0
         }
@@ -336,7 +367,7 @@ public enum ReplayCommentary {
     /// The number a milestone puts on screen, when it puts one there at all.
     private static func count(_ kind: ReplayMilestone.Kind) -> Int? {
         switch kind {
-        case .jibe(let n), .streak(let n), .splash(let n): n
+        case .jibe(let n), .cleanJibe(let n), .streak(let n), .splash(let n): n
         default: nil
         }
     }
@@ -445,6 +476,11 @@ public enum ReplayCommentary {
         case .topSpeed: 1
         case .longestFlight: 2
         case .streak: milestone.id == bestStreak ? 3 : 5
+        // Every clean-jibe line sits with the first jibe and the first splash — above the
+        // ordinary ordinals, below the best streak. A clean jibe is the event the rider came
+        // for, so it survives a budget an ordinary "20 dry jibes" does not; it does not
+        // outrank the run that beat his own record, which is a bigger sentence still.
+        case .cleanJibe: 4
         case .jibe(let n), .splash(let n): n == 1 ? 4 : 5
         case .firstTakeoff: 5
         }

@@ -68,7 +68,7 @@ public struct ShareCardStats: Sendable, Equatable {
         public static let maxSpeed = "max2s"
         public static let tally = "tally"
         public static let streaks = "streaks"
-        /// **The closing card's ninth cell, and nowhere else.** Not a `KeyMetrics` key: the
+        /// **The closing card's extra cell, and nowhere else.** Not a `KeyMetrics` key: the
         /// block does not carry the longest flight, and the exported card is a strict mirror
         /// of the block — see `outro`.
         public static let longestFlight = "longestFlight"
@@ -237,7 +237,8 @@ public struct ShareCardStats: Sendable, Equatable {
     /// exactly those numbers, four centimetres higher up. The one highlight the grid did *not*
     /// carry was the longest flight, and a number is better in a cell than in a caption
     /// repeating cells around it. So the lines are gone and the number they were really about
-    /// is a cell — which also makes the grid a clean 3 × 3.
+    /// is a cell — which made the grid a clean 3 × 3 at nine, and a three-row 4 × 4 × 2 once
+    /// CPH joined the rate row in engine 0.10.0 (`ReplayOutroCardView.columns`).
     ///
     /// **Only here.** `make` is unchanged and stays a strict mirror of `KeyMetrics`: the app's
     /// key-metrics block and the PNG a rider exports must remain the same list, or the two
@@ -267,8 +268,8 @@ public struct ShareCardStats: Sendable, Equatable {
     ///
     /// Absent rather than "0:00": a session where nothing ever flew has an *unknown* longest
     /// flight, not a zero-second one, and a closing card that printed 0:00 would be delivering
-    /// a verdict the analysis never reached. The grid is then eight cells, which is what it
-    /// was before.
+    /// a verdict the analysis never reached. The grid is then the complete block and nothing
+    /// added, which is exactly what the exported card shows.
     public static func longestFlightStat(_ seconds: Double?) -> Stat? {
         guard let seconds, seconds > 0 else { return nil }
         return Stat(key: Key.longestFlight, label: "longest flight",

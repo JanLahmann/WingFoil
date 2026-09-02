@@ -30,11 +30,11 @@ import Testing
     // MARK: - Length
 
     /// The number under each speed in the setup sheet. The replay's own times are
-    /// `ReplayDriverTests`' pinned 77.70 / 34.44 / 22.52; the cards add the same 6.5 s to all
+    /// `ReplayDriverTests`' pinned 78.90 / 35.64 / 23.58; the cards add the same 6.5 s to all
     /// three, which is why they matter most at 60× — a fifth of that clip is bookends.
     @Test func theCardsExtendEveryClipByTheSameSixAndAHalfSeconds() throws {
         let milestones = try script()
-        let replay: [Double: Double] = [10: 77.70, 30: 34.44, 60: 22.52]
+        let replay: [Double: Double] = [10: 78.90, 30: 35.64, 60: 23.58]
 
         for (rate, runWallS) in replay {
             let board = ReplayStoryboard.make(span: span, rate: rate, milestones: milestones, timeZone: fixtureZone)
@@ -49,16 +49,16 @@ import Testing
     /// Asked for a **length**, the storyboard builds its driver from the script that length can
     /// carry rather than from everything the session had to say.
     ///
-    /// The rate-taking factory is the raw one and stays raw — a caller that hands it twelve
-    /// milestones gets twelve dips, which is what "Full detail" and the scrubber's own speeds
+    /// The rate-taking factory is the raw one and stays raw — a caller that hands it thirteen
+    /// milestones gets thirteen dips, which is what "Full detail" and the scrubber's own speeds
     /// want. It is the target-taking one that budgets, because a target is a promise and the
-    /// twelfth dip is what used to break it (`ReplayPacing`).
+    /// dip past the budget is what used to break it (`ReplayPacing`).
     @Test func askingForALengthBuildsTheDriverFromTheScriptThatFits() throws {
         let milestones = try script()
-        #expect(milestones.count == 12)
+        #expect(milestones.count == 13)
 
         #expect(ReplayStoryboard.make(span: span, rate: 30, milestones: milestones,
-                                      timeZone: fixtureZone).driver.easeAt.count == 12)
+                                      timeZone: fixtureZone).driver.easeAt.count == 13)
         for (target, lines) in [(10.0, 4), (25.0, 8), (60.0, 12)] {
             let board = ReplayStoryboard.make(span: span, targetWallS: target,
                                               milestones: milestones, timeZone: fixtureZone)
@@ -85,7 +85,7 @@ import Testing
             span: span, rate: 30, milestones: milestones,
             photos: [.init(id: "a", takenAt: startedAt.addingTimeInterval(100))],
             startedAt: startedAt, timeZone: fixtureZone, timing: .bare)
-        #expect(abs(board.runWallS - 34.44) < 0.05)
+        #expect(abs(board.runWallS - 35.64) < 0.05)
         #expect(board.splices.isEmpty)
         #expect(board.slideshow.isEmpty)
     }
@@ -107,9 +107,9 @@ import Testing
         #expect(board.splices.map(\.t) == [40, 292])
         #expect(board.slideshow == ["screenshot"])
 
-        // Two 2 s pauses and one 1.5 s slide on top of the 34.44 s replay and 6.5 s of cards.
+        // Two 2 s pauses and one 1.5 s slide on top of the 35.64 s replay and 6.5 s of cards.
         #expect(board.photoWallS == 5.5)
-        #expect(abs(board.runWallS - (34.44 + 6.5 + 5.5)) < 0.05)
+        #expect(abs(board.runWallS - (35.64 + 6.5 + 5.5)) < 0.05)
     }
 
     /// A picture from before the launch or after the drive home is not a picture of the

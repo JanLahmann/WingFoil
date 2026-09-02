@@ -17,7 +17,8 @@ import Foundation
 ///    carries the **clean jibe** count as well as the total, so the one number a rider
 ///    quotes about his turns is in the block rather than three screens down.
 /// 4. `rates` — the per-hour rates (`docs/algorithms.md` "Session rates"); JPH counts
-///    **dry** jibes since 0.7.0, and its label says so.
+///    **dry** jibes since 0.7.0 and CPH the **clean** ones since 0.10.0, and both labels
+///    say which set they count.
 ///
 /// Everything resolves to a display string here so both platforms format one way and so
 /// the *content* is testable without a renderer — the same arrangement `ShareCardStats`
@@ -81,7 +82,7 @@ public struct KeyMetrics: Sendable, Equatable {
     /// the two runs and the one the rider is chasing, and `longestFlewStreak` is always
     /// the smaller number, so the pair reads strict-then-lenient in both halves.
     public let streaks: Metric?
-    /// JPH (or TPH) and WPH. **Empty** when `durationS <= 0` — the engine reports the
+    /// JPH + CPH (or TPH alone) and WPH. **Empty** when `durationS <= 0` — the engine reports the
     /// rates as null there, and "no hour to divide by" is an absence, not a 0.0.
     public let rates: [Metric]
 
@@ -145,23 +146,36 @@ public struct KeyMetrics: Sendable, Equatable {
                      caption: "of \(t.turnsCounted) turns · \(t.turnsSuccessful) clean")
     }
 
-    /// JPH · WPH, one decimal.
+    /// JPH · CPH · WPH, one decimal.
     ///
     /// JPH is **dry** jibes per hour (engine 0.7.0), and the label says so: the number
     /// counts the jibes he came out of still sailing, so it cannot be raised by falling
     /// more often, and a caption reading "jibes per hour" over it would name a different
     /// number than the one printed.
     ///
-    /// It degrades to TPH rather than to 0.0: a session whose wind axis never resolved
+    /// CPH is **clean** jibes per hour (engine 0.10.0) and sits beside JPH, never instead
+    /// of it. The two answer the two questions a rider asks in exactly this order — "did I
+    /// come out of it still sailing" and "did I ride it" — and the pair reads
+    /// lenient-then-strict, the same direction the tally reads when its caption qualifies
+    /// the three counts with the clean number. Neither is derivable from the other and
+    /// neither is a correction of the other; a block that printed only one of them would be
+    /// answering half the question (docs/presentation.md, "Clean jibe").
+    ///
+    /// JPH degrades to TPH rather than to 0.0: a session whose wind axis never resolved
     /// has turns and no jibes, and "0.0 jibes per hour" would be a verdict on a rider who
-    /// jibed all afternoon. WPH needs no such fallback — a fell-in flight end is a fall
-    /// whatever the wind was doing.
+    /// jibed all afternoon. **CPH travels with JPH, not with the fallback** — it is a jibe
+    /// rate, and on a session that named no jibes at all "0.0 clean jibes per hour" would be
+    /// the precise lie the TPH fallback exists to avoid. Where jibes *were* named, a 0.0 CPH
+    /// is a measured verdict and is printed as one. WPH needs no fallback of any kind — a
+    /// fell-in flight end is a fall whatever the wind was doing.
     static func rates(_ s: SessionSummary) -> [Metric] {
         guard let wet = s.wetPerHour else { return [] }
         var out: [Metric] = []
         if let jibes = s.jibesPerHour, jibes > 0 || (s.turnsPerHour ?? 0) <= 0 {
             out.append(Metric(key: "jph", label: "JPH · dry jibes per hour",
                               value: rate(jibes)))
+            out.append(Metric(key: "cph", label: "CPH · clean jibes per hour",
+                              value: rate(s.cleanJibesPerHour ?? 0)))
         } else if let turns = s.turnsPerHour {
             out.append(Metric(key: "tph", label: "TPH · turns per hour",
                               value: rate(turns)))

@@ -192,9 +192,13 @@ struct SessionTurnsSection: View {
             VStack(alignment: .leading, spacing: 20) {
                 cardSection("Turns & losses", anchor: "turns", help: .turnOutcomes) {
                     StatCard(title: "Jibes", value: "\(t.jibes)",
-                             caption: outcomeCaption(t.jibeOutcomes), help: .turnTypes)
+                             caption: outcomeCaption(t.jibeOutcomes,
+                                                     clean: t.jibesSuccessful),
+                             help: .turnTypes)
                     StatCard(title: "Tacks", value: "\(t.tacks)",
-                             caption: outcomeCaption(t.tackOutcomes), help: .turnTypes)
+                             caption: outcomeCaption(t.tackOutcomes,
+                                                     clean: t.tacksSuccessful),
+                             help: .turnTypes)
                     if t.unclassified > 0 {
                         StatCard(title: "Unclassified turns", value: "\(t.unclassified)",
                                  caption: "no usable wind axis", help: .windAxis)
@@ -234,9 +238,17 @@ struct SessionTurnsSection: View {
         }
     }
 
-    private func outcomeCaption(_ counts: OutcomeCounts) -> String {
+    /// The ladder's three counts, and the **clean** count of the same set beside them.
+    ///
+    /// The clean number rides last rather than joining the three: it is the stricter verdict
+    /// over the same turns, not a fourth rung of the ladder, and it never wears the ladder's
+    /// inks (docs/presentation.md, "Clean jibe"). It is what puts `tacksSuccessful` — clean
+    /// tacks — on a screen for the first time; the engine has counted them since the first
+    /// turn tally and nothing had ever printed them.
+    private func outcomeCaption(_ counts: OutcomeCounts, clean: Int) -> String {
         guard counts.total > 0 else { return "none detected" }
         return "\(counts.flewThrough) flew · \(counts.touchdown) touch · \(counts.fellIn) fell"
+            + " · \(clean) clean"
     }
 }
 
