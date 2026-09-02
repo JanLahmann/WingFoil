@@ -691,6 +691,41 @@ button.ghost.danger:hover { background: #2a1414; border-color: #6b2626; color: #
 .trend-head h4 { margin: 0; font: 600 13px/1.3 var(--sans); color: var(--ink-2); }
 #records-table tbody tr { cursor: default; }
 
+/* ------------------------------------------------------------------ the periods
+ *
+ * A list somebody scans, not fifteen numbers times a dozen periods. Every row is closed:
+ * the heading and its one-line summary are what a reader is looking through, and the block
+ * is one tap away for the period they were looking for.
+ */
+.period-group { margin-top: 14px; }
+.period-group h4 { margin: 0; font: 600 13px/1.3 var(--sans); color: var(--ink-2); }
+.period-group > .muted { margin: 2px 0 8px; }
+details.period {
+  border: 1px solid var(--line-soft); border-radius: 8px;
+  padding: 8px 12px; margin-bottom: 6px;
+}
+details.period > summary {
+  cursor: pointer; list-style: none; display: flex; flex-wrap: wrap;
+  align-items: baseline; gap: 4px 10px;
+}
+details.period > summary::-webkit-details-marker { display: none; }
+/* The disclosure triangle is drawn rather than inherited, so it points the same way in
+   every browser and stays on the text baseline next to a two-part heading. */
+details.period > summary::before {
+  content: "▸"; color: var(--ink-3); font-size: 11px; width: 10px;
+}
+details.period[open] > summary::before { content: "▾"; }
+.period-title { font-weight: 600; font-size: 13.5px; }
+.period-sub { color: var(--ink-3); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+details.period > .kv { margin-top: 10px; }
+.period-actions { margin-top: 10px; }
+.period-range { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin: 8px 0; }
+.period-range label { display: grid; gap: 4px; font: 600 11px/1 var(--sans);
+                      text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
+.period-range input[type="date"] { font: 13px var(--sans); }
+.period-custom-head { display: flex; flex-wrap: wrap; gap: 4px 10px;
+                      align-items: baseline; margin: 10px 0 8px; }
+
 /* --------------------------------------------------------------------- icu */
 
 .icu-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin: 14px 0 6px; }
