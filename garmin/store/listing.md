@@ -113,6 +113,42 @@ New — write settings breadcrumbs with `→`.
 
 ---
 
+## The two developer-only listings (`… (private dev)`)
+
+Not store listings in any public sense, but they live on the same dashboard and cost a day
+of confusion once, so they are written down here.
+
+* `WingFoil (private dev)` — <https://apps.garmin.com/apps/8f4efc35-ad13-46b9-ae9d-f01f444fe05f>,
+  bound to the **developer-beta** UUID `953f7547-c152-42c2-8d33-69fb59ad0bf6`
+  (`garmin/manifest-beta.xml`, built with `monkey-beta.jungle`). Version **0.9.4** since
+  2026-09-02; before that 0.9.2 (2026-08-07 … 08-31).
+* `WingFoil Field (private dev)` — <https://apps.garmin.com/apps/da0c6cb5-502b-4623-81ed-54ae40a3bf84>,
+  bound to `7e614501-d311-49c6-a68b-992b946e3d21` (`garmin/field/manifest-beta.xml`).
+  Version **0.9.5** since 2026-09-02; before that 0.1.0 from 2026-08-12.
+
+What these listings are, and what the dashboard will not tell you:
+
+1. **"Beta App" listings never leave `Status: Pending`.** That is not a review queue — the
+   listing's own banner says it: *only you will be able to download and test the app; to
+   publish, upload again with another appID.* Nobody reviews them, nobody else can install
+   them, and Pending is their permanent, healthy state (confirmed on the CIQ forum,
+   2026-09-02). Do not wait for it to clear and do not ask Garmin about it.
+2. **They take the dev-beta UUIDs only.** "The app ID within the manifest file deviates" is
+   an accurate error: a RELEASE package (`b1ef484c…`) or an INVITE package (`28942317…`)
+   uploaded here is refused because the listing was created from a `manifest-beta.xml`
+   build. Export with `monkeyc -e -r -f monkey-beta.jungle …` (and the field's
+   `garmin/field/monkey-beta.jungle`) — those are the only packages that fit.
+3. **Their job** is an over-the-air channel to Jan's own watch for the unlocked,
+   full-device-list build, nothing more. The public CleanJibe listings above carry the
+   invite UUIDs; the release UUID `b1ef484c…` is reserved for the eventual non-beta public
+   listing and has no store listing yet.
+
+Naming trap in `garmin/bin/`: files called `*-beta-*.iq` from 0.9.4 on (`CleanJibe-beta-0.9.4.iq`,
+`CleanJibeField-beta-0.9.x.iq`) carry the **invite** UUID, not the dev-beta one — "beta" there
+meant the "Invite Beta" listing. The dev-beta exports are the `*-devbeta-*.iq` files.
+
+---
+
 ## Version history
 
 What the store shipped, recovered from this repo's git log — the store keeps only the
