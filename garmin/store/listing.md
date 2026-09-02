@@ -9,7 +9,7 @@ rewrite it here and leave the store behind.
 Rewrite drafts are a separate thing and are not in this file.
 
 Both apps: developer **JanRL** (`7d829c3a-3343-46f5-b946-4556e4579f53`), support
-`jan@lahmann-online.de`, website `https://github.com/JanLahmann/WingFoil`, free,
+`info@cleanjibe.org`, website `https://github.com/JanLahmann/WingFoil`, free,
 open beta, English only.
 
 ---
@@ -148,7 +148,7 @@ What these listings are, and what the dashboard will not tell you:
 
 Their descriptions were rewritten 2026-09-02 to say what they are (developer-only builds of
 the two public listings, full device list, no lock) rather than "Private beta of WingFoil";
-support e-mail there is still `jan@lahmann-online.de`. Both carry `brand/cover-500-private.png` as cover — the current mark with the red PRIVATE
+support e-mail there is `info@cleanjibe.org` since 2026-09-02, like the public ones. Both carry `brand/cover-500-private.png` as cover — the current mark with the red PRIVATE
 ribbon, regenerated 2026-09-02 (the old file still had the pre-September mark).
 
 Naming trap in `garmin/bin/`: files called `*-beta-*.iq` from 0.9.4 on (`CleanJibe-beta-0.9.4.iq`,
