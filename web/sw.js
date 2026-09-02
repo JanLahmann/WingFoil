@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v34";     // v34: the 360 detector rides along in the bundle, dark
+const VERSION = "v35";     // v35: periods — trips, months, seasons, and a card of a week
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
