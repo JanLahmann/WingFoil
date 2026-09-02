@@ -450,6 +450,42 @@ module PageModel {
         return id == M_SPEED ? "km/h" : label(id);
     }
 
+    // ---- CPH: clean jibes per hour (device app 0.9.5) ----
+    //
+    // A tally answers "how many", a rate answers "how busy" (docs/algorithms.md "Session
+    // rates"). The phone divides by the elapsed span of the CLEANED TRACK, gaps included; the
+    // watch has no cleaned track, so it divides by the session's own wall clock — the same
+    // number the post-save verdict page already prints as "of 1:47:12". That divergence is
+    // recorded in docs/algorithms.md's watch-divergence list; it is small (the two differ only
+    // by whatever the phone's cleaner drops off the ends) and it is the only denominator the
+    // watch actually has.
+    //
+    // NO RATE BEFORE A MINUTE. One clean jibe forty seconds in is not "ninety an hour", it is
+    // one clean jibe and not enough afternoon to divide by — the same never-a-flattering-zero
+    // rule the engine applies at `durationS <= 0`, moved up to where a watch needs it, because
+    // the watch is asked the question live and the first minute is where the answer is silliest.
+    // Below the floor the caller gets a negative, which `fmtCph` prints as the app's own
+    // "unmeasured" mark rather than as a number nobody should read.
+    const CPH_MIN_ELAPSED_S = 60.0;
+    const CPH_NONE = "--";
+
+    // Clean jibes per hour, or a NEGATIVE value when there is no hour to divide by yet.
+    function cleanPerHour(cleanJibes as Number, elapsedS as Float) as Float {
+        if (elapsedS < CPH_MIN_ELAPSED_S || cleanJibes < 0) {
+            return -1.0;
+        }
+        return cleanJibes * 3600.0 / elapsedS;
+    }
+
+    // The same, formatted for a row: one decimal, or "--" while there is no rate to state.
+    // "--" and not "0.0", for the reason above, and not "-" because "--" is already what this
+    // watch prints everywhere a value was not measured (SummaryView's takeoff rows, the HR
+    // cost). One idiom for one meaning.
+    function fmtCph(cleanJibes as Number, elapsedS as Float) as String {
+        var v = cleanPerHour(cleanJibes, elapsedS);
+        return v < 0.0 ? CPH_NONE : v.format("%.1f");
+    }
+
     // m:ss. Shared by every timer metric and by SummaryView.
     function fmtTime(seconds as Float) as String {
         var s = seconds.toNumber();

@@ -161,6 +161,17 @@ class TurnDetector {
     var touchdownCount as Number = 0;
     var fellCount as Number = 0;
     var successCount as Number = 0;
+    // CLEAN JIBES (device app 0.9.5). `successCount` counts every successful turn; this counts
+    // the ones that were also classified as JIBES, which is the metric the product is named
+    // after (docs/presentation.md "Clean jibe", docs/algorithms.md "Glossary"). Kept as its own
+    // counter rather than derived, because success and kind are decided at different moments —
+    // kind when the sweep closes, success when the outcome window resolves — and the only place
+    // both are known is `_resolve()`.
+    var cleanJibeCount as Number = 0;
+    // Was the turn that just resolved a clean jibe? Published beside `lastOutcome` so a caller
+    // that already reacts to a resolved turn can tell the two apart without a second event
+    // nibble; false again on the next turn that is not one.
+    var lastCleanJibe as Boolean = false;
     var lastKind as Number = KIND_NONE;
     // The geometry of the sweep just confirmed, published at EVENT_TURN: the UNWRAPPED entry
     // bearing and the net rotation (signed, and free to exceed 180 deg). It is what a sweep is
@@ -639,8 +650,16 @@ class TurnDetector {
         }
         // success is the score pair (turns.py._build_turn), independent of the outcome:
         // score >= turnSuccessPct AND the foil still carried across the scored window.
+        lastCleanJibe = false;
         if (pct >= SUCCESS_PCT && _minSpeed > _cfg.foilExitMps) {
             successCount++;
+            // ...and a successful turn that was named a JIBE is a clean jibe. `lastKind` is
+            // still this turn's: the watch does not re-detect during an outcome window, so
+            // nothing can have overwritten it between the sweep closing and here.
+            if (lastKind == KIND_JIBE) {
+                cleanJibeCount++;
+                lastCleanJibe = true;
+            }
         }
         state = ST_IDLE;
         _count = 0;
@@ -676,6 +695,15 @@ class TurnDetector {
     //   * a logged sweep that comes out KIND_REJECT under the new axis (a bear-away) stays
     //     counted as the generic turn it was. Retracting it would move turnCount, successPct
     //     and every streak that spanned it, i.e. re-judge outcomes on hindsight evidence.
+    //   * `cleanJibeCount` is NOT backfilled. The sweep log carries geometry only (entry
+    //     bearing and net rotation, all AutoWind needs to re-name an axis), and it is written
+    //     when the sweep CLOSES — before the outcome window has resolved, so at that moment
+    //     nothing in it knows whether the turn was carried. Backfilling the split therefore
+    //     turns pre-lock turns into jibes without turning any of them into clean jibes, and
+    //     the watch's CPH under-reads for the first few minutes of an auto-wind session.
+    //     Documented in docs/algorithms.md's watch-divergence list rather than fixed with a
+    //     third parallel array: it is a handful of turns at the very start of a session, and
+    //     it errs the way every other watch divergence errs — conservative.
     // So after the backfill `tackCount + jibeCount <= turnCount`, with the difference being
     // the sweeps that turned out to be course changes.
     function backfillWindSplit(entryDeg as Array<Number>, netDeg as Array<Number>,

@@ -57,6 +57,37 @@ const TURNS_SIDE_SEP = "/";
 // other count on the watch stops.
 const VERDICT_FROM = 1;
 
+// ---- the Turns page's CLEAN JIBE row (0.9.5, see drawCleanRow) ----
+// "★ 12  4.6 CPH": the star, the session's clean-jibe count, and the rate that count implies.
+//
+// It sits directly under the giant tally because it REFINES it. The tally's green says "this
+// many flew through"; the star says how many of those were jibes he also carried the speed
+// through, which is a stricter question and the one the app is named after
+// (docs/presentation.md "Clean jibe"). Putting it anywhere else on the page would leave the
+// two numbers to be related by the rider.
+//
+// The star is the row's caption — there is no word, because there is no room for one on a
+// 240 px glass and the mark is the vocabulary the phone and the web already teach. The rate's
+// three letters are XTINY beside a value in the row's own font, the same size-and-colour break
+// the verdict row two rows down uses instead of spaces.
+const TURNS_CPH_SUFFIX = "CPH";
+// The rung this row's VALUES sit at, as a TEXT_FONTS index. FONT_SMALL — the readability floor
+// every count on this watch keeps — and NOT the FONT_MEDIUM the verdict row starts at, for a
+// reason that was measured rather than chosen: this row is the sixth on a page that had five,
+// and the whole stack is centred, so every pixel of band it takes pushes the verdict row
+// another half-pixel deeper into the arc. At FONT_MEDIUM on a 454 px glass that cost the
+// verdict row its port/starboard split by six pixels (304 px of ink into a 298 px budget) —
+// the one number on the page a rider can act on tomorrow, dropped to make room for a bigger
+// font on a row whose content is two short numbers. The floor buys it back with room over.
+//
+// So the row is pinned here and sheds CONTENT rather than size, which is what every other row
+// on this page does once it reaches the floor anyway.
+const CLEAN_FROM = TALLY_FLOOR;
+// Gap between the star and the count it labels. Wider than GLYPH_GAP: the mark is a filled
+// shape, not a letter, and it needs more air than a glyph beside a word does before the count
+// starts reading as part of it.
+const CLEAN_GLYPH_GAP = 7;
+
 // PAUSED banner. A word, not a value, so FONT_TINY is the right rung (docs review: XTINY and
 // TINY are label sizes) — and a narrower banner is what lets it sit high enough on the glass
 // to clear the rings entirely instead of punching a hole in them.
@@ -1400,31 +1431,106 @@ class RecordingView extends WatchUi.View {
         var hK = dc.getFontHeight(Graphics.FONT_MEDIUM);
         var hD = stripBandH(dc);
         var hS = dc.getFontHeight(TEXT_FONTS[VERDICT_FROM]);
+        var hC = dc.getFontHeight(TEXT_FONTS[CLEAN_FROM]);
         var windSet = AppSettings.cfg.windDirection >= 0;
 
         // row 0 — the header, unchanged: which two maneuvers the counts below are, and the
         // axis that split them. `windLabel` marks an axis the WATCH estimated with a leading
         // "~" ("tack / jibe  ~SSW"), so the header never claims the rider named it.
-        var y = turnsRowY(cy, hT, hG, hK, hD, hS, 0);
+        var y = turnsRowY(cy, hT, hG, hC, hK, hD, hS, 0);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, Graphics.FONT_XTINY,
             windSet ? "tack / jibe  " + AppSettings.windLabel() : "turns", CV);
 
         // row 1 — the giant: flew · touched · swam, in the ladder's own colours, with the
         // separators drawn as dim dots because the number fonts have no punctuation.
-        drawGiantTally(dc, cx, turnsRowY(cy, hT, hG, hK, hD, hS, 1), cy, radius, t);
+        drawGiantTally(dc, cx, turnsRowY(cy, hT, hG, hC, hK, hD, hS, 1), cy, radius, t);
 
-        // row 2 — both streaks. The dry run says "how long since I last went in", the flew run
+        // row 2 — the clean jibes and the rate they imply, in the clean-jibe ink. It reads the
+        // same live and ashore; only the denominator moves under it (SessionController's
+        // elapsedNowS), and it moves by exactly the paused time.
+        drawCleanRow(dc, cx, turnsRowY(cy, hT, hG, hC, hK, hD, hS, 2), cy, radius, t,
+            c.elapsedNowS());
+
+        // row 3 — both streaks. The dry run says "how long since I last went in", the flew run
         // "how long since I last even touched down"; bestFlewStreak <= bestDryStreak always.
-        drawStreakRow2(dc, cx, turnsRowY(cy, hT, hG, hK, hD, hS, 2), cy, radius, t, live);
+        drawStreakRow2(dc, cx, turnsRowY(cy, hT, hG, hC, hK, hD, hS, 3), cy, radius, t, live);
 
-        // row 3 — the same turns as row 1, one dot each, in the order they happened.
-        y = turnsRowY(cy, hT, hG, hK, hD, hS, 3);
+        // row 4 — the same turns as row 1, one dot each, in the order they happened.
+        y = turnsRowY(cy, hT, hG, hC, hK, hD, hS, 4);
         drawOutcomeStrip(dc, cx, y, rowBudget(radius, y - cy, hD), c.engine.history);
 
-        // row 4 — the verdict, and the asymmetry underneath it. Which side of the wind he
+        // row 5 — the verdict, and the asymmetry underneath it. Which side of the wind he
         // enters on is the one thing on this page he can act on tomorrow.
-        drawVerdictRow(dc, cx, turnsRowY(cy, hT, hG, hK, hD, hS, 4), cy, radius, t);
+        drawVerdictRow(dc, cx, turnsRowY(cy, hT, hG, hC, hK, hD, hS, 5), cy, radius, t);
+    }
+
+    // ---- row 2: the clean jibes ----
+    // "★ 12  4.6 CPH" — the mark, the count, and the rate. Nothing here is a second opinion on
+    // the tally above it: the count is TurnDetector.cleanJibeCount, which is a strict subset of
+    // that row's green, and the rate is that same count over the session's own clock.
+    //
+    // It sheds CONTENT before size, exactly as the tally and the verdict row do: the RATE goes
+    // first, because a count is a fact and a rate is a reading of it, and "★ 12" alone is still
+    // the whole point of the row. Whether the rate is kept is decided at the FLOOR font, so a
+    // row that could hold it at FONT_SMALL is never given a bigger font instead.
+    //
+    // Nothing at all before the first counted turn — "★ 0" over an empty session is not a fact
+    // yet, the same rule the verdict row keeps one row further down.
+    hidden function drawCleanRow(dc as Dc, cx as Number, y as Number, cy as Number,
+            radius as Number, t as TurnDetector, elapsedS as Float) as Void {
+        if (t.turnCount <= 0) {
+            return;
+        }
+        var count = t.cleanJibeCount.toString();
+        var cph = PageModel.fmtCph(t.cleanJibeCount, elapsedS);
+        var s = Glyphs.size(dc);
+        var budget = rowBudget(radius, y - cy, inkH(dc, TEXT_FONTS[CLEAN_FROM]));
+        var rate = cleanRowWidth(dc, s, count, cph, true, TEXT_FONTS[TALLY_FLOOR]) <= budget;
+        var f = cleanRowFont(dc, s, count, cph, rate, budget);
+        var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
+        var x = cx - cleanRowWidth(dc, s, count, cph, rate, f) / 2;
+        var col = Ink.cleanJibe();
+        dc.setColor(col, Graphics.COLOR_TRANSPARENT);
+        Glyphs.drawStar(dc, x + s / 2, y, s);
+        x += s + CLEAN_GLYPH_GAP;
+        dc.drawText(x, y, f, count, LV);
+        if (!rate) {
+            return;
+        }
+        x += dc.getTextWidthInPixels(count, f) + TURNS_OK_GAP;
+        // The rate is WHITE, not the clean ink: the ink belongs to the mark and the count it
+        // labels, and a second number in the same colour would read as a second count.
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, y, f, cph, LV);
+        x += dc.getTextWidthInPixels(cph, f);
+        dc.drawText(x, y, Graphics.FONT_XTINY, TURNS_CPH_SUFFIX, LV);
+    }
+
+    // Width of the clean row in `f`, with or without the rate half. Static and shared with the
+    // layout test, like every other width on this page.
+    static function cleanRowWidth(dc as Dc, glyph as Number, count as String, cph as String,
+            rate as Boolean, f as Graphics.FontType) as Number {
+        var w = glyph + CLEAN_GLYPH_GAP + dc.getTextWidthInPixels(count, f);
+        if (rate) {
+            w += TURNS_OK_GAP + dc.getTextWidthInPixels(cph, f)
+                + dc.getTextWidthInPixels(TURNS_CPH_SUFFIX, Graphics.FONT_XTINY);
+        }
+        return w;
+    }
+
+    // The row's font. The loop is empty while CLEAN_FROM is the floor — and it is written as a
+    // loop anyway, because the ladder is the page's rule and a row that is one day given a
+    // bigger band should step down it like every other, not be a special case somebody has to
+    // notice.
+    static function cleanRowFont(dc as Dc, glyph as Number, count as String, cph as String,
+            rate as Boolean, budget as Number) as Graphics.FontType {
+        for (var i = CLEAN_FROM; i < TALLY_FLOOR; i++) {
+            if (cleanRowWidth(dc, glyph, count, cph, rate, TEXT_FONTS[i]) <= budget) {
+                return TEXT_FONTS[i];
+            }
+        }
+        return TEXT_FONTS[TALLY_FLOOR];
     }
 
     // The giant tally: three counts in a NUMBER font with two dim dots between them. Number
@@ -1667,14 +1773,18 @@ class RecordingView extends WatchUi.View {
     // `hG` is the giant tally's INK height (0.9.2, see heroRowY): 39 px of NUMBER_MEDIUM
     // leading on a 454 px glass that the four rows under it were being pushed down by. The
     // bottom row's chord gains 32 px of it, which is most of what pays for its bigger font.
-    static function turnsRowY(cy as Number, hT as Number, hG as Number, hK as Number,
-            hD as Number, hS as Number, row as Number) as Number {
-        var y = cy - (hT + hG + hK + hD + hS) / 2;
+    // Turns-page rows: 0 header · 1 giant tally · 2 CLEAN JIBE row · 3 streaks · 4 outcome
+    // strip · 5 verdict. `hC` joined the stack in 0.9.5 and is the clean-jibe row's band;
+    // every other band is unchanged, and the block stays centred by construction.
+    static function turnsRowY(cy as Number, hT as Number, hG as Number, hC as Number,
+            hK as Number, hD as Number, hS as Number, row as Number) as Number {
+        var y = cy - (hT + hG + hC + hK + hD + hS) / 2;
         if (row == 0) { return y + hT / 2; }
         if (row == 1) { return y + hT + hG / 2; }
-        if (row == 2) { return y + hT + hG + hK / 2; }
-        if (row == 3) { return y + hT + hG + hK + hD / 2; }
-        return y + hT + hG + hK + hD + hS / 2;
+        if (row == 2) { return y + hT + hG + hC / 2; }
+        if (row == 3) { return y + hT + hG + hC + hK / 2; }
+        if (row == 4) { return y + hT + hG + hC + hK + hD / 2; }
+        return y + hT + hG + hC + hK + hD + hS / 2;
     }
 
     // Width of the tally row: three counts, two separators, and — when it is being shown —

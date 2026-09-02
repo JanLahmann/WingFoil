@@ -59,7 +59,14 @@ the listing text should gain instead is the rest of the 0.9.4 device list — se
 
 ### What's New (live text)
 
+**The 0.9.5 entry below is DRAFTED, not yet live** — written with the build, uploaded after it;
+everything under it is the store's own text as transcribed on 1 September 2026. (There is no
+0.9.4 entry to sit above: 0.9.4 was a device-list release and its note was never added here,
+so 0.9.3 is what the store currently leads with.)
+
 ```
+0.9.5: the clean jibe is now on your wrist. The Turns page and the post-save summary carry a star, the number of clean jibes you have landed, and your CPH — clean jibes per hour — and a clean jibe now gets its own rising three-tick buzz instead of the plain fly-through tick, so you can tell one from the other without looking. If you would rather have the old buzz back, turn it off under Garmin Connect → CleanJibe → Settings.
+
 0.9.3: the app is now called CleanJibe (same app, new name — cleanjibe.org). Pump strokes are now counted only in real pumping bursts, so totals drop to realistic numbers and match the phone analysis.
 
 0.9.2: bigger and brighter - all text full white, larger numbers on nearly every page, the foil page's numbers in a larger table, and the map page is drawn by the app itself (teal where you flew, grey where you did not) so it works on every watch and while paused.

@@ -609,6 +609,79 @@ function rejectedSweepsAreInvisibleToStreaks(logger as Test.Logger) as Boolean {
     return true;
 }
 
+// ---- Clean jibes (device app 0.9.5, docs/presentation.md "Clean jibe") ----
+// `cleanJibeCount` is the count the watch's CPH divides by an hour, and it is the INTERSECTION
+// of two facts decided at two different moments: the sweep was classified a JIBE when it
+// closed, and it was SUCCESSFUL when its outcome window resolved. Every way of getting that
+// intersection wrong looks like a plausible number on a page, so all four corners are pinned
+// here — a clean jibe, a successful TACK, a jibe he swam out of, and a jibe with no axis to
+// name it.
+(:test)
+function cleanJibesAreSuccessfulJibesAndNothingElse(logger as Test.Logger) as Boolean {
+    var cfg = coreDefaults();
+    cfg.setWindDirection(0);                    // wind from north
+
+    // (1) 120 -> 240 through dead downwind at a constant 8 m/s: a jibe, carried, so a clean one
+    var d = new TurnDetector(cfg);
+    runStraight(d, 5, 120.0, 8.0);
+    runSweep(d, 120.0, 30.0, 4, 8.0);
+    runStraight(d, 6, 240.0, 8.0);
+    Test.assertMessage(d.jibeCount == 1, "not a jibe: " + d.jibeCount.toString());
+    Test.assertMessage(d.successCount == 1, "a jibe carried at 8 m/s throughout is successful");
+    Test.assertMessage(d.cleanJibeCount == 1,
+        "a successful jibe must be a clean jibe, got " + d.cleanJibeCount.toString());
+    Test.assertMessage(d.lastCleanJibe, "lastCleanJibe was not published for a clean jibe");
+
+    // (2) 300 -> 60, the same shape through HEAD to wind: a tack, equally well carried, and
+    // NOT a clean jibe. This is the assertion that stops cleanJibeCount drifting into being a
+    // second spelling of successCount.
+    var t = new TurnDetector(cfg);
+    runStraight(t, 5, 300.0, 8.0);
+    runSweep(t, 300.0, 30.0, 4, 8.0);
+    runStraight(t, 6, 60.0, 8.0);
+    Test.assertMessage(t.tackCount == 1, "not a tack: " + t.tackCount.toString());
+    Test.assertMessage(t.successCount == 1, "the tack was carried just as well");
+    Test.assertMessage(t.cleanJibeCount == 0,
+        "a successful TACK was counted as a clean jibe");
+    Test.assertMessage(!t.lastCleanJibe, "lastCleanJibe was published for a tack");
+
+    // (3) a jibe he swam out of: classified, counted, and not clean — the speed floor is the
+    // whole point of the word.
+    var w = new TurnDetector(cfg);
+    runStraight(w, 5, 120.0, 8.0);
+    runSweep(w, 120.0, 30.0, 4, 8.0);
+    runStraight(w, 14, 240.0, 0.2);
+    Test.assertMessage(w.jibeCount == 1, "the swim was still a jibe");
+    Test.assertMessage(w.cleanJibeCount == 0, "a jibe he swam out of is not clean");
+    Test.assertMessage(!w.lastCleanJibe,
+        "lastCleanJibe must go false again on the next turn that is not one");
+
+    // (4) NO WIND AXIS, the same carried 180: a generic turn, successful, and not a clean jibe,
+    // because nothing named it a jibe. This is the shape of the watch's auto-wind session
+    // before the estimator locks — CPH under-reads there, deliberately and conservatively
+    // (TurnDetector.backfillWindSplit).
+    var g = new TurnDetector(coreDefaults());
+    runStraight(g, 5, 120.0, 8.0);
+    runSweep(g, 120.0, 30.0, 4, 8.0);
+    runStraight(g, 6, 240.0, 8.0);
+    Test.assertMessage(g.turnCount == 1, "the sweep was not counted at all");
+    Test.assertMessage(g.jibeCount == 0, "there was no axis to call it a jibe");
+    Test.assertMessage(g.successCount == 1, "it was carried, axis or no axis");
+    Test.assertMessage(g.cleanJibeCount == 0,
+        "an unclassified turn cannot be a clean JIBE");
+
+    // and the invariant every page draws on: clean jibes are a subset of both populations
+    Test.assertMessage(d.cleanJibeCount <= d.jibeCount && d.cleanJibeCount <= d.successCount,
+        "clean jibes must be a subset of the jibes AND of the successful turns");
+
+    logger.debug("clean jibes: jibe " + d.cleanJibeCount.toString() + "/"
+        + d.jibeCount.toString() + ", tack " + t.cleanJibeCount.toString() + "/"
+        + t.tackCount.toString() + ", swim " + w.cleanJibeCount.toString() + "/"
+        + w.jibeCount.toString() + ", no axis " + g.cleanJibeCount.toString() + "/"
+        + g.turnCount.toString());
+    return true;
+}
+
 
 // The amendment: a swim that no turn explains still ends the run. A rider who ventilates the
 // foil on a straight reach and goes in HAS been in the water, and a "dry" streak that counted

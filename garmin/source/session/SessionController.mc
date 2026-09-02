@@ -113,7 +113,11 @@ class SessionController {
                 }
             }
             if (turnEvent >= TurnDetector.EVENT_FLEW) {
-                AlertManager.turnOutcome(engine.turns.lastOutcome);
+                // One turn, one buzz: `turnResolved` picks the clean-jibe flourish over the
+                // ladder rhythm when this one was a clean jibe, rather than firing both and
+                // letting the global floor eat whichever lost the race.
+                AlertManager.turnResolved(engine.turns.lastOutcome,
+                    engine.turns.lastCleanJibe);
             }
             if (pumpEvent == PumpDetector.EVENT_TAKEOFF) {
                 AlertManager.takeoff();
@@ -337,6 +341,19 @@ class SessionController {
         // keeps the payload and retries.
         PhoneLink.sendSummary(self);
         return ok;
+    }
+
+    // The session's own clock, in seconds, valid at any moment of its life — the ONE
+    // denominator every "per hour" number on this watch divides by, and the same one the
+    // post-save verdict page already prints as "of 1:47:12".
+    //
+    // `elapsedS` is stamped at save and is 0 until then, so during recording this is the
+    // engine's timer and afterwards it is the wall clock including pauses. The two differ by
+    // exactly the paused time, which is the honest answer to "how long was I out there" on
+    // either side of the save; and the alternative — a rate that changes the moment you press
+    // save because the denominator did — is the thing this function exists to prevent.
+    function elapsedNowS() as Float {
+        return elapsedS > 0 ? elapsedS.toFloat() : engine.timerS;
     }
 
     // FIT total_elapsed_time in whole seconds — wall clock from start to save, paused time

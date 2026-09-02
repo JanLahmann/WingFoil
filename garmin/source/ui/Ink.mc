@@ -83,6 +83,15 @@ module Ink {
             ? DesignTokens.OUTCOME_COURSE_CHANGE_MIP : DesignTokens.OUTCOME_COURSE_CHANGE;
     }
 
+    // The clean jibe. A STRICTER question than the ladder's top rung — score carried AND the
+    // foil never lost across the scored window — so it gets an ink of its own and may not
+    // borrow `ladderFlew()`. If it did, the Turns page would draw one green for "flew through"
+    // and the same green for "flew through and carried it", which is the whole distinction the
+    // metric exists to make (docs/presentation.md "Clean jibe").
+    function cleanJibe() as Number {
+        return isMip() ? DesignTokens.CLEAN_JIBE_MIP : DesignTokens.CLEAN_JIBE;
+    }
+
     // Effort, not verdict: a record is something he DID, not something that went well.
     // The PB flash and the record numbers use this, so green never means "personal best".
     function effortWindow() as Number {

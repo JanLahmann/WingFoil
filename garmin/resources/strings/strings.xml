@@ -22,6 +22,8 @@
     <string id="SetAlertPb">Vibrate on speed PB</string>
     <string id="SetAlertFlight">Vibrate on longest flight</string>
     <string id="SetAlertTurn">Vibrate on turn outcome</string>
+    <string id="SetAlertCleanJibe">Vibrate on clean jibe</string>
+    <string id="SetAlertCleanJibeNote">A clean jibe — a jibe you fly all the way through carrying your speed — gets its own rising three-tick buzz instead of the plain fly-through tick, so you can tell one from the other without looking. Turn it off to get the ordinary turn-outcome buzz back.</string>
     <string id="SetWindDir">Wind direction (deg from, -1 = unset)</string>
     <string id="SetAutoWind">Estimate wind on the watch</string>
     <string id="SetTurnHabit">I mostly do</string>
