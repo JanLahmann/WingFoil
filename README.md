@@ -25,8 +25,8 @@ code with a `discipline=wingfoil` developer field.
 | `docs/` | The contracts: `plan.md` · `fit-schema.md` · `algorithms.md` · `testing.md` · `decisions.md` |
 
 Data pipeline (no servers): watch FIT → Garmin Connect → intervals.icu → iOS app pulls the
-original FIT via personal API key. Backfill via Garmin GDPR export. Wind via Open-Meteo
-(CC-BY 4.0, https://open-meteo.com/).
+original FIT via personal API key. Backfill via Garmin GDPR export. Wind is estimated
+on-device from the track (no weather service is contacted).
 
 ## Getting started
 

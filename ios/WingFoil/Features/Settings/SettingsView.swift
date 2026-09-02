@@ -272,7 +272,7 @@ struct SettingsView: View {
         } header: {
             Text("About")
         } footer: {
-            Text("Wind data by Open-Meteo.com, CC BY 4.0.")
+            Text("Wind is estimated on this device from your track.")
         }
     }
 }
