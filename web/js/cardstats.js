@@ -163,10 +163,11 @@ export function keyMetricEntries(g) {
   const avg = s.avgSpeedKmh === null || s.avgSpeedKmh === undefined
     ? "—" : `${nf(s.avgSpeedKmh / 1.852, 2)} kn`;
 
-  // Jibes are what the rider asked for and what JPH counts a row below, so the tally has
+  // Jibes are what the rider asked for and what CPH counts a row below, so the tally has
   // to be about the same turns. A session whose wind axis never resolved has no jibes at
   // all, and an empty ladder over an afternoon of turns would read as "nothing happened" —
-  // so it falls back to every counted turn, the same way the rate row falls back to TPH.
+  // so it falls back to every counted turn, the same way the rate row falls back to TPH —
+  // and on the same test, so the two rows can never disagree about which set they name.
   // The caption says which, so the three numbers can never be read as the other set.
   // The caption also carries the CLEAN count — the jibes he flew all the way through
   // carrying his speed (the engine's `success` flag against `turnSuccessPct`). It is the
@@ -209,11 +210,23 @@ export function keyMetricEntries(g) {
                row: 2 });
   }
 
-  // `durationS <= 0` makes the engine report all four rates as null: there is no hour to
+  // `durationS <= 0` makes the engine report all five rates as null: there is no hour to
   // divide by, which is an absence and never a flattering 0.0. The row disappears.
+  //
+  // The rate the block prints is **CPH** — clean jibes per hour (engine 0.10.0), the jibes
+  // he flew all the way through carrying his speed. It is the metric the rider is chasing,
+  // and it is the same verdict the tally's caption counts one row up, so the two lines of
+  // the block now agree about what a good session is. JPH stays measured and stays in the
+  // turn analytics; it is simply not the headline.
+  //
+  // The fallback is the tally's, and it is the tally's on purpose: TPH when the session
+  // named **no jibes at all** (an unresolved wind axis), CPH otherwise — including a
+  // measured `0.0` on an afternoon of jibes he did not ride, which is a verdict the block
+  // is entitled to print and TPH would hide.
   if (s.wetPerHour !== null && s.wetPerHour !== undefined) {
-    out.push((s.jibesPerHour > 0 || !(s.turnsPerHour > 0))
-      ? { key: "jph", label: "JPH · dry jibes per hour", value: nf(s.jibesPerHour, 1), row: 3 }
+    out.push((t.jibes > 0 || !(s.turnsPerHour > 0))
+      ? { key: "cph", label: "CPH · clean jibes per hour",
+          value: nf(s.cleanJibesPerHour, 1), row: 3 }
       : { key: "tph", label: "TPH · turns per hour", value: nf(s.turnsPerHour, 1), row: 3 });
     out.push({ key: "wph", label: "WPH · swims per hour", value: nf(s.wetPerHour, 1), row: 3 });
   }

@@ -799,7 +799,8 @@ original's, byte for byte of meaning. Nothing degrades, so there is no degradati
 
 What the example therefore shows: 645 s elapsed, **67.9 %** on foil (431 s), **2** flights
 (the long one 392 s / 2 222 m), **2.559 km**, **10** counted jibes and no tacks — 8 flown
-through, 2 fallen, 5 port / 5 starboard — **44.7 JPH** and **11.2 WPH**, best 2 s
+through, 2 fallen, 5 clean, 5 port / 5 starboard — **27.9 CPH** (44.7 JPH) and
+**11.2 WPH**, best 2 s
 **13.47 kn**, alpha 500 **11.70 kn**, wind from **196°** at full confidence, 4 takeoff
 attempts of which 2 succeeded on **31** pump strokes (286 before engine 0.8.0 taught the
 total to reject chop — docs/algorithms.md "The session total") of which **5** in flight (60
