@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v30";     // v30: the share card can put a map behind the track, if asked
+const VERSION = "v31";     // v31: the privacy page, and a link to it in all three footers
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
@@ -84,9 +84,11 @@ const APP_SHELL = [
   // on install is the one installing the ANALYZER, who reaches the homepage only on the way
   // back out and reaches it online. Its box is still reserved by `aspect-ratio`, so offline
   // the hero is one tidy empty plate beside a headline that says the same thing in words.
-  // /invite/ is not precached either: it is read once, at a desk, next to a watch. Neither
-  // is the umami script — it is a third-party URL, nothing calls into it, and an offline
-  // page renders whole without it.
+  // /invite/ is not precached either: it is read once, at a desk, next to a watch. Nor is
+  // /privacy/, for the same reason and more so — it is read once, before an install, by a
+  // person deciding whether to trust the thing, which is not a decision anyone makes on a
+  // train with no signal. Neither is the umami script — it is a third-party URL, nothing
+  // calls into it, and an offline page renders whole without it.
   "img/peek-track.png",
   "img/peek-speed.png",
   "img/peek-turns.png",
