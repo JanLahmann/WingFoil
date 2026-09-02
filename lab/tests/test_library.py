@@ -283,3 +283,199 @@ def test_the_clean_jibe_series_are_per_session_and_hole_tolerant():
                                    "cph", "pumps", "turnSide"]
     assert [p["v"] for p in charts["cleanJibes"]["lines"][0]["points"]] == [5.0, None]
     assert [p["v"] for p in charts["cph"]["lines"][0]["points"]] == [5.0, None]
+
+
+# ------------------------------------------------------------------------- periods
+#
+# Four ways of naming a set of afternoons, one aggregate block. These are the *rules* —
+# the boundary cases, written down as arithmetic somebody can check by eye. The
+# platform-to-platform contract is a file instead (`fixtures/periods/periods.expected.json`,
+# generated from `library` and asserted by both apps), because two hand-written suites
+# agreeing today is not two implementations that cannot drift.
+
+
+def at(ident: str, day: str, spot: str, lat: float | None = 45.876,
+       lon: float | None = 10.871, **overrides) -> dict:
+    """A session on a day, at a place. The epoch is derived from the day so `_sorted`
+    keeps the reading order, which is what every "oldest first" rule below depends on."""
+    epoch = library._epoch(f"{day}T08:00:00Z")
+    geo = None if lat is None else {"lat": lat, "lon": lon}
+    return entry(ident, day, epoch, spot=spot, geo=geo,
+                 rateDurationS=overrides.pop("rateDurationS", 3600.0), **overrides)
+
+
+def test_a_trip_is_one_place_and_no_gap_wider_than_three_days():
+    """Three days is still the same holiday — a trip has blown-out days in it. Four days
+    apart is a second visit."""
+    ds = [at("a", "2026-07-31", "Garda"), at("b", "2026-08-03", "Garda"),
+          at("c", "2026-08-07", "Garda"), at("d", "2026-08-08", "Garda")]
+    trips = library.periods(ds)["trips"]
+    assert [t["sessionIds"] for t in trips] == [["c", "d"], ["a", "b"]]
+    assert [t["title"] for t in trips] == ["Garda · 7 Aug – 8 Aug",
+                                           "Garda · 31 Jul – 3 Aug"]
+
+
+def test_one_afternoon_somewhere_is_not_a_trip():
+    ds = [at("solo", "2026-06-13", "Rheinstetten", lat=48.97, lon=8.32),
+          at("a", "2026-07-31", "Garda"), at("b", "2026-08-01", "Garda")]
+    assert [t["sessionIds"] for t in library.periods(ds)["trips"]] == [["a", "b"]]
+
+
+def test_trips_cluster_on_coordinates_not_on_the_filenames_spelling():
+    """The corpus spells one beach three ways — `nago-torbole-windsurfen`, `-foilmotion`,
+    `-wingfoiling` — because the spot is derived from the filename. A trip detected on the
+    name alone would split one week at Garda into three holidays."""
+    ds = [at("a", "2026-07-31", "Nago Torbole Windsurfen"),
+          at("b", "2026-08-01", "Nago Torbole Foilmotion", lat=45.8765, lon=10.8715),
+          at("c", "2026-08-02", "Nago Torbole Wingfoiling", lat=45.8755, lon=10.8705)]
+    trips = library.periods(ds)["trips"]
+    assert len(trips) == 1
+    assert trips[0]["sessionIds"] == ["a", "b", "c"]
+    # The heading takes the name most of the afternoons carry; ties go to the earliest.
+    assert trips[0]["spot"] == "Nago Torbole Windsurfen"
+
+
+def test_two_beaches_on_one_lake_are_two_places():
+    """3 km, deliberately looser than the phone's 500 m and still far tighter than a lake:
+    Torbole and Malcesine are one week at Garda and two different spots."""
+    ds = [at("a", "2026-07-31", "Torbole"), at("b", "2026-08-01", "Torbole"),
+          at("c", "2026-07-31", "Malcesine", lat=45.765, lon=10.810),
+          at("d", "2026-08-01", "Malcesine", lat=45.765, lon=10.810)]
+    trips = library.periods(ds)["trips"]
+    assert sorted(t["spot"] for t in trips) == ["Malcesine", "Torbole"]
+
+
+def test_a_session_with_no_anchor_is_placed_by_the_name_it_already_carries():
+    """A library saved before schema 7 has no coordinates at all, and must still produce
+    trips: the filename's guess is the only thing those rows have."""
+    ds = [at("a", "2026-07-31", "Garda"), at("b", "2026-08-01", "Garda", lat=None, lon=None)]
+    trips = library.periods(ds)["trips"]
+    assert [t["sessionIds"] for t in trips] == [["a", "b"]]
+
+
+def test_months_are_cut_on_the_riders_own_calendar_day():
+    """22:30 UTC on 31 August at +02:00 is 1 September where the rider was standing, and
+    a month bucketed on the UTC instant would file it under the month before it happened."""
+    late = entry("late", "2026-08-31", library._epoch("2026-08-31T22:30:00Z"),
+                 dateLocal="2026-09-01", spot="Garda")
+    early = entry("early", "2026-08-30", library._epoch("2026-08-30T10:00:00Z"),
+                  dateLocal="2026-08-30", spot="Garda")
+    months = library.periods([early, late])["months"]
+    assert [(m["key"], m["sessionIds"]) for m in months] \
+        == [("2026-09", ["late"]), ("2026-08", ["early"])]
+
+
+def test_the_season_runs_from_april_and_is_named_for_the_year_it_opened():
+    """1 April → 31 March, the cut the Trends range picker has always used. A February
+    afternoon belongs to the winter that started the previous April."""
+    ds = [at("spring", "2026-04-01", "Garda"), at("winter", "2027-02-14", "Garda"),
+          at("next", "2027-04-01", "Garda")]
+    seasons = library.periods(ds)["seasons"]
+    assert [(s["key"], s["title"], s["sessionIds"]) for s in seasons] == [
+        ("2027", "Season 2027", ["next"]),
+        ("2026", "Season 2026/27", ["spring", "winter"]),
+    ]
+    # March belongs to the season that opened the April before it, not to its own year.
+    march = library.periods([at("march", "2027-03-31", "Garda")])["seasons"]
+    assert [(s["key"], s["title"]) for s in march] == [("2026", "Season 2026/27")]
+
+
+def test_a_season_that_has_not_crossed_a_year_is_just_the_year():
+    ds = [at("a", "2026-05-01", "Garda"), at("b", "2026-09-01", "Garda")]
+    assert library.periods(ds)["seasons"][0]["title"] == "Season 2026"
+
+
+# ----------------------------------------------------------------- the aggregate block
+
+
+def block_of(ds: list) -> dict:
+    return {e["key"]: e["value"] for e in library.period_block(ds, spots=1)}
+
+
+def test_the_block_is_the_one_list_in_the_one_order():
+    keys = [k for k, _l, _f in library.PERIOD_BLOCK]
+    assert keys == ["sessions", "hours", "distance", "flights", "foilPct", "cleanJibes",
+                    "cph", "turns", "cleanJibeRate", "wph", "best2s", "best10s",
+                    "longestFlight", "longestDryStreak", "spots"]
+    # A preset may only ever drop an entry, so `lean` cannot name one the block lacks.
+    assert set(library.PERIOD_LEAN_KEYS) <= set(keys)
+
+
+def test_a_rate_over_a_period_divides_summed_by_summed():
+    """Ten minutes with one clean jibe and three hours with three is not "6.0 and 1.0, so
+    3.5 an hour" — it is four clean jibes in three hours and ten minutes."""
+    short = at("short", "2026-08-01", "Garda", rateDurationS=600.0,
+               turns={"jibes": 6, "jibesSuccessful": 1})
+    long = at("long", "2026-08-02", "Garda", rateDurationS=10800.0,
+              turns={"jibes": 12, "jibesSuccessful": 3})
+    got = block_of([short, long])
+    assert got["hours"] == "3.2 h"                       # 11400 s
+    assert got["cleanJibes"] == "4"
+    assert got["cph"] == "1.3"                           # 4 / (11400/3600) = 1.263
+    # …and emphatically not the mean of the two sessions' own rates.
+    assert got["cph"] != "3.5"
+
+
+def test_the_period_divides_by_the_engines_own_span_so_one_session_agrees_with_itself():
+    """`rateDurationS` is the denominator every session rate already uses; `durationS` is
+    the FIT's elapsed time and is a third longer on one afternoon in the corpus. A month
+    holding one session must report that session's CPH, not a second opinion about it."""
+    one = at("one", "2026-08-01", "Garda", rateDurationS=3600.0, durationS=5400.0,
+             turns={"jibes": 8, "jibesSuccessful": 5})
+    assert block_of([one])["cph"] == "5.0"
+    # A row saved before schema 7 has only the elapsed time, and that is what it divides by.
+    old = dict(one)
+    old.pop("rateDurationS")
+    assert block_of([old])["cph"] == "3.3"
+
+
+def test_on_foil_share_is_weighted_by_time_on_the_water():
+    """Total foil time over total on-water time — not the mean of the percentages, which
+    would let a ten-minute session swing the number as hard as a two-hour one."""
+    big = at("big", "2026-08-01", "Garda", foilTimeS=3600.0, foilPct=50.0)
+    small = at("small", "2026-08-02", "Garda", foilTimeS=90.0, foilPct=10.0)
+    # 3690 s of foil over 7200 + 900 s on the water.
+    assert block_of([big, small])["foilPct"] == "45.6 %"
+
+
+def test_the_clean_jibe_rate_keeps_its_floor_over_the_periods_own_total():
+    thin = at("thin", "2026-08-01", "Garda", turns={"jibes": 4, "jibesSuccessful": 4})
+    assert "cleanJibeRate" not in block_of([thin])
+    second = at("second", "2026-08-02", "Garda", turns={"jibes": 4, "jibesSuccessful": 1})
+    # Eight jibes between them clear the floor neither afternoon could clear alone.
+    assert block_of([thin, second])["cleanJibeRate"] == "62.5 %"
+
+
+def test_a_fact_no_session_can_supply_is_dropped_and_never_zeroed():
+    """The block's own half of "absent is never 0": a period whose rows all predate a
+    field has no answer, and an entry that is not there cannot be misread as a verdict."""
+    bare = at("bare", "2026-08-01", "Garda", wetExits=None,
+              turns={"jibes": 8, "jibesSuccessful": 5, "longestDryStreak": None})
+    got = block_of([bare])
+    assert "wph" not in got and "longestDryStreak" not in got
+    # A measured zero is still a value.
+    dry = at("dry", "2026-08-01", "Garda", wetExits=0)
+    assert block_of([dry])["wph"] == "0.0"
+
+
+def test_the_custom_range_is_inclusive_at_both_ends():
+    ds = [at("a", "2026-08-01", "Garda"), at("b", "2026-08-04", "Garda"),
+          at("c", "2026-08-09", "Garda")]
+    assert library.custom_period(ds, "2026-08-01", "2026-08-04")["sessionIds"] == ["a", "b"]
+    assert library.custom_period(ds, None, "2026-08-04")["sessionIds"] == ["a", "b"]
+    assert library.custom_period(ds, "2026-08-04", None)["sessionIds"] == ["b", "c"]
+    empty = library.custom_period(ds, "2026-09-01", "2026-09-30")
+    assert empty["sessionIds"] == []
+    # An empty range still has a session count and a spot count — both measured zeroes.
+    assert [e["key"] for e in empty["block"]] == ["sessions", "spots"]
+
+
+def test_a_friends_afternoon_is_in_nobodys_holiday():
+    """`counts_towards_records` is the one rule, applied here as it is in `aggregate` —
+    a trip built out of a borrowed session would be a holiday somebody else had."""
+    mine = at("mine", "2026-08-01", "Garda")
+    theirs = at("theirs", "2026-08-02", "Garda", rider="Max")
+    demo = at("demo", "2026-08-03", "Garda", example=True)
+    ps = library.periods([mine, theirs, demo])
+    assert ps["trips"] == []
+    assert ps["months"][0]["sessionIds"] == ["mine"]

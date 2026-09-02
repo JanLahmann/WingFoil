@@ -53,7 +53,13 @@ from datetime import datetime, timedelta, timezone
 # an engine rate now (docs/algorithms.md "Session rates"), published beside JPH and WPH, and
 # a metric with an engine field must not be re-derived by a reader. Null on every row written
 # before it, where `_cph` still does the division — see there.
-SCHEMA = 6
+# v7 carries the three facts a *period* needs and a session never did: `rateDurationS` (the
+# engine's own cleaned session span, which is the denominator every per-hour rate divides by
+# and is not `durationS`), `wetExits` (the fell-in flight ends WPH counts), and `geo` (one
+# lat/lon, so an afternoon can be placed at a spot without trusting a filename). All three
+# null on a row written before them; `periods` degrades one metric at a time rather than
+# refusing to describe a library.
+SCHEMA = 7
 
 # The project-wide "same session" rule, in one place: a session start within +/-60 s AND a
 # duration within +/-60 s of an existing entry is the same session recorded twice (watch
@@ -265,6 +271,24 @@ def _windows(rec: dict, window_key: str | None) -> list:
     return out
 
 
+def _geo(doc) -> dict | None:
+    """The session's one anchor fix as `{lat, lon}`, or None.
+
+    `view.geo` (web_entry) already carries one row that knows both its metres and its
+    degrees — it exists for the share card's map background. The digest keeps only the two
+    degrees: a spot is a place, and the metres are about a projection this row will never
+    do. None on a recording with no fixes and on a document analysed before the anchor
+    existed, which simply cannot be placed.
+    """
+    geo = (doc.get("view") or {}).get("geo")
+    if not isinstance(geo, dict):
+        return None
+    lat, lon = _num(geo.get("lat")), _num(geo.get("lon"))
+    if lat is None or lon is None:
+        return None
+    return {"lat": round(lat, 6), "lon": round(lon, 6)}
+
+
 def digest(doc, file_name: str | None = None) -> dict:
     """Analysis document (dict or JSON text) -> the compact entry the library stores."""
     doc = _as_doc(doc)
@@ -316,6 +340,22 @@ def digest(doc, file_name: str | None = None) -> dict:
         # The engine's own strict jibe rate (0.10.0, schema 6). Copied, never recomputed:
         # `_cph` divides for a stored row that predates it and reads this everywhere else.
         "cleanJibesPerHour": _num(summ.get("cleanJibesPerHour")),
+        # The engine's *cleaned* session span (schema 7) — the denominator all four session
+        # rates share (docs/algorithms.md "Session rates"). Deliberately beside `durationS`
+        # rather than instead of it: `durationS` is the FIT's `total_elapsed_time` and it is
+        # what the stored id is built from, so it may not move. A period's hours and its CPH
+        # divide by *this*, or a month holding one session would report a rate that
+        # disagreed with that session's own page.
+        "rateDurationS": _num(summ.get("durationS")),
+        # Every fell-in flight end — turn swims and straight-line swims alike, which is what
+        # WPH counts (`summary.wetPerHour`). Absent, never 0, on a row written before it.
+        "wetExits": _count(((summ.get("flightEnds") or {}).get("all") or {}).get("fellIn")),
+        # Where the session was, to one fix (schema 7). The digest's `spot` is derived from
+        # the *filename*, which spells one beach three ways in this project's own corpus —
+        # `nago-torbole-windsurfen`, `-foilmotion`, `-wingfoiling` — so a trip detected on
+        # the name alone would split a week at Garda into three holidays. Coordinates are
+        # what the phone clusters on (`SpotClusterer`), and this is the web's half of it.
+        "geo": _geo(doc),
         "sourceClass": meta.get("sourceClass"),
         "discipline": meta.get("discipline"),
         "sport": meta.get("sport"),
@@ -779,6 +819,497 @@ def _totals(ds: list) -> dict:
     }
 
 
+# ==================================================================== periods
+#
+# A month, a season, a trip or a range the rider typed — four ways of naming a *set of
+# afternoons*, all answered by one aggregate block (docs/presentation.md "Periods").
+#
+# Everything below is arithmetic and calendar work, which is why it is here rather than in
+# js/trends.js: the analyzer's rule is that the browser never computes a number, and a trip
+# is a number's worth of judgement (which afternoons belong to it) before it is a heading.
+# iOS says the same things in `LibraryStore.periods` and `PeriodBlock`, and the two are
+# pinned against one shared fixture — `fixtures/presentation/periods.expected.json`.
+
+
+#: How far apart two afternoons can be and still be one holiday. Three days: a trip has
+#: rest days, blown-out days and travel days in it, and a Tuesday off does not end a week
+#: at Garda. Four days apart is two visits.
+TRIP_GAP_DAYS = 3
+#: One afternoon somewhere is a session, not a trip. The heading has to be worth a heading.
+TRIP_MIN_SESSIONS = 2
+#: Spot radius for the trip clusterer. Deliberately looser than the phone's 500 m
+#: (`SpotClusterer.defaultRadiusM`), because this is not the same question: the phone is
+#: naming *launches* and wants the beach, and a trip is asking whether two afternoons were
+#: the same holiday — Torbole and Malcesine are one week at Garda and 15 km apart. 3 km
+#: keeps a lake's north shore together and still separates two spots in one city.
+TRIP_RADIUS_M = 3000
+
+_EARTH_RADIUS_M = 6_371_000
+
+#: The season cut: **1 April → 31 March**, one Northern-hemisphere water year, so a
+#: February session still counts towards the winter it belongs to. The same cut the iOS
+#: Trends range picker has always used (`TrendsView.TrendRange.season`); stated once here
+#: rather than invented a second time.
+SEASON_START_MONTH = 4
+
+_MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July",
+                "August", "September", "October", "November", "December"]
+_MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def _day(d: dict):
+    """The calendar day the *rider* had, as a `date`, or None.
+
+    `dateLocal` (schema 3) is the day in the session's own zone; `dateUtc` is the fallback
+    for a row saved before it, and is the UTC day — right for most afternoons and a day out
+    for one either side of midnight. Every bucket on this page is cut on this, because a
+    month is a fact about the rider's calendar and not about Greenwich's.
+    """
+    text = d.get("dateLocal") or d.get("dateUtc")
+    if not text:
+        return None
+    try:
+        return datetime.strptime(str(text)[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _distance_m(a: dict, b: dict) -> float:
+    """Great-circle metres — the same haversine `SpotClusterer.distance` uses."""
+    lat1, lon1, lat2, lon2 = a["lat"], a["lon"], b["lat"], b["lon"]
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp, dl = math.radians(lat2 - lat1), math.radians(lon2 - lon1)
+    h = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * _EARTH_RADIUS_M * math.atan2(math.sqrt(h), math.sqrt(max(0.0, 1 - h)))
+
+
+def _spot_clusters(ds: list) -> list[list[int]]:
+    """Group the digests into places, as lists of indices into `ds`.
+
+    Single-link greedy assignment against a moving centroid, which is exactly what the
+    phone does (`SpotClusterer.cluster`) and for the same reason: a rig-up beach is tens of
+    metres across and the next spot is kilometres away, so there is no cluster count to get
+    wrong.
+
+    A digest with **no** anchor (schema < 7, or a recording with no fixes) cannot be placed,
+    so it falls back to its filename-derived `spot` string: it joins a cluster that already
+    answers to that name, and otherwise seeds one of its own. That is weaker than
+    coordinates and is why the field was added — but a library saved last month must still
+    produce trips, and a name is the only thing those rows have.
+    """
+    clusters: list[dict] = []          # {lat, lon, n, names: set, members: [i]}
+    unplaced: list[int] = []
+    for i, d in enumerate(ds):
+        geo = d.get("geo")
+        if not isinstance(geo, dict) or _num(geo.get("lat")) is None:
+            unplaced.append(i)
+            continue
+        point = {"lat": float(geo["lat"]), "lon": float(geo["lon"])}
+        best, best_d = None, float("inf")
+        for c in clusters:
+            gap = _distance_m(point, c)
+            if gap <= TRIP_RADIUS_M and gap < best_d:
+                best, best_d = c, gap
+        if best is None:
+            clusters.append({"lat": point["lat"], "lon": point["lon"], "n": 1,
+                             "names": {str(d.get("spot") or "")}, "members": [i]})
+            continue
+        n = best["n"]
+        best["lat"] = (best["lat"] * n + point["lat"]) / (n + 1)
+        best["lon"] = (best["lon"] * n + point["lon"]) / (n + 1)
+        best["n"] = n + 1
+        best["names"].add(str(d.get("spot") or ""))
+        best["members"].append(i)
+
+    for i in unplaced:
+        name = str(ds[i].get("spot") or "")
+        home = next((c for c in clusters if name in c["names"]), None)
+        if home is None:
+            home = {"lat": None, "lon": None, "n": 0, "names": {name}, "members": []}
+            clusters.append(home)
+        home["members"].append(i)
+
+    return [sorted(c["members"]) for c in clusters]
+
+
+def _cluster_name(ds: list, members: list[int]) -> str:
+    """What to call a cluster: the spot name most of its afternoons carry.
+
+    Ties go to the earliest session's, because `ds` is oldest-first and the first name a
+    place was given is the one the rider has been reading ever since. The name is still the
+    filename's guess — the *view* applies the one correction (`sportCorrected`), here as on
+    every other surface that prints it.
+    """
+    counts: dict[str, int] = {}
+    for i in members:
+        name = str(ds[i].get("spot") or "").strip()
+        if name:
+            counts[name] = counts.get(name, 0) + 1
+    if not counts:
+        return "Session"
+    best = max(counts.values())
+    for i in members:                                   # oldest first
+        name = str(ds[i].get("spot") or "").strip()
+        if counts.get(name) == best:
+            return name
+    return "Session"
+
+
+def _runs(ds: list, members: list[int]) -> list[list[int]]:
+    """Split one place's afternoons into visits, on the `TRIP_GAP_DAYS` rule.
+
+    Members with no usable date cannot be placed in time and are simply left out — a trip
+    is a span, and a session that cannot say which day it was on cannot be inside one.
+    """
+    dated = [(i, _day(ds[i])) for i in members]
+    dated = sorted(((i, day) for i, day in dated if day is not None), key=lambda p: p[1])
+    out: list[list[int]] = []
+    run: list[int] = []
+    previous = None
+    for i, day in dated:
+        if previous is not None and (day - previous).days > TRIP_GAP_DAYS:
+            out.append(run)
+            run = []
+        run.append(i)
+        previous = day
+    if run:
+        out.append(run)
+    return out
+
+
+# ------------------------------------------------------------------ the block
+
+
+def _f_int(v):
+    return f"{int(round(v))}"
+
+
+def _f_hours(v):
+    return f"{v:.1f} h"
+
+
+def _f_km(v):
+    return f"{v:.1f} km"
+
+
+def _f_pct(v):
+    return f"{v:.1f} %"
+
+
+def _f_rate(v):
+    return f"{v:.1f}"
+
+
+def _f_kn(v):
+    return f"{v:.2f} kn"
+
+
+def _f_clock(v):
+    """`m:ss min` / `h:mm h` — the key-metrics block's own duration rule (`hm` in
+    js/cardstats.js, `KeyMetrics.duration` on iOS), so a flight on a period card reads the
+    way a duration reads everywhere else in this project."""
+    total = max(0, int(round(v)))
+    if total >= 3600:
+        m = int(round(total / 60))
+        return f"{m // 60}:{m % 60:02d} h"
+    return f"{total // 60}:{total % 60:02d} min"
+
+
+#: **The aggregate block**, in the one order both platforms show it in
+#: (docs/presentation.md "Periods"). `(key, label, formatter)`; the value itself is
+#: computed in `_period_facts`, once, from summed numerators over summed denominators.
+#:
+#: An entry whose fact the period cannot supply is **omitted**, not printed as a dash or a
+#: zero — the same rule `KeyMetrics.rates` follows, and the same rule that lets a card
+#: preset be a strict subset without ever inventing a cell.
+PERIOD_BLOCK = [
+    ("sessions", "sessions", _f_int),
+    ("hours", "hours on the water", _f_hours),
+    ("distance", "distance", _f_km),
+    ("flights", "flights", _f_int),
+    ("foilPct", "on foil", _f_pct),
+    ("cleanJibes", "clean jibes", _f_int),
+    ("cph", "CPH · clean jibes per hour", _f_rate),
+    ("turns", "turns", _f_int),
+    ("cleanJibeRate", "clean-jibe rate", _f_pct),
+    ("wph", "WPH · swims per hour", _f_rate),
+    ("best2s", "best 2 s", _f_kn),
+    ("best10s", "best 10 s", _f_kn),
+    ("longestFlight", "longest flight", _f_clock),
+    ("longestDryStreak", "longest dry streak", _f_int),
+    ("spots", "spots visited", _f_int),
+]
+
+#: What the period card's `lean` preset keeps — the five a rider quotes about a holiday.
+#: Keys, not a rebuilt list, so the preset can only ever *drop* an entry: the same rule the
+#: session card's `LEAN_KEYS` follows and for the same reason.
+PERIOD_LEAN_KEYS = ["sessions", "hours", "cleanJibes", "cph", "best2s"]
+
+
+def _rate_duration_s(d: dict):
+    """The seconds a period's rates divide by, for one session.
+
+    `rateDurationS` (schema 7) is the engine's own cleaned span — the denominator every
+    per-session rate already uses — so a month holding one afternoon reports that
+    afternoon's CPH and not a second opinion about it. `durationS` is the fallback for a
+    row saved before the field, where it is the closest thing stored.
+    """
+    engine = _num(d.get("rateDurationS"))
+    return engine if engine is not None else _num(d.get("durationS"))
+
+
+def _sum(ds: list, pick):
+    """Σ over the digests that can answer, or None when *none* of them can.
+
+    The distinction is the block's whole honesty: a period whose rows all predate a field
+    has no answer and drops the entry, where a period in which the rider genuinely did
+    none of something has a measured zero and prints it.
+    """
+    values = [pick(d) for d in ds]
+    values = [v for v in values if v is not None]
+    return sum(values) if values else None
+
+
+def _max(ds: list, pick):
+    values = [pick(d) for d in ds if pick(d) is not None]
+    return max(values) if values else None
+
+
+def _period_facts(ds: list, spots: int) -> dict:
+    """Every number the block prints, as numbers.
+
+    **Rates use the summed denominators, never the mean of the per-session rates.** Ten
+    minutes with one clean jibe and three hours with three are not "3.0 and 1.0, so 2.0 an
+    hour"; they are four clean jibes in three hours and ten minutes. The same rule already
+    governs the library totals' on-foil share, which is total foil time over total on-water
+    time and not the average of the percentages.
+    """
+    seconds = _sum(ds, _rate_duration_s) or 0.0
+    hours = seconds / 3600.0 if seconds > 0 else None
+    clean = _sum(ds, _clean_jibes)
+    jibes = _sum(ds, lambda d: _count((d.get("turns") or {}).get("jibes")))
+    wet = _sum(ds, lambda d: _count(d.get("wetExits")))
+    foil = _sum(ds, lambda d: _num(d.get("foilTimeS")))
+    on_water = _sum(ds, _on_water_s)
+    return {
+        "sessions": float(len(ds)),
+        "hours": hours,
+        "distance": _sum(ds, lambda d: _num(d.get("distanceKm"))),
+        "flights": _sum(ds, lambda d: _count(d.get("flightCount"))),
+        "foilPct": (100.0 * foil / on_water) if foil is not None and on_water else None,
+        "cleanJibes": None if clean is None else float(clean),
+        "cph": None if clean is None or hours is None else clean / hours,
+        "turns": _sum(ds, lambda d: _count((d.get("turns") or {}).get("counted"))),
+        # Same floor as the session record, over the period's own total: four clean out of
+        # four is a good week, and it is still not a rate.
+        "cleanJibeRate": (100.0 * clean / jibes)
+                         if clean is not None and jibes and jibes >= MIN_JIBES_FOR_RATE
+                         else None,
+        "wph": None if wet is None or hours is None else wet / hours,
+        "best2s": _max(ds, lambda d: _num((d.get("records") or {}).get("best2sKn"))),
+        "best10s": _max(ds, lambda d: _num((d.get("records") or {}).get("best10sKn"))),
+        "longestFlight": _max(ds, lambda d: _num(d.get("longestFlightS"))),
+        "longestDryStreak": _max(ds, lambda d: _streak(d, "longestDryStreak")),
+        "spots": float(spots),
+    }
+
+
+def period_block(ds: list, spots: int = 1) -> list:
+    """The aggregate block for one set of digests, as `{key, label, value}` entries.
+
+    Display strings, as on the session card and for the same reason: a period card is a PNG
+    in somebody else's chat thread, so every rounding and every absence has to be decided in
+    a function a test can call rather than by a binding at draw time.
+    """
+    facts = _period_facts(ds, spots)
+    out = []
+    for key, label, fmt in PERIOD_BLOCK:
+        value = facts.get(key)
+        if value is None:
+            continue
+        out.append({"key": key, "label": label, "value": fmt(value)})
+    return out
+
+
+# ------------------------------------------------------------------ the headings
+
+
+def _span_line(first, last) -> str:
+    """The period's dates in words, en-GB, the way the card's date line reads them.
+
+    One day is one date; a span inside one month names the month once; a span inside one
+    year names the year once. The year is always there, because a card outlives the season
+    it was made in.
+    """
+    if first == last:
+        return f"{first.day} {_MONTHS_LONG[first.month - 1]} {first.year}"
+    if (first.year, first.month) == (last.year, last.month):
+        return f"{first.day} – {last.day} {_MONTHS_LONG[last.month - 1]} {last.year}"
+    if first.year == last.year:
+        return (f"{first.day} {_MONTHS_LONG[first.month - 1]} – "
+                f"{last.day} {_MONTHS_LONG[last.month - 1]} {last.year}")
+    return (f"{first.day} {_MONTHS_LONG[first.month - 1]} {first.year} – "
+            f"{last.day} {_MONTHS_LONG[last.month - 1]} {last.year}")
+
+
+def _span_short(first, last) -> str:
+    """`31 Jul – 6 Aug`, for a trip heading that already carries the spot's name. The year
+    joins it only when the trip crosses one, where leaving it out would be a riddle."""
+    if first.year != last.year:
+        return (f"{first.day} {_MONTHS_SHORT[first.month - 1]} {first.year} – "
+                f"{last.day} {_MONTHS_SHORT[last.month - 1]} {last.year}")
+    if first == last:
+        return f"{first.day} {_MONTHS_SHORT[first.month - 1]}"
+    return (f"{first.day} {_MONTHS_SHORT[first.month - 1]} – "
+            f"{last.day} {_MONTHS_SHORT[last.month - 1]}")
+
+
+def season_year(day) -> int:
+    """Which season a day belongs to, named by the calendar year it opened in.
+
+    1 April → 31 March. A February afternoon belongs to the season that started the
+    previous April, which is the winter the rider actually rode it in.
+    """
+    return day.year if day.month >= SEASON_START_MONTH else day.year - 1
+
+
+def season_label(start_year: int, crosses: bool) -> str:
+    """`2026/27` for a season that has reached January, `2026` for one that has not.
+
+    A season is named for the year it opened in either way; the second half of the name
+    appears once there is a second half of the season to name.
+    """
+    return f"{start_year}/{(start_year + 1) % 100:02d}" if crosses else str(start_year)
+
+
+def _period(kind: str, key: str, title: str, ds: list, members: list[int],
+            spot: str | None = None) -> dict:
+    """One period, headed and blocked. `members` is oldest-first into `ds`."""
+    rows = [ds[i] for i in members]
+    days = [d for d in (_day(r) for r in rows) if d is not None]
+    first, last = (min(days), max(days)) if days else (None, None)
+    spots = len(_spot_clusters(rows))
+    return {
+        "kind": kind,
+        "key": key,
+        "title": title,
+        "spot": spot,
+        "dateLine": _span_line(first, last) if first else "",
+        "spanShort": _span_short(first, last) if first else "",
+        "startDate": first.isoformat() if first else None,
+        "endDate": last.isoformat() if last else None,
+        "sessionIds": [r.get("id") for r in rows],
+        "sessions": len(rows),
+        "block": period_block(rows, spots),
+    }
+
+
+def periods(digests) -> dict:
+    """Every period the library implies: **trips, then months, then seasons**, newest first.
+
+    The reader's own sessions only — `counts_towards_records`, applied here as it is in
+    `aggregate`, because a trip built out of a friend's afternoon would be a holiday
+    somebody else had.
+    """
+    ds = [d for d in _sorted(digests) if counts_towards_records(d)]
+    return {"trips": _trips(ds), "months": _months(ds), "seasons": _seasons(ds)}
+
+
+def _trips(ds: list) -> list:
+    """A trip is: the same place, afternoons no more than `TRIP_GAP_DAYS` apart, at least
+    `TRIP_MIN_SESSIONS` of them. Newest first, because the last holiday is the one being
+    looked for."""
+    out = []
+    for members in _spot_clusters(ds):
+        name = _cluster_name(ds, members)
+        for run in _runs(ds, members):
+            if len(run) < TRIP_MIN_SESSIONS:
+                continue
+            first, last = _day(ds[run[0]]), _day(ds[run[-1]])
+            title = f"{name} · {_span_short(first, last)}"
+            out.append(_period("trip", f"trip:{ds[run[0]].get('id')}", title, ds, run,
+                               spot=name))
+    out.sort(key=lambda p: (p["startDate"] or "", p["title"]), reverse=True)
+    return out
+
+
+def _months(ds: list) -> list:
+    buckets: dict[str, list[int]] = {}
+    for i, d in enumerate(ds):
+        day = _day(d)
+        if day is None:
+            continue
+        buckets.setdefault(f"{day.year:04d}-{day.month:02d}", []).append(i)
+    out = []
+    for key in sorted(buckets, reverse=True):
+        year, month = int(key[:4]), int(key[5:])
+        out.append(_period("month", key, f"{_MONTHS_LONG[month - 1]} {year}",
+                           ds, buckets[key]))
+    return out
+
+
+def _seasons(ds: list) -> list:
+    buckets: dict[int, list[int]] = {}
+    crosses: dict[int, bool] = {}
+    for i, d in enumerate(ds):
+        day = _day(d)
+        if day is None:
+            continue
+        year = season_year(day)
+        buckets.setdefault(year, []).append(i)
+        crosses[year] = crosses.get(year, False) or day.year > year
+    out = []
+    for year in sorted(buckets, reverse=True):
+        label = season_label(year, crosses[year])
+        out.append(_period("season", str(year), f"Season {label}", ds, buckets[year]))
+    return out
+
+
+def custom_period(digests, start: str | None = None, end: str | None = None) -> dict:
+    """The rider's own range, inclusive on both ends, in **local** calendar days.
+
+    Inclusive because the two date inputs are read as "from this day to that day", which is
+    what a person means by them; an exclusive end would silently drop the last afternoon of
+    a holiday, which is usually the best one. An open end is open: no start means "since the
+    first session", no end means "up to the last".
+    """
+    ds = [d for d in _sorted(digests) if counts_towards_records(d)]
+    members = []
+    for i, d in enumerate(ds):
+        day = _day(d)
+        if day is None:
+            continue
+        if start and str(day) < str(start)[:10]:
+            continue
+        if end and str(day) > str(end)[:10]:
+            continue
+        members.append(i)
+    rows = [ds[i] for i in members]
+    days = [d for d in (_day(r) for r in rows) if d is not None]
+    if days:
+        title = _span_short(min(days), max(days))
+        if min(days).year == max(days).year:
+            title = f"{title} {max(days).year}"
+    else:
+        title = "No sessions in this range"
+    key = f"custom:{start or ''}:{end or ''}"
+    return _period("custom", key, title, ds, members)
+
+
+def periods_json(digests_json: str) -> str:
+    return json.dumps(periods(digests_json), allow_nan=False)
+
+
+def custom_period_json(digests_json: str, start: str | None = None,
+                       end: str | None = None) -> str:
+    return json.dumps(custom_period(digests_json, start or None, end or None),
+                      allow_nan=False)
+
+
+# ------------------------------------------------------------------ the whole view
+
+
 def aggregate(digests) -> dict:
     """The whole Records & Trends view, in one Python call over the stored digests.
 
@@ -789,7 +1320,13 @@ def aggregate(digests) -> dict:
     ds = [d for d in _sorted(digests) if counts_towards_records(d)]
     return {"schema": SCHEMA, "count": len(ds), "totals": _totals(ds),
             "records": _records(ds), "sessionRecords": _session_records(ds),
-            "trends": _trends(ds)}
+            "trends": _trends(ds),
+            # The whole periods section rides on the aggregate the view already asks for:
+            # it reads the same digests, and a second round trip to Pyodide for the same
+            # list would be a second answer waiting to disagree with this one. Only the
+            # rider's own custom range needs a call of its own (`custom_period`).
+            "periods": {"trips": _trips(ds), "months": _months(ds),
+                        "seasons": _seasons(ds)}}
 
 
 def aggregate_json(digests_json: str) -> str:

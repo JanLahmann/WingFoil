@@ -39,6 +39,12 @@ WEB = Path(__file__).resolve().parents[1]
 REPO = WEB.parent
 GOLDENS = REPO / "fixtures" / "goldens"
 OUT = REPO / "fixtures" / "presentation"
+#: The periods fixture lives outside `OUT` on purpose: it is not derived from an analysis
+#: golden, and the orphan sweep in `write()` removes anything under `OUT` that is not.
+PERIODS_OUT = REPO / "fixtures" / "periods" / "periods.expected.json"
+
+sys.path.insert(0, str(WEB / "lab_bundle"))
+import library                                                          # noqa: E402
 
 SUFFIX = ".expected.json"
 
@@ -212,6 +218,155 @@ def render(stem: str, doc: dict) -> str:
     return json.dumps(facts(stem, doc), indent=2, ensure_ascii=False) + "\n"
 
 
+# ----------------------------------------------------------------- the periods fixture
+#
+# One synthetic library, and the periods `web/lab_bundle/library.py` makes of it. The whole
+# reason it is a *file* rather than a pair of test cases is that iOS has to read it too:
+# months, seasons, trips and the aggregate block are one contract with one reference
+# implementation (Python), and two hand-written test suites agreeing today is not the same
+# thing as two implementations that cannot drift.
+#
+# `sessions` is the input, echoed into the fixture verbatim, so the Swift side can build the
+# same `SessionRow`s from it. Everything else is Python's answer.
+#
+# The library is small and every row in it is doing a job:
+#
+#   a1 a2 a3   one trip: gaps of 1 and 3 days, and 3 is still the same holiday
+#   a4         5 days after a3 — a second visit, alone, and therefore not a trip
+#   b1 b2      a second spot 12 km away: 3 km separates two beaches on one lake
+#   a5         starts 22:30 UTC on 31 August at +02:00 — a SEPTEMBER session
+#   c1 c2      two winter afternoons 46 days apart: one season, no trip
+#   a6         no anchor fix, so it is placed by name; no swims, no streak, no 10 s
+#              record and only three jibes — a period built of it alone has to drop
+#              four entries rather than print four zeroes
+#
+# and the seasons it produces are the two spellings: 2026 reaches February 2027 and is
+# therefore "2026/27", while 2027 has not crossed a year and is just "2027".
+PERIOD_SESSIONS = [
+    {"id": "a1", "spot": "Nago Torbole", "startUtc": "2026-07-31T10:00:00Z",
+     "utcOffsetS": 7200, "lat": 45.8760, "lon": 10.8710,
+     "rateDurationS": 3600.0, "durationS": 3700.0, "distanceKm": 12.0,
+     "foilTimeS": 1800.0, "foilPct": 50.0, "flightCount": 9, "longestFlightS": 120.0,
+     "jibes": 8, "jibesSuccessful": 5, "turnsCounted": 12, "longestDryStreak": 6,
+     "wetExits": 4, "best2sKn": 14.00, "best10sKn": 12.00},
+    {"id": "a2", "spot": "Nago Torbole", "startUtc": "2026-08-01T10:00:00Z",
+     "utcOffsetS": 7200, "lat": 45.8762, "lon": 10.8712,
+     "rateDurationS": 7200.0, "durationS": 7300.0, "distanceKm": 24.0,
+     "foilTimeS": 4320.0, "foilPct": 60.0, "flightCount": 18, "longestFlightS": 240.0,
+     "jibes": 20, "jibesSuccessful": 11, "turnsCounted": 26, "longestDryStreak": 9,
+     "wetExits": 7, "best2sKn": 15.50, "best10sKn": 13.20},
+    {"id": "a3", "spot": "Nago Torbole", "startUtc": "2026-08-04T10:00:00Z",
+     "utcOffsetS": 7200, "lat": 45.8758, "lon": 10.8705,
+     "rateDurationS": 1800.0, "durationS": 1850.0, "distanceKm": 6.0,
+     "foilTimeS": 900.0, "foilPct": 50.0, "flightCount": 5, "longestFlightS": 90.0,
+     "jibes": 6, "jibesSuccessful": 4, "turnsCounted": 8, "longestDryStreak": 3,
+     "wetExits": 2, "best2sKn": 13.10, "best10sKn": 11.40},
+    {"id": "a4", "spot": "Nago Torbole", "startUtc": "2026-08-09T10:00:00Z",
+     "utcOffsetS": 7200, "lat": 45.8759, "lon": 10.8709,
+     "rateDurationS": 3600.0, "durationS": 3650.0, "distanceKm": 10.0,
+     "foilTimeS": 1440.0, "foilPct": 40.0, "flightCount": 7, "longestFlightS": 150.0,
+     "jibes": 10, "jibesSuccessful": 3, "turnsCounted": 14, "longestDryStreak": 4,
+     "wetExits": 6, "best2sKn": 12.80, "best10sKn": 10.90},
+    {"id": "b1", "spot": "Malcesine", "startUtc": "2026-08-02T12:00:00Z",
+     "utcOffsetS": 7200, "lat": 45.7650, "lon": 10.8100,
+     "rateDurationS": 5400.0, "durationS": 5500.0, "distanceKm": 18.0,
+     "foilTimeS": 2700.0, "foilPct": 50.0, "flightCount": 12, "longestFlightS": 200.0,
+     "jibes": 14, "jibesSuccessful": 7, "turnsCounted": 18, "longestDryStreak": 5,
+     "wetExits": 5, "best2sKn": 13.60, "best10sKn": 11.80},
+    {"id": "b2", "spot": "Malcesine", "startUtc": "2026-08-03T12:00:00Z",
+     "utcOffsetS": 7200, "lat": 45.7655, "lon": 10.8105,
+     "rateDurationS": 3600.0, "durationS": 3700.0, "distanceKm": 11.0,
+     "foilTimeS": 1980.0, "foilPct": 55.0, "flightCount": 8, "longestFlightS": 130.0,
+     "jibes": 9, "jibesSuccessful": 6, "turnsCounted": 11, "longestDryStreak": 7,
+     "wetExits": 3, "best2sKn": 14.40, "best10sKn": 12.60},
+    {"id": "a5", "spot": "Nago Torbole", "startUtc": "2026-08-31T22:30:00Z",
+     "utcOffsetS": 7200, "lat": 45.8761, "lon": 10.8711,
+     "rateDurationS": 1800.0, "durationS": 1900.0, "distanceKm": 5.0,
+     "foilTimeS": 720.0, "foilPct": 40.0, "flightCount": 4, "longestFlightS": 70.0,
+     "jibes": 5, "jibesSuccessful": 2, "turnsCounted": 7, "longestDryStreak": 2,
+     "wetExits": 3, "best2sKn": 11.90, "best10sKn": 10.20},
+    {"id": "c1", "spot": "Rheinstetten", "startUtc": "2026-12-30T09:00:00Z",
+     "utcOffsetS": 3600, "lat": 48.9700, "lon": 8.3200,
+     "rateDurationS": 5400.0, "durationS": 5600.0, "distanceKm": 14.0,
+     "foilTimeS": 2160.0, "foilPct": 40.0, "flightCount": 10, "longestFlightS": 110.0,
+     "jibes": 12, "jibesSuccessful": 4, "turnsCounted": 15, "longestDryStreak": 5,
+     "wetExits": 8, "best2sKn": 12.20, "best10sKn": 10.60},
+    {"id": "c2", "spot": "Rheinstetten", "startUtc": "2027-02-14T09:00:00Z",
+     "utcOffsetS": 3600, "lat": 48.9702, "lon": 8.3205,
+     "rateDurationS": 3600.0, "durationS": 3700.0, "distanceKm": 9.0,
+     "foilTimeS": 1440.0, "foilPct": 40.0, "flightCount": 6, "longestFlightS": 95.0,
+     "jibes": 7, "jibesSuccessful": 3, "turnsCounted": 9, "longestDryStreak": 4,
+     "wetExits": 5, "best2sKn": 11.50, "best10sKn": 9.80},
+    {"id": "a6", "spot": "Nago Torbole", "startUtc": "2027-05-10T10:00:00Z",
+     "utcOffsetS": 7200, "lat": None, "lon": None,
+     "rateDurationS": 2400.0, "durationS": 2500.0, "distanceKm": 7.0,
+     "foilTimeS": 1200.0, "foilPct": 50.0, "flightCount": 5, "longestFlightS": 100.0,
+     "jibes": 3, "jibesSuccessful": 2, "turnsCounted": 5, "longestDryStreak": None,
+     "wetExits": None, "best2sKn": 12.00, "best10sKn": None},
+]
+
+#: The custom ranges the fixture pins. Inclusive on both ends, in local calendar days.
+PERIOD_RANGES = [
+    {"start": "2026-08-01", "end": "2026-08-04"},
+    {"start": None, "end": "2026-07-31"},
+    {"start": "2027-01-01", "end": None},
+]
+
+PERIOD_NOTE = (
+    "Generated by web/tools/make_presentation_goldens.py from PERIOD_SESSIONS — do not "
+    "edit. `sessions` is the input, so both platforms build the same library from it; "
+    "everything else is what web/lab_bundle/library.py makes of it, and is what the iOS "
+    "PeriodTests and web/tools/verify_presentation.py 6 assert against. Python is the "
+    "reference implementation (docs/presentation.md, \"Periods\").")
+
+
+def period_digest(s: dict) -> dict:
+    """One fixture session as the stored digest shape `library` reads.
+
+    Only the fields periods touch, so the fixture stays readable: it is a contract about
+    trips, months, seasons and one block, not a second copy of the digest schema.
+    """
+    epoch = library._epoch(s["startUtc"])
+    geo = None if s.get("lat") is None else {"lat": s["lat"], "lon": s["lon"]}
+    return {
+        "schema": library.SCHEMA, "id": s["id"], "fileName": f"{s['id']}.fit",
+        "spot": s["spot"], "startUtc": s["startUtc"], "startEpoch": epoch,
+        "dateUtc": s["startUtc"][:10],
+        "dateLocal": library._local_date(epoch, s["utcOffsetS"]),
+        "utcOffsetS": s["utcOffsetS"], "geo": geo,
+        "durationS": s["durationS"], "rateDurationS": s["rateDurationS"],
+        "distanceKm": s["distanceKm"], "foilTimeS": s["foilTimeS"], "foilPct": s["foilPct"],
+        "flightCount": s["flightCount"], "longestFlightS": s["longestFlightS"],
+        "wetExits": s["wetExits"],
+        "records": {"best2sKn": s["best2sKn"], "best10sKn": s["best10sKn"]},
+        "turns": {"counted": s["turnsCounted"], "jibes": s["jibes"],
+                  "jibesSuccessful": s["jibesSuccessful"],
+                  "longestDryStreak": s["longestDryStreak"]},
+    }
+
+
+def period_facts() -> dict:
+    digests = [period_digest(s) for s in PERIOD_SESSIONS]
+    out = library.periods(digests)
+    return {
+        "note": PERIOD_NOTE,
+        "rules": {"tripGapDays": library.TRIP_GAP_DAYS,
+                  "tripMinSessions": library.TRIP_MIN_SESSIONS,
+                  "tripRadiusM": library.TRIP_RADIUS_M,
+                  "seasonStartMonth": library.SEASON_START_MONTH,
+                  "minJibesForRate": library.MIN_JIBES_FOR_RATE,
+                  "blockOrder": [key for key, _l, _f in library.PERIOD_BLOCK],
+                  "leanKeys": list(library.PERIOD_LEAN_KEYS)},
+        "sessions": PERIOD_SESSIONS,
+        "trips": out["trips"],
+        "months": out["months"],
+        "seasons": out["seasons"],
+        "custom": [{"start": r["start"], "end": r["end"],
+                    **library.custom_period(digests, r["start"], r["end"])}
+                   for r in PERIOD_RANGES],
+    }
+
+
 def goldens() -> list[Path]:
     return sorted(p for p in GOLDENS.glob(f"*{SUFFIX}"))
 
@@ -222,6 +377,7 @@ def artifacts() -> dict[Path, str]:
         stem = path.name[: -len(SUFFIX)]
         doc = json.loads(path.read_text(encoding="utf-8"))
         out[OUT / f"{stem}{SUFFIX}"] = render(stem, doc)
+    out[PERIODS_OUT] = json.dumps(period_facts(), indent=2, ensure_ascii=False) + "\n"
     return out
 
 
@@ -229,6 +385,7 @@ def write() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     built = artifacts()
     for path, content in built.items():
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
     for orphan in sorted(OUT.glob(f"*{SUFFIX}")):
         if orphan not in built:
