@@ -273,6 +273,49 @@ import Testing
         #expect(without[PeriodBlock.Key.cph] == "3.3")
     }
 
+    // MARK: - The period card
+
+    /// The card **is** the block — same entries, same order, same strings — and a preset can
+    /// only drop from it. The same contract `verify_presentation.py` 5 holds the session card
+    /// to, and 5d holds the analyzer's period card to, asked here of the phone's.
+    @Test func thePeriodCardIsTheBlockAndItsPresetOnlyDrops() async throws {
+        let fixture = try Self.loadFixture()
+        let set = try await Self.library(fixture).periods()
+        let periods = set.trips + set.months + set.seasons
+        #expect(!periods.isEmpty)
+
+        for period in periods {
+            let complete = ShareCardStats.make(period: period)
+            #expect(complete.stats.map(\.key) == period.block.map(\.key))
+            #expect(complete.stats.map(\.label) == period.block.map(\.label))
+            #expect(complete.stats.map(\.value) == period.block.map(\.value))
+            // The heading and the span are the period's own; the card re-derives neither.
+            #expect(complete.title == period.title)
+            #expect(complete.dateLine == period.dateLine)
+            // A period spans several recordings, so the speed disclaimer — a claim about one
+            // recording's speed channel — has nothing to attach to.
+            #expect(complete.disclaimer == nil)
+
+            let lean = ShareCardStats.make(period: period, preset: .lean)
+            let keep = Set(PeriodBlock.leanKeys)
+            #expect(lean.stats.map(\.key) == complete.stats.map(\.key).filter(keep.contains))
+            #expect(lean.stats.allSatisfy { stat in
+                complete.stats.contains { $0.key == stat.key && $0.value == stat.value }
+            }, "lean may drop an entry and may not reword one")
+        }
+    }
+
+    /// A title the rider typed wins over the period's own; an empty one leaves it derived.
+    @Test func thePeriodCardTakesTheRidersOwnWords() async throws {
+        let fixture = try Self.loadFixture()
+        let period = try #require(try await Self.library(fixture).periods().trips.first)
+        #expect(ShareCardStats.make(period: period, title: "").title == period.title)
+        let named = ShareCardStats.make(period: period, title: "Garda, finally",
+                                        note: "first week on the new foil")
+        #expect(named.title == "Garda, finally")
+        #expect(named.note == "first week on the new foil")
+    }
+
     /// The filter every other aggregate screen honours narrows a holiday too — and the
     /// example session, a provisional row and a friend's afternoon are in nobody's trip.
     @Test func periodsHonourTheLibraryFilterAndItsExclusions() async throws {

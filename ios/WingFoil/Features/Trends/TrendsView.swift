@@ -82,6 +82,19 @@ struct TrendsView: View {
                 }
             }
             .navigationTitle("Trends")
+            // Periods live one push from here rather than in a fifth tab: they are the same
+            // question this screen asks — how is the season going — with the afternoons
+            // grouped instead of drawn one by one, and a rider looking at a chart of the last
+            // four weeks is exactly the rider who wants the week at Garda summed up.
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        PeriodsView()
+                    } label: {
+                        Label("Periods", systemImage: "calendar")
+                    }
+                }
+            }
             .refreshable { await reload() }
             .task(id: reloadKey) { await reload() }
         }

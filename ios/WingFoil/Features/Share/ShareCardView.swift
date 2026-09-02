@@ -31,6 +31,13 @@ struct ShareCardView: View {
     /// Track outline; nil for a recording with no positions (the card then leans on the
     /// stats, which is the honest thing to show).
     var thumbnail: TrackThumbnail?
+    /// The **period** card's artwork: every session's outline, stacked in one box.
+    ///
+    /// A period has no single ride to draw, and picking one would be picking a favourite.
+    /// What it has is a shape — a week at one spot is a dozen tracks over the same water —
+    /// so all of them go down, faint, and the picture is the accumulation. Empty on a
+    /// session card, which is every card this view drew before periods existed.
+    var thumbnails: [TrackThumbnail] = []
     /// Rider-picked background. Without one the card uses the brand gradient.
     var photo: Image?
     /// The optional map background and the track already projected onto it
@@ -326,7 +333,13 @@ struct ShareCardView: View {
 
     @ViewBuilder
     private var track: some View {
-        if let thumbnail, !thumbnail.points.isEmpty {
+        if !thumbnails.isEmpty {
+            stack
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onGeometryChange(for: CGRect.self) {
+                    $0.frame(in: .named(Self.cardSpace))
+                } action: { onTrackFrame?($0) }
+        } else if let thumbnail, !thumbnail.points.isEmpty {
             Group {
                 if map == nil {
                     TrackOutlineView(thumbnail: thumbnail,
@@ -352,6 +365,34 @@ struct ShareCardView: View {
             } action: { onTrackFrame?($0) }
         } else {
             Spacer(minLength: 0)
+        }
+    }
+
+    /// The period's outlines, laid on one another.
+    ///
+    /// Each is drawn into the same rectangle by the same fit rule (`fillsBox: false`, the
+    /// normalized square inscribed), so they share a box and a centre and every track keeps
+    /// its own aspect. It is not a shared *metres* scale — `TrackThumbnail` normalizes that
+    /// away, one session at a time, and carrying the extent is the follow-up the contract
+    /// names (docs/presentation.md, "The period card").
+    ///
+    /// No marks: fifty outcome dots per session times a dozen sessions is confetti, and the
+    /// card's own numbers already say how the maneuvers went.
+    @ViewBuilder
+    private var stack: some View {
+        // Faint enough that a dozen read as one shape rather than a scribble; the overlap is
+        // what draws the eye, so the water everything was ridden over comes out brightest.
+        let alpha = max(0.22, min(0.6, 2.4 / Double(thumbnails.count)))
+        ZStack {
+            ForEach(Array(thumbnails.enumerated()), id: \.offset) { _, thumbnail in
+                TrackOutlineView(thumbnail: thumbnail,
+                                 flyingColor: flyingColor,
+                                 offFoilColor: offFoilColor,
+                                 lineWidth: 1.8,
+                                 offFoilScale: 0.5,
+                                 padding: 4)
+                    .opacity(alpha)
+            }
         }
     }
 
