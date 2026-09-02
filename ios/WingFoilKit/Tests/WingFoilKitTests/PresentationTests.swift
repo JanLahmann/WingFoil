@@ -223,7 +223,7 @@ import Testing
         #expect(stats.title == "Torbole")
         #expect(stats.stats.map(\.key)
                 == ["duration", "distance", "avgSpeed", "max2s", "tally", "streaks",
-                    "jph", "wph"])
+                    "jph", "cph", "wph"])
         // Labels and values verbatim from the block — no rewording, no reformatting.
         for metric in block.basics + [block.maxSpeed] + block.rates {
             let cell = stats.stats.first { $0.key == metric.key }
@@ -273,8 +273,8 @@ import Testing
 
         #expect(outro.stats.map(\.key)
                 == ["duration", "distance", "avgSpeed", "max2s", "tally", "streaks",
-                    "jph", "wph", "longestFlight"])
-        #expect(outro.stats.count == 9)
+                    "jph", "cph", "wph", "longestFlight"])
+        #expect(outro.stats.count == 10)
         // "6:32" — the same string the replay's own caption said and the flight table prints.
         #expect(outro.stats.last?.value == FlightPairing.clock(392))
         #expect(outro.stats.last?.value == "6:32")
@@ -291,7 +291,8 @@ import Testing
     }
 
     /// A session where nothing flew has an *unknown* longest flight, not a zero-second one.
-    /// The grid is then eight cells, which is what it was before.
+    /// The grid is then the complete block and nothing added — nine cells since CPH joined
+    /// the rate row in engine 0.10.0.
     @Test func theOutroOmitsTheFlightCellRatherThanPrintingZero() {
         var records = GP3SRecords()
         records.best2sKn = 13.209
@@ -299,7 +300,7 @@ import Testing
         for seconds in [nil, 0, -1] as [Double?] {
             let outro = ShareCardStats.outro(row: sampleRow(), title: "x", metrics: block,
                                              longestFlightS: seconds, timeZone: fixtureZone)
-            #expect(outro.stats.count == 8)
+            #expect(outro.stats.count == 9)
             #expect(!outro.stats.contains { $0.key == ShareCardStats.Key.longestFlight })
         }
         #expect(ShareCardStats.longestFlightStat(nil) == nil)
@@ -338,7 +339,8 @@ import Testing
         let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
         let stats = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block, timeZone: fixtureZone)
         #expect(stats.stats.map(\.key) == ["duration", "distance", "avgSpeed", "max2s"])
-        #expect(!stats.stats.contains { $0.key == "jph" || $0.key == "wph" })
+        #expect(!stats.stats.contains { $0.key == "jph" || $0.key == "cph"
+                                       || $0.key == "wph" })
         // Nothing measured is "—", never a fabricated 0.00 kn.
         #expect(stats.stats.allSatisfy { !$0.value.contains("0.00") })
         #expect(stats.stats.first { $0.key == "max2s" }?.value == "—")
@@ -460,7 +462,7 @@ import Testing
                                      longestFlightS: 424, longestFlightM: 1580,
                                      distanceKm: 22.985)
         summary.apply(SessionRates(durationS: 7029, distanceM: 22_985, turnsCounted: 51,
-                                   dryJibes: 43, fellIn: 25))
+                                   dryJibes: 43, fellIn: 25, cleanJibes: 12))
         summary.turns.turnsCounted = 51
         summary.turns.jibes = 50
         // The strict verdict: 12 of the 50 jibes were flown all the way through with the
@@ -492,12 +494,16 @@ import Testing
         #expect(block.tally?.fellIn == 7)
         #expect(block.tally?.caption == "of 50 jibes · 12 clean")
         #expect(block.streaks?.value == "5 flew · 11 dry")
-        #expect(block.rates.map(\.key) == ["jph", "wph"])
+        #expect(block.rates.map(\.key) == ["jph", "cph", "wph"])
         // 43 dry jibes of 50 over 1:57 — the rate counts the ones he sailed out of, and the
         // label says so, because 50/h would be a different number under the same word.
         #expect(block.rates[0].label == "JPH · dry jibes per hour")
         #expect(block.rates[0].value == "22.0")
-        #expect(block.rates[1].value == "12.8")
+        // …and 12 of those 50 were clean, the same 12 the tally's caption names one row up.
+        // Lenient then strict, and neither number is derivable from the other.
+        #expect(block.rates[1].label == "CPH · clean jibes per hour")
+        #expect(block.rates[1].value == "6.1")
+        #expect(block.rates[2].value == "12.8")
     }
 
     /// No duration ⇒ the engine reports every rate as null, and the row disappears rather
@@ -520,7 +526,8 @@ import Testing
 
     /// A session whose wind axis never resolved has turns and no jibes. JPH would read
     /// 0.0 over an afternoon of jibing, so both the rate and the tally fall back to the
-    /// turn channel — and both say so in their own label.
+    /// turn channel — and both say so in their own label. **CPH goes with JPH**: it is a
+    /// jibe rate too, and there is no jibe here to rate.
     @Test func keyMetricsFallBackToTurnsWhenNoJibeWasNamed() {
         var summary = SessionSummary(foilTimeS: 600, foilPct: 30, flightCount: 4,
                                      longestFlightS: 60, longestFlightM: 300,
@@ -536,6 +543,7 @@ import Testing
         let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
 
         #expect(block.rates.map(\.key) == ["tph", "wph"])
+        #expect(!block.rates.contains { $0.key == "cph" })
         #expect(block.rates[0].label == "TPH · turns per hour")
         #expect(block.rates[0].value == "12.0")
         #expect(block.tally?.caption == "of 12 turns · 4 clean")
@@ -543,8 +551,8 @@ import Testing
     }
 
     /// A measured zero is a value: a session with a duration and no turns really did do
-    /// 0.0 jibes an hour, and that is JPH — not the TPH fallback, which exists only for
-    /// turns the wind axis could not name.
+    /// 0.0 jibes an hour, and that is JPH and CPH — not the TPH fallback, which exists only
+    /// for turns the wind axis could not name.
     @Test func keyMetricsKeepJPHWhenThereWereNoTurnsAtAll() {
         var summary = SessionSummary(foilTimeS: 30, foilPct: 50, flightCount: 1,
                                      longestFlightS: 30, longestFlightM: 100,
@@ -552,9 +560,35 @@ import Testing
         summary.apply(SessionRates(durationS: 59, distanceM: 226, turnsCounted: 0,
                                    dryJibes: 0, fellIn: 0))
         let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
-        #expect(block.rates.map(\.key) == ["jph", "wph"])
+        #expect(block.rates.map(\.key) == ["jph", "cph", "wph"])
         #expect(block.rates[0].value == "0.0")
+        #expect(block.rates[1].value == "0.0")
         #expect(block.tally == nil)
+    }
+
+    /// An afternoon of jibes he did not ride keeps a **measured** 0.0 CPH beside a JPH that
+    /// is anything but zero — which is the whole reason both rates are on the row.
+    ///
+    /// 2026-08-03 pm is that session in the corpus: 15 jibes, 9 of them dry, none of them
+    /// clean. One number says he mostly stayed out of the water; the other says he did not
+    /// ride a single one, and no rider is told the second by being shown the first.
+    @Test func keyMetricsPrintAMeasuredZeroCPHBesideANonZeroJPH() {
+        var summary = SessionSummary(foilTimeS: 600, foilPct: 30, flightCount: 4,
+                                     longestFlightS: 60, longestFlightM: 300, distanceKm: 5)
+        summary.apply(SessionRates(durationS: 3600, distanceM: 5000, turnsCounted: 15,
+                                   dryJibes: 9, fellIn: 6, cleanJibes: 0))
+        summary.turns.turnsCounted = 15
+        summary.turns.jibes = 15
+        summary.turns.jibesSuccessful = 0
+        summary.turns.outcomes = outcomes(4, 5, 6)
+        summary.turns.jibeOutcomes = outcomes(4, 5, 6)
+        let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
+
+        #expect(block.rates.map(\.key) == ["jph", "cph", "wph"])
+        #expect(block.rates[0].value == "9.0")
+        #expect(block.rates[1].value == "0.0")
+        // …and the tally above names the same set the two jibe rates are about.
+        #expect(block.tally?.caption == "of 15 jibes · 0 clean")
     }
 
     // MARK: - Thumbnail geometry
@@ -805,6 +839,123 @@ import Testing
         #expect(snapshot.value(for: .best2s) == 20.0)
         #expect(snapshot.value(for: .bestNm) == nil)
         #expect(!snapshot.isEmpty)
+    }
+
+    // MARK: - The clean jibe as a personal best (engine 0.10.0)
+
+    /// A library row with a clean-jibe count and a duration, and nothing else that matters.
+    private func cleanRow(_ id: String, daysAgo: Double, clean: Int,
+                          durationS: Double) -> SessionRow {
+        var row = SessionRow(id: id,
+                             startDate: Date(timeIntervalSince1970: 1_756_000_000
+                                             - daysAgo * 86400),
+                             durationS: durationS, sourceClass: "a")
+        row.jibesSuccessful = clean
+        return row
+    }
+
+    /// The two records, over a library: the biggest count, and the best rate.
+    ///
+    /// They are deliberately different sessions here, because that is the case a single
+    /// number would lose — the long afternoon that rode the most jibes is not the short
+    /// evening that rode them fastest, and a rider recognises both as his own best.
+    @Test func cleanJibeBestsSplitTheCountFromTheRate() {
+        let bests = PersonalBestDetector.cleanJibeBests([
+            cleanRow("long", daysAgo: 9, clean: 25, durationS: 7200),      // 12.5 an hour
+            cleanRow("sharp", daysAgo: 4, clean: 9, durationS: 1800),      // 18.0 an hour
+        ])
+        #expect(bests.map(\.kind) == [.cleanJibes, .cleanJibesPerHour])
+        #expect(bests[0].sessionId == "long")
+        #expect(bests[0].value == 25)
+        #expect(bests[1].sessionId == "sharp")
+        #expect(abs(bests[1].value - 18) < 1e-9)
+    }
+
+    /// A personal best a rider can set by going home early is not one.
+    ///
+    /// The rolling window's rule ("never a flattering peak", docs/algorithms.md) applied to
+    /// a session: one clean jibe in four minutes is fifteen an hour, and it may not stand
+    /// over an afternoon. The *count* takes no such floor — that four-minute sail really did
+    /// hold one clean jibe, and one is one.
+    @Test func aFragmentOfASessionCannotHoldTheCphRecord() {
+        let bests = PersonalBestDetector.cleanJibeBests([
+            cleanRow("afternoon", daysAgo: 9, clean: 12, durationS: 7200),  // 6.0 an hour
+            cleanRow("fragment", daysAgo: 1, clean: 1, durationS: 240),     // would be 15.0
+        ])
+        #expect(bests.first { $0.kind == .cleanJibesPerHour }?.sessionId == "afternoon")
+        // …and it is still in the count, where it is an honest 1.
+        #expect(bests.first { $0.kind == .cleanJibes }?.value == 12)
+    }
+
+    /// Ties keep the earlier session: a record is set the first time it is reached.
+    @Test func aTiedCleanJibeRecordStaysWithTheSessionThatSetIt() {
+        let bests = PersonalBestDetector.cleanJibeBests([
+            cleanRow("first", daysAgo: 9, clean: 11, durationS: 3600),
+            cleanRow("equal", daysAgo: 2, clean: 11, durationS: 3600),
+        ])
+        #expect(bests.allSatisfy { $0.sessionId == "first" })
+    }
+
+    @Test func cleanJibeImprovementsReportWhatWasBeatenAndByWhat() {
+        let previous = PersonalBestSnapshot(bestCleanJibeByKind: ["cleanJibes": 8])
+        let found = PersonalBestDetector.cleanJibeImprovements(
+            previous: previous,
+            current: [CleanJibeBest(kind: .cleanJibes, value: 11, sessionId: "s2"),
+                      CleanJibeBest(kind: .cleanJibesPerHour, value: 12.5, sessionId: "s2")])
+        #expect(found.map(\.kind) == [.cleanJibes, .cleanJibesPerHour])
+        #expect(found[0].headline == "Clean jibes — 11 (was 8)")
+        // A kind the library never held has nothing to have beaten, and says so.
+        #expect(found[1].previous == nil)
+        #expect(found[1].headline == "Best CPH — 12.5")
+    }
+
+    /// Equalling a record is not beating it, and a count has to move by a whole jibe.
+    @Test func cleanJibeImprovementsIgnoreATieAndFloatNoise() {
+        let previous = PersonalBestSnapshot(
+            bestCleanJibeByKind: ["cleanJibes": 11, "cleanJibesPerHour": 12.5])
+        let found = PersonalBestDetector.cleanJibeImprovements(
+            previous: previous,
+            current: [CleanJibeBest(kind: .cleanJibes, value: 11, sessionId: "s2"),
+                      CleanJibeBest(kind: .cleanJibesPerHour, value: 12.5 + 1e-9,
+                                    sessionId: "s2")])
+        #expect(found.isEmpty)
+    }
+
+    /// A snapshot written before these records existed has never measured them, and the
+    /// first measurement beats nothing — the same silence `improvements` keeps on an empty
+    /// library, and for the same reason.
+    @Test func aSnapshotFromBeforeTheCleanJibeRecordDoesNotCelebrate() {
+        let old = PersonalBestSnapshot(bestByKind: ["best2s": 20.0])
+        #expect(old.bestCleanJibeByKind == nil)
+        #expect(PersonalBestDetector.cleanJibeImprovements(
+            previous: old,
+            current: [CleanJibeBest(kind: .cleanJibes, value: 11, sessionId: "s2")]).isEmpty)
+
+        // An *empty* dictionary is the other statement — "measured, and there were none" —
+        // and that one does celebrate the first clean jibe the library ever sees.
+        let measured = PersonalBestSnapshot(bestByKind: ["best2s": 20.0],
+                                            bestCleanJibeByKind: [:])
+        #expect(PersonalBestDetector.cleanJibeImprovements(
+            previous: measured,
+            current: [CleanJibeBest(kind: .cleanJibes, value: 1, sessionId: "s2")]).count == 1)
+    }
+
+    /// The snapshot round-trips through JSON, and a v1 payload with no clean-jibe half still
+    /// decodes — the stored `UserDefaults` blob of every existing install.
+    @Test func theSnapshotStillDecodesWithoutItsCleanJibeHalf() throws {
+        let v1 = Data(#"{"bestByKind":{"best2s":20.0}}"#.utf8)
+        let decoded = try JSONDecoder().decode(PersonalBestSnapshot.self, from: v1)
+        #expect(decoded.value(for: .best2s) == 20.0)
+        #expect(decoded.bestCleanJibeByKind == nil)
+
+        let now = PersonalBestSnapshot(records: [best(.best2s, 21.4)],
+                                       cleanJibes: [CleanJibeBest(kind: .cleanJibes, value: 11,
+                                                                  sessionId: "s2")])
+        let round = try JSONDecoder().decode(PersonalBestSnapshot.self,
+                                             from: try JSONEncoder().encode(now))
+        #expect(round == now)
+        #expect(round.value(for: .cleanJibes) == 11)
+        #expect(round.value(for: .cleanJibesPerHour) == nil)
     }
 
     // MARK: - Widget snapshot

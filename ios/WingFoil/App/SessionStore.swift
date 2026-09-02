@@ -44,6 +44,14 @@ final class SessionStore {
     /// by the Records screen, which is where the celebration belongs.
     private(set) var celebration: [NewPersonalBest] = []
 
+    /// Clean-jibe records beaten by the same import (engine 0.10.0) — most clean jibes in a
+    /// session, and best CPH. A separate list because they are not speeds and have no row in
+    /// the knots table, but the same moment: the Records screen fires one burst for both.
+    private(set) var cleanJibeCelebration: [NewCleanJibeBest] = []
+
+    /// What the Records screen watches to know a celebration arrived, whichever kind it is.
+    var celebrationCount: Int { celebration.count + cleanJibeCelebration.count }
+
     /// Which map/chart overlay categories the legend chips are showing. One setting for
     /// the whole app rather than one per session: "I never want to see course changes" is
     /// a statement about the rider, not about a particular ride. Persisted on every
@@ -236,15 +244,24 @@ final class SessionStore {
     private func refreshPersonalBests(celebrate: Bool) async {
         guard let records = try? await library.records() else { return }
         let previous = storedPersonalBests
+        // Both axes off the same load: the speed records out of the library's own query,
+        // the clean-jibe pair out of the rows `load()` has just refreshed.
+        let cleanJibes = PersonalBestDetector.cleanJibeBests(sessions)
         if celebrate, let previous {
             let found = PersonalBestDetector.improvements(previous: previous, current: records)
             if !found.isEmpty { celebration = found }
+            let clean = PersonalBestDetector.cleanJibeImprovements(previous: previous,
+                                                                   current: cleanJibes)
+            if !clean.isEmpty { cleanJibeCelebration = clean }
         }
-        storePersonalBests(PersonalBestSnapshot(records: records))
+        storePersonalBests(PersonalBestSnapshot(records: records, cleanJibes: cleanJibes))
     }
 
     /// Called by the Records screen once it has shown the burst.
-    func clearCelebration() { celebration = [] }
+    func clearCelebration() {
+        celebration = []
+        cleanJibeCelebration = []
+    }
 
     // MARK: - Widgets
 

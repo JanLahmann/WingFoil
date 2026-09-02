@@ -523,6 +523,9 @@ def expected_card_values(doc: dict) -> dict[str, str]:
     if s.get("wetPerHour") is not None:
         if s["jibesPerHour"] > 0 or not s["turnsPerHour"] > 0:
             out["jph"] = f"{s['jibesPerHour']:.1f}"
+            # CPH beside JPH since engine 0.10.0 — and only beside it: a session whose wind
+            # axis named no jibes gets the TPH fallback and no jibe rate of any kind.
+            out["cph"] = f"{s['cleanJibesPerHour']:.1f}"
         else:
             out["tph"] = f"{s['turnsPerHour']:.1f}"
         out["wph"] = f"{s['wetPerHour']:.1f}"
