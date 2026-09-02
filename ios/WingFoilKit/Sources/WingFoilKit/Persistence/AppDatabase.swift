@@ -33,7 +33,7 @@ public struct AppDatabase: Sendable {
     /// Every migration this build knows, oldest first — the migration test asserts a v1
     /// database moves through all of them.
     public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
-                                        "v10"]
+                                        "v10", "v11"]
 
     /// The schema version this build writes — the `N` of the last `vN` migration.
     ///
@@ -245,6 +245,29 @@ public struct AppDatabase: Sendable {
             try db.alter(table: "session") { t in
                 t.add(column: "longestDryStreak", .integer)
                 t.add(column: "longestFlewStreak", .integer)
+            }
+            try db.execute(sql: "UPDATE session SET engineVersion = NULL")
+        }
+
+        // v11: CPH stops being arithmetic this layer does for itself.
+        //
+        // `SessionRow.cleanJibesPerHour` divided the clean count by the row's own duration,
+        // with a TODO on it, because engine 0.10.0 had not landed. It has: the rate is
+        // `summary.cleanJibesPerHour`, published beside JPH and WPH and sharing their
+        // denominator (docs/algorithms.md "Session rates"). A metric with an engine field
+        // must have exactly one owner, so the field is denormalized here like every other
+        // number the aggregate screens read, and the division survives only as the fallback
+        // for a row this sweep could not refill.
+        //
+        // The sweep is the same one v2 and v10 used — `engineVersion = NULL` marks every row
+        // stale and `reanalyzeStale()` fills the column from the archived FITs — because the
+        // two denominators are genuinely different numbers: the row's `durationS` is the raw
+        // sample span, and the engine's is its own *cleaned* one. On the corpus's
+        // Rheinstetten afternoon they are 10338 s and 7742 s, and the old arithmetic
+        // therefore printed a CPH a third below the one the session page showed.
+        migrator.registerMigration("v11") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "engineCleanJibesPerHour", .double)
             }
             try db.execute(sql: "UPDATE session SET engineVersion = NULL")
         }
@@ -630,6 +653,16 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     public var longestDryStreak: Int?
     public var longestFlewStreak: Int?
 
+    // MARK: schema v11
+    /// The engine's own `summary.cleanJibesPerHour` (0.10.0), denormalized like every other
+    /// number the aggregate screens read. nil on a row this build has not re-derived yet.
+    ///
+    /// **Read `cleanJibesPerHour`, never this.** The property is deliberately spelled
+    /// differently from the accessor so that a call site cannot reach the raw column by
+    /// accident and quietly get nil for an old row; the accessor is where the fallback
+    /// lives, and it is the only thing any screen should ask.
+    public var engineCleanJibesPerHour: Double?
+
     /// `startUtcOffsetSource` as the closed vocabulary, or nil for "unrecorded" — which
     /// includes a stored string this version has never heard of.
     public var utcOffsetSource: UtcOffsetSource? {
@@ -681,13 +714,19 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
         return Double(jibesFlewThrough ?? 0) / Double(jibes) * 100
     }
 
-    /// Clean jibes per hour of session time — the rate the Records table and the Trends
-    /// chart both read. nil when the row predates the count or the session has no length.
+    /// Clean jibes per hour of session time — the rate the Records table, the Trends chart
+    /// and the period block all read.
     ///
-    /// TODO: switch to the engine's own `summary.turns.cleanJibesPerHour` (landing in
-    /// parallel) once it is denormalized here, and keep this arithmetic only for rows
-    /// written before it existed. The two must agree to the last decimal when it lands.
+    /// **The engine's number where the row has it** (`summary.cleanJibesPerHour`, engine
+    /// 0.10.0, schema v11). The division below is the fallback for a row the v11 sweep could
+    /// not refill — an archived FIT gone missing — and nothing else, because it is not quite
+    /// the same number: the engine divides by its own *cleaned* session span and this row's
+    /// `durationS` is the raw sample span. Those agree on most afternoons and are 7742 s
+    /// against 10338 s on one in the corpus, which is why the column exists at all.
+    ///
+    /// nil when neither can answer: no clean count, or no length to divide by.
     public var cleanJibesPerHour: Double? {
+        if let stored = engineCleanJibesPerHour { return stored }
         guard let clean = jibesSuccessful, durationS > 0 else { return nil }
         return Double(clean) * 3600 / durationS
     }
@@ -754,6 +793,9 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
         turnsFellIn = t.outcomes.fellIn
         longestDryStreak = t.longestDryStreak
         longestFlewStreak = t.longestFlewStreak
+        // Copied, never recomputed: the engine owns every per-hour rate and the denominator
+        // they share (docs/algorithms.md "Session rates").
+        engineCleanJibesPerHour = s.cleanJibesPerHour
 
         let k = s.takeoff
         takeoffAttempts = k.takeoffAttempts

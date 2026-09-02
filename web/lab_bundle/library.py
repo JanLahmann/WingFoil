@@ -48,7 +48,12 @@ from datetime import datetime, timedelta, timezone
 # so nothing had ever asked for them. Absent (null) on every row written before it, which
 # is why every session record skips a null rather than reading it as a zero: a library
 # saved last month must not report "0 clean jibes" as its all-time best.
-SCHEMA = 5
+# v6 (engine 0.10.0) carries `cleanJibesPerHour` itself, instead of leaving `_cph` to divide
+# the count by the hour. The arithmetic is identical; what changes is *who owns it* — CPH is
+# an engine rate now (docs/algorithms.md "Session rates"), published beside JPH and WPH, and
+# a metric with an engine field must not be re-derived by a reader. Null on every row written
+# before it, where `_cph` still does the division — see there.
+SCHEMA = 6
 
 # The project-wide "same session" rule, in one place: a session start within +/-60 s AND a
 # duration within +/-60 s of an existing entry is the same session recorded twice (watch
@@ -308,6 +313,9 @@ def digest(doc, file_name: str | None = None) -> dict:
         "flightCount": int(summ.get("flightCount") or 0),
         "longestFlightS": _num(summ.get("longestFlightS")),
         "longestFlightM": _num(summ.get("longestFlightM")),
+        # The engine's own strict jibe rate (0.10.0, schema 6). Copied, never recomputed:
+        # `_cph` divides for a stored row that predates it and reads this everywhere else.
+        "cleanJibesPerHour": _num(summ.get("cleanJibesPerHour")),
         "sourceClass": meta.get("sourceClass"),
         "discipline": meta.get("discipline"),
         "sport": meta.get("sport"),
@@ -489,12 +497,22 @@ def _clean_jibes(d: dict):
 
 
 def _cph(d: dict):
-    """Clean jibes per hour — clean jibes over elapsed session time.
+    """Clean jibes per hour — the engine's `summary.cleanJibesPerHour` (0.10.0, schema 6).
 
-    TODO: switch to the engine's own `summary.turns.cleanJibesPerHour` (landing in
-    parallel) once every digest carries it, and keep this arithmetic only as the fallback
-    for rows saved before it existed.
+    The division below is the **fallback for a stored row written before that field
+    existed**, and nothing else. It is the same arithmetic the engine does — clean jibes
+    over elapsed session time — kept here because a library saved last month is still the
+    rider's library and its afternoons still hold records; dropping those rows out of the
+    CPH record and the CPH trend line would be a worse answer than re-deriving a number
+    whose inputs the digest already carries.
+
+    A stored 0.0 is a *measured* zero and is returned as one: `is None` rather than a
+    falsy test, or an afternoon of jibes he never carved would fall through to the
+    division and print the identical 0.0 by a different route.
     """
+    stored = _num(d.get("cleanJibesPerHour"))
+    if stored is not None:
+        return stored
     clean, duration = _clean_jibes(d), _num(d.get("durationS"))
     if clean is None or duration is None or duration <= 0:
         return None

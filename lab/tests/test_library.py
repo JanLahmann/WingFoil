@@ -44,6 +44,14 @@ def entry(ident: str, day: str, epoch: float, **overrides) -> dict:
     if turn_overrides:
         e["turns"] = {**turns, **turn_overrides}
     e.update(overrides)
+    # The engine's rate (schema 6), consistent with whatever the overrides left behind —
+    # a real digest is a projection of one analysis, so its rate and its counts agree.
+    # An explicit `cleanJibesPerHour=` override wins, which is how the "the stored rate is
+    # the answer" half of `_cph` gets tested.
+    if "cleanJibesPerHour" not in overrides:
+        clean, duration = e["turns"].get("jibesSuccessful"), e["durationS"]
+        e["cleanJibesPerHour"] = (None if clean is None or not duration
+                                  else clean * 3600.0 / duration)
     return e
 
 
@@ -120,6 +128,9 @@ def test_a_digest_saved_before_schema_5_sets_no_jibe_record():
     old = entry("old", "2026-08-03", 1000.0)
     old["turns"] = {k: v for k, v in old["turns"].items()
                     if k not in ("jibesSuccessful", "longestDryStreak", "longestFlewStreak")}
+    # Schema 6's rate is that same clean count over the hour, so a row that predates the
+    # count predates the rate too — the fallback in `_cph` has nothing to divide either.
+    old.pop("cleanJibesPerHour")
     keys = set(records_of([old]))
     assert not keys & {"mostCleanJibes", "bestCph", "bestCleanJibeRate",
                        "longestDryStreak", "longestFlewStreak"}
@@ -169,14 +180,38 @@ def test_the_rate_record_ignores_a_perfect_thin_session_entirely():
     assert rows["bestCleanJibeRate"]["caption"] == "Sessions with at least 5 jibes."
 
 
-def test_cph_is_clean_jibes_over_elapsed_hours():
-    """The engine is gaining a `cleanJibesPerHour` of its own; until every stored digest
-    carries it, this is the arithmetic, and it is this arithmetic that is pinned."""
-    half = entry("half", "2026-08-03", 1000.0, durationS=1800.0,
+def test_cph_is_the_engines_own_rate_where_the_digest_carries_it():
+    """CPH is `summary.cleanJibesPerHour` (engine 0.10.0, schema 6), copied and not
+    re-derived — a metric with an engine field must have exactly one owner.
+
+    The stored rate wins even where the counts would divide to something else: the digest
+    is a projection of one analysis, and if the two ever disagreed it is the analysis that
+    is right about what it measured.
+    """
+    half = entry("half", "2026-08-03", 1000.0, durationS=1800.0, cleanJibesPerHour=12.0,
                  turns={"jibes": 9, "jibesSuccessful": 6})
     assert records_of([half])["bestCph"]["value"] == 12.0
+    stated = entry("stated", "2026-08-03", 1000.0, cleanJibesPerHour=7.5)
+    assert records_of([stated])["bestCph"]["value"] == 7.5
+
+
+def test_a_pre_schema_6_row_still_divides_for_its_cph():
+    """The fallback, and the whole reason it stays: a library saved before the engine
+    published the rate is still the rider's library, and its afternoons still hold
+    records. Same arithmetic — clean jibes over elapsed hours — in the one place that is
+    allowed to do it."""
+    half = entry("half", "2026-08-03", 1000.0, durationS=1800.0,
+                 turns={"jibes": 9, "jibesSuccessful": 6})
+    half.pop("cleanJibesPerHour", None)
+    assert records_of([half])["bestCph"]["value"] == 12.0
     zero = entry("zero", "2026-08-03", 1000.0, durationS=0.0)
+    zero.pop("cleanJibesPerHour", None)
     assert "bestCph" not in records_of([zero])
+    # A measured 0.0 is a value, not an absence: it must not fall through to the division
+    # and arrive at the same number by a route that means something else.
+    none = entry("none", "2026-08-03", 1000.0, cleanJibesPerHour=0.0,
+                 turns={"jibes": 9, "jibesSuccessful": 6})
+    assert library._cph(none) == 0.0
 
 
 # ------------------------------------------------------------------- the ISO week buckets
@@ -239,7 +274,10 @@ def test_a_digest_with_no_usable_date_is_left_out_of_the_weeks():
 def test_the_clean_jibe_series_are_per_session_and_hole_tolerant():
     good = entry("good", "2026-08-03", 1000.0, turns={"jibesSuccessful": 5})
     old = entry("old", "2026-08-10", 2000.0)
+    # A row saved before schema 5: no clean count, and therefore — since the rate is the
+    # count over the hour — no rate either. Both holes, not two zeroes.
     old["turns"] = {k: v for k, v in old["turns"].items() if k != "jibesSuccessful"}
+    old.pop("cleanJibesPerHour")
     charts = {c["key"]: c for c in library.aggregate([good, old])["trends"]["charts"]}
     assert [c for c in charts] == ["foilPct", "longestFlight", "turnSuccess", "cleanJibes",
                                    "cph", "pumps", "turnSide"]
