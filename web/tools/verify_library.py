@@ -35,6 +35,7 @@ import glob
 import json
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 
 WEB = Path(__file__).resolve().parents[1]
@@ -160,6 +161,8 @@ def counted_entry(ident: str, best2s: float, **extra) -> dict:
         "foilPct": 50.0, "foilTimeS": 1800.0, "flightCount": 5, "longestFlightS": 60.0,
         "records": {"best2sKn": best2s}, "recordWindows": {"best2sKn": []},
         "turns": {"counted": 10, "successful": 4, "successPct": 40.0,
+                  "jibes": 8, "jibesSuccessful": 3,
+                  "longestDryStreak": 4, "longestFlewStreak": 2,
                   "bySide": {"port": {"entries": 5, "successes": 2},
                              "starboard": {"entries": 5, "successes": 2}}},
         "takeoff": {"attempts": 5, "successes": 5},
@@ -200,6 +203,14 @@ def check_attribution() -> None:
     rows = {r["key"]: r for r in agg["records"]}
     check("  the record is the reader's, not the friend's",
           (rows["best2sKn"]["value"], rows["best2sKn"]["id"]), (12.0, "mine"))
+    # The same rule over the *session* records, which have their own aggregation loop and
+    # would otherwise be a second place for the exclusion to be forgotten. The friend rode
+    # the longest and the furthest of the three; neither may reach the table.
+    session_rows = {r["key"]: r for r in agg["sessionRecords"]}
+    check("  the session records are the reader's too",
+          sorted({r["id"] for r in agg["sessionRecords"]}), ["mine"])
+    check("  most distance is the reader's 10 km, not the friend's 99",
+          session_rows["mostDistance"]["value"], 10.0)
     check("  one point per counted session",
           [len(l["points"]) for c in agg["trends"]["charts"] for l in c["lines"]],
           [1] * sum(len(c["lines"]) for c in agg["trends"]["charts"]))
@@ -220,7 +231,7 @@ def check_attribution() -> None:
         e.pop("schema")
     check("  a schema-1 library is unchanged", library.aggregate(old)["count"], 2)
     check("  digest stamps the current schema",
-          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 4)
+          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 5)
 
     # Schema 3 (engine 0.8.2): the session's own UTC offset, and the local calendar date it
     # implies. `dateUtc` stays what it always was — the UTC day — so an entry written before
@@ -399,6 +410,82 @@ def check_records(digests: list[dict]) -> None:
     check("  totals.turnsBySide sums", tot["turnsBySide"]["port"]["entries"]
           + tot["turnsBySide"]["starboard"]["entries"], tot["turnsCounted"])
 
+    check_session_records(digests)
+
+
+def check_session_records(digests: list[dict]) -> None:
+    """The second records table: all-time bests that are not speeds.
+
+    Same rules as the GP3S table (max over the counted digests, ties to the earliest
+    session, a kind nobody set is dropped), so the checks are the same shape — plus the
+    two rules that only exist here: the >= 5 jibes floor under the clean-jibe rate, and
+    the absence of any certification badge on a row that makes no speed claim.
+    """
+    section("3b. session records (the non-speed table)")
+    agg = library.aggregate(digests)
+    rows = {r["key"]: r for r in agg["sessionRecords"]}
+
+    for key, label, _unit, places, pick, _caption in library.SESSION_RECORD_KINDS:
+        values = [(pick(d) or 0.0, d["id"]) for d in digests]
+        best = max(v for v, _ in values)
+        if best <= 0:
+            check(f"  {label}: dropped (nobody set one)", key in rows, False)
+            continue
+        row = rows.get(key)
+        check(f"  {label}: value", row and row["value"], round(best, places))
+        check(f"  {label}: session", row and row["id"] in {i for v, i in values if v == best},
+              True)
+        check(f"  {label}: carries no certification badge", "certified" in (row or {}), False)
+
+    check("  the table's order matches the catalogue",
+          [r["key"] for r in agg["sessionRecords"]],
+          [k for k, *_ in library.SESSION_RECORD_KINDS if k in rows])
+    check("  the longest flight names its distance",
+          rows["longestFlight"]["caption"].endswith("m of it"), True)
+    check("  the clean-jibe rate states its floor",
+          rows["bestCleanJibeRate"]["caption"], "Sessions with at least 5 jibes.")
+
+    # The >= 5 jibes floor. Every corpus session clears it, so the boundary is drawn with
+    # synthetic entries: four-for-four is a perfect afternoon and not a rate.
+    def rate_of(jibes: int, clean: int):
+        e = counted_entry("thin", 10.0)
+        e["turns"] = dict(e["turns"], jibes=jibes, jibesSuccessful=clean)
+        winners = {r["key"]: r for r in library.aggregate([e])["sessionRecords"]}
+        return winners.get("bestCleanJibeRate", {}).get("value")
+
+    check(f"  {library.MIN_JIBES_FOR_RATE - 1} jibes set no rate record",
+          rate_of(library.MIN_JIBES_FOR_RATE - 1, library.MIN_JIBES_FOR_RATE - 1), None)
+    check(f"  {library.MIN_JIBES_FOR_RATE} jibes do", rate_of(library.MIN_JIBES_FOR_RATE, 4),
+          round(100.0 * 4 / library.MIN_JIBES_FOR_RATE, 1))
+
+    # CPH is clean jibes over elapsed hours, and the winner is the session that maximises
+    # it — not the one with the most clean jibes.
+    cph = max((d["turns"]["jibesSuccessful"] * 3600.0 / d["durationS"], d["id"])
+              for d in digests)
+    check("  CPH is jibesSuccessful / (durationS/3600)", rows["bestCph"]["value"],
+          round(cph[0], 2))
+    check("  CPH names the session that maximises it", rows["bestCph"]["id"], cph[1])
+
+    # Ties go to the earliest session. Two synthetic entries with the same duration: the
+    # older one holds the record, and adding a later equal never takes it away.
+    early = counted_entry("early", 10.0, startEpoch=1000.0, durationS=3600.0)
+    late = counted_entry("late", 10.0, startEpoch=2000.0, durationS=3600.0)
+    tied = library.aggregate([late, early])["sessionRecords"]
+    check("  a tie goes to the earliest session",
+          next(r for r in tied if r["key"] == "longestSession")["id"], "early")
+
+    # A digest saved before schema 5 carries none of the three turn counts. It must drop
+    # out of those records rather than enter them as a zero.
+    old = counted_entry("old", 10.0)
+    old["turns"] = {"counted": 10, "successful": 4, "successPct": 40.0, "jibes": 8,
+                    "bySide": {"port": {"entries": 5, "successes": 2},
+                               "starboard": {"entries": 5, "successes": 2}}}
+    keys = {r["key"] for r in library.aggregate([old])["sessionRecords"]}
+    check("  a pre-schema-5 digest sets no jibe record",
+          keys & {"mostCleanJibes", "bestCph", "bestCleanJibeRate",
+                  "longestDryStreak", "longestFlewStreak"}, set())
+    check("  …but still sets the ones it can", "mostDistance" in keys, True)
+
 
 def check_trends(digests: list[dict]) -> None:
     section("4. trend series shape")
@@ -409,8 +496,8 @@ def check_trends(digests: list[dict]) -> None:
     check("  sessions are oldest first",
           [s["startUtc"] for s in tr["sessions"]],
           sorted(s["startUtc"] for s in tr["sessions"]))
-    check("  five charts", [c["key"] for c in tr["charts"]],
-          ["foilPct", "longestFlight", "turnSuccess", "pumps", "turnSide"])
+    check("  seven charts", [c["key"] for c in tr["charts"]],
+          ["foilPct", "longestFlight", "turnSuccess", "cleanJibes", "cph", "pumps", "turnSide"])
     for c in tr["charts"]:
         for line in c["lines"]:
             check(f"  {c['key']}/{line['key']}: one point per session", len(line["points"]), n)
@@ -449,7 +536,28 @@ def check_trends(digests: list[dict]) -> None:
           library.aggregate([])["totals"]["sessions"], 0)
     check("  empty library has no records", library.aggregate([])["records"], [])
     check("  single-session library still charts",
-          len(library.aggregate([digests[0]])["trends"]["charts"]), 5)
+          len(library.aggregate([digests[0]])["trends"]["charts"]), 7)
+
+    # The CPH series is the arithmetic the CPH record uses, session by session.
+    cph = next(c for c in tr["charts"] if c["key"] == "cph")["lines"][0]
+    check("  cph == clean jibes over session hours",
+          [p["v"] for p in cph["points"]],
+          [None if d["turns"]["jibesSuccessful"] is None
+           else round(d["turns"]["jibesSuccessful"] * 3600.0 / d["durationS"], 3)
+           for d in ordered])
+
+    # Weeks: ISO Monday buckets in the session's own local time, zero-filled.
+    weeks = tr["weeks"]
+    check("  every bucket opens on a Monday",
+          all(library._week_start(w["weekStart"]) == w["weekStart"] for w in weeks), True)
+    starts = [datetime.strptime(w["weekStart"], "%Y-%m-%d").date() for w in weeks]
+    check("  buckets are seven days apart with no gaps",
+          {(b - a).days for a, b in zip(starts, starts[1:])} or {7}, {7})
+    check("  the sessions all land in some bucket",
+          sum(w["count"] for w in weeks), len(digests))
+    check("  hours sum to the library's elapsed time",
+          round(sum(w["hours"] for w in weeks), 3),
+          round(sum(d["durationS"] for d in digests) / 3600.0, 3))
 
 
 def check_export() -> None:

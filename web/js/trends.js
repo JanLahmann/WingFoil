@@ -102,6 +102,12 @@ function draw(host, agg) {
       exact window inside it — the provenance is in every analysis document under
       <code>records.windows</code>.</p>
     <div class="table-scroll"><table id="records-table"></table></div>
+    <h3 class="sub-head">Session records</h3>
+    <p class="muted small">All-time bests that are not speeds — the afternoons themselves.
+      No certification applies here: a degraded recording can misreport a speed, but the
+      number of jibes it holds and the minutes it lasted are not claims its speed channel
+      makes.</p>
+    <div class="table-scroll"><table id="session-records-table"></table></div>
     <h3 class="sub-head">Session by session</h3>
     <p class="muted small">Oldest first. Click a point to open that session. A gap in a line
       is a session where the value could not be measured — not a zero.</p>
@@ -109,6 +115,7 @@ function draw(host, agg) {
 
   renderTotals(el("trend-totals"), agg.totals);
   renderRecords(el("records-table"), agg.records);
+  renderSessionRecords(el("session-records-table"), agg.sessionRecords || []);
   const charts = el("trend-charts");
   for (const chart of agg.trends.charts) {
     const box = document.createElement("div");
@@ -119,6 +126,7 @@ function draw(host, agg) {
     charts.appendChild(box);
     drawChart(box.querySelector(".figure"), chart, agg.trends.sessions);
   }
+  drawWeeks(charts, agg.trends.weeks || []);
 }
 
 function renderTotals(host, t) {
@@ -169,6 +177,46 @@ function renderRecords(table, records) {
         <td class="l dim" data-th="date">${esc(localDate(r) || "—")}</td>
         <td class="l stack-actions" data-th=""><button class="ghost small-btn" data-act="record"
           data-id="${esc(r.id)}">Show the window</button></td>
+      </tr>`).join("")}</tbody>`;
+}
+
+/** A session record's value in the unit `library.py` gave it. The unit strings are the
+ *  contract — this file still decides nothing about the number, only how it reads. */
+function recordValue(r) {
+  switch (r.unit) {
+    case "s": return `${hms(r.value)}<span class="dim"> h:m:s</span>`;
+    case "%": return `<strong>${nf(r.value, 1)}</strong> <span class="dim">%</span>`;
+    case "km": return `<strong>${nf(r.value, 2)}</strong> <span class="dim">km</span>`;
+    case "/h": return `<strong>${nf(r.value, 2)}</strong> <span class="dim">/ h</span>`;
+    default: return `<strong>${int(r.value)}</strong>`;
+  }
+}
+
+/** The second records table: bests that are not speeds.
+ *
+ *  Same shape as the speed table above it and deliberately so — the rider is reading one
+ *  page of personal bests, not two screens with different manners. Two differences, both
+ *  load-bearing: there is no `uncertified` badge, because a session record makes no claim
+ *  the speed channel could get wrong; and the action opens the *session* rather than a
+ *  window inside it, because the record is the whole afternoon. */
+function renderSessionRecords(table, records) {
+  if (!records.length) {
+    table.innerHTML = "";
+    return;
+  }
+  const head = ["record", "value", "session", "date", ""];
+  table.className = "stack-sm";
+  table.innerHTML = `<thead><tr>${head.map((h, i) =>
+    `<th${i !== 1 ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
+    <tbody>${records.map((r) => `
+      <tr>
+        <td class="l stack-lead" data-th="record">${esc(r.label)}${
+          r.caption ? `<br><span class="dim small">${esc(r.caption)}</span>` : ""}</td>
+        <td data-th="value">${recordValue(r)}</td>
+        <td class="l" data-th="session">${esc(sessionLabel(r, r.fileName, r.id))}</td>
+        <td class="l dim" data-th="date">${esc(localDate(r) || "—")}</td>
+        <td class="l stack-actions" data-th=""><button class="ghost small-btn"
+          data-act="session" data-id="${esc(r.id)}">Open the session</button></td>
       </tr>`).join("")}</tbody>`;
 }
 
@@ -270,6 +318,94 @@ function drawChart(host, chart, sessions) {
   });
 }
 
+/** Sessions per week, as bars.
+ *
+ *  The one chart on this page whose x axis is *time* rather than a list of events: the
+ *  per-session charts are categorical (one column per session, evenly spaced, because
+ *  sessions are events), and the whole point of this one is the gaps between them. A week
+ *  with no session is drawn as an empty slot rather than skipped — a season with its quiet
+ *  fortnights removed is a season nobody had.
+ *
+ *  The buckets come from `library._weeks`: **ISO-8601 weeks, Monday start, in the session's
+ *  own local time**, which is the rule iOS's `LibraryStore.weeks` follows too. This file
+ *  does not bucket anything; it places rectangles. */
+function drawWeeks(host, weeks) {
+  if (!weeks.length) return;
+  const box = document.createElement("div");
+  box.className = "trend-chart";
+  box.innerHTML = `<div class="trend-head"><h4>Sessions per week</h4>` +
+    `<span class="trend-unit">sessions</span></div><div class="figure"></div>`;
+  host.appendChild(box);
+  const ridden = weeks.filter((w) => w.count > 0).length;
+  const note = document.createElement("p");
+  note.className = "muted small";
+  note.textContent = `${ridden} of ${weeks.length} weeks on the water. `
+    + "Weeks start on Monday (ISO-8601), in the session's own local time.";
+  box.appendChild(note);
+
+  const figure = box.querySelector(".figure");
+  const W = figureWidth(figure);
+  const narrow = isNarrow(W);
+  const H = narrow ? 150 : 190;
+  const L = narrow ? 26 : 40, R = 10, B = 30, T = 12;
+  const plot = W - L - R;
+  const top = Math.max(1, ...weeks.map((w) => w.count));
+  const step = top <= 4 ? 1 : Math.ceil(top / 4);
+  const yMax = Math.ceil(top / step) * step;
+  const Y = (v) => H - B - (v / yMax) * (H - T - B);
+  const slot = plot / weeks.length;
+  const barW = Math.max(1.5, Math.min(22, slot - (slot > 6 ? 2 : 0.6)));
+
+  const root = svg("svg", { viewBox: `0 0 ${W} ${H}`, role: "img",
+                            "aria-label": "Sessions per ISO week" }, figure);
+  svg("rect", { width: W, height: H, fill: C.surface }, root);
+  for (let v = 0; v <= yMax + 1e-9; v += step) {
+    svg("line", { x1: L, x2: W - R, y1: Y(v), y2: Y(v), stroke: C.grid, "stroke-width": 1,
+                  opacity: v === 0 ? 0.9 : 0.45 }, root);
+    const t = svg("text", { x: L - 8, y: Y(v) + 3.5, "text-anchor": "end",
+                            "font-size": 10.5, fill: C.ink3 }, root);
+    t.textContent = String(Math.round(v));
+  }
+
+  // A "06 Aug" tick is ~42 units wide; keep at least that much between the ones we draw.
+  const stride = Math.max(1, Math.ceil(weeks.length
+    / Math.max(2, Math.floor(plot / (narrow ? 52 : 110)))));
+  weeks.forEach((w, i) => {
+    const x = L + i * slot + (slot - barW) / 2;
+    const empty = !w.count;
+    const bar = svg("rect", {
+      x, y: empty ? Y(0) - 1.5 : Y(w.count), width: barW,
+      height: empty ? 1.5 : Math.max(1.5, Y(0) - Y(w.count)),
+      fill: C.foil, opacity: empty ? 0.22 : 0.9, rx: Math.min(2, barW / 2),
+    }, root);
+    const hours = w.hours >= 0.05 ? ` · ${nf(w.hours, 1)} h on the water` : "";
+    const html = `<b>Week of ${esc(w.weekStart)}</b><br>` +
+      (empty ? "no session" : `${int(w.count)} session${w.count === 1 ? "" : "s"}${hours}`);
+    bar.addEventListener("pointerenter", (ev) => showTip(ev, html));
+    bar.addEventListener("pointermove", (ev) => showTip(ev, html));
+    bar.addEventListener("pointerleave", hideTip);
+    if (i % stride && i !== weeks.length - 1) return;
+    const last = i === weeks.length - 1;
+    const t = svg("text", {
+      x: last ? W - R : i === 0 ? L : x + barW / 2,
+      y: H - B + 16,
+      "text-anchor": last ? "end" : i === 0 ? "start" : "middle",
+      "font-size": 10.5, fill: C.ink3,
+    }, root);
+    t.textContent = weekTick(w.weekStart);
+  });
+}
+
+/** "06 Aug" from a `YYYY-MM-DD` Monday. The bucket is already a calendar date in the
+ *  rider's own time, so it is formatted as text and never re-parsed into an instant — a
+ *  `new Date("2026-08-03")` would be midnight *UTC* and could print the day before. */
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function weekTick(day) {
+  const [, m, d] = String(day).split("-");
+  return `${d} ${MONTHS[Number(m) - 1] || "?"}`;
+}
+
 /** An x-axis tick: the day the *rider* had, not the day UTC had. `s` is the session stamp
  *  (`library._stamp`), which carries the instant and the offset it was recorded at. */
 const tickLabel = (s) => (s && s.startUtc
@@ -287,6 +423,10 @@ const localDate = (s) => (s && (s.dateLocal || s.dateUtc)) || "";
 function onClick(ev) {
   const dot = ev.target.closest("circle[data-session]");
   if (dot) { hooks.openSession(dot.dataset.session); return; }
+  // A session record is the whole afternoon, so its row opens the session itself — there
+  // is no window inside it to highlight.
+  const open = ev.target.closest("button[data-act=session]");
+  if (open) { hooks.openSession(open.dataset.id); return; }
   const button = ev.target.closest("button[data-act=record]");
   if (!button) return;
   const key = button.closest("tr")?.dataset.record;

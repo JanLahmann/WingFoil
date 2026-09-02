@@ -664,6 +664,49 @@ highlights *that* window on map and chart; tapping the selected one returns to t
 selection is transient (never persisted); a record with no achieved window is inert and
 says nothing.
 
+## All-time records — two tables, one page
+
+The **speed table** is the nine GP3S kinds above, and it is the only one that can carry the
+`uncertified` mark (§ "Uncertified speed"). Under it sits the **session records** table: the
+best *afternoons* rather than the best windows, in this order on both platforms —
+
+`Longest flight` (with its distance in the row, because six minutes downwind and six minutes
+of pumping in a lull are not the same flight) · `Most flights` · `Highest on-foil share` ·
+`Most clean jibes` · `Best CPH` · `Best clean-jibe rate` · `Longest dry streak` · `Longest
+flew streak` · `Longest session` · `Most distance`.
+
+- **CPH is `jibesSuccessful / (durationS / 3600)`** — clean jibes per hour of session time,
+  the elapsed hour and not the on-water one, so the number a rider quotes is the one the
+  afternoon actually cost him.
+- **The clean-jibe rate needs at least five jibes**, and the row says so. Four out of four is
+  a good afternoon; it is not a rate. The floor is one constant on each side
+  (`SessionRecordKind.minJibesForRate`, `library.MIN_JIBES_FOR_RATE`).
+- **No certification here.** A degraded recording can misreport a speed; the number of jibes
+  it holds and the minutes it lasted are not claims its speed channel makes, so the badge
+  the speed table wears would be answering a question nobody asked.
+- Same filters and the same exclusions as the speed table (spot / gear / since; the example
+  session, a provisional row and a friend's afternoon count in neither), and the same tie
+  rule: **a tie goes to the earliest session** — the record was set then, not re-set later.
+- **Absent is never zero**, and here it bites twice: a stored row written before the counts
+  existed (web digest schema 5, iOS schema v10) has no clean-jibe count and no streaks, and
+  a kind nobody has a positive value for is dropped from the table rather than shown as a
+  dash or a flattering `0`.
+
+## Trend weeks — ISO-8601, Monday, local
+
+The "sessions per week" histogram buckets by **ISO-8601 week, Monday start, in the session's
+own local time**, zero-filled between the first session and the last — a week with no session
+is a bar of height 0, because that *is* the information, and a season with its quiet
+fortnights removed is a season nobody had.
+
+Monday is stated rather than inherited on both sides. iOS cuts the buckets with
+`LibraryStore.isoCalendar` (`firstWeekday = 2`, `minimumDaysInFirstWeek = 4`) **and hands the
+chart the same calendar**, because `BarMark(…, unit: .weekOfYear)` bins a second time under
+the environment's calendar and a Sunday-first locale would draw every bar a day early; the
+analyzer cuts them in `library._weeks`, in Python, and `js/trends.js` only places rectangles.
+The boundary both sides pin is the same one: a Saturday and the Monday after it are two
+different weeks, and the Sunday between them belongs to the **earlier** one.
+
 ## Marker eligibility
 
 - Turns with `counted == false` are excluded from every marker, tally, list and trend.

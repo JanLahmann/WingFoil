@@ -157,6 +157,33 @@ import Testing
         #expect(AppDatabase.migrationNames.contains("v5"))
     }
 
+    /// v10 adds the two turn streaks. They are the one pair of session records that cannot
+    /// be recovered from anything already stored — a streak merges counted turns with the
+    /// flight ends no turn owns, so the `turn` table alone cannot say where a run ended —
+    /// which is why the migration marks every row stale rather than leaving the columns
+    /// NULL and hoping. After the sweep they must equal the engine's own numbers.
+    @Test func v10AddsTheStreakColumnsAndFillsThemFromTheEngine() async throws {
+        let harness = try migratedV1Library()
+        defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
+
+        let (columns, stale) = try await harness.database.writer.read { db in
+            (Set(try db.columns(in: "session").map(\.name)),
+             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM session WHERE engineVersion IS NULL"))
+        }
+        #expect(columns.isSuperset(of: ["longestDryStreak", "longestFlewStreak"]))
+        #expect(stale == harness.v1Ids.count)
+        #expect(AppDatabase.migrationNames.last == "v10")
+        #expect(AppDatabase.schemaVersion == 10)
+
+        _ = try await harness.ingestor.reanalyzeStale()
+        for session in try await harness.ingestor.allSessions() {
+            let turns = try await harness.ingestor.analysis(for: session).summary.turns
+            #expect(session.longestDryStreak == turns.longestDryStreak)
+            #expect(session.longestFlewStreak == turns.longestFlewStreak)
+            #expect(session.jibesSuccessful == turns.jibesSuccessful)
+        }
+    }
+
     @Test func deletingASessionCascadesToItsDerivedRows() async throws {
         let harness = try migratedV1Library(fixtureCount: 1)
         defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }

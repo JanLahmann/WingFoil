@@ -418,6 +418,201 @@ import ZIPFoundation
         #expect(SessionIngestor.riderName("") == nil)
         #expect(SessionIngestor.riderName(" Jo ") == "Jo")
     }
+
+    // MARK: - Session records (the non-speed table)
+
+    /// Synthetic rows rather than fixtures, because what is under test here is the *rule*
+    /// and not the corpus: no arrangement of real FITs can be made to hold a four-jibe
+    /// afternoon and a nine-jibe one whose clean rates tie on purpose.
+    private static let recordsBase = Date(timeIntervalSince1970: 1_785_000_000)
+
+    private func sessionRow(_ id: String, day: Double, durationS: Double = 3600,
+                            _ build: (inout SessionRow) -> Void = { _ in }) -> SessionRow {
+        var row = SessionRow(id: id,
+                             startDate: Self.recordsBase.addingTimeInterval(day * 86_400),
+                             durationS: durationS, sourceClass: "test")
+        build(&row)
+        return row
+    }
+
+    private func store(_ rows: [SessionRow]) async throws -> LibraryStore {
+        let database = try AppDatabase.inMemory()
+        try await database.writer.write { db in for row in rows { try row.insert(db) } }
+        return LibraryStore(database: database)
+    }
+
+    /// The catalogue is a contract with the analyzer's `SESSION_RECORD_KINDS`: same ten
+    /// kinds, same order, so a rider reading both sees one set of personal bests.
+    @Test func sessionRecordsAreTheTenKindsInCatalogueOrder() async throws {
+        #expect(SessionRecordKind.allCases.map(\.rawValue) ==
+                ["longestFlight", "mostFlights", "bestFoilPct", "mostCleanJibes", "bestCph",
+                 "bestCleanJibeRate", "longestDryStreak", "longestFlewStreak",
+                 "longestSession", "mostDistance"])
+
+        let full = sessionRow("full", day: 1) {
+            $0.longestFlightS = 120; $0.longestFlightM = 640; $0.flightCount = 9
+            $0.foilPct = 55; $0.jibes = 8; $0.jibesSuccessful = 5
+            $0.longestDryStreak = 6; $0.longestFlewStreak = 3; $0.distanceKm = 12
+        }
+        let records = try await store([full]).sessionRecords()
+        #expect(records.map(\.kind) == SessionRecordKind.allCases)
+        #expect(records.allSatisfy { $0.sessionId == "full" })
+        // The longest-flight row carries the one fact its duration cannot.
+        #expect(records.first { $0.kind == .longestFlight }?.distanceM == 640)
+        #expect(records.filter { $0.distanceM != nil }.count == 1)
+    }
+
+    @Test func eachSessionRecordIsTheMaximumOverTheLibrary() async throws {
+        let older = sessionRow("older", day: 1) {
+            $0.longestFlightS = 120; $0.flightCount = 9; $0.foilPct = 55
+            $0.jibes = 8; $0.jibesSuccessful = 5
+            $0.longestDryStreak = 6; $0.longestFlewStreak = 3; $0.distanceKm = 12
+        }
+        let newer = sessionRow("newer", day: 8, durationS: 7200) {
+            $0.longestFlightS = 90; $0.flightCount = 4; $0.foilPct = 40
+            $0.jibes = 20; $0.jibesSuccessful = 8
+            $0.longestDryStreak = 9; $0.longestFlewStreak = 1; $0.distanceKm = 30
+        }
+        let by = Dictionary(uniqueKeysWithValues:
+            try await store([newer, older]).sessionRecords().map { ($0.kind, $0) })
+
+        #expect(by[.longestFlight]?.sessionId == "older")
+        #expect(by[.mostFlights]?.value == 9)
+        #expect(by[.bestFoilPct]?.value == 55)
+        #expect(by[.mostCleanJibes]?.sessionId == "newer")
+        // Five clean jibes in one hour beats eight in two.
+        #expect(by[.bestCph]?.sessionId == "older")
+        #expect(by[.bestCph]?.value == 5)
+        #expect(by[.bestCleanJibeRate]?.value == 62.5)
+        #expect(by[.longestDryStreak]?.sessionId == "newer")
+        #expect(by[.longestFlewStreak]?.sessionId == "older")
+        #expect(by[.longestSession]?.value == 7200)
+        #expect(by[.mostDistance]?.value == 30)
+    }
+
+    /// The record was set then, not re-set later — the same tie rule the speed table has
+    /// always followed, and the reason `sessionRecords` compares with a strict `>`.
+    @Test func aTiedSessionRecordGoesToTheEarliestSession() async throws {
+        let rows = ["first": 1.0, "second": 8.0, "third": 15.0].map { id, day in
+            sessionRow(id, day: day) { $0.jibes = 10; $0.jibesSuccessful = 5 }
+        }
+        for order in [rows, Array(rows.reversed()),
+                      Array(rows.dropFirst()) + Array(rows.prefix(1))] {
+            let by = Dictionary(uniqueKeysWithValues:
+                try await store(order).sessionRecords().map { ($0.kind, $0) })
+            #expect(by[.longestSession]?.sessionId == "first")
+            #expect(by[.mostCleanJibes]?.sessionId == "first")
+            #expect(by[.bestCleanJibeRate]?.sessionId == "first")
+        }
+        // …and a later session that genuinely beats it does take the record.
+        let beaten = try await store(rows + [sessionRow("beat", day: 20, durationS: 3600.1)])
+            .sessionRecords()
+        #expect(beaten.first { $0.kind == .longestSession }?.sessionId == "beat")
+    }
+
+    /// Four out of four is a good afternoon; it is not a rate. The floor is
+    /// `SessionRecordKind.minJibesForRate`, and the same number is printed in the caption
+    /// so the rule the number obeys is the rule the reader is told.
+    @Test func theCleanJibeRateNeedsFiveJibes() async throws {
+        let floor = SessionRecordKind.minJibesForRate
+        for (jibes, clean, expected) in [(0, 0, nil), (1, 1, nil), (floor - 1, floor - 1, nil),
+                                         (floor, 4, 80.0), (floor, floor, 100.0),
+                                         (20, 3, 15.0)] as [(Int, Int, Double?)] {
+            let row = sessionRow("s", day: 1) { $0.jibes = jibes; $0.jibesSuccessful = clean }
+            let rate = try await store([row]).sessionRecords()
+                .first { $0.kind == .bestCleanJibeRate }?.value
+            #expect(rate == expected, "\(clean)/\(jibes)")
+        }
+        // A perfect thin session does not merely lose the record — it is not in the running.
+        let perfect = sessionRow("perfect", day: 1) { $0.jibes = 3; $0.jibesSuccessful = 3 }
+        let honest = sessionRow("honest", day: 8) { $0.jibes = 10; $0.jibesSuccessful = 4 }
+        let best = try await store([perfect, honest]).sessionRecords()
+            .first { $0.kind == .bestCleanJibeRate }
+        #expect(best?.sessionId == "honest")
+        #expect(best?.value == 40)
+        #expect(SessionRecordKind.bestCleanJibeRate.caption
+                == "Sessions with at least \(floor) jibes.")
+    }
+
+    /// Absent is never zero. A row the v10 migration has not re-derived yet has no streaks
+    /// and no clean-jibe count; reading those as 0 would put a fabricated number in the
+    /// running for an all-time best, and a kind nobody has set is dropped rather than shown.
+    @Test func aRowWithNoCountsSetsNoSessionRecordForThem() async throws {
+        let stale = sessionRow("stale", day: 1) { $0.distanceKm = 12 }
+        let kinds = Set(try await store([stale]).sessionRecords().map(\.kind))
+        #expect(kinds.isDisjoint(with: [.mostCleanJibes, .bestCph, .bestCleanJibeRate,
+                                        .longestDryStreak, .longestFlewStreak]))
+        #expect(kinds.contains(.mostDistance))
+        #expect(kinds.contains(.longestSession), "the session still lasted an hour")
+
+        // A genuine zero is dropped too — "0 flights" is not a record anybody holds.
+        let flat = sessionRow("flat", day: 1) {
+            $0.flightCount = 0; $0.distanceKm = 0; $0.jibes = 9; $0.jibesSuccessful = 0
+        }
+        let flatKinds = Set(try await store([flat]).sessionRecords().map(\.kind))
+        #expect(flatKinds.isDisjoint(with: [.mostFlights, .mostDistance, .mostCleanJibes]))
+    }
+
+    /// The second table goes through `LibraryStore.clause` like the first one, so the
+    /// example session, a provisional row and a friend's afternoon move nothing here either.
+    @Test func sessionRecordsHonourTheSameExclusionsAndFilters() async throws {
+        let mine = sessionRow("mine", day: 1) {
+            $0.distanceKm = 10; $0.spotId = "garda"; $0.foilPct = 60; $0.flightCount = 5
+        }
+        let friend = sessionRow("friend", day: 2, durationS: 99_999) {
+            $0.distanceKm = 99; $0.rider = "Marco"
+        }
+        let demo = sessionRow("demo", day: 3, durationS: 88_888) {
+            $0.distanceKm = 88; $0.isExample = true
+        }
+        let watch = sessionRow("watch", day: 4, durationS: 77_777) {
+            $0.distanceKm = 77; $0.isProvisional = true
+        }
+        let elsewhere = sessionRow("elsewhere", day: 5, durationS: 5000) {
+            $0.distanceKm = 20; $0.spotId = "rhein"; $0.foilPct = 40; $0.flightCount = 2
+        }
+        let library = try await store([mine, friend, demo, watch, elsewhere])
+        let all = try await library.sessionRecords()
+        #expect(Set(all.map(\.sessionId)) == ["mine", "elsewhere"])
+        #expect(all.first { $0.kind == .mostDistance }?.value == 20)
+
+        let atGarda = try await library.sessionRecords(LibraryFilter(spotId: "garda"))
+        #expect(atGarda.allSatisfy { $0.sessionId == "mine" })
+        #expect(atGarda.first { $0.kind == .mostDistance }?.value == 10)
+
+        let recent = try await library.sessionRecords(
+            LibraryFilter(since: Self.recordsBase.addingTimeInterval(3 * 86_400)))
+        #expect(recent.allSatisfy { $0.sessionId == "elsewhere" })
+    }
+
+    /// The week rule is ISO-8601, Monday start: a Saturday and the Monday after it are two
+    /// different weeks, and the Sunday between them belongs to the *earlier* one. A
+    /// Sunday-first calendar gets that last one backwards and every bar still looks
+    /// plausible, which is why it is pinned here rather than left to the chart.
+    @Test func weeksStartOnTheIsoMonday() async throws {
+        let calendar = LibraryStore.isoCalendar
+        func noon(_ month: Int, _ day: Int) throws -> Date {
+            try #require(calendar.date(from: DateComponents(year: 2026, month: month,
+                                                            day: day, hour: 12)))
+        }
+        let saturday = try noon(8, 1), sunday = try noon(8, 2), monday = try noon(8, 3)
+        let rows = [SessionRow(id: "sat", startDate: saturday, durationS: 3600,
+                               sourceClass: "test"),
+                    SessionRow(id: "sun", startDate: sunday, durationS: 3600,
+                               sourceClass: "test"),
+                    SessionRow(id: "mon", startDate: monday, durationS: 7200,
+                               sourceClass: "test")]
+        let weeks = LibraryStore.weeks(rows, since: nil, until: monday)
+
+        #expect(weeks.count == 2, "27 Jul and 3 Aug, and nothing in between")
+        #expect(weeks.map(\.count) == [2, 1], "the Sunday joins the Saturday's week")
+        #expect(weeks.map(\.hours) == [2, 2])
+        let starts = weeks.map { calendar.component(.weekday, from: $0.weekStart) }
+        #expect(starts.allSatisfy { $0 == 2 }, "every bucket opens on a Monday")
+        #expect(weeks[1].weekStart == calendar.startOfDay(for: monday))
+        #expect(weeks[0].weekStart == calendar.date(byAdding: .day, value: -7,
+                                                    to: weeks[1].weekStart))
+    }
 }
 
 /// Store-mode ZIP builder shared by the library and GDPR import tests.
