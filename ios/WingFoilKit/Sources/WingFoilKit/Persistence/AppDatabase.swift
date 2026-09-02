@@ -32,7 +32,8 @@ public struct AppDatabase: Sendable {
 
     /// Every migration this build knows, oldest first — the migration test asserts a v1
     /// database moves through all of them.
-    public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9"]
+    public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
+                                        "v10"]
 
     /// The schema version this build writes — the `N` of the last `vN` migration.
     ///
@@ -222,6 +223,30 @@ public struct AppDatabase: Sendable {
                 t.add(column: "customTitle", .text)
                 t.add(column: "shareNote", .text)
             }
+        }
+
+        // v10: the two turn streaks, so Records can name the best run of the season.
+        //
+        // The Records screen was speed-only, so the denormalized session row carried every
+        // turn *tally* the engine produces and neither of its two streaks. They are the one
+        // pair of session records that cannot be recovered from what is already stored: a
+        // streak is a claim about **the rider**, not about the turn channel, so the engine
+        // merges counted turns with the flight ends no turn owns before counting one
+        // (docs/algorithms.md "Turn streaks"). Recomputing that from the `turn` table would
+        // silently drop every swim in a straight line, which is exactly the event a rider
+        // remembers as having ended the run.
+        //
+        // So: two columns, filled from the engine's own numbers, and the same re-derivation
+        // trigger v2 used — `engineVersion = NULL` marks every row stale and
+        // `reanalyzeStale()` fills them from the archived FITs. A provisional row has no FIT
+        // to re-read and is excluded from that sweep by its own clause; it is also excluded
+        // from Records, so it has nothing to contribute either way.
+        migrator.registerMigration("v10") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "longestDryStreak", .integer)
+                t.add(column: "longestFlewStreak", .integer)
+            }
+            try db.execute(sql: "UPDATE session SET engineVersion = NULL")
         }
         return migrator
     }
@@ -593,6 +618,18 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// caption that does not fit is permanent.
     public var shareNote: String?
 
+    // MARK: schema v10
+    /// The longest run of maneuvers this session that stayed out of the water, and the
+    /// longest that never touched down at all (`summary.turns.longestDryStreak` /
+    /// `longestFlewStreak`). nil on a row not yet re-derived under v10.
+    ///
+    /// Copied from the engine and never recomputed here: a streak merges counted turns with
+    /// the flight ends no turn owns, so a swim in a straight line ends a run exactly as a
+    /// botched jibe does (docs/algorithms.md "Turn streaks"). The `turn` table alone cannot
+    /// say that, which is why these are columns rather than a query.
+    public var longestDryStreak: Int?
+    public var longestFlewStreak: Int?
+
     /// `startUtcOffsetSource` as the closed vocabulary, or nil for "unrecorded" — which
     /// includes a stored string this version has never heard of.
     public var utcOffsetSource: UtcOffsetSource? {
@@ -642,6 +679,25 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     public var jibeFlewThroughPct: Double? {
         guard let jibes, jibes > 0 else { return nil }
         return Double(jibesFlewThrough ?? 0) / Double(jibes) * 100
+    }
+
+    /// Clean jibes per hour of session time — the rate the Records table and the Trends
+    /// chart both read. nil when the row predates the count or the session has no length.
+    ///
+    /// TODO: switch to the engine's own `summary.turns.cleanJibesPerHour` (landing in
+    /// parallel) once it is denormalized here, and keep this arithmetic only for rows
+    /// written before it existed. The two must agree to the last decimal when it lands.
+    public var cleanJibesPerHour: Double? {
+        guard let clean = jibesSuccessful, durationS > 0 else { return nil }
+        return Double(clean) * 3600 / durationS
+    }
+
+    /// Share of jibes that were clean, over sessions with enough jibes to mean anything —
+    /// four out of four is a good afternoon, not a rate (`SessionRecordKind.minJibesForRate`).
+    public var cleanJibeRatePct: Double? {
+        guard let clean = jibesSuccessful, let jibes,
+              jibes >= SessionRecordKind.minJibesForRate else { return nil }
+        return Double(clean) / Double(jibes) * 100
     }
 
     /// Port share of the counted turns, 50 % = symmetric. nil without sided turns.
@@ -696,6 +752,8 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
         turnsFlewThrough = t.outcomes.flewThrough
         turnsTouchdown = t.outcomes.touchdown
         turnsFellIn = t.outcomes.fellIn
+        longestDryStreak = t.longestDryStreak
+        longestFlewStreak = t.longestFlewStreak
 
         let k = s.takeoff
         takeoffAttempts = k.takeoffAttempts

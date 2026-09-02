@@ -65,6 +65,31 @@ public struct RecordBest: Sendable, Identifiable, Equatable {
     public var certified: Bool { sourceClass != "c" }
 }
 
+/// One session record's all-time best under the current filter.
+///
+/// Deliberately thinner than `RecordBest`: there is no effort history to draw a step curve
+/// from (the number lives on the session row, not in `record_effort`) and no certification
+/// to badge, because a session record makes no claim about a speed channel.
+public struct SessionRecordBest: Sendable, Identifiable, Equatable {
+    public var kind: SessionRecordKind
+    public var value: Double
+    public var sessionId: String
+    public var achievedAt: Date
+    /// The offset of the session the record was set in, so the row dates it on the day the
+    /// *rider* had — same reason `RecordBest` carries one.
+    public var utcOffsetS: Int?
+    /// The winning session's longest-flight distance, on the `.longestFlight` row and
+    /// nowhere else: six minutes downwind and six minutes of pumping in a lull are not the
+    /// same flight, and the duration alone cannot tell them apart.
+    public var distanceM: Double?
+
+    public var id: String { kind.rawValue }
+
+    public var displayZone: TimeZone {
+        utcOffsetS.flatMap { TimeZone(secondsFromGMT: $0) } ?? .current
+    }
+}
+
 /// One session as the Trends charts see it. Every optional stays optional: a session
 /// without an accelerometer has *unknown* pumps-to-takeoff, which must not plot as 0.
 public struct TrendPoint: Sendable, Identifiable, Equatable {
@@ -77,6 +102,10 @@ public struct TrendPoint: Sendable, Identifiable, Equatable {
     public var distanceKm: Double?
     public var jibeFlewThroughPct: Double?
     public var turnSuccessPct: Double?
+    /// Clean jibes in the session and the same count per hour of it — the two series the
+    /// Trends screen adds beside the rates. nil, never 0, on a row that has no count.
+    public var cleanJibes: Int?
+    public var cleanJibesPerHour: Double?
     public var avgPumpsToTakeoff: Double?
     public var portSharePct: Double?
     public var best2sKn: Double?
@@ -101,6 +130,8 @@ public struct TrendPoint: Sendable, Identifiable, Equatable {
         distanceKm = row.distanceKm
         jibeFlewThroughPct = row.jibeFlewThroughPct
         turnSuccessPct = (row.turnsCounted ?? 0) > 0 ? row.turnSuccessPct : nil
+        cleanJibes = row.jibesSuccessful
+        cleanJibesPerHour = row.cleanJibesPerHour
         avgPumpsToTakeoff = row.avgPumpsToTakeoff
         portSharePct = row.portSharePct
         best2sKn = row.best2sKn
@@ -241,6 +272,32 @@ public struct LibraryStore: Sendable {
         }
     }
 
+    /// The all-time best per session-record kind under the same filter the speed records
+    /// use, in catalogue order. A kind nobody has a positive value for is absent rather
+    /// than shown as a dash — the same rule `records(_:)` follows, and the same rule the
+    /// analyzer's `library._session_records` follows.
+    ///
+    /// **Ties go to the earliest session**, because the record was set then and not re-set
+    /// later. `sessions(_:)` orders by `startDate`, so a strict `>` is the whole of it.
+    public func sessionRecords(_ filter: LibraryFilter = LibraryFilter()) async throws
+        -> [SessionRecordBest] {
+        try await database.writer.read { db in
+            let rows = try Self.sessions(filter, db: db)          // oldest first
+            return SessionRecordKind.allCases.compactMap { kind in
+                var best: (Double, SessionRow)?
+                for row in rows {
+                    guard let value = kind.value(in: row), value > 0 else { continue }
+                    if best == nil || value > best!.0 { best = (value, row) }
+                }
+                guard let (value, row) = best else { return nil }
+                return SessionRecordBest(
+                    kind: kind, value: value, sessionId: row.id, achievedAt: row.startDate,
+                    utcOffsetS: row.startUtcOffsetS,
+                    distanceM: kind == .longestFlight ? row.longestFlightM : nil)
+            }
+        }
+    }
+
     // MARK: - Trends
 
     public func trend(_ filter: LibraryFilter = LibraryFilter()) async throws -> [TrendPoint] {
@@ -289,10 +346,26 @@ public struct LibraryStore: Sendable {
         return Self.weeks(rows, since: filter.since, until: until)
     }
 
-    static func weeks(_ rows: [SessionRow], since: Date?, until: Date) -> [WeekBucket] {
-        guard let first = rows.first?.startDate ?? since else { return [] }
+    /// The week rule, in one place: **ISO-8601 weeks, Monday start, in the reader's own
+    /// local time**. The analyzer says the same thing in `library._week_start`.
+    ///
+    /// `firstWeekday` and `minimumDaysInFirstWeek` are set rather than inherited even
+    /// though the ISO-8601 identifier implies both: a calendar that picks up a locale's
+    /// Sunday-first habit would bucket a Sunday session into the week *after* the one the
+    /// rider rode it in, and the failure is invisible — every bar still has a plausible
+    /// height. It is also what the chart's own binning is handed, so the bar and the bucket
+    /// cannot drift apart.
+    public static var isoCalendar: Calendar {
         var calendar = Calendar(identifier: .iso8601)
         calendar.timeZone = .current
+        calendar.firstWeekday = 2                    // Monday
+        calendar.minimumDaysInFirstWeek = 4
+        return calendar
+    }
+
+    static func weeks(_ rows: [SessionRow], since: Date?, until: Date) -> [WeekBucket] {
+        guard let first = rows.first?.startDate ?? since else { return [] }
+        let calendar = isoCalendar
         func startOfWeek(_ date: Date) -> Date {
             calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? date
         }
