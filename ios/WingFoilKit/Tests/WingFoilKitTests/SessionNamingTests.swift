@@ -47,7 +47,8 @@ import Testing
     }
 
     @Test func v9IsRegisteredAndReachableFromAV1Library() throws {
-        #expect(AppDatabase.migrationNames.last == "v9")
+        // Registered, not last: the list keeps growing, and this test is about v9.
+        #expect(AppDatabase.migrationNames.contains("v9"))
         let queue = try DatabaseQueue()
         try AppDatabase.migrator.migrate(queue, upTo: "v1")
         _ = try AppDatabase(queue)

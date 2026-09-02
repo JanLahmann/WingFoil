@@ -15,6 +15,9 @@ struct RecordsView: View {
 
     @State private var filter = LibraryFilter()
     @State private var records: [RecordBest] = []
+    /// The second table: all-time bests that are not speeds. Same filter, same tie rule,
+    /// no certification — see `SessionRecordKind`.
+    @State private var sessionRecords: [SessionRecordBest] = []
     @State private var loaded = false
     @State private var confetti: Int?
     /// Kinds beaten by the last import, so their rows can say so.
@@ -29,11 +32,12 @@ struct RecordsView: View {
                 }
                 .listRowBackground(Color.clear)
 
-                if records.isEmpty {
+                if records.isEmpty && sessionRecords.isEmpty {
                     emptyState
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
-                } else {
+                }
+                if !records.isEmpty {
                     Section {
                         recordsHeader
                             .listRowInsets(EdgeInsets(top: 4, leading: 16,
@@ -46,8 +50,29 @@ struct RecordsView: View {
                             .listRowInsets(EdgeInsets(top: 6, leading: 16,
                                                       bottom: 6, trailing: 16))
                         }
+                    } header: {
+                        Text("Speed records")
                     } footer: {
                         Text(footnote)
+                    }
+                }
+                if !sessionRecords.isEmpty {
+                    Section {
+                        ForEach(sessionRecords) { best in
+                            NavigationLink(value: best.sessionId) {
+                                SessionRecordRowView(best: best,
+                                                     title: title(of: best.sessionId))
+                            }
+                            .listRowInsets(EdgeInsets(top: 6, leading: 16,
+                                                      bottom: 6, trailing: 16))
+                        }
+                    } header: {
+                        Text("Session records")
+                    } footer: {
+                        Text("Best afternoons rather than best windows. No certification "
+                             + "applies here: a degraded recording can misreport a speed, "
+                             + "but the number of jibes it holds and the minutes it lasted "
+                             + "are not claims its speed channel makes.")
                     }
                 }
             }
@@ -130,7 +155,62 @@ struct RecordsView: View {
 
     private func reload() async {
         records = (try? await store.library.records(filter)) ?? []
+        sessionRecords = (try? await store.library.sessionRecords(filter)) ?? []
         loaded = true
+    }
+}
+
+/// One session record, as a table row.
+///
+/// Not the speed table's four columns: those labels are two characters wide ("2 s", "1 NM")
+/// and these are phrases, so a fixed 66 pt name column would truncate every one of them.
+/// The value keeps the right edge, which is what makes the column of numbers scannable —
+/// that was the point of the speed table's geometry and it survives here without it.
+private struct SessionRecordRowView: View {
+    let best: SessionRecordBest
+    let title: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(best.kind.label)
+                    .font(.subheadline)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Spacer(minLength: 6)
+                Text(value)
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
+            }
+            Text(provenance)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            if let note = best.kind.caption {
+                Text(note).font(.caption2).foregroundStyle(.tertiary)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(best.kind.label), \(value)")
+        .accessibilityValue(provenance)
+    }
+
+    /// The date and session, plus the one fact a duration cannot carry: how far the longest
+    /// flight actually went. Six minutes downwind and six minutes of pumping in a lull are
+    /// not the same flight.
+    private var provenance: String {
+        let stamp = "\(Fmt.shortDate(best.achievedAt, zone: best.displayZone)) · \(title)"
+        guard let metres = best.distanceM else { return stamp }
+        return "\(Int(metres.rounded())) m · \(stamp)"
+    }
+
+    private var value: String {
+        switch best.kind.unit {
+        case .seconds: Fmt.duration(best.value)
+        case .count: "\(Int(best.value.rounded()))"
+        case .percent: String(format: "%.1f %%", best.value)
+        case .perHour: String(format: "%.2f / h", best.value)
+        case .km: String(format: "%.2f km", best.value)
+        }
     }
 }
 

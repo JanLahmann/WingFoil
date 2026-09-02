@@ -143,6 +143,21 @@ struct TrendsView: View {
                    tone: DesignTokens.Outcome.flew,
                    value: \.jibeFlewThroughPct, domain: 0...100,
                    note: "Share of jibes that never touched down.")
+        // Clean jibes and CPH are **counts of maneuvers**, not ladder verdicts, so they
+        // deliberately do not wear `Outcome.flew`: on a page where the green line already
+        // means "flew through", a second green line would read as a second flew-through
+        // series (the same misread app-ui-review.md §5.2 caught on the entry-tack chart).
+        // A metric with no vocabulary of its own takes the app's own ink — which is what
+        // the analyzer's `role: "primary"` means, and what the week chart below already does.
+        TrendChart(title: "Clean jibes", unit: "per session", points: points,
+                   tone: Color.accentColor,
+                   value: { $0.cleanJibes.map(Double.init) },
+                   note: "The engine's `success` verdict, which is stricter than "
+                       + "flown-through above.")
+        TrendChart(title: "CPH", unit: "clean jibes / h", points: points,
+                   tone: Color.accentColor,
+                   value: \.cleanJibesPerHour,
+                   note: "Clean jibes per hour of session time.")
         TrendChart(title: "Pumps to takeoff", unit: "strokes", points: points,
                    tone: DesignTokens.Effort.window,
                    value: \.avgPumpsToTakeoff,
@@ -232,6 +247,16 @@ struct TrendsView: View {
         .id("sideSuccess")
     }
 
+    /// Sessions per week — the one chart here whose x axis is *time* rather than a list of
+    /// events, because the whole point of it is the gaps between them.
+    ///
+    /// **The chart is handed the same calendar the buckets were cut with.** `LibraryStore`
+    /// puts each session in an ISO-8601 week starting on Monday; `BarMark(…, unit:
+    /// .weekOfYear)` then bins those Mondays again, and it does so under the *environment's*
+    /// calendar — which on a Sunday-first locale opens its weeks a day earlier and drew
+    /// every bar under the Sunday before the week it belongs to. Two calendars for one
+    /// question is one calendar too many, so the environment gets the ISO one and the bar
+    /// lands on the Monday the bucket is named after.
     private var weeklyChart: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Sessions per week").font(.subheadline.weight(.semibold))
@@ -240,9 +265,11 @@ struct TrendsView: View {
                         y: .value("Sessions", week.count))
                     .foregroundStyle(Color.accentColor.opacity(week.count == 0 ? 0.15 : 0.85))
             }
+            .environment(\.calendar, LibraryStore.isoCalendar)
             .chartYAxis { AxisMarks(position: .leading) }
             .frame(height: 140)
-            Text("\(weeks.filter { $0.count > 0 }.count) of \(weeks.count) weeks on the water")
+            Text("\(weeks.filter { $0.count > 0 }.count) of \(weeks.count) weeks on the "
+                 + "water. Weeks start on Monday (ISO-8601), on your own clock.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
