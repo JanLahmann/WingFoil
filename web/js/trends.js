@@ -36,8 +36,18 @@ const ROLE = {
   sideStarboard: { color: C.sideStarboard, dash: "5 3", width: 1.7 },
 };
 
-let hooks = { openRecord: () => {}, openSession: () => {} };
+let hooks = { openRecord: () => {}, openSession: () => {}, openPeriodCard: () => {} };
 let cache = { signature: null, data: null };
+/** The stored digests this view is currently showing. Kept because the custom range is the
+ *  one question Python has to be asked again for, and it needs the same input the aggregate
+ *  was given — not a second, subtly different list. */
+let entries = [];
+/** The last range the rider asked for, so its "Share card" button has something to open,
+ *  and the two dates he typed, so a resize does not throw them away — `redrawTrends` lays
+ *  the whole view out again, and a form that empties itself on a rotation is a form. */
+let customPeriod = null;
+let rangeFrom = "";
+let rangeTo = "";
 
 export function mountTrends(options) {
   hooks = { ...hooks, ...options };
@@ -48,8 +58,9 @@ export function mountTrends(options) {
  * (Re)build the view from the library index. `entries` are the stored digests — they go
  * to Python untouched, and everything drawn below comes back from it.
  */
-export async function showTrends(entries) {
+export async function showTrends(saved) {
   const host = el("trends-body");
+  entries = saved;
   if (!entries.length) {
     host.innerHTML = `<p class="note">No saved sessions yet. Save a couple of sessions to
       the library and your all-time records and season trends appear here.</p>`;
@@ -73,6 +84,9 @@ export async function showTrends(entries) {
 /** Drop the memoised aggregate — call after a save or a delete. */
 export function invalidateTrends() {
   cache = { signature: null, data: null };
+  // A saved or deleted session changes which afternoons a range holds, so the answer this
+  // view is still showing for one is out of date too.
+  customPeriod = null;
 }
 
 /** Redraw from the memoised aggregate — the figures are sized to their container, so a
@@ -108,6 +122,13 @@ function draw(host, agg) {
       number of jibes it holds and the minutes it lasted are not claims its speed channel
       makes.</p>
     <div class="table-scroll"><table id="session-records-table"></table></div>
+    <h3 class="sub-head">Periods</h3>
+    <p class="muted small">A trip, a month or a season, each with the same block of numbers.
+      A trip is one spot with no gap wider than ${esc(String(GAP_DAYS))} days and at least
+      two sessions — a holiday, found rather than filed. Rates over a period divide the
+      period's own totals: they are not the average of the sessions' own.</p>
+    <div id="period-custom"></div>
+    <div id="period-groups"></div>
     <h3 class="sub-head">Session by session</h3>
     <p class="muted small">Oldest first. Click a point to open that session. A gap in a line
       is a session where the value could not be measured — not a zero.</p>
@@ -116,6 +137,8 @@ function draw(host, agg) {
   renderTotals(el("trend-totals"), agg.totals);
   renderRecords(el("records-table"), agg.records);
   renderSessionRecords(el("session-records-table"), agg.sessionRecords || []);
+  renderPeriods(el("period-groups"), agg.periods || {});
+  renderCustomRange(el("period-custom"));
   const charts = el("trend-charts");
   for (const chart of agg.trends.charts) {
     const box = document.createElement("div");
@@ -218,6 +241,130 @@ function renderSessionRecords(table, records) {
         <td class="l stack-actions" data-th=""><button class="ghost small-btn"
           data-act="session" data-id="${esc(r.id)}">Open the session</button></td>
       </tr>`).join("")}</tbody>`;
+}
+
+/* ---------------------------------------------------------------------- periods
+ *
+ * Trips, then months, then seasons, each row expanding to the one aggregate block. Every
+ * number and every heading in here — the titles, the date lines, the block's labels, its
+ * values as *strings* — comes out of `library.periods`. This file opens a `<details>` and
+ * writes what Python said, which is the same division of labour the rest of the page keeps.
+ */
+
+/** The gap rule, printed in the explainer so the reader is told the rule the trips obey.
+ *  `library.TRIP_GAP_DAYS` is where it actually lives; repeating the number in a sentence
+ *  is the one thing a `<p>` can do that a Python constant cannot. */
+const GAP_DAYS = 3;
+
+const GROUPS = [
+  ["trips", "Trips", "Spells at one spot — a holiday the library noticed."],
+  ["months", "Months", "Calendar months, on the day the rider had."],
+  ["seasons", "Seasons", "1 April to 31 March, so a February session counts "
+    + "towards the winter it belongs to."],
+];
+
+/** One period's block as the same `.kv` list the totals above use — the block is a list of
+ *  {label, value} pairs and the page has a way of drawing those already. */
+const blockHtml = (block) => `<div class="kv">${(block || []).map((e) =>
+  `<div class="row"><span>${esc(e.label)}</span><span>${esc(e.value)}</span></div>`)
+  .join("")}</div>`;
+
+/** One row: a summary line that is always readable, and the block behind a disclosure.
+ *
+ *  Closed by default, all of them. Fifteen numbers times a dozen periods is a page nobody
+ *  reads; a heading plus "12 sessions · 31 July – 7 August 2026" is a list somebody scans,
+ *  and the block is one tap away for the one period being looked for. */
+function periodRow(period) {
+  const spot = sportCorrected(period.spot || "");
+  const title = period.kind === "trip" && spot
+    ? `${spot} · ${period.spanShort}` : period.title;
+  return `<details class="period" data-period="${esc(period.key)}">
+    <summary>
+      <span class="period-title">${esc(title)}</span>
+      <span class="period-sub">${esc(period.sessions)} session${
+        period.sessions === 1 ? "" : "s"} · ${esc(period.dateLine)}</span>
+    </summary>
+    ${blockHtml(period.block)}
+    <div class="period-actions"><button class="ghost small-btn" data-act="period-card"
+      data-key="${esc(period.key)}">Share card</button></div>
+  </details>`;
+}
+
+function renderPeriods(host, periods) {
+  const parts = [];
+  for (const [key, label, note] of GROUPS) {
+    const rows = periods[key] || [];
+    if (!rows.length) continue;
+    parts.push(`<div class="period-group"><h4>${esc(label)}</h4>
+      <p class="muted small">${esc(note)}</p>
+      ${rows.map(periodRow).join("")}</div>`);
+  }
+  host.innerHTML = parts.join("")
+    || `<p class="note">No period has a date to sit on yet — a session needs a recorded
+        start before it can belong to a month.</p>`;
+}
+
+/**
+ * The rider's own range: two date inputs and the four spells he asks for most.
+ *
+ * The presets are here rather than in Python for one reason and it is not arithmetic:
+ * "this week" is a question about *today*, and today is a fact about the reader's clock
+ * that the stored digests cannot supply. What the buttons produce is a pair of `YYYY-MM-DD`
+ * strings, and Python does everything downstream of that — including deciding which
+ * afternoons fall inside them, which is emphatically not a JavaScript date comparison.
+ */
+function renderCustomRange(host) {
+  const today = new Date();
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${
+    String(d.getDate()).padStart(2, "0")}`;
+  const shift = (days) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() + days);
+    return d;
+  };
+  // Monday-start, matching the week the histogram below buckets on (ISO-8601).
+  const monday = shift(-((today.getDay() + 6) % 7));
+  const presets = [
+    ["This week", iso(monday), iso(today)],
+    ["Last 7 days", iso(shift(-6)), iso(today)],
+    ["This month", iso(new Date(today.getFullYear(), today.getMonth(), 1)), iso(today)],
+  ];
+  rangeFrom = rangeFrom || presets[2][1];
+  rangeTo = rangeTo || iso(today);
+  host.innerHTML = `<div class="period-range">
+    <label>from <input type="date" id="period-from" value="${esc(rangeFrom)}"></label>
+    <label>to <input type="date" id="period-to" value="${esc(rangeTo)}"></label>
+    <button class="ghost small-btn" data-act="period-range">Show</button>
+    ${presets.map(([label, from, to]) =>
+      `<button class="ghost small-btn" data-act="period-preset" data-from="${esc(from)}"
+        data-to="${esc(to)}">${esc(label)}</button>`).join("")}
+  </div><div id="period-range-out"></div>`;
+}
+
+/** Ask Python for one range's block. The digests go over untouched, exactly as they do for
+ *  the aggregate — this is the only period the aggregate could not have known about, because
+ *  it is the only one whose input is something the rider typed. */
+async function showRange(from, to) {
+  const out = el("period-range-out");
+  if (!out) return;
+  rangeFrom = from || "";
+  rangeTo = to || "";
+  out.innerHTML = `<p class="note">Aggregating that range in Python…</p>`;
+  try {
+    const period = await ask("period", { digestsJson: JSON.stringify(entries),
+                                         start: from || null, end: to || null });
+    customPeriod = period;
+    out.innerHTML = period.sessions
+      ? `<div class="period-custom-head"><strong>${esc(period.title)}</strong>
+           <span class="dim">${esc(period.sessions)} session${
+             period.sessions === 1 ? "" : "s"} · ${esc(period.dateLine)}</span></div>
+         ${blockHtml(period.block)}
+         <div class="period-actions"><button class="ghost small-btn"
+           data-act="period-card" data-key="${esc(period.key)}">Share card</button></div>`
+      : `<p class="note">No session in that range.</p>`;
+  } catch (err) {
+    out.innerHTML = `<p class="note">Could not aggregate that range: ${esc(err.message)}</p>`;
+  }
 }
 
 /* ----------------------------------------------------------------------- charts */
@@ -423,6 +570,19 @@ const localDate = (s) => (s && (s.dateLocal || s.dateUtc)) || "";
 function onClick(ev) {
   const dot = ev.target.closest("circle[data-session]");
   if (dot) { hooks.openSession(dot.dataset.session); return; }
+  const preset = ev.target.closest("button[data-act=period-preset]");
+  if (preset) {
+    el("period-from").value = preset.dataset.from;
+    el("period-to").value = preset.dataset.to;
+    showRange(preset.dataset.from, preset.dataset.to);
+    return;
+  }
+  if (ev.target.closest("button[data-act=period-range]")) {
+    showRange(el("period-from").value, el("period-to").value);
+    return;
+  }
+  const card = ev.target.closest("button[data-act=period-card]");
+  if (card) { hooks.openPeriodCard(findPeriod(card.dataset.key), entries); return; }
   // A session record is the whole afternoon, so its row opens the session itself — there
   // is no window inside it to highlight.
   const open = ev.target.closest("button[data-act=session]");
@@ -432,4 +592,16 @@ function onClick(ev) {
   const key = button.closest("tr")?.dataset.record;
   const record = (cache.data?.records || []).find((r) => r.key === key);
   if (record) hooks.openRecord(record);
+}
+
+/** The period one button belongs to, by the key Python gave it. The custom range is not in
+ *  the aggregate — it was asked for separately — so it is checked first and by identity. */
+function findPeriod(key) {
+  if (customPeriod && customPeriod.key === key) return customPeriod;
+  const groups = cache.data?.periods || {};
+  for (const list of Object.values(groups)) {
+    const found = (list || []).find((p) => p.key === key);
+    if (found) return found;
+  }
+  return null;
 }
