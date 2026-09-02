@@ -28,7 +28,8 @@ globalThis.window = { addEventListener() {} };
 
 const JS = new URL("../js/", import.meta.url);
 const { keyMetrics } = await import(new URL("render.js", JS).href);
-const { LEAN_KEYS, cardStats } = await import(new URL("cardstats.js", JS).href);
+const { LEAN_KEYS, PERIOD_LEAN_KEYS, cardStats, periodCardStats } =
+  await import(new URL("cardstats.js", JS).href);
 
 /**
  * The block's cells, in order, as the page actually prints them.
@@ -51,6 +52,27 @@ function parseBlock(html) {
 const strip = (s) => s.replace(/<[^>]*>/g, "");
 const normalize = (s) => s.replace(/\s*·\s*/g, " · ").trim();
 
+/* The **period** card, from the shared fixture rather than from an analysis golden: a
+ * period is a set of afternoons, so the thing to dump is what `library.periods` made of ten
+ * of them and what the card does with each one's block. Same two questions as above —
+ * complete is the block, lean is a strict subset of it — asked of the second card kind. */
+const periodsPath = new URL("../../fixtures/periods/periods.expected.json", import.meta.url);
+const fixture = JSON.parse(readFileSync(periodsPath, "utf8"));
+const periods = [];
+for (const group of ["trips", "months", "seasons", "custom"]) {
+  for (const period of fixture[group]) {
+    periods.push({
+      group,
+      key: period.key,
+      title: period.title,
+      dateLine: period.dateLine,
+      block: period.block.map((e) => ({ key: e.key, label: e.label, value: e.value })),
+      complete: periodCardStats(period, "complete"),
+      lean: periodCardStats(period, "lean"),
+    });
+  }
+}
+
 const out = [];
 for (const path of process.argv.slice(2)) {
   const g = JSON.parse(readFileSync(path, "utf8"));
@@ -64,4 +86,8 @@ for (const path of process.argv.slice(2)) {
     leanKeys: [...LEAN_KEYS].sort(),
   });
 }
-process.stdout.write(JSON.stringify(out));
+process.stdout.write(JSON.stringify({
+  cards: out,
+  periods,
+  periodLeanKeys: [...PERIOD_LEAN_KEYS],
+}));

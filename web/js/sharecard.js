@@ -40,8 +40,9 @@ import { CREDIT, frameTrack, mapBackdrop, placeOn } from "./cardmap.js";
 import {
   BRANDING, CAPTION_SEP, NOTE_LIMIT, PRESETS, SHAPES, TITLE_LIMIT, cardDateLine,
   cardDisclaimer, cardKey, cardStats, cardTitle, cardTitleDraft, cleanNote, cleanTitle,
-  isWide, loadCardChoice, loadCardText, saveCardChoice, saveCardText,
+  isWide, loadCardChoice, loadCardText, periodCardContent, saveCardChoice, saveCardText,
 } from "./cardstats.js";
+import { getAnalysisJson } from "./store.js";
 import { indexAt, phaseRuns } from "./session.js";
 import { C, OUTCOME_COLOR } from "./viz.js";
 
@@ -233,6 +234,50 @@ function fittedPlacer(track, box) {
   const cx = (ext.x0 + ext.x1) / 2, cy = (ext.y0 + ext.y1) / 2;
   return (x, y) => ({ x: box.x + box.w / 2 + (x - cx) * scale,
                       y: box.y + box.h / 2 - (y - cy) * scale });
+}
+
+/**
+ * The **period card's** artwork: every session's outline, stacked.
+ *
+ * A period has no single ride to draw, and picking one would be picking a favourite. What it
+ * has is a shape — a week at one spot is a dozen tracks over the same water, and laid on top
+ * of one another they are recognisably that beach. So all of them go down, faint, and the
+ * picture is the accumulation rather than any one afternoon.
+ *
+ * **One placer for all of them**, fitted to the union of their extents, so they are at one
+ * scale and share a centre. Each session's `view.x`/`y` are metres in its own frame centred on
+ * its own track, which is exactly what makes that meaningful: a short session draws small
+ * inside a long one instead of being stretched to match it.
+ *
+ * No marks. Fifty outcome dots per session times a dozen sessions is confetti, and the card's
+ * numbers already say how the maneuvers went.
+ */
+function drawTrackStack(ctx, tracks, box) {
+  const merged = { runs: tracks.flatMap((t) => t.runs), marks: [] };
+  const place = fittedPlacer(merged, box);
+  if (!place) return;
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  // Faint enough that twelve of them read as one shape rather than as a scribble, and the
+  // overlap is what draws the eye: the water everything was ridden over comes out brightest.
+  ctx.globalAlpha = Math.max(0.22, Math.min(0.6, 2.4 / Math.max(1, tracks.length)));
+  for (const track of tracks) {
+    for (const run of track.runs) {
+      if (run.pts.length < 2) continue;
+      ctx.beginPath();
+      const first = place(run.pts[0][0], run.pts[0][1]);
+      ctx.moveTo(first.x, first.y);
+      for (let i = 1; i < run.pts.length; i++) {
+        const p = place(run.pts[i][0], run.pts[i][1]);
+        ctx.lineTo(p.x, p.y);
+      }
+      ctx.strokeStyle = run.flying ? FLYING : OFF_FOIL;
+      ctx.lineWidth = run.flying ? 1.8 : 1.8 * 0.5;
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
 }
 
 /** Draw the outline through `place`, a metres → layout-points projection. */
@@ -783,6 +828,8 @@ export async function drawCard(canvas, content, shape, options = {}) {
   if (content.track) {
     const place = map ? map.place : fittedPlacer(content.track, boxes.track);
     if (place) drawTrack(ctx, content.track, place);
+  } else if (content.tracks?.length && boxes.track) {
+    drawTrackStack(ctx, content.tracks, boxes.track);
   }
 
   const titleInset = map && !wide ? creditWidth(ctx, family) + 8 : 0;
@@ -807,6 +854,10 @@ function cardBoxes(content, shape, W, H) {
   const headH = headerHeight(content);
   const inner = { x: PAD_X, y: PAD_TOP, w: W - PAD_X * 2, h: H - PAD_TOP - PAD_BOTTOM };
 
+  // A period card has no single ride and a stack of them instead, and either way the box is
+  // the same box — the layout does not care which artwork lands in it.
+  const hasArt = Boolean(content.track) || Boolean(content.tracks?.length);
+
   if (isWide(shape)) {
     // Track left, everything that is words right — at 1920×1080 a track stretched across
     // the full width leaves the stat block a 70-pt strip and the title reads as a caption
@@ -816,7 +867,7 @@ function cardBoxes(content, shape, W, H) {
     const cx = inner.x + trackW + STACK_GAP * 2;
     return {
       inner,
-      track: content.track ? { x: inner.x, y: inner.y, w: trackW, h: inner.h } : null,
+      track: hasArt ? { x: inner.x, y: inner.y, w: trackW, h: inner.h } : null,
       header: { x: cx, y: inner.y, w: colW },
       grid: { x: cx, y: inner.y + headH + STACK_GAP, w: colW },
       footer: { x: cx, y: inner.y + inner.h - footH, w: colW, h: footH },
@@ -826,7 +877,7 @@ function cardBoxes(content, shape, W, H) {
   const gridY = inner.y + inner.h - footH - STACK_GAP - gridH;
   return {
     inner,
-    track: content.track
+    track: hasArt
       ? { x: inner.x, y: trackY, w: inner.w, h: gridY - STACK_GAP - trackY } : null,
     header: { x: inner.x, y: inner.y, w: inner.w },
     grid: { x: inner.x, y: gridY, w: inner.w },
@@ -859,7 +910,10 @@ export function cardContent(result, preset, text = {}) {
 /* ------------------------------------------------------------------ the dialog */
 
 const state = { result: null, key: "", shape: "portrait", preset: "complete", map: false,
-                title: "", note: "", blob: null, seq: 0 };
+                title: "", note: "", blob: null, seq: 0,
+                // The second payload: a period, and the outlines of the sessions in it.
+                // Null for the session card, which is every card this composer used to make.
+                period: null, tracks: [] };
 
 /** The offscreen canvas the PNG comes off. One per page: a 1920×1080 bitmap is 8 MB, and
  *  a phone that has just run an analysis does not need three of them. */
@@ -890,7 +944,9 @@ export function mountShareCard() {
     // the rider's own, so it is remembered as nothing — the twin of what `commit()` does on
     // iOS. The card is headlined identically either way.
     const typed = ev.target.value;
-    choose({ title: typed === cardTitle(state.result?.file?.name) ? "" : typed });
+    const derived = state.period ? state.period.title
+                                 : cardTitle(state.result?.file?.name);
+    choose({ title: typed === derived ? "" : typed });
   });
   el("card-note-input").addEventListener("input", (ev) => {
     choose({ note: ev.target.value });
@@ -914,6 +970,8 @@ export function openShareCard(result) {
   const dialog = el("card-dialog");
   if (!dialog || !result) return;
   state.result = result;
+  state.period = null;
+  state.tracks = [];
   state.key = cardKey(result);
   const saved = loadCardChoice();
   state.shape = saved.shape;
@@ -948,8 +1006,77 @@ export function openShareCard(result) {
   refresh();
 }
 
-/** Whether this document can carry a map at all — see `cardContent`'s `geo`. */
-const mapAvailable = (result) => Boolean(result?.view?.geo);
+/**
+ * Open the same composer for a **period**.
+ *
+ * The dialog, the shapes, the presets, the title and caption fields and the export are the
+ * session card's, unchanged: this is the same card describing a week instead of an afternoon.
+ * Two things are different and both are stated rather than inferred — the map switch is not
+ * offered (a period has no single ground; see docs/presentation.md), and the artwork is every
+ * session's outline stacked rather than one ride.
+ *
+ * The outlines come from the stored analyses, read on demand: the Records tab holds digests,
+ * which is all a number needs and not enough to draw with. A session whose document cannot be
+ * read is simply not in the stack — a card with eleven of a rider's twelve afternoons on it is
+ * a card, and a missing one is not worth refusing to make it.
+ */
+export async function openPeriodCard(period, entries) {
+  const dialog = el("card-dialog");
+  if (!dialog || !period) return;
+  state.result = null;
+  state.period = period;
+  state.tracks = [];
+  state.key = `period:${period.key}`;
+  const saved = loadCardChoice();
+  state.shape = saved.shape;
+  state.preset = saved.preset;
+  state.map = false;                      // no ground under a period, in this first version
+  const text = loadCardText(state.key);
+  state.title = text.title;
+  state.note = text.note;
+  el("card-title-input").value = cleanTitle(state.title) || period.title;
+  el("card-title-input").placeholder = period.title;
+  el("card-note-input").value = state.note;
+  syncNoteCount();
+  el("card-sub").textContent = `${period.title} · ${period.dateLine}`;
+  el("card-share").hidden = !canShareFiles();
+  syncChoices();
+  dialog.showModal();
+  refresh();
+  // After the first draw, not before it: the dialog opens on the stats immediately and the
+  // outlines arrive when the documents do, which on a dozen sessions is a second or two.
+  state.tracks = await loadTracks(period, entries);
+  if (state.period === period) refresh();
+}
+
+/** The period's sessions as drawable outlines, oldest first, silently skipping any the
+ *  library cannot hand back. */
+async function loadTracks(period, entries) {
+  const known = new Set((entries || []).map((e) => e.id));
+  const out = [];
+  for (const id of period.sessionIds || []) {
+    if (!known.has(id)) continue;
+    try {
+      const json = await getAnalysisJson(id);
+      if (!json) continue;
+      const track = buildTrack(JSON.parse(json));
+      if (track) out.push(track);
+    } catch { /* one unreadable document is not a reason to refuse the card */ }
+  }
+  return out;
+}
+
+/** Everything the card prints, for whichever payload the composer is holding. */
+function content() {
+  return state.period
+    ? periodCardContent(state.period, state.preset,
+                        { title: state.title, note: state.note }, state.tracks)
+    : cardContent(state.result, state.preset, { title: state.title, note: state.note });
+}
+
+/** Whether this document can carry a map at all — see `cardContent`'s `geo`. A period never
+ *  can: it has no single ground, and the follow-up is written down in the contract. */
+const mapAvailable = (result) => !state.period && Boolean(result?.view?.geo);
 
 function choose(next) {
   Object.assign(state, next);
@@ -985,14 +1112,12 @@ function syncChoices() {
  * shape before last.
  */
 async function refresh() {
-  if (!state.result) return;
+  if (!state.result && !state.period) return;
   const seq = ++state.seq;
   const preview = el("card-canvas");
   if (!full) full = document.createElement("canvas");
   const size = SHAPES[state.shape];
-  await drawCard(full, cardContent(state.result, state.preset,
-                                   { title: state.title, note: state.note }), state.shape,
-                 { map: state.map });
+  await drawCard(full, content(), state.shape, { map: state.map });
   if (seq !== state.seq) return;
 
   // The preview IS the PNG, scaled — not a second rendering of it, so what the rider
@@ -1022,7 +1147,8 @@ async function refresh() {
  *  twin of `FitShareFilter.filename` on iOS). A title of nothing but emoji slugs to nothing,
  *  which is why the stem falls back rather than producing a file called `-portrait.png`. */
 const fileName = () => {
-  const title = cleanTitle(state.title) || cardTitle(state.result?.file?.name);
+  const title = cleanTitle(state.title)
+    || (state.period ? state.period.title : cardTitle(state.result?.file?.name));
   const slug = title.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40).replace(/-+$/, "");
   return `${slug || "session"}-${state.shape}.png`;

@@ -254,6 +254,49 @@ export function cardStats(g, preset = "complete") {
   return preset === "lean" ? entries.filter((e) => LEAN_KEYS.has(e.key)) : entries;
 }
 
+/* ------------------------------------------------------------ the period card
+ *
+ * The second card kind, and the same card: three shapes, one footer, two presets, the
+ * rider's title and caption. What differs is what is being described — a week rather than
+ * an afternoon — so the stats are the aggregate block `library.period_block` produced and
+ * the date line is the period's span.
+ *
+ * Nothing here computes anything. `period.block` arrives from Python as `{key, label,
+ * value}` strings, and the only thing this file is allowed to do with it is drop entries,
+ * which is exactly the licence the session card's presets have.
+ */
+
+/** What the period card's `lean` preset keeps — the five a rider quotes about a holiday.
+ *  Identical to `PeriodBlock.leanKeys` in the kit and `library.PERIOD_LEAN_KEYS`. */
+export const PERIOD_LEAN_KEYS = new Set(["sessions", "hours", "cleanJibes", "cph", "best2s"]);
+
+/** The card's stat list for a period: the block, filtered by the preset. Nothing else — and,
+ *  as on the session card, deliberately no way to *add* a cell. */
+export function periodCardStats(period, preset = "complete") {
+  const entries = (period?.block || []).map(
+    (e) => ({ key: e.key, label: e.label, value: e.value }));
+  return preset === "lean" ? entries.filter((e) => PERIOD_LEAN_KEYS.has(e.key)) : entries;
+}
+
+/** Everything a period card prints. `tracks` are the outlines to stack behind it — the
+ *  period's own sessions, drawn faint on one another (see js/sharecard.js).
+ *
+ *  No disclaimer: the speed one is a claim about a single recording's speed channel, and
+ *  marking a whole holiday because one afternoon came from a GPX would answer a question
+ *  nobody asked. */
+export function periodCardContent(period, preset, text = {}, tracks = []) {
+  return {
+    title: cleanTitle(text.title) || period.title,
+    dateLine: period.dateLine,
+    note: cleanNote(text.note) || null,
+    stats: periodCardStats(period, preset),
+    disclaimer: null,
+    tracks,
+    track: null,
+    geo: null,
+  };
+}
+
 /* --------------------------------------------------------------- the identity */
 
 /**
