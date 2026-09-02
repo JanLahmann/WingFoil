@@ -1,5 +1,6 @@
 """Session-library glue: digests, dedupe keys, all-time records, trend series.
 
+
 The second (and last) piece of hand-written Python the web app adds, next to
 `web_entry.py`. It exists so that **the browser never computes a number in JavaScript**.
 Everything the library and the trends view show — the dedupe key, the per-session summary
@@ -31,7 +32,7 @@ import math
 import os
 import re
 import zipfile
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 # The stored-entry schema. v2 added the two attribution fields the JS side writes beside
 # the digest (`rider`, `example`, see `counts_towards_records`); a v1 entry predates them
@@ -42,7 +43,12 @@ from datetime import datetime, timezone
 # `utcOffsetSource`: which rung of the ladder produced that offset, so a stored row can
 # still tell an exact answer from a solar guess after the recording itself is long gone.
 # Null on every row written before it, which reads as "unrecorded", not as "exact".
-SCHEMA = 4
+# v5 adds the three turn counts the *session* records need — `jibesSuccessful` and the two
+# streaks — which the digest carried in no form at all: the records table was speed-only,
+# so nothing had ever asked for them. Absent (null) on every row written before it, which
+# is why every session record skips a null rather than reading it as a zero: a library
+# saved last month must not report "0 clean jibes" as its all-time best.
+SCHEMA = 5
 
 # The project-wide "same session" rule, in one place: a session start within +/-60 s AND a
 # duration within +/-60 s of an existing entry is the same session recorded twice (watch
@@ -67,6 +73,11 @@ RECORD_KINDS = [
     ("alpha500Kn", "alpha500", "Alpha 500", "kn"),
 ]
 
+# A clean-jibe *rate* over three jibes is a fact about three jibes. The floor is stated
+# here, applied in `_clean_jibe_rate`, and printed in the table's caption on both
+# platforms, so the rule the number obeys is the rule the reader is told.
+MIN_JIBES_FOR_RATE = 5
+
 SIDES = ("port", "starboard")
 
 
@@ -84,6 +95,22 @@ def _num(v, places: int | None = None):
     if not math.isfinite(f):
         return None
     return f if places is None else round(f, places)
+
+
+def _count(v):
+    """A whole-number tally, or None when the field is *absent*.
+
+    Deliberately not `int(x or 0)`, which is what the older digest fields do: for a count
+    that feeds a "most / longest ever" record, absent and zero have to stay different.
+    A digest saved before schema 5 carries no `jibesSuccessful` at all, and reading that
+    as 0 would put a fabricated zero in the running for an all-time best.
+    """
+    if v is None or isinstance(v, bool):
+        return None
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return None
 
 
 def _offset(value):
@@ -296,6 +323,15 @@ def digest(doc, file_name: str | None = None) -> dict:
             "successPct": _num(turns.get("successPct")),
             "jibes": int(turns.get("jibes") or 0),
             "tacks": int(turns.get("tacks") or 0),
+            # Schema 5, for the session records and the two new trend series. `successful`
+            # above is over *every* counted turn; this is the jibes alone, which is what
+            # "clean jibes" means everywhere else in both apps.
+            "jibesSuccessful": _count(turns.get("jibesSuccessful")),
+            # How the session *felt*, not how the turn channel scored (docs/algorithms.md
+            # "Turn streaks"): a swim in a straight line ends a run exactly as a botched
+            # jibe does, so these are engine numbers and are never recomputed here.
+            "longestDryStreak": _count(turns.get("longestDryStreak")),
+            "longestFlewStreak": _count(turns.get("longestFlewStreak")),
             # The outcome tally, so a library row can carry the headline metric the iOS
             # rows have always carried and these did not (app-ui-review.md §5.6). Over
             # every counted turn, which is what the iOS row shows, not over jibes alone.
@@ -443,6 +479,105 @@ def _records(ds: list) -> list:
     return out
 
 
+# ------------------------------------------------------- the non-speed session records
+
+
+def _clean_jibes(d: dict):
+    """Clean jibes in this session (`summary.turns.jibesSuccessful`), or None if the digest
+    predates schema 5 and never carried the number."""
+    return _count((d.get("turns") or {}).get("jibesSuccessful"))
+
+
+def _cph(d: dict):
+    """Clean jibes per hour — clean jibes over elapsed session time.
+
+    TODO: switch to the engine's own `summary.turns.cleanJibesPerHour` (landing in
+    parallel) once every digest carries it, and keep this arithmetic only as the fallback
+    for rows saved before it existed.
+    """
+    clean, duration = _clean_jibes(d), _num(d.get("durationS"))
+    if clean is None or duration is None or duration <= 0:
+        return None
+    return clean * 3600.0 / duration
+
+
+def _clean_jibe_rate(d: dict):
+    """Share of jibes that were clean, over sessions with enough jibes to mean anything."""
+    turns = d.get("turns") or {}
+    clean, jibes = _clean_jibes(d), _count(turns.get("jibes"))
+    if clean is None or jibes is None or jibes < MIN_JIBES_FOR_RATE:
+        return None
+    return 100.0 * clean / jibes
+
+
+def _streak(d: dict, key: str):
+    return _count((d.get("turns") or {}).get(key))
+
+
+def _flight_caption(d: dict):
+    """The longest flight's *distance*, which is the fact the duration alone leaves out —
+    six minutes downwind and six minutes of pumping in a lull are not the same flight."""
+    metres = _num(d.get("longestFlightM"))
+    return None if metres is None else f"{int(round(metres))} m of it"
+
+
+# The session records, in the order the second table shows them, and identical to iOS's
+# `SessionRecordKind`. Every entry is `(key, label, unit, places, pick, caption)`; `pick`
+# reads one digest and answers None when that session cannot supply the number at all,
+# which is what keeps a missing field out of a "best ever" claim. `caption` is either a
+# fixed string or a function of the *winning* digest.
+#
+# These are all-time bests over whole sessions, so — unlike the GP3S rows — they carry no
+# certification: a class-(c) recording can misreport a speed, but the number of jibes it
+# holds and the minutes it lasted are not claims its speed channel makes.
+SESSION_RECORD_KINDS = [
+    ("longestFlight", "Longest flight", "s", 1,
+     lambda d: _num(d.get("longestFlightS")), _flight_caption),
+    ("mostFlights", "Most flights", "", 0,
+     lambda d: _count(d.get("flightCount")), None),
+    ("bestFoilPct", "Highest on-foil share", "%", 1,
+     lambda d: _num(d.get("foilPct")), None),
+    ("mostCleanJibes", "Most clean jibes", "", 0, _clean_jibes, None),
+    ("bestCph", "Best CPH", "/h", 2, _cph, "Clean jibes per hour of session time."),
+    ("bestCleanJibeRate", "Best clean-jibe rate", "%", 1, _clean_jibe_rate,
+     f"Sessions with at least {MIN_JIBES_FOR_RATE} jibes."),
+    ("longestDryStreak", "Longest dry streak", "", 0,
+     lambda d: _streak(d, "longestDryStreak"), "Maneuvers in a row without a swim."),
+    ("longestFlewStreak", "Longest flew streak", "", 0,
+     lambda d: _streak(d, "longestFlewStreak"), "Maneuvers in a row that never touched down."),
+    ("longestSession", "Longest session", "s", 0,
+     lambda d: _num(d.get("durationS")), None),
+    ("mostDistance", "Most distance", "km", 2,
+     lambda d: _num(d.get("distanceKm")), None),
+]
+
+
+def _session_records(ds: list) -> list:
+    """All-time best per session-record kind. Same rules as `_records`: ties go to the
+    earliest session, and a kind nobody has a positive value for is dropped."""
+    out = []
+    for key, label, unit, places, pick, caption in SESSION_RECORD_KINDS:
+        best = None
+        for d in ds:                                  # ds is already oldest-first
+            v = _num(pick(d))
+            if v is None or v <= 0:
+                continue
+            if best is None or v > best[0]:
+                best = (v, d)
+        if best is None:
+            continue
+        value, d = best
+        row = {"key": key, "label": label, "unit": unit, "value": round(value, places)}
+        text = caption(d) if callable(caption) else caption
+        if text:
+            row["caption"] = text
+        row.update(_stamp(d))
+        # A session record is not a speed claim, so it carries no certification to badge.
+        row.pop("certified", None)
+        out.append(row)
+    return out
+
+
 def _points(ds: list, pick) -> list:
     pts = []
     for i, d in enumerate(ds):
@@ -494,7 +629,56 @@ def _trends(ds: list) -> dict:
     charts = _charts(ds)
     for c in charts:
         c.update(_y_axis(c["lines"], bool(c.get("percent"))))
-    return {"sessions": [_stamp(d) for d in ds], "charts": charts}
+    return {"sessions": [_stamp(d) for d in ds], "charts": charts, "weeks": _weeks(ds)}
+
+
+# The week rule, in one sentence and in one place: **ISO-8601 weeks, Monday start, in the
+# session's own local time**. iOS says the same thing in `LibraryStore.weeks` with
+# `Calendar(identifier: .iso8601)`; this is the web's half of that agreement, and it lives
+# in Python rather than in the chart code for the same reason every other number here does.
+#
+# Local time, not UTC: a Sunday-evening session that starts at 23:30 in Torbole is a 21:30
+# UTC session on the Sunday two months of the year and on the *Saturday* the rest of the
+# time — bucketing on the UTC instant would file it under the week before it happened.
+# `dateLocal` (schema 3) is the day the rider had; `dateUtc` is the fallback for a digest
+# saved before that field existed.
+def _week_start(date_text: str) -> str:
+    """`YYYY-MM-DD` -> the `YYYY-MM-DD` of the Monday that opens its ISO week."""
+    d = datetime.strptime(date_text, "%Y-%m-%d").date()
+    return (d - timedelta(days=d.weekday())).isoformat()
+
+
+def _weeks(ds: list) -> list:
+    """Sessions per ISO week, zero-filled from the first week to the last.
+
+    A week with no session is a bar of height 0, because that *is* the information — a
+    chart that simply omits the quiet weeks draws a season with no gaps in it.
+    """
+    buckets: dict[str, dict] = {}
+    for d in ds:
+        day = d.get("dateLocal") or d.get("dateUtc")
+        if not day:
+            continue
+        try:
+            key = _week_start(str(day)[:10])
+        except ValueError:
+            continue
+        b = buckets.setdefault(key, {"weekStart": key, "count": 0, "hours": 0.0})
+        b["count"] += 1
+        b["hours"] += (_num(d.get("durationS")) or 0.0) / 3600.0
+    if not buckets:
+        return []
+    cursor = datetime.strptime(min(buckets), "%Y-%m-%d").date()
+    end = datetime.strptime(max(buckets), "%Y-%m-%d").date()
+    out = []
+    # Same 520-week ceiling as iOS: a single mis-dated digest from 1989 must not turn the
+    # chart into thirty years of empty bars.
+    while cursor <= end and len(out) < 520:
+        key = cursor.isoformat()
+        b = buckets.get(key) or {"weekStart": key, "count": 0, "hours": 0.0}
+        out.append({**b, "hours": round(b["hours"], 3)})
+        cursor += timedelta(days=7)
+    return out
 
 
 def _charts(ds: list) -> list:
@@ -508,6 +692,12 @@ def _charts(ds: list) -> list:
         {"key": "turnSuccess", "label": "Clean jibe rate", "unit": "%", "percent": True,
          "lines": [{"key": "successPct", "label": "clean", "role": "primary",
                     "points": _points(ds, lambda d: _num((d.get("turns") or {}).get("successPct")))}]},
+        {"key": "cleanJibes", "label": "Clean jibes per session", "unit": "",
+         "lines": [{"key": "cleanJibes", "label": "clean jibes", "role": "primary",
+                    "points": _points(ds, _clean_jibes)}]},
+        {"key": "cph", "label": "Clean jibes per hour", "unit": "/h",
+         "lines": [{"key": "cph", "label": "CPH", "role": "primary",
+                    "points": _points(ds, _cph)}]},
         {"key": "pumps", "label": "Avg pumps to takeoff", "unit": "",
          "lines": [{"key": "avgPumpsToTakeoff", "label": "pumps", "role": "primary",
                     "points": _points(ds, lambda d: _num((d.get("takeoff") or {}).get("avgPumpsToTakeoff")))}]},
@@ -580,7 +770,8 @@ def aggregate(digests) -> dict:
     """
     ds = [d for d in _sorted(digests) if counts_towards_records(d)]
     return {"schema": SCHEMA, "count": len(ds), "totals": _totals(ds),
-            "records": _records(ds), "trends": _trends(ds)}
+            "records": _records(ds), "sessionRecords": _session_records(ds),
+            "trends": _trends(ds)}
 
 
 def aggregate_json(digests_json: str) -> str:
