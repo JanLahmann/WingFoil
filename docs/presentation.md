@@ -61,8 +61,12 @@ how the turn *ended*; clean is what it *cost*. They disagree on purpose — a ji
 cleanly through the sweep stays clean even when the foil is lost later in the recovery
 tail, which is exactly what the outcome records — and on the corpus session the two read
 30 % and 13 %. So the clean count never wears the outcome ladder's inks, never sits inside
-the three-count tally, and never borrows the word "flew". It is drawn beside them, in
-neutral ink, as the stricter reading of the same set of turns.
+the three-count tally, and never borrows the word "flew". Where it is a *count* beside the
+tally it is drawn in neutral ink, as the stricter reading of the same set of turns; where it
+is a *mark of its own* — the map's star — it carries the clean ink
+(`DesignTokens.Clean.jibe` / `--wf-clean-jibe`), a green chosen to be nothing on the ladder.
+Either way the rule is the same one: the two verdicts are two readings, and no ink may say
+they are one.
 
 ## Layers
 
@@ -71,6 +75,7 @@ neutral ink, as the stricter reading of the same set of turns.
 | `flying` | track tinted on-foil | visible | phase tint, not a marker |
 | `offFoil` | track tinted off-foil | visible | |
 | `effort` | the selected GP3S record window glowing on track + shaded on chart | visible | window choice is the record picker's (below) |
+| `cleanJibe` | **clean jibes, as filled stars** in place of their outcome dot | visible | cuts *across* the ladder — see below |
 | `flewThrough` | turn outcome markers, flew | visible | |
 | `touchdown` | turn outcome markers, touchdown | visible | |
 | `fellIn` | turn outcome markers, fell in | visible | |
@@ -84,8 +89,59 @@ Layer visibility persists on iOS (hidden-set, `mapLayerVisibility.v1`; unknown i
 decode harmlessly so old prefs survive new layers) and is transient on web. Legend chips are
 the only toggle surface; a struck-through chip means hidden.
 
+### The clean jibe is a star, and it needs two chips
+
+A counted jibe the engine's `success` flag passed is drawn as a **filled star** — SF Symbol
+`star.fill` on iOS, the `star` shape in `viz.js` — in the clean-jibe ink
+(`DesignTokens.Clean.jibe` / `--wf-clean-jibe`, `#2ee6a8`). Three rules, and all three are
+the same rule read from different sides:
+
+- **It replaces the outcome dot; it does not join it.** Two marks on one turn at map scale
+  is two events to the eye, and the turn is one.
+- **It is a green of its own, never `Outcome.flew`.** "Flew through" is how a jibe *ended*;
+  clean is what it *cost*, and the two disagree on purpose (see "Clean jibe" above). A star
+  drawn in the ladder's green would quietly claim they are one reading. Shape carries the
+  distinction anyway, so nothing here depends on telling one green from another.
+- **A starred jibe answers to two chips**, its outcome's and `cleanJibe`'s, and is drawn only
+  when **both** are visible. Clean cuts across the ladder rather than sitting on it: a star
+  that survived "hide touchdowns" would be a touchdown the rider asked not to see. Hiding
+  `cleanJibe` alone leaves the jibe on the map as the outcome dot it always was.
+- **Counts follow the chips, not the marks.** A clean jibe is one on its outcome chip and one
+  on the star's, which is what makes both live toggles. It is deliberately *not* a fifth
+  entry in `PresentationFacts.markers` — those partition the turns and the drawn flight ends
+  one mark each — but a fact of its own, `cleanJibes`, pinned per fixture in
+  `fixtures/presentation/`.
+
+The speed strip shares the visibility model, so a star hidden on the map is hidden there too,
+and the web keeps its numbered marks in step with the Turns table: the number rides with the
+mark and disappears with it.
+
+### The option row under the map: three groups, one question each
+
+Both platforms lay the row out the same way, and the split is by *what a tap changes*:
+
+| group | holds |
+|---|---|
+| route | flying · off foil · pumping · direction · the effort window |
+| events | **clean jibe** · flew through · touchdown · fell in · course change · takeoff · splash |
+| utilities | "show all" (only while something is hidden) · the map-style menu (iOS) or the zoom bar (web) · the `?` (iOS, and not on the full-screen map) |
+
+- **Clean jibe leads the event group.** It is the mark a rider opens the map to find, and it
+  is the one mark there that is not a rung of the ladder — putting it after "fell in" would
+  file the strict verdict as the ladder's fourth outcome.
+- **The utilities are last and trailing-aligned**, because none of them toggles a layer: the
+  style menu is the map's *ground*, "show all" is a reset, the zoom bar is a camera and the
+  `?` is a sheet. They used to sit in the middle of the route chips, which on a narrow phone
+  wrapped the style menu between "direction" and "best 2 s" and made the row read as a list
+  of eight unrelated things.
+- iOS draws the three as three rows (`MapLegendView.routeRow` / `markerRow` / `utilityRow`);
+  web draws them as three `.chip-group` spans with a visible seam between them, wrapping as
+  units so a narrow screen breaks between the questions rather than through one. The legend
+  note stays last, under all three.
+
 **Chip text is the layer catalogue's `label` in `design/tokens.json`** — flying · off foil ·
-pumping · direction · flew through · touchdown · fell in · course change · takeoff · splash
+pumping · direction · clean jibe · flew through · touchdown · fell in · course change ·
+takeoff · splash
 — read from the generated constants on both platforms, never written as a literal in a view.
 The one exception is `effort`, whose chip is labelled with the *selected* window ("best 2 s")
 because that is what it is currently highlighting; the catalogue's "best effort" is the
@@ -269,11 +325,53 @@ The rules, which are the only thing the two implementations can disagree about:
   cell is captioned **"JPH · dry jibes per hour"**. A rate that counted the swims too could
   be raised by falling more often, and a caption reading "jibes per hour" over a number that
   excludes seven of them would name a different figure than the one printed.
-- **Row 4 degrades JPH to TPH, not to zero.** When `jibesPerHour` is 0 while
-  `turnsPerHour` is positive — turns the wind axis could not name — the row shows
-  `turnsPerHour` labelled TPH. WPH needs no fallback: a fell-in flight end is a fall
-  whatever the wind was doing. A session with a duration and genuinely no turns keeps JPH
-  at `0.0`, because that is a measured zero.
+- **CPH sits beside JPH, never instead of it** (engine 0.10.0). `cleanJibesPerHour` is the
+  strict verdict per hour — the jibes he flew all the way through carrying his speed — and
+  the cell is captioned **"CPH · clean jibes per hour"**. The two are on the row together
+  because they answer the two questions a rider asks in exactly that order: *did I come out
+  of it still sailing*, and *did I ride it*. Neither is derivable from the other. 2026-08-03
+  pm is the session that makes the point — **4.5 JPH beside 0.0 CPH**, fifteen jibes he
+  mostly stayed out of the water on and did not ride one of — and a block printing either
+  number alone would be answering half the question. The pair reads lenient-then-strict, the
+  same direction the tally reads when its caption qualifies the three counts with the clean
+  number.
+  - **CPH never wears the outcome ladder's inks**, here or anywhere — see "Clean jibe"
+    above. It is a rate in the block's ordinary type, like every other cell on the row.
+
+**The clean jibe is a personal best, and it gets the celebration.** Until engine 0.10.0 every
+record the app celebrated was a speed. The two that were missing are the ones a wingfoiler
+actually chases, and they are kept beside the nine (`CleanJibeRecordKind`,
+`PersonalBestDetector.cleanJibeBests`):
+
+| record | what it is | why it is separate |
+|---|---|---|
+| **Clean jibes** | most clean jibes in one session (`SessionRow.jibesSuccessful`) | the afternoon he rode the most |
+| **Best CPH** | best `jibesSuccessful / (durationS/3600)` | the afternoon he rode them *fastest*, which a short evening in good wind wins |
+
+- **A session must last one rate window (15 min) to hold the CPH record.** The rolling
+  window's "never a flattering peak" rule (docs/algorithms.md) applied to a session: one
+  clean jibe in a four-minute sail is fifteen an hour, and a personal best a rider can set by
+  going home early is not one. The *count* takes no such floor.
+- **Ties keep the earlier session**, the way the window peak keeps the earliest window.
+- **One burst for both kinds.** A speed record and a clean-jibe record are the same moment to
+  a rider, so `RecordsView` fires one confetti burst and one haptic for either, with a line
+  above the table naming what was beaten — the two records have no row in a table of knots,
+  and a count of jibes in a column headed `kn` is the one thing a records screen may never
+  print. A snapshot written before the pair existed celebrates nothing, exactly as an empty
+  snapshot does: the first measurement beats nothing.
+- **The replay says it too.** `ReplayCommentary` gains a `cleanJibe` beat on the same
+  ordinals the dry count uses — "First clean jibe!", "5 clean jibes" — ranked *above* the dry
+  line, so a jibe that is both the fifth dry and the third clean is announced as the clean
+  one. It survives a tighter clip budget than an ordinary jibe ordinal and never outranks a
+  streak record.
+- **Row 4 degrades JPH to TPH, not to zero — and CPH goes with JPH.** When `jibesPerHour`
+  is 0 while `turnsPerHour` is positive — turns the wind axis could not name — the row shows
+  `turnsPerHour` labelled TPH, **and no clean-jibe cell at all**: CPH is a jibe rate, and
+  "0.0 clean jibes per hour" over a session that named no jibes would be the precise lie the
+  TPH fallback exists to avoid. Where jibes *were* named, a `0.0` CPH is a measured verdict
+  and is printed as one. WPH needs no fallback: a fell-in flight end is a fall whatever the
+  wind was doing. A session with a duration and genuinely no turns keeps JPH and CPH at
+  `0.0`, because those are measured zeroes.
 - **No duration, no row.** `durationS <= 0` makes the engine report all four rates as
   null, and row 4 disappears — the general rule ("a missing value is absent, never 0")
   applied to the one place where a 0.0 would read as a verdict on the rider.
@@ -410,7 +508,7 @@ Two presets choose how much of it appears, and a preset may only **remove** entr
 
 | preset | cells |
 |---|---|
-| `complete` (default) | the whole block: duration · distance · avg speed · max 2 s · tally · streaks · JPH/TPH · WPH |
+| `complete` (default) | the whole block: duration · distance · avg speed · max 2 s · tally · streaks · JPH/TPH · CPH · WPH |
 | `lean` | duration · distance · max 2 s · tally |
 
 **The rider gets a title and one caption, and neither is a cell** (schema v9). The card's
@@ -585,7 +683,7 @@ knows the word GPX:
 |---|---|
 | session badge | `limited data` (web `render.js`), `SessionDisplay.sourceClassNote` (iOS) — the title/subtitle names both absences: estimated speed, no pump data |
 | records table | an `uncertified` chip beside the **value** (web `trends.js`, iOS `RecordsView`) — beside the claim, not beside the session |
-| personal bests | a class-(c) effort never fires the celebration (`PersonalBestDetector.improvements`) |
+| personal bests | a class-(c) effort never fires the celebration (`PersonalBestDetector.improvements`). The clean-jibe records are exempt: a jibe count is not a speed and a bad fix cannot inflate it |
 | share card | `disclaimer` — "Speeds from a degraded source — uncertified" (`ShareCardStats`, `cardDisclaimer`) — the card leaves the device, so it cannot be read as a speed claim |
 
 The same source class also has no accelerometer, so the pump and takeoff-effort figures are

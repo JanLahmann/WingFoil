@@ -59,7 +59,8 @@ export function render(result, { highlight = null, isExample = false } = {}) {
  *   2  the best 2 s record, labelled with the window it is
  *   3  the outcome ladder's three counts on the ladder's own inks, plus the two turn
  *      streaks the engine has computed since 0.4.0 and neither app ever drew
- *   4  JPH (or TPH) and WPH — the per-hour rates, JPH over *dry* jibes since 0.7.0
+ *   4  JPH + CPH (or TPH alone) and WPH — the per-hour rates: JPH over *dry* jibes since
+ *      0.7.0, CPH over the *clean* ones since 0.10.0
  *
  * **This function is now layout only.** Every rule the two platforms have to agree on —
  * which entries exist, in what order, with which labels and which strings — moved to
@@ -249,9 +250,13 @@ const yn = (b) => (b ? "yes" : "–");
 
 function renderTurns(table, caption, g, v, meta) {
   const s = g.summary.turns;
+  // The clean count is split the way the tally is — clean jibes and clean **tacks**
+  // (`tacksSuccessful`, which the engine has counted since the first turn tally and no
+  // screen had ever printed).
   caption.textContent =
     `${s.turnsCounted} counted (${s.jibes} jibes, ${s.tacks} tacks), ${s.rejected} bear-aways rejected · ` +
-    `${s.turnsSuccessful} clean — carried ≥ 70 % of entry speed (${nf(s.successPct, 0)} %) · ` +
+    `${s.turnsSuccessful} clean — ${s.jibesSuccessful} jibes, ${s.tacksSuccessful} tacks — ` +
+    `carried ≥ 70 % of entry speed (${nf(s.successPct, 0)} %) · ` +
     `port/starboard ${s.port}/${s.starboard}`;
 
   const head = ["#", "time", "type", "turn", "tack", "entry kn", "min kn", "score", "clean",

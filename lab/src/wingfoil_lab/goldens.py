@@ -84,6 +84,15 @@ itself is unchanged; what was missing was the qualification, and without it a pa
 hour out under DST. That is a claim about the data, so it is engine-side, and a stored
 document written before it cannot say which rung it used — which is why the version moves
 and every golden is rewritten with the new stamp and identical numbers.
+
+Engine 0.10.0 adds `summary.cleanJibesPerHour` (docs/algorithms.md "Session rates"), the
+rate over the **strict** verdict — `turns.jibesSuccessful / (durationS/3600)`, the jibes he
+carved all the way through carrying his speed (docs/presentation.md "Clean jibe"). Nothing
+pre-existing moves: it is arithmetic over a count the summary has carried since 0.1.0, and
+every other value on every fixture is byte-identical to 0.9.1's. The bump is because a 0.9.1
+document cannot answer the question the rider actually asks — JPH says he got away with the
+jibe, CPH says he rode it — and a missing rate read as 0 would claim a session with no clean
+jibes in it. Same denominator, same null-on-no-duration rule, same 1 dp as JPH.
 """
 
 from __future__ import annotations
@@ -239,6 +248,9 @@ class SessionRates:
     turns_per_hour: float | None = None
     #: **Dry** jibes per hour: the ones he came out of still sailing. See `session_rates`.
     jibes_per_hour: float | None = None
+    #: **Clean** jibes per hour (engine 0.10.0): the strict verdict, `turns.jibesSuccessful`
+    #: over the same hour. See `session_rates`.
+    clean_jibes_per_hour: float | None = None
     wet_per_hour: float | None = None
 
 
@@ -293,7 +305,7 @@ def session_start_t(ct: CleanTrack) -> float:
 
 
 def session_rates(duration_s: float, distance_m: float, turns_counted: int, dry_jibes: int,
-                  fell_in: int) -> SessionRates:
+                  fell_in: int, clean_jibes: int = 0) -> SessionRates:
     """The rate block.
 
     `dry_jibes` is the jibes he came out of **still sailing** -- `jibes - jibeOutcomes.
@@ -302,6 +314,11 @@ def session_rates(duration_s: float, distance_m: float, turns_counted: int, dry_
     would let a rider raise his headline number by falling more often. `turnsPerHour` beside
     it is deliberately still **all** counted turns: that one answers "how busy", which is a
     question about activity and not about quality.
+
+    `clean_jibes` is the strict reading of the same set -- `turns.jibesSuccessful`, the jibes
+    he carved all the way through carrying his speed (docs/presentation.md "Clean jibe").
+    Dry asks whether he got away with it; clean asks whether he rode it, and CPH is the one
+    the rider is actually chasing.
 
     `fell_in` is **every** fell-in flight end, turn and straight-line alike -- the question
     is how often the rider got wet, and the water does not care whether he was mid-jibe at
@@ -315,6 +332,7 @@ def session_rates(duration_s: float, distance_m: float, turns_counted: int, dry_
         avg_speed_kmh=distance_m / duration_s * 3.6,
         turns_per_hour=turns_counted / hours,
         jibes_per_hour=dry_jibes / hours,
+        clean_jibes_per_hour=clean_jibes / hours,
         wet_per_hour=fell_in / hours,
     )
 
@@ -409,7 +427,8 @@ def build_golden(a: Analysis) -> dict:
     dry_ts, wet_ts = dry_jibe_times(a.turns), wet_times(a.flight_ends)
     duration_s = session_duration_s(a.clean)
     rates = session_rates(duration_s, rec.distance_m, a.turn_summary.turns_counted,
-                          len(dry_ts), a.flight_end_summary.all_ends.fell_in)
+                          len(dry_ts), a.flight_end_summary.all_ends.fell_in,
+                          a.turn_summary.jibes_successful)
     windows = window_rates(dry_ts, wet_ts, session_start_t(a.clean), duration_s,
                            a.rate_config)
     pumps = {k.flight_index: k.pumps_to_takeoff for k in a.takeoffs.takeoffs}
@@ -460,6 +479,8 @@ def build_golden(a: Analysis) -> dict:
             "avgSpeedKmh": _round(rates.avg_speed_kmh, 2),
             "turnsPerHour": _round(rates.turns_per_hour, 1),
             "jibesPerHour": _round(rates.jibes_per_hour, 1),   # DRY jibes (engine 0.7.0)
+            # CLEAN jibes (engine 0.10.0) -- the strict verdict, per hour.
+            "cleanJibesPerHour": _round(rates.clean_jibes_per_hour, 1),
             "wetPerHour": _round(rates.wet_per_hour, 1),
             "windowRates": _window_rates_json(windows),
             "turns": _turn_summary_json(a.turn_summary),

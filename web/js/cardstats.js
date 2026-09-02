@@ -209,12 +209,26 @@ export function keyMetricEntries(g) {
                row: 2 });
   }
 
-  // `durationS <= 0` makes the engine report all four rates as null: there is no hour to
+  // `durationS <= 0` makes the engine report every rate as null: there is no hour to
   // divide by, which is an absence and never a flattering 0.0. The row disappears.
   if (s.wetPerHour !== null && s.wetPerHour !== undefined) {
-    out.push((s.jibesPerHour > 0 || !(s.turnsPerHour > 0))
+    const namedJibes = s.jibesPerHour > 0 || !(s.turnsPerHour > 0);
+    out.push(namedJibes
       ? { key: "jph", label: "JPH · dry jibes per hour", value: nf(s.jibesPerHour, 1), row: 3 }
       : { key: "tph", label: "TPH · turns per hour", value: nf(s.turnsPerHour, 1), row: 3 });
+    // CPH rides beside JPH, never instead of it (engine 0.10.0). The two answer the two
+    // questions a rider asks in this order — "did I come out of it still sailing" and "did
+    // I ride it" — and the pair reads lenient-then-strict, the same direction the tally
+    // reads when its caption qualifies the three counts with the clean number.
+    //
+    // It rides with JPH rather than with the TPH fallback, because it is a *jibe* rate: on
+    // a session whose wind axis named no jibes at all, "0.0 clean jibes per hour" would be
+    // the precise lie the TPH fallback exists to avoid. Where jibes were named, a 0.0 is a
+    // measured verdict and is printed as one.
+    if (namedJibes) {
+      out.push({ key: "cph", label: "CPH · clean jibes per hour",
+                 value: nf(s.cleanJibesPerHour, 1), row: 3 });
+    }
     out.push({ key: "wph", label: "WPH · swims per hour", value: nf(s.wetPerHour, 1), row: 3 });
   }
 

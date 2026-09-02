@@ -342,12 +342,21 @@ public enum HelpCatalog {
                 + "of the same session, so a marker in one and not the other would be a lie. "
                 + "A hidden chip stays in place, struck through, and \"show all\" brings "
                 + "everything back. A category this session has none of is not a switch.",
+                "They come in three rows, by what a tap changes: how the track itself is "
+                + "drawn, then the events on it, then the map's own controls — show all, "
+                + "the map style, and this button.",
                 "The track is tinted by phase: teal where you were flying, grey where you "
                 + "were not. Small chevrons along it point the way you were riding.",
                 "The dots are verdicts, on one ladder: green flew through, orange touched "
                 + "down, red fell in, grey a course change that is no verdict at all. Fill "
                 + "carries the channel rather than a second colour — solid is a maneuver's "
                 + "outcome, hollow is a straight-line flight end that no turn explains.",
+                "A star is a clean jibe: one you flew all the way through carrying your "
+                + "speed. It takes the place of that jibe's dot, and it is a green of its "
+                + "own, because \"clean\" and \"flew through\" are two different readings "
+                + "of the same turn — one is how it ended, the other is what it cost. A "
+                + "starred jibe needs both its chips: hide the outcome it ended on and the "
+                + "star goes with it, and hiding the star alone leaves the dot behind.",
                 "Takeoffs are arrows, not dots, so a busy track cannot confuse them with "
                 + "outcomes: an up-arrow got you up, and a red u-turn is an attempt that did "
                 + "not. One chip hides both halves, because they are two ends of the same "

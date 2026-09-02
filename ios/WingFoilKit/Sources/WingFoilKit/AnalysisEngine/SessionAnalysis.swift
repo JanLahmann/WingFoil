@@ -22,7 +22,8 @@ public enum AnalysisEngine {
     /// re-derive rather than be read as if the rider had never declared a habit.
     ///
     /// 0.6.0 adds the **session rate metrics** (docs/algorithms.md "Session rates"):
-    /// `summary.durationS` / `avgSpeedKmh` / `turnsPerHour` / `jibesPerHour` / `wetPerHour`.
+    /// `summary.durationS` / `avgSpeedKmh` / `turnsPerHour` / `jibesPerHour` / `wetPerHour`
+    /// (`cleanJibesPerHour` joins them in 0.10.0).
     /// Nothing pre-existing moves — they are arithmetic over numbers the summary already
     /// carried — but a 0.5.0 document cannot answer "how busy was that hour" at all, and a
     /// missing rate decoded as 0 would claim a session with no jibes in it.
@@ -76,7 +77,17 @@ public enum AnalysisEngine {
     /// usually states no zone at all. The ladder is unchanged; what was missing was the
     /// qualification, and a stored 0.9.0 document cannot supply it retroactively, which is
     /// what the bump is for (docs/presentation.md, "Session time").
-    public static let version = "0.9.1"
+    ///
+    /// 0.10.0 adds one field and moves no other: `summary.cleanJibesPerHour`
+    /// (docs/algorithms.md "Session rates"), the rate over the **strict** verdict —
+    /// `turns.jibesSuccessful` over the same elapsed hour every other rate divides by. It is
+    /// arithmetic over a count the summary has always carried, so every stored number
+    /// re-derives identical; what a 0.9.1 document cannot do is answer the question the
+    /// rider actually asks. JPH says he got away with the jibe, CPH says he rode it, and CPH
+    /// is what the key-metrics block prints from here on (docs/presentation.md, "Clean
+    /// jibe"). A missing rate decoded as 0 would claim a session with no clean jibes in it,
+    /// which is why the bump — and the null — are both here.
+    public static let version = "0.10.0"
 }
 
 /// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's
@@ -650,13 +661,19 @@ public struct SessionRates: Sendable, Equatable {
     /// is a jibe he made. A jibe he swam out of is one he did not, and counting it would
     /// let a rider raise his headline number by falling more often.
     public var jibesPerHour: Double?
+    /// **Clean** jibes per hour (engine 0.10.0): `turns.jibesSuccessful` over the same hour —
+    /// the strict verdict, a counted jibe flown all the way through carrying its speed
+    /// (docs/presentation.md "Clean jibe"). Not a new measurement, just the engine's
+    /// per-turn `success` flag given a rate. Dry asks whether he got away with it; clean
+    /// asks whether he rode it, and clean is the one the key-metrics block prints.
+    public var cleanJibesPerHour: Double?
     /// How often the rider got **wet**, per hour: every `fell_in` flight end, straight-line
     /// swims and turn swims alike. Deliberately not the turn ladder's `fellIn` — most of a
     /// session's falls happen outside a counted turn, and the water does not care.
     public var wetPerHour: Double?
 
     public init(durationS: Double, distanceM: Double, turnsCounted: Int, dryJibes: Int,
-                fellIn: Int) {
+                fellIn: Int, cleanJibes: Int = 0) {
         guard durationS > 0 else {
             self.durationS = max(durationS, 0)
             return
@@ -666,6 +683,7 @@ public struct SessionRates: Sendable, Equatable {
         avgSpeedKmh = distanceM / durationS * 3.6
         turnsPerHour = Double(turnsCounted) / hours
         jibesPerHour = Double(dryJibes) / hours
+        cleanJibesPerHour = Double(cleanJibes) / hours
         wetPerHour = Double(fellIn) / hours
     }
 }
@@ -790,6 +808,8 @@ public struct SessionSummary: Sendable, Codable, Equatable {
     public var avgSpeedKmh: Double?
     public var turnsPerHour: Double?
     public var jibesPerHour: Double?
+    /// The strict jibe rate (engine 0.10.0) — see `SessionRates.cleanJibesPerHour`.
+    public var cleanJibesPerHour: Double?
     public var wetPerHour: Double?
     /// The rolling 15-minute view of the same two events (engine 0.7.0).
     public var windowRates = SessionWindowRates()
@@ -808,12 +828,13 @@ public struct SessionSummary: Sendable, Codable, Equatable {
         self.distanceKm = distanceKm
     }
 
-    /// Fills the five session-rate fields from one computed rate block.
+    /// Fills the six session-rate fields from one computed rate block.
     public mutating func apply(_ rates: SessionRates) {
         durationS = rates.durationS
         avgSpeedKmh = rates.avgSpeedKmh
         turnsPerHour = rates.turnsPerHour
         jibesPerHour = rates.jibesPerHour
+        cleanJibesPerHour = rates.cleanJibesPerHour
         wetPerHour = rates.wetPerHour
     }
 }
@@ -975,7 +996,8 @@ public enum SessionSummarizer {
                                    distanceM: records.totalDistanceM,
                                    turnsCounted: turnSummary.turnsCounted,
                                    dryJibes: dryJibeTs.count,
-                                   fellIn: endSummary.all.fellIn))
+                                   fellIn: endSummary.all.fellIn,
+                                   cleanJibes: turnSummary.jibesSuccessful))
         summary.windowRates = SessionWindowRates(dryJibeTs: dryJibeTs, wetTs: wetTs,
                                                  startT: clean.samples.first?.t ?? 0,
                                                  durationS: clean.spanS,

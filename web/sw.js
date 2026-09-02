@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v33";     // v33: session records, the two clean-jibe series, sessions per week
+const VERSION = "v33";     // v33: session records and the clean-jibe series; CPH on the key metrics, the clean jibe as a star on the map
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.

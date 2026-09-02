@@ -87,6 +87,18 @@ def marker_counts(doc: dict) -> dict[str, int]:
     return counts
 
 
+def clean_jibe_count(doc: dict) -> int:
+    """The star layer: counted, named a jibe, and passed the engine's own `success` flag
+    (docs/presentation.md, "Clean jibe").
+
+    Deliberately **not** one of `marker_counts`: those partition the turns and the drawn
+    flight ends one mark each, and a clean jibe is already counted there under whatever
+    outcome it ended on. This is the second, stricter reading laid over the same set.
+    """
+    return sum(1 for t in doc.get("turns", [])
+               if t.get("counted") and t["type"] == "jibe" and t["success"])
+
+
 def takeoff_counts(doc: dict) -> dict[str, int]:
     """Both halves of the takeoff layer. Every entry in `takeoffs` flew (the engine only
     writes one for a flight that happened); the failures are the pumping episodes the
@@ -182,6 +194,7 @@ def facts(stem: str, doc: dict) -> dict:
         # starts every flight, one end stops it (docs/presentation.md "Enforcement" 3).
         "flightCount": doc.get("summary", {}).get("flightCount"),
         "markers": marker_counts(doc),
+        "cleanJibes": clean_jibe_count(doc),
         "flightEnds": flight_end_counts(doc),
         "takeoff": takeoff_counts(doc),
         "splash": splash_count(doc),
