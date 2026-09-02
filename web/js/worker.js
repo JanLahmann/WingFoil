@@ -12,7 +12,8 @@
  *   {type:'analyze',   id, name, buffer}
  *   {type:'digest',    id, json, name}              analysis JSON -> library digest
  *   {type:'dedupe',    id, digestJson, indexJson}   is this session already stored?
- *   {type:'aggregate', id, digestsJson}             records + trends over the library
+ *   {type:'aggregate', id, digestsJson}             records + trends + periods
+ *   {type:'period',    id, digestsJson, start, end} one custom date range's block
  *   {type:'zip',       id, files:[{name, bytes}]}   bulk export, via Python's zipfile
  * Protocol (worker -> main):
  *   {type:'status', step, state, detail} | {type:'ready'}
@@ -150,6 +151,17 @@ self.onmessage = async (ev) => {
         await ready();
         self.postMessage({ type: "json", id: msg.id, kind: "aggregate",
                            json: lib.aggregate_json(msg.digestsJson) });
+        break;
+      // The trips, months and seasons ride along with `aggregate` — they read the same
+      // digests, and a second pass over the same list would be a second answer waiting to
+      // disagree. Only the range the rider types needs a call of its own, because only it
+      // has an input the aggregate could not have known.
+      case "period":
+        await ready();
+        self.postMessage({ type: "json", id: msg.id, kind: "period",
+                           json: lib.custom_period_json(msg.digestsJson,
+                                                        msg.start || null,
+                                                        msg.end || null) });
         break;
       case "zip":
         await buildZip(msg.id, msg.files);

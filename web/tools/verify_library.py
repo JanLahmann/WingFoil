@@ -23,9 +23,14 @@ Four groups:
    turn split, which is hand-counted here from the golden's own `turns` array.
 3. **Records aggregation** over the real FIT corpus, with the winners named explicitly.
 4. **Trend series shape**: one point per session per line, oldest first, aligned indices.
+6. **Periods** over the same corpus, with the trips it finds named explicitly — there is
+   exactly one week at Garda in `fixtures/sessions/` and the rule has to find that week and
+   not two or three of them. `6b` re-derives `fixtures/periods/periods.expected.json`, which
+   is the file iOS is held to, so a stale one cannot pin the phone to an answer this module
+   no longer gives.
 
-Groups 2-4 need `fixtures/sessions/**.fit` and take ~20 s (they run the real engine).
-`--fast` runs group 1 and the pure-string checks only.
+Groups 2-6 need `fixtures/sessions/**.fit` and take ~20 s (they run the real engine).
+`--fast` runs group 1, group 6b and the pure-string checks only.
 """
 
 from __future__ import annotations
@@ -234,7 +239,7 @@ def check_attribution() -> None:
         e.pop("schema")
     check("  a schema-1 library is unchanged", library.aggregate(old)["count"], 2)
     check("  digest stamps the current schema",
-          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 6)
+          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 7)
 
     # Schema 3 (engine 0.8.2): the session's own UTC offset, and the local calendar date it
     # implies. `dateUtc` stays what it always was — the UTC day — so an entry written before
@@ -294,6 +299,20 @@ def check_digest_fidelity() -> None:
     # library used to divide the count by the hour itself, which was the same arithmetic
     # in a second place — and a second place is where two answers come from.
     check("  cleanJibesPerHour == golden", d["cleanJibesPerHour"], s["cleanJibesPerHour"])
+    # Schema 7: the three facts a *period* needs and a session row never carried.
+    # `rateDurationS` is the engine's own cleaned span — the denominator all four session
+    # rates divide by — and is deliberately **not** `durationS`, which is the FIT's
+    # `total_elapsed_time` and is what the stored id is built from.
+    check("  rateDurationS == the engine's own span", d["rateDurationS"], s["durationS"])
+    check("  …which is not the row's durationS on this session",
+          d["rateDurationS"] != d["durationS"], True)
+    check("  wetExits == the fell-in flight ends WPH counts",
+          d["wetExits"], s["flightEnds"]["all"]["fellIn"])
+    check("  …and WPH is exactly that over the engine's hour",
+          round(d["wetExits"] / (d["rateDurationS"] / 3600.0), 1), s["wetPerHour"])
+    check("  geo is the view's anchor fix, degrees only",
+          d["geo"], {"lat": round(doc["view"]["geo"]["lat"], 6),
+                     "lon": round(doc["view"]["geo"]["lon"], 6)})
     check("  flightCount == golden", d["flightCount"], s["flightCount"])
     check("  longestFlightS == golden", d["longestFlightS"], s["longestFlightS"])
     check("  turns.counted == golden", d["turns"]["counted"], s["turns"]["turnsCounted"])
@@ -639,6 +658,84 @@ def check_export() -> None:
 # --------------------------------------------------------------------------- main
 
 
+def check_periods(digests: list[dict]) -> None:
+    """The periods the real corpus makes, named explicitly.
+
+    The synthetic rules live in `lab/tests/test_library.py` and the cross-platform contract
+    in `fixtures/periods/periods.expected.json`; this is the third question, and the only
+    one the other two cannot answer: does the rule find the holiday a person would name
+    when it is handed fifteen actual recordings? There is exactly one week at Garda in this
+    corpus and the rider knows which one it is.
+    """
+    section("6. periods over the FIT corpus")
+    ps = library.aggregate(digests)["periods"]
+
+    trips = ps["trips"]
+    check("  two visits, newest first", [t["title"] for t in trips],
+          ["Nago Torbole Windsurfen · 29 Aug – 30 Aug",
+           "Nago Torbole Windsurfen · 31 Jul – 7 Aug"])
+    garda = trips[-1]
+    check("  the Garda week is one trip of twelve afternoons", garda["sessions"], 12)
+    check("  …spanning 31 July to 7 August", (garda["startDate"], garda["endDate"]),
+          ("2026-07-31", "2026-08-07"))
+    check("  …dated in words for the card", garda["dateLine"], "31 July – 7 August 2026")
+    # Three filenames spell that beach three ways; the cluster is one place all the same.
+    check("  …at one place", {e["key"]: e["value"] for e in garda["block"]}["spots"], "1")
+    # The lone Rheinstetten afternoon in June is a session, not a holiday.
+    check("  a single afternoon is in no trip",
+          any("Rheinstetten" in t["title"] for t in trips), False)
+
+    months = [m["key"] for m in ps["months"]]
+    check("  months are newest first, no gaps invented",
+          months, ["2026-08", "2026-07", "2026-06"])
+    check("  August holds thirteen afternoons", ps["months"][0]["sessions"], 13)
+    check("  one season, and it never reached January",
+          [s["title"] for s in ps["seasons"]], ["Season 2026"])
+    check("  the season holds every counted session",
+          ps["seasons"][0]["sessions"], len(digests))
+
+    # The block is the same list in the same order everywhere, and its rates divide summed
+    # by summed — never the mean of the sessions' own.
+    block = {e["key"]: e["value"] for e in ps["seasons"][0]["block"]}
+    check("  the block is the catalogue, in order",
+          [e["key"] for e in ps["seasons"][0]["block"]],
+          [k for k, _l, _f in library.PERIOD_BLOCK])
+    seconds = sum(d["rateDurationS"] for d in digests)
+    clean = sum(d["turns"]["jibesSuccessful"] for d in digests)
+    check("  hours are the engine's own spans, summed",
+          block["hours"], f"{seconds / 3600.0:.1f} h")
+    check("  CPH is the summed count over the summed hours",
+          block["cph"], f"{clean / (seconds / 3600.0):.1f}")
+    check("  best 2 s is the library's own record",
+          block["best2s"], f"{max(d['records']['best2sKn'] for d in digests):.2f} kn")
+
+    # The rider's own range, inclusive at both ends, over the same corpus.
+    week = library.custom_period(digests, "2026-08-01", "2026-08-04")
+    check("  a custom range takes both its endpoints", week["sessions"], 6)
+    check("  …and titles itself with its span", week["title"], "1 Aug – 4 Aug 2026")
+
+
+def check_period_fixture() -> None:
+    """`fixtures/periods/periods.expected.json` still says what `library` says.
+
+    The file is the contract iOS is held to, so a stale one would pin the phone to an
+    answer this module no longer gives. `make_presentation_goldens.py --check` says the
+    same thing in CI; this says it in the tool a person runs while changing `library.py`.
+    """
+    section("6b. the periods fixture is current")
+    sys.path.insert(0, str(WEB / "tools"))
+    import make_presentation_goldens as gen                              # noqa: PLC0415
+
+    path = REPO / "fixtures" / "periods" / "periods.expected.json"
+    if not path.exists():
+        FAILED.append("  fixtures/periods/periods.expected.json is missing")
+        return
+    stored = json.loads(path.read_text(encoding="utf-8"))
+    fresh = gen.period_facts()
+    for key in ("rules", "sessions", "trips", "months", "seasons", "custom"):
+        check(f"  {key}", stored.get(key), fresh[key])
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -650,11 +747,13 @@ def main(argv=None) -> int:
     check_spot_names()
     check_attribution()
     check_export()
+    check_period_fixture()
     if not args.fast:
         digests = build_digests()
         check_digest_fidelity()
         check_records(digests)
         check_trends(digests)
+        check_periods(digests)
     else:
         _close_section()
         print("\n(--fast: corpus checks skipped)")
