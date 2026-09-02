@@ -133,6 +133,88 @@ public enum RecordKind: String, CaseIterable, Sendable, Codable {
     }
 }
 
+/// The all-time bests that are **not** speeds, in the order the Records screen shows them.
+///
+/// The same list in the same order as `SESSION_RECORD_KINDS` in the analyzer's
+/// `library.py`: a rider who opens the app and the web page is reading one set of personal
+/// bests, and two tables that disagree about which afternoons count would be two answers to
+/// one question.
+///
+/// Every one of these is a whole-session fact, which is why the kind reads a `SessionRow`
+/// rather than a `record_effort` row: the numbers are already denormalized onto the session
+/// index for the Trends charts, so the second records table costs one query and no new
+/// table. It is also why none of them carries a certification badge — a class (c) recording
+/// can misreport a *speed*, but the number of jibes it holds and the minutes it lasted are
+/// not claims its speed channel makes.
+public enum SessionRecordKind: String, CaseIterable, Sendable, Codable {
+    case longestFlight, mostFlights, bestFoilPct, mostCleanJibes, bestCph,
+         bestCleanJibeRate, longestDryStreak, longestFlewStreak, longestSession, mostDistance
+
+    /// A clean-jibe *rate* over three jibes is a fact about three jibes. The floor is
+    /// stated here, applied in `value(in:)` and printed in `caption` — the rule the number
+    /// obeys is the rule the reader is told. `library.MIN_JIBES_FOR_RATE` is its twin.
+    public static let minJibesForRate = 5
+
+    /// How the value should read. The view formats; the kit does not build strings.
+    public enum Unit: Sendable { case seconds, count, percent, perHour, km }
+
+    public var label: String {
+        switch self {
+        case .longestFlight: "Longest flight"
+        case .mostFlights: "Most flights"
+        case .bestFoilPct: "Highest on-foil share"
+        case .mostCleanJibes: "Most clean jibes"
+        case .bestCph: "Best CPH"
+        case .bestCleanJibeRate: "Best clean-jibe rate"
+        case .longestDryStreak: "Longest dry streak"
+        case .longestFlewStreak: "Longest flew streak"
+        case .longestSession: "Longest session"
+        case .mostDistance: "Most distance"
+        }
+    }
+
+    public var unit: Unit {
+        switch self {
+        case .longestFlight, .longestSession: .seconds
+        case .mostFlights, .mostCleanJibes, .longestDryStreak, .longestFlewStreak: .count
+        case .bestFoilPct, .bestCleanJibeRate: .percent
+        case .bestCph: .perHour
+        case .mostDistance: .km
+        }
+    }
+
+    /// The line under the row, where the number needs one. Nil where the label says it all.
+    public var caption: String? {
+        switch self {
+        case .bestCph: "Clean jibes per hour of session time."
+        case .bestCleanJibeRate: "Sessions with at least \(Self.minJibesForRate) jibes."
+        case .longestDryStreak: "Maneuvers in a row without a swim."
+        case .longestFlewStreak: "Maneuvers in a row that never touched down."
+        default: nil
+        }
+    }
+
+    /// This session's value for the kind, or nil when the session cannot supply it at all.
+    ///
+    /// Nil is not zero, and the distinction is the whole point: a row imported before the
+    /// v10 migration re-derived it has no streaks, and reading those as 0 would enter a
+    /// fabricated number in the running for an all-time best.
+    public func value(in row: SessionRow) -> Double? {
+        switch self {
+        case .longestFlight: row.longestFlightS
+        case .mostFlights: row.flightCount.map(Double.init)
+        case .bestFoilPct: row.foilPct
+        case .mostCleanJibes: row.jibesSuccessful.map(Double.init)
+        case .bestCph: row.cleanJibesPerHour
+        case .bestCleanJibeRate: row.cleanJibeRatePct
+        case .longestDryStreak: row.longestDryStreak.map(Double.init)
+        case .longestFlewStreak: row.longestFlewStreak.map(Double.init)
+        case .longestSession: row.durationS
+        case .mostDistance: row.distanceKm
+        }
+    }
+}
+
 /// One session's best effort for one record kind — the PB *history*, not just the PB.
 /// The all-time record is `max(valueKn)`; the sparkline is the whole series.
 public struct RecordEffortRow: Codable, FetchableRecord, PersistableRecord, Sendable, Equatable {
