@@ -69,6 +69,12 @@ rider had to pump it out; neither alone is enough.
 The score%/success pair is kept as the secondary, continuous metric: outcome says *what
 happened*, score says *how much speed the turn cost*.
 
+A **360** is a fourth thing entirely, and an experimental one: a full rotation, detected by
+`detect_three_sixties` only when `detectThreeSixty` is set, and never counted as a tack or a
+jibe. It is off by default and its parameters are uncalibrated -- there is no ground-truthed
+spin in the corpus -- so with the flag down nothing in this module produces one and the
+serialized document is byte-for-byte what it was.
+
 The summary finally carries two **streaks**, ``longest_dry_streak`` (no swim) and
 ``longest_flew_streak`` (every turn carried clean). They are the one part of the summary
 that is *not* read from the turn channel alone: a streak claims something about the rider,
@@ -98,6 +104,9 @@ JIBE = "jibe"
 BEAR_AWAY = "bear_away"
 ROUND_UP = "round_up"
 UNCLASSIFIED = "turn"          # wind axis missing or too weak (golden schema: "turn")
+#: A full rotation (see `detect_three_sixties`). **Experimental and unvalidated**: nothing
+#: produces one unless `TurnConfig.detect_three_sixty` is set, which it is not by default.
+THREE_SIXTY = "three_sixty"
 COUNTED_TYPES = (TACK, JIBE, UNCLASSIFIED)
 
 FLEW_THROUGH = "flew_through"
@@ -131,6 +140,15 @@ class TurnConfig:
     recover_hold_s: float = 2.0           # turnRecoverHold: held this long = turn is over
     outcome_window_s: float = 60.0        # turnOutcomeWindow: cap on following the recovery
     baro_drop_m: float = 25.0             # turnBaroDrop: below median altitude = submerged
+
+    # --- 360 spins: EXPERIMENTAL, and dark unless the flag below is set (see
+    # `detect_three_sixties` and docs/algorithms.md "360 spins"). Nothing about the
+    # serialized document changes while `detect_three_sixty` is False.
+    detect_three_sixty: bool = False      # detectThreeSixty: unvalidated, off by default
+    three_sixty_min_deg: float = 300.0    # threeSixtyMinDeg: net rotation of the sweep
+    three_sixty_max_s: float = 10.0       # threeSixtyMaxS: window the rotation must fit in
+    three_sixty_reversal_deg: float = 25.0   # threeSixtyReversalDeg: allowed back-swing
+    three_sixty_min_kmh: float = 5.0      # threeSixtyMinKmh: Doppler floor inside the sweep
 
 
 @dataclass
@@ -238,6 +256,13 @@ class TurnSummary:
     unknown_side: int = 0
     longest_dry_streak: int = 0      # longest run of counted turns without a fell_in
     longest_flew_streak: int = 0     # longest run of counted turns that all flew through
+    #: Full rotations (`THREE_SIXTY`), and **None when the detector was not run at all** --
+    #: which is not the statement "he did no 360s". Every other count here is a tally over
+    #: a channel that always exists; this one is a tally over a channel that is off by
+    #: default, so its absence has to be spellable. Nothing else in this dataclass moves
+    #: when it is filled: a 360 is not a maneuver the rider attempted (`turns_counted`),
+    #: not a bear-away (`rejected`), and feeds no outcome, streak or rate.
+    three_sixties: int | None = None
 
 
 @dataclass
@@ -292,6 +317,13 @@ def detect_turns(clean: CleanTrack, flights: FlightResult,
     cfg = config or TurnConfig()
     cands = _accepted_candidates(clean, flights, cfg)
     turns = [_build_turn(c, wind, cfg) for c in cands]
+    if cfg.detect_three_sixty:
+        # Purely additive, and only ever under the flag: the spin pass never removes or
+        # renames a maneuver the main scan reported, so an overlapping tack/jibe stays
+        # exactly where it was. Whether that overlap is a double report is precisely the
+        # open question the flag exists to keep out of the shipped document.
+        turns = sorted(turns + detect_three_sixties(clean, wind, cfg),
+                       key=lambda t: t.start_t)
     _assign_outcomes(turns, clean, flights, cfg, pump, evidence)
     return turns
 
@@ -338,16 +370,150 @@ def _scan(clean: CleanTrack, flights: FlightResult, cfg: TurnConfig):
                 yield _Candidate(seg=seg, t=t, tu=tu, u=u, rate=rate, i=i, j=j, arc=arc)
 
 
-def summarize_turns(turns: list[Turn],
-                    ends: Sequence[FlightEndLike] = ()) -> TurnSummary:
+def detect_three_sixties(clean: CleanTrack, wind: WindEstimate | None = None,
+                         config: TurnConfig | None = None) -> list[Turn]:
+    """Every full rotation in the track, as uncounted `THREE_SIXTY` turns, in time order.
+
+    **Experimental and unvalidated.** There is no ground-truthed 360 anywhere in the corpus,
+    so nothing below is calibrated against a spin anyone actually rode; `detect_three_sixty`
+    is False and this pass is not reached from `detect_turns` until someone sets it.
+
+    A spin is a sweep of the unwrapped COG that turns `threeSixtyMinDeg` **one way** inside
+    `threeSixtyMaxS`, never backing off its own extreme by more than `threeSixtyReversalDeg`
+    on the way round. The monotonicity test is what separates one rotation from two
+    maneuvers that happen to add up: a tack and a jibe in the same direction with a straight
+    bit between them sum to 360 as surely as a spin does, but the straight bit costs them
+    the duration cap, and a pair that reverses fails the back-swing test.
+
+    Two speed gates, both on Doppler, both there for the same reason: **a stopped rider's
+    COG spins freely.** With no way on, the bearing between consecutive fixes is decided by
+    a metre of GPS noise, so a rider sitting on his board produces a perfect, fast,
+    monotone 360 out of nothing at all. So the sweep must be *entered on foil* --
+    `foilEntrySpeed` at its first sample -- and must never drop below `threeSixtyMinKmh`
+    inside it. The floor is deliberately well under foiling speed: a spin ridden on the
+    foil and dropped halfway through is still a spin the rider did, and the gate is
+    guarding against the standstill, not judging the maneuver.
+
+    The geometry, scoring and outcome of a spin are built exactly as a turn's
+    (`_build_turn`) -- only the naming is replaced: a full rotation crosses the wind axis
+    *and* the downwind line by construction, so `classify_sweep`'s tack/jibe answer says
+    nothing about it. `counted` is False, and `summarize_turns` keeps it out of every
+    maneuver tally rather than filing it under `rejected`: a 360 is not a failed jibe.
+    """
+    cfg = config or TurnConfig()
+    cands = sorted(_spin_candidates(clean, cfg), key=lambda c: c.start_t)
+    return [_build_three_sixty(c, wind, cfg) for c in _drop_overlaps(cands)]
+
+
+def _spin_candidates(clean: CleanTrack, cfg: TurnConfig):
+    """Yield every sweep that passes the rotation and speed gates, per gap-free segment.
+
+    Unlike `_scan` this reads the COG over the whole segment rather than over the
+    `turnCogSpeedFloor` "sailing runs". The floor exists to keep position noise out of the
+    *heading*, and it would do that here too -- but a spin's own Doppler gates are stricter
+    at the entry (`foilEntrySpeed`) and looser inside it (`threeSixtyMinKmh`) by design, and
+    routing them through a third, differently-shaped floor would make the parameters in the
+    docs describe something other than what runs. The noise the floor guards against is
+    exactly what the entry gate refuses.
+    """
+    for seg in clean.segments():
+        if len(seg) < 3 or seg["x"].isna().all():
+            continue
+        t = seg["t"].to_numpy(float)
+        x, y = seg["x"].to_numpy(float), seg["y"].to_numpy(float)
+        v = seg["doppler_mps"].to_numpy(float)
+        u = unwrapped_cog_deg(x, y)
+        if len(u) < 2:
+            continue
+        tu = t[:len(u)]
+        rate = _rates(tu, u)
+        for i, j in _spins(tu, u, cfg):
+            if not _spin_speed_ok(v, i, j, cfg):
+                continue
+            yield _Candidate(seg=seg, t=t, tu=tu, u=u, rate=rate, i=i, j=j,
+                             arc=_arc(x, y, i, j + 1))
+
+
+def _spins(tu: np.ndarray, u: np.ndarray, cfg: TurnConfig) -> list[tuple[int, int]]:
+    """Per start index, the *first* monotone `threeSixtyMinDeg` rotation inside the window.
+
+    The first rather than the widest, because a rotation that has already closed does not
+    become a better one by running on into the next few seconds of sailing -- and the
+    overlap resolution afterwards keeps the widest of whatever survives anyway.
+
+    "Monotone" is measured as a drawdown from the running extreme: for a clockwise sweep,
+    how far the COG ever came back from the furthest clockwise it had reached. That is the
+    test that refuses a tack and a jibe sharing a window, and it is one-sided per direction,
+    so a start index is abandoned only once *both* directions have been spent.
+    """
+    out: list[tuple[int, int]] = []
+    n = len(u)
+    for i in range(n - 1):
+        limit = float(tu[i]) + cfg.three_sixty_max_s
+        run_max = run_min = float(u[i])
+        back_cw = back_ccw = 0.0
+        for k in range(i + 1, n):
+            if tu[k] > limit:
+                break
+            run_max, run_min = max(run_max, float(u[k])), min(run_min, float(u[k]))
+            back_cw = max(back_cw, run_max - float(u[k]))
+            back_ccw = max(back_ccw, float(u[k]) - run_min)
+            net = float(u[k] - u[i])
+            if net >= cfg.three_sixty_min_deg and back_cw <= cfg.three_sixty_reversal_deg:
+                out.append((i, k))
+                break
+            if -net >= cfg.three_sixty_min_deg and back_ccw <= cfg.three_sixty_reversal_deg:
+                out.append((i, k))
+                break
+            if min(back_cw, back_ccw) > cfg.three_sixty_reversal_deg:
+                break
+    return out
+
+
+def _spin_speed_ok(v: np.ndarray, i: int, j: int, cfg: TurnConfig) -> bool:
+    """Entered on foil, and never at a standstill inside the sweep (Doppler both times).
+
+    A missing Doppler sample fails both tests: a spin claimed on a channel that was not
+    reporting is not a spin anyone can stand behind. COG element `k` describes the step
+    leaving sample `k`, so the sweep i..j spans samples i..j+1 -- the same convention `_arc`
+    reads the geometry over.
+    """
+    entry = float(v[i]) if i < len(v) else float("nan")
+    inside = v[i:min(j + 2, len(v))]
+    if inside.size == 0 or not np.isfinite(entry) or not np.isfinite(inside).all():
+        return False
+    return (entry >= cfg.foil_entry_speed_kmh * KMH_TO_MPS
+            and float(np.min(inside)) >= cfg.three_sixty_min_kmh * KMH_TO_MPS)
+
+
+def _build_three_sixty(c: _Candidate, wind: WindEstimate | None, cfg: TurnConfig) -> Turn:
+    """A scored `Turn` renamed to `THREE_SIXTY` (see `detect_three_sixties`)."""
+    turn = _build_turn(c, wind, cfg)
+    turn.kind, turn.counted = THREE_SIXTY, False
+    return turn
+
+
+def summarize_turns(turns: list[Turn], ends: Sequence[FlightEndLike] = (),
+                    config: TurnConfig | None = None) -> TurnSummary:
     """Aggregate detected turns; bear-aways/round-ups only feed `rejected`.
 
     Every count here reads turns alone. `ends` is needed by the **streaks** only, which are
     a claim about the rider rather than about the turn channel and so have to see the
     losses that happened outside a maneuver too (`streaks`).
+
+    `config` is read for one thing: whether the 360 detector ran. With it on,
+    `three_sixties` starts at 0 and counts up; without it the field stays None, because "no
+    spins were found" and "nobody looked" are different statements (`TurnSummary`).
     """
     s = TurnSummary()
+    if (config or TurnConfig()).detect_three_sixty:
+        s.three_sixties = 0
     for t in turns:
+        if t.kind == THREE_SIXTY:
+            # Not a maneuver attempt, not a bear-away: it belongs to neither ladder, so it
+            # is tallied on its own and touches nothing else in the summary.
+            s.three_sixties = (s.three_sixties or 0) + 1
+            continue
         if not t.counted:
             s.rejected += 1
             continue
