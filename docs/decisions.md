@@ -2,6 +2,50 @@
 
 Newest first. One paragraph each: context → decision → consequence.
 
+## ADR-017 · The complication is a **launcher**, the Siri intents live in the app, and neither detects anything
+ADR-016 declined a complication on the grounds that it would be "a fourth surface making claims
+about a session". That reasoning was about *claims*, and it survives intact — what it did not
+cover is the gesture. Between a watch face and a running recording there were five steps (crown,
+find the app in a grid of forty, launch, wait, START), performed in knee-deep water by a rider
+holding a wing overhead with wet hands, and every one of them is a chance to start the session
+two minutes late or not at all. Decision: **one complication whose entire job is to start the
+session**, plus Siri phrases that do the same thing hands-free. `accessoryCircular`,
+`accessoryCorner` and `accessoryRectangular` carry the brand mark and a `widgetURL` of
+`cleanjibe://start`; the app answers it through `SessionRecorder.startFromOutside()`, which is
+also the door `StartSessionIntent` comes through. One entry point, so a session begun from a face
+is not a second kind of session — same `HKWorkoutSession`, same water lock, same files — and the
+UI follows without a tap because `phase` is what `RootView` switches on.
+**The complication is a separate target because WidgetKit demands one; the intents are not,
+because nothing demands it.** A complication is a WidgetKit extension — its own process, its own
+`@main`, its own bundle id — and there is no way to render one from an app target, which is why
+`WingFoilWatchWidgets` (`de.lahmann.wingfoil.watchkitapp.widgets`) exists at all. App Intents are
+under no such constraint, and an intents *extension* would have been actively worse: the thing
+this intent moves is a state machine that owns an `HKWorkoutSession`, which exists in the app
+process and nowhere else, so an extension would have to message the app to do the work — the app
+doing the work, with a round trip in front of it. `openAppWhenRun` says "run me in the app" and is
+also the honest answer, because the rider who says it out loud wants to see his watch recording.
+No new entitlement: no app group, no HealthKit in the extension, nothing but the URL.
+**It still claims almost nothing, and that is ADR-016 holding rather than being softened.** The
+watch cannot print a clean-jibe count or a foil percentage, because under ADR-016 it does not
+compute them — those exist only after the phone has analysed the recording, and a face that
+guessed at them would be the exact second answer that ADR forbids. The rectangular family
+therefore shows either "Start session" or the three facts the watch measured itself (date,
+duration, distance), through a ~200-byte `WatchLastSessionStore` snapshot written *after* the
+`.cjw` container is safely assembled — never before, so a face cannot advertise a session that
+failed to save. That store has the same app-group shape, and the same missing entitlement, as
+`WidgetSnapshotStore`: the manual App Store profiles do not carry `group.de.lahmann.wingfoil`, so
+today the write is a no-op and every face reads "Start session". Which costs nothing that matters,
+because the launcher — the whole point — needs no group at all.
+Consequences: `SessionRecorder` becomes a singleton (there is one workout session on a wrist, and
+two things outside the view tree now have to reach it); `startFromOutside` waits on the HealthKit
+prompt before starting, because a Siri start may be the first thing a cold process does and
+`WorkoutBridge.start` throws if Health has not answered; the two constants both targets must agree
+on live in `ios/WatchShared/`, outside either target's source tree, for the XcodeGen path-collision
+reason `Views/WatchBrand.swift` already documents; and `ios/ExportOptions.plist` needs a fourth
+profile, three bundles deep. **iPhone-side intents were considered and dropped**: the phone cannot
+start a watch workout without `HKHealthStore.startWatchApp(with:)` and a WatchConnectivity handoff,
+which is a feature and not a trivial re-export, so "Start a CleanJibe session" is a watch phrase.
+
 ## ADR-016 · The Apple Watch recorder is class (b) and **certifies**, and it detects nothing
 An Apple Watch is the one recording device a rider already owns that can reach the library
 without an account, a cable or anybody's cloud: the watch writes a file, `WCSession.transferFile`
