@@ -160,6 +160,11 @@ the two public listings, full device list, no lock) rather than "Private beta of
 support e-mail there is `info@cleanjibe.org` since 2026-09-02, like the public ones. Both carry `brand/cover-500-private.png` as cover — the current mark with the red PRIVATE
 ribbon, regenerated 2026-09-02 (the old file still had the pre-September mark).
 
+On the wrist the developer-only builds are called **Dev CleanJibe** / **Dev CleanJibe Field**
+(`AppNameBeta` in the two strings.xml, since 2026-09-03) so they can be told from the public
+"CleanJibe Beta" in a truncated watch list; their store version strings carry a `-dev` suffix
+(`0.9.5-dev`, `0.9.6-dev`) because the manifests did not move.
+
 Naming trap in `garmin/bin/`: files called `*-beta-*.iq` from 0.9.4 on (`CleanJibe-beta-0.9.4.iq`,
 `CleanJibeField-beta-0.9.x.iq`) carry the **invite** UUID, not the dev-beta one — "beta" there
 meant the "Invite Beta" listing. The dev-beta exports are the `*-devbeta-*.iq` files.
