@@ -674,9 +674,10 @@ final class SessionStore {
         await importFiles(urls: urls, source: .gdpr)
     }
 
+    @discardableResult
     private func runImport(_ payloads: [DiscoveredFit], source: ImportSource,
-                           rider: String? = nil) async {
-        guard !payloads.isEmpty, !isBusy else { return }
+                           rider: String? = nil) async -> ImportSummary {
+        guard !payloads.isEmpty, !isBusy else { return ImportSummary() }
         isBusy = true
         status = "Importing \(payloads.count) file\(payloads.count == 1 ? "" : "s")…"
         importProgress = ImportSummary()
@@ -711,6 +712,7 @@ final class SessionStore {
         await load()
         await refreshPersonalBests(celebrate: true)
         await writeNewSessionsToHealth()
+        return summary
     }
 
     /// Bridges the ingestor's `@Sendable` progress closure back to the main actor.
@@ -989,10 +991,9 @@ final class SessionStore {
             .flatMap(DefaultTurnType.init(rawValue:)) ?? WindConfig().defaultTurnType
     }
 
-    // MARK: - Apple Health (opt-in, write-only)
+    // MARK: - Apple Health (writing: opt-in, and only ever our own sessions)
 
-    /// Off by default (plan phase 4: "optional Apple Health write"). Nothing is ever read
-    /// back from HealthKit — Garmin's own sync already owns that direction.
+    /// Off by default (plan phase 4: "optional Apple Health write").
     var healthWriteEnabled: Bool {
         get { UserDefaults.standard.bool(forKey: "healthWriteEnabled") }
         set {
@@ -1025,9 +1026,15 @@ final class SessionStore {
         // collapse them — `HKMetadataKeyExternalUUID` carries the watch's session id on one
         // and the library's row id on the other, so they are not even recognisably the same
         // session. The watch's copy is strictly the better one, so the phone stands down.
+        //
+        // Nor is a workout that *came out of* Health (ADR-017): it is already there, written
+        // by whoever recorded it, and our stub would be the second `.surfingSports` workout on
+        // the same afternoon — the rider having imported a session in order to be shown it
+        // twice, in the one place where getting it wrong leaves a mark outside this app.
         let pending = sessions.filter {
             !exported.contains($0.id) && $0.rider == nil
                 && !ImportSource.appleWatch.isNamed(in: $0.importSource)
+                && !ImportSource.appleHealth.isNamed(in: $0.importSource)
         }
         guard !pending.isEmpty else { return }
         var written = 0
@@ -1042,6 +1049,207 @@ final class SessionStore {
             status = "Added \(written) workout\(written == 1 ? "" : "s") to Apple Health"
         }
     }
+
+    // MARK: - Apple Health (reading: Apple's own Workout app)
+
+    /// Which Apple workout types the Health import looks at. Surfing + Water Sports until the
+    /// rider says otherwise — an empty set is a legal answer and means "offer me nothing".
+    var healthWorkoutTypes: Set<HealthWorkoutType> {
+        get {
+            guard let raw = UserDefaults.standard.stringArray(forKey: Self.healthTypesKey) else {
+                return HealthWorkoutType.defaults
+            }
+            return Set(raw.compactMap(HealthWorkoutType.init(rawValue:)))
+        }
+        set {
+            UserDefaults.standard.set(newValue.map(\.rawValue).sorted(),
+                                      forKey: Self.healthTypesKey)
+            healthCandidates = []
+        }
+    }
+
+    static let healthTypesKey = "healthWorkoutTypes"
+    static let healthImportedKey = "healthImportedWorkouts"
+
+    /// Workouts already pulled in, by `HKWorkout.uuid`.
+    ///
+    /// Belt to the dedupe key's braces, and it earns its keep on the case the key cannot see:
+    /// a workout the rider imported and then *deleted* from the library. The tombstone keeps
+    /// intervals.icu from bringing it back (`SessionIngestor.delete`) and this keeps the
+    /// automatic Health pickup from doing the same, silently, an hour later.
+    private var importedHealthWorkouts: Set<UUID> {
+        get {
+            Set((UserDefaults.standard.stringArray(forKey: Self.healthImportedKey) ?? [])
+                .compactMap(UUID.init(uuidString:)))
+        }
+        set {
+            UserDefaults.standard.set(newValue.map(\.uuidString).sorted(),
+                                      forKey: Self.healthImportedKey)
+        }
+    }
+
+    /// What Health is offering right now. Empty until the screen asks, and emptied whenever
+    /// the type selection changes — a stale list is a list of the wrong sport.
+    private(set) var healthCandidates: [HealthWorkoutCandidate] = []
+    private(set) var isReadingHealth = false
+    /// Set once the permission sheet has been through, so the Import screen can stop leading
+    /// with an explainer the rider has already read.
+    var hasAskedHealthPermission: Bool {
+        get { UserDefaults.standard.bool(forKey: "healthReadAsked") }
+        set { UserDefaults.standard.set(newValue, forKey: "healthReadAsked") }
+    }
+
+    /// True once a session has actually arrived this way. The automatic pickup is offered only
+    /// after this: a toggle for a source the rider has never used is a question about nothing.
+    var hasImportedFromHealth: Bool {
+        get { UserDefaults.standard.bool(forKey: "healthDidImport") }
+        set { UserDefaults.standard.set(newValue, forKey: "healthDidImport") }
+    }
+
+    /// "Import new Health workouts automatically" — off until asked for.
+    var healthAutoImport: Bool {
+        get { UserDefaults.standard.bool(forKey: "healthAutoImport") }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "healthAutoImport")
+            guard newValue else { return }
+            Task {
+                await watchHealthForNewWorkouts()
+            }
+        }
+    }
+
+    var isHealthAvailable: Bool { HealthImporter.shared.isAvailable }
+
+    /// The permission prompt. HealthKit never reveals a read denial — that is deliberate on
+    /// Apple's part — so this reports only that the sheet went through; whether anything was
+    /// granted shows up as workouts, or as their absence.
+    @discardableResult
+    func requestHealthPermission() async -> Bool {
+        hasAskedHealthPermission = true
+        return await HealthImporter.shared.requestAuthorization()
+    }
+
+    /// Reads the workout list Health will show. Cheap: metadata only, no routes.
+    func refreshHealthCandidates() async {
+        guard isHealthAvailable else { return }
+        isReadingHealth = true
+        defer { isReadingHealth = false }
+        let found = await HealthImporter.shared.candidates(types: healthWorkoutTypes,
+                                                           oldest: IcuSyncService.defaultOldest(),
+                                                           imported: importedHealthWorkouts)
+        healthCandidates = await markAlreadyImported(found)
+    }
+
+    /// Second opinion on "already imported", for the workouts the uuid set does not know
+    /// about: the same afternoon may have reached the library from intervals.icu first, and
+    /// the rider should be told that before he taps rather than after.
+    private func markAlreadyImported(_ list: [HealthWorkoutCandidate])
+    async -> [HealthWorkoutCandidate] {
+        var out: [HealthWorkoutCandidate] = []
+        out.reserveCapacity(list.count)
+        for var candidate in list {
+            if !candidate.isAlreadyImported,
+               let held = try? await ingestor.holdsSession(startDate: candidate.start,
+                                                           durationS: candidate.durationS) {
+                candidate.isAlreadyImported = held
+            }
+            out.append(candidate)
+        }
+        return out
+    }
+
+    /// Fetches each workout's route and heart rate, maps them, and sends the bytes through the
+    /// ordinary import door — same `SessionIngestor`, same ±60 s dedupe, same archive.
+    ///
+    /// A workout Health kept no positions for is *skipped with a reason*, not failed: an
+    /// indoor session, a watch that never got a fix and a rider who denied location all land
+    /// here, and none of them is an error worth an alert.
+    func importFromHealth(_ ids: [UUID]) async {
+        guard !ids.isEmpty, !isBusy, !isReadingHealth else { return }
+        isReadingHealth = true
+        status = "Reading \(ids.count) workout\(ids.count == 1 ? "" : "s") from Health…"
+
+        var payloads: [DiscoveredFit] = []
+        var routeless = 0
+        let version = Self.appVersion
+        var read: [UUID] = []
+        for id in ids {
+            do {
+                let made = try await HealthImporter.shared.container(for: id, appVersion: version)
+                payloads.append(DiscoveredFit(name: made.name, data: made.data))
+                read.append(id)
+            } catch {
+                routeless += 1
+            }
+        }
+        isReadingHealth = false
+
+        guard !payloads.isEmpty else {
+            status = routeless > 0
+                ? "No GPS route in \(routeless == 1 ? "that workout" : "those workouts")"
+                : nil
+            return
+        }
+        let summary = await runImport(payloads, source: .appleHealth)
+        // Remembered whatever the outcome: a duplicate is still a workout that has been
+        // through here, and re-offering it every time the screen opens would be the app
+        // failing to remember its own answer.
+        importedHealthWorkouts.formUnion(read)
+        if summary.imported > 0 { hasImportedFromHealth = true }
+        status = Self.healthImportMessage(summary, routeless: routeless)
+        await refreshHealthCandidates()
+    }
+
+    /// The banner. Names Apple Health rather than reading "1 imported", because a session that
+    /// appeared without the rider touching a file needs to say where it came from.
+    static func healthImportMessage(_ summary: ImportSummary, routeless: Int) -> String? {
+        var parts: [String] = []
+        if summary.imported > 0 {
+            parts.append("\(summary.imported) session\(summary.imported == 1 ? "" : "s") "
+                         + "imported from Apple Health")
+        }
+        if summary.duplicates > 0 {
+            parts.append("\(summary.duplicates) already in your library")
+        }
+        if routeless > 0 { parts.append("\(routeless) with no GPS route") }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    /// Launch, foreground, and an observer wake: whatever Health has that the library does not.
+    ///
+    /// Silent by construction on the ordinary pass, where there is nothing new — no status, no
+    /// permission prompt, no work beyond one metadata query.
+    func checkHealthForNewWorkouts() async {
+        guard healthAutoImport, isHealthAvailable, !isBusy, !isReadingHealth else { return }
+        let found = await HealthImporter.shared.candidates(types: healthWorkoutTypes,
+                                                           oldest: IcuSyncService.defaultOldest(),
+                                                           imported: importedHealthWorkouts)
+        let fresh = await markAlreadyImported(found).filter { !$0.isAlreadyImported }
+        guard !fresh.isEmpty else { return }
+        await importFromHealth(fresh.map(\.id))
+    }
+
+    /// Registers the HealthKit observer and sweeps once.
+    ///
+    /// **The sweep is the reliable half.** Background delivery needs an entitlement the manual
+    /// App Store profile does not carry today and, even where it is granted, iOS decides when a
+    /// background app runs and may hold a delivery for hours. So this app never waits for one:
+    /// the check at launch and at every foreground is what actually gets the session in, and
+    /// the observer only shortens the wait when it works.
+    func watchHealthForNewWorkouts() async {
+        guard healthAutoImport, isHealthAvailable else { return }
+        if !isObservingHealth {
+            isObservingHealth = true
+            await HealthImporter.shared.observeNewWorkouts { [weak self] in
+                Task { @MainActor in await self?.checkHealthForNewWorkouts() }
+            }
+        }
+        await checkHealthForNewWorkouts()
+    }
+
+    /// One observer per launch. `HKObserverQuery` is cheap but not free, and registering a
+    /// second on every foreground would multiply the wake-ups the rider's battery pays for.
+    private var isObservingHealth = false
 
     // MARK: - intervals.icu
 
