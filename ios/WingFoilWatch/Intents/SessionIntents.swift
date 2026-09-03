@@ -17,7 +17,7 @@ struct StartSessionIntent: AppIntent {
     // One string literal, not a concatenation: `IntentDescription` takes a
     // `LocalizedStringResource`, which is a literal or nothing.
     static var description: IntentDescription {
-        IntentDescription("Records a wingfoil session on your Apple Watch — GPS, heart rate and wrist motion — with water lock on.")
+        IntentDescription("Records a wingfoil session on your watch — GPS, heart rate and wrist motion — with water lock on.")
     }
 
     /// The app is the only place a workout session can be started, so the app is where this
@@ -47,7 +47,7 @@ struct StopSessionIntent: AppIntent {
     static var title: LocalizedStringResource { "Stop my CleanJibe session" }
 
     static var description: IntentDescription {
-        IntentDescription("Ends the wingfoil session your Apple Watch is recording and saves it for your iPhone.")
+        IntentDescription("Ends the wingfoil session your watch is recording and saves it for your phone.")
     }
 
     static var openAppWhenRun: Bool { true }
