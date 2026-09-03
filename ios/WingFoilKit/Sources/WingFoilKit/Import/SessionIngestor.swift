@@ -403,6 +403,23 @@ public struct SessionIngestor: Sendable {
         try await database.writer.read { db in try SessionRow.fetchOne(db, key: id) }
     }
 
+    /// Would a recording of this shape land on a session the library already holds?
+    ///
+    /// THE dedupe rule, asked *before* the bytes exist. The Apple Health import is the caller:
+    /// its list can say "already imported" beside a workout without fetching and mapping the
+    /// route first, which for a season of workouts is the difference between a list and a
+    /// wait. It answers with the same `duplicate` the ingest path uses rather than with a
+    /// second copy of the ±60 s rule, because two rules would eventually disagree and the
+    /// screen would promise one thing while the import did another.
+    ///
+    /// It is a *preview*, not the decision: what a workout's route actually spans is a little
+    /// shorter than what Health calls its duration, so a borderline answer here can differ
+    /// from the one the ingest reaches. That is safe in the direction that matters — the
+    /// ingest still dedupes — and the screen says "already imported" rather than promising it.
+    public func holdsSession(startDate: Date, durationS: Double) async throws -> Bool {
+        try await duplicate(startDate: startDate, durationS: durationS) != nil
+    }
+
     public func icuActivityIds() async throws -> Set<String> {
         let ids = try await database.writer.read { db in
             try String.fetchAll(db, sql: "SELECT icuActivityId FROM session WHERE icuActivityId IS NOT NULL")
