@@ -34,6 +34,8 @@
         <string>WingFoil Widgets App Store</string>
         <key>de.lahmann.wingfoil.watchkitapp</key>
         <string>WingFoil Watch App Store</string>
+        <key>de.lahmann.wingfoil.watchkitapp.widgets</key>
+        <string>WingFoil Watch Widgets App Store</string>
     </dict>
     <key>uploadSymbols</key>
     <true/>
