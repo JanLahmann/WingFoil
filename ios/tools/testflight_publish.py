@@ -17,16 +17,13 @@ KEY_PATH = "/Users/majl/.appstoreconnect/private_keys/AuthKey_HZT9694JZ4.p8"
 APP = "6800401377"
 BASE = "https://api.appstoreconnect.apple.com/v1"
 
-WHATS_NEW = """0.14.0 - the clean jibe round.
+WHATS_NEW = """0.15.0 - for Apple Watch riders.
 
-- CPH, clean jibes per hour, now sits beside JPH and TPH in the key metrics and on the share card.
-- Clean jibes get a star on the map with their own legend chip, a personal-best moment, and a line in the replay commentary.
-- Records: a second table of session records - longest flight, most flights, foil share, most clean jibes, best CPH, best clean-jibe rate, streaks, longest session, most distance.
-- Trends: clean jibes and CPH per session; the weekly chart now bins by ISO weeks (Monday).
-- Periods: trips (auto-detected), months, seasons and custom ranges, each with one aggregate block, and a share card for a period with its tracks stacked.
-- The option row under the map is regrouped: route layers, event markers, utilities.
+- Import from Apple Health: sessions you recorded with Apple's Workout app (Surfing, Water Sports or Sailing) come into the library with foil time, flights, turns, clean jibes and records. Import → Apple Health, or turn on automatic pickup in Settings.
+- The CleanJibe watch app gets a complication (tap the mark on your watch face to start a session) and Siri: "Start a CleanJibe session", "Stop my CleanJibe session".
+- Everything from 0.14.0 is still new to most of you: CPH beside JPH and TPH, the clean-jibe star on the map, session records, periods and the period share card.
 
-On first launch after this update the library re-analyses itself once (new record columns); give it a minute on a big library. Please check: does the star land on the jibes you remember as clean? Does your Garda week come out as one trip?"""
+Please check: does a Health import look right next to a Garmin session? Does the complication start a session with one tap, and does Siri understand you?"""
 
 
 def tok():
