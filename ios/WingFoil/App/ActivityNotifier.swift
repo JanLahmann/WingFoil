@@ -53,16 +53,19 @@ final class ActivityNotifier: NSObject {
     func register(store: SessionStore) {
         self.store = store
         UNUserNotificationCenter.current().delegate = self
+        // `using: .main` is load-bearing. BackgroundTasks does not mark its launch handler
+        // `@Sendable` (HealthKit does), so a closure written inside this `@MainActor` class
+        // inherits the main actor — and since Xcode 26 the runtime *checks* that on entry.
+        // With `using: nil` the scheduler called it on its own queue and the app died in
+        // `dispatch_assert_queue` before a single line ran (build 16, 3 Sep 2026). On the
+        // main queue the check passes, and the expiration handler is installed synchronously
+        // inside the handler, which is what the ~30 s contract asks for anyway.
         BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.taskIdentifier,
-                                        using: nil) { task in
+                                        using: .main) { @MainActor task in
             guard let refresh = task as? BGAppRefreshTask else {
                 return task.setTaskCompleted(success: false)
             }
-            // The launch handler runs on a queue of BGTaskScheduler's choosing, so hop
-            // rather than assume. The expiration handler is installed on the other side of
-            // this hop, microseconds later and well inside the ~30 s the system allows.
-            let box = TaskBox(refresh)
-            Task { @MainActor in ActivityNotifier.shared.handle(box.task) }
+            ActivityNotifier.shared.handle(refresh)
         }
         // A relaunch is also the moment to make sure a request is outstanding: iOS drops
         // every pending request when the app is force-quit or updated.
