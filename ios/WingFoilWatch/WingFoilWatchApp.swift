@@ -13,7 +13,9 @@ import SwiftUI
 @main
 struct WingFoilWatchApp: App {
 
-    @State private var recorder = SessionRecorder()
+    /// `SessionRecorder.shared`, not a fresh one: the complication and the Siri intents reach
+    /// the recorder from outside the view tree, and there is one workout session on a wrist.
+    @State private var recorder = SessionRecorder.shared
 
     var body: some Scene {
         WindowGroup {
@@ -24,6 +26,15 @@ struct WingFoilWatchApp: App {
                     // previous launch left behind. Idempotent — a rider who opens the app
                     // four times before launching gets one of each.
                     recorder.prepare()
+                }
+                // The complication's `widgetURL`. Tapping the face is a start, not a launch:
+                // the rider is standing in the shallows with a wing already overhead, and an
+                // app that opened to a START button he then has to find would have wasted the
+                // gesture. `startFromOutside` is the same door Siri comes through.
+                .onOpenURL { url in
+                    guard url.scheme == WatchURL.scheme,
+                          url.host == WatchURL.startHost else { return }
+                    recorder.startFromOutside()
                 }
         }
     }

@@ -2,6 +2,7 @@ import CoreLocation
 import Foundation
 import OSLog
 import WatchKit
+import WidgetKit
 
 /// Where a recording lives on the watch, in two stages.
 ///
@@ -82,6 +83,16 @@ struct RecordedSummary: Equatable, Sendable {
 @Observable
 final class SessionRecorder {
 
+    /// The one recorder in the process.
+    ///
+    /// A singleton because two things outside SwiftUI now have to reach it: the complication's
+    /// `cleanjibe://start` URL and the `StartSessionIntent` Siri runs, both of which arrive in
+    /// a process whose view tree they cannot see. The alternative — a pending-command box the
+    /// App drains on appear — is the same singleton with an extra hop and one more state to be
+    /// wrong about. There is exactly one `HKWorkoutSession` on a wrist, so there is exactly one
+    /// recorder; `WingFoilWatchApp` holds this instance rather than making its own.
+    static let shared = SessionRecorder()
+
     private static let log = Logger(subsystem: "de.lahmann.wingfoil.watch", category: "recorder")
 
     enum Phase: Equatable {
@@ -117,6 +128,16 @@ final class SessionRecorder {
         return Date().timeIntervalSince(lastFixAt) < 10 && fixAccuracyM <= 50
     }
 
+    /// True from the moment START is pressed until the summary is dismissed — everything a
+    /// second "start" would have to refuse. `.finished` is not in here: the summary is on
+    /// screen but the wrist is free, and starting from there is what the START button does.
+    var isSessionActive: Bool {
+        switch phase {
+        case .starting, .recording, .paused, .saving: return true
+        case .idle, .finished, .failed: return false
+        }
+    }
+
     // MARK: Collaborators
 
     private var location: LocationBridge?
@@ -145,6 +166,11 @@ final class SessionRecorder {
     /// Closed while paused and after stop, so the accelerometer handler can decide for itself
     /// whether to write without ever asking the main actor.
     private let accelGate = RecordingGate()
+    /// The in-flight HealthKit authorization prompt, kept so `startFromOutside` can wait for
+    /// it. A session started from the watch face or from Siri may be the *first* thing this
+    /// process does, and `WorkoutBridge.start` throws if Health has not answered yet — which
+    /// would turn "Hey Siri, start a CleanJibe session" into an error screen.
+    private var healthAuthorization: Task<Void, Never>?
 
     // MARK: - Lifecycle
 
@@ -164,7 +190,9 @@ final class SessionRecorder {
         // rather than finding out thirty seconds into the first run.
         location?.startUpdating()
 
-        Task { await requestHealthAuthorization() }
+        if healthAuthorization == nil {
+            healthAuthorization = Task { await self.requestHealthAuthorization() }
+        }
         SessionTransfer.shared.activate()
         // Order matters: recovery only *assembles* interrupted sessions into the outbox, and
         // the single sweep below is what queues them. Doing both jobs in both places would
@@ -260,6 +288,46 @@ final class SessionRecorder {
         Self.log.info("recording \(id) started")
     }
 
+    // MARK: - Started from outside the app
+
+    /// The single entry point for "start recording without anyone touching START".
+    ///
+    /// Both outside callers land here — the complication's `cleanjibe://start` and Siri's
+    /// `StartSessionIntent` — and neither of them gets its own path into the recorder. It does
+    /// three things the button does not have to: it clears a stale failure screen, it runs
+    /// `prepare()` (which the button can assume already ran, because the button only exists on
+    /// a screen `prepare()` put there), and it waits for the HealthKit prompt before starting.
+    ///
+    /// Everything downstream is `start()` unchanged — same `HKWorkoutSession`, same water
+    /// lock, same files — so a session begun from a watch face is not a second kind of
+    /// session, and the UI follows because `phase` is what `RootView` switches on.
+    func startFromOutside() {
+        guard !isSessionActive else {
+            Self.log.info("external start ignored: a session is already active")
+            return
+        }
+        if case .failed = phase { phase = .idle }
+        prepare()
+
+        let authorization = healthAuthorization
+        Task { @MainActor in
+            await authorization?.value
+            // Re-checked after the await: the rider may have pressed START himself while the
+            // Health prompt was up, and two workout sessions is not a thing a wrist has.
+            guard !isSessionActive else { return }
+            start()
+        }
+    }
+
+    /// The other half, for `StopSessionIntent`. Returns false when there was nothing running,
+    /// so the intent can say so instead of pretending it saved something.
+    @discardableResult
+    func stopFromOutside() -> Bool {
+        guard phase == .recording || phase == .paused else { return false }
+        stop()
+        return true
+    }
+
     // MARK: - Pause / resume / stop
 
     func pause() {
@@ -319,11 +387,25 @@ final class SessionRecorder {
                                       accelCount: counts.accel,
                                       queuedForTransfer: queued)
             phase = .finished
+            publishComplicationSnapshot(start: started, durationS: duration)
             Self.log.info("""
                 recording \(id) finished: \(counts.track) fixes, \(counts.heart) hr, \
                 \(counts.accel) accel, queued=\(queued)
                 """)
         }
+    }
+
+    /// Hands the complication the three facts the watch actually measured — after the file is
+    /// safely assembled, never before, so a face never advertises a session that failed to
+    /// save. A no-op without the app group (see `WatchLastSessionStore`), which is today's
+    /// state on every shipped build; the complication then reads "Start session".
+    private func publishComplicationSnapshot(start: Date, durationS: Double) {
+        let snapshot = WatchLastSession(startedAt: start,
+                                        durationS: durationS,
+                                        distanceM: distanceM,
+                                        maxSpeedMps: maxSpeedMps)
+        guard WatchLastSessionStore.write(snapshot) else { return }
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     func dismissSummary() {

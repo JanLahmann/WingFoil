@@ -34,6 +34,11 @@
         <string>WingFoil Widgets App Store</string>
         <key>de.lahmann.wingfoil.watchkitapp</key>
         <string>WingFoil Watch App Store</string>
+        <!--
+          The watch-face complication (docs/decisions.md ADR-018). It is embedded in the watch
+          app, which is embedded in the phone app, so manual export needs its profile too —
+          three levels down and still one line here.
+        -->
         <key>de.lahmann.wingfoil.watchkitapp.widgets</key>
         <string>WingFoil Watch Widgets App Store</string>
     </dict>

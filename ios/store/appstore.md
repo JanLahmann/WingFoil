@@ -188,7 +188,7 @@ APPLE HEALTH IMPORT. Import > Apple Health lists workouts recorded with Apple's 
 
 PERMISSIONS. Health (read and write, both off by default: writing exports a session as a workout, reading imports Apple Workout-app recordings), Photos (add-only, only when saving a recorded replay video), Bluetooth (to receive a session summary from a Garmin watch via the Garmin Connect app), and Notifications (only if the user enables the optional background check for new activities). The app never requests location: all GPS shown comes from inside the imported files.
 
-WATCH APP. An Apple Watch target is present in the bundle. It is not being announced or marketed in this release and is not featured in any screenshot or copy.
+WATCH APP. An Apple Watch target is present in the bundle. It is not being announced or marketed in this release and is not featured in any screenshot or copy. It ships two small surfaces of its own, also unannounced: a watch-face complication (circular, corner and rectangular) whose only action is to start a recording, and two Siri phrases that do the same thing hands-free ("Start a CleanJibe session", "Stop my CleanJibe session"). Both are launchers. Neither displays any analysis result, because the watch computes none - all analysis happens on the iPhone after the recording is transferred. Reviewing them needs a paired Apple Watch and is not necessary to review the app.
 
 Questions: info@cleanjibe.org
 ```
