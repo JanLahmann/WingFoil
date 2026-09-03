@@ -268,6 +268,7 @@
         "b2"
       ],
       "sessions": 2,
+      "mapGround": true,
       "block": [
         {
           "key": "sessions",
@@ -361,6 +362,7 @@
         "a3"
       ],
       "sessions": 3,
+      "mapGround": true,
       "block": [
         {
           "key": "sessions",
@@ -454,6 +456,7 @@
         "a6"
       ],
       "sessions": 1,
+      "mapGround": false,
       "block": [
         {
           "key": "sessions",
@@ -525,6 +528,7 @@
         "c2"
       ],
       "sessions": 1,
+      "mapGround": true,
       "block": [
         {
           "key": "sessions",
@@ -616,6 +620,7 @@
         "c1"
       ],
       "sessions": 1,
+      "mapGround": true,
       "block": [
         {
           "key": "sessions",
@@ -707,6 +712,7 @@
         "a5"
       ],
       "sessions": 1,
+      "mapGround": true,
       "block": [
         {
           "key": "sessions",
@@ -802,6 +808,7 @@
         "a4"
       ],
       "sessions": 5,
+      "mapGround": false,
       "block": [
         {
           "key": "sessions",
@@ -893,6 +900,7 @@
         "a1"
       ],
       "sessions": 1,
+      "mapGround": true,
       "block": [
         {
           "key": "sessions",
@@ -986,6 +994,7 @@
         "a6"
       ],
       "sessions": 1,
+      "mapGround": false,
       "block": [
         {
           "key": "sessions",
@@ -1065,6 +1074,7 @@
         "c2"
       ],
       "sessions": 9,
+      "mapGround": false,
       "block": [
         {
           "key": "sessions",
@@ -1163,6 +1173,7 @@
         "a3"
       ],
       "sessions": 4,
+      "mapGround": false,
       "block": [
         {
           "key": "sessions",
@@ -1256,6 +1267,7 @@
         "a1"
       ],
       "sessions": 1,
+      "mapGround": true,
       "block": [
         {
           "key": "sessions",
@@ -1350,6 +1362,7 @@
         "a6"
       ],
       "sessions": 2,
+      "mapGround": false,
       "block": [
         {
           "key": "sessions",
