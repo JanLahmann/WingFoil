@@ -224,6 +224,14 @@ struct SettingsView: View {
         }
     }
 
+    /// Both directions, in one section, because the rider thinks of Health as one place.
+    ///
+    /// The read toggle appears only once a session has actually arrived that way (ADR-017):
+    /// until then the door is on the Import screen where a first import belongs, and a switch
+    /// here would be a question about a source the rider has never used. The two directions
+    /// never meet — a session that came *out* of Health is excluded from what goes back in,
+    /// or importing a workout would be how you end up with two of them.
+    @ViewBuilder
     private var healthSection: some View {
         Section {
             Toggle("Add sessions to Apple Health", isOn: Binding(
@@ -235,7 +243,25 @@ struct SettingsView: View {
             Text("Off by default. Each session is written as a **Surfing** workout — the "
                  + "closest type Apple Health offers, since it has no wingfoil or windsurf "
                  + "activity — carrying the discipline, foil share, flights and best 2 s in "
-                 + "its metadata. CleanJibe never reads health data.")
+                 + "its metadata. Sessions you imported *from* Health are left alone, so a "
+                 + "workout never appears twice.")
+        }
+
+        if store.hasImportedFromHealth {
+            Section {
+                Toggle("Import new Health workouts automatically", isOn: Binding(
+                    get: { store.healthAutoImport },
+                    set: { store.healthAutoImport = $0 }))
+            } footer: {
+                Text("CleanJibe checks Apple Health when you open it and imports any new "
+                     + "workout of the types you chose on the Import screen. Anything already "
+                     + "in your library is recognised, and a workout you imported and then "
+                     + "deleted is not brought back.\n\n"
+                     + "iOS can also wake the app when a workout is saved, but it decides "
+                     + "when — that may be hours later, and it never happens with Background "
+                     + "App Refresh off. Opening CleanJibe is the reliable way to pick up the "
+                     + "session you just finished.")
+            }
         }
     }
 
