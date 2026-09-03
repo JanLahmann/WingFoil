@@ -1,6 +1,6 @@
 <strings>
     <string id="AppName">CleanJibe Field</string>
-    <string id="AppNameBeta">CleanJibe Field Beta</string>
+    <string id="AppNameBeta">Dev CleanJibe Field</string>
 
     <!-- settings titles (same wording as the device app) -->
     <string id="SetFoilEntry">Foil entry speed (km/h)</string>
