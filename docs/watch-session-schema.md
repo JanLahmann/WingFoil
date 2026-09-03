@@ -80,6 +80,17 @@ the UTC-offset ladder (`SessionIngestor.resolveUtcOffset`, docs/algorithms.md): 
 said so itself*. A watch session therefore never falls through to the longitude guess a GPX has
 to use, and every surface may state its clock as fact.
 
+`meta.utcOffsetKnown` (optional, added with ADR-017) is the escape hatch for a **second writer**
+of this format: `HealthImport`, which maps a workout recorded with Apple's own Workout app and
+read back out of Health into the same container. Such a workout usually carries no
+`HKMetadataKeyTimeZone` at all, and a device-zone guess handed over wearing rung 1's provenance
+would license every surface to state a clock the app does not know. **Absent means true** — every
+container the watch app writes, now and later, omits it — and `false` means *ignore
+`utcOffsetS`*: `WatchSessionParser` claims nothing and the ladder answers, usually with the
+longitude rung. Nothing else about the format changes for that writer: `meta.producer` says who
+filled it in (`"CleanJibe iOS 0.14.0 (Apple Health)"`), the `accel` stream is empty, and
+`TrackFormat.watch` keeps naming a *packed track layout* rather than a device.
+
 ## Record encodings
 
 ### `track.v1` — 40 bytes, nominally 1 Hz

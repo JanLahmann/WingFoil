@@ -104,6 +104,18 @@ public struct WatchSessionMeta: Codable, Sendable, Equatable {
     /// recording saying so itself, DST included. A watch session therefore never needs the
     /// longitude guess a GPX falls back to.
     public var utcOffsetS: Int
+    /// Whether `utcOffsetS` above is the **recording's own word** or the writer admitting it
+    /// had none.
+    ///
+    /// Absent — every container the watch app has ever written, and every one it ever will —
+    /// means true: the watch read its own calendar at start and rung 1 is the honest rung.
+    /// `HealthImport` is the writer that needs the other answer: an Apple Workout-app workout
+    /// usually carries no `HKMetadataKeyTimeZone` at all, and a device-zone guess handed over
+    /// wearing rung 1's provenance would license every surface in the app to state a clock it
+    /// does not know (docs/presentation.md "Session time"). False therefore means *ignore the
+    /// number*: `WatchSessionParser` claims nothing, and `SessionIngestor.resolveUtcOffset`
+    /// falls through to the longitude rung exactly as it does for a GPX.
+    public var utcOffsetKnown: Bool?
     /// Wall-clock length of the recording including pauses; `t` of the last sample is the
     /// authority for analysis and this is a cross-check.
     public var durationS: Double
@@ -128,6 +140,7 @@ public struct WatchSessionMeta: Codable, Sendable, Equatable {
                 sessionId: String,
                 startEpoch: Double,
                 utcOffsetS: Int,
+                utcOffsetKnown: Bool? = nil,
                 durationS: Double,
                 activityType: String,
                 discipline: String = "wingfoil",
@@ -140,6 +153,7 @@ public struct WatchSessionMeta: Codable, Sendable, Equatable {
         self.sessionId = sessionId
         self.startEpoch = startEpoch
         self.utcOffsetS = utcOffsetS
+        self.utcOffsetKnown = utcOffsetKnown
         self.durationS = durationS
         self.activityType = activityType
         self.discipline = discipline
