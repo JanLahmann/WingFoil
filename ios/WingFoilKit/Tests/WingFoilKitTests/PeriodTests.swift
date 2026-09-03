@@ -62,6 +62,7 @@ import Testing
             let endDate: String?
             let sessionIds: [String]
             let sessions: Int
+            let mapGround: Bool
             let block: [PeriodBlock.Entry]
             let start: String?
             let end: String?
@@ -145,6 +146,7 @@ import Testing
         #expect(got.endDate == want.endDate, "\(label): endDate")
         #expect(got.sessionIds == want.sessionIds, "\(label): sessionIds")
         #expect(got.sessions == want.sessions, "\(label): session count")
+        #expect(got.mapGround == want.mapGround, "\(label): mapGround")
         #expect(got.block == want.block, "\(label): block")
     }
 
@@ -303,6 +305,32 @@ import Testing
                 complete.stats.contains { $0.key == stat.key && $0.value == stat.value }
             }, "lean may drop an entry and may not reword one")
         }
+    }
+
+    /// The map ground is offered exactly where a period **has** one: every afternoon inside a
+    /// single 3 km cluster, and every one of them placed by a fix.
+    ///
+    /// The fixture pins the four period kinds against the analyzer's own answer (`expect`
+    /// above); this says the rule out loud on the three cases that decide it, because the
+    /// failure mode is a switch that appears on a month split between two lakes and draws a
+    /// card of the motorway between them.
+    @Test func theGroundIsOfferedOnlyWhereAPeriodHasOne() async throws {
+        let fixture = try Self.loadFixture()
+        let set = try await Self.library(fixture).periods()
+        let byKey = Dictionary(uniqueKeysWithValues:
+            (set.trips + set.months + set.seasons).map { ($0.key, $0) })
+
+        // A trip is one place by construction, and every afternoon of it is anchored.
+        #expect(byKey["trip:a1"]?.mapGround == true)
+        // August holds Torbole *and* Malcesine, 12 km apart: two clusters, no single ground.
+        #expect(byKey["2026-08"]?.mapGround == false)
+        // May 2027 is the one afternoon with no fix — placed by the name of its file, which
+        // is enough to file it under a spot and not enough to point a camera at one.
+        #expect(byKey["2027-05"]?.sessionIds == ["a6"])
+        #expect(byKey["2027-05"]?.mapGround == false)
+        // …and the sanity check that it is the *anchor* doing that and not the count: the
+        // other one-session months are all offered a ground.
+        #expect(byKey["2026-09"]?.mapGround == true)
     }
 
     /// A title the rider typed wins over the period's own; an empty one leaves it derived.

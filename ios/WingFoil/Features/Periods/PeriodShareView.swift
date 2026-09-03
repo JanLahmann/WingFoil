@@ -11,11 +11,14 @@ import WingFoilKit
 /// * the stats are the aggregate block (`ShareCardStats.make(period:)`), not a session's
 ///   key-metrics block;
 /// * the artwork is every session's outline stacked, because a period has no single ride and
-///   picking one would be picking a favourite.
+///   picking one would be picking a favourite;
+/// * the map background is offered only where the period **has** one ground — every afternoon
+///   inside a single 3 km cluster (`Period.mapGround`). A month split between two lakes has a
+///   union bounding box that is mostly the road between them, so the switch is not there at
+///   all rather than there and useless.
 ///
-/// There is no map background and no photo picker on this first version, and no FIT tab —
-/// a period is not a file. The map is written down as a follow-up in docs/presentation.md
-/// rather than left as an omission somebody has to rediscover.
+/// There is no photo picker and no FIT tab: a period is not a file, and a rider's own
+/// photograph is a picture of one afternoon.
 struct PeriodShareView: View {
     let period: Period
 
@@ -28,10 +31,22 @@ struct PeriodShareView: View {
     /// preference about cards, not about this period, and it is the same preference the
     /// session card reads.
     @State private var preset = ShareCardPresetStore.load(from: .standard)
+    /// And so is the map switch: `wingfoil.shareCard.map.v1`, one habit per device, read and
+    /// written by both composers. Honoured only where this period can offer a ground.
+    @State private var wantsMap = ShareCardMapStore.load(from: .standard)
     @State private var titleDraft = ""
     @State private var noteDraft = ""
     @State private var outlines: [TrackThumbnail] = []
+    @State private var map: ShareCardMap?
+    /// The rectangle the layout gave the stack, measured from the live view — see
+    /// `ShareCardView.onTrackFrame`, and `ShareCardMap` for why it is measured rather than
+    /// recomputed.
+    @State private var trackBox: CGRect = .zero
     @State private var rendered: Image?
+
+    /// Whether this period can carry a ground at all. Decided in the kit (`LibraryStore`) and
+    /// in the analyzer (`library._map_ground`) from the same rule, never here.
+    private var offersMap: Bool { period.mapGround }
 
     private var stats: ShareCardStats {
         ShareCardStats.make(period: period, preset: preset,
@@ -46,6 +61,7 @@ struct PeriodShareView: View {
                     preview
                     naming
                     pickers
+                    mapToggle
                     exportRow
                 }
                 .padding()
@@ -59,6 +75,7 @@ struct PeriodShareView: View {
             }
             .task { titleDraft = period.title }
             .task(id: period.key) { await loadOutlines() }
+            .task(id: mapKey) { await loadMap() }
             .task(id: renderKey) { render() }
             .onChange(of: preset) { ShareCardPresetStore.save(preset, to: .standard) }
         }
@@ -66,8 +83,11 @@ struct PeriodShareView: View {
 
     // MARK: - The card
 
-    private var card: some View {
-        ShareCardView(stats: stats, shape: shape, thumbnails: outlines)
+    /// Typed rather than `some View`, so `loadMap` can ask it for the size the snapshot has to
+    /// fill — the same shape `ShareComposerView.card` is written in, and for the same reason.
+    private var card: ShareCardView {
+        ShareCardView(stats: stats, shape: shape, thumbnails: outlines, map: map,
+                      onTrackFrame: { trackBox = $0 })
     }
 
     @ViewBuilder
@@ -126,6 +146,31 @@ struct PeriodShareView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// **Offered only where the period has a ground.** Not offered-and-inert: a switch that is
+    /// on and does nothing is worse than a switch that is not there, and "which rectangle of
+    /// the earth?" genuinely has no answer for a month spent at two lakes.
+    @ViewBuilder
+    private var mapToggle: some View {
+        if offersMap {
+            VStack(alignment: .leading, spacing: 4) {
+                Toggle(isOn: Binding(get: { wantsMap },
+                                     set: { wanted in
+                                         wantsMap = wanted
+                                         ShareCardMapStore.save(wanted, to: .standard)
+                                     })) {
+                    Text("Map background")
+                }
+                Text("Draws every outline over the map, on the ground you picked for the "
+                     + "session map. Needs a connection; without one the card comes out "
+                     + "plain.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
     @ViewBuilder
     private var exportRow: some View {
         if let rendered {
@@ -149,6 +194,38 @@ struct PeriodShareView: View {
 
     private var renderKey: String {
         "\(shape.rawValue)|\(preset.rawValue)|\(titleDraft)|\(noteDraft)|\(outlines.count)"
+            + "|\(map == nil ? 0 : 1)"
+    }
+
+    /// Everything one snapshot depends on: whether it is wanted and offered, the aspect it has
+    /// to fill, the ground the rider chose for every other map in the app, how many outlines
+    /// have arrived, and the rectangle the layout gave them.
+    ///
+    /// The box is rounded to whole points on purpose: it is measured from a scaled preview, so
+    /// a sub-point wobble as the sheet resizes would otherwise re-run the snapshotter for a
+    /// framing no eye could tell from the last one.
+    private var mapKey: String {
+        "\(wantsMap && offersMap)|\(shape.rawValue)|\(store.mapStyle.rawValue)"
+            + "|\(outlines.count)|\(trackBox.integral)"
+    }
+
+    /// One snapshot for the whole period, framed on the union of its outlines.
+    ///
+    /// Every failure — the switch off, no ground to offer, no outlines yet, a snapshotter that
+    /// could not reach Apple's servers — leaves `map` nil, which is the plain card. Nothing is
+    /// said about it: the rider asked for a background, not for a report on one.
+    private func loadMap() async {
+        guard wantsMap, offersMap, trackBox.width > 1 else {
+            map = nil
+            return
+        }
+        let sources = outlines.compactMap(ShareCardMapSource.init(thumbnail:))
+        guard !sources.isEmpty else {
+            map = nil
+            return
+        }
+        map = await ShareCardMapper.makeStack(sources: sources, size: card.size,
+                                              trackBox: trackBox, style: store.mapStyle)
     }
 
     private func render() {

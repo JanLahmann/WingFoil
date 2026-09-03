@@ -66,6 +66,19 @@ public struct Period: Sendable, Equatable, Identifiable {
     public let endDate: String?
     public let sessionIds: [String]
     public let sessions: Int
+    /// Whether the card may offer a **map background** under this period.
+    ///
+    /// A period is a set of afternoons and they need not have happened anywhere near one
+    /// another, so "which rectangle of the earth?" has no answer a card can take for granted:
+    /// the union box of a month split between Garda and the Rhine is mostly the motorway
+    /// between them. The ground is therefore offered exactly when the period is one place —
+    /// every session inside a single `PeriodRules.tripRadiusM` cluster, and every one of them
+    /// placed by a fix rather than by the spot it was filed under. Otherwise the switch is not
+    /// offered at all, rather than offered and inert (docs/presentation.md, "The period card").
+    ///
+    /// The analyzer decides the same thing in `library._map_ground`, and the two are pinned
+    /// against the shared fixture like every other field here.
+    public let mapGround: Bool
     public let block: [PeriodBlock.Entry]
 
     public var id: String { key }
@@ -321,13 +334,20 @@ extension LibraryStore {
         let days = members.map { localDay(rows[$0]) }.filter { $0.year != nil }
         let first = days.min { dayKey($0) < dayKey($1) }
         let last = days.max { dayKey($0) < dayKey($1) }
+        let f = facts(picked)
+        // One place, and every afternoon of it placed by a fix: a row the clusterer had to
+        // file by its spot rather than by coordinates cannot be said to be *at* the beach the
+        // camera would point at. The twin of `library._map_ground`.
+        let anchored = !picked.isEmpty
+            && picked.allSatisfy { $0.startLat != nil && $0.startLon != nil }
         return Period(
             kind: kind, key: key, title: title, spot: spot,
             dateLine: first.map { spanLine($0, last ?? $0) } ?? "",
             spanShort: first.map { spanShort($0, last ?? $0) } ?? "",
             startDate: first.map(dayKey), endDate: last.map(dayKey),
             sessionIds: picked.map(\.id), sessions: picked.count,
-            block: PeriodBlock.entries(facts(picked)))
+            mapGround: anchored && f.spots == 1,
+            block: PeriodBlock.entries(f))
     }
 
     /// Every number the block prints, summed the way the metric means it.
