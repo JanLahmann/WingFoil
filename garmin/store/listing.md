@@ -110,7 +110,7 @@ New — write settings breadcrumbs with `→`.
 
 ### What's New (live text)
 
-> The 0.9.6 entry is **drafted, not yet live**: it goes into the store form with the upload.
+**The 0.9.6 entry below was uploaded on 3 September 2026** — live on the private listing (0.9.6, Internal 3), awaiting Garmin review on the public one (0.9.6, Internal 7).
 
 ```
 0.9.6: the clean jibe comes to the data field — a jibe you flew all the way through and carried your speed out of. A star, the count and clean jibes per hour now sit beside the outcome tally on the full-screen cell, get a row of their own on the paused summary, and are two more choices for any smaller cell (Garmin Connect → CleanJibe Field → Settings); the count goes into the FIT too, so it is there in Garmin Connect and on cleanjibe.org afterwards. The rate shows "--" for the first minute: one clean jibe forty seconds in is not ninety an hour.
