@@ -30,6 +30,17 @@ public enum ImportSource: String, Sendable, CaseIterable {
     /// `SessionStore.writeNewSessionsToHealth` (the watch already filed this workout with
     /// Health itself, live, with the ring credit the phone's after-the-fact stub cannot give).
     case appleWatch = "applewatch"
+    /// A workout recorded with **Apple's own Workout app** and read back out of Health
+    /// (docs/decisions.md ADR-017). The third source with "watch" somewhere in its story and
+    /// the third that means something different by it: `.watch` is a Garmin BLE summary card,
+    /// `.appleWatch` is a recording the CleanJibe watch app handed over directly, and this one
+    /// is a recording made by somebody else's app that we were allowed to read.
+    ///
+    /// It is the reason `SessionStore.writeNewSessionsToHealth` has a second exclusion: these
+    /// workouts are *already in* Health — writing our own stub back would put two overlapping
+    /// `.surfingSports` workouts on the same afternoon, and the rider would have imported a
+    /// session in order to be shown it twice.
+    case appleHealth = "applehealth"
 
     /// Whether a merged `session.importSource` names this source.
     ///
@@ -390,6 +401,23 @@ public struct SessionIngestor: Sendable {
 
     public func session(id: String) async throws -> SessionRow? {
         try await database.writer.read { db in try SessionRow.fetchOne(db, key: id) }
+    }
+
+    /// Would a recording of this shape land on a session the library already holds?
+    ///
+    /// THE dedupe rule, asked *before* the bytes exist. The Apple Health import is the caller:
+    /// its list can say "already imported" beside a workout without fetching and mapping the
+    /// route first, which for a season of workouts is the difference between a list and a
+    /// wait. It answers with the same `duplicate` the ingest path uses rather than with a
+    /// second copy of the ±60 s rule, because two rules would eventually disagree and the
+    /// screen would promise one thing while the import did another.
+    ///
+    /// It is a *preview*, not the decision: what a workout's route actually spans is a little
+    /// shorter than what Health calls its duration, so a borderline answer here can differ
+    /// from the one the ingest reaches. That is safe in the direction that matters — the
+    /// ingest still dedupes — and the screen says "already imported" rather than promising it.
+    public func holdsSession(startDate: Date, durationS: Double) async throws -> Bool {
+        try await duplicate(startDate: startDate, durationS: durationS) != nil
     }
 
     public func icuActivityIds() async throws -> Set<String> {

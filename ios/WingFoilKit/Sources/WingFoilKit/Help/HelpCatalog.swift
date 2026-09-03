@@ -141,7 +141,7 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
 
 /// Every explainable metric, as an enum so a `?` button cannot point at a missing topic.
 public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
-    case icuSetup, exampleSession, icuTroubleshooting, icuPrivacy, libraryBackup
+    case icuSetup, exampleSession, appleWorkoutApp, icuTroubleshooting, icuPrivacy, libraryBackup
     case foilPct, flights, longestFlight, distance, mapLegend
     case recordSet, best2s, best10s, best5x10s, best500m, bestNm, alpha500, uncertified
     case turnTypes, turnOutcomes, turnSuccess, portStarboard, falls, touchdowns, glideOuts
@@ -204,6 +204,53 @@ public enum HelpCatalog {
                                  + "session\"."),
             action: .loadExampleSession,
             related: [.icuSetup, .sourceClass, .uncertified, .riderAttribution]),
+
+        // The topic for the rider who owns no Garmin at all (ADR-017). It sits third in
+        // "Getting set up" rather than under "Where the numbers come from", because for that
+        // rider it is not a footnote about data quality — it is the whole way in.
+        HelpTopic(
+            id: .appleWorkoutApp, section: .setup,
+            title: "Recording with the Apple Workout app",
+            summary: "No Garmin, no extra app: record on your Apple Watch and import from "
+                + "Health.",
+            body: [
+                "If you have an Apple Watch, you can record a session with Apple's own Workout "
+                + "app and analyse it here. Nothing else is needed — no Garmin, no account, no "
+                + "cable, and not even CleanJibe's own watch app.",
+                "Apple Health has no wingfoil activity, so pick the closest one. The Workout "
+                + "app records the GPS track and your heart rate either way, and which type "
+                + "you chose changes nothing about the analysis: CleanJibe reads the workout "
+                + "as a wingfoil session because you asked it to.",
+                "Then open Import → Apple Health, allow CleanJibe to read workouts, and pick "
+                + "the ones you want. Once you have imported one, you can switch on "
+                + "\"Import new Health workouts automatically\" and the next session is "
+                + "waiting for you when you open the app.",
+                "Speed comes off the watch's own GPS receiver rather than being worked out "
+                + "from the positions afterwards, so your speed records from these sessions "
+                + "count as certified, exactly like a Garmin recording. What is missing is "
+                + "the same thing a Garmin recording is missing: nothing records your wrist "
+                + "accelerometer, so there are no pump strokes and no failed takeoff attempts.",
+            ],
+            items: [
+                .init(term: "Pick Surfing or Water Sports",
+                      detail: "Both are on by default in CleanJibe, and Surfing is what the "
+                          + "app itself writes. Sailing works too — switch it on in Import → "
+                          + "Apple Health if that is what you record under."),
+                .init(term: "Keep the wrist above water for GPS",
+                      detail: "Salt water stops GPS dead. A watch held under during a "
+                          + "waterstart or a swim back loses its fix, which shows up as a gap "
+                          + "in the track — CleanJibe marks those rather than sailing straight "
+                          + "through them, but the seconds themselves are gone."),
+                .init(term: "Let the workout finish saving",
+                      detail: "The route is written to Health when you end the workout, and "
+                          + "the watch may take a minute to hand it to the phone. If a session "
+                          + "is not offered yet, come back to the list and look again."),
+                .init(term: "Nothing is uploaded",
+                      detail: "CleanJibe reads the workouts you pick — their route and heart "
+                          + "rate — and analyses them on your phone. It never reads anything "
+                          + "else in Health, and nothing about the session leaves the device."),
+            ],
+            related: [.sourceClass, .uncertified, .icuSetup, .exampleSession]),
 
         HelpTopic(
             id: .icuTroubleshooting, section: .setup, title: "When the sync does not work",
@@ -793,12 +840,15 @@ public enum HelpCatalog {
                           + "because this app also records the wrist accelerometer — pump "
                           + "strokes, failed takeoff attempts and accelerometer-confirmed "
                           + "touchdowns."),
-                .init(term: "Recorded with Garmin's own profile, or another Connect IQ app",
+                .init(term: "Recorded with Garmin's own profile, another Connect IQ app, or "
+                          + "Apple's Workout app",
                       detail: "Almost everything: the track, the flights and touchdowns, "
                           + "every turn with its verdict, certified speed records, the wind "
                           + "axis. Only pump strokes, failed takeoff attempts and "
                           + "accelerometer-confirmed touchdowns are missing, because nothing "
-                          + "recorded the accelerometer."),
+                          + "recorded the accelerometer. An Apple Watch workout imported from "
+                          + "Health is this case: its speed came off the watch's own GPS "
+                          + "receiver, so those records certify."),
                 .init(term: "A GPX, or any file with no speed channel",
                       detail: "GPX imports work: the track, the flights, every turn with its "
                           + "verdict, the wind axis. But a GPX carries no speed channel, so "

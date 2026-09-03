@@ -117,6 +117,12 @@ struct LibraryView: View {
                 switch ProcessInfo.processInfo.environment["UI_SHEET"] {
                 case "help": showHelp = true
                 case "settings": showSettings = true
+                // `import` is the way to reach the Apple Health source (ADR-017), which is
+                // otherwise two taps behind a toolbar button `simctl` cannot press. It stages
+                // only the sheet: the Health screen behind it fills itself from the machine's
+                // real Health database, because the app is a reader there and staging a
+                // workout would mean shipping code that writes fake ones into it.
+                case "import": showImporter = true
                 default: break
                 }
                 // `UI_SCROLL_TO=setup` parks the (very tall) onboarding card on its

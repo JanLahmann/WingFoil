@@ -46,6 +46,11 @@ struct WingFoilApp: App {
                 // recordings over WatchConnectivity, that one receives summary cards through
                 // Garmin Connect Mobile.
                 .task { await store.watchForAppleWatchSessions() }
+                // And the third watch story: a workout somebody else's app — Apple's own —
+                // wrote into Health. Opt-in, so this returns immediately on every install
+                // that has not asked for it. It registers the HealthKit observer and sweeps
+                // once; the sweep is the half that always works (ADR-017).
+                .task { await store.watchHealthForNewWorkouts() }
                 // Two kinds of URL land here: Garmin Connect returning the watch the rider
                 // picked, and the share sheet handing us a FIT or a ZIP. The companion
                 // link answers only on its own scheme, so it gets first refusal.
@@ -58,7 +63,13 @@ struct WingFoilApp: App {
                 // next launch. Silent and free on every ordinary foreground.
                 .onChange(of: scenePhase) { _, phase in
                     guard phase == .active else { return }
-                    Task { await store.absorbBackgroundImports() }
+                    Task {
+                        await store.absorbBackgroundImports()
+                        // The reliable half of the automatic Health pickup: the rider has
+                        // just finished a workout and opened the app, which is the moment
+                        // iOS's own background delivery is least likely to have run yet.
+                        await store.checkHealthForNewWorkouts()
+                    }
                 }
         }
     }
