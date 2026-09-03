@@ -82,13 +82,33 @@ import Testing
         let privacy = HelpCatalog.topic(.icuPrivacy)
         #expect(privacy.body.contains(IcuSetupGuide.privacyNote))
 
-        // The setup section is reachable from the index and holds exactly these five —
-        // the example session sits second, right after the path it is an alternative to,
-        // and the backup topic sits last because it is the one a rider reads before he
-        // leaves a phone rather than when he arrives on one.
+        // The setup section is reachable from the index and holds exactly these six — the
+        // example session sits second, right after the path it is an alternative to; the
+        // Apple Workout app sits third because for a rider with no Garmin it is not a
+        // footnote about data quality but the whole way in (ADR-017); and the backup topic
+        // sits last because it is the one a rider reads before he leaves a phone rather than
+        // when he arrives on one.
         #expect(HelpCatalog.topics(in: .setup).map(\.id)
-                == [.icuSetup, .exampleSession, .icuTroubleshooting, .icuPrivacy,
-                    .libraryBackup])
+                == [.icuSetup, .exampleSession, .appleWorkoutApp, .icuTroubleshooting,
+                    .icuPrivacy, .libraryBackup])
+    }
+
+    /// The topic for the rider who owns no Garmin (ADR-017). It has one job — get him from
+    /// "I have an Apple Watch" to a session in the library — so it has to name the three
+    /// steps *and* the two things he would otherwise learn by being disappointed: salt water
+    /// kills GPS, and nothing in a Health workout records his wrist.
+    @Test func theAppleWorkoutTopicSaysHowToRecordAndWhatIsMissing() {
+        let topic = HelpCatalog.topic(.appleWorkoutApp)
+        #expect(topic.section == .setup)
+        let prose = (topic.body + topic.items.flatMap { [$0.term, $0.detail] })
+            .joined(separator: " ").lowercased()
+        for phrase in ["surfing", "water sports", "sailing", "import", "health",
+                       "above water", "certified", "accelerometer", "automatically"] {
+            #expect(prose.contains(phrase), "the Apple Workout topic never mentions \(phrase)")
+        }
+        // The promise the permission prompt is about to make, made here first.
+        #expect(prose.contains("never reads anything else"))
+        #expect(HelpCatalog.search("Apple Watch").contains { $0.id == .appleWorkoutApp })
     }
 
     /// The backup topic has to answer three questions in order, because a rider who reads
