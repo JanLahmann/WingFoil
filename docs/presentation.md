@@ -932,7 +932,7 @@ described.
 | date line | the session's day | the period's span |
 | title default | the session's name | the period's title |
 | artwork | the track outline | **the period's outlines, stacked** |
-| map background | optional, off by default | **not offered** — see below |
+| map background | optional, off by default | optional, off by default — **offered only where the period is one place** |
 | speed disclaimer | on a class-(c) source | never |
 
 - **A preset may only drop entries**, held as keys (`PeriodBlock.leanKeys`,
@@ -947,16 +947,52 @@ described.
   one spot laid over itself is recognisably that beach. Fifty outcome dots per session times
   a dozen sessions is confetti, and the card's own numbers already say how the maneuvers
   went. The opacity falls with the count so a dozen read as one shape rather than a scribble.
-  - The two platforms stack the same outlines by slightly different arithmetic, and this is
-    the one place they knowingly differ. The web fits **one placer to the union of the
-    tracks' extents**, so they share a true metres scale and a short session draws small
-    inside a long one. iOS stacks `TrackThumbnail`s, which are normalized per session, so
-    they share a box and a centre but not a scale — carrying the extent in the thumbnail is
-    the follow-up.
-- **No map background in this first version.** A period has no single ground: the sessions
-  in it may be 15 km apart, the framing question ("which rectangle of the earth?") has no
-  answer the card can take for granted, and the tile fetch would be per-session. The switch
-  is therefore not offered rather than offered and inert. A follow-up.
+  - **One placer, fitted to the union of the tracks' metre extents**, on both platforms — so
+    every outline is at one true metres-per-point and a short session draws small *inside* a
+    long one rather than being stretched to match it. That is the whole difference between a
+    picture of a week and twelve identical rides: a thumbnail is normalized against its own
+    extent, which is right for a library row (every session reads as one consistent shape)
+    and exactly wrong here.
+    - iOS therefore **carries the extent with the thumbnail** — `TrackThumbnail.Bounds`, the
+      metre extremes and the equirectangular anchor the unit box was projected around, which
+      `metres(x:y:)` inverts exactly and `coordinate(x:y:)` turns back into degrees.
+      `TrackThumbnail.currentVersion` is 3 because of it: a v2 blob decodes perfectly well
+      without the key, so nothing but the version bump would have rebuilt it, and a
+      boundless outline is one the stack and the map would both silently drop.
+    - The arithmetic itself is one rule with two spellings — `TrackStack.placement` in the
+      kit and `stackPlacer` in `web/js/sharecard.js` — pinned against
+      `fixtures/periods/outlines.expected.json`: a set of polylines in metres, a box in
+      layout points, and every placed vertex. Uniform in both axes, an axis narrower than a
+      centimetre imposes no limit, and a stack with no extent at all is placed at one point
+      per metre rather than dividing by zero.
+- **The map background is offered only when the period is one place.** A period has no single
+  ground *in general*: its sessions may be 15 km apart, and the framing question ("which
+  rectangle of the earth?") then has no answer a card can take for granted — the union
+  bounding box of a month split between Garda and the Rhine is mostly the motorway between
+  them, at a zoom where neither beach is visible.
+  - So the ground is offered exactly when **every session in the period lies in one spot
+    cluster** — the same greedy clusterer and the same 3 km trip radius that decided whether
+    those afternoons were one holiday — **and every one of them was placed by a fix**. A row
+    with no anchor is clustered by the name of its file, which is enough to file it under a
+    spot and not enough to point a camera at one. A trip is one place by construction; a
+    month, a season or a typed range is one when the rider only rode one beach in it.
+  - Where it does not hold the switch is **not offered**, never offered-and-inert: a control
+    that is on and does nothing is worse than a control that is not there.
+  - The rule is decided **once, engine-side** — `library._map_ground`, handed to the browser
+    as the period's `mapGround`, and `LibraryStore.period` on iOS — because a second copy of
+    a clustering rule in a view is a second answer to "was this one place". Both are pinned
+    by `fixtures/periods/periods.expected.json` like every other field of a period, and
+    `verify_presentation.py` §5d re-derives it from a second copy of the rule.
+  - When it is on, the ground is the **union bounding box of all the period's tracks**, under
+    the same contract the session card's map has, clause for clause: the ride fills exactly
+    the box the layout already gave it and only the margins become map, the breadcrumb is
+    placed through the map's own projection (one anchor per session — each outline's metres
+    are in a frame of its own), the same scrim and dark stat plates, the same attribution
+    footer, and the same silent degradation to the plain card when there is no network, no
+    tile server or no anchor. The same per-device preference as the session card's
+    (`wingfoil.shareCard.map.v1`, `ShareCardMapStore`), read but only honoured where it can
+    be. iOS takes one `MKMapSnapshotter` image for the whole period
+    (`ShareCardMapper.makeStack`); the web composites one OSM tile grid (`buildStackMap`).
 - **Entry points**: the Periods screen on iOS (a share button on every period and on the
   custom range), and the Periods section of the Records tab on the web (a "Share card"
   button per period), both opening the composer the session card already uses.
@@ -973,8 +1009,16 @@ the third question neither can — handed the fifteen real recordings in `fixtur
 does the rule find the week a person would name? (It finds one Garda week of twelve
 afternoons, 31 July to 7 August 2026.) `card_parity.mjs` dumps the period card beside the
 session card and `verify_presentation.py` §5d asserts, per period, that `complete` **is** the
-block and `lean` is that block filtered — the same two assertions §5 makes about the session
-card.
+block, that `lean` is that block filtered — the same two assertions §5 makes about the session
+card — and that `mapGround` is what a second copy of the one-cluster rule says it is.
+
+The card's *picture* is pinned the same way. `fixtures/periods/outlines.expected.json` carries
+a set of outlines in metres, a box in layout points and every placed vertex;
+`TrackStackTests` holds `TrackStack` to it and `verify_presentation.py` §5e holds
+`stackPlacer` to it, re-deriving the file from `make_presentation_goldens.py` first so a stale
+fixture cannot pin either platform to an answer the rule no longer gives. §5e also asserts the
+thing the shared scale is *for*: three tracks of three different lengths come out at three
+different drawn widths, and the longest is the one that fills the box.
 
 ## Marker eligibility
 
