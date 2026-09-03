@@ -647,9 +647,14 @@ extension SessionDetail {
         guard thinned.count >= 2 else {
             return TrackThumbnail(points: [], speed: [], maxKn: 0)
         }
-        return TrackThumbnail(points: TrackThumbnail.outline(coordinates: thinned),
-                              marks: shareMarks(thinned),
-                              speed: [], maxKn: maxSpeedKn)
+        return TrackThumbnail(
+            points: TrackThumbnail.outline(coordinates: thinned),
+            marks: shareMarks(thinned),
+            // The extent the normalization threw away, kept — this outline is built the same
+            // way the cached ones are, so it carries the same thing they now carry.
+            bounds: TrackThumbnail.Projection(
+                thinned.map { (lat: $0.lat, lon: $0.lon) })?.bounds,
+            speed: [], maxKn: maxSpeedKn)
     }
 
     /// The same polyline, thinned the same way, **before** it is normalized into a unit box.

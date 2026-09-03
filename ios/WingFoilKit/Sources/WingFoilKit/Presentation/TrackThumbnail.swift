@@ -15,7 +15,12 @@ public struct TrackThumbnail: Codable, Sendable, Equatable {
     /// v2 adds `marks`. A v1 blob has no such key and fails to decode outright, which
     /// reaches the same place the version check does — `thumbnail(for:)` returns nil and
     /// the thumbnail is rebuilt — but the bump is what *documents* it.
-    public static let currentVersion = 2
+    ///
+    /// v3 adds `bounds`. A v2 blob decodes perfectly well without it — the key is optional —
+    /// which is exactly why the bump is load-bearing rather than documentary this time: a
+    /// thumbnail with no bounds is one the period card cannot put on a shared metres scale
+    /// or on a map, and it would be silently left out of both rather than rebuilt.
+    public static let currentVersion = 3
 
     /// A track vertex in a unit box: x/y in 0…1, y already pointing **down** so the value
     /// can be multiplied straight into a view rectangle. Aspect ratio is preserved (the
@@ -68,6 +73,49 @@ public struct TrackThumbnail: Codable, Sendable, Equatable {
         }
     }
 
+    /// The metres the unit box was normalized from, and the anchor it was projected around.
+    ///
+    /// **The one thing normalization throws away, kept.** `Point` is a session against
+    /// itself: two afternoons on the same water come out the same size, which is right for a
+    /// list row (every thumbnail reads as one consistent shape) and wrong for a *period*
+    /// card, where a dozen outlines are laid on one another and a half-hour paddle drawn as
+    /// large as a three-hour reach is a picture of nothing. With the extent carried, a
+    /// drawing layer can undo the normalization (`metres(x:y:)`), put every session back on
+    /// one metres scale (`TrackStack`), and — because the anchor is here too — ask where on
+    /// the earth a vertex was (`coordinate(x:y:)`), which is what a map background under a
+    /// period needs.
+    ///
+    /// `minX`…`maxY` are metres east and north of the anchor, which is the track's own
+    /// centroid: the raw extremes of the equirectangular projection, *before* the shorter
+    /// axis was centred in a square. They are the exact inverse of `Projection.place`, so a
+    /// vertex that goes out and comes back is the vertex that went in.
+    public struct Bounds: Codable, Sendable, Equatable {
+        public var minX: Double
+        public var minY: Double
+        public var maxX: Double
+        public var maxY: Double
+        /// The centroid the projection was taken around, in degrees.
+        public var lat0: Double
+        public var lon0: Double
+
+        public init(minX: Double, minY: Double, maxX: Double, maxY: Double,
+                    lat0: Double, lon0: Double) {
+            self.minX = minX
+            self.minY = minY
+            self.maxX = maxX
+            self.maxY = maxY
+            self.lat0 = lat0
+            self.lon0 = lon0
+        }
+
+        /// The side of the square the unit box is, in metres — `Projection.span`, with the
+        /// same floor, because a rider who never moved would otherwise divide by zero.
+        public var spanM: Double { max(maxX - minX, maxY - minY, 1) }
+        /// What the shorter axis was padded by when it was centred in that square.
+        public var offsetX: Double { (spanM - (maxX - minX)) / 2 }
+        public var offsetY: Double { (spanM - (maxY - minY)) / 2 }
+    }
+
     /// One moment on the session clock, before it has been given a position. What callers
     /// hand `make` — they know *when* something happened; only the thumbnail knows where
     /// that lands in its own box.
@@ -87,17 +135,50 @@ public struct TrackThumbnail: Codable, Sendable, Equatable {
     /// an analysis, which is a fact about the source rather than a claim that nothing
     /// happened — the list row does not draw them anyway.
     public var marks: [Mark]
+    /// The metre extent the unit box came out of. nil on a thumbnail built with no positions
+    /// at all — and, in a v2 blob, on every one of them, which is why `currentVersion` moved.
+    public var bounds: Bounds?
     /// Speed over time, normalized to 0…1 of `maxKn`, evenly spaced across the session.
     public var speed: [Double]
     public var maxKn: Double
 
     public init(version: Int = TrackThumbnail.currentVersion, points: [Point],
-                marks: [Mark] = [], speed: [Double], maxKn: Double) {
+                marks: [Mark] = [], bounds: Bounds? = nil, speed: [Double], maxKn: Double) {
         self.version = version
         self.points = points
         self.marks = marks
+        self.bounds = bounds
         self.speed = speed
         self.maxKn = maxKn
+    }
+
+    /// One normalized vertex back in metres, in the session's own frame — the inverse of
+    /// `Projection.place`. nil without `bounds`, which is the honest answer: a thumbnail that
+    /// does not carry its extent cannot say how big it was.
+    public func metres(x: Double, y: Double) -> (x: Double, y: Double)? {
+        guard let bounds else { return nil }
+        let span = bounds.spanM
+        return (x: x * span - bounds.offsetX + bounds.minX,
+                // Screen y grows downward, the projection's grows north.
+                y: (1 - y) * span - bounds.offsetY + bounds.minY)
+    }
+
+    /// Where a normalized vertex was on the earth, through the same equirectangular anchor
+    /// the projection used. Exact to well under a metre at session scale, which is the same
+    /// claim the analyzer's `view.geo` anchor makes on the other platform.
+    public func coordinate(x: Double, y: Double) -> (lat: Double, lon: Double)? {
+        guard let bounds, let m = metres(x: x, y: y) else { return nil }
+        let cosLat0 = cos(bounds.lat0 * .pi / 180)
+        return (lat: bounds.lat0 + m.y / 110_540,
+                lon: bounds.lon0 + (cosLat0 == 0 ? 0 : m.x / (cosLat0 * 111_320)))
+    }
+
+    /// The track's metre extent as a stackable one — what `TrackStack` fits a set of
+    /// outlines by. nil without `bounds`.
+    public var stackExtent: TrackStack.Extent? {
+        guard let bounds else { return nil }
+        return TrackStack.Extent(minX: bounds.minX, minY: bounds.minY,
+                                 maxX: bounds.maxX, maxY: bounds.maxY)
     }
 
     public var isEmpty: Bool { points.count < 2 && speed.isEmpty }
@@ -178,6 +259,7 @@ public struct TrackThumbnail: Codable, Sendable, Equatable {
         let (speed, maxKn) = sparkline(track.samples)
         return TrackThumbnail(points: outline(coordinates: kept),
                               marks: marks(events, on: positioned, in: projection),
+                              bounds: projection?.bounds,
                               speed: speed, maxKn: maxKn)
     }
 
@@ -253,9 +335,16 @@ public struct TrackThumbnail: Codable, Sendable, Equatable {
         let lat0: Double
         let minX: Double
         let minY: Double
+        let maxX: Double
+        let maxY: Double
         let span: Double
         let offsetX: Double
         let offsetY: Double
+
+        /// The extent this projection normalized away, kept so a thumbnail can carry it.
+        public var bounds: Bounds {
+            Bounds(minX: minX, minY: minY, maxX: maxX, maxY: maxY, lat0: lat0, lon0: lon0)
+        }
 
         /// nil for fewer than two coordinates — there is no box to normalize into.
         public init?(_ coordinates: [(lat: Double, lon: Double)]) {
@@ -274,7 +363,8 @@ public struct TrackThumbnail: Codable, Sendable, Equatable {
                 (x: (point.lon - centreLon) * cosCentre * 111_320,
                  y: (point.lat - centreLat) * 110_540)
             }
-            let maxX = raw.map(\.x).max()!, maxY = raw.map(\.y).max()!
+            maxX = raw.map(\.x).max()!
+            maxY = raw.map(\.y).max()!
             minX = raw.map(\.x).min()!
             minY = raw.map(\.y).min()!
             // One scale for both axes keeps the shape honest; the shorter axis is centred.
