@@ -41,6 +41,15 @@ struct ShareCardMap: Equatable {
     var image: UIImage
     var runs: [Run]
     var marks: [Mark]
+    /// How faint the breadcrumb is drawn. 1 for a session — one ride, at full strength — and
+    /// `TrackStack.opacity` for a period, where a dozen outlines have to read as one shape
+    /// rather than as a scribble. The runs of every session in the stack are in this one list,
+    /// which is exactly what the web does with `globalAlpha`: one alpha, every stroke.
+    var opacity: Double = 1
+    /// The flying line's width in layout points — 2.6 for a session, and the stack's thinner
+    /// 1.8 for a period, so a mapped stack is the plain stack with ground under it rather than
+    /// a second, heavier picture. Off-foil legs are half of it, as everywhere else.
+    var lineWidth: Double = 2.6
     /// Whether the ground is photography, and the track therefore needs its dark outer halo —
     /// the same rule the session maps draw by (`MapStyleRecipe.needsTrackHalo`).
     var needsHalo: Bool
@@ -57,7 +66,8 @@ struct ShareCardMap: Equatable {
 
     static func == (a: ShareCardMap, b: ShareCardMap) -> Bool {
         a.image === b.image && a.runs == b.runs && a.marks == b.marks
-            && a.needsHalo == b.needsHalo
+            && a.needsHalo == b.needsHalo && a.opacity == b.opacity
+            && a.lineWidth == b.lineWidth
     }
 }
 
@@ -81,14 +91,37 @@ struct ShareCardMapSource {
     var isEmpty: Bool { points.count < 2 }
 }
 
+extension ShareCardMapSource {
+
+    /// A cached outline put back on the earth — one afternoon of a period card's ground.
+    ///
+    /// The thumbnail's `bounds` is what makes this possible at all: `Point` is a session
+    /// normalized against itself, and the anchor it was projected around is the only way back.
+    /// nil for a thumbnail without one (a v2 blob the cache has not rebuilt, or a recording
+    /// with no positions), which quietly keeps that afternoon off the map rather than putting
+    /// it in the wrong bay.
+    ///
+    /// No marks: the stack draws none, because fifty outcome dots per session times a dozen
+    /// sessions is confetti and the card's own numbers already say how the maneuvers went.
+    init?(thumbnail: TrackThumbnail) {
+        guard thumbnail.bounds != nil else { return nil }
+        let placed = thumbnail.points.compactMap { point -> Point? in
+            guard let c = thumbnail.coordinate(x: point.x, y: point.y) else { return nil }
+            return Point(lat: c.lat, lon: c.lon, flying: point.flying)
+        }
+        guard placed.count >= 2 else { return nil }
+        self.init(points: placed, marks: [])
+    }
+}
+
 enum ShareCardMapper {
 
     /// The inset the card's track box reserves — `TrackOutlineView`'s padding plus the mark
     /// radius the share card asks it for, because a dot on the outermost vertex is centred
     /// *on* the fitted edge. The framing has to reserve exactly the same margin or a mapped
-    /// track would come out a different size from a plain one. Twin of `TRACK_INSET` in
-    /// web/js/sharecard.js.
-    static let inset: Double = 4 + 3.2
+    /// track would come out a different size from a plain one. One number in the kit, four
+    /// readers (`ShareCardStats.trackInset`); twin of `TRACK_INSET` in web/js/sharecard.js.
+    static let inset = ShareCardStats.trackInset
 
     /// What a session with no extent at all is given instead of a fit: a rider who never
     /// moved gets his launch beach and its shoreline rather than a division by zero.
@@ -122,9 +155,32 @@ enum ShareCardMapper {
     /// plain card. A rider in a tunnel still gets a card.
     static func make(source: ShareCardMapSource, size: CGSize, trackBox: CGRect,
                      style: MapStyleChoice) async -> ShareCardMap? {
-        guard !source.isEmpty, size.width > 0, size.height > 0,
+        await make(sources: [source], size: size, trackBox: trackBox, style: style)
+    }
+
+    /// The same, for a **period**: many outlines on one ground.
+    ///
+    /// One snapshot, framed on the union of every session's bounding box, and every session's
+    /// breadcrumb projected onto it. The switch is only offered where that union is a beach
+    /// rather than a county (`Period.mapGround`), which is what makes one framing honest for a
+    /// dozen afternoons.
+    ///
+    /// The runs of all of them come back in one list at one `opacity`, because that is what
+    /// the picture is: an accumulation, drawn faint, in which the water everything was ridden
+    /// over comes out brightest.
+    static func makeStack(sources: [ShareCardMapSource], size: CGSize, trackBox: CGRect,
+                          style: MapStyleChoice) async -> ShareCardMap? {
+        await make(sources: sources, size: size, trackBox: trackBox, style: style,
+                   opacity: TrackStack.opacity(count: sources.count), lineWidth: 1.8)
+    }
+
+    static func make(sources: [ShareCardMapSource], size: CGSize, trackBox: CGRect,
+                     style: MapStyleChoice, opacity: Double = 1,
+                     lineWidth: Double = 2.6) async -> ShareCardMap? {
+        let usable = sources.filter { !$0.isEmpty }
+        guard !usable.isEmpty, size.width > 0, size.height > 0,
               trackBox.width > 1, trackBox.height > 1,
-              let rect = frame(source: source, size: size, trackBox: trackBox) else {
+              let rect = frame(sources: usable, size: size, trackBox: trackBox) else {
             return nil
         }
 
@@ -143,31 +199,37 @@ enum ShareCardMapper {
         guard let snapshot = try? await snapshotter.start() else { return nil }
 
         var runs: [ShareCardMap.Run] = []
-        var current: [CGPoint] = []
-        var flying = source.points[1].flying
-        for point in source.points {
-            let placed = snapshot.point(for: CLLocationCoordinate2D(latitude: point.lat,
-                                                                   longitude: point.lon))
-            if point.flying != flying, !current.isEmpty {
-                // Consecutive runs share a vertex, so the polyline has no visual gap where
-                // the phase changes — the same rule `TrackThumbnail.runs` draws by.
-                current.append(placed)
-                if current.count >= 2 { runs.append(.init(flying: flying, points: current)) }
-                current = [placed]
-                flying = point.flying
-            } else {
-                current.append(placed)
+        var marks: [ShareCardMap.Mark] = []
+        for source in usable {
+            var current: [CGPoint] = []
+            var flying = source.points[1].flying
+            for point in source.points {
+                let placed = snapshot.point(for: CLLocationCoordinate2D(latitude: point.lat,
+                                                                       longitude: point.lon))
+                if point.flying != flying, !current.isEmpty {
+                    // Consecutive runs share a vertex, so the polyline has no visual gap where
+                    // the phase changes — the same rule `TrackThumbnail.runs` draws by.
+                    current.append(placed)
+                    if current.count >= 2 {
+                        runs.append(.init(flying: flying, points: current))
+                    }
+                    current = [placed]
+                    flying = point.flying
+                } else {
+                    current.append(placed)
+                }
             }
-        }
-        if current.count >= 2 { runs.append(.init(flying: flying, points: current)) }
+            if current.count >= 2 { runs.append(.init(flying: flying, points: current)) }
 
-        let marks = source.marks.map { mark in
-            ShareCardMap.Mark(
-                point: snapshot.point(for: CLLocationCoordinate2D(latitude: mark.lat,
-                                                                  longitude: mark.lon)),
-                kind: mark.kind)
+            marks.append(contentsOf: source.marks.map { mark in
+                ShareCardMap.Mark(
+                    point: snapshot.point(for: CLLocationCoordinate2D(latitude: mark.lat,
+                                                                      longitude: mark.lon)),
+                    kind: mark.kind)
+            })
         }
         return ShareCardMap(image: snapshot.image, runs: runs, marks: marks,
+                            opacity: opacity, lineWidth: lineWidth,
                             needsHalo: style.recipe.needsTrackHalo)
     }
 
@@ -178,6 +240,13 @@ enum ShareCardMapper {
     /// about the coastline.
     static func frame(source: ShareCardMapSource, size: CGSize,
                       trackBox: CGRect) -> MKMapRect? {
+        frame(sources: [source], size: size, trackBox: trackBox)
+    }
+
+    /// The union of every source's bounding box, fitted to the track slot — one session's for
+    /// a session card, a whole period's for a period card.
+    static func frame(sources: [ShareCardMapSource], size: CGSize,
+                      trackBox: CGRect) -> MKMapRect? {
         var minX = Double.infinity, minY = Double.infinity
         var maxX = -Double.infinity, maxY = -Double.infinity
         func absorb(_ lat: Double, _ lon: Double) {
@@ -185,11 +254,13 @@ enum ShareCardMapper {
             minX = min(minX, p.x); maxX = max(maxX, p.x)
             minY = min(minY, p.y); maxY = max(maxY, p.y)
         }
-        for point in source.points { absorb(point.lat, point.lon) }
-        // The marks count: one is placed from the sample nearest its instant and can sit a
-        // hair outside the polyline, and a frame that ignored it would push the dot off the
-        // edge of an exported image.
-        for mark in source.marks { absorb(mark.lat, mark.lon) }
+        for source in sources {
+            for point in source.points { absorb(point.lat, point.lon) }
+            // The marks count: one is placed from the sample nearest its instant and can sit a
+            // hair outside the polyline, and a frame that ignored it would push the dot off
+            // the edge of an exported image.
+            for mark in source.marks { absorb(mark.lat, mark.lon) }
+        }
         guard minX.isFinite, maxX > -Double.infinity else { return nil }
 
         let width = max(trackBox.width - inset * 2, 1)

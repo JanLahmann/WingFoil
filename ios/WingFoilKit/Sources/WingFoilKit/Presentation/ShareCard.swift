@@ -157,6 +157,18 @@ public struct ShareCardStats: Sendable, Equatable {
         public var isWide: Bool { size.width > size.height }
     }
 
+    /// The margin the card's track box reserves, in layout points: the outline's own padding
+    /// plus the radius of a mark centred on its outermost vertex, which would otherwise lose
+    /// its outer half to the edge of an exported image.
+    ///
+    /// It lives here, in the kit, because four things have to agree on it or a card comes out
+    /// a different size depending on which of them drew it: `TrackOutlineView`'s padding and
+    /// mark radius, the map snapshot's framing (`ShareCardMapper.inset`), the period card's
+    /// stacked fit (`TrackStack.placement`), and `TRACK_INSET` in web/js/sharecard.js. The
+    /// stack draws no marks and reserves the radius anyway, so a mapped stack and a plain one
+    /// come out the same size.
+    public static let trackInset: Double = 4 + 3.2
+
     public let title: String
     public let dateLine: String
     /// The rider's own caption, under the date line, or nil for the card as it has always

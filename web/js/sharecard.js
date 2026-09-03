@@ -40,7 +40,8 @@ import { CREDIT, frameTrack, mapBackdrop, placeOn } from "./cardmap.js";
 import {
   BRANDING, CAPTION_SEP, NOTE_LIMIT, PRESETS, SHAPES, TITLE_LIMIT, cardDateLine,
   cardDisclaimer, cardKey, cardStats, cardTitle, cardTitleDraft, cleanNote, cleanTitle,
-  isWide, loadCardChoice, loadCardText, periodCardContent, saveCardChoice, saveCardText,
+  isWide, loadCardChoice, loadCardText, periodCardContent, periodMapAvailable,
+  saveCardChoice, saveCardText,
 } from "./cardstats.js";
 import { getAnalysisJson } from "./store.js";
 import { indexAt, phaseRuns } from "./session.js";
@@ -210,12 +211,47 @@ const MARK_R = 3.2;
  *  same margin, or a mapped track would come out a different size from a plain one. */
 const TRACK_INSET = 4 + MARK_R;
 
+/** The extent of a track's polyline alone, ignoring its marks — what the *stack* is fitted
+ *  by, because the stack draws no marks. `extent` above is the session card's, which has to
+ *  reserve room for a dot on the outermost vertex. */
+function runsExtent(track) {
+  return extent({ runs: track.runs, marks: [] });
+}
+
+/** An axis narrower than this has no extent worth fitting by, so it imposes no limit — a
+ *  centimetre of drift is not a reach. The twin of `TrackStack.flatAxisM` in the kit. */
+const FLAT_AXIS_M = 0.01;
+
 /**
- * Where a track coordinate lands, fitting the ride to `box` (layout points).
+ * The metres → layout-points projection that puts `ext` in `box`, as numbers and a placer.
  *
  * `y` is metres north, so the vertical axis is flipped — north up, the same way the map
  * figure draws it. The scale is uniform: a track stretched to fill both axes is a
  * different-shaped session.
+ *
+ * The twin of `TrackStack.placement` in the kit, and the two are pinned against one fixture
+ * (`fixtures/periods/outlines.expected.json`) so a card composed here and a card composed on
+ * the phone place the same outlines in the same places.
+ */
+function placerFor(ext, box) {
+  const inset = TRACK_INSET;
+  const w = Math.max(box.w - inset * 2, 1), h = Math.max(box.h - inset * 2, 1);
+  const dx = ext.x1 - ext.x0, dy = ext.y1 - ext.y0;
+  // A perfectly straight leg has zero extent on one axis; that axis then imposes no limit,
+  // which is exactly right — `min` takes the other one.
+  const s = Math.min(dx > FLAT_AXIS_M ? w / dx : Infinity,
+                     dy > FLAT_AXIS_M ? h / dy : Infinity);
+  const scale = Number.isFinite(s) ? s : 1;
+  const cx = (ext.x0 + ext.x1) / 2, cy = (ext.y0 + ext.y1) / 2;
+  return {
+    scale, centreX: cx, centreY: cy,
+    place: (x, y) => ({ x: box.x + box.w / 2 + (x - cx) * scale,
+                        y: box.y + box.h / 2 - (y - cy) * scale }),
+  };
+}
+
+/**
+ * Where a track coordinate lands, fitting the ride to `box` (layout points).
  *
  * This is the card's *own* projection, and it knows only about the session: the track is
  * placed against itself, which is all a card on a plain background has ever needed. With a
@@ -223,18 +259,30 @@ const TRACK_INSET = 4 + MARK_R;
  */
 function fittedPlacer(track, box) {
   const ext = extent(track);
-  if (!ext) return null;
-  const inset = TRACK_INSET;
-  const w = Math.max(box.w - inset * 2, 1), h = Math.max(box.h - inset * 2, 1);
-  const dx = ext.x1 - ext.x0, dy = ext.y1 - ext.y0;
-  // A perfectly straight leg has zero extent on one axis; that axis then imposes no limit,
-  // which is exactly right — `min` takes the other one.
-  const s = Math.min(dx > 0.01 ? w / dx : Infinity, dy > 0.01 ? h / dy : Infinity);
-  const scale = Number.isFinite(s) ? s : 1;
-  const cx = (ext.x0 + ext.x1) / 2, cy = (ext.y0 + ext.y1) / 2;
-  return (x, y) => ({ x: box.x + box.w / 2 + (x - cx) * scale,
-                      y: box.y + box.h / 2 - (y - cy) * scale });
+  return ext ? placerFor(ext, box).place : null;
 }
+
+/**
+ * **One placer for a whole stack**, fitted to the union of the tracks' metre extents.
+ *
+ * The period card's arithmetic, and the reason it is a named export: `web/tools/card_parity.mjs`
+ * dumps what it does to a fixed set of outlines and `verify_presentation.py` §5e holds the kit's
+ * `TrackStack.placement` to the same answer. A shared scale is the whole point — normalize each
+ * outline against its own extent and a half-hour paddle is drawn exactly as large as a
+ * three-hour reach, which is a picture of nothing.
+ */
+export function stackPlacer(tracks, box) {
+  const extents = tracks.map(runsExtent).filter(Boolean);
+  if (!extents.length) return null;
+  const ext = extents.reduce((a, b) => ({
+    x0: Math.min(a.x0, b.x0), y0: Math.min(a.y0, b.y0),
+    x1: Math.max(a.x1, b.x1), y1: Math.max(a.y1, b.y1),
+  }));
+  return placerFor(ext, box);
+}
+
+/** How faint each outline is, so a dozen read as one shape. Twin of `TrackStack.opacity`. */
+const stackOpacity = (count) => Math.max(0.22, Math.min(0.6, 2.4 / Math.max(1, count)));
 
 /**
  * The **period card's** artwork: every session's outline, stacked.
@@ -251,18 +299,27 @@ function fittedPlacer(track, box) {
  *
  * No marks. Fifty outcome dots per session times a dozen sessions is confetti, and the card's
  * numbers already say how the maneuvers went.
+ *
+ * **With a map behind it** the shared fit is replaced by the map's own projection, one anchor
+ * per session, exactly as the session card replaces its fit with `buildMap`'s. The ground is
+ * only ever offered where every session in the period is in one spot cluster — see
+ * `periodMapAvailable` and docs/presentation.md.
  */
-function drawTrackStack(ctx, tracks, box) {
-  const merged = { runs: tracks.flatMap((t) => t.runs), marks: [] };
-  const place = fittedPlacer(merged, box);
-  if (!place) return;
+function drawTrackStack(ctx, tracks, box, map = null) {
+  const shared = map ? null : stackPlacer(tracks, box);
+  if (!map && !shared) return;
   ctx.save();
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   // Faint enough that twelve of them read as one shape rather than as a scribble, and the
   // overlap is what draws the eye: the water everything was ridden over comes out brightest.
-  ctx.globalAlpha = Math.max(0.22, Math.min(0.6, 2.4 / Math.max(1, tracks.length)));
+  ctx.globalAlpha = stackOpacity(tracks.length);
   for (const track of tracks) {
+    // With a map behind the card every track goes through the *map's* projection instead,
+    // around its own anchor — the same substitution the session card makes, once per session,
+    // because each outline's metres are in a frame of its own.
+    const place = map ? map.placer(track) : shared.place;
+    if (!place) continue;
     for (const run of track.runs) {
       if (run.pts.length < 2) continue;
       ctx.beginPath();
@@ -386,6 +443,51 @@ async function buildMap(content, box, W, H, scale) {
       const c = toLatLon(geo, x, y);
       return placeOn(frame, c.lat, c.lon);
     },
+  };
+}
+
+/**
+ * The map under a **period** card: one bitmap for a whole week, and a placer per session.
+ *
+ * The framing is the union bounding box of every outline in the stack, which is the honest
+ * answer to "which rectangle of the earth?" — and the reason the switch is only offered when
+ * there is one: a period whose afternoons are 15 km apart has a union box that is mostly the
+ * road between them (see `periodMapAvailable` and docs/presentation.md). Once the sessions are
+ * one cluster the box is the beach, and the same three-kilometre radius that made them a trip
+ * is what bounds it.
+ *
+ * Everything else is the session card's contract unchanged: the ride fills exactly the box the
+ * layout gave it, the card's own margins become map, the scrim and the credit follow, and every
+ * failure is `null` — which the caller draws as the plain card.
+ *
+ * The placer is **per track**, because each session's metres are in a frame anchored on its own
+ * `view.geo`; one shared frame would put a dozen beaches on top of each other.
+ */
+async function buildStackMap(tracks, box, W, H, scale) {
+  const anchored = tracks.filter((t) => t.geo && runsExtent(t));
+  if (!anchored.length) return null;
+  let minLat = Infinity, minLon = Infinity, maxLat = -Infinity, maxLon = -Infinity;
+  for (const track of anchored) {
+    const ext = runsExtent(track);
+    for (const [x, y] of [[ext.x0, ext.y0], [ext.x1, ext.y1]]) {
+      const c = toLatLon(track.geo, x, y);
+      minLat = Math.min(minLat, c.lat); maxLat = Math.max(maxLat, c.lat);
+      minLon = Math.min(minLon, c.lon); maxLon = Math.max(maxLon, c.lon);
+    }
+  }
+  if (!Number.isFinite(minLat)) return null;
+  const frame = frameTrack({ min: { lat: minLat, lon: minLon },
+                             max: { lat: maxLat, lon: maxLon },
+                             box, inset: TRACK_INSET });
+  if (!frame) return null;
+  const image = await mapBackdrop(frame, W, H, scale);
+  if (!image) return null;
+  return {
+    image,
+    placer: (track) => (track.geo ? (x, y) => {
+      const c = toLatLon(track.geo, x, y);
+      return placeOn(frame, c.lat, c.lon);
+    } : null),
   };
 }
 
@@ -806,10 +908,15 @@ export async function drawCard(canvas, content, shape, options = {}) {
   const wide = isWide(shape);
   const boxes = cardBoxes(content, shape, W, H);
 
-  // The one await between the layout and the ink. Off — the default — it is not reached at
-  // all, and everything below draws the card this file has always drawn.
-  const map = options.map && boxes.track
-    ? await buildMap(content, boxes.track, W, H, SCALE) : null;
+  // The one await between the layout and the ink. Off — the default — neither branch is
+  // reached at all, and everything below draws the card this file has always drawn. A period
+  // takes the stack's framing (the union of its outlines) and a session its own.
+  let map = null;
+  if (options.map && boxes.track) {
+    map = content.tracks?.length
+      ? await buildStackMap(content.tracks, boxes.track, W, H, SCALE)
+      : await buildMap(content, boxes.track, W, H, SCALE);
+  }
 
   if (map) {
     ctx.save();
@@ -829,7 +936,7 @@ export async function drawCard(canvas, content, shape, options = {}) {
     const place = map ? map.place : fittedPlacer(content.track, boxes.track);
     if (place) drawTrack(ctx, content.track, place);
   } else if (content.tracks?.length && boxes.track) {
-    drawTrackStack(ctx, content.tracks, boxes.track);
+    drawTrackStack(ctx, content.tracks, boxes.track, map);
   }
 
   const titleInset = map && !wide ? creditWidth(ctx, family) + 8 : 0;
@@ -1011,9 +1118,9 @@ export function openShareCard(result) {
  *
  * The dialog, the shapes, the presets, the title and caption fields and the export are the
  * session card's, unchanged: this is the same card describing a week instead of an afternoon.
- * Two things are different and both are stated rather than inferred — the map switch is not
- * offered (a period has no single ground; see docs/presentation.md), and the artwork is every
- * session's outline stacked rather than one ride.
+ * Two things are different and both are stated rather than inferred — the artwork is every
+ * session's outline stacked rather than one ride, and the map switch is offered only where a
+ * period *has* a single ground (`periodMapAvailable`; docs/presentation.md).
  *
  * The outlines come from the stored analyses, read on demand: the Records tab holds digests,
  * which is all a number needs and not enough to draw with. A session whose document cannot be
@@ -1030,7 +1137,10 @@ export async function openPeriodCard(period, entries) {
   const saved = loadCardChoice();
   state.shape = saved.shape;
   state.preset = saved.preset;
-  state.map = false;                      // no ground under a period, in this first version
+  // Remembered, but only where it can be honoured — the same rule the session card follows,
+  // asking a different question: a period has a ground when all of its afternoons were at one
+  // place, and none at all when they were 15 km apart.
+  state.map = saved.map && periodMapAvailable(period);
   const text = loadCardText(state.key);
   state.title = text.title;
   state.note = text.note;
@@ -1050,7 +1160,12 @@ export async function openPeriodCard(period, entries) {
 }
 
 /** The period's sessions as drawable outlines, oldest first, silently skipping any the
- *  library cannot hand back. */
+ *  library cannot hand back.
+ *
+ *  Each carries its own `geo` anchor, because a stack on a map is a dozen frames rather than
+ *  one: the metres in `view.x`/`y` are relative to that session's own anchor sample, so the
+ *  key back to the globe has to travel with the outline it belongs to. Null on a document
+ *  analysed before the anchor existed, which simply keeps that session off the ground. */
 async function loadTracks(period, entries) {
   const known = new Set((entries || []).map((e) => e.id));
   const out = [];
@@ -1059,8 +1174,9 @@ async function loadTracks(period, entries) {
     try {
       const json = await getAnalysisJson(id);
       if (!json) continue;
-      const track = buildTrack(JSON.parse(json));
-      if (track) out.push(track);
+      const result = JSON.parse(json);
+      const track = buildTrack(result);
+      if (track) out.push({ ...track, geo: result.view?.geo || null });
     } catch { /* one unreadable document is not a reason to refuse the card */ }
   }
   return out;
@@ -1074,9 +1190,11 @@ function content() {
     : cardContent(state.result, state.preset, { title: state.title, note: state.note });
 }
 
-/** Whether this document can carry a map at all — see `cardContent`'s `geo`. A period never
- *  can: it has no single ground, and the follow-up is written down in the contract. */
-const mapAvailable = (result) => !state.period && Boolean(result?.view?.geo);
+/** Whether the card on screen can carry a map at all. A session can when the document has a
+ *  geographic anchor (`cardContent`'s `geo`); a period can when its afternoons share one spot
+ *  cluster (`periodMapAvailable`). */
+const mapAvailable = (result) => (state.period ? periodMapAvailable(state.period)
+                                               : Boolean(result?.view?.geo));
 
 function choose(next) {
   Object.assign(state, next);

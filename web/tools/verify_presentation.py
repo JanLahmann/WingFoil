@@ -691,6 +691,76 @@ def check_period_card() -> None:
         check(f"  {key}: the date line is the period's span", card["dateLine"],
               want["dateLine"])
 
+        # 5. The map ground, re-derived here by a second copy of the rule: one spot cluster,
+        #    and every afternoon in it placed by a fix rather than by the name of its file.
+        #    The browser may only *read* the flag — a second clustering implementation in
+        #    js/ would be a second answer to "was this one place".
+        rows = [d for d in digests if d["id"] in set(want["sessionIds"])]
+        anchored = all(isinstance(d.get("geo"), dict) for d in rows)
+        one_place = bool(rows) and len(library._spot_clusters(rows)) == 1
+        check(f"  {key}: the ground is offered iff the period is one place",
+              want["mapGround"], anchored and one_place)
+        check(f"  {key}: and the composer offers exactly that",
+              card["mapOffered"], want["mapGround"])
+        check(f"  {key}: read from the library, never re-derived",
+              card["mapGround"], want["mapGround"])
+
+
+def check_outline_stack() -> None:
+    """The period card's artwork: many outlines, **one** metres scale, both platforms.
+
+    The card's stats are pinned by the two sections above; its picture is pinned here. What
+    makes a stack of a dozen tracks a picture rather than a scribble is that they share a
+    scale — a half-hour paddle draws small inside a three-hour reach instead of being
+    stretched to match it — and what makes it the *same* picture on a phone and in a browser
+    is that both fit the union of the extents by the same arithmetic.
+
+    `fixtures/periods/outlines.expected.json` is the contract: polylines in metres, a box in
+    layout points, and every placed vertex. `TrackStackTests` holds the kit to it; this holds
+    `stackPlacer` in web/js/sharecard.js to it, and re-derives the file from
+    `make_presentation_goldens.py` first, so a stale fixture cannot pin either platform to an
+    answer the rule no longer gives.
+    """
+    if not _CARD_DUMP:
+        return
+    section("5e. the period card's outlines share one scale, on both platforms")
+    sys.path.insert(0, str(WEB / "tools"))
+    import make_presentation_goldens as stack_gen                        # noqa: PLC0415
+
+    stored = json.loads(
+        (REPO / "fixtures" / "periods" / "outlines.expected.json").read_text(encoding="utf-8"))
+    fresh = stack_gen.stack_facts()
+    check("  the fixture is what the rule produces now", stored, fresh)
+
+    got = {case["name"]: case for case in (_CARD_DUMP[-1].get("stacks") or [])}
+    check("  every case was measured in the browser", sorted(got),
+          sorted(c["name"] for c in fresh["cases"]))
+    for want in fresh["cases"]:
+        name = want["name"]
+        have = got.get(name)
+        if have is None:
+            FAILED.append(f"  {name}: not dumped")
+            continue
+        check(f"  {name}: one scale, and it is the fixture's", have["scale"], want["scale"])
+        check(f"  {name}: the union's centre", [have["centreX"], have["centreY"]],
+              [want["centreX"], want["centreY"]])
+        check(f"  {name}: every vertex lands where the fixture says", have["placed"],
+              want["placed"])
+
+    # The point of the whole thing, said out loud so a regression names itself: three tracks
+    # of three different sizes come off ONE scale, and the biggest is the one that binds the
+    # fit. Normalize each against its own extent — which is what the phone did before the
+    # thumbnail carried its bounds — and all three would be drawn the same size.
+    week = next(c for c in fresh["cases"] if c["name"] == "a week of different lengths")
+    spans = []
+    for track in week["placed"]:
+        xs = [p[0] for p in track]
+        spans.append(round(max(xs) - min(xs), 3))
+    check("  the three tracks are drawn at three different widths",
+          len(set(spans)) == len(spans), True)
+    check("  …and the longest is the one that fills the box",
+          round(max(spans), 1), round(week["box"]["w"] - 2 * fresh["rule"]["inset"], 1))
+
 
 CARD_TEXT = TOOLS / "card_text.mjs"
 
@@ -1018,6 +1088,7 @@ def main(argv=None) -> int:
     check_card()
     check_card_text()
     check_period_card()
+    check_outline_stack()
 
     _close_section()
     print(f"\n{PASSED} passed, {len(FAILED)} failed")
