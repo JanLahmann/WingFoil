@@ -28,8 +28,9 @@ globalThis.window = { addEventListener() {} };
 
 const JS = new URL("../js/", import.meta.url);
 const { keyMetrics } = await import(new URL("render.js", JS).href);
-const { LEAN_KEYS, PERIOD_LEAN_KEYS, cardStats, periodCardStats } =
+const { LEAN_KEYS, PERIOD_LEAN_KEYS, cardStats, periodCardStats, periodMapAvailable } =
   await import(new URL("cardstats.js", JS).href);
+const { stackPlacer } = await import(new URL("sharecard.js", JS).href);
 
 /**
  * The block's cells, in order, as the page actually prints them.
@@ -69,9 +70,39 @@ for (const group of ["trips", "months", "seasons", "custom"]) {
       block: period.block.map((e) => ({ key: e.key, label: e.label, value: e.value })),
       complete: periodCardStats(period, "complete"),
       lean: periodCardStats(period, "lean"),
+      // Whether the composer offers a ground under this period at all. The rule itself is
+      // `library._map_ground`'s; what is dumped here is that the browser reads it and does
+      // not invent a second one.
+      mapOffered: periodMapAvailable(period),
+      mapGround: period.mapGround ?? null,
     });
   }
 }
+
+/* The **artwork**, from a second shared fixture: a set of outlines in metres, a box, and where
+ * `stackPlacer` puts every vertex. The one thing that makes a stack a picture rather than a
+ * scribble is that all of them share a metres scale, and the one thing that makes it the *same*
+ * picture on both platforms is that `TrackStack.placement` in the kit agrees with this. */
+const outlinesPath = new URL("../../fixtures/periods/outlines.expected.json",
+                             import.meta.url);
+const outlines = JSON.parse(readFileSync(outlinesPath, "utf8"));
+const round6 = (v) => Number(v.toFixed(6));
+const stacks = outlines.cases.map((c) => {
+  // The shape `drawTrackStack` reads: one run per track, no marks — the stack draws none.
+  const tracks = c.tracks.map((pts) => ({ runs: [{ flying: true, pts }], marks: [] }));
+  const placer = stackPlacer(tracks, c.box);
+  return {
+    name: c.name,
+    scale: placer === null ? null : Number(placer.scale.toFixed(9)),
+    centreX: placer === null ? null : round6(placer.centreX),
+    centreY: placer === null ? null : round6(placer.centreY),
+    placed: placer === null ? null : c.tracks.map(
+      (pts) => pts.map(([x, y]) => {
+        const p = placer.place(x, y);
+        return [round6(p.x), round6(p.y)];
+      })),
+  };
+});
 
 const out = [];
 for (const path of process.argv.slice(2)) {
@@ -90,4 +121,5 @@ process.stdout.write(JSON.stringify({
   cards: out,
   periods,
   periodLeanKeys: [...PERIOD_LEAN_KEYS],
+  stacks,
 }));

@@ -170,7 +170,7 @@ struct ShareCardView: View {
             for run in map.runs {
                 var path = Path()
                 path.addLines(run.points)
-                let width = run.flying ? 2.6 : 2.6 * 0.5
+                let width = run.flying ? map.lineWidth : map.lineWidth * 0.5
                 if map.needsHalo {
                     // Over photography only, and by the map's own rule: a foil-green line on
                     // sunlit chop is not legible without a dark outer edge.
@@ -178,9 +178,11 @@ struct ShareCardView: View {
                                    style: StrokeStyle(lineWidth: TrackHalo.width(under: width),
                                                       lineCap: .round, lineJoin: .round))
                 }
+                // `map.opacity` is 1 for a session and the stack's own for a period, where a
+                // dozen breadcrumbs on one ground have to read as one shape.
+                let ink = run.flying ? flyingColor : offFoilColor.opacity(0.55)
                 context.stroke(
-                    path,
-                    with: .color(run.flying ? flyingColor : offFoilColor.opacity(0.55)),
+                    path, with: .color(ink.opacity(map.opacity)),
                     style: StrokeStyle(lineWidth: width, lineCap: .round, lineJoin: .round))
             }
             // Splashes last, so the one mark that is *evidence* rather than a verdict sits on
@@ -334,11 +336,17 @@ struct ShareCardView: View {
     @ViewBuilder
     private var track: some View {
         if !thumbnails.isEmpty {
-            stack
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .onGeometryChange(for: CGRect.self) {
-                    $0.frame(in: .named(Self.cardSpace))
-                } action: { onTrackFrame?($0) }
+            Group {
+                // With a ground under it the whole stack is drawn by `mapTrack` instead, in
+                // the map's own projection and over the whole card. The slot stays, at exactly
+                // the size it had, because nothing else on the card may move when the switch
+                // is flipped — and because the snapshot is framed against this rectangle.
+                if map == nil { stack } else { Color.clear }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onGeometryChange(for: CGRect.self) {
+                $0.frame(in: .named(Self.cardSpace))
+            } action: { onTrackFrame?($0) }
         } else if let thumbnail, !thumbnail.points.isEmpty {
             Group {
                 if map == nil {
@@ -368,32 +376,54 @@ struct ShareCardView: View {
         }
     }
 
-    /// The period's outlines, laid on one another.
+    /// The period's outlines, laid on one another **at one metres scale**.
     ///
-    /// Each is drawn into the same rectangle by the same fit rule (`fillsBox: false`, the
-    /// normalized square inscribed), so they share a box and a centre and every track keeps
-    /// its own aspect. It is not a shared *metres* scale — `TrackThumbnail` normalizes that
-    /// away, one session at a time, and carrying the extent is the follow-up the contract
-    /// names (docs/presentation.md, "The period card").
+    /// Every outline is un-normalized back to metres through the extent its thumbnail now
+    /// carries (`TrackThumbnail.metres(x:y:)`), and all of them go through one placer fitted
+    /// to the union of those extents (`TrackStack.placement`). So a half-hour paddle draws
+    /// small inside a three-hour reach rather than being stretched to match it, and a week at
+    /// one spot laid over itself is recognisably that beach.
+    ///
+    /// It used to stack `TrackOutlineView`s, each normalized against its own extent: they
+    /// shared a box and a centre and not a scale, so twelve afternoons of twelve different
+    /// lengths came out twelve identical sizes. That was the follow-up the contract named, and
+    /// this is it — pinned against the browser's own arithmetic by
+    /// `fixtures/periods/outlines.expected.json`.
     ///
     /// No marks: fifty outcome dots per session times a dozen sessions is confetti, and the
     /// card's own numbers already say how the maneuvers went.
-    @ViewBuilder
     private var stack: some View {
-        // Faint enough that a dozen read as one shape rather than a scribble; the overlap is
-        // what draws the eye, so the water everything was ridden over comes out brightest.
-        let alpha = max(0.22, min(0.6, 2.4 / Double(thumbnails.count)))
-        ZStack {
-            ForEach(Array(thumbnails.enumerated()), id: \.offset) { _, thumbnail in
-                TrackOutlineView(thumbnail: thumbnail,
-                                 flyingColor: flyingColor,
-                                 offFoilColor: offFoilColor,
-                                 lineWidth: 1.8,
-                                 offFoilScale: 0.5,
-                                 padding: 4)
-                    .opacity(alpha)
+        Canvas(opaque: false) { context, size in
+            let extents = thumbnails.compactMap(\.stackExtent)
+            guard let placement = TrackStack.placement(
+                of: extents, in: TrackStack.Box(x: 0, y: 0, w: size.width, h: size.height),
+                inset: ShareCardStats.trackInset) else { return }
+            // Faint enough that a dozen read as one shape rather than a scribble; the overlap
+            // is what draws the eye, so the water everything was ridden over comes out
+            // brightest. Per stroke rather than per layer, which is what the web's
+            // `globalAlpha` does and therefore the same picture.
+            let alpha = TrackStack.opacity(count: thumbnails.count)
+            for thumbnail in thumbnails {
+                for run in thumbnail.runs {
+                    let placed = run.points.compactMap { point -> CGPoint? in
+                        guard let m = thumbnail.metres(x: point.x, y: point.y) else {
+                            return nil
+                        }
+                        let p = placement.place(x: m.x, y: m.y)
+                        return CGPoint(x: p.x, y: p.y)
+                    }
+                    guard placed.count >= 2 else { continue }
+                    var path = Path()
+                    path.addLines(placed)
+                    let ink = run.flying ? flyingColor : offFoilColor.opacity(0.55)
+                    context.stroke(
+                        path, with: .color(ink.opacity(alpha)),
+                        style: StrokeStyle(lineWidth: run.flying ? 1.8 : 1.8 * 0.5,
+                                           lineCap: .round, lineJoin: .round))
+                }
             }
         }
+        .accessibilityHidden(true)
     }
 
     // MARK: - The stats
