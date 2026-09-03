@@ -53,8 +53,9 @@ An iPhone app with the full analysis — maps, turn forensics, replay with comme
 
 ### What's New (live text)
 
-**The 0.9.5 entry below is DRAFTED, not yet live** — written with the build, uploaded after it;
-everything under it is the store's own text as transcribed on 2 September 2026.
+**The 0.9.5 entry below was uploaded on 3 September 2026 and is awaiting Garmin review**
+(listing shows 0.9.5, Internal 13); everything under it is the store's own text as transcribed on
+2 September 2026.
 
 ```
 0.9.5: the clean jibe is now on your wrist. The Turns page and the post-save summary carry a star, the number of clean jibes you have landed, and your CPH — clean jibes per hour — and a clean jibe now gets its own rising three-tick buzz instead of the plain fly-through tick, so you can tell one from the other without looking. If you would rather have the old buzz back, turn it off under Garmin Connect → CleanJibe → Settings.
