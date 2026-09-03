@@ -212,7 +212,15 @@ Identical ids, types and meanings to the device app: `foil_state`(0) · `turn_ma
 `tick`(4). `flight_index`(1) and `pump_cadence`(2) are **not** written — there is no lap
 structure to index against and no accelerometer (below).
 
-### SESSION message — 14 fields / **29 bytes** (limit 32 B / 16 fields)
+### SESSION message — 15 fields / **30 bytes** (limit 32 B / 16 fields)
+
+Field **51 `clean_jibes`** is new in field 0.9.6 and is the one number the data field records
+that the **device app cannot**: the app's session message has been at the 16-field ceiling
+since 0.9.0, so the watch computes `TurnDetector.cleanJibeCount`, shows it on the Turns page
+with CPH beside it, and has no slot left to write it into. The field's budget binds on *bytes*
+rather than fields, and a uint8 was affordable. A reader must therefore expect the clean count
+in class-(d) files and **derive it** for class (a) — from the record-level `turn_marker` stream
+plus the phone's own jibe classification, which is what `cleanJibesPerHour` already does.
 
 | fieldId | name | type | B | notes |
 |---|---|---|---|---|
@@ -228,12 +236,15 @@ structure to index against and no accelerometer (below).
 | 39 | `wind_dir_user` | uint16 | 2 | 65535 = unset |
 | 43 | `app_version` | uint16 | 2 | high byte app minor, low byte `SCHEMA_VERSION` — still **1** here: the class-(d) schema below is unchanged by the device app's v1→v2 packing, and it was already packed. This is exactly why a parser keys off field *presence*, not the version number |
 | 50 | `turn_outcomes` | uint32 | 4 | **packed**: `flew << 16 \| touchdown << 8 \| fell`, each uint8 saturating at 254 |
+| 51 | `clean_jibes` | uint8 | 1 | **field 0.9.6.** Counted jibes that were *successful* — score ≥ `turnSuccessPct` and the foil never lost across the scored window (docs/presentation.md "Clean jibe"). Saturates at 254. Deliberately **not** packed into `turn_outcomes`(50): those three lanes are the outcome ladder and partition the counted turns, whereas this is a stricter question asked of one of them, so it is a count that overlaps `flew` rather than a fourth share of the same total. Written on every tick like every other field in this table — the data field has no omit path, so a 0 here is a written 0. Read it with the same caution the class-(d) `tack_count`/`jibe_count` pair needs: **a session with no wind axis names nothing a jibe**, so `clean_jibes` = 0 alongside `wind_dir_user` = 65535 means *unclassified*, not *none*. It can never exceed the `flew` lane of field 50, and a file where it does has been mis-parsed |
 | 53 | `discipline_id` | uint8 | 1 | 1 = wingfoil — the compact form of the app's `discipline`(20) string |
 | 54 | `cfg_pack` | uint32 | 4 | **packed**: `entry_cms << 16 \| minFlight_s << 11 \| exit_cms` (entry 16 b cm/s · minFlight 5 b s · exit 11 b cm/s) — the compact form of `cfg_entry_speed`(40)/`cfg_min_flight`(42)/`cfg_exit_speed`(41) |
 
 Ids **21–43 keep the device app's meaning and type exactly**; 50–59 is a new band reserved for
-field-variant-only fields. 50 and 54 are bit-packed because *fields*, not bytes, are the
-binding constraint. Fields the device app writes and the data field cannot: `discipline`(20)
+field-variant-only fields, minus 54/55/56, which the device app's own packed fields already
+own. Allocated so far: 50 `turn_outcomes`, **51 `clean_jibes`**, 53 `discipline_id`, 54
+`cfg_pack` — 52 and 57–59 are free, and the next field takes the lowest of them. 50 and 54 are
+bit-packed because *fields*, not bytes, are the binding constraint. Fields the device app writes and the data field cannot: `discipline`(20)
 as a string (16 B and a scarce slot), `longest_flight_m`(25), `best_5x10s`(28)…`alpha500_lite`
 (31), every takeoff/pump field (35–38) and every LAP field (10–16).
 
@@ -257,6 +268,11 @@ as a string (16 B and a scarce slot), `longest_flight_m`(25), `best_5x10s`(28)�
 - **Unpack** 50 and 54 with the shifts above before comparing them to class-(a) fields; then
   `turn_outcomes` maps to the same flew/touchdown/fell tallies the phone derives from the
   record-level `turn_marker` values 4–6, and `cfg_pack` to the same three thresholds.
+- **`clean_jibes`(51) is the watch's own count, not a rate.** No CPH is ever written to a FIT,
+  by either app: the numerator is cheap and the denominator is the argument (docs/algorithms.md
+  "Session rates" — the phone divides by the cleaned track, the device app by the session
+  clock, the data field by the native activity's timer time). Writing a rounded rate would
+  freeze one denominator into the file forever. Divide it yourself.
 
 ## Parsing rules (phone/lab)
 

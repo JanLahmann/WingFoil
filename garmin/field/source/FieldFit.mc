@@ -9,7 +9,9 @@ import WingFoilCore;
 // budget of 32 bytes AND 16 fields (SessionPack documents how both were measured):
 //   RECORD  3 fields / 3 B — foil_state(0) + turn_marker(3) + tick(4), identical meaning
 //                            to the device app's
-//   SESSION 14 fields / 29 B — the compact summary, whose table lives in SessionPack
+//   SESSION 15 fields / 30 B — the compact summary, whose table lives in SessionPack
+//                              (0.9.6 added `clean_jibes`(51), the one thing the field writes
+//                              that the device app cannot: its session message is full)
 // Field IDs shared with the device app carry exactly the app's meaning and type.
 class FieldFit {
     const SCHEMA_VERSION = 1;
@@ -41,10 +43,10 @@ class FieldFit {
     // Session field names and units, in SessionPack slot order (the table is the schema).
     hidden const NAMES = ["foil_time", "foil_pct", "flight_count", "longest_flight_s",
         "best_2s", "best_10s", "tack_count", "jibe_count", "turn_success_pct",
-        "wind_dir_user", "app_version", "turn_outcomes", "discipline_id",
+        "wind_dir_user", "app_version", "turn_outcomes", "clean_jibes", "discipline_id",
         "cfg_pack"] as Array<String>;
     hidden const UNITS = ["s", "%", "", "s", "cm/s", "cm/s", "", "", "%", "deg", "", "", "",
-        ""] as Array<String>;
+        "", ""] as Array<String>;
 
     function initialize(df as WatchUi.DataField) {
         _foilState = df.createField("foil_state", 0, FitContributor.DATA_TYPE_UINT8,

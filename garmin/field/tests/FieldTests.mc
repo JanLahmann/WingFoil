@@ -77,6 +77,7 @@ function sessionPackRoundTrips(logger as Test.Logger) as Boolean {
     vals[SessionPack.SLOT_WIND_DIR] = 197;
     vals[SessionPack.SLOT_APP_VERSION] = 257;           // minor 1, schema 1
     vals[SessionPack.SLOT_OUTCOMES] = SessionPack.packOutcomes(90, 44, 25);
+    vals[SessionPack.SLOT_CLEAN_JIBES] = 61;            // 0.9.6, field 51
     vals[SessionPack.SLOT_DISCIPLINE] = SessionPack.DISCIPLINE_WINGFOIL;
     vals[SessionPack.SLOT_CFG] = SessionPack.packCfg(333, 222, 5);
 
@@ -110,6 +111,7 @@ function sessionPackSaturatesInsteadOfWrapping(logger as Test.Logger) as Boolean
         vals[i] = 0;
     }
     vals[SessionPack.SLOT_JIBES] = 9000;                // uint8 count
+    vals[SessionPack.SLOT_CLEAN_JIBES] = 900;           // uint8 count
     vals[SessionPack.SLOT_FLIGHT_COUNT] = 200000;       // uint16 count
     vals[SessionPack.SLOT_TURN_SUCCESS] = -5;           // never negative on the wire
     vals[SessionPack.SLOT_WIND_DIR] = 65535;            // the "unset" sentinel is legal
@@ -117,6 +119,9 @@ function sessionPackSaturatesInsteadOfWrapping(logger as Test.Logger) as Boolean
     var back = SessionPack.decode(SessionPack.encode(vals));
     Test.assertMessage(back[SessionPack.SLOT_JIBES] == 254,
         "uint8 count saturates at 254, got " + back[SessionPack.SLOT_JIBES].toString());
+    Test.assertMessage(back[SessionPack.SLOT_CLEAN_JIBES] == 254,
+        "and so does the clean count, got "
+        + back[SessionPack.SLOT_CLEAN_JIBES].toString());
     Test.assertMessage(back[SessionPack.SLOT_FLIGHT_COUNT] == 65534,
         "uint16 count saturates at 65534, got "
         + back[SessionPack.SLOT_FLIGHT_COUNT].toString());
@@ -167,6 +172,16 @@ function sessionValuesComeFromTheDetectors(logger as Test.Logger) as Boolean {
     Test.assertMessage(SessionPack.cfgMinFlightS(c) == 5, "min flight echoed");
     Test.assertMessage(vals[SessionPack.SLOT_DISCIPLINE] == SessionPack.DISCIPLINE_WINGFOIL,
         "discipline marker present — this is what tells a parser the session is ours");
+    // 0.9.6: field 51 is the detector's own clean count, taken straight off TurnDetector and
+    // not re-derived here. Nothing in this 36 s of straight-line riding is a jibe, so the
+    // honest value is 0 — and the assertion is that the field is WRITTEN, at the detector's
+    // number, which is what a parser reading a session with no jibes in it has to see.
+    Test.assertMessage(vals[SessionPack.SLOT_CLEAN_JIBES] == e.turns.cleanJibeCount,
+        "clean count comes off the detector, got "
+        + vals[SessionPack.SLOT_CLEAN_JIBES].toString());
+    e.turns.cleanJibeCount = 25;
+    Test.assertMessage(SessionPack.fromEngine(e, cfg, 257)[SessionPack.SLOT_CLEAN_JIBES] == 25,
+        "and follows it");
     // and it still round-trips at those values
     var back = SessionPack.decode(SessionPack.encode(vals));
     Test.assertMessage(back[SessionPack.SLOT_FOIL_TIME] == vals[SessionPack.SLOT_FOIL_TIME],
@@ -781,6 +796,7 @@ function metricCatalogIsComplete(logger as Test.Logger) as Boolean {
     e.turns.fellCount = 8;
     e.turns.lastOutcome = TurnDetector.OUTCOME_TOUCHDOWN;
     e.turns.lastScorePct = 61;
+    e.turns.cleanJibeCount = 25;                 // 2026-08-29 pm, the corpus session
     for (var i = 0; i < FieldMetrics.LIST.size(); i++) {
         var id = FieldMetrics.LIST[i];
         var worst = FieldMetrics.worst(id);
@@ -862,6 +878,121 @@ function configuredSlotsNeverClip(logger as Test.Logger) as Boolean {
     // rule that decides it is untested in the only place it runs
     Test.assertMessage(capped > 0, "no configuration anywhere kept its words");
     Test.assertMessage(bare > 0, "no configuration anywhere gave them up");
+    return true;
+}
+
+// ---- 0.9.6: the clean jibe ----
+
+// CPH is a division and a floor, and the floor is the half that is easy to get wrong. The four
+// corners are pinned here the way the barrel suite pins the detector's: below the minute there
+// is no rate at all, at the minute there is, and the arithmetic in between is a rate per HOUR
+// and not per anything else.
+(:test)
+function cphIsARatePerHourWithAMinuteFloor(logger as Test.Logger) as Boolean {
+    // the arithmetic: 25 clean jibes in 7029 s of a real afternoon (docs/algorithms.md's
+    // corpus row for 2026-08-29 pm, where the phone's cleaned-track denominator gives 12.8)
+    var v = FieldMetrics.cleanPerHour(25, 7029.0);
+    Test.assertMessage(v > 12.7 && v < 12.9, "25 in 7029 s is ~12.8 an hour, got " + v);
+    Test.assertMessage(FieldMetrics.fmtCph(25, 7029.0).equals("12.8"),
+        "and prints to one decimal, got " + FieldMetrics.fmtCph(25, 7029.0));
+    // an hour exactly is the identity case, and it is worth pinning because it is the one
+    // value that would still look right if the constant were seconds-per-minute
+    Test.assertMessage(FieldMetrics.fmtCph(7, 3600.0).equals("7.0"),
+        "seven in an hour is seven an hour, got " + FieldMetrics.fmtCph(7, 3600.0));
+    Test.assertMessage(FieldMetrics.fmtCph(3, 1800.0).equals("6.0"),
+        "three in half an hour is six an hour, got " + FieldMetrics.fmtCph(3, 1800.0));
+
+    // THE FLOOR. One clean jibe forty seconds in is not ninety an hour — it is one clean jibe
+    // and not enough afternoon to divide by. Below 60 s the rate is refused outright, and what
+    // the row shows is the field's own unmeasured mark, never a number and never a 0.0.
+    Test.assertMessage(FieldMetrics.cleanPerHour(1, 40.0) < 0.0,
+        "no rate before a minute");
+    Test.assertMessage(FieldMetrics.fmtCph(1, 40.0).equals(FieldMetrics.CPH_NONE),
+        "and it prints as \"--\", got " + FieldMetrics.fmtCph(1, 40.0));
+    Test.assertMessage(FieldMetrics.fmtCph(0, 0.0).equals(FieldMetrics.CPH_NONE),
+        "a session that has not started has no rate either");
+    // the floor is a floor and not a gate: at exactly 60 s the rate exists
+    Test.assertMessage(FieldMetrics.cleanPerHour(0, 59.9) < 0.0, "59.9 s is still below it");
+    Test.assertMessage(FieldMetrics.fmtCph(1, 60.0).equals("60.0"),
+        "at 60 s it lifts, got " + FieldMetrics.fmtCph(1, 60.0));
+    // ...and a zero above the floor is a real observation, not a missing one: an hour with no
+    // clean jibe in it is a fact about the hour, and dashing it would hide a hard session.
+    Test.assertMessage(FieldMetrics.fmtCph(0, 3600.0).equals("0.0"),
+        "zero clean jibes in an hour is 0.0, not \"--\"");
+    // a negative count cannot arise from the detector, but the guard must not invent a rate
+    // from one if some future caller passes it
+    Test.assertMessage(FieldMetrics.cleanPerHour(-1, 3600.0) < 0.0, "no rate from a negative");
+    logger.debug("cph 25/7029 s = " + FieldMetrics.fmtCph(25, 7029.0) + ", 1/40 s = "
+        + FieldMetrics.fmtCph(1, 40.0));
+    return true;
+}
+
+// The two metrics as the field actually reads them: off TurnDetector.cleanJibeCount and off
+// the engine's own timer, which is the denominator a data field has (there is no
+// SessionController here — see FieldMetrics' CPH header and the divergence list in
+// docs/algorithms.md).
+(:test)
+function cleanMetricsReadTheDetectorAndTheTimer(logger as Test.Logger) as Boolean {
+    var cfg = fieldCfg();
+    var e = new FieldEngine(cfg);
+    Test.assertMessage(FieldMetrics.value(FieldMetrics.M_CLEAN, e, cfg).equals("0"),
+        "a session with no jibes in it has counted none");
+    Test.assertMessage(FieldMetrics.value(FieldMetrics.M_CPH, e, cfg)
+        .equals(FieldMetrics.CPH_NONE), "and has no rate, because it has no minute");
+    e.turns.cleanJibeCount = 12;
+    e.timerS = 3600.0;
+    Test.assertMessage(FieldMetrics.value(FieldMetrics.M_CLEAN, e, cfg).equals("12"),
+        "the count is the detector's");
+    Test.assertMessage(FieldMetrics.value(FieldMetrics.M_CPH, e, cfg).equals("12.0"),
+        "the rate divides by the engine timer, got "
+        + FieldMetrics.value(FieldMetrics.M_CPH, e, cfg));
+    // the denominator is the TIMER, not foil time: a rider who flew for ten minutes of his
+    // hour still rode those twelve jibes in an hour on the water
+    e.detector.foilTimeS = 600.0;
+    Test.assertMessage(FieldMetrics.value(FieldMetrics.M_CPH, e, cfg).equals("12.0"),
+        "foil time is not the denominator");
+    // a new activity starts both over
+    e.reset();
+    Test.assertMessage(e.turns.cleanJibeCount == 0, "reset clears the clean count");
+    Test.assertMessage(FieldMetrics.value(FieldMetrics.M_CPH, e, cfg)
+        .equals(FieldMetrics.CPH_NONE), "and the rate with it");
+    return true;
+}
+
+// The star's row, on both screens that draw it. Its worst case is measured with the glyph
+// budgeted as one character, so what has to hold is that the character really is what the
+// drawing code reserves — otherwise the fitter is sizing a row the field does not draw.
+(:test)
+function cleanRowsBudgetTheStarAsOneCharacter(logger as Test.Logger) as Boolean {
+    var dc = scratchDc();
+    var full = FieldLayout.WIDEST[FieldLayout.SIZE_FULL][3];
+    var sumB = FieldLayout.WIDEST[FieldLayout.REND_SUM_B][3];
+    Test.assertMessage(full.equals("99 · 99 · 99" + FieldLayout.CLEAN_GAP
+        + FieldLayout.STAR_STANDIN + " 99 99.9"),
+        "the Main tally row's worst case is the tally, the gap, the star and the two numbers: "
+        + full);
+    Test.assertMessage(sumB.equals(FieldLayout.STAR_STANDIN + " 99 99.9"),
+        "and the summary's clean row is the star and the two numbers: " + sumB);
+    // the stand-in must be a glyph with width in every font on the ladder, or the star's box
+    // would be budgeted at zero on some rung and the row would overflow only there
+    for (var i = 0; i < FieldLayout.TEXT_FONTS.size(); i++) {
+        var w = dc.getTextWidthInPixels(FieldLayout.STAR_STANDIN, FieldLayout.TEXT_FONTS[i]);
+        Test.assertMessage(w > 0, "the star's stand-in measures 0 px in font "
+            + FieldLayout.TEXT_FONTS[i] + " — the box it reserves would vanish");
+    }
+    // and the live strings must fit inside the tabled ones: the count and the rate are the
+    // two halves that grow during a session
+    var cfg = fieldCfg();
+    var e = new FieldEngine(cfg);
+    e.turns.cleanJibeCount = 99;
+    e.timerS = 3600.0;
+    var live = FieldLayout.STAR_STANDIN + " " + e.turns.cleanJibeCount.toString() + " "
+        + FieldMetrics.cphText(e);
+    var lw = dc.getTextWidthInPixels(live, Graphics.FONT_MEDIUM);
+    var ww = dc.getTextWidthInPixels(sumB, Graphics.FONT_MEDIUM);
+    logger.debug("clean row live \"" + live + "\" " + lw + " px vs worst \"" + sumB + "\" "
+        + ww + " px");
+    Test.assertMessage(lw <= ww, "a 99/99.0 session is wider than the tabled worst case");
     return true;
 }
 

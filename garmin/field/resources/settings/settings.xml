@@ -35,7 +35,12 @@
          The list is what a DATA FIELD can compute. Pump strokes, takeoffs and takeoff cost
          are missing because Sensor.* crashes a data field (docs/fit-schema.md), not because
          they were forgotten. Ids and wording are the device app's wherever both have the
-         metric, so the two settings pages read as one vocabulary. -->
+         metric, so the two settings pages read as one vocabulary.
+
+         0.9.6 appends 26 and 27, the clean-jibe count and CPH. They are LAST in each list and
+         must stay there: the order is what a rider scrolls, and inserting a new entry beside
+         the jibes it belongs with would shuffle everything under it in a picker some people
+         have already learned. -->
     <setting propertyKey="@Properties.smallSlot" title="@Strings.SetSmallSlot">
         <settingConfig type="list">
             <listEntry value="1">@Strings.MetSpeed</listEntry>
@@ -56,6 +61,8 @@
             <listEntry value="22">@Strings.MetFlightLine</listEntry>
             <listEntry value="23">@Strings.MetTackJibe</listEntry>
             <listEntry value="24">@Strings.MetOutcomes</listEntry>
+            <listEntry value="26">@Strings.MetClean</listEntry>
+            <listEntry value="27">@Strings.MetCph</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.widePrimary" title="@Strings.SetWidePrimary">
@@ -78,6 +85,8 @@
             <listEntry value="22">@Strings.MetFlightLine</listEntry>
             <listEntry value="23">@Strings.MetTackJibe</listEntry>
             <listEntry value="24">@Strings.MetOutcomes</listEntry>
+            <listEntry value="26">@Strings.MetClean</listEntry>
+            <listEntry value="27">@Strings.MetCph</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.wideSecondary" title="@Strings.SetWideSecondary">
@@ -100,6 +109,8 @@
             <listEntry value="22">@Strings.MetFlightLine</listEntry>
             <listEntry value="23">@Strings.MetTackJibe</listEntry>
             <listEntry value="24">@Strings.MetOutcomes</listEntry>
+            <listEntry value="26">@Strings.MetClean</listEntry>
+            <listEntry value="27">@Strings.MetCph</listEntry>
         </settingConfig>
     </setting>
 </settings>

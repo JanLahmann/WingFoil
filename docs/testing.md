@@ -702,8 +702,30 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    (both paused pages, every row labelled), `configuredSlotsNeverClip` (the same never-clip
    loop run once per metric in the settings list, with that metric in every configurable slot
    at once — 18 metrics x 33 cells on a fenix 8) and `slotDefaultsAreTheOldRows` (the promise
-   that an install which never opens the settings page sees what it saw in 0.9.4). Counts:
-   **57/57** on `fenix847mm`, `fr255` and `epix2pro42mm`.
+   that an install which never opens the settings page sees what it saw in 0.9.4).
+
+   0.9.6 added three more, all about the clean jibe: `cphIsARatePerHourWithAMinuteFloor` (the
+   division and, more to the point, the 60 s floor — below it there is no rate and the row
+   prints `--`, at exactly 60 s there is, and a zero *above* the floor is a real observation
+   that must not be dashed away), `cleanMetricsReadTheDetectorAndTheTimer` (the count comes off
+   `TurnDetector.cleanJibeCount` and the denominator is the engine's timer, not foil time — the
+   divergence recorded in algorithms.md) and `cleanRowsBudgetTheStarAsOneCharacter` (the star
+   is not text, so the worst-case tables spend `FieldLayout.STAR_STANDIN` on it and the drawing
+   code reserves a box exactly that wide; if the two ever disagreed the fitter would be sizing
+   a row the field does not draw). Counts: **61/61** on `fenix847mm`, `fr255`, `epix2pro42mm`
+   and `fenix7s` — the four-glass matrix above, run for 0.9.6 because the new content lands on
+   the row that was already the widest on the Main page.
+
+   That row is also where 0.9.6's one layout finding came from, and it is the same lesson as
+   0.9.5's: **a caption is width taken out of the value's window.** Putting the star, the count
+   and CPH beside the outcome tally made the Main page's row 3 434 px wide in a 405 px window
+   on a 454 px fenix 8 — of which "outcomes" was 142 — so `fitCell` dropped the captions from
+   the *whole page* and `fullScreenCarriesTheAppMainPage` failed, which is exactly what it is
+   for. The fix was to spend the word where it is load-bearing: the caption is now `cph` (55
+   px), because a bare "4.5" beside two counts means nothing, while the clean count is named by
+   the star in front of it and the three outcome counts by the three inks they are drawn in.
+   346 px in 405 on the fenix 8, 314 in 342 on an epix 2 Pro 42 mm, 170 in 233 on an fr255,
+   170 in 207 on a fenix 7S.
 
    `configuredSlotsNeverClip` deliberately does **not** assert the tabled SIZE per cell: a
    wider metric legitimately steps a cell down, and pinning the size would pin the
