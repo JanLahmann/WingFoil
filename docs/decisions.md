@@ -2,6 +2,60 @@
 
 Newest first. One paragraph each: context → decision → consequence.
 
+## ADR-017 · Apple Health is a **source**, and it reuses the watch container rather than becoming a fourth format
+ADR-003 ruled HealthKit out as an input and the reason it gave was about *Garmin*: HealthKit
+hands out no `HKWorkoutRoute` for a Garmin-synced workout, so it can never be the way this app
+reaches the recordings it was built around. That is still true and nothing here contradicts it.
+What it missed is the workout an Apple Watch makes **for itself**: a rider who owns no Garmin at
+all, records with Apple's own Workout app under Surfing, Water Sports or Sailing, and has a
+1 Hz `CLLocation` route with Doppler speed plus a heart-rate stream sitting in Health with
+nothing able to read it. That rider is the whole funnel ADR-016 opened, minus the requirement to
+install our watch app. Decision: **read those workouts**, through a new `HealthImport` mapper in
+the kit and a `HealthImporter` in the app, with an "Apple Health" source on the Import screen and
+an opt-in automatic pickup.
+**Not a fourth format.** A route is, sample for sample, what the CleanJibe watch app already
+writes into a `.cjw` container (docs/watch-session-schema.md), so `HealthImport` maps into *that*
+— `WatchSessionParser` is still the only parser, the capability rules are decided in one place,
+and the archived original re-analyses on an engine bump exactly like every other session.
+`TrackFormat.watch` was always the name of a packed track layout rather than of a device;
+`meta.producer` says who filled it in (`"CleanJibe iOS 0.14.0 (Apple Health)"`) and
+`session.importSource` (`applehealth`) says where the session came from. The alternative — a
+second binary shape for identical data — would have bought a nicer file extension and cost a
+second parser, a second capability table and a second thing to keep in step with the first.
+**Class (b), certified, and plain (b) this time.** ADR-016's argument transfers unchanged:
+`CLLocation.speed` is the GNSS chip's own Doppler solution rather than a difference of positions,
+which is exactly what docs/presentation.md's provenance rule asks for. But unlike a CleanJibe
+watch recording there is **no accelerometer** — Health carries none — so there is no pump chart,
+no failed-takeoff count, and the standard class-(b) sentence is the correct one. That is why
+`SessionDisplay.sourceClassNote`'s special case stays keyed on `applewatch` and is not widened.
+`discipline` is set to `wingfoil` because the *import* is the rider saying so: Apple has no
+wingfoil type, so the type he picked says nothing, and pointing a wingfoil app at a workout and
+asking for it is the claim. The type Health actually holds is not thrown away — it lands in
+`SourceCapabilities.sport`.
+**The one thing the container could not already say.** Apple's Workout app usually writes no
+`HKMetadataKeyTimeZone`, and a device-zone guess handed over wearing rung 1's provenance would
+license every surface to state a clock the app does not know (engine 0.9.1's whole point). So
+`WatchSessionMeta` gains one additive optional field, `utcOffsetKnown`, absent-means-true on
+every container the watch has ever written; false hands the question back to
+`SessionIngestor.resolveUtcOffset`, where a Health session lands on `longitude` exactly like a
+GPX. A workout that *does* carry a zone gets rung 1, and the two cases are distinguishable in
+the library rather than averaged.
+**Our own workouts are skipped**, by bundle-id prefix — the watch app's live save and
+`HealthWriter`'s after-the-fact stub are both already in the library, by a better road in both
+cases — and the symmetric rule is the one that matters more:
+`SessionStore.writeNewSessionsToHealth` now excludes `applehealth` as well as `applewatch`, or
+importing a workout would be how a rider ends up with two of them on the same afternoon.
+Consequences. **A read denial is invisible and stays that way**: HealthKit refuses to reveal one
+on purpose, so the empty list names both possibilities and points at Health → Sharing → Apps
+rather than inventing a verdict. **Background delivery is asked for and may simply be refused** —
+`com.apple.developer.healthkit.background-delivery` is not on the manual "WingFoil App Store"
+profile, which is ADR-011's trap exactly — so the sweep at launch and at every foreground is the
+path that always works and the observer only shortens the wait; the entitlement is documented in
+`ios/project.yml` as configuration rather than added there. And **the automatic pickup remembers
+workout uuids** on top of the dedupe key, because the key alone cannot see the one case that
+would be maddening: a workout imported, then deliberately deleted, then silently imported again
+an hour later.
+
 ## ADR-016 · The Apple Watch recorder is class (b) and **certifies**, and it detects nothing
 An Apple Watch is the one recording device a rider already owns that can reach the library
 without an account, a cable or anybody's cloud: the watch writes a file, `WCSession.transferFile`

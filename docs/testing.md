@@ -378,6 +378,30 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      accelerometer sentence, the provenance union, `example` winning the primary-source
      pick, gear's case-insensitive natural key, and `AppDatabase.schemaVersion` pinned to
      the migration list so the manifest's number cannot drift from the schema it describes.
+   - `HealthImportTests` — a workout recorded with **Apple's own Workout app** and read back
+     out of Health (ADR-017). **Nothing here touches HealthKit**, which is the point: the kit
+     has no Health database, no entitlement and no watch in the room, so `HealthImport` takes
+     plain value types and every fixture is a synthetic thirty minutes — a slow start, a
+     straight run east, a 180° turn over six seconds, the run back, a two-minute stop, a
+     missing minute, and one more ride. The engine finds ≥ 2 flights and ≥ 1 turn in it,
+     which is the whole claim: an Apple Watch workout analyses like a native Garmin file.
+     Then the honest capabilities — `hasSpeed` (CoreLocation's Doppler channel ⇒ **class (b),
+     certified**), `hasHR`, and `hasAccel` **false**, so the letter is plain (b) and the
+     standard class-(b) sentence is the right one; heart rate joined onto the record timeline
+     inside the ±5 s tolerance, and readings from outside the route's own span dropped; the
+     missing minute marked `gapBefore` exactly once; CoreLocation's negative "no reading"
+     sentinels turning into nil rather than into a speed record; an empty (or wholly
+     unusable) route rejected by name instead of imported as an empty session. Two suites of
+     invariants beyond the mapping: the **clock** — an offset is claimed as rung 1 only when
+     the workout stated one (`HKMetadataKeyTimeZone`), otherwise the ladder answers
+     `longitude` like a GPX, and a container written *without* the new `utcOffsetKnown` flag
+     still means rung 1, which is what keeps every watch container ever written correct — and
+     the **round trip**: `HealthImport.container` re-parses to the same track the mapper
+     produced, sample for sample, because a session whose numbers changed at the next engine
+     bump would be the archive silently lying. Finally the whole integration: the bytes go
+     through `SessionIngestor.ingestContainer` (the door a *file* comes through), land as
+     `importSource == "applehealth"` with `sourceClass "b"`, re-analyse from the archive, and
+     a second import of the same workout is one duplicate rather than a second session.
    - `ShareTextTests` — the message that travels with a shared file (`ShareText`). Every one
      of the three leads with where and when, off the share card's own `dateLine`, because the
      receiver is usually the friend who was on the water at the same time and could not
@@ -420,7 +444,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    and `UI_ICU_KEY=…` seeds a key through the real keychain path afterwards, so the
    first-run setup card and the "key stored, sync rejected" card can both be captured
    without reinstalling. `UI_IMPORT_FIXTURES=1`, `UI_OPEN_SESSION=latest|<name>`,
-   `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings` and
+   `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings|import` and
    `UI_HELP_TOPIC=<HelpTopicID>` park the app on a given screen, since `simctl` cannot tap.
    **Since the session page became a four-way switcher** (`SessionSection`,
    docs/presentation.md "Sections"), every session hook that names a place also **selects
@@ -559,6 +583,38 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    `AVAudioSession.playback` for exactly that, and a Mac has no ring switch to check it
    against); `ReplayClipSoundtrackTests` settles the schedule and the mux, not the listening.
    And whether a clip actually reaches the camera roll.
+   **Apple Health has no hook, and cannot have one** (ADR-017). Every other staging hook fills
+   in state the app owns; a workout lives in a database the app is only a *reader* of, and
+   writing one to stage a screenshot would mean shipping a code path that puts fake workouts in
+   the rider's Health. So the mapping is settled by `HealthImportTests` on synthetic samples,
+   and the three things around it are settled by hand, in rising order of effort:
+   * **A simulator with nothing in Health** — the honest empty state, and the one worth
+     photographing. `UI_SHEET=import`, tap "Import from Health…", tap "Allow CleanJibe to read
+     workouts", accept the system sheet. The list comes back empty with the sentence naming
+     both possibilities (no workouts, or permission refused) and pointing at Health → Sharing →
+     Apps → CleanJibe. **Deny** the system sheet on a second run: it looks identical, which is
+     the point — HealthKit refuses to reveal a read denial, so the copy names both.
+   * **A simulator with a workout in it.** The Health app on a simulator has no "add workout"
+     UI, so there are two ways to get one. Either run **our own watchOS app** on a paired watch
+     simulator and record a session — it saves an `HKWorkout` with a live route, and then
+     confirms the *skip* rule instead of the import, because it is written by
+     `de.lahmann.wingfoil.watchkitapp` and must never be offered (that is the assertion worth
+     making). Or write one from a scratch app with HealthKit share permission
+     (`HKWorkoutBuilder` + `HKWorkoutRouteBuilder.insertRouteData` with a run of `CLLocation`s
+     carrying a positive `speed`); a foreign bundle id is what makes it importable.
+   * **A phone, an Apple Watch, and one real session.** The only way to settle the whole path:
+     record ten minutes of Surfing with Apple's Workout app, end it, wait for the watch to hand
+     the route over, then Import → Apple Health. What to check afterwards, in the session the
+     import produced — the track has GPS in it (not an empty map), the speed records are
+     **not** marked uncertified (`CLLocation.speed` is the Doppler channel, ADR-016's argument),
+     heart rate is present, the pump and takeoff cards say *unavailable* rather than zero, and
+     the session's clock is right for where you were. Then import it a second time: it must
+     report a duplicate and the library must still hold one session. Then turn on "Import new
+     Health workouts automatically", record another, and reopen the app — the banner should say
+     "1 session imported from Apple Health" without a tap. Background delivery is the one thing
+     that may not fire at all; see ADR-017 on the entitlement, and treat the foreground sweep
+     as the behaviour under test.
+
    **The Help pictures are made with these hooks** (ADR-010). Five topics carry a
    screenshot, and each one is a crop of one staged launch on the `iPhone 17 Pro Max`
    simulator with the bundled example session loaded — so the picture is of a session every
