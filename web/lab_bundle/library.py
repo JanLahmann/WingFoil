@@ -828,7 +828,7 @@ def _totals(ds: list) -> dict:
 # js/trends.js: the analyzer's rule is that the browser never computes a number, and a trip
 # is a number's worth of judgement (which afternoons belong to it) before it is a heading.
 # iOS says the same things in `LibraryStore.periods` and `PeriodBlock`, and the two are
-# pinned against one shared fixture — `fixtures/presentation/periods.expected.json`.
+# pinned against one shared fixture — `fixtures/periods/periods.expected.json`.
 
 
 #: How far apart two afternoons can be and still be one holiday. Three days: a trip has
@@ -1183,6 +1183,35 @@ def season_label(start_year: int, crosses: bool) -> str:
     return f"{start_year}/{(start_year + 1) % 100:02d}" if crosses else str(start_year)
 
 
+def _anchored(d: dict) -> bool:
+    """Whether this session was placed by a **fix** rather than by the name of its file.
+
+    `_spot_clusters` falls back to the filename-derived spot for a digest with no anchor, which
+    is right for deciding whether two afternoons were one holiday and not good enough for
+    deciding where on the earth to point a camera.
+    """
+    geo = d.get("geo")
+    return isinstance(geo, dict) and _num(geo.get("lat")) is not None
+
+
+def _map_ground(rows: list, spots: int) -> bool:
+    """Whether this period has **one ground** a card can draw itself on.
+
+    A period is a set of afternoons and they need not have happened anywhere near one another.
+    The session card can always answer "which rectangle of the earth?" — one recording, one
+    bounding box — and a period cannot: a month split between Garda and the Rhine has a union
+    box that is mostly the motorway between them, at a zoom where neither beach is visible.
+
+    So the ground is offered exactly when the period is **one place**: every session inside a
+    single 3 km spot cluster — the same radius and the same clusterer that decides whether two
+    afternoons were one trip — and every one of them placed by a fix. A trip is one place by
+    construction; a month, a season or a typed range is one when the rider only rode one beach
+    in it. Otherwise the switch is not offered at all, which is the honest shape of a control
+    that has no answer (docs/presentation.md, "The period card").
+    """
+    return bool(rows) and spots == 1 and all(_anchored(r) for r in rows)
+
+
 def _period(kind: str, key: str, title: str, ds: list, members: list[int],
             spot: str | None = None) -> dict:
     """One period, headed and blocked. `members` is oldest-first into `ds`."""
@@ -1201,6 +1230,10 @@ def _period(kind: str, key: str, title: str, ds: list, members: list[int],
         "endDate": last.isoformat() if last else None,
         "sessionIds": [r.get("id") for r in rows],
         "sessions": len(rows),
+        # Whether the card may offer a map background — see `_map_ground`. Decided here
+        # because it is a fact about which afternoons these are, and the browser never
+        # computes one of those.
+        "mapGround": _map_ground(rows, spots),
         "block": period_block(rows, spots),
     }
 

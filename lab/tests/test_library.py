@@ -458,6 +458,37 @@ def test_a_fact_no_session_can_supply_is_dropped_and_never_zeroed():
     assert block_of([dry])["wph"] == "0.0"
 
 
+def test_the_map_ground_is_offered_only_where_a_period_is_one_place():
+    """The card may draw ground under a period exactly when the period *has* one.
+
+    A session card can always answer "which rectangle of the earth?" — one recording, one
+    bounding box. A period cannot: a month split between Garda and the Rhine has a union box
+    that is mostly the motorway between them, at a zoom where neither beach is visible. So
+    the rule is the trip clusterer's own — one 3 km cluster, every afternoon anchored — and
+    where it does not hold the switch is not offered at all (docs/presentation.md).
+    """
+    garda = [at("a", "2026-08-01", "Garda"), at("b", "2026-08-02", "Garda")]
+    ps = library.periods(garda)
+    assert ps["trips"][0]["mapGround"] is True
+    assert ps["months"][0]["mapGround"] is True
+    assert library.custom_period(garda, "2026-08-01", "2026-08-31")["mapGround"] is True
+
+    # Two lakes in one month: two clusters, and therefore no single ground.
+    split = garda + [at("c", "2026-08-20", "Rheinstetten", lat=48.97, lon=8.32)]
+    assert library.periods(split)["months"][0]["mapGround"] is False
+    # …though the Garda week inside it is still one place, and still gets its ground.
+    assert library.periods(split)["trips"][0]["mapGround"] is True
+
+    # An afternoon with no fix is clustered by the name of its file, which is enough to file
+    # it under a spot and not enough to point a camera at one.
+    nameless = [at("a", "2026-08-01", "Garda"),
+                at("b", "2026-08-02", "Garda", lat=None, lon=None)]
+    assert library.periods(nameless)["trips"][0]["sessionIds"] == ["a", "b"]
+    assert library.periods(nameless)["trips"][0]["mapGround"] is False
+    # And a range holding nothing has nothing to draw.
+    assert library.custom_period(garda, "2026-09-01", "2026-09-30")["mapGround"] is False
+
+
 def test_the_custom_range_is_inclusive_at_both_ends():
     ds = [at("a", "2026-08-01", "Garda"), at("b", "2026-08-04", "Garda"),
           at("c", "2026-08-09", "Garda")]

@@ -270,6 +270,22 @@ export function cardStats(g, preset = "complete") {
  *  Identical to `PeriodBlock.leanKeys` in the kit and `library.PERIOD_LEAN_KEYS`. */
 export const PERIOD_LEAN_KEYS = new Set(["sessions", "hours", "cleanJibes", "cph", "best2s"]);
 
+/**
+ * Whether a period has a single ground worth drawing under it.
+ *
+ * A period is a set of afternoons and they need not have happened anywhere near one another,
+ * so "which rectangle of the earth?" has no answer a card can take for granted: the union box
+ * of a month split between Garda and the Rhine is mostly the motorway between them. The rule
+ * is therefore the trip clusterer's own — every session in the period inside **one** 3 km spot
+ * cluster, and every one of them actually placed by a fix rather than by the name its file
+ * carries. `library._period` decides it, once, and hands it over as `mapGround`; nothing in
+ * the browser re-derives it, because a second copy of a clustering rule is a second answer.
+ *
+ * False is "not offered", never "offered and inert": a switch that is on and does nothing is
+ * worse than a switch that is not there.
+ */
+export const periodMapAvailable = (period) => Boolean(period?.mapGround);
+
 /** The card's stat list for a period: the block, filtered by the preset. Nothing else — and,
  *  as on the session card, deliberately no way to *add* a cell. */
 export function periodCardStats(period, preset = "complete") {
