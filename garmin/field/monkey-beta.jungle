@@ -1,7 +1,7 @@
 project.manifest = manifest-beta.xml
 
 # see field/monkey.jungle for why the gate is a single file and where the zero pepper comes in
-base.sourcePath = source;tests;../source/lock/LockGate.mc;../source-nopepper
+base.sourcePath = source;tests;../source/lock/LockGate.mc;../source-nopepper;../source/ui/Glyphs.mc;../source/DesignTokens.mc
 base.barrelPath = ../barrel/WingFoilCore/barrel.jungle
 
 # see field/monkey.jungle: per-product launcher icons at their native compiler.json sizes

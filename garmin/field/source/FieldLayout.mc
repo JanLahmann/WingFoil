@@ -99,12 +99,24 @@ module FieldLayout {
     // HEIGHT is a font's and whose WIDTH is however much of the glass it is given (it draws
     // the dots that fit and no more, dotsShown()). One rung means the fitter cannot shrink it
     // and the drawing code always knows the band it got.
+    // The character a worst-case row spends on the clean jibe's STAR (Glyphs.drawStar). The
+    // glyph is not text and has to be budgeted as something, so it is drawn inside a box
+    // exactly as wide as this character in the row's OWN font — which makes the string the
+    // fitter measured and the ink the field draws the same width by construction, rather than
+    // by a fixed pixel allowance that would be wrong at eight of the nine rungs of the ladder.
+    // A digit and not a space, because the star is as wide as it is tall and a space is not.
+    const STAR_STANDIN = "0";
+    // What separates the outcome tally from the clean block beside it on the Main page. Two
+    // spaces rather than the tally's own " · ", so the row reads as two groups and not as a
+    // fourth rung of a three-rung ladder.
+    const CLEAN_GAP = "  ";
+
     var WIDEST as Array<Array<String> > = [
         ["100%", "99 · 88:88"],
         ["100%", "99 · 88:88", "TOUCH 100% · 99/99"],
-        ["100%", "88.8", "", "99 · 99 · 99", "99 / 99"],
+        ["100%", "88.8", "", "99 · 99 · 99  0 99 99.9", "99 / 99"],
         ["100%", "999", "199:59 / 199:59", "199:59", "88.8 km"],
-        ["999", "99/99", "99 · 99 · 99", "88.8/88.8", "99 / 99"]
+        ["999", "99/99", "99 · 99 · 99", "0 99 99.9", "88.8/88.8", "99 / 99"]
     ];
     var DOT_ROW_FONTS as Array<Graphics.FontType> = [Graphics.FONT_XTINY]
         as Array<Graphics.FontType>;
@@ -113,7 +125,7 @@ module FieldLayout {
         [NUM_FONTS, TEXT_FONTS, TEXT_FONTS],
         [NUM_FONTS, NUM_FONTS, DOT_ROW_FONTS, TEXT_FONTS, TEXT_FONTS],
         [NUM_FONTS, NUM_FONTS, TEXT_FONTS, NUM_FONTS, TEXT_FONTS],
-        [NUM_FONTS, TEXT_FONTS, TEXT_FONTS, TEXT_FONTS, TEXT_FONTS]
+        [NUM_FONTS, TEXT_FONTS, TEXT_FONTS, TEXT_FONTS, TEXT_FONTS, TEXT_FONTS]
     ];
 
     // The row of each layout that gets the height the stack did not use, or -1 where every row
@@ -175,12 +187,26 @@ module FieldLayout {
     const CAP_GAP = 4;
     // How much of a stack's glyph height the captions may cost before they are dropped.
     const CAP_KEEP_PCT = 80;
+    // The Main page's row 3 caption changed in 0.9.6 from "outcomes" to "cph", and the swap is
+    // a measurement, not a preference. That row now carries the tally AND the clean block, and
+    // on the widest glass there is a 405 px window for it: the value is 292 px and "outcomes"
+    // was another 142, which overflowed — so the whole page lost its captions and the field
+    // stopped looking like the app's Main page at all. "cph" costs 55, and it is the label the
+    // row cannot do without: a bare "4.5" beside two counts means nothing, whereas the clean
+    // COUNT is named by the star in front of it (a glyph exists so it can label without
+    // spending a word — Glyphs.mc) and the three outcome counts are named by the three inks
+    // they are drawn in, which is what that row has said since 0.9.5 and what the dot ladder
+    // above it repeats. One word bought, two words that were already being said dropped.
+    //
+    // The summary's clean row does spell both out: it is the screen a stranger reads at a
+    // standstill, it has a row to itself, and there is no tally beside it to borrow from.
     var CAPS as Array<Array<Array<String> > > = [
         [["foil"], ["flights"]],
         [["foil"], ["flights"], ["last turn"]],
-        [["foil"], ["km/h", "best 10s"], ["turns"], ["outcomes"], ["dry run"]],
+        [["foil"], ["km/h", "best 10s"], ["turns"], ["cph"], ["dry run"]],
         [["foil"], ["flights"], ["foil / total"], ["longest"], ["dist"]],
-        [["turns"], ["tack/jibe"], ["outcomes"], ["best 2s/10s"], ["dry run"]]
+        [["turns"], ["tack/jibe"], ["outcomes"], ["clean · cph"], ["best 2s/10s"],
+            ["dry run"]]
     ];
 
     // Pixels a caption block takes out of its row's window: the wider of its lines, plus the

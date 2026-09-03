@@ -23,7 +23,7 @@
       files.
     -->
     <iq:application id="22002da3-f7ef-40fc-acfb-72668ee8173d" type="datafield"
-        name="@Strings.AppName" entry="WingFoilFieldApp" version="0.9.5"
+        name="@Strings.AppName" entry="WingFoilFieldApp" version="0.9.6"
         launcherIcon="@Drawables.LauncherIcon" minApiLevel="5.0.0">
         <iq:products>
             <iq:product id="fenix843mm"/>

@@ -21,4 +21,8 @@
         dataLabel="@Strings.FitJibes" unitLabel="@Strings.FitUnitNone"/>
     <fitField id="34" displayInActivitySummary="true" sortOrder="8" precision="0"
         dataLabel="@Strings.FitTurnSuccess" unitLabel="@Strings.FitUnitPct"/>
+    <!-- 0.9.6. Last in the summary on purpose: it is the strictest number on the list, and it
+         reads as the answer to the three above it rather than as another tally. -->
+    <fitField id="51" displayInActivitySummary="true" sortOrder="9" precision="0"
+        dataLabel="@Strings.FitCleanJibes" unitLabel="@Strings.FitUnitNone"/>
 </fitContributions>

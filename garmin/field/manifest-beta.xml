@@ -15,7 +15,7 @@
       files.
     -->
     <iq:application id="7e614501-d311-49c6-a68b-992b946e3d21" type="datafield"
-        name="@Strings.AppNameBeta" entry="WingFoilFieldApp" version="0.9.5"
+        name="@Strings.AppNameBeta" entry="WingFoilFieldApp" version="0.9.6"
         launcherIcon="@Drawables.LauncherIcon" minApiLevel="5.0.0">
         <iq:products>
             <iq:product id="fenix843mm"/>

@@ -15,7 +15,7 @@ import Toybox.Lang;
 //     with "Out Of Memory Error: New Field out of memory for FIT data", or, from inside a
 //     loop, the less helpful "System Error: Failed invoking <symbol>".
 //
-// So the schema is 14 fields / 29 bytes: two fields and three bytes of headroom. The unit
+// So the schema is 15 fields / 30 bytes: one field and two bytes of headroom. The unit
 // tests assert both limits, so the next field added to this table fails a test instead of
 // bricking the app on the water.
 //
@@ -23,6 +23,21 @@ import Toybox.Lang;
 // the meaning is identical (21/22/23/24/26/27/32/33/34/39/43 — same number, same meaning,
 // same type). 50-59 is the new field-variant band; 50 and 54 are bit-packed precisely
 // because the 16-field limit is scarcer than the byte budget.
+//
+// 0.9.6 spends one of the two spare slots on `clean_jibes`(51). It is a NEW id rather than a
+// borrowed one because the device app has no clean-jibe field to mirror: its session message
+// has been at the 16-field ceiling since 0.9.0 (docs/fit-schema.md), so the watch computes the
+// count and shows it and cannot write it down. The data field's tighter BYTE budget happens to
+// leave it the room the device app's does not, and 51 is the next free id in the field's own
+// band — 50 is `turn_outcomes`, 52 is unallocated and stays that way, and 55/56 are the device
+// app's packed fields and must never mean something else here.
+//
+// It is deliberately NOT packed into `turn_outcomes`(50). That field's three lanes are the
+// outcome ladder — flew, touched down, fell in — which are mutually exclusive and sum to the
+// counted turns. A clean jibe is a stricter question asked of one of those lanes (a fly-through
+// that also carried its speed AND was named a jibe), so it does not partition anything and
+// would have to be documented as "the fourth byte that is not like the others". A slot was
+// cheaper than that sentence.
 module SessionPack {
     enum {
         SLOT_FOIL_TIME = 0,         // 21 uint32 s
@@ -37,17 +52,18 @@ module SessionPack {
         SLOT_WIND_DIR = 9,          // 39 uint16 deg (65535 = unset)
         SLOT_APP_VERSION = 10,      // 43 uint16 (minor << 8 | schema)
         SLOT_OUTCOMES = 11,         // 50 uint32 packed flew/touchdown/fell
-        SLOT_DISCIPLINE = 12,       // 53 uint8  enum (1 = wingfoil)
-        SLOT_CFG = 13,              // 54 uint32 packed entry/minFlight/exit
-        SLOT_COUNT = 14
+        SLOT_CLEAN_JIBES = 12,      // 51 uint8  count
+        SLOT_DISCIPLINE = 13,       // 53 uint8  enum (1 = wingfoil)
+        SLOT_CFG = 14,              // 54 uint32 packed entry/minFlight/exit
+        SLOT_COUNT = 15
     }
 
     // Measured data-field limits, per message type (see the header).
     const LIMIT_BYTES = 32;
     const LIMIT_FIELDS = 16;
 
-    const WIDTHS = [4, 1, 2, 2, 2, 2, 1, 1, 1, 2, 2, 4, 1, 4] as Array<Number>;
-    const FIELD_IDS = [21, 22, 23, 24, 26, 27, 32, 33, 34, 39, 43, 50, 53, 54]
+    const WIDTHS = [4, 1, 2, 2, 2, 2, 1, 1, 1, 2, 2, 4, 1, 1, 4] as Array<Number>;
+    const FIELD_IDS = [21, 22, 23, 24, 26, 27, 32, 33, 34, 39, 43, 50, 51, 53, 54]
         as Array<Number>;
 
     // The RECORD message costs 3 fields / 3 B: foil_state(0) + turn_marker(3) + tick(4).
@@ -207,6 +223,10 @@ module SessionPack {
         vals[SLOT_WIND_DIR] = cfg.windDirection < 0 ? 65535 : cfg.windDirection;
         vals[SLOT_APP_VERSION] = appVersion;
         vals[SLOT_OUTCOMES] = packOutcomes(t.flewCount, t.touchdownCount, t.fellCount);
+        // The count only — never the rate. CPH is a division the reader can do better than the
+        // watch can (the phone has the cleaned track and the field has moving time), and a
+        // rounded rate written into a FIT would be the watch's denominator preserved forever.
+        vals[SLOT_CLEAN_JIBES] = t.cleanJibeCount;
         vals[SLOT_DISCIPLINE] = DISCIPLINE_WINGFOIL;
         vals[SLOT_CFG] = packCfg(cms(cfg.foilEntryMps), cms(cfg.foilExitMps),
             cfg.minFlightS);

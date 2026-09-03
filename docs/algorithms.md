@@ -300,6 +300,25 @@ inventing turns):
   (`score >= turnSuccessPct` and the minimum stayed above `foilExitSpeed`), read off the
   firmware's smoothed Doppler, so the watch calls slightly *more* jibes clean than the phone
   does — the same Doppler-only caveat two bullets up, inherited by the stricter metric.
+- **The DATA FIELD's CPH divides by the native activity's TIMER TIME** (field ≥ 0.9.6). Same
+  numerator (`TurnDetector.cleanJibeCount` out of the shared barrel), same 60 s floor, same
+  `--` below it, same one decimal — a third denominator. `garmin/field/` does not own the
+  recording, so it has no `SessionController` and no way to ask Garmin for the wall clock since
+  START; what it has is `Activity.Info.timerTime`, which is the *moving* clock and stops while
+  the rider is paused. So the three implementations divide by three spans of the same
+  afternoon, each the widest one available to it: the phone by `durationS`, the elapsed span of
+  the **cleaned track**; the device app by `SessionController.elapsedNowS()`, the session's own
+  clock **including** pauses; the data field by **timer time**, excluding them. On a session
+  ridden straight through, all three agree to within what the cleaner trims off the ends. On
+  one with a long lunch in it the data field reads **highest** of the three, because a rate
+  whose denominator excludes the pause is a rate per hour *sailing* rather than per hour on the
+  water. That is the flattering direction, and it is the one place on this list where the watch
+  side is not conservative — which is why it is written down rather than left to be discovered.
+  Pinned by `cphIsARatePerHourWithAMinuteFloor` and `cleanMetricsReadTheDetectorAndTheTimer` in
+  `garmin/field/tests/FieldTests.mc`.
+- **The data field is also the only one of the three that WRITES the clean count**
+  (`clean_jibes`, session field 51 — docs/fit-schema.md). The device app's session message is
+  full, so its count lives on the glass and nowhere else. Neither writes the rate.
 
 ## Pumping (accelerometer)
 

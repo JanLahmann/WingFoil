@@ -173,7 +173,12 @@ class WingFoilDataField extends WatchUi.DataField {
     //   2  the outcome dot ladder — one dot per counted turn in its verdict colour, oldest
     //      left. The counts under it say how many; the strip says how they ARRIVED, and three
     //      swims in a row is a different session from three swims in an hour.
-    //   3  the same three counts as numbers, in the same three colours.
+    //   3  the same three counts as numbers, in the same three colours — and since 0.9.6 the
+    //      clean jibe beside them: a filled star in its own ink, the count, and CPH. It rides
+    //      on the tally's row rather than on a sixth of its own because the page has five rows
+    //      and a 260 px glass; a row costs every other row a font rung, and the clean block is
+    //      the same subject as the tally it sits next to (see Glyphs.O_STAR: a clean jibe is a
+    //      stricter question asked of the ladder's top rung, not a fourth rung).
     //   4  the dry run: turns since he last went in, beside the session's longest.
     hidden function drawMainPage(dc as Dc, w as Number, h as Number, bg as Graphics.ColorType,
             fonts as Array<Graphics.FontType>, lean as Number,
@@ -201,10 +206,10 @@ class WingFoilDataField extends WatchUi.DataField {
         y = FieldLayout.stackY(h, heights, 2, lean);
         drawDotRow(dc, FieldLayout.rowWindow(w, y, heights[2], g), y, heights[2], caps[2], bg);
 
-        // row 3 — the counts, in the ladder's colours
+        // row 3 — the counts, in the ladder's colours, and the clean jibe beside them
         y = FieldLayout.stackY(h, heights, 3, lean);
         drawTallyRow(dc, FieldLayout.rowWindow(w, y, heights[3], g), y, fonts[3], heights[3],
-            " · ", caps[3], bg);
+            " · ", caps[3], bg, true);
 
         // row 4 — the dry run
         y = FieldLayout.stackY(h, heights, 4, lean);
@@ -217,8 +222,13 @@ class WingFoilDataField extends WatchUi.DataField {
     //
     // The two halves of the session, alternating every FieldLayout.SUMMARY_TICKS seconds. Page
     // A is what the session WAS — foil share, foil time against moving time, flights, the
-    // longest one, distance. Page B is how it was RIDDEN — the two speed records, the turn
-    // count and its tack/jibe split, the outcome tally in its colours, and the dry run.
+    // longest one, distance. Page B is how it was RIDDEN — the turn count and its tack/jibe
+    // split, the outcome tally in its colours, the clean jibes and CPH (0.9.6), the two speed
+    // records, and the dry run.
+    //
+    // The clean row goes THIRD, directly under the outcome tally it refines and above the
+    // records, because the page reads top to bottom as a narrowing question: how many turns,
+    // how they split, how they ended, and how many of them he actually rode.
     //
     // Between them they are every number the field writes into the FIT, which is the point: a
     // rider who stops at the beach can read his session off the watch instead of waiting for
@@ -237,7 +247,13 @@ class WingFoilDataField extends WatchUi.DataField {
             // Page B's outcome row is the same three counts in the same three inks as the live
             // page's, drawn by the same function: one vocabulary, one place it is drawn.
             if (page == FieldLayout.REND_SUM_B && i == 2) {
-                drawTallyRow(dc, win, y, fonts[i], heights[i], " · ", caps[i], bg);
+                drawTallyRow(dc, win, y, fonts[i], heights[i], " · ", caps[i], bg, false);
+                continue;
+            }
+            // ...and the row under it is the clean jibe, which is a glyph and two numbers in
+            // two inks. Same reason: what the field draws piecewise, it draws in one place.
+            if (page == FieldLayout.REND_SUM_B && i == 3) {
+                drawCleanRow(dc, win, y, fonts[i], heights[i], caps[i], bg);
                 continue;
             }
             // Neutral ink throughout: a stopped session has no live state to tint, and the one
@@ -259,6 +275,7 @@ class WingFoilDataField extends WatchUi.DataField {
             return [t.turnCount.toString(),
                 t.tackCount.toString() + "/" + t.jibeCount.toString(),
                 FieldMetrics.outcomesText(t),      // drawn piecewise; measured as this string
+                cleanText(),                       // ditto — the leading digit is the star
                 cfg.speedToDisplay(e.records.best2sMps).format("%.1f") + "/"
                     + cfg.speedToDisplay(e.records.best10sMps).format("%.1f"),
                 t.dryStreak.toString() + " / "
@@ -362,15 +379,29 @@ class WingFoilDataField extends WatchUi.DataField {
     // "35 · 8 · 8" with the three counts in the ladder's own inks — green flew, orange touched
     // down, red swam. Colour AND position carry the verdict, so the row reads before the
     // digits are in focus, and it is the same three inks the dots above it are drawn in.
+    //
+    // With `clean` set it carries the clean jibe on the same line: a gap, the filled star in
+    // the clean ink, the count, and CPH. The star is drawn INSIDE A BOX exactly as wide as
+    // FieldLayout.STAR_STANDIN is in this row's font, which is what the worst-case table
+    // budgeted for it — so the ink laid down here and the string the fitter measured are the
+    // same width, not merely close.
     hidden function drawTallyRow(dc as Dc, win as Array<Number>, y as Number,
             font as Graphics.FontType, rowH as Number, sep as String, cap as Array<String>,
-            bg as Graphics.ColorType) as Void {
+            bg as Graphics.ColorType, clean as Boolean) as Void {
         var t = _engine.turns;
         var parts = [t.flewCount.toString(), sep, t.touchdownCount.toString(), sep,
             t.fellCount.toString()] as Array<String>;
         var colors = [Graphics.COLOR_GREEN, fg(bg), Graphics.COLOR_ORANGE, fg(bg),
             Graphics.COLOR_RED] as Array<Graphics.ColorType>;
-        var valW = 0;
+        var starW = 0;
+        var tail = "";
+        if (clean) {
+            parts.add(FieldLayout.CLEAN_GAP);
+            colors.add(fg(bg));
+            starW = dc.getTextWidthInPixels(FieldLayout.STAR_STANDIN, font);
+            tail = cleanTail();
+        }
+        var valW = starW + dc.getTextWidthInPixels(tail, font);
         for (var i = 0; i < parts.size(); i++) {
             valW += dc.getTextWidthInPixels(parts[i], font);
         }
@@ -380,7 +411,54 @@ class WingFoilDataField extends WatchUi.DataField {
             dc.drawText(x, y, font, parts[i], LV);
             x += dc.getTextWidthInPixels(parts[i], font);
         }
+        if (clean) {
+            x = drawCleanBlock(dc, x, y, font, rowH, starW, tail);
+        }
         drawCap(dc, x + FieldLayout.CAP_GAP, y, rowH, cap, bg);
+    }
+
+    // The summary page's own clean row: the same block, alone on its line and centred like any
+    // other summary value.
+    hidden function drawCleanRow(dc as Dc, win as Array<Number>, y as Number,
+            font as Graphics.FontType, rowH as Number, cap as Array<String>,
+            bg as Graphics.ColorType) as Void {
+        var starW = dc.getTextWidthInPixels(FieldLayout.STAR_STANDIN, font);
+        var tail = cleanTail();
+        var valW = starW + dc.getTextWidthInPixels(tail, font);
+        var x = win[0] - (valW + FieldLayout.capWidth(dc, cap)) / 2;
+        x = drawCleanBlock(dc, x, y, font, rowH, starW, tail);
+        drawCap(dc, x + FieldLayout.CAP_GAP, y, rowH, cap, bg);
+    }
+
+    // Star, count, rate — the one place the mark is put on the glass. Returns the x it ended
+    // at, so both callers place a caption after it the same way.
+    //
+    // The star's box is `starW` wide and no taller than the row, which matters at the small end
+    // of the ladder: a five-point star as tall as a NUMBER glyph's box would have its points in
+    // the row above. Everything after it is the clean ink — count and rate are one fact twice,
+    // and colouring only one of them would invite reading the other as belonging to the tally.
+    hidden function drawCleanBlock(dc as Dc, x as Number, y as Number,
+            font as Graphics.FontType, rowH as Number, starW as Number,
+            tail as String) as Number {
+        var s = starW < rowH ? starW : rowH;
+        dc.setColor(FieldMetrics.cleanInk(), Graphics.COLOR_TRANSPARENT);
+        Glyphs.drawStar(dc, x + starW / 2, y, s);
+        var out = x + starW;
+        dc.drawText(out, y, font, tail, LV);
+        return out + dc.getTextWidthInPixels(tail, font);
+    }
+
+    // Everything in the clean block except the star: " <count> <cph>". The leading space is
+    // the gap after the glyph and is part of the measured string, so it may not be trimmed.
+    hidden function cleanTail() as String {
+        return " " + _engine.turns.cleanJibeCount.toString() + " "
+            + FieldMetrics.cphText(_engine);
+    }
+
+    // The same string with the star's stand-in character in front of it: what the summary's
+    // clean row measures as, character for character with FieldLayout.WIDEST's entry for it.
+    hidden function cleanText() as String {
+        return FieldLayout.STAR_STANDIN + cleanTail();
     }
 
     // One row: the value and, where there is one, the small word beside it saying what it is.
