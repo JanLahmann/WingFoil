@@ -77,8 +77,21 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_PREVIEWS: YES
         SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
-    # Apple Health is opt-in and write-only (Settings → Apple Health). The entitlement has
-    # to exist at build time even though nothing is written until the toggle is flipped.
+    # Apple Health is opt-in in both directions — writing our sessions out (Settings → Apple
+    # Health) and reading Apple Workout-app recordings in (Import → Apple Health, ADR-017).
+    # The entitlement has to exist at build time even though nothing happens until the rider
+    # asks. `healthkit.access` stays empty: that array is for *clinical records*, which this
+    # app neither reads nor wants.
+    #
+    # NOT here, deliberately: `com.apple.developer.healthkit.background-delivery`. It is what
+    # `HKHealthStore.enableBackgroundDelivery` needs to actually wake the app, and the manual
+    # "WingFoil App Store" provisioning profile does not carry it — requesting an entitlement a
+    # profile does not grant fails the archive, which is exactly the trap ADR-011 documents for
+    # the widget's app group. So the app asks anyway and accepts the refusal
+    # (`HealthImporter.observeNewWorkouts`), and the check at launch and foreground is what
+    # actually gets a session in. Turning the wake on for real is configuration, not code: add
+    # HealthKit → Background Delivery to the app id, regenerate the profile, and add the key
+    # below.
     entitlements:
       path: WingFoil/WingFoil.entitlements
       properties:
@@ -90,11 +103,15 @@ targets:
         NSHealthUpdateUsageDescription: >-
           Adds your wingfoil sessions to the Health app as workouts. CleanJibe only writes
           workouts you already imported; it never reads your health data.
-        # App Store validation requires the share string too whenever HealthKit APIs are
-        # referenced, even though the app never reads health data.
+        # Reading is opt-in too, and only ever the workouts the rider asks for: Import →
+        # Apple Health lists Surfing / Water Sports / Sailing workouts, fetches the route and
+        # heart rate of the ones he picks, and analyses them on this phone (ADR-017). Same
+        # tone as the write string above, and the same promise underneath it — nothing about
+        # a workout leaves the device.
         NSHealthShareUsageDescription: >-
-          CleanJibe does not read any data from the Health app. This permission exists only
-          because the workout-export feature links the HealthKit framework.
+          Imports sessions you recorded with Apple's Workout app: their GPS route and heart
+          rate, so CleanJibe can analyse them. Everything stays on this phone; CleanJibe never
+          uploads your health data.
         # The end-of-recording sheet's "Save to Photos" (App/PhotoLibrarySaver.swift). ADD
         # ONLY: the app asks for `.addOnly` authorization and can never read an asset back,
         # which is why there is no `NSPhotoLibraryUsageDescription` beside it. The photos a

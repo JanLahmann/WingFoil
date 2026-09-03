@@ -53,7 +53,7 @@ Out of beta. Every flight, every jibe, every swim from your Garmin session - ana
 
 ## Description
 
-4000-character limit. **3482 used.** Leads with what it does, says the beta graduation
+4000-character limit. **3787 used.** Leads with what it does, says the beta graduation
 plainly rather than hiding it, then the three pieces, then the privacy story.
 
 ```
@@ -81,6 +81,8 @@ An example session is bundled. You can see the entire app - map, verdicts, repla
 WORKS WITH YOUR GARMIN, OR WITHOUT ONE
 
 CleanJibe reads sessions recorded with the free CleanJibe Connect IQ watch app and with Garmin's own Windsurf profile. Pump strokes and takeoff effort need the CleanJibe watch app, because only it records the wrist accelerometer; everything else works from either.
+
+Records with the Apple Workout app? Import from Health. Pick your Surfing, Water Sports or Sailing workouts and CleanJibe analyses the GPS track and heart rate your Apple Watch already saved - no Garmin, no cable, no account. Speed comes off the watch's own GPS receiver, so those speed records certify.
 
 No Garmin at all? The same analysis engine runs free in any browser at cleanjibe.org - which is also the Android answer, because it is a web page and not an app.
 
@@ -132,11 +134,11 @@ Reasoning, since this is the field that is hardest to second-guess later:
 | Price | Free, no in-app purchases |
 | Copyright | `2026 Jan-Rainer Lahmann` |
 
-Secondary category note: Health & Fitness is the honest second home — the app writes
-workouts to the Health app and shows session-level effort — and it does not commit us to
-anything, since the app declares no required-reason API beyond `UserDefaults` and uses
-HealthKit write-only. Navigation and Utilities were considered and rejected: nobody looking
-for a wingfoil app browses either.
+Secondary category note: Health & Fitness is the honest second home — the app writes workouts
+to the Health app, reads Apple Workout-app recordings back out of it (ADR-017) and shows
+session-level effort — and it does not commit us to anything, since the app declares no
+required-reason API beyond `UserDefaults`. Navigation and Utilities were considered and
+rejected: nobody looking for a wingfoil app browses either.
 
 ## Age rating
 
@@ -182,7 +184,9 @@ The bundled example is one of the developer's own sessions, stripped of all iden
 
 INTERVALS.ICU IS OPTIONAL. Settings offers a field for an intervals.icu API key. intervals.icu is an independent third-party training-analysis service; the key is the reviewer's or user's own, obtained from their own intervals.icu account, and it is used only to DOWNLOAD that user's own activity files. It is stored in the iOS Keychain. The app uploads nothing to it. Reviewing this path is not necessary - the feature is inert without a key, and the bundled example covers everything else.
 
-PERMISSIONS. Health (write-only, off by default, for exporting a session as a workout), Photos (add-only, only when saving a recorded replay video), Bluetooth (to receive a session summary from a Garmin watch via the Garmin Connect app), and Notifications (only if the user enables the optional background check for new activities). The app never requests location: all GPS shown comes from inside the imported files.
+APPLE HEALTH IMPORT. Import > Apple Health lists workouts recorded with Apple's own Workout app (Surfing, Water Sports, Sailing) and reads the route and heart rate of the ones the user picks, so they can be analysed like any other recording. Read access is requested only when that screen is opened, only for workouts, workout routes and heart rate, and nothing read is transmitted anywhere. A simulator has no such workouts, so the bundled example covers the analysis this path feeds; to see the list populated, record any Surfing workout on a paired Apple Watch first.
+
+PERMISSIONS. Health (read and write, both off by default: writing exports a session as a workout, reading imports Apple Workout-app recordings), Photos (add-only, only when saving a recorded replay video), Bluetooth (to receive a session summary from a Garmin watch via the Garmin Connect app), and Notifications (only if the user enables the optional background check for new activities). The app never requests location: all GPS shown comes from inside the imported files.
 
 WATCH APP. An Apple Watch target is present in the bundle. It is not being announced or marketed in this release and is not featured in any screenshot or copy.
 
@@ -211,7 +215,7 @@ stores or transmits, and nothing that could tie a session to a person.
 | Data type | Collected | Purpose | Linked to identity | Used for tracking | Why |
 | --- | --- | --- | --- | --- | --- |
 | **Location → Precise Location** | Yes | App Functionality | **No** | **No** | The coordinates are already inside the file the user imports. They leave the device in only two ways: map imagery is fetched from Apple Maps for the area being displayed, and one rounded coordinate per new sailing spot goes to Apple's geocoder for a place name. The app holds no location permission and never turns on the phone's GPS. |
-| **Health & Fitness → Fitness** | Yes | App Functionality | **No** | **No** | Session metrics, and heart rate where the imported file carries it. Written to Apple Health only if the user turns workout export on. Never transmitted anywhere by us. |
+| **Health & Fitness → Fitness** | Yes | App Functionality | **No** | **No** | Session metrics, and heart rate where the imported file carries it. **Read** from Apple Health only when the user opens Import → Apple Health and picks a workout — its route and heart-rate samples, nothing else. **Written** to Apple Health only if the user turns workout export on. Both directions are off by default and neither is ever transmitted anywhere by us. |
 
 **Data types — explicitly NOT collected**
 

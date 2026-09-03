@@ -75,8 +75,15 @@ public enum WatchSessionParser {
         // Rung 1 of the offset ladder (`SessionIngestor.resolveUtcOffset`): the recording
         // saying so itself. The watch read its own calendar at start, DST included, so a
         // watch session never falls through to the longitude guess a GPX has to use.
-        track.startUtcOffsetS = meta.utcOffsetS
-        track.startUtcOffsetSource = .activity
+        //
+        // Unless the writer said otherwise (`WatchSessionMeta.utcOffsetKnown`, absent on every
+        // container the watch app writes): a workout read back out of Apple Health may carry
+        // no time zone at all, and then nothing is claimed here — the ladder takes over and
+        // records which rung actually answered.
+        if meta.utcOffsetKnown ?? true {
+            track.startUtcOffsetS = meta.utcOffsetS
+            track.startUtcOffsetSource = .activity
+        }
 
         var samples: [RecordSample] = []
         samples.reserveCapacity(payload.track.count)

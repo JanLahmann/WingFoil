@@ -86,10 +86,10 @@
       <article class="panel claim">
         <h3>The analysis runs on the phone</h3>
         <p>
-          When you import a <code>.fit</code> or <code>.gpx</code> file, the app reads it and
-          works out the flights, the turn verdicts, the speed records and the wind axis
-          itself, on the device. Nothing is sent anywhere to be analysed, and there is
-          nowhere it could be sent to.
+          When you import a <code>.fit</code> or <code>.gpx</code> file — or a workout you
+          recorded with Apple's Workout app — the app reads it and works out the flights, the
+          turn verdicts, the speed records and the wind axis itself, on the device. Nothing is
+          sent anywhere to be analysed, and there is nowhere it could be sent to.
         </p>
       </article>
       <article class="panel claim">
@@ -176,11 +176,17 @@
 
     <dl class="terms">
       <div class="term">
-        <dt>Health — write only, off by default</dt>
+        <dt>Health — both directions, both off by default</dt>
         <dd>
-          If you turn on workout export, CleanJibe adds your imported sessions to the Health
-          app as workouts. It asks for permission to <em>write</em> only; it requests no
-          read access to your health data at all and never reads any.
+          <strong>Writing:</strong> if you turn on workout export, CleanJibe adds your
+          imported sessions to the Health app as workouts.
+          <strong>Reading:</strong> if you record on an Apple Watch with Apple's own Workout
+          app, Import &rarr; Apple Health can read those workouts — their GPS route and heart
+          rate, and nothing else — so CleanJibe can analyse them like any other recording. It
+          reads only the workout types you choose and only the sessions you pick, never your
+          steps, sleep, weight or anything else in Health. Both directions are off until you
+          switch them on, everything read stays on the phone, and nothing about a workout is
+          ever uploaded.
         </dd>
       </div>
       <div class="term">

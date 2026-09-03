@@ -12,6 +12,7 @@ struct ImportView: View {
 
     @State private var showBulkImporter = false
     @State private var showFileImporter = false
+    @State private var showHealthImporter = false
     @State private var log: [ImportLogRow] = []
 
     var body: some View {
@@ -64,6 +65,32 @@ struct ImportView: View {
                          + "effort.")
                 }
 
+                // The third door, and the only one that needs no account, no cable and no
+                // file: a workout the rider already recorded with Apple's own Workout app
+                // (ADR-017). It sits under "Single sessions" rather than beside the GDPR ZIP
+                // because that is what it is — one afternoon at a time, picked by hand.
+                if store.isHealthAvailable {
+                    Section {
+                        Button {
+                            showHealthImporter = true
+                        } label: {
+                            Label("Import from Health…", systemImage: "heart.text.square")
+                        }
+                        .disabled(store.isBusy)
+                    } header: {
+                        Text("Apple Health")
+                    } footer: {
+                        Text("Record with Apple's Workout app on an Apple Watch — Surfing, "
+                             + "Water Sports or Sailing — and the GPS track and heart rate "
+                             + "land in Health. CleanJibe reads the workouts you pick and "
+                             + "analyses them on this phone: speed comes off the watch's own "
+                             + "GPS, so the speed records are certified. There is no "
+                             + "accelerometer in a Health workout, so pump strokes and "
+                             + "takeoff effort are missing — the same limit a Garmin "
+                             + "recording has.")
+                    }
+                }
+
                 if !log.isEmpty {
                     Section("Recent imports") {
                         ForEach(log) { entry in ImportLogRowView(entry: entry) }
@@ -78,6 +105,7 @@ struct ImportView: View {
             .task(id: store.libraryGeneration) {
                 log = (try? await store.library.importLog()) ?? []
             }
+            .sheet(isPresented: $showHealthImporter) { HealthImportView() }
             .fileImporter(isPresented: $showBulkImporter,
                           allowedContentTypes: [.zip], allowsMultipleSelection: false) { result in
                 if case .success(let urls) = result {
