@@ -265,8 +265,12 @@ targets:
   # flight, turn or record detection on the wrist and there must not be a second one — see
   # docs/watch-session-schema.md.
   #
-  # NO COMPLICATIONS, NO WIDGETS. A complication would be a fourth surface making claims
-  # about a session, and the MVP has nothing to claim that the phone does not say better.
+  # ONE COMPLICATION, AND IT CLAIMS ALMOST NOTHING (docs/decisions.md ADR-017). The MVP shipped
+  # without one on the grounds that a complication would be a fourth surface making claims about
+  # a session; `WingFoilWatchWidgets` is not that. It is a launcher — the mark, and a `widgetURL`
+  # that has the recorder running before the app has finished appearing — and the only session
+  # facts it will ever print are the three the watch measured itself. No jibe count, no foil
+  # percentage: ADR-016 still holds, and those numbers exist only on the phone.
   #
   # DEPLOYMENT TARGET 11.0. Every Apple Watch Apple currently sells — Series 10 and 11,
   # Ultra 2 and 3, SE 3 — runs watchOS 11 or later (Ultra 2 shipped on 10 and updates past
@@ -278,10 +282,23 @@ targets:
     type: application
     platform: watchOS
     deploymentTarget: "11.0"
+    dependencies:
+      # The complication ships inside the watch app, exactly as the watch app ships inside the
+      # phone app. `embed: true` is again what puts it there.
+      - target: WingFoilWatchWidgets
+        embed: true
     sources:
       - path: WingFoilWatch
         excludes:
           - "Info.plist"
+      # Two constants both sides of the complication have to agree on: the `cleanjibe://start`
+      # URL, and the shape of the last-session snapshot. They live in `ios/WatchShared/` rather
+      # than in either target's own directory for the mechanical reason `Views/WatchBrand.swift`
+      # documents — a file inside a target's source tree that a second target also compiles gets
+      # one group-relative reference filed at two depths, and the deeper one resolves to a path
+      # that does not exist. No target claims `WatchShared/`, so both can have it.
+      - path: WatchShared
+        group: Shared
       # SHARED SOURCE, NOT A LINKED LIBRARY — the same arrangement `WingFoilWidgets` uses for
       # `WidgetSnapshot.swift`, and for the same reason. Linking WingFoilKit would drag GRDB,
       # FitFileParser and ZIPFoundation onto a wrist in order to write four floats at a time.
@@ -354,4 +371,61 @@ targets:
         NSMotionUsageDescription: >-
           Records wrist motion while you ride, so CleanJibe can measure your pumping and how
           much effort each takeoff cost.
+        # How the complication reaches the app. `widgetURL` hands the system this URL, and
+        # without the scheme declared here nothing routes it — the tap opens the app to
+        # whatever screen it was on and the rider has to press START after all, which is the
+        # entire feature gone with no error anywhere. `WatchURL` in ios/WatchShared/ is the
+        # single place the string is written; this is the declaration that makes it work.
+        CFBundleURLTypes:
+          - CFBundleURLName: de.lahmann.wingfoil.watchkitapp.start
+            CFBundleTypeRole: Editor
+            CFBundleURLSchemes:
+              - cleanjibe
+        ITSAppUsesNonExemptEncryption: false
+
+  # The watch-face complication (ios/WingFoilWatchWidgets/), embedded in the watch app above.
+  #
+  # A SEPARATE TARGET BECAUSE WIDGETKIT DEMANDS ONE. A complication is a WidgetKit extension —
+  # its own process, its own bundle id, its own `@main` — and there is no way to render one from
+  # inside an app target. That is the whole reason this exists as a fourth target rather than a
+  # file in `WingFoilWatch`; the Siri intents, which are under no such constraint, deliberately
+  # did not get an extension and live in the app (docs/decisions.md ADR-017).
+  #
+  # NO APP GROUP ENTITLEMENT, for the same reason `WingFoilWidgets` has none: the manual App
+  # Store profiles do not carry `group.de.lahmann.wingfoil`, and requesting an entitlement a
+  # profile does not grant fails the archive. `WatchLastSessionStore` probes for the container
+  # at runtime, so today the complication renders its "Start session" state — which is a fully
+  # working launcher, because the launching does not need the group at all. Only the last
+  # session's line does. To turn that on: add App Groups to the watch app id and to
+  # `de.lahmann.wingfoil.watchkitapp.widgets` in the portal, regenerate both profiles, and add
+  # `com.apple.security.application-groups` to both `entitlements` blocks. No code change.
+  WingFoilWatchWidgets:
+    type: app-extension
+    platform: watchOS
+    deploymentTarget: "11.0"
+    sources:
+      - path: WingFoilWatchWidgets
+      - path: WatchShared
+        group: Shared
+    settings:
+      base:
+        PRODUCT_NAME: WingFoilWatchWidgets
+        PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.watchkitapp.widgets
+        MARKETING_VERSION: "0.14.0"
+        CURRENT_PROJECT_VERSION: "16"
+        TARGETED_DEVICE_FAMILY: "4"          # Apple Watch
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 685X8YLYSB
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+        SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
+    info:
+      path: WingFoilWatchWidgets/Info.plist
+      properties:
+        # What the watch-face complication picker prints above the mark.
+        CFBundleDisplayName: CleanJibe
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
         ITSAppUsesNonExemptEncryption: false
