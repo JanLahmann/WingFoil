@@ -87,7 +87,19 @@ public enum AnalysisEngine {
     /// is what the key-metrics block prints from here on (docs/presentation.md, "Clean
     /// jibe"). A missing rate decoded as 0 would claim a session with no clean jibes in it,
     /// which is why the bump — and the null — are both here.
-    public static let version = "0.10.0"
+    ///
+    /// 0.11.0 moves no number and adds five per-turn fields: `minTs`, `exitKn`,
+    /// `peakRateDegS`, `twaInDeg`, `twaOutDeg`. Every one of them is something
+    /// `TurnDetector` has computed since 0.1.0 and then dropped — the stored record kept a
+    /// turn's two endpoints, so a per-turn page could say a jibe went 11.1 → 7.5 kn but not
+    /// *when* the bottom was, what the rider came out carrying, how hard it was carved, or
+    /// where the wind stood at either end. `exitKn` is the one new definition
+    /// (docs/algorithms.md): the maneuver channel at the first sample at or after `endTs`,
+    /// the same channel `minKn` is read on. The TWA pair is nil without a usable wind axis,
+    /// because a 0 there would read as dead upwind. Every stored session re-derives to
+    /// identical numbers; the bump is what makes them re-derive at all, and what stops a
+    /// 0.10.0 document from answering a question it has no fields for.
+    public static let version = "0.11.0"
 }
 
 /// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's
@@ -257,22 +269,36 @@ public struct FlightRecord: Sendable, Codable, Equatable {
 }
 
 /// Golden-schema turn: the 0.1.0 keys (`ts`/`type`/`entryKn`/`minKn`/`score`/`side`) plus
-/// the phase-2 geometry and the three-way outcome.
+/// the phase-2 geometry, the three-way outcome, and the 0.11.0 shape-of-the-maneuver fields
+/// (`minTs`, `exitKn`, `peakRateDegS`, `twaInDeg`, `twaOutDeg`) — all five computed by the
+/// detector since 0.1.0 and, until now, thrown away.
 public struct TurnRecord: Sendable, Codable, Equatable {
     public var ts: Double
     public var endTs: Double
+    /// Time of the speed minimum, on the session clock like `ts`/`endTs` (engine 0.11.0).
+    public var minTs: Double
     /// "jibe" | "tack" | "turn" | "bear_away" | "round_up".
     public var type: String
     /// tack/jibe (or a plain turn) count in the summaries; course changes do not.
     public var counted: Bool
     public var entryKn: Double
     public var minKn: Double
+    /// Maneuver channel at the first sample at or after `endTs` — the same channel and
+    /// scale as `minKn`, so entry → min → exit reads as one line (engine 0.11.0).
+    public var exitKn: Double
     public var score: Double
     public var success: Bool
     /// "port" | "starboard" | "unknown".
     public var side: String
     public var direction: String
     public var netDeg: Double
+    /// Signed peak COG rate, + = clockwise/starboard like `netDeg` (engine 0.11.0).
+    public var peakRateDegS: Double
+    /// True wind angle entering the sweep — **nil** without a usable wind axis, which is
+    /// "no wind was known", never a 0 that would read as dead upwind (engine 0.11.0).
+    public var twaInDeg: Double?
+    /// True wind angle leaving the sweep; nil under the same rule as `twaInDeg`.
+    public var twaOutDeg: Double?
     public var arcM: Double
     public var radiusM: Double
     /// "flew_through" | "touchdown" | "fell_in".
@@ -287,15 +313,20 @@ public struct TurnRecord: Sendable, Codable, Equatable {
     public init(_ turn: Turn) {
         ts = turn.startT
         endTs = turn.endT
+        minTs = turn.minT
         type = turn.kind.rawValue
         counted = turn.counted
         entryKn = turn.entryKn
         minKn = turn.minKn
+        exitKn = turn.exitKn
         score = turn.score
         success = turn.success
         side = turn.side
         direction = turn.direction
         netDeg = turn.netDeg
+        peakRateDegS = turn.peakRateDegS
+        twaInDeg = turn.twaInDeg.isFinite ? turn.twaInDeg : nil
+        twaOutDeg = turn.twaOutDeg.isFinite ? turn.twaOutDeg : nil
         arcM = turn.arcM
         radiusM = turn.radiusM
         outcome = turn.outcome.rawValue
@@ -305,6 +336,75 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         pumped = turn.pumped
         submerged = turn.submerged
         outcomeWindowS = turn.outcomeWindowS
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case ts, endTs, minTs, type, counted, entryKn, minKn, exitKn, score, success
+        case side, direction, netDeg, peakRateDegS, twaInDeg, twaOutDeg, arcM, radiusM
+        case outcome, borderline, offFoilS, stoppedS, pumped, submerged, outcomeWindowS
+    }
+
+    /// The 0.11.0 keys decode as *optional*, so an `analysis.json` written by an older
+    /// engine still loads rather than throwing. Such a document is stale by `engineVersion`
+    /// anyway and `reanalyzeStale()` re-derives it from the FIT with the real numbers; the
+    /// fallbacks below only have to survive the trip between the two, which is why the two
+    /// speeds fall back to the endpoints beside them and the TWA pair falls back to nil.
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        ts = try c.decode(Double.self, forKey: .ts)
+        endTs = try c.decode(Double.self, forKey: .endTs)
+        type = try c.decode(String.self, forKey: .type)
+        counted = try c.decode(Bool.self, forKey: .counted)
+        entryKn = try c.decode(Double.self, forKey: .entryKn)
+        minKn = try c.decode(Double.self, forKey: .minKn)
+        score = try c.decode(Double.self, forKey: .score)
+        success = try c.decode(Bool.self, forKey: .success)
+        side = try c.decode(String.self, forKey: .side)
+        direction = try c.decode(String.self, forKey: .direction)
+        netDeg = try c.decode(Double.self, forKey: .netDeg)
+        arcM = try c.decode(Double.self, forKey: .arcM)
+        radiusM = try c.decode(Double.self, forKey: .radiusM)
+        outcome = try c.decode(String.self, forKey: .outcome)
+        borderline = try c.decode(Bool.self, forKey: .borderline)
+        offFoilS = try c.decode(Double.self, forKey: .offFoilS)
+        stoppedS = try c.decode(Double.self, forKey: .stoppedS)
+        pumped = try c.decode(Bool.self, forKey: .pumped)
+        submerged = try c.decode(Bool.self, forKey: .submerged)
+        outcomeWindowS = try c.decode(Double.self, forKey: .outcomeWindowS)
+        minTs = try c.decodeIfPresent(Double.self, forKey: .minTs) ?? ts
+        exitKn = try c.decodeIfPresent(Double.self, forKey: .exitKn) ?? minKn
+        peakRateDegS = try c.decodeIfPresent(Double.self, forKey: .peakRateDegS) ?? 0
+        twaInDeg = try c.decodeIfPresent(Double.self, forKey: .twaInDeg)
+        twaOutDeg = try c.decodeIfPresent(Double.self, forKey: .twaOutDeg)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(ts, forKey: .ts)
+        try c.encode(endTs, forKey: .endTs)
+        try c.encode(minTs, forKey: .minTs)
+        try c.encode(type, forKey: .type)
+        try c.encode(counted, forKey: .counted)
+        try c.encode(entryKn, forKey: .entryKn)
+        try c.encode(minKn, forKey: .minKn)
+        try c.encode(exitKn, forKey: .exitKn)
+        try c.encode(score, forKey: .score)
+        try c.encode(success, forKey: .success)
+        try c.encode(side, forKey: .side)
+        try c.encode(direction, forKey: .direction)
+        try c.encode(netDeg, forKey: .netDeg)
+        try c.encode(peakRateDegS, forKey: .peakRateDegS)
+        try c.encode(twaInDeg, forKey: .twaInDeg)           // explicit null
+        try c.encode(twaOutDeg, forKey: .twaOutDeg)         // explicit null
+        try c.encode(arcM, forKey: .arcM)
+        try c.encode(radiusM, forKey: .radiusM)
+        try c.encode(outcome, forKey: .outcome)
+        try c.encode(borderline, forKey: .borderline)
+        try c.encode(offFoilS, forKey: .offFoilS)
+        try c.encode(stoppedS, forKey: .stoppedS)
+        try c.encode(pumped, forKey: .pumped)
+        try c.encode(submerged, forKey: .submerged)
+        try c.encode(outcomeWindowS, forKey: .outcomeWindowS)
     }
 }
 

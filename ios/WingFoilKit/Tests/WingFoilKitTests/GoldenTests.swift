@@ -284,6 +284,9 @@ import Testing
                 #expect(abs(act.ts - v) <= 1.0, "\(stem) turns[\(i)].ts: \(act.ts) vs \(v)")
             }
             if let v = num(exp["endTs"]) { #expect(abs(act.endTs - v) <= 1.0, "\(stem) turns[\(i)].endTs") }
+            if let v = num(exp["minTs"]) {
+                #expect(abs(act.minTs - v) <= 1.0, "\(stem) turns[\(i)].minTs: \(act.minTs) vs \(v)")
+            }
             if let v = num(exp["entryKn"]) {
                 #expect(abs(act.entryKn - v) <= 0.05,
                         "\(stem) turns[\(i)].entryKn: \(act.entryKn) vs \(v)")
@@ -291,7 +294,36 @@ import Testing
             if let v = num(exp["minKn"]) {
                 #expect(abs(act.minKn - v) <= 0.05, "\(stem) turns[\(i)].minKn: \(act.minKn) vs \(v)")
             }
+            if let v = num(exp["exitKn"]) {
+                #expect(abs(act.exitKn - v) <= 0.05,
+                        "\(stem) turns[\(i)].exitKn: \(act.exitKn) vs \(v)")
+            }
             if let v = num(exp["netDeg"]) { #expect(abs(act.netDeg - v) <= 1.0, "\(stem) turns[\(i)].netDeg") }
+            // Signed, so a sign flip is a failure rather than a rounding difference.
+            if let v = num(exp["peakRateDegS"]) {
+                #expect(abs(act.peakRateDegS - v) <= 1.0,
+                        "\(stem) turns[\(i)].peakRateDegS: \(act.peakRateDegS) vs \(v)")
+            }
+            // TWA is null exactly when the session has no usable wind axis — the presence
+            // of the key has to agree, not only the number under it.
+            if exp.keys.contains("twaInDeg") {
+                if let v = num(exp["twaInDeg"]), let a = act.twaInDeg {
+                    #expect(abs(angleDelta(a, v)) <= 1.0,
+                            "\(stem) turns[\(i)].twaInDeg: \(a) vs \(v)")
+                } else {
+                    #expect(exp["twaInDeg"] is NSNull && act.twaInDeg == nil,
+                            "\(stem) turns[\(i)].twaInDeg: \(describe(act.twaInDeg))")
+                }
+            }
+            if exp.keys.contains("twaOutDeg") {
+                if let v = num(exp["twaOutDeg"]), let a = act.twaOutDeg {
+                    #expect(abs(angleDelta(a, v)) <= 1.0,
+                            "\(stem) turns[\(i)].twaOutDeg: \(a) vs \(v)")
+                } else {
+                    #expect(exp["twaOutDeg"] is NSNull && act.twaOutDeg == nil,
+                            "\(stem) turns[\(i)].twaOutDeg: \(describe(act.twaOutDeg))")
+                }
+            }
             if let v = num(exp["stoppedS"]) {
                 #expect(abs(act.stoppedS - v) <= 1.0, "\(stem) turns[\(i)].stoppedS")
             }
@@ -879,7 +911,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.10.0")
+        #expect(analysis.engineVersion == "0.11.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)
