@@ -54,6 +54,13 @@ private struct MetricsPage: View {
                     .font(.caption2.weight(.heavy))
                     .tracking(1)
                     .foregroundStyle(.orange)
+            } else if !recorder.hasUsableFix {
+                // A session with heart rate and no track is the one failure the rider cannot
+                // see from the speed alone — 0.0 kn looks like waiting for wind. Say it.
+                Text("NO GPS")
+                    .font(.caption2.weight(.heavy))
+                    .tracking(1)
+                    .foregroundStyle(.orange)
             }
 
             Divider().overlay(Brand.paper.opacity(0.2))

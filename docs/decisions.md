@@ -2,6 +2,27 @@
 
 Newest first. One paragraph each: context → decision → consequence.
 
+## ADR-019 · Watch GPS needs the phone's permission string and the background flag — the workout session alone is not enough
+The first real Apple Watch session (4 Sep 2026, 68 min, heart rate throughout) reached the phone
+with **zero position fixes**, and the start screen had said "Asking for location" the whole time.
+Two separate facts, both wrong in the code since ec1e3bd, and neither produced an error anywhere:
+1. **watchOS keeps a companion watch app's location permission under the iPhone app.** The
+   prompt on the wrist only appears when the *iPhone* app's Info.plist carries
+   `NSLocationWhenInUseUsageDescription` — since watchOS 10 a missing key is not a crash but a
+   silent `.notDetermined` forever. The phone never asks for location itself; the string is there
+   for the watch and says so.
+2. **A running `HKWorkoutSession` keeps the process alive, not the fixes.** Since watchOS 4,
+   CoreLocation stops delivering to a backgrounded (wrist-down, water-locked) app unless
+   `allowsBackgroundLocationUpdates` is true. ITMS-90362 was right that `location` is not a
+   `WKBackgroundModes` value, and ec1e3bd drew the wrong conclusion from it: on watchOS the flag
+   needs no plist mode, only a workout session — so `LocationBridge.startUpdating(background:)`
+   sets it `true` right after `WorkoutBridge.start` succeeds and `false` before START, after
+   stop, and whenever the manager is stopped.
+Also decided: the recording screen now says **NO GPS** in the paused slot whenever
+`hasUsableFix` is false, because 0.0 kn on a foil looks exactly like waiting for wind, and a
+rider cannot otherwise tell a dead recorder from a calm day. The import's "contains no position
+fixes" refusal stays as it is: a heart-rate-only file has nothing to analyse.
+
 ## ADR-018 · The complication is a **launcher**, the Siri intents live in the app, and neither detects anything
 ADR-016 declined a complication on the grounds that it would be "a fourth surface making claims
 about a session". That reasoning was about *claims*, and it survives intact — what it did not
