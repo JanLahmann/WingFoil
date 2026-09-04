@@ -1046,6 +1046,103 @@ misread waiting to happen. Both turn fields exist in the schema (`side`, `direct
 filters and trends read `side`. Anything that draws a side in colour uses the `side.*`
 tokens above and nothing else.
 
+## Turn detail — one maneuver, at the scale of one maneuver
+
+The session map answers "where did I ride". A jibe is thirty metres of water inside two
+kilometres of it, and at session scale it is four pixels. **Turn detail** is the drill-in:
+tapping a turn's dot on the map (via the callout's "Details" affordance, or the card itself)
+or a row in the Turns tab opens a sheet holding that one maneuver.
+
+**The set is every counted turn of the session, in time order, swipeable, with a "3 of 14"
+position.** Not the Turns tab's *filtered* set — a filter is a way of looking at the list, not
+a claim about which turns exist — and not the course changes either: a bear-away has no
+verdict, no score and no entry tack, so the affordance is simply absent on its grey dot
+(iOS: `SessionDetail.EventMarker.turnIndex` is nil unless the turn is counted).
+
+**The framing rule.** The drawn window is `[ts − pad, endTs + pad]` with `pad = 8 s`, because
+a jibe drawn from its first frame to its last is an arc with no approach and no exit, and the
+whole question is what the speed did on either side of it. Geometry is local metres —
+equirectangular around the turn's **entry point**, so the entry is the origin — fitted to the
+window's own extent, padded by 14 % of the larger side, and never narrower than 20 m. One
+scale on both axes; the shape stays honest. The frame is fitted to the turn, so a tight pivot
+and a wide arc come out the same width on screen: **a scale bar (10 / 25 / 50 m, the largest
+that fits) is mandatory**, and it is the only thing that says which was which.
+
+**Wind up.** The orientation control is `North up | Wind up`. Wind up rotates the frame so the
+direction the wind blows **from** points at the top — so a rider running downwind travels
+toward the bottom of the page, and a jibe comes down the page, sweeps across and goes back up.
+Headings rotate with the points. The wind is the rider's own value first (session dev field 39)
+and the engine's estimate second, and **only when the estimate is `usable`** — the same gate
+that decides whether turns are named tacks and jibes at all. Below it, wind up is *disabled*
+with a footnote saying why; it is never silently drawn north up under a "wind up" label.
+
+**The ink.** The in-turn segment is drawn thick and coloured **on the phase pair, not on a
+palette of its own**: a vertex at the entry speed is the flying teal (`phase.flying`), a vertex
+at a standstill is the off-foil grey (`phase.offFoil`), everything between is mixed in
+proportion, and the stroke thickens with it. A turn that carried its speed is teal all the way
+round and one that stalled goes grey where it stalled — the same statement the score makes, in
+the two inks the app already uses for exactly it. The padded context track is the off-foil grey
+at low opacity. Ticks one second apart run across the line, so the drawing carries time as well
+as shape. The low point is a hollow ring; the end of the sweep is the outcome dot in the
+ladder's ink (`outcome.*`).
+
+**The ghost.** One comparison turn may be laid underneath, dashed, in the clean-jibe ink
+(`clean.jibe`) at low opacity, behind a remembered toggle. The selection rule is exact:
+
+> the **highest-`score`** turn of the **same session** that is **counted**, a **jibe**, ended
+> **`flew_through`**, and has the **same `direction`** (rotation, not entry tack) as the turn
+> being read — **never the turn itself**. Ties go to the earlier turn.
+
+Same session, because a comparison against different wind is not a comparison. Same rotation,
+because a jibe spun to starboard and one spun to port are mirror images. `flew_through`,
+because the model has to be a turn that worked. Never itself, because a dashed line exactly
+under the solid one reads as a rendering bug. No such turn ⇒ no ghost, and the toggle says so.
+Both slices are anchored at their own entry points and at their own `t = 0`, so the comparison
+is aligned in space and in time by construction rather than by a transform.
+
+**The strip.** Speed against seconds from the turn's start, over the same padded window, with
+the sweep shaded, rule marks and labels at entry / low / exit, and the ghost's speed as a faint
+dashed line aligned at `t = 0`. A drag scrubs it and drives the playhead dot on the drawing —
+the same **one playhead** rule the map and the chart follow ("Scrub and zoom").
+
+**Two sets of numbers, and they are allowed to differ.** The numbers row prints the *engine's*
+`entryKn`, `minKn`, `score`, `stoppedS`, `offFoilS`, `radiusM`, `netDeg`, `side`, `direction`
+and `outcome` — those are the verdict and nothing may re-derive them. The strip's three markers
+are read off **this window's own recorded samples**, because a label at 11.4 kn on a line that
+is at 10.9 there is worse than no label. The page says so in a footnote. Score is spelled
+"held 71 % of entry speed"; `direction` is spelled "clockwise / counter-clockwise" and never
+"port/starboard", which is the entry tack's word ("Filter semantics").
+
+**The coach line.** One calm sentence under the numbers, in the `ReplayCommentary` voice —
+plain, no exclamation marks, never blaming, and never a number the page is not already showing.
+It is a ladder of specificity, first match wins, and the ordering is the contract:
+
+| # | rung | fires when | says |
+|---|---|---|---|
+| 1 | `fellIn` | `outcome == fell_in` | ended in the water, entry → low |
+| 2 | `wristUnder` | `submerged` | the barometer saw the wrist go under, entry → low |
+| 3 | `pumpedOut` | `pumped` | pumped back out, with `offFoilS` when there is one |
+| 4 | `touchdownOnExit` | touchdown, low point **at or after** halfway | held it in, lost it after |
+| 5 | `touchdownComingIn` | touchdown, low point **before** halfway | the speed was already gone going in |
+| 6 | `cleanAndFast` | `success && score ≥ 0.85` | clean, and barely slowed |
+| 7 | `cleanButSlow` | `flew_through && score < 0.7` | flew through, and it cost |
+| 8 | `slowedEarly` | low point before halfway | the speed went before the mid-point |
+| 9 | `slowedLate` | low point at or after halfway | carried it in, lost it on the way out |
+| 10 | `plain` | nothing above, or no usable geometry | the three numbers, said plainly |
+
+"Halfway" is where the sweep has turned through **half its cumulative heading change** — not
+half its `netDeg`, because a sweep that overshoots and comes back has swept more than its net,
+and not half its duration. A jibe's halfway point is called the **downwind point**, a tack's
+**head-to-wind**, and an unnamed sweep's the **middle of the turn**. Rules 4/5 and 8/9 need it;
+where the window has too few usable bearings to say, no rule that depends on it may fire and
+the ladder falls through to `plain`.
+
+iOS: `TurnSlice` + `TurnCoach` in the kit (pure, `TurnSliceTests`), drawn by
+`TurnDetailView` / `TurnDetailMapView` / `TurnDetailStripView`. The drawing is a SwiftUI
+`Canvas` and deliberately not a `MapKit` map: the frame has to rotate, and the ticks must not
+move under the reader on a camera settle. There is no ground under it — a satellite tile at
+30 m across is a photograph of water, and it would bury all six of the things the drawing says.
+
 ## Formatter rules
 
 - **A missing value is absent, never 0.** No dashes-grid where a whole card has nothing to
