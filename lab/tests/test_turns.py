@@ -557,7 +557,7 @@ def _seq(*outcomes, counted=True):
     flags = counted if isinstance(counted, tuple) else (counted,) * len(outcomes)
     return [Turn(start_t=10.0 * (i + 1) - 1, end_t=10.0 * (i + 1), min_t=10.0 * (i + 1),
                  kind=JIBE, counted=c, net_deg=180.0, peak_rate_deg_s=30.0,
-                 direction="port", side="port", entry_kn=12.0, min_kn=9.0,
+                 direction="port", side="port", entry_kn=12.0, min_kn=9.0, exit_kn=10.0,
                  entry_kn_doppler=12.0, min_kn_doppler=9.0, score=0.75, success=True,
                  twa_in_deg=90.0, twa_out_deg=-90.0, outcome=o)
             for i, (o, c) in enumerate(zip(outcomes, flags))]
