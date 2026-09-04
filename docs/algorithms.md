@@ -155,6 +155,23 @@ Entry/minimum speeds come from `speedChannelManeuvers` (positional); the "never 
 foil" half of the success test stays on Doppler so it agrees with flight segmentation.
 Overlapping candidates are non-maximum-suppressed by net angle, widest sweep wins.
 
+### What a turn records — the shape, not only the endpoints (engine 0.11.0)
+
+Scoring computes more than it used to keep. Until 0.11.0 a stored turn carried its start,
+its end, and the two speeds the score is a ratio of, so a per-turn surface could say a jibe
+went 11.1 → 7.5 kn but not *when* the bottom of it was, what the rider came out carrying,
+how hard he carved it, or where the wind stood at either end. Those four answers already
+existed inside the detector and were dropped on the return. They are now persisted, and
+**nothing about detection, scoring, classification or outcome changes** — every number on
+every fixture is what it was.
+
+| field | definition |
+|---|---|
+| `minTs` | time of the speed minimum: the sample `minKn` was read at, on the session clock like `ts`/`endTs`. It is the instant the outcome window is searched *past* (`turnRecoverPct` recovery is looked for after it), so it was never a derived convenience — it is the anchor the window already used |
+| `exitKn` | **the one new definition.** `speedChannelManeuvers` at the *first sample at or after* `turnEnd` — the same channel and the same rounding as `minKn`, so `entryKn → minKn → exitKn` reads as one line in one unit. `turnEnd` is itself a sample time, so in practice this is the sweep's last sample; the "at or after" wording is what makes the rule total for a segment that ends there. Deliberately **not** the recovery speed: the outcome window already answers "did he get going again", and a fourth number sampled at a moving boundary would not be comparable between two turns. Exit is where the sweep stopped, full stop |
+| `peakRateDegS` | the detector's own peak COG rate over the sweep, **signed** with `netDeg`'s convention (+ = clockwise/starboard). The magnitude is the one already tested against `turnPeakRate`; the sign is kept because a rate that reads +38 on one jibe and −38 on the next is the pair of directions, not two different maneuvers |
+| `twaInDeg`, `twaOutDeg` | the true wind angles `classify` computed to name the turn: TWA at the sweep's entry, and TWA at its exit wrapped to ±180. **Null when the wind axis is unusable** — the same state that leaves `type` a plain `turn`. A 0 in their place would read as dead upwind, which is a claim about a session that never had a wind direction |
+
 **Glossary — "clean jibe" is this criterion, under the name the UIs use.** A *clean jibe*
 is a counted jibe whose `success` flag is set: `score >= turnSuccessPct` **and** the speed
 never dropped to `foilExitSpeed` across the scored window. Nothing here changes with the
