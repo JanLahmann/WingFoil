@@ -71,14 +71,25 @@ final class LocationBridge: NSObject, CLLocationManagerDelegate, @unchecked Send
     /// the running `HKWorkoutSession` keeps the *process* alive through water lock and a
     /// lowered wrist, but since watchOS 4 it does not keep *fixes* coming: CoreLocation stops
     /// delivering the moment the app leaves the foreground unless
-    /// `allowsBackgroundLocationUpdates` is true. On watchOS that flag needs no Info.plist
-    /// background mode (`location` is not even a legal `WKBackgroundModes` value, ITMS-90362);
-    /// it needs a workout session to be running, which is why the recorder passes `true` only
-    /// after `WorkoutBridge.start` succeeded and `false` everywhere else (ADR-019).
+    /// `allowsBackgroundLocationUpdates` is true. The flag needs two things: a running workout
+    /// session (why the recorder passes `true` only after `WorkoutBridge.start` succeeded) and
+    /// `location` under `UIBackgroundModes` in this app's Info.plist — not `WKBackgroundModes`,
+    /// which rejects it (ITMS-90362). Setting the flag without the plist entry is not a
+    /// warning, it is `NSInternalInconsistencyException` and a dead app on START (build 21,
+    /// ADR-019), so the entry is checked here first: a plist mistake costs the background
+    /// fixes, never the session.
     func startUpdating(background: Bool) {
-        manager.allowsBackgroundLocationUpdates = background
+        if background && !Self.plistAllowsBackgroundLocation {
+            Self.log.error("UIBackgroundModes lacks 'location' — recording foreground fixes only")
+        }
+        manager.allowsBackgroundLocationUpdates = background && Self.plistAllowsBackgroundLocation
         manager.startUpdatingLocation()
     }
+
+    private static let plistAllowsBackgroundLocation: Bool = {
+        let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String]
+        return modes?.contains("location") ?? false
+    }()
 
     func stopUpdating() {
         manager.allowsBackgroundLocationUpdates = false
