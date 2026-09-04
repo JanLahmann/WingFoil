@@ -78,6 +78,9 @@ public struct Turn: Sendable, Equatable {
     public var side: String
     public var entryKn: Double
     public var minKn: Double
+    /// Maneuver channel at the first sample at or after `endT` — the speed the rider came
+    /// out of the sweep carrying (docs/algorithms.md "Turn detection & classification").
+    public var exitKn: Double = 0
     public var entryKnDoppler: Double
     public var minKnDoppler: Double
     public var score: Double
@@ -528,6 +531,11 @@ public enum TurnDetector {
             if man[k] < minMan { minMan = man[k]; minIdx = k }
             minDop = min(minDop, dop[k])
         }
+        // Exit speed: the maneuver channel at the *first sample at or after* the sweep's
+        // end. `endT` is itself a sample time, so in practice that is the sweep's last
+        // sample — the clamp only guards a track whose segment ends there. Mirrors
+        // `_build_turn` in `lab/src/wingfoil_lab/turns.py`.
+        let exitMan = man[min(searchSortedLeft(t, endT), t.count - 1)]
         let score = entryMan > 0 ? minMan / entryMan : 0
         let stayedUp = minDop > config.foilExitSpeedKmh * kmhToMps
         let success = score >= config.successPct / 100 && stayedUp
@@ -537,6 +545,7 @@ public enum TurnDetector {
                     netDeg: net, peakRateDegS: peak,
                     direction: net >= 0 ? "starboard" : "port", side: k.side,
                     entryKn: entryMan * mpsToKn, minKn: minMan * mpsToKn,
+                    exitKn: exitMan * mpsToKn,
                     entryKnDoppler: entryDop * mpsToKn, minKnDoppler: minDop * mpsToKn,
                     score: score, success: success, twaInDeg: k.twaIn, twaOutDeg: k.twaOut,
                     arcM: arc.0, chordM: arc.1, radiusM: radiusM)
