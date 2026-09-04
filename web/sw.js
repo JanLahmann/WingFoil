@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v38";     // v38: the turn popover reads entry → min → exit (engine 0.11.0)
+const VERSION = "v39";     // v39: the invite page drops the stale unlock note and the data-field paragraph (ADR-020)
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.

@@ -2,6 +2,20 @@
 
 Newest first. One paragraph each: context → decision → consequence.
 
+## ADR-020 · The Garmin data field is **dormant** — the app is the product
+ADR-002 chose a device app over a data field, and the field arrived later (0.1.0, 13 Aug 2026)
+as a companion for riders who wanted to keep Garmin's native Windsurf profile. Three weeks on:
+Jan has never ridden with it, no rider has asked for it, its CPH denominator already diverges
+from the app's (`docs/algorithms.md`, timerTime vs elapsed), and every metric added to the app
+now costs a second implementation, a second listing, a second review and a second set of store
+assets. Decision: **park it.** `garmin/field/` stays in the tree and keeps building (it shares
+the barrel and the tokens, so it costs nothing to keep compiling), but it gets no new metrics,
+no releases and no listing work. cleanjibe.org stops linking to it; `garmin/store/listing.md`
+marks the section dormant and keeps the text for a possible re-listing. The store listing itself
+comes down only by *Remove* — Garmin has no unpublish — and that is Jan's call, taken on the
+store page, not in this repo. Reversal condition: riders asking for it, in numbers, with a use
+the app cannot serve (a customised native profile is the only one anybody has named).
+
 ## ADR-019 · Watch GPS needs the phone's permission string and the background flag — the workout session alone is not enough
 The first real Apple Watch session (4 Sep 2026, 68 min, heart rate throughout) reached the phone
 with **zero position fixes**, and the start screen had said "Asking for location" the whole time.

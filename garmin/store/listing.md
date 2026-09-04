@@ -72,7 +72,14 @@ Garmin keeps your stored page settings across updates — existing installs can 
 
 ---
 
-## Data field — `CleanJibe Wingfoil Field (Beta)`
+## Data field — `CleanJibe Wingfoil Field (Beta)` — DORMANT since 2026-09-04
+
+**The field is parked (ADR-020).** Jan never used it, nobody has asked for it, and every hour on
+it is an hour not on the app. The code under `garmin/field/` stays in the tree and still builds,
+but it gets no new features, no releases and no listing work unless riders ask for it. The
+store's only off-switch is *Remove* (there is no unpublish), and that is Jan's click — until it
+happens the listing below is live at 0.9.6 with the text as transcribed. cleanjibe.org no longer
+links to it. Everything after this note is history, kept because a re-listing would need it.
 
 Title since 2026-09-02 (was `CleanJibe Field (Beta)`): "Wingfoil" belongs in both public titles
 because store search shows the two side by side and the tiny DATA FIELD / DEVICE APP label is
