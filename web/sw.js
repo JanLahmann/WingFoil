@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v37";     // v37: the privacy page says Health reads as well as writes
+const VERSION = "v38";     // v38: the turn popover reads entry → min → exit (engine 0.11.0)
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.

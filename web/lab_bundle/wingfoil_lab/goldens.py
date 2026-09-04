@@ -93,6 +93,17 @@ every other value on every fixture is byte-identical to 0.9.1's. The bump is bec
 document cannot answer the question the rider actually asks — JPH says he got away with the
 jibe, CPH says he rode it — and a missing rate read as 0 would claim a session with no clean
 jibes in it. Same denominator, same null-on-no-duration rule, same 1 dp as JPH.
+
+Engine 0.11.0 changes no number and adds five keys to each entry of `turns` — `minTs`,
+`exitKn`, `peakRateDegS`, `twaInDeg`, `twaOutDeg`. Every one of them is something the
+detector already computed and then dropped on the floor: the turn's own record kept only
+its two endpoints, so a per-turn page could say a jibe went 11.1 → 7.5 kn but not *when*
+the bottom was, what it came out at, how hard it was carved, or where the wind stood at
+either end. `exitKn` is the one new *definition* (docs/algorithms.md, "Turn detection &
+classification"): the maneuver channel at the first sample at or after `endTs` — the same
+channel and the same 3 dp as `minKn`, so the three read as one line. The TWA pair is
+explicit **null** without a usable wind axis, by the same rule every other unmeasurable
+number in this schema follows.
 """
 
 from __future__ import annotations
@@ -636,19 +647,33 @@ def _window_json(w: RecordWindow | list[RecordWindow]) -> dict | list[dict]:
 
 
 def _turn_json(t: Turn) -> dict:
-    """One detected turn. `ts`/`type`/`entryKn`/`minKn`/`score`/`side` keep the 0.1.0 names."""
+    """One detected turn. `ts`/`type`/`entryKn`/`minKn`/`score`/`side` keep the 0.1.0 names.
+
+    Engine 0.11.0 persists four things the detector had always computed and thrown away --
+    `minTs`, `exitKn`, `peakRateDegS` and the entry/exit TWA pair. Nothing is recomputed and
+    no existing key moves; they are the numbers a per-turn detail page needs to draw the
+    shape of the maneuver rather than its two endpoints. `twaInDeg`/`twaOutDeg` are explicit
+    **null** without a usable wind axis -- "no wind was known", never a flattering 0.
+    """
     return {
         "ts": round(t.start_t, 2),
         "endTs": round(t.end_t, 2),
+        # Time of the speed minimum: on the session clock, like `ts`/`endTs`.
+        "minTs": round(t.min_t, 2),
         "type": t.kind,
         "counted": bool(t.counted),
         "entryKn": round(t.entry_kn, 3),
         "minKn": round(t.min_kn, 3),
+        "exitKn": round(t.exit_kn, 3),
         "score": round(t.score, 4),
         "success": bool(t.success),
         "side": t.side,
         "direction": t.direction,
         "netDeg": round(t.net_deg, 2),
+        # Signed: + = clockwise/starboard, the same convention as `netDeg`.
+        "peakRateDegS": round(t.peak_rate_deg_s, 2),
+        "twaInDeg": _finite(t.twa_in_deg, 2),
+        "twaOutDeg": _finite(t.twa_out_deg, 2),
         "arcM": round(t.arc_m, 2),
         "radiusM": round(t.radius_m, 2),
         "outcome": t.outcome,
@@ -928,3 +953,12 @@ def _takeoff_summary_json(s: TakeoffSummary) -> dict:
 
 def _round(v: float | None, places: int) -> float | None:
     return None if v is None else round(float(v), places)
+
+
+def _finite(v: float | None, places: int) -> float | None:
+    """`_round`, with a NaN written as **null** rather than as a number.
+
+    The detector spells "no usable wind axis" as a NaN TWA (`turns._classify`), and JSON has
+    no NaN; a 0.0 in its place would read as "dead upwind", which is a claim.
+    """
+    return None if v is None or not math.isfinite(float(v)) else round(float(v), places)
