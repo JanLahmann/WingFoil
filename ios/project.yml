@@ -68,7 +68,7 @@ targets:
         OTHER_LDFLAGS: "-ObjC"
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil
         MARKETING_VERSION: "0.15.0"
-        CURRENT_PROJECT_VERSION: "19"
+        CURRENT_PROJECT_VERSION: "20"
         TARGETED_DEVICE_FAMILY: "1"          # iPhone only
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB         # Jan-Rainer Lahmann (personal + program team)
@@ -264,7 +264,7 @@ targets:
         PRODUCT_NAME: WingFoilWidgets
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.widgets
         MARKETING_VERSION: "0.15.0"
-        CURRENT_PROJECT_VERSION: "19"
+        CURRENT_PROJECT_VERSION: "20"
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB
@@ -354,7 +354,7 @@ targets:
         PRODUCT_NAME: WingFoilWatch
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.watchkitapp
         MARKETING_VERSION: "0.15.0"
-        CURRENT_PROJECT_VERSION: "19"
+        CURRENT_PROJECT_VERSION: "20"
         TARGETED_DEVICE_FAMILY: "4"          # Apple Watch
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB
@@ -453,7 +453,7 @@ targets:
         PRODUCT_NAME: WingFoilWatchWidgets
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.watchkitapp.widgets
         MARKETING_VERSION: "0.15.0"
-        CURRENT_PROJECT_VERSION: "19"
+        CURRENT_PROJECT_VERSION: "20"
         TARGETED_DEVICE_FAMILY: "4"          # Apple Watch
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB

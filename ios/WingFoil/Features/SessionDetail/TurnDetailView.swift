@@ -209,7 +209,7 @@ private struct TurnDetailPage: View {
                 arrow
                 speedStep(String(format: "%.1f", turn.minKn), "low")
                 arrow
-                speedStep(String(format: "%.1f", slice.speed.exitKn), "out")
+                speedStep(String(format: "%.1f", turn.exitKn), "out")
                 Text("kn")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
