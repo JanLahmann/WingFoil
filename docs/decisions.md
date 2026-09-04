@@ -28,10 +28,17 @@ Two separate facts, both wrong in the code since ec1e3bd, and neither produced a
 2. **A running `HKWorkoutSession` keeps the process alive, not the fixes.** Since watchOS 4,
    CoreLocation stops delivering to a backgrounded (wrist-down, water-locked) app unless
    `allowsBackgroundLocationUpdates` is true. ITMS-90362 was right that `location` is not a
-   `WKBackgroundModes` value, and ec1e3bd drew the wrong conclusion from it: on watchOS the flag
-   needs no plist mode, only a workout session — so `LocationBridge.startUpdating(background:)`
-   sets it `true` right after `WorkoutBridge.start` succeeds and `false` before START, after
-   stop, and whenever the manager is stopped.
+   `WKBackgroundModes` value, and ec1e3bd drew the wrong conclusion from it: the key the flag
+   wants on watchOS is **`UIBackgroundModes: [location]`** in the watch app's Info.plist — the
+   same entry the WatchKit extension carried since watchOS 4 — plus a running workout session.
+   `LocationBridge.startUpdating(background:)` sets the flag `true` right after
+   `WorkoutBridge.start` succeeds and `false` before START, after stop, and whenever the manager
+   is stopped.
+   *Amendment, same day:* build 21 shipped the flag without the plist entry and START killed
+   the app with `NSInternalInconsistencyException` ("!stayUp || CLClientIsBackgroundable"),
+   because CoreLocation asserts the entry the moment the flag is set. Build 22 adds the entry,
+   and `LocationBridge` reads it before setting the flag so a plist mistake can only ever cost
+   the background fixes, never the session.
 Also decided: the recording screen now says **NO GPS** in the paused slot whenever
 `hasUsableFix` is false, because 0.0 kn on a foil looks exactly like waiting for wind, and a
 rider cannot otherwise tell a dead recorder from a calm day. The import's "contains no position

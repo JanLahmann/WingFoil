@@ -68,7 +68,7 @@ targets:
         OTHER_LDFLAGS: "-ObjC"
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil
         MARKETING_VERSION: "0.15.0"
-        CURRENT_PROJECT_VERSION: "21"
+        CURRENT_PROJECT_VERSION: "22"
         TARGETED_DEVICE_FAMILY: "1"          # iPhone only
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB         # Jan-Rainer Lahmann (personal + program team)
@@ -274,7 +274,7 @@ targets:
         PRODUCT_NAME: WingFoilWidgets
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.widgets
         MARKETING_VERSION: "0.15.0"
-        CURRENT_PROJECT_VERSION: "21"
+        CURRENT_PROJECT_VERSION: "22"
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB
@@ -364,7 +364,7 @@ targets:
         PRODUCT_NAME: WingFoilWatch
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.watchkitapp
         MARKETING_VERSION: "0.15.0"
-        CURRENT_PROJECT_VERSION: "21"
+        CURRENT_PROJECT_VERSION: "22"
         TARGETED_DEVICE_FAMILY: "4"          # Apple Watch
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB
@@ -403,14 +403,21 @@ targets:
         # `workout-processing` is what keeps the app running for two hours on a wet wrist in
         # a pocket — the `HKWorkoutSession` is the extended-runtime mechanism, and there is
         # deliberately no `WKExtendedRuntimeSession` beside it (they are alternatives).
-        # No `location` here: App Store validation rejects it as a WKBackgroundModes
-        # value (ITMS-90362) — `workout-processing` is the only value watchOS accepts. That
-        # does NOT mean the workout session keeps fixes flowing by itself: since watchOS 4 a
-        # wrist-down app gets no location unless `allowsBackgroundLocationUpdates` is true,
-        # which on watchOS needs no plist mode, only a running HKWorkoutSession. The recorder
-        # sets it after the workout starts (ADR-019).
+        # No `location` under WKBackgroundModes: App Store validation rejects it there
+        # (ITMS-90362) — `workout-processing` is the only value that key accepts. That does
+        # NOT mean the workout session keeps fixes flowing by itself: since watchOS 4 a
+        # wrist-down app gets no location unless `allowsBackgroundLocationUpdates` is true.
         WKBackgroundModes:
           - workout-processing
+        # …and THIS is where `location` goes on watchOS: the same UIBackgroundModes key the
+        # WatchKit extension carried since watchOS 4. CoreLocation checks it the moment the
+        # recorder sets `allowsBackgroundLocationUpdates = true` after the workout starts,
+        # and without it the watch app dies right there with NSInternalInconsistencyException
+        # "!stayUp || CLClientIsBackgroundable" — which is what build 21's START did (4 Sep
+        # 2026, ADR-019). `LocationBridge` also reads this key before setting the flag, so a
+        # future edit here degrades to no background fixes instead of a crash.
+        UIBackgroundModes:
+          - location
         # Real sentences. These are what the rider reads on the watch when the prompt appears,
         # and a placeholder here is both a review rejection and a rudeness.
         NSHealthUpdateUsageDescription: >-
@@ -466,7 +473,7 @@ targets:
         PRODUCT_NAME: WingFoilWatchWidgets
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.watchkitapp.widgets
         MARKETING_VERSION: "0.15.0"
-        CURRENT_PROJECT_VERSION: "21"
+        CURRENT_PROJECT_VERSION: "22"
         TARGETED_DEVICE_FAMILY: "4"          # Apple Watch
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB
