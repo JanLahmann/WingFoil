@@ -8,15 +8,17 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
 
 ```json
 {
-  "engineVersion": "0.10.0",
+  "engineVersion": "0.11.0",
   "config": { "foilEntrySpeed": 12.0, "...": "params actually used" },
   "capabilities": { "hasDoppler": true, "hasDevFields": false, "hasWatchLaps": false,
                      "hasAccel": false, "hasHR": true, "sampleRateHz": 1 },
   "flights": [ { "startTs": 0, "endTs": 0, "distM": 0.0, "maxKn": 0.0, "takeoffPumps": null } ],
-  "turns":   [ { "ts": 0, "endTs": 0, "type": "jibe|tack|turn|bear_away|round_up",
-                 "counted": true, "entryKn": 0.0, "minKn": 0.0, "score": 0.0,
+  "turns":   [ { "ts": 0, "endTs": 0, "minTs": 0,
+                 "type": "jibe|tack|turn|bear_away|round_up",
+                 "counted": true, "entryKn": 0.0, "minKn": 0.0, "exitKn": 0.0, "score": 0.0,
                  "success": false, "side": "port|starboard|unknown",
-                 "direction": "port|starboard", "netDeg": 0.0, "arcM": 0.0, "radiusM": 0.0,
+                 "direction": "port|starboard", "netDeg": 0.0, "peakRateDegS": 0.0,
+                 "twaInDeg": null, "twaOutDeg": null, "arcM": 0.0, "radiusM": 0.0,
                  "outcome": "flew_through|touchdown|fell_in", "borderline": false,
                  "offFoilS": 0.0, "stoppedS": 0.0, "pumped": false, "submerged": false,
                  "outcomeWindowS": 0.0 } ],
@@ -115,6 +117,15 @@ events and so are never below the series they sit beside. Its peaks obey the **m
 the zero rule — never a flattering *peak*: only windows lying wholly inside the session
 count, and a session shorter than the window reports its own whole-session rate over the span
 it lasted rather than a fragment scaled up to the hour.
+The five per-turn fields added in engine 0.11.0 — `minTs`, `exitKn`, `peakRateDegS`,
+`twaInDeg`, `twaOutDeg` — are all things the detector had computed since 0.1.0 and thrown
+away, so **no existing number on any fixture moves**; the whole of the change is that a turn
+now records its shape and not only its two endpoints. `minTs` is on the session clock like
+`ts`/`endTs`; `exitKn` is the maneuver channel at the first sample at or after `endTs`, the
+same channel and scale as `minKn`, so entry → min → exit reads as one line;
+`peakRateDegS` is **signed** with `netDeg`'s convention (+ = clockwise). The TWA pair obeys
+the same never-a-flattering-zero rule as everything else here: without a usable wind axis it
+is explicit **null**, because a 0.0 would read as "dead upwind", which is a claim.
 
 ### Fixture provenance — one converted recording, and why
 
@@ -212,8 +223,9 @@ and the Pages deploy).
 | verdicts (turn type/outcome, flight-end outcome, ownership) | exact |
 | pump episodes (list length **and order**, outcome, strokes, bursts, flightIndex/turnIndex) | exact; their `startTs`/`endTs`/`lookaheadS` ± 1 s |
 | timestamps | ± 1 s |
-| speeds (records, turn entry/minimum) | ± 0.05 kn (alpha ± 0.1 kn) |
-| angles (wind direction/axis, turn net sweep) | ± 1° |
+| speeds (records, turn entry/minimum/exit) | ± 0.05 kn (alpha ± 0.1 kn) |
+| angles (wind direction/axis, turn net sweep, turn `twaInDeg`/`twaOutDeg`) | ± 1° |
+| turn peak COG rate (`peakRateDegS`, **signed**) | ± 1 °/s |
 | percentages (turn success, takeoff success, HR coverage/usable share) | ± 0.5 |
 | heart rates and coverage shares (HR cost, baseline, peak, pumping/cruising) | ± 0.05 bpm |
 | bpm per stroke (a ratio of two of the above) | ± 0.005 |
