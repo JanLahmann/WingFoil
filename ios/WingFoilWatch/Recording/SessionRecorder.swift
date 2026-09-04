@@ -187,8 +187,9 @@ final class SessionRecorder {
         locationAuthorization = location?.authorizationStatus ?? .notDetermined
         if locationAuthorization == .notDetermined { location?.requestAuthorization() }
         // Fixes before START, so the rider can see whether the watch knows where it is
-        // rather than finding out thirty seconds into the first run.
-        location?.startUpdating()
+        // rather than finding out thirty seconds into the first run. Foreground only: there
+        // is no workout session yet, and background fixes need one (ADR-019).
+        location?.startUpdating(background: false)
 
         if healthAuthorization == nil {
             healthAuthorization = Task { await self.requestHealthAuthorization() }
@@ -263,7 +264,10 @@ final class SessionRecorder {
             return
         }
 
-        location?.startUpdating()
+        // The workout session is running now, which is what makes background fixes legal —
+        // and necessary: from here on the wrist is down, locked, and under water for an
+        // hour, and without this the file has heart rate and not one position (ADR-019).
+        location?.startUpdating(background: true)
         // The handler captures the writer, the clock origin and the gate directly — never
         // `self`. Nothing on this path touches the main actor, which is the only way a 50 Hz
         // sensor and a SwiftUI view can share a process without one of them suffering.
@@ -362,7 +366,7 @@ final class SessionRecorder {
         accelGate.set(false)
         motion.stop()
         location?.stopUpdating()
-        location?.startUpdating()
+        location?.startUpdating(background: false)
 
         let counts = closeWriters()
         let dir = directory
@@ -418,7 +422,9 @@ final class SessionRecorder {
     private func handle(authorization status: CLAuthorizationStatus) {
         locationAuthorization = status
         if status == .authorizedWhenInUse || status == .authorizedAlways {
-            location?.startUpdating()
+            // Granted mid-session (the prompt answered after START): the workout is already
+            // running, so background is legal and wanted.
+            location?.startUpdating(background: phase == .recording || phase == .paused)
         }
     }
 

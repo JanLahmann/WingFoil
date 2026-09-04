@@ -66,15 +66,22 @@ final class LocationBridge: NSObject, CLLocationManagerDelegate, @unchecked Send
 
     /// Fixes start arriving before the rider presses start, so the start screen can say
     /// whether the watch actually knows where it is.
-    func startUpdating() {
-        // No `allowsBackgroundLocationUpdates` here: App Store validation rejects
-        // `location` as a WKBackgroundModes value (ITMS-90362), and on watchOS the
-        // running HKWorkoutSession is what keeps the app — and its fixes — alive
-        // through water lock and a lowered wrist, `workout-processing` alone.
+    ///
+    /// `background` is the difference between a track and a heart-rate-only file. On watchOS
+    /// the running `HKWorkoutSession` keeps the *process* alive through water lock and a
+    /// lowered wrist, but since watchOS 4 it does not keep *fixes* coming: CoreLocation stops
+    /// delivering the moment the app leaves the foreground unless
+    /// `allowsBackgroundLocationUpdates` is true. On watchOS that flag needs no Info.plist
+    /// background mode (`location` is not even a legal `WKBackgroundModes` value, ITMS-90362);
+    /// it needs a workout session to be running, which is why the recorder passes `true` only
+    /// after `WorkoutBridge.start` succeeded and `false` everywhere else (ADR-019).
+    func startUpdating(background: Bool) {
+        manager.allowsBackgroundLocationUpdates = background
         manager.startUpdatingLocation()
     }
 
     func stopUpdating() {
+        manager.allowsBackgroundLocationUpdates = false
         manager.stopUpdatingLocation()
     }
 

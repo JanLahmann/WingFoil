@@ -68,7 +68,7 @@ targets:
         OTHER_LDFLAGS: "-ObjC"
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil
         MARKETING_VERSION: "0.15.0"
-        CURRENT_PROJECT_VERSION: "20"
+        CURRENT_PROJECT_VERSION: "21"
         TARGETED_DEVICE_FAMILY: "1"          # iPhone only
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB         # Jan-Rainer Lahmann (personal + program team)
@@ -120,6 +120,16 @@ targets:
           Imports sessions you recorded with Apple's Workout app: their GPS route and heart
           rate, so CleanJibe can analyse them. Everything stays on this phone; CleanJibe never
           uploads your health data.
+        # The phone never asks for location — this string exists for the WATCH. watchOS
+        # stores a companion watch app's location permission under the iPhone app, and since
+        # watchOS 10 the watch simply never shows its own prompt when this key is missing
+        # here: no error, `.notDetermined` forever, "Asking for location" on the start screen
+        # for a whole session, and a recording with heart rate and zero fixes (4 Sep 2026,
+        # ADR-019). Keep it in step with the watch target's string below.
+        NSLocationWhenInUseUsageDescription: >-
+          Records your track and speed on your Apple Watch while you ride. CleanJibe uses the
+          watch's GPS only during a session you started, and the recording is sent straight
+          to this phone. The phone itself never tracks your location.
         # The end-of-recording sheet's "Save to Photos" (App/PhotoLibrarySaver.swift). ADD
         # ONLY: the app asks for `.addOnly` authorization and can never read an asset back,
         # which is why there is no `NSPhotoLibraryUsageDescription` beside it. The photos a
@@ -264,7 +274,7 @@ targets:
         PRODUCT_NAME: WingFoilWidgets
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.widgets
         MARKETING_VERSION: "0.15.0"
-        CURRENT_PROJECT_VERSION: "20"
+        CURRENT_PROJECT_VERSION: "21"
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB
@@ -354,7 +364,7 @@ targets:
         PRODUCT_NAME: WingFoilWatch
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.watchkitapp
         MARKETING_VERSION: "0.15.0"
-        CURRENT_PROJECT_VERSION: "20"
+        CURRENT_PROJECT_VERSION: "21"
         TARGETED_DEVICE_FAMILY: "4"          # Apple Watch
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB
@@ -394,8 +404,11 @@ targets:
         # a pocket — the `HKWorkoutSession` is the extended-runtime mechanism, and there is
         # deliberately no `WKExtendedRuntimeSession` beside it (they are alternatives).
         # No `location` here: App Store validation rejects it as a WKBackgroundModes
-        # value (ITMS-90362). The running workout session is what keeps fixes flowing
-        # through water lock; the recorder never touches allowsBackgroundLocationUpdates.
+        # value (ITMS-90362) — `workout-processing` is the only value watchOS accepts. That
+        # does NOT mean the workout session keeps fixes flowing by itself: since watchOS 4 a
+        # wrist-down app gets no location unless `allowsBackgroundLocationUpdates` is true,
+        # which on watchOS needs no plist mode, only a running HKWorkoutSession. The recorder
+        # sets it after the workout starts (ADR-019).
         WKBackgroundModes:
           - workout-processing
         # Real sentences. These are what the rider reads on the watch when the prompt appears,
@@ -453,7 +466,7 @@ targets:
         PRODUCT_NAME: WingFoilWatchWidgets
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.watchkitapp.widgets
         MARKETING_VERSION: "0.15.0"
-        CURRENT_PROJECT_VERSION: "20"
+        CURRENT_PROJECT_VERSION: "21"
         TARGETED_DEVICE_FAMILY: "4"          # Apple Watch
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB
