@@ -166,6 +166,7 @@ class Turn:
     side: str                        # tack sailed *before* the turn: port|starboard|unknown
     entry_kn: float                  # maneuver channel, max over entry window
     min_kn: float                    # maneuver channel, min over the turn
+    exit_kn: float                   # maneuver channel, first sample at or after end_t
     entry_kn_doppler: float
     min_kn_doppler: float
     score: float                     # min_kn / entry_kn in [0,1]
@@ -809,6 +810,11 @@ def _build_turn(c: _Candidate, wind: WindEstimate | None, cfg: TurnConfig) -> Tu
     min_idx = int(np.flatnonzero(turn_win)[int(np.argmin(man[turn_win]))])
     min_man = float(man[min_idx])
     min_dop = float(np.min(dop[turn_win]))
+    # Exit speed: the maneuver channel at the *first sample at or after* the sweep's end.
+    # `end_t` is itself a sample time, so in practice that is the sweep's last sample --
+    # the clamp only guards a track whose segment ends there (docs/algorithms.md).
+    exit_idx = min(int(np.searchsorted(t, end_t, "left")), len(t) - 1)
+    exit_man = float(man[exit_idx])
 
     score = min_man / entry_man if entry_man > 0 else 0.0
     stayed_up = min_dop > cfg.foil_exit_speed_kmh * KMH_TO_MPS
@@ -820,6 +826,7 @@ def _build_turn(c: _Candidate, wind: WindEstimate | None, cfg: TurnConfig) -> Tu
         counted=kind in COUNTED_TYPES, net_deg=net, peak_rate_deg_s=peak,
         direction="starboard" if net >= 0 else "port", side=side,
         entry_kn=entry_man * MPS_TO_KN, min_kn=min_man * MPS_TO_KN,
+        exit_kn=exit_man * MPS_TO_KN,
         entry_kn_doppler=entry_dop * MPS_TO_KN, min_kn_doppler=min_dop * MPS_TO_KN,
         score=float(score), success=success, twa_in_deg=twa_in, twa_out_deg=twa_out,
         arc_m=arc_m, chord_m=chord_m, radius_m=radius_m,
