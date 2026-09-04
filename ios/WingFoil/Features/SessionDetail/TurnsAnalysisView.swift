@@ -34,6 +34,9 @@ struct TurnsAnalysisView: View {
     /// The row the reader tapped, drawn larger on the map. Transient, like the record
     /// window picker — it is a way of pointing, not a preference.
     @State private var focused: Int?
+    /// The turn whose detail sheet is open. A row tap does both things: it enlarges the pin
+    /// (so the page behind the sheet is showing the turn being read) and it opens the sheet.
+    @State private var opened: TurnDetailRequest?
 
     private var items: [TurnListItem] {
         TurnAnalytics.items(detail.analysis.turns, filter: filter)
@@ -58,6 +61,9 @@ struct TurnsAnalysisView: View {
             footnote
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .sheet(item: $opened) { request in
+            TurnDetailSheet(detail: detail, start: request.id)
+        }
         #if DEBUG && targetEnvironment(simulator)
         // Screenshot hook, same family as `UI_HIDE_LAYERS`: `simctl` cannot tap a segment,
         // so `UI_TURN_FILTER=jibes,starboard` opens the tab with both filters engaged.
@@ -216,7 +222,7 @@ struct TurnsAnalysisView: View {
                 Text(pins.isEmpty
                      ? "Nothing to mark — widen the filters."
                      : "\(pins.count) turn\(pins.count == 1 ? "" : "s") marked · "
-                         + "tap a row below to enlarge one.")
+                         + "tap a row below to open it.")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                 Spacer(minLength: 8)
@@ -241,7 +247,13 @@ struct TurnsAnalysisView: View {
         } else {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(items) { item in
-                    Button { focused = focused == item.id ? nil : item.id } label: {
+                    Button {
+                        // The pin enlarge stays — it is what tells the reader which dot on
+                        // the map above is the row they just opened — but it is a side
+                        // effect now rather than the whole answer.
+                        focused = item.id
+                        opened = TurnDetailRequest(id: item.id)
+                    } label: {
                         TurnRowView(item: item, focused: focused == item.id)
                     }
                     .buttonStyle(.plain)

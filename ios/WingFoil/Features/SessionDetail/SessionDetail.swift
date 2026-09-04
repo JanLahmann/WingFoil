@@ -48,6 +48,15 @@ struct SessionDetail: Sendable {
         var lon: Double
         var tone: Tone
         var filled: Bool
+        /// Index into `analysis.turns` when this mark **is** a turn, nil on a straight-line
+        /// flight end.
+        ///
+        /// The marker's own `id` cannot answer this: markers are renumbered as they are
+        /// built, straight-line ends are interleaved with turns, and the sort at the end
+        /// moves both. Carrying the index is what lets a tap on a dot open the same turn a
+        /// tap on its row in the Turns tab opens — by construction rather than by a lookup
+        /// on a timestamp that could match the wrong one.
+        var turnIndex: Int?
         /// A **clean jibe** — the strict verdict (docs/presentation.md, "Clean jibe"). It is
         /// drawn as a filled star in the clean ink instead of the outcome dot, and it answers
         /// to the `cleanJibe` chip *as well as* to its outcome chip: clean cuts across the
@@ -172,6 +181,26 @@ struct SessionDetail: Sendable {
     let splashMarks: [SplashMark]
     /// Positions of the counted turns, keyed by their index in `analysis.turns`.
     let turnPins: [TurnPin]
+    /// Full-rate positioned samples **inside the counted turns' padded windows**, and nowhere
+    /// else — what `TurnSlice` cuts one turn's picture out of.
+    ///
+    /// Deliberately not the whole track and deliberately not `timeline`. The scrubber's
+    /// timeline is thinned to 1 500 points, which is one sample every five seconds on a long
+    /// session: a jibe is six seconds and would come out as two vertices. The whole positioned
+    /// stream is the other extreme — a three-hour 4 Hz import is 43 000 samples held alive for
+    /// a sheet that looks at forty of them at a time. The union of the turn windows is what the
+    /// feature actually needs, at the rate it was recorded at, and it is bounded by the number
+    /// of turns rather than by the length of the afternoon.
+    let turnSamples: [TurnSlice.Sample]
+    /// The wind direction the turn detail's wind-up frame rotates by — degrees the wind blows
+    /// **from** — or nil when this session has none to offer.
+    ///
+    /// The rider's own value first (`windDirUserDeg`, session dev field 39): he set it on the
+    /// beach and it is a statement, not an inference. The estimate second, and only when the
+    /// engine calls it *usable* — the same gate that decides whether turns get named tacks and
+    /// jibes at all. Below that the axis is not good enough to name a turn, so it is certainly
+    /// not good enough to rotate a picture of one.
+    let windDirDeg: Double?
     /// GP3S efforts with map/chart geometry, strongest set first.
     let efforts: [RecordEffort]
     /// Every flight with the end that stopped it and the strokes that started it — what the
@@ -231,6 +260,9 @@ struct SessionDetail: Sendable {
                                               pairings: pairings)
         splashMarks = Self.buildSplashMarks(analysis, positioned: positioned)
         turnPins = Self.buildTurnPins(analysis, positioned: positioned)
+        turnSamples = Self.buildTurnSamples(analysis, positioned: positioned)
+        windDirDeg = track.watchSummary.windDirUserDeg
+            ?? analysis.wind.flatMap { $0.usable ? $0.dirDeg : nil }
         efforts = Self.buildEfforts(analysis, positioned: positioned)
 
         var bounds: Bounds?
@@ -271,6 +303,9 @@ struct SessionDetail: Sendable {
         var t: Double
         /// The flight to frame in the chart — set only by a tap on a flying segment.
         var focus: ClosedRange<Double>?
+        /// The counted turn this callout is about, as an index into `analysis.turns`. Present
+        /// only on a turn marker, and what puts the "Details" affordance on the card.
+        var turnIndex: Int?
     }
 
     /// A flight the map has asked the chart to frame.
@@ -308,7 +343,8 @@ struct SessionDetail: Sendable {
         for marker in markers {
             consider(marker.lat, marker.lon) {
                 Callout(id: "marker-\(marker.id)", title: marker.title,
-                        detail: marker.detail, pairing: marker.pairing, t: marker.t)
+                        detail: marker.detail, pairing: marker.pairing, t: marker.t,
+                        turnIndex: marker.turnIndex)
             }
         }
         for mark in splashMarks {
@@ -448,19 +484,20 @@ struct SessionDetail: Sendable {
         var nextID = 0
 
         func add(t: Double, tone: EventMarker.Tone, filled: Bool, title: String, detail: String,
-                 flightIndex: Int? = nil, isCleanJibe: Bool = false) {
+                 flightIndex: Int? = nil, isCleanJibe: Bool = false, turnIndex: Int? = nil) {
             guard let sample = nearest(positioned, t: t),
                   let lat = sample.lat, let lon = sample.lon else { return }
             let flight = flightIndex.flatMap { FlightPairing.flight(at: $0, in: pairings) }
             out.append(EventMarker(id: nextID, t: t, lat: lat, lon: lon, tone: tone,
-                                   filled: filled, isCleanJibe: isCleanJibe,
+                                   filled: filled, turnIndex: turnIndex,
+                                   isCleanJibe: isCleanJibe,
                                    title: title, detail: detail,
                                    pairing: flight.map(FlightPairing.flightEndLine),
                                    flightIndex: flight?.index))
             nextID += 1
         }
 
-        for turn in analysis.turns {
+        for (index, turn) in analysis.turns.enumerated() {
             let tone: EventMarker.Tone = turn.counted ? outcomeTone(turn.outcome) : .course
             var detail = String(format: "%.1f → %.1f kn", turn.entryKn, turn.minKn)
             if turn.stoppedS > 0 { detail += String(format: " · stopped %.0f s", turn.stoppedS) }
@@ -470,7 +507,11 @@ struct SessionDetail: Sendable {
             // same flag the tally's caption counts, never re-derived here.
             add(t: turn.ts, tone: tone, filled: true,
                 title: turnTitle(turn), detail: detail,
-                isCleanJibe: turn.counted && turn.type == "jibe" && turn.success)
+                isCleanJibe: turn.counted && turn.type == "jibe" && turn.success,
+                // Only a *counted* turn carries one. A bear-away has no verdict, no score and
+                // no entry tack, so there is nothing for a detail sheet to analyse — the
+                // callout still names it, and the "Details" affordance is simply absent.
+                turnIndex: turn.counted ? index : nil)
         }
         for end in PresentationRules.drawnFlightEnds(analysis) {
             var detail = "straight-line"
@@ -639,6 +680,37 @@ struct SessionDetail: Sendable {
             return TurnPin(id: index, t: turn.ts, lat: lat, lon: lon,
                            outcome: TurnOutcomeKind(turn.outcome))
         }
+    }
+
+    /// The samples the turn detail sheet draws from — see `turnSamples`.
+    ///
+    /// One pass over the positioned stream against the union of the counted turns' padded
+    /// windows, not a filter per turn: a session with fifty jibes would otherwise walk the
+    /// track fifty times. The pad is generous — twice `TurnSlice.defaultPadS` — because the
+    /// sheet is free to widen its lead-in later and a slice that ran out of samples at the
+    /// edge would silently draw a shorter approach than it asked for.
+    private static func buildTurnSamples(_ analysis: SessionAnalysis,
+                                         positioned: [RecordSample]) -> [TurnSlice.Sample] {
+        let pad = TurnSlice.defaultPadS * 2
+        let windows = analysis.turns
+            .filter(\.counted)
+            .map { (start: $0.ts - pad, end: $0.endTs + pad) }
+            .sorted { $0.start < $1.start }
+        guard !windows.isEmpty else { return [] }
+
+        var out: [TurnSlice.Sample] = []
+        var index = 0
+        for sample in positioned {
+            guard let lat = sample.lat, let lon = sample.lon else { continue }
+            // Windows are sorted but may overlap, so the cursor only ever advances past one
+            // that has ended before this sample — it never skips an overlapping neighbour.
+            while index < windows.count && windows[index].end < sample.t { index += 1 }
+            guard index < windows.count else { break }
+            guard sample.t >= windows[index].start else { continue }
+            out.append(TurnSlice.Sample(t: sample.t, lat: lat, lon: lon,
+                                        kn: (sample.speedMps ?? 0) * Units.mpsToKn))
+        }
+        return out
     }
 
     /// GP3S efforts, using the window provenance the engine already carries.

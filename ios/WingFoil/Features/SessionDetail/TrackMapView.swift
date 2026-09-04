@@ -35,6 +35,8 @@ struct TrackMapView: View {
     @State private var comment: ReplayMilestone?
     /// Bumped on every flight tap; see `SessionDetail.FlightFocus`.
     @State private var focusTick = 0
+    /// The turn whose detail sheet the callout's "Details" affordance opened.
+    @State private var openedTurn: TurnDetailRequest?
 
     /// Direction chevrons for the camera as it stands. State rather than a computed value:
     /// the spacing is measured in screen points, so it is a function of the camera and has
@@ -74,7 +76,10 @@ struct TrackMapView: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
             if let callout {
-                TrackCalloutCard(callout: callout) { self.callout = nil }
+                TrackCalloutCard(callout: callout,
+                                 open: callout.turnIndex.map { index in
+                                     { openedTurn = TurnDetailRequest(id: index) }
+                                 }) { self.callout = nil }
             }
             // The chips, and their `?`. The caption that used to sit under them ("Tap the
             // track to move the replay playhead — on a mark or a flight for what it was")
@@ -101,6 +106,9 @@ struct TrackMapView: View {
             try? await Task.sleep(for: .seconds(Self.commentaryDwellS))
             guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.3)) { comment = nil }
+        }
+        .sheet(item: $openedTurn) { request in
+            TurnDetailSheet(detail: detail, start: request.id)
         }
         #if DEBUG && targetEnvironment(simulator)
         .onAppear(perform: stageCalloutForScreenshot)
@@ -193,6 +201,10 @@ struct TrackMapView: View {
 /// back at the track beats a popover they have to dismiss to see anything.
 private struct TrackCalloutCard: View {
     let callout: SessionDetail.Callout
+    /// Opens the turn detail sheet. nil on everything that is not a counted turn — a takeoff,
+    /// a splash, a flight, a course change — which is what makes the affordance appear only
+    /// where there is something to drill into.
+    var open: (() -> Void)?
     let close: () -> Void
 
     var body: some View {
@@ -219,11 +231,24 @@ private struct TrackCalloutCard: View {
                     .foregroundStyle(Color.accentColor)
                     .accessibilityIdentifier("pairing-line")
             }
+            if open != nil {
+                Text("Details ›")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .accessibilityIdentifier("turn-details-link")
+            }
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.secondary.opacity(0.12), in: .rect(cornerRadius: 10))
+        // The whole card is the target, not just the two words: the card is already the
+        // answer to "what is this", and "show me more of it" is the same question asked
+        // harder. The affordance is there so the tap is discoverable, not so it is the only
+        // place that takes one.
+        .contentShape(.rect)
+        .onTapGesture { open?() }
         .accessibilityElement(children: .contain)
+        .accessibilityAction(named: "Turn details") { open?() }
     }
 }
 
