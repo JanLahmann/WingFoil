@@ -77,7 +77,7 @@ def smoke_golden():
 def test_schema_shape(smoke_golden):
     g = smoke_golden
     assert list(g.keys()) == TOP_KEYS
-    assert g["engineVersion"] == "0.11.0"
+    assert g["engineVersion"] == "0.12.0"
     assert set(g["capabilities"].keys()) == CAP_KEYS
     assert set(g["records"].keys()) == RECORD_KEYS
     assert set(g["summary"].keys()) == SUMMARY_KEYS
@@ -243,13 +243,18 @@ def test_jibes_per_hour_counts_only_the_jibes_he_sailed_out_of():
     assert s["turnsPerHour"] == pytest.approx(s["turns"]["turnsCounted"] / hours, abs=0.05)
     assert s["jibesPerHour"] < jibes / hours
 
-    # And CPH (engine 0.10.0) is the stricter reading of the same 50 jibes: 25 he rode all
-    # the way through, 12.8 an hour against the dry 22.0. Never above JPH -- a clean jibe is
-    # a dry one by construction.
+    # And CPH is the stricter reading of the same 50 jibes: 24 he rode all the way through,
+    # 12.3 an hour against the dry 22.0. Never above JPH -- since engine 0.12.0 a clean jibe
+    # is a `flew_through` one by *definition* and not merely in practice, so the nesting is
+    # structural: every clean jibe is one of the 43 dry ones.
     clean = s["turns"]["jibesSuccessful"]
-    assert clean == 25
-    assert s["cleanJibesPerHour"] == pytest.approx(clean / hours, abs=0.05) == 12.8
+    assert clean == 24
+    assert s["cleanJibesPerHour"] == pytest.approx(clean / hours, abs=0.05) == 12.3
     assert s["cleanJibesPerHour"] < s["jibesPerHour"]
+    assert clean <= outcomes["flewThrough"]
+    # 0.12.0's whole point: `success` alone starred jibes the rider swam out of. One of the
+    # 25 turns that passed the score verdict did not fly through, and is no longer clean.
+    assert sum(1 for t in a.turns if t.counted and t.kind == "jibe" and t.success) == 25
 
 
 def test_window_peak_never_scales_a_partial_window_up():
