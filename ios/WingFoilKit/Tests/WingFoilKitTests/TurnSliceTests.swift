@@ -41,6 +41,9 @@ import Testing
         let json: [String: Any] = [
             "ts": ts, "endTs": endTs, "type": type, "counted": counted,
             "entryKn": entryKn, "minKn": minKn, "score": score, "success": success,
+            // The engine's 0.12.0 clean rule, spelled here so a fixture is never cleaner
+            // than a real turn with the same fields would be.
+            "clean": counted && type == "jibe" && success && outcome == "flew_through",
             "side": side, "direction": direction, "netDeg": netDeg, "arcM": 31.4,
             "radiusM": radiusM, "outcome": outcome, "borderline": false,
             "offFoilS": offFoilS, "stoppedS": stoppedS, "pumped": pumped,
@@ -395,7 +398,10 @@ import Testing
         #expect(TurnCoach.rule(turn: blind,
                                slice: TurnSlice.make(samples: [], turn: blind,
                                                      windDirDeg: nil)) == .plain)
-        #expect(TurnCoach.Rule.allCases.count == 10)
+        // The 0.12.0 rung: the speed held all the way round and it still ended in the
+        // water — the one turn the old rule called clean.
+        #expect(rule(try turn(score: 0.92, success: true, outcome: "fell_in")) == .fellInFast)
+        #expect(TurnCoach.Rule.allCases.count == 11)
     }
 
     /// A fall outranks everything below it. The most specific true thing is the one worth
@@ -406,7 +412,16 @@ import Testing
         let everything = try turn(score: 0.92, success: true, outcome: "fell_in",
                                   offFoilS: 9, pumped: true, submerged: true)
         let cut = TurnSlice.make(samples: arc, turn: everything, windDirDeg: nil)
-        #expect(TurnCoach.rule(turn: everything, slice: cut) == .fellIn)
+        // A fall it is, and the fast rung says so first: the score is the only thing that
+        // separates the two fall sentences, and neither reaches for the heading.
+        #expect(TurnCoach.rule(turn: everything, slice: cut) == .fellInFast)
+
+        // The same fall with the speed gone gets the plain fall sentence.
+        let slow = try turn(score: 0.4, outcome: "fell_in",
+                            offFoilS: 9, pumped: true, submerged: true)
+        #expect(TurnCoach.rule(turn: slow,
+                               slice: TurnSlice.make(samples: arc, turn: slow,
+                                                     windDirDeg: nil)) == .fellIn)
 
         // Take the fall away and the wrist is the next most specific fact.
         let wet = try turn(score: 0.92, success: true, outcome: "touchdown",

@@ -277,6 +277,14 @@ import Testing
             }
             if let v = exp["counted"] as? Bool { #expect(act.counted == v, "\(stem) turns[\(i)].counted") }
             if let v = exp["success"] as? Bool { #expect(act.success == v, "\(stem) turns[\(i)].success") }
+            // Engine 0.12.0: the clean verdict is its own key, and Swift must agree with
+            // the lab turn by turn — not merely on the count the summary rolls it into.
+            if let v = exp["clean"] as? Bool {
+                #expect(act.clean == v, "\(stem) turns[\(i)].clean: \(act.clean) vs \(v)")
+                #expect(!v || (act.counted && act.type == "jibe" && act.success
+                               && act.outcome == "flew_through"),
+                        "\(stem) turns[\(i)] is clean without the four things clean means")
+            }
             if let v = exp["borderline"] as? Bool {
                 #expect(act.borderline == v, "\(stem) turns[\(i)].borderline")
             }
@@ -700,6 +708,12 @@ import Testing
                     "\(stem) summary.cleanJibesPerHour \(cph) is not jibesSuccessful over the hour")
             #expect(cph <= (analysis.summary.jibesPerHour ?? 0) + 1e-9,
                     "\(stem) CPH \(cph) stands above JPH — a clean jibe is a dry one")
+            // 0.12.0 makes the nesting structural rather than incidental: a clean jibe is
+            // one that flew through, so the count can never pass the ladder's own green.
+            #expect(t.jibesSuccessful <= t.jibeOutcomes.flewThrough,
+                    "\(stem) \(t.jibesSuccessful) clean but \(t.jibeOutcomes.flewThrough) flew")
+            #expect(t.jibesSuccessful == analysis.turns.filter(\.clean).count,
+                    "\(stem) jibesSuccessful disagrees with the per-turn clean flags")
         }
 
         expectWindowRates(stem, expSummary["windowRates"], analysis.summary.windowRates)
@@ -911,7 +925,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.11.0")
+        #expect(analysis.engineVersion == "0.12.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)

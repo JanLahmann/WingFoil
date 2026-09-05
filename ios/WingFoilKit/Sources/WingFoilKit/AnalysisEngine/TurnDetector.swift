@@ -103,6 +103,12 @@ public struct Turn: Sendable, Equatable {
     public var submerged = false
     /// Tail past the sweep the outcome was judged over.
     public var outcomeWindowS: Double = 0
+    /// **The clean jibe** (engine ≥ 0.12.0): a counted jibe that carried its speed *and*
+    /// flew through — `counted && kind == .jibe && success && outcome == .flewThrough`.
+    /// Filled once the outcome is final (`assignOutcomes`), which is why it is stored and
+    /// not computed: `success` is known at scoring time, the outcome is not. `borderline`
+    /// needs no mention — it only ever rides on a `touchdown`, already excluded here.
+    public var clean = false
 
     public var counted: Bool { kind.counted }
 }
@@ -143,8 +149,13 @@ public struct OutcomeCounts: Sendable, Codable, Equatable {
 /// Counts suitable for session fields / goldens (bear-aways excluded by design).
 public struct TurnSummary: Sendable, Codable, Equatable {
     public var tacks = 0
+    /// Tacks that passed the *score* verdict. Deliberately still `success`: "clean" is a
+    /// jibe word in the product, and a tack has no clean/dirty reading to carry.
     public var tacksSuccessful = 0
     public var jibes = 0
+    /// **Clean jibes** (engine ≥ 0.12.0): `Turn.clean`, i.e. the score verdict *and*
+    /// `flewThrough`. Read by `cleanJibesPerHour` and every "clean" surface; the name is
+    /// kept because the golden key `jibesSuccessful` has never moved.
     public var jibesSuccessful = 0
     /// Detected turns with no usable wind axis.
     public var unclassified = 0
@@ -282,7 +293,7 @@ public enum TurnDetector {
                 s.tackOutcomes.add(t)
             case .jibe:
                 s.jibes += 1
-                if t.success { s.jibesSuccessful += 1 }
+                if t.clean { s.jibesSuccessful += 1 }
                 s.jibeOutcomes.add(t)
             default:
                 s.unclassified += 1
@@ -609,8 +620,30 @@ public enum TurnDetector {
                                pump: PumpTrack?, evidence: OffFoilEvidence? = nil) {
         guard let ev = evidence ?? Evidence.build(track, flights: flights,
                                                   exitSpeedKmh: config.foilExitSpeedKmh,
-                                                  baroDropM: config.baroDropM) else { return }
-        for i in turns.indices { outcome(&turns[i], ev: ev, config: config, pump: pump) }
+                                                  baroDropM: config.baroDropM) else {
+            // No evidence: every turn keeps the `flewThrough` default, but `clean` still
+            // has to be filled — a session the ladder cannot judge is not one where every
+            // jibe is dirty. Mirrors `_assign_outcomes` in `lab/.../turns.py`.
+            for i in turns.indices { turns[i].clean = isClean(turns[i]) }
+            return
+        }
+        for i in turns.indices {
+            outcome(&turns[i], ev: ev, config: config, pump: pump)
+            turns[i].clean = isClean(turns[i])
+        }
+    }
+
+    /// **A clean jibe is a counted jibe that carried its speed and flew through** —
+    /// `counted && kind == .jibe && success && outcome == .flewThrough` (engine 0.12.0).
+    ///
+    /// Until 0.12.0 "clean" was `success` alone, deliberately independent of the outcome:
+    /// a jibe carved cleanly through the sweep stayed clean even when the foil was lost in
+    /// the recovery tail. To a rider that reads as a lie — a jibe held at 71 % that ends in
+    /// 54 s of swimming is not one he would call clean — so the outcome joined the verdict.
+    /// `success` is untouched: it is still the score verdict, and the Turns tab still shows
+    /// it. `borderline` needs no test: it only rides on a `touchdown`, already excluded.
+    static func isClean(_ turn: Turn) -> Bool {
+        turn.counted && turn.kind == .jibe && turn.success && turn.outcome == .flewThrough
     }
 
     /// Three-way outcome for one turn (docs/algorithms.md "Turn outcome", steps 0–5).

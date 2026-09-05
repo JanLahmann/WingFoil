@@ -99,7 +99,18 @@ public enum AnalysisEngine {
     /// because a 0 there would read as dead upwind. Every stored session re-derives to
     /// identical numbers; the bump is what makes them re-derive at all, and what stops a
     /// 0.10.0 document from answering a question it has no fields for.
-    public static let version = "0.11.0"
+    ///
+    /// 0.12.0 narrows **the clean jibe**, and it is the first bump here that moves numbers
+    /// on purpose. Clean was the per-turn `success` flag alone — the score verdict,
+    /// deliberately independent of how the turn *ended* — so a jibe could be starred as
+    /// clean and still be one the rider swam out of. It now reads `counted && type ==
+    /// "jibe" && success && outcome == "flew_through"`, which is what a rider means by the
+    /// word. Each turn carries it as a new `clean` key beside `success`, and
+    /// `turns.jibesSuccessful` — hence `summary.cleanJibesPerHour` — counts `clean`.
+    /// `success` is unchanged and still per turn; `tacksSuccessful`/`turnsSuccessful` still
+    /// read it, because "clean" is a jibe word. Nothing else moves: no parameter, no
+    /// detection, no score, no outcome, no streak (the streaks already ran on the outcome).
+    public static let version = "0.12.0"
 }
 
 /// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's
@@ -269,9 +280,9 @@ public struct FlightRecord: Sendable, Codable, Equatable {
 }
 
 /// Golden-schema turn: the 0.1.0 keys (`ts`/`type`/`entryKn`/`minKn`/`score`/`side`) plus
-/// the phase-2 geometry, the three-way outcome, and the 0.11.0 shape-of-the-maneuver fields
+/// the phase-2 geometry, the three-way outcome, the 0.11.0 shape-of-the-maneuver fields
 /// (`minTs`, `exitKn`, `peakRateDegS`, `twaInDeg`, `twaOutDeg`) — all five computed by the
-/// detector since 0.1.0 and, until now, thrown away.
+/// detector since 0.1.0 and, until then, thrown away — and 0.12.0's `clean`.
 public struct TurnRecord: Sendable, Codable, Equatable {
     public var ts: Double
     public var endTs: Double
@@ -287,7 +298,12 @@ public struct TurnRecord: Sendable, Codable, Equatable {
     /// scale as `minKn`, so entry → min → exit reads as one line (engine 0.11.0).
     public var exitKn: Double
     public var score: Double
+    /// The score verdict alone: `score >= turnSuccessPct` and the foil held across the
+    /// *scored window*. Still shown per turn; it is no longer what "clean" means.
     public var success: Bool
+    /// **The clean jibe** (engine 0.12.0): `counted && type == "jibe" && success &&
+    /// outcome == "flew_through"`.
+    public var clean: Bool
     /// "port" | "starboard" | "unknown".
     public var side: String
     public var direction: String
@@ -321,6 +337,7 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         exitKn = turn.exitKn
         score = turn.score
         success = turn.success
+        clean = turn.clean
         side = turn.side
         direction = turn.direction
         netDeg = turn.netDeg
@@ -339,7 +356,7 @@ public struct TurnRecord: Sendable, Codable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case ts, endTs, minTs, type, counted, entryKn, minKn, exitKn, score, success
+        case ts, endTs, minTs, type, counted, entryKn, minKn, exitKn, score, success, clean
         case side, direction, netDeg, peakRateDegS, twaInDeg, twaOutDeg, arcM, radiusM
         case outcome, borderline, offFoilS, stoppedS, pumped, submerged, outcomeWindowS
     }
@@ -374,6 +391,10 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         minTs = try c.decodeIfPresent(Double.self, forKey: .minTs) ?? ts
         exitKn = try c.decodeIfPresent(Double.self, forKey: .exitKn) ?? minKn
         peakRateDegS = try c.decodeIfPresent(Double.self, forKey: .peakRateDegS) ?? 0
+        // 0.12.0: absent in a pre-0.12.0 document, where "clean" meant `success` and the
+        // verdict cannot be reconstructed without the outcome ladder anyway. `false` is the
+        // honest fallback for the trip to `reanalyzeStale()`, which the version bump forces.
+        clean = try c.decodeIfPresent(Bool.self, forKey: .clean) ?? false
         twaInDeg = try c.decodeIfPresent(Double.self, forKey: .twaInDeg)
         twaOutDeg = try c.decodeIfPresent(Double.self, forKey: .twaOutDeg)
     }

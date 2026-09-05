@@ -344,9 +344,11 @@ public struct TurnSlice: Sendable, Equatable {
     /// **The rule, and why each half of it.** Same session, because a comparison against an
     /// afternoon in different wind is not a comparison. Same `direction`, because a jibe spun
     /// to starboard and one spun to port are mirror images and laying one on the other would
-    /// say the rider went the wrong way round. `flew_through`, because the model has to be a
-    /// turn that worked. Highest `score`, because among the ones that worked that is the one
-    /// he carried most speed through — the shape worth copying. And never the turn itself,
+    /// say the rider went the wrong way round. **Clean** (engine 0.12.0), because the model
+    /// has to be a turn that worked — which since 0.12.0 means it flew through *and* held its
+    /// speed, where before it only had to fly through. Highest `score`, because among the
+    /// ones that worked that is the one he carried most speed through — the shape worth
+    /// copying. And never the turn itself,
     /// which would draw a dashed line exactly under the solid one and read as a rendering bug.
     ///
     /// nil when the session has no other such jibe, which is common and not an error: the
@@ -365,9 +367,7 @@ public struct TurnSlice: Sendable, Equatable {
         turns
             .filter {
                 $0.ts != turn.ts
-                    && $0.counted
-                    && $0.type == "jibe"
-                    && TurnOutcomeKind($0.outcome) == .flewThrough
+                    && $0.clean
                     && $0.direction == turn.direction
             }
             .max { first, second in
