@@ -38,7 +38,7 @@ module FitSchema {
     const APP_MINOR = 9;
     // The full version string, so "what is this build" has exactly one answer in the source
     // tree. `appVersionMatchesMinor()` in the test suite holds the two together.
-    const APP_VERSION = "0.9.5";
+    const APP_VERSION = "0.9.6";
 
     // ---- platform limits (measured, see the header) ----
     // Fields per message type. HARD: exceeding it kills the app, uncatchably.

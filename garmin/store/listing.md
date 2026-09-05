@@ -53,10 +53,12 @@ An iPhone app with the full analysis — maps, turn forensics, replay with comme
 
 ### What's New (live text)
 
-**0.9.5 was uploaded and approved on 3 September 2026** (listing shows 0.9.5, Internal 13); everything under it is the store's own text as transcribed on
+**0.9.6 uploaded 5 September 2026** (awaiting Garmin review); **0.9.5 was uploaded and approved on 3 September 2026** (listing shows 0.9.5, Internal 13); everything under it is the store's own text as transcribed on
 2 September 2026.
 
 ```
+0.9.6: a clean jibe now has to fly through. Until now a jibe that carried its speed through the turn but touched down or fell in right after could still count as clean; from this version the star, the clean count and CPH only count jibes you rode all the way out of — the same rule the phone and cleanjibe.org apply from today.
+
 0.9.5: the clean jibe is now on your wrist. The Turns page and the post-save summary carry a star, the number of clean jibes you have landed, and your CPH — clean jibes per hour — and a clean jibe now gets its own rising three-tick buzz instead of the plain fly-through tick, so you can tell one from the other without looking. If you would rather have the old buzz back, turn it off under Garmin Connect → CleanJibe → Settings.
 
 0.9.4: THE BETA IS NOW OPEN — no unlock key needed. Install and ride. Also new: 17 more watches supported (epix 2 family, Forerunner 955/965/970/255/265/570, MARQ 2, Enduro 3, D2 Mach, Descent Mk3), the CleanJibe mark on the start screen, "clean jibe" labels for turns you fly through carrying your speed, and the accelerometer-logging setting now explains its transfer cost (off by default).
@@ -170,7 +172,8 @@ ribbon, regenerated 2026-09-02 (the old file still had the pre-September mark).
 On the wrist the developer-only builds are called **Dev CleanJibe** / **Dev CleanJibe Field**
 (`AppNameBeta` in the two strings.xml, since 2026-09-03) so they can be told from the public
 "CleanJibe Beta" in a truncated watch list; their store version strings carry a `-dev` suffix
-(`0.9.5-dev`, `0.9.6-dev`) because the manifests did not move.
+(`0.9.6-dev` app, Internal 18, uploaded 2026-09-05; `0.9.6-dev` field, dormant) so the two
+channels never share a version string.
 
 Naming trap in `garmin/bin/`: files called `*-beta-*.iq` from 0.9.4 on (`CleanJibe-beta-0.9.4.iq`,
 `CleanJibeField-beta-0.9.x.iq`) carry the **invite** UUID, not the dev-beta one — "beta" there
@@ -191,6 +194,9 @@ field. Dates are the commit dates; a store release usually follows by a day.
 | 0.9.3 | 2026-08-31 | `16568d5` | Pump strokes counted only inside real pumping bursts, so the totals match the phone. Renamed to CleanJibe. |
 | 0.9.2 | 2026-08-31 | `2b3bc66` | The map page becomes the app's own drawing (works while paused, on every watch); all text full white, bigger numbers. |
 | 0.9.1 | 2026-08-30 | `b891e08` | The fenix 8 crash: the map page is pushed, never switched to. Not separately listed in the store's What's New. |
+| 0.9.6 | 2026-09-05 | `459ae1d` | A clean jibe has to fly through: the star, the clean count and CPH drop jibes that touched down or fell in after the sweep (engine 0.12.0 on the phone and the web, same day). Uploaded to both listings; public Internal 14 pending review. |
+| 0.9.5 | 2026-09-03 | — | The clean jibe on the wrist: star, count, CPH, its own three-tick buzz. Public Internal 13, approved 3 Sep. |
+| 0.9.4 | 2026-09-01 | — | Open beta, no unlock key; 17 more watches; the CleanJibe mark on the start screen. |
 | 0.9.0 | 2026-08-30 | `e2cadfe` | The watch works the wind axis out for itself and classifies tacks and jibes live. |
 | 0.8.2 | 2026-08-30 | `3ccec57` `b60769b` `8390d1b` | The foil min/km table and the seventh page; the owner's screen-review round. |
 | 0.8.1 | 2026-08-30 | `6619d4f` | Summary fixes the store had already swallowed 0.8.0 without. |
