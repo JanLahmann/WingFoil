@@ -163,10 +163,14 @@ public struct TurnListItem: Sendable, Equatable, Identifiable {
     public let score: Double
     /// "67" — the score as the row prints it, percent-shaped without the sign.
     public let scoreText: String
-    /// A **clean jibe**: the score cleared `turnSuccessPct` and the foil was never lost
-    /// across the scored window. The engine's `success` flag, under the name the app
-    /// gives it — not the same thing as `outcome == .flewThrough`, which is about how the
-    /// turn *ended*.
+    /// Whether this row is a jibe, read off the one label the app ever prints for one.
+    /// The row carries no raw `type` — nothing downstream should be re-deciding what a
+    /// turn is called — so the question is asked of the label, which `typeLabel` owns.
+    public var isJibe: Bool { typeLabel == TurnAnalytics.typeLabel("jibe") }
+    /// A **clean jibe**: the engine's own `clean` verdict (engine 0.12.0) — the score
+    /// cleared `turnSuccessPct`, the foil was never lost across the scored window, *and*
+    /// the turn flew through. A strict subset of `outcome == .flewThrough`, never a
+    /// crosswise reading of it, and false on every tack: "clean" is a jibe word.
     public let clean: Bool
     /// A touchdown that only just missed being a fall (or vice versa).
     public let borderline: Bool
@@ -225,14 +229,21 @@ public struct TurnOutcomeTally: Sendable, Equatable {
     public let fellIn: Int
     /// How many of the filtered turns were **clean** — flown all the way through with the
     /// speed carried (`turnSuccessPct`). Not one of the three counts and never drawn on
-    /// the ladder's inks: it is the stricter verdict laid over the same set.
+    /// the ladder's inks: it is the stricter verdict laid over the same set, and since
+    /// engine 0.12.0 a strict *subset* of `flewThrough`.
     public let clean: Int
+    /// How many of the filtered turns were jibes — the denominator the clean line divides
+    /// by, and the reason a tacks-only filter has no clean line at all rather than a "0 of
+    /// 4" that would read as four botched tacks. A tack is never clean and never dirty.
+    public let jibes: Int
 
-    public init(flewThrough: Int = 0, touchdown: Int = 0, fellIn: Int = 0, clean: Int = 0) {
+    public init(flewThrough: Int = 0, touchdown: Int = 0, fellIn: Int = 0, clean: Int = 0,
+                jibes: Int = 0) {
         self.flewThrough = flewThrough
         self.touchdown = touchdown
         self.fellIn = fellIn
         self.clean = clean
+        self.jibes = jibes
     }
 
     public var total: Int { flewThrough + touchdown + fellIn }
@@ -257,11 +268,13 @@ public struct TurnOutcomeTally: Sendable, Equatable {
         return "\(flewThrough) flew · \(touchdown) touch · \(fellIn) fell"
     }
 
-    /// "7 of 10 clean" — the strict verdict, in the words the rest of the app uses for it.
-    /// Empty when nothing survives the filter, for the same reason `flewThroughPct` is nil.
+    /// "7 of 10 clean" — the strict verdict, in the words the rest of the app uses for it,
+    /// over the **jibes** in the filtered set. Empty when the filter leaves no jibe, for
+    /// the same reason `flewThroughPct` is nil when it leaves no turn: "you have never done
+    /// this" is not "you fail at it", and a tack has no clean reading to report.
     public var cleanCaption: String {
-        guard total > 0 else { return "" }
-        return "\(clean) of \(total) clean"
+        guard jibes > 0 else { return "" }
+        return "\(clean) of \(jibes) clean"
     }
 }
 
@@ -296,14 +309,14 @@ public enum TurnAnalytics {
                      sideLabel: sideLabel(turn.side),
                      outcome: TurnOutcomeKind(turn.outcome),
                      score: turn.score, scoreText: scoreText(turn.score),
-                     clean: turn.success,
+                     clean: turn.clean,
                      borderline: turn.borderline, submerged: turn.submerged,
                      pumped: turn.pumped, detail: detail(turn))
     }
 
     /// The outcome counts over already-filtered rows.
     public static func tally(_ items: [TurnListItem]) -> TurnOutcomeTally {
-        var flew = 0, touch = 0, fell = 0, clean = 0
+        var flew = 0, touch = 0, fell = 0, clean = 0, jibes = 0
         for item in items {
             switch item.outcome {
             case .flewThrough: flew += 1
@@ -311,9 +324,10 @@ public enum TurnAnalytics {
             case .fellIn: fell += 1
             }
             if item.clean { clean += 1 }
+            if item.isJibe { jibes += 1 }
         }
         return TurnOutcomeTally(flewThrough: flew, touchdown: touch, fellIn: fell,
-                                clean: clean)
+                                clean: clean, jibes: jibes)
     }
 
     /// Filter and tally in one step — what the header uses.

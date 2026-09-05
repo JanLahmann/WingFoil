@@ -1550,6 +1550,9 @@ import Testing
         let json: [String: Any] = [
             "ts": ts, "endTs": ts + 8, "type": type, "counted": counted,
             "entryKn": 11.1, "minKn": 7.5, "score": score, "success": score >= 0.7,
+            // The engine's 0.12.0 rule, spelled here so a fixture can never be cleaner
+            // than a real turn with the same fields would be.
+            "clean": counted && type == "jibe" && score >= 0.7 && outcome == "flew_through",
             "side": side, "direction": direction, "netDeg": -151.1, "arcM": 44.0,
             "radiusM": 16.7, "outcome": outcome, "borderline": false, "offFoilS": 54.0,
             "stoppedS": stopped, "pumped": false, "submerged": submerged,
@@ -1567,9 +1570,9 @@ import Testing
                      outcome: "flew_through", score: 0.82),
             try turn(200, type: "jibe", side: "port", direction: "starboard",
                      outcome: "fell_in", score: 0.31),
-            // Carried its speed (0.78 clears the threshold) and still touched down: the
-            // one turn where "clean" and "flew through" disagree, which is the whole
-            // reason they are two numbers.
+            // Carried its speed (0.78 clears the threshold) and still touched down. Until
+            // engine 0.12.0 this was starred as clean; it is the turn the rule was
+            // narrowed for, and it is now `success` without being `clean`.
             try turn(300, type: "jibe", side: "starboard", direction: "port",
                      outcome: "touchdown", score: 0.78),
             try turn(400, type: "jibe", side: "starboard", direction: "port",
@@ -1650,11 +1653,20 @@ import Testing
         #expect(all.total == 6)
         #expect(all.flewThroughPct.map { Int($0.rounded()) } == 50)
         #expect(all.caption == "3 flew · 2 touch · 1 fell")
-        // The stricter verdict over the same six turns: the four that cleared the success
-        // threshold (0.82, 0.78, 0.90, 0.75). Deliberately *not* the flew-through count —
-        // the 0.78 jibe carried its speed and still touched down.
-        #expect(all.clean == 4)
-        #expect(all.cleanCaption == "4 of 6 clean")
+        // The stricter verdict, over the **jibes** and not the six: the two that cleared
+        // the success threshold *and* flew through (0.82, 0.90). Deliberately not the four
+        // that merely cleared it — the 0.78 jibe carried its speed and still touched down,
+        // and the 0.75 tack is a tack, which is never clean and never dirty (engine
+        // 0.12.0). Still not the flew-through count either: three turns flew, two of them
+        // clean, because a tack flew through too.
+        #expect((all.clean, all.jibes) == (2, 4))
+        #expect(all.cleanCaption == "2 of 4 clean")
+
+        // A tacks-only filter has no clean line at all, rather than a "0 of 2" that would
+        // read as two botched tacks.
+        let tacks = TurnAnalytics.tally(turns, filter: TurnFilter(type: .tacks))
+        #expect((tacks.total, tacks.jibes, tacks.clean) == (2, 0, 0))
+        #expect(tacks.cleanCaption == "")
 
         let portJibes = TurnAnalytics.tally(turns, filter: TurnFilter(type: .jibes,
                                                                       side: .port))
@@ -1677,7 +1689,7 @@ import Testing
         #expect(noTacks.flewThroughPct == nil)
         #expect(noTacks.caption == "nothing matches this filter")
         // Nothing to be clean out of, so the strict line is absent rather than "0 of 0".
-        #expect(noTacks.clean == 0)
+        #expect((noTacks.clean, noTacks.jibes) == (0, 0))
         #expect(noTacks.cleanCaption == "")
     }
 
@@ -1692,7 +1704,8 @@ import Testing
         #expect(submerged.sideLabel == "starboard entry")
         #expect(submerged.outcome == .flewThrough)
         #expect(submerged.scoreText == "90")
-        #expect(submerged.clean, "0.90 clears the success threshold")
+        #expect(submerged.clean, "0.90 clears the threshold and the jibe flew through")
+        #expect(submerged.isJibe)
         #expect(submerged.detail.contains("wrist under"))
         #expect(submerged.accessibilityText.contains("Jibe, starboard entry"))
         #expect(submerged.accessibilityText.contains("flew through"))

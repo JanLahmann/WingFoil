@@ -233,7 +233,9 @@ private struct TurnDetailPage: View {
                 chip(TurnOutcomeKind(turn.outcome).label,
                      symbol: TurnOutcomeKind(turn.outcome).symbolName,
                      tint: TurnOutcomeStyle.color(TurnOutcomeKind(turn.outcome)))
-                if turn.type == "jibe" && turn.success {
+                // The engine's `clean` verdict, not the score flag beside it: a jibe that
+                // held its speed and still went in wears the outcome chip alone.
+                if turn.clean {
                     chip("clean", symbol: DesignTokens.Glyph.cleanJibe,
                          tint: DesignTokens.Clean.jibe)
                 }

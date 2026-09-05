@@ -19,6 +19,10 @@ public enum TurnCoach {
 
     /// The rungs, most specific first. `line` walks them in this order.
     public enum Rule: String, Sendable, Equatable, CaseIterable {
+        /// Ended in the water with the speed still there — the case engine 0.12.0 stopped
+        /// calling clean, and the reason this rung exists: it is the one turn where the
+        /// score and the outcome say opposite things, and the sentence has to say both.
+        case fellInFast
         /// Ended in the water.
         case fellIn
         /// The barometer saw the wrist go under, on a turn that did not end in a fall.
@@ -29,7 +33,9 @@ public enum TurnCoach {
         case touchdownOnExit
         /// Touchdown, low point before it — lost going in.
         case touchdownComingIn
-        /// Clean, and barely slowed.
+        /// Flew all the way through and barely slowed — a **clean** jibe on the 0.12.0
+        /// rule, which the ladder gets for free: every rung above this one has already
+        /// taken the turns that did not fly through.
         case cleanAndFast
         /// Flew all the way through, and it cost a lot of speed.
         case cleanButSlow
@@ -47,15 +53,22 @@ public enum TurnCoach {
     public static let slowScore = 0.7
 
     /// Which rung the turn lands on.
+    ///
+    /// The outcome is asked first and the score second, which is what keeps `cleanAndFast`
+    /// honest: by the time the ladder reaches it every fall and every touchdown has already
+    /// been taken, so the rung is `flewThrough` by construction and never calls a swim
+    /// clean. `fellInFast` is the same rule read from the other end — a turn whose score
+    /// held all the way round and whose foil went in the recovery tail.
     public static func rule(turn: TurnRecord, slice: TurnSlice) -> Rule {
         let outcome = TurnOutcomeKind(turn.outcome)
-        if outcome == .fellIn { return .fellIn }
+        let fast = turn.success && turn.score >= fastScore
+        if outcome == .fellIn { return fast ? .fellInFast : .fellIn }
         if turn.submerged { return .wristUnder }
         if turn.pumped { return .pumpedOut }
         if outcome == .touchdown {
             return lateMinimum(slice) == true ? .touchdownOnExit : .touchdownComingIn
         }
-        if turn.success && turn.score >= fastScore { return .cleanAndFast }
+        if fast { return .cleanAndFast }
         if outcome == .flewThrough && turn.score < slowScore { return .cleanButSlow }
         switch lateMinimum(slice) {
         case .some(true): return .slowedLate
@@ -68,6 +81,9 @@ public enum TurnCoach {
     public static func line(turn: TurnRecord, slice: TurnSlice) -> String {
         let mid = midPointWord(turn.type)
         switch rule(turn: turn, slice: slice) {
+        case .fellInFast:
+            return "The speed was there right round — \(pct(turn.score)) of your entry held "
+                + "— and it still ended in the water."
         case .fellIn:
             return "This one ended in the water — \(kn(turn.entryKn)) coming in, "
                 + "\(kn(turn.minKn)) at the low point."

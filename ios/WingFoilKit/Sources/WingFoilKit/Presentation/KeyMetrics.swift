@@ -56,10 +56,11 @@ public struct KeyMetrics: Sendable, Equatable {
         /// axis never resolved and which therefore has no jibes.
         ///
         /// A *clean jibe* is a counted jibe flown all the way through with the speed
-        /// carried — the engine's `success` flag (`docs/algorithms.md`, `turnSuccessPct`).
-        /// It is a stricter verdict than the ladder's green and deliberately a different
-        /// number: the three counts say how each turn ended, the clean count says how many
-        /// of them the rider actually got right.
+        /// carried — the engine's per-turn `clean` flag: `success` (`docs/algorithms.md`,
+        /// `turnSuccessPct`) **and** `flew_through` (engine 0.12.0). It is a stricter
+        /// verdict than the ladder's green and deliberately a different number: the three
+        /// counts say how each turn ended, the clean count says how many of the ones that
+        /// flew the rider actually rode. Clean can therefore never exceed `flewThrough`.
         public let caption: String
 
         public var total: Int { flewThrough + touchdown + fellIn }

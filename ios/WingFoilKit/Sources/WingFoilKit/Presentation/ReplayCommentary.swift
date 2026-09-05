@@ -167,15 +167,17 @@ public enum ReplayCommentary {
         }
         // MARK: the clean ones
         //
-        // The *strict* verdict over the same set: `turn.success`, the jibes he flew all the
-        // way through carrying his speed. A clean jibe is a dry jibe by construction, so
-        // every line here lands on a turn the dry count already passed — and when the two
-        // ordinals coincide, `collapse` keeps this one, because "5 clean jibes" is the
-        // sentence a rider wants and "5 dry jibes" is the one he settles for.
+        // The *strict* verdict over the same set: `turn.clean`, the jibes he flew all the
+        // way through carrying his speed. A clean jibe is a dry jibe by construction — since
+        // engine 0.12.0 by *definition*, because clean now requires `flew_through` — so every
+        // line here lands on a turn the dry count already passed, and when the two ordinals
+        // coincide `collapse` keeps this one, because "5 clean jibes" is the sentence a rider
+        // wants and "5 dry jibes" is the one he settles for.
         //
-        // Not the outcome ladder's green: "flew through" is how the turn ended, clean is
-        // what it cost, and the two disagree on purpose (docs/presentation.md, "Clean jibe").
-        let cleanJibes = jibes.filter { $0.element.success }
+        // Still not the outcome ladder's green: clean is a *subset* of flew-through, not the
+        // same reading of it, and the star keeps its own ink (docs/presentation.md, "Clean
+        // jibe") because not every jibe that flew through carried its speed.
+        let cleanJibes = jibes.filter { $0.element.clean }
         for (ordinal, entry) in cleanJibes.enumerated() {
             let n = ordinal + 1
             guard isCleanJibeMilestone(n) else { continue }
