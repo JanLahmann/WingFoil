@@ -115,12 +115,13 @@ extension SessionDetail.EventMarker {
         }
     }
 
-    /// Every chip that has to be on for this mark to be drawn.
+    /// Every chip that has to be on for this mark to be drawn — exactly one.
     ///
-    /// A clean jibe answers to **two**: its outcome, because it is still a turn that ended
-    /// some way, and `cleanJibe`, because that is the question the star answers. Hiding
-    /// either hides the mark — the clean layer cuts across the ladder rather than sitting on
-    /// it, and a star that survived "hide touchdowns" would be a touchdown the rider asked
-    /// not to see.
-    var layers: [MapLayer] { isCleanJibe ? [layer, .cleanJibe] : [layer] }
+    /// A clean jibe answers to the `cleanJibe` chip alone (Jan, 5 Sep 2026: the star's chip
+    /// and the flew-through chip are independent). It used to answer to both, when "clean"
+    /// could still sit on a touchdown; now a clean jibe is by definition one that flew
+    /// through, so the star is simply its own category of mark: hide "flew through" and the
+    /// plain flew-through dots go while the stars stay, hide "clean jibe" and the stars go
+    /// while the dots stay. Nothing is ever drawn twice, and nothing answers to two chips.
+    var layers: [MapLayer] { isCleanJibe ? [.cleanJibe] : [layer] }
 }
