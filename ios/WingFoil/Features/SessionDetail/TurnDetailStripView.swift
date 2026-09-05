@@ -53,9 +53,16 @@ struct TurnDetailStripView: View {
             }
 
             // The three numbers the score is made of, on the trace they were read from.
-            mark(at: 0, kn: slice.speed.entryKn, label: "in")
-            mark(at: slice.speed.minRt, kn: slice.speed.minKn, label: "low")
-            mark(at: slice.speed.exitRt, kn: slice.speed.exitKn, label: "out")
+            // "low" and "out" fall within a second of each other on every jibe whose speed
+            // bottomed out at the exit — the fallen ones — and two captions on one x
+            // overprint into "bout 9.0". When they are that close, "out" takes the bottom
+            // edge; when the minimum is at the entry it is "low" that steps down instead.
+            let lowNearIn = abs(slice.speed.minRt) < Self.captionGapS
+            let outNearLow = abs(slice.speed.exitRt - slice.speed.minRt) < Self.captionGapS
+            mark(at: 0, kn: slice.speed.entryKn, label: "in", below: false)
+            mark(at: slice.speed.minRt, kn: slice.speed.minKn, label: "low", below: lowNearIn)
+            mark(at: slice.speed.exitRt, kn: slice.speed.exitKn, label: "out",
+                 below: outNearLow && !lowNearIn)
 
             if let playheadRt {
                 RuleMark(x: .value("Playhead", playheadRt))
@@ -77,12 +84,15 @@ struct TurnDetailStripView: View {
     /// A rule and its caption. The caption sits at the top of the plot rather than beside the
     /// point, because three labels chasing three points on a six-second window overlap on
     /// every turn that mattered.
+    /// Closer than this, two captions on the top edge overprint.
+    private static let captionGapS = 1.5
+
     @ChartContentBuilder
-    private func mark(at rt: Double, kn: Double, label: String) -> some ChartContent {
+    private func mark(at rt: Double, kn: Double, label: String, below: Bool) -> some ChartContent {
         RuleMark(x: .value("Seconds", rt))
             .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 3]))
             .foregroundStyle(Color.secondary.opacity(0.5))
-            .annotation(position: .top, alignment: .center, spacing: 1) {
+            .annotation(position: below ? .bottom : .top, alignment: .center, spacing: 1) {
                 Text("\(label) \(String(format: "%.1f", kn))")
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.secondary)

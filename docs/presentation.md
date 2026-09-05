@@ -89,28 +89,32 @@ Layer visibility persists on iOS (hidden-set, `mapLayerVisibility.v1`; unknown i
 decode harmlessly so old prefs survive new layers) and is transient on web. Legend chips are
 the only toggle surface; a struck-through chip means hidden.
 
-### The clean jibe is a star, and it needs two chips
+### The clean jibe is a star, and it answers to one chip
 
-A counted jibe the engine's `success` flag passed is drawn as a **filled star** — SF Symbol
-`star.fill` on iOS, the `star` shape in `viz.js` — in the clean-jibe ink
-(`DesignTokens.Clean.jibe` / `--wf-clean-jibe`, `#2ee6a8`). Three rules, and all three are
-the same rule read from different sides:
+A clean jibe (the engine's per-turn `clean` flag — see "Clean jibe" above) is drawn as a
+**filled star** — SF Symbol `star.fill` on iOS, the `star` shape in `viz.js` — in the
+clean-jibe ink (`DesignTokens.Clean.jibe` / `--wf-clean-jibe`, `#2ee6a8`). Three rules, and
+all three are the same rule read from different sides:
 
 - **It replaces the outcome dot; it does not join it.** Two marks on one turn at map scale
   is two events to the eye, and the turn is one.
-- **It is a green of its own, never `Outcome.flew`.** "Flew through" is how a jibe *ended*;
-  clean is what it *cost*, and the two disagree on purpose (see "Clean jibe" above). A star
-  drawn in the ladder's green would quietly claim they are one reading. Shape carries the
-  distinction anyway, so nothing here depends on telling one green from another.
-- **A starred jibe answers to two chips**, its outcome's and `cleanJibe`'s, and is drawn only
-  when **both** are visible. Clean cuts across the ladder rather than sitting on it: a star
-  that survived "hide touchdowns" would be a touchdown the rider asked not to see. Hiding
-  `cleanJibe` alone leaves the jibe on the map as the outcome dot it always was.
-- **Counts follow the chips, not the marks.** A clean jibe is one on its outcome chip and one
-  on the star's, which is what makes both live toggles. It is deliberately *not* a fifth
-  entry in `PresentationFacts.markers` — those partition the turns and the drawn flight ends
-  one mark each — but a fact of its own, `cleanJibes`, pinned per fixture in
-  `fixtures/presentation/`.
+- **It is a green of its own, never `Outcome.flew`.** Every clean jibe flew through, but not
+  every flew-through jibe is clean: "flew through" is how a jibe *ended*, clean is that *and*
+  what it cost. A star drawn in the ladder's green would quietly claim the two sets are one.
+  Shape carries the distinction anyway, so nothing here depends on telling one green from
+  another.
+- **A starred jibe answers to the `cleanJibe` chip and to nothing else** (Jan, 5 Sep 2026 —
+  the star's chip and the flew-through chip are independent). Hide "flew through" and the
+  plain flew-through dots go while the stars stay; hide "clean jibe" and the stars go while
+  the dots stay. Until 5 Sep a star answered to both chips, because "clean" could then sit on
+  a touchdown and a star that survived "hide touchdowns" would have been a touchdown the rider
+  asked not to see; with clean ⊂ flew through that case no longer exists, and one mark, one
+  chip is the simpler contract.
+- **Counts follow the chips.** The flew-through chip still counts every jibe that flew
+  through, clean ones included — it is the outcome tally and the outcome did happen — while
+  the star's chip counts `cleanJibes`. The clean count is deliberately *not* a fifth entry in
+  `PresentationFacts.markers` — those partition the turns and the drawn flight ends one mark
+  each — but a fact of its own, pinned per fixture in `fixtures/presentation/`.
 
 The speed strip shares the visibility model, so a star hidden on the map is hidden there too,
 and the web keeps its numbered marks in step with the Turns table: the number rides with the
