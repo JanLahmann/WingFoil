@@ -653,10 +653,13 @@ class TurnDetector {
         lastCleanJibe = false;
         if (pct >= SUCCESS_PCT && _minSpeed > _cfg.foilExitMps) {
             successCount++;
-            // ...and a successful turn that was named a JIBE is a clean jibe. `lastKind` is
-            // still this turn's: the watch does not re-detect during an outcome window, so
-            // nothing can have overwritten it between the sweep closing and here.
-            if (lastKind == KIND_JIBE) {
+            // ...and a successful turn that was named a JIBE *and flew through* is a clean
+            // jibe (engine 0.12.0, Jan 5 Sep 2026: a jibe he fell out of is not clean,
+            // whatever the sweep scored). `lastKind` is still this turn's: the watch does not
+            // re-detect during an outcome window, so nothing can have overwritten it between
+            // the sweep closing and here. A touchdown in the recovery tail is enough to lose
+            // the star — same rule as `Turn.clean` on the phone.
+            if (lastKind == KIND_JIBE && outcome == OUTCOME_FLEW) {
                 cleanJibeCount++;
                 lastCleanJibe = true;
             }

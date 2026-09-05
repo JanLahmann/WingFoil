@@ -670,6 +670,23 @@ function cleanJibesAreSuccessfulJibesAndNothingElse(logger as Test.Logger) as Bo
     Test.assertMessage(g.cleanJibeCount == 0,
         "an unclassified turn cannot be a clean JIBE");
 
+    // (5) the sweep carried at 8 m/s, then the foil lost in the recovery tail and pumped
+    // back: a jibe, scored a success, resolved a TOUCHDOWN — and NOT clean (engine 0.12.0:
+    // clean = success AND flew through). This is the page Jan photographed: "Jibe 13 ·
+    // fell in" wearing a star.
+    var x = new TurnDetector(cfg);
+    runStraight(x, 5, 120.0, 8.0);
+    runSweep(x, 120.0, 30.0, 4, 8.0);
+    runStraight(x, 2, 240.0, 8.0);
+    runStraight(x, 4, 240.0, 1.0);              // off the foil, still making way
+    runStraight(x, 8, 240.0, 8.0);              // and back up: a touchdown, not a fall
+    Test.assertMessage(x.jibeCount == 1, "the touchdown jibe was still a jibe");
+    Test.assertMessage(x.touchdownCount == 1,
+        "expected one touchdown, got " + x.touchdownCount.toString());
+    Test.assertMessage(x.cleanJibeCount == 0,
+        "a jibe that touched down after the sweep must not be clean");
+    Test.assertMessage(!x.lastCleanJibe, "lastCleanJibe was published for a touchdown jibe");
+
     // and the invariant every page draws on: clean jibes are a subset of both populations
     Test.assertMessage(d.cleanJibeCount <= d.jibeCount && d.cleanJibeCount <= d.successCount,
         "clean jibes must be a subset of the jibes AND of the successful turns");
