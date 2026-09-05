@@ -195,7 +195,9 @@ function renderSummary(result, isExample = false) {
     { k: "Best 5×10 s", v: nf(rec.best5x10sKn, 2), unit: "kn", n: `1 NM ${nf(rec.bestNmKn, 2)} kn` },
     { k: "Alpha 500", v: nf(rec.alpha500Kn, 2), unit: "kn", n: `250 m ${nf(rec.best250mKn, 2)} kn` },
     { k: "Turns", v: int(s.turns.turnsCounted),
-      n: `${s.turns.jibes} jibes · ${s.turns.tacks} tacks · ${nf(s.turns.successPct, 0)}% clean` },
+      // `successPct` is the score verdict over every counted turn, not the clean count —
+      // "carried" since engine 0.12.0, where clean also demands the outcome.
+      n: `${s.turns.jibes} jibes · ${s.turns.tacks} tacks · ${nf(s.turns.successPct, 0)}% carried` },
     { k: "Outcomes", v: `${s.turns.outcomes.flewThrough}/${s.turns.outcomes.touchdown}/${s.turns.outcomes.fellIn}`,
       n: "flew through / touchdown / fell in" },
     windTile,
@@ -250,19 +252,25 @@ const yn = (b) => (b ? "yes" : "–");
 
 function renderTurns(table, caption, g, v, meta) {
   const s = g.summary.turns;
-  // The clean count is split the way the tally is — clean jibes and clean **tacks**
-  // (`tacksSuccessful`, which the engine has counted since the first turn tally and no
-  // screen had ever printed).
+  // Two verdicts, so two clauses, and since engine 0.12.0 they are no longer the same
+  // reading. **Clean** is the strict one and jibes only: the speed carried *and* the turn
+  // flown through, which is what a rider means by the word. `turnsSuccessful` and
+  // `tacksSuccessful` are still the score half alone — named "carried" here so a caption
+  // can never call a jibe he swam out of clean.
   caption.textContent =
     `${s.turnsCounted} counted (${s.jibes} jibes, ${s.tacks} tacks), ${s.rejected} bear-aways rejected · ` +
-    `${s.turnsSuccessful} clean — ${s.jibesSuccessful} jibes, ${s.tacksSuccessful} tacks — ` +
-    `carried ≥ 70 % of entry speed (${nf(s.successPct, 0)} %) · ` +
+    `${s.jibesSuccessful} clean jibes · ` +
+    `${s.turnsSuccessful} carried ≥ 70 % of entry speed (${nf(s.successPct, 0)} %), ` +
+    `${s.tacksSuccessful} of those tacks · ` +
     `port/starboard ${s.port}/${s.starboard}`;
 
-  const head = ["#", "time", "type", "turn", "tack", "entry kn", "min kn", "score", "clean",
-                "outcome", "stop s", "off foil s", "pump", "wet", "arc m", "R m"];
+  // "carried" is the score verdict on its own; "clean" is the engine's `clean` flag, which
+  // for a jibe also demands the outcome. Both columns, because the pair is exactly where
+  // the two used to be conflated.
+  const head = ["#", "time", "type", "turn", "tack", "entry kn", "min kn", "score", "carried",
+                "clean", "outcome", "stop s", "off foil s", "pump", "wet", "arc m", "R m"];
   table.innerHTML = `<thead><tr>${head
-    .map((h, i) => `<th${i <= 4 || i === 9 ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
+    .map((h, i) => `<th${i <= 4 || i === 10 ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
     <tbody>${g.turns.map((t, i) => `
       <tr>
         <td class="l">${i + 1}</td>
@@ -274,6 +282,7 @@ function renderTurns(table, caption, g, v, meta) {
         <td>${nf(t.minKn, 2)}</td>
         <td>${nf(t.score * 100, 0)} %</td>
         <td>${yn(t.success)}</td>
+        <td>${yn(t.clean)}</td>
         <td class="l">${outcomePill(t.outcome)}${t.borderline ? ' <span class="pill">borderline</span>' : ""}</td>
         <td>${nf(t.stoppedS, 1)}</td>
         <td>${nf(t.offFoilS, 1)}</td>

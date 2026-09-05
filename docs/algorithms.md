@@ -133,7 +133,7 @@ with a numeric offset (`+02:00`) is the exporter naming the local clock, and win
 | `turnContinueRate` | 5 | deg/s | edge trim: shrink the detected span to the actually-turning part |
 | `entrySpeedWindow` | 3 | s | entry speed = max over window before turn start |
 | `minSpeedLag` | 2 | s | minimum searched to `turnEnd + lag` (the collapse of a botched turn lands just past the COG sweep) |
-| `turnSuccessPct` | 70 | % | success ⇒ minSpeed/entrySpeed ≥ this AND speed never ≤ `foilExitSpeed`. Both halves are read over the **scored window only** — `turnStart` … `turnEnd + minSpeedLag` — never over the outcome window: a turn carried cleanly through the sweep stays successful even when the foil is lost later in the recovery tail (that is what the outcome says) |
+| `turnSuccessPct` | 70 | % | success ⇒ minSpeed/entrySpeed ≥ this AND speed never ≤ `foilExitSpeed`. Both halves are read over the **scored window only** — `turnStart` … `turnEnd + minSpeedLag` — never over the outcome window: a turn carried cleanly through the sweep stays successful even when the foil is lost later in the recovery tail (that is what the outcome says). Since engine 0.12.0 that turn is nevertheless **not clean** — the clean verdict conjoins this flag with the outcome (glossary below) |
 | `turnStopSpeedFloor` | 1.0 | m/s | "stopped": below this the rider is not making way |
 | `turnTouchdownMaxStop` | 3 | s | longest stop still called a touchdown |
 | `turnFallStop` | 5 | s | stop longer than this ⇒ fell in |
@@ -172,12 +172,32 @@ every fixture is what it was.
 | `peakRateDegS` | the detector's own peak COG rate over the sweep, **signed** with `netDeg`'s convention (+ = clockwise/starboard). The magnitude is the one already tested against `turnPeakRate`; the sign is kept because a rate that reads +38 on one jibe and −38 on the next is the pair of directions, not two different maneuvers |
 | `twaInDeg`, `twaOutDeg` | the true wind angles `classify` computed to name the turn: TWA at the sweep's entry, and TWA at its exit wrapped to ±180. **Null when the wind axis is unusable** — the same state that leaves `type` a plain `turn`. A 0 in their place would read as dead upwind, which is a claim about a session that never had a wind direction |
 
-**Glossary — "clean jibe" is this criterion, under the name the UIs use.** A *clean jibe*
-is a counted jibe whose `success` flag is set: `score >= turnSuccessPct` **and** the speed
-never dropped to `foilExitSpeed` across the scored window. Nothing here changes with the
-name — same flag, same parameters, same goldens; `docs/presentation.md` ("Clean jibe")
-holds the spelling contract and the rule that it is never conflated with the outcome
-ladder's `flew_through`, which is a different, looser verdict about how the turn *ended*.
+**Glossary — "clean jibe", the name the UIs use, and the one rule behind it (engine
+0.12.0).** A *clean jibe* is
+
+```
+counted  AND  type == jibe  AND  success  AND  outcome == flew_through
+```
+
+— it carried its speed **and** it flew through. `success` is unchanged and still means what
+it always did (`score >= turnSuccessPct` **and** the speed never dropped to `foilExitSpeed`
+across the *scored window*); it is still reported per turn and still what `tacksSuccessful`
+and `turnsSuccessful` count. What moved is that "clean" is no longer that flag on its own.
+The verdict is stored per turn as `clean`, so no surface re-derives it.
+
+`borderline` needs no clause of its own: it only ever rides on a `touchdown`, so requiring
+`flew_through` already excludes it.
+
+**Until 0.12.0 clean was `success` alone, deliberately independent of the outcome** — the
+reasoning being that a jibe carved cleanly through the sweep stayed clean even if the foil
+went in the recovery tail, because the scored window ends where the sweep does. That is
+defensible as a measurement and wrong as a word. On 2026-08-29, jibe 13 held 71 % of its
+entry speed, spent 54 s off the foil and ended in the water, and the map starred it while
+the turns table six rows below called it a swim. A rider reading that does not conclude the
+two verdicts are subtly different; he concludes the app is lying. So the outcome joined the
+verdict, and clean became a strict **subset** of `flew_through` rather than a reading across
+it. `docs/presentation.md` ("Clean jibe") holds the spelling contract and the ink rule — the
+star keeps its own ink, because not every jibe that flew through is clean.
 
 ### Spatial gate — "real movement around the curve" (Jan)
 
@@ -316,7 +336,10 @@ inventing turns):
 - **No pump corroboration reaches the clean flag either.** Success is the score pair only
   (`score >= turnSuccessPct` and the minimum stayed above `foilExitSpeed`), read off the
   firmware's smoothed Doppler, so the watch calls slightly *more* jibes clean than the phone
-  does — the same Doppler-only caveat two bullets up, inherited by the stricter metric.
+  does — the same Doppler-only caveat two bullets up, inherited by the stricter metric. The
+  0.12.0 rule itself is **not** a divergence: the watch applies the same
+  `outcome == flew_through` test when the turn's outcome resolves, so `cleanJibeCount` counts
+  the same four things the phone's `clean` flag does, over the watch's own evidence.
 - **The DATA FIELD's CPH divides by the native activity's TIMER TIME** (field ≥ 0.9.6). Same
   numerator (`TurnDetector.cleanJibeCount` out of the shared barrel), same 60 s floor, same
   `--` below it, same one decimal — a third denominator. `garmin/field/` does not own the
@@ -375,7 +398,7 @@ ring on sensor dropouts and are then discarded, so a SensorLogging gap contribut
 strokes rather than a burst of edge artifacts.
 
 `pumpMinStrokes` sits in a wide gap, not on a knife edge: on 2026-08-07 the longest burst
-inside a turn's outcome window is ≤2 for every jibe the speed channels called clean except
+inside a turn's outcome window is ≤2 for every jibe the speed channels called successful except
 the two pump-outs, which score 6 and 7, and the verdict is unchanged at `pumpStrokeAmp`
 0.20–0.30 g. Garmin writes `calibrated_accel_*` in milli-g although the FIT profile names
 the unit "g"; the parser sniffs the scale from the resting magnitude rather than assuming.
@@ -689,13 +712,21 @@ that is 43 of 50 jibes: **22.0** an hour where the all-jibes count read 25.6.
 **CPH counts the jibes he *rode*** (engine ≥ 0.10.0). `cleanJibesPerHour` is
 `turns.jibesSuccessful` over the same hour — the strict verdict, a counted jibe flown all the
 way through carrying its speed (docs/presentation.md "Clean jibe"), which is the engine's
-per-turn `success` flag and not a new measurement. Same denominator, same 1 dp, same
+per-turn `clean` flag and not a new measurement. Same denominator, same 1 dp, same
 null-on-no-duration rule. The two jibe rates are deliberately both here because they answer
 questions a rider asks in that order: JPH says he got away with it, CPH says he rode it. On
-2026-08-29 that is 25 of 50 jibes, **12.8** an hour against JPH's 22.0; on 2026-08-07 it is 4
-of 30, **2.8** against 12.8 — a 4.6× gap between the two sessions where the dry number,
+2026-08-29 that is 24 of 50 jibes, **12.3** an hour against JPH's 22.0; on 2026-08-07 it is 3
+of 30, **2.1** against 12.8 — a 5.9× gap between the two sessions where the dry number,
 which forgives every touchdown, sees only 1.7×. CPH is the harder number to move and the
 one the front screen carries (docs/presentation.md, key metrics).
+
+Since 0.12.0 **CPH nests inside JPH by construction** rather than by luck: clean requires
+`flew_through`, dry is `flewThrough + touchdown`, so every clean jibe is a dry one and the
+rate can never stand above it. Before 0.12.0 the nesting held on every fixture but was not
+guaranteed — `success` was blind to the outcome, so a session of high-scoring swims could
+in principle have printed a CPH above its JPH. The numerator fell on eleven of the seventeen
+fixtures when the rule narrowed (e.g. 2026-08-29: 25 → 24; 2026-08-02: 14 → 9), which is the
+size of the population that had been carrying its speed and still getting wet.
 
 `turnsPerHour` beside them is deliberately **all** counted turns, outcome and all. The three
 answer different questions — "how busy was the afternoon", "how much of it did I sail out

@@ -8,7 +8,7 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
 
 ```json
 {
-  "engineVersion": "0.11.0",
+  "engineVersion": "0.12.0",
   "config": { "foilEntrySpeed": 12.0, "...": "params actually used" },
   "capabilities": { "hasDoppler": true, "hasDevFields": false, "hasWatchLaps": false,
                      "hasAccel": false, "hasHR": true, "sampleRateHz": 1 },
@@ -16,7 +16,7 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
   "turns":   [ { "ts": 0, "endTs": 0, "minTs": 0,
                  "type": "jibe|tack|turn|bear_away|round_up",
                  "counted": true, "entryKn": 0.0, "minKn": 0.0, "exitKn": 0.0, "score": 0.0,
-                 "success": false, "side": "port|starboard|unknown",
+                 "success": false, "clean": false, "side": "port|starboard|unknown",
                  "direction": "port|starboard", "netDeg": 0.0, "peakRateDegS": 0.0,
                  "twaInDeg": null, "twaOutDeg": null, "arcM": 0.0, "radiusM": 0.0,
                  "outcome": "flew_through|touchdown|fell_in", "borderline": false,
@@ -126,6 +126,17 @@ same channel and scale as `minKn`, so entry → min → exit reads as one line;
 `peakRateDegS` is **signed** with `netDeg`'s convention (+ = clockwise). The TWA pair obeys
 the same never-a-flattering-zero rule as everything else here: without a usable wind axis it
 is explicit **null**, because a 0.0 would read as "dead upwind", which is a claim.
+
+Engine 0.12.0 adds one per-turn key, `clean`, and is the first bump in this schema that
+**moves numbers on purpose**. A *clean jibe* is now `counted && type == "jibe" && success &&
+outcome == "flew_through"` (docs/algorithms.md, glossary) rather than `success` alone, so
+`turns.jibesSuccessful` — and therefore `summary.cleanJibesPerHour` — fell on eleven of the
+seventeen fixtures. `success` is unchanged and still per turn; `tacksSuccessful`,
+`turnsSuccessful` and `successPct` still read it, so those did not move, and neither did any
+parameter, score, outcome or streak. Exactly four things changed on any fixture: the
+`engineVersion` stamp, the new `clean` key on every turn, `turns.jibesSuccessful`, and
+`summary.cleanJibesPerHour`. The Swift cross-check asserts `clean` per turn *and* re-derives
+it from the four fields, so a golden that carries the key cannot carry a wrong one.
 
 ### Fixture provenance — one converted recording, and why
 
