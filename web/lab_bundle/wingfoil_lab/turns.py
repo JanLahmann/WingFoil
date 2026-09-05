@@ -171,6 +171,7 @@ class Turn:
     min_kn_doppler: float
     score: float                     # min_kn / entry_kn in [0,1]
     success: bool                    # score >= turnSuccessPct AND never dropped off foil
+                                     # (the score verdict alone -- see `clean` below)
     twa_in_deg: float                # TWA entering the turn (nan without wind)
     twa_out_deg: float
     arc_m: float = 0.0               # path length travelled across the COG sweep
@@ -183,6 +184,32 @@ class Turn:
     pumped: bool = False             # accel: a pump burst inside the outcome window
     submerged: bool = False          # baro: the wrist went under inside the window
     outcome_window_s: float = 0.0    # tail past the sweep the outcome was judged over
+    #: **The clean jibe** (engine >= 0.12.0): a counted jibe that carried its speed *and*
+    #: flew through -- `counted and kind == jibe and success and outcome == flew_through`.
+    #: Filled once the outcome is final (`_assign_outcomes`), which is why it is a stored
+    #: flag rather than a property: `success` is known at scoring time, the outcome is not.
+    #: `borderline` needs no mention here -- it only ever rides on a `touchdown`, so it is
+    #: already excluded by the outcome test.
+    clean: bool = False
+
+
+def is_clean(turn: Turn) -> bool:
+    """**A clean jibe is a counted jibe that carried its speed and flew through.**
+
+    ``counted and kind == jibe and success and outcome == flew_through`` (engine 0.12.0).
+
+    Until 0.12.0 "clean" was the `success` flag alone, deliberately independent of the
+    outcome: a jibe carved cleanly through the sweep stayed clean even when the foil was
+    lost in the recovery tail. On the water that reads as a lie -- a jibe held at 71 % that
+    ends with 54 s of swimming is not one a rider would call clean -- so the outcome is now
+    part of the verdict. `success` itself is untouched: it is still the score verdict, and
+    the per-turn surfaces that show it still show it.
+
+    `borderline` needs no test of its own: it only ever rides on a `touchdown`, so
+    requiring `flew_through` already excludes it.
+    """
+    return (turn.counted and turn.kind == JIBE and turn.success
+            and turn.outcome == FLEW_THROUGH)
 
 
 class FlightEndLike(Protocol):
@@ -241,8 +268,13 @@ class TurnSummary:
     """Counts suitable for session fields / goldens (bear-aways excluded by design)."""
 
     tacks: int = 0
+    #: Tacks that passed the *score* verdict. Deliberately still `success`: "clean" is a
+    #: jibe word in the product, and a tack has no clean/dirty reading to carry.
     tacks_successful: int = 0
     jibes: int = 0
+    #: **Clean jibes** (engine >= 0.12.0): `Turn.clean`, i.e. the score verdict *and*
+    #: `flew_through`. Read by `cleanJibesPerHour` and by every "clean" surface; the name
+    #: is kept for the golden key `jibesSuccessful`, which has never moved.
     jibes_successful: int = 0
     tack_outcomes: OutcomeCounts = field(default_factory=OutcomeCounts)
     jibe_outcomes: OutcomeCounts = field(default_factory=OutcomeCounts)
@@ -524,7 +556,7 @@ def summarize_turns(turns: list[Turn], ends: Sequence[FlightEndLike] = (),
             s.tack_outcomes.add(t)
         elif t.kind == JIBE:
             s.jibes += 1
-            s.jibes_successful += int(t.success)
+            s.jibes_successful += int(t.clean)
             s.jibe_outcomes.add(t)
         else:
             s.unclassified += 1
@@ -606,14 +638,22 @@ def _streak_events(turns: list[Turn],
 def _assign_outcomes(turns: list[Turn], clean: CleanTrack, flights: FlightResult,
                      cfg: TurnConfig, pump: PumpTrack | None = None,
                      evidence: OffFoilEvidence | None = None) -> None:
-    """Fill `outcome`/`borderline`/`off_foil_s`/`stopped_s` on every turn, in place."""
+    """Fill `outcome`/`borderline`/`off_foil_s`/`stopped_s`/`clean` on every turn, in place.
+
+    `clean` is set here rather than at scoring time because it is the *conjunction* of the
+    score verdict and the outcome, and the outcome is not known until this pass. Without
+    off-foil evidence every turn keeps the `flew_through` default, so the flag still has to
+    be filled -- a session with no evidence is one where the outcome ladder says nothing,
+    not one where every jibe is dirty.
+    """
     ev = evidence
     if ev is None:
         ev = off_foil_evidence(clean, flights, cfg.foil_exit_speed_kmh, cfg.baro_drop_m)
-    if ev is None:
-        return
+    if ev is not None:
+        for turn in turns:
+            _outcome(turn, ev, cfg, pump)
     for turn in turns:
-        _outcome(turn, ev, cfg, pump)
+        turn.clean = is_clean(turn)
 
 
 def _outcome(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,
