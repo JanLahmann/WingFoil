@@ -163,7 +163,7 @@ Tune in Python on real data → port to Swift (authoritative) → approximate in
 - **Phase 3 — Records complete + takeoff/pump (needs phase-1 accel fixtures):** L pump detection on wrist-accel corpus; P full GP3S (alpha/NM/1 h) + takeoff analysis + UI; W PumpDetector live, 5×10s/500 m/NM/AlphaLite, Page 3, remaining session fields. *Accept: pumps-to-takeoff ±2 strokes on ≥80% of verified attempts; alpha/500 m within tolerance of Speedreader; watch live within ±0.2 kn of phone.*
 - **Phase 4 — Library depth (needs P1, independent of W):** gear, spots, trends, PB history, GDPR bulk backfill, divergence banner, optional Apple Health write. *Accept: full-history backfill clean, zero duplicates; all-time PBs across source classes.*
 - **Phase 5 — Companion link — BUILT, acceptance PENDING on hardware:** instant summary card + wind push. Everything either side of the BLE hop is unit-tested (watch 54/54, kit 181); the hop itself needs a paired watch, GCM and a real iPhone. *Accept (still to prove on the water): card <60 s after save, numbers match the later full analysis, wind set on the phone shows on the watch, and `Activity.Info.elapsedTime` equals the FIT's `total_elapsed_time` on a session WITH a pause — the dedupe key rests on that.*
-- **Phase 6 — Store-readiness (optional):** Beta App → store listing, intervals.icu OAuth2, MIP-variant QA, DE localization, pricing decision.
+- **Phase 6 — Store-readiness (optional):** Beta App → store listing, intervals.icu OAuth2, MIP-variant QA, DE localization, pricing decision — worked out as a proposal in `docs/pro-tier.md` (the ten-capability Pro / School / watch-face shortlist, 5 Sep 2026).
 
 ## 5. Verification
 
