@@ -97,15 +97,17 @@ def marker_counts(doc: dict) -> dict[str, int]:
 
 
 def clean_jibe_count(doc: dict) -> int:
-    """The star layer: counted, named a jibe, and passed the engine's own `success` flag
-    (docs/presentation.md, "Clean jibe").
+    """The star layer: the engine's own per-turn `clean` verdict — counted, named a jibe,
+    it carried its speed *and* it flew through (engine 0.12.0; docs/presentation.md,
+    "Clean jibe"). Read, not re-derived: the rule lives in the engine now, which is what
+    stopped a jibe from being starred here and listed as a swim in the turns table.
 
     Deliberately **not** one of `marker_counts`: those partition the turns and the drawn
-    flight ends one mark each, and a clean jibe is already counted there under whatever
-    outcome it ended on. This is the second, stricter reading laid over the same set.
+    flight ends one mark each, and a clean jibe is already counted there under the
+    `flew_through` outcome it necessarily ended on. This is the second, stricter reading
+    laid over the same set.
     """
-    return sum(1 for t in doc.get("turns", [])
-               if t.get("counted") and t["type"] == "jibe" and t["success"])
+    return sum(1 for t in doc.get("turns", []) if t.get("clean"))
 
 
 def takeoff_counts(doc: dict) -> dict[str, int]:

@@ -104,6 +104,17 @@ classification"): the maneuver channel at the first sample at or after `endTs` �
 channel and the same 3 dp as `minKn`, so the three read as one line. The TWA pair is
 explicit **null** without a usable wind axis, by the same rule every other unmeasurable
 number in this schema follows.
+
+Engine 0.12.0 narrows **the clean jibe**, and it is the first version bump here that moves
+numbers on purpose. A clean jibe was the per-turn `success` flag alone — the score verdict,
+deliberately independent of how the turn *ended* — so a jibe could be starred as clean and
+still be one the rider swam out of. It now reads `counted and type == jibe and success and
+outcome == flew_through`, which is what a rider means by the word. Each turn carries the
+verdict as a new `clean` key beside `success`, and `turns.jibesSuccessful` — hence
+`summary.cleanJibesPerHour` — counts `clean` rather than `success`. `success` itself is
+unchanged and still reported per turn; `tacksSuccessful` and `turnsSuccessful` still read
+it, because "clean" is a jibe word. Nothing outside those three places moves: no parameter,
+no detection, no score, no outcome, no streak (the streaks already ran on the outcome).
 """
 
 from __future__ import annotations
@@ -327,7 +338,9 @@ def session_rates(duration_s: float, distance_m: float, turns_counted: int, dry_
     question about activity and not about quality.
 
     `clean_jibes` is the strict reading of the same set -- `turns.jibesSuccessful`, the jibes
-    he carved all the way through carrying his speed (docs/presentation.md "Clean jibe").
+    he carved all the way through carrying his speed *and* flew out of (engine >= 0.12.0;
+    docs/presentation.md "Clean jibe"). Clean is therefore a subset of dry, which is the
+    point: the two rates now nest, and CPH can never exceed JPH.
     Dry asks whether he got away with it; clean asks whether he rode it, and CPH is the one
     the rider is actually chasing.
 
@@ -667,6 +680,8 @@ def _turn_json(t: Turn) -> dict:
         "exitKn": round(t.exit_kn, 3),
         "score": round(t.score, 4),
         "success": bool(t.success),
+        # The clean jibe (engine 0.12.0): the score verdict *and* `flew_through`.
+        "clean": bool(t.clean),
         "side": t.side,
         "direction": t.direction,
         "netDeg": round(t.net_deg, 2),

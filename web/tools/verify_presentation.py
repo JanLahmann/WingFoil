@@ -177,12 +177,14 @@ def check_rules() -> None:
             "courseChange": turns["course"],
         }
         check(f"  {stem}: markers per layer", facts["markers"], want)
-        # The star layer, re-derived rather than trusted: a counted jibe the engine's own
-        # `success` flag passed. It lies *across* the ladder above, never inside it — every
-        # clean jibe is also counted under the outcome it ended on, which is why the marker
-        # total below still comes out as turns + drawn ends.
+        # The star layer, re-derived from the four fields rather than read off the engine's
+        # own `clean` key — this is the check that the key means what the rule says, so it
+        # must not be the key. It lies *across* the ladder above, never inside it: every
+        # clean jibe is also counted under `flew_through`, which is why the marker total
+        # below still comes out as turns + drawn ends.
         clean = sum(1 for t in doc.get("turns", [])
-                    if t["counted"] and t["type"] == "jibe" and t["success"])
+                    if t["counted"] and t["type"] == "jibe" and t["success"]
+                    and t["outcome"] == "flew_through")
         check(f"  {stem}: clean jibes are the star layer", facts["cleanJibes"], clean)
         check(f"  {stem}: never more clean jibes than counted turns",
               facts["cleanJibes"] <= sum(want.values()), True)
