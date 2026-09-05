@@ -53,14 +53,17 @@ public enum PresentationRules {
         analysis.pumpEpisodes.filter { $0.outcome == .success || $0.outcome == .failed }
     }
 
-    /// The **clean jibes**: counted, named a jibe, and passed the engine's own `success`
-    /// flag (docs/presentation.md, "Clean jibe"). The map draws each of these as a star
-    /// instead of its outcome dot, and the same list is what the `cleanJibe` chip counts.
+    /// The **clean jibes**: the engine's own per-turn `clean` verdict — counted, named a
+    /// jibe, it carried its speed *and* it flew through (docs/presentation.md, "Clean
+    /// jibe"). The map draws each of these as a star instead of its outcome dot, and the
+    /// same list is what the `cleanJibe` chip counts.
     ///
-    /// One definition, spelled once — the web's `session.js` reads the same three fields off
-    /// the same rows, and the tally's caption counts the same set from the engine's summary.
+    /// One definition, spelled once, and since engine 0.12.0 it is spelled in the engine:
+    /// the rule is no longer re-derived here or in the web's `session.js`, both of which
+    /// read the stored flag. That is what stopped a jibe from being starred as clean on the
+    /// map and listed as a swim six rows below it.
     public static func cleanJibes(_ analysis: SessionAnalysis) -> [TurnRecord] {
-        analysis.turns.filter { $0.counted && $0.type == "jibe" && $0.success }
+        analysis.turns.filter(\.clean)
     }
 
     /// Turns whose swim the barometer actually saw. Evidence, not a census — and the UI

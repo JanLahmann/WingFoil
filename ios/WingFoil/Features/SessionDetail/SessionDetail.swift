@@ -503,11 +503,11 @@ struct SessionDetail: Sendable {
             if turn.stoppedS > 0 { detail += String(format: " · stopped %.0f s", turn.stoppedS) }
             if turn.submerged { detail += " · wrist under" }
             if turn.pumped { detail += " · pumped out" }
-            // A clean jibe is a counted jibe the engine's own `success` flag passed — the
-            // same flag the tally's caption counts, never re-derived here.
+            // A clean jibe is the engine's own per-turn `clean` verdict (engine 0.12.0) —
+            // the same flag the tally's caption counts, never re-derived here.
             add(t: turn.ts, tone: tone, filled: true,
                 title: turnTitle(turn), detail: detail,
-                isCleanJibe: turn.counted && turn.type == "jibe" && turn.success,
+                isCleanJibe: turn.clean,
                 // Only a *counted* turn carries one. A bear-away has no verdict, no score and
                 // no entry tack, so there is nothing for a detail sheet to analyse — the
                 // callout still names it, and the "Details" affordance is simply absent.

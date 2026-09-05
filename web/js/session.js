@@ -276,14 +276,18 @@ function buildModel(result) {
     const turn = g.turns[m.i];
     const layer = m.counted && m.maneuver ? (OUTCOME_LAYER[m.outcome] || "courseChange")
                                           : "courseChange";
-    // A CLEAN jibe (the engine's own `success` flag on a counted jibe) is drawn as a star
-    // and answers to TWO chips: its outcome, because it is still a turn that ended some
-    // way, and `cleanJibe`, because that is the question the star answers. Clean cuts
-    // across the ladder rather than sitting on it, so hiding either chip hides the mark —
-    // the same rule as the iOS `EventMarker.layers`.
-    const clean = !!(m.counted && turn.type === "jibe" && turn.success);
+    // A CLEAN jibe is drawn as a star. Since engine 0.12.0 the rule is not re-derived
+    // here: the engine stores the verdict per turn (`counted && jibe && success &&
+    // flew_through`), which is what stopped a jibe from being starred on the map and
+    // listed as a swim in the table below it.
+    //
+    // A star answers to ONE chip, `cleanJibe`, and a plain dot to its outcome's — the chips
+    // are independent (Jan, 5 Sep 2026), the same rule as the iOS `EventMarker.layers`.
+    // Since engine 0.12.0 every clean jibe flew through, so the star is simply its own
+    // category of mark: hide "flew through" and the dots go while the stars stay.
+    const clean = !!turn.clean;
     marks.push({
-      layer, layers: clean ? [layer, "cleanJibe"] : [layer],
+      layer, layers: clean ? ["cleanJibe"] : [layer],
       t: m.t, x: m.x, y: m.y, kn: m.kn, style: turnStyle({ ...m, clean }), n: m.n,
       title: `#${m.n} ${m.kind}${m.counted ? "" : " (not counted)"}`,
       tip: `<b>#${m.n} ${clockAt(meta, m.t)}</b> — ${esc(m.kind)}<br>` +
@@ -299,7 +303,10 @@ function buildModel(result) {
         // bottom of the turn says what it cost, the exit says whether he carried it out.
         ["speed", `${nf(turn.entryKn, 2)} → ${nf(turn.minKn, 2)} → ` +
                   `${nf(turn.exitKn, 2)} kn`],
-        ["score", `${nf(turn.score * 100, 0)} % · ${turn.success ? "clean" : "not clean"}`],
+        // The score verdict is the *carried* half alone; "clean" needs the outcome too and
+        // is only ever said when the engine's own flag says it (engine 0.12.0).
+        ["score", `${nf(turn.score * 100, 0)} % · ${turn.success ? "carried" : "not carried"}` +
+                  (clean ? " · clean" : "")],
         ["stopped", `${nf(turn.stoppedS, 1)} s · off foil ${nf(turn.offFoilS, 1)} s`],
         ["arc", `${nf(turn.arcM, 0)} m · R ${nf(turn.radiusM, 0)} m`],
       ],

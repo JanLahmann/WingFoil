@@ -38,12 +38,19 @@ effort orange (a record is something the rider *did*, not a verdict).
 **A clean jibe is a counted jibe you fly all the way through, carrying your speed — no
 touchdown, no swim, at or above the success threshold of your entry speed.**
 
-That is not a new measurement. It is the engine's existing per-turn `success` flag —
-`score >= turnSuccessPct` **and** the foil never lost across the scored window
-(`docs/algorithms.md`, "Turn detection & classification") — given the name every surface
-now uses for it. No parameter moved, no golden moved; the metric was called "turn success"
-or "carried through" or "held speed" on four screens and is called one thing on all of
-them from here on.
+That is the engine's per-turn `clean` flag, and every surface reads it rather than
+re-deriving it: `counted && type == jibe && success && outcome == flew_through`
+(`docs/algorithms.md`, "Turn detection & classification"). No parameter moved; the metric
+was called "turn success" or "carried through" or "held speed" on four screens and is
+called one thing on all of them.
+
+**Until engine 0.12.0 clean was the `success` flag alone** — the score verdict, deliberately
+independent of how the turn *ended*. That let a jibe be starred as clean on the map and
+listed as a swim in the table six rows below it, which is what happened to 2026-08-29's jibe
+13: 71 % of its entry speed held, 54 s off the foil, in the water. The word had to mean what
+a rider means by it, so the outcome joined the verdict and the clean counts fell on eleven of
+the seventeen fixtures. `success` did not change and the Turns tab still shows it, under the
+name **carried** — the score half, on its own, which is a different question.
 
 **The spelling is a contract, both halves of it:**
 
@@ -57,16 +64,17 @@ Never "CleanJibes" for the metric and never "clean jibe" for the app. A sentence
 means the count is lowercase even when it opens with the word.
 
 **It is not the ladder's green, and no surface may let the two blur.** "Flew through" is
-how the turn *ended*; clean is what it *cost*. They disagree on purpose — a jibe carved
-cleanly through the sweep stays clean even when the foil is lost later in the recovery
-tail, which is exactly what the outcome records — and on the corpus session the two read
-30 % and 13 %. So the clean count never wears the outcome ladder's inks, never sits inside
-the three-count tally, and never borrows the word "flew". Where it is a *count* beside the
-tally it is drawn in neutral ink, as the stricter reading of the same set of turns; where it
-is a *mark of its own* — the map's star — it carries the clean ink
-(`DesignTokens.Clean.jibe` / `--wf-clean-jibe`), a green chosen to be nothing on the ladder.
-Either way the rule is the same one: the two verdicts are two readings, and no ink may say
-they are one.
+how the turn *ended*; clean asks that *and* what it cost. Since 0.12.0 clean is a strict
+**subset** of `flew_through` — every clean jibe flew through, and on the corpus session 24 of
+the 35 jibes that flew were clean. That is the whole reason the two must stay visibly separate: the
+distinction is no longer "these disagree" but "this one is narrower", and a surface that drew
+them alike would be claiming every jibe that flew was ridden. So the clean count never wears
+the outcome ladder's inks, never sits inside the three-count tally, and never borrows the
+word "flew". Where it is a *count* beside the tally it is drawn in neutral ink, as the
+stricter reading of the same set of turns; where it is a *mark of its own* — the map's star —
+it carries the clean ink (`DesignTokens.Clean.jibe` / `--wf-clean-jibe`), a green chosen to
+be nothing on the ladder. Either way the rule is the same one: clean is the narrower of two
+verdicts, and no ink may say they are one.
 
 ## Layers
 
@@ -312,8 +320,9 @@ The rules, which are the only thing the two implementations can disagree about:
   until §5.6, on the more prominent of the two library surfaces; a row from a digest
   written before the field existed renders "—" rather than three zeroes.
   - **The clean count rides in the caption, not in a cell.** It is `jibesSuccessful`
-    against the jibe ladder and `turnsSuccessful` against the turn fallback, so it is
-    always about the same set the three counts are about. A fifth cell on row 3 is a cell
+    against the jibe ladder and `turnsSuccessful` against the turn fallback — the fallback
+    is the score verdict, because a session with no jibes has no clean jibes to report and
+    the caption is qualifying a tally of turns. A fifth cell on row 3 is a cell
     the streaks pair would lose, and the count is a *qualification* of the tally rather
     than a metric standing beside it. It stays in neutral ink — see "Clean jibe" above.
 - **Streaks are `summary.turns.longestFlewStreak` / `longestDryStreak`**, rendered
@@ -1093,14 +1102,17 @@ ladder's ink (`outcome.*`).
 **The ghost.** One comparison turn may be laid underneath, dashed, in the clean-jibe ink
 (`clean.jibe`) at low opacity, behind a remembered toggle. The selection rule is exact:
 
-> the **highest-`score`** turn of the **same session** that is **counted**, a **jibe**, ended
-> **`flew_through`**, and has the **same `direction`** (rotation, not entry tack) as the turn
-> being read — **never the turn itself**. Ties go to the earlier turn.
+> the **highest-`score`** **clean** jibe of the **same session** with the **same `direction`**
+> (rotation, not entry tack) as the turn being read — **never the turn itself**. Ties go to
+> the earlier turn.
 
 Same session, because a comparison against different wind is not a comparison. Same rotation,
-because a jibe spun to starboard and one spun to port are mirror images. `flew_through`,
-because the model has to be a turn that worked. Never itself, because a dashed line exactly
-under the solid one reads as a rendering bug. No such turn ⇒ no ghost, and the toggle says so.
+because a jibe spun to starboard and one spun to port are mirror images. **Clean** (engine
+0.12.0), because the model has to be a turn that worked — which now means it flew through
+*and* carried its speed, where before it only had to fly through. Never itself, because a
+dashed line exactly under the solid one reads as a rendering bug. No such turn ⇒ no ghost,
+and the toggle says so — including on a session where no jibe was clean, which is a true
+answer and not a missing feature.
 Both slices are anchored at their own entry points and at their own `t = 0`, so the comparison
 is aligned in space and in time by construction rather than by a transform.
 
@@ -1123,16 +1135,24 @@ It is a ladder of specificity, first match wins, and the ordering is the contrac
 
 | # | rung | fires when | says |
 |---|---|---|---|
-| 1 | `fellIn` | `outcome == fell_in` | ended in the water, entry → low |
-| 2 | `wristUnder` | `submerged` | the barometer saw the wrist go under, entry → low |
-| 3 | `pumpedOut` | `pumped` | pumped back out, with `offFoilS` when there is one |
-| 4 | `touchdownOnExit` | touchdown, low point **at or after** halfway | held it in, lost it after |
-| 5 | `touchdownComingIn` | touchdown, low point **before** halfway | the speed was already gone going in |
-| 6 | `cleanAndFast` | `success && score ≥ 0.85` | clean, and barely slowed |
-| 7 | `cleanButSlow` | `flew_through && score < 0.7` | flew through, and it cost |
-| 8 | `slowedEarly` | low point before halfway | the speed went before the mid-point |
-| 9 | `slowedLate` | low point at or after halfway | carried it in, lost it on the way out |
-| 10 | `plain` | nothing above, or no usable geometry | the three numbers, said plainly |
+| 1 | `fellInFast` | `fell_in && success && score ≥ 0.85` | the speed was there right round, and it still ended in the water |
+| 2 | `fellIn` | `outcome == fell_in` | ended in the water, entry → low |
+| 3 | `wristUnder` | `submerged` | the barometer saw the wrist go under, entry → low |
+| 4 | `pumpedOut` | `pumped` | pumped back out, with `offFoilS` when there is one |
+| 5 | `touchdownOnExit` | touchdown, low point **at or after** halfway | held it in, lost it after |
+| 6 | `touchdownComingIn` | touchdown, low point **before** halfway | the speed was already gone going in |
+| 7 | `cleanAndFast` | `success && score ≥ 0.85` | clean, and barely slowed |
+| 8 | `cleanButSlow` | `flew_through && score < 0.7` | flew through, and it cost |
+| 9 | `slowedEarly` | low point before halfway | the speed went before the mid-point |
+| 10 | `slowedLate` | low point at or after halfway | carried it in, lost it on the way out |
+| 11 | `plain` | nothing above, or no usable geometry | the three numbers, said plainly |
+
+Rungs 1 and 7 are the same score test read from the two sides of the outcome, which is what
+keeps `cleanAndFast` honest without a `clean` clause of its own: every fall and every
+touchdown has been taken by a rung above it, so by the time the ladder reaches 7 the turn
+flew through, and for a jibe that is exactly `clean` (engine 0.12.0). `fellInFast` exists
+because that turn — the speed held all the way round, the foil gone in the recovery tail —
+is the one the old rule called clean, and the one sentence that must say both things.
 
 "Halfway" is where the sweep has turned through **half its cumulative heading change** — not
 half its `netDeg`, because a sweep that overshoots and comes back has swept more than its net,
