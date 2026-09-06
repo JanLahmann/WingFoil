@@ -123,6 +123,16 @@ private struct TurnDetailPage: View {
     /// Wind up needs a wind. Where the session has none, the control's second option is
     /// disabled and says why rather than silently drawing north up under a "wind up" label.
     private var windKnown: Bool { detail.windDirDeg != nil }
+
+    /// How many strokes he put in to get out of this one, where the analysis knows — the
+    /// chip and the coach line print the same number, and neither prints one when it does
+    /// not (`TurnAnalytics.pumpStrokes`).
+    private var pumpStrokes: Int? {
+        guard let turn, turn.pumped else { return nil }
+        return TurnAnalytics.pumpStrokes(for: index, turn: turn,
+                                         in: detail.analysis.pumpEpisodes)
+    }
+
     private var windUp: Bool { windUpPreferred && windKnown }
     private var showsGhost: Bool { ghostEnabled && ghost != nil }
 
@@ -240,7 +250,13 @@ private struct TurnDetailPage: View {
                          tint: DesignTokens.Clean.jibe)
                 }
                 if turn.pumped {
-                    chip("pumped out", symbol: DesignTokens.Glyph.takeoffPumped,
+                    // "pumped out · 7 strokes" where the analysis counted them. The count is
+                    // the engine's own (`PumpEpisodeRecord.strokes` on the episodes this turn
+                    // owns), and where there are none the chip says exactly what it said
+                    // before rather than "0 strokes", which would be a claim.
+                    chip(pumpStrokes.map { "pumped out · \(TurnAnalytics.strokesText($0))" }
+                            ?? "pumped out",
+                         symbol: DesignTokens.Glyph.takeoffPumped,
                          tint: DesignTokens.Effort.pumping)
                 }
                 if turn.submerged {
@@ -306,7 +322,7 @@ private struct TurnDetailPage: View {
     // MARK: - The sentence
 
     private func coach(_ turn: TurnRecord, slice: TurnSlice) -> some View {
-        Text(TurnCoach.line(turn: turn, slice: slice))
+        Text(TurnCoach.line(turn: turn, slice: slice, pumpStrokes: pumpStrokes))
             .font(.subheadline)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
@@ -316,8 +332,9 @@ private struct TurnDetailPage: View {
     private func footnote(_ turn: TurnRecord) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text("The drawing is \(Int(TurnSlice.defaultPadS)) s either side of the sweep. "
-                 + "Ticks are one second apart; the line runs from the off-foil grey at a "
-                 + "standstill to the flying teal at your entry speed.")
+                 + "Ticks are one second apart; the line is coloured by speed on the ramp at "
+                 + "the foot of the picture — cold at a standstill, teal at the speed you "
+                 + "came in at, hot above it. North and the wind are marked top right.")
             Text("Score is how much of your entry speed you carried through. Speed here is "
                  + "the manoeuvre channel the verdict was scored on, derived from position — "
                  + "the GPS Doppler speed the records use is smoothed through a turn and "
