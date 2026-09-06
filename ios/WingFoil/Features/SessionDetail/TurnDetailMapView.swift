@@ -289,8 +289,12 @@ struct TurnDetailMapView: View {
         guard left > Self.inset + 60 else { return }
         let y = size.height - Self.inset - barHeight
 
+        // The bar runs from the ramp's cold end (half the entry speed) to the top, not from
+        // 0 kn: the speeds a jibe is actually ridden at are what the colours are spent on.
+        let bottomKn = TurnSpeedRamp.legendBottomKn(entryKn: entryKn)
         let stops = stride(from: 0.0, through: 1.0, by: 0.125).map { fraction in
-            Gradient.Stop(color: TurnSpeedRamp.color(kn: topKn * fraction, entryKn: entryKn),
+            Gradient.Stop(color: TurnSpeedRamp.color(kn: bottomKn + (topKn - bottomKn) * fraction,
+                                                     entryKn: entryKn),
                           location: fraction)
         }
         let bar = CGRect(x: left, y: y, width: barWidth, height: barHeight)
@@ -303,12 +307,13 @@ struct TurnDetailMapView: View {
         func text(_ string: String) -> Text {
             Text(string).font(.system(size: 9).monospacedDigit()).foregroundStyle(label)
         }
-        context.draw(text("0"), at: CGPoint(x: left, y: y - 2), anchor: .bottomLeading)
+        context.draw(text(String(format: "%.1f", bottomKn)),
+                     at: CGPoint(x: left, y: y - 2), anchor: .bottomLeading)
         context.draw(text(String(format: "%.1f kn", topKn)),
                      at: CGPoint(x: right, y: y - 2), anchor: .bottomTrailing)
         // The anchor's own tick, unless it has arrived at the top of the bar — where the two
         // numbers would be the same number printed twice.
-        let entryFraction = CGFloat(entryKn / topKn)
+        let entryFraction = CGFloat((entryKn - bottomKn) / max(topKn - bottomKn, 0.001))
         if entryFraction < 0.88 {
             let x = left + barWidth * entryFraction
             var tick = Path()

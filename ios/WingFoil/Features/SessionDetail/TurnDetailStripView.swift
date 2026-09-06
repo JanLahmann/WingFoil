@@ -32,6 +32,14 @@ struct TurnDetailStripView: View {
             RectangleMark(xStart: .value("Turn start", 0),
                           xEnd: .value("Turn end", slice.speed.exitRt))
                 .foregroundStyle(DesignTokens.Phase.flying.opacity(0.14))
+            // The sweep ends when the heading stops moving; the speed usually comes back a
+            // second or two later. That recovery is shaded too, lighter, so the band's early
+            // end reads as "the turn was done" rather than "the drawing stopped short".
+            if let recoverRt = slice.speed.recoverRt, recoverRt > slice.speed.exitRt {
+                RectangleMark(xStart: .value("Turn end", slice.speed.exitRt),
+                              xEnd: .value("Flying again", recoverRt))
+                    .foregroundStyle(DesignTokens.Phase.flying.opacity(0.06))
+            }
 
             if let ghost, ghost.hasGeometry {
                 ForEach(Array(ghost.points.enumerated()), id: \.offset) { _, point in
@@ -59,7 +67,7 @@ struct TurnDetailStripView: View {
             // edge; when the minimum is at the entry it is "low" that steps down instead.
             let lowNearIn = abs(slice.speed.minRt) < Self.captionGapS
             let outNearLow = abs(slice.speed.exitRt - slice.speed.minRt) < Self.captionGapS
-            mark(at: 0, kn: slice.speed.entryKn, label: "in", below: false)
+            mark(at: slice.speed.entryRt, kn: slice.speed.entryKn, label: "in", below: false)
             mark(at: slice.speed.minRt, kn: slice.speed.minKn, label: "low", below: lowNearIn)
             mark(at: slice.speed.exitRt, kn: slice.speed.exitKn, label: "out",
                  below: outNearLow && !lowNearIn)
@@ -84,7 +92,9 @@ struct TurnDetailStripView: View {
     /// A rule and its caption. The caption sits at the top of the plot rather than beside the
     /// point, because three labels chasing three points on a six-second window overlap on
     /// every turn that mattered.
-    /// Closer than this, two captions on the top edge overprint.
+    /// Closer than this, two captions on the top edge overprint. ("in" now sits at the
+    /// engine's entry-window maximum, up to `entrySpeedWindowS` before 0; it never collides
+    /// with "low", which is inside the sweep.)
     private static let captionGapS = 1.5
 
     @ChartContentBuilder

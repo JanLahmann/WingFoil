@@ -1159,9 +1159,16 @@ gate that disables wind up.
 
 | speed at the vertex | ramp position | stop |
 |---|---|---|
-| 0 kn | 0 | `speed.stopped`, the cold end |
+| half the entry speed and below | 0 | `speed.stopped`, the cold end |
 | **the turn's entry speed** | **0.5** | **`speed.entry` — the same value as `phase.flying`** |
 | 1.3 × entry speed and above | 1 | `speed.fastest`, the hot end (capped) |
+
+The cold end is **half the entry speed, not 0 kn** (Jan, 6 Sep 2026: "not nuanced
+enough"). A jibe is ridden between roughly two thirds of its entry speed and the entry
+speed, and a ramp that began at 0 kn spent its whole cold half on speeds nobody foils at,
+leaving the 8–12 kn a rider actually sees inside one stop. Anchored at half the entry, the
+low point of a 66 % jibe sits a full stop below the entry colour and an 81 % jibe's visibly
+above it; below half the entry speed the rider is off the foil and the line stays cold.
 
 The anchor is *this turn's* entry speed, which is the number the score is a ratio of — never
 the fastest vertex, which would give every turn its own scale and make two jibes
@@ -1174,8 +1181,8 @@ flying teal, which could say only "more teal than grey" and drew a turn *acceler
 exactly like one that merely held its speed.
 
 **A legend says what the colours are worth**: a small horizontal gradient bar at the foot of
-the map card, beside the scale bar, labelled `0`, the entry speed at its own tick, and the
-top of the bar in kn. The top is the fastest the rider actually went through this turn,
+the map card, beside the scale bar, labelled with the cold end (half the entry speed), the
+entry speed at its own tick, and the top of the bar in kn. The top is the fastest the rider actually went through this turn,
 capped at the ramp's own 1.3 × entry; a turn that never beat its entry speed ends the bar
 there and prints two labels rather than three, because the top half of the ramp went unused
 and a number nobody rode would be an overclaim.
@@ -1205,6 +1212,16 @@ is aligned in space and in time by construction rather than by a transform.
 the sweep shaded, rule marks and labels at entry / low / exit, and the ghost's speed as a faint
 dashed line aligned at `t = 0`. A drag scrubs it and drives the playhead dot on the drawing —
 the same **one playhead** rule the map and the chart follow ("Scrub and zoom").
+
+**Where the marks sit, and what the bands mean** (6 Sep 2026). `entryKn` is the engine's
+*maximum over the entry window* (`entrySpeedWindowS` before the sweep), not the sample at
+`ts` — most riders have begun to slow before the heading starts to move — so the "in" mark
+sits at the sample in that window nearest the value, not at 0 s, where it floated above the
+line. The shaded band is the **sweep**: it ends when the heading stops changing, which is
+usually a second or two before the speed comes back. The **recovery** — from the sweep's end
+to the first sample back at `turnRecoverPct` of the entry speed, the engine's own "flying
+again" threshold — is shaded lighter behind it, so the band's early end reads as "the turn
+was done" rather than "the drawing stopped short".
 
 **One channel, one set of numbers.** The numbers row prints the *engine's* `entryKn`,
 `minKn`, `exitKn`, `score`, `stoppedS`, `offFoilS`, `radiusM`, `netDeg`, `side`, `direction`

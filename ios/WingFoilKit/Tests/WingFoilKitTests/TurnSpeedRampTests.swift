@@ -17,7 +17,12 @@ import Testing
     @Test func theRampIsAnchoredOnTheTurnsOwnEntrySpeed() {
         #expect(TurnSpeedRamp.position(kn: 0, entryKn: 12) == 0)
         #expect(TurnSpeedRamp.position(kn: 12, entryKn: 12) == 0.5)
-        #expect(abs(TurnSpeedRamp.position(kn: 6, entryKn: 12) - 0.25) < 1e-9)
+        // The cold end is half the entry speed (6 Sep 2026), so 6 kn on a 12 kn entry is
+        // the cold stop and 9 kn is halfway up to the anchor.
+        #expect(TurnSpeedRamp.position(kn: 6, entryKn: 12) == 0)
+        #expect(TurnSpeedRamp.position(kn: 3, entryKn: 12) == 0)
+        #expect(abs(TurnSpeedRamp.position(kn: 9, entryKn: 12) - 0.25) < 1e-9)
+        #expect(TurnSpeedRamp.legendBottomKn(entryKn: 12) == 6)
         // The cap: 1.3x the entry speed is the hot end, and anything past it stays there
         // rather than running off the end of a palette that has no more colours.
         #expect(TurnSpeedRamp.position(kn: 12 * 1.3, entryKn: 12) == 1)
