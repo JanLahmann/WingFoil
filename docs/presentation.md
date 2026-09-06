@@ -146,10 +146,32 @@ Both platforms lay the row out the same way, and the split is by *what a tap cha
   `?` is a sheet. They used to sit in the middle of the route chips, which on a narrow phone
   wrapped the style menu between "direction" and "best 2 s" and made the row read as a list
   of eight unrelated things.
-- iOS draws the three as three rows (`MapLegendView.routeRow` / `markerRow` / `utilityRow`);
-  web draws them as three `.chip-group` spans with a visible seam between them, wrapping as
-  units so a narrow screen breaks between the questions rather than through one. The legend
-  note stays last, under all three.
+- iOS draws the two chip groups as two rows (`MapLegendView.routeRow` / `markerRow`) behind
+  the header row below, with the utilities riding on that header; web draws all three as
+  `.chip-group` spans with a visible seam between them, wrapping as units so a narrow screen
+  breaks between the questions rather than through one. The legend note stays last, under
+  all three.
+
+**iOS collapses the chip groups behind a one-line header** (Jan, 6 Sep 2026, on build 24).
+Twelve chips wrap to two or three lines, which is ~70 pt between the map and the speed chart
+on every visit to every session — and the two are one instrument, so the rider was scrolling
+past the controls to reach the half of the figure they control. The contract:
+
+- **The header is always on screen and always says the state**: `Layers · all shown`, or
+  `Layers · 3 hidden` with the count in the accent colour. A collapsed control that hid the
+  fact that a filter is on would be exactly the failure the chips exist to prevent.
+- **The count is of layers this session actually has any of.** A rider who hid "splash"
+  months ago is not told something is off on every session he never went under on; the
+  number's whole job is to be the reason to open the block.
+- **The utilities stay on the header row**: "show all" (only while something is hidden), the
+  map-style menu and the `?`. None of them is a chip and none needs the block open.
+- **Collapsed by default, and the state is remembered per rider**
+  (`mapLegend.expanded.v1`), like the visibility set itself: "I use the chips" is a fact
+  about a rider, not about a session. Both the inline and the full-screen legend read it.
+- **Expanded, a chip is exactly what it was** — same groups, same order, same three states.
+  Only whether the rows are on screen changes.
+- The web keeps its chips open: above the breakpoint it is a document on a desktop, not a
+  phone screen with a chart below the fold.
 
 **Chip text is the layer catalogue's `label` in `design/tokens.json`** — flying · off foil ·
 pumping · direction · clean jibe · flew through · touchdown · fell in · course change ·
@@ -158,6 +180,25 @@ takeoff · splash
 The one exception is `effort`, whose chip is labelled with the *selected* window ("best 2 s")
 because that is what it is currently highlighting; the catalogue's "best effort" is the
 fallback for a session with no achieved window.
+
+### The inline map pans and zooms
+
+The session map takes **pan and zoom** and nothing else (iOS, 6 Sep 2026 — it used to take no
+gesture at all, `interactionModes: []`). A two-kilometre track on a 260 pt figure is four
+pixels per jibe, and the one thing a rider wants to do with it — get closer to the corner he
+jibed at — cost a trip to the full-screen map and back.
+
+- **Rotate and pitch stay off.** The drawing is a plan view of a plane of water; a tilted one
+  answers nothing, and a rotated one breaks the chevrons' one job.
+- **A drag that starts on the map moves the map**, and the page scrolls from anywhere else on
+  it. That is the trade, it is known, and there is no lock toggle: a control whose only
+  purpose is to say which of two gestures a drag meant is a control about the app.
+- **A tap still means "show me this point"** — mark, then flown stretch, then nothing — and
+  its two tolerances are read off the camera *as it stands* rather than off the region the
+  map opened on, so they stay roughly a fingertip after a zoom (iOS: the region from
+  `onMapCameraChange`).
+- **"Open map full screen" stays.** The big map is still where rotation, the whole session at
+  once and the floating legend live.
 
 ## Map style — the ground under the track
 
@@ -245,6 +286,14 @@ Trends drew "turn success by entry tack" with port in the takeoff blue and starb
 as the flew-through line — and the port/starboard share chart above it in a **magenta
 belonging to no vocabulary at all** (`app-ui-review.md` §5.2, §5.3). Both were only ever
 literals in a view, which is exactly what `design/tokens.json` exists to prevent.
+
+**The speed ramp is a scale, not a vocabulary, and it is scoped to one drawing:** the turn
+detail breadcrumb and the legend under it ("Turn detail"). Five stops, `speed.*`, cold →
+`phase.flying` at the turn's entry speed → hot. It is the one place a *magenta* is drawn on
+purpose — the §5.2 complaint above is about a magenta belonging to nothing, and this one is
+the top of a labelled scale with a legend beside it. It may not leave that card: on the
+session map a line coloured by speed would compete with the phase tint, which answers a
+different question, and the two ramps would be read as one.
 
 **Phase tints** are one colour each, in both apps: flying = teal, off foil = the secondary
 label grey. They are *not* the app's own accent blue — a track tinted with the brand colour
@@ -1089,15 +1138,46 @@ and the engine's estimate second, and **only when the estimate is `usable`** —
 that decides whether turns are named tacks and jibes at all. Below it, wind up is *disabled*
 with a footnote saying why; it is never silently drawn north up under a "wind up" label.
 
-**The ink.** The in-turn segment is drawn thick and coloured **on the phase pair, not on a
-palette of its own**: a vertex at the entry speed is the flying teal (`phase.flying`), a vertex
-at a standstill is the off-foil grey (`phase.offFoil`), everything between is mixed in
-proportion, and the stroke thickens with it. A turn that carried its speed is teal all the way
-round and one that stalled goes grey where it stalled — the same statement the score makes, in
-the two inks the app already uses for exactly it. The padded context track is the off-foil grey
-at low opacity. Ticks one second apart run across the line, so the drawing carries time as well
-as shape. The low point is a hollow ring; the end of the sweep is the outcome dot in the
-ladder's ink (`outcome.*`).
+**Both references are drawn, in both orientations** (6 Sep 2026). Top right, small, in ink
+rather than a hue: a needle labelled `N`, and beside it an arrow labelled `wind` that blows
+**from its tail toward its head**. In wind up the wind arrow points straight down the frame
+and `N` swings with the rotation; in north up `N` points up the frame and the wind arrow
+swings to the direction the wind was going. Before this there was one arrow — north in north
+up, the wind in wind up — which made the mark a *label for the control* rather than
+information, and answered the question the rider had just asked while hiding the other one.
+A jibe is read against both: which way the water was moving, and which way home is. The wind
+arrow is **absent, never drawn at a default**, on a session with no wind direction — the same
+gate that disables wind up.
+
+**The ink is a speed ramp of its own** (`speed.*` in `design/tokens.json`, five stops,
+`TurnSpeedRamp`). The in-turn segment is drawn thick and coloured per vertex:
+
+| speed at the vertex | ramp position | stop |
+|---|---|---|
+| 0 kn | 0 | `speed.stopped`, the cold end |
+| **the turn's entry speed** | **0.5** | **`speed.entry` — the same value as `phase.flying`** |
+| 1.3 × entry speed and above | 1 | `speed.fastest`, the hot end (capped) |
+
+The anchor is *this turn's* entry speed, which is the number the score is a ratio of — never
+the fastest vertex, which would give every turn its own scale and make two jibes
+incomparable. The middle stop is deliberately the flying teal, so "he held the speed he came
+in with" is drawn in the ink the app already means flying with; the stops either side of it
+are clear of the outcome ladder's inks and of the clean-jibe mint, since both are drawn on
+this same picture. The stroke still thickens with the cold half of the ramp, so the line
+reads without colour. Until 6 Sep 2026 the line was mixed between the off-foil grey and the
+flying teal, which could say only "more teal than grey" and drew a turn *accelerated* through
+exactly like one that merely held its speed.
+
+**A legend says what the colours are worth**: a small horizontal gradient bar at the foot of
+the map card, beside the scale bar, labelled `0`, the entry speed at its own tick, and the
+top of the bar in kn. The top is the fastest the rider actually went through this turn,
+capped at the ramp's own 1.3 × entry; a turn that never beat its entry speed ends the bar
+there and prints two labels rather than three, because the top half of the ramp went unused
+and a number nobody rode would be an overclaim.
+
+The padded context track is the off-foil grey at low opacity. Ticks one second apart run
+across the line, so the drawing carries time as well as shape. The low point is a hollow
+ring; the end of the sweep is the outcome dot in the ladder's ink (`outcome.*`).
 
 **The ghost.** One comparison turn may be laid underneath, dashed, in the clean-jibe ink
 (`clean.jibe`) at low opacity, behind a remembered toggle. The selection rule is exact:
@@ -1136,6 +1216,20 @@ page reads differently. Score is spelled "held 71 % of entry speed"; `direction`
 "clockwise / counter-clockwise" and never "port/starboard", which is the entry tack's word
 ("Filter semantics").
 
+**The chips under the numbers**, in order: the outcome, `clean` where the engine says so,
+`pumped out` where `pumped`, `wrist under` where `submerged`.
+
+- **"pumped out" carries the count**: `pumped out · 7 strokes`, and `1 stroke` in the
+  singular. The number is the engine's — the sum of `strokes` over the pump episodes whose
+  `turnIndex` is this turn's (`PumpEpisodeRecord`, engine 0.3.0); where no episode names the
+  turn, the ones overlapping the window the outcome was judged on
+  (`ts … endTs + outcomeWindowS`), because an older stored analysis can carry `pumped`
+  without the assignment. Nothing found ⇒ the chip reads `pumped out` and nothing else:
+  "0 strokes" would be a claim where there is only an absence ("Formatter rules"). The same
+  count, in the same words, is the one number the `pumpedOut` rung of the coach line adds —
+  which is what keeps the ladder's rule that it never prints a number the page is not
+  already showing. iOS: `TurnAnalytics.pumpStrokes`, pinned by `TurnSpeedRampTests`.
+
 **The coach line.** One calm sentence under the numbers, in the `ReplayCommentary` voice —
 plain, no exclamation marks, never blaming, and never a number the page is not already showing.
 It is a ladder of specificity, first match wins, and the ordering is the contract:
@@ -1145,7 +1239,7 @@ It is a ladder of specificity, first match wins, and the ordering is the contrac
 | 1 | `fellInFast` | `fell_in && success && score ≥ 0.85` | the speed was there right round, and it still ended in the water |
 | 2 | `fellIn` | `outcome == fell_in` | ended in the water, entry → low |
 | 3 | `wristUnder` | `submerged` | the barometer saw the wrist go under, entry → low |
-| 4 | `pumpedOut` | `pumped` | pumped back out, with `offFoilS` when there is one |
+| 4 | `pumpedOut` | `pumped` | pumped back out, with the stroke count and `offFoilS` when there is one of each |
 | 5 | `touchdownOnExit` | touchdown, low point **at or after** halfway | held it in, lost it after |
 | 6 | `touchdownComingIn` | touchdown, low point **before** halfway | the speed was already gone going in |
 | 7 | `cleanAndFast` | `success && score ≥ 0.85` | clean, and barely slowed |
@@ -1168,8 +1262,9 @@ and not half its duration. A jibe's halfway point is called the **downwind point
 where the window has too few usable bearings to say, no rule that depends on it may fire and
 the ladder falls through to `plain`.
 
-iOS: `TurnSlice` + `TurnCoach` in the kit (pure, `TurnSliceTests`), drawn by
-`TurnDetailView` / `TurnDetailMapView` / `TurnDetailStripView`. The drawing is a SwiftUI
+iOS: `TurnSlice` + `TurnCoach` + `TurnSpeedRamp` in the kit (pure, `TurnSliceTests` /
+`TurnSpeedRampTests`), drawn by `TurnDetailView` / `TurnDetailMapView` /
+`TurnDetailStripView`. The drawing is a SwiftUI
 `Canvas` and deliberately not a `MapKit` map: the frame has to rotate, and the ticks must not
 move under the reader on a camera settle. There is no ground under it — a satellite tile at
 30 m across is a photograph of water, and it would bury all six of the things the drawing says.
