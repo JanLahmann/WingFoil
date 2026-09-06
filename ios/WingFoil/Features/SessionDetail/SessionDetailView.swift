@@ -251,18 +251,25 @@ struct SessionDetailView: View {
         if detail.segments.isEmpty {
             noTrackNote
         } else {
-            TrackMapView(detail: detail, effort: effort, playhead: $playhead,
-                         visibility: store.mapLayers, mapStyle: store.mapStyle,
-                         flightFocus: $flightFocus,
-                         // The toggle on the scrubber row is one store flag away, so
-                         // switching the commentary off is an empty list rather than a
-                         // second condition inside the map.
-                         milestones: store.replayCommentary ? milestones : [])
-            NavigationLink {
-                FullScreenMapView(detail: detail, effort: effort, playheadT: playhead)
-            } label: {
-                Label("Open map full screen", systemImage: "map")
-                    .font(.footnote)
+            // The map, its controls and the way to a bigger one are one block, at the
+            // block's own spacing rather than the page's: with the layer chips collapsed
+            // (`MapLegendView`) the point of the change is that the chart is the next thing
+            // on the screen, and three 20 pt gaps in a row would spend the space the chips
+            // just gave back.
+            VStack(alignment: .leading, spacing: 6) {
+                TrackMapView(detail: detail, effort: effort, playhead: $playhead,
+                             visibility: store.mapLayers, mapStyle: store.mapStyle,
+                             flightFocus: $flightFocus,
+                             // The toggle on the scrubber row is one store flag away, so
+                             // switching the commentary off is an empty list rather than a
+                             // second condition inside the map.
+                             milestones: store.replayCommentary ? milestones : [])
+                NavigationLink {
+                    FullScreenMapView(detail: detail, effort: effort, playheadT: playhead)
+                } label: {
+                    Label("Open map full screen", systemImage: "map")
+                        .font(.footnote)
+                }
             }
         }
         SpeedChartView(detail: detail, effort: effort, playhead: $playhead,

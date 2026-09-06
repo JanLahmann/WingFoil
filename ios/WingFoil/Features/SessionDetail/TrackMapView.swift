@@ -4,8 +4,15 @@ import SwiftUI
 import WingFoilKit
 
 /// Track drawn as segmented polylines coloured by phase (flying vs everything else), with
-/// the maneuver/flight-end outcomes marked and one GP3S effort highlighted. The inline map
-/// is non-interactive so the detail page scrolls; the full-screen version is interactive.
+/// the maneuver/flight-end outcomes marked and one GP3S effort highlighted.
+///
+/// **The inline map pans and zooms** (6 Sep 2026). It used to take no gestures at all so
+/// that a drag anywhere on the page scrolled it, which meant the one thing a rider wants to
+/// do with a two-kilometre track on a 260 pt figure — get closer to the corner he jibed at —
+/// cost a trip to the full-screen map and back. The trade is deliberate and known: a drag
+/// that starts on the map moves the map, and the page scrolls from anywhere else on it.
+/// Rotate and pitch stay off, because the drawing is a plan view of a plane of water and a
+/// tilted one answers nothing. "Open map full screen" stays where it was.
 ///
 /// The map is the second handle on the replay playhead: tapping near the track moves it,
 /// and the dot it draws is the same instant the chart and the readout show.
@@ -43,10 +50,16 @@ struct TrackMapView: View {
     /// to be rebuilt when the camera moves (see `DirectionField`).
     @State private var direction = DirectionField()
 
+    /// Where the camera is *now*, once the rider has moved it. The tap tolerances are metres
+    /// per point, so they are a function of the visible span rather than of the span the map
+    /// opened on — read off the initial region until the camera first settles.
+    @State private var visibleRegion: MKCoordinateRegion?
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             MapReader { proxy in
-                Map(initialPosition: .region(detail.initialRegion), interactionModes: []) {
+                Map(initialPosition: .region(detail.initialRegion),
+                    interactionModes: [.pan, .zoom]) {
                     TrackContent(detail: detail, effort: effort,
                                  visibility: visibility, style: mapStyle,
                                  playhead: playhead.flatMap(detail.moment),
@@ -56,13 +69,15 @@ struct TrackMapView: View {
                 .figureHeight(regular: 260, compact: 190)
                 .clipShape(.rect(cornerRadius: 14))
                 .onMapCameraChange(frequency: .onEnd) { context in
+                    visibleRegion = context.region
                     direction.camera(moved: context, detail: detail)
                 }
                 .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
                     direction.resized(to: size, detail: detail)
                 }
-                // Interaction is off so the page scrolls, which leaves the tap free to
-                // mean exactly one thing: "show me this point".
+                // A tap still means exactly one thing — "show me this point" — and it is
+                // resolved against the camera as it stands, so it keeps meaning it after a
+                // pan or a zoom. A drag is the map's.
                 .onTapGesture { location in
                     guard let coordinate = proxy.convert(location, from: .local) else { return }
                     tapped(coordinate)
@@ -133,10 +148,11 @@ struct TrackMapView: View {
     /// what the caption promises; and when it landed on a stretch of *flown* track it also
     /// says which flight that was and frames the flight in the chart. A tap nowhere near the
     /// track is ignored rather than snapping the playhead to some unrelated corner of the
-    /// session. Both tolerances scale with how much water the map is showing, so they are
-    /// roughly a fingertip at any zoom.
+    /// session. Both tolerances scale with how much water the map is showing — the span the
+    /// camera has *now*, not the one it opened on, which is what keeps them a fingertip after
+    /// the rider has zoomed into one jibe.
     private func tapped(_ coordinate: CLLocationCoordinate2D) {
-        let spanM = detail.region.span.latitudeDelta * 110_540
+        let spanM = (visibleRegion ?? detail.region).span.latitudeDelta * 110_540
         if let mark = detail.mark(nearLat: coordinate.latitude, lon: coordinate.longitude,
                                   toleranceM: max(12, spanM * 0.025)) {
             callout = mark
@@ -522,8 +538,8 @@ struct DirectionField {
     mutating func resized(to size: CGSize, detail: SessionDetail) {
         guard size != self.size else { return }
         self.size = size
-        // The inline map never moves its camera, so a layout pass is the only moment it ever
-        // gets to build its chevrons.
+        // Before the camera has settled once there is no region to decimate against, and a
+        // layout pass is the earliest moment the chevrons can be built at all.
         if region == nil { region = detail.initialRegion }
         rebuild(detail)
     }
