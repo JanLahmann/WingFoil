@@ -260,7 +260,17 @@ struct SessionDetail: Sendable {
                                               pairings: pairings)
         splashMarks = Self.buildSplashMarks(analysis, positioned: positioned)
         turnPins = Self.buildTurnPins(analysis, positioned: positioned)
-        turnSamples = Self.buildTurnSamples(analysis, positioned: positioned)
+        // The turn sheet draws the maneuver channel the verdicts were scored on, so the
+        // track is cleaned here exactly as the engine cleaned it (same gates, same gap rule
+        // — `analysis.config` echoes the values that were actually used).
+        var filter = FilterConfig()
+        filter.maxHdop = analysis.config.maxHdop
+        filter.minSatellites = analysis.config.minSatellites
+        filter.maxAccelMps2 = analysis.config.maxAccel1Hz
+        filter.gapMinS = analysis.config.gapMinS
+        filter.gapFactor = analysis.config.gapFactor
+        let clean = TrackCleaner.clean(track, config: filter)
+        turnSamples = Self.buildTurnSamples(analysis, positioned: positioned, clean: clean)
         windDirDeg = track.watchSummary.windDirUserDeg
             ?? analysis.wind.flatMap { $0.usable ? $0.dirDeg : nil }
         efforts = Self.buildEfforts(analysis, positioned: positioned)
@@ -689,14 +699,29 @@ struct SessionDetail: Sendable {
     /// track fifty times. The pad is generous — twice `TurnSlice.defaultPadS` — because the
     /// sheet is free to widen its lead-in later and a slice that ran out of samples at the
     /// edge would silently draw a shorter approach than it asked for.
+    ///
+    /// **Speed is the maneuver channel, not the FIT's Doppler.** The record's `entryKn`,
+    /// `minKn` and `exitKn` were read on `CleanSample.hybridMps` (position-derived, because
+    /// device Doppler is smoothed through a turn and understates the low point by a knot or
+    /// more), and a strip that drew Doppler under those numbers put 9.4 under an 8.1 on
+    /// Jan's phone (6 Sep 2026). Samples the cleaner dropped are not drawn either: the sheet
+    /// shows the track the verdict was scored on, and nothing else.
     private static func buildTurnSamples(_ analysis: SessionAnalysis,
-                                         positioned: [RecordSample]) -> [TurnSlice.Sample] {
+                                         positioned: [RecordSample],
+                                         clean: CleanTrack) -> [TurnSlice.Sample] {
         let pad = TurnSlice.defaultPadS * 2
         let windows = analysis.turns
             .filter(\.counted)
             .map { (start: $0.ts - pad, end: $0.endTs + pad) }
             .sorted { $0.start < $1.start }
         guard !windows.isEmpty else { return [] }
+
+        // Cleaned samples keep the record's own `t`, so an exact key is safe; the rounding
+        // only guards against a sub-millisecond difference introduced by projection maths.
+        func key(_ t: Double) -> Int64 { Int64((t * 1000).rounded()) }
+        var maneuverMps: [Int64: Double] = [:]
+        maneuverMps.reserveCapacity(clean.samples.count)
+        for sample in clean.samples { maneuverMps[key(sample.t)] = sample.hybridMps }
 
         var out: [TurnSlice.Sample] = []
         var index = 0
@@ -707,8 +732,9 @@ struct SessionDetail: Sendable {
             while index < windows.count && windows[index].end < sample.t { index += 1 }
             guard index < windows.count else { break }
             guard sample.t >= windows[index].start else { continue }
+            guard let mps = maneuverMps[key(sample.t)] else { continue }
             out.append(TurnSlice.Sample(t: sample.t, lat: lat, lon: lon,
-                                        kn: (sample.speedMps ?? 0) * Units.mpsToKn))
+                                        kn: mps * Units.mpsToKn))
         }
         return out
     }

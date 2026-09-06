@@ -303,20 +303,24 @@ public struct TurnSlice: Sendable, Equatable {
         }
     }
 
-    /// Speed at the entry, at the low point and at the exit, off the window's own samples.
+    /// Speed at the entry, at the low point and at the exit — **the engine's own three
+    /// numbers**, at the engine's own times.
+    ///
+    /// They used to be read off the window's samples, and the footnote promised they would
+    /// differ from the numbers row "by a tenth". On Jan's phone they differed by 1.5 kn
+    /// (6 Sep 2026): the strip was drawing the FIT's Doppler speed while the verdict was
+    /// scored on the maneuver channel (`CleanSample.hybridMps`, position-derived because
+    /// device Doppler is smoothed through a turn). One page, one channel: the caller now
+    /// feeds the slice the maneuver channel (`SessionDetail.buildTurnSamples`), and the
+    /// marks are `entryKn` / `minKn` at `minTs` / `exitKn` straight from the record, so
+    /// they sit on the drawn line by construction and print the same digits as the row.
     private static func marks(_ window: [Sample], turn: TurnRecord) -> SpeedMarks {
         let duration = max(turn.endTs - turn.ts, 0)
-        let entry = nearest(window, t: turn.ts)?.kn ?? turn.entryKn
-        let exit = nearest(window, t: turn.endTs)?.kn ?? turn.minKn
-        // The minimum is looked for **inside the turn**, not across the padded window: the
-        // slowest instant of a lead-in that began with a bear-away is not this turn's low
-        // point, and marking it there would put the label outside the shaded band.
-        let inTurn = window.filter { $0.t >= turn.ts && $0.t <= turn.endTs }
-        let low = inTurn.min { $0.kn < $1.kn }
-        return SpeedMarks(entryKn: entry,
-                          minKn: low?.kn ?? turn.minKn,
-                          minRt: low.map { $0.t - turn.ts } ?? duration / 2,
-                          exitKn: exit,
+        let minRt = min(max(turn.minTs - turn.ts, 0), duration)
+        return SpeedMarks(entryKn: turn.entryKn,
+                          minKn: turn.minKn,
+                          minRt: minRt,
+                          exitKn: turn.exitKn,
                           exitRt: duration)
     }
 
