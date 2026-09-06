@@ -78,7 +78,14 @@ public enum TurnCoach {
     }
 
     /// The sentence.
-    public static func line(turn: TurnRecord, slice: TurnSlice) -> String {
+    ///
+    /// `pumpStrokes` is the one number the ladder takes from outside the turn record
+    /// (`TurnAnalytics.pumpStrokes`), and only the `pumpedOut` rung uses it. It is optional
+    /// because the analysis may not know — and a sentence must never print a count that is
+    /// really an absence. It is also on the page: the "pumped out" chip carries the same
+    /// words, which is what keeps the rule "never a number the page is not already showing".
+    public static func line(turn: TurnRecord, slice: TurnSlice,
+                            pumpStrokes: Int? = nil) -> String {
         let mid = midPointWord(turn.type)
         switch rule(turn: turn, slice: slice) {
         case .fellInFast:
@@ -91,10 +98,20 @@ public enum TurnCoach {
             return "The barometer saw your wrist go under here, so the foil was gone for a "
                 + "moment — \(kn(turn.entryKn)) in, \(kn(turn.minKn)) at the low point."
         case .pumpedOut:
-            return turn.offFoilS > 0
-                ? "You pumped this one back out — \(seconds(turn.offFoilS)) off the foil "
-                    + "before it flew again."
-                : "You pumped this one back out, and it was flying again straight away."
+            let strokes = pumpStrokes.map { "\(TurnAnalytics.strokesText($0))" }
+            switch (strokes, turn.offFoilS > 0) {
+            case (let strokes?, true):
+                return "You pumped this one back out — \(strokes), and "
+                    + "\(seconds(turn.offFoilS)) off the foil before it flew again."
+            case (let strokes?, false):
+                return "You pumped this one back out in \(strokes), and it was flying "
+                    + "again straight away."
+            case (nil, true):
+                return "You pumped this one back out — \(seconds(turn.offFoilS)) off the "
+                    + "foil before it flew again."
+            case (nil, false):
+                return "You pumped this one back out, and it was flying again straight away."
+            }
         case .touchdownOnExit:
             return "The foil touched down on the way out — you held \(kn(turn.entryKn)) into "
                 + "the \(mid) and lost it after."

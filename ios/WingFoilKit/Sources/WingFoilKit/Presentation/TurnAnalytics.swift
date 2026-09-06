@@ -368,6 +368,53 @@ public enum TurnAnalytics {
         String(format: "%.0f", (score * 100).rounded())
     }
 
+    // MARK: - How much pumping a turn cost
+
+    /// The strokes the rider put in to get out of one turn, or nil where the analysis does
+    /// not know.
+    ///
+    /// The engine already answers this: a pump episode whose outcome is `recovery` carries
+    /// the index of the turn whose outcome window owns it (`PumpEpisodeRecord.turnIndex`,
+    /// engine 0.3.0), and more than one episode may be claimed by one turn — a rider who
+    /// pumps, sinks and pumps again pumped twice out of the same jibe — so they sum.
+    ///
+    /// nil rather than 0 when nothing is claimed, because the two are different statements:
+    /// "he pumped and the analysis counted no strokes" is a claim, and "this build's
+    /// analysis has no episodes at all" (a document written before 0.3.0, or a source with
+    /// no accelerometer) is an absence. A chip may print the first and must not print the
+    /// second — see the formatter rule "a missing value is absent, never 0".
+    public static func pumpStrokes(for turnIndex: Int,
+                                   in episodes: [PumpEpisodeRecord]) -> Int? {
+        let claimed = episodes.filter { $0.turnIndex == turnIndex }
+        guard !claimed.isEmpty else { return nil }
+        let strokes = claimed.reduce(0) { $0 + $1.strokes }
+        return strokes > 0 ? strokes : nil
+    }
+
+    /// The same question with the fallback the presentation needs: where no episode names
+    /// this turn, the ones that *overlap the window the turn's outcome was judged on*
+    /// (`ts ... endTs + outcomeWindowS`) are the pumping the rider did out of it.
+    ///
+    /// The fallback exists because `turnIndex` is written by the classifier and the
+    /// `pumped` flag is written by the turn detector, and a stored analysis can carry the
+    /// second without the first. It is deliberately second: an episode the engine actually
+    /// assigned beats one that merely happens to overlap.
+    public static func pumpStrokes(for turnIndex: Int, turn: TurnRecord,
+                                   in episodes: [PumpEpisodeRecord]) -> Int? {
+        if let claimed = pumpStrokes(for: turnIndex, in: episodes) { return claimed }
+        let from = turn.ts
+        let to = turn.endTs + turn.outcomeWindowS
+        let overlapping = episodes.filter { $0.endTs >= from && $0.startTs <= to }
+        guard !overlapping.isEmpty else { return nil }
+        let strokes = overlapping.reduce(0) { $0 + $1.strokes }
+        return strokes > 0 ? strokes : nil
+    }
+
+    /// "7 strokes", and "1 stroke" — the chip and the coach line print the same words.
+    public static func strokesText(_ strokes: Int) -> String {
+        "\(strokes) stroke\(strokes == 1 ? "" : "s")"
+    }
+
     /// The same second line the map callout carries, so the two never diverge.
     public static func detail(_ turn: TurnRecord) -> String {
         var text = String(format: "%.1f → %.1f kn", turn.entryKn, turn.minKn)
