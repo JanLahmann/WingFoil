@@ -1,0 +1,15 @@
+{
+  "session": "fixtures/sessions/ciq/2026-09-04-0758_nago-torbole-windsurfen_ciq.fit",
+  "session_start_utc": "2026-09-04T05:58:20Z",
+  "camera": {"make": "Apple", "model": "iPhone 16 Pro", "where": "shore, 45.86441 N 10.87532 E", "clock": "EXIF DateTimeOriginal + OffsetTimeOriginal (+02:00), GPS timestamp agrees"},
+  "offset_s": 0,
+  "offset_source": "metadata, verified by eye: both frames show the rider wading in at launch, before the first flight",
+  "files": [
+    {"name": "launch-1.jpg", "taken_local": "2026-09-04T07:58:59+02:00", "session_t_s": 39, "shows": "rider wading in, wing on the water, no flight yet"},
+    {"name": "launch-2.jpg", "taken_local": "2026-09-04T07:59:10+02:00", "session_t_s": 50, "shows": "rider wading in, wing up, no flight yet"}
+  ],
+  "not_placed": [
+    {"name": "lake panorama with many wings", "why": "re-encoded in transit, no EXIF; unknown day"},
+    {"name": "beach portrait with the wing and sun", "why": "re-encoded in transit, no EXIF; unknown day"}
+  ]
+}
