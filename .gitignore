@@ -38,3 +38,12 @@ developer_key*
 # moved it there.
 garmin/gen/
 garmin/source/gen/
+
+# Footage fixtures: gigabytes of video per afternoon. Only the README, the ground truth
+# and the alignment result are tracked (fixtures/footage/README.md).
+fixtures/footage/**
+!fixtures/footage/README.md
+!fixtures/footage/*/
+!fixtures/footage/*/README.md
+!fixtures/footage/*/truth.json
+!fixtures/footage/*/align.json
