@@ -93,9 +93,78 @@ verdicts, and no ink may say they are one.
 | `splash` | submersion moments | visible | |
 | `direction` | course-of-travel chevrons along the track | visible | decimated by on-screen spacing |
 
-Layer visibility persists on iOS (hidden-set, `mapLayerVisibility.v1`; unknown ids must
-decode harmlessly so old prefs survive new layers) and is transient on web. Legend chips are
-the only toggle surface; a struck-through chip means hidden.
+Layer visibility persists on iOS (hidden-set; unknown ids must decode harmlessly so old prefs
+survive new layers) and is transient on web. Legend chips are the only toggle surface; a
+struck-through chip means hidden.
+
+### Every map has the same legend, and its own visibility
+
+**One control, three maps** (iOS, 6 Sep 2026). The Ride section's track (inline and full
+screen), the Turns section's maneuver map and the Takeoffs section's attempt map all mount
+the same collapsible legend — the `Layers · N hidden` header, the chips, "show all", the
+style picker, the `?` — and nothing else may be a layer control. The two analysis maps used
+to have no legend at all and carried a lone style chip in their caption lines, which made
+them look like a different kind of map rather than the same map asking a narrower question.
+
+Two rules, and they are the whole of it (`MapLayerScope` in the kit, pure and tested):
+
+- **A map declares the subset it can draw, and gets chips only for those.** A `pumping` chip
+  on the Turns map would be a control that changes nothing, which is worse than no control:
+  it tells the rider the page has a state it does not have.
+
+  | map | draws |
+  |---|---|
+  | `ride` | the whole catalogue — the twelve above |
+  | `turns` | `direction` · `cleanJibe` · `flewThrough` · `touchdown` · `fellIn` · `courseChange` |
+  | `takeoffs` | `pumping` · `direction` · `takeoff` · `splash` |
+
+  Neither analysis map draws the **line** layers: their route is deliberately neutral grey,
+  because the page is about one filtered set and a phase-tinted track under it would be the
+  loudest thing on a 240 pt figure. So `flying` / `off foil` / the effort glow are *absent*
+  rather than present-and-inert.
+
+- **Visibility is per map; the collapsed/expanded header state is shared.** Three stored sets
+  (`mapLayerVisibility.v1` for the ride map — the original key, so an existing preference
+  survives — plus `mapLayerVisibility.turns.v1` and `mapLayerVisibility.takeoffs.v1`), each
+  with its own defaults: ride hides nothing, Turns opens without `direction` and
+  `courseChange`, Takeoffs without `direction`. Hiding "fell in" on Turns, where the page is
+  a verdict on maneuvers, is a different intention from hiding it on the ride, which is a
+  picture of the afternoon. "Show all" resets **one** map. The expanded state stays shared
+  (`mapLegend.expanded.v1`): "I use the chips" is a habit, not a per-map choice.
+
+The `N hidden` count is scoped the same way — only this map's layers, and only categories the
+session actually has any of (`MapLayerVisibility.hiddenCount(in:tally:)`).
+
+**The layer chips and the pages' own filters are different controls and must stay apart.**
+The Turns tab's type/side segments and the Takeoffs tab's outcome chips are *data* filters:
+they choose which attempts or maneuvers the page is about, and the pins, the tally, the
+caption and the list move together. The legend chooses *what is drawn about them*. Filtering
+to failures and hiding the pumping runs are different intentions; neither control may imply
+the other.
+
+### The Takeoffs map
+
+The Takeoffs section's map is the Turns map's sibling — the same frame, the same legend, the
+same pan and zoom — with attempts instead of maneuvers:
+
+- **The whole session's track, faint and neutral**, with the same dark outer edge over
+  photography the other maps' tracks get (`TrackHalo`).
+- **The pumping spans under the pins**, because a run he pumped is the context for the
+  attempt that ends it and not a thing to read on its own — the same order the Ride map draws
+  them in. The spans obey the outcome filter with the pins.
+- **One pin per attempt**, in the takeoff layer's existing glyphs and inks: the filled arrow
+  for a pumped takeoff, the hollow one for a free takeoff, the red u-turn for a failed
+  attempt (§ "Colour and glyph vocabulary"). Nothing new is invented here.
+- **Outcome filter chips — `All · Success · Failed · Free`** — where **free is a narrowing of
+  success, not a rival to it**: a rider who got up on the wind alone got up. Same shape as
+  clean ⊂ flew through on the Turns tab.
+- **Tapping a pin or a row focuses the attempt**: the pin grows and the row bands. Transient,
+  like every other way of pointing. There is no takeoff detail sheet — a takeoff is one
+  moment, not a maneuver with a shape.
+- **A list under the map, in time order**, mirroring the turn list: `at | pumps | to foil |
+  outcome`. A missing number is **absent, never 0** — a source with no accelerometer counted
+  no strokes, and a failed attempt never reached the foil, so both print an em-dash rather
+  than a zero that would read as a claim.
 
 ### The clean jibe is a star, and it answers to one chip
 
@@ -123,6 +192,11 @@ all three are the same rule read from different sides:
   the star's chip counts `cleanJibes`. The clean count is deliberately *not* a fifth entry in
   `PresentationFacts.markers` — those partition the turns and the drawn flight ends one mark
   each — but a fact of its own, pinned per fixture in `fixtures/presentation/`.
+
+**The Turns tab's map draws the star too** (6 Sep 2026). It was the one map in the app that
+drew a clean jibe as a plain outcome dot, which made the star look like a property of the
+session map rather than of the jibe; it now answers to the `cleanJibe` chip there under the
+same one-mark-one-chip rule (`TurnOutcomeKind.layer(clean:)`).
 
 The speed strip shares the visibility model, so a star hidden on the map is hidden there too,
 and the web keeps its numbered marks in step with the Turns table: the number rides with the
@@ -167,7 +241,9 @@ past the controls to reach the half of the figure they control. The contract:
   map-style menu and the `?`. None of them is a chip and none needs the block open.
 - **Collapsed by default, and the state is remembered per rider**
   (`mapLegend.expanded.v1`), like the visibility set itself: "I use the chips" is a fact
-  about a rider, not about a session. Both the inline and the full-screen legend read it.
+  about a rider, not about a session. **All four legends read it** — inline, full screen,
+  Turns and Takeoffs — because it is a habit and not a per-map choice; the *visibility* sets
+  underneath are per map (§ "Every map has the same legend, and its own visibility").
 - **Expanded, a chip is exactly what it was** — same groups, same order, same three states.
   Only whether the rows are on screen changes.
 - The web keeps its chips open: above the breakpoint it is a document on a desktop, not a
@@ -221,10 +297,11 @@ The table is `MapStyleChoice.recipe` and the view builds its `MapStyle` *from* i
 plan view of a plane of water. Points of interest are excluded wherever the argument exists —
 including on the full-screen map, which used to be the one place they were drawn.
 
-**One setting, four surfaces.** The session's inline map, the full-screen map, the Turns tab's
-map and the cinema replay all read it. The control is a menu chip in the legend row — the
-map's control strip — and, on the Turns tab, which has no legend, in the caption line under
-the map.
+**One setting, five surfaces.** The session's inline map, the full-screen map, the Turns
+tab's map, the Takeoffs tab's map and the cinema replay all read it. The control is a menu
+chip in the legend row — the map's control strip — on every one of them: the analysis maps
+carried a lone style chip in their caption lines until 6 Sep 2026, when they gained the same
+legend as everything else and the chip moved into it, where it belongs.
 
 **Over photography the track is redrawn to survive it, and the vector styles keep today's
 rendering exactly.** Two rules, both in the shared drawing path (`TrackHalo`,
@@ -778,11 +855,47 @@ caption saying whose responsibility the rights are.
 ## Sections — how a session divides
 
 Both apps open on the key-metrics block and then **switch between four sections**, in this
-order: **`Map · Speed` · `Turns` · `Takeoffs` · `Effort`**. The ids and the words are
-`SessionSection` in the kit; the web uses the same ids on `data-section` attributes. The
-alternative was measured: one column of ~3 800 pt on the phone and ~6 000 px on a phone
-browser, five unrelated subjects deep, with no way to the fifth except through the other
-four (`app-ui-review.md` §3.1, §7.2).
+order: **`Ride` · `Turns` · `Takeoffs` · `Log`**. The ids and the words are `SessionSection`
+in the kit. The alternative was measured: one column of ~3 800 pt on the phone and ~6 000 px
+on a phone browser, five unrelated subjects deep, with no way to the fifth except through
+the other four (`app-ui-review.md` §3.1, §7.2).
+
+| section | holds |
+|---|---|
+| **`ride`** *(default)* | the map, its legend, the speed chart, the replay scrubber, the foil tiles and the speed-records table — one instrument, one section |
+| **`turns`** | the turn cards, then the two filters, the outcome tally, the maneuver map and the turn list |
+| **`takeoffs`** | the failed-attempt headline and the takeoff & pumping tiles, then the attempt map and list, then the HR card ("What pumping cost") |
+| **`log`** | the gear card, the wind detail, the recording's provenance, and the watch-vs-phone table |
+
+**The four were re-cut on 6 Sep 2026** (Jan), from `Map · Speed | Turns | Takeoffs | Effort`.
+Two rationales, and both are about a name describing the wrong thing:
+
+- **Takeoffs and Effort were one subject split by sensor.** The takeoff tiles counted
+  attempts off the accelerometer and the HR card priced those same attempts off the optical
+  heart rate — "how many did I have to pump for" and "what did the pumping cost" are the same
+  question asked twice, and the app was answering them on two tabs. The word gave it away:
+  **"effort" was already the map legend's name for the GP3S record window**, so a section
+  called Effort was competing for a word the map had spent. The HR card is under the takeoff
+  content now and its heading dropped the redundant half (§ "The HR card's own title").
+- **The session's own facts had nowhere to live.** The recording's provenance was a footer
+  repeated under all four sections, the wind axis the whole analysis is named against was one
+  grey line under the date, and the watch-vs-phone table was hidden inside a warning banner
+  most riders dismiss. Three facts about the *record*, filed as page furniture. `Log` is
+  where they are, with the gear card, which was already the same kind of fact. There are no
+  placeholders on it for anything else.
+
+`Ride` replaced `Map · Speed` in the same move: the middle dot was load-bearing while the
+name was a list of two figures, and it is dead weight beside three one-word siblings. The
+section is the ride — where it went and how fast — and the two figures on it are how it says
+so.
+
+**Every scroll anchor that existed keeps working, and two changed section rather than name**:
+`hr` is on `takeoffs`, `gear` is on `log`. A jump to an anchor — a deep link, a screenshot
+hook (`UI_SCROLL_TO`), the divergence banner's tap — **must select the anchor's section
+first and then scroll**, because a scroll into an unselected section's subtree reaches
+nothing at all, silently. The rule is `SessionSection.tabChange(for:current:)`, and it
+returns nil for an anchor already on screen and for `key`, which is above the switcher and
+therefore on every section.
 
 - **The key-metrics block is above the switcher and is never a section.** It is the answer
   to "was that a good session"; a page you can navigate away from is not an answer. There
@@ -802,8 +915,30 @@ four (`app-ui-review.md` §3.1, §7.2).
   what makes it a lab tool. The switcher exists only below the breakpoint, and crossing the
   breakpoint upward must restore every panel.
 - **A section with nothing in it is not shown.** The web has no HR card, so its fourth chip
-  is the raw-output panel (`Data`) rather than an empty `Effort`; an honest label beats a
-  matching one. When the web gains effort content, the id is already reserved.
+  is the raw-output panel (`Data`) rather than an empty one; an honest label beats a matching
+  one.
+- **The web still carries the pre-re-cut ids** (`mapSpeed` … `effort` on `data-section`)
+  until it is re-cut to match. The two apps are meant to be the same product and this is a
+  known, temporary divergence: the analyzer has no HR card and no gear, so `Log` and the
+  Takeoffs merge do not transfer unchanged, and the re-cut is an iOS commit.
+
+### The HR card's own title
+
+The card under the takeoff content is headed **"What pumping cost"**, not "Effort — what
+pumping cost". The tab it used to sit on carried the first two words, and a card that repeats
+its section's name in its own heading is decoration that says nothing (§ "Tables over tile
+walls"). The section already says Takeoffs; the heading only has to say which half of the
+takeoff question this half answers.
+
+### The divergence banner is one line, and it links
+
+The watch-vs-phone banner sits under the key-metrics block, as it did, and it is now a
+**one-line warning with a chevron**: the four-column table it used to unfold in place is on
+`Log`. Tapping the banner selects `Log` and scrolls to the table. The dismiss X is unchanged
+and still per session and per divergence (`DivergenceDismissal`). A disclosure that put the
+most technical thing on the page in the second most prominent place on it was the wrong
+weight for a provenance footnote; a banner's job is to say there is something and to take you
+to it.
 
 ## Tables over tile walls
 

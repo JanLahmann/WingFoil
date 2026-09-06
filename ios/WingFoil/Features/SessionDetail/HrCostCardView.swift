@@ -27,7 +27,11 @@ struct HrCostCardView: View {
         if let card {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 6) {
-                    Text("Effort — what pumping cost").font(.headline)
+                    // "Effort — " was the tab's name repeated into the card's, and the tab
+                    // that carried it is gone (6 Sep 2026): the card sits under the takeoff
+                    // tiles now, on a tab that already says Takeoffs, so the heading only
+                    // has to say which half of the takeoff question this half answers.
+                    Text("What pumping cost").font(.headline)
                     HelpButton(topic: .heartRate, size: .footnote)
                     Spacer()
                 }

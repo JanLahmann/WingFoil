@@ -108,12 +108,32 @@ struct SessionDetail: Sendable {
         var kind: Kind
         var title: String
         var detail: String
+        /// How many strokes the attempt took — the engine's, from the takeoff record or from
+        /// the failed episode. Absent on a source with no accelerometer, where the strokes
+        /// were never counted at all: the Takeoffs list prints nothing rather than a 0 that
+        /// would read as "he got up without pumping".
+        var pumps: Int?
+        /// Seconds from the first stroke to the foil. Present only on an attempt that got
+        /// up *and* whose run the record could judge — a truncated run has no duration to
+        /// print, and a failed attempt never reached the foil at all.
+        var timeToFoilS: Double?
         /// The flight this attempt started, or "no flight" when it did not — tap-only
         /// (docs/presentation.md, "Pairing").
         var pairing: String?
         var flightIndex: Int?
 
         var isFailed: Bool { kind == .failed }
+
+        /// The kit's vocabulary for the same three-way split, which is what the Takeoffs
+        /// tab's outcome filter is written against (`TakeoffOutcomeFilter`). The view model
+        /// and the filter must agree on what "free" means, so only one of them defines it.
+        var attemptKind: TakeoffAttemptKind {
+            switch kind {
+            case .pumped: return .pumped
+            case .free: return .free
+            case .failed: return .failed
+            }
+        }
     }
 
     /// A moment the barometer says the wrist went under water — the turns and flight ends
@@ -137,6 +157,9 @@ struct SessionDetail: Sendable {
         var lat: Double
         var lon: Double
         var outcome: TurnOutcomeKind
+        /// The engine's own `clean` verdict, carried so the Turns map can draw the star the
+        /// session map draws — and answer to the same one chip (`TurnOutcomeKind.layer(clean:)`).
+        var clean: Bool = false
     }
 
     /// One GP3S record with the provenance the engine already computed, so the effort can
@@ -618,11 +641,12 @@ struct SessionDetail: Sendable {
                                           pairings: [FlightPairing.Flight]) -> [TakeoffMark] {
         var out: [TakeoffMark] = []
         func add(t: Double, kind: TakeoffMark.Kind, title: String, detail: String,
-                 pairing: String?, flightIndex: Int?) {
+                 pumps: Int?, timeToFoilS: Double?, pairing: String?, flightIndex: Int?) {
             guard let sample = nearest(positioned, t: t),
                   let lat = sample.lat, let lon = sample.lon else { return }
             out.append(TakeoffMark(id: out.count, t: t, lat: lat, lon: lon, kind: kind,
-                                   title: title, detail: detail, pairing: pairing,
+                                   title: title, detail: detail, pumps: pumps,
+                                   timeToFoilS: timeToFoilS, pairing: pairing,
                                    flightIndex: flightIndex))
         }
 
@@ -639,6 +663,10 @@ struct SessionDetail: Sendable {
             let flight = FlightPairing.flight(startingAt: takeoff.startTs, in: pairings)
             add(t: takeoff.startTs, kind: takeoff.free ? .free : .pumped,
                 title: takeoff.free ? "Free takeoff" : "Takeoff", detail: detail,
+                pumps: takeoff.pumps,
+                // A truncated run is one the record could not time — the recording started
+                // or stopped inside it — so it has no number rather than a short one.
+                timeToFoilS: takeoff.truncated ? nil : takeoff.timeToFoilS,
                 pairing: flight.map(FlightPairing.takeoffLine), flightIndex: flight?.index)
         }
         // The episode's *first* stroke, not its last: the marker should sit where he
@@ -649,6 +677,9 @@ struct SessionDetail: Sendable {
             if duration >= 1 { detail += String(format: " · %.0f s", duration) }
             if episode.bursts > 1 { detail += " · \(episode.bursts) bursts" }
             add(t: episode.startTs, kind: .failed, title: "Failed attempt", detail: detail,
+                pumps: episode.strokes,
+                // Never reached the foil, so there is no time to it. Absent, not zero.
+                timeToFoilS: nil,
                 pairing: FlightPairing.failedLine(strokes: episode.strokes),
                 flightIndex: nil)
         }
@@ -695,7 +726,7 @@ struct SessionDetail: Sendable {
             guard turn.counted, let sample = nearest(positioned, t: turn.ts),
                   let lat = sample.lat, let lon = sample.lon else { return nil }
             return TurnPin(id: index, t: turn.ts, lat: lat, lon: lon,
-                           outcome: TurnOutcomeKind(turn.outcome))
+                           outcome: TurnOutcomeKind(turn.outcome), clean: turn.clean)
         }
     }
 
