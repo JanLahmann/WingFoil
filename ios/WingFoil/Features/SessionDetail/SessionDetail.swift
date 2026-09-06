@@ -145,8 +145,15 @@ struct SessionDetail: Sendable {
         var id: String           // the engine's window key, e.g. "best2s"
         var label: String
         var kn: Double
-        var band: Band
-        var points: [Point]
+        /// One band per window. A single window for every record but 5×10 s, which is
+        /// five disjoint runs — and was drawn as one until 6 Sep 2026, because the window
+        /// subscript hands out only the top run. All five glow now, on the map and under
+        /// the chart: the record *is* the five, and one segment misnames it.
+        var bands: [Band]
+        var segments: [[Point]]
+
+        var band: Band { bands[0] }
+        var points: [Point] { segments[0] }
     }
 
     /// One instant of the session as the replay scrubber reads it: everything the live
@@ -748,14 +755,30 @@ struct SessionDetail: Sendable {
     private static func buildEfforts(_ analysis: SessionAnalysis,
                                      positioned: [RecordSample]) -> [RecordEffort] {
         var out: [RecordEffort] = []
+        var bandId = 0
         for kind in RecordWindowSelection.catalogue {
-            guard let kn = kind.value(in: analysis.records), kn > 0,
-                  let window = analysis.records.windows[kind.rawValue] else { continue }
-            let start = window.startTs
-            let end = window.startTs + window.durS
+            guard let kn = kind.value(in: analysis.records), kn > 0 else { continue }
+            // 5×10 s is the one record made of several windows; the subscript yields only
+            // its top run, so the list is read directly and every run is drawn.
+            let windows: [RecordWindow]
+            if kind == .best5x10s, let five = analysis.records.windows.best5x10s, !five.isEmpty {
+                windows = five.sorted { $0.startTs < $1.startTs }
+            } else if let window = analysis.records.windows[kind.rawValue] {
+                windows = [window]
+            } else {
+                continue
+            }
+            var bands: [Band] = []
+            var segments: [[Point]] = []
+            for window in windows {
+                let start = window.startTs
+                let end = window.startTs + window.durS
+                bands.append(Band(id: bandId, start: start, end: end))
+                bandId += 1
+                segments.append(points(positioned, from: start, to: end))
+            }
             out.append(RecordEffort(id: kind.rawValue, label: effortLabel(kind), kn: kn,
-                                    band: Band(id: out.count, start: start, end: end),
-                                    points: points(positioned, from: start, to: end)))
+                                    bands: bands, segments: segments))
         }
         return out
     }

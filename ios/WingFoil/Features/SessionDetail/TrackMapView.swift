@@ -384,10 +384,16 @@ struct TrackContent: MapContent {
         }
         // The record effort glows over the phase colouring: provenance the engine already
         // computed (`records.windows`), so the rider can see *where* the best run happened.
-        if let effort, effort.points.count >= 2, visibility.isVisible(.effort) {
-            MapPolyline(coordinates: effort.points.map(Self.coordinate))
-                .stroke(DesignTokens.Effort.window,
-                        style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))
+        if let effort, visibility.isVisible(.effort) {
+            // Every window of the record — five for 5×10 s, one for the rest.
+            ForEach(Array(effort.segments.enumerated()), id: \.offset) { _, segment in
+                if segment.count >= 2 {
+                    MapPolyline(coordinates: segment.map(Self.coordinate))
+                        .stroke(DesignTokens.Effort.window,
+                                style: StrokeStyle(lineWidth: 7, lineCap: .round,
+                                                   lineJoin: .round))
+                }
+            }
         }
         if visibility.isVisible(.takeoff) {
             ForEach(detail.takeoffMarks) { mark in

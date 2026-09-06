@@ -307,15 +307,17 @@ struct SessionDetailView: View {
                 if row.zoneIsEstimated { estimatedClockNote }
                 if row.isExample { exampleNote }
                 if row.rider != nil { riderNote(row) }
+                // The badge alone. Duration and distance used to follow it and were the
+                // first two cells of the key-metrics block eight points lower — the same
+                // two numbers twice on one screen (Jan, 6 Sep 2026). The block is the
+                // contract the card mirrors, so the block keeps them and the header does
+                // not; the library row still carries both for the list.
                 HStack(spacing: 8) {
                     Text(SessionDisplay.badge(row))
                         .font(.caption.weight(.semibold))
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(SessionDisplay.badgeColor(row).opacity(0.16), in: .capsule)
                         .foregroundStyle(SessionDisplay.badgeColor(row))
-                    Text(Fmt.duration(row.durationS))
-                    Text("·")
-                    Text(Fmt.km(row.distanceKm))
                 }
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
