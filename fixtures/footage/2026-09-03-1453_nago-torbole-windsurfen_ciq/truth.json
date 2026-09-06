@@ -1,0 +1,10 @@
+{
+  "session": "fixtures/sessions/ciq/2026-09-03-1453_nago-torbole-windsurfen_ciq.fit",
+  "session_start_utc": "2026-09-03T12:53:18Z",
+  "files": [],
+  "not_placed": [
+    {"name": "lake-panorama.jpg", "why": "re-encoded in transit, no EXIF; rider says Thursday afternoon"},
+    {"name": "beach-portrait.jpg", "why": "re-encoded in transit, no EXIF; rider says Thursday afternoon"}
+  ],
+  "pending": "AirDrop originals of the videos and these two photos"
+}
