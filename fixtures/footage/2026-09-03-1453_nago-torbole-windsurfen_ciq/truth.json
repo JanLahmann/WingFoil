@@ -1,10 +1,17 @@
 {
   "session": "fixtures/sessions/ciq/2026-09-03-1453_nago-torbole-windsurfen_ciq.fit",
   "session_start_utc": "2026-09-03T12:53:18Z",
-  "files": [],
-  "not_placed": [
-    {"name": "lake-panorama.jpg", "why": "re-encoded in transit, no EXIF; rider says Thursday afternoon"},
-    {"name": "beach-portrait.jpg", "why": "re-encoded in transit, no EXIF; rider says Thursday afternoon"}
+  "camera": {"make": "Apple", "model": "iPhone 17 Pro Max", "who": "a second person holding Jan's own phone", "where": "in the water near the launch, 45.86466 N 10.87494 E", "clock": "EXIF DateTimeOriginal + OffsetTimeOriginal (+02:00)"},
+  "offset_s": 0,
+  "offset_source": "metadata, verified by eye: the frame shows the rider flying, between jibe 9 (flew through, 10 s earlier) and jibe 10 (fell in, 7 s later); the track has him at 11.8 kn, 64 m from the camera, moving away at bearing 293°",
+  "files": [
+    {"name": "flying-1501.jpg", "taken_local": "2026-09-03T15:01:29+02:00", "session_t_s": 491, "shows": "rider on the foil, wing sheeted in, windsurfers behind; flight 3 (14:59:49–15:01:49)", "events_in_window": ["turn/jibe #9 at -10 s flew_through", "turn/jibe #10 at +7 s fell_in"]}
   ],
-  "pending": "AirDrop originals of the videos and these two photos"
+  "not_placed": [
+    {"name": "lake-panorama.jpg", "why": "re-encoded in transit, no EXIF"},
+    {"name": "beach-portrait.jpg", "why": "re-encoded in transit, no EXIF"},
+    {"name": "flying-portrait-undated.jpg", "why": "re-encoded in transit, no EXIF; same flight as flying-1501 by the look of it"},
+    {"name": "beach-wing-undated.jpg", "why": "re-encoded in transit, no EXIF; wading in past a windsurf sail, probably 14:5x"}
+  ],
+  "pending": "AirDrop originals of the videos and the undated photos"
 }
