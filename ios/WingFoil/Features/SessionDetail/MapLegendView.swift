@@ -17,11 +17,23 @@ import WingFoilKit
 /// `mapLegend` help topic, and the one genuinely session-specific fact that was buried in
 /// them — how many attempts failed — moved to the takeoff card, which is where a number
 /// about takeoffs belongs.
+///
+/// **One legend, three maps** (6 Sep 2026). This view is now the *only* layer control in the
+/// app: the Ride tab's track (inline and full screen), the Turns tab's maneuver map and the
+/// Takeoffs tab's attempt map all mount it, each declaring the subset of categories it can
+/// draw (`MapLayerScope`). Before, the two analysis maps had no legend at all and carried a
+/// lone style chip in their captions, which made them look like a different kind of map
+/// rather than the same map asking a narrower question. What is *not* shared is the
+/// visibility set — three scopes, three stored sets, sensible defaults each — because hiding
+/// "fell in" on Turns is a different intention from hiding it on the ride.
 struct MapLegendView: View {
     let detail: SessionDetail
     /// The GP3S effort currently highlighted, which is what the `.effort` chip is labelled
     /// with. No effort selected ⇒ no chip, rather than a chip with nothing to name.
     let effort: SessionDetail.RecordEffort?
+    /// Which map this legend belongs to: it decides both the chips that exist and the stored
+    /// set they toggle.
+    var scope: MapLayerScope = .ride
     /// True on the full-screen map, where the legend floats over the water on a material
     /// strip. It drops the `?`: the help sheet would cover the map the rider just went
     /// full-screen to look at, and the same button is one back-swipe away on the session.
@@ -31,29 +43,38 @@ struct MapLegendView: View {
 
     /// Collapsed until the rider opens it, and then remembered — per rider, like the
     /// visibility set itself, because "I use the chips" and "I never touch the chips" are
-    /// facts about a rider and not about a session.
+    /// facts about a rider and not about a session. Deliberately **shared by all three
+    /// maps**: it is a habit, not a per-map choice, and a rider who opens the chips on one
+    /// map should not have to open them again on the next.
     @AppStorage(MapLegendView.expandedKey) private var expanded = false
 
     static let expandedKey = "mapLegend.expanded.v1"
 
-    private var visibility: MapLayerVisibility { store.mapLayers }
+    private var visibility: MapLayerVisibility { store.mapLayers(for: scope) }
     private var tally: MapLayerTally { detail.layerTally(effort: effort) }
 
-    private var hasMarkers: Bool {
-        !detail.markers.isEmpty || !detail.takeoffMarks.isEmpty
-            || !detail.splashMarks.isEmpty
+    /// The chips this map has, split into the legend's two rows. `direction` rides with the
+    /// route because that is what it is about — the route, not the events on it — even
+    /// though it hides outright the way a marker layer does.
+    private var routeLayers: [MapLayer] {
+        scope.layers.filter { $0.isLine || $0 == .direction }
     }
 
-    /// How many categories are hidden **that this session has any of**.
-    ///
-    /// Not `visibility.hiddenLayers.count`: a rider who hid "splash" months ago would
-    /// otherwise be told something is off on every session he never went under on, and the
-    /// number's whole job is to be the reason to open the block.
-    private var hiddenHere: Int {
-        let tally = self.tally
-        return MapLayer.allCases.filter { !visibility.isVisible($0) && tally.count($0) > 0 }
-            .count
+    private var markerLayers: [MapLayer] {
+        scope.layers.filter { !($0.isLine || $0 == .direction) }
     }
+
+    /// Whether the marker row has anything to say on *this* session. A map whose event
+    /// categories are all empty draws no second row rather than a row of inert captions.
+    private var hasMarkers: Bool {
+        let tally = self.tally
+        return markerLayers.contains { tally.count($0) > 0 }
+    }
+
+    /// How many of this map's categories are hidden **that this session has any of** — the
+    /// rule is in the kit (`MapLayerVisibility.hiddenCount(in:tally:)`) so all three maps
+    /// count the same way and a test can hold them to it.
+    private var hiddenHere: Int { visibility.hiddenCount(in: scope, tally: tally) }
 
     /// **Three rows, one question each** — and the utilities are not one of the questions.
     ///
@@ -105,7 +126,7 @@ struct MapLegendView: View {
         HStack(spacing: 8) {
             disclosure
             Spacer(minLength: 0)
-            if !visibility.isEverythingVisible { showAllButton }
+            if !visibility.isEverythingVisible(in: scope) { showAllButton }
             MapStyleChip()
             // A chip-sized affordance among chips, and it costs one line where the prose it
             // replaced cost three paragraphs (§1.2). Dropped on the full-screen map, where
@@ -140,16 +161,16 @@ struct MapLegendView: View {
 
     private var routeRow: some View {
         WrapRow(spacing: 6) {
-            chip(.flying, swatch: .line(DesignTokens.Phase.flying))
-            chip(.offFoil, swatch: .line(DesignTokens.Phase.offFoil))
-            chip(.pumping, swatch: .line(EventMarkerStyle.pumping))
-            // Sits with the route chips rather than the marker ones because that is what it
-            // is about — the route, not the events on it — even though hiding it removes
-            // the arrows outright the way a marker layer does.
-            chip(.direction, swatch: .glyph("chevron.up", DesignTokens.Direction.ink))
-            if let effort {
-                chip(.effort, swatch: .line(DesignTokens.Effort.window),
-                     label: effort.label.lowercased())
+            ForEach(routeLayers) { layer in
+                // The effort chip is the one that is labelled with what it is currently
+                // highlighting ("best 2 s") rather than with its own name — and with no
+                // record selected there is nothing to name, so there is no chip.
+                if layer != .effort {
+                    chip(layer, swatch: Self.swatch(for: layer))
+                } else if let effort {
+                    chip(.effort, swatch: .line(DesignTokens.Effort.window),
+                         label: effort.label.lowercased())
+                }
             }
         }
     }
@@ -159,24 +180,42 @@ struct MapLegendView: View {
     /// It leads because it is the mark a rider opens the map to find, and because it is the
     /// one mark here that is not a rung of the ladder: putting it after "fell in" would file
     /// the strict verdict as the ladder's fourth outcome, which is precisely what it is not
-    /// (docs/presentation.md, "Clean jibe").
+    /// (docs/presentation.md, "Clean jibe"). The order is the scope's
+    /// (`MapLayerScope.layers`), so a map's chips read in the same order as every other
+    /// map's, minus the ones it cannot draw.
     private var markerRow: some View {
         WrapRow(spacing: 6) {
-            chip(.cleanJibe, swatch: .glyph(DesignTokens.Glyph.cleanJibe,
-                                            EventMarkerStyle.cleanJibe))
-            chip(.flewThrough, swatch: .dot(EventMarkerStyle.color(.flew)))
-            chip(.touchdown, swatch: .dot(EventMarkerStyle.color(.touchdown)))
-            chip(.fellIn, swatch: .dot(EventMarkerStyle.color(.fell)))
-            chip(.courseChange, swatch: .dot(EventMarkerStyle.color(.course)))
-            chip(.takeoff, swatch: .glyph("arrow.up.circle.fill", EventMarkerStyle.takeoff))
-            chip(.splash, swatch: .glyph("drop.fill", EventMarkerStyle.splash))
+            ForEach(markerLayers) { layer in
+                chip(layer, swatch: Self.swatch(for: layer))
+            }
+        }
+    }
+
+    /// **A chip has to look like the thing it toggles**, so the swatch is the catalogue's
+    /// twelfth column: a line for the route tints, a dot for the outcome ladder, the mark's
+    /// own glyph for the categories the map draws as glyphs. One table, read by all three
+    /// legends.
+    private static func swatch(for layer: MapLayer) -> LegendChip.Swatch {
+        switch layer {
+        case .flying: return .line(DesignTokens.Phase.flying)
+        case .offFoil: return .line(DesignTokens.Phase.offFoil)
+        case .pumping: return .line(EventMarkerStyle.pumping)
+        case .effort: return .line(DesignTokens.Effort.window)
+        case .direction: return .glyph("chevron.up", DesignTokens.Direction.ink)
+        case .cleanJibe: return .glyph(DesignTokens.Glyph.cleanJibe, EventMarkerStyle.cleanJibe)
+        case .flewThrough: return .dot(EventMarkerStyle.color(.flew))
+        case .touchdown: return .dot(EventMarkerStyle.color(.touchdown))
+        case .fellIn: return .dot(EventMarkerStyle.color(.fell))
+        case .courseChange: return .dot(EventMarkerStyle.color(.course))
+        case .takeoff: return .glyph("arrow.up.circle.fill", EventMarkerStyle.takeoff)
+        case .splash: return .glyph("drop.fill", EventMarkerStyle.splash)
         }
     }
 
     /// Only shown while something *is* hidden: an always-present reset would read as
     /// clutter, and while it is present it is the one-tap way back to the full picture.
     private var showAllButton: some View {
-        Button("show all") { store.showAllMapLayers() }
+        Button("show all") { store.showAllMapLayers(in: scope) }
             .font(.caption2.weight(.medium))
             .buttonStyle(.plain)
             .foregroundStyle(Color.accentColor)
@@ -190,7 +229,7 @@ struct MapLegendView: View {
                    swatch: swatch,
                    isOn: visibility.isVisible(layer),
                    count: tally.count(layer)) {
-            store.toggleMapLayer(layer)
+            store.toggleMapLayer(layer, in: scope)
         }
     }
 }
@@ -380,5 +419,13 @@ extension SessionDetail {
     /// draw, so the two can never disagree about what is on screen.
     func visibleMarkers(_ visibility: MapLayerVisibility) -> [EventMarker] {
         markers.filter { marker in marker.layers.allSatisfy(visibility.isVisible) }
+    }
+
+    /// The rejected sweeps — bear-aways and round-ups. Their own list because the Turns map
+    /// draws them as *context* behind the `courseChange` chip while its type/side filter is
+    /// about counted maneuvers only: a course change has no verdict, no score and no entry
+    /// tack, so it can never be one of the rows.
+    var courseChangeMarkers: [EventMarker] {
+        markers.filter { $0.tone == .course }
     }
 }

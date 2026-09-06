@@ -169,68 +169,64 @@ struct TurnsAnalysisView: View {
     /// The track in neutral grey with only the filtered turns on it. Deliberately *not*
     /// the session map: this page is about one subset, and the outcome dots of the turns
     /// the filter excluded would be exactly the thing that makes the answer unreadable.
+    ///
+    /// The frame — the receding route, the chevrons, the pan and zoom, the legend — is
+    /// `FocusMapView`, shared with the Takeoffs tab's attempt map. Only the marks are this
+    /// page's.
+    ///
+    /// **Two controls, two questions, and they are not the same question.** The segments
+    /// above choose *which turns the page is about* (a data filter — the pins, the tally and
+    /// the list move together); the legend below chooses *what is drawn about them* (a layer
+    /// filter, over this map's own stored set). A rider who filters to jibes and then hides
+    /// "fell in" is asking two different things, and the falls come back on the ride map
+    /// untouched.
     private var map: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Map(initialPosition: .region(detail.region), interactionModes: [.zoom, .pan]) {
-                // Over photography the neutral grey route would be the first thing to
-                // disappear — it is *meant* to recede, and a photograph gives it far more to
-                // recede into than a vector map does. So it gets the same dark outer edge the
-                // session map's track gets, from the same place (`TrackHalo`).
-                if store.mapStyle.isImagery {
-                    ForEach(detail.segments) { segment in
-                        MapPolyline(coordinates: segment.points.map {
-                            CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
-                        })
-                        .stroke(TrackHalo.ink,
-                                style: StrokeStyle(
-                                    lineWidth: TrackHalo.width(under: segment.flying ? 3 : 1.5),
-                                    lineCap: .round, lineJoin: .round))
-                    }
-                }
-                ForEach(detail.segments) { segment in
-                    MapPolyline(coordinates: segment.points.map {
-                        CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
-                    })
-                    // Neutral grey is "recede" said in the app's own ink, and over a photograph
-                    // of deep water it recedes all the way out of sight. Same intent, read
-                    // against what is actually underneath (`TrackHalo.ink`).
-                    .stroke(TrackHalo.ink(Color.secondary, on: store.mapStyle,
-                                          opacity: segment.flying ? 0.45 : 0.22,
-                                          overImagery: segment.flying ? 0.8 : 0.45),
-                            style: StrokeStyle(lineWidth: segment.flying ? 3 : 1.5,
-                                               lineCap: .round, lineJoin: .round))
-                }
-                ForEach(pins) { pin in
-                    Annotation("", coordinate: CLLocationCoordinate2D(latitude: pin.lat,
-                                                                      longitude: pin.lon),
+        FocusMapView(detail: detail, scope: .turns, caption: caption) {
+            // The grey non-verdict sweeps, under the maneuvers and behind their own chip:
+            // context for where the reader was pointing rather than part of the answer,
+            // which is why they are off until asked for.
+            if visibility.isVisible(.courseChange) {
+                ForEach(detail.courseChangeMarkers) { marker in
+                    Annotation("", coordinate: CLLocationCoordinate2D(latitude: marker.lat,
+                                                                      longitude: marker.lon),
                                anchor: .center) {
-                        TrackHalo.around(TurnOutcomeStyle.pin(pin.outcome,
-                                                              focused: focused == pin.id),
+                        TrackHalo.around(EventMarkerStyle.dot(marker, size: 9),
                                          on: store.mapStyle)
                             .accessibilityHidden(true)
                     }
                     .annotationTitles(.hidden)
                 }
             }
-            .mapStyle(store.mapStyle.mapStyle)
-            .figureHeight(regular: 240, compact: 180)
-            .clipShape(.rect(cornerRadius: 14))
-            // The caption, and the map's one control. This page has no legend to put the style
-            // chip in — the filters above are about the turns, not the map — so it sits with
-            // the line that is already about the picture.
-            HStack(alignment: .firstTextBaseline) {
-                Text(pins.isEmpty
-                     ? "Nothing to mark — widen the filters."
-                     : "\(pins.count) turn\(pins.count == 1 ? "" : "s") marked · "
-                         + "tap a row below to open it.")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                Spacer(minLength: 8)
-                MapStyleChip()
-                    .font(.caption2)
+            ForEach(drawnPins) { pin in
+                Annotation("", coordinate: CLLocationCoordinate2D(latitude: pin.lat,
+                                                                  longitude: pin.lon),
+                           anchor: .center) {
+                    TrackHalo.around(TurnOutcomeStyle.pin(pin.outcome, clean: pin.clean,
+                                                          focused: focused == pin.id),
+                                     on: store.mapStyle)
+                        .accessibilityHidden(true)
+                }
+                .annotationTitles(.hidden)
             }
         }
         .id("turnsMap")
+    }
+
+    private var caption: String {
+        pins.isEmpty
+            ? "Nothing to mark — widen the filters."
+            : "\(pins.count) turn\(pins.count == 1 ? "" : "s") marked · "
+                + "tap a row below to open it."
+    }
+
+    private var visibility: MapLayerVisibility { store.mapLayers(for: .turns) }
+
+    /// The filtered pins the *layer* chips also allow. A clean jibe is a star answering to
+    /// the `cleanJibe` chip alone, exactly as on the session map — the rule is the kit's
+    /// (`TurnOutcomeKind.layer(clean:)`), so the two maps cannot drift.
+    private var drawnPins: [SessionDetail.TurnPin] {
+        let visibility = self.visibility
+        return pins.filter { visibility.isVisible($0.outcome.layer(clean: $0.clean)) }
     }
 
     // MARK: - List
@@ -334,13 +330,27 @@ enum TurnOutcomeStyle {
         }
     }
 
+    /// The pin, or a **star** when the jibe was clean.
+    ///
+    /// The star replaces the dot rather than sitting beside it, in the clean ink and never
+    /// the ladder's green — the same three rules the session map's marks follow
+    /// (docs/presentation.md, "Clean jibe"). It had been the one map in the app that drew a
+    /// clean jibe as a plain dot, which made the star look like a property of the session
+    /// map rather than of the jibe.
     @ViewBuilder
-    static func pin(_ outcome: TurnOutcomeKind, focused: Bool) -> some View {
-        let tint = color(outcome)
-        Circle()
-            .fill(tint)
-            .stroke(.white.opacity(0.9), lineWidth: focused ? 3 : 2)
-            .frame(width: focused ? 18 : 11, height: focused ? 18 : 11)
-            .shadow(radius: focused ? 3 : 1)
+    static func pin(_ outcome: TurnOutcomeKind, clean: Bool = false,
+                    focused: Bool) -> some View {
+        if clean {
+            Image(systemName: DesignTokens.Glyph.cleanJibe)
+                .font(.system(size: focused ? 20 : 13, weight: .semibold))
+                .foregroundStyle(EventMarkerStyle.cleanJibe)
+                .shadow(radius: focused ? 3 : 1)
+        } else {
+            Circle()
+                .fill(color(outcome))
+                .stroke(.white.opacity(0.9), lineWidth: focused ? 3 : 2)
+                .frame(width: focused ? 18 : 11, height: focused ? 18 : 11)
+                .shadow(radius: focused ? 3 : 1)
+        }
     }
 }

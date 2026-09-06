@@ -493,7 +493,9 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    On the Trends tab `UI_SCROLL_TO=sideSuccess` parks the screen on the port/starboard
    turn-success chart. On the session page,
    `UI_SCROLL_TO=<anchor>` (`chart` for the speed chart, `replay`, `summary`, `turns` for
-   the turn cards and the drill-in row, `takeoff`, `hr` for the HR-cost card, `gear`),
+   the turn cards and the drill-in row, `takeoff`, `takeoffsMap` / `takeoffList` for the
+   attempt map and its rows, `hr` for the HR-cost card, `gear`, and `wind` / `recording` /
+   `divergence` for the Log section's three cards),
    `UI_PLAYHEAD=0.0…1.0`,
    `UI_FULLSCREEN_MAP=1` and `UI_HIDE_LAYERS=<MapLayer,…>` stage the session detail page:
    the last one starts with those legend chips switched off (e.g. `fellIn,courseChange`,
@@ -512,6 +514,11 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    pushed a page until the drill-in was folded inline, app-ui-review.md §2.1) and
    `UI_TURN_FILTER=<jibes|tacks|both>,<port|starboard|both>` engages its two segmented
    filters (e.g. `jibes,starboard`), which `simctl` likewise cannot tap.
+   `UI_TAKEOFF_FILTER=<all|success|failed|free>` does the same for the **Takeoffs** section's
+   one segmented filter, so the attempt map can be photographed showing only the attempts
+   that did not get up. Both are data filters and are unrelated to `UI_HIDE_LAYERS`, which is
+   the layer legend — and note that the three maps now keep **separate** visibility sets, so
+   the layer override is applied to every scope that draws the named layer.
    `UI_MAP_CALLOUT=takeoff|failed|end|flight` opens the track callout on the first mark of
    that kind, because the pairing line (docs/presentation.md, "Pairing") is deliberately
    *tap-only* and `simctl` has no finger to tap with. It opens exactly the card a tap opens

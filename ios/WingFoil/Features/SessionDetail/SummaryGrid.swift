@@ -32,7 +32,7 @@ private func cardSection(_ title: String, anchor: String? = nil, help: HelpTopic
 
 // MARK: - Foil
 
-/// The flight facts, on the Map · Speed tab because that is where the flights are drawn.
+/// The flight facts, on the Ride tab because that is where the flights are drawn.
 /// Foil time and flight count are what the map's teal and the chart's shaded bands *are*,
 /// and reading the number beside the picture of it is the reason they sit together.
 struct SessionFoilGrid: View {
@@ -255,6 +255,10 @@ struct SessionTurnsSection: View {
 // MARK: - Takeoff & pumping
 
 /// The takeoff cards, led by the number of attempts that did not get up.
+///
+/// The top of the Takeoffs section, not the whole of it: `TakeoffsAnalysisView` puts the
+/// attempts on the water underneath, and `HrCostCardView` prices them below that. The three
+/// are one subject — how getting up went, where it happened, and what it took out of you.
 struct SessionTakeoffSection: View {
     let detail: SessionDetail
 

@@ -52,15 +52,31 @@ final class SessionStore {
     /// What the Records screen watches to know a celebration arrived, whichever kind it is.
     var celebrationCount: Int { celebration.count + cleanJibeCelebration.count }
 
-    /// Which map/chart overlay categories the legend chips are showing. One setting for
-    /// the whole app rather than one per session: "I never want to see course changes" is
-    /// a statement about the rider, not about a particular ride. Persisted on every
-    /// change, so a relaunch comes back the way the map was left.
-    var mapLayers: MapLayerVisibility = SessionStore.initialMapLayers() {
+    /// Which map/chart overlay categories the legend chips are showing, **per map**
+    /// (`MapLayerScope`: the ride track, the Turns map, the Takeoffs map).
+    ///
+    /// One setting per map for the whole app rather than one per session: "I never want to
+    /// see course changes" is a statement about the rider, not about a particular ride. Per
+    /// *map* rather than one set for all three because the maps answer different questions —
+    /// hiding "fell in" on Turns, where the page is a verdict on maneuvers, must not blank
+    /// the falls on the ride map, which is a picture of the afternoon. Each scope is
+    /// persisted under its own key on every change, so a relaunch comes back the way each
+    /// map was left.
+    private var mapLayersByScope: [MapLayerScope: MapLayerVisibility]
+        = SessionStore.initialMapLayers() {
         didSet {
-            guard mapLayers != oldValue else { return }
-            MapLayerVisibilityStore.save(mapLayers, to: .standard)
+            for scope in MapLayerScope.allCases
+            where mapLayersByScope[scope] != oldValue[scope] {
+                MapLayerVisibilityStore.save(mapLayers(for: scope), scope: scope,
+                                             to: .standard)
+            }
         }
+    }
+
+    /// The set one map is drawing with. The single keyed accessor every legend, map and
+    /// chart reads through.
+    func mapLayers(for scope: MapLayerScope) -> MapLayerVisibility {
+        mapLayersByScope[scope] ?? scope.defaultVisibility
     }
 
     /// What the maps are drawn **on** (`MapStyleChoice`). One setting for the whole app, like
@@ -929,25 +945,43 @@ final class SessionStore {
 
     // MARK: - Map legend
 
-    /// Tapping a legend chip. Kept on the store rather than in a view's `@State` because
-    /// the inline map, the full-screen map and the speed chart are three views of the same
-    /// answer — a chip that only convinced the view it lives in would be a bug.
-    func toggleMapLayer(_ layer: MapLayer) { mapLayers.toggle(layer) }
+    /// Tapping a legend chip on one map. Kept on the store rather than in a view's `@State`
+    /// because a scope's set is read by more than one view — the ride set by the inline map,
+    /// the full-screen map, the cinema clip and the speed chart — and a chip that only
+    /// convinced the view it lives in would be a bug.
+    func toggleMapLayer(_ layer: MapLayer, in scope: MapLayerScope) {
+        var visibility = mapLayers(for: scope)
+        visibility.toggle(layer)
+        mapLayersByScope[scope] = visibility
+    }
 
-    func showAllMapLayers() { mapLayers.showAll() }
+    /// "Show all" is scoped too: it resets the map the rider is looking at and leaves the
+    /// other two exactly as they were set on the maps they belong to.
+    func showAllMapLayers(in scope: MapLayerScope) {
+        var visibility = mapLayers(for: scope)
+        visibility.showAll(in: scope)
+        mapLayersByScope[scope] = visibility
+    }
 
-    private static func initialMapLayers() -> MapLayerVisibility {
-        var stored = MapLayerVisibilityStore.load(from: .standard)
+    private static func initialMapLayers() -> [MapLayerScope: MapLayerVisibility] {
+        var stored: [MapLayerScope: MapLayerVisibility] = [:]
+        for scope in MapLayerScope.allCases {
+            stored[scope] = MapLayerVisibilityStore.load(scope: scope, from: .standard)
+        }
         #if DEBUG && targetEnvironment(simulator)
         // Screenshot hook, same family as `UI_TAB` / `UI_OPEN_SESSION`: `simctl` cannot tap
         // a chip, so `UI_HIDE_LAYERS=fellIn,courseChange` starts the app with those chips
         // off. It deliberately runs *after* the load and is never written back — the
-        // override stages a screenshot, it does not edit the rider's preference.
+        // override stages a screenshot, it does not edit the rider's preference. It reaches
+        // **every** map that draws the named layer, because it is one launch argument and
+        // the shot may be of any of the three.
         if let list = ProcessInfo.processInfo.environment["UI_HIDE_LAYERS"] {
             for token in list.split(separator: ",") {
                 guard let layer = MapLayer(rawValue: token.trimmingCharacters(in: .whitespaces))
                 else { continue }
-                stored.setVisible(false, for: layer)
+                for scope in MapLayerScope.allCases where scope.draws(layer) {
+                    stored[scope]?.setVisible(false, for: layer)
+                }
             }
         }
         #endif
@@ -1890,7 +1924,8 @@ final class SessionStore {
                     reAddDeclinedKey, replayLengthKey, replayFramingKey, replayMusicKey,
                     ActivityNotifier.enabledKey, ActivityNotifier.markKey,
                     ActivityNotifier.pendingImportKey, ActivityNotifier.promptedKey,
-                    MapLayerVisibilityStore.defaultsKey, MapStyleStore.defaultsKey] {
+                    MapStyleStore.defaultsKey]
+            + MapLayerVisibilityStore.allDefaultsKeys {
             UserDefaults.standard.removeObject(forKey: key)
         }
         let fm = FileManager.default
