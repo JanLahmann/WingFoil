@@ -185,6 +185,20 @@ struct ProvisionalBadge: View {
 
 enum Fmt {
 
+    /// "WSW" — a bearing as the sixteen-point name a rider actually uses.
+    ///
+    /// Here rather than beside one of its callers because two surfaces print it and they
+    /// must agree: the session header's one-line wind row, and the Log tab's wind card that
+    /// the line is short for. A name that rounded differently in the two places would read
+    /// as two different winds.
+    static func compass(_ deg: Double) -> String {
+        let names = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+                     "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
+        let wrapped = (deg.truncatingRemainder(dividingBy: 360) + 360)
+            .truncatingRemainder(dividingBy: 360)
+        return names[Int((wrapped / 22.5).rounded()) % 16]
+    }
+
     /// "Sun 30 Aug, 14:07" — **in the zone you name**.
     ///
     /// The zone is required and has no default, which is the whole point of it. It used to

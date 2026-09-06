@@ -416,7 +416,7 @@ struct ReplayCinemaView: View {
     /// conflict with in the other direction.
     private var map: some View {
         Map(position: $camera, interactionModes: [.pan, .zoom]) {
-            TrackContent(detail: detail, effort: effort, visibility: store.mapLayers,
+            TrackContent(detail: detail, effort: effort, visibility: store.mapLayers(for: .ride),
                          style: store.mapStyle,
                          playhead: detail.moment(at: playhead), direction: direction)
         }

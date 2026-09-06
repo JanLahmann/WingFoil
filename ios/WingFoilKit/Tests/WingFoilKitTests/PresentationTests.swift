@@ -1175,6 +1175,196 @@ import Testing
         #expect(decoded.hiddenLayers == [.fellIn], "an unknown layer is dropped, not fatal")
     }
 
+    // MARK: - One legend, three maps
+
+    /// **Every category exists on exactly one map that can draw all of them.**
+    ///
+    /// The ride map is the catalogue: a layer that no scope draws would be a chip nobody can
+    /// reach, and one the ride map omits would be a category the session map cannot show.
+    /// The two analysis maps are subsets of it by construction.
+    @Test func everyMapLayerIsDrawnByTheRideMapAndTheOthersAreSubsets() {
+        #expect(Set(MapLayerScope.ride.layers) == Set(MapLayer.allCases))
+        #expect(MapLayerScope.ride.layers.count == MapLayer.allCases.count,
+                "a layer is listed twice, so it would get two chips")
+        for scope in MapLayerScope.allCases {
+            #expect(Set(scope.layers).isSubset(of: Set(MapLayer.allCases)))
+            #expect(Set(scope.layers).count == scope.layers.count,
+                    "\(scope.rawValue) lists a layer twice")
+            #expect(!scope.layers.isEmpty)
+            for layer in scope.layers { #expect(scope.draws(layer)) }
+        }
+    }
+
+    /// **A map gets chips only for what it draws**, which is the whole reason the subset is
+    /// declared rather than assumed. The two analysis maps draw a neutral route on purpose —
+    /// the page is about one filtered set, and a phase-tinted track under it would be the
+    /// loudest thing on the figure — so the route tints and the record glow are absent
+    /// rather than present-and-inert.
+    @Test func theAnalysisMapsDeclareOnlyTheLayersTheyActuallyDraw() {
+        let turns = Set(MapLayerScope.turns.layers)
+        #expect(turns == [.direction, .cleanJibe, .flewThrough, .touchdown, .fellIn,
+                          .courseChange])
+        for absent in [MapLayer.flying, .offFoil, .effort, .pumping, .takeoff, .splash] {
+            #expect(!MapLayerScope.turns.draws(absent),
+                    "the turns map cannot draw \(absent.rawValue), so it must not offer a chip")
+        }
+
+        let takeoffs = Set(MapLayerScope.takeoffs.layers)
+        #expect(takeoffs == [.pumping, .direction, .takeoff, .splash])
+        for absent in [MapLayer.flying, .offFoil, .effort, .cleanJibe, .flewThrough,
+                       .touchdown, .fellIn, .courseChange] {
+            #expect(!MapLayerScope.takeoffs.draws(absent))
+        }
+        // The outcome ladder is the Turns map's subject and nothing else's; the effort
+        // window belongs to the figures that share a playhead with it.
+        #expect(!MapLayerScope.takeoffs.draws(.fellIn))
+        #expect(MapLayerScope.allCases.filter { $0.draws(.effort) } == [.ride])
+    }
+
+    /// The defaults, which are the part a rider meets before he has touched anything.
+    ///
+    /// Ride hides nothing — that contract predates the split, and a rider who never touched
+    /// a chip must not discover the app decided to hide half the session for him. The two
+    /// analysis maps each open without the one category that is texture rather than subject.
+    @Test func eachMapOpensOnItsOwnSensibleDefaults() {
+        #expect(MapLayerScope.ride.hiddenByDefault.isEmpty)
+        #expect(MapLayerScope.ride.defaultVisibility.isEverythingVisible)
+
+        #expect(MapLayerScope.turns.hiddenByDefault == [.direction, .courseChange])
+        #expect(MapLayerScope.takeoffs.hiddenByDefault == [.direction])
+
+        for scope in MapLayerScope.allCases {
+            // A default may only hide something the map can draw, or it is hiding nothing
+            // and quietly inflating no count at all.
+            #expect(scope.hiddenByDefault.isSubset(of: Set(scope.layers)),
+                    "\(scope.rawValue) hides a layer it does not draw")
+            let visibility = scope.defaultVisibility
+            #expect(visibility.hiddenLayers == scope.hiddenByDefault)
+            #expect(visibility.isEverythingVisible(in: scope) == scope.hiddenByDefault.isEmpty)
+        }
+    }
+
+    /// **The header's number is scoped, tallied and hidden-only.**
+    ///
+    /// Each of the three conditions is a bug it prevents: a map reporting a filter on
+    /// something it cannot draw, a rider told something is off on every session he never
+    /// went under on, and a count of things that are on.
+    @Test func theHiddenCountAsksOnlyAboutThisMapsOwnLayers() {
+        var tally = MapLayerTally()
+        tally.add(.fellIn, 3)
+        tally.add(.pumping, 12)
+        tally.add(.takeoff, 8)
+        // splash: none in this session at all.
+
+        var visibility = MapLayerVisibility()
+        visibility.setVisible(false, for: .fellIn)
+        visibility.setVisible(false, for: .pumping)
+        visibility.setVisible(false, for: .splash)
+
+        // The turns map draws `fellIn` and neither of the other two.
+        #expect(visibility.hiddenCount(in: .turns, tally: tally) == 1)
+        // The takeoffs map draws `pumping` (12 of them) and `splash` (none, so it is not a
+        // reason to open the block).
+        #expect(visibility.hiddenCount(in: .takeoffs, tally: tally) == 1)
+        // The ride map draws all three, and the same "only what this session has" rule.
+        #expect(visibility.hiddenCount(in: .ride, tally: tally) == 2)
+    }
+
+    /// "Show all" resets **one** map. The whole point of storing three sets is that hiding
+    /// "fell in" on Turns is a different intention from hiding it on the ride, and a reset
+    /// that reached across would undo an intention the rider is not looking at.
+    @Test func showAllResetsOneMapAndLeavesTheOthersAlone() {
+        var visibility = MapLayerVisibility()
+        visibility.setVisible(false, for: .fellIn)     // drawn by turns and ride
+        visibility.setVisible(false, for: .pumping)    // drawn by takeoffs and ride
+        #expect(!visibility.isEverythingVisible(in: .turns))
+        #expect(!visibility.isEverythingVisible(in: .takeoffs))
+
+        visibility.showAll(in: .turns)
+        #expect(visibility.isVisible(.fellIn))
+        #expect(!visibility.isVisible(.pumping), "a reset reached a layer this map cannot draw")
+        #expect(visibility.isEverythingVisible(in: .turns))
+        #expect(!visibility.isEverythingVisible(in: .takeoffs))
+    }
+
+    /// Three keys, three stored sets — and the ride map keeps the original one, so a rider
+    /// who hid "course change" months ago still has it hidden on the map he hid it on.
+    @Test func eachMapPersistsUnderItsOwnKey() throws {
+        let defaults = try scratchDefaults()
+        #expect(MapLayerScope.ride.defaultsKey == MapLayerVisibilityStore.defaultsKey)
+        #expect(Set(MapLayerVisibilityStore.allDefaultsKeys).count == 3,
+                "two maps share a key, so one would overwrite the other")
+
+        // Nothing stored: each map gets its own defaults, not everything-visible.
+        #expect(MapLayerVisibilityStore.load(scope: .ride, from: defaults)
+                    .isEverythingVisible)
+        #expect(MapLayerVisibilityStore.load(scope: .turns, from: defaults).hiddenLayers
+                == MapLayerScope.turns.hiddenByDefault)
+
+        var turns = MapLayerScope.turns.defaultVisibility
+        turns.setVisible(false, for: .fellIn)
+        MapLayerVisibilityStore.save(turns, scope: .turns, to: defaults)
+
+        #expect(MapLayerVisibilityStore.load(scope: .turns, from: defaults) == turns)
+        // And the other two are untouched by it.
+        #expect(MapLayerVisibilityStore.load(scope: .ride, from: defaults).isVisible(.fellIn))
+        #expect(MapLayerVisibilityStore.load(scope: .takeoffs, from: defaults).hiddenLayers
+                == MapLayerScope.takeoffs.hiddenByDefault)
+    }
+
+    /// **One mark, one chip** — the rule the Turns map's pins now share with the session
+    /// map's markers, which is why it is stated once here rather than twice in two views.
+    ///
+    /// A clean jibe is a star and answers to `cleanJibe` alone: hide "flew through" and the
+    /// plain dots go while the stars stay; hide "clean jibe" and the stars go while the dots
+    /// stay (docs/presentation.md, "Clean jibe"). Nothing is drawn twice and nothing answers
+    /// to two chips.
+    @Test func aCleanJibesPinAnswersToTheCleanChipAndNothingElse() {
+        #expect(TurnOutcomeKind.flewThrough.layer == .flewThrough)
+        #expect(TurnOutcomeKind.touchdown.layer == .touchdown)
+        #expect(TurnOutcomeKind.fellIn.layer == .fellIn)
+
+        #expect(TurnOutcomeKind.flewThrough.layer(clean: false) == .flewThrough)
+        #expect(TurnOutcomeKind.flewThrough.layer(clean: true) == .cleanJibe)
+        // Every rung answers to exactly one chip, and a clean turn to exactly one other.
+        for outcome in TurnOutcomeKind.allCases {
+            #expect(outcome.layer(clean: false) == outcome.layer)
+            #expect(outcome.layer(clean: true) == .cleanJibe)
+            #expect(MapLayerScope.turns.draws(outcome.layer))
+        }
+        #expect(MapLayerScope.turns.draws(.cleanJibe))
+    }
+
+    // MARK: - The Takeoffs tab's outcome filter
+
+    /// **Free is a narrowing of success, not a rival to it** — the same shape as clean ⊂ flew
+    /// through on the Turns tab. A chip row that filed the three side by side would be
+    /// claiming a rider who got up on wind alone did not get up.
+    @Test func theTakeoffFilterTreatsFreeAsOneOfTheSuccesses() {
+        #expect(TakeoffOutcomeFilter.allCases == [.all, .success, .failed, .free])
+        #expect(TakeoffAttemptKind.pumped.gotUp)
+        #expect(TakeoffAttemptKind.free.gotUp)
+        #expect(!TakeoffAttemptKind.failed.gotUp)
+
+        for kind in TakeoffAttemptKind.allCases {
+            #expect(TakeoffOutcomeFilter.all.accepts(kind))
+            // Success and failed partition the attempts: every one is in exactly one.
+            #expect(TakeoffOutcomeFilter.success.accepts(kind)
+                    != TakeoffOutcomeFilter.failed.accepts(kind))
+            // And free is inside success.
+            if TakeoffOutcomeFilter.free.accepts(kind) {
+                #expect(TakeoffOutcomeFilter.success.accepts(kind))
+            }
+        }
+        #expect(TakeoffOutcomeFilter.free.accepts(.free))
+        #expect(!TakeoffOutcomeFilter.free.accepts(.pumped))
+
+        // The words the empty state and the caption print.
+        #expect(TakeoffOutcomeFilter.failed.description == "failed attempts")
+        let labels = TakeoffOutcomeFilter.allCases.map(\.label)
+        #expect(Set(labels).count == labels.count)
+    }
+
     // MARK: - The ground under the track
 
     /// The mapping table. `MapStyle` is opaque and not `Equatable`, so what a view asks MapKit
@@ -2652,20 +2842,59 @@ import Testing
     /// the record picker on a tab away from the map and chart whose windows it highlights.
     /// The third is §3.2's constraint — the figures share a playhead, so they share a tab.
     @Test func sessionSectionsAreTheFourTheReviewSettledOn() {
-        #expect(SessionSection.allCases == [.mapSpeed, .turns, .takeoffs, .effort])
-        #expect(SessionSection.allCases.first == .mapSpeed, "the default is the figures")
+        #expect(SessionSection.allCases == [.ride, .turns, .takeoffs, .log])
+        #expect(SessionSection.allCases.first == .ride, "the default is the figures")
         let labels = SessionSection.allCases.map(\.label)
-        #expect(labels == ["Map · Speed", "Turns", "Takeoffs", "Effort"])
+        #expect(labels == ["Ride", "Turns", "Takeoffs", "Log"])
         #expect(Set(labels).count == labels.count)
         // The chart and the map's own anchors are on one section, and that is the contract's
         // "one playhead" made structural — nothing may move them apart.
-        let figures = SessionSection.mapSpeed.anchors
+        let figures = SessionSection.ride.anchors
         #expect(figures.contains("chart"))
         #expect(figures.contains("replay"))
-        #expect(SessionSection.section(owning: "chart") == .mapSpeed)
-        #expect(SessionSection.section(owning: "replay") == .mapSpeed)
+        #expect(SessionSection.section(owning: "chart") == .ride)
+        #expect(SessionSection.section(owning: "replay") == .ride)
         // The record table is on the same section as the figures it annotates.
-        #expect(SessionSection.section(owning: "summary") == .mapSpeed)
+        #expect(SessionSection.section(owning: "summary") == .ride)
+    }
+
+    /// The re-cut of 6 Sep 2026, as the two claims that make it more than a rename.
+    ///
+    /// Takeoffs and Effort were one subject split by sensor — the accelerometer counted the
+    /// attempts and the heart rate priced them — so the HR card is on the takeoff section
+    /// now; and the recording's own facts, which had been a footer under all four sections
+    /// and a table behind a banner's disclosure, are one section of their own.
+    @Test func takeoffsCarriesTheHeartRateAndLogCarriesTheRecordsOwnFacts() {
+        #expect(SessionSection.section(owning: "hr") == .takeoffs,
+                "the price of pumping belongs with the pumping")
+        #expect(SessionSection.takeoffs.anchors.contains("takeoff"))
+        #expect(SessionSection.takeoffs.anchors.contains("takeoffsMap"))
+        for anchor in ["gear", "wind", "recording", "divergence"] {
+            #expect(SessionSection.section(owning: anchor) == .log,
+                    "\(anchor) is a fact about the recording, not about the riding")
+        }
+        // The word "effort" is the map legend's, for the GP3S record window, and no section
+        // may compete for it.
+        #expect(!SessionSection.allCases.map(\.label).contains("Effort"))
+        #expect(!SessionSection.allCases.map(\.id).contains("effort"))
+    }
+
+    /// The routing rule every deep link, screenshot hook and in-page link asks first.
+    ///
+    /// nil means "leave the switcher alone", and it has to be the answer in both of the
+    /// cases that are not a redirect — the anchor is already on this tab, or it is on no tab
+    /// at all — because a caller that treated nil as "select the current tab" would report a
+    /// section change for a scroll to the key-metrics block, which sits above the switcher.
+    @Test func jumpingToAnAnchorSelectsItsTabAndOnlyWhenItHasTo() {
+        #expect(SessionSection.tabChange(for: "hr", current: .ride) == .takeoffs)
+        #expect(SessionSection.tabChange(for: "divergence", current: .ride) == .log)
+        #expect(SessionSection.tabChange(for: "chart", current: .turns) == .ride)
+        // Already there: no change, so no redraw of a switcher that is already right.
+        #expect(SessionSection.tabChange(for: "turnList", current: .turns) == nil)
+        #expect(SessionSection.tabChange(for: "chart", current: .ride) == nil)
+        // Above the switcher, and on no tab: scrolling to it must not move the selection.
+        #expect(SessionSection.tabChange(for: "key", current: .takeoffs) == nil)
+        #expect(SessionSection.tabChange(for: "nonsense", current: .log) == nil)
     }
 
     /// Every screenshot anchor `docs/testing.md` documents has to resolve to the section it
@@ -2678,8 +2907,10 @@ import Testing
         }
         #expect(SessionSection.section(owning: "turns") == .turns)
         #expect(SessionSection.section(owning: "takeoff") == .takeoffs)
-        #expect(SessionSection.section(owning: "hr") == .effort)
-        #expect(SessionSection.section(owning: "gear") == .effort)
+        // Two anchors changed *tab* in the 6 Sep re-cut and neither changed name, so every
+        // link that predates it still lands on the card it named.
+        #expect(SessionSection.section(owning: "hr") == .takeoffs)
+        #expect(SessionSection.section(owning: "gear") == .log)
 
         // No anchor may belong to two sections: the mapping is what selects a tab, and an
         // ambiguous one would select whichever case happened to be declared first.

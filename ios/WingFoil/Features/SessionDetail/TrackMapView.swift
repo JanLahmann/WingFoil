@@ -281,7 +281,7 @@ struct FullScreenMapView: View {
 
     var body: some View {
         Map(initialPosition: .region(detail.initialRegion)) {
-            TrackContent(detail: detail, effort: effort, visibility: store.mapLayers,
+            TrackContent(detail: detail, effort: effort, visibility: store.mapLayers(for: .ride),
                          style: store.mapStyle,
                          playhead: playheadT.flatMap(detail.moment),
                          direction: direction)
@@ -477,7 +477,10 @@ struct TrackContent: MapContent {
 /// Rotation is course *minus the camera's heading*, so it keeps pointing where he was going
 /// after the rider spins the big map. Hidden from VoiceOver on purpose — a hundred elements
 /// reading "chevron" is noise, and the legend chip is where the layer is named.
-private struct DirectionChevron: View {
+///
+/// Internal rather than private because the analysis maps draw it too (`FocusMapView`): the
+/// `direction` chip means the same arrows on every map that offers it.
+struct DirectionChevron: View {
     let bearingDeg: Double
     let style: TrackLineStyle
     /// What the arrow is drawn on. The chevron is pure ink (`DesignTokens.Direction.ink` is

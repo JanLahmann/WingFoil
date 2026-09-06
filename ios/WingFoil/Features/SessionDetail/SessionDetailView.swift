@@ -26,19 +26,26 @@ import WingFoilKit
 ///   should never be a page you can navigate away from.
 /// * **There is no Records tab.** The record picker's whole purpose is to highlight a window
 ///   on the map and the chart; a picker on a tab away from the figures highlights something
-///   you cannot see. The records live on Map · Speed, as a table, with the figures they
-///   annotate (§1.4, and the review's "deliberately not recommended").
+///   you cannot see. The records live on Ride, as a table, with the figures they annotate
+///   (§1.4, and the review's "deliberately not recommended").
+///
+/// **The four were re-cut on 6 Sep 2026** (Jan) — see `SessionSection` for the reasoning.
+/// Takeoffs and Effort were one subject split by sensor, so the HR card came under the
+/// takeoff tiles and Effort's name went back to the map legend, which had spent the word
+/// first; and Log picked up the four facts about the *recording* that had been living as
+/// furniture — the footer under every tab, the wind line's detail, the divergence table
+/// behind a banner's disclosure, and the gear card.
 struct SessionDetailView: View {
     let sessionID: String
     @Environment(SessionStore.self) private var store
 
     @State private var detail: SessionDetail?
     @State private var failure: String?
-    /// The selected section. `mapSpeed` is what every session opens on, because the figures
+    /// The selected section. `ride` is what every session opens on, because the figures
     /// are the browsing surface and the block above them has already given the verdict. The
-    /// enum, its words and the anchor mapping live in the kit (`SessionSection`) so the
-    /// rules are testable and so the web app can use the same four ids.
-    @State private var tab = SessionSection.mapSpeed
+    /// enum, its words, the anchor mapping and the routing rule live in the kit
+    /// (`SessionSection`) so they are testable.
+    @State private var tab = SessionSection.ride
     /// Engine window key of the GP3S effort highlighted on the map and chart. Transient by
     /// design (`RecordWindowSelection`): every session opens on the 2 s peak.
     @State private var selectedEffort: String? = RecordWindowSelection.defaultKey
@@ -84,15 +91,18 @@ struct SessionDetailView: View {
                         .id("key")
                     // Below the verdict now, not above it. It is a provenance footnote
                     // about one metric, and it was the most prominent element on the screen
-                    // after the title (§1.3).
+                    // after the title (§1.3). One line: the numbers behind it are on Log,
+                    // which is where the recording's own facts live, and the banner's job
+                    // here is to say there is something to go and read.
                     if !detail.divergences.isEmpty {
                         DivergenceBanner(sessionID: sessionID,
-                                         divergences: detail.divergences)
+                                         divergences: detail.divergences) {
+                            jump(to: "divergence", proxy: proxy)
+                        }
                     }
                     Section {
                         VStack(alignment: .leading, spacing: 20) {
                             body(of: tab, detail: detail)
-                            footer(detail)
                         }
                     } header: {
                         switcher
@@ -126,9 +136,11 @@ struct SessionDetailView: View {
             // tap, so `UI_SCROLL_TO=<anchor>` parks the page on a card section for a
             // screenshot ("chart" for the speed chart, "summary" for the record table,
             // "turns" for the turn cards and the filtered list, "takeoff" for the pumping
-            // card, "hr" for the HR-cost card, "gear" for the gear card, "replay" for the
-            // scrubber). Since the page is tabbed, the anchor also has to *select the tab
-            // it lives on* — a scroll to an anchor on an unselected tab reaches nothing.
+            // card, "takeoffsMap" / "takeoffList" for the attempt map and its rows, "hr"
+            // for the HR-cost card, "gear" for the gear card, "wind" / "recording" /
+            // "divergence" for the Log tab's three, "replay" for the scrubber). Since the
+            // page is tabbed, the anchor also has to *select the tab it lives on* — a
+            // scroll to an anchor on an unselected tab reaches nothing (`jump(to:proxy:)`).
             .onChange(of: detail == nil) {
                 guard detail != nil else { return }
                 let environment = ProcessInfo.processInfo.environment
@@ -154,21 +166,7 @@ struct SessionDetailView: View {
                 // so it selects that tab instead. `UI_TURN_FILTER` (read there) still
                 // engages the two segmented filters for the shot, unchanged.
                 if environment["UI_OPEN_TURNS"] == "1" { tab = .turns }
-                if let anchor = environment["UI_SCROLL_TO"] {
-                    if let home = SessionSection.section(owning: anchor) { tab = home }
-                    // Two beats, not one. Selecting the tab above only *schedules* that
-                    // tab's subtree; on the same turn of the runloop the anchor does not
-                    // exist yet, so `scrollTo` silently reaches nothing and the shot comes
-                    // out parked at the top of the page — which is how `turnList` and
-                    // `tally` were quietly unphotographable. Scroll once now (for an
-                    // anchor on the tab that was already selected) and once after the
-                    // switch has laid out.
-                    proxy.scrollTo(anchor, anchor: .top)
-                    Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(400))
-                        proxy.scrollTo(anchor, anchor: .top)
-                    }
-                }
+                if let anchor = environment["UI_SCROLL_TO"] { jump(to: anchor, proxy: proxy) }
             }
             #endif
             }
@@ -216,6 +214,30 @@ struct SessionDetailView: View {
         }
     }
 
+    // MARK: - Going to a card
+
+    /// **One way in to any card on the page**, whichever tab it is on.
+    ///
+    /// A scroll to an anchor on an unselected tab reaches nothing at all — the tab's subtree
+    /// does not exist yet — so the switcher has to move first and the scroll has to happen
+    /// twice. That was a screenshot hook's private problem until the divergence banner
+    /// became a one-line link to the table on Log; it is a general affordance now, and the
+    /// routing rule it asks (`SessionSection.tabChange(for:current:)`) is the kit's so a
+    /// test can hold it.
+    ///
+    /// Two beats, not one: selecting the tab only *schedules* its subtree, and on the same
+    /// turn of the runloop `scrollTo` silently reaches nothing — which is how `turnList` and
+    /// `tally` were once quietly unphotographable. Scroll now (for an anchor already on
+    /// screen) and again once the switch has laid out.
+    private func jump(to anchor: String, proxy: ScrollViewProxy) {
+        if let home = SessionSection.tabChange(for: anchor, current: tab) { tab = home }
+        proxy.scrollTo(anchor, anchor: .top)
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(400))
+            withAnimation(.snappy) { proxy.scrollTo(anchor, anchor: .top) }
+        }
+    }
+
     // MARK: - The switcher and the four bodies
 
     /// Sticky, and full-bleed against the scroll behind it — a segmented control floating
@@ -234,10 +256,10 @@ struct SessionDetailView: View {
     @ViewBuilder
     private func body(of tab: SessionSection, detail: SessionDetail) -> some View {
         switch tab {
-        case .mapSpeed: mapSpeed(detail)
+        case .ride: ride(detail)
         case .turns: SessionTurnsSection(detail: detail)
-        case .takeoffs: SessionTakeoffSection(detail: detail)
-        case .effort: effortTab(detail)
+        case .takeoffs: takeoffs(detail)
+        case .log: SessionLogView(detail: detail, sessionID: sessionID)
         }
     }
 
@@ -247,7 +269,7 @@ struct SessionDetailView: View {
     /// (`presentation.md`), and the only way to keep them visibly true is to keep the two
     /// figures on one screen. Nothing here may be moved to another tab.
     @ViewBuilder
-    private func mapSpeed(_ detail: SessionDetail) -> some View {
+    private func ride(_ detail: SessionDetail) -> some View {
         if detail.segments.isEmpty {
             noTrackNote
         } else {
@@ -258,7 +280,8 @@ struct SessionDetailView: View {
             // just gave back.
             VStack(alignment: .leading, spacing: 6) {
                 TrackMapView(detail: detail, effort: effort, playhead: $playhead,
-                             visibility: store.mapLayers, mapStyle: store.mapStyle,
+                             visibility: store.mapLayers(for: .ride),
+                             mapStyle: store.mapStyle,
                              flightFocus: $flightFocus,
                              // The toggle on the scrubber row is one store flag away, so
                              // switching the commentary off is an empty list rather than a
@@ -273,7 +296,7 @@ struct SessionDetailView: View {
             }
         }
         SpeedChartView(detail: detail, effort: effort, playhead: $playhead,
-                       visibility: store.mapLayers, flightFocus: flightFocus,
+                       visibility: store.mapLayers(for: .ride), flightFocus: flightFocus,
                        zoom: $chartZoom)
             .id("chart")
         // The same filtered list the map is given, and for the same reason: the scrubber
@@ -286,16 +309,26 @@ struct SessionDetailView: View {
         SessionRecordsTable(detail: detail, selectedEffort: $selectedEffort)
     }
 
-    /// What the session cost: the HR card, its fatigue bins, and the kit it was ridden on.
-    /// Gear sits here rather than on a tab of its own because a wing and a foil are the
-    /// other half of the same question the heart rate answers — how hard was that, and on
-    /// what.
+    /// **Getting up, in full**: the tiles, the attempts on the water, and what they cost.
+    ///
+    /// Takeoffs and the old Effort tab were one subject split by which sensor saw it — the
+    /// accelerometer counted the attempts, the optical heart rate priced them — and "how many
+    /// did I have to pump for" and "what did the pumping cost" are the same question asked
+    /// twice. They are one tab now, in the order the question is asked: how it went, where it
+    /// happened, what it took out of you.
+    ///
+    /// The HR card sits *after* the map and list rather than immediately under the tiles,
+    /// because the map and the list are the tiles' own drill-in — exactly the shape the Turns
+    /// tab has — and the cost is the closing note on all of it. It is silent, no card at all,
+    /// on a session whose heart rate measured nothing.
     @ViewBuilder
-    private func effortTab(_ detail: SessionDetail) -> some View {
-        // Silent — no card at all — on a session whose heart rate measured nothing.
+    private func takeoffs(_ detail: SessionDetail) -> some View {
+        SessionTakeoffSection(detail: detail)
+        if !detail.takeoffMarks.isEmpty {
+            Divider()
+            TakeoffsAnalysisView(detail: detail)
+        }
         HrCostCardView(detail: detail)
-        SessionGearCard(sessionID: sessionID)
-            .id("gear")
     }
 
     @ViewBuilder
@@ -392,24 +425,10 @@ struct SessionDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func footer(_ detail: SessionDetail) -> some View {
-        let rate = String(format: "%.1f", detail.analysis.capabilities.sampleRateHz)
-        let provenance = "Engine \(detail.analysis.engineVersion) · \(rate) Hz · "
-            + "sport \(SessionDisplay.sportLabel(detail.row.sport))"
-            + (detail.row.importSource.map { " · via \($0)" } ?? "")
-        return VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 5) {
-                Text(SessionDisplay.sourceClassNote(detail.row.sourceClass,
-                                                    importSource: detail.row.importSource))
-                HelpButton(topic: .sourceClass, size: .caption2)
-            }
-            Text(provenance)
-            if let file = detail.row.originalFilename { Text(file) }
-        }
-        .font(.caption2)
-        .foregroundStyle(.tertiary)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
+    // The three-line provenance footer that used to close every tab is the Log tab's
+    // `Recording` card now (`SessionLogView`). It said the same sentence about source class,
+    // the same engine version and the same filename under all four sections of every session
+    // forever, which is a fact about the recording filed as page furniture.
 }
 
 /// The estimated wind axis, plus the rider's own value from session dev field 39 when the
@@ -438,7 +457,7 @@ private struct WindRow: View {
         if let wind = detail.analysis.wind {
             let confidence = Int((wind.confidence * 100).rounded())
             let qualifier = wind.usable ? "" : " (too weak to name turns)"
-            parts.append("Wind from \(compass(wind.dirDeg)) "
+            parts.append("Wind from \(Fmt.compass(wind.dirDeg)) "
                          + "\(Int(wind.dirDeg.rounded()))° · \(confidence) % confident"
                          + qualifier)
         }
@@ -448,13 +467,6 @@ private struct WindRow: View {
         return parts.joined(separator: " · ")
     }
 
-    private func compass(_ deg: Double) -> String {
-        let names = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
-                     "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
-        let index = Int(((deg.truncatingRemainder(dividingBy: 360) + 360)
-            .truncatingRemainder(dividingBy: 360) / 22.5).rounded()) % 16
-        return names[index]
-    }
 }
 
 /// Watch-vs-phone divergence banner (docs/plan.md §5, thresholds in docs/algorithms.md).
@@ -463,10 +475,20 @@ private struct WindRow: View {
 /// rider has to act on — which is why the text says so in the rider's words and why the
 /// banner can be sent away. Dismissal is per session and per *divergence*
 /// (`DivergenceDismissal`): a later re-analysis that says something different comes back.
+///
+/// **One line, and a way to the numbers** (6 Sep 2026). It used to carry its own disclosure:
+/// tapping it unfolded a four-column table of metric / watch / phone / delta directly under
+/// the key-metrics block, which put the most technical thing on the page in the second most
+/// prominent place on it. The table is on the Log tab now, with the recording's other facts,
+/// and the banner does what a banner is for — it says there is something, and it takes you
+/// there. The tap is the whole row, and the chevron points the way rather than down.
 private struct DivergenceBanner: View {
     let sessionID: String
     let divergences: [Divergence]
-    @State private var expanded = false
+    /// Selects Log and scrolls to the table. Owned by the page, because switching tabs is
+    /// the page's business and a banner that knew about the switcher would be a second
+    /// router (`SessionDetailView.jump(to:proxy:)`).
+    let open: () -> Void
     @AppStorage(DivergenceDismissal.defaultsKey) private var dismissedRaw = ""
 
     /// The store as an array. `@AppStorage` cannot hold `[String]`, so the fingerprints ride
@@ -481,61 +503,32 @@ private struct DivergenceBanner: View {
                                         dismissed: dismissed)
     }
 
-    /// True when the only things that disagree are the takeoff counts. That is the expected
-    /// disagreement — the watch counts strokes and attempts as they happen, the phone reads
-    /// the whole session back — so it gets a calmer sentence than a speed or a foil time.
-    private var takeoffOnly: Bool {
-        !divergences.isEmpty
-            && divergences.allSatisfy { $0.metric.hasPrefix("Takeoff") }
-    }
-
     var body: some View {
         if !isDismissed { banner }
     }
 
     private var banner: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Button { expanded.toggle() } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                    Text("Watch and phone disagree on \(list)")
-                        .font(.footnote.weight(.medium))
-                        .multilineTextAlignment(.leading)
-                    Spacer()
-                    Image(systemName: expanded ? "chevron.up" : "chevron.down")
-                        .font(.caption2)
-                }
-                .foregroundStyle(.orange)
+        Button(action: open) {
+            HStack(spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                Text("Watch and phone disagree on \(list)")
+                    .font(.footnote.weight(.medium))
+                    .multilineTextAlignment(.leading)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    // Room for the dismiss X, which floats over the trailing corner.
+                    .padding(.trailing, 12)
             }
-            .buttonStyle(.plain)
-            .overlay(alignment: .topTrailing) { dismissButton }
-
-            if expanded {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(divergences) { d in
-                        HStack {
-                            Text(d.metric).frame(width: 120, alignment: .leading)
-                            Text(d.watch).frame(width: 70, alignment: .trailing)
-                            Text("→")
-                            Text(d.phone).frame(width: 70, alignment: .trailing)
-                            Text(d.delta).foregroundStyle(.orange)
-                            Spacer()
-                        }
-                        .font(.caption2.monospacedDigit())
-                    }
-                    HStack(spacing: 6) {
-                        Text(advice)
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                        HelpButton(topic: .divergence)
-                    }
-                    .padding(.top, 2)
-                }
-            }
+            .foregroundStyle(.orange)
+            .contentShape(.rect)
         }
+        .buttonStyle(.plain)
+        .accessibilityHint("Opens the watch-versus-phone table on the Log section")
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.orange.opacity(0.12), in: .rect(cornerRadius: 12))
+        .overlay(alignment: .topTrailing) { dismissButton }
     }
 
     /// The X. Deliberately quiet — tertiary, no label — because it is an escape hatch on a
@@ -555,16 +548,7 @@ private struct DivergenceBanner: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Hide this note")
-        .offset(x: 6, y: -6)
-    }
-
-    private var advice: String {
-        let base = "The phone's numbers are the ones to trust: it reads the whole session "
-            + "back afterwards, while the watch has to work these out live on your wrist, "
-            + "as you ride. Nothing is wrong with your session."
-        guard takeoffOnly else { return base }
-        return base + " Takeoff and pump counting is where the two differ most; keeping the "
-            + "watch app up to date narrows the gap."
+        .offset(x: 6, y: 4)
     }
 
     private var list: String {

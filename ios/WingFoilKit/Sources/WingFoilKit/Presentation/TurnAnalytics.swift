@@ -142,6 +142,24 @@ public enum TurnOutcomeKind: String, Sendable, Equatable, CaseIterable {
         case .fellIn: return "xmark.circle.fill"
         }
     }
+
+    /// The legend chip this rung answers to.
+    public var layer: MapLayer {
+        switch self {
+        case .flewThrough: return .flewThrough
+        case .touchdown: return .touchdown
+        case .fellIn: return .fellIn
+        }
+    }
+
+    /// **The one chip a turn's pin answers to** — the same rule the session map's markers
+    /// follow (`EventMarker.layers`), said once so the Turns map cannot drift from it.
+    ///
+    /// A clean jibe is drawn as a star and answers to `cleanJibe` *alone*: hide "flew
+    /// through" and the plain flew-through dots go while the stars stay, hide "clean jibe"
+    /// and the stars go while the dots stay (docs/presentation.md, "Clean jibe"). Nothing is
+    /// ever drawn twice, and nothing answers to two chips.
+    public func layer(clean: Bool) -> MapLayer { clean ? .cleanJibe : layer }
 }
 
 /// One row of the turn list, fully resolved: no view formats a number.
