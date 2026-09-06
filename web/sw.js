@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v40";     // v40: engine 0.12.0 — a clean jibe must fly through, so the star, the turns table and CPH all move
+const VERSION = "v41";     // v41: key metrics row 2 gains 5×10 s and alpha 500 (block-only)
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.

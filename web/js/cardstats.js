@@ -157,7 +157,8 @@ export function keyMetricEntries(g) {
 
   // Goldens serialize a non-qualifying record as 0.0 where the Swift model uses nil; both
   // mean "no window of that length exists", and neither may print as a speed.
-  const best2s = rec.best2sKn >= 0.05 ? `${nf(rec.best2sKn, 2)} kn` : "—";
+  const kn2 = (v) => (v >= 0.05 ? `${nf(v, 2)} kn` : "—");
+  const best2s = kn2(rec.best2sKn);
   // Every other speed in either app is knots, so the one summary number the engine reports
   // in km/h is converted rather than set beside a column of them.
   const avg = s.avgSpeedKmh === null || s.avgSpeedKmh === undefined
@@ -189,6 +190,12 @@ export function keyMetricEntries(g) {
     // type: it is the number a rider quotes, and the label names the window rather than
     // letting "max" imply a peak sample (docs/presentation.md, "Record windows").
     { key: "max2s", label: "max 2 s", value: best2s, row: 1, hero: true },
+    // The two composites beside it (6 Sep 2026 — "the second row is a bit empty"), "—"
+    // where the session produced none. `blockOnly`: the card never carries them — one
+    // speed on a card, the one a rider quotes; the Records page owns the set — and
+    // `cardStats` drops them, which is the one exception to "a preset can only drop".
+    { key: "best5x10s", label: "5×10 s", value: kn2(rec.best5x10sKn), row: 1, blockOnly: true },
+    { key: "alpha500", label: "alpha 500", value: kn2(rec.alpha500Kn), row: 1, blockOnly: true },
   ];
 
   if (tally) {
@@ -251,7 +258,8 @@ export const CAPTION_SEP = " — ";
  * exported card there does not get it either, and neither does this one.)
  */
 export function cardStats(g, preset = "complete") {
-  const entries = keyMetricEntries(g);
+  // The block minus its block-only cells (row 2's composites): one speed on a card.
+  const entries = keyMetricEntries(g).filter((e) => !e.blockOnly);
   return preset === "lean" ? entries.filter((e) => LEAN_KEYS.has(e.key)) : entries;
 }
 

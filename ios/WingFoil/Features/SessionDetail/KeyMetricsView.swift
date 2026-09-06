@@ -21,10 +21,14 @@ struct KeyMetricsView: View {
                 ForEach(metrics.basics) { cell($0) }
             }
 
-            // The session's fastest measured window, on its own line and in the block's
-            // largest type: it is the one number a rider quotes, and the label says which
-            // window it is rather than letting "max" imply a peak sample.
-            cell(metrics.maxSpeed, font: .title.weight(.semibold))
+            // The session's fastest measured window leads the row in the block's largest
+            // type: it is the one number a rider quotes, and the label says which window it
+            // is rather than letting "max" imply a peak sample. The two composites sit
+            // beside it at the ordinary size (6 Sep 2026 — the row was "a bit empty").
+            HStack(alignment: .top, spacing: 12) {
+                cell(metrics.maxSpeed, font: .title.weight(.semibold))
+                ForEach(metrics.speedExtras) { cell($0) }
+            }
 
             if metrics.tally != nil || metrics.streaks != nil {
                 HStack(alignment: .top, spacing: 12) {

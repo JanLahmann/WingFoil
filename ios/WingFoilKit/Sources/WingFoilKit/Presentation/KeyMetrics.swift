@@ -77,6 +77,12 @@ public struct KeyMetrics: Sendable, Equatable {
     public let basics: [Metric]
     /// The best 2 s record — the session's fastest *measured* window, not a peak sample.
     public let maxSpeed: Metric
+    /// The two composites beside it on row 2 (Jan, 6 Sep 2026 — "the second row is a bit
+    /// empty"): **5×10 s** and **alpha 500**, each "—" when the session did not produce
+    /// one. Always two, so the row keeps its shape. They are **block-only**: the share card
+    /// does not carry them (`ShareCardStats` reads `maxSpeed`, never this), because the
+    /// card's rule is one speed, the one a rider quotes, and the Records page owns the set.
+    public let speedExtras: [Metric]
     /// nil when no turn was counted: a tally of three zeros is not a verdict.
     public let tally: Tally?
     /// "5 flew · 11 dry", nil with no counted turns. Flying leads: it is the harder of
@@ -87,10 +93,11 @@ public struct KeyMetrics: Sendable, Equatable {
     /// rates as null there, and "no hour to divide by" is an absence, not a 0.0.
     public let rates: [Metric]
 
-    public init(basics: [Metric], maxSpeed: Metric, tally: Tally?, streaks: Metric?,
-                rates: [Metric]) {
+    public init(basics: [Metric], maxSpeed: Metric, speedExtras: [Metric] = [],
+                tally: Tally?, streaks: Metric?, rates: [Metric]) {
         self.basics = basics
         self.maxSpeed = maxSpeed
+        self.speedExtras = speedExtras
         self.tally = tally
         self.streaks = streaks
         self.rates = rates
@@ -112,6 +119,10 @@ public struct KeyMetrics: Sendable, Equatable {
             // (docs/presentation.md, "Record windows") is that a chip names the window it
             // is highlighting; "max speed" over a 2 s peak would be the same overclaim.
             maxSpeed: Metric(key: "max2s", label: "max 2 s", value: knots(records.best2sKn)),
+            speedExtras: [
+                Metric(key: "best5x10s", label: "5×10 s", value: knots(records.best5x10sKn)),
+                Metric(key: "alpha500", label: "alpha 500", value: knots(records.alpha500Kn)),
+            ],
             tally: tally(t),
             streaks: t.turnsCounted > 0
                 ? Metric(key: "streaks", label: "best streaks",
