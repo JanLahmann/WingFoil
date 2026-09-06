@@ -90,10 +90,18 @@ def video_clock(path: Path) -> tuple[float | None, float, str]:
 
 def image_clock(path: Path) -> tuple[float | None, str]:
     if sys.platform == "darwin":
-        out = _run(["mdls", "-raw", "-name", "kMDItemContentCreationDate", str(path)])
-        t = _parse_iso(out.replace(" +0000", " +0000")) if out and out != "(null)" else None
-        if t is not None:
-            return t, "mdls kMDItemContentCreationDate"
+        # Spotlight fills kMDItemContentCreationDate from EXIF when there is EXIF and from
+        # the file system when there is not — and a re-encoded WhatsApp copy has none, so
+        # its "content" date is the moment it was saved. Compare with the FS date: equal
+        # means no EXIF answered, and a photo with no clock must say so rather than land
+        # on whatever day it was copied.
+        content = _run(["mdls", "-raw", "-name", "kMDItemContentCreationDate", str(path)])
+        fs = _run(["mdls", "-raw", "-name", "kMDItemFSCreationDate", str(path)])
+        if content and content != "(null)" and content.strip() != fs.strip():
+            t = _parse_iso(content)
+            if t is not None:
+                return t, "EXIF via mdls"
+        return None, "no EXIF clock (re-encoded copy?)"
     return None, "no reader"
 
 
@@ -103,12 +111,10 @@ def read_clips(folder: Path) -> list[Clip]:
         ext = p.suffix.lower()
         if ext in VIDEO:
             t, dur, src = video_clock(p)
-            if t is not None:
-                clips.append(Clip(str(p), "video", t, dur, src))
+            clips.append(Clip(str(p), "video", t if t is not None else float("nan"), dur, src))
         elif ext in IMAGE:
             t, src = image_clock(p)
-            if t is not None:
-                clips.append(Clip(str(p), "photo", t, 0.0, src))
+            clips.append(Clip(str(p), "photo", t if t is not None else float("nan"), 0.0, src))
     return clips
 
 
@@ -144,6 +150,8 @@ def main() -> int:
     ap.add_argument("--pad-s", type=float, default=3.0,
                     help="seconds either side of an event that still count as 'in the clip'")
     ap.add_argument("--json", type=Path)
+    ap.add_argument("--events", action="store_true",
+                    help="also print the session's own event timeline (what a clip could show)")
     args = ap.parse_args()
 
     a = analyze(args.fit)
@@ -158,7 +166,25 @@ def main() -> int:
     print(f"session {Path(args.fit).name}: {span/60:.0f} min, {len(events)} events, "
           f"start {datetime.fromtimestamp(epoch0, timezone.utc):%Y-%m-%d %H:%M:%S}Z")
     print(f"{len(clips)} clips, offset {args.offset_s:+.1f} s\n")
+    if args.events:
+        print("event timeline (minutes into the session, local clock):")
+        for e in events:
+            local = datetime.fromtimestamp(epoch0 + e["t"] + (a.track.start_utc_offset_s or 0),
+                                           timezone.utc)
+            tag = ""
+            if e["kind"].startswith("turn"):
+                tag = f"{e['outcome']}{' · clean' if e['clean'] else ''} · score {e['score']}"
+            elif e["kind"] == "takeoff":
+                tag = f"flight {e['flight_s']} s"
+            print(f"  {e['t']/60:6.1f}  {local:%H:%M:%S}  {e['kind']:22s} #{e['n']:<3d} {tag}")
+        print()
     for c in clips:
+        if c.start_utc != c.start_utc:          # NaN: no clock — the tray, not the map
+            print(f"{Path(c.path).name:36s} {c.kind:5s} {c.duration_s:5.0f} s  NOT PLACED  "
+                  f"[{c.clock_source}]")
+            c.inside = False
+            c.events = []
+            continue
         c.start_t = c.start_utc + args.offset_s - epoch0
         c.end_t = c.start_t + c.duration_s
         c.inside = c.end_t >= -args.pad_s and c.start_t <= span + args.pad_s
