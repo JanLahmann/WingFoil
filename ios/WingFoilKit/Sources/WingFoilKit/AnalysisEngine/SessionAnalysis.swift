@@ -394,7 +394,14 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         // 0.12.0: absent in a pre-0.12.0 document, where "clean" meant `success` and the
         // verdict cannot be reconstructed without the outcome ladder anyway. `false` is the
         // honest fallback for the trip to `reanalyzeStale()`, which the version bump forces.
-        clean = try c.decodeIfPresent(Bool.self, forKey: .clean) ?? false
+        // Absent, derive it from the fields that define it rather than default to false:
+        // between 5 and 6 Sep 2026 the encoder below forgot the key, so every document
+        // written by builds 23–25 came back with no clean jibe in it after a relaunch
+        // (the tally was right — it was counted in memory and stored as a number — while
+        // the turn sheet's chip and the ghost, which read the record, said "not clean").
+        // The rule is the engine's own (`TurnDetector.isClean`), so deriving is exact.
+        clean = try c.decodeIfPresent(Bool.self, forKey: .clean)
+            ?? (counted && type == "jibe" && success && outcome == "flew_through")
         twaInDeg = try c.decodeIfPresent(Double.self, forKey: .twaInDeg)
         twaOutDeg = try c.decodeIfPresent(Double.self, forKey: .twaOutDeg)
     }
@@ -411,6 +418,7 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         try c.encode(exitKn, forKey: .exitKn)
         try c.encode(score, forKey: .score)
         try c.encode(success, forKey: .success)
+        try c.encode(clean, forKey: .clean)
         try c.encode(side, forKey: .side)
         try c.encode(direction, forKey: .direction)
         try c.encode(netDeg, forKey: .netDeg)

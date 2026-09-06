@@ -137,8 +137,21 @@ public struct TurnSlice: Sendable, Equatable {
     /// on the trace the strip is drawing, which is this one. Anything else puts a label at
     /// 11.4 kn on a line that is at 10.9 there.
     public struct SpeedMarks: Sendable, Equatable {
-        /// Speed at `turn.ts`.
+        /// The engine's entry speed — the **maximum** over the `entrySpeedWindowS` before
+        /// the sweep starts, not the sample at `turn.ts`.
         public var entryKn: Double
+        /// Where that maximum was read, in seconds from `turn.ts` (≤ 0): the sample inside
+        /// the entry window whose speed is nearest `entryKn`. Until 6 Sep 2026 the "in"
+        /// mark sat at 0 and floated above the line whenever the rider had already begun
+        /// to slow before the heading started to move — which is most jibes.
+        public var entryRt: Double = 0
+        /// First moment after the sweep at which the speed is back to `recoverPct` of the
+        /// entry speed — the engine's own "flying again" threshold — in seconds from
+        /// `turn.ts`; nil when it never got there inside the drawn window. The sweep ends
+        /// when the *heading* stops changing, which is often a second or two before the
+        /// speed comes back, and the strip shades the two spans differently so the band's
+        /// early end reads as what it is.
+        public var recoverRt: Double? = nil
         /// The lowest speed inside the turn, and when it happened (seconds from `turn.ts`).
         public var minKn: Double
         public var minRt: Double
@@ -317,11 +330,24 @@ public struct TurnSlice: Sendable, Equatable {
     private static func marks(_ window: [Sample], turn: TurnRecord) -> SpeedMarks {
         let duration = max(turn.endTs - turn.ts, 0)
         let minRt = min(max(turn.minTs - turn.ts, 0), duration)
-        return SpeedMarks(entryKn: turn.entryKn,
-                          minKn: turn.minKn,
-                          minRt: minRt,
-                          exitKn: turn.exitKn,
-                          exitRt: duration)
+        let config = TurnConfig()
+        // The entry speed is the engine's maximum over the window *before* the sweep; put
+        // the mark where that maximum sits on the drawn line.
+        let entryWindow = window.filter {
+            $0.t >= turn.ts - config.entrySpeedWindowS && $0.t <= turn.ts
+        }
+        let entryAt = entryWindow.min { abs($0.kn - turn.entryKn) < abs($1.kn - turn.entryKn) }
+        // Recovery: the first sample after the sweep back at the engine's own threshold.
+        let threshold = config.recoverPct / 100 * turn.entryKn
+        let recoverAt = window.first { $0.t > turn.endTs && $0.kn >= threshold }
+        var marks = SpeedMarks(entryKn: turn.entryKn,
+                               minKn: turn.minKn,
+                               minRt: minRt,
+                               exitKn: turn.exitKn,
+                               exitRt: duration)
+        marks.entryRt = entryAt.map { $0.t - turn.ts } ?? 0
+        marks.recoverRt = recoverAt.map { $0.t - turn.ts }
+        return marks
     }
 
     /// Where the turn is halfway round, by cumulative heading change — see `midRotationRt`.

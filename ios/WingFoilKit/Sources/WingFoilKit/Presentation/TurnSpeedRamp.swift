@@ -34,13 +34,29 @@ public enum TurnSpeedRamp {
     /// would divide by a rounding error. Below it every vertex simply reads cold.
     public static let minReferenceKn = 0.5
 
+    /// Where the cold end of the ramp sits, as a fraction of the turn's entry speed.
+    ///
+    /// Not zero (Jan, 6 Sep 2026: "not nuanced enough"). A jibe is ridden between roughly
+    /// two thirds of its entry speed and the entry speed — 8 to 12 kn on a 12 kn entry —
+    /// and a ramp that started at 0 kn spent its whole cold half on speeds nobody foils at,
+    /// leaving that 8–12 band inside one stop. Anchoring the cold end at half the entry
+    /// speed puts the low point of a 66 % jibe a full stop below the entry colour and the
+    /// low point of an 81 % jibe visibly above it; below half the entry speed the rider is
+    /// off the foil anyway, and the line simply stays cold.
+    public static let coldFraction = 0.5
     /// Where `kn` sits on the ramp, 0…1 — see the table above.
     public static func position(kn: Double, entryKn: Double) -> Double {
         guard entryKn >= minReferenceKn, kn > 0 else { return 0 }
-        if kn <= entryKn { return 0.5 * min(kn / entryKn, 1) }
+        if kn <= entryKn {
+            let cold = entryKn * coldFraction
+            return 0.5 * min(max((kn - cold) / (entryKn - cold), 0), 1)
+        }
         let over = (kn - entryKn) / (entryKn * (overspeedCap - 1))
         return 0.5 + 0.5 * min(over, 1)
     }
+
+    /// The bottom of the legend's bar — the cold end, in knots.
+    public static func legendBottomKn(entryKn: Double) -> Double { entryKn * coldFraction }
 
     /// Which two stops a position falls between, and how far it is from the first.
     ///

@@ -253,6 +253,25 @@ import Testing
 
     // MARK: - Speed marks and the halfway point
 
+    /// `clean` survives a round trip through the document. It did not between 5 and 6 Sep
+    /// 2026: the encoder forgot the key, so every relaunch read every jibe as not clean while
+    /// the tally — counted in memory — still said fifteen.
+    @Test func cleanSurvivesEncodingAndIsDerivedWhenAbsent() throws {
+        let clean = try turn(score: 0.8, success: true)
+        #expect(clean.clean)
+        let data = try JSONEncoder().encode(clean)
+        let back = try JSONDecoder().decode(TurnRecord.self, from: data)
+        #expect(back.clean)
+        #expect(back == clean)
+        // A document written by the builds that dropped the key: derived from the fields
+        // that define it, not defaulted to false.
+        var json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        json.removeValue(forKey: "clean")
+        let derived = try JSONDecoder().decode(
+            TurnRecord.self, from: JSONSerialization.data(withJSONObject: json))
+        #expect(derived.clean)
+    }
+
     /// The strip's three markers are the record's own `entryKn` / `minKn` at `minTs` / `exitKn`
     /// (6 Sep 2026): the strip draws the maneuver channel the record was scored on, so the
     /// engine's numbers *are* on the line, and the row and the strip print the same digits.
