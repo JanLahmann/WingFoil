@@ -29,6 +29,12 @@
   --wf-side-starboard: #d9b9a3;
   /* clean */
   --wf-clean-jibe: #2ee6a8;
+  /* speed */
+  --wf-speed-stopped: #4f63d8;
+  --wf-speed-slow: #3d9ad9;
+  --wf-speed-entry: #40c8e0;
+  --wf-speed-fast: #e07ad0;
+  --wf-speed-fastest: #ff3d9e;
   /* opacity */
   --wf-opacity-direction-web: 0.42;
   --wf-opacity-direction-flying: 0.62;
