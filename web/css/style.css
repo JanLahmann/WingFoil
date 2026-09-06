@@ -343,7 +343,9 @@ input:focus-visible, button:focus-visible, .btn:focus-visible, .dropzone:focus-v
 .key-row { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
 /* One cell on its own row stays one cell — a 3-up `auto-fit` would stretch the best-2 s
    number across the whole panel. */
-.key-row:has(> .key.hero) { grid-template-columns: 1fr; }
+/* The hero row: max 2 s in the large type, the two composites beside it at the ordinary
+   size — the hero keeps the wider track so the big number never wraps. */
+.key-row:has(> .key.hero) { grid-template-columns: 1.6fr 1fr 1fr; }
 .key .v { font: 650 26px/1.15 var(--sans); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .key.hero .v { font-size: 32px; }
 .key .k {

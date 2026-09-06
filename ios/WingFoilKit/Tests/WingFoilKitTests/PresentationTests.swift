@@ -209,9 +209,26 @@ import Testing
         return row
     }
 
-    /// The card's stats *are* the key-metrics block, cell for cell. This is the assertion
-    /// that keeps a posted picture and the app's own summary of the same session from
-    /// naming different numbers with different words.
+    /// Row 2's two composites (6 Sep 2026): always present so the row keeps its shape, "—"
+    /// where the session produced none, and never on the card.
+    @Test func rowTwoCarriesTheTwoCompositesAndTheCardDoesNot() {
+        var records = GP3SRecords()
+        records.best2sKn = 13.209
+        records.best5x10sKn = 11.5
+        let block = KeyMetrics.make(summary: torboleSummary(), records: records)
+        #expect(block.speedExtras.map(\.key) == ["best5x10s", "alpha500"])
+        #expect(block.speedExtras.map(\.label) == ["5×10 s", "alpha 500"])
+        #expect(block.speedExtras.map(\.value) == ["11.50 kn", "—"])
+        let stats = ShareCardStats.make(row: sampleRow(), title: "Torbole", metrics: block,
+                                        preset: .complete,
+                                        timeZone: TimeZone(identifier: "UTC")!)
+        #expect(!stats.stats.contains { $0.key == "best5x10s" || $0.key == "alpha500" })
+    }
+
+    /// The card's stats *are* the key-metrics block, cell for cell — minus the block-only
+    /// composites on row 2. This is the assertion that keeps a posted picture and the
+    /// app's own summary of the same session from naming different numbers with different
+    /// words.
     @Test func shareCardCompletePresetMirrorsTheKeyMetricsBlock() {
         var records = GP3SRecords()
         records.best2sKn = 13.209

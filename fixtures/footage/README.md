@@ -42,3 +42,7 @@ its window. Verify three of them against the picture; if a splash in the video i
 and `fell_in` is at +9 s, the camera is five seconds fast — pass `--offset-s -5` and record
 it in `truth.json`. Accept: iPhone originals within 1 s with no offset; a GoPro within 0.5 s
 once the GPMF path (H3) exists; motion-only within 2 s.
+
+Raw September 2026 recordings (Jan, intervals.icu originals, unscrubbed) live in
+`_raw-2026-09/` here rather than under `fixtures/sessions/`, because `verify_library.py`
+scans that folder and pins its counts to the tracked corpus. Ignored by git like the footage.

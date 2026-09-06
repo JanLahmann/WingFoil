@@ -279,7 +279,7 @@ screens below a map, ten legend chips and three paragraphs of legend documentati
 | row | content |
 |---|---|
 | 1 | duration (`10:45 min` / `1:57 h`) · distance · average speed |
-| 2 | the best 2 s record, labelled **"max 2 s"** |
+| 2 | the best 2 s record, labelled **"max 2 s"**, in the largest type · beside it **5×10 s** and **alpha 500** at the ordinary size, "—" where the session produced none (since 6 Sep 2026). These two are **block-only**: the share card is the block *minus* them — one speed on a card, the one a rider quotes; the Records page owns the set. The web renders them with the `extra` class, which is how `card_parity.mjs` tells them apart |
 | 3 | the outcome tally on the ladder's inks · the two turn streaks |
 | 4 | **JPH** (dry jibes) and **WPH** (`docs/algorithms.md` "Session rates"), one decimal |
 

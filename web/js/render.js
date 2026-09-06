@@ -80,7 +80,10 @@ export function keyMetrics(g) {
         `<i>·</i><span class="touchdown">${int(e.tally.touchdown)}</span>` +
         `<i>·</i><span class="fell">${int(e.tally.fellIn)}</span></span>`
       : esc(e.value);
-    return `<div class="key${e.hero ? " hero" : ""}"><div class="v">${v}</div>
+    // `extra` marks a block-only cell (5×10 s, alpha 500): the card parity check parses
+    // `class="key"` / `class="key hero"` and skips these, which is exactly the contract —
+    // the card is the block *minus* its block-only cells (docs/presentation.md).
+    return `<div class="key${e.hero ? " hero" : ""}${e.blockOnly ? " extra" : ""}"><div class="v">${v}</div>
        <div class="k">${esc(e.label)}</div></div>`;
   };
 
