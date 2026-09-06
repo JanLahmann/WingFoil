@@ -826,7 +826,12 @@ Eight kinds, in canonical order: `best2s, best10s, best5x10s, best100m, best250m
 bestNm, alpha500`. Default highlighted window: `best2s`. The picker: tapping a record
 highlights *that* window on map and chart; tapping the selected one returns to the default;
 selection is transient (never persisted); a record with no achieved window is inert and
-says nothing.
+says nothing. **5×10 s highlights all of its windows** — up to five disjoint runs, five
+glows on the track and five bands under the chart — because the record *is* the five and
+one segment misnames it (iOS drew only the top run until 6 Sep 2026; the web always drew
+the list). **The session header carries no numbers**: it is the date, the discipline badge
+and the wind line, because duration and distance are the block's first two cells eight
+points lower and the block is the contract the card mirrors (6 Sep 2026).
 
 ## All-time records — two tables, one page
 

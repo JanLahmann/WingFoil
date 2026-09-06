@@ -178,10 +178,13 @@ struct SpeedChartView: View {
                         .foregroundStyle(EventMarkerStyle.pumping.opacity(0.28))
                 }
             }
-            if let effort, showsEffort, let band = clip([effort.band]).first {
-                RectangleMark(xStart: .value("Best start", band.start),
-                              xEnd: .value("Best end", band.end))
-                    .foregroundStyle(DesignTokens.Effort.window.opacity(0.55))
+            if let effort, showsEffort {
+                // Every window of the record — five bands for 5×10 s, one for the rest.
+                ForEach(clip(effort.bands)) { band in
+                    RectangleMark(xStart: .value("Best start", band.start),
+                                  xEnd: .value("Best end", band.end))
+                        .foregroundStyle(DesignTokens.Effort.window.opacity(0.55))
+                }
             }
             ForEach(visibleSpeed) { point in
                 LineMark(x: .value("Time", point.t), y: .value("Speed", point.kn))
