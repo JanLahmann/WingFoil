@@ -33,14 +33,16 @@ import Testing
     /// `Turn` and this suite has no business constructing one.
     private func turn(ts: Double = 100, endTs: Double = 106, type: String = "jibe",
                       counted: Bool = true, entryKn: Double = 12, minKn: Double = 6,
+                      minTs: Double = 103, exitKn: Double = 10,
                       score: Double = 0.5, success: Bool = false, side: String = "port",
                       direction: String = "starboard", netDeg: Double = 90,
                       radiusM: Double = 20, outcome: String = "flew_through",
                       offFoilS: Double = 0, stoppedS: Double = 0,
                       pumped: Bool = false, submerged: Bool = false) throws -> TurnRecord {
         let json: [String: Any] = [
-            "ts": ts, "endTs": endTs, "type": type, "counted": counted,
-            "entryKn": entryKn, "minKn": minKn, "score": score, "success": success,
+            "ts": ts, "endTs": endTs, "minTs": minTs, "type": type, "counted": counted,
+            "entryKn": entryKn, "minKn": minKn, "exitKn": exitKn,
+            "score": score, "success": success,
             // The engine's 0.12.0 clean rule, spelled here so a fixture is never cleaner
             // than a real turn with the same fields would be.
             "clean": counted && type == "jibe" && success && outcome == "flew_through",
@@ -251,9 +253,10 @@ import Testing
 
     // MARK: - Speed marks and the halfway point
 
-    /// The strip's three markers come off *this window's* samples, so they sit on the trace
-    /// the strip is drawing rather than a tenth of a knot above it.
-    @Test func theStripsMarksAreReadOffTheWindowItDraws() throws {
+    /// The strip's three markers are the record's own `entryKn` / `minKn` at `minTs` / `exitKn`
+    /// (6 Sep 2026): the strip draws the maneuver channel the record was scored on, so the
+    /// engine's numbers *are* on the line, and the row and the strip print the same digits.
+    @Test func theStripsMarksAreTheRecordsOwnNumbers() throws {
         let cut = slice(try turn())
         #expect(abs(cut.speed.entryKn - 12) < 0.001)
         #expect(abs(cut.speed.minKn - 6) < 0.001)
@@ -264,8 +267,9 @@ import Testing
         #expect(cut.timeDomain == -8 ... 14)
     }
 
-    /// The low point is looked for **inside the sweep**. A slow approach is not this turn's
-    /// low point, and marking it there would put the label outside the shaded band.
+    /// The low point is the record's `minTs`, which the engine only ever places **inside the
+    /// sweep** — a slow approach in the samples cannot move it, and marking a lead-in crawl
+    /// would have put the label outside the shaded band.
     @Test func theLowPointIsInsideTheSweepAndNotInTheApproach() throws {
         var samples = quarterCircle()
         // A crawl through the lead-in, slower than anything in the turn.
@@ -275,6 +279,10 @@ import Testing
         let cut = TurnSlice.make(samples: samples, turn: try turn(), windDirDeg: nil)
         #expect(abs(cut.speed.minKn - 6) < 0.001)
         #expect(cut.speed.minRt == 3)
+        // A record whose minTs lies outside its own sweep (a hand-built one) is clamped
+        // into it rather than trusted.
+        let odd = TurnSlice.make(samples: samples, turn: try turn(minTs: 90), windDirDeg: nil)
+        #expect(odd.speed.minRt == 0)
     }
 
     /// Halfway is measured as cumulative heading change, because the question the coach asks
@@ -383,13 +391,12 @@ import Testing
         #expect(rule(try turn(outcome: "touchdown", offFoilS: 4, pumped: true)) == .pumpedOut)
         // The low point at 3 s is at the halfway mark, so it was lost on the way out.
         #expect(rule(try turn(outcome: "touchdown")) == .touchdownOnExit)
-        // The same turn with the speed gone by the first second was lost coming in.
-        #expect(rule(try turn(outcome: "touchdown"),
-                     samples: quarterCircle(speedAtHalfway: 1)) == .touchdownComingIn)
+        // The same turn with the engine's low point in the first second was lost coming in.
+        // (`minTs` is the record's, since 6 Sep — the samples cannot move it.)
+        #expect(rule(try turn(minTs: 101, outcome: "touchdown")) == .touchdownComingIn)
         #expect(rule(try turn(score: 0.9, success: true)) == .cleanAndFast)
         #expect(rule(try turn(score: 0.6)) == .cleanButSlow)
-        #expect(rule(try turn(score: 0.75),
-                     samples: quarterCircle(speedAtHalfway: 1)) == .slowedEarly)
+        #expect(rule(try turn(minTs: 101, score: 0.75)) == .slowedEarly)
         #expect(rule(try turn(score: 0.75)) == .slowedLate)
 
         // Without geometry there is no halfway point, so no rule that depends on one may

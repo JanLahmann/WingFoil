@@ -199,9 +199,9 @@ private struct TurnDetailPage: View {
 
     // MARK: - Numbers
 
-    /// The engine's numbers, and only the engine's. The strip's markers come off the recorded
-    /// samples of this window and can differ by a tenth; the verdict does not, so the row that
-    /// carries the verdict prints `TurnRecord` and nothing derived.
+    /// The engine's numbers, and only the engine's — and since 6 Sep the strip's markers are
+    /// the same three numbers at the same times (`TurnSlice.marks`), drawn on the same
+    /// maneuver channel, so the two surfaces cannot disagree.
     private func numbers(_ turn: TurnRecord, slice: TurnSlice) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -318,9 +318,10 @@ private struct TurnDetailPage: View {
             Text("The drawing is \(Int(TurnSlice.defaultPadS)) s either side of the sweep. "
                  + "Ticks are one second apart; the line runs from the off-foil grey at a "
                  + "standstill to the flying teal at your entry speed.")
-            Text("Score is how much of your entry speed you carried through. The numbers are "
-                 + "the engine's; the marks on the strip are read off this window's own "
-                 + "samples and can differ by a tenth of a knot.")
+            Text("Score is how much of your entry speed you carried through. Speed here is "
+                 + "the manoeuvre channel the verdict was scored on, derived from position — "
+                 + "the GPS Doppler speed the records use is smoothed through a turn and "
+                 + "would read lower at the low point.")
         }
         .font(.caption2)
         .foregroundStyle(.tertiary)

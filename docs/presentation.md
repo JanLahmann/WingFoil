@@ -1121,13 +1121,20 @@ the sweep shaded, rule marks and labels at entry / low / exit, and the ghost's s
 dashed line aligned at `t = 0`. A drag scrubs it and drives the playhead dot on the drawing —
 the same **one playhead** rule the map and the chart follow ("Scrub and zoom").
 
-**Two sets of numbers, and they are allowed to differ.** The numbers row prints the *engine's*
-`entryKn`, `minKn`, `score`, `stoppedS`, `offFoilS`, `radiusM`, `netDeg`, `side`, `direction`
-and `outcome` — those are the verdict and nothing may re-derive them. The strip's three markers
-are read off **this window's own recorded samples**, because a label at 11.4 kn on a line that
-is at 10.9 there is worse than no label. The page says so in a footnote. Score is spelled
-"held 71 % of entry speed"; `direction` is spelled "clockwise / counter-clockwise" and never
-"port/starboard", which is the entry tack's word ("Filter semantics").
+**One channel, one set of numbers.** The numbers row prints the *engine's* `entryKn`,
+`minKn`, `exitKn`, `score`, `stoppedS`, `offFoilS`, `radiusM`, `netDeg`, `side`, `direction`
+and `outcome` — those are the verdict and nothing may re-derive them. The strip draws **the
+maneuver channel the verdict was scored on** (`CleanSample.hybridMps`, position-derived; see
+`speedChannelManeuvers` in docs/algorithms.md), not the FIT's Doppler speed, and its three
+markers are `entryKn` at `ts`, `minKn` at `minTs` and `exitKn` at `endTs` straight from the
+record — so they sit on the drawn line by construction and print the same digits as the row.
+Until 6 Sep 2026 the strip drew Doppler and read its markers off that window's samples, with
+a footnote allowing "a tenth"; Jan's phone showed 10.7 / 9.4 / 9.6 over a row saying
+12.2 / 8.1 / 10.1, because device Doppler is smoothed through a turn and understates the low
+point by more than a knot. The footnote now says which channel this is and why the records
+page reads differently. Score is spelled "held 71 % of entry speed"; `direction` is spelled
+"clockwise / counter-clockwise" and never "port/starboard", which is the entry tack's word
+("Filter semantics").
 
 **The coach line.** One calm sentence under the numbers, in the `ReplayCommentary` voice —
 plain, no exclamation marks, never blaming, and never a number the page is not already showing.
