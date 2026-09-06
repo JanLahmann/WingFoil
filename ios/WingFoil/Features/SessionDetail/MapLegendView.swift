@@ -29,12 +29,30 @@ struct MapLegendView: View {
 
     @Environment(SessionStore.self) private var store
 
+    /// Collapsed until the rider opens it, and then remembered — per rider, like the
+    /// visibility set itself, because "I use the chips" and "I never touch the chips" are
+    /// facts about a rider and not about a session.
+    @AppStorage(MapLegendView.expandedKey) private var expanded = false
+
+    static let expandedKey = "mapLegend.expanded.v1"
+
     private var visibility: MapLayerVisibility { store.mapLayers }
     private var tally: MapLayerTally { detail.layerTally(effort: effort) }
 
     private var hasMarkers: Bool {
         !detail.markers.isEmpty || !detail.takeoffMarks.isEmpty
             || !detail.splashMarks.isEmpty
+    }
+
+    /// How many categories are hidden **that this session has any of**.
+    ///
+    /// Not `visibility.hiddenLayers.count`: a rider who hid "splash" months ago would
+    /// otherwise be told something is off on every session he never went under on, and the
+    /// number's whole job is to be the reason to open the block.
+    private var hiddenHere: Int {
+        let tally = self.tally
+        return MapLayer.allCases.filter { !visibility.isVisible($0) && tally.count($0) > 0 }
+            .count
     }
 
     /// **Three rows, one question each** — and the utilities are not one of the questions.
@@ -50,20 +68,75 @@ struct MapLegendView: View {
     ///    came to find, then the ladder, then the effort marks;
     /// 3. **the utilities** — show-all (only while something is hidden), the ground the map
     ///    is drawn on, and the help sheet. Trailing-aligned, so they read as the block's
-    ///    right-hand furniture rather than as a third kind of layer.
+    ///    right-hand furniture rather than as a third kind of layer; they ride on the header
+    ///    row, which is the one line that is always on screen.
     ///
     /// The web's `drawChips` groups the identical three (`web/js/session.js`).
+    ///
+    /// **The two chip groups are behind a header now** (Jan, 6 Sep 2026). Twelve chips over
+    /// two or three wrapped lines is ~70 pt between the map and the speed chart on every
+    /// visit, and the pair are one instrument: the rider was scrolling past the controls to
+    /// reach the second half of the figure they control. So the block collapses to its own
+    /// one-line header, which keeps the utilities — the style menu and the `?` — on that
+    /// line, since neither is a chip and neither needs the block open to be useful.
+    ///
+    /// **Collapsed, the header still says when something is off.** "Layers · all shown" is
+    /// a statement about the map, and "Layers · 3 hidden" is the reason to open it: a
+    /// collapsed control that hid a filter would be exactly the bug the chips exist to
+    /// prevent (a marker on the map and not in the chart, or neither, with nothing saying
+    /// why).
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            routeRow
-            if hasMarkers { markerRow }
-            utilityRow
+        VStack(alignment: .leading, spacing: expanded ? 6 : 0) {
+            headerRow
+            if expanded {
+                routeRow
+                if hasMarkers { markerRow }
+            }
         }
         .font(.caption2)
         .foregroundStyle(.secondary)
     }
 
     // MARK: - Rows
+
+    /// The one line that is always there: what the chips are doing, and the two controls
+    /// that were never chips.
+    private var headerRow: some View {
+        HStack(spacing: 8) {
+            disclosure
+            Spacer(minLength: 0)
+            if !visibility.isEverythingVisible { showAllButton }
+            MapStyleChip()
+            // A chip-sized affordance among chips, and it costs one line where the prose it
+            // replaced cost three paragraphs (§1.2). Dropped on the full-screen map, where
+            // the sheet would cover the water the rider went full-screen to look at.
+            if !compact { HelpButton(topic: .mapLegend, size: .caption) }
+        }
+    }
+
+    private var disclosure: some View {
+        let hidden = hiddenHere
+        return Button {
+            withAnimation(.snappy(duration: 0.2)) { expanded.toggle() }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.semibold))
+                    .rotationEffect(.degrees(expanded ? 90 : 0))
+                Text("Layers")
+                Text("·")
+                Text(hidden > 0 ? "\(hidden) hidden" : "all shown")
+                    .foregroundStyle(hidden > 0 ? AnyShapeStyle(Color.accentColor)
+                                                : AnyShapeStyle(.secondary))
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .accessibilityLabel("Map layers")
+        .accessibilityValue(hidden > 0 ? "\(hidden) hidden" : "all shown")
+        .accessibilityHint(expanded ? "Hides the layer chips" : "Shows the layer chips")
+    }
 
     private var routeRow: some View {
         WrapRow(spacing: 6) {
@@ -97,24 +170,6 @@ struct MapLegendView: View {
             chip(.courseChange, swatch: .dot(EventMarkerStyle.color(.course)))
             chip(.takeoff, swatch: .glyph("arrow.up.circle.fill", EventMarkerStyle.takeoff))
             chip(.splash, swatch: .glyph("drop.fill", EventMarkerStyle.splash))
-        }
-    }
-
-    /// Show-all, the map's ground, and the help sheet — trailing-aligned.
-    ///
-    /// None of the three toggles a layer. The style menu is the map's *ground* rather than
-    /// one of its layers, "show all" is a reset that only exists while there is something to
-    /// reset, and the `?` is a sheet. They live together, at the end, so the chips above are
-    /// all and only the answer to "what is drawn".
-    private var utilityRow: some View {
-        HStack(spacing: 8) {
-            Spacer(minLength: 0)
-            if !visibility.isEverythingVisible { showAllButton }
-            MapStyleChip()
-            // A chip-sized affordance among chips, and it costs one line where the prose it
-            // replaced cost three paragraphs (§1.2). Dropped on the full-screen map, where
-            // the sheet would cover the water the rider went full-screen to look at.
-            if !compact { HelpButton(topic: .mapLegend, size: .caption) }
         }
     }
 

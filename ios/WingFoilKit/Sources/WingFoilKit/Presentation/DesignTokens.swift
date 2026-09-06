@@ -71,6 +71,34 @@ public enum DesignTokens {
         public static let jibe = Color.mint
     }
 
+    /// The speed ramp: five stops, cold to hot, for a line coloured by how fast it was
+    /// going. Authored RGB on both platforms rather than system colours, because a ramp
+    /// has to be ordered and the semantic palette is not (see `rampNote`).
+    public enum Speed {
+        /// ramp stop 1 of 5 — a standstill. The cold end: an indigo blue, the one hue nothing else on the turn page uses
+        public static let stopped = Color(red: 0.3098, green: 0.3882, blue: 0.8471)
+        /// ramp stop 2 of 5 — well under the speed he came in at
+        public static let slow = Color(red: 0.2392, green: 0.6039, blue: 0.851)
+        /// ramp stop 3 of 5 — THE ANCHOR: the speed the turn was entered at, and deliberately the same value as phase.flying, so 'he held his entry speed' is drawn in the ink the app already means flying with
+        public static let entry = Color(red: 0.251, green: 0.7843, blue: 0.8784)
+        /// ramp stop 4 of 5 — above the entry speed. Past the anchor the ramp leaves the cool half, because a rider who accelerated through a turn should be able to see it at a glance
+        public static let fast = Color(red: 0.8784, green: 0.4784, blue: 0.8157)
+        /// ramp stop 5 of 5 — the hot end, 1.3x the entry speed and up. A magenta, not the amber or the red: those are outcome words, and a fast vertex is not a verdict
+        public static let fastest = Color(red: 1, green: 0.2392, blue: 0.6196)
+        /// The five stops in order, cold to hot — what a renderer
+        /// interpolates between. Index 2 is the entry-speed anchor.
+        public static let ramp: [Color] = [stopped, slow, entry, fast, fastest]
+        /// The same five stops as components, for interpolation:
+        /// a `Color` cannot be taken apart again once built.
+        public static let rampRGB: [DesignTokenRGB] = [
+            DesignTokenRGB(red: 0.3098, green: 0.3882, blue: 0.8471),
+            DesignTokenRGB(red: 0.2392, green: 0.6039, blue: 0.851),
+            DesignTokenRGB(red: 0.251, green: 0.7843, blue: 0.8784),
+            DesignTokenRGB(red: 0.8784, green: 0.4784, blue: 0.8157),
+            DesignTokenRGB(red: 1, green: 0.2392, blue: 0.6196),
+        ]
+    }
+
     /// Opacities the chevrons are drawn at, per phase (web uses its own).
     public enum Opacity {
         public static let directionWeb: Double = 0.42
@@ -111,6 +139,11 @@ public enum DesignTokens {
         public static let sidePort = "#a38054"
         public static let sideStarboard = "#d9b9a3"
         public static let cleanJibe = "#2ee6a8"
+        public static let speedStopped = "#4f63d8"
+        public static let speedSlow = "#3d9ad9"
+        public static let speedEntry = "#40c8e0"
+        public static let speedFast = "#e07ad0"
+        public static let speedFastest = "#ff3d9e"
     }
 
     /// The record picker: canonical order, display labels, and the window every
@@ -163,6 +196,23 @@ public enum DesignTokens {
             "direction",
         ]
     }
+}
+
+/// One authored colour as numbers — the ramp's stops, so a renderer can mix two of
+/// them. SwiftUI's `Color` is opaque and its own blend is newer than this package's
+/// oldest platform, so the components live here rather than being read back out.
+public struct DesignTokenRGB: Sendable, Equatable {
+    public let red: Double
+    public let green: Double
+    public let blue: Double
+
+    public init(red: Double, green: Double, blue: Double) {
+        self.red = red
+        self.green = green
+        self.blue = blue
+    }
+
+    public var color: Color { Color(red: red, green: green, blue: blue) }
 }
 
 /// One catalogue row: the id the code switches on, and the words the rider reads.
