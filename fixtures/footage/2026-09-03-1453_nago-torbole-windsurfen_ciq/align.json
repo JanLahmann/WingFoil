@@ -1,0 +1,81 @@
+{
+ "fit": "../fixtures/footage/2026-09-03-1453_nago-torbole-windsurfen_ciq/session.fit",
+ "epoch0": 1788439998.0,
+ "offset_s": 0.0,
+ "clips": [
+  {
+   "path": "../fixtures/footage/2026-09-03-1453_nago-torbole-windsurfen_ciq/beach-portrait.jpg",
+   "kind": "photo",
+   "start_utc": NaN,
+   "duration_s": 0.0,
+   "clock_source": "no EXIF clock (re-encoded copy?)",
+   "start_t": 0.0,
+   "end_t": 0.0,
+   "inside": false,
+   "events": []
+  },
+  {
+   "path": "../fixtures/footage/2026-09-03-1453_nago-torbole-windsurfen_ciq/beach-wing-undated.jpg",
+   "kind": "photo",
+   "start_utc": NaN,
+   "duration_s": 0.0,
+   "clock_source": "no EXIF clock (re-encoded copy?)",
+   "start_t": 0.0,
+   "end_t": 0.0,
+   "inside": false,
+   "events": []
+  },
+  {
+   "path": "../fixtures/footage/2026-09-03-1453_nago-torbole-windsurfen_ciq/flying-1501.jpg",
+   "kind": "photo",
+   "start_utc": 1788440489.0,
+   "duration_s": 0.0,
+   "clock_source": "EXIF via mdls",
+   "start_t": 491.0,
+   "end_t": 491.0,
+   "inside": true,
+   "events": [
+    {
+     "kind": "turn/jibe",
+     "n": 9,
+     "t": 481.0,
+     "end": 489.0,
+     "outcome": "flew_through",
+     "clean": false,
+     "score": 0.7
+    },
+    {
+     "kind": "turn/jibe",
+     "n": 10,
+     "t": 498.0,
+     "end": 506.0,
+     "outcome": "fell_in",
+     "clean": false,
+     "score": 0.67
+    }
+   ]
+  },
+  {
+   "path": "../fixtures/footage/2026-09-03-1453_nago-torbole-windsurfen_ciq/flying-portrait-undated.jpg",
+   "kind": "photo",
+   "start_utc": NaN,
+   "duration_s": 0.0,
+   "clock_source": "no EXIF clock (re-encoded copy?)",
+   "start_t": 0.0,
+   "end_t": 0.0,
+   "inside": false,
+   "events": []
+  },
+  {
+   "path": "../fixtures/footage/2026-09-03-1453_nago-torbole-windsurfen_ciq/lake-panorama.jpg",
+   "kind": "photo",
+   "start_utc": NaN,
+   "duration_s": 0.0,
+   "clock_source": "no EXIF clock (re-encoded copy?)",
+   "start_t": 0.0,
+   "end_t": 0.0,
+   "inside": false,
+   "events": []
+  }
+ ]
+}
