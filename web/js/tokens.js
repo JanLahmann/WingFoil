@@ -80,6 +80,28 @@ export const TOKENS = {
       "swiftUI": "mint"
     }
   },
+  "speed": {
+    "stopped": {
+      "hex": "#4f63d8",
+      "swiftUI": "literal"
+    },
+    "slow": {
+      "hex": "#3d9ad9",
+      "swiftUI": "literal"
+    },
+    "entry": {
+      "hex": "#40c8e0",
+      "swiftUI": "literal"
+    },
+    "fast": {
+      "hex": "#e07ad0",
+      "swiftUI": "literal"
+    },
+    "fastest": {
+      "hex": "#ff3d9e",
+      "swiftUI": "literal"
+    }
+  },
   "opacity": {
     "directionWeb": 0.42,
     "directionFlying": 0.62,
