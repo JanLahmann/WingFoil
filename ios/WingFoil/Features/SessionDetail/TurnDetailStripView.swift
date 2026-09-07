@@ -100,6 +100,14 @@ struct TurnDetailStripView: View {
                                                         outNearLow: outNearLow))
             }
 
+            // Where the quiet tail closes (engine 0.17.0) — the last instant a touchdown or a
+            // fall still costs this jibe its star. Drawn only where it *fits*: at the default
+            // 10 s it lands past the drawing's own 8 s of run-out, and a rule clipped off the
+            // right edge is a mark nobody can read. The footnote says the number either way.
+            if let quietRt = quietRt {
+                quietMark(at: quietRt, captioned: !quietOverprints(quietRt))
+            }
+
             if let playheadRt {
                 RuleMark(x: .value("Playhead", playheadRt))
                     .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 3]))
@@ -131,6 +139,9 @@ struct TurnDetailStripView: View {
         var entryS: Double = TurnConfig().entrySpeedWindowS
         var minLagS: Double = TurnConfig().minSpeedLagS
         var outcomeS: Double = TurnConfig().outcomeLookaheadS
+        /// The clean jibe's quiet tail (engine 0.17.0) — nil in an analysis stored before it,
+        /// where nothing measured one and the footnote says nothing about it.
+        var quietS: Double? = TurnConfig().cleanQuietS
 
         init() {}
 
@@ -138,7 +149,37 @@ struct TurnDetailStripView: View {
             entryS = config.entrySpeedWindow ?? entryS
             minLagS = config.minSpeedLag ?? minLagS
             outcomeS = config.turnOutcomeLookahead
+            quietS = config.turnCleanQuietS
         }
+    }
+
+    /// Where the quiet tail closes, in seconds from the turn's start — or nil when there is
+    /// none (the parameter is off, or the analysis predates it) or when it lands outside the
+    /// drawn window, which at the default 10 s against an 8 s run-out is the usual case.
+    private var quietRt: Double? {
+        guard let quietS = windows.quietS, quietS > 0 else { return nil }
+        let rt = slice.speed.exitRt + quietS
+        return rt <= domain.upperBound ? rt : nil
+    }
+
+    /// Would the `quiet` caption land on the word the `outcome` band prints under it? The band
+    /// runs from the sweep's end to the right edge of the plot, and its label is centred on
+    /// the part of it that is *visible*.
+    private func quietOverprints(_ rt: Double) -> Bool {
+        let visibleEnd = min(slice.speed.exitRt + windows.outcomeS, domain.upperBound)
+        return abs(rt - 0.5 * (slice.speed.exitRt + visibleEnd)) < Self.captionGapS
+    }
+
+    /// The end of the quiet tail: a thin dashed rule, captioned on the **bottom** edge where
+    /// the other window words live, because it is a window boundary and not a speed.
+    @ChartContentBuilder
+    private func quietMark(at rt: Double, captioned: Bool) -> some ChartContent {
+        RuleMark(x: .value("Seconds", rt))
+            .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 4]))
+            .foregroundStyle(DesignTokens.Clean.jibe.opacity(0.55))
+            .annotation(position: .bottom, alignment: .center, spacing: 2) {
+                if captioned { windowLabel("quiet") }
+            }
     }
 
     /// The small word under a window band.
