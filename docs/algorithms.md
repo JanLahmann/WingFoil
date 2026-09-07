@@ -364,12 +364,10 @@ inventing turns):
   refuses to adapt while a spike is in progress. Same positive-only semantics.
 - **No pump corroboration** (step 3 of the ladder): the watch cannot promote a fly-through to a
   touchdown on accel evidence, so it reports slightly more fly-throughs than the phone.
-- **No `turnClassifyMinAngle`** (engine 0.13.0, phone-side only until the watch follows). The
-  watch names any sweep that crosses the axis a tack or a jibe, however narrow, so it counts
-  the handful of ≥60°-but-<90° course changes the phone now files under `rejected`. Five
-  sweeps in a thousand on the corpus, always in the *flattering* direction — the watch says
-  "jibe" where the phone says "course change" — so a re-import can lower a jibe count the
-  rider watched climb on his wrist.
+- **`turnClassifyMinAngle` — same on the watch** (engine 0.13.0, watch 0.9.7): `classifySweep`
+  applies the 90° floor ahead of the wind check, so a 60–89° sweep is `rejected` (an uncounted
+  course change) on the wrist exactly as on the phone, with or without a wind axis. Not a
+  divergence; listed so nobody re-adds one.
 - **Foil % is the same ratio over a different clock.** The phone divides `foilTimeS` by
   `timerTimeS` (T2, the cleaned track's non-gap total); the watch's screens and FIT field 22
   divide by `Activity.Info.timerTime`, its own native moving clock. Both exclude pauses, so
