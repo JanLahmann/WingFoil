@@ -1460,6 +1460,49 @@ The padded context track is the off-foil grey at low opacity. Ticks one second a
 across the line, so the drawing carries time as well as shape. The low point is a hollow
 ring; the end of the sweep is the outcome dot in the ladder's ink (`outcome.*`).
 
+**A number every five seconds, on the outside of the curve** (7 Sep 2026). The second ticks
+carry *rhythm* — bunched ticks are a rider who stopped — but they cannot carry *position*, and
+a reader looking at the strip's "low at 4.2 s" had to count ticks along the arc to find where
+on the water that was. On a turn whose ticks bunch exactly where he is counting, that is the
+one stretch the counting fails on. So every fifth second of the turn's own clock is printed
+small beside the line: `−5`, `5`, `10`. Five, because closer crowds a six-second jibe and
+wider leaves a short turn with none at all. **Across the whole drawn span**, unlike the second
+ticks, which stop at the sweep: the pads are where the approach and the run-out are, and `−5`
+is exactly as much of an answer as `5` to a rider asking where he was before it started. The
+sign is kept, and `0` is skipped — the sweep's start already carries three marks and a fourth
+saying so would be noise. The number sits on the **outside** of the curve, the side away from
+the centre of rotation, so it never lands inside the arc where the ring, the outcome dot and
+the ghost are; where the sweep's own rate cannot say which side that is, it goes to the right
+of the heading, which is a choice and not a claim. Two patches are reserved and skipped: the
+north/wind block top right, and the strip along the foot carrying the scale bar and the ramp.
+A number that would print over the `axis` word is skipped too — one unreadable mark is better
+than two.
+
+**Tapping the drawing picks the nearest sample.** The drawing had been readable since it was
+built and *inert* since it was built: everything on it was something the page had decided to
+mark, and the rider's own question — "what was I doing **there**, at the top of the arc" — had
+no answer. A tap now picks the nearest recorded vertex within a fingertip of it (about 26 pt,
+converted to metres through the frame's own scale, so the tolerance is right at every zoom),
+and prints four readings in a small slab top left: **t relative, speed in kn, heading °, and
+TWA ° where the wind is known** — the same gate that enables wind up. Nearest *vertex*, never
+an interpolation: the callout names one sample that exists, and a position invented between
+two would put a real-looking time on a reading nobody took. A tap on open water is outside the
+tolerance and picks nothing, which is what lets a reader dismiss it.
+
+Heading is read off the **north-up** vertex even while the wind-up frame is drawn: the
+rotation has already subtracted the wind from those headings, so printing one there would say
+the TWA twice under two names.
+
+**And the tap moves the shared playhead.** It writes `playheadRt`, which is the same value a
+finger on any strip writes — so the drawing's dot, the speed strip's rule and (in the dev
+build) the heading and barometer strips' rules are one instant, whichever surface the reader
+touched. That is the app's one-playhead rule ("Scrub and zoom"), and the drawing was the last
+place it did not hold. The callout therefore appears for a scrub as well as for a tap: two
+fingers asking the same question deserve the same answer. It is a **tap** and not a drag,
+which the first version was: both detail pages live in a paging `TabView`, and a
+zero-distance drag over the drawing swallowed the swipe to the next turn *and* fired as the
+pager settled, opening a page with a playhead nobody had asked for.
+
 **The axis crossing is a tick, not a dot** (engine 0.15.0). Jan's definition of a jibe is "a
 turn through the wind axis", and the engine now records *when* it went through (`axisTs`). The
 drawing marks that instant with a longer tick across the line — twice the length of the second
@@ -1522,7 +1565,9 @@ with the values in force from `TurnConfig` rather than prose that could drift:
 The `quiet` rule is drawn **only where it fits inside the drawn window**, which at the default
 10 s against the drawing's own 8 s of run-out means usually not at all: a rule clipped off the
 right edge is a mark nobody can read, and widening the frame for it would redraw every turn to
-make room for a line most turns do not need. Its caption steps aside where it would print over
+make room for a line most turns do not need. (The dev build's run-out slider is exactly how it
+is made to fit — see "Dev strips and window" under "Tuning" — and the rule that decides is
+unchanged: it is drawn when it lands inside whatever span the window is currently cut to.) Its caption steps aside where it would print over
 the `outcome` band's word. Either way the footnote carries the number, in one sentence: *"A
 clean jibe also needs N s after the sweep with no touchdown, fall or wrist under."*
 
@@ -1641,11 +1686,86 @@ where the window has too few usable bearings to say, no rule that depends on it 
 the ladder falls through to `plain`.
 
 iOS: `TurnSlice` + `TurnCoach` + `TurnSpeedRamp` in the kit (pure, `TurnSliceTests` /
-`TurnSpeedRampTests`), drawn by `TurnDetailView` / `TurnDetailMapView` /
-`TurnDetailStripView`. The drawing is a SwiftUI
+`TurnSpeedRampTests` / `ManeuverSliceTests`), drawn by `TurnDetailView` / `TurnDetailMapView` /
+`TurnDetailStripView`. The geometry the drawing needs is a `ManeuverFigure`, which the
+flight-end slice also exposes, so one `Canvas` draws both events and neither knows which it
+got ("Flight-end detail"). The drawing is a SwiftUI
 `Canvas` and deliberately not a `MapKit` map: the frame has to rotate, and the ticks must not
 move under the reader on a camera settle. There is no ground under it — a satellite tile at
 30 m across is a photograph of water, and it would bury all six of the things the drawing says.
+
+## Flight-end detail — the same page, for the losses no turn owns
+
+Roughly half a session's losses do not happen in a maneuver. A gust dies, the foil ventilates,
+a tip catches on a reach; the engine has classified every one of those since it started
+carrying `flightEnds` (docs/algorithms.md, "Flight-end outcome"), and the map has drawn each
+as a hollow ring for as long. The ring was the end of the road. Tapping it said "Fell in ·
+straight-line · stopped 7 s" and there was nowhere further to go, while a jibe that ended in
+exactly the same swim got a drawing, a strip, six numbers and a sentence — for no better
+reason than that a turn detector had happened to fire.
+
+**So a flight end gets the same page** (7 Sep 2026), built from the same parts: the same
+`Canvas`, through a shared `ManeuverFigure` that both slices expose; the same strip furniture
+(`StripChrome`); the same footnote voice. What differs is what genuinely differs.
+
+**The set is every *drawn* flight end**, in time order, swipeable, with a "3 of 9" position —
+the ones no turn owns and the recording did not truncate, which is `drawnFlightEnds` read
+positionally (`FlightEndAnalytics.drawnIndices`). A turn-owned end is the same swim already
+counted at its jibe and reachable on its turn's page; a truncated one is a recording that
+stopped, and has no evidence to judge. Both exclusions are said once, under the list.
+
+**A flight end is an instant, not a sweep**, and the page never pretends otherwise:
+
+| turn detail | flight-end detail |
+|---|---|
+| `t = 0` is the start of the sweep; the drawn window is `[ts − pad, endTs + pad]` | `t = 0` **is the end**; the window is `[−pad, +pad]` around it |
+| the thick, speed-coloured part is the sweep | the thick part is the **flight**: everything at or after the end is already off the foil |
+| entry / sweep / outcome / quiet bands | **entry** (`entrySpeedWindow`, the speed the flight was ending at), **outcome** (`outcomeLookahead`), and a rule at **evidence** |
+| the `axis` tick and its two angles | **absent, never zeroed** — a flight end is not a maneuver and the engine records no crossing for one |
+| the ghost, the score, the entry tack, the rotation | none of them exist for a straight-line end |
+| all three of in / low / out are the engine's | **only `low` is** — see below |
+
+**`evidence` is a rule, not a band**, because it is a property of the *recording* rather than
+of the configuration: how much gap-free record there actually was past the end (`windowS`). It
+is a limit on what could be known, and the one window on the page that a tuning slider cannot
+move. Its caption steps aside where it would print over the `outcome` band's word — the same
+"only when it fits" rule the turn strip's `quiet` mark follows.
+
+**One number is the engine's and two are the picture's, and the footnote says so.** A
+`FlightEndRecord` carries `minKn` and no entry or exit speed at all, so there is nothing to
+print for the other two. `low` is the engine's `minKn`, placed at the sample of the drawn
+window nearest that value — the same trick the turn strip uses for its `in` mark. `in` is the
+**maximum of the drawn channel over the entry window**, which is the rule the classifier's own
+recovery threshold is built from, applied to the channel this strip draws. `out` is where that
+channel came back to `turnRecoverPct` of it, and is **absent, not zero**, where it never did —
+which is exactly what a fall looks like, and the line under the numbers says "Never back up to
+flying speed inside the window" rather than printing a dash and leaving it.
+
+**The numbers, the chips and the reason line.** Stopped, off foil, the flight's own number and
+the evidence seconds; then the outcome chip in the ladder's ink (`glided out` / `touchdown` /
+`fell in` — **never** the turn ladder's "flew through", which a flight end cannot earn, since
+by the time there is one the rider is off the foil by definition), `pumped out` and `wrist
+under` where the record says so. Under them, one line in the turn page's voice:
+`fell in · stopped 7 s · wrist under`, composed by `FlightEndAnalytics.outcomeText` from the
+record's own fields. Off-foil seconds are printed **only where there is no stop to print**: a
+rider who stopped was off the foil too, and saying both says one loss twice. A stop under a
+second is not printed at all — at 1 Hz that is one sample, and "0 s" would read as a
+measurement. A `truncated` end says the one true thing about itself, "the recording ended, not
+the flight", instead of a verdict it does not have.
+
+**Two ways in, one set.** The ride map's hollow-ring callout grows the same "Details ›"
+affordance a turn's dot has (`EventMarker.flightEndIndex`, carried rather than looked up by
+timestamp, because two flights can end in the same second of a gappy import); and the **Log**
+tab carries a "Flight ends" card listing them, each row opening the same page. Log rather than
+Ride or Turns on purpose: Ride is the map, Turns is the maneuvers, and a straight-line flight
+end is neither — it is what the *record* says happened when the foil stopped carrying, which
+is the question that tab exists to answer. On a session with no drawn ends the card is absent
+rather than empty.
+
+iOS: `FlightEndSlice` + `FlightEndAnalytics` in the kit (pure, `ManeuverSliceTests`), drawn by
+`FlightEndDetailView` through `TurnDetailMapView` and `StripChrome`. Screenshot hook:
+`UI_OPEN_FLIGHT_END=<index>`, which selects the Log tab first — a sheet attached to an
+unselected tab's subtree never appears.
 
 ## One clock — every duration a rider sees is the engine's cleaned span
 
@@ -1862,6 +1982,84 @@ same trip taken immediately, and leaving the page takes it automatically.
 | Records header, Trends header | `tuned thresholds · N` chip | the *current* setting — these are aggregates over the library |
 | Settings → About | `0.17.0 · dev` | the build variant itself |
 | turn detail footnote | "Measured at: turnSuccessPct 70 % · minSpeedLag 2 s · turnOutcomeLookahead 12 s" | the analysis' own `config` echo |
+
+### Dev strips and window — the detectors, drawn
+
+Three things on the two detail pages are compiled out of the public build with the tuning page
+itself, and for one reason: they are pictures of **detectors**, not of the ride. A rider does
+not ask what his rate of turn was in degrees per second; somebody moving `turnPeakRate` asks
+nothing else.
+
+**The window control.** Two sliders above the drawing — **lead-in 5…20 s**, **run-out
+8…60 s** — remembered per phone in `@AppStorage`, and the drawing, the strip and the extra
+strips are all cut to them. The pads were one constant, `TurnSlice.defaultPadS = 8`, which is
+a good default and a bad only-option: eight seconds cannot hold the clean jibe's **quiet
+tail**, which closes ten seconds after the sweep, so the strip's `quiet` rule was drawn "only
+when it fits" and in practice never fitted; and it cannot show what a fall actually did, where
+the interesting part is the minute of swimming `turnOutcomeWindow` is measured over. The two
+ranges differ because the two ends do different work: the lead-in only has to hold
+`entrySpeedWindow` plus an approach, and every second added to it pushes the sweep to the
+right of the frame, while the run-out has to reach the quiet tail and the recovery. A note
+under the sliders says whether the run-out is yet wide enough to draw the `quiet` rule, which
+is the main reason to touch them. The engine's own windows stay marked inside the wider span —
+`entry`, `sweep`, `outcome`, the recovery and `quiet` are drawn to the same numbers, and only
+the frame around them moves.
+
+**Not in the public build**, deliberately. "The drawing is 8 s either side of the sweep" is a
+sentence in the footnote and a promise that two turns are drawn at one scale in time; a
+control that broke it silently, on the screen a rider reads to compare his jibes, would cost
+more than it gives. The public footnote's number is the constant; the dev footnote prints
+whatever the sliders are at.
+
+**The heading strip**, under the speed strip and on its clock. The speed strip says what the
+turn cost; it cannot say why *this* stretch of track is a turn and the stretch either side of
+it is not, and that is a heading question from end to end. It draws:
+
+| mark | what it is |
+|---|---|
+| the heavy line | **TWA** where the wind is known — 0 = head to wind, ±180 = dead downwind — and the compass **heading** where it is not, said in the strip's own title so the two are never confused |
+| — | **unwrapped**: consecutive angles are moved by whole turns so each step is the shortest one, anchored on the first vertex. A sweep through north is a straight climb rather than a 350° cliff and a 10° recovery, and a jibe carries *through* ±180 instead of folding back |
+| a dashed horizontal rule | the **axis** the maneuver is named by: ±180 for a jibe's downwind, 0 for a tack's head-to-wind, captioned above its left end. **Absent on a heading series** — a compass 0 is north, and a rule there would invent a fact |
+| a light second line, right axis | the **rate of turn** in °/s, signed |
+| four thin rules | `turnPeakRate` and `turnContinueRate`, at **±** each. Four and not two because the rate is signed: a jibe spun to port clears the same bar as one to starboard, and drawing only the positive half would make half the turns on the page look like they never did |
+| a dotted rule at 0 | where the board stopped turning, which is what trims the sweep's two ends |
+
+Both series share one y scale — Swift Charts gives a plot one domain — with the rate mapped
+onto the angle's range and the right-hand ticks labelled with the inverse, so the secondary
+line has real units. Two stacked plots would have cost the one thing the strip is for: seeing
+the rate cross its threshold **at** the moment the line steepens.
+
+**The barometer strip**, third. `submerged` is one line of arithmetic against one threshold —
+a sample counts as underwater when the pressure altitude reads `turnBaroDrop` below the
+session median — and it is the evidence that promotes a touchdown to a fall. Until this strip
+the only thing any screen showed of it was a chip saying yes or no: a dunk that grazed the
+line and one that went forty metres under looked identical, and "is 25 m the right number" had
+no picture to be answered from. Everything is drawn in **metres relative to the session
+reference** (`BaroReference.session`, which forwards to the engine's own
+`Evidence.submergedReference` rather than spelling the median a second time), which puts the
+wrist-under rule at a fixed −`turnBaroDrop` and makes two sessions comparable — on the water
+the absolute altitude is a pressure reading and means nothing. The submerged samples are
+marked and their **episodes** shaded, read from `analysis.submersions` rather than by
+re-applying the threshold here: one rounding apart from the stored document and the picture
+would quietly disagree with the chip above it. A session with no barometer gets **one line**
+saying so, never a flat trace at zero — "nobody was looking" and "the wrist stayed up" are
+different facts and only the strip can tell them apart.
+
+**Pump strokes on the speed strip** are the one addition that is *not* dev-only, because they
+answer a rider's question: the page already says whether he pumped out and how many strokes it
+took, and could not say **when** — which on a touchdown is most of it, since a rider who pumps
+the instant he lands and one who drifts six seconds first wear the same chip. They are drawn
+as a low band along the floor of the plot with the count on it, and **a span rather than one
+tick per stroke**, because that is what the engine stores: a `PumpEpisodeRecord` carries the
+first stroke, the last and how many were between them, and individual stroke times are never
+persisted. A tick per stroke would be an invention. Nothing is drawn where no episode names or
+overlaps the window, which is the same absence the chip already handles.
+
+**All four strips are one picture.** One clock, one scrub, one playhead, the same bands in the
+same ink under the same words — which is a contract between views, and a contract four views
+each implemented privately would last until the next edit. It lives in `StripChrome`: the
+bands, the rules, the captions, the caption-collision gap, the playhead and the scrub surface.
+What stays with each strip is the only thing that differs, which is what it plots.
 
 The session-level marks read the *analysis*, not the current setting, because a session
 analysed under tuned thresholds stays tuned until it is re-derived — that is the only honest
