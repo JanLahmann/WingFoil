@@ -141,12 +141,32 @@ session by. Detection is unchanged (`turnMinAngle` stays 60°, so the course cha
 found and still marked); it is now filed under `rejected` like every other one. And
 `turnOutcomeWindow` moves 60 s -> **12 s**, equal to `turnOutcomeLookahead`, so a fall the
 ladder blames on a turn is always inside the tail that turn is actually judged over and
-everything later is a straight-line fall. `turnMaxDuration` stays at 8 s: a 12 s sweep window
-pulls a slow exit into the minimum and cost 16 clean jibes on the corpus.
+everything later is a straight-line fall. `turnMaxDuration` stays at 8 s for now: a 12 s
+sweep window pulls a slow exit into the minimum and cost 16 clean jibes on the corpus.
+(Engine 0.14.0 widens it anyway — see below.)
 
 *`longestFlightM` is renamed `maxFlightM`*, because it was never the longest flight's
 distance — it is the largest distance any one flight covered. The value is unchanged; only
 the name now says what it is.
+
+Engine 0.14.0 moves two thresholds and nothing else: `turnPeakRate` 25 -> **18 deg/s** and
+`turnMaxDuration` 8 -> **12 s**.
+
+A carved jibe is not a pivoted one. At 11 kn on a 25 m radius the board comes round at a
+steady ~13 deg/s and never spikes, so a peak floor set at the pivot's 25-40 deg/s threw away
+exactly the jibes the rider was riding best -- on one flight of the 4 Sep afternoon, three of
+eight ridden reversals were invisible. 18 deg/s is where the corpus stops gaining jibes and
+starts gaining nothing but grey course-change markers, and 12 s is the window a 150-180 deg
+carve actually needs (an 8 s one sees 120 deg of it and files the rest as a course change).
+
+Across the seventeen fixtures: jibes 499 -> 544, course changes 99 -> 145, straight-line
+falls 58 -> 41 (a fall that had no maneuver to belong to now has one). **Clean jibes fall,
+152 -> 134**, and that is the sweep window rather than the peak floor: at 18 deg/s with the
+old 8 s window clean would have *risen* to 160. A longer sweep pulls the slow exit into the
+minimum `turnSuccessPct` divides by, so a jibe that scored clean over 8 s of carve scores
+merely carried over 12 s of carve-and-recovery. The trade was made deliberately: a jibe the
+engine files as a course change is missing from the count the rider checks, and no scoring
+subtlety fixes that. Expect CPH down and JPH up on the same session.
 """
 
 from __future__ import annotations

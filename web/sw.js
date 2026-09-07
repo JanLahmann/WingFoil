@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v44";     // v44: digest schema 9 — a period's rates divide by summed timer time; its hours stay the elapsed span
+const VERSION = "v45";     // v45: engine 0.14.0 — turnPeakRate 25→18 °/s and turnMaxDuration 8→12 s, so the carved jibes the peak gate threw away are counted
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
