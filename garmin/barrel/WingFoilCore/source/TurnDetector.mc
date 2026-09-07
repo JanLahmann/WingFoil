@@ -30,7 +30,19 @@ function wrapDeg180(deg as Float) as Float {
 // would let the prior vote on a different classification than the session reports.
 //
 // `uIn`/`uOut` are UNWRAPPED bearings: uOut may legitimately sit 200 deg from uIn.
+// Engine 0.13.0 (Jan, 7 Sep 2026): a course change may be 35° or 60°, but a tack or a jibe
+// needs a real sweep. Below this net angle a sweep is filed as a course change — uncounted,
+// with or without a wind axis — never a tack, a jibe or a generic turn. Corpus effect: 5 of
+// 773 jibes reclassify; the course-change markers stay. Module-level because `classifySweep`
+// is shared with the auto-wind backfill and lives outside the class.
+const CLASSIFY_MIN_ANGLE_DEG = 90.0;
+
 function classifySweep(uIn as Float, uOut as Float, windDeg as Number) as Number {
+    // The classification floor comes first, ahead of the wind check: a 70° sweep is a course
+    // change whether or not anyone knows where the wind is.
+    if ((uOut - uIn).abs() < CLASSIFY_MIN_ANGLE_DEG) {
+        return TurnDetector.KIND_REJECT;
+    }
     if (windDeg < 0) {
         return TurnDetector.KIND_TURN;
     }
@@ -123,10 +135,7 @@ class TurnDetector {
     }
 
     // docs/algorithms.md defaults (not user-tunable on the watch)
-    // 90° since engine 0.13.0 (was 60°): on the corpus the 60–89° sweeps were almost all
-    // course changes the classifier never counted anyway — raising the floor cost 5 of 773
-    // jibes and removed 107 of 124 grey dots, with the clean count unchanged.
-    const MIN_ANGLE_DEG = 90.0;
+    const MIN_ANGLE_DEG = 60.0;     // the CANDIDATE floor; see CLASSIFY_MIN_ANGLE_DEG below
     const MAX_DURATION_S = 8.0;
     const PEAK_RATE_DEG_S = 25.0;
     const CONTINUE_RATE_DEG_S = 5.0;
