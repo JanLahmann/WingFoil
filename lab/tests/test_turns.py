@@ -170,6 +170,99 @@ def test_slow_pivot_below_peak_rate_is_not_a_turn():
     assert _detect(course, speed) == []
 
 
+# --- engine 0.15.0: the wind-axis crossing, and the two requirements around it ---------
+
+
+def test_the_crossing_is_recorded_on_every_counted_jibe():
+    """Jan's definition of a jibe -- "a turn through the wind axis" -- made an instant.
+
+    Wind from north, 90 deg -> 270 deg the downwind way: the axis is dead downwind, so the
+    crossing is where the course passes 180, the sweep starts 90 deg off it and carries
+    90 deg past it before the run-out leg holds.
+    """
+    turns = _detect(*_clean_jibe())
+    turn = turns[0]
+    assert turn.kind == JIBE
+    assert turn.start_t <= turn.axis_t <= turn.end_t
+    assert turn.axis_before_deg == pytest.approx(90.0, abs=5.0)
+    assert turn.axis_after_deg == pytest.approx(90.0, abs=5.0)
+
+
+def test_a_tack_crosses_head_to_wind_and_says_when():
+    course, speed = _join(_leg(45.0, 40),
+                          _ramp(45.0, -45.0, 4, np.linspace(6.0, 5.0, 4)),
+                          _leg(-45.0, 40))
+    turn = _detect(course, speed)[0]
+    assert turn.kind == TACK
+    assert turn.start_t <= turn.axis_t <= turn.end_t
+    assert turn.axis_before_deg == pytest.approx(45.0, abs=5.0)
+    assert turn.axis_after_deg == pytest.approx(45.0, abs=5.0)
+
+
+def test_a_course_change_and_an_axis_less_turn_carry_no_crossing():
+    """nan, never 0: "he started on the axis" and "there was no axis" are different facts."""
+    course, speed = _join(_leg(50.0, 40),
+                          _ramp(50.0, 140.0, 4, [6.0] * 4),
+                          _leg(140.0, 40))
+    bear_away = _detect(course, speed)[0]
+    assert bear_away.kind == BEAR_AWAY
+    for value in (bear_away.axis_t, bear_away.axis_before_deg, bear_away.axis_after_deg):
+        assert np.isnan(value)
+    no_wind = _detect(*_clean_jibe(), wind=None)[0]
+    assert no_wind.kind == UNCLASSIFIED and no_wind.counted
+    for value in (no_wind.axis_t, no_wind.axis_before_deg, no_wind.axis_after_deg):
+        assert np.isnan(value)
+
+
+def test_axis_before_deg_files_a_late_started_sweep_as_a_course_change():
+    """170 -> 290: it crosses dead downwind, but it began 10 deg off it.
+
+    That is a rider already three quarters of the way round straightening out, not a turn
+    *through* the wind -- and at `axis_before_deg` 30 it is filed exactly where the
+    classification floor files its own refusals, with its axis numbers going with the label.
+    """
+    course, speed = _join(_leg(170.0, 40),
+                          _ramp(170.0, 290.0, 7, [6.0] * 7),
+                          _leg(290.0, 40))
+    named = _detect(course, speed)[0]
+    assert named.kind == JIBE and named.counted
+    assert named.axis_before_deg == pytest.approx(10.0, abs=5.0)
+
+    refused = _detect(course, speed, config=TurnConfig(axis_before_deg=30.0))[0]
+    assert refused.kind in (BEAR_AWAY, ROUND_UP) and not refused.counted
+    assert np.isnan(refused.axis_t) and np.isnan(refused.axis_before_deg)
+    assert summarize_turns([refused]).rejected == 1
+
+
+def test_axis_after_deg_costs_the_clean_verdict_and_nothing_else():
+    """90 -> 190 through dead downwind: only 10 deg out the other side.
+
+    Jan: "it might be an additional requirement for a successful jibe to turn 30 deg after
+    the axis. But not require that for a touch-down or failed jibe." So the turn stays a
+    counted jibe with its outcome untouched; what it loses is `success`, and with it `clean`.
+    """
+    course, speed = _join(_leg(90.0, 40),
+                          _ramp(90.0, 190.0, 6, np.linspace(6.0, 5.0, 6)),
+                          _leg(190.0, 40))
+    carried = _detect(course, speed)[0]
+    assert carried.kind == JIBE and carried.success and carried.clean
+    assert carried.axis_after_deg == pytest.approx(10.0, abs=5.0)
+
+    strict = _detect(course, speed, config=TurnConfig(axis_after_deg=30.0))[0]
+    assert strict.kind == JIBE and strict.counted        # still a jibe he made
+    assert strict.outcome == carried.outcome             # the ladder is untouched
+    assert not strict.success and not strict.clean
+    assert summarize_turns([strict]).jibes_successful == 0
+
+
+def test_the_defaults_ask_nothing():
+    """Both parameters are 0, and 0 refuses nothing -- the reason no golden number moved."""
+    assert TurnConfig().axis_before_deg == 0.0
+    assert TurnConfig().axis_after_deg == 0.0
+    turn = _detect(*_clean_jibe())[0]
+    assert turn.axis_before_deg >= 0.0 and turn.axis_after_deg >= 0.0
+
+
 # --- engine 0.14.0: the carved jibe the 25 deg/s peak floor threw away -----------------
 
 #: A 150 deg carve at a 15 deg/s *mean*, ten one-second steps easing in and out of a 19
