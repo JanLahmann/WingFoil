@@ -203,6 +203,22 @@ struct TurnsAnalysisView: View {
                     .annotationTitles(.hidden)
                 }
             }
+            // **Wrist under** (engine 0.16.0), under the verdict pins and on all three maps:
+            // the overlay set has to be the same everywhere, or a rider who finds a
+            // submersion diamond on the ride map cannot find it on the page that is about
+            // the maneuver he went under in. Unfiltered on purpose — an episode belongs to
+            // the afternoon, not to the type/side subset the page is currently asking about.
+            if visibility.isVisible(.splash) {
+                ForEach(detail.splashMarks) { mark in
+                    Annotation("", coordinate: CLLocationCoordinate2D(latitude: mark.lat,
+                                                                      longitude: mark.lon),
+                               anchor: .center) {
+                        TrackHalo.around(EventMarkerStyle.splashMark(), on: store.mapStyle)
+                            .accessibilityHidden(true)
+                    }
+                    .annotationTitles(.hidden)
+                }
+            }
             ForEach(drawnPins) { pin in
                 Annotation("", coordinate: CLLocationCoordinate2D(latitude: pin.lat,
                                                                   longitude: pin.lon),

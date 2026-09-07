@@ -208,7 +208,7 @@ struct MapLegendView: View {
         case .fellIn: return .dot(EventMarkerStyle.color(.fell))
         case .courseChange: return .dot(EventMarkerStyle.color(.course))
         case .takeoff: return .glyph("arrow.up.circle.fill", EventMarkerStyle.takeoff)
-        case .splash: return .glyph("drop.fill", EventMarkerStyle.splash)
+        case .splash: return .glyph(DesignTokens.Glyph.splash, EventMarkerStyle.splash)
         }
     }
 
