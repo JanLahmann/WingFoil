@@ -32,7 +32,11 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
     /// 0.3.0 gave the pumping episodes timestamps — every attempt that never became one.
     /// One chip, because to the rider they are one act: pumping to get up.
     case takeoff
-    /// The wrist went under: the barometer's submersion evidence on a turn or a flight end.
+    /// **"Wrist under"** — one mark per submersion episode (`SessionAnalysis.submersions`,
+    /// engine 0.16.0). The raw value stays `splash` on purpose: it is the id the stored
+    /// preferences, the token catalogue and both platforms' goldens are written in, and the
+    /// rename is a rider-facing one. Was the barometer's flag on a turn or a flight end
+    /// until 0.16.0, which drew four marks on an afternoon with thirty-five dunks in it.
     case splash
     /// Which way he was riding: chevrons along the track, oriented to the course. A marker
     /// category rather than a line one — hiding it removes the arrows and leaves the route
@@ -69,7 +73,7 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
         case .fellIn: return "fell in"
         case .courseChange: return "course change"
         case .takeoff: return "takeoff"
-        case .splash: return "splash"
+        case .splash: return "wrist under"
         case .direction: return "direction"
         }
     }
@@ -87,7 +91,7 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
         case .fellIn: return "fell in markers"
         case .courseChange: return "course change markers"
         case .takeoff: return "takeoff and failed attempt markers"
-        case .splash: return "splash markers"
+        case .splash: return "wrist under markers"
         case .direction: return "direction of travel chevrons"
         }
     }

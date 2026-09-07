@@ -122,8 +122,8 @@ export const TOKENS = {
       "webShape": "uturn"
     },
     "splash": {
-      "sfSymbol": "drop.fill",
-      "webShape": "drop"
+      "sfSymbol": "diamond.fill",
+      "webShape": "diamond"
     },
     "cleanJibe": {
       "sfSymbol": "star.fill",
@@ -220,7 +220,7 @@ export const TOKENS = {
     },
     {
       "id": "splash",
-      "label": "splash",
+      "label": "wrist under",
       "defaultVisible": true
     },
     {

@@ -148,7 +148,19 @@ public enum AnalysisEngine {
     /// second it cannot be *carried* (and so cannot be clean) while its outcome is untouched.
     /// At 0 every fixture is what 0.14.0 said it was; the bump is what makes a stored document
     /// re-derive so the crossing is there to draw.
-    public static let version = "0.15.0"
+    /// 0.16.0 gives **the wrist going under** a list of its own, and moves no number.
+    /// `submersions` is the barometer's submersion mask read as *events* — one entry per
+    /// contiguous run of it, per gap-free segment, with runs closer together than 2 s merged
+    /// (one dunk, one wave) — each carrying `ts`, `endTs`, `durationS`, `dropM` and the
+    /// window it happened in (`turnIndex`, else `flightEndIndex`, else neither: he was
+    /// already off the foil). Until now the mask reached a rider only as a boolean on the
+    /// turn or flight end whose *window* it fired in, so the map could mark 4 dunks on a
+    /// session that had 35 of them, and it marked them at the turn's start rather than at
+    /// the dip. The `submerged` flags themselves are the outcome ladder's inputs and are
+    /// **untouched** — same mask, same threshold, same verdicts — which is why every other
+    /// number in a 0.15.0 document re-derives identical. The bump is what makes a stored
+    /// document re-derive so the episodes are there to draw.
+    public static let version = "0.16.0"
 }
 
 /// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's
@@ -591,6 +603,66 @@ public struct FlightEndRecord: Sendable, Codable, Equatable {
         try c.encode(windowS, forKey: .windowS)
         try c.encode(truncated, forKey: .truncated)
         try c.encode(ownedByTurn, forKey: .ownedByTurn)     // explicit null
+    }
+}
+
+/// Golden-schema submersion episode (engine 0.16.0, docs/algorithms.md "Submersion
+/// episodes"). One continuous spell the barometer says the wrist spent under water.
+///
+/// The map draws one "wrist under" diamond per entry. It is deliberately a *second* reading
+/// of the same mask the outcome ladder uses and not a replacement for it: `TurnRecord`'s and
+/// `FlightEndRecord`'s `submerged` flags are the verdict inputs, they are unchanged, and a
+/// turn can carry the flag while owning no episode of its own (the mask fired inside its
+/// window; which run it was is what this block adds).
+public struct SubmersionRecord: Sendable, Codable, Equatable {
+    /// First submerged sample — where the mark goes.
+    public var ts: Double
+    /// Last submerged sample.
+    public var endTs: Double
+    /// Gap-aware elapsed time between the two, like every other span in the document.
+    public var durationS: Double
+    /// The deepest sample of the run below the session's median altitude — the same line the
+    /// mask itself is measured against, so `dropM >= turnBaroDrop` always holds.
+    public var dropM: Double
+    /// The counted turn whose outcome window this episode overlaps; nil otherwise.
+    public var turnIndex: Int?
+    /// Failing that, the drawn flight end whose window it overlaps; nil otherwise — and an
+    /// episode with neither happened while the rider was already off the foil.
+    public var flightEndIndex: Int?
+
+    public init(_ sub: Submersion) {
+        ts = sub.startT
+        endTs = sub.endT
+        durationS = sub.durationS
+        dropM = sub.dropM
+        turnIndex = sub.turnIndex
+        flightEndIndex = sub.flightEndIndex
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case ts, endTs, durationS, dropM, turnIndex, flightEndIndex
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        ts = try c.decode(Double.self, forKey: .ts)
+        endTs = try c.decode(Double.self, forKey: .endTs)
+        durationS = try c.decode(Double.self, forKey: .durationS)
+        dropM = try c.decode(Double.self, forKey: .dropM)
+        turnIndex = try c.decodeIfPresent(Int.self, forKey: .turnIndex)
+        flightEndIndex = try c.decodeIfPresent(Int.self, forKey: .flightEndIndex)
+    }
+
+    /// Explicit nulls for the two indices, matching the lab's golden JSON: "this dunk
+    /// belongs to no turn" is a fact the map draws, not a missing key.
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(ts, forKey: .ts)
+        try c.encode(endTs, forKey: .endTs)
+        try c.encode(durationS, forKey: .durationS)
+        try c.encode(dropM, forKey: .dropM)
+        try c.encode(turnIndex, forKey: .turnIndex)              // explicit null
+        try c.encode(flightEndIndex, forKey: .flightEndIndex)    // explicit null
     }
 }
 
@@ -1139,6 +1211,12 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
     public var flights: [FlightRecord]
     public var turns: [TurnRecord]
     public var flightEnds: [FlightEndRecord]
+    /// Every spell the barometer says the wrist spent under water, in time order (engine
+    /// 0.16.0) — the "wrist under" layer's own list. Empty rather than absent on a source
+    /// with no barometer: there was no pressure step to see, which is a fact about the
+    /// source. Decoded leniently so a stored `analysis.json` from before the block still
+    /// opens; such a row is stale by `engineVersion` and `reanalyzeStale()` re-derives it.
+    public var submersions: [SubmersionRecord]
     public var records: GP3SRecords
     public var wind: WindEstimate?
     public var takeoffs: [TakeoffRecord]
@@ -1155,12 +1233,13 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
     public var summary: SessionSummary
 
     enum CodingKeys: String, CodingKey {
-        case engineVersion, config, capabilities, flights, turns, flightEnds
+        case engineVersion, config, capabilities, flights, turns, flightEnds, submersions
         case records, wind, takeoffs, pumpEpisodes, hr, summary
     }
 
     public init(engineVersion: String, config: AnalysisConfig, capabilities: AnalysisCapabilities,
                 flights: [FlightRecord], turns: [TurnRecord], flightEnds: [FlightEndRecord],
+                submersions: [SubmersionRecord] = [],
                 records: GP3SRecords, wind: WindEstimate?, takeoffs: [TakeoffRecord],
                 pumpEpisodes: [PumpEpisodeRecord] = [],
                 hr: HrAnalysis? = nil, summary: SessionSummary) {
@@ -1170,6 +1249,7 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
         self.flights = flights
         self.turns = turns
         self.flightEnds = flightEnds
+        self.submersions = submersions
         self.records = records
         self.wind = wind
         self.takeoffs = takeoffs
@@ -1186,6 +1266,8 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
         flights = try c.decode([FlightRecord].self, forKey: .flights)
         turns = try c.decode([TurnRecord].self, forKey: .turns)
         flightEnds = try c.decodeIfPresent([FlightEndRecord].self, forKey: .flightEnds) ?? []
+        submersions = try c.decodeIfPresent([SubmersionRecord].self,
+                                            forKey: .submersions) ?? []
         records = try c.decode(GP3SRecords.self, forKey: .records)
         wind = try c.decodeIfPresent(WindEstimate.self, forKey: .wind)
         takeoffs = try c.decode([TakeoffRecord].self, forKey: .takeoffs)
@@ -1203,6 +1285,7 @@ public struct SessionAnalysis: Sendable, Codable, Equatable {
         try c.encode(flights, forKey: .flights)
         try c.encode(turns, forKey: .turns)
         try c.encode(flightEnds, forKey: .flightEnds)
+        try c.encode(submersions, forKey: .submersions)
         try c.encode(records, forKey: .records)
         try c.encode(wind, forKey: .wind)          // explicit null per schema
         try c.encode(takeoffs, forKey: .takeoffs)
@@ -1265,6 +1348,7 @@ public enum SessionSummarizer {
         // clean turns too (docs/algorithms.md "Turn streaks").
         let turnSummary = TurnDetector.summarize(turns, ends: ends)
         let endSummary = FlightEndClassifier.summarize(ends)
+        let submersions = Self.submersions(clean, evidence: evidence, turns: turns, ends: ends)
         let longest = segmentation.longest
         var summary = SessionSummary(
             foilTimeS: segmentation.foilTimeS,
@@ -1313,12 +1397,39 @@ public enum SessionSummarizer {
             },
             turns: turns.map(TurnRecord.init),
             flightEnds: ends.map(FlightEndRecord.init),
+            submersions: submersions.map(SubmersionRecord.init),
             records: records,
             wind: wind,
             takeoffs: takeoffs.takeoffs.map(TakeoffRecord.init),
             pumpEpisodes: takeoffs.episodes.map(PumpEpisodeRecord.init),
             hr: hr,
             summary: summary)
+    }
+
+    /// The session's submersion episodes, attributed (docs/algorithms.md "Submersion
+    /// episodes"). Mirrors the lab's `session_submersions`.
+    ///
+    /// The two window lists are the *same* spans the two outcome ladders judged over,
+    /// rebuilt from what each record already carries — a turn's is `startT` to `endT +
+    /// outcomeWindowS`, a flight end's is `t` to `t + windowS` — so an episode is never
+    /// attributed to a window the verdict was not read from. Counted turns only, and drawn
+    /// flight ends only (no turn owns them, the recording did not stop), which is the same
+    /// ownership rule that keeps one swim from being marked twice on the map.
+    public static func submersions(_ clean: CleanTrack, evidence: OffFoilEvidence?,
+                                   turns: [Turn], ends: [FlightEnd]) -> [Submersion] {
+        guard let ev = evidence else { return [] }
+        var out = Evidence.submersionRuns(t: ev.t, gap: ev.gap, submerged: ev.submerged,
+                                          alt: clean.samples.map(\.altM))
+        let turnWindows = turns.enumerated().filter { $0.element.counted }.map {
+            (index: $0.offset, start: $0.element.startT,
+             end: $0.element.endT + $0.element.outcomeWindowS)
+        }
+        let endWindows = ends.enumerated()
+            .filter { $0.element.ownedByTurn == nil && !$0.element.truncated }
+            .map { (index: $0.offset, start: $0.element.t,
+                    end: $0.element.t + $0.element.windowS) }
+        Evidence.attribute(&out, turnWindows: turnWindows, endWindows: endWindows)
+        return out
     }
 
     /// When each **dry** jibe happened, in time order: a counted jibe he did not swim out

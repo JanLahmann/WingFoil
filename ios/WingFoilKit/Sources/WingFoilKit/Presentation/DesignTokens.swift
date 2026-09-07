@@ -115,8 +115,8 @@ public enum DesignTokens {
         public static let takeoffFree = "arrow.up.circle"
         /// hollow red u-turn — went at it and came back down
         public static let takeoffFailed = "arrow.uturn.down.circle"
-        /// drop glyph — submersion evidence
-        public static let splash = "drop.fill"
+        /// cyan diamond — one per submersion episode ("wrist under"). Shape as well as colour, because a submersion usually sits on the fell-in verdict it belongs to and the two must not read as one mark; the same diamond the thumbnails and the share card have always drawn
+        public static let splash = "diamond.fill"
         /// filled star — a clean jibe, drawn instead of that turn's outcome dot
         public static let cleanJibe = "star.fill"
     }
@@ -177,7 +177,7 @@ public enum DesignTokens {
             DesignTokenEntry(id: "fellIn", label: "fell in"),
             DesignTokenEntry(id: "courseChange", label: "course change"),
             DesignTokenEntry(id: "takeoff", label: "takeoff"),
-            DesignTokenEntry(id: "splash", label: "splash"),
+            DesignTokenEntry(id: "splash", label: "wrist under"),
             DesignTokenEntry(id: "direction", label: "direction"),
         ]
         public static let order: [String] = catalogue.map(\.id)

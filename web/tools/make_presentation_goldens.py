@@ -20,7 +20,8 @@ rule*, and every rule is written down in docs/presentation.md:
     end is a recording that stopped, not an event;
   * pump episodes: only `success` and `failed` are attempts; `recovery`, `in_flight` and
     `unknown` are counted by the engine but never drawn;
-  * splash evidence comes from the engine's `submerged` flags and is never re-derived;
+  * "wrist under" evidence comes from the engine's `submersions` list -- one mark per
+    episode -- and is never re-derived;
   * turn filters are type × ENTRY side, ANDed, over counted turns only;
   * every flight is started by one takeoff and stopped by one end, so the takeoff halves
     and the flight-end buckets each sum to `flightCount`.
@@ -139,11 +140,15 @@ def flight_end_counts(doc: dict) -> dict[str, int]:
 
 
 def splash_count(doc: dict) -> int:
-    """The barometer's evidence on both channels, with the same ownership rule that keeps
-    one swim from being marked twice."""
-    turns = sum(1 for t in doc.get("turns", []) if t.get("submerged") and t.get("counted"))
-    ends = sum(1 for e in drawn_flight_ends(doc) if e.get("submerged"))
-    return turns + ends
+    """**"Wrist under"** — one mark per submersion episode (engine 0.16.0).
+
+    Read straight off `submersions`, never re-derived: the mask, its runs, the 2 s merge and
+    the attribution are all the engine's, which is what stops the phone and the web counting
+    a rider's dunks differently. Before 0.16.0 this counted the turns and the drawn flight
+    ends the barometer had *flagged*, which was one mark per maneuver that owned a dunk
+    rather than one per dunk.
+    """
+    return len(doc.get("submersions", []))
 
 
 def pumping_spans(doc: dict) -> int:
