@@ -188,6 +188,15 @@ public enum TurnWorkbench {
             guard let i = index(at: time), rate.indices.contains(i) else { return nil }
             return rate[i]
         }
+
+        /// The rate *into* the element at `time` — the one `TurnDetector.trim` reads when it
+        /// decides whether to shrink the sweep off this sample. The sweep's last step is above
+        /// `turnContinueRate` by construction; the step *after* it is not, and confusing the
+        /// two is how a trace comes to print a number that contradicts its own sentence.
+        public func rateInto(at time: Double) -> Double? {
+            guard let i = index(at: time), rate.indices.contains(i - 1) else { return nil }
+            return rate[i - 1]
+        }
     }
 
     /// The sailing run that contains `[startT, endT]`, unwrapped like the detector does it.
