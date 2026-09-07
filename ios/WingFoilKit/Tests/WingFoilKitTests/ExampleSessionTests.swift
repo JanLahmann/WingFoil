@@ -103,7 +103,9 @@ import Testing
              efforts: try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM record_effort") ?? 0)
         }
         #expect(counts.flights == 2)
-        #expect(counts.turns == 10)                          // 10 counted, none rejected
+        // Engine 0.14.0's 18 °/s peak floor marks one course change this session always
+        // contained and the old floor never saw: 10 counted jibes, one rejected sweep.
+        #expect(counts.turns == 11)
         #expect(counts.efforts > 0)
     }
 

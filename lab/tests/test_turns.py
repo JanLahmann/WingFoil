@@ -155,17 +155,89 @@ def test_bear_away_is_not_counted_as_a_turn():
 
 
 def test_chop_wiggle_below_thresholds_is_not_a_turn():
-    # steering through chop: +-25 deg at 8 s period -> peak ~20 deg/s, net swing 50 deg
+    # steering through chop: +-25 deg at 8 s period -> peak ~20 deg/s, net swing 50 deg.
+    # Since engine 0.14.0 that peak clears `turnPeakRate` (18 deg/s); the 50 deg net swing
+    # is what rejects it, and `turnMinAngle` is the gate doing the work here.
     t = np.arange(200.0)
     course = 90.0 + 25.0 * np.sin(2 * np.pi * t / 8.0)
     assert _detect(course, np.full(200, 6.0)) == []
 
 
 def test_slow_pivot_below_peak_rate_is_not_a_turn():
-    # 90 deg over 30 s = 3 deg/s: net angle qualifies over 8 s? no -- and no 25 deg/s peak
+    # 90 deg over 30 s = 3 deg/s: net angle qualifies over 12 s? no -- and no 18 deg/s peak
     course, speed = _join(_leg(90.0, 30), _ramp(90.0, 180.0, 30, [6.0] * 30),
                           _leg(180.0, 30))
     assert _detect(course, speed) == []
+
+
+# --- engine 0.14.0: the carved jibe the 25 deg/s peak floor threw away -----------------
+
+#: A 150 deg carve at a 15 deg/s *mean*, ten one-second steps easing in and out of a 19
+#: deg/s plateau. This is the shape of the jibes the corpus was losing: a rider carving a
+#: wide radius at 11 kn turns steadily and never spikes.
+_CARVE_RATES = [9.0, 14.0, 18.0, 19.0, 19.0, 19.0, 19.0, 18.0, 9.0, 6.0]
+
+
+def _carved_jibe(c0=90.0):
+    """Beam reach -> beam reach through dead downwind, carved over 10 s at 15 deg/s mean."""
+    ramp = [c0] + list(c0 + np.cumsum(_CARVE_RATES))
+    return _join(_leg(c0, 40), (ramp, [6.0] * len(ramp)), _leg(ramp[-1], 40))
+
+
+def test_a_carved_150_deg_sweep_at_15_deg_s_is_a_jibe():
+    """Engine 0.14.0's reason to exist: a carve is slow, and the old gates called it nothing.
+
+    150 deg through dead downwind over 10 s -- a real jibe, ridden and counted by the rider
+    -- peaks at 19 deg/s. Under the 0.13.0 pair (25 deg/s inside 8 s) the engine did not
+    emit so much as a grey course-change marker for it: too gentle for the peak floor, too
+    long for the window. Both halves of the change earn their place here. The 18 deg/s
+    floor is what makes the carve visible at all, and the 12 s window is what lets the
+    detector see all 150 deg of it instead of the 135 deg an 8 s window reaches.
+    """
+    course, speed = _carved_jibe()
+
+    turns = _detect(course, speed)
+    assert len(turns) == 1
+    turn = turns[0]
+    assert turn.kind == JIBE and turn.counted
+    assert turn.net_deg == pytest.approx(150.0, abs=1.0)
+    assert abs(turn.peak_rate_deg_s) == pytest.approx(19.0, abs=0.5)   # never near 25
+    assert turn.end_t - turn.start_t == pytest.approx(10.0, abs=0.5)   # never inside 8 s
+
+    # The 0.13.0 thresholds saw nothing at all here.
+    assert _detect(course, speed,
+                   config=TurnConfig(peak_rate_deg_s=25.0, max_duration_s=8.0)) == []
+    # The peak floor alone finds the jibe but clips the sweep to what 8 s reaches.
+    clipped = _detect(course, speed,
+                      config=TurnConfig(peak_rate_deg_s=18.0, max_duration_s=8.0))
+    assert len(clipped) == 1 and clipped[0].kind == JIBE
+    assert clipped[0].net_deg == pytest.approx(135.0, abs=1.0)
+
+
+def test_a_100_deg_correction_at_20_deg_s_is_still_not_counted():
+    """The lower floor buys markers, not maneuvers.
+
+    A 100 deg bear-away at 20 deg/s clears `turnPeakRate` only because 0.14.0 lowered it,
+    and it is *detected* -- the page marks the course change. It stays on one side of the
+    wind, so it is no more a jibe than it was before: the wind-axis rule, not the peak
+    floor, is what decides whether a sweep counts, and lowering the floor did not touch it.
+    """
+    course, speed = _join(_leg(40.0, 40),
+                          _ramp(40.0, 140.0, 6, [6.0] * 6),
+                          _leg(140.0, 40))
+    turns = _detect(course, speed)
+    assert len(turns) == 1
+    assert turns[0].net_deg == pytest.approx(100.0, abs=1.0)
+    assert abs(turns[0].peak_rate_deg_s) == pytest.approx(20.0, abs=0.5)
+    assert turns[0].kind == BEAR_AWAY and not turns[0].counted
+
+    summary = summarize_turns(turns)
+    assert (summary.tacks, summary.jibes, summary.turns_counted) == (0, 0, 0)
+    assert summary.rejected == 1
+
+    # Below the 0.13.0 floor of 25 deg/s, so the old engine did not even mark it.
+    assert _detect(course, speed,
+                   config=TurnConfig(peak_rate_deg_s=25.0, max_duration_s=8.0)) == []
 
 
 def test_wallow_rotation_is_rejected_by_the_spatial_gate():

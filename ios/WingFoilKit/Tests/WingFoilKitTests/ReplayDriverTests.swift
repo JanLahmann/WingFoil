@@ -147,16 +147,17 @@ import Testing
     // MARK: - The Torbole clip
 
     /// What the rate picker offers, pinned. The ease roughly halves the speed a run averages,
-    /// so the three choices are about 79 s, 36 s and 24 s of video for the same afternoon —
+    /// so the three choices are about 78 s, 34 s and 22 s of video for the same afternoon —
     /// and it is *those* numbers, not "10x / 30x / 60x", that a rider is choosing between.
     ///
-    /// Thirteen lines since the clean-jibe beat joined the commentary (engine 0.10.0), and a
-    /// line is a dip: each of the three ran about a second longer for it.
+    /// Twelve lines under engine 0.14.0: the clean-jibe beat that joined the commentary in
+    /// 0.10.0 now lands on the third dry jibe and rides its streak line instead of taking an
+    /// instant of its own. A line is a dip, so each of the three runs about a second shorter.
     @Test func theEasedTorboleRunHasAKnownLength() throws {
         let script = ReplayCommentary.make(try torbole(), span: torboleSpan, timeZone: fixtureZone)
-        #expect(script.count == 13)
+        #expect(script.count == 12)
 
-        let expected: [Double: Double] = [10: 78.90, 30: 35.64, 60: 23.58]
+        let expected: [Double: Double] = [10: 77.70, 30: 34.44, 60: 22.50]
         for (rate, wallS) in expected {
             let driver = ReplayDriver(span: torboleSpan, rate: rate,
                                       easeAt: script.map(\.t))

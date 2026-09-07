@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.13.0",
+  "engineVersion": "0.14.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -21,8 +21,8 @@
     "minSpeedFilter": null,
     "turnMinAngle": 60.0,
     "turnClassifyMinAngle": 90.0,
-    "turnMaxDuration": 8.0,
-    "turnPeakRate": 25.0,
+    "turnMaxDuration": 12.0,
+    "turnPeakRate": 18.0,
     "turnContinueRate": 5.0,
     "turnCogSpeedFloor": 2.0,
     "turnMinArc": 12.0,
@@ -429,25 +429,25 @@
   ],
   "turns": [
     {
-      "ts": 802.0,
+      "ts": 799.0,
       "endTs": 809.0,
       "minTs": 809.0,
       "type": "jibe",
       "counted": true,
-      "entryKn": 9.386,
+      "entryKn": 9.984,
       "minKn": 6.113,
       "exitKn": 6.113,
-      "score": 0.6513,
+      "score": 0.6123,
       "success": false,
       "clean": false,
       "side": "starboard",
       "direction": "port",
-      "netDeg": -149.37,
+      "netDeg": -174.87,
       "peakRateDegS": -30.9,
-      "twaInDeg": -96.44,
+      "twaInDeg": -70.93,
       "twaOutDeg": 114.19,
-      "arcM": 38.03,
-      "radiusM": 14.59,
+      "arcM": 52.5,
+      "radiusM": 17.2,
       "outcome": "flew_through",
       "borderline": false,
       "offFoilS": 0.0,
@@ -458,52 +458,52 @@
     },
     {
       "ts": 851.0,
-      "endTs": 858.0,
+      "endTs": 860.0,
       "minTs": 855.0,
       "type": "jibe",
       "counted": true,
       "entryKn": 9.471,
       "minKn": 7.248,
-      "exitKn": 8.196,
+      "exitKn": 8.953,
       "score": 0.7653,
       "success": true,
       "clean": true,
       "side": "port",
       "direction": "starboard",
-      "netDeg": 138.32,
+      "netDeg": 156.54,
       "peakRateDegS": 36.78,
       "twaInDeg": 115.9,
-      "twaOutDeg": -105.78,
-      "arcM": 41.33,
-      "radiusM": 17.12,
+      "twaOutDeg": -87.56,
+      "arcM": 50.69,
+      "radiusM": 18.55,
       "outcome": "flew_through",
       "borderline": false,
       "offFoilS": 0.0,
       "stoppedS": 0.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 2.0
+      "outcomeWindowS": 0.0
     },
     {
-      "ts": 920.0,
+      "ts": 917.0,
       "endTs": 928.0,
       "minTs": 928.0,
       "type": "jibe",
       "counted": true,
-      "entryKn": 9.736,
+      "entryKn": 9.971,
       "minKn": 5.179,
       "exitKn": 5.179,
-      "score": 0.532,
+      "score": 0.5194,
       "success": false,
       "clean": false,
       "side": "starboard",
       "direction": "port",
-      "netDeg": -155.73,
+      "netDeg": -164.64,
       "peakRateDegS": -42.48,
-      "twaInDeg": -105.75,
+      "twaInDeg": -96.84,
       "twaOutDeg": 98.52,
-      "arcM": 41.17,
-      "radiusM": 15.15,
+      "arcM": 54.86,
+      "radiusM": 19.09,
       "outcome": "touchdown",
       "borderline": false,
       "offFoilS": 10.0,
@@ -511,6 +511,34 @@
       "pumped": false,
       "submerged": false,
       "outcomeWindowS": 10.0
+    },
+    {
+      "ts": 1057.0,
+      "endTs": 1066.0,
+      "minTs": 1066.0,
+      "type": "jibe",
+      "counted": true,
+      "entryKn": 9.698,
+      "minKn": 5.669,
+      "exitKn": 5.669,
+      "score": 0.5845,
+      "success": false,
+      "clean": false,
+      "side": "port",
+      "direction": "starboard",
+      "netDeg": 113.42,
+      "peakRateDegS": 20.48,
+      "twaInDeg": 82.82,
+      "twaOutDeg": -163.77,
+      "arcM": 49.48,
+      "radiusM": 25.0,
+      "outcome": "flew_through",
+      "borderline": false,
+      "offFoilS": 0.0,
+      "stoppedS": 0.0,
+      "pumped": false,
+      "submerged": false,
+      "outcomeWindowS": 3.0
     },
     {
       "ts": 1330.0,
@@ -597,25 +625,25 @@
       "outcomeWindowS": 1.0
     },
     {
-      "ts": 1679.0,
+      "ts": 1675.0,
       "endTs": 1686.0,
       "minTs": 1685.0,
       "type": "jibe",
       "counted": true,
-      "entryKn": 9.91,
+      "entryKn": 10.686,
       "minKn": 7.292,
       "exitKn": 7.375,
-      "score": 0.7359,
-      "success": true,
-      "clean": true,
+      "score": 0.6824,
+      "success": false,
+      "clean": false,
       "side": "port",
       "direction": "starboard",
-      "netDeg": 159.1,
+      "netDeg": 172.37,
       "peakRateDegS": 53.07,
-      "twaInDeg": 82.33,
+      "twaInDeg": 69.05,
       "twaOutDeg": -118.58,
-      "arcM": 43.29,
-      "radiusM": 15.59,
+      "arcM": 61.84,
+      "radiusM": 20.56,
       "outcome": "flew_through",
       "borderline": false,
       "offFoilS": 0.0,
@@ -653,25 +681,25 @@
       "outcomeWindowS": 12.0
     },
     {
-      "ts": 1971.0,
+      "ts": 1965.0,
       "endTs": 1977.0,
       "minTs": 1979.0,
       "type": "jibe",
       "counted": true,
-      "entryKn": 9.199,
+      "entryKn": 9.686,
       "minKn": 4.567,
       "exitKn": 5.675,
-      "score": 0.4965,
+      "score": 0.4715,
       "success": false,
       "clean": false,
       "side": "starboard",
       "direction": "port",
-      "netDeg": -117.62,
+      "netDeg": -163.09,
       "peakRateDegS": -30.78,
-      "twaInDeg": -105.24,
+      "twaInDeg": -59.77,
       "twaOutDeg": 137.14,
-      "arcM": 31.73,
-      "radiusM": 15.46,
+      "arcM": 59.57,
+      "radiusM": 20.93,
       "outcome": "touchdown",
       "borderline": false,
       "offFoilS": 6.0,
@@ -681,25 +709,25 @@
       "outcomeWindowS": 12.0
     },
     {
-      "ts": 2040.0,
+      "ts": 2038.0,
       "endTs": 2047.0,
       "minTs": 2049.0,
       "type": "jibe",
       "counted": true,
-      "entryKn": 10.542,
+      "entryKn": 10.267,
       "minKn": 6.412,
       "exitKn": 7.925,
-      "score": 0.6083,
+      "score": 0.6245,
       "success": false,
       "clean": false,
       "side": "port",
       "direction": "starboard",
-      "netDeg": 165.87,
+      "netDeg": 178.07,
       "peakRateDegS": 30.89,
-      "twaInDeg": 94.78,
+      "twaInDeg": 82.58,
       "twaOutDeg": -99.36,
-      "arcM": 42.38,
-      "radiusM": 14.64,
+      "arcM": 53.41,
+      "radiusM": 17.19,
       "outcome": "flew_through",
       "borderline": false,
       "offFoilS": 0.0,
@@ -710,31 +738,31 @@
     },
     {
       "ts": 2095.0,
-      "endTs": 2102.0,
+      "endTs": 2105.0,
       "minTs": 2102.0,
       "type": "jibe",
       "counted": true,
       "entryKn": 9.781,
       "minKn": 4.715,
-      "exitKn": 4.715,
+      "exitKn": 6.307,
       "score": 0.482,
       "success": false,
       "clean": false,
       "side": "starboard",
       "direction": "port",
-      "netDeg": -146.35,
+      "netDeg": -167.51,
       "peakRateDegS": -31.25,
       "twaInDeg": -73.41,
-      "twaOutDeg": 140.24,
-      "arcM": 39.99,
-      "radiusM": 15.66,
+      "twaOutDeg": 119.07,
+      "arcM": 53.3,
+      "radiusM": 18.23,
       "outcome": "flew_through",
       "borderline": false,
       "offFoilS": 0.0,
       "stoppedS": 0.0,
       "pumped": false,
       "submerged": false,
-      "outcomeWindowS": 7.0
+      "outcomeWindowS": 4.0
     },
     {
       "ts": 2146.0,
@@ -765,25 +793,25 @@
       "outcomeWindowS": 9.0
     },
     {
-      "ts": 2190.0,
+      "ts": 2185.0,
       "endTs": 2197.0,
       "minTs": 2199.0,
       "type": "jibe",
       "counted": true,
-      "entryKn": 9.764,
+      "entryKn": 9.212,
       "minKn": 4.969,
       "exitKn": 5.51,
-      "score": 0.5089,
+      "score": 0.5394,
       "success": false,
       "clean": false,
       "side": "starboard",
       "direction": "port",
-      "netDeg": -131.7,
+      "netDeg": -157.14,
       "peakRateDegS": -34.42,
-      "twaInDeg": -91.19,
+      "twaInDeg": -65.75,
       "twaOutDeg": 137.11,
-      "arcM": 36.78,
-      "radiusM": 16.0,
+      "arcM": 60.29,
+      "radiusM": 21.98,
       "outcome": "touchdown",
       "borderline": false,
       "offFoilS": 10.0,
@@ -793,25 +821,25 @@
       "outcomeWindowS": 10.0
     },
     {
-      "ts": 2333.0,
+      "ts": 2328.0,
       "endTs": 2339.0,
       "minTs": 2339.0,
       "type": "jibe",
       "counted": true,
-      "entryKn": 9.132,
+      "entryKn": 9.67,
       "minKn": 5.059,
       "exitKn": 5.059,
-      "score": 0.554,
+      "score": 0.5232,
       "success": false,
       "clean": false,
       "side": "starboard",
       "direction": "port",
-      "netDeg": -137.72,
+      "netDeg": -189.68,
       "peakRateDegS": -26.03,
-      "twaInDeg": -125.63,
+      "twaInDeg": -73.67,
       "twaOutDeg": 96.65,
-      "arcM": 25.75,
-      "radiusM": 10.71,
+      "arcM": 49.62,
+      "radiusM": 14.99,
       "outcome": "flew_through",
       "borderline": false,
       "offFoilS": 0.0,
@@ -821,7 +849,7 @@
       "outcomeWindowS": 7.0
     },
     {
-      "ts": 2372.0,
+      "ts": 2371.0,
       "endTs": 2380.0,
       "minTs": 2377.0,
       "type": "jibe",
@@ -834,12 +862,12 @@
       "clean": false,
       "side": "port",
       "direction": "starboard",
-      "netDeg": 171.21,
+      "netDeg": 187.55,
       "peakRateDegS": 60.89,
-      "twaInDeg": 92.05,
+      "twaInDeg": 75.71,
       "twaOutDeg": -96.74,
-      "arcM": 48.8,
-      "radiusM": 16.33,
+      "arcM": 53.51,
+      "radiusM": 16.35,
       "outcome": "touchdown",
       "borderline": false,
       "offFoilS": 5.0,
@@ -849,7 +877,7 @@
       "outcomeWindowS": 12.0
     },
     {
-      "ts": 2476.0,
+      "ts": 2473.0,
       "endTs": 2484.0,
       "minTs": 2485.0,
       "type": "jibe",
@@ -862,12 +890,12 @@
       "clean": false,
       "side": "starboard",
       "direction": "port",
-      "netDeg": -168.9,
+      "netDeg": -188.1,
       "peakRateDegS": -46.06,
-      "twaInDeg": -94.42,
+      "twaInDeg": -75.22,
       "twaOutDeg": 96.68,
-      "arcM": 38.63,
-      "radiusM": 13.11,
+      "arcM": 54.64,
+      "radiusM": 16.64,
       "outcome": "touchdown",
       "borderline": false,
       "offFoilS": 9.0,
@@ -961,25 +989,25 @@
       "outcomeWindowS": 9.0
     },
     {
-      "ts": 2976.0,
+      "ts": 2972.0,
       "endTs": 2983.0,
       "minTs": 2983.0,
       "type": "jibe",
       "counted": true,
-      "entryKn": 11.162,
+      "entryKn": 10.339,
       "minKn": 6.749,
       "exitKn": 6.749,
-      "score": 0.6046,
+      "score": 0.6528,
       "success": false,
       "clean": false,
       "side": "port",
       "direction": "starboard",
-      "netDeg": 152.14,
+      "netDeg": 172.39,
       "peakRateDegS": 35.23,
-      "twaInDeg": 90.84,
+      "twaInDeg": 70.6,
       "twaOutDeg": -117.01,
-      "arcM": 48.04,
-      "radiusM": 18.09,
+      "arcM": 71.05,
+      "radiusM": 23.62,
       "outcome": "touchdown",
       "borderline": false,
       "offFoilS": 4.0,
@@ -1017,25 +1045,25 @@
       "outcomeWindowS": 3.0
     },
     {
-      "ts": 3116.0,
+      "ts": 3115.0,
       "endTs": 3124.0,
       "minTs": 3124.0,
       "type": "jibe",
       "counted": true,
-      "entryKn": 10.325,
+      "entryKn": 10.435,
       "minKn": 6.333,
       "exitKn": 6.333,
-      "score": 0.6134,
+      "score": 0.6069,
       "success": false,
       "clean": false,
       "side": "port",
       "direction": "starboard",
-      "netDeg": 135.87,
+      "netDeg": 145.43,
       "peakRateDegS": 41.8,
-      "twaInDeg": 93.75,
+      "twaInDeg": 84.2,
       "twaOutDeg": -130.37,
-      "arcM": 53.39,
-      "radiusM": 22.52,
+      "arcM": 58.42,
+      "radiusM": 23.01,
       "outcome": "touchdown",
       "borderline": false,
       "offFoilS": 8.0,
@@ -1101,25 +1129,25 @@
       "outcomeWindowS": 2.0
     },
     {
-      "ts": 3360.0,
+      "ts": 3357.0,
       "endTs": 3367.0,
       "minTs": 3367.0,
       "type": "jibe",
       "counted": true,
-      "entryKn": 7.854,
+      "entryKn": 7.601,
       "minKn": 5.957,
       "exitKn": 5.957,
-      "score": 0.7585,
+      "score": 0.7838,
       "success": true,
       "clean": true,
       "side": "starboard",
       "direction": "port",
-      "netDeg": -137.07,
+      "netDeg": -161.65,
       "peakRateDegS": -28.88,
-      "twaInDeg": -118.81,
+      "twaInDeg": -94.22,
       "twaOutDeg": 104.13,
-      "arcM": 40.7,
-      "radiusM": 17.01,
+      "arcM": 52.65,
+      "radiusM": 18.66,
       "outcome": "flew_through",
       "borderline": false,
       "offFoilS": 0.0,
@@ -1129,7 +1157,7 @@
       "outcomeWindowS": 8.0
     },
     {
-      "ts": 3395.0,
+      "ts": 3393.0,
       "endTs": 3402.0,
       "minTs": 3404.0,
       "type": "jibe",
@@ -1142,12 +1170,12 @@
       "clean": false,
       "side": "port",
       "direction": "starboard",
-      "netDeg": 119.23,
+      "netDeg": 130.13,
       "peakRateDegS": 48.12,
-      "twaInDeg": 72.29,
+      "twaInDeg": 61.39,
       "twaOutDeg": -168.47,
-      "arcM": 42.39,
-      "radiusM": 20.37,
+      "arcM": 53.35,
+      "radiusM": 23.49,
       "outcome": "touchdown",
       "borderline": false,
       "offFoilS": 8.0,
@@ -1198,7 +1226,7 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": null
+      "ownedByTurn": 3
     },
     {
       "flightIndex": 3,
@@ -1268,7 +1296,7 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 3
+      "ownedByTurn": 4
     },
     {
       "flightIndex": 8,
@@ -1310,7 +1338,7 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 4
+      "ownedByTurn": 5
     },
     {
       "flightIndex": 11,
@@ -1338,7 +1366,7 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 5
+      "ownedByTurn": 6
     },
     {
       "flightIndex": 13,
@@ -1366,7 +1394,7 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 6
+      "ownedByTurn": 7
     },
     {
       "flightIndex": 15,
@@ -1506,7 +1534,7 @@
       "submerged": false,
       "windowS": 7.0,
       "truncated": false,
-      "ownedByTurn": 12
+      "ownedByTurn": 13
     },
     {
       "flightIndex": 25,
@@ -1576,7 +1604,7 @@
       "submerged": false,
       "windowS": 6.0,
       "truncated": false,
-      "ownedByTurn": 14
+      "ownedByTurn": 15
     },
     {
       "flightIndex": 30,
@@ -1590,7 +1618,7 @@
       "submerged": false,
       "windowS": 3.0,
       "truncated": false,
-      "ownedByTurn": 15
+      "ownedByTurn": 16
     },
     {
       "flightIndex": 31,
@@ -1632,7 +1660,7 @@
       "submerged": false,
       "windowS": 9.0,
       "truncated": false,
-      "ownedByTurn": 16
+      "ownedByTurn": 17
     },
     {
       "flightIndex": 34,
@@ -1646,7 +1674,7 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 17
+      "ownedByTurn": 18
     },
     {
       "flightIndex": 35,
@@ -1716,7 +1744,7 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 20
+      "ownedByTurn": 21
     },
     {
       "flightIndex": 40,
@@ -1730,7 +1758,7 @@
       "submerged": false,
       "windowS": 11.0,
       "truncated": false,
-      "ownedByTurn": 21
+      "ownedByTurn": 22
     },
     {
       "flightIndex": 41,
@@ -1758,7 +1786,7 @@
       "submerged": false,
       "windowS": 11.0,
       "truncated": false,
-      "ownedByTurn": 22
+      "ownedByTurn": 23
     },
     {
       "flightIndex": 43,
@@ -1772,7 +1800,7 @@
       "submerged": false,
       "windowS": 0.0,
       "truncated": true,
-      "ownedByTurn": 23
+      "ownedByTurn": 24
     },
     {
       "flightIndex": 44,
@@ -1786,7 +1814,7 @@
       "submerged": false,
       "windowS": 10.0,
       "truncated": false,
-      "ownedByTurn": 25
+      "ownedByTurn": 26
     },
     {
       "flightIndex": 45,
@@ -3481,14 +3509,14 @@
     "durationS": 3850.0,
     "timerTimeS": 2282.0,
     "avgSpeedKmh": 12.57,
-    "turnsPerHour": 39.4,
-    "jibesPerHour": 39.4,
-    "cleanJibesPerHour": 6.3,
+    "turnsPerHour": 41.0,
+    "jibesPerHour": 41.0,
+    "cleanJibesPerHour": 4.7,
     "wetPerHour": 6.3,
     "windowRates": {
       "windowMin": 15.0,
-      "bestJph": 40.0,
-      "bestJphStartTs": 1330.0,
+      "bestJph": 44.0,
+      "bestJphStartTs": 1576.0,
       "bestWph": 12.0,
       "bestWphStartTs": 2390.0,
       "series": [
@@ -3509,77 +3537,77 @@
         },
         {
           "ts": 180.0,
-          "jph": 12.0,
+          "jph": 16.0,
           "wph": 0.0
         },
         {
           "ts": 240.0,
-          "jph": 12.0,
+          "jph": 16.0,
           "wph": 0.0
         },
         {
           "ts": 300.0,
-          "jph": 12.0,
+          "jph": 16.0,
           "wph": 0.0
         },
         {
           "ts": 360.0,
-          "jph": 12.0,
+          "jph": 16.0,
           "wph": 0.0
         },
         {
           "ts": 420.0,
-          "jph": 12.0,
+          "jph": 16.0,
           "wph": 0.0
         },
         {
           "ts": 480.0,
-          "jph": 16.0,
+          "jph": 20.0,
           "wph": 0.0
         },
         {
           "ts": 540.0,
-          "jph": 16.0,
+          "jph": 20.0,
           "wph": 0.0
         },
         {
           "ts": 600.0,
-          "jph": 20.0,
+          "jph": 24.0,
           "wph": 0.0
         },
         {
           "ts": 660.0,
-          "jph": 20.0,
+          "jph": 24.0,
           "wph": 0.0
         },
         {
           "ts": 720.0,
-          "jph": 24.0,
-          "wph": 0.0
-        },
-        {
-          "ts": 780.0,
           "jph": 28.0,
           "wph": 0.0
         },
         {
+          "ts": 780.0,
+          "jph": 32.0,
+          "wph": 0.0
+        },
+        {
           "ts": 840.0,
-          "jph": 24.0,
+          "jph": 28.0,
           "wph": 0.0
         },
         {
           "ts": 900.0,
-          "jph": 24.0,
+          "jph": 28.0,
           "wph": 0.0
         },
         {
           "ts": 960.0,
-          "jph": 20.0,
+          "jph": 24.0,
           "wph": 0.0
         },
         {
           "ts": 1020.0,
-          "jph": 20.0,
+          "jph": 24.0,
           "wph": 0.0
         },
         {
@@ -3589,7 +3617,7 @@
         },
         {
           "ts": 1140.0,
-          "jph": 24.0,
+          "jph": 28.0,
           "wph": 0.0
         },
         {
@@ -3664,7 +3692,7 @@
         },
         {
           "ts": 2040.0,
-          "jph": 36.0,
+          "jph": 32.0,
           "wph": 12.0
         },
         {
@@ -3699,7 +3727,7 @@
         },
         {
           "ts": 2460.0,
-          "jph": 32.0,
+          "jph": 36.0,
           "wph": 8.0
         },
         {
@@ -3747,20 +3775,20 @@
     "turns": {
       "tacks": 0,
       "tacksSuccessful": 0,
-      "jibes": 26,
-      "jibesSuccessful": 4,
+      "jibes": 27,
+      "jibesSuccessful": 3,
       "unclassified": 0,
-      "turnsCounted": 26,
-      "turnsSuccessful": 4,
-      "successPct": 15.38,
+      "turnsCounted": 27,
+      "turnsSuccessful": 3,
+      "successPct": 11.11,
       "rejected": 0,
-      "port": 11,
+      "port": 12,
       "starboard": 15,
       "unknownSide": 0,
-      "longestDryStreak": 16,
+      "longestDryStreak": 17,
       "longestFlewStreak": 3,
       "outcomes": {
-        "flewThrough": 13,
+        "flewThrough": 14,
         "touchdown": 12,
         "fellIn": 1,
         "borderline": 0
@@ -3772,7 +3800,7 @@
         "borderline": 0
       },
       "jibeOutcomes": {
-        "flewThrough": 13,
+        "flewThrough": 14,
         "touchdown": 12,
         "fellIn": 1,
         "borderline": 0
@@ -3790,14 +3818,14 @@
         "glideOut": 0,
         "touchdown": 0,
         "fellIn": 0,
-        "unknown": 33,
+        "unknown": 32,
         "borderline": 0
       },
       "inTurn": {
         "glideOut": 1,
         "touchdown": 3,
         "fellIn": 4,
-        "unknown": 7,
+        "unknown": 8,
         "borderline": 1
       }
     },
