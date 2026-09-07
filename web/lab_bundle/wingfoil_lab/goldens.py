@@ -166,6 +166,14 @@ clean ones (538/160 at 8 s against 544/134 at 12 s), for the reason 0.13.0 alrea
 longer sweep pulls the slow exit into the minimum `turnSuccessPct` divides by. A carve
 running past 8 s is reported as its first 8 s instead, so a 10 s 150 deg jibe is counted as
 a 135 deg one -- still a jibe, which is the verdict that matters.
+
+Engine 0.15.0 adds the **wind-axis crossing** to every counted tack and jibe, and two
+parameters that read it. Three keys join each entry of `turns` -- `axisTs`, `axisBeforeDeg`,
+`axisAfterDeg` -- and two join `config`: `turnAxisBeforeDeg` and `turnAxisAfterDeg`, both
+**0**, so no verdict on any fixture moves and the only difference between a 0.14.0 golden and
+a 0.15.0 one is the version stamp and the new keys. Jan's definition of a jibe is "a turn
+through the wind axis"; the crossing was already what `classify_sweep` names a turn by, and
+until now it was found and thrown away. It is now an instant a page can mark.
 """
 
 from __future__ import annotations
@@ -656,6 +664,8 @@ def _config_dict(a: Analysis) -> dict:
         # turn detection & classification
         "turnMinAngle": t.min_angle_deg,
         "turnClassifyMinAngle": t.classify_min_angle_deg,
+        "turnAxisBeforeDeg": t.axis_before_deg,
+        "turnAxisAfterDeg": t.axis_after_deg,
         "turnMaxDuration": t.max_duration_s,
         "turnPeakRate": t.peak_rate_deg_s,
         "turnContinueRate": t.continue_rate_deg_s,
@@ -777,6 +787,12 @@ def _turn_json(t: Turn) -> dict:
         "peakRateDegS": round(t.peak_rate_deg_s, 2),
         "twaInDeg": _finite(t.twa_in_deg, 2),
         "twaOutDeg": _finite(t.twa_out_deg, 2),
+        # The wind-axis crossing (engine 0.15.0), on the session clock like `ts`/`endTs`, and
+        # the two angles either side of it. Explicit **null** on a course change and on a turn
+        # with no usable axis -- the same rule the TWA pair above obeys.
+        "axisTs": _finite(t.axis_t, 2),
+        "axisBeforeDeg": _finite(t.axis_before_deg, 2),
+        "axisAfterDeg": _finite(t.axis_after_deg, 2),
         "arcM": round(t.arc_m, 2),
         "radiusM": round(t.radius_m, 2),
         "outcome": t.outcome,

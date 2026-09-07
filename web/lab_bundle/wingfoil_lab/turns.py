@@ -29,6 +29,17 @@ are real course changes but not maneuvers, and are the false positives a naive
 heading-delta counter reports as jibes. They are returned, flagged `counted = False`, and
 left out of the summary counts.
 
+Since engine 0.15.0 that crossing is also an **event**, not only a test. Jan's definition of a
+jibe is "a turn through the wind axis", so every counted tack and jibe records *when* it went
+through (`axis_t`, interpolated between the two samples astride the crossing), how far from
+the axis it started (`axis_before_deg`) and how far past the axis the heading carried
+(`axis_after_deg`, the maximum reached in the turn's own sense by the end of the outcome
+window). Two parameters read those numbers, and both default to 0, so nothing moves until
+somebody moves them: `axis_before_deg` refuses to name a sweep that barely reached the axis,
+filing it as the same uncounted course change the classification floor produces, and
+`axis_after_deg` refuses to call a turn *carried* that did not come far enough out the other
+side -- `success`, and therefore `clean`, and never the outcome ladder.
+
 Every turn also carries an **outcome**, the rider-facing three-way verdict (Jan's spec):
 
 ``flew_through``  never left the foil -- the turn's whole outcome window stays inside a
@@ -130,6 +141,16 @@ class TurnConfig:
     min_cog_speed_mps: float = 2.0        # lab-added: COG != heading below this (COAPS)
     min_arc_m: float = 12.0               # turnMinArc: path travelled across the sweep
     min_radius_m: float = 6.0             # turnMinRadius: arc / |net angle| (rad)
+    #: turnAxisBeforeDeg (engine 0.15.0): how far the sweep must start *from* the axis it
+    #: crosses before it is allowed to be a tack or a jibe. 0 = off, and at 0 no verdict
+    #: anywhere moves. Below it the sweep is filed as the same uncounted course change the
+    #: `classify_min_angle_deg` floor produces.
+    axis_before_deg: float = 0.0
+    #: turnAxisAfterDeg (engine 0.15.0): how far the heading must carry on *past* the axis,
+    #: in the turn's own sense, before the turn may be called clean. 0 = off. Jan's rule: it
+    #: is a requirement for a *successful* jibe, not for a touch-down or a failed one — so it
+    #: moves `success` (and therefore `clean`) and never the outcome ladder.
+    axis_after_deg: float = 0.0
     context_after_s: float = 3.0          # turnContext: ON_FOIL or <= this after a flight
     entry_speed_window_s: float = 3.0     # entrySpeedWindow: max speed before turn start
     min_speed_lag_s: float = 2.0          # lab-added: the minimum can land past the exit
@@ -178,6 +199,17 @@ class Turn:
                                      # (the score verdict alone -- see `clean` below)
     twa_in_deg: float                # TWA entering the turn (nan without wind)
     twa_out_deg: float
+    #: **The wind-axis crossing** (engine 0.15.0). Jan's definition of a jibe is "a turn
+    #: through the wind axis", and until now the crossing was something `classify_sweep`
+    #: *found* and threw away. `axis_t` is the session-clock instant the unwrapped TWA passed
+    #: the axis the sweep was named after (180 + k*360 for a jibe, k*360 for a tack), linearly
+    #: interpolated between the two samples it falls between; `axis_before_deg` is how far
+    #: from that axis the sweep started, `axis_after_deg` the furthest the heading got past it
+    #: afterwards. All three are **nan** on a course change and on a turn with no usable wind:
+    #: a 0 would read as "he started dead downwind", which is a claim.
+    axis_t: float = float("nan")
+    axis_before_deg: float = float("nan")
+    axis_after_deg: float = float("nan")
     arc_m: float = 0.0               # path length travelled across the COG sweep
     chord_m: float = 0.0             # straight-line displacement across the sweep
     radius_m: float = 0.0            # arc_m / |net_deg| in radians: how tightly it carved
@@ -537,6 +569,9 @@ def _build_three_sixty(c: _Candidate, wind: WindEstimate | None, cfg: TurnConfig
     """A scored `Turn` renamed to `THREE_SIXTY` (see `detect_three_sixties`)."""
     turn = _build_turn(c, wind, cfg)
     turn.kind, turn.counted = THREE_SIXTY, False
+    # A full rotation crosses both lines by construction, so "the axis it went through" is not
+    # a thing a spin has -- the same reason `classify_sweep`'s answer is discarded above.
+    turn.axis_t = turn.axis_before_deg = turn.axis_after_deg = float("nan")
     return turn
 
 
@@ -875,6 +910,16 @@ def _build_turn(c: _Candidate, wind: WindEstimate | None, cfg: TurnConfig) -> Tu
     success = bool(score >= cfg.success_pct / 100.0 and stayed_up)
 
     kind, side, twa_in, twa_out = _classify(u[i], u[j], wind, cfg.classify_min_angle_deg)
+    axis = _axis_measures(c, wind, kind, cfg)
+    if axis.uncounted:
+        # Too close to the axis to have gone *through* it: filed as the same uncounted course
+        # change the classification floor produces, and its axis numbers go with the label.
+        kind = axis.course_change or kind
+    elif kind in (TACK, JIBE) and axis.after_deg < cfg.axis_after_deg:
+        # Not enough carry past the axis to call it carried. The outcome ladder is untouched
+        # (Jan: "not require that for a touch-down or failed jibe") -- only `success`, and so
+        # only `clean`, which is the conjunction of the two.
+        success = False
     return Turn(
         start_t=start_t, end_t=end_t, min_t=float(t[min_idx]), kind=kind,
         counted=kind in COUNTED_TYPES, net_deg=net, peak_rate_deg_s=peak,
@@ -883,8 +928,111 @@ def _build_turn(c: _Candidate, wind: WindEstimate | None, cfg: TurnConfig) -> Tu
         exit_kn=exit_man * MPS_TO_KN,
         entry_kn_doppler=entry_dop * MPS_TO_KN, min_kn_doppler=min_dop * MPS_TO_KN,
         score=float(score), success=success, twa_in_deg=twa_in, twa_out_deg=twa_out,
+        axis_t=axis.t, axis_before_deg=axis.before_deg, axis_after_deg=axis.after_deg,
         arc_m=arc_m, chord_m=chord_m, radius_m=radius_m,
     )
+
+
+@dataclass(frozen=True)
+class _Axis:
+    """The crossing, measured — or the three nans that say there was none to measure."""
+
+    t: float = float("nan")
+    before_deg: float = float("nan")
+    after_deg: float = float("nan")
+    #: The sweep fails `turnAxisBeforeDeg` and has to be re-filed under this label.
+    course_change: str | None = None
+
+    @property
+    def uncounted(self) -> bool:
+        return self.course_change is not None
+
+
+def _axis_measures(c: _Candidate, wind: WindEstimate | None, kind: str,
+                   cfg: TurnConfig) -> _Axis:
+    """When and where the sweep went through the wind axis (engine 0.15.0).
+
+    Only a **named** maneuver has an axis to cross: a course change is precisely a sweep that
+    crossed neither line, and an `UNCLASSIFIED` turn is one whose axis nobody knows. Both get
+    the empty `_Axis`, whose three nans serialize as JSON nulls.
+
+    The crossing is the one `classify_sweep` named the turn after -- the multiple of 360 (a
+    tack) or 180 + a multiple of 360 (a jibe) nearest the sweep's middle in unwrapped TWA. TWA
+    is COG minus a constant, so that value maps straight onto a COG on the detector's own
+    unwrapped array and everything below is measured there, in degrees, on the samples the
+    sweep was detected from.
+    """
+    if kind not in (TACK, JIBE) or wind is None or not wind.usable:
+        return _Axis()
+    u, tu, i, j = c.u, c.tu, c.i, c.j
+    twa_in = _wrap180(float(u[i]) - wind.dir_deg)
+    twa_out = twa_in + (float(u[j]) - float(u[i]))
+    lo, hi = min(twa_in, twa_out), max(twa_in, twa_out)
+    crossing = _nearest_crossing(lo, hi, 0.0 if kind == TACK else 180.0, 0.5 * (lo + hi))
+    if crossing is None:                      # unreachable: the kind was named by that crossing
+        return _Axis()
+    before = abs(twa_in - crossing)
+    if before < cfg.axis_before_deg:
+        return _Axis(course_change=BEAR_AWAY if abs(twa_out) > abs(twa_in) else ROUND_UP)
+    # The same crossing, back on the COG array: TWA and unwrapped COG differ by a constant
+    # across the sweep, so `u_axis` is the heading the rider was on at the crossing.
+    u_axis = float(u[i]) + (crossing - twa_in)
+    k = _axis_index(u, i, j, u_axis)
+    if k is None:                             # unreachable: u_axis lies between u[i] and u[j]
+        return _Axis()
+    return _Axis(t=_axis_time(tu, u, k, u_axis), before_deg=float(before),
+                 after_deg=_axis_after(tu, u, k, u_axis, c.net_deg,
+                                       c.end_t + cfg.outcome_lookahead_s))
+
+
+def _axis_index(u: np.ndarray, i: int, j: int, u_axis: float) -> int | None:
+    """The first step of the sweep that spans `u_axis` -- index `k` with u[k]..u[k+1] astride.
+
+    The *first*, not the nearest to the middle: a sweep that overshoots and comes back passes
+    the same heading more than once, and the moment a rider went through the wind is the first
+    one. The k-multiple ambiguity was already settled by `_nearest_crossing`; this is only
+    about where in time that one value was reached.
+    """
+    for k in range(i, j):
+        a, b = float(u[k]), float(u[k + 1])
+        if min(a, b) <= u_axis <= max(a, b):
+            return k
+    return None
+
+
+def _axis_time(tu: np.ndarray, u: np.ndarray, k: int, u_axis: float) -> float:
+    """Session-clock instant of the crossing, linear between the two samples astride it."""
+    a, b = float(u[k]), float(u[k + 1])
+    if a == b:
+        return float(tu[k])
+    f = (u_axis - a) / (b - a)
+    return float(tu[k]) + f * (float(tu[k + 1]) - float(tu[k]))
+
+
+def _axis_after(tu: np.ndarray, u: np.ndarray, k: int, u_axis: float, net_deg: float,
+                until_t: float) -> float:
+    """Furthest the heading got **past** the axis, in the turn's sense, by `until_t`.
+
+    Measured on the detector's own unwrapped COG rather than on the sweep's endpoint, for two
+    reasons. A rider who keeps easing the board round after the sweep has closed is still
+    turning away from the wind -- the sweep ended because he dropped below
+    `turnContinueRate`, not because he stopped -- so the measurement runs to the end of the
+    outcome window (`turnEnd + turnOutcomeLookahead`). And it is a *maximum*, not the value at
+    the end: a rider who carries on round and then heads back up has still been that far past
+    the axis.
+
+    The array is the sailing run's, so a run that ends first -- the rider stopped, the fix was
+    lost, the segment closed -- simply ends the measurement. That is the honest answer: there
+    is no heading after a run ends, and extrapolating one would invent the very carry-on the
+    parameter is asking about.
+    """
+    sense = 1.0 if net_deg >= 0 else -1.0
+    best = 0.0
+    for m in range(k + 1, len(u)):
+        if float(tu[m]) > until_t:
+            break
+        best = max(best, sense * (float(u[m]) - u_axis))
+    return best
 
 
 def _classify(cog_in: float, cog_out: float, wind: WindEstimate | None,
