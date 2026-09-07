@@ -63,7 +63,8 @@ struct TrackMapView: View {
                     TrackContent(detail: detail, effort: effort,
                                  visibility: visibility, style: mapStyle,
                                  playhead: playhead.flatMap(detail.moment),
-                                 direction: direction)
+                                 direction: direction,
+                                 onMarkTap: tapped)
                 }
                 .mapStyle(mapStyle.mapStyle)
                 .figureHeight(regular: 260, compact: 190)
@@ -330,6 +331,10 @@ struct TrackContent: MapContent {
     var style: MapStyleChoice = .standard
     let playhead: SessionDetail.TimelinePoint?
     let direction: DirectionField
+    /// Where a tap on a marker goes. Annotation views take the tap themselves — the map's
+    /// own tap reader never sees a press that lands on one — so the marker hands its
+    /// coordinate to the owner, who resolves it exactly as a tap on bare water beside it.
+    var onMarkTap: ((CLLocationCoordinate2D) -> Void)? = nil
 
     /// One flag, read here so the four map surfaces cannot disagree about it.
     private var halo: Bool { style.isImagery }
@@ -401,6 +406,11 @@ struct TrackContent: MapContent {
                            anchor: .center) {
                     TrackHalo.around(EventMarkerStyle.takeoffMark(mark), on: style)
                         .accessibilityLabel("\(mark.title), \(mark.detail)")
+                        // The mark's own view sits above the map and would swallow the
+                        // tap; answering it here is what makes a mark tappable *on* the
+                        // mark and not only just beside it (Jan, 7 Sep 2026).
+                        .contentShape(Circle().scale(2.2))
+                        .onTapGesture { onMarkTap?(Self.coordinate(mark.lat, mark.lon)) }
                 }
                 .annotationTitles(.hidden)
             }
@@ -411,6 +421,8 @@ struct TrackContent: MapContent {
                            anchor: .center) {
                     TrackHalo.around(EventMarkerStyle.splashMark(), on: style)
                         .accessibilityLabel("\(mark.title), \(mark.detail)")
+                        .contentShape(Circle().scale(2.2))
+                        .onTapGesture { onMarkTap?(Self.coordinate(mark.lat, mark.lon)) }
                 }
                 .annotationTitles(.hidden)
             }
@@ -420,6 +432,8 @@ struct TrackContent: MapContent {
                        anchor: .center) {
                 TrackHalo.around(EventMarkerStyle.dot(marker), on: style)
                     .accessibilityLabel("\(marker.title), \(marker.detail)")
+                    .contentShape(Circle().scale(2.2))
+                    .onTapGesture { onMarkTap?(Self.coordinate(marker.lat, marker.lon)) }
             }
             .annotationTitles(.hidden)
         }
@@ -429,6 +443,9 @@ struct TrackContent: MapContent {
                 TrackHalo.around(PlayheadDot(flying: playhead.flying), on: style)
                     .accessibilityLabel(String(format: "Replay position, %.1f knots",
                                                playhead.kn))
+                    // Never the thing under the finger: a tap on the dot is a tap on
+                    // whatever the dot is covering.
+                    .allowsHitTesting(false)
             }
             .annotationTitles(.hidden)
         }

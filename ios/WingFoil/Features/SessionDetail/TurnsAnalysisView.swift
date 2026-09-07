@@ -205,6 +205,14 @@ struct TurnsAnalysisView: View {
                                                           focused: focused == pin.id),
                                      on: store.mapStyle)
                         .accessibilityHidden(true)
+                        // A pin is the turn: tapping it opens the turn's page, the same as
+                        // its row. Until 7 Sep 2026 the pin's view swallowed the tap and did
+                        // nothing (Jan: "markers cannot be clicked to go to the details").
+                        .contentShape(Circle().scale(2.2))
+                        .onTapGesture {
+                            focused = pin.id
+                            opened = TurnDetailRequest(id: pin.id)
+                        }
                 }
                 .annotationTitles(.hidden)
             }
