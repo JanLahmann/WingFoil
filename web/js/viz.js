@@ -65,6 +65,60 @@ export const OUTCOME_LABEL = { flew_through: "flew through", touchdown: "touched
                                fell_in: "fell in", glide_out: "glided out",
                                unknown: "no evidence" };
 
+/** km/h → knots, for the one sentence below that names a config speed in the rider's unit. */
+const KMH_TO_KN = 1 / 1.852;
+
+/**
+ * **Why this turn is a touchdown or a fall** (engine 0.18.0) — one short line, and the same
+ * one the phone prints under the chips (`TurnAnalytics.outcomeText` in WingFoilKit).
+ *
+ * Jan, 7 Sep 2026: *"Can we add a short comment for the user why a jibe is a touchdown or a
+ * fall?"* The page had the numbers — stopped, off foil, wrist under — and left the reader to
+ * assemble the verdict out of them. The engine now writes down which rung of the ladder
+ * decided (`outcomeReason`), and this is the one place that rung becomes words. Two apps
+ * wording the same fact differently is how a rider learns to trust one of them, so
+ * `verify_presentation.py` §6 re-derives every sentence this produces in Python and compares.
+ *
+ * null for a fly-through — nothing happened, and the outcome pill already says so — and null
+ * for a document written before 0.18.0, which carries no reason: a sentence reconstructed from
+ * `stoppedS` alone would be a guess about a ladder that may not have been climbed that way.
+ *
+ * `marginalSpeed` is the document's own `turnPumpedMarginalSpeed` echo, never a literal, and
+ * where it is missing the one wording that names a speed drops the number rather than
+ * inventing one — so a tuned run that revived the rung by raising the speed says *its* speed.
+ */
+export function outcomeText(turn, marginalSpeed = null) {
+  // Whole seconds, **half away from zero** — `Math.round` here, `.rounded()` in Swift,
+  // `floor(v + 0.5)` in the verifier. Spelled out rather than left to each language's
+  // default formatter, because `%.0f` rounds 4.5 to 4 (banker's) and `toFixed(0)` rounds it
+  // to 5, and a stop of exactly 4.5 s is an ordinary reading at 1 Hz.
+  const s0 = (v) => String(Math.round(v));
+  switch (turn.outcomeReason) {
+    case "stop":
+      if (turn.outcome === "fell_in") return `fell in · stopped ${s0(turn.stoppedS)} s`;
+      return `touchdown · stopped ${s0(turn.stoppedS)} s`
+             + (turn.borderline ? ", borderline" : "");
+    case "off_foil": {
+      // "no stop" rather than "stopped 0 s": the rider did not stop, and a rounded zero reads
+      // as a measurement of one.
+      const stop = Math.round(turn.stoppedS) >= 1
+        ? `stopped ${s0(turn.stoppedS)} s` : "no stop";
+      return `touchdown · off the foil ${s0(turn.offFoilS)} s, ${stop}`;
+    }
+    case "submerged":
+      return "fell in · wrist under";
+    case "pumped_marginal":
+      if (marginalSpeed === null || marginalSpeed === undefined
+          || !Number.isFinite(marginalSpeed)) {
+        return "touchdown · pumped out below min foil speed, no sample off the foil";
+      }
+      return `touchdown · pumped out below ${nf(marginalSpeed * KMH_TO_KN, 1)} kn, `
+             + "no sample off the foil";
+    default:
+      return null;
+  }
+}
+
 /* ---------------------------------------------------------------- formatting */
 
 export const nf = (v, d = 1) =>

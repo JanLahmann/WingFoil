@@ -2,6 +2,48 @@
 
 Newest first. One paragraph each: context → decision → consequence.
 
+## ADR-022 · The pumped-out touchdown is an opinion, so it is a switch — and it asks the wrong speed
+Step 3 of the outcome ladder promoted a fly-through to a `touchdown` when the accelerometer
+heard a pump burst *and* the speed channels went below `foilEntrySpeed` somewhere in the same
+window. Two things were wrong with it. It is the one rung that is a **judgement about the
+rider** rather than a measurement of the water — everything else on the ladder says *the foil
+stopped carrying*, and this one says *he worked, so it must have* — and it was asked against
+the speed a **flight starts** at, 12 km/h, which is not the speed below which a foil stops
+flying. Jan's Jibe 50 of 4 Sep 2026 07:58 is the case: it sagged to 5.5 kn = 10.2 km/h, below
+entry and comfortably above the 8 km/h exit, with no off-foil sample, no stop and no wrist
+under — and he flew it. Jan, 7 Sep 2026: *"change to '…below min foil speed…'"*, and *"can we
+add a short comment for the user why a jibe is a touchdown or a fall?"*
+
+Decision: **the rung gets a speed of its own and a switch — `turnPumpedMarginalSpeed` (8.0
+km/h) and `turnPumpedOutIsTouchdown` (on).** The speed defaults to the number `foilExitSpeed`
+carries, and because `flying` is *defined* as in a flight, not submerged, and above
+`foilExitSpeed`, the rung is thereby **unreachable**: on the only branch it lives on, every
+sample is already above the speed it tests. That is the intended effect and not a side effect —
+the rule is retired, in the open. It is a **parameter rather than a reference** to
+`foilExitSpeed` precisely so the retirement is a *setting somebody can disagree with*: the band
+the rung judges is `(foilExitSpeed, turnPumpedMarginalSpeed]`, empty at 8.0, and at 12.0 the
+0.17.0 reading restored — which is asserted, in both directions, against Jibe 50 itself. The
+switch sits beside it as the gate, because the two answer different questions: whether the rung
+is asked at all, and what it asks. Left alone deliberately: the `pumped` flag and the "pumped
+out · N strokes" chip, which are about *effort* and were always true. Beside it, every touchdown
+and fall now carries `outcomeReason` (`stop` | `off_foil` | `submerged` | `pumped_marginal`,
+null on a fly-through) — a code, with the words chosen once in presentation for both platforms
+and held together by `verify_presentation.py` §6.
+
+Consequence: engine **0.18.0**. Over the 21-session corpus 13 of 270 jibe touchdowns become
+fly-throughs (493 → 506 flew through, 270 → 257 touched down, 55 fell in unchanged) and 3 jibes
+become clean (263 → 266). One new per-turn key, two new config echoes, two new tuning rows —
+one of them the first that is a **switch** rather than a slider (`TuningParameterSpec.kind`).
+One new watch
+divergence, and for once the *unflattering* one: `garmin/` keeps the old rule at the old speed,
+so the wrist now reports about 5 % more jibe touchdowns than the phone. That direction needs no
+urgency — a rider told he touched down who then sees a fly-through reads it as good news, and
+ADR-005 makes the phone authoritative — so the watch side rides along with the next store
+release that has another reason to exist. Rejected: deleting the rung outright (a stored
+document would then decode a verdict nothing in the tree explains), and writing the speed as a
+reference to `foilExitSpeed` (it would have made the retirement unarguable and the switch inert
+at every setting, which is a knob that lies about what it does).
+
 ## ADR-021 · A clean jibe needs a **quiet tail** — ten seconds, and only for clean
 A turn's outcome window closes at *recovery* (`turnRecoverPct` held for `turnRecoverHold`), so
 a jibe the rider powers straight out of is judged over a second or two and a touchdown at +7 s
