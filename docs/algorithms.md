@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.14.0** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.15.0** (bump on any change that alters outputs; triggers phone re-analysis)
 
 ## Flight (foil) detection — hysteresis state machine
 
@@ -139,6 +139,8 @@ with a numeric offset (`+02:00`) is the exporter naming the local clock, and win
 |---|---|---|---|
 | `turnMinAngle` | 60 | deg | net unwrapped COG change — the **detection** floor. A course change is a real thing that happened and the page marks it, so this stays where it is |
 | `turnClassifyMinAngle` | **90** | deg | the **classification** floor (engine ≥ 0.13.0). Below it a sweep is never named a tack or a jibe — **wind axis or not** — and is filed as the same uncounted bear-away/round-up the no-crossing branch already produces. A tack and a jibe both take the board through the wind and out the other side; a 70° sweep that happens to clip dead downwind is a rider bearing away, and calling it a jibe put a course change into the number he judges his session by. With no usable axis the two course-change labels are indistinguishable, so such a sweep takes the bear-away label — the verdict that matters, *not counted*, is the same either way. At or above the floor the rule is unchanged: tack/jibe by the crossings, or a counted `turn` (unclassified) with no usable axis |
+| `turnAxisBeforeDeg` | **0** | deg | the **first axis requirement** (engine ≥ 0.15.0), and off at its default. A sweep whose `axisBeforeDeg` — the angle between the TWA it started on and the axis it crosses — is below this is not a tack or a jibe: it is filed as the same uncounted `bear_away`/`round_up` the classification floor produces, and its three axis fields go null with the label. It asks the question `turnClassifyMinAngle` cannot: a 100° sweep that begins 10° off dead downwind and ends 90° past it has crossed the axis without ever having been *upwind of it*, which is a rider straightening out of a reach, not a jibe. At 0 nothing is refused |
+| `turnAxisAfterDeg` | **0** | deg | the **second axis requirement** (engine ≥ 0.15.0), and off at its default. A tack or a jibe whose `axisAfterDeg` — the furthest the heading carried past the axis, in the turn's own sense, by the end of the outcome window — is below this cannot be **carried**: `success` is false, and therefore so is `clean`. Jan's wording: *"it might be an additional requirement for a successful jibe to turn 30 deg after the axis. But not require that for a touch-down or failed jibe."* So it touches the score verdict and nothing else — the turn stays a counted jibe, its outcome ladder is untouched, and the JPH/TPH numerators do not move. At 0 nothing is refused |
 | `turnMaxDuration` | 8 | s | window for the net change. Deliberately **not** widened to 12 s, and measured twice: a 12 s sweep pulls a slow exit into the scored minimum, and on the 17 fixtures that costs **26 clean jibes to buy 6 jibes** (18°/s at 8 s gives 538 jibes / 160 clean; at 12 s, 544 / 134). A carve longer than 8 s is therefore reported as the 8 s share of itself — a 10 s, 150° jibe counts as a 135° one, which is over `turnClassifyMinAngle` with room to spare and lands the verdict the rider reads. Counting it a little short beats scoring it a little more generously |
 | `turnPeakRate` | **18** | deg/s | at ≥1 sample (engine ≥ 0.14.0; was 25). Richterich's ~30–40°/s for ~4 s is a *pivoted* jibe; a **carved** one is a different maneuver. At 11 kn on a 25 m radius the board turns at a steady ~13°/s and never spikes at all, so a floor set at the pivot's peak rejected exactly the jibes the rider was riding best — on one flight of the 4 Sep afternoon, three of eight ridden reversals were invisible. 18°/s is the floor below which nothing new appears but grey course-change markers |
 | `turnContext` | ON_FOIL or ≤3 s after | | turns while swimming don't count |
@@ -218,6 +220,24 @@ fall that used to have no maneuver to belong to now has one — the same swim, d
 attributed. **Every number a rider reads moves the right way**: JPH and CPH both rise, and no
 session in the corpus loses a clean jibe.
 
+**What 0.15.0 did to the corpus: nothing, and that is the point.** Both axis parameters ship
+at 0, so every golden is what 0.14.0 said it was — the diff is the version stamp, two config
+keys and three per-turn keys. What the crossing bought is the ability to *ask*. Over the 21
+sessions (the 15 committed fixtures plus the six September raw recordings), 818 jibes:
+
+| | jibes | clean |
+|---|---|---|
+| defaults (both 0) | 818 | 278 |
+| `turnAxisAfterDeg` = 30° | 818 | **270** |
+
+Fifty-five jibes carry less than 30° past the axis; eleven of those flew through and **eight of
+them are clean today**, so a 30° requirement would cost eight clean jibes and no jibes at all —
+the count is untouched by construction, because the parameter moves `success` and not the
+label. `turnAxisBeforeDeg` = 30° would uncount **seven** jibes (two of them currently clean):
+sweeps that crossed the axis having started within 30° of it, which is a rider straightening
+out rather than going through the wind. Neither is switched on; the evidence is here so the
+decision can be made from numbers rather than from a feeling about one afternoon.
+
 **Why the sweep window stayed at 8 s.** Widening it to 12 s was measured alongside the peak
 floor and rejected, which is the second time this parameter has been proposed and declined:
 
@@ -265,6 +285,31 @@ every fixture is what it was.
 | `exitKn` | **the one new definition.** `speedChannelManeuvers` at the *first sample at or after* `turnEnd` — the same channel and the same rounding as `minKn`, so `entryKn → minKn → exitKn` reads as one line in one unit. `turnEnd` is itself a sample time, so in practice this is the sweep's last sample; the "at or after" wording is what makes the rule total for a segment that ends there. Deliberately **not** the recovery speed: the outcome window already answers "did he get going again", and a fourth number sampled at a moving boundary would not be comparable between two turns. Exit is where the sweep stopped, full stop |
 | `peakRateDegS` | the detector's own peak COG rate over the sweep, **signed** with `netDeg`'s convention (+ = clockwise/starboard). The magnitude is the one already tested against `turnPeakRate`; the sign is kept because a rate that reads +38 on one jibe and −38 on the next is the pair of directions, not two different maneuvers |
 | `twaInDeg`, `twaOutDeg` | the true wind angles `classify` computed to name the turn: TWA at the sweep's entry, and TWA at its exit wrapped to ±180. **Null when the wind axis is unusable** — the same state that leaves `type` a plain `turn`. A 0 in their place would read as dead upwind, which is a claim about a session that never had a wind direction |
+
+### The crossing, as an event — `axisTs` · `axisBeforeDeg` · `axisAfterDeg` (engine 0.15.0)
+
+Jan defines a jibe as **"a turn through the wind axis"**, and that crossing is exactly what
+`classifySweep` has always named a turn by: carry the sweep onto unwrapped TWA, and a pass
+through `k·360` is a tack, a pass through `180 + k·360` a jibe. Until 0.15.0 the engine found
+that crossing, used it to pick a word, and threw it away. It is now persisted, so a page can
+mark the instant instead of only printing its consequence.
+
+| field | definition |
+|---|---|
+| `axisTs` | the session-clock instant the unwrapped TWA passed the axis — **the same crossing the classification picked**, i.e. the multiple nearest the sweep's middle — **linearly interpolated** between the two samples astride it. Where a non-monotone sweep passes the same heading more than once it is the **first** such pass: the k-multiple was already settled by the classification, and "the moment he went through the wind" is the first time he was through it |
+| `axisBeforeDeg` | \|TWA at the sweep's start − the axis\|: how far from the wind the turn began. A jibe entered on a beam reach reads ~90°, one entered already half round reads ~40° |
+| `axisAfterDeg` | the **furthest** the heading got past the axis, in the turn's own sense (the sign of `netDeg`), from the crossing to the end of the outcome window (`turnEnd + turnOutcomeLookahead`) — measured on the detector's own unwrapped COG array, **not** on the sweep's endpoint. The sweep ends when the rate drops below `turnContinueRate`, not when the rider stops turning, so a slow continuation below that rate still counts; it is a maximum rather than the value at the end, because a rider who carries on round and then heads back up has still been that far past the axis. The array is the sailing run's, so a run that ends first — he stopped, the fix was lost, the segment closed — simply ends the measurement, which is the honest answer: there is no heading after a run ends |
+
+All three are **null** on a course change, on an unclassified turn and on a session with no
+usable wind axis, under the same rule the TWA pair obeys: 0 would be a claim, and there was no
+crossing to claim anything about. A `three_sixty` gets nulls too — a full rotation crosses both
+lines by construction, so "the axis it went through" is not a thing a spin has.
+
+Where the measurement stops **matters to what the numbers say**: over the 21-session corpus, 66
+jibes have less than 30° after the axis measured to the sweep's end and only **55** measured to
+the end of the outcome window. The window is the defined one, because the question
+`turnAxisAfterDeg` asks is whether the rider came out the other side, not whether he did it
+before the COG rate fell below 5°/s.
 
 **Glossary — "clean jibe", the name the UIs use, and the one rule behind it (engine
 0.12.0).** A *clean jibe* is
@@ -403,6 +448,12 @@ inventing turns):
   refuses to adapt while a spike is in progress. Same positive-only semantics.
 - **No pump corroboration** (step 3 of the ladder): the watch cannot promote a fly-through to a
   touchdown on accel evidence, so it reports slightly more fly-throughs than the phone.
+- **The watch does not measure the axis crossing**, and knows neither axis parameter. It has no
+  `axisTs`/`axisBeforeDeg`/`axisAfterDeg` to publish and applies neither `turnAxisBeforeDeg` nor
+  `turnAxisAfterDeg`, so its clean count is unchanged by them. Both are 0 by default, which is
+  the only reason this is a silence rather than a divergence: move either on the phone and the
+  wrist and the page will disagree about which jibes were clean, exactly as they do for every
+  other tuned threshold.
 - **`turnClassifyMinAngle` — same on the watch** (engine 0.13.0, watch 0.9.7): `classifySweep`
   applies the 90° floor ahead of the wind check, so a 60–89° sweep is `rejected` (an uncounted
   course change) on the wrist exactly as on the phone, with or without a wind axis. Not a
