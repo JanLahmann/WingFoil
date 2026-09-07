@@ -29,7 +29,7 @@ States: `OFF_FOIL → (entry) → ON_FOIL → (exit) → OFF_FOIL`. A third deri
 | # | name | key | definition | who reads it |
 |---|---|---|---|---|
 | **T1** | elapsed cleaned span | `summary.durationS` | last − first **cleaned** sample; **gaps included** | the duration the phone and the web *display*; the period block's "hours on the water" (`rateDurationS`); the rolling window rates' timeline |
-| **T2** | timer time | `summary.timerTimeS` | Σ dt over **non-gap** steps — the session minus its pauses | **the denominator of `foilPct`, `avgSpeedKmh` and all four per-hour rates** (engine ≥ 0.13.0) |
+| **T2** | timer time | `summary.timerTimeS` | Σ dt over **non-gap** steps — the session minus its pauses | **the denominator of `foilPct`, `avgSpeedKmh` and all four per-hour rates** (engine ≥ 0.13.0), a period's four included — summed, `timerTimeS` (digest schema 9, GRDB v13) |
 | — | watch clocks | — | `Activity.Info.timerTime` (moving) and `Activity.Info.elapsedTime` (wall) | the watch prints its session timer and its foil % over its own timer, and its post-save summary over its own elapsed. Neither is T1 or T2 — they are the device's, measured live |
 
 T1 is what a rider means by "how long was I out"; T2 is what a rate has to divide by, because
@@ -827,6 +827,20 @@ flight is a `fell_in` **turn** and no flight end at all, which is why 2026-06-13
 falls against 9 fell-in ends while 2026-08-29 reads 4 against 25. The rider-facing question
 is "how often did I get in the water", so the flight-end channel — one event per actual
 swim — is the one that answers it.
+
+**A period divides by the same clock a session does.** A month, a season, a trip or a typed
+range prints JPH/TPH/CPH/WPH over `Σ timerTimeS` — never over `Σ durationS`, which is what
+the aggregate block's "hours on the water" sums and is a *duration*, not a divisor. The rule
+in one line, and it holds on both platforms: **every displayed duration is T1, every rate
+denominator is timer time.** Until 7 Sep 2026 the period block summed T1 for its rates too,
+so a month holding one afternoon reported a CPH *below* that afternoon's own page — every
+paused break the rider took deflating his own month. Both stored clocks exist for exactly
+this: a library computes a rate without re-reading the recording, so the row has to carry the
+denominator (digest schema 9 `timerTimeS` / `library._timer_s`, GRDB v13 `timerTimeS` /
+`SessionRow.timerSeconds`; their duration twins are `rateDurationS` / `_rate_duration_s` and
+`rateSeconds`). A row saved before those columns falls back one step at a time — timer →
+elapsed → the row's own duration — which under-states the rate by whatever the recorder sat
+paused, and is a smaller error than dropping the afternoon out of its own month.
 
 **No timer time, no rate.** `timerTimeS ≤ 0` (a one-sample track, an empty clean) makes all
 five derived values **null**, never 0.0 — and both window peaks with them, over an empty
