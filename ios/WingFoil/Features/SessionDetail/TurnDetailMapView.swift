@@ -41,6 +41,7 @@ struct TurnDetailMapView: View {
             drawContextTrack(context: &context, place: place)
             drawTurn(context: &context, place: place)
             drawSecondTicks(context: &context, place: place)
+            drawAxisTick(context: &context, place: place)
             drawMarks(context: &context, place: place)
             drawPlayhead(context: &context, place: place)
             drawScaleBar(context: &context, size: size, scale: place.scale)
@@ -165,6 +166,40 @@ struct TurnDetailMapView: View {
             context.stroke(tick, with: .color(Color(.label).opacity(0.45)),
                            style: StrokeStyle(lineWidth: 1.2, lineCap: .round))
         }
+    }
+
+    /// **Where the board went through the wind** (engine 0.15.0) — a longer tick across the
+    /// line at `axisTs`, with the word `axis` beside it.
+    ///
+    /// A tick and not a third dot on purpose. The drawing already spends its two dots on the
+    /// two things that *happened to the rider* — the hollow ring at the low point, the filled
+    /// outcome dot at the end — and a third would read as a third verdict. The crossing is not
+    /// a verdict; it is the instant the maneuver is *named* by, which is what a mark across
+    /// the track says and a dot on it does not. It is drawn in the same ink as the `wind`
+    /// arrow top right rather than in a hue of its own, because it belongs to the wind
+    /// reference and not to the speed ramp the line is coloured with.
+    ///
+    /// Nothing is drawn where the engine recorded no crossing: a course change, a session with
+    /// no usable wind, or a stored analysis written before 0.15.0 (`TurnSlice.axisRt`).
+    private func drawAxisTick(context: inout GraphicsContext, place: Placer) {
+        guard let axisRt = slice.axisRt,
+              let point = slice.point(atRelative: axisRt, windUp: windUp),
+              let heading = point.headingDeg else { return }
+        let radians = (heading + 90) * .pi / 180
+        let dx = CGFloat(sin(radians)) * 9
+        let dy = -CGFloat(cos(radians)) * 9
+        let centre = place(point)
+        var tick = Path()
+        tick.move(to: CGPoint(x: centre.x - dx, y: centre.y - dy))
+        tick.addLine(to: CGPoint(x: centre.x + dx, y: centre.y + dy))
+        let ink = Color(.label).opacity(0.55)
+        context.stroke(tick, with: .color(ink),
+                       style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
+        // Off the outboard end of the tick, so the word never sits on the track it labels.
+        context.draw(Text("axis").font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(ink),
+                     at: CGPoint(x: centre.x + dx * 1.7, y: centre.y + dy * 1.7),
+                     anchor: .center)
     }
 
     /// The two moments worth a mark: where the speed bottomed out, and how it ended.
@@ -340,6 +375,9 @@ struct TurnDetailMapView: View {
         ]
         if let windDirDeg = slice.windDirDeg {
             parts.append(String(format: "wind from %.0f degrees", windDirDeg))
+        }
+        if let axisRt = slice.axisRt {
+            parts.append(String(format: "through the wind axis %.0f seconds in", axisRt))
         }
         if ghost != nil { parts.append("compared with your best clean jibe, dashed") }
         return parts.joined(separator: ", ")

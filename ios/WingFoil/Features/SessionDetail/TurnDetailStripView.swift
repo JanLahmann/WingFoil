@@ -93,6 +93,13 @@ struct TurnDetailStripView: View {
             mark(at: slice.speed.exitRt, kn: slice.speed.exitKn, label: "out",
                  below: outNearLow && !lowNearIn)
 
+            // Where the board went through the wind (engine 0.15.0). The crossing sits inside
+            // the sweep and so lands near "low" on most jibes — see `axisLifted`.
+            if let axisRt = slice.axisRt {
+                axisMark(at: axisRt, lifted: axisLifted(axisRt, lowNearIn: lowNearIn,
+                                                        outNearLow: outNearLow))
+            }
+
             if let playheadRt {
                 RuleMark(x: .value("Playhead", playheadRt))
                     .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 3]))
@@ -139,6 +146,37 @@ struct TurnDetailStripView: View {
         Text(text)
             .font(.system(size: 8, weight: .medium))
             .foregroundStyle(.tertiary)
+    }
+
+    /// Does the "axis" caption have to step up out of the row the speed captions sit in?
+    ///
+    /// It is lifted rather than dropped, which is where "low" and "out" go when *they*
+    /// collide. The bottom edge of this plot is not free: the three window bands each print
+    /// their own word there (`windowLabel`), and the crossing lands inside the `sweep` band by
+    /// construction — so sending "axis" down would trade one overprint for another. Lifted, it
+    /// gets a line of its own above the speeds and can collide with nothing.
+    private func axisLifted(_ axisRt: Double, lowNearIn: Bool, outNearLow: Bool) -> Bool {
+        let occupied = [slice.speed.entryRt]
+            + (lowNearIn ? [] : [slice.speed.minRt])
+            + (outNearLow && !lowNearIn ? [] : [slice.speed.exitRt])
+        return occupied.contains { abs($0 - axisRt) < Self.captionGapS }
+    }
+
+    /// The crossing: a dashed rule and the word `axis`, and deliberately no dot.
+    ///
+    /// No `PointMark`, because there is no *speed* being named here — the other three rules
+    /// each mark a number the score is made of, and putting a fourth dot on the trace would
+    /// claim the crossing was a fourth reading. It is an instant, so it gets a line.
+    @ChartContentBuilder
+    private func axisMark(at rt: Double, lifted: Bool) -> some ChartContent {
+        RuleMark(x: .value("Seconds", rt))
+            .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+            .foregroundStyle(Color(.label).opacity(0.35))
+            .annotation(position: .top, alignment: .center, spacing: lifted ? 13 : 1) {
+                Text("axis")
+                    .font(.caption2)
+                    .foregroundStyle(Color(.label).opacity(0.55))
+            }
     }
 
     @ChartContentBuilder
@@ -188,6 +226,9 @@ struct TurnDetailStripView: View {
                           + "%.0f seconds in.",
                           slice.speed.entryKn, slice.speed.minKn, slice.speed.minRt,
                           slice.speed.exitKn, slice.speed.exitRt)
+        if let axisRt = slice.axisRt {
+            text += String(format: " Through the wind axis %.0f seconds in.", axisRt)
+        }
         if ghost != nil { text += " Your best clean jibe is drawn dashed beside it." }
         return text
     }
