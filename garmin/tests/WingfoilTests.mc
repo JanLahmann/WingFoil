@@ -2510,6 +2510,10 @@ function fullSessionController() as SessionController {
     c.startEpochS = 1786000000;          // ten-digit UNIX epoch, the worst case for width
     c.elapsedS = 7412;
     var e = c.engine;
+    // Timer time is shorter than the wall clock: the two are different on purpose, so a
+    // test that reads the wrong one fails rather than agrees by accident (foil % divides by
+    // timer time since 7 Sep 2026; KEY_DUR stays the wall clock).
+    e.timerS = 7000.0;
     e.detector.foilTimeS = 5183.4;
     e.detector.flightCount = 47;
     e.detector.longestS = 412.7;
@@ -2588,7 +2592,7 @@ function phoneLinkPayloadShape(logger as Test.Logger) as Boolean {
     Test.assertEqual(p[PhoneLink.KEY_LONGEST_S], 412);
     Test.assertEqual(p[PhoneLink.KEY_LONGEST_M], 4830);
     Test.assertEqual(p[PhoneLink.KEY_DIST_M], 38412);
-    Test.assertEqual(p[PhoneLink.KEY_FOIL_PCT], 69);        // 5183.4 / 7412
+    Test.assertEqual(p[PhoneLink.KEY_FOIL_PCT], 74);        // 5183.4 / 7000 timer, not / 7412 elapsed
     Test.assertEqual(p[PhoneLink.KEY_TAKEOFF_ATT], 56);     // successes + failed
     Test.assertEqual(p[PhoneLink.KEY_TAKEOFF_OK], 39);
     Test.assertEqual(p[PhoneLink.KEY_FLEW], 63);
@@ -2599,9 +2603,9 @@ function phoneLinkPayloadShape(logger as Test.Logger) as Boolean {
 
     // A percentage cannot exceed 100 however the two clocks disagree, and a zero-length
     // session must not divide by it.
-    c.elapsedS = 0;
+    c.engine.timerS = 0.0;
     Test.assertEqual(PhoneLink.summary(c)[PhoneLink.KEY_FOIL_PCT], 0);
-    c.elapsedS = 10;
+    c.engine.timerS = 10.0;
     Test.assertEqual(PhoneLink.summary(c)[PhoneLink.KEY_FOIL_PCT], 100);
     logger.debug("payload: " + p.size().toString()
         + " keys, all Numbers, schema tag findable by key");
@@ -3642,7 +3646,7 @@ function appVersionAgreesWithTheFitByte(logger as Test.Logger) as Boolean {
     // on without it, which is the same drift this test was written for one field over. It is
     // the source tree's ONE answer to "what is this build", so it now says what the manifests
     // say — and the parse below is what keeps it honest about the byte.
-    Test.assertEqual(FitSchema.APP_VERSION, "0.9.5");
+    Test.assertEqual(FitSchema.APP_VERSION, "0.9.7");
     Test.assertEqual(FitSchema.APP_MINOR, 9);
     // the string's minor field, parsed rather than assumed
     var v = FitSchema.APP_VERSION;
