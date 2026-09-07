@@ -155,6 +155,12 @@ def _meta(a) -> dict:
         "timerTimeS": _num(s.get("total_timer_time")) or round(a.clean.timer_time_s, 1),
         "samples": int(len(df)),
         "sourceClass": caps.source_class,
+        # **The rule, decided once, in Python.** `certified = source_class != "c"` is the
+        # same one line `LibraryQueries.certified` is on iOS and `library._stamp` is here,
+        # and the card's disclaimer used to spell it a fourth time in JavaScript
+        # (`meta.sourceClass === "c"`). A one-line rule with four spellings is a rule with
+        # four chances to drift, and this is the copy the browser reads.
+        "certified": caps.source_class != "c",
         "sport": caps.sport,
         "subSport": caps.sub_sport,
         "discipline": caps.discipline,

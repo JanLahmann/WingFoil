@@ -434,8 +434,9 @@ def test_on_foil_share_is_weighted_by_time_on_the_water():
     would let a ten-minute session swing the number as hard as a two-hour one."""
     big = at("big", "2026-08-01", "Garda", foilTimeS=3600.0, foilPct=50.0)
     small = at("small", "2026-08-02", "Garda", foilTimeS=90.0, foilPct=10.0)
-    # 3690 s of foil over 7200 + 900 s on the water.
-    assert block_of([big, small])["foilPct"] == "45.6 %"
+    # 3690 s of foil over 7200 + 900 s on the water. No decimal: the one percent rule
+    # spends its decimal below 10 % and drops it above (docs/presentation.md, "Label table").
+    assert block_of([big, small])["foilPct"] == "46 %"
 
 
 def test_the_clean_jibe_rate_keeps_its_floor_over_the_periods_own_total():
@@ -443,7 +444,7 @@ def test_the_clean_jibe_rate_keeps_its_floor_over_the_periods_own_total():
     assert "cleanJibeRate" not in block_of([thin])
     second = at("second", "2026-08-02", "Garda", turns={"jibes": 4, "jibesSuccessful": 1})
     # Eight jibes between them clear the floor neither afternoon could clear alone.
-    assert block_of([thin, second])["cleanJibeRate"] == "62.5 %"
+    assert block_of([thin, second])["cleanJibeRate"] == "62 %"
 
 
 def test_a_fact_no_session_can_supply_is_dropped_and_never_zeroed():
