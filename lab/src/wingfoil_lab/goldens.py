@@ -200,6 +200,23 @@ reason a jibe the page cannot otherwise explain is not clean (`axis_after`,
 `quiet_flight_end`, `quiet_off_foil`, `quiet_submerged`, else null), and `config` gains
 `turnCleanQuietS`. Over the 17 committed fixtures clean jibes fall 160 -> 152; over the 21
 sessions of the corpus 278 -> 261. See docs/algorithms.md "The quiet tail".
+
+Engine 0.18.0 **retires the pump rung and gives every touchdown and fall a reason**. Step 3 of
+the ladder promoted a fly-through to a touchdown when the accelerometer heard a burst and a
+sample fell below `foilEntrySpeed` -- the speed a *flight starts* at, which is not the speed
+below which a foil stops flying. Jan, 7 Sep 2026: *"change to '...below min foil speed...'"*,
+which in this engine is `foilExitSpeed`. His Jibe 50 of 4 Sep 07:58 sagged to 5.5 kn = 10.2
+km/h, below entry and well above exit, and was a touchdown on that rung alone; he flew it.
+The speed becomes `turnPumpedMarginalSpeed` (**8.0**), and since `flying` already requires
+speed above the exit speed the rung is thereby unreachable -- deliberately, and it is a
+*parameter* rather than a reference to `foilExitSpeed` so the retirement is a setting somebody
+can raise (at 12.0 it is the 0.17.0 reading, restored). `turnPumpedOutIsTouchdown` (**true**)
+is kept beside it as the gate. Beside it every turn gains
+`outcomeReason` (`stop` | `off_foil` | `submerged` | `pumped_marginal`, else null), the rung
+that decided, as a code whose words live in presentation. Over the 17 committed fixtures jibes
+go 289 -> 295 flew through, 212 -> 206 touched down, 37 fell in unchanged, and clean 150 -> 151;
+over the 21 sessions of the corpus 493 -> 506, 270 -> 257, 55 unchanged, clean 263 -> 266. See
+docs/algorithms.md "Turn outcome" and ADR-022.
 """
 
 from __future__ import annotations
@@ -751,6 +768,11 @@ def _config_dict(a: Analysis) -> dict:
         "turnRecoverHold": t.recover_hold_s,
         "turnOutcomeWindow": t.outcome_window_s,
         "turnBaroDrop": t.baro_drop_m,
+        # The pump rung (engine 0.18.0): its gate, and the speed it corroborates against.
+        # At the default speed -- 8.0, the same number the foil exit speed carries -- the rung
+        # cannot fire, which is the retirement; raising it revives the rule.
+        "turnPumpedOutIsTouchdown": bool(t.pumped_out_is_touchdown),
+        "turnPumpedMarginalSpeed": t.pumped_marginal_speed_kmh,
         # wind axis
         "windMinSpeed": w.min_speed_mps,
         "windBinDeg": w.bin_deg,
@@ -865,6 +887,10 @@ def _turn_json(t: Turn) -> dict:
         "arcM": round(t.arc_m, 2),
         "radiusM": round(t.radius_m, 2),
         "outcome": t.outcome,
+        # Which rung decided it (engine 0.18.0): "stop" | "off_foil" | "submerged" |
+        # "pumped_marginal", and explicit **null** on a fly-through, which needs no
+        # explanation. A code, never a sentence -- the words are presentation's.
+        "outcomeReason": t.outcome_reason,
         "borderline": bool(t.borderline),
         "offFoilS": round(t.off_foil_s, 2),
         "stoppedS": round(t.stopped_s, 2),

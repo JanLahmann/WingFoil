@@ -297,6 +297,16 @@ import Testing
             if let v = exp["borderline"] as? Bool {
                 #expect(act.borderline == v, "\(stem) turns[\(i)].borderline")
             }
+            // Engine 0.18.0: **why** the outcome is what it is. Both engines have to agree on
+            // the rung turn by turn — a reason that differed would be two implementations of
+            // one ladder, and the sentence the page prints comes straight off this code.
+            if exp.keys.contains("outcomeReason") {
+                let want = exp["outcomeReason"] as? String
+                #expect(act.outcomeReason == want,
+                        "\(stem) turns[\(i)].outcomeReason: \(act.outcomeReason ?? "nil") vs \(want ?? "nil")")
+                #expect((want == nil) == (act.outcome == "flew_through"),
+                        "\(stem) turns[\(i)]: a reason exactly where there is one to give")
+            }
             if let v = num(exp["ts"]) {
                 #expect(abs(act.ts - v) <= 1.0, "\(stem) turns[\(i)].ts: \(act.ts) vs \(v)")
             }
@@ -1002,7 +1012,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.17.0")
+        #expect(analysis.engineVersion == "0.18.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)

@@ -194,6 +194,15 @@ public struct TuningOverrides: Sendable, Equatable {
             out.flightEnd.recoverHoldS = v
         }
         if let v = self[.turnOutcomeWindow] { out.turn.outcomeWindowS = v }
+        // A switch, stored as the same `Double` every other override is (0 = off, 1 = on), so
+        // the map, the fingerprint, the clamp and the drop-if-default rule all keep working
+        // unchanged — a second storage shape for one boolean would have been a second set of
+        // bugs. `.toggle` is a *rendering* fact, and it lives in the spec.
+        if let v = self[.turnPumpedOutIsTouchdown] { out.turn.pumpedOutIsTouchdown = v >= 0.5 }
+        // The speed the rung corroborates against — its own knob, and not pushed onto
+        // `foilExitSpeed`: they share a default and answer different questions, and moving the
+        // exit speed here would silently re-segment every flight in the library.
+        if let v = self[.turnPumpedMarginalSpeed] { out.turn.pumpedMarginalSpeedKmh = v }
         // Flights — and the two speeds every channel is judged against.
         if let v = self[.foilEntrySpeed] {
             out.flight.foilEntrySpeedKmh = v
@@ -357,6 +366,8 @@ public enum TuningParameter: String, CaseIterable, Sendable, Codable {
     case turnRecoverPct
     case turnRecoverHold
     case turnOutcomeWindow
+    case turnPumpedOutIsTouchdown
+    case turnPumpedMarginalSpeed
     // Flights
     case foilEntrySpeed
     case foilExitSpeed
@@ -371,6 +382,16 @@ public enum TuningParameter: String, CaseIterable, Sendable, Codable {
     public static func all(in group: TuningGroup) -> [TuningParameter] {
         allCases.filter { $0.spec.group == group && !$0.spec.hidden }
     }
+}
+
+/// **What a row looks like.** Almost every parameter is a number over a range, and the page
+/// draws it as a slider; `turnPumpedOutIsTouchdown` is a rule that is either applied or not,
+/// and a slider from 0 to 1 would be a lie about the question. The value is still a `Double`
+/// in the override map (0 = off, 1 = on) — one storage shape, one fingerprint, one clamp — and
+/// only the row changes.
+public enum TuningKind: String, Sendable, Equatable, Codable {
+    case slider
+    case toggle
 }
 
 /// The published default and the range a slider may move it over. Ranges are wide enough to
@@ -390,6 +411,9 @@ public struct TuningParameterSpec: Sendable, Equatable {
     public let title: String
     /// The half-line under the row, after "default N": what moving it does to what you see.
     public let note: String
+    /// Slider or switch. `.slider` for every parameter that is a quantity, `.toggle` for the
+    /// one that is a rule (see `TuningKind`).
+    public var kind: TuningKind = .slider
     /// Not on the page. `turnOutcomeWindow` has equalled `turnOutcomeLookahead` since engine
     /// 0.13.0 and the lookahead slider moves both; a second slider for the same tail was one
     /// more thing to explain and nothing to learn from.
@@ -399,14 +423,22 @@ public struct TuningParameterSpec: Sendable, Equatable {
     /// none where it is whole, so a 1 °/s step never prints "18.0".
     public var decimals: Int { step < 1 ? 1 : 0 }
 
+    /// A switch reads "on" / "off" — never "1" / "0", which is the stored shape and not the
+    /// rider's word for it.
     public func format(_ value: Double) -> String {
-        String(format: "%.\(decimals)f", value)
+        kind == .toggle ? (isOn(value) ? "on" : "off")
+                        : String(format: "%.\(decimals)f", value)
     }
 
-    /// "70 %" / "8 s" / "12 km/h" — value and unit, spaced except for the degree sign.
+    /// "70 %" / "8 s" / "12 km/h" — value and unit, spaced except for the degree sign. A
+    /// switch has no unit and prints its word alone.
     public func formatted(_ value: Double) -> String {
-        unit == "°" ? "\(format(value))°" : "\(format(value)) \(unit)"
+        if kind == .toggle { return format(value) }
+        return unit == "°" ? "\(format(value))°" : "\(format(value)) \(unit)"
     }
+
+    /// The stored `Double` as the boolean the engine takes.
+    public func isOn(_ value: Double) -> Bool { value >= 0.5 }
 
     static let table: [TuningParameter: TuningParameterSpec] = {
         var table: [TuningParameter: TuningParameterSpec] = [:]
@@ -497,6 +529,19 @@ public struct TuningParameterSpec: Sendable, Equatable {
               title: "Off-foil search after the sweep",
               note: "moves with the lookahead",
               hidden: true),
+        .init(parameter: .turnPumpedOutIsTouchdown, group: .outcomes, unit: "",
+              defaultValue: 1, range: 0...1, step: 1,
+              title: "Pumped out below min foil speed is a touchdown",
+              note: "with no sample off the foil, a pump burst that dropped below the "
+                  + "flight-end speed still counts as a touchdown when on; off, it flew "
+                  + "through and the chip says it pumped out",
+              kind: .toggle),
+        .init(parameter: .turnPumpedMarginalSpeed, group: .outcomes, unit: "km/h",
+              defaultValue: 8, range: 4...20, step: 0.5,
+              title: "Pumped out below this speed is a touchdown",
+              note: "when the switch above is on and no sample was off the foil, a pump burst "
+                  + "that dropped below this speed still counts as a touchdown; at the "
+                  + "flight-end speed it can never fire, raise it to revive the rule"),
 
         .init(parameter: .foilEntrySpeed, group: .flights, unit: "km/h", defaultValue: 12,
               range: 6...25, step: 0.5,

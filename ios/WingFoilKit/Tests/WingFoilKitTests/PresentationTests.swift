@@ -757,8 +757,10 @@ import Testing
     ///
     /// Asserted against a decoded golden rather than a hand-built session, for the reason
     /// `ReplayBeatsTests` gives: a synthetic analysis can be made to agree with any rule at
-    /// all. Under engine 0.14.0's lower peak floor 29 Aug Torbole has 56 counted turns
-    /// (38 · 12 · 6) and 20 uncounted ones. Its submersions moved from **7** to **35** at
+    /// all. Under engine 0.14.0's lower peak floor 29 Aug Torbole has 56 counted turns, and
+    /// since 0.18.0 retired the pump rung they split (42 · 8 · 6) rather than (38 · 12 · 6) —
+    /// four jibes the accelerometer had called touchdowns at a speed the foil was still flying
+    /// at. Twenty sweeps stay uncounted. Its submersions moved from **7** to **35** at
     /// 0.16.0 and that is the point of the change: the seven were the turns and flight ends
     /// whose *windows* the mask fired in, and the thirty-five are the times the wrist
     /// actually went under.
@@ -770,8 +772,8 @@ import Testing
         let events = TrackThumbnail.events(analysis)
         let counts = Dictionary(grouping: events, by: \.kind).mapValues(\.count)
 
-        #expect(counts[.flewThrough] == 38)
-        #expect(counts[.touchdown] == 12)
+        #expect(counts[.flewThrough] == 42)
+        #expect(counts[.touchdown] == 8)
         #expect(counts[.fellIn] == 6)
         #expect(counts[.splash] == 35)
         // 76 turns in the session, 56 of them counted: the twenty course changes are not

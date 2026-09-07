@@ -16,8 +16,8 @@
 
 import { hm, keyMetricEntries } from "./cardstats.js";
 import { renderFigures } from "./session.js";
-import { C, OUTCOME_COLOR, OUTCOME_LABEL, SVGNS, clockAt, esc, hms, int, marker, nf, pct,
-         pctDigits, sessionDate } from "./viz.js";
+import { C, OUTCOME_COLOR, OUTCOME_LABEL, SVGNS, clockAt, esc, hms, int, marker, nf,
+         outcomeText, pct, pctDigits, sessionDate } from "./viz.js";
 
 // Re-exported so the rest of the app keeps one import site for the shared helpers; the
 // split into viz.js is an internal arrangement of the rendering layer.
@@ -304,10 +304,14 @@ function renderTurns(table, caption, g, v, meta) {
   // the evidence behind the verdict, not a verdict itself. The `carried` column beside it
   // was the engine's score boolean, which is not a tier the rider has; `clean` is, and it
   // is the engine's own per-turn flag, read and never re-derived.
+  // "why" (engine 0.18.0) is the one column that is a *sentence*, and it is the same sentence
+  // the phone prints under the turn's chips — the outcome pill beside it says what happened,
+  // this says which rung of the ladder decided. Empty on a fly-through, which needs no reason.
   const head = ["#", "time", "type", "turn", "tack", "entry kn", "min kn", "score",
-                "clean", "outcome", "stop s", "off foil s", "pump", "wet", "arc m", "R m"];
+                "clean", "outcome", "why", "stop s", "off foil s", "pump", "wet",
+                "arc m", "R m"];
   table.innerHTML = `<thead><tr>${head
-    .map((h, i) => `<th${i <= 4 || i === 9 ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
+    .map((h, i) => `<th${i <= 4 || i === 9 || i === 10 ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
     <tbody>${g.turns.map((t, i) => `
       <tr>
         <td class="l">${i + 1}</td>
@@ -320,6 +324,7 @@ function renderTurns(table, caption, g, v, meta) {
         <td>${nf(t.score * 100, 0)} %</td>
         <td>${yn(t.clean)}</td>
         <td class="l">${outcomePill(t.outcome)}${t.borderline ? ' <span class="pill">borderline</span>' : ""}</td>
+        <td class="l dim">${esc(outcomeText(t, cfg.turnPumpedMarginalSpeed) ?? "")}</td>
         <td>${nf(t.stoppedS, 1)}</td>
         <td>${nf(t.offFoilS, 1)}</td>
         <td class="dim">${yn(t.pumped)}</td>
