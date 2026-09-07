@@ -174,6 +174,17 @@ parameters that read it. Three keys join each entry of `turns` -- `axisTs`, `axi
 a 0.15.0 one is the version stamp and the new keys. Jan's definition of a jibe is "a turn
 through the wind axis"; the crossing was already what `classify_sweep` names a turn by, and
 until now it was found and thrown away. It is now an instant a page can mark.
+
+Engine 0.16.0 adds **`submersions`** and moves nothing else. The barometer's submersion mask
+has always been read in exactly two places -- inside a turn's outcome window and inside a
+flight end's -- which is the right input for a *verdict* and the wrong shape for a *map*: Jan
+asked on 7 Sep 2026 whether he was seeing all his wrist-under events, and the 29 Aug session
+drew four marks where the mask had fired thirty-five times, each of the four at its turn's
+start rather than at the dip. The same mask is now also serialized as events, one per
+contiguous run of it (gap-broken, near ones merged), each carrying `ts`, `endTs`, `durationS`,
+`dropM` and what it happened during. The `submerged` flags are untouched -- same mask, same
+threshold, same verdicts -- so a 0.15.0 golden differs from a 0.16.0 one only by the version
+stamp and the new block. See docs/algorithms.md "Submersion episodes".
 """
 
 from __future__ import annotations
@@ -184,7 +195,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import ENGINE_VERSION, gp3s
-from .evidence import OffFoilEvidence, off_foil_evidence
+from .evidence import (OffFoilEvidence, Submersion, attribute_submersions,
+                       off_foil_evidence, submersion_runs)
 from .filters import CleanTrack, FilterConfig, clean
 from .flight import FlightConfig, FlightResult, segment_flights
 from .flightend import (FlightEnd, FlightEndConfig, FlightEndSummary, OutcomeSplit,
@@ -230,6 +242,10 @@ class Analysis:
     turn_summary: TurnSummary
     flight_ends: list[FlightEnd]
     flight_end_summary: FlightEndSummary
+    #: Every spell the barometer says the wrist spent under water (engine 0.16.0), in time
+    #: order. Presentation evidence: the `submerged` flags on the two lists above are the
+    #: verdict inputs and are untouched by this.
+    submersions: list[Submersion]
     outcome_split: OutcomeSplit
     takeoffs: TakeoffAnalysis
     takeoff_summary: TakeoffSummary
@@ -299,16 +315,41 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
     # clean turns too (docs/algorithms.md "Turn streaks").
     turn_summary = summarize_turns(turns, ends, tcfg)
     end_summary = summarize_flight_ends(ends)
+    subs = session_submersions(ct, ev, turns, ends)
     return Analysis(
         track=track, clean=ct, flights=fr, records=rec,
         filter_config=fcfg, flight_config=flcfg,
         wind=wind, turns=turns, turn_summary=turn_summary,
-        flight_ends=ends, flight_end_summary=end_summary,
+        flight_ends=ends, flight_end_summary=end_summary, submersions=subs,
         outcome_split=split_outcomes(turn_summary, end_summary),
         takeoffs=takeoffs, takeoff_summary=summarize_takeoffs(takeoffs), pump=pt, hr=hr,
         wind_config=wcfg, turn_config=tcfg, flight_end_config=fecfg,
         pump_config=pcfg, takeoff_config=tocfg, hr_config=hcfg, rate_config=rcfg,
     )
+
+
+def session_submersions(ct: CleanTrack, ev: OffFoilEvidence | None, turns: list[Turn],
+                        ends: list[FlightEnd]) -> list[Submersion]:
+    """The session's submersion episodes, attributed (docs/algorithms.md "Submersion
+    episodes").
+
+    The two window lists are the *same* spans the two outcome ladders judged over, rebuilt
+    from what each record already carries -- a turn's is `start_t` to `end_t +
+    outcome_window_s`, a flight end's is `t` to `t + window_s` -- so an episode is never
+    attributed to a window the verdict was not read from. Counted turns only, and drawn
+    flight ends only (no turn owns them, the recording did not stop), which is the same
+    ownership rule that keeps one swim from being marked twice on the map.
+    """
+    if ev is None:
+        return []
+    subs = submersion_runs(ev.t, ev.gap, ev.submerged,
+                           ct.records["alt_m"].to_numpy(float))
+    turn_windows = [(i, t.start_t, t.end_t + t.outcome_window_s)
+                    for i, t in enumerate(turns) if t.counted]
+    end_windows = [(i, e.t, e.t + e.window_s) for i, e in enumerate(ends)
+                   if e.owned_by_turn is None and not e.truncated]
+    attribute_submersions(subs, turn_windows, end_windows)
+    return subs
 
 
 @dataclass
@@ -566,6 +607,7 @@ def build_golden(a: Analysis) -> dict:
         ],
         "turns": [_turn_json(t) for t in a.turns],
         "flightEnds": [_end_json(e) for e in a.flight_ends],
+        "submersions": [_submersion_json(s) for s in a.submersions],
         "records": {
             "best2sKn": round(rec.best2s_kn, 3),
             "best10sKn": round(rec.best10s_kn, 3),
@@ -820,6 +862,23 @@ def _end_json(e: FlightEnd) -> dict:
         "windowS": round(e.window_s, 2),
         "truncated": bool(e.truncated),
         "ownedByTurn": e.owned_by_turn,
+    }
+
+
+def _submersion_json(s: Submersion) -> dict:
+    """One submersion episode (engine 0.16.0, docs/algorithms.md "Submersion episodes").
+
+    Both indices are explicit **null** rather than absent: "this dunk belongs to no turn" is
+    a fact the map draws ("while off foil"), and a missing key would make it indistinguishable
+    from a document written before the block existed.
+    """
+    return {
+        "ts": round(s.start_t, 2),                # first submerged sample
+        "endTs": round(s.end_t, 2),               # last submerged sample
+        "durationS": round(s.duration_s, 2),      # gap-aware, like every other span
+        "dropM": round(s.drop_m, 2),              # deepest sample below the session median
+        "turnIndex": s.turn_index,                # index into `turns`
+        "flightEndIndex": s.flight_end_index,     # index into `flightEnds`
     }
 
 

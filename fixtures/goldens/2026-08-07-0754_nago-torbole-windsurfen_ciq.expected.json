@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.15.0",
+  "engineVersion": "0.16.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -1694,6 +1694,56 @@
       "windowS": 12.0,
       "truncated": false,
       "ownedByTurn": null
+    }
+  ],
+  "submersions": [
+    {
+      "ts": 858.0,
+      "endTs": 859.0,
+      "durationS": 1.0,
+      "dropM": 75.6,
+      "turnIndex": 3,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 875.0,
+      "endTs": 924.0,
+      "durationS": 49.0,
+      "dropM": 233.0,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 3332.0,
+      "endTs": 3333.0,
+      "durationS": 1.0,
+      "dropM": 38.4,
+      "turnIndex": 21,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 3339.0,
+      "endTs": 3374.0,
+      "durationS": 35.0,
+      "dropM": 102.6,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 4152.0,
+      "endTs": 4153.0,
+      "durationS": 1.0,
+      "dropM": 103.0,
+      "turnIndex": 29,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 4164.0,
+      "endTs": 4207.0,
+      "durationS": 43.0,
+      "dropM": 300.0,
+      "turnIndex": null,
+      "flightEndIndex": null
     }
   ],
   "records": {

@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.15.0",
+  "engineVersion": "0.16.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -2459,6 +2459,104 @@
       "windowS": 0.0,
       "truncated": true,
       "ownedByTurn": null
+    }
+  ],
+  "submersions": [
+    {
+      "ts": 451.0,
+      "endTs": 453.0,
+      "durationS": 2.0,
+      "dropM": 99.4,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 860.0,
+      "endTs": 860.0,
+      "durationS": 0.0,
+      "dropM": 180.6,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 875.0,
+      "endTs": 880.0,
+      "durationS": 5.0,
+      "dropM": 319.0,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 2071.0,
+      "endTs": 2072.0,
+      "durationS": 1.0,
+      "dropM": 101.4,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 2484.0,
+      "endTs": 2485.0,
+      "durationS": 1.0,
+      "dropM": 158.0,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 3867.0,
+      "endTs": 3867.0,
+      "durationS": 0.0,
+      "dropM": 96.6,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 3881.0,
+      "endTs": 3886.0,
+      "durationS": 5.0,
+      "dropM": 284.6,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 4612.0,
+      "endTs": 4612.0,
+      "durationS": 0.0,
+      "dropM": 25.6,
+      "turnIndex": 30,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 4631.0,
+      "endTs": 4635.0,
+      "durationS": 4.0,
+      "dropM": 71.8,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 4755.0,
+      "endTs": 4781.0,
+      "durationS": 26.0,
+      "dropM": 333.0,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 5201.0,
+      "endTs": 5201.0,
+      "durationS": 0.0,
+      "dropM": 138.8,
+      "turnIndex": 37,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 5226.0,
+      "endTs": 5226.0,
+      "durationS": 0.0,
+      "dropM": 60.2,
+      "turnIndex": null,
+      "flightEndIndex": null
     }
   ],
   "records": {
