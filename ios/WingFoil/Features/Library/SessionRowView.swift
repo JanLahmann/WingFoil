@@ -42,7 +42,12 @@ struct SessionRowView: View {
                         .foregroundStyle(SessionDisplay.badgeColor(row))
                 }
 
-                Text("\(Fmt.date(row.startDate, zone: row.displayZone)) · \(Fmt.duration(row.durationS))")
+                // The engine's cleaned span in the block's own spelling — the same number and
+                // the same string the session page opens with (docs/presentation.md, "One
+                // clock"). It was `Fmt.duration(row.durationS)`: a different clock in a
+                // different format, one tap away from the page that disagreed with it.
+                Text("\(Fmt.date(row.startDate, zone: row.displayZone)) · "
+                     + KeyMetrics.duration(row.rateSeconds))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 
