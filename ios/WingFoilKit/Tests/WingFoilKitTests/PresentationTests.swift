@@ -627,9 +627,12 @@ import Testing
     /// write it down instead.
     @Test func keyMetricsKeepBothJibeRatesWhenEveryJibeWasSwum() {
         var summary = SessionSummary(foilTimeS: 600, foilPct: 30, flightCount: 4,
-                                     longestFlightS: 60, longestFlightM: 300, distanceKm: 5)
-        summary.apply(SessionRates(durationS: 3600, distanceM: 5000, turnsCounted: 15,
-                                   dryJibes: 0, fellIn: 15, cleanJibes: 0))
+                                     longestFlightS: 60, maxFlightM: 300, distanceKm: 5)
+        // Engine 0.13.0: TPH counts *dry* turns too, so fifteen swum jibes give TPH 0.0 as
+        // well as JPH 0.0 — the rates alone can no longer tell this session from one with no
+        // turns at all, which is exactly why the gate has to read the jibe count.
+        summary.apply(SessionRates(durationS: 3600, timerTimeS: 3600, distanceM: 5000,
+                                   dryTurns: 0, dryJibes: 0, fellIn: 15, cleanJibes: 0))
         summary.turns.turnsCounted = 15
         summary.turns.jibes = 15
         summary.turns.jibesSuccessful = 0
@@ -638,7 +641,7 @@ import Testing
         let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
 
         #expect(summary.jibesPerHour == 0)
-        #expect((summary.turnsPerHour ?? 0) > 0)          // the shape that used to mislead
+        #expect(summary.turnsPerHour == 0)
         #expect(block.rates.map(\.key) == ["jph", "cph", "wph"])
         #expect(block.rates[0].value == "0.0")
         #expect(block.rates[1].value == "0.0")
