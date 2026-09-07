@@ -240,6 +240,16 @@ private struct TurnDetailPage: View {
                 cell("Rotation", Self.rotationLabel(turn.direction))
             }
 
+            // The crossing, in words (engine 0.15.0). One row rather than two cells in the
+            // grid above: the two angles are one fact read either side of one instant, and
+            // splitting them would invite a reader to compare them with the speeds.
+            if let axis = Self.axisLine(turn) {
+                Text(axis)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             HStack(spacing: 8) {
                 chip(TurnOutcomeKind(turn.outcome).label,
                      symbol: TurnOutcomeKind(turn.outcome).symbolName,
@@ -309,6 +319,19 @@ private struct TurnDetailPage: View {
         .background(Capsule().fill(Color.secondary.opacity(0.14)))
     }
 
+    /// "Through the axis · 87° before, 72° after" — the wind-axis crossing, in integers
+    /// (engine 0.15.0).
+    ///
+    /// nil where the engine recorded no crossing, which is every course change, every session
+    /// with no usable wind, and every analysis stored before 0.15.0. Absent, not zeroed: "he
+    /// started on the axis" and "nobody knows where the axis was" are different sentences, and
+    /// only one of them is ever true here.
+    static func axisLine(_ turn: TurnRecord) -> String? {
+        guard let before = turn.axisBeforeDeg, let after = turn.axisAfterDeg,
+              before.isFinite, after.isFinite else { return nil }
+        return String(format: "Through the axis · %.0f° before, %.0f° after", before, after)
+    }
+
     /// The direction the **board rotated**, never the tack it was entered on. The engine's
     /// `direction` is signed net heading change — "starboard" is clockwise — and the Turns
     /// tab already says out loud that this is a different field from `side`.
@@ -370,6 +393,11 @@ private struct TurnDetailPage: View {
                  + "to \(Int(windows.minLagS)) s past the sweep, so it can sit after \"out\"; "
                  + "\"outcome\" is the \(Int(windows.outcomeS)) s the verdict is read from, and "
                  + "the lighter band inside it ends where you were flying again.")
+            if turn.axisTs != nil {
+                Text("The tick marked \"axis\" is the moment the board went through the wind "
+                     + "axis — dead downwind on a jibe, head to wind on a tack — which is the "
+                     + "crossing the turn is named after.")
+            }
             #if TUNING
             Text(thresholdLine)
             #endif
