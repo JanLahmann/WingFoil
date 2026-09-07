@@ -39,14 +39,16 @@ import Testing
                       radiusM: Double = 20, outcome: String = "flew_through",
                       offFoilS: Double = 0, stoppedS: Double = 0,
                       pumped: Bool = false, submerged: Bool = false,
-                      axisTs: Double? = nil) throws -> TurnRecord {
+                      axisTs: Double? = nil, cleanBlockedBy: String? = nil)
+    throws -> TurnRecord {
         var json: [String: Any] = [
             "ts": ts, "endTs": endTs, "minTs": minTs, "type": type, "counted": counted,
             "entryKn": entryKn, "minKn": minKn, "exitKn": exitKn,
             "score": score, "success": success,
             // The engine's 0.12.0 clean rule, spelled here so a fixture is never cleaner
             // than a real turn with the same fields would be.
-            "clean": counted && type == "jibe" && success && outcome == "flew_through",
+            "clean": counted && type == "jibe" && success && outcome == "flew_through"
+                && cleanBlockedBy == nil,
             "side": side, "direction": direction, "netDeg": netDeg, "arcM": 31.4,
             "radiusM": radiusM, "outcome": outcome, "borderline": false,
             "offFoilS": offFoilS, "stoppedS": stoppedS, "pumped": pumped,
@@ -59,6 +61,8 @@ import Testing
             json["axisBeforeDeg"] = 87.4
             json["axisAfterDeg"] = 72.1
         }
+        // Engine 0.17.0, and left out by default for the same reason.
+        if let cleanBlockedBy { json["cleanBlockedBy"] = cleanBlockedBy }
         return try JSONDecoder().decode(TurnRecord.self,
                                         from: JSONSerialization.data(withJSONObject: json))
     }
@@ -467,7 +471,18 @@ import Testing
         // The 0.12.0 rung: the speed held all the way round and it still ended in the
         // water — the one turn the old rule called clean.
         #expect(rule(try turn(score: 0.92, success: true, outcome: "fell_in")) == .fellInFast)
-        #expect(TurnCoach.Rule.allCases.count == 11)
+
+        // The 0.17.0 rungs: carried, flown through, and still not clean. Each sits *above*
+        // `cleanAndFast` — the same fast jibe that reaches rung 7 without a reason lands on
+        // its reason with one, which is the shadowing this test exists to catch.
+        for (reason, rung) in [("quiet_flight_end", TurnCoach.Rule.quietFlightEnd),
+                               ("quiet_off_foil", .quietOffFoil),
+                               ("quiet_submerged", .quietSubmerged),
+                               ("axis_after", .axisAfter)] {
+            #expect(rule(try turn(score: 0.92, success: true,
+                                  cleanBlockedBy: reason)) == rung)
+        }
+        #expect(TurnCoach.Rule.allCases.count == 15)
     }
 
     /// A fall outranks everything below it. The most specific true thing is the one worth
