@@ -8,7 +8,7 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
 
 ```json
 {
-  "engineVersion": "0.13.0",
+  "engineVersion": "0.14.0",
   "config": { "foilEntrySpeed": 12.0, "...": "params actually used" },
   "capabilities": { "hasDoppler": true, "hasDevFields": false, "hasWatchLaps": false,
                      "hasAccel": false, "hasHR": true, "sampleRateHz": 1 },
@@ -181,6 +181,16 @@ straight-line fall, so the jibe ladder's `fellIn` collapses into `touchdown` (10
 `summary.longestFlightM` is renamed **`maxFlightM`** — same value, honester name: it is the
 largest distance any one flight covered and never was the longest flight's own. The rolling
 `windowRates` are deliberately untouched and stay on the elapsed clock.
+
+Engine 0.14.0 moves two thresholds and nothing else: `turnPeakRate` 25 → **18 °/s** and
+`turnMaxDuration` 8 → **12 s**, so the carved jibes the peak gate rejected are counted (a
+carve at 11 kn holds a steady ~13 °/s and never spikes the way a pivot does). Both appear in
+the config echo. Across the seventeen fixtures jibes go 499 → 544, course changes 99 → 145,
+straight-line falls 58 → 41, and **clean jibes 152 → 134** — the wider sweep pulls a slow
+exit into the scored minimum, which is the price the change was accepted at. Turn counts,
+outcomes, streaks, all four session rates, `windowRates` and the HR block's swim events move
+with them; **`flights`, `records`, `wind`, `takeoffs` and `pumpEpisodes` are byte-identical**,
+which is the check that says the change is confined to the turn channel.
 
 ### Fixture provenance — one converted recording, and why
 
