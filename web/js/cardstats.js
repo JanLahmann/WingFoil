@@ -170,8 +170,9 @@ export function keyMetricEntries(g) {
   // so it falls back to every counted turn, the same way the rate row falls back to TPH.
   // The caption says which, so the three numbers can never be read as the other set.
   // The caption also carries the CLEAN count — the jibes he flew all the way through
-  // carrying his speed (the engine's per-turn `clean` flag: `turnSuccessPct` met *and*
-  // `flew_through`, engine 0.12.0). It is the stricter verdict laid over the same set of
+  // carrying his speed (the engine's per-turn `clean` flag: `turnSuccessPct` met, *and*
+  // `flew_through`, engine 0.12.0; *and* a quiet `turnCleanQuietS` after it, 0.17.0). It
+  // is the stricter verdict laid over the same set of
   // turns the three counts describe — a strict *subset* of the ladder's green — and it
   // rides in the caption rather than in a cell of its own because row 3 has no fifth cell
   // to give it that the streaks pair would not lose.

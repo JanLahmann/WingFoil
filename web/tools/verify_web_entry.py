@@ -35,7 +35,8 @@ import numpy as np                                          # noqa: E402
 import web_entry                                            # noqa: E402
 from wingfoil_lab.filters import clean_from_arrays          # noqa: E402
 from wingfoil_lab.flight import segment_flights             # noqa: E402
-from wingfoil_lab.flightend import classify_flight_ends     # noqa: E402
+from wingfoil_lab.flightend import (assign_end_ownership,          # noqa: E402
+                                    classify_flight_ends)
 from wingfoil_lab.turns import detect_turns                 # noqa: E402
 
 CIQ = "2026-08-07-0754_nago-torbole-windsurfen_ciq"
@@ -66,8 +67,11 @@ def check_position_less_track() -> str:
     nan = np.full(n, np.nan)                     # no lat/lon -> all-NaN projection
     clean = clean_from_arrays(t, speed, x=nan, y=nan)
     flights = segment_flights(clean)
-    turns = detect_turns(clean, flights)
-    ends = classify_flight_ends(clean, flights, turns)
+    # The pipeline's own order since engine 0.17.0: ends, then turns (which read them for
+    # the clean jibe's quiet tail), then ownership.
+    ends = classify_flight_ends(clean, flights)
+    turns = detect_turns(clean, flights, ends=ends)
+    assign_end_ownership(ends, turns)
     a = types.SimpleNamespace(clean=clean, flights=flights, turns=turns, flight_ends=ends)
 
     view = web_entry._view(a)

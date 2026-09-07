@@ -199,15 +199,34 @@ def check_rules() -> None:
             "courseChange": turns["course"],
         }
         check(f"  {stem}: markers per layer", facts["markers"], want)
-        # The star layer, re-derived from the four fields rather than read off the engine's
-        # own `clean` key — this is the check that the key means what the rule says, so it
-        # must not be the key. It lies *across* the ladder above, never inside it: every
-        # clean jibe is also counted under `flew_through`, which is why the marker total
-        # below still comes out as turns + drawn ends.
+        # The star layer, re-derived from the fields rather than read off the engine's own
+        # `clean` key — this is the check that the key means what the rule says, so it must
+        # not be the key. It lies *across* the ladder above, never inside it: every clean
+        # jibe is also counted under `flew_through`, which is why the marker total below
+        # still comes out as turns + drawn ends.
+        #
+        # Since engine 0.17.0 the rule has a fifth clause — a quiet `turnCleanQuietS` after
+        # the sweep — and that one is a *measurement over samples this document does not
+        # carry*, so it is re-derived here through the reason the engine wrote down
+        # (`cleanBlockedBy`). What is still checked independently is everything the record
+        # does carry, plus the arithmetic that ties the two: a jibe is starred exactly when
+        # the four fields say yes and no reason was recorded against it.
         clean = sum(1 for t in doc.get("turns", [])
                     if t["counted"] and t["type"] == "jibe" and t["success"]
-                    and t["outcome"] == "flew_through")
+                    and t["outcome"] == "flew_through"
+                    and t.get("cleanBlockedBy") is None)
         check(f"  {stem}: clean jibes are the star layer", facts["cleanJibes"], clean)
+        # And a reason is never recorded beside a star, nor on a turn the score or the
+        # outcome had already refused (docs/algorithms.md "The quiet tail").
+        blocked = [t for t in doc.get("turns", []) if t.get("cleanBlockedBy") is not None]
+        check(f"  {stem}: a blocked jibe is a jibe that otherwise qualified",
+              [t for t in blocked
+               if not (t["counted"] and t["type"] == "jibe"
+                       and t["outcome"] == "flew_through"
+                       and (t["success"] or t["cleanBlockedBy"] == "axis_after"))],
+              [])
+        check(f"  {stem}: nothing is clean and blocked at once",
+              [t for t in blocked if t["clean"]], [])
         check(f"  {stem}: never more clean jibes than counted turns",
               facts["cleanJibes"] <= sum(want.values()), True)
         # An end with no verdict is a recording that stopped, not an event; if one ever

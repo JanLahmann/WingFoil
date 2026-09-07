@@ -1757,7 +1757,8 @@ function drawChips() {
     + (utilities ? `<span class="chip-group chip-utilities">${utilities}</span>` : "")
     + `<p class="legend-note">Tap a chip to hide or show it on the map <em>and</em> in the
       speed strip. Chevrons point the way you were riding. Star = a clean jibe, the ones you
-      flew all the way through carrying your speed · solid shape = manoeuvre outcome ·
+      flew all the way through carrying your speed, with no touchdown or fall in the
+      seconds after · solid shape = manoeuvre outcome ·
       hollow square = straight-line flight end, on the same colour ladder · arrow = takeoff,
       red u-turn = a failed attempt. A starred jibe needs both its chips: hide its outcome
       and the star goes with it. Tap either figure to move the playhead; tap a mark —

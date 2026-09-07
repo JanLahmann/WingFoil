@@ -185,6 +185,21 @@ contiguous run of it (gap-broken, near ones merged), each carrying `ts`, `endTs`
 `dropM` and what it happened during. The `submerged` flags are untouched -- same mask, same
 threshold, same verdicts -- so a 0.15.0 golden differs from a 0.16.0 one only by the version
 stamp and the new block. See docs/algorithms.md "Submersion episodes".
+
+Engine 0.17.0 gives **the clean jibe a quiet tail**, and it is the second bump here that moves
+numbers on purpose. Jan, 7 Sep 2026: *"an additional requirement for a clean jibe: no touch
+down or fall within 10 s afterwards. This only applies to clean jibe, not to carried through."*
+A turn's outcome window closes at recovery, so a jibe powered out of is judged over two seconds
+and the touchdown at +7 s belongs to the flight-end channel -- correct for the ladder, and
+wrong for the word. `turnCleanQuietS` (**10 s**) asks the same evidence one more question over
+`[endTs, endTs + 10 s]`, stopping at a recording gap: no touchdown/fell-in flight end, no
+off-foil spell of 1 s or longer, no submerged sample. `clean` and `turns.jibesSuccessful`
+(hence `cleanJibesPerHour`) move with it; **nothing else does** -- not `success`, not the
+outcome, not a count, not a streak, not JPH or TPH. Each turn gains `cleanBlockedBy`, the
+reason a jibe the page cannot otherwise explain is not clean (`axis_after`,
+`quiet_flight_end`, `quiet_off_foil`, `quiet_submerged`, else null), and `config` gains
+`turnCleanQuietS`. Over the 17 committed fixtures clean jibes fall 160 -> 152; over the 21
+sessions of the corpus 278 -> 261. See docs/algorithms.md "The quiet tail".
 """
 
 from __future__ import annotations
@@ -200,7 +215,8 @@ from .evidence import (OffFoilEvidence, Submersion, attribute_submersions,
 from .filters import CleanTrack, FilterConfig, clean
 from .flight import FlightConfig, FlightResult, segment_flights
 from .flightend import (FlightEnd, FlightEndConfig, FlightEndSummary, OutcomeSplit,
-                        classify_flight_ends, split_outcomes, summarize_flight_ends)
+                        assign_end_ownership, classify_flight_ends, split_outcomes,
+                        summarize_flight_ends)
 from .gp3s import GP3SRecords, RecordWindow
 from .hrcost import (Coverage, FatigueBin, HrAnalysis, HrConfig, HrEvent, HrSummary,
                      PumpCruiseHr, analyze_hr)
@@ -301,9 +317,15 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
         same = exit_kmh == tcfg.foil_exit_speed_kmh and drop_m == tcfg.baro_drop_m
         return ev if same else None
 
-    turns = detect_turns(ct, fr, wind, tcfg, pt, evidence=ev)
-    ends = classify_flight_ends(ct, fr, turns, fecfg, pt,
+    # **Ends first, turns second, ownership last** (engine 0.17.0). The clean jibe's quiet
+    # tail asks whether a touchdown or a fall landed in the ten seconds after the sweep, and
+    # the flight-end channel is what has already classified those losses. The dependency only
+    # looks circular: classification reads no turn at all, and it is the *ownership* pass that
+    # does -- so the two are simply run in the order the evidence flows.
+    ends = classify_flight_ends(ct, fr, None, fecfg, pt,
                                 evidence=shared(fecfg.foil_exit_speed_kmh, fecfg.baro_drop_m))
+    turns = detect_turns(ct, fr, wind, tcfg, pt, evidence=ev, ends=ends)
+    assign_end_ownership(ends, turns)
     takeoffs = analyze_takeoffs(ct, fr, turns, tocfg, pt,
                                 evidence=shared(tocfg.foil_exit_speed_kmh, tocfg.baro_drop_m))
 
@@ -708,6 +730,7 @@ def _config_dict(a: Analysis) -> dict:
         "turnClassifyMinAngle": t.classify_min_angle_deg,
         "turnAxisBeforeDeg": t.axis_before_deg,
         "turnAxisAfterDeg": t.axis_after_deg,
+        "turnCleanQuietS": t.clean_quiet_s,
         "turnMaxDuration": t.max_duration_s,
         "turnPeakRate": t.peak_rate_deg_s,
         "turnContinueRate": t.continue_rate_deg_s,
@@ -820,8 +843,12 @@ def _turn_json(t: Turn) -> dict:
         "exitKn": round(t.exit_kn, 3),
         "score": round(t.score, 4),
         "success": bool(t.success),
-        # The clean jibe (engine 0.12.0): the score verdict *and* `flew_through`.
+        # The clean jibe (engine 0.12.0): the score verdict *and* `flew_through` -- and, since
+        # 0.17.0, a quiet `turnCleanQuietS` after the sweep.
         "clean": bool(t.clean),
+        # Why not clean (engine 0.17.0), where the answer is not already on the page: null on
+        # a clean jibe, on every non-jibe, and wherever the score or the outcome said no.
+        "cleanBlockedBy": t.clean_blocked_by,
         "side": t.side,
         "direction": t.direction,
         "netDeg": round(t.net_deg, 2),
