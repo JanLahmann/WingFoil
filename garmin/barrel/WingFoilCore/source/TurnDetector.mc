@@ -136,7 +136,7 @@ class TurnDetector {
 
     // docs/algorithms.md defaults (not user-tunable on the watch)
     const MIN_ANGLE_DEG = 60.0;     // the CANDIDATE floor; see CLASSIFY_MIN_ANGLE_DEG below
-    const MAX_DURATION_S = 12.0;    // engine 0.14.0 (was 8): a 150° carve at 10°/s takes 15 s; 8 s saw 80° of it
+    const MAX_DURATION_S = 8.0;     // measured 7 Sep 2026: 12 s bought 6 jibes and cost 26 clean ones on the corpus, so it stays
     const PEAK_RATE_DEG_S = 18.0;   // engine 0.14.0 (was 25): a carved jibe at 11 kn on 25 m turns at a steady ~13–22°/s and never spikes to 25
     const CONTINUE_RATE_DEG_S = 5.0;
     const COG_SPEED_FLOOR = 2.0;
@@ -159,8 +159,8 @@ class TurnDetector {
     // long") deserves one set of numbers however the loss started.
     const FLIGHT_END_WINDOW_S = LOOKAHEAD_S;
 
-    // 12 s sweep cap + 3 s entry window + margin, at 1 Hz (engine 0.14.0; was 14 for 8 s)
-    const HIST = 18;
+    // 8 s sweep cap + 3 s entry window + margin, at 1 Hz
+    const HIST = 14;
 
     var state as Number = ST_IDLE;
 
