@@ -45,7 +45,7 @@ public enum DivergenceCheck {
         let records: [(String, Double?, Double?)] = [
             ("Best 2 s", watch.best2sMps, phone.records.best2sKn),
             ("Best 10 s", watch.best10sMps, phone.records.best10sKn),
-            ("5 × 10 s", watch.best5x10sMps, phone.records.best5x10sKn),
+            ("Best 5×10 s", watch.best5x10sMps, phone.records.best5x10sKn),
             ("Best 500 m", watch.best500mMps, phone.records.best500mKn),
             ("Best 1 NM", watch.bestNmMps, phone.records.bestNmKn),
             ("Alpha 500", watch.alpha500LiteMps, phone.records.alpha500Kn),
