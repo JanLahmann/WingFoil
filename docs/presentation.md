@@ -1598,6 +1598,43 @@ or, since 0.17.0, **why not** where the engine says that instead — `pumped out
   which is what keeps the ladder's rule that it never prints a number the page is not
   already showing. iOS: `TurnAnalytics.pumpStrokes`, pinned by `TurnSpeedRampTests`.
 
+  Since engine 0.18.0 the chip is *only* an effort chip: pumping no longer moves the verdict
+  (docs/algorithms.md, step 3), so a jibe can wear `pumped out · 7 strokes` and `flew through`
+  at once. That pairing is the truth — he worked for it and he rode it out.
+
+### Why it ended that way — the line under the chips (engine ≥ 0.18.0)
+
+Jan, 7 Sep 2026: *"Can we add a short comment for the user why a jibe is a touchdown or a
+fall?"* The numbers were all on the page — stopped, off foil, wrist under — and the rider was
+left to assemble the verdict out of them. One short line, directly under the chip row, says
+which rung of the ladder decided.
+
+The engine writes a **code** (`turn.outcomeReason`; docs/algorithms.md, "Why") and the words
+are chosen here, once, for both platforms — `TurnAnalytics.outcomeText` on the phone,
+`outcomeText` in `web/js/viz.js` for the site. Two apps wording the same fact differently is
+how a rider learns to trust one of them, so the strings are held together from the outside:
+`verify_presentation.py` §6 re-derives every sentence in Python and compares it with what the
+JavaScript actually produces, over every turn of every fixture, plus the shapes the corpus
+cannot supply.
+
+| `outcomeReason` | line |
+|---|---|
+| `off_foil` | `touchdown · off the foil 2 s, stopped 1 s` — and `…, no stop` where the stop rounds below a second, never `stopped 0 s`, which would be a measurement where there is none |
+| `stop` (touchdown) | `touchdown · stopped 4 s, borderline` — the band between `turnTouchdownMaxStop` and `turnFallStop`, named as the near-fall it is |
+| `stop` (fall) | `fell in · stopped 7 s` |
+| `submerged` | `fell in · wrist under` — the wrist wins the wording wherever it decided, even when a long stop sits beside it |
+| `pumped_marginal` | `touchdown · pumped out below 4.3 kn, no sample off the foil` — the knots are `foilExitSpeed` from the **document's own** config echo, converted, never a literal; without an echo the line says `below min foil speed`. Unreachable at the published defaults since 0.18.0, and kept because a stored document from an older engine still carries it |
+| **null** | nothing is printed. A fly-through needs no explanation, and neither does a document written before 0.18.0 — a sentence rebuilt from `stoppedS` alone would be a guess about a ladder that may not have been climbed that way |
+
+Seconds are whole and rounded **away from zero**, spelled out in all three languages rather
+than left to each one's default formatter: `%.0f` prints 4.5 as "4" and `toFixed(0)` prints it
+as "5", and a stop of exactly 4.5 s is an ordinary reading at 1 Hz.
+
+**Where it appears.** The phone's turn page, under the chips. The web session page in two
+places — the map callout's `why` row and the `why` column of the turns table — both from the
+one function. The coach line (`TurnCoach`) is unchanged: it speaks about what to do next, and
+a rung that already has a sentence of its own does not need a second one.
+
 **The coach line.** One calm sentence under the numbers, in the `ReplayCommentary` voice —
 plain, no exclamation marks, never blaming, and never a number the page is not already showing.
 It is a ladder of specificity, first match wins, and the ordering is the contract:
@@ -1812,16 +1849,17 @@ out of it.
 
 ## Tuning — the thresholds on sliders, in the dev build, on one phone
 
-**What it is.** Settings → Tuning puts 25 of the docs/algorithms.md parameters on sliders so
+**What it is.** Settings → Tuning puts 26 of the docs/algorithms.md parameters on controls so
 a threshold can be tried against a real library in a minute instead of an afternoon: turn
 detection and scoring (`turnMinAngle`, `turnClassifyMinAngle`, `turnAxisBeforeDeg`,
 `turnAxisAfterDeg`, `turnCleanQuietS`, `turnMaxDuration`,
 `turnPeakRate`, `turnContinueRate`, `turnMinArc`, `turnMinRadius`, `entrySpeedWindow`,
 `minSpeedLag`, `turnSuccessPct`), the stop ladder (`turnStopSpeedFloor`,
 `turnTouchdownMaxStop`, `turnFallStop`, `turnOutcomeLookahead`, `turnRecoverPct`,
-`turnRecoverHold`, `turnOutcomeWindow`) and flight hysteresis (`foilEntrySpeed`,
-`foilExitSpeed`, `entryHold`, `exitHold`, `minFlightDuration`). `nil` means the published
-default; setting a slider back to the default clears the override rather than storing it.
+`turnRecoverHold`, `turnOutcomeWindow`, `turnPumpedOutIsTouchdown`) and flight hysteresis
+(`foilEntrySpeed`, `foilExitSpeed`, `entryHold`, `exitHold`, `minFlightDuration`). `nil` means
+the published default; setting a control back to the default clears the override rather than
+storing it.
 
 **How a row reads** (7 Sep 2026, Jan: "review all descriptions on the new tuning page for
 clarity"). Each row is named in the rider's words — "Fall: shortest stop", "Flying again
@@ -1836,6 +1874,19 @@ shifting between touchdown and fall; foil time and flight counts). **One tail, n
 slider moves both, so the window has no row of its own (`TuningParameterSpec.hidden`) — an
 explicit override stored by an earlier dev build is still applied and still wins.
 
+**One row is a switch** (`TuningParameterSpec.kind`, engine 0.18.0). `turnPumpedOutIsTouchdown`
+is a rule that is either applied or not, and a slider from 0 to 1 would be a lie about the
+question, so the Outcomes group draws it as a `Toggle`: title *"Pumped out below min foil speed
+is a touchdown"*, the code name small under it like every other row, and the caption *"default
+on · with no sample off the foil, a pump burst that dropped below the flight-end speed still
+counts as a touchdown when on; off, it flew through and the chip says it pumped out"*. The
+value is still a `Double` in the override map (0 = off, 1 = on), so the fingerprint, the clamp,
+the reset and the drop-if-default rule all keep working unchanged — the switch is a *rendering*
+fact and nothing else. It prints "on"/"off" and never "1"/"0", and the row shows no value
+beside the control, because the control already says which way it is set. (At the published
+defaults this particular rung cannot fire either way — docs/algorithms.md, step 3 — so the
+switch documents a retired rule rather than moving a number.)
+
 **Phone-only, and dev-build-only.** The watch computes live on the wrist with no way to be
 told, and the web reads documents the phone wrote — neither follows a slider, and neither is
 asked to. And the whole feature is compiled out of the app external testers get: it lives
@@ -1848,7 +1899,7 @@ by a dev build installed over the same bundle id is not even read.
 outcomes, clean jibes, records, trends, periods and the share card are all derived from the
 same analysis. So a moved slider marks the whole library stale by the mechanism an engine
 bump already uses: the overrides' fingerprint rides in the analysis' `engineVersion` as
-`0.17.0+tuned.<n>.<hash8>` (`TuningStamp`), which is the string `reanalyzeStale()`,
+`0.18.0+tuned.<n>.<hash8>` (`TuningStamp`), which is the string `reanalyzeStale()`,
 `SessionArchive.analysis(for:)` and `SessionStore.detail(for:)` already compare on. Sessions
 re-derive lazily on open and in bulk at the next launch; "Re-analyse all sessions now" is the
 same trip taken immediately, and leaving the page takes it automatically.
@@ -1860,7 +1911,7 @@ same trip taken immediately, and leaving the page takes it automatically.
 | session header, beside the discipline badge | `tuned · N` chip | that session's stored `engineVersion` |
 | session page, in the divergence banner's slot | "Analysed with tuned thresholds (N changed) — Settings → Tuning" | that session's analysis |
 | Records header, Trends header | `tuned thresholds · N` chip | the *current* setting — these are aggregates over the library |
-| Settings → About | `0.17.0 · dev` | the build variant itself |
+| Settings → About | `0.18.0 · dev` | the build variant itself |
 | turn detail footnote | "Measured at: turnSuccessPct 70 % · minSpeedLag 2 s · turnOutcomeLookahead 12 s" | the analysis' own `config` echo |
 
 The session-level marks read the *analysis*, not the current setting, because a session

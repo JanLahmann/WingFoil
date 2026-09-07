@@ -237,6 +237,24 @@ a `clean` change: the diff is the version stamp, the two new keys, ten booleans 
 numbers derived from them. The presentation goldens move only in `cleanJibes` (the star layer),
 by the same ten. Over the 21-session corpus it reads 278 → 263.
 
+Engine 0.18.0 **retires the pump rung of the outcome ladder and gives every touchdown and fall
+a reason**. `turnPumpedOutIsTouchdown` (**true**) joins `config` and `outcomeReason` joins each
+entry of `turns` (docs/algorithms.md, "Turn outcome" / "Why"; ADR-022). The rung's
+corroborating speed moves from `foilEntrySpeed` to `foilExitSpeed`, which — since `flying`
+already requires speed above the exit speed — makes it unreachable, deliberately. Across the
+seventeen fixtures **six jibe touchdowns become fly-throughs** (289 → 295 flew through,
+212 → 206 touched down, 37 fell in unchanged) and one more jibe is clean (150 → 151); the
+`longestFlewStreak` on 2026-08-07 moves with them, and every other key is otherwise identical
+but for the new reason on each turn. The presentation goldens move only where a turn changed
+rung. Over the 21-session corpus: 493 → 506 flew through, 270 → 257 touched down, clean
+263 → 266, and Jan's Jibe 50 of 2026-09-04-0758 reads `flew_through` — and clean.
+
+The reason itself is checked twice over. `GoldenTests` asserts Swift's `outcomeReason` against
+the lab's turn by turn, and that one is present on exactly the touchdowns and falls;
+`verify_presentation.py` §6 re-derives the *sentence* the reason becomes, in Python, and
+compares it with what `web/js/viz.js` actually produces over every turn of every fixture —
+plus the shapes the corpus cannot supply, the retired rung above all.
+
 ### Fixture provenance — one converted recording, and why
 
 Every fixture in `fixtures/sessions/**` is one of Jan's own recordings kept as it came off
