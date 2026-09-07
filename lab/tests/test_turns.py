@@ -605,6 +605,133 @@ def test_positional_channel_catches_a_touchdown_the_doppler_smooths_away():
     assert turn.outcome == TOUCHDOWN              # min(Doppler, positional) sees the stop
 
 
+# --- the clean jibe's quiet tail (engine 0.17.0) -----------------------------------------
+#
+# Jan, 7 Sep 2026: "an additional requirement for a clean jibe: no touch down or fall within
+# 10 s afterwards. This only applies to clean jibe, not to carried through." The outcome
+# window closes at recovery, so the losses below are all *outside* it and the ladder is
+# right to keep calling the turn a fly-through. Only `clean` moves.
+
+
+def _jibe_then_later(dip, quiet=6, tail=40):
+    """A jibe powered straight out of, `quiet` seconds of cruising, then `dip`.
+
+    The cruising leg closes the outcome window (recovery), so the dip is past the verdict
+    and inside the quiet tail -- which is exactly the shape the rule was written for.
+    """
+    return _join(_leg(90.0, 40),
+                 _ramp(90.0, 270.0, 7, np.linspace(6.0, 5.0, 7)),
+                 _leg(270.0, quiet),
+                 ([270.0] * len(dip), list(dip)),
+                 _leg(270.0, tail))
+
+
+def test_a_touchdown_inside_the_quiet_tail_costs_the_jibe_its_star():
+    course, speed = _jibe_then_later([0.5] * 3)
+    turn = _detect(course, speed)[0]
+    # The ladder is untouched: the loss is outside the window the outcome was read from.
+    assert turn.outcome == FLEW_THROUGH and turn.success
+    assert not turn.clean and turn.clean_blocked_by == "quiet_off_foil"
+
+
+def test_the_quiet_tail_is_off_at_zero():
+    course, speed = _jibe_then_later([0.5] * 3)
+    turn = _detect(course, speed, config=TurnConfig(clean_quiet_s=0.0))[0]
+    assert turn.clean and turn.clean_blocked_by is None
+
+
+def test_a_loss_past_the_quiet_tail_leaves_the_jibe_clean():
+    """The same touchdown, twenty seconds later: not this jibe's business."""
+    turn = _detect(*_jibe_then_later([0.5] * 3, quiet=20))[0]
+    assert turn.clean and turn.clean_blocked_by is None
+
+
+def test_a_recording_gap_ends_the_quiet_tail():
+    """Samples the far side of a hole are not evidence about what happened in it."""
+    course, speed = _jibe_then_later([0.5] * 3)
+    t = np.arange(len(course), dtype=float)
+    t[50:] += 30.0                                # the recording stops right after the sweep
+    ct = _track(course, speed, t=t)
+    turn = detect_turns(ct, segment_flights(ct), WIND_N)[0]
+    assert turn.outcome == FLEW_THROUGH and turn.clean
+
+
+def test_a_touchdown_flight_end_in_the_tail_blocks_it_and_a_glide_out_does_not():
+    """The three flight-end verdicts the rule distinguishes, on one clean jibe."""
+    course, speed = _clean_jibe(min_speed=5.0)
+    ct = _track(course, speed)
+    flights = segment_flights(ct)
+
+    def clean_with(*ends):
+        turn = detect_turns(ct, flights, WIND_N, ends=ends)[0]
+        return turn.clean, turn.clean_blocked_by
+
+    after = 52.0                                  # a few seconds past the sweep
+    assert clean_with() == (True, None)
+    assert clean_with(_end(after, GLIDE_OUT)) == (True, None)
+    assert clean_with(_end(after, UNKNOWN, truncated=True)) == (True, None)
+    assert clean_with(_end(after, TOUCHDOWN)) == (False, "quiet_flight_end")
+    assert clean_with(_end(after, FELL_IN)) == (False, "quiet_flight_end")
+    assert clean_with(_end(after + 30.0, TOUCHDOWN)) == (True, None)   # past the tail
+
+
+def test_a_wrist_under_in_the_tail_blocks_it():
+    """One submerged sample, too short to be an off-foil spell, and still a swim."""
+    course, speed = _clean_jibe(min_speed=5.0)
+    alt = np.full(len(course), 70.0)
+    alt[52] = -200.0                              # 30 cm of water, past the outcome window
+    ct = _track(course, speed, alt_m=alt)
+    turn = detect_turns(ct, segment_flights(ct), WIND_N)[0]
+    assert turn.outcome == FLEW_THROUGH and not turn.submerged
+    assert not turn.clean and turn.clean_blocked_by == "quiet_submerged"
+
+
+def test_the_quiet_tail_moves_clean_and_nothing_else():
+    """Every other number a rider reads is the same with the gate on and off."""
+    course, speed = _jibe_then_later([0.5] * 3)
+    ct = _track(course, speed)
+    flights = segment_flights(ct)
+    on = detect_turns(ct, flights, WIND_N)[0]
+    off = detect_turns(ct, flights, WIND_N, TurnConfig(clean_quiet_s=0.0))[0]
+    assert (on.outcome, on.success, on.score, on.counted, on.kind, on.off_foil_s,
+            on.stopped_s, on.outcome_window_s) == \
+           (off.outcome, off.success, off.score, off.counted, off.kind, off.off_foil_s,
+            off.stopped_s, off.outcome_window_s)
+    assert on.clean != off.clean
+    # And the summary moves in exactly one place.
+    a, b = summarize_turns([on]), summarize_turns([off])
+    assert a.jibes == b.jibes == 1
+    assert a.turns_successful == b.turns_successful == 1
+    assert (a.jibes_successful, b.jibes_successful) == (0, 1)
+
+
+def test_a_jibe_the_outcome_already_failed_needs_no_explanation():
+    """`cleanBlockedBy` is for the refusals nothing else on the page shows."""
+    turn = _detect(*_jibe_then([0.3] * 11))[0]
+    assert turn.outcome == FELL_IN and not turn.clean
+    assert turn.clean_blocked_by is None
+
+
+def test_a_tack_carries_no_clean_verdict_and_no_reason():
+    """"Clean" is a jibe word, so a tack is never blocked and never explained."""
+    course, speed = _join(_leg(45.0, 40),
+                          _ramp(45.0, -45.0, 5, np.linspace(6.0, 4.0, 5)),
+                          _leg(-45.0, 6),
+                          ([-45.0] * 3, [0.5] * 3),
+                          _leg(-45.0, 40))
+    turn = _detect(course, speed)[0]
+    assert turn.kind == TACK
+    assert not turn.clean and turn.clean_blocked_by is None
+
+
+def test_the_axis_after_gate_says_so_when_it_takes_a_jibe():
+    """The other invisible refusal: carried, flew through, and not far enough past the axis."""
+    course, speed = _clean_jibe(min_speed=5.0)
+    turn = _detect(course, speed, config=TurnConfig(axis_after_deg=120.0))[0]
+    assert turn.outcome == FLEW_THROUGH and not turn.success
+    assert not turn.clean and turn.clean_blocked_by == "axis_after"
+
+
 # --- barometric submersion: a wet wrist is proof of a swim ------------------------------
 
 def test_wrist_submersion_makes_a_short_stop_a_fall():
