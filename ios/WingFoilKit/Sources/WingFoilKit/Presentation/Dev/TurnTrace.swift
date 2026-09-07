@@ -154,14 +154,28 @@ public enum TurnTraceBuilder {
                           else: disagreement(derived: derivedEntry, record: record.entryKn,
                                              tolerance: 0.05, unit: "kn")))
 
-        // 1. The sweep's end — the heading stopped turning.
-        let endRate = headings?.rate(at: record.endTs)
-        let sweepDetail = String(format: "the sweep ran %.0f s and turned %.0f°",
+        // 1. The sweep's end — trimmed back to the part that was actually turning.
+        //
+        // Two rates, and they are different things. `TurnDetector.trim` shrinks the span while
+        // the step *into* the last sample is below `turnContinueRate`, so the step it kept is
+        // above it — that is what "the sweep ends here" means. The step *out* of that sample is
+        // the first one the sweep does not own, and is usually below. Printing only the second
+        // and calling it the trim rule produced a sentence whose own number contradicted it.
+        let intoRate = headings?.rateInto(at: record.endTs)
+        let outRate = headings?.rate(at: record.endTs)
+        var sweepDetail = String(format: "the sweep ran %.0f s and turned %.0f°",
                                  max(record.endTs - record.ts, 0), abs(record.netDeg))
-            + (endRate.map {
-                String(format: "; the rate leaving it is %.1f °/s, under the %.0f °/s the sweep "
-                       + "is trimmed at", abs($0), config.continueRateDegS)
-            } ?? "; no heading series here — the run had no COG above turnCogSpeedFloor")
+        if let intoRate {
+            sweepDetail += String(format: "; trimmed to the part turning faster than %.0f °/s "
+                                  + "— the step into its last sample ran at %.1f °/s",
+                                  config.continueRateDegS, abs(intoRate))
+            if let outRate {
+                sweepDetail += String(format: ", the step out at %.1f °/s", abs(outRate))
+            }
+        } else {
+            sweepDetail += "; no heading series here — the run carried no COG above "
+                + "turnCogSpeedFloor"
+        }
         add("Sweep end", sweepDetail, atRt: rt(record.endTs), rule: "turnContinueRate",
             note: noteFor("turnContinueRate"))
 
