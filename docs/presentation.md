@@ -35,14 +35,25 @@ effort orange (a record is something the rider *did*, not a verdict).
 
 ## Clean jibe — the name of the strict verdict, and how it is spelled
 
-**A clean jibe is a counted jibe you fly all the way through, carrying your speed — no
-touchdown, no swim, at or above the success threshold of your entry speed.**
+**A clean jibe is a counted jibe you fly all the way through, carrying your speed, and stay
+up for ten seconds after — no touchdown, no swim, at or above the success threshold of your
+entry speed.**
 
 That is the engine's per-turn `clean` flag, and every surface reads it rather than
-re-deriving it: `counted && type == jibe && success && outcome == flew_through`
-(`docs/algorithms.md`, "Turn detection & classification"). No parameter moved; the metric
-was called "turn success" or "carried through" or "held speed" on four screens and is
-called one thing on all of them.
+re-deriving it: `counted && type == jibe && success && outcome == flew_through`, plus a quiet
+`turnCleanQuietS` after the sweep (`docs/algorithms.md`, "The quiet tail"). The metric was
+called "turn success" or "carried through" or "held speed" on four screens and is called one
+thing on all of them.
+
+**The quiet tail is the third clause, and it arrived on 7 Sep 2026** (engine 0.17.0). Jan:
+*"an additional requirement for a clean jibe: no touch down or fall within 10 s afterwards.
+This only applies to clean jibe, not to carried through."* A turn's outcome window closes as
+soon as the rider is flying again, so a jibe powered straight out of is judged over two
+seconds and the touchdown at +7 s belongs to the flight-end channel — right for the ladder,
+wrong for the word. On the corpus it costs 15 clean jibes in 278. Only `clean` moves: the
+outcome chip, the score, the counts and both streaks say exactly what they said before, which
+is why a rider who reads "flew through" over a jibe with no star has to be told why — see
+"Turn detail".
 
 **Until engine 0.12.0 clean was the `success` flag alone** — the score verdict, deliberately
 independent of how the turn *ended*. That let a jibe be starred as clean on the map and
@@ -57,7 +68,7 @@ reads is:
 | tier | what it asks | engine |
 |---|---|---|
 | **flew through** | did the foil survive the turn *and* the recovery out of it — no touchdown, no swim | `outcome == flew_through` |
-| **clean** | that, **and** did it hold its speed — a jibe word | the per-turn `clean` flag |
+| **clean** | that, **and** did it hold its speed, **and** were the ten seconds after it quiet — a jibe word | the per-turn `clean` flag |
 
 `success` / `turnsSuccessful` / `successPct` / `tacksSuccessful` — the score verdict on its
 own, over every counted turn — is an **internal** quantity. It is the input to `clean` and
@@ -1506,6 +1517,14 @@ with the values in force from `TurnConfig` rather than prose that could drift:
 | (no band) | `… endTs + minSpeedLagS` | `minKn` is searched to here, so "low" may sit *after* "out" — the footnote says so |
 | `outcome` | `endTs … endTs + outcomeLookaheadS` | stop, recovery and the verdict |
 | lighter, inside `outcome` | `endTs … recoverRt` | the recovery: where the speed was back at `turnRecoverPct` |
+| `quiet` (a dashed rule, no band) | `endTs + turnCleanQuietS` | the clean jibe's quiet tail (engine 0.17.0) — the last instant a touchdown or a fall still costs this jibe its star |
+
+The `quiet` rule is drawn **only where it fits inside the drawn window**, which at the default
+10 s against the drawing's own 8 s of run-out means usually not at all: a rule clipped off the
+right edge is a mark nobody can read, and widening the frame for it would redraw every turn to
+make room for a line most turns do not need. Its caption steps aside where it would print over
+the `outcome` band's word. Either way the footnote carries the number, in one sentence: *"A
+clean jibe also needs N s after the sweep with no touchdown, fall or wrist under."*
 
 The strip carries one more rule, dashed and captioned `axis`, at `axisTs − ts` — the same
 crossing the drawing ticks. It has **no dot**: the other three rules each mark a speed the
@@ -1545,8 +1564,28 @@ gave no crossing: "he started on the axis" and "nobody knows where the axis was"
 sentences and only the second is ever true here. The footnote gains one sentence saying what
 the tick is.
 
-**The chips under the numbers**, in order: the outcome, `clean` where the engine says so,
-`pumped out` where `pumped`, `wrist under` where `submerged`.
+**The chips under the numbers**, in order: the outcome, `clean` where the engine says so —
+or, since 0.17.0, **why not** where the engine says that instead — `pumped out` where
+`pumped`, `wrist under` where `submerged`.
+
+- **"not clean · …" is the chip that explains a missing star.** A jibe that flew through and
+  held its speed and is still not clean used to leave the page saying "flew through" and
+  nothing else, with the star simply absent — which reads as a bug, not a verdict. The chip
+  reads the engine's `cleanBlockedBy` and says it in rider words, in the neutral ink with a
+  crossed-star glyph (never the clean mint: it is the absence of that verdict, not a weaker
+  one). The `clean` chip's own rule is untouched — it reads the engine's flag and only it, so
+  the two can never both appear.
+
+  | `cleanBlockedBy` | chip |
+  |---|---|
+  | `quiet_flight_end` | `not clean · touched down 6 s after` — the seconds come from the flight end the engine's own rule found, and where the stored document carries none the chip says `not clean · touched down after` rather than inventing a number |
+  | `quiet_off_foil` | `not clean · off the foil after` |
+  | `quiet_submerged` | `not clean · wrist under after` |
+  | `axis_after` | `not clean · carried 18° past the axis` — the engine's `axisAfterDeg`, an integer; `not clean · short of the axis` where the crossing was not measured |
+
+  Nothing is said on a jibe the **outcome** or the **score** already refused: those the page
+  prints in its own words two rows up ("touched down", "held 61 % of entry speed"), and the
+  engine writes no reason for them either.
 
 - **"pumped out" carries the count**: `pumped out · 7 strokes`, and `1 stroke` in the
   singular. The number is the engine's — the sum of `strokes` over the pump episodes whose
@@ -1571,16 +1610,26 @@ It is a ladder of specificity, first match wins, and the ordering is the contrac
 | 4 | `pumpedOut` | `pumped` | pumped back out, with the stroke count and `offFoilS` when there is one of each |
 | 5 | `touchdownOnExit` | touchdown, low point **at or after** halfway | held it in, lost it after |
 | 6 | `touchdownComingIn` | touchdown, low point **before** halfway | the speed was already gone going in |
-| 7 | `cleanAndFast` | `success && score ≥ 0.85` | clean, and barely slowed |
-| 8 | `cleanButSlow` | `flew_through && score < 0.7` | flew through, and it cost |
-| 9 | `slowedEarly` | low point before halfway | the speed went before the mid-point |
-| 10 | `slowedLate` | low point at or after halfway | carried it in, lost it on the way out |
-| 11 | `plain` | nothing above, or no usable geometry | the three numbers, said plainly |
+| 7 | `quietFlightEnd` | `cleanBlockedBy == quiet_flight_end` | you rode the turn, the foil went a few seconds later |
+| 8 | `quietOffFoil` | `cleanBlockedBy == quiet_off_foil` | the turn was there, the seconds after it were not |
+| 9 | `quietSubmerged` | `cleanBlockedBy == quiet_submerged` | came through carrying it, wrist under just after |
+| 10 | `axisAfter` | `cleanBlockedBy == axis_after` | held the speed, did not come far enough past the axis |
+| 11 | `cleanAndFast` | `success && score ≥ 0.85` | clean, and barely slowed |
+| 12 | `cleanButSlow` | `flew_through && score < 0.7` | flew through, and it cost |
+| 13 | `slowedEarly` | low point before halfway | the speed went before the mid-point |
+| 14 | `slowedLate` | low point at or after halfway | carried it in, lost it on the way out |
+| 15 | `plain` | nothing above, or no usable geometry | the three numbers, said plainly |
 
-Rungs 1 and 7 are the same score test read from the two sides of the outcome, which is what
+Rungs 1 and 11 are the same score test read from the two sides of the outcome, which is what
 keeps `cleanAndFast` honest without a `clean` clause of its own: every fall and every
-touchdown has been taken by a rung above it, so by the time the ladder reaches 7 the turn
-flew through, and for a jibe that is exactly `clean` (engine 0.12.0). `fellInFast` exists
+touchdown has been taken by a rung above it, so by the time the ladder reaches it the turn
+flew through, and for a jibe that is exactly `clean` (engine 0.12.0).
+
+**Rungs 7–10 exist because that stopped being true in 0.17.0.** A jibe the quiet tail or the
+axis gate refused *did* fly through and *did* hold its speed, so `cleanAndFast` would have
+called it clean and said so out loud, one line under a chip saying it was not. They sit
+immediately above it, in the order the engine settles the reason in, and each says the one
+thing the rider could not see. `fellInFast` exists
 because that turn — the speed held all the way round, the foil gone in the recovery tail —
 is the one the old rule called clean, and the one sentence that must say both things.
 
@@ -1763,10 +1812,10 @@ out of it.
 
 ## Tuning — the thresholds on sliders, in the dev build, on one phone
 
-**What it is.** Settings → Tuning puts 24 of the docs/algorithms.md parameters on sliders so
+**What it is.** Settings → Tuning puts 25 of the docs/algorithms.md parameters on sliders so
 a threshold can be tried against a real library in a minute instead of an afternoon: turn
 detection and scoring (`turnMinAngle`, `turnClassifyMinAngle`, `turnAxisBeforeDeg`,
-`turnAxisAfterDeg`, `turnMaxDuration`,
+`turnAxisAfterDeg`, `turnCleanQuietS`, `turnMaxDuration`,
 `turnPeakRate`, `turnContinueRate`, `turnMinArc`, `turnMinRadius`, `entrySpeedWindow`,
 `minSpeedLag`, `turnSuccessPct`), the stop ladder (`turnStopSpeedFloor`,
 `turnTouchdownMaxStop`, `turnFallStop`, `turnOutcomeLookahead`, `turnRecoverPct`,
@@ -1786,7 +1835,7 @@ by a dev build installed over the same bundle id is not even read.
 outcomes, clean jibes, records, trends, periods and the share card are all derived from the
 same analysis. So a moved slider marks the whole library stale by the mechanism an engine
 bump already uses: the overrides' fingerprint rides in the analysis' `engineVersion` as
-`0.15.0+tuned.<n>.<hash8>` (`TuningStamp`), which is the string `reanalyzeStale()`,
+`0.17.0+tuned.<n>.<hash8>` (`TuningStamp`), which is the string `reanalyzeStale()`,
 `SessionArchive.analysis(for:)` and `SessionStore.detail(for:)` already compare on. Sessions
 re-derive lazily on open and in bulk at the next launch; "Re-analyse all sessions now" is the
 same trip taken immediately, and leaving the page takes it automatically.
@@ -1798,7 +1847,7 @@ same trip taken immediately, and leaving the page takes it automatically.
 | session header, beside the discipline badge | `tuned · N` chip | that session's stored `engineVersion` |
 | session page, in the divergence banner's slot | "Analysed with tuned thresholds (N changed) — Settings → Tuning" | that session's analysis |
 | Records header, Trends header | `tuned thresholds · N` chip | the *current* setting — these are aggregates over the library |
-| Settings → About | `0.15.0 · dev` | the build variant itself |
+| Settings → About | `0.17.0 · dev` | the build variant itself |
 | turn detail footnote | "Measured at: turnSuccessPct 70 % · minSpeedLag 2 s · turnOutcomeLookahead 12 s" | the analysis' own `config` echo |
 
 The session-level marks read the *analysis*, not the current setting, because a session

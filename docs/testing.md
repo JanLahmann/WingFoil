@@ -225,6 +225,18 @@ metre, because a GPX carries the FIT's own `<ele>`. The presentation goldens' `s
 with it — same key, and it now counts episodes rather than the turns and ends the mask was
 flagged on (29 Aug: **7 → 35**), which is the whole point of the change.
 
+Engine 0.17.0 gives **the clean jibe a quiet tail**, and it is the first golden diff since
+0.14.0 that moves a number the rider reads. `turnCleanQuietS` (**10 s**) joins `config` and
+`cleanBlockedBy` joins each entry of `turns` (docs/algorithms.md, "The quiet tail"): a counted
+jibe is clean only if the ten seconds after its sweep carry no touchdown/fell-in flight end, no
+off-foil spell of 1 s or more and no submerged sample. Across the seventeen fixtures **ten
+`clean` flags flip to false and nothing else changes** — `jibesSuccessful` and
+`cleanJibesPerHour` follow them, 160 → 150 clean jibes, and every other key in every golden is
+byte-identical, `success` and the outcome ladder included. That is the check that says this is
+a `clean` change: the diff is the version stamp, the two new keys, ten booleans and the two
+numbers derived from them. The presentation goldens move only in `cleanJibes` (the star layer),
+by the same ten. Over the 21-session corpus it reads 278 → 263.
+
 ### Fixture provenance — one converted recording, and why
 
 Every fixture in `fixtures/sessions/**` is one of Jan's own recordings kept as it came off
