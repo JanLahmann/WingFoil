@@ -797,7 +797,9 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
         foilTimeS = s.foilTimeS
         flightCount = s.flightCount
         longestFlightS = s.longestFlightS
-        longestFlightM = s.longestFlightM
+        // The stored column keeps its name (renaming it is a migration for no new fact);
+        // the engine's key is `maxFlightM` since 0.13.0 — same number, honester name.
+        longestFlightM = s.maxFlightM
 
         let r = analysis.records
         best2sKn = r.best2sKn
