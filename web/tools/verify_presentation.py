@@ -46,6 +46,12 @@ Six groups:
    that its framing puts the ride in exactly the box the plain card gives it. The tiles are
    not fetched and no canvas is drawn: what could be wrong here is the arithmetic, and the
    arithmetic is pure (`web/js/cardmap.js`).
+6. **Why a turn is a touchdown or a fall** (engine 0.18.0). The one line under a turn's
+   outcome is the same sentence the phone prints under its chips, so it is re-derived here in
+   Python and compared with what `web/js/viz.js` actually produces, over every turn of every
+   fixture — plus the shapes the corpus cannot supply, the retired pump rung above all. The
+   engine's half is asserted too: a reason on exactly the touchdowns and falls, never on a
+   fly-through, and never a code the contract does not know.
 
 Exit 0 = everything matched; exit 1 = the failures are listed.
 """
@@ -1223,6 +1229,125 @@ def check_card_map(got: dict) -> None:
 # --------------------------------------------------------------------- main
 
 
+# ------------------------------------------- 6. why a turn is a touchdown or a fall
+
+OUTCOME_TEXT = TOOLS / "outcome_text.mjs"
+
+#: km/h to knots, for the one wording that names a config speed in the rider's unit.
+KMH_TO_KN = 1 / 1.852
+
+
+def _secs(value: float) -> str:
+    """Whole seconds, **half away from zero** — `Math.round` in the JavaScript,
+    `Double.rounded()` in the Swift. Spelled out rather than left to `format`, because
+    `"%.0f" % 4.5` is `"4"` (banker's) while `(4.5).toFixed(0)` is `"5"`, and a stop of
+    exactly 4.5 s is an ordinary reading at 1 Hz."""
+    return str(math.floor(value + 0.5))
+
+
+def expected_outcome_text(turn: dict, foil_exit_speed: float | None) -> str | None:
+    """The line the page must print under one turn's outcome, re-derived here in Python.
+
+    A third spelling of docs/presentation.md "Why it ended that way", against the JavaScript
+    that draws it (`outcomeText` in web/js/viz.js) and the Swift that draws the same sentence
+    on the phone (`TurnAnalytics.outcomeText`). Jan asked for "a short comment for the user why
+    a jibe is a touchdown or a fall"; a comment that says one thing on the phone and another on
+    the web is worse than no comment at all.
+
+    None on a fly-through — nothing happened — and None on a document written before engine
+    0.18.0, which carries no reason: a sentence rebuilt from `stoppedS` alone would be a guess
+    about a ladder that may not have been climbed that way.
+    """
+    reason = turn.get("outcomeReason")
+    if reason == "stop":
+        stopped = f"stopped {_secs(turn['stoppedS'])} s"
+        if turn["outcome"] == "fell_in":
+            return f"fell in · {stopped}"
+        return f"touchdown · {stopped}" + (", borderline" if turn["borderline"] else "")
+    if reason == "off_foil":
+        # "no stop", never "stopped 0 s": the rider did not stop, and a rounded zero reads as
+        # a measurement of one.
+        stop = (f"stopped {_secs(turn['stoppedS'])} s"
+                if math.floor(turn["stoppedS"] + 0.5) >= 1 else "no stop")
+        return f"touchdown · off the foil {_secs(turn['offFoilS'])} s, {stop}"
+    if reason == "submerged":
+        return "fell in · wrist under"
+    if reason == "pumped_marginal":
+        if foil_exit_speed is None:
+            return "touchdown · pumped out below min foil speed, no sample off the foil"
+        return (f"touchdown · pumped out below {foil_exit_speed * KMH_TO_KN:.1f} kn, "
+                "no sample off the foil")
+    return None
+
+
+#: The sentences the hand-made cases in `outcome_text.mjs` must produce. Written out rather
+#: than derived, because the whole point of them is the shapes the seventeen fixtures cannot
+#: supply — the pump rung above all, which no published-default run can reach any more.
+OUTCOME_TEXT_CASES = {
+    "pumpedMarginal": "touchdown · pumped out below 4.3 kn, no sample off the foil",
+    "pumpedMarginalNoConfig":
+        "touchdown · pumped out below min foil speed, no sample off the foil",
+    "offFoilNoStop": "touchdown · off the foil 2 s, no stop",
+    "offFoilWithStop": "touchdown · off the foil 2 s, stopped 1 s",
+    "borderline": "touchdown · stopped 4 s, borderline",
+    "fellInStopped": "fell in · stopped 7 s",
+    "fellInSubmerged": "fell in · wrist under",
+    "flewThrough": None,
+    "preReason": None,
+    "halfSecond": "fell in · stopped 7 s",
+}
+
+
+def check_outcome_text() -> None:
+    """The "why" line, over every turn of every fixture and the shapes none of them contain.
+
+    Two things are asserted. That the JavaScript's sentence is the Python's, per turn, on all
+    seventeen documents — which is the parity check. And that a reason is written down for
+    exactly the touchdowns and falls, never for a fly-through, which is the check that the
+    *engine* is holding up its half: a fly-through with a reason on it would print a sentence
+    explaining something that did not happen.
+    """
+    section("6. why a turn is a touchdown or a fall")
+    goldens = sorted(GOLDENS.glob(f"*{gen.SUFFIX}"))
+    node = shutil.which("node")
+    if not node:
+        print("  (skipped: node not on PATH — the why line unchecked)")
+        return
+    if not goldens:
+        print("  (skipped: no analysis goldens)")
+        return
+    try:
+        raw = subprocess.run([node, str(OUTCOME_TEXT), *[str(p) for p in goldens]],
+                             capture_output=True, text=True, check=True, cwd=REPO).stdout
+    except (subprocess.CalledProcessError, OSError) as exc:              # pragma: no cover
+        FAILED.append(f"  outcome_text.mjs failed\n{getattr(exc, 'stderr', exc)}")
+        return
+    got = json.loads(raw)
+
+    check("  the hand-made cases", got["cases"], OUTCOME_TEXT_CASES)
+
+    for entry in got["fixtures"]:
+        stem = Path(entry["file"]).name[: -len(gen.SUFFIX)]
+        doc = json.loads((REPO / entry["file"]).read_text(encoding="utf-8"))
+        exit_speed = (doc.get("config") or {}).get("foilExitSpeed")
+        turns = doc.get("turns", [])
+        want = [expected_outcome_text(t, exit_speed) for t in turns]
+        check(f"  {stem}: the why line, re-derived", entry["texts"], want)
+        # The engine's half of the contract: a reason exactly where there is something to
+        # explain. `glide_out` never appears on a turn — that is a flight-end word — so the
+        # three outcomes partition the list.
+        check(f"  {stem}: a reason on every touchdown and fall, and on nothing else",
+              sorted({t["outcome"] for t in turns
+                      if (t.get("outcomeReason") is None) == (t["outcome"] != "flew_through")}),
+              [])
+        # And the reason is one the contract knows.
+        check(f"  {stem}: no unknown reason code",
+              sorted({t["outcomeReason"] for t in turns
+                      if t.get("outcomeReason") is not None}
+                     - {"stop", "off_foil", "submerged", "pumped_marginal"}),
+              [])
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -1251,6 +1376,7 @@ def main(argv=None) -> int:
     check_card_text()
     check_period_card()
     check_outline_stack()
+    check_outcome_text()
 
     _close_section()
     print(f"\n{PASSED} passed, {len(FAILED)} failed")
