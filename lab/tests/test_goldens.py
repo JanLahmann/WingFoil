@@ -236,15 +236,15 @@ def test_wet_per_hour_counts_straight_falls_as_well_as_turn_falls():
 def test_jibes_per_hour_counts_only_the_jibes_he_sailed_out_of():
     """The 0.7.0 numerator: dry jibes, not every jibe the detector named.
 
-    2026-08-29 is the session that shows the size of it -- 56 jibes, 6 of them swum, so the
-    headline reads 26.7 an hour and not 29.9. A rider cannot raise this number by falling
+    2026-08-29 is the session that shows the size of it -- 55 jibes, 5 of them swum, so the
+    headline reads 26.7 an hour and not 29.3. A rider cannot raise this number by falling
     more often, which is the whole point of the change.
     """
     a = analyze(CIQ_LONG)
     g = build_golden(a)
     s = g["summary"]
     jibes, fell = s["turns"]["jibes"], s["turns"]["jibeOutcomes"]["fellIn"]
-    assert (jibes, fell) == (56, 6)
+    assert (jibes, fell) == (55, 5)
 
     # The per-turn list and the tally agree on what "dry" means -- flew-through and
     # touchdown alike, because pumping back up out of a touchdown is a jibe he made.
@@ -265,16 +265,16 @@ def test_jibes_per_hour_counts_only_the_jibes_he_sailed_out_of():
     assert s["turnsPerHour"] == pytest.approx(dry_turns / hours, abs=0.05)
     assert s["jibesPerHour"] < jibes / hours
 
-    # And CPH is the stricter reading of the same 56 jibes: 25 he rode all the way through,
-    # 13.3 an hour against the dry 26.7. Never above JPH -- since engine 0.12.0 a clean jibe
+    # And CPH is the stricter reading of the same 55 jibes: 26 he rode all the way through,
+    # 13.9 an hour against the dry 26.7. Never above JPH -- since engine 0.12.0 a clean jibe
     # is a `flew_through` one by *definition* and not merely in practice, so the nesting is
     # structural: every clean jibe is one of the 50 dry ones.
     clean = s["turns"]["jibesSuccessful"]
-    assert clean == 25
-    assert s["cleanJibesPerHour"] == pytest.approx(clean / hours, abs=0.05) == 13.3
+    assert clean == 26
+    assert s["cleanJibesPerHour"] == pytest.approx(clean / hours, abs=0.05) == 13.9
     assert s["cleanJibesPerHour"] < s["jibesPerHour"]
     assert clean <= outcomes["flewThrough"]
-    # 0.12.0's whole point: `success` alone starred jibes the rider swam out of. Three of the
+    # 0.12.0's whole point: `success` alone starred jibes the rider swam out of. Two of the
     # 28 turns that passed the score verdict did not fly through, and are no longer clean.
     assert sum(1 for t in a.turns if t.counted and t.kind == "jibe" and t.success) == 28
 

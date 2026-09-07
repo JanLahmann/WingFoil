@@ -757,8 +757,8 @@ import Testing
     ///
     /// Asserted against a decoded golden rather than a hand-built session, for the reason
     /// `ReplayBeatsTests` gives: a synthetic analysis can be made to agree with any rule at
-    /// all. Under engine 0.14.0's slower detector 29 Aug Torbole has 56 counted turns
-    /// (37 · 13 · 6), 22 uncounted ones, and seven splashes across three turns and four
+    /// all. Under engine 0.14.0's lower peak floor 29 Aug Torbole has 56 counted turns
+    /// (38 · 12 · 6), 20 uncounted ones, and seven splashes across three turns and four
     /// straight-line flight ends.
     @Test func thumbnailEventsAreTheLadderPlusTheSplashes() throws {
         let url = testFixturesDir.appendingPathComponent(
@@ -768,12 +768,12 @@ import Testing
         let events = TrackThumbnail.events(analysis)
         let counts = Dictionary(grouping: events, by: \.kind).mapValues(\.count)
 
-        #expect(counts[.flewThrough] == 37)
-        #expect(counts[.touchdown] == 13)
+        #expect(counts[.flewThrough] == 38)
+        #expect(counts[.touchdown] == 12)
         #expect(counts[.fellIn] == 6)
         #expect(counts[.splash] == 7)
-        // 78 turns in the session, 56 of them counted: the twenty-two course changes are
-        // not verdicts and are not marked.
+        // 76 turns in the session, 56 of them counted: the twenty course changes are not
+        // verdicts and are not marked.
         #expect(events.count == 63)
         #expect(events.map(\.t) == events.map(\.t).sorted(), "marks must be in time order")
     }

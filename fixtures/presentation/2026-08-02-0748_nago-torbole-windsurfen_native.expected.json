@@ -9,9 +9,9 @@
     "flewThrough": 17,
     "touchdown": 21,
     "fellIn": 6,
-    "courseChange": 3
+    "courseChange": 4
   },
-  "cleanJibes": 6,
+  "cleanJibes": 9,
   "flightEnds": {
     "drawn": 8,
     "ownedByTurn": 11,
@@ -46,25 +46,25 @@
     {
       "type": "both",
       "side": "port",
-      "count": 21,
+      "count": 20,
       "flewThrough": 10
     },
     {
       "type": "both",
       "side": "starboard",
-      "count": 15,
+      "count": 16,
       "flewThrough": 5
     },
     {
       "type": "jibes",
       "side": "both",
-      "count": 36,
+      "count": 35,
       "flewThrough": 15
     },
     {
       "type": "jibes",
       "side": "port",
-      "count": 21,
+      "count": 20,
       "flewThrough": 10
     },
     {
@@ -76,7 +76,7 @@
     {
       "type": "tacks",
       "side": "both",
-      "count": 0,
+      "count": 1,
       "flewThrough": 0
     },
     {
@@ -88,7 +88,7 @@
     {
       "type": "tacks",
       "side": "starboard",
-      "count": 0,
+      "count": 1,
       "flewThrough": 0
     }
   ]
