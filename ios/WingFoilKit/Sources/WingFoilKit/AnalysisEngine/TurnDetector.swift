@@ -61,6 +61,26 @@ public struct TurnConfig: Sendable, Equatable {
     public var outcomeWindowS: Double = 12.0
     /// turnBaroDrop: apparent altitude below the session median that means "submerged".
     public var baroDropM: Double = 25.0
+    /// turnPumpedOutIsTouchdown (engine 0.18.0), **on by default**. Gates the pump rung: a turn
+    /// with no off-foil sample at all is a `touchdown` when the accelerometer heard a burst in
+    /// the window *and* a sample fell below `foilExitSpeedKmh`.
+    ///
+    /// **That speed is the change.** It was `foilEntrySpeedKmh` (12 km/h, where a *flight
+    /// starts*) until 0.17.0, and entry speed is the wrong question — the speed below which the
+    /// foil stops carrying is the exit speed. Jan, 7 Sep 2026: *"change to '…below min foil
+    /// speed…'"*. His Jibe 50 of 4 Sep 07:58 sagged to 5.5 kn = 10.2 km/h, below entry and well
+    /// above exit, and was called a touchdown by this rule alone — no off-foil sample, no stop,
+    /// no wrist under. He flew it.
+    ///
+    /// **At the exit speed the rung can no longer fire, and that is the point.** `flying` is
+    /// defined as in a flight, not submerged, and `speed > foilExitSpeed`
+    /// (`Evidence.flyingMask`), so on the branch this rung lives on — no non-flying sample
+    /// anywhere in the window — `marginal` is provably false. The switch is kept, and kept on,
+    /// because it is the rule being retired and not the reading behind it; `pumped` and the
+    /// "pumped out · N strokes" chip are untouched either way. Over the 21-session corpus the
+    /// rung is the sole reason for **13 of 270 jibe touchdowns**, 3 of which held their speed.
+    /// The watch keeps the old rule at the old speed (docs/algorithms.md, "Watch divergences").
+    public var pumpedOutIsTouchdown = true
 
     public init() {}
 }
@@ -81,6 +101,26 @@ public enum TurnOutcome: String, Sendable, Codable {
     case flewThrough = "flew_through"
     case touchdown
     case fellIn = "fell_in"
+}
+
+/// **Which rung of the ladder decided the outcome** (engine 0.18.0).
+///
+/// A code, never a sentence: the words are presentation's (`TurnAnalytics.outcomeText` here,
+/// `outcomeText` in `web/js/viz.js`), so the phone and the site say one thing and the engine
+/// says none of it. nil — the fourth state, and the common one — is a fly-through: nothing
+/// happened, so there is nothing to explain.
+public enum OutcomeReason: String, Sendable, Codable {
+    /// A stop past `turnTouchdownMaxStop` (a borderline touchdown) or past `turnFallStop`.
+    case stop
+    /// Off the foil, with no stop long enough to be worth naming.
+    case offFoil = "off_foil"
+    /// The wrist went under, and that is what decided the fall.
+    case submerged
+    /// The pump rung fired: a burst below the minimum foiling speed with no sample off the
+    /// foil at all. Unreachable at the published defaults since 0.18.0 (see
+    /// `TurnConfig.pumpedOutIsTouchdown`); the code and its wording are kept so a document
+    /// written by an older engine, or a tuned run, still reads.
+    case pumpedMarginal = "pumped_marginal"
 }
 
 /// **Why a counted jibe that got this far is still not clean** (engine 0.17.0).
@@ -142,6 +182,9 @@ public struct Turn: Sendable, Equatable {
     /// arcM ÷ |netDeg| in radians: how tightly it carved.
     public var radiusM: Double = 0
     public var outcome: TurnOutcome = .flewThrough
+    /// **Why** (engine 0.18.0), or nil on a fly-through. Set on the same branch that sets
+    /// `outcome`, so the two can never disagree.
+    public var outcomeReason: OutcomeReason?
     /// The stop landed in the ambiguous 3–5 s band.
     public var borderline = false
     public var offFoilS: Double = 0
@@ -939,10 +982,14 @@ public enum TurnDetector {
         return nil
     }
 
-    /// Three-way outcome for one turn (docs/algorithms.md "Turn outcome", steps 0–5).
+    /// Three-way outcome for one turn (docs/algorithms.md "Turn outcome", steps 0–5), and the
+    /// reason for it.
     ///
     /// Every scan is bounded to the window's index range by binary search: the evidence
     /// arrays span the whole session, and an outcome window is a handful of seconds of it.
+    ///
+    /// `outcomeReason` names the rung that decided the verdict and is nil on a fly-through.
+    /// Mirrors `_outcome` in `lab/src/wingfoil_lab/turns.py`.
     static func outcome(_ turn: inout Turn, ev: OffFoilEvidence, config: TurnConfig,
                         pump: PumpTrack?) {
         let t = ev.t
@@ -959,10 +1006,20 @@ public enum TurnDetector {
             turn.borderline = false
             turn.offFoilS = 0
             turn.stoppedS = 0
+            // Nothing off the foil at all. The corroborating speed is the **exit** speed since
+            // 0.18.0 — the speed below which the foil stops carrying, not the one a flight
+            // starts at — which is why this rung no longer fires: `flying` already requires
+            // speed above it. Left standing, gated and measured, rather than deleted.
             let marginal = win.contains {
-                ev.speed[$0] < config.foilEntrySpeedKmh * kmhToMps
+                ev.speed[$0] < config.foilExitSpeedKmh * kmhToMps
             }
-            turn.outcome = (turn.pumped && marginal) ? .touchdown : .flewThrough
+            if config.pumpedOutIsTouchdown && turn.pumped && marginal {
+                turn.outcome = .touchdown
+                turn.outcomeReason = .pumpedMarginal
+            } else {
+                turn.outcome = .flewThrough
+                turn.outcomeReason = nil
+            }
             return
         }
 
@@ -974,9 +1031,16 @@ public enum TurnDetector {
         if turn.submerged || turn.stoppedS > config.fallStopS {
             turn.outcome = .fellIn
             turn.borderline = false
+            // The wrist wins the wording when it is what decided: the mask is proof of a swim
+            // wherever it appears and it is tested first, so a submerged fall is named after
+            // the wrist even where the stop would have carried the verdict on its own.
+            turn.outcomeReason = turn.submerged ? .submerged : .stop
         } else {
             turn.outcome = .touchdown
             turn.borderline = turn.stoppedS > config.touchdownMaxStopS
+            // A stop long enough to be worth naming (the borderline band) is what the reader
+            // is told about; a short touch is off-foil time and nothing more.
+            turn.outcomeReason = turn.borderline ? .stop : .offFoil
         }
     }
 
