@@ -16,6 +16,8 @@ import WingFoilKit
 struct TurnDetailStripView: View {
     let slice: TurnSlice
     let ghost: TurnSlice?
+    /// The windows this analysis was measured with — the bands are drawn to them.
+    var windows = Windows()
     /// Seconds from the turn's start; nil when nothing is being scrubbed.
     @Binding var playheadRt: Double?
 
@@ -32,7 +34,7 @@ struct TurnDetailStripView: View {
             // Every window the engine reads, drawn and named (Jan, 7 Sep 2026: "it's not
             // clear when the jibe starts and ends, and what extended windows we look at").
             // Entry: the seconds before the sweep the entry speed is the maximum of.
-            RectangleMark(xStart: .value("Entry window", -Self.config.entrySpeedWindowS),
+            RectangleMark(xStart: .value("Entry window", -windows.entryS),
                           xEnd: .value("Turn start", 0))
                 .foregroundStyle(Color.secondary.opacity(0.10))
                 .annotation(position: .bottom, alignment: .center, spacing: 2) {
@@ -49,7 +51,7 @@ struct TurnDetailStripView: View {
             // ends where the speed was back at the recovery threshold — flying again.
             RectangleMark(xStart: .value("Turn end", slice.speed.exitRt),
                           xEnd: .value("Outcome window",
-                                       slice.speed.exitRt + Self.config.outcomeLookaheadS))
+                                       slice.speed.exitRt + windows.outcomeS))
                 .foregroundStyle(TurnOutcomeStyle.color(.touchdown).opacity(0.05))
                 .annotation(position: .bottom, alignment: .center, spacing: 2) {
                     windowLabel("outcome")
@@ -116,8 +118,21 @@ struct TurnDetailStripView: View {
     /// with "low", which is inside the sweep.)
     private static let captionGapS = 1.5
 
-    /// The engine's own windows, so the strip is labelled with the numbers in force.
-    private static let config = TurnConfig()
+    /// The engine's windows, read off the analysis' own config echo so the strip is drawn
+    /// to the numbers in force — on a tuned dev build those are not `TurnConfig()`'s.
+    struct Windows {
+        var entryS: Double = TurnConfig().entrySpeedWindowS
+        var minLagS: Double = TurnConfig().minSpeedLagS
+        var outcomeS: Double = TurnConfig().outcomeLookaheadS
+
+        init() {}
+
+        init(config: AnalysisConfig) {
+            entryS = config.entrySpeedWindow ?? entryS
+            minLagS = config.minSpeedLag ?? minLagS
+            outcomeS = config.turnOutcomeLookahead
+        }
+    }
 
     /// The small word under a window band.
     private func windowLabel(_ text: String) -> some View {

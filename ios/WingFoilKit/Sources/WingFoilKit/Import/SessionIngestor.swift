@@ -115,8 +115,13 @@ public struct SessionIngestor: Sendable {
     public var flightConfig = FlightConfig()
     public var recordsConfig = RecordsConfig()
     /// Carries the rider's declared `defaultTurnType` into the wind estimator
-    /// (docs/algorithms.md "Default turn type"). The only engine parameter the app exposes.
+    /// (docs/algorithms.md "Default turn type").
     public var windConfig = WindConfig()
+    /// Settings → Tuning: the published thresholds, moved by hand on this phone
+    /// (`TuningOverrides`). Empty on every install that has not touched the page, and an empty
+    /// set applies nothing and stamps nothing — an untuned library is byte-identical to one
+    /// produced by a build without the feature.
+    public var tuning = TuningOverrides()
     public var dedupeToleranceS: TimeInterval = 60
     public var spotRadiusM: Double = SpotClusterer.defaultRadiusM
 
@@ -318,14 +323,31 @@ public struct SessionIngestor: Sendable {
 
     // MARK: - Analysis access (lazy re-analysis)
 
+    /// What a document produced *by this ingestor* is stamped with: the engine version, plus
+    /// the tuning fingerprint where the rider has moved a threshold (`TuningStamp`). It is the
+    /// staleness key everything below compares on, which is what makes a moved slider behave
+    /// exactly like an engine bump — the library re-derives itself, lazily, on the next pass.
+    public var analysisVersion: String { tuning.engineVersionKey() }
+
     private func analyze(_ track: RawTrack) -> SessionAnalysis {
-        SessionSummarizer.analyze(track, filterConfig: filterConfig, flightConfig: flightConfig,
-                                  recordsConfig: recordsConfig, windConfig: windConfig)
+        let configs = tuning.apply(to: TuningOverrides.Configs(flight: flightConfig))
+        var analysis = SessionSummarizer.analyze(track, filterConfig: filterConfig,
+                                                 flightConfig: configs.flight,
+                                                 recordsConfig: recordsConfig,
+                                                 turnConfig: configs.turn,
+                                                 windConfig: windConfig,
+                                                 flightEndConfig: configs.flightEnd)
+        // The engine states its own version; the stamp is the *ingestor's* fact about how it
+        // was run, so it is applied here rather than threaded through the analyzer. On an
+        // untuned install this assignment changes nothing.
+        analysis.engineVersion = analysisVersion
+        return analysis
     }
 
     /// Cached `analysis.json`, recomputed from the archived FIT when missing or stale.
     public func analysis(for row: SessionRow) async throws -> SessionAnalysis {
-        if let cached = archive.analysis(for: row.id), row.engineVersion == cached.engineVersion {
+        if let cached = archive.analysis(for: row.id, engineVersion: analysisVersion),
+           row.engineVersion == cached.engineVersion {
             return cached
         }
         return try await reanalyze(row)
@@ -359,6 +381,11 @@ public struct SessionIngestor: Sendable {
     /// (plan §3.3, lazy re-analysis on an engine bump). The aggregate screens call this
     /// before they read, because a stale row would silently skew a whole trend line.
     /// Returns the number of sessions rebuilt.
+    ///
+    /// "The current one" includes the tuning fingerprint (`analysisVersion`), so moving a
+    /// slider in Settings → Tuning marks the whole library stale by exactly this rule and
+    /// gets exactly this sweep — no second mechanism, and no way to end up with half a
+    /// library on one set of thresholds and half on another.
     @discardableResult
     public func reanalyzeStale(progress: (@Sendable (Int, Int) -> Void)? = nil) async throws -> Int {
         let stale = try await database.writer.read { db in
@@ -367,7 +394,7 @@ public struct SessionIngestor: Sendable {
             // and the app would announce "re-derived 1 session" at every single launch.
             try SessionRow.filter(sql: """
                 isProvisional = 0 AND (engineVersion IS NULL OR engineVersion <> ?)
-                """, arguments: [AnalysisEngine.version])
+                """, arguments: [analysisVersion])
                 .order(Column("startDate")).fetchAll(db)
         }
         guard !stale.isEmpty else { return 0 }

@@ -177,6 +177,16 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
     public var turnMinArc: Double
     public var turnMinRadius: Double
     public var turnSuccessPct: Double
+    /// The four the echo used to leave out, and the tuning page put back (engine 0.14.0).
+    /// A parameter the rider can *move* is a parameter the page that shows its effect has to
+    /// be able to *name*: the turn-detail footnote labels the strip's windows with the numbers
+    /// actually in force, and it can only do that if they were written down. Optional so a
+    /// stored `analysis.json` from before them still decodes; such a row re-derives on its
+    /// version.
+    public var turnContinueRate: Double?
+    public var entrySpeedWindow: Double?
+    public var minSpeedLag: Double?
+    public var turnRecoverHold: Double?
     // The 3-way outcome ladder (shared by turns and flight ends)
     public var turnStopSpeedFloor: Double
     public var turnTouchdownMaxStop: Double
@@ -230,6 +240,10 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
         turnMinArc = turn.minArcM
         turnMinRadius = turn.minRadiusM
         turnSuccessPct = turn.successPct
+        turnContinueRate = turn.continueRateDegS
+        entrySpeedWindow = turn.entrySpeedWindowS
+        minSpeedLag = turn.minSpeedLagS
+        turnRecoverHold = turn.recoverHoldS
         turnStopSpeedFloor = turn.stopSpeedFloorMps
         turnTouchdownMaxStop = turn.touchdownMaxStopS
         turnFallStop = turn.fallStopS

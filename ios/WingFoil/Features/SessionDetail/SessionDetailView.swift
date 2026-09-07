@@ -100,6 +100,15 @@ struct SessionDetailView: View {
                             jump(to: "divergence", proxy: proxy)
                         }
                     }
+                    #if TUNING
+                    // One line, in the divergence banner's place and its register: a note
+                    // about where these numbers came from. Read off the *analysis*, not off
+                    // the current setting — a session analysed under tuned thresholds stays
+                    // marked until it is re-derived, which is the only honest answer.
+                    if let count = TuningStamp.changedCount(detail.analysis.engineVersion) {
+                        tunedBanner(count)
+                    }
+                    #endif
                     Section {
                         VStack(alignment: .leading, spacing: 20) {
                             body(of: tab, detail: detail)
@@ -351,6 +360,13 @@ struct SessionDetailView: View {
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(SessionDisplay.badgeColor(row).opacity(0.16), in: .capsule)
                         .foregroundStyle(SessionDisplay.badgeColor(row))
+                    #if TUNING
+                    // Beside the discipline badge, because it is the same kind of fact: what
+                    // this session *is*, before any of its numbers are read.
+                    if let count = TuningStamp.changedCount(row.engineVersion ?? "") {
+                        TunedChip(count: count, compact: true)
+                    }
+                    #endif
                 }
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -359,6 +375,31 @@ struct SessionDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
+
+    #if TUNING
+    /// The tuned-thresholds line, in the divergence banner's slot and its voice: one sentence
+    /// about the provenance of every number below it, and where to go and change it.
+    ///
+    /// Not dismissible, unlike the divergence banner. A divergence is a note about two sources
+    /// disagreeing and the reader can decide he has read it; this is a statement that the page
+    /// is not measuring by the published contract, and it goes away by re-analysing with the
+    /// defaults, not by being told to.
+    private func tunedBanner(_ count: Int) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "slider.horizontal.3")
+                .foregroundStyle(.secondary)
+            Text("Analysed with tuned thresholds (\(count) changed) — Settings → Tuning")
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.secondary.opacity(0.10), in: .rect(cornerRadius: 10))
+        .accessibilityElement(children: .combine)
+    }
+    #endif
 
     /// Said under the date when the session's clock was **guessed** — the longitude rung of
     /// the offset ladder (`SessionRow.zoneIsEstimated`, engine 0.9.1).

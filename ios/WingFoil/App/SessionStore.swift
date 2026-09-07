@@ -177,7 +177,8 @@ final class SessionStore {
         return try? JSONDecoder().decode(ReplayMusicTrack.self, from: data)
     }
 
-    /// `var` because one engine parameter is the rider's to set: `defaultTurnType`.
+    /// `var` because two engine settings are the rider's to move: `defaultTurnType`, and
+    /// — on this phone only — the tuning overrides (Settings → Tuning).
     var ingestor: SessionIngestor
     /// Lazy track thumbnails for the library rows.
     let thumbnails: ThumbnailStore
@@ -211,6 +212,12 @@ final class SessionStore {
         var ingestor = SessionIngestor(database: database!,
                                        archive: SessionArchive(root: archiveRoot))
         ingestor.windConfig.defaultTurnType = Self.storedDefaultTurnType
+        #if TUNING
+        // Dev build only. In the shipping app this assignment does not exist, so
+        // `ingestor.tuning` stays empty, the engine runs on the published defaults, and a
+        // `tuningOverrides.v1` left behind by a dev build on the same phone is never read.
+        ingestor.tuning = Self.storedTuning
+        #endif
         self.ingestor = ingestor
         // The thumbnail cache only ever touches the archive, never the analyzer, so its
         // copy of the ingestor does not need the engine parameter kept in step.
@@ -1024,6 +1031,68 @@ final class SessionStore {
         UserDefaults.standard.string(forKey: defaultTurnTypeKey)
             .flatMap(DefaultTurnType.init(rawValue:)) ?? WindConfig().defaultTurnType
     }
+
+    // MARK: - Tuning (dev build only — Settings → Tuning, this phone only)
+
+    #if TUNING
+    static let tuningKey = "tuningOverrides.v1"
+
+    /// The rider's tuning overrides (`TuningOverrides`), persisted as the bare parameter map.
+    ///
+    /// Unlike `defaultTurnType`, moving one of these *does* make every stored analysis stale:
+    /// the fingerprint rides in the analysis' `engineVersion` (`TuningStamp`), so the ordinary
+    /// lazy sweep — `reanalyzeStale()` on the next launch, and `analysis(for:)` on the next
+    /// session opened — re-derives the library with the new thresholds without anyone asking
+    /// it to. `reanalyzeTuned()` is the same trip taken now, with a count to watch.
+    var tuning: TuningOverrides {
+        get { Self.storedTuning }
+        set {
+            if let data = try? JSONEncoder().encode(newValue) {
+                UserDefaults.standard.set(data, forKey: Self.tuningKey)
+            }
+            ingestor.tuning = newValue
+        }
+    }
+
+    private static var storedTuning: TuningOverrides {
+        guard let data = UserDefaults.standard.data(forKey: tuningKey),
+              let decoded = try? JSONDecoder().decode(TuningOverrides.self, from: data)
+        else { return TuningOverrides() }
+        return decoded
+    }
+
+    /// Brings the library up to the thresholds currently set — the lazy sweep, run on demand
+    /// because a rider who has just moved a slider wants to see what it did, not to relaunch.
+    ///
+    /// Deliberately `reanalyzeStale` and not `rerunAnalysis`: after a tuning change *every*
+    /// row is stale by fingerprint, so the two do the same work — but this one is also correct
+    /// (and cheap) when nothing changed, which is what makes it safe to call on leaving the
+    /// page.
+    func reanalyzeTuned() async {
+        guard !isBusy else { return }
+        isBusy = true
+        defer { isBusy = false }
+        let ingestor = self.ingestor
+        let rows = sessions
+        let done = await Task.detached(priority: .userInitiated) {
+            (try? await ingestor.reanalyzeStale()) ?? 0
+        }.value
+        guard done > 0 else {
+            status = "Every session is already on these thresholds"
+            return
+        }
+        // Which parts of a track were flown moves with `foilEntrySpeed`, so the cached
+        // outlines are stale for exactly the same reason the summaries were.
+        for row in rows { thumbnails.invalidate(row.id) }
+        status = "Re-analysed \(done) session\(done == 1 ? "" : "s") "
+            + (tuning.isEmpty
+               ? "with the published thresholds"
+               : "with \(tuning.changedCount) tuned threshold"
+                 + "\(tuning.changedCount == 1 ? "" : "s")")
+        await load()
+        await refreshPersonalBests(celebrate: false)
+    }
+    #endif
 
     // MARK: - Apple Health (writing: opt-in, and only ever our own sessions)
 
