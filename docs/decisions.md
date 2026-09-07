@@ -2,6 +2,25 @@
 
 Newest first. One paragraph each: context → decision → consequence.
 
+## ADR-021 · A clean jibe needs a **quiet tail** — ten seconds, and only for clean
+A turn's outcome window closes at *recovery* (`turnRecoverPct` held for `turnRecoverHold`), so
+a jibe the rider powers straight out of is judged over a second or two and a touchdown at +7 s
+is a straight-line loss the flight-end channel counts. That is right for the ladder — charging one
+swim to two channels is exactly the double count the ownership rule exists to prevent — and
+wrong for the word: a rider swimming ten seconds after his jibe does not call it clean.
+Decision (Jan, 7 Sep 2026): **`turnCleanQuietS`, 10 s, as a third clause of `clean` only.**
+Over `[turnEnd, turnEnd + 10 s]`, on the same off-foil evidence and stopping at a recording
+gap, there may be no `touchdown`/`fell_in` flight end, no off-foil spell of 1 s or longer and
+no submerged sample; the turn keeps its outcome, its `success`, its score and its place in
+every count and streak. Consequence: engine **0.17.0**, clean jibes 160 → 150 over the
+committed fixtures and 278 → 263 over the 21-session corpus (about 5 %), one new per-turn key
+(`cleanBlockedBy`) so a page can say *why* a jibe has no star, one new tuning slider, and one
+new watch divergence — the wrist has no way to withdraw a count ten seconds later, so the watch
+now reports **more** clean jibes than the phone on a session with a fall shortly after a jibe.
+Rejected: 6 s (catches only the run-out, 5 jibes) and 15 s (takes jibes for a fall the turn did
+not cause, 23). Rejected too: making it a requirement for *carried through*, which is a
+measurement of the sweep and has no business reading a tail.
+
 ## ADR-020 · The Garmin data field is **dormant** — the app is the product
 ADR-002 chose a device app over a data field, and the field arrived later (0.1.0, 13 Aug 2026)
 as a companion for riders who wanted to keep Garmin's native Windsurf profile. Three weeks on:

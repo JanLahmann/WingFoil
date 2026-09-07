@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.16.0** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.17.0** (bump on any change that alters outputs; triggers phone re-analysis)
 
 ## Flight (foil) detection — hysteresis state machine
 
@@ -141,6 +141,7 @@ with a numeric offset (`+02:00`) is the exporter naming the local clock, and win
 | `turnClassifyMinAngle` | **90** | deg | the **classification** floor (engine ≥ 0.13.0). Below it a sweep is never named a tack or a jibe — **wind axis or not** — and is filed as the same uncounted bear-away/round-up the no-crossing branch already produces. A tack and a jibe both take the board through the wind and out the other side; a 70° sweep that happens to clip dead downwind is a rider bearing away, and calling it a jibe put a course change into the number he judges his session by. With no usable axis the two course-change labels are indistinguishable, so such a sweep takes the bear-away label — the verdict that matters, *not counted*, is the same either way. At or above the floor the rule is unchanged: tack/jibe by the crossings, or a counted `turn` (unclassified) with no usable axis |
 | `turnAxisBeforeDeg` | **0** | deg | the **first axis requirement** (engine ≥ 0.15.0), and off at its default. A sweep whose `axisBeforeDeg` — the angle between the TWA it started on and the axis it crosses — is below this is not a tack or a jibe: it is filed as the same uncounted `bear_away`/`round_up` the classification floor produces, and its three axis fields go null with the label. It asks the question `turnClassifyMinAngle` cannot: a 100° sweep that begins 10° off dead downwind and ends 90° past it has crossed the axis without ever having been *upwind of it*, which is a rider straightening out of a reach, not a jibe. At 0 nothing is refused |
 | `turnAxisAfterDeg` | **0** | deg | the **second axis requirement** (engine ≥ 0.15.0), and off at its default. A tack or a jibe whose `axisAfterDeg` — the furthest the heading carried past the axis, in the turn's own sense, by the end of the outcome window — is below this cannot be **carried**: `success` is false, and therefore so is `clean`. Jan's wording: *"it might be an additional requirement for a successful jibe to turn 30 deg after the axis. But not require that for a touch-down or failed jibe."* So it touches the score verdict and nothing else — the turn stays a counted jibe, its outcome ladder is untouched, and the JPH/TPH numerators do not move. At 0 nothing is refused |
+| `turnCleanQuietS` | **10** | s | the **quiet tail** (engine ≥ 0.17.0), and the third requirement of a clean jibe. Over `[turnEnd, turnEnd + this]`, measured on the same off-foil evidence the outcome ladder reads and stopping at a recording gap, there must be no `touchdown`/`fell_in` flight end, no off-foil spell of 1 s or longer, and no submerged sample. Jan's rule: *"no touch down or fall within 10 s afterwards. This only applies to clean jibe, not to carried through."* So it moves `clean` — and therefore `jibesSuccessful` and `cleanJibesPerHour` — and nothing else: not `success`, not the outcome, not a count, not a streak, not JPH or TPH. At 0 it asks nothing. The 1 s off-foil floor is a code constant (`CLEAN_QUIET_OFF_FOIL_S`), not a parameter: it is the resolution of the question, not a threshold to tune |
 | `turnMaxDuration` | 8 | s | window for the net change. Deliberately **not** widened to 12 s, and measured twice: a 12 s sweep pulls a slow exit into the scored minimum, and on the 17 fixtures that costs **26 clean jibes to buy 6 jibes** (18°/s at 8 s gives 538 jibes / 160 clean; at 12 s, 544 / 134). A carve longer than 8 s is therefore reported as the 8 s share of itself — a 10 s, 150° jibe counts as a 135° one, which is over `turnClassifyMinAngle` with room to spare and lands the verdict the rider reads. Counting it a little short beats scoring it a little more generously |
 | `turnPeakRate` | **18** | deg/s | at ≥1 sample (engine ≥ 0.14.0; was 25). Richterich's ~30–40°/s for ~4 s is a *pivoted* jibe; a **carved** one is a different maneuver. At 11 kn on a 25 m radius the board turns at a steady ~13°/s and never spikes at all, so a floor set at the pivot's peak rejected exactly the jibes the rider was riding best — on one flight of the 4 Sep afternoon, three of eight ridden reversals were invisible. 18°/s is the floor below which nothing new appears but grey course-change markers |
 | `turnContext` | ON_FOIL or ≤3 s after | | turns while swimming don't count |
@@ -262,7 +263,7 @@ and well clear of `turnClassifyMinAngle`.
 |---|---|---|
 | **flew through** | an *outcome*: the ladder found no touchdown and no fall in the tail past the sweep. One of three rungs, and the only one that is not a loss | `turn.outcome == "flew_through"` |
 | **carried** | the *score verdict*: `score ≥ turnSuccessPct` **and** the Doppler minimum stayed above `foilExitSpeed`. It says what the turn cost in speed and says nothing about how it ended | `turn.success` |
-| **clean** | **carried AND flew through**, and only for a **jibe**. The product's headline verdict (engine ≥ 0.12.0). A strict subset of both | `turn.clean`, `turns.jibesSuccessful`, `cleanJibesPerHour` |
+| **clean** | **carried AND flew through AND quiet for `turnCleanQuietS` afterwards**, and only for a **jibe**. The product's headline verdict (engine ≥ 0.12.0; the quiet tail since 0.17.0). A strict subset of both | `turn.clean`, `turns.jibesSuccessful`, `cleanJibesPerHour`; `turn.cleanBlockedBy` says why not |
 | **dry** | outcome is **not** `fell_in` — flew through *or* touched down. "He did not swim out of it" | the JPH and (since 0.13.0) TPH numerators |
 
 They nest: clean ⊂ flew through ⊂ dry. `carried` cuts across all three, which is exactly why
@@ -312,13 +313,14 @@ the end of the outcome window. The window is the defined one, because the questi
 before the COG rate fell below 5°/s.
 
 **Glossary — "clean jibe", the name the UIs use, and the one rule behind it (engine
-0.12.0).** A *clean jibe* is
+0.12.0, extended in 0.17.0).** A *clean jibe* is
 
 ```
 counted  AND  type == jibe  AND  success  AND  outcome == flew_through
+                                            AND  a quiet turnCleanQuietS after it
 ```
 
-— it carried its speed **and** it flew through. `success` is unchanged and still means what
+— it carried its speed, it flew through, **and** the seconds after it were quiet. `success` is unchanged and still means what
 it always did (`score >= turnSuccessPct` **and** the speed never dropped to `foilExitSpeed`
 across the *scored window*); it is still reported per turn and still what `tacksSuccessful`
 and `turnsSuccessful` count. What moved is that "clean" is no longer that flag on its own.
@@ -337,6 +339,66 @@ two verdicts are subtly different; he concludes the app is lying. So the outcome
 verdict, and clean became a strict **subset** of `flew_through` rather than a reading across
 it. `docs/presentation.md` ("Clean jibe") holds the spelling contract and the ink rule — the
 star keeps its own ink, because not every jibe that flew through is clean.
+
+### The quiet tail — a clean jibe needs ten seconds after it (engine 0.17.0)
+
+Jan, 7 Sep 2026: *"We should add an additional requirement for a clean jibe: 'no touch down or
+fall within 10 s afterwards'. This only applies to clean jibe, not to carried through."*
+
+**Why 0.12.0's outcome clause does not already cover it.** A turn's outcome window is not a
+fixed tail: it runs from the turn's start until the rider is demonstrably flying again
+(`turnRecoverPct` held for `turnRecoverHold`), capped at `turnOutcomeLookahead`. A jibe the
+rider powers straight out of therefore closes its window in a second or two — which is the
+right rule for the *ladder*, because a fall five seconds later is a straight-line loss the
+flight-end channel counts, and blaming the turn for it as well would charge one swim twice.
+It is the wrong rule for the *word*: a rider who is in the water ten seconds after his jibe
+does not call that jibe clean, whatever channel owns the swim.
+
+So `turnCleanQuietS` (**10 s**) asks one more question, of the same `OffFoilEvidence` the two
+ladders already read, over `[turnEnd, turnEnd + turnCleanQuietS]`, **stopping at a recording
+gap** like every other window in the engine. Three tests, most specific first, first answer
+wins — the answer is stored on the turn as `cleanBlockedBy`:
+
+| # | test | `cleanBlockedBy` |
+|---|---|---|
+| 1 | a **flight end** inside the tail whose outcome is `touchdown` or `fell_in`. `glide_out` and `unknown` are not losses — settling onto the board and carrying on is not a fall, and a truncated end is the recording stopping, which is evidence of nothing | `quiet_flight_end` |
+| 2 | an **off-foil spell** of 1 s or longer, measured with the ladder's own `off_foil_run` so "off the foil" means here exactly what it means there. This is the loss too short to end a flight | `quiet_off_foil` |
+| 3 | a **submerged** sample: the wrist went under, which the ladder treats as proof of a swim wherever it sees it | `quiet_submerged` |
+
+The flight-end test is asked first because it is the sharpest thing that can be said: that
+channel has already classified the loss, so the page can *name* it ("touched down 6 s after")
+instead of describing it. The three overlap heavily by construction — a flight end is an
+off-foil spell, and a submerged sample is never a flying one — and the order decides only
+which word the rider reads.
+
+`cleanBlockedBy` is **null** wherever the score or the outcome already refused the jibe: those
+two are printed on every turn surface in their own words, and repeating them as a reason would
+say the same thing twice. What it exists for is the two refusals nothing else shows — this one
+and `turnAxisAfterDeg`, whose value is `axis_after`.
+
+**This is a `clean` change and nothing else.** The outcome ladder, `success`, the score, every
+count, both streaks, JPH and TPH are bit-identical; `jibesSuccessful`, `cleanJibesPerHour` and
+the star layer move with `clean`, which is the whole list.
+
+**Why 10 s.** Measured over the 21-session corpus (818 jibes, 278 clean at 0.16.0):
+
+| `turnCleanQuietS` | clean jibes | blocked: flight end / off foil / wrist under |
+|---|---|---|
+| 0 (off) | 278 | — |
+| 6 s | 273 | 3 / 2 / 0 |
+| **10 s** | **263** | **13 / 2 / 0** |
+| 15 s | 255 | 18 / 5 / 0 |
+
+Six seconds catches only the losses that are visibly part of the jibe's own run-out and leaves
+the ones a rider would still connect to it; fifteen starts taking jibes for a fall two thirds
+of a minute later that nothing about the turn caused. Ten is where Jan drew it, and the corpus
+does not argue: 15 of 278 clean jibes (5 %) had a loss of the foil inside ten seconds of the
+sweep. Over the 17 committed fixtures the same change reads **160 → 150**.
+
+The ordering this needs is worth naming, because it looks circular and is not: flight ends are
+classified **first** (classification reads no turn), turns are detected **with** them, and the
+*ownership* pass — which is the part that does read turns — runs last. `lab/.../goldens.py`
+`analyze` and `SessionSummarizer.analyze` both spell it in that order.
 
 ### Spatial gate — "real movement around the curve" (Jan)
 
@@ -490,13 +552,24 @@ inventing turns):
   `jibeCount` is never backfilled into `cleanJibeCount`, and the watch's CPH under-reads for
   the opening minutes of a session with no manual axis. Conservative, like every other item on
   this list, and visible only as a rate that climbs once the axis is known.
+- **The watch has no quiet tail** (engine 0.17.0). `cleanJibeCount` is incremented when the
+  turn's own outcome resolves and is never revisited, so the ten seconds after the sweep are
+  not examined: a jibe followed by a touchdown or a swim still counts as clean on the wrist.
+  Together with the axis bullet above, the phone now applies **two** clean gates the watch does
+  not, and this one is on by default — so the watch will report **more** clean jibes than the
+  phone on any session with a fall shortly after a jibe. On the 21-session corpus that is 15
+  jibes in 278, about **6 %**; on a session where the rider was falling out of the recovery it
+  is larger. The direction is the flattering one, which is why it is written down: live on the
+  wrist there is nothing to fix here — the count would have to be held back ten seconds and
+  then withdrawn on the glass — and the phone recompute is authoritative, as ADR-005 says.
 - **No pump corroboration reaches the clean flag either.** Success is the score pair only
   (`score >= turnSuccessPct` and the minimum stayed above `foilExitSpeed`), read off the
   firmware's smoothed Doppler, so the watch calls slightly *more* jibes clean than the phone
   does — the same Doppler-only caveat two bullets up, inherited by the stricter metric. The
   0.12.0 rule itself is **not** a divergence: the watch applies the same
   `outcome == flew_through` test when the turn's outcome resolves, so `cleanJibeCount` counts
-  the same four things the phone's `clean` flag does, over the watch's own evidence.
+  the same four things the phone's `clean` flag did in 0.12.0, over the watch's own evidence.
+  The **fifth** thing, the quiet tail, is a divergence, and it has the bullet above.
 - **The DATA FIELD's CPH divides by the native activity's TIMER TIME** (field ≥ 0.9.6). Same
   numerator (`TurnDetector.cleanJibeCount` out of the shared barrel), same 60 s floor, same
   `--` below it, same one decimal — a third denominator. `garmin/field/` does not own the
