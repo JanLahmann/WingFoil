@@ -1043,6 +1043,40 @@ means a phone that ran the dev build has a library stamped `0.15.0+tuned.…` un
 build's own `reanalyzeStale()` sweep re-derives it on the published defaults, which it does at
 the first launch because the stamped version does not match.
 
+### Ground-truth labels — the CSV the dev build exports
+
+The dev build lets Jan label a counted turn with what actually happened — *I flew · I touched ·
+I fell* — and scores those labels against the engine (docs/presentation.md, "The dev workbench").
+The labels live on the phone, outside the analysis; **Settings → Tuning → Labels → Export labels
+as CSV** is how they leave it, and this is the format the lab reads them back in.
+
+One header row, then one row per **paired** label — a label whose turn is not in the session's
+current analysis any more is counted on the page and left out of the file, because the row could
+not name a verdict to sit beside. Ordered **oldest session first**, then by turn index.
+UTF-8, `\n`, RFC 4180 quoting on the two free-text columns only.
+
+```
+session_id,session_title,session_start,turn_index,turn_ts_s,turn_type,label,verdict,clean,agrees
+1F2A…,Nago-Torbole 07:54,2026-08-07T07:54:12+02:00,12,1483.0,jibe,touched,fell_in,0,0
+```
+
+| column | what it is |
+|---|---|
+| `session_id` | the library's own row id — the join key, verbatim |
+| `session_title` | what the app calls the session, for a human reading the file |
+| `session_start` | ISO-8601 with offset, the session's own zone |
+| `turn_index` | index into that session's `analysis.turns` — the same identity the app, the map pins and the turn sheet use |
+| `turn_ts_s` | the sweep's start, seconds from the session's start |
+| `turn_type` | `jibe` \| `tack` \| `turn` (counted turns only; a course change cannot be labelled) |
+| `label` | the rider's verdict: `flew` \| `touched` \| `fell` |
+| `verdict` | the engine's, in **its own spelling** — `flew_through` \| `touchdown` \| `fell_in`, so the file reads beside `analysis.json` |
+| `clean` | the engine's `clean` flag, `1`/`0` |
+| `agrees` | `1` when `label` and `verdict` are the same event — the column the agreement percentage sums |
+
+The pairing `flew ↔ flew_through`, `touched ↔ touchdown`, `fell ↔ fell_in` is the whole of the
+scoring, and it is spelled once (`TurnLabel.verdict`). `clean` is carried but never scored: the
+rider is asked what happened, not whether a jibe met a threshold he cannot see from the water.
+
 ## The bundled example session
 
 A fresh install has an empty library, an empty Records screen and no reason to trust any of
