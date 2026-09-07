@@ -229,12 +229,41 @@ def check_rules() -> None:
               len(doc.get("pumpEpisodes", [])) - facts["pumpingSpans"],
               episodes["recovery"] + episodes["in_flight"] + episodes["unknown"])
 
-        # Splashes: the engine's flags, both channels, never re-derived.
-        splash = sum(1 for t in doc.get("turns", []) if t["submerged"] and t["counted"])
-        splash += sum(1 for e in doc.get("flightEnds", [])
-                      if e["submerged"] and e.get("ownedByTurn") is None
-                      and not e.get("truncated", False))
-        check(f"  {stem}: splash evidence", facts["splash"], splash)
+        # "Wrist under": one mark per submersion episode, read off the engine's own list
+        # (engine 0.16.0) and never re-derived from the mask.
+        subs = doc.get("submersions", [])
+        check(f"  {stem}: wrist-under episodes", facts["splash"], len(subs))
+        # An episode is named at most once, and only ever after a record that exists.
+        check(f"  {stem}: no episode claims both a turn and a flight end",
+              sum(1 for s in subs
+                  if s["turnIndex"] is not None and s["flightEndIndex"] is not None), 0)
+        check(f"  {stem}: every named turn is a counted one",
+              sum(1 for s in subs if s["turnIndex"] is not None
+                  and not doc["turns"][s["turnIndex"]]["counted"]), 0)
+        check(f"  {stem}: every named flight end is a drawn one",
+              sum(1 for s in subs if s["flightEndIndex"] is not None
+                  and (doc["flightEnds"][s["flightEndIndex"]]["ownedByTurn"] is not None
+                       or doc["flightEnds"][s["flightEndIndex"]]["truncated"])), 0)
+        # Episodes are disjoint and in time order: they are runs of one mask, so an overlap
+        # would mean one dunk drawn twice.
+        check(f"  {stem}: episodes are disjoint and in time order",
+              all(a["endTs"] < b["ts"] for a, b in zip(subs, subs[1:])), True)
+        # Every turn and flight end the mask flagged still has an episode inside the window
+        # its verdict was read from -- the check that says the flags and the list are two
+        # readings of one mask rather than two measurements.
+        for i, t in enumerate(doc.get("turns", [])):
+            if not (t["submerged"] and t["counted"]):
+                continue
+            w0, w1 = t["ts"], t["endTs"] + t["outcomeWindowS"]
+            check(f"  {stem}: turn {i}'s submerged flag has an episode",
+                  any(s["ts"] <= w1 and s["endTs"] >= w0 for s in subs), True)
+        for i, e in enumerate(doc.get("flightEnds", [])):
+            if not (e["submerged"] and e.get("ownedByTurn") is None
+                    and not e.get("truncated", False)):
+                continue
+            w0, w1 = e["ts"], e["ts"] + e["windowS"]
+            check(f"  {stem}: flight end {i}'s submerged flag has an episode",
+                  any(s["ts"] <= w1 and s["endTs"] >= w0 for s in subs), True)
 
         # Record windows: a value AND the provenance the map draws with it.
         records = doc.get("records", {})
@@ -642,9 +671,58 @@ def check_card() -> None:
     if cards:
         check("  leanKeys is the contract's set", cards[0]["leanKeys"], LEAN_KEYS)
 
+    check_wrist_under(cards)
+
     # Stashed rather than checked here, so the period card's section prints after the
     # session card's two — one `card_parity.mjs` run answers both questions.
     _CARD_DUMP.append(dumped)
+
+
+#: The rider's word for each turn kind in the "wrist under" callout. Only the counted kinds
+#: can ever appear — an uncounted sweep is a course change and never owns an episode — but
+#: the map is spelled in full so a wrong one is a failure rather than a silent "turn".
+TURN_WORD = {"jibe": "jibe", "tack": "tack", "bear_away": "bear-away", "round_up": "round-up"}
+
+
+def expected_wrist_under(sub: dict, doc: dict) -> dict:
+    """The callout the web must print for one submersion episode, re-derived here in Python.
+
+    A third spelling of docs/presentation.md "Wrist under", against the JavaScript that draws
+    it and the Swift that draws the same sentence on the phone. The two apps wording one fact
+    differently is how a rider learns to trust one of them.
+    """
+    title = ("Wrist under" if round(sub["durationS"]) < 1
+             else f"Wrist under · {sub['durationS']:.0f} s")
+    index = sub["turnIndex"]
+    if index is not None:
+        turn = doc["turns"][index]
+        word = TURN_WORD.get(turn["type"], "turn")
+        same = [i for i, t in enumerate(doc["turns"])
+                if t["counted"] and t["type"] == turn["type"]]
+        during = (f"during {word} {same.index(index) + 1}" if index in same
+                  else f"during a {word}")
+    elif sub["flightEndIndex"] is not None:
+        end = doc["flightEnds"][sub["flightEndIndex"]]
+        during = f"after flight {end['flightIndex'] + 1} ended"
+        if end["stoppedS"] >= 1:
+            during += f", stopped {end['stoppedS']:.0f} s"
+    else:
+        during = "while off foil"
+    return {"ts": sub["ts"], "title": title, "during": during}
+
+
+def check_wrist_under(cards: list[dict]) -> None:
+    """The "wrist under" callout, over every fixture: one line per submersion episode, in the
+    words docs/presentation.md specifies and the iOS `SessionDetail.splashTitle` /
+    `splashDetail` print."""
+    for card in cards:
+        stem = Path(card["file"]).name[: -len(gen.SUFFIX)]
+        doc = json.loads(Path(REPO / card["file"]).read_text(encoding="utf-8"))
+        subs = doc.get("submersions", [])
+        check(f"  {stem}: a callout per wrist-under episode",
+              len(card["wristUnder"]), len(subs))
+        check(f"  {stem}: the wrist-under callouts, re-derived",
+              card["wristUnder"], [expected_wrist_under(s, doc) for s in subs])
 
 
 #: The rate row, per synthetic case in `card_parity.mjs`: which keys row 4 must carry, and

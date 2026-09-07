@@ -31,6 +31,7 @@ const { keyMetrics } = await import(new URL("render.js", JS).href);
 const { LEAN_KEYS, PERIOD_LEAN_KEYS, cardStats, keyMetricEntries, periodCardStats,
         periodMapAvailable } = await import(new URL("cardstats.js", JS).href);
 const { stackPlacer } = await import(new URL("sharecard.js", JS).href);
+const { submersionDuring, submersionTitle } = await import(new URL("session.js", JS).href);
 
 /**
  * The block's cells, in order, as the page actually prints them.
@@ -165,6 +166,14 @@ for (const path of process.argv.slice(2)) {
     complete: cardStats(g, "complete").map(pair),
     lean: cardStats(g, "lean").map(pair),
     leanKeys: [...LEAN_KEYS].sort(),
+    // The "wrist under" callout, in the words the web puts on screen — the same
+    // two-implementations-of-one-sentence check the pairing lines get, for the layer
+    // Jan asked for on 7 Sep 2026 (docs/presentation.md, "Wrist under").
+    wristUnder: (g.submersions || []).map((sub) => ({
+      ts: sub.ts,
+      title: submersionTitle(sub),
+      during: submersionDuring(sub, g),
+    })),
   });
 }
 process.stdout.write(JSON.stringify({

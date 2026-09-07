@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v46";     // v46: engine 0.15.0 — the wind-axis crossing is persisted per turn (axisTs/axisBeforeDeg/axisAfterDeg); no verdict moves
+const VERSION = "v47";     // v47: engine 0.16.0 — "wrist under" is a list of submersion episodes, one cyan diamond each; no verdict moves
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
