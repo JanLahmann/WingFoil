@@ -1245,7 +1245,7 @@ def _secs(value: float) -> str:
     return str(math.floor(value + 0.5))
 
 
-def expected_outcome_text(turn: dict, foil_exit_speed: float | None) -> str | None:
+def expected_outcome_text(turn: dict, marginal_speed: float | None) -> str | None:
     """The line the page must print under one turn's outcome, re-derived here in Python.
 
     A third spelling of docs/presentation.md "Why it ended that way", against the JavaScript
@@ -1273,9 +1273,9 @@ def expected_outcome_text(turn: dict, foil_exit_speed: float | None) -> str | No
     if reason == "submerged":
         return "fell in · wrist under"
     if reason == "pumped_marginal":
-        if foil_exit_speed is None:
+        if marginal_speed is None:
             return "touchdown · pumped out below min foil speed, no sample off the foil"
-        return (f"touchdown · pumped out below {foil_exit_speed * KMH_TO_KN:.1f} kn, "
+        return (f"touchdown · pumped out below {marginal_speed * KMH_TO_KN:.1f} kn, "
                 "no sample off the foil")
     return None
 
@@ -1285,6 +1285,9 @@ def expected_outcome_text(turn: dict, foil_exit_speed: float | None) -> str | No
 #: supply — the pump rung above all, which no published-default run can reach any more.
 OUTCOME_TEXT_CASES = {
     "pumpedMarginal": "touchdown · pumped out below 4.3 kn, no sample off the foil",
+    # The 0.17.0 reading, restored by raising `turnPumpedMarginalSpeed` to 12 km/h. This is the
+    # sentence the rung printed for its whole working life, and the number is the *document's*.
+    "pumpedMarginalRevived": "touchdown · pumped out below 6.5 kn, no sample off the foil",
     "pumpedMarginalNoConfig":
         "touchdown · pumped out below min foil speed, no sample off the foil",
     "offFoilNoStop": "touchdown · off the foil 2 s, no stop",
@@ -1329,9 +1332,9 @@ def check_outcome_text() -> None:
     for entry in got["fixtures"]:
         stem = Path(entry["file"]).name[: -len(gen.SUFFIX)]
         doc = json.loads((REPO / entry["file"]).read_text(encoding="utf-8"))
-        exit_speed = (doc.get("config") or {}).get("foilExitSpeed")
+        marginal = (doc.get("config") or {}).get("turnPumpedMarginalSpeed")
         turns = doc.get("turns", [])
-        want = [expected_outcome_text(t, exit_speed) for t in turns]
+        want = [expected_outcome_text(t, marginal) for t in turns]
         check(f"  {stem}: the why line, re-derived", entry["texts"], want)
         # The engine's half of the contract: a reason exactly where there is something to
         # explain. `glide_out` never appears on a turn — that is a flight-end word — so the

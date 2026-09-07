@@ -324,7 +324,7 @@ function renderTurns(table, caption, g, v, meta) {
         <td>${nf(t.score * 100, 0)} %</td>
         <td>${yn(t.clean)}</td>
         <td class="l">${outcomePill(t.outcome)}${t.borderline ? ' <span class="pill">borderline</span>' : ""}</td>
-        <td class="l dim">${esc(outcomeText(t, cfg.foilExitSpeed) ?? "")}</td>
+        <td class="l dim">${esc(outcomeText(t, cfg.turnPumpedMarginalSpeed) ?? "")}</td>
         <td>${nf(t.stoppedS, 1)}</td>
         <td>${nf(t.offFoilS, 1)}</td>
         <td class="dim">${yn(t.pumped)}</td>

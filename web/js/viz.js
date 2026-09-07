@@ -83,10 +83,11 @@ const KMH_TO_KN = 1 / 1.852;
  * for a document written before 0.18.0, which carries no reason: a sentence reconstructed from
  * `stoppedS` alone would be a guess about a ladder that may not have been climbed that way.
  *
- * `foilExitSpeed` is the document's **own** config echo, never a literal, and where it is
- * missing the one wording that names a speed drops the number rather than inventing one.
+ * `marginalSpeed` is the document's own `turnPumpedMarginalSpeed` echo, never a literal, and
+ * where it is missing the one wording that names a speed drops the number rather than
+ * inventing one — so a tuned run that revived the rung by raising the speed says *its* speed.
  */
-export function outcomeText(turn, foilExitSpeed = null) {
+export function outcomeText(turn, marginalSpeed = null) {
   // Whole seconds, **half away from zero** — `Math.round` here, `.rounded()` in Swift,
   // `floor(v + 0.5)` in the verifier. Spelled out rather than left to each language's
   // default formatter, because `%.0f` rounds 4.5 to 4 (banker's) and `toFixed(0)` rounds it
@@ -107,11 +108,11 @@ export function outcomeText(turn, foilExitSpeed = null) {
     case "submerged":
       return "fell in · wrist under";
     case "pumped_marginal":
-      if (foilExitSpeed === null || foilExitSpeed === undefined
-          || !Number.isFinite(foilExitSpeed)) {
+      if (marginalSpeed === null || marginalSpeed === undefined
+          || !Number.isFinite(marginalSpeed)) {
         return "touchdown · pumped out below min foil speed, no sample off the foil";
       }
-      return `touchdown · pumped out below ${nf(foilExitSpeed * KMH_TO_KN, 1)} kn, `
+      return `touchdown · pumped out below ${nf(marginalSpeed * KMH_TO_KN, 1)} kn, `
              + "no sample off the foil";
     default:
       return null;
