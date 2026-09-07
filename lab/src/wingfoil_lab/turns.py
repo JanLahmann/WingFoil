@@ -77,29 +77,37 @@ into a touchdown only when the speed channels *also* saw the foil go marginal (b
 `foilEntrySpeed`) in the same window. Speed says the foil stopped carrying, accel says the
 rider had to pump it out; neither alone is enough.
 
-**That rung asked the wrong speed, and engine 0.18.0 moves it and makes it a switch**
-(`pumped_out_is_touchdown`, `turnPumpedOutIsTouchdown`, default **True**). Until 0.17.0 the
-corroborating speed was `foilEntrySpeed` -- 12 km/h, the speed at which a *flight starts*.
-That is the wrong question. Entry speed is the threshold a rider has to climb through to get
-up; the speed below which the foil is no longer carrying is `foilExitSpeed` (8 km/h), and Jan
-put it plainly on 7 Sep 2026: *"change to '...below min foil speed...'"*. His Jibe 50 of 4 Sep
-07:58 sagged to 5.5 kn = 10.2 km/h -- below entry, comfortably above exit -- and was called a
-touchdown by this rule alone, with no off-foil sample, no stop and no wrist under. He flew it.
-Working the wing through a soft patch is riding.
+**That rung asked the wrong speed, and engine 0.18.0 gives it a parameter and a switch**
+(`pumped_marginal_speed_kmh` / `turnPumpedMarginalSpeed`, and `pumped_out_is_touchdown` /
+`turnPumpedOutIsTouchdown`, default **True**). Until 0.17.0 the corroborating speed was
+hard-wired to `foilEntrySpeed` -- 12 km/h, the speed at which a *flight starts*. That is the
+wrong question. Entry speed is the threshold a rider has to climb through to get up; the speed
+below which the foil is no longer carrying is the exit speed, 8 km/h, and Jan put it plainly on
+7 Sep 2026: *"change to '...below min foil speed...'"*. His Jibe 50 of 4 Sep 07:58 sagged to
+5.5 kn = 10.2 km/h -- below entry, comfortably above exit -- and was called a touchdown by this
+rule alone, with no off-foil sample, no stop and no wrist under. He flew it. Working the wing
+through a soft patch is riding.
 
-**With the threshold at `foilExitSpeed` the rung can no longer fire, and that is the point.**
-It is not a coincidence to be tidied away later: `flying` is *defined* as in a flight, not
-submerged, and `speed > foilExitSpeed` (`evidence.flying_mask`), so on the branch this rung
-lives on -- no non-flying sample anywhere in the window -- every sample is above the exit
-speed already and `marginal` is provably False. The switch is kept, and kept **on**, because
-it is the rule that is being retired rather than the reading behind it: `pumped_out_is_touchdown`
-still names the rung, still gates it, and turning it off says the same thing twice. What the
-verdict no longer does is call a jibe a touchdown on the strength of the accelerometer and a
-speed the foil was still flying at. Over the 21-session corpus that is **13 of 270 jibe
-touchdowns**, 3 of which held their speed besides. (Not 34: that is the count of touchdowns
-whose `offFoilS` *rounds* to zero, and 21 of those had a real non-flying sample the ladder
-found on the branch below -- a single sample, so no elapsed time between its own two ends.
-Only a turn the rung actually decided carries `outcome_reason == "pumped_marginal"`, and
+**At the default the rung cannot fire, and that is the point.** It is not a coincidence to be
+tidied away later: `flying` is *defined* as in a flight, not submerged, and above
+`foilExitSpeed` (`evidence.flying_mask`), so on the branch this rung lives on -- no non-flying
+sample anywhere in the window -- every sample is above 8 km/h already and `marginal` is
+provably False.
+
+**The speed is its own parameter so the retirement is a setting and not a deletion.** It could
+have been written as a reference to `foilExitSpeed`, and then nobody could ever disagree with
+it; as `turnPumpedMarginalSpeed` it defaults to the same 8.0 and can be raised. The band
+between the exit speed and this one is exactly the band the rung judges, so at 8.0 that band is
+empty and at 12.0 it is the 0.17.0 reading, restored. The switch is kept beside it, and kept
+**on**, because the two say different things: the switch is whether the rung is asked at all,
+the speed is what it asks.
+
+What the verdict no longer does at the defaults is call a jibe a touchdown on the strength of
+the accelerometer and a speed the foil was still flying at. Over the 21-session corpus that is
+**13 of 270 jibe touchdowns**, 3 of which held their speed besides. (Not 34: that is the count
+of touchdowns whose `offFoilS` *rounds* to zero, and 21 of those had a real non-flying sample
+the ladder found on the branch below -- a single sample, so no elapsed time between its own two
+ends. Only a turn the rung actually decided carries `outcome_reason == "pumped_marginal"`, and
 counting those is the only honest way to ask what the rung was doing.)
 
 The evidence itself is not thrown away: `pumped` still says the rider worked for it and the
@@ -253,13 +261,21 @@ class TurnConfig:
     baro_drop_m: float = 25.0             # turnBaroDrop: below median altitude = submerged
     #: turnPumpedOutIsTouchdown (engine 0.18.0), **on by default**. Gates the pump rung: a turn
     #: with no off-foil sample at all is a `touchdown` when the accelerometer heard a burst in
-    #: the window *and* a sample fell below `foil_exit_speed_kmh`. That speed is the change --
-    #: it was `foil_entry_speed_kmh` until 0.17.0 -- and because `flying` already requires
-    #: speed above the exit speed, the rung is now unreachable in any configuration where the
-    #: evidence and the turn config were built from the same exit speed. Off, the rung is
-    #: refused explicitly. Either way `pumped` and the "pumped out" chip are untouched. See the
-    #: module docstring and ADR-022.
+    #: the window *and* a sample fell below `pumped_marginal_speed_kmh`. Off, the rung is
+    #: refused whatever that speed says. Either way `pumped` and the "pumped out" chip are
+    #: untouched. See the module docstring and ADR-022.
     pumped_out_is_touchdown: bool = True
+    #: turnPumpedMarginalSpeed (engine 0.18.0), km/h: **the speed the pump rung corroborates
+    #: against**. It was `foil_entry_speed_kmh` (12) until 0.17.0, hard-wired; Jan's rule is
+    #: *"below min foil speed"*, so the default is **8.0** -- the same number as
+    #: `foil_exit_speed_kmh`, and deliberately its own parameter rather than a reference to it.
+    #:
+    #: At the default the rung **cannot fire**, because `flying` already requires speed above
+    #: the exit speed and this rung only ever runs on the branch where every sample is flying.
+    #: That is the retirement. Raising it above the exit speed revives the rule over the band
+    #: between the two -- at 12.0 it is exactly the 0.17.0 reading -- which is what makes the
+    #: retirement a *setting* somebody can argue with rather than a deletion.
+    pumped_marginal_speed_kmh: float = 8.0
 
     # --- 360 spins: EXPERIMENTAL, and dark unless the flag below is set (see
     # `detect_three_sixties` and docs/algorithms.md "360 spins"). Nothing about the
@@ -871,11 +887,12 @@ def _outcome(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,
     if lost.size == 0:
         turn.borderline = False
         turn.off_foil_s = turn.stopped_s = 0.0
-        # Nothing off the foil at all. The corroborating speed is the **exit** speed since
-        # 0.18.0 -- the speed below which the foil stops carrying, not the one a flight starts
-        # at -- which is why this rung no longer fires: `flying` already requires speed above
-        # it. Left standing, gated and measured, rather than deleted; see the module docstring.
-        marginal = bool((ev.speed[win] < cfg.foil_exit_speed_kmh * KMH_TO_MPS).any())
+        # Nothing off the foil at all. The corroborating speed is `turnPumpedMarginalSpeed`
+        # since 0.18.0 -- 8.0 km/h, the speed below which the foil stops carrying, not the 12
+        # a flight starts at -- which is why this rung no longer fires at the defaults:
+        # `flying` already requires speed above 8. Left standing, gated, measured and
+        # *settable*, rather than deleted; see the module docstring.
+        marginal = bool((ev.speed[win] < cfg.pumped_marginal_speed_kmh * KMH_TO_MPS).any())
         if cfg.pumped_out_is_touchdown and turn.pumped and marginal:
             turn.outcome, turn.outcome_reason = TOUCHDOWN, REASON_PUMPED_MARGINAL
         else:

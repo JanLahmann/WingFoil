@@ -13,8 +13,7 @@ from wingfoil_lab.filters import clean, clean_from_arrays
 from wingfoil_lab.flight import segment_flights
 from wingfoil_lab.flightend import GLIDE_OUT, UNKNOWN, FlightEnd, classify_flight_ends
 from wingfoil_lab.parse import parse_fit
-from wingfoil_lab.pump import pump_track_from_arrays
-from wingfoil_lab.evidence import off_foil_evidence
+from wingfoil_lab.pump import pump_track, pump_track_from_arrays
 from wingfoil_lab.turns import (BEAR_AWAY, COUNTED_TYPES, FELL_IN, FLEW_THROUGH, JIBE,
                                 OUTCOMES, REASON_OFF_FOIL, REASON_PUMPED_MARGINAL,
                                 REASON_STOP, REASON_SUBMERGED, ROUND_UP, TACK, THREE_SIXTY,
@@ -24,6 +23,11 @@ from wingfoil_lab.wind import WindEstimate, estimate_wind
 
 FIXTURES = Path(__file__).resolve().parents[2] / "fixtures"
 TODAY = FIXTURES / "sessions/ciq/2026-08-07-0754_nago-torbole-windsurfen_ciq.fit"
+#: The 4 Sep 2026 morning, which holds Jan's Jibe 50 -- the turn that retired the pump rung.
+#: Not a committed fixture: it lives under `fixtures/footage/`, which is kept out of the repo
+#: (docs/testing.md), so the test that reads it skips wherever it is absent.
+JIBE50_SESSION = (FIXTURES
+                  / "footage/_raw-2026-09/2026-09-04-0758_nago-torbole-windsurfen_ciq.fit")
 
 WIND_N = WindEstimate(dir_deg=0.0, confidence=1.0, source="estimate", axis_deg=0.0)
 
@@ -818,29 +822,41 @@ def test_the_pump_rung_cannot_fire_at_the_published_defaults():
     assert [t.outcome_reason for t in on] == [t.outcome_reason for t in off] == [None]
 
 
-def test_the_pump_rung_still_computes_where_the_two_speeds_disagree():
-    """The rung is unreachable, not deleted -- and a stored document from an older engine still
-    carries its verdict, so the code and its reason code have to keep working.
+def test_raising_the_marginal_speed_revives_the_rung():
+    """**The retirement is a setting, not a deletion** (`turnPumpedMarginalSpeed`, engine
+    0.18.0).
 
-    The only way to reach it is to judge a turn against a *higher* exit speed than the evidence
-    was built with, which is what 0.17.0 effectively did by testing the entry speed. Handing
-    `detect_turns` evidence built at 6 km/h while the turn config judges at 12 km/h reproduces
-    exactly that, and the rung fires with its own reason.
+    The default is 8.0 km/h -- the same number the foil exit speed carries -- and at it the rung
+    cannot fire, because `flying` already requires speed above the exit speed. The band between
+    the exit speed and this parameter is exactly the band the rung judges: empty at 8.0, and at
+    12.0 the 0.17.0 reading, restored. That is what makes the retirement something a reader can
+    disagree with rather than something they have to take on trust, and it is why the speed is a
+    parameter of its own instead of a reference to `foilExitSpeed`.
     """
     course, speed = _jibe_then([2.8] * 4)                          # 10.1 km/h
     ct = _track(course, speed)
     flights = segment_flights(ct)
     pump = pump_track_from_arrays(*_pump_stream(48.0, 56.0))
-    lenient = off_foil_evidence(ct, flights, 6.0, TurnConfig().baro_drop_m)
-    cfg = TurnConfig(foil_exit_speed_kmh=12.0)
-    turn = detect_turns(ct, flights, WIND_N, config=cfg, pump=pump, evidence=lenient)[0]
+
+    assert TurnConfig().pumped_marginal_speed_kmh == 8.0
+    assert TurnConfig().pumped_marginal_speed_kmh == TurnConfig().foil_exit_speed_kmh
+
+    revived = TurnConfig(pumped_marginal_speed_kmh=12.0)
+    turn = detect_turns(ct, flights, WIND_N, config=revived, pump=pump)[0]
     assert turn.pumped and turn.off_foil_s == 0.0
     assert turn.outcome == TOUCHDOWN and turn.outcome_reason == REASON_PUMPED_MARGINAL
 
-    # And the switch is what gates it: off, the same turn flew through.
-    cfg_off = TurnConfig(foil_exit_speed_kmh=12.0, pumped_out_is_touchdown=False)
-    off = detect_turns(ct, flights, WIND_N, config=cfg_off, pump=pump, evidence=lenient)[0]
+    # The switch still gates it: revived speed, switch off, and it flew through again. The two
+    # answer different questions -- whether the rung is asked at all, and what it asks.
+    both = TurnConfig(pumped_marginal_speed_kmh=12.0, pumped_out_is_touchdown=False)
+    off = detect_turns(ct, flights, WIND_N, config=both, pump=pump)[0]
     assert off.pumped and off.outcome == FLEW_THROUGH and off.outcome_reason is None
+
+    # And it is the *speed* that revived it, not the evidence moving: the flight segmentation
+    # and every off-foil reading are identical either way.
+    base = detect_turns(ct, flights, WIND_N, pump=pump)[0]
+    assert base.off_foil_s == turn.off_foil_s == 0.0
+    assert base.outcome_window_s == turn.outcome_window_s
 
 
 def test_every_touchdown_and_fall_says_why_and_no_fly_through_does():
@@ -960,6 +976,47 @@ def test_real_session_turns_smoke():
 
 
 @pytest.mark.skipif(not TODAY.exists(), reason="ciq fixture missing")
+@pytest.mark.skipif(not JIBE50_SESSION.exists(),
+                    reason="4 Sep footage recording not in this checkout")
+def test_jibe_50_flew_through_and_the_old_speed_takes_it_back():
+    """**Jan's Jibe 50, the turn that started all this** (4 Sep 2026 07:58, start_t 3480 s).
+
+    It sagged to 5.5 kn = 10.2 km/h with the wrist working -- below the 12 km/h a flight starts
+    at, comfortably above the 8 km/h below which the foil stops carrying -- with no off-foil
+    sample, no stop and no wrist under. 0.17.0 called it a touchdown on the pump rung alone.
+    He flew it.
+
+    Both directions are asserted, because only the pair is evidence: at the published defaults
+    it flew through with no reason to give, and at `pumped_marginal_speed_kmh = 12.0` -- the
+    0.17.0 reading, restored through the parameter -- the rung takes it back and says so.
+
+    Skipped where the recording is absent: it lives in `fixtures/footage/`, which is not
+    committed (docs/testing.md, "Fixture provenance").
+    """
+    track = parse_fit(JIBE50_SESSION)
+    ct = clean(track)
+    flights = segment_flights(ct)
+    wind = estimate_wind(ct, flights)
+    pump = pump_track(track)
+    assert pump is not None                       # class (a): the wrist was recording
+
+    def jibe_50(config):
+        turns = detect_turns(ct, flights, wind, config=config, pump=pump)
+        jibes = [t for t in turns if t.counted and t.kind == JIBE]
+        turn = jibes[49]
+        assert round(turn.start_t) == 3480                 # the turn this test is about
+        return turn
+
+    now = jibe_50(TurnConfig())
+    assert now.pumped and now.off_foil_s == 0.0 and now.stopped_s == 0.0
+    assert not now.submerged
+    assert now.outcome == FLEW_THROUGH and now.outcome_reason is None
+
+    then = jibe_50(TurnConfig(pumped_marginal_speed_kmh=12.0))
+    assert then.outcome == TOUCHDOWN
+    assert then.outcome_reason == REASON_PUMPED_MARGINAL
+
+
 def test_real_session_pumping_moves_no_verdict():
     """Accel evidence was corroborating and could only ever *promote* a fly-through to a
     touchdown. Since engine 0.18.0 the rung it promoted through is unreachable, so on a real
@@ -969,8 +1026,6 @@ def test_real_session_pumping_moves_no_verdict():
     The stream is still read and `pumped` is still set -- what the page says about effort is
     untouched. This is the assertion that the *verdict* no longer depends on it.
     """
-    from wingfoil_lab.pump import pump_track
-
     track = parse_fit(TODAY)
     ct = clean(track)
     flights = segment_flights(ct)
