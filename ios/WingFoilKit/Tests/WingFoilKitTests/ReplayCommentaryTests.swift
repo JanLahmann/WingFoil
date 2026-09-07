@@ -19,7 +19,9 @@ import Testing
     }
 
     /// 2026-08-30 Torbole: 645 s, 2.6 km, ten counted jibes (eight flown, two swum), a dry
-    /// streak of eight, two swims and a 2 s peak of 13.47 kn at 292 s.
+    /// streak of eight, two swims and a 2 s peak of 13.47 kn at 292 s. Engine 0.14.0 scores
+    /// three of the ten clean where 0.13.0 scored five — the 12 s sweep window pulls each
+    /// carve's slow exit into the speed minimum the score divides by.
     private func torbole() throws -> SessionAnalysis {
         try golden("2026-08-30-1407_nago-torbole-windsurfen_ciq")
     }
@@ -42,29 +44,26 @@ import Testing
                                            timeZone: TimeZone(identifier: "Europe/Rome")!)
 
         #expect(script.map(\.t)
-                == [0, 85, 151, 222, 255, 278, 292, 320, 362, 399, 441, 477, 645])
+                == [0, 85, 149, 255, 278, 292, 319, 362, 396, 441, 477, 645])
         #expect(script.map(\.text) == [
             "Torbole, 14:07 — session start",
             // The first takeoff *is* the start of the longest flight here, so the two share
             // an instant and the plainer fact leads.
             "Flying! · Longest flight — 6:32",
             "First jibe — flew through",
-            // The strict verdict, on its own instant: 5 of this session's 10 jibes were
-            // clean, and the first of them is a line the dry count cannot say.
-            "First clean jibe!",
-            // The 3rd and 5th dry jibes are also streak records, and a line that said "3 dry
-            // jibes · New streak — 3 dry jibes" would print the number twice.
-            "New streak — 3 dry jibes",
-            "New streak — 4 dry jibes",
-            "Top speed — 13.47 kn over 2 s",
             // Where a clean ordinal lands on a streak record they share the frame, strict
             // first: the run is over dry maneuvers, the count beside it is over ridden ones.
-            "3 clean jibes · New streak — 5 dry jibes",
+            // Under 0.14.0 the first clean jibe *is* the third dry one, so the line the dry
+            // count cannot say and the streak record arrive together instead of 33 s apart.
+            "First clean jibe! · New streak — 3 dry jibes",
+            "New streak — 4 dry jibes",
+            "Top speed — 13.47 kn over 2 s",
+            "New streak — 5 dry jibes",
             "New streak — 6 dry jibes",
-            "5 clean jibes · New streak — 7 dry jibes",
+            "3 clean jibes · New streak — 7 dry jibes",
             "New streak — 8 dry jibes",
             // The swim at 467 is the jibe; the splash is its flight end ten seconds later.
-            // It is also why nothing is said at 571: that tenth attempt was swum too, so the
+            // It is also why nothing is said at 570: that tenth attempt was swum too, so the
             // dry count stops at eight and the session never reaches a tenth dry jibe.
             "First splash",
             "Session end — 10:45 · 2.6 km · 8 dry jibes",
@@ -241,9 +240,9 @@ import Testing
     @Test func theScriptIsCutInAKnownOrder() throws {
         let script = try torbole()
         let full = ReplayCommentary.make(script, timeZone: fixtureZone)
-        #expect(full.count == 13)
+        #expect(full.count == 12)
 
-        let byLimit = (0...13).map { ReplayCommentary.pruned(full, keeping: $0).map(\.id) }
+        let byLimit = (0...12).map { ReplayCommentary.pruned(full, keeping: $0).map(\.id) }
 
         // The bookends survive a limit of zero: a clip that opened and never closed would be
         // worse than a silent one.
@@ -257,19 +256,21 @@ import Testing
         // already ranks them: a swim is a more specific thing to say than a count.
         #expect(byLimit[6] == ["start", "longest-flight", "top-speed", "streak-8", "splash-1",
                                "end"])
-        // The firsts are one tier and it now holds three of them, split by the collision
-        // rule's own rank: the swim, then the **clean** jibe, then the dry one. A clip with
-        // room for seven lines says "First clean jibe!" before it says "First jibe" — which
-        // is the whole point of putting the clean count in the commentary at all.
-        #expect(byLimit[7] == ["start", "longest-flight", "clean-1", "top-speed", "streak-8",
+        // The firsts are one tier. Under 0.14.0 the session's first clean jibe lands on the
+        // 3rd dry one, so "First clean jibe!" has no milestone of its own to be ranked —
+        // it rides the `streak-3` line, and the first jibe is the only "first" left in the
+        // tier. The clean count is still said before any run-up streak, which is the whole
+        // point of putting it in the commentary at all: `streak-3` outranks `streak-4`.
+        #expect(byLimit[7] == ["start", "longest-flight", "jibe-1", "top-speed", "streak-8",
                                "splash-1", "end"])
-        #expect(byLimit[8] == ["start", "longest-flight", "jibe-1", "clean-1", "top-speed",
-                               "streak-8", "splash-1", "end"])
         // From here it is the leftovers, by the collision rule's own rank and then by time:
-        // the four remaining streak records, earliest first.
-        #expect(byLimit[9] == ["start", "longest-flight", "jibe-1", "clean-1", "streak-3",
+        // the five remaining streak records, earliest first — and the earliest is the one
+        // carrying "First clean jibe!".
+        #expect(byLimit[8] == ["start", "longest-flight", "jibe-1", "streak-3", "top-speed",
+                               "streak-8", "splash-1", "end"])
+        #expect(byLimit[9] == ["start", "longest-flight", "jibe-1", "streak-3", "streak-4",
                                "top-speed", "streak-8", "splash-1", "end"])
-        #expect(byLimit[13] == full.map(\.id))
+        #expect(byLimit[12] == full.map(\.id))
 
         // Monotone: every list is a subset of the next one up.
         for (smaller, larger) in zip(byLimit, byLimit.dropFirst()) {

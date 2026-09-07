@@ -10,9 +10,9 @@ public struct TurnConfig: Sendable, Equatable {
     /// marks it — but it is filed as a bear-away/round-up and counted in no tally.
     public var classifyMinAngleDeg: Double = 90.0
     /// turnMaxDuration: window for the net change.
-    public var maxDurationS: Double = 8.0
+    public var maxDurationS: Double = 12.0
     /// turnPeakRate: at ≥ 1 sample.
-    public var peakRateDegS: Double = 25.0
+    public var peakRateDegS: Double = 18.0
     /// turnContinueRate: edge trim — below this the rider is not turning.
     public var continueRateDegS: Double = 5.0
     /// turnCogSpeedFloor: COG ≠ heading below this (COAPS).

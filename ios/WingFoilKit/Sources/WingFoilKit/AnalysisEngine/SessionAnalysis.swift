@@ -135,7 +135,7 @@ public enum AnalysisEngine {
     ///
     /// *`longestFlightM` is renamed `maxFlightM`*, because it was never the longest
     /// flight's distance — it is the largest distance any one flight covered.
-    public static let version = "0.13.0"
+    public static let version = "0.14.0"
 }
 
 /// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's
