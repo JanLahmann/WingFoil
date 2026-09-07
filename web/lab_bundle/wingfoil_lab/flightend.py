@@ -173,10 +173,13 @@ def classify_flight_ends(clean: CleanTrack, flights: FlightResult,
                          evidence: OffFoilEvidence | None = None) -> list[FlightEnd]:
     """Classify every flight ending in time order (see the module docstring).
 
-    `turns` supplies the ownership rule and may be omitted (then nothing is owned); `pump`
-    is optional accelerometer evidence, as in `turns.detect_turns`. `evidence` is the same
-    read-only off-foil evidence the turn pass uses and may be handed in by a pipeline that
-    already built it; omitted, it is built here.
+    `turns` supplies the ownership rule and may be omitted (then nothing is owned) -- which
+    is what the pipeline does since engine 0.17.0, because the clean jibe's quiet tail reads
+    these verdicts and the turns therefore have to be built *after* them; ownership is a
+    separate pass (`assign_end_ownership`) and always was. `pump` is optional accelerometer
+    evidence, as in `turns.detect_turns`. `evidence` is the same read-only off-foil evidence
+    the turn pass uses and may be handed in by a pipeline that already built it; omitted, it
+    is built here.
     """
     cfg = config or FlightEndConfig()
     ev = evidence
@@ -185,7 +188,7 @@ def classify_flight_ends(clean: CleanTrack, flights: FlightResult,
     if ev is None:
         return []
     ends = [_classify(i, f.end_t, ev, cfg, pump) for i, f in enumerate(flights.flights)]
-    _assign_ownership(ends, turns or [])
+    assign_end_ownership(ends, turns or [])
     return ends
 
 
@@ -266,7 +269,7 @@ def _marginal(ev: OffFoilEvidence, win: np.ndarray, cfg: FlightEndConfig) -> boo
     return bool((ev.speed[win] < cfg.foil_entry_speed_kmh * KMH_TO_MPS).any())
 
 
-def _assign_ownership(ends: list[FlightEnd], turns: list[Turn]) -> None:
+def assign_end_ownership(ends: list[FlightEnd], turns: list[Turn]) -> None:
     """Flag each flight end that falls inside a turn's outcome window, in place.
 
     A turn's window runs from `start_t` to `end_t + outcome_window_s` (the tail its outcome
@@ -282,5 +285,5 @@ def _assign_ownership(ends: list[FlightEnd], turns: list[Turn]) -> None:
 
 __all__ = ["FELL_IN", "FLIGHT_END_OUTCOMES", "GLIDE_OUT", "TOUCHDOWN", "UNKNOWN",
            "FlightEnd", "FlightEndConfig", "FlightEndCounts", "FlightEndSummary",
-           "OutcomeSplit", "classify_flight_ends", "split_outcomes",
+           "OutcomeSplit", "assign_end_ownership", "classify_flight_ends", "split_outcomes",
            "summarize_flight_ends"]

@@ -283,9 +283,14 @@ function renderTurns(table, caption, g, v, meta) {
     ? null : `${nf(cfg.turnSuccessPct, 0)} %`;
   const floor = cfg.foilExitSpeed === null || cfg.foilExitSpeed === undefined
     ? "the foil exit speed" : `${nf(cfg.foilExitSpeed, 0)} km/h`;
+  // The quiet tail (engine 0.17.0), and stated the same way: from the document's own config,
+  // absent from a document written before it. A clean jibe is now three requirements, and a
+  // caption that named two of them would be the same half-rule the threshold literal was.
+  const quiet = cfg.turnCleanQuietS
+    ? `, and had no touchdown or fall in the ${nf(cfg.turnCleanQuietS, 0)} s after` : "";
   const cleanRule = threshold === null
-    ? "flew through and held their speed"
-    : `flew through, held ≥ ${threshold} of entry speed and never dropped below ${floor}`;
+    ? `flew through and held their speed${quiet}`
+    : `flew through, held ≥ ${threshold} of entry speed and never dropped below ${floor}${quiet}`;
   const o = s.outcomes;
   caption.textContent =
     `${s.turnsCounted} counted (${s.jibes} jibes, ${s.tacks} tacks), ${s.rejected} bear-aways rejected · ` +

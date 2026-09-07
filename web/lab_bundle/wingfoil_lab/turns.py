@@ -80,6 +80,24 @@ rider had to pump it out; neither alone is enough.
 The score%/success pair is kept as the secondary, continuous metric: outcome says *what
 happened*, score says *how much speed the turn cost*.
 
+**A clean jibe also needs a quiet tail** (engine 0.17.0, Jan's rule: *"no touch down or fall
+within 10 s afterwards"*). The outcome window closes at *recovery* -- speed back at
+`turnRecoverPct` of the entry, held `turnRecoverHold` -- so a jibe powered out of closes it in
+a second or two, and a touchdown at +7 s is a straight-line loss the verdict never sees. That
+is right for the outcome ladder (the fall belongs to the flight-end channel, and to charge it
+twice would be a double count) and wrong for the word *clean*: a rider who is swimming ten
+seconds after his jibe does not call it clean. So `turnCleanQuietS` (**10 s**) asks one more
+question of the same evidence, over `[endTs, endTs + turnCleanQuietS]`, stopping at a
+recording gap: no off-foil spell of `CLEAN_QUIET_OFF_FOIL_S` or longer, no touchdown/fell-in
+flight end, no submerged sample. It moves `clean` and nothing else -- not the outcome, not
+`success`, not the score, not a rate numerator other than CPH's -- exactly like the
+`turnAxisAfterDeg` gate it sits beside, and at 0 it asks nothing.
+
+Why a turn is not clean is worth saying out loud, so `clean_blocked_by` carries the reason
+(`axis_after`, `quiet_flight_end`, `quiet_off_foil`, `quiet_submerged`) and is None when the
+jibe is clean or when the score or the outcome had already failed it -- those two the page
+already prints in words of their own.
+
 A **360** is a fourth thing entirely, and an experimental one: a full rotation, detected by
 `detect_three_sixties` only when `detectThreeSixty` is set, and never counted as a tack or a
 jibe. It is off by default and its parameters are uncalibrated -- there is no ground-truthed
@@ -125,6 +143,23 @@ TOUCHDOWN = "touchdown"
 FELL_IN = "fell_in"
 OUTCOMES = (FLEW_THROUGH, TOUCHDOWN, FELL_IN)
 
+#: Why a counted jibe that got this far is still not clean (engine 0.17.0). None is the
+#: fourth state and the common one: it *is* clean, or the score or the outcome already said
+#: no and the page prints that verdict in its own words.
+BLOCKED_AXIS_AFTER = "axis_after"            # carried too little past the wind axis
+BLOCKED_QUIET_FLIGHT_END = "quiet_flight_end"   # touched down / fell in inside the quiet tail
+BLOCKED_QUIET_OFF_FOIL = "quiet_off_foil"    # off the foil for CLEAN_QUIET_OFF_FOIL_S there
+BLOCKED_QUIET_SUBMERGED = "quiet_submerged"  # the wrist went under there
+CLEAN_BLOCKED_REASONS = (BLOCKED_AXIS_AFTER, BLOCKED_QUIET_FLIGHT_END,
+                         BLOCKED_QUIET_OFF_FOIL, BLOCKED_QUIET_SUBMERGED)
+
+#: The shortest off-foil spell the quiet tail refuses (s). Deliberately a **constant** and
+#: not a parameter: it is the resolution of the question, not a threshold anyone tunes. At
+#: 1 Hz it means two consecutive non-flying samples, which is the least evidence that can be
+#: told apart from one noisy speed reading; the tunable part of the rule is how long the
+#: quiet has to last (`turnCleanQuietS`).
+CLEAN_QUIET_OFF_FOIL_S = 1.0
+
 
 @dataclass
 class TurnConfig:
@@ -151,6 +186,11 @@ class TurnConfig:
     #: is a requirement for a *successful* jibe, not for a touch-down or a failed one — so it
     #: moves `success` (and therefore `clean`) and never the outcome ladder.
     axis_after_deg: float = 0.0
+    #: turnCleanQuietS (engine 0.17.0): seconds after the sweep that must pass with no
+    #: touchdown, no fall and no wrist under before a jibe may be called clean. Jan's rule,
+    #: 7 Sep 2026: *"no touch down or fall within 10 s afterwards"* -- and only for a clean
+    #: jibe, never for the outcome ladder. 0 = off. See `_quiet_blocked`.
+    clean_quiet_s: float = 10.0
     context_after_s: float = 3.0          # turnContext: ON_FOIL or <= this after a flight
     entry_speed_window_s: float = 3.0     # entrySpeedWindow: max speed before turn start
     min_speed_lag_s: float = 2.0          # lab-added: the minimum can land past the exit
@@ -227,12 +267,21 @@ class Turn:
     #: `borderline` needs no mention here -- it only ever rides on a `touchdown`, so it is
     #: already excluded by the outcome test.
     clean: bool = False
+    #: **Why not clean** (engine 0.17.0), one of `CLEAN_BLOCKED_REASONS`, or None. Set only
+    #: on a counted jibe whose score *and* outcome were good enough: `clean` is the word this
+    #: explains, and a jibe that touched down or came in slow is not waiting for an
+    #: explanation -- the page prints its outcome and its score already.
+    clean_blocked_by: str | None = None
 
 
-def is_clean(turn: Turn) -> bool:
-    """**A clean jibe is a counted jibe that carried its speed and flew through.**
+def is_clean(turn: Turn, ev: OffFoilEvidence | None = None,
+             cfg: "TurnConfig | None" = None,
+             ends: Sequence["FlightEndLike"] = ()) -> bool:
+    """**A clean jibe is a counted jibe that carried its speed, flew through, and stayed
+    out of the water for `turnCleanQuietS` afterwards.**
 
-    ``counted and kind == jibe and success and outcome == flew_through`` (engine 0.12.0).
+    ``counted and kind == jibe and success and outcome == flew_through`` (engine 0.12.0),
+    **and** a quiet tail (engine 0.17.0, `clean_verdict`).
 
     Until 0.12.0 "clean" was the `success` flag alone, deliberately independent of the
     outcome: a jibe carved cleanly through the sweep stayed clean even when the foil was
@@ -243,9 +292,37 @@ def is_clean(turn: Turn) -> bool:
 
     `borderline` needs no test of its own: it only ever rides on a `touchdown`, so
     requiring `flew_through` already excludes it.
+
+    Without `ev`/`cfg` the quiet tail is not asked about -- there is no evidence to ask it
+    of -- which is the same reading `streaks` gives an omitted flight-end channel.
     """
-    return (turn.counted and turn.kind == JIBE and turn.success
-            and turn.outcome == FLEW_THROUGH)
+    return clean_verdict(turn, ev, cfg, ends)[0]
+
+
+def clean_verdict(turn: Turn, ev: OffFoilEvidence | None = None,
+                  cfg: "TurnConfig | None" = None,
+                  ends: Sequence["FlightEndLike"] = ()) -> tuple[bool, str | None]:
+    """``(clean, why not)`` for one turn -- the whole clean rule in one place.
+
+    The reason is deliberately **None** wherever the score or the outcome already refused
+    the jibe: those two are printed on every turn surface in their own words ("touched
+    down", "held 61 % of entry speed"), and repeating them as a *blocked-by* would say the
+    same thing twice. What the field is for is the two refusals nothing else on the page
+    shows -- the axis carry-on and the quiet tail.
+    """
+    if not (turn.counted and turn.kind == JIBE):
+        return False, None
+    if turn.outcome != FLEW_THROUGH:
+        return False, None
+    if not turn.success:
+        # The score verdict, or `turnAxisAfterDeg` -- and only the latter left a mark on the
+        # turn when it fired (`_build_turn`), because only the latter is invisible otherwise.
+        return False, (BLOCKED_AXIS_AFTER
+                       if turn.clean_blocked_by == BLOCKED_AXIS_AFTER else None)
+    if ev is None:
+        return True, None
+    reason = _quiet_blocked(turn, ev, cfg or TurnConfig(), ends)
+    return reason is None, reason
 
 
 class FlightEndLike(Protocol):
@@ -385,13 +462,21 @@ def detect_turns(clean: CleanTrack, flights: FlightResult,
                  wind: WindEstimate | None = None,
                  config: TurnConfig | None = None,
                  pump: PumpTrack | None = None,
-                 evidence: OffFoilEvidence | None = None) -> list[Turn]:
+                 evidence: OffFoilEvidence | None = None,
+                 ends: Sequence["FlightEndLike"] = ()) -> list[Turn]:
     """Detect, score and classify every turn in a cleaned track, in time order.
 
     `pump` is optional accelerometer evidence (class-(a) sources); without it the outcome
     rests on the speed channels alone. `evidence` lets a pipeline that already built the
     off-foil evidence for this track hand it in (it is read-only, and the flight-end and
     takeoff passes ask for the very same arrays); omitted, it is built here.
+
+    `ends` is the session's **already-classified** flight ends, read by the clean jibe's
+    quiet tail (engine 0.17.0) and by nothing else. The two channels only look circular:
+    classification needs no turn (`classify_flight_ends(..., turns=None)`), and it is the
+    *ownership* pass that reads turns, which is why the pipeline classifies ends, detects
+    turns with them, and assigns ownership last. Omitted, the quiet tail simply has no
+    flight-end evidence to weigh -- the reading `streaks` already gives an omitted `ends`.
     """
     cfg = config or TurnConfig()
     cands = _accepted_candidates(clean, flights, cfg)
@@ -403,7 +488,7 @@ def detect_turns(clean: CleanTrack, flights: FlightResult,
         # open question the flag exists to keep out of the shipped document.
         turns = sorted(turns + detect_three_sixties(clean, wind, cfg),
                        key=lambda t: t.start_t)
-    _assign_outcomes(turns, clean, flights, cfg, pump, evidence)
+    _assign_outcomes(turns, clean, flights, cfg, pump, evidence, ends)
     return turns
 
 
@@ -686,14 +771,15 @@ def _streak_events(turns: list[Turn],
 
 def _assign_outcomes(turns: list[Turn], clean: CleanTrack, flights: FlightResult,
                      cfg: TurnConfig, pump: PumpTrack | None = None,
-                     evidence: OffFoilEvidence | None = None) -> None:
+                     evidence: OffFoilEvidence | None = None,
+                     ends: Sequence["FlightEndLike"] = ()) -> None:
     """Fill `outcome`/`borderline`/`off_foil_s`/`stopped_s`/`clean` on every turn, in place.
 
     `clean` is set here rather than at scoring time because it is the *conjunction* of the
-    score verdict and the outcome, and the outcome is not known until this pass. Without
-    off-foil evidence every turn keeps the `flew_through` default, so the flag still has to
-    be filled -- a session with no evidence is one where the outcome ladder says nothing,
-    not one where every jibe is dirty.
+    score verdict, the outcome and (since 0.17.0) the quiet tail, and only the first of the
+    three is known when the turn is scored. Without off-foil evidence every turn keeps the
+    `flew_through` default, so the flag still has to be filled -- a session with no evidence
+    is one where the outcome ladder says nothing, not one where every jibe is dirty.
     """
     ev = evidence
     if ev is None:
@@ -702,7 +788,7 @@ def _assign_outcomes(turns: list[Turn], clean: CleanTrack, flights: FlightResult
         for turn in turns:
             _outcome(turn, ev, cfg, pump)
     for turn in turns:
-        turn.clean = is_clean(turn)
+        turn.clean, turn.clean_blocked_by = clean_verdict(turn, ev, cfg, ends)
 
 
 def _outcome(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,
@@ -753,6 +839,61 @@ def _window_end(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig) -> int:
     return recovery_end(ev.t, ev.gap, ev.doppler, lo,
                         turn.end_t + cfg.outcome_lookahead_s, turn.min_t,
                         thr, cfg.recover_hold_s)
+
+
+def _quiet_blocked(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,
+                   ends: Sequence["FlightEndLike"]) -> str | None:
+    """Why the `turnCleanQuietS` tail after this turn was not quiet, or None (engine 0.17.0).
+
+    The tail is ``[end_t, end_t + clean_quiet_s]`` on the *same* `OffFoilEvidence` the outcome
+    ladder reads, and it **stops at a recording gap** like every other window in the engine:
+    the samples the far side of a hole are not evidence about what happened in it.
+
+    Three questions, most specific first, first answer wins:
+
+    1. a **flight end** that touched down or fell in inside the tail. Asked first because it
+       is the sharpest thing that can be said -- the flight-end channel has already classified
+       that loss, so the page can name it ("touched down 6 s after") instead of describing it.
+       `glide_out` and `unknown` are not losses: settling onto the board and carrying on is not
+       a fall, and a truncated end is the recording stopping, which is evidence of nothing.
+    2. an **off-foil spell** of `CLEAN_QUIET_OFF_FOIL_S` or longer, measured with the ladder's
+       own `off_foil_run` so "off the foil" means here exactly what it means there. This is the
+       loss too short to end a flight -- a 1-2 s touch the hysteresis smooths over.
+    3. a **submerged** sample: the wrist went under, which the ladder treats as proof of a swim
+       wherever it sees it.
+    """
+    if cfg.clean_quiet_s <= 0:
+        return None
+    t = ev.t
+    lo = int(np.searchsorted(t, turn.end_t, "left"))
+    if lo >= len(t):
+        return None
+    until = turn.end_t + cfg.clean_quiet_s
+    hi = lo
+    for i in range(lo, len(t)):
+        if t[i] > until or (i > lo and ev.gap[i]):
+            break
+        hi = i
+    stop_t = float(t[hi])
+
+    for end in ends:
+        if end.outcome in (TOUCHDOWN, FELL_IN) and not end.truncated \
+                and turn.end_t <= float(end.t) <= stop_t:
+            return BLOCKED_QUIET_FLIGHT_END
+
+    i = lo
+    while i <= hi:
+        if ev.flying[i]:
+            i += 1
+            continue
+        b, resume = off_foil_run(t, ev.flying, i, stop_t)
+        if elapsed(t, ev.gap, i, b) >= CLEAN_QUIET_OFF_FOIL_S:
+            return BLOCKED_QUIET_OFF_FOIL
+        i = max(resume, b + 1)
+
+    if bool(ev.submerged[lo:hi + 1].any()):
+        return BLOCKED_QUIET_SUBMERGED
+    return None
 
 
 def _sailing_runs(ok: np.ndarray) -> list[tuple[int, int]]:
@@ -911,6 +1052,7 @@ def _build_turn(c: _Candidate, wind: WindEstimate | None, cfg: TurnConfig) -> Tu
 
     kind, side, twa_in, twa_out = _classify(u[i], u[j], wind, cfg.classify_min_angle_deg)
     axis = _axis_measures(c, wind, kind, cfg)
+    blocked: str | None = None
     if axis.uncounted:
         # Too close to the axis to have gone *through* it: filed as the same uncounted course
         # change the classification floor produces, and its axis numbers go with the label.
@@ -919,6 +1061,12 @@ def _build_turn(c: _Candidate, wind: WindEstimate | None, cfg: TurnConfig) -> Tu
         # Not enough carry past the axis to call it carried. The outcome ladder is untouched
         # (Jan: "not require that for a touch-down or failed jibe") -- only `success`, and so
         # only `clean`, which is the conjunction of the two.
+        #
+        # A jibe this gate takes is one the page can otherwise say nothing about: its score is
+        # good and its outcome is a fly-through, so the mark is left for `clean_verdict` to
+        # read back. On a jibe the score had already failed there is nothing to explain.
+        if success and kind == JIBE:
+            blocked = BLOCKED_AXIS_AFTER
         success = False
     return Turn(
         start_t=start_t, end_t=end_t, min_t=float(t[min_idx]), kind=kind,
@@ -929,7 +1077,7 @@ def _build_turn(c: _Candidate, wind: WindEstimate | None, cfg: TurnConfig) -> Tu
         entry_kn_doppler=entry_dop * MPS_TO_KN, min_kn_doppler=min_dop * MPS_TO_KN,
         score=float(score), success=success, twa_in_deg=twa_in, twa_out_deg=twa_out,
         axis_t=axis.t, axis_before_deg=axis.before_deg, axis_after_deg=axis.after_deg,
-        arc_m=arc_m, chord_m=chord_m, radius_m=radius_m,
+        arc_m=arc_m, chord_m=chord_m, radius_m=radius_m, clean_blocked_by=blocked,
     )
 
 
