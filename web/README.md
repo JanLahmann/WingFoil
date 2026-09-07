@@ -641,7 +641,7 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    the fastest way to spot a break is to read the two together. Walk all three shapes and
    both presets: no clipped or ellipsised text anywhere (the card shrinks type, it never
    truncates), the tally on the ladder's green/amber/red, the track filling its box with
-   outcome dots and cyan splash *diamonds*, and the footer whole — mark, `CleanJibe`, the
+   outcome dots and cyan wrist-under *diamonds*, and the footer whole — mark, `CleanJibe`, the
    call to action, and a QR that a phone camera actually opens. *Download PNG* must save a
    file whose pixel size matches the caption under the pickers. A *Share…* button appears
    beside it wherever `navigator.canShare({files: [png]})` is true — iOS Safari, Android
@@ -653,8 +653,8 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    markers — green discs / amber triangles / red crosses / grey hairline crosses for
    bear-aways / hollow squares on the *same* colour ladder for straight-line flight ends (a
    glide-out is a hollow green square, not a category of its own) / blue takeoff arrows /
-   red hollow u-turns for failed attempts / cyan drops where the barometer saw the wrist go
-   under; wind arrow + scale bar. Hovering a marker
+   red hollow u-turns for failed attempts / one cyan diamond per submersion episode
+   ("wrist under"); wind arrow + scale bar. Hovering a marker
    shows a tooltip, tapping one opens a popover of that event's facts. The legend counts
    must match the tiles. **Zoom it**: wheel/pinch/double-tap, or the **&minus; + Reset zoom**
    row under the chips. At 3× the markers and their numbers must be the same size as at 1×
@@ -681,7 +681,7 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    - **Layer chips.** Eleven of them, worded by `design/tokens.json` and therefore the same
      words the iOS legend uses: flying · off foil · pumping · direction · best 2 s (the
      effort chip is named after the window it is showing) · flew through · touchdown · fell
-     in · course change · takeoff · splash. Every chip hides its category on the map *and*
+     in · course change · takeoff · wrist under. Every chip hides its category on the map *and*
      in the chart — `direction` takes the chevrons with it and leaves the route. A chip with
      nothing to show stays as a subdued caption, not a dead button. "Show all" returns.
    - **Zoom, on the strip.** Wheel or trackpad over the plot (or a two-finger pinch on a

@@ -249,9 +249,14 @@ export function marker(parent, kind, x, y, scale = 1) {
       svg("path", { d: "M0.6,1.1 L2.4,2.9 L4.1,1.1", stroke: color, "stroke-width": 1.5,
                     fill: "none", "stroke-linecap": "round", "stroke-linejoin": "round" }, g);
       break;
-    case "drop":
-      svg("path", { d: "M0,-5 C2.6,-1.6 4,-0.2 4,1.6 A4,4 0 0 1 -4,1.6 C-4,-0.2 -2.6,-1.6 0,-5 Z",
-                    fill: color, stroke: C.surface, "stroke-width": 1 }, g);
+    // **Wrist under**: a submersion episode. A diamond rather than a dot because a
+    // submersion usually sits on the fell-in verdict it belongs to, and colour alone would
+    // separate them for nobody who cannot tell cyan from green — the share card and the
+    // phone's thumbnails have always drawn this one as a diamond, and since engine 0.16.0
+    // the maps agree with them.
+    case "diamond":
+      svg("path", { d: "M0,-5.2 L5.2,0 L0,5.2 L-5.2,0 Z", fill: color,
+                    stroke: C.surface, "stroke-width": 1, "stroke-linejoin": "round" }, g);
       break;
     // A CLEAN jibe, drawn instead of that turn's outcome dot. A star rather than a fourth
     // dot colour because it is not a rung of the ladder — shape carries it, so it survives

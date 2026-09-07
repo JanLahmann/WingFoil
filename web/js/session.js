@@ -67,7 +67,8 @@ const LAYERS = [
   { id: "fellIn",       group: "marker", swatch: () => glyphSwatch("cross", C.bad) },
   { id: "courseChange", group: "marker", swatch: () => glyphSwatch("hairline", C.reject) },
   { id: "takeoff",      group: "marker", swatch: () => glyphSwatch("arrow-up", C.takeoff) },
-  { id: "splash",       group: "marker", swatch: () => glyphSwatch("drop", C.splash) },
+  { id: "splash",       group: "marker",
+    swatch: () => glyphSwatch(TOKENS.glyphs.splash.webShape, C.splash) },
 ];
 
 const OUTCOME_LAYER = { flew_through: "flewThrough", touchdown: "touchdown",
@@ -117,6 +118,52 @@ const pairTakeoff = (f) =>
   `starts flight ${f.index + 1} · ${hms(f.endTs - f.startTs)} · ended: ${f.outcome}`;
 
 const pairFailed = (strokes) => `no flight · ${plural(strokes, "stroke")}`;
+
+/* ------------------------------------------------------------------ wrist under
+ *
+ * One submersion episode, in the words the iOS callout uses (`SessionDetail.splashTitle` /
+ * `splashDetail`), word for word — the same argument the pairing lines above make: two apps
+ * wording the same fact differently is how a rider learns to trust one of them.
+ */
+
+/** "Wrist under · 4 s". The length is dropped rather than printed as "0 s" when the run is a
+ *  single sample: at 1 Hz that is an instant the recorder caught once, and a zero would read
+ *  as a measurement. */
+export const submersionTitle = (sub) =>
+  (Math.round(sub.durationS) >= 1 ? `Wrist under · ${nf(sub.durationS, 0)} s`
+                                  : "Wrist under");
+
+/** "jibe 7" — the rider's ordinal among the session's counted turns *of the same kind*, the
+ *  numbering the turn sheet's title uses. His seventh jibe, not the seventh sweep found. */
+const TURN_WORD = { jibe: "jibe", tack: "tack", bear_away: "bear-away", round_up: "round-up" };
+
+function turnOrdinal(index, g) {
+  const turn = g.turns[index];
+  if (!turn || !turn.counted) return null;
+  const same = g.turns
+    .map((t, i) => ({ t, i }))
+    .filter(({ t }) => t.counted && t.type === turn.type);
+  const at = same.findIndex(({ i }) => i === index);
+  return at < 0 ? null : at + 1;
+}
+
+/** What the episode happened *during*, in the engine's own attribution order: the turn whose
+ *  outcome window owns it, else the flight end's, else neither — which is a real answer and
+ *  says so. */
+export function submersionDuring(sub, g) {
+  if (sub.turnIndex !== null && sub.turnIndex !== undefined && g.turns[sub.turnIndex]) {
+    const kind = TURN_WORD[g.turns[sub.turnIndex].type] || "turn";
+    const n = turnOrdinal(sub.turnIndex, g);
+    return n === null ? `during a ${kind}` : `during ${kind} ${n}`;
+  }
+  const end = (sub.flightEndIndex === null || sub.flightEndIndex === undefined)
+    ? null : g.flightEnds[sub.flightEndIndex];
+  if (end) {
+    return `after flight ${end.flightIndex + 1} ended` +
+           (end.stoppedS >= 1 ? `, stopped ${nf(end.stoppedS, 0)} s` : "");
+  }
+  return "while off foil";
+}
 
 const pairEnd = (f) =>
   `ends flight ${f.index + 1} · started ${hms(f.startTs)}`
@@ -388,34 +435,25 @@ function buildModel(result) {
     });
   }
 
-  // --- submersion evidence ------------------------------------------------------
-  // The barometer has to see the pressure step, so this layer is evidence, not a census.
-  for (let i = 0; i < g.turns.length; i++) {
-    const turn = g.turns[i];
-    if (!turn.submerged || !turn.counted) continue;
-    const p = at(turn.ts);
+  // --- wrist under --------------------------------------------------------------
+  // One cyan diamond per **submersion episode** (engine 0.16.0), at the sample the pressure
+  // stepped. The engine's own list, read verbatim: the mask, the run splitting, the 2 s
+  // merge and the attribution all live there, so this page and the phone cannot disagree
+  // about how many times a rider went under. Until 0.16.0 both apps drew the `submerged`
+  // *flag* on a turn or a flight end instead — one mark per maneuver that owned a dunk, at
+  // the maneuver's own start, which is how an afternoon with 35 of them showed four.
+  // Still evidence and not a census: the barometer has to see the step.
+  for (const sub of g.submersions || []) {
+    const p = at(sub.ts);
     marks.push({
-      layer: "splash", t: turn.ts, x: p.x, y: p.y, kn: traceKn(v, turn.ts),
+      layer: "splash", t: sub.ts, x: p.x, y: p.y, kn: traceKn(v, sub.ts),
       style: { shape: TOKENS.glyphs.splash.webShape, color: C.splash }, n: null,
-      title: `${turn.type} · wrist under`,
-      tip: `<b>${clockAt(meta, turn.ts)}</b> — wrist under<br>` +
-           `${esc(turn.type)} · ${nf(turn.entryKn, 1)} → ${nf(turn.minKn, 1)} kn`,
-      rows: [["time", time(turn.ts)], ["evidence", "barometer saw the wrist go under"],
-             ["turn", `${turn.type} · ${OUTCOME_LABEL[turn.outcome] || turn.outcome}`],
-             ["speed", `${nf(turn.entryKn, 2)} → ${nf(turn.minKn, 2)} kn`]],
-    });
-  }
-  for (const end of g.flightEnds) {
-    if (!end.submerged || end.ownedByTurn !== null || end.truncated) continue;
-    const p = at(end.ts);
-    marks.push({
-      layer: "splash", t: end.ts, x: p.x, y: p.y, kn: traceKn(v, end.ts),
-      style: { shape: TOKENS.glyphs.splash.webShape, color: C.splash }, n: null,
-      title: "Wrist under",
-      tip: `<b>${clockAt(meta, end.ts)}</b> — wrist under<br>straight-line flight end`,
-      rows: [["time", time(end.ts)], ["evidence", "barometer saw the wrist go under"],
-             ["channel", "straight-line flight end"],
-             ["stopped", `${nf(end.stoppedS, 1)} s`]],
+      title: submersionTitle(sub),
+      tip: `<b>${clockAt(meta, sub.ts)}</b> — ${submersionTitle(sub).toLowerCase()}<br>` +
+           esc(submersionDuring(sub, g)),
+      rows: [["time", time(sub.ts)], ["evidence", "barometer saw the wrist go under"],
+             ["under for", `${nf(sub.durationS, 0)} s`],
+             ["during", submersionDuring(sub, g)]],
     });
   }
 

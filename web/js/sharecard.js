@@ -176,13 +176,13 @@ function buildTrack(result) {
     const i = indexAt(v, t);
     return v.x[i] == null || v.y[i] == null ? null : { x: v.x[i], y: v.y[i] };
   };
-  const splash = (t) => {
-    const p = at(t);
+  // "Wrist under": one diamond per submersion episode, at the sample the pressure stepped
+  // (engine 0.16.0). The engine's own list, exactly as the session map and the phone's
+  // thumbnails read it — a card that counted a rider's dunks differently from the page it
+  // was made from is the one failure a PNG in somebody else's chat thread cannot correct.
+  for (const sub of g.submersions || []) {
+    const p = at(sub.ts);
     if (p) marks.push({ x: p.x, y: p.y, color: C.splash, splash: true });
-  };
-  for (const turn of g.turns) if (turn.submerged && turn.counted) splash(turn.ts);
-  for (const end of g.flightEnds) {
-    if (end.submerged && end.ownedByTurn === null && !end.truncated) splash(end.ts);
   }
   return runs.length || marks.length ? { runs, marks } : null;
 }
