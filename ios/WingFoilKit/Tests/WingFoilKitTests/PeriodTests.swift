@@ -28,6 +28,9 @@ import Testing
             let lat: Double?
             let lon: Double?
             let rateDurationS: Double
+            /// T2, the rate denominator. Optional because `a6` has none — a row saved
+            /// before digest schema 9 / GRDB v13, which is what pins the fallback.
+            let timerTimeS: Double?
             let durationS: Double
             let distanceKm: Double
             let foilTimeS: Double
@@ -111,6 +114,7 @@ import Testing
                 row.startLon = session.lon
                 row.spotId = spotIds[session.spot]
                 row.rateDurationS = session.rateDurationS
+                row.timerTimeS = session.timerTimeS
                 row.distanceKm = session.distanceKm
                 row.foilTimeS = session.foilTimeS
                 row.foilPct = session.foilPct
@@ -254,21 +258,37 @@ import Testing
         #expect(block[PeriodBlock.Key.cph] != "3.5")        // …and not the mean of 6.0 and 1.0
     }
 
-    /// The denominator is the engine's own cleaned span, so a period holding one afternoon
-    /// reports that afternoon's CPH rather than a second opinion about it.
+    /// Every displayed duration is T1; every rate denominator is timer time.
+    ///
+    /// The block prints both, from the same rows, and they are not the same clock: "hours on
+    /// the water" sums `rateSeconds` (the engine's cleaned elapsed span) while CPH and WPH
+    /// divide by `timerSeconds` (the session minus its pauses) — the denominator the engine
+    /// gives the session's own rates since 0.13.0, so a period holding one afternoon reports
+    /// that afternoon's CPH rather than a deflated second opinion about it.
     @Test func aPeriodDividesByTheEnginesOwnSpan() {
         var row = SessionRow(id: "one", startDate: Date(timeIntervalSince1970: 1_785_000_000),
                              durationS: 5400, sourceClass: "b")
         row.startUtcOffsetS = 0
         row.rateDurationS = 3600
+        row.timerTimeS = 1800
         row.jibes = 8
         row.jibesSuccessful = 5
+        row.wetExits = 3
         let with = Dictionary(uniqueKeysWithValues:
             PeriodBlock.entries(LibraryStore.facts([row])).map { ($0.key, $0.value) })
-        #expect(with[PeriodBlock.Key.cph] == "5.0")
+        #expect(with[PeriodBlock.Key.hours] == "1.0 h")   // the shown duration is T1
+        #expect(with[PeriodBlock.Key.cph] == "10.0")      // 5 clean in half an hour of timer
+        #expect(with[PeriodBlock.Key.cph] != "5.0")       // …not 5 over the elapsed hour
+        #expect(with[PeriodBlock.Key.wph] == "6.0")       // the same divisor, 3 swims
 
-        // A row the v12 sweep has not refilled falls back to the raw span, which is what
-        // this layer divided by before the column existed.
+        // A row the v13 sweep has not refilled falls back to the elapsed span — the closest
+        // clock it stores, and the number this layer divided by before the column existed.
+        row.timerTimeS = nil
+        let pre13 = Dictionary(uniqueKeysWithValues:
+            PeriodBlock.entries(LibraryStore.facts([row])).map { ($0.key, $0.value) })
+        #expect(pre13[PeriodBlock.Key.cph] == "5.0")
+
+        // And one the v12 sweep never reached has only the raw sample span to fall back to.
         row.rateDurationS = nil
         let without = Dictionary(uniqueKeysWithValues:
             PeriodBlock.entries(LibraryStore.facts([row])).map { ($0.key, $0.value) })
