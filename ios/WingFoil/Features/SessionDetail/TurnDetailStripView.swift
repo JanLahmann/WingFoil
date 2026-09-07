@@ -18,6 +18,14 @@ struct TurnDetailStripView: View {
     let ghost: TurnSlice?
     /// The windows this analysis was measured with — the bands are drawn to them.
     var windows = Windows()
+    /// **The pump strokes, as ticks along the foot of the trace** (engine 0.3.0).
+    ///
+    /// The page already says *whether* he pumped out and *how many* strokes it took; what it
+    /// could not say is **when** — and on a touchdown that is most of the question, because a
+    /// rider who pumps the instant he lands and one who drifts for six seconds first have the
+    /// same chip and very different jibes. Empty on a source with no accelerometer, and on a
+    /// turn no episode names, which is the same absence the chip already handles.
+    var pumps: [PumpTick] = []
     /// Seconds from the turn's start; nil when nothing is being scrubbed.
     @Binding var playheadRt: Double?
 
@@ -34,32 +42,19 @@ struct TurnDetailStripView: View {
             // Every window the engine reads, drawn and named (Jan, 7 Sep 2026: "it's not
             // clear when the jibe starts and ends, and what extended windows we look at").
             // Entry: the seconds before the sweep the entry speed is the maximum of.
-            RectangleMark(xStart: .value("Entry window", -windows.entryS),
-                          xEnd: .value("Turn start", 0))
-                .foregroundStyle(Color.secondary.opacity(0.10))
-                .annotation(position: .bottom, alignment: .center, spacing: 2) {
-                    windowLabel("entry")
-                }
+            StripChrome.band(from: -windows.entryS, to: 0,
+                             tint: StripChrome.Band.entry, caption: "entry")
             // Sweep: where the heading turned. "low" is searched to `minSpeedLagS` past it.
-            RectangleMark(xStart: .value("Turn start", 0),
-                          xEnd: .value("Turn end", slice.speed.exitRt))
-                .foregroundStyle(DesignTokens.Phase.flying.opacity(0.14))
-                .annotation(position: .bottom, alignment: .center, spacing: 2) {
-                    windowLabel("sweep")
-                }
+            StripChrome.band(from: 0, to: slice.speed.exitRt,
+                             tint: StripChrome.Band.sweep, caption: "sweep")
             // Outcome: the lookahead the verdict is read from; the lighter band inside it
             // ends where the speed was back at the recovery threshold — flying again.
-            RectangleMark(xStart: .value("Turn end", slice.speed.exitRt),
-                          xEnd: .value("Outcome window",
-                                       slice.speed.exitRt + windows.outcomeS))
-                .foregroundStyle(TurnOutcomeStyle.color(.touchdown).opacity(0.05))
-                .annotation(position: .bottom, alignment: .center, spacing: 2) {
-                    windowLabel("outcome")
-                }
+            StripChrome.band(from: slice.speed.exitRt,
+                             to: slice.speed.exitRt + windows.outcomeS,
+                             tint: StripChrome.Band.outcome, caption: "outcome")
             if let recoverRt = slice.speed.recoverRt, recoverRt > slice.speed.exitRt {
-                RectangleMark(xStart: .value("Turn end", slice.speed.exitRt),
-                              xEnd: .value("Flying again", recoverRt))
-                    .foregroundStyle(DesignTokens.Phase.flying.opacity(0.08))
+                StripChrome.band(from: slice.speed.exitRt, to: recoverRt,
+                                 tint: StripChrome.Band.recovery, caption: nil)
             }
 
             if let ghost, ghost.hasGeometry {
@@ -108,21 +103,56 @@ struct TurnDetailStripView: View {
                 quietMark(at: quietRt, captioned: !quietOverprints(quietRt))
             }
 
-            if let playheadRt {
-                RuleMark(x: .value("Playhead", playheadRt))
-                    .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 3]))
-                    .foregroundStyle(Color(.label))
-                    .zIndex(10)
+            // The strokes, along the floor of the plot. Deliberately at the bottom rather
+            // than on the trace: a stroke has no speed of its own, and a glyph on the line
+            // would read as a reading taken there.
+            ForEach(pumps) { tick in
+                pumpMark(tick)
             }
+
+            StripChrome.playhead(playheadRt)
         }
         .chartXScale(domain: domain)
         .chartYScale(domain: 0...ceilingKn)
         .chartXAxisLabel("s from the turn")
         .chartYAxisLabel("kn")
-        .chartOverlay { proxy in scrubSurface(proxy) }
+        .chartOverlay { proxy in
+            StripChrome.scrubSurface(proxy, domain: domain, playheadRt: $playheadRt)
+        }
         .figureHeight(regular: 170, compact: 130)
         .accessibilityElement()
         .accessibilityLabel(accessibilityText)
+    }
+
+    /// One pumping effort on the strip's clock.
+    ///
+    /// **A span, not a point, and the reason is what the engine stores.** A `PumpEpisodeRecord`
+    /// carries the first stroke, the last stroke and how many there were between them — the
+    /// individual stroke times are never persisted. So a tick per stroke would be an
+    /// invention; the honest mark is the episode's own span with its count on it, which is
+    /// also the number the chip and the coach line print.
+    struct PumpTick: Identifiable, Equatable {
+        var id: Int
+        /// The first stroke, on the event's clock.
+        var startRt: Double
+        /// The last stroke. Equal to `startRt` on a single-stroke effort, where the mark
+        /// degrades to a tick rather than a band, which is exactly right.
+        var endRt: Double
+        var strokes: Int
+    }
+
+    @ChartContentBuilder
+    private func pumpMark(_ tick: PumpTick) -> some ChartContent {
+        let floor = ceilingKn * 0.045
+        RectangleMark(xStart: .value("From", tick.startRt),
+                      xEnd: .value("To", max(tick.endRt, tick.startRt + 0.15)),
+                      yStart: .value("Floor", 0),
+                      yEnd: .value("Tick", floor))
+            .foregroundStyle(DesignTokens.Effort.pumping.opacity(0.75))
+            .annotation(position: .top, alignment: .center, spacing: 0) {
+                StripChrome.label(TurnAnalytics.strokesText(tick.strokes))
+                    .foregroundStyle(DesignTokens.Effort.pumping)
+            }
     }
 
     /// A rule and its caption. The caption sits at the top of the plot rather than beside the
@@ -130,8 +160,9 @@ struct TurnDetailStripView: View {
     /// every turn that mattered.
     /// Closer than this, two captions on the top edge overprint. ("in" now sits at the
     /// engine's entry-window maximum, up to `entrySpeedWindowS` before 0; it never collides
-    /// with "low", which is inside the sweep.)
-    private static let captionGapS = 1.5
+    /// with "low", which is inside the sweep.) The number is `StripChrome`'s, so all four
+    /// strips agree on what "close" means.
+    private static let captionGapS = StripChrome.captionGapS
 
     /// The engine's windows, read off the analysis' own config echo so the strip is drawn
     /// to the numbers in force — on a tuned dev build those are not `TurnConfig()`'s.
@@ -174,19 +205,9 @@ struct TurnDetailStripView: View {
     /// the other window words live, because it is a window boundary and not a speed.
     @ChartContentBuilder
     private func quietMark(at rt: Double, captioned: Bool) -> some ChartContent {
-        RuleMark(x: .value("Seconds", rt))
-            .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 4]))
-            .foregroundStyle(DesignTokens.Clean.jibe.opacity(0.55))
-            .annotation(position: .bottom, alignment: .center, spacing: 2) {
-                if captioned { windowLabel("quiet") }
-            }
-    }
-
-    /// The small word under a window band.
-    private func windowLabel(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 8, weight: .medium))
-            .foregroundStyle(.tertiary)
+        StripChrome.rule(at: rt, dash: [2, 4],
+                         tint: DesignTokens.Clean.jibe.opacity(0.55),
+                         caption: captioned ? "quiet" : nil)
     }
 
     /// Does the "axis" caption have to step up out of the row the speed captions sit in?
@@ -233,32 +254,6 @@ struct TurnDetailStripView: View {
         PointMark(x: .value("Seconds", rt), y: .value("Speed", kn))
             .symbolSize(28)
             .foregroundStyle(Color.accentColor)
-    }
-
-    /// One finger, anywhere on the plot, moves the dot on the drawing. `minimumDistance: 0`
-    /// so a tap works as well as a drag — the common gesture is "what was I doing *there*".
-    private func scrubSurface(_ proxy: ChartProxy) -> some View {
-        GeometryReader { geometry in
-            if let plotFrame = proxy.plotFrame {
-                let frame = geometry[plotFrame]
-                Rectangle()
-                    .fill(.clear)
-                    .contentShape(.rect)
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { value in
-                                guard let rt: Double =
-                                        proxy.value(atX: value.location.x - frame.origin.x)
-                                else { return }
-                                playheadRt = min(max(rt, domain.lowerBound),
-                                                 domain.upperBound)
-                            }
-                            // Released, not cleared: the rider let go looking at a moment,
-                            // and snatching the dot back off the drawing would undo the one
-                            // thing the gesture is for.
-                            .onEnded { _ in })
-            }
-        }
     }
 
     private var accessibilityText: String {

@@ -175,6 +175,11 @@ struct SessionDetailView: View {
                 // so it selects that tab instead. `UI_TURN_FILTER` (read there) still
                 // engages the two segmented filters for the shot, unchanged.
                 if environment["UI_OPEN_TURNS"] == "1" { tab = .turns }
+                // `UI_OPEN_FLIGHT_END=<index>` opens one flight end's page. The list of
+                // them is on Log, and the sheet is presented from there
+                // (`SessionLogView.FlightEndsCard`), so the hook has to select that tab
+                // first — a sheet attached to an unselected tab's subtree never appears.
+                if environment["UI_OPEN_FLIGHT_END"] != nil { tab = .log }
                 if let anchor = environment["UI_SCROLL_TO"] { jump(to: anchor, proxy: proxy) }
             }
             #endif
