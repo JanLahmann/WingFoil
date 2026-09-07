@@ -8,7 +8,7 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
 
 ```json
 {
-  "engineVersion": "0.13.0",
+  "engineVersion": "0.14.0",
   "config": { "foilEntrySpeed": 12.0, "...": "params actually used" },
   "capabilities": { "hasDoppler": true, "hasDevFields": false, "hasWatchLaps": false,
                      "hasAccel": false, "hasHR": true, "sampleRateHz": 1 },
@@ -181,6 +181,21 @@ straight-line fall, so the jibe ladder's `fellIn` collapses into `touchdown` (10
 `summary.longestFlightM` is renamed **`maxFlightM`** — same value, honester name: it is the
 largest distance any one flight covered and never was the longest flight's own. The rolling
 `windowRates` are deliberately untouched and stay on the elapsed clock.
+
+Engine 0.14.0 moves **one** threshold: `turnPeakRate` 25 → **18 °/s**, so the carved jibes
+the peak gate rejected are counted (a carve at 11 kn holds a steady ~13 °/s and never spikes
+the way a pivot does). Across the seventeen fixtures jibes go 499 → 538, clean jibes
+152 → **160**, course changes 99 → 147 and straight-line falls 58 → 45 — every number a
+rider reads moves the right way, and no session loses a clean jibe.
+
+`turnMaxDuration` was measured at 12 s in the same pass and **kept at 8 s**: on top of the
+new floor it buys 6 jibes and costs 26 clean ones, because a longer sweep pulls the slow
+exit into the scored minimum. A carve running past 8 s is reported as its first 8 s, so a
+10 s 150° jibe is counted as a 135° one — still a jibe, which is the verdict that matters.
+
+Turn counts, outcomes, streaks, all four session rates, `windowRates` and the HR block's swim
+events move with the new floor; **`flights`, `records`, `wind`, `takeoffs` and `pumpEpisodes`
+are byte-identical**, which is the check that says the change is confined to the turn channel.
 
 ### Fixture provenance — one converted recording, and why
 

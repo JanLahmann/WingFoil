@@ -147,6 +147,25 @@ pulls a slow exit into the minimum and cost 16 clean jibes on the corpus.
 *`longestFlightM` is renamed `maxFlightM`*, because it was never the longest flight's
 distance — it is the largest distance any one flight covered. The value is unchanged; only
 the name now says what it is.
+
+Engine 0.14.0 moves one threshold: `turnPeakRate` 25 -> **18 deg/s**.
+
+A carved jibe is not a pivoted one. At 11 kn on a 25 m radius the board comes round at a
+steady ~13 deg/s and never spikes, so a peak floor set at the pivot's 25-40 deg/s threw away
+exactly the jibes the rider was riding best -- on one flight of the 4 Sep afternoon, three of
+eight ridden reversals were invisible. 18 deg/s is where the corpus stops gaining jibes and
+starts gaining nothing but grey course-change markers.
+
+Across the seventeen fixtures: jibes 499 -> 538, clean jibes 152 -> 160, course changes
+99 -> 147, straight-line falls 58 -> 45 (a fall that had no maneuver to belong to now has
+one). Every number a rider reads moves the right way and no session loses a clean jibe.
+
+`turnMaxDuration` was measured at 12 s in the same pass and **kept at 8 s** -- the second
+time it has been proposed and declined. On top of the new floor it buys 6 jibes and costs 26
+clean ones (538/160 at 8 s against 544/134 at 12 s), for the reason 0.13.0 already named: a
+longer sweep pulls the slow exit into the minimum `turnSuccessPct` divides by. A carve
+running past 8 s is reported as its first 8 s instead, so a 10 s 150 deg jibe is counted as
+a 135 deg one -- still a jibe, which is the verdict that matters.
 """
 
 from __future__ import annotations

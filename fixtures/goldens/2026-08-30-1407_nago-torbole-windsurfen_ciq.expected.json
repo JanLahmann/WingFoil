@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.13.0",
+  "engineVersion": "0.14.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -22,7 +22,7 @@
     "turnMinAngle": 60.0,
     "turnClassifyMinAngle": 90.0,
     "turnMaxDuration": 8.0,
-    "turnPeakRate": 25.0,
+    "turnPeakRate": 18.0,
     "turnContinueRate": 5.0,
     "turnCogSpeedFloor": 2.0,
     "turnMinArc": 12.0,
