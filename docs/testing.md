@@ -999,7 +999,11 @@ uv run --with pyjwt --with cryptography --with requests \
   python ios/tools/testflight_publish.py N+1 --group external --wait
 ```
 
-`--group internal` attaches to the internal group and **skips the beta-review submission** —
+Our internal group has automatic distribution on (`hasAccessToAllBuilds`), so **every**
+processed build — the public N+1 included — reaches internal testers by itself, and Apple
+refuses a manual assignment to that group (build 29: 422 "Builds cannot be assigned to this
+internal group"). The script sees the flag and skips the assignment; it still sets What to
+Test. `--group internal` therefore mainly **skips the beta-review submission** —
 internal testers need no review, and submitting a build we never intend to ship would put it
 in front of Apple's reviewers ahead of the one we do. `--group external` is the default and
 is unchanged: attach, set What to Test, submit for beta review (the lesson of builds 6–15,

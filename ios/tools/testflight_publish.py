@@ -108,9 +108,14 @@ def main():
             print("skip", "internal" if is_internal else "external", "group",
                   g["attributes"]["name"])
             continue
-        # Internal groups usually receive every processed build automatically; POSTing the
-        # relationship is harmless where that already happened and is the only way in where
-        # the group is not set to auto-notify.
+        # An internal group with "automatic distribution" on (`hasAccessToAllBuilds`) gets
+        # every processed build by itself, and Apple *refuses* a manual assignment to it
+        # (422 "Builds cannot be assigned to this internal group", build 29, 7 Sep 2026).
+        # Only a group without that flag needs the relationship POSTed.
+        if g["attributes"].get("hasAccessToAllBuilds"):
+            print("already in", g["attributes"]["name"], "— the group receives every build")
+            attached += 1
+            continue
         req(f"/betaGroups/{g['id']}/relationships/builds", "POST",
             {"data": [{"type": "builds", "id": bid}]})
         attached += 1
