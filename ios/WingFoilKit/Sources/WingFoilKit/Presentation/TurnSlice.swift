@@ -32,12 +32,19 @@ public struct TurnSlice: Sendable, Equatable {
         public var lat: Double
         public var lon: Double
         public var kn: Double
+        /// Barometric altitude in metres, carried through unfiltered — the same channel the
+        /// submersion mask reads (`CleanSample.altM`). Its *absolute* value is meaningless on
+        /// the water; what the barometer strip draws is its distance from the session
+        /// reference (`BaroReference.session`). nil on a source with no barometer, which is
+        /// how the strip knows to print its empty line instead of a flat trace at zero.
+        public var altM: Double?
 
-        public init(t: Double, lat: Double, lon: Double, kn: Double) {
+        public init(t: Double, lat: Double, lon: Double, kn: Double, altM: Double? = nil) {
             self.t = t
             self.lat = lat
             self.lon = lon
             self.kn = kn
+            self.altM = altM
         }
     }
 
@@ -62,15 +69,29 @@ public struct TurnSlice: Sendable, Equatable {
         public var headingDeg: Double?
         /// Inside `turn.ts ... turn.endTs` — the part drawn thick and coloured.
         public var inTurn: Bool
+        /// Barometric altitude at this vertex, unfiltered — see `Sample.altM`.
+        public var altM: Double?
 
         public init(x: Double, y: Double, rt: Double, kn: Double,
-                    headingDeg: Double? = nil, inTurn: Bool) {
+                    headingDeg: Double? = nil, inTurn: Bool, altM: Double? = nil) {
             self.x = x
             self.y = y
             self.rt = rt
             self.kn = kn
             self.headingDeg = headingDeg
             self.inTurn = inTurn
+            self.altM = altM
+        }
+
+        /// **True wind angle** at this vertex: 0 = pointing straight at the wind it comes
+        /// from, ±180 = dead downwind, signed the way the board is off the axis.
+        ///
+        /// Read from the *north-up* heading and the wind direction, never from a rotated
+        /// frame's heading — the wind-up rotation subtracts the wind from every heading, so
+        /// on those points the heading already **is** the TWA and subtracting again would
+        /// double it. Callers pass the slice's own `windDirDeg` and the north-up points.
+        public func twaDeg(windFromDeg: Double) -> Double? {
+            headingDeg.map { TurnSlice.delta(from: windFromDeg, to: $0) }
         }
     }
 
@@ -181,6 +202,16 @@ public struct TurnSlice: Sendable, Equatable {
     public static let minSpanM = 20.0
     /// Default lead-in / run-out either side of the turn, in seconds.
     public static let defaultPadS = 8.0
+    /// How far the dev build's window control may widen the lead-in and the run-out.
+    ///
+    /// They are deliberately not the same range. The lead-in only has to hold the entry
+    /// window (`entrySpeedWindowS`, 3 s) plus the approach a reader wants to see, and every
+    /// second added to it pushes the sweep to the right of the frame. The run-out has to be
+    /// able to hold the *quiet tail* — 10 s past the sweep at the default, which is why at
+    /// the fixed 8 s the strip's `quiet` rule almost never fitted — and a fall's whole
+    /// recovery, which can be a minute (`outcomeWindowS`). Hence 5…20 and 8…60.
+    public static let padBeforeRangeS = 5.0...20.0
+    public static let padAfterRangeS = 8.0...60.0
 
     // MARK: - Stored
 
@@ -206,8 +237,14 @@ public struct TurnSlice: Sendable, Equatable {
     /// comes back has swept more than its net. nil when the window has too few usable bearings
     /// to say.
     public let midRotationRt: Double?
-    /// Seconds of lead-in and run-out this slice was cut with.
-    public let padS: Double
+    /// Seconds of lead-in this slice was cut with (before `turn.ts`).
+    public let padBeforeS: Double
+    /// Seconds of run-out this slice was cut with (after `turn.endTs`).
+    ///
+    /// Split from the lead-in on 7 Sep 2026 so the dev build can widen the two ends
+    /// independently. They were one number, and one number could not hold the quiet tail
+    /// without also pushing the sweep off-centre — see `padAfterRangeS`.
+    public let padAfterS: Double
 
     /// Enough vertices to draw a line. A slice of a turn the GPS had no fix through still
     /// carries its numbers — the sheet is mostly numbers — and simply draws no map.
@@ -233,7 +270,9 @@ public struct TurnSlice: Sendable, Equatable {
     }
 
     /// The strip's x domain: the whole padded window.
-    public var timeDomain: ClosedRange<Double> { -padS ... max(durationS + padS, -padS + 1) }
+    public var timeDomain: ClosedRange<Double> {
+        -padBeforeS ... max(durationS + padAfterS, -padBeforeS + 1)
+    }
 
     public func points(windUp: Bool) -> [Point] {
         windUp ? (windUpPoints ?? points) : points
@@ -241,6 +280,22 @@ public struct TurnSlice: Sendable, Equatable {
 
     public func bounds(windUp: Bool) -> Bounds? {
         windUp ? (windUpBounds ?? bounds) : bounds
+    }
+
+    /// Everything the drawing needs and nothing it does not — the shape a straight-line
+    /// flight end can also be put in (`FlightEndSlice.figure`), so one `Canvas` draws both.
+    public var figure: ManeuverFigure {
+        ManeuverFigure(points: points, windUpPoints: windUpPoints,
+                       bounds: bounds, windUpBounds: windUpBounds,
+                       windDirDeg: windDirDeg,
+                       entryKn: speed.entryKn,
+                       lowRt: hasGeometry ? speed.minRt : nil,
+                       endRt: hasGeometry ? speed.exitRt : nil,
+                       outcome: turn.outcome,
+                       axisRt: axisRt,
+                       timeDomain: timeDomain,
+                       durationS: durationS,
+                       title: TurnAnalytics.typeLabel(turn.type))
     }
 
     // MARK: - Building
@@ -256,11 +311,15 @@ public struct TurnSlice: Sendable, Equatable {
     /// The projection is equirectangular around the turn's **entry point** — not the window's
     /// centroid — so the entry sits at the origin. That is what lets a ghost turn be laid over
     /// this one by doing nothing at all: both are already anchored at their own entries.
+    /// The two pads default to `defaultPadS`, so every caller that does not care is drawn
+    /// exactly as it was before they were split.
     public static func make(samples: [Sample], turn: TurnRecord, windDirDeg: Double?,
-                            padS: Double = defaultPadS) -> TurnSlice {
-        let pad = max(padS, 0)
-        let from = turn.ts - pad
-        let to = turn.endTs + pad
+                            padBeforeS: Double = defaultPadS,
+                            padAfterS: Double = defaultPadS) -> TurnSlice {
+        let before = max(padBeforeS, 0)
+        let after = max(padAfterS, 0)
+        let from = turn.ts - before
+        let to = turn.endTs + after
         let window = samples.filter { $0.t >= from && $0.t <= to }
 
         // The anchor: the positioned sample nearest the turn's start. Without one there is no
@@ -268,7 +327,8 @@ public struct TurnSlice: Sendable, Equatable {
         guard let anchor = nearest(window, t: turn.ts) ?? nearest(samples, t: turn.ts) else {
             return TurnSlice(turn: turn, points: [], windUpPoints: nil,
                              windDirDeg: windDirDeg, bounds: nil, windUpBounds: nil,
-                             speed: marks(window, turn: turn), midRotationRt: nil, padS: pad)
+                             speed: marks(window, turn: turn), midRotationRt: nil,
+                             padBeforeS: before, padAfterS: after)
         }
         let cosLat = cos(anchor.lat * .pi / 180)
 
@@ -279,7 +339,8 @@ public struct TurnSlice: Sendable, Equatable {
                                 y: (sample.lat - anchor.lat) * 110_540,
                                 rt: sample.t - turn.ts,
                                 kn: sample.kn,
-                                inTurn: sample.t >= turn.ts && sample.t <= turn.endTs))
+                                inTurn: sample.t >= turn.ts && sample.t <= turn.endTs,
+                                altM: sample.altM))
         }
         applyHeadings(&points)
 
@@ -292,7 +353,7 @@ public struct TurnSlice: Sendable, Equatable {
                          windUpBounds: up.flatMap(Bounds.around)?.padded(),
                          speed: marks(window, turn: turn),
                          midRotationRt: midRotation(points),
-                         padS: pad)
+                         padBeforeS: before, padAfterS: after)
     }
 
     /// The bearing from each vertex to the next, written onto the vertex it leaves.
@@ -300,7 +361,10 @@ public struct TurnSlice: Sendable, Equatable {
     /// The last vertex inherits the one before it rather than being left nil: it is the end of
     /// the run-out, and a tick that vanished at the edge of the frame would read as a gap in
     /// the recording.
-    private static func applyHeadings(_ points: inout [Point]) {
+    /// Internal rather than private: `FlightEndSlice` projects its own window and needs the
+    /// same bearings, and two copies of "the bearing of a metre of GPS noise is a random
+    /// number" is one copy too many.
+    static func applyHeadings(_ points: inout [Point]) {
         guard points.count >= 2 else { return }
         for index in 0..<(points.count - 1) {
             let dx = points[index + 1].x - points[index].x
@@ -404,9 +468,11 @@ public struct TurnSlice: Sendable, Equatable {
     /// toggle simply says there is nothing to compare with.
     public static func ghost(for turn: TurnRecord, in turns: [TurnRecord],
                              samples: [Sample], windDirDeg: Double?,
-                             padS: Double = defaultPadS) -> TurnSlice? {
+                             padBeforeS: Double = defaultPadS,
+                             padAfterS: Double = defaultPadS) -> TurnSlice? {
         guard let best = bestClean(for: turn, in: turns) else { return nil }
-        return make(samples: samples, turn: best, windDirDeg: windDirDeg, padS: padS)
+        return make(samples: samples, turn: best, windDirDeg: windDirDeg,
+                    padBeforeS: padBeforeS, padAfterS: padAfterS)
     }
 
     /// The comparison turn itself, exposed for the tests and for a caller that wants to name
@@ -452,20 +518,10 @@ public struct TurnSlice: Sendable, Equatable {
     }
 
     /// The vertex nearest a relative time — what the strip's scrub drives the map's playhead
-    /// dot through.
+    /// dot through. Spelled once, on the figure, because the flight-end drawing asks the same
+    /// question of the same points.
     public func point(atRelative rt: Double, windUp: Bool) -> Point? {
-        let all = points(windUp: windUp)
-        guard !all.isEmpty else { return nil }
-        var best = all[0]
-        var bestDelta = Double.infinity
-        for point in all {
-            let d = abs(point.rt - rt)
-            if d < bestDelta {
-                bestDelta = d
-                best = point
-            }
-        }
-        return best
+        figure.point(atRelative: rt, windUp: windUp)
     }
 
     /// A scale bar the frame has room for: 10 m, 25 m or 50 m, whichever is the largest that
