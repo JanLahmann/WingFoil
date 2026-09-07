@@ -123,7 +123,10 @@ class TurnDetector {
     }
 
     // docs/algorithms.md defaults (not user-tunable on the watch)
-    const MIN_ANGLE_DEG = 60.0;
+    // 90° since engine 0.13.0 (was 60°): on the corpus the 60–89° sweeps were almost all
+    // course changes the classifier never counted anyway — raising the floor cost 5 of 773
+    // jibes and removed 107 of 124 grey dots, with the clean count unchanged.
+    const MIN_ANGLE_DEG = 90.0;
     const MAX_DURATION_S = 8.0;
     const PEAK_RATE_DEG_S = 25.0;
     const CONTINUE_RATE_DEG_S = 5.0;

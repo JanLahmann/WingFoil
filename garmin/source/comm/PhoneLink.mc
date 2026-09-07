@@ -199,7 +199,12 @@ module PhoneLink {
         var d = e.detector;
         var t = e.turns;
         var p = e.pump;
-        var pct = c.elapsedS > 0 ? (d.foilTimeS / c.elapsedS * 100.0).toNumber() : 0;
+        // Foil share over TIMER time — the same denominator the watch's own pages, FIT
+        // field 22 and the phone use (foil time ÷ total time minus pauses). Until 7 Sep 2026
+        // this divided by elapsedS, the wall clock including pauses, so a session imported
+        // through the companion card read a lower foil % than the same session's FIT.
+        // KEY_DUR below stays elapsed on purpose: it mirrors the FIT's total_elapsed_time.
+        var pct = e.timerS > 0 ? (d.foilTimeS / e.timerS * 100.0).toNumber() : 0;
         if (pct > 100) {
             pct = 100;
         }
