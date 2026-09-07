@@ -145,17 +145,15 @@ struct TuningView: View {
         let overridden = overrides.isOverridden(parameter)
         return VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(spec.title)
-                        .font(.subheadline.weight(overridden ? .semibold : .regular))
-                    Text(parameter.rawValue)
-                        .font(.caption2.monospaced())
-                        .foregroundStyle(.tertiary)
-                }
+                heading(spec, parameter: parameter, overridden: overridden)
                 Spacer(minLength: 8)
-                Text(spec.formatted(value))
-                    .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(overridden ? Color.accentColor : Color.secondary)
+                // A switch carries its state in the control itself; printing "on" beside a
+                // control that already says on is one reading of the same fact too many.
+                if spec.kind == .slider {
+                    Text(spec.formatted(value))
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundStyle(overridden ? Color.accentColor : Color.secondary)
+                }
                 if overridden {
                     Button {
                         overrides.reset(parameter)
@@ -167,6 +165,50 @@ struct TuningView: View {
                     .accessibilityLabel("Reset \(spec.title)")
                 }
             }
+            control(spec, parameter: parameter)
+            Text("default \(spec.formatted(spec.defaultValue)) · \(spec.note)")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .contain)
+    }
+
+    /// The row's name in the rider's words, with the docs/algorithms.md name small under it —
+    /// the same two lines whether the control below is a slider or a switch.
+    private func heading(_ spec: TuningParameterSpec, parameter: TuningParameter,
+                         overridden: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(spec.title)
+                .font(.subheadline.weight(overridden ? .semibold : .regular))
+                .fixedSize(horizontal: false, vertical: true)
+            Text(parameter.rawValue)
+                .font(.caption2.monospaced())
+                .foregroundStyle(.tertiary)
+        }
+    }
+
+    /// **A slider for a quantity, a switch for a rule** (`TuningKind`). The stored value is a
+    /// `Double` either way — the override map, the fingerprint and the reset never learn there
+    /// are two kinds — so the split lives here and nowhere else.
+    @ViewBuilder
+    private func control(_ spec: TuningParameterSpec,
+                         parameter: TuningParameter) -> some View {
+        switch spec.kind {
+        case .toggle:
+            Toggle(isOn: Binding(
+                get: { spec.isOn(overrides.value(for: parameter)) },
+                set: { isOn in
+                    overrides[parameter] = isOn ? 1 : 0
+                    commit()
+                })) {
+                    Text(spec.title)
+                }
+                .labelsHidden()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityLabel(spec.title)
+        case .slider:
             Slider(value: Binding(
                 get: { overrides.value(for: parameter) },
                 set: { newValue in
@@ -180,13 +222,7 @@ struct TuningView: View {
             } maximumValueLabel: {
                 Text(spec.format(spec.range.upperBound)).font(.caption2).foregroundStyle(.tertiary)
             }
-            Text("default \(spec.formatted(spec.defaultValue)) · \(spec.note)")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.vertical, 2)
-        .accessibilityElement(children: .contain)
     }
 
     /// Written through on every change rather than on leaving: a page that loses a slider drag

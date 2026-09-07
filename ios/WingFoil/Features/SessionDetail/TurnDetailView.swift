@@ -154,6 +154,14 @@ private struct TurnDetailPage: View {
                                    quietS: detail.analysis.config.turnCleanQuietS)
     }
 
+    /// Why this turn is a touchdown or a fall (engine 0.18.0) — the kit's wording, with this
+    /// analysis' own exit speed, so the one sentence that names a speed names the speed the
+    /// run was actually judged against. nil on a fly-through and on a stored document written
+    /// before the reason existed.
+    private func outcomeText(_ turn: TurnRecord) -> String? {
+        TurnAnalytics.outcomeText(turn, foilExitSpeedKmh: detail.analysis.config.foilExitSpeed)
+    }
+
     private var windUp: Bool { windUpPreferred && windKnown }
     private var showsGhost: Bool { ghostEnabled && ghost != nil }
 
@@ -309,6 +317,18 @@ private struct TurnDetailPage: View {
                          tint: DesignTokens.Effort.splash)
                 }
                 Spacer(minLength: 0)
+            }
+
+            // **Why it ended that way** (engine 0.18.0), directly under the chips. Jan asked
+            // for "a short comment for the user why a jibe is a touchdown or a fall": the
+            // numbers were all on the page already — stopped, off foil, wrist under — and the
+            // rider was left to assemble the verdict out of them. One sentence, the engine's
+            // own reason, and the same sentence the web session page prints.
+            if let why = outcomeText(turn) {
+                Text(why)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(12)
