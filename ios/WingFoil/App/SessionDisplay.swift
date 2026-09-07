@@ -251,9 +251,21 @@ enum Fmt {
         return String(format: "%.2f kn", value)
     }
 
+    /// **A share, under the one percent rule** (docs/presentation.md, "Label table").
+    ///
+    /// One decimal below 10 %, none at or above it, and always a space before the sign —
+    /// `PeriodBlock.percent`, `library._f_pct` and `pct` in web/js/viz.js are the same
+    /// rule spelled in their own languages.
+    ///
+    /// The magnitude switch is there for the small numbers: a 0.4 % clean-jibe rate at no
+    /// decimals is `0 %`, which reads as "none", and one clean jibe in three hundred is
+    /// not none. Above ten points the decimal is noise. The space is what every other unit
+    /// in this app already gets (`2.6 km`, `13.47 kn`, `10:45 min`); the percent sign was
+    /// the one that rode tight against its digits on the cards and spaced in the period
+    /// block, which is how one share came out `47%` and `47.3 %` on the same afternoon.
     static func pct(_ value: Double?) -> String {
         guard let value else { return "—" }
-        return String(format: "%.0f%%", value)
+        return String(format: abs(value) < 10 ? "%.1f %%" : "%.0f %%", value)
     }
 
     static func meters(_ value: Double?) -> String {
