@@ -69,6 +69,11 @@ struct SessionDetail: Sendable {
         /// "Pairing").
         var pairing: String?
         var flightIndex: Int?
+        /// Index into `analysis.flightEnds` when this mark **is** a straight-line flight end,
+        /// nil on a turn — the mirror of `turnIndex`, and what puts the "Details" affordance
+        /// on a hollow ring's callout. Carried rather than looked up by timestamp for the
+        /// reason `turnIndex` is: two flights can end in the same second of a gappy import.
+        var flightEndIndex: Int?
     }
 
     /// One pumping *attempt*, as a stretch of track: the episode's first stroke to its last.
@@ -222,7 +227,16 @@ struct SessionDetail: Sendable {
     /// a sheet that looks at forty of them at a time. The union of the turn windows is what the
     /// feature actually needs, at the rate it was recorded at, and it is bounded by the number
     /// of turns rather than by the length of the afternoon.
-    let turnSamples: [TurnSlice.Sample]
+    ///
+    /// Since 7 Sep 2026 the *flight ends* draw from it too — the flight-end detail page is
+    /// the same picture of the same track — so the windows are the union of the counted
+    /// turns' and the drawn ends', and the name stopped saying "turn".
+    let sliceSamples: [TurnSlice.Sample]
+    /// The altitude every submersion is measured against: the session median of the cleaned
+    /// track's finite barometric samples (`BaroReference.session`, which is the engine's own
+    /// `Evidence.submergedReference`). nil on a source with no barometer, which is what makes
+    /// the barometer strip print its one-line empty state instead of a flat trace at zero.
+    let baroReferenceM: Double?
     /// The wind direction the turn detail's wind-up frame rotates by — degrees the wind blows
     /// **from** — or nil when this session has none to offer.
     ///
@@ -301,7 +315,8 @@ struct SessionDetail: Sendable {
         filter.gapMinS = analysis.config.gapMinS
         filter.gapFactor = analysis.config.gapFactor
         let clean = TrackCleaner.clean(track, config: filter)
-        turnSamples = Self.buildTurnSamples(analysis, positioned: positioned, clean: clean)
+        sliceSamples = Self.buildSliceSamples(analysis, positioned: positioned, clean: clean)
+        baroReferenceM = BaroReference.session(clean.samples.map(\.altM))
         windDirDeg = track.watchSummary.windDirUserDeg
             ?? analysis.wind.flatMap { $0.usable ? $0.dirDeg : nil }
         efforts = Self.buildEfforts(analysis, positioned: positioned)
@@ -347,6 +362,9 @@ struct SessionDetail: Sendable {
         /// The counted turn this callout is about, as an index into `analysis.turns`. Present
         /// only on a turn marker, and what puts the "Details" affordance on the card.
         var turnIndex: Int?
+        /// The straight-line flight end this callout is about. Present only on a hollow
+        /// ring, and never on a turn: the two drill-ins are different pages.
+        var flightEndIndex: Int?
     }
 
     /// A flight the map has asked the chart to frame.
@@ -385,7 +403,8 @@ struct SessionDetail: Sendable {
             consider(marker.lat, marker.lon) {
                 Callout(id: "marker-\(marker.id)", title: marker.title,
                         detail: marker.detail, pairing: marker.pairing, t: marker.t,
-                        turnIndex: marker.turnIndex)
+                        turnIndex: marker.turnIndex,
+                        flightEndIndex: marker.flightEndIndex)
             }
         }
         for mark in splashMarks {
@@ -525,7 +544,8 @@ struct SessionDetail: Sendable {
         var nextID = 0
 
         func add(t: Double, tone: EventMarker.Tone, filled: Bool, title: String, detail: String,
-                 flightIndex: Int? = nil, isCleanJibe: Bool = false, turnIndex: Int? = nil) {
+                 flightIndex: Int? = nil, isCleanJibe: Bool = false, turnIndex: Int? = nil,
+                 flightEndIndex: Int? = nil) {
             guard let sample = nearest(positioned, t: t),
                   let lat = sample.lat, let lon = sample.lon else { return }
             let flight = flightIndex.flatMap { FlightPairing.flight(at: $0, in: pairings) }
@@ -534,7 +554,8 @@ struct SessionDetail: Sendable {
                                    isCleanJibe: isCleanJibe,
                                    title: title, detail: detail,
                                    pairing: flight.map(FlightPairing.flightEndLine),
-                                   flightIndex: flight?.index))
+                                   flightIndex: flight?.index,
+                                   flightEndIndex: flightEndIndex))
             nextID += 1
         }
 
@@ -554,12 +575,16 @@ struct SessionDetail: Sendable {
                 // callout still names it, and the "Details" affordance is simply absent.
                 turnIndex: turn.counted ? index : nil)
         }
-        for end in PresentationRules.drawnFlightEnds(analysis) {
+        // By index, so the callout can name the record the flight-end page opens on — the
+        // list is `PresentationRules.drawnFlightEnds` read positionally.
+        for index in FlightEndAnalytics.drawnIndices(analysis) {
+            let end = analysis.flightEnds[index]
             var detail = "straight-line"
             if end.stoppedS > 0 { detail += String(format: " · stopped %.0f s", end.stoppedS) }
             if end.submerged { detail += " · wrist under" }
             add(t: end.ts, tone: outcomeTone(end.outcome), filled: false,
-                title: endTitle(end.outcome), detail: detail, flightIndex: end.flightIndex)
+                title: endTitle(end.outcome), detail: detail, flightIndex: end.flightIndex,
+                flightEndIndex: index)
         }
         return out.sorted { $0.t < $1.t }
     }
@@ -769,13 +794,14 @@ struct SessionDetail: Sendable {
         }
     }
 
-    /// The samples the turn detail sheet draws from — see `turnSamples`.
+    /// The samples the two detail sheets draw from — see `sliceSamples`.
     ///
-    /// One pass over the positioned stream against the union of the counted turns' padded
-    /// windows, not a filter per turn: a session with fifty jibes would otherwise walk the
-    /// track fifty times. The pad is generous — twice `TurnSlice.defaultPadS` — because the
-    /// sheet is free to widen its lead-in later and a slice that ran out of samples at the
-    /// edge would silently draw a shorter approach than it asked for.
+    /// One pass over the positioned stream against the union of the counted turns' and the
+    /// drawn flight ends' padded windows, not a filter per event: a session with fifty jibes
+    /// would otherwise walk the track fifty times. The pad is the **widest the window control
+    /// can ask for** (`TurnSlice.padBeforeRangeS` / `padAfterRangeS`), not the default: a
+    /// slice that ran out of samples at the edge would silently draw a shorter run-out than
+    /// the slider says it is drawing, which is worse than not having the slider.
     ///
     /// **Speed is the maneuver channel, not the FIT's Doppler.** The record's `entryKn`,
     /// `minKn` and `exitKn` were read on `CleanSample.hybridMps` (position-derived, because
@@ -783,22 +809,27 @@ struct SessionDetail: Sendable {
     /// more), and a strip that drew Doppler under those numbers put 9.4 under an 8.1 on
     /// Jan's phone (6 Sep 2026). Samples the cleaner dropped are not drawn either: the sheet
     /// shows the track the verdict was scored on, and nothing else.
-    private static func buildTurnSamples(_ analysis: SessionAnalysis,
-                                         positioned: [RecordSample],
-                                         clean: CleanTrack) -> [TurnSlice.Sample] {
-        let pad = TurnSlice.defaultPadS * 2
-        let windows = analysis.turns
+    private static func buildSliceSamples(_ analysis: SessionAnalysis,
+                                          positioned: [RecordSample],
+                                          clean: CleanTrack) -> [TurnSlice.Sample] {
+        let before = TurnSlice.padBeforeRangeS.upperBound
+        let after = TurnSlice.padAfterRangeS.upperBound
+        var windows = analysis.turns
             .filter(\.counted)
-            .map { (start: $0.ts - pad, end: $0.endTs + pad) }
-            .sorted { $0.start < $1.start }
+            .map { (start: $0.ts - before, end: $0.endTs + after) }
+        windows += PresentationRules.drawnFlightEnds(analysis)
+            .map { (start: $0.ts - before, end: $0.ts + after) }
+        windows.sort { $0.start < $1.start }
         guard !windows.isEmpty else { return [] }
 
         // Cleaned samples keep the record's own `t`, so an exact key is safe; the rounding
         // only guards against a sub-millisecond difference introduced by projection maths.
         func key(_ t: Double) -> Int64 { Int64((t * 1000).rounded()) }
-        var maneuverMps: [Int64: Double] = [:]
-        maneuverMps.reserveCapacity(clean.samples.count)
-        for sample in clean.samples { maneuverMps[key(sample.t)] = sample.hybridMps }
+        var maneuver: [Int64: (mps: Double, altM: Double?)] = [:]
+        maneuver.reserveCapacity(clean.samples.count)
+        for sample in clean.samples {
+            maneuver[key(sample.t)] = (mps: sample.hybridMps, altM: sample.altM)
+        }
 
         var out: [TurnSlice.Sample] = []
         var index = 0
@@ -809,11 +840,29 @@ struct SessionDetail: Sendable {
             while index < windows.count && windows[index].end < sample.t { index += 1 }
             guard index < windows.count else { break }
             guard sample.t >= windows[index].start else { continue }
-            guard let mps = maneuverMps[key(sample.t)] else { continue }
+            guard let cleaned = maneuver[key(sample.t)] else { continue }
+            // The barometer rides along: it is the same cleaned sample, and carrying it here
+            // is what lets the third strip draw the channel the submersion mask reads without
+            // a second pass over the track.
             out.append(TurnSlice.Sample(t: sample.t, lat: lat, lon: lon,
-                                        kn: mps * Units.mpsToKn))
+                                        kn: cleaned.mps * Units.mpsToKn,
+                                        altM: cleaned.altM))
         }
         return out
+    }
+
+    /// The barometer series for one drawn window, on that event's own clock.
+    ///
+    /// The reference and the episodes are both the session's — the median every submersion is
+    /// measured against, and the engine's own runs — so the strip's threshold rule and its
+    /// shaded spans are the same facts the "wrist under" chip is, read a second way rather
+    /// than derived a second time (`SliceBaro`).
+    func baro(points: [TurnSlice.Point], at zeroTs: Double) -> SliceBaro {
+        SliceBaro.make(points: points, referenceM: baroReferenceM,
+                       dropM: analysis.config.turnBaroDrop,
+                       submersions: analysis.submersions.map {
+                           ($0.ts - zeroTs)...max($0.endTs - zeroTs, $0.ts - zeroTs)
+                       })
     }
 
     /// GP3S efforts, using the window provenance the engine already carries.

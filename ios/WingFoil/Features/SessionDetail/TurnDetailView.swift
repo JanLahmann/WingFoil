@@ -105,6 +105,12 @@ private struct TurnDetailPage: View {
     /// stopped comparing has stopped comparing.
     @AppStorage("turnDetail.orientation.v1") private var windUpPreferred = true
     @AppStorage("turnDetail.ghost.v1") private var ghostEnabled = true
+    #if TUNING
+    /// The drawn window, remembered per phone — see `TurnWindowControl`. Dev only: the public
+    /// build's footnote promises 8 s either side and two turns drawn at one scale in time.
+    @AppStorage("turnDetail.padBefore.v1") private var padBeforeS = TurnSlice.defaultPadS
+    @AppStorage("turnDetail.padAfter.v1") private var padAfterS = TurnSlice.defaultPadS
+    #endif
 
     /// Built once per turn rather than in `body`: scrubbing re-evaluates this view many times
     /// a second, and re-cutting the window on every frame would walk the sample array with it.
@@ -163,11 +169,16 @@ private struct TurnDetailPage: View {
                 if let turn, let slice {
                     controls
                     TurnDetailMapView(slice: slice, ghost: showsGhost ? ghost : nil,
-                                      windUp: windUp, playheadRt: playheadRt)
+                                      windUp: windUp, playheadRt: playheadRt,
+                                      onPick: { playheadRt = $0 })
                     if !slice.hasGeometry { noGeometryNote }
                     TurnDetailStripView(slice: slice, ghost: showsGhost ? ghost : nil,
                                         windows: .init(config: detail.analysis.config),
+                                        pumps: pumpTicks(turn),
                                         playheadRt: $playheadRt)
+                    #if TUNING
+                    extraStrips(slice)
+                    #endif
                     numbers(turn, slice: slice)
                     coach(turn, slice: slice)
                     footnote(turn)
@@ -178,17 +189,75 @@ private struct TurnDetailPage: View {
             .padding(.horizontal)
             .padding(.bottom, 24)
         }
-        .task(id: index) { build() }
+        .task(id: buildKey) { build() }
+    }
+
+    /// The drawn window is what the slice was *cut* with, so a pad that changed without
+    /// re-cutting would move a caption and nothing else. Keyed on the turn and both pads.
+    private var buildKey: String { "\(index)-\(pads.beforeS)-\(pads.afterS)" }
+
+    /// The lead-in and run-out in force. `.standard` in the public build, where there is no
+    /// control and the footnote's "8 s either side" is a promise.
+    private var pads: TurnWindowPads {
+        #if TUNING
+        return TurnWindowPads(beforeS: padBeforeS, afterS: padAfterS)
+        #else
+        return .standard
+        #endif
     }
 
     private func build() {
         guard let turn else { return }
-        slice = TurnSlice.make(samples: detail.turnSamples, turn: turn,
-                               windDirDeg: detail.windDirDeg)
+        slice = TurnSlice.make(samples: detail.sliceSamples, turn: turn,
+                               windDirDeg: detail.windDirDeg,
+                               padBeforeS: pads.beforeS, padAfterS: pads.afterS)
         ghost = TurnSlice.ghost(for: turn, in: detail.analysis.turns,
-                                samples: detail.turnSamples, windDirDeg: detail.windDirDeg)
+                                samples: detail.sliceSamples, windDirDeg: detail.windDirDeg,
+                                padBeforeS: pads.beforeS, padAfterS: pads.afterS)
         playheadRt = nil
     }
+
+    /// The pumping efforts this turn owns, as spans on its own clock — the same episodes the
+    /// `pumped out` chip counts (`TurnAnalytics.pumpStrokes`), placed in time.
+    private func pumpTicks(_ turn: TurnRecord) -> [TurnDetailStripView.PumpTick] {
+        let window = turn.ts...(turn.endTs + turn.outcomeWindowS)
+        return detail.analysis.pumpEpisodes.enumerated().compactMap { offset, episode in
+            let owned = episode.turnIndex == index
+            let overlaps = episode.endTs >= window.lowerBound
+                && episode.startTs <= window.upperBound
+            guard owned || overlaps else { return nil }
+            return TurnDetailStripView.PumpTick(id: offset,
+                                                startRt: episode.startTs - turn.ts,
+                                                endRt: episode.endTs - turn.ts,
+                                                strokes: episode.strokes)
+        }
+    }
+
+    #if TUNING
+    /// **The heading strip and the barometer strip**, under the speed one and on its clock.
+    ///
+    /// Dev only, both of them, and for the same reason: they are pictures of *detectors*.
+    /// The heading strip draws the three numbers that decide where a jibe begins and ends,
+    /// and the barometer strip draws the one line that decides whether a touchdown was
+    /// really a fall. A rider does not ask what his rate of turn was in degrees per second;
+    /// somebody tuning `turnPeakRate` asks nothing else.
+    @ViewBuilder
+    private func extraStrips(_ slice: TurnSlice) -> some View {
+        let config = detail.analysis.config
+        TurnHeadingStripView(
+            angles: SliceAngles.make(points: slice.points, windDirDeg: slice.windDirDeg),
+            sweep: 0...slice.speed.exitRt,
+            domain: slice.timeDomain,
+            axisRt: slice.axisRt,
+            peakRateDegS: config.turnPeakRate,
+            continueRateDegS: config.turnContinueRate ?? TurnConfig().continueRateDegS,
+            playheadRt: $playheadRt)
+        TurnBaroStripView(baro: detail.baro(points: slice.points, at: slice.turn.ts),
+                          domain: slice.timeDomain,
+                          sweep: 0...slice.speed.exitRt,
+                          playheadRt: $playheadRt)
+    }
+    #endif
 
     // MARK: - Controls
 
@@ -209,6 +278,11 @@ private struct TurnDetailPage: View {
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+
+            #if TUNING
+            TurnWindowControl(beforeS: $padBeforeS, afterS: $padAfterS,
+                              quietS: detail.analysis.config.turnCleanQuietS)
+            #endif
 
             if ghost != nil {
                 Toggle("Compare with best clean jibe", isOn: $ghostEnabled)
@@ -410,10 +484,14 @@ private struct TurnDetailPage: View {
 
     private func footnote(_ turn: TurnRecord) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text("The drawing is \(Int(TurnSlice.defaultPadS)) s either side of the sweep. "
-                 + "Ticks are one second apart; the line is coloured by speed on the ramp at "
+            let lead = Int(pads.beforeS)
+            let run = Int(pads.afterS)
+            Text("The drawing is \(lead) s before the sweep and \(run) s after it. "
+                 + "Ticks are one second apart and the numbers along the path are every "
+                 + "five; the line is coloured by speed on the ramp at "
                  + "the foot of the picture — cold at a standstill, teal at the speed you "
                  + "came in at, hot above it. North and the wind are marked top right.")
+            Text("Tap the drawing for the reading at that sample; the strips follow it.")
             Text("Score is how much of your entry speed you held through the turn. Speed here is "
                  + "the manoeuvre channel the verdict was scored on, derived from position — "
                  + "the GPS Doppler speed the records use is smoothed through a turn and "
