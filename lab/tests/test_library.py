@@ -419,14 +419,27 @@ def test_a_rate_over_a_period_divides_summed_by_summed():
 
 
 def test_the_period_divides_by_the_engines_own_span_so_one_session_agrees_with_itself():
-    """`rateDurationS` is the denominator every session rate already uses; `durationS` is
-    the FIT's elapsed time and is a third longer on one afternoon in the corpus. A month
-    holding one session must report that session's CPH, not a second opinion about it."""
-    one = at("one", "2026-08-01", "Garda", rateDurationS=3600.0, durationS=5400.0,
-             turns={"jibes": 8, "jibesSuccessful": 5})
-    assert block_of([one])["cph"] == "5.0"
-    # A row saved before schema 7 has only the elapsed time, and that is what it divides by.
-    old = dict(one)
+    """Every displayed duration is T1; every rate denominator is timer time.
+
+    `timerTimeS` (schema 9) is what a session's own rates divide by since engine 0.13.0, so
+    a month holding one afternoon must report that afternoon's CPH and not a second opinion
+    about it. "Hours on the water" is a duration and keeps T1 (`rateDurationS`); `durationS`
+    is the FIT's elapsed time and is neither.
+    """
+    one = at("one", "2026-08-01", "Garda", rateDurationS=3600.0, timerTimeS=1800.0,
+             durationS=5400.0, turns={"jibes": 8, "jibesSuccessful": 5})
+    got = block_of([one])
+    assert got["hours"] == "1.0 h"                       # the shown duration is still T1
+    assert got["cph"] == "10.0"                          # 5 clean in half an hour of timer
+    assert got["cph"] != "5.0"                           # …not 5 over the elapsed hour
+
+    # A row saved before schema 9 has no timer clock; it falls back to the elapsed span,
+    # which is the closest thing it stores and the number it was already divided by.
+    pre9 = dict(one)
+    pre9.pop("timerTimeS")
+    assert block_of([pre9])["cph"] == "5.0"
+    # And one saved before schema 7 has only the FIT's elapsed time to fall back to.
+    old = dict(pre9)
     old.pop("rateDurationS")
     assert block_of([old])["cph"] == "3.3"
 
