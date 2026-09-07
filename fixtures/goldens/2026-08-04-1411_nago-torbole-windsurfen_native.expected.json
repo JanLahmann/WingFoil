@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.15.0",
+  "engineVersion": "0.16.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -5059,6 +5059,7 @@
       "ownedByTurn": null
     }
   ],
+  "submersions": [],
   "records": {
     "best2sKn": 12.451,
     "best10sKn": 11.567,

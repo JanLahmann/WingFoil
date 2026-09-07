@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.15.0",
+  "engineVersion": "0.16.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -3102,6 +3102,288 @@
       "windowS": 12.0,
       "truncated": false,
       "ownedByTurn": null
+    }
+  ],
+  "submersions": [
+    {
+      "ts": 452.0,
+      "endTs": 455.0,
+      "durationS": 3.0,
+      "dropM": 217.6,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 470.0,
+      "endTs": 497.0,
+      "durationS": 27.0,
+      "dropM": 328.0,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 1104.0,
+      "endTs": 1108.0,
+      "durationS": 4.0,
+      "dropM": 132.8,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 1112.0,
+      "endTs": 1147.0,
+      "durationS": 35.0,
+      "dropM": 115.0,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 1834.0,
+      "endTs": 1839.0,
+      "durationS": 5.0,
+      "dropM": 166.6,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 1856.0,
+      "endTs": 1864.0,
+      "durationS": 8.0,
+      "dropM": 214.2,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 2159.0,
+      "endTs": 2164.0,
+      "durationS": 5.0,
+      "dropM": 135.4,
+      "turnIndex": null,
+      "flightEndIndex": 7
+    },
+    {
+      "ts": 2172.0,
+      "endTs": 2187.0,
+      "durationS": 15.0,
+      "dropM": 213.2,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 2489.0,
+      "endTs": 2491.0,
+      "durationS": 2.0,
+      "dropM": 109.4,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 2504.0,
+      "endTs": 2511.0,
+      "durationS": 7.0,
+      "dropM": 205.0,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 2819.0,
+      "endTs": 2823.0,
+      "durationS": 4.0,
+      "dropM": 30.8,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 3014.0,
+      "endTs": 3018.0,
+      "durationS": 4.0,
+      "dropM": 119.4,
+      "turnIndex": null,
+      "flightEndIndex": 12
+    },
+    {
+      "ts": 3036.0,
+      "endTs": 3040.0,
+      "durationS": 4.0,
+      "dropM": 297.0,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 3956.0,
+      "endTs": 3956.0,
+      "durationS": 0.0,
+      "dropM": 26.0,
+      "turnIndex": 49,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 3962.0,
+      "endTs": 3966.0,
+      "durationS": 4.0,
+      "dropM": 34.8,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 4054.0,
+      "endTs": 4060.0,
+      "durationS": 6.0,
+      "dropM": 101.0,
+      "turnIndex": null,
+      "flightEndIndex": 17
+    },
+    {
+      "ts": 4068.0,
+      "endTs": 4070.0,
+      "durationS": 2.0,
+      "dropM": 59.0,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 4736.0,
+      "endTs": 4736.0,
+      "durationS": 0.0,
+      "dropM": 29.0,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 4744.0,
+      "endTs": 4756.0,
+      "durationS": 12.0,
+      "dropM": 186.6,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 4765.0,
+      "endTs": 4781.0,
+      "durationS": 16.0,
+      "dropM": 288.4,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 4801.0,
+      "endTs": 4802.0,
+      "durationS": 1.0,
+      "dropM": 342.8,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 5089.0,
+      "endTs": 5090.0,
+      "durationS": 1.0,
+      "dropM": 52.0,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 5197.0,
+      "endTs": 5200.0,
+      "durationS": 3.0,
+      "dropM": 183.6,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 5215.0,
+      "endTs": 5218.0,
+      "durationS": 3.0,
+      "dropM": 171.0,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 5312.0,
+      "endTs": 5316.0,
+      "durationS": 4.0,
+      "dropM": 59.2,
+      "turnIndex": 68,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 5326.0,
+      "endTs": 5328.0,
+      "durationS": 2.0,
+      "dropM": 46.4,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 5494.0,
+      "endTs": 5496.0,
+      "durationS": 2.0,
+      "dropM": 118.2,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 5507.0,
+      "endTs": 5513.0,
+      "durationS": 6.0,
+      "dropM": 193.6,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 5744.0,
+      "endTs": 5751.0,
+      "durationS": 7.0,
+      "dropM": 158.8,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 5760.0,
+      "endTs": 5762.0,
+      "durationS": 2.0,
+      "dropM": 104.0,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 5945.0,
+      "endTs": 5948.0,
+      "durationS": 3.0,
+      "dropM": 119.8,
+      "turnIndex": 72,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 5960.0,
+      "endTs": 5968.0,
+      "durationS": 8.0,
+      "dropM": 127.4,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 6157.0,
+      "endTs": 6160.0,
+      "durationS": 3.0,
+      "dropM": 158.8,
+      "turnIndex": 73,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 6176.0,
+      "endTs": 6187.0,
+      "durationS": 11.0,
+      "dropM": 161.8,
+      "turnIndex": null,
+      "flightEndIndex": null
+    },
+    {
+      "ts": 6196.0,
+      "endTs": 6205.0,
+      "durationS": 9.0,
+      "dropM": 196.6,
+      "turnIndex": null,
+      "flightEndIndex": null
     }
   ],
   "records": {

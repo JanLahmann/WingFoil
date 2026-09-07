@@ -24,7 +24,7 @@ CIQ_LONG = (Path(__file__).resolve().parents[2] / "fixtures" / "sessions" / "ciq
             / "2026-08-29-1440_nago-torbole-windsurfen_ciq.fit")
 
 TOP_KEYS = ["engineVersion", "config", "capabilities", "flights", "turns", "flightEnds",
-            "records", "wind", "takeoffs", "pumpEpisodes", "hr", "summary"]
+            "submersions", "records", "wind", "takeoffs", "pumpEpisodes", "hr", "summary"]
 EPISODE_KEYS = {"startTs", "endTs", "strokes", "outcome", "bursts", "flightIndex",
                 "turnIndex", "lookaheadS"}
 CAP_KEYS = {"hasDoppler", "hasDevFields", "hasWatchLaps", "hasAccel", "hasHR", "sampleRateHz"}
@@ -77,7 +77,7 @@ def smoke_golden():
 def test_schema_shape(smoke_golden):
     g = smoke_golden
     assert list(g.keys()) == TOP_KEYS
-    assert g["engineVersion"] == "0.15.0"
+    assert g["engineVersion"] == "0.16.0"
     assert set(g["capabilities"].keys()) == CAP_KEYS
     assert set(g["records"].keys()) == RECORD_KEYS
     assert set(g["summary"].keys()) == SUMMARY_KEYS

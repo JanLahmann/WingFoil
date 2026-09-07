@@ -81,16 +81,126 @@ def flying_mask(t: np.ndarray, speed: np.ndarray, submerged: np.ndarray,
     return m & (speed > exit_mps) & ~submerged
 
 
+def submerged_reference(alt: np.ndarray) -> float | None:
+    """The altitude the submersion test is measured *against*: the session median of the
+    finite samples, or None when there is no altitude channel at all.
+
+    Spelled once because two things read it -- the mask below, and `dropM` on a submersion
+    episode, which is how far under this same line the deepest sample of the run got. A
+    second median computed anywhere else is a second definition waiting to drift.
+    """
+    ok = np.isfinite(alt)
+    if not ok.any():
+        return None
+    return float(np.median(alt[ok]))
+
+
 def submerged_mask(alt: np.ndarray, drop_m: float) -> np.ndarray:
     """Per sample: the barometer reads `drop_m` below the session median = wrist wet.
 
     All-NaN (no altitude channel) yields all-False, so sources without a barometer simply
     lose this evidence instead of failing.
     """
-    ok = np.isfinite(alt)
-    if not ok.any():
+    ref = submerged_reference(alt)
+    if ref is None:
         return np.zeros(len(alt), dtype=bool)
-    return ok & (alt < float(np.median(alt[ok])) - drop_m)
+    return np.isfinite(alt) & (alt < ref - drop_m)
+
+
+# --------------------------------------------------------------- submersion episodes
+
+
+#: Two runs closer together than this are one submersion (docs/algorithms.md "Submersion
+#: episodes"). A dunk and the wave that follows it are one event to the rider, and the
+#: altimeter's slew limiter crosses the threshold twice on the way back up.
+SUBMERSION_MERGE_S = 2.0
+
+
+@dataclass
+class Submersion:
+    """One spell the barometer says the wrist spent under water.
+
+    **Presentation evidence, never a verdict.** The `submerged` flags on turns and flight
+    ends are the outcome ladder's input and are computed exactly as they always were; this
+    is the same mask read a second way -- as events with a time, a length and a depth, so a
+    map can put one mark on each of them instead of one mark on the maneuver that owned one.
+    """
+
+    start_t: float                   # first submerged sample of the run
+    end_t: float                     # last submerged sample of the run
+    duration_s: float                # gap-aware elapsed time between the two
+    drop_m: float                    # deepest sample below `submerged_reference`
+    #: The counted turn whose outcome window this run overlaps, else None.
+    turn_index: int | None = None
+    #: Failing that, the drawn flight end whose window it overlaps, else None -- and a run
+    #: with neither happened while the rider was already off the foil.
+    flight_end_index: int | None = None
+
+
+def submersion_runs(t: np.ndarray, gap: np.ndarray, submerged: np.ndarray,
+                    alt: np.ndarray,
+                    merge_s: float = SUBMERSION_MERGE_S) -> list[Submersion]:
+    """The mask's contiguous true-runs, per gap-free segment, with near ones merged.
+
+    A recording gap always breaks a run: the samples either side of it are not evidence
+    about one another, which is the rule every other window in this module obeys.
+    """
+    ref = submerged_reference(alt)
+    if ref is None:
+        return []
+    n = len(t)
+    spans: list[tuple[int, int]] = []
+    i = 0
+    while i < n:
+        if not submerged[i]:
+            i += 1
+            continue
+        b = i
+        while b + 1 < n and submerged[b + 1] and not gap[b + 1]:
+            b += 1
+        if spans:
+            pa, pb = spans[-1]
+            near = t[i] - t[pb] < merge_s
+            broken = bool(gap[pb + 1:i + 1].any())
+            if near and not broken:
+                spans[-1] = (pa, b)
+                i = b + 1
+                continue
+        spans.append((i, b))
+        i = b + 1
+
+    out = []
+    for a, b in spans:
+        window = alt[a:b + 1]
+        deepest = float(np.min(window[np.isfinite(window)]))
+        out.append(Submersion(start_t=float(t[a]), end_t=float(t[b]),
+                              duration_s=elapsed(t, gap, a, b),
+                              drop_m=float(ref - deepest)))
+    return out
+
+
+def attribute_submersions(subs: list[Submersion],
+                          turn_windows: list[tuple[int, float, float]],
+                          end_windows: list[tuple[int, float, float]]) -> None:
+    """Name what each episode happened *during*, in place.
+
+    Order matters and is the map's: a counted turn's outcome window first, because that is
+    the maneuver a rider remembers going under in; then a drawn flight end's window, which
+    is the straight-line swim; and otherwise nothing at all -- the rider was already off the
+    foil, which is a real answer and not a missing one. First match wins, so an episode is
+    named once.
+    """
+    for sub in subs:
+        for index, w0, w1 in turn_windows:
+            if sub.start_t <= w1 and sub.end_t >= w0:
+                sub.turn_index = index
+                break
+        if sub.turn_index is not None:
+            continue
+        for index, w0, w1 in end_windows:
+            if sub.start_t <= w1 and sub.end_t >= w0:
+                sub.flight_end_index = index
+                break
 
 
 def recovery_end(t: np.ndarray, gap: np.ndarray, dop: np.ndarray, lo: int,
