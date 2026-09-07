@@ -146,6 +146,14 @@ private struct TurnDetailPage: View {
         return longest.flatMap { $0.rounded() >= 1 ? $0 : nil }
     }
 
+    /// Why the star is missing from a jibe that flew through and held its speed (engine
+    /// 0.17.0) — the kit's wording, with this analysis' own flight ends and quiet tail, so
+    /// the chip says "6 s after" only where the document it was written from can prove it.
+    private func notCleanText(_ turn: TurnRecord) -> String? {
+        TurnAnalytics.notCleanText(turn, ends: detail.analysis.flightEnds,
+                                   quietS: detail.analysis.config.turnCleanQuietS)
+    }
+
     private var windUp: Bool { windUpPreferred && windKnown }
     private var showsGhost: Bool { ghostEnabled && ghost != nil }
 
@@ -272,6 +280,12 @@ private struct TurnDetailPage: View {
                 if turn.clean {
                     chip("clean", symbol: DesignTokens.Glyph.cleanJibe,
                          tint: DesignTokens.Clean.jibe)
+                } else if let reason = notCleanText(turn) {
+                    // A jibe that flew through and held its speed and is still not clean
+                    // (engine 0.17.0). Without this the page said "flew through", said
+                    // nothing else, and left the missing star looking like a bug. The star
+                    // chip's own rule is untouched: it reads the engine's `clean` and only it.
+                    chip(reason, symbol: "star.slash", tint: .secondary)
                 }
                 if turn.pumped {
                     // "pumped out · 7 strokes" where the analysis counted them. The count is
@@ -413,6 +427,13 @@ private struct TurnDetailPage: View {
                  + "to \(Int(windows.minLagS)) s past the sweep, so it can sit after \"out\"; "
                  + "\"outcome\" is the \(Int(windows.outcomeS)) s the verdict is read from, and "
                  + "the lighter band inside it ends where you were flying again.")
+            // The quiet tail (engine 0.17.0). Said in the footnote whether or not the strip
+            // could fit its rule mark in — at the default 10 s the mark lands past the
+            // drawing's own run-out, and this sentence is then the only place the number is.
+            if let quiet = detail.analysis.config.turnCleanQuietS, quiet > 0 {
+                Text("A clean jibe also needs \(Int(quiet)) s after the sweep with no "
+                     + "touchdown, fall or wrist under.")
+            }
             if turn.axisTs != nil {
                 Text("The tick marked \"axis\" is the moment the board went through the wind "
                      + "axis — dead downwind on a jibe, head to wind on a tack — which is the "
