@@ -31,6 +31,11 @@ public struct TurnConfig: Sendable, Equatable {
     /// Jan's rule: it is a requirement for a *successful* jibe, not for a touch-down or a
     /// failed one, so it moves `success` and never the outcome ladder.
     public var axisAfterDeg: Double = 0.0
+    /// turnCleanQuietS (engine 0.17.0): seconds after the sweep that must pass with no
+    /// touchdown, no fall and no wrist under before a jibe may be called clean. Jan's rule,
+    /// 7 Sep 2026: *"no touch down or fall within 10 s afterwards"* — and only for a clean
+    /// jibe, never for the outcome ladder. 0 = off. See `quietBlocked`.
+    public var cleanQuietS: Double = 10.0
     /// turnContext: ON_FOIL or ≤ this after a flight.
     public var contextAfterS: Double = 3.0
     /// entrySpeedWindow: max speed before the turn start.
@@ -76,6 +81,23 @@ public enum TurnOutcome: String, Sendable, Codable {
     case flewThrough = "flew_through"
     case touchdown
     case fellIn = "fell_in"
+}
+
+/// **Why a counted jibe that got this far is still not clean** (engine 0.17.0).
+///
+/// nil is the fourth state and the common one: it *is* clean, or the score or the outcome
+/// already said no — and those two the page prints in words of their own, so repeating them
+/// here would say the same thing twice. What this is for is the two refusals nothing else on
+/// a turn surface shows.
+public enum CleanBlock: String, Sendable, Codable {
+    /// Carried too little past the wind axis (`turnAxisAfterDeg`).
+    case axisAfter = "axis_after"
+    /// A touchdown or a fall inside the quiet tail, seen by the flight-end channel.
+    case quietFlightEnd = "quiet_flight_end"
+    /// Off the foil for `TurnDetector.cleanQuietOffFoilS` or more inside the quiet tail.
+    case quietOffFoil = "quiet_off_foil"
+    /// The wrist went under inside the quiet tail.
+    case quietSubmerged = "quiet_submerged"
 }
 
 /// One detected course change, scored and (given wind) classified.
@@ -136,6 +158,10 @@ public struct Turn: Sendable, Equatable {
     /// not computed: `success` is known at scoring time, the outcome is not. `borderline`
     /// needs no mention — it only ever rides on a `touchdown`, already excluded here.
     public var clean = false
+    /// **Why not clean** (engine 0.17.0), or nil. Set only on a counted jibe whose score
+    /// *and* outcome were good enough: `clean` is the word this explains, and a jibe that
+    /// touched down or came in slow is not waiting for an explanation.
+    public var cleanBlockedBy: CleanBlock?
 
     public var counted: Bool { kind.counted }
 }
@@ -231,6 +257,13 @@ public enum TurnDetector {
     static let mpsToKn = Units.mpsToKn
     static let kmhToMps = 1.0 / 3.6
 
+    /// The shortest off-foil spell the quiet tail refuses (s). Deliberately a **constant**
+    /// and not a parameter: it is the resolution of the question, not a threshold anyone
+    /// tunes. At 1 Hz it means two consecutive non-flying samples, the least evidence that
+    /// can be told apart from one noisy speed reading; what *is* tunable is how long the
+    /// quiet has to last (`turnCleanQuietS`).
+    public static let cleanQuietOffFoilS = 1.0
+
     /// One accepted sweep, before any wind is applied — the geometry half of a `Turn`.
     ///
     /// Detection is split here so the wind estimator can ask "what sweeps did this session
@@ -253,15 +286,23 @@ public enum TurnDetector {
 
     /// `evidence` lets the caller hand in the whole-track `OffFoilEvidence` it already
     /// built (the flight-end classifier needs the same arrays); omitted, it is built here.
+    ///
+    /// `ends` is the session's **already-classified** flight ends, read by the clean jibe's
+    /// quiet tail (engine 0.17.0) and by nothing else. The two channels only look circular:
+    /// classification reads no turn (`FlightEndClassifier.classify(..., turns: nil)`), and it
+    /// is the *ownership* pass that does — which is why the pipeline classifies ends, detects
+    /// turns with them, and assigns ownership last. Omitted, the quiet tail simply has no
+    /// flight-end evidence to weigh, the reading an omitted `ends` already gets in `streaks`.
     public static func detect(_ track: CleanTrack, flights: FlightSegmentation,
                               wind: WindEstimate? = nil, config: TurnConfig = TurnConfig(),
                               pump: PumpTrack? = nil,
-                              evidence: OffFoilEvidence? = nil) -> [Turn] {
+                              evidence: OffFoilEvidence? = nil,
+                              ends: [FlightEnd] = []) -> [Turn] {
         var turns = acceptedCandidates(track, flights: flights, config: config).map {
             build($0, wind: wind, config: config)
         }
         assignOutcomes(&turns, track: track, flights: flights, config: config, pump: pump,
-                       evidence: evidence)
+                       evidence: evidence, ends: ends)
         return turns
     }
 
@@ -589,6 +630,7 @@ public enum TurnDetector {
                          minAngleDeg: config.classifyMinAngleDeg)
         var kind = k.kind
         let axis = axisMeasures(c, wind: wind, kind: kind, config: config)
+        var blocked: CleanBlock?
         if let courseChange = axis.courseChange {
             // Too close to the axis to have gone *through* it: filed as the same uncounted
             // course change the classification floor produces, and its axis numbers with it.
@@ -597,9 +639,15 @@ public enum TurnDetector {
             // Not enough carry past the axis to call it carried. The outcome ladder is
             // untouched (Jan: "not require that for a touch-down or failed jibe") — only
             // `success`, and so only `clean`, which is the conjunction of the two.
+            //
+            // A jibe this gate takes is one the page can otherwise say nothing about: its
+            // score is good and its outcome is a fly-through, so the mark is left here for
+            // `cleanVerdict` to read back. On a jibe the score had already failed there is
+            // nothing to explain.
+            if success, kind == .jibe { blocked = .axisAfter }
             success = false
         }
-        return Turn(startT: startT, endT: endT, minT: t[max(minIdx, 0)], kind: kind,
+        var turn = Turn(startT: startT, endT: endT, minT: t[max(minIdx, 0)], kind: kind,
                     netDeg: net, peakRateDegS: peak,
                     direction: net >= 0 ? "starboard" : "port", side: k.side,
                     entryKn: entryMan * mpsToKn, minKn: minMan * mpsToKn,
@@ -608,6 +656,8 @@ public enum TurnDetector {
                     score: score, success: success, twaInDeg: k.twaIn, twaOutDeg: k.twaOut,
                     axisT: axis.t, axisBeforeDeg: axis.beforeDeg, axisAfterDeg: axis.afterDeg,
                     arcM: arc.0, chordM: arc.1, radiusM: radiusM)
+        turn.cleanBlockedBy = blocked
+        return turn
     }
 
     // MARK: - The wind-axis crossing (engine 0.15.0)
@@ -780,24 +830,31 @@ public enum TurnDetector {
 
     static func assignOutcomes(_ turns: inout [Turn], track: CleanTrack,
                                flights: FlightSegmentation, config: TurnConfig,
-                               pump: PumpTrack?, evidence: OffFoilEvidence? = nil) {
+                               pump: PumpTrack?, evidence: OffFoilEvidence? = nil,
+                               ends: [FlightEnd] = []) {
         guard let ev = evidence ?? Evidence.build(track, flights: flights,
                                                   exitSpeedKmh: config.foilExitSpeedKmh,
                                                   baroDropM: config.baroDropM) else {
             // No evidence: every turn keeps the `flewThrough` default, but `clean` still
             // has to be filled — a session the ladder cannot judge is not one where every
             // jibe is dirty. Mirrors `_assign_outcomes` in `lab/.../turns.py`.
-            for i in turns.indices { turns[i].clean = isClean(turns[i]) }
+            for i in turns.indices {
+                (turns[i].clean, turns[i].cleanBlockedBy) =
+                    cleanVerdict(turns[i], ev: nil, config: config, ends: ends)
+            }
             return
         }
         for i in turns.indices {
             outcome(&turns[i], ev: ev, config: config, pump: pump)
-            turns[i].clean = isClean(turns[i])
+            (turns[i].clean, turns[i].cleanBlockedBy) =
+                cleanVerdict(turns[i], ev: ev, config: config, ends: ends)
         }
     }
 
-    /// **A clean jibe is a counted jibe that carried its speed and flew through** —
-    /// `counted && kind == .jibe && success && outcome == .flewThrough` (engine 0.12.0).
+    /// **A clean jibe is a counted jibe that carried its speed, flew through, and stayed out
+    /// of the water for `turnCleanQuietS` afterwards** —
+    /// `counted && kind == .jibe && success && outcome == .flewThrough` (engine 0.12.0) and a
+    /// quiet tail (engine 0.17.0, `cleanVerdict`).
     ///
     /// Until 0.12.0 "clean" was `success` alone, deliberately independent of the outcome:
     /// a jibe carved cleanly through the sweep stayed clean even when the foil was lost in
@@ -805,8 +862,81 @@ public enum TurnDetector {
     /// 54 s of swimming is not one he would call clean — so the outcome joined the verdict.
     /// `success` is untouched: it is still the score verdict, and the Turns tab still shows
     /// it. `borderline` needs no test: it only rides on a `touchdown`, already excluded.
-    static func isClean(_ turn: Turn) -> Bool {
-        turn.counted && turn.kind == .jibe && turn.success && turn.outcome == .flewThrough
+    static func isClean(_ turn: Turn, ev: OffFoilEvidence? = nil,
+                        config: TurnConfig = TurnConfig(), ends: [FlightEnd] = []) -> Bool {
+        cleanVerdict(turn, ev: ev, config: config, ends: ends).clean
+    }
+
+    /// `(clean, why not)` for one turn — the whole clean rule in one place.
+    ///
+    /// The reason is deliberately nil wherever the score or the outcome already refused the
+    /// jibe: those two are printed on every turn surface in their own words ("touched down",
+    /// "held 61 % of entry speed"), and repeating them as a *blocked-by* would say the same
+    /// thing twice. Mirrors `clean_verdict` in `lab/src/wingfoil_lab/turns.py`.
+    static func cleanVerdict(_ turn: Turn, ev: OffFoilEvidence?,
+                             config: TurnConfig,
+                             ends: [FlightEnd]) -> (clean: Bool, blocked: CleanBlock?) {
+        guard turn.counted, turn.kind == .jibe else { return (false, nil) }
+        guard turn.outcome == .flewThrough else { return (false, nil) }
+        guard turn.success else {
+            // The score verdict, or `turnAxisAfterDeg` — and only the latter left a mark on
+            // the turn when it fired (`build`), because only the latter is invisible.
+            return (false, turn.cleanBlockedBy == .axisAfter ? .axisAfter : nil)
+        }
+        guard let ev else { return (true, nil) }
+        let blocked = quietBlocked(turn, ev: ev, config: config, ends: ends)
+        return (blocked == nil, blocked)
+    }
+
+    /// Why the `turnCleanQuietS` tail after this turn was not quiet, or nil (engine 0.17.0).
+    ///
+    /// The tail is `[endT, endT + cleanQuietS]` on the *same* `OffFoilEvidence` the outcome
+    /// ladder reads, and it **stops at a recording gap** like every other window in the
+    /// engine: the samples the far side of a hole are not evidence about what happened in it.
+    ///
+    /// Three questions, most specific first, first answer wins. A **flight end** that touched
+    /// down or fell in inside the tail, asked first because it is the sharpest thing that can
+    /// be said — the flight-end channel has already classified that loss, so the page can
+    /// name it rather than describe it, and `glideOut`/`unknown` are not losses. Then an
+    /// **off-foil spell** of `cleanQuietOffFoilS` or longer, measured with the ladder's own
+    /// `offFoilRun` so "off the foil" means here exactly what it means there — the loss too
+    /// short to end a flight. Then a **submerged** sample.
+    ///
+    /// Mirrors `_quiet_blocked` in `lab/src/wingfoil_lab/turns.py`.
+    static func quietBlocked(_ turn: Turn, ev: OffFoilEvidence, config: TurnConfig,
+                             ends: [FlightEnd]) -> CleanBlock? {
+        guard config.cleanQuietS > 0 else { return nil }
+        let t = ev.t
+        let lo = searchSortedLeft(t, turn.endT)
+        guard lo < t.count else { return nil }
+        let until = turn.endT + config.cleanQuietS
+        var hi = lo
+        var i = lo
+        while i < t.count {
+            if t[i] > until || (i > lo && ev.gap[i]) { break }
+            hi = i
+            i += 1
+        }
+        let stopT = t[hi]
+
+        for end in ends where !end.truncated
+            && (end.outcome == .touchdown || end.outcome == .fellIn)
+            && end.t >= turn.endT && end.t <= stopT {
+            return .quietFlightEnd
+        }
+
+        i = lo
+        while i <= hi {
+            if ev.flying[i] { i += 1; continue }
+            let (b, resume) = Evidence.offFoilRun(t: t, flying: ev.flying, a: i, capT: stopT)
+            if Evidence.elapsed(t: t, gap: ev.gap, a: i, b: b) >= cleanQuietOffFoilS {
+                return .quietOffFoil
+            }
+            i = max(resume, b + 1)
+        }
+
+        if (lo...hi).contains(where: { ev.submerged[$0] }) { return .quietSubmerged }
+        return nil
     }
 
     /// Three-way outcome for one turn (docs/algorithms.md "Turn outcome", steps 0–5).

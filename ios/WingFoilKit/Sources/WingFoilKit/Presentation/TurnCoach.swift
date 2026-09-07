@@ -33,6 +33,17 @@ public enum TurnCoach {
         case touchdownOnExit
         /// Touchdown, low point before it — lost going in.
         case touchdownComingIn
+        /// Flew through and held its speed, and the ten seconds after it were not quiet: a
+        /// touchdown or a fall the flight-end channel saw (engine 0.17.0).
+        case quietFlightEnd
+        /// The same tail, with the foil lost for a second or more — too short to end a
+        /// flight, long enough that the jibe is not one he rode away from.
+        case quietOffFoil
+        /// The same tail, with the barometer seeing the wrist go under in it.
+        case quietSubmerged
+        /// Carried and flown through, and it did not come far enough past the wind axis
+        /// (`turnAxisAfterDeg`, off by default).
+        case axisAfter
         /// Flew all the way through and barely slowed — a **clean** jibe on the 0.12.0
         /// rule, which the ladder gets for free: every rung above this one has already
         /// taken the turns that did not fly through.
@@ -59,6 +70,10 @@ public enum TurnCoach {
     /// been taken, so the rung is `flewThrough` by construction and never calls a swim
     /// clean. `fellInFast` is the same rule read from the other end — a turn whose score
     /// held all the way round and whose foil went in the recovery tail.
+    ///
+    /// The four `cleanBlockedBy` rungs (engine 0.17.0) sit immediately above `cleanAndFast`
+    /// for the same reason: a jibe the quiet tail refused *did* fly through and *did* hold
+    /// its speed, so every rung below would call it clean and say so out loud.
     public static func rule(turn: TurnRecord, slice: TurnSlice) -> Rule {
         let outcome = TurnOutcomeKind(turn.outcome)
         let fast = turn.success && turn.score >= fastScore
@@ -67,6 +82,15 @@ public enum TurnCoach {
         if turn.pumped { return .pumpedOut }
         if outcome == .touchdown {
             return lateMinimum(slice) == true ? .touchdownOnExit : .touchdownComingIn
+        }
+        // Above `cleanAndFast` on purpose: a jibe the quiet tail or the axis gate refused
+        // flew through and held its speed, so every rung below this one would call it clean.
+        switch turn.cleanBlockedBy {
+        case CleanBlock.quietFlightEnd.rawValue: return .quietFlightEnd
+        case CleanBlock.quietOffFoil.rawValue: return .quietOffFoil
+        case CleanBlock.quietSubmerged.rawValue: return .quietSubmerged
+        case CleanBlock.axisAfter.rawValue: return .axisAfter
+        default: break
         }
         if fast { return .cleanAndFast }
         if outcome == .flewThrough && turn.score < slowScore { return .cleanButSlow }
@@ -118,6 +142,18 @@ public enum TurnCoach {
         case .touchdownComingIn:
             return "The foil touched down before the \(mid) — the speed was already at "
                 + "\(kn(turn.minKn)) going in."
+        case .quietFlightEnd:
+            return "You rode the turn itself — \(pct(turn.score)) of your entry held — and "
+                + "the foil went a few seconds later, so it is not a clean one."
+        case .quietOffFoil:
+            return "The turn was there and the seconds after it were not: the foil dropped "
+                + "again on the way out, so this one does not count as clean."
+        case .quietSubmerged:
+            return "You came through carrying \(pct(turn.score)) of your entry speed, and "
+                + "the barometer saw your wrist go under just after — not a clean one."
+        case .axisAfter:
+            return "You held \(pct(turn.score)) of your entry speed, and the board did not "
+                + "come far enough past the wind axis for this to count as clean."
         case .cleanAndFast:
             return "Clean, and you barely slowed — \(pct(turn.score)) of your entry speed "
                 + "held all the way round."

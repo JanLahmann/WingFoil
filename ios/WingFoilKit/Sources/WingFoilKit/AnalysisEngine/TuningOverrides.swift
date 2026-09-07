@@ -150,6 +150,7 @@ public struct TuningOverrides: Sendable, Equatable {
         if let v = self[.turnClassifyMinAngle] { out.turn.classifyMinAngleDeg = v }
         if let v = self[.turnAxisBeforeDeg] { out.turn.axisBeforeDeg = v }
         if let v = self[.turnAxisAfterDeg] { out.turn.axisAfterDeg = v }
+        if let v = self[.turnCleanQuietS] { out.turn.cleanQuietS = v }
         if let v = self[.turnMaxDuration] { out.turn.maxDurationS = v }
         if let v = self[.turnPeakRate] { out.turn.peakRateDegS = v }
         if let v = self[.turnContinueRate] { out.turn.continueRateDegS = v }
@@ -333,6 +334,7 @@ public enum TuningParameter: String, CaseIterable, Sendable, Codable {
     case turnClassifyMinAngle
     case turnAxisBeforeDeg
     case turnAxisAfterDeg
+    case turnCleanQuietS
     case turnMaxDuration
     case turnPeakRate
     case turnContinueRate
@@ -409,6 +411,10 @@ public struct TuningParameterSpec: Sendable, Equatable {
         .init(parameter: .turnAxisAfterDeg, group: .turns, unit: "°", defaultValue: 0,
               range: 0...60, step: 5,
               note: "how far past the axis it has to carry to count as clean — 0 asks nothing"),
+        .init(parameter: .turnCleanQuietS, group: .turns, unit: "s", defaultValue: 10,
+              range: 0...20, step: 1,
+              note: "seconds after the sweep with no touchdown, fall or wrist under, for a "
+                  + "clean jibe — 0 asks nothing"),
         .init(parameter: .turnMaxDuration, group: .turns, unit: "s", defaultValue: 8,
               range: 4...20, step: 1,
               note: "window the net change has to happen inside"),

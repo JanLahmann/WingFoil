@@ -126,6 +126,11 @@ public enum FlightEndClassifier {
 
     /// `evidence` lets the caller hand in the whole-track `OffFoilEvidence` the turn
     /// detector already built; omitted, it is built here.
+    ///
+    /// `turns` supplies the ownership rule and may be omitted — which is what the pipeline
+    /// does since engine 0.17.0, because the clean jibe's quiet tail reads these verdicts and
+    /// the turns are therefore built *after* them. Ownership is a separate pass
+    /// (`assignOwnership`) and always was.
     public static func classify(_ track: CleanTrack, flights: FlightSegmentation,
                                 turns: [Turn] = [], config: FlightEndConfig = FlightEndConfig(),
                                 pump: PumpTrack? = nil,
@@ -234,7 +239,7 @@ public enum FlightEndClassifier {
     /// Flag each flight end that falls inside a turn's outcome window. A turn's window runs
     /// from `startT` to `endT + outcomeWindowS` (the tail its outcome was actually judged
     /// over, not the lookahead cap), so the two channels agree by construction.
-    private static func assignOwnership(_ ends: inout [FlightEnd], turns: [Turn]) {
+    static func assignOwnership(_ ends: inout [FlightEnd], turns: [Turn]) {
         for i in ends.indices {
             for (k, turn) in turns.enumerated()
             where turn.startT <= ends[i].t && ends[i].t <= turn.endT + turn.outcomeWindowS {

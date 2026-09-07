@@ -285,6 +285,14 @@ import Testing
                 #expect(!v || (act.counted && act.type == "jibe" && act.success
                                && act.outcome == "flew_through"),
                         "\(stem) turns[\(i)] is clean without the four things clean means")
+                // Engine 0.17.0: and where it is *not* clean, both engines have to agree on
+                // why — the quiet tail is a second measurement, and a reason that differed
+                // would be two implementations of one rule.
+                let want = exp["cleanBlockedBy"] as? String
+                #expect(act.cleanBlockedBy == want,
+                        "\(stem) turns[\(i)].cleanBlockedBy: \(act.cleanBlockedBy ?? "nil") vs \(want ?? "nil")")
+                #expect(!v || act.cleanBlockedBy == nil,
+                        "\(stem) turns[\(i)] is clean and blocked at the same time")
             }
             if let v = exp["borderline"] as? Bool {
                 #expect(act.borderline == v, "\(stem) turns[\(i)].borderline")
@@ -994,7 +1002,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.16.0")
+        #expect(analysis.engineVersion == "0.17.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)

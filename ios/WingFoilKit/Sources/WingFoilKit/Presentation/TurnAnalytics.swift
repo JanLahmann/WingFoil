@@ -437,6 +437,52 @@ public enum TurnAnalytics {
         "\(strokes) stroke\(strokes == 1 ? "" : "s")"
     }
 
+    /// **Why this jibe has no star** — the chip beside the outcome (engine 0.17.0).
+    ///
+    /// nil for every turn that is clean, for every turn that is not a jibe, and for every
+    /// jibe the score or the outcome already refused: those the page states in words of its
+    /// own ("touched down", "held 61 % of entry speed"), and a second sentence saying the
+    /// same thing is noise. What is left is the two refusals nothing else shows.
+    ///
+    /// `ends` gives the touchdown its **time** — "touched down 6 s after" — by finding the
+    /// end the engine's own rule would have found: the first touchdown or fall inside the
+    /// quiet tail. The engine stores the reason and not the instant, and re-deriving the
+    /// instant from the same document is the same fallback the pump chip already makes for
+    /// its stroke count. Nothing found ⇒ the plainer wording, never a fabricated number.
+    public static func notCleanText(_ turn: TurnRecord, ends: [FlightEndRecord] = [],
+                                    quietS: Double? = nil) -> String? {
+        guard let reason = turn.cleanBlockedBy.flatMap(CleanBlock.init(rawValue:)) else {
+            return nil
+        }
+        switch reason {
+        case .quietFlightEnd:
+            guard let seconds = secondsToLoss(turn, ends: ends, quietS: quietS) else {
+                return "not clean · touched down after"
+            }
+            return "not clean · touched down \(seconds) s after"
+        case .quietOffFoil: return "not clean · off the foil after"
+        case .quietSubmerged: return "not clean · wrist under after"
+        case .axisAfter:
+            guard let after = turn.axisAfterDeg, after.isFinite else {
+                return "not clean · short of the axis"
+            }
+            return String(format: "not clean · carried %.0f° past the axis", after)
+        }
+    }
+
+    /// Whole seconds from the sweep's end to the flight end that cost the jibe its star.
+    static func secondsToLoss(_ turn: TurnRecord, ends: [FlightEndRecord],
+                              quietS: Double?) -> Int? {
+        let tail = turn.endTs + (quietS ?? 0)
+        let loss = ends
+            .filter { !$0.truncated && ($0.outcome == "touchdown" || $0.outcome == "fell_in") }
+            .filter { $0.ts >= turn.endTs && $0.ts <= tail }
+            .map(\.ts)
+            .min()
+        guard let loss else { return nil }
+        return max(Int((loss - turn.endTs).rounded()), 0)
+    }
+
     /// The same second line the map callout carries, so the two never diverge.
     public static func detail(_ turn: TurnRecord) -> String {
         var text = String(format: "%.1f → %.1f kn", turn.entryKn, turn.minKn)

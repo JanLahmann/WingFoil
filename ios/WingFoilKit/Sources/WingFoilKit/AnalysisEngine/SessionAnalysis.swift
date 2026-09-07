@@ -160,7 +160,20 @@ public enum AnalysisEngine {
     /// **untouched** — same mask, same threshold, same verdicts — which is why every other
     /// number in a 0.15.0 document re-derives identical. The bump is what makes a stored
     /// document re-derive so the episodes are there to draw.
-    public static let version = "0.16.0"
+    ///
+    /// 0.17.0 gives **the clean jibe a quiet tail**, and it is the second bump here that moves
+    /// numbers on purpose. Jan, 7 Sep 2026: *"an additional requirement for a clean jibe: no
+    /// touch down or fall within 10 s afterwards. This only applies to clean jibe, not to
+    /// carried through."* A turn's outcome window closes at recovery, so a jibe powered out of
+    /// is judged over two seconds and the touchdown at +7 s belongs to the flight-end channel —
+    /// correct for the ladder, and wrong for the word. `turnCleanQuietS` (10 s) asks the same
+    /// evidence one more question over `[endTs, endTs + 10 s]`, stopping at a recording gap:
+    /// no touchdown/fell-in flight end, no off-foil spell of 1 s or longer, no submerged
+    /// sample. `clean` and `turns.jibesSuccessful` (hence `cleanJibesPerHour`) move with it;
+    /// **nothing else does** — not `success`, not the outcome, not a count, not a streak, not
+    /// JPH or TPH. Each turn gains `cleanBlockedBy`, the reason a jibe the page cannot
+    /// otherwise explain is not clean, and `config` gains `turnCleanQuietS`.
+    public static let version = "0.17.0"
 }
 
 /// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's
@@ -201,6 +214,9 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
     /// `analysis.json` from before them still decodes; such a row re-derives on its version.
     public var turnAxisBeforeDeg: Double?
     public var turnAxisAfterDeg: Double?
+    /// The clean jibe's quiet tail (engine 0.17.0), 10 s by default. Optional so a stored
+    /// `analysis.json` from before it still decodes; such a row re-derives on its version.
+    public var turnCleanQuietS: Double?
     public var turnMaxDuration: Double
     public var turnPeakRate: Double
     public var turnMinArc: Double
@@ -266,6 +282,7 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
         turnClassifyMinAngle = turn.classifyMinAngleDeg
         turnAxisBeforeDeg = turn.axisBeforeDeg
         turnAxisAfterDeg = turn.axisAfterDeg
+        turnCleanQuietS = turn.cleanQuietS
         turnMaxDuration = turn.maxDurationS
         turnPeakRate = turn.peakRateDegS
         turnMinArc = turn.minArcM
@@ -377,8 +394,15 @@ public struct TurnRecord: Sendable, Codable, Equatable {
     /// *scored window*. Still shown per turn; it is no longer what "clean" means.
     public var success: Bool
     /// **The clean jibe** (engine 0.12.0): `counted && type == "jibe" && success &&
-    /// outcome == "flew_through"`.
+    /// outcome == "flew_through"` — and, since 0.17.0, a quiet `turnCleanQuietS` after the
+    /// sweep with no touchdown, no fall and no wrist under.
     public var clean: Bool
+    /// **Why not clean** (engine 0.17.0), where the answer is not already on the page:
+    /// "axis_after" | "quiet_flight_end" | "quiet_off_foil" | "quiet_submerged". nil on a
+    /// clean jibe, on every non-jibe, and wherever the score or the outcome said no — those
+    /// two the page prints in words of their own. A `String?` rather than the engine's
+    /// `CleanBlock` so a value written by a newer build decodes rather than throwing.
+    public var cleanBlockedBy: String?
     /// "port" | "starboard" | "unknown".
     public var side: String
     public var direction: String
@@ -423,6 +447,7 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         score = turn.score
         success = turn.success
         clean = turn.clean
+        cleanBlockedBy = turn.cleanBlockedBy?.rawValue
         side = turn.side
         direction = turn.direction
         netDeg = turn.netDeg
@@ -445,6 +470,7 @@ public struct TurnRecord: Sendable, Codable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case ts, endTs, minTs, type, counted, entryKn, minKn, exitKn, score, success, clean
+        case cleanBlockedBy
         case side, direction, netDeg, peakRateDegS, twaInDeg, twaOutDeg, arcM, radiusM
         case outcome, borderline, offFoilS, stoppedS, pumped, submerged, outcomeWindowS
         case axisTs, axisBeforeDeg, axisAfterDeg
@@ -496,6 +522,10 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         // 0.15.0: absent in every older document, and there is nothing to derive them from —
         // the crossing is a measurement over samples this record does not carry. nil is the
         // honest fallback, and it renders exactly as "the wind axis is not known here" does.
+        // 0.17.0: absent in every older document, and nothing to derive it from — the quiet
+        // tail is a measurement over samples this record does not carry. nil reads as "no
+        // reason recorded", which is what the chip row does with it.
+        cleanBlockedBy = try c.decodeIfPresent(String.self, forKey: .cleanBlockedBy)
         axisTs = try c.decodeIfPresent(Double.self, forKey: .axisTs)
         axisBeforeDeg = try c.decodeIfPresent(Double.self, forKey: .axisBeforeDeg)
         axisAfterDeg = try c.decodeIfPresent(Double.self, forKey: .axisAfterDeg)
@@ -514,6 +544,7 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         try c.encode(score, forKey: .score)
         try c.encode(success, forKey: .success)
         try c.encode(clean, forKey: .clean)
+        try c.encode(cleanBlockedBy, forKey: .cleanBlockedBy)   // explicit null
         try c.encode(side, forKey: .side)
         try c.encode(direction, forKey: .direction)
         try c.encode(netDeg, forKey: .netDeg)
@@ -1332,11 +1363,18 @@ public enum SessionSummarizer {
                                       baroDropM: turnConfig.baroDropM)
         let sharable = flightEndConfig.foilExitSpeedKmh == turnConfig.foilExitSpeedKmh
             && flightEndConfig.baroDropM == turnConfig.baroDropM
-        let turns = TurnDetector.detect(clean, flights: segmentation, wind: wind,
-                                        config: turnConfig, pump: pump, evidence: evidence)
-        let ends = FlightEndClassifier.classify(clean, flights: segmentation, turns: turns,
+        // **Ends first, turns second, ownership last** (engine 0.17.0). The clean jibe's
+        // quiet tail asks whether a touchdown or a fall landed in the ten seconds after the
+        // sweep, and the flight-end channel is what has already classified those losses. The
+        // dependency only looks circular: classification reads no turn at all, and it is the
+        // *ownership* pass that does — so the two run in the order the evidence flows.
+        var ends = FlightEndClassifier.classify(clean, flights: segmentation, turns: [],
                                                 config: flightEndConfig, pump: pump,
                                                 evidence: sharable ? evidence : nil)
+        let turns = TurnDetector.detect(clean, flights: segmentation, wind: wind,
+                                        config: turnConfig, pump: pump, evidence: evidence,
+                                        ends: ends)
+        FlightEndClassifier.assignOwnership(&ends, turns: turns)
         let takeoffs = TakeoffAnalyzer.analyze(clean, flights: segmentation, turns: turns,
                                                config: takeoffConfig, pump: pump)
         // HR is the one channel read from the *raw* samples rather than the cleaned track,
