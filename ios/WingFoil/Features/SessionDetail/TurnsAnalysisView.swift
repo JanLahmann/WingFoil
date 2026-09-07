@@ -68,6 +68,12 @@ struct TurnsAnalysisView: View {
         // Screenshot hook, same family as `UI_HIDE_LAYERS`: `simctl` cannot tap a segment,
         // so `UI_TURN_FILTER=jibes,starboard` opens the tab with both filters engaged.
         .onAppear {
+            // `UI_OPEN_TURN=<index>` opens one turn's page, for a picture of the strip.
+            if let raw = ProcessInfo.processInfo.environment["UI_OPEN_TURN"], let id = Int(raw),
+               detail.analysis.turns.indices.contains(id) {
+                focused = id
+                opened = TurnDetailRequest(id: id)
+            }
             guard let raw = ProcessInfo.processInfo.environment["UI_TURN_FILTER"] else { return }
             for token in raw.split(separator: ",") {
                 let key = token.trimmingCharacters(in: .whitespaces)
