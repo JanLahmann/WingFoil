@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.13.0** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.14.0** (bump on any change that alters outputs; triggers phone re-analysis)
 
 ## Flight (foil) detection — hysteresis state machine
 
@@ -139,8 +139,8 @@ with a numeric offset (`+02:00`) is the exporter naming the local clock, and win
 |---|---|---|---|
 | `turnMinAngle` | 60 | deg | net unwrapped COG change — the **detection** floor. A course change is a real thing that happened and the page marks it, so this stays where it is |
 | `turnClassifyMinAngle` | **90** | deg | the **classification** floor (engine ≥ 0.13.0). Below it a sweep is never named a tack or a jibe — **wind axis or not** — and is filed as the same uncounted bear-away/round-up the no-crossing branch already produces. A tack and a jibe both take the board through the wind and out the other side; a 70° sweep that happens to clip dead downwind is a rider bearing away, and calling it a jibe put a course change into the number he judges his session by. With no usable axis the two course-change labels are indistinguishable, so such a sweep takes the bear-away label — the verdict that matters, *not counted*, is the same either way. At or above the floor the rule is unchanged: tack/jibe by the crossings, or a counted `turn` (unclassified) with no usable axis |
-| `turnMaxDuration` | 8 | s | window for the net change. Deliberately **not** widened to 12 s with the outcome window: a 12 s sweep pulls a slow exit into the scored minimum, and on the corpus that cost 16 clean jibes |
-| `turnPeakRate` | 25 | deg/s | at ≥1 sample (Richterich: jibes ~30–40°/s for ~4 s) |
+| `turnMaxDuration` | 8 | s | window for the net change. Deliberately **not** widened to 12 s, and measured twice: a 12 s sweep pulls a slow exit into the scored minimum, and on the 17 fixtures that costs **26 clean jibes to buy 6 jibes** (18°/s at 8 s gives 538 jibes / 160 clean; at 12 s, 544 / 134). A carve longer than 8 s is therefore reported as the 8 s share of itself — a 10 s, 150° jibe counts as a 135° one, which is over `turnClassifyMinAngle` with room to spare and lands the verdict the rider reads. Counting it a little short beats scoring it a little more generously |
+| `turnPeakRate` | **18** | deg/s | at ≥1 sample (engine ≥ 0.14.0; was 25). Richterich's ~30–40°/s for ~4 s is a *pivoted* jibe; a **carved** one is a different maneuver. At 11 kn on a 25 m radius the board turns at a steady ~13°/s and never spikes at all, so a floor set at the pivot's peak rejected exactly the jibes the rider was riding best — on one flight of the 4 Sep afternoon, three of eight ridden reversals were invisible. 18°/s is the floor below which nothing new appears but grey course-change markers |
 | `turnContext` | ON_FOIL or ≤3 s after | | turns while swimming don't count |
 | `turnCogSpeedFloor` | 2.0 | m/s | COG geometry read only from steps above this (same COAPS caveat as wind); a capsize below it otherwise reads as a multi-turn spin |
 | `turnMinArc` | 12 | m | **spatial gate**: path length travelled across the COG sweep |
@@ -196,6 +196,45 @@ detecting those sweeps at all. That was reverted: detection stays at 60° and th
 markers stay on the page, so `rejected` **rises** with the reclassified sweeps instead. On the
 17 committed fixtures: jibes 504 → 499, `rejected` 94 → 99, clean 152 → 152, jibe `fell_in`
 106 → 32, jibe `touchdown` 128 → 197.)
+
+**What 0.14.0 did to the corpus.** `turnPeakRate` 25 → 18 °/s is the whole change;
+`turnMaxDuration` stays at 8 s. Over the 17 committed fixtures, regenerated from the goldens
+in this release:
+
+| | 0.13.0 | 0.14.0 |
+|---|---|---|
+| jibes | 499 | 538 |
+| counted turns | 501 | 540 |
+| course changes (`rejected`) | 99 | 147 |
+| clean jibes | 152 | **160** |
+| jibe outcome `flew_through` | 270 | 289 |
+| jibe outcome `touchdown` | 197 | 212 |
+| jibe outcome `fell_in` | 32 | 37 |
+| straight-line falls | 58 | 45 |
+
+Thirty-nine jibes the engine had never counted, forty-eight more course changes marked on the
+page beside them, and eight more clean jibes. Straight-line falls drop by thirteen because a
+fall that used to have no maneuver to belong to now has one — the same swim, differently
+attributed. **Every number a rider reads moves the right way**: JPH and CPH both rise, and no
+session in the corpus loses a clean jibe.
+
+**Why the sweep window stayed at 8 s.** Widening it to 12 s was measured alongside the peak
+floor and rejected, which is the second time this parameter has been proposed and declined:
+
+| | jibes | clean | course changes |
+|---|---|---|---|
+| 25°/s, 8 s (0.13.0) | 499 | 152 | 99 |
+| **18°/s, 8 s (0.14.0)** | **538** | **160** | **147** |
+| 25°/s, 12 s | 504 | 128 | 99 |
+| 18°/s, 12 s | 544 | 134 | 145 |
+
+Going to 12 s on top of the 18°/s floor buys **6 more jibes and costs 26 clean ones** — and
+on the 4 Sep session that motivated the change it added no jibe at all. The mechanism is the
+one 0.13.0 already named: a longer sweep pulls the slow exit into the minimum
+`turnSuccessPct` divides by, so a jibe that scored clean over 8 s of carve scores merely
+*carried* over 12 s of carve-and-recovery. A carve that runs past 8 s is instead reported as
+its first 8 s — a 10 s, 150° jibe is counted as a 135° one, which is the verdict that matters
+and well clear of `turnClassifyMinAngle`.
 
 ### Glossary — four words that are not synonyms
 

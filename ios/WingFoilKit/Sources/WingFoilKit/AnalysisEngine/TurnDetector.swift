@@ -12,7 +12,7 @@ public struct TurnConfig: Sendable, Equatable {
     /// turnMaxDuration: window for the net change.
     public var maxDurationS: Double = 8.0
     /// turnPeakRate: at ≥ 1 sample.
-    public var peakRateDegS: Double = 25.0
+    public var peakRateDegS: Double = 18.0
     /// turnContinueRate: edge trim — below this the rider is not turning.
     public var continueRateDegS: Double = 5.0
     /// turnCogSpeedFloor: COG ≠ heading below this (COAPS).

@@ -125,7 +125,7 @@ class TurnConfig:
     #: marks it -- but it is filed as a bear-away/round-up and counted in no tally.
     classify_min_angle_deg: float = 90.0
     max_duration_s: float = 8.0           # turnMaxDuration: window for the net change
-    peak_rate_deg_s: float = 25.0         # turnPeakRate: at >= 1 sample
+    peak_rate_deg_s: float = 18.0         # turnPeakRate: at >= 1 sample
     continue_rate_deg_s: float = 5.0      # lab-added: edge trim, below this is not turning
     min_cog_speed_mps: float = 2.0        # lab-added: COG != heading below this (COAPS)
     min_arc_m: float = 12.0               # turnMinArc: path travelled across the sweep
