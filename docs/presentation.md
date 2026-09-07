@@ -110,12 +110,53 @@ verdicts, and no ink may say they are one.
 | `courseChange` | rejected sweeps (bear-away / round-up) | visible | grey — a non-verdict |
 | `pumping` | pump-burst spans on the track | visible | spans, not markers |
 | `takeoff` | takeoff attempts, BOTH halves: successes and failures | visible | one chip hides both halves together |
-| `splash` | submersion moments | visible | |
+| `splash` | **wrist under** — one cyan diamond per submersion episode | visible | engine 0.16.0: one mark per *episode*, not per flagged turn/end. Rider-facing name is "wrist under"; the id stays `splash` |
 | `direction` | course-of-travel chevrons along the track | visible | decimated by on-screen spacing |
 
 Layer visibility persists on iOS (hidden-set; unknown ids must decode harmlessly so old prefs
 survive new layers) and is transient on web. Legend chips are the only toggle surface; a
 struck-through chip means hidden.
+
+### "Wrist under" — one mark per submersion, on every map
+
+Jan, 7 Sep 2026: *"do we see all 'watch / arm in water' events on the map?"* The answer was
+no. The layer drew the `submerged` **flag** on a turn or a straight-line flight end — one
+mark per maneuver that happened to own a dunk, at the maneuver's own start — so the 29 Aug
+session showed four marks where the barometer had seen thirty-five submersions, none of them
+where the wrist actually went in. The engine now carries the episodes themselves
+(`SessionAnalysis.submersions`, engine 0.16.0, docs/algorithms.md "Submersion episodes") and
+the layer is one mark per entry. Five rules, and every surface obeys all five:
+
+- **The name is "wrist under."** Chip, legend row, layer options, callout title, docs. The
+  *id* stays `splash` — it is what the stored preferences, the token catalogue and both
+  platforms' goldens are written in, and this is a rider-facing rename, not a data one.
+- **The mark is the cyan diamond**, the one the thumbnails and the share card have always
+  drawn (`effort.splash`, #3fc4d8, `diamond.fill` / the web's `diamond`). It replaced a drop
+  glyph so that map, thumbnail and card are one picture; the colour token did not move. Shape
+  as well as colour, for the reason the thumbnail already gave: a submersion usually sits on
+  the fell-in verdict it belongs to.
+- **It is placed at `ts`** — the first submerged sample, the moment the pressure stepped —
+  and never at the turn's start or the flight end's.
+- **It is on all three maps and visible by default**, on Ride, Turns and Takeoffs alike. The
+  overlay set is consistent across the three maps by standing decision, and Turns gained it on
+  7 Sep 2026: a rider who finds a diamond on the ride map has to be able to find the same one
+  on the page that is about the maneuver he went under in. Deliberately **not** filtered by
+  the Turns page's type/side segments — an episode belongs to the afternoon, not to the subset
+  the page is currently asking about. Default-visible is the point of the whole change: Jan
+  asked for this layer because he could not find it.
+- **The legend tally counts episodes**, and so does `splash` in the presentation goldens.
+
+**The callout** (tap, like every other mark — `TrackContent.onMarkTap` on iOS, the tooltip
+and the row block on web), worded identically on both platforms:
+
+| line | text |
+|---|---|
+| title | `Wrist under · 4 s` — the episode's `durationS`, dropped rather than printed as "0 s" when the run rounds to nothing (at 1 Hz a single sample is an instant caught once, and a zero would read as a measurement) |
+| detail | `during jibe 7` (its `turnIndex`, numbered the way the turn sheet numbers it: the rider's *n*-th turn of that kind) · `after flight 10 ended, stopped 6 s` (its `flightEndIndex`; the stop is dropped under 1 s) · `while off foil` (neither — a real answer, not a missing one) |
+
+**The turn page's chip carries the length too**: `wrist under 4 s`, from the longest episode
+attributed to that turn, and plain `wrist under` where the flag is set but no episode is
+named — the same "never a fabricated zero" rule the `pumped out` chip beside it obeys.
 
 ### Every map has the same legend, and its own visibility
 
@@ -135,7 +176,7 @@ Two rules, and they are the whole of it (`MapLayerScope` in the kit, pure and te
   | map | draws |
   |---|---|
   | `ride` | the whole catalogue — the twelve above |
-  | `turns` | `direction` · `cleanJibe` · `flewThrough` · `touchdown` · `fellIn` · `courseChange` |
+  | `turns` | `direction` · `cleanJibe` · `flewThrough` · `touchdown` · `fellIn` · `courseChange` · `splash` |
   | `takeoffs` | `pumping` · `direction` · `takeoff` · `splash` |
 
   Neither analysis map draws the **line** layers: their route is deliberately neutral grey,
@@ -229,7 +270,7 @@ Both platforms lay the row out the same way, and the split is by *what a tap cha
 | group | holds |
 |---|---|
 | route | flying · off foil · pumping · direction · the effort window |
-| events | **clean jibe** · flew through · touchdown · fell in · course change · takeoff · splash |
+| events | **clean jibe** · flew through · touchdown · fell in · course change · takeoff · wrist under |
 | utilities | "show all" (only while something is hidden) · the map-style menu (iOS) or the zoom bar (web) · the `?` (iOS, and not on the full-screen map) |
 
 - **Clean jibe leads the event group.** It is the mark a rider opens the map to find, and it
@@ -254,8 +295,8 @@ past the controls to reach the half of the figure they control. The contract:
 - **The header is always on screen and always says the state**: `Layers · all shown`, or
   `Layers · 3 hidden` with the count in the accent colour. A collapsed control that hid the
   fact that a filter is on would be exactly the failure the chips exist to prevent.
-- **The count is of layers this session actually has any of.** A rider who hid "splash"
-  months ago is not told something is off on every session he never went under on; the
+- **The count is of layers this session actually has any of.** A rider who hid "wrist
+  under" months ago is not told something is off on every session he never went under on; the
   number's whole job is to be the reason to open the block.
 - **The utilities stay on the header row**: "show all" (only while something is hidden), the
   map-style menu and the `?`. None of them is a chip and none needs the block open.
@@ -271,7 +312,7 @@ past the controls to reach the half of the figure they control. The contract:
 
 **Chip text is the layer catalogue's `label` in `design/tokens.json`** — flying · off foil ·
 pumping · direction · clean jibe · flew through · touchdown · fell in · course change ·
-takeoff · splash
+takeoff · wrist under
 — read from the generated constants on both platforms, never written as a literal in a view.
 The one exception is `effort`, whose chip is labelled with the *selected* window ("best 2 s")
 because that is what it is currently highlighting; the catalogue's "best effort" is the
@@ -354,7 +395,7 @@ end no turn explains. Same dot, same ladder, different fill.
 
 **Effort-and-water layers sit deliberately outside the ladder** — nothing in them is a
 verdict, and borrowing the ladder would make a takeoff look like a good jibe:
-pumping = indigo (spans) · takeoff = blue (glyphs) · splash = cyan (drop glyph) ·
+pumping = indigo (spans) · takeoff = blue (glyphs) · wrist under = cyan (diamond) ·
 the selected record window = orange, one ink for both of its marks (the glow on the track
 and the shading in the chart).
 
@@ -746,8 +787,8 @@ not contain.
 
 The card's outline carries three semantics and no more (`TrackThumbnail.Mark`): the track
 tinted by foil state, a dot per **counted** turn on the verdict ladder's inks, and the
-barometer's submersion evidence as a cyan **diamond** — shape as well as colour, because a
-splash usually sits on the fell-in verdict it belongs to. Course changes get no dot, by the
+barometer's submersion evidence as a cyan **diamond**, one per episode — shape as well as
+colour, because a submersion usually sits on the fell-in verdict it belongs to. Course changes get no dot, by the
 same rule the map draws by. Nothing else from the map's eleven layers survives the shrink.
 **The ground under it is optional, and off.** A switch on both composers — "Map background",
 remembered per device (`ShareCardMapStore`, `wingfoil.shareCard.map.v1`) — puts a map behind
@@ -1314,8 +1355,12 @@ different drawn widths, and the longest is the one that fills the box.
   is counted under `flewThrough`, drawn hollow. There is no separate "glided out" layer or
   chip: fill carries the channel, colour carries the verdict, and a third category would say
   the same thing twice.
-- Splash evidence comes from the engine's submersion flags (turns, flight ends); the UI
-  never re-derives it.
+- **"Wrist under" is the engine's `submersions` list, one mark per entry** (engine
+  0.16.0), placed at the episode's `ts` — the sample the pressure stepped. The UI never
+  re-derives it from the mask, and never from the `submerged` flags on turns and flight
+  ends, which are the *verdict* inputs and stay exactly where they are. The legend tally,
+  the thumbnails, the share card and both platforms' maps all count the same list, which
+  is what `splash` in the presentation goldens pins.
 
 ## Filter semantics
 
