@@ -14,29 +14,35 @@ entry and comfortably above the 8 km/h exit, with no off-foil sample, no stop an
 under — and he flew it. Jan, 7 Sep 2026: *"change to '…below min foil speed…'"*, and *"can we
 add a short comment for the user why a jibe is a touchdown or a fall?"*
 
-Decision: **the rung becomes `turnPumpedOutIsTouchdown`, a switch, default on — and its
-threshold moves to `foilExitSpeed`.** Because `flying` is *defined* as in a flight, not
-submerged, and above `foilExitSpeed`, the rung is thereby **unreachable**: on the only branch it
-lives on, every sample is already above the speed it tests. That is the intended effect and not
-a side effect — the rule is retired, in the open, with the switch left standing so a reader sees
-what was retired and a stored document from an older engine still decodes its verdict. Left
-alone deliberately: the `pumped` flag and the "pumped out · N strokes" chip, which are about
-*effort* and were always true. Beside it, every touchdown and fall now carries `outcomeReason`
-(`stop` | `off_foil` | `submerged` | `pumped_marginal`, null on a fly-through) — a code, with
-the words chosen once in presentation for both platforms and held together by
-`verify_presentation.py` §6.
+Decision: **the rung gets a speed of its own and a switch — `turnPumpedMarginalSpeed` (8.0
+km/h) and `turnPumpedOutIsTouchdown` (on).** The speed defaults to the number `foilExitSpeed`
+carries, and because `flying` is *defined* as in a flight, not submerged, and above
+`foilExitSpeed`, the rung is thereby **unreachable**: on the only branch it lives on, every
+sample is already above the speed it tests. That is the intended effect and not a side effect —
+the rule is retired, in the open. It is a **parameter rather than a reference** to
+`foilExitSpeed` precisely so the retirement is a *setting somebody can disagree with*: the band
+the rung judges is `(foilExitSpeed, turnPumpedMarginalSpeed]`, empty at 8.0, and at 12.0 the
+0.17.0 reading restored — which is asserted, in both directions, against Jibe 50 itself. The
+switch sits beside it as the gate, because the two answer different questions: whether the rung
+is asked at all, and what it asks. Left alone deliberately: the `pumped` flag and the "pumped
+out · N strokes" chip, which are about *effort* and were always true. Beside it, every touchdown
+and fall now carries `outcomeReason` (`stop` | `off_foil` | `submerged` | `pumped_marginal`,
+null on a fly-through) — a code, with the words chosen once in presentation for both platforms
+and held together by `verify_presentation.py` §6.
 
 Consequence: engine **0.18.0**. Over the 21-session corpus 13 of 270 jibe touchdowns become
 fly-throughs (493 → 506 flew through, 270 → 257 touched down, 55 fell in unchanged) and 3 jibes
-become clean (263 → 266). One new per-turn key, one new config echo, one new tuning row — the
-first that is a **switch** rather than a slider (`TuningParameterSpec.kind`). One new watch
+become clean (263 → 266). One new per-turn key, two new config echoes, two new tuning rows —
+one of them the first that is a **switch** rather than a slider (`TuningParameterSpec.kind`).
+One new watch
 divergence, and for once the *unflattering* one: `garmin/` keeps the old rule at the old speed,
 so the wrist now reports about 5 % more jibe touchdowns than the phone. That direction needs no
 urgency — a rider told he touched down who then sees a fly-through reads it as good news, and
 ADR-005 makes the phone authoritative — so the watch side rides along with the next store
 release that has another reason to exist. Rejected: deleting the rung outright (a stored
-document would then decode a verdict nothing in the tree explains), and giving it a threshold
-parameter of its own (a third speed to tune, to keep alive a rule nobody wants back).
+document would then decode a verdict nothing in the tree explains), and writing the speed as a
+reference to `foilExitSpeed` (it would have made the retirement unarguable and the switch inert
+at every setting, which is a knob that lies about what it does).
 
 ## ADR-021 · A clean jibe needs a **quiet tail** — ten seconds, and only for clean
 A turn's outcome window closes at *recovery* (`turnRecoverPct` held for `turnRecoverHold`), so

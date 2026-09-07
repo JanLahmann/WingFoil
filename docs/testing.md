@@ -238,10 +238,11 @@ numbers derived from them. The presentation goldens move only in `cleanJibes` (t
 by the same ten. Over the 21-session corpus it reads 278 → 263.
 
 Engine 0.18.0 **retires the pump rung of the outcome ladder and gives every touchdown and fall
-a reason**. `turnPumpedOutIsTouchdown` (**true**) joins `config` and `outcomeReason` joins each
-entry of `turns` (docs/algorithms.md, "Turn outcome" / "Why"; ADR-022). The rung's
-corroborating speed moves from `foilEntrySpeed` to `foilExitSpeed`, which — since `flying`
-already requires speed above the exit speed — makes it unreachable, deliberately. Across the
+a reason**. `turnPumpedOutIsTouchdown` (**true**) and `turnPumpedMarginalSpeed` (**8.0**) join
+`config`, and `outcomeReason` joins each entry of `turns` (docs/algorithms.md, "Turn outcome" /
+"Why"; ADR-022). The rung's corroborating speed moves from a hard-wired `foilEntrySpeed` to
+that parameter, whose default is the exit speed — and since `flying` already requires speed
+above the exit speed, that makes the rung unreachable, deliberately. Across the
 seventeen fixtures **six jibe touchdowns become fly-throughs** (289 → 295 flew through,
 212 → 206 touched down, 37 fell in unchanged) and one more jibe is clean (150 → 151); the
 `longestFlewStreak` on 2026-08-07 moves with them, and every other key is otherwise identical
@@ -254,6 +255,16 @@ the lab's turn by turn, and that one is present on exactly the touchdowns and fa
 `verify_presentation.py` §6 re-derives the *sentence* the reason becomes, in Python, and
 compares it with what `web/js/viz.js` actually produces over every turn of every fixture —
 plus the shapes the corpus cannot supply, the retired rung above all.
+
+**And the retirement is asserted in both directions**, because a rule that can only be shown
+not to fire has not been shown to have been about anything.
+`test_jibe_50_flew_through_and_the_old_speed_takes_it_back` reads the 4 Sep morning, finds the
+jibe at `start_t` 3480 s, and asserts it flew through with no reason at the defaults *and* comes
+back as a `pumped_marginal` touchdown with `turnPumpedMarginalSpeed` at 12.0 — the 0.17.0
+reading, restored through the parameter. That recording lives under `fixtures/footage/` and is
+not committed, so the test is `skipif`-guarded and skips in CI; the repo-only half of the same
+argument is `test_raising_the_marginal_speed_revives_the_rung`, on a synthetic jibe, which runs
+everywhere.
 
 ### Fixture provenance — one converted recording, and why
 

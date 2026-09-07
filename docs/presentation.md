@@ -1623,7 +1623,7 @@ cannot supply.
 | `stop` (touchdown) | `touchdown · stopped 4 s, borderline` — the band between `turnTouchdownMaxStop` and `turnFallStop`, named as the near-fall it is |
 | `stop` (fall) | `fell in · stopped 7 s` |
 | `submerged` | `fell in · wrist under` — the wrist wins the wording wherever it decided, even when a long stop sits beside it |
-| `pumped_marginal` | `touchdown · pumped out below 4.3 kn, no sample off the foil` — the knots are `foilExitSpeed` from the **document's own** config echo, converted, never a literal; without an echo the line says `below min foil speed`. Unreachable at the published defaults since 0.18.0, and kept because a stored document from an older engine still carries it |
+| `pumped_marginal` | `touchdown · pumped out below 4.3 kn, no sample off the foil` — the knots are `turnPumpedMarginalSpeed` from the **document's own** config echo, converted, never a literal; a run that revived the rung at 12 km/h says `below 6.5 kn`, and without an echo the line says `below min foil speed`. Unreachable at the published defaults since 0.18.0, and kept because a stored document from an older engine still carries it and because the speed can be raised |
 | **null** | nothing is printed. A fly-through needs no explanation, and neither does a document written before 0.18.0 — a sentence rebuilt from `stoppedS` alone would be a guess about a ladder that may not have been climbed that way |
 
 Seconds are whole and rounded **away from zero**, spelled out in all three languages rather
@@ -1849,14 +1849,15 @@ out of it.
 
 ## Tuning — the thresholds on sliders, in the dev build, on one phone
 
-**What it is.** Settings → Tuning puts 26 of the docs/algorithms.md parameters on controls so
+**What it is.** Settings → Tuning puts 27 of the docs/algorithms.md parameters on controls so
 a threshold can be tried against a real library in a minute instead of an afternoon: turn
 detection and scoring (`turnMinAngle`, `turnClassifyMinAngle`, `turnAxisBeforeDeg`,
 `turnAxisAfterDeg`, `turnCleanQuietS`, `turnMaxDuration`,
 `turnPeakRate`, `turnContinueRate`, `turnMinArc`, `turnMinRadius`, `entrySpeedWindow`,
 `minSpeedLag`, `turnSuccessPct`), the stop ladder (`turnStopSpeedFloor`,
 `turnTouchdownMaxStop`, `turnFallStop`, `turnOutcomeLookahead`, `turnRecoverPct`,
-`turnRecoverHold`, `turnOutcomeWindow`, `turnPumpedOutIsTouchdown`) and flight hysteresis
+`turnRecoverHold`, `turnOutcomeWindow`, `turnPumpedOutIsTouchdown`,
+`turnPumpedMarginalSpeed`) and flight hysteresis
 (`foilEntrySpeed`, `foilExitSpeed`, `entryHold`, `exitHold`, `minFlightDuration`). `nil` means
 the published default; setting a control back to the default clears the override rather than
 storing it.
@@ -1883,9 +1884,18 @@ counts as a touchdown when on; off, it flew through and the chip says it pumped 
 value is still a `Double` in the override map (0 = off, 1 = on), so the fingerprint, the clamp,
 the reset and the drop-if-default rule all keep working unchanged — the switch is a *rendering*
 fact and nothing else. It prints "on"/"off" and never "1"/"0", and the row shows no value
-beside the control, because the control already says which way it is set. (At the published
-defaults this particular rung cannot fire either way — docs/algorithms.md, step 3 — so the
-switch documents a retired rule rather than moving a number.)
+beside the control, because the control already says which way it is set.
+
+**And the slider under it is the one that moves the number.** `turnPumpedMarginalSpeed`
+(4…20 km/h, step 0.5, default **8**) is the speed the switch's rung corroborates against, and
+at its default the rung cannot fire at all — so a rider who wants the old rule back raises this
+rather than touching the switch. Title *"Pumped out below this speed is a touchdown"*, caption
+*"default 8.0 km/h · when the switch above is on and no sample was off the foil, a pump burst
+that dropped below this speed still counts as a touchdown; at the flight-end speed it can never
+fire, raise it to revive the rule"*. The two rows sit together in Outcomes and read as one
+question and its answer: whether the rung is asked, and what it asks. Moving the speed moves
+nothing else — flight segmentation reads `foilExitSpeed` and never this — which is why it is
+its own knob and not pushed onto the flight hysteresis the way the shared thresholds are.
 
 **Phone-only, and dev-build-only.** The watch computes live on the wrist with no way to be
 told, and the web reads documents the phone wrote — neither follows a slider, and neither is
