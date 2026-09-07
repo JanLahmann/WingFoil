@@ -110,7 +110,32 @@ public enum AnalysisEngine {
     /// `success` is unchanged and still per turn; `tacksSuccessful`/`turnsSuccessful` still
     /// read it, because "clean" is a jibe word. Nothing else moves: no parameter, no
     /// detection, no score, no outcome, no streak (the streaks already ran on the outcome).
-    public static let version = "0.12.0"
+    ///
+    /// 0.13.0 moves four things at once, and every number in the summary with them.
+    ///
+    /// *The rate denominator is now timer time.* `avgSpeedKmh` and all four per-hour rates
+    /// divide by `summary.timerTimeS` (T2, the sum of the non-gap steps) instead of
+    /// `summary.durationS` (T1, the elapsed cleaned span). An hour a rate divides by has to
+    /// be an hour the recorder was running; a Smart-Recording hole or a paused lunch break
+    /// is not time the rider spent jibing, and it used to deflate every rate on the page.
+    /// `durationS` keeps its meaning and stays in the block — it is the duration every
+    /// surface *displays* — and `timerTimeS` joins it as a named key. The null-on-no-
+    /// duration rule keys on `timerTimeS <= 0`. The rolling 15-minute window rates are
+    /// untouched and stay on the elapsed clock: a window is a wall-clock span, and its peak
+    /// has to fall at a time the rider can point to.
+    ///
+    /// *TPH counts dry turns.* `turnsPerHour` reads `turnsCounted - turns.outcomes.fellIn` —
+    /// the same "dry" rule JPH has applied since 0.7.0, now over every counted turn.
+    ///
+    /// *A classification floor, and a narrower outcome window.* `turnClassifyMinAngle`
+    /// (90°) is new: below it a sweep is never named a tack or a jibe, wind axis or not, and
+    /// is filed as an uncounted course change. Detection is unchanged (`turnMinAngle` stays
+    /// 60°, so the course change is still found and still marked). And `turnOutcomeWindow`
+    /// moves 60 s → 12 s, equal to `turnOutcomeLookahead`.
+    ///
+    /// *`longestFlightM` is renamed `maxFlightM`*, because it was never the longest
+    /// flight's distance — it is the largest distance any one flight covered.
+    public static let version = "0.13.0"
 }
 
 /// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's
@@ -144,6 +169,9 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
     public var alphaMaxDistance: Double
     // Turn detection & classification
     public var turnMinAngle: Double
+    /// The classification floor (engine 0.13.0). Optional only so a stored `analysis.json`
+    /// from 0.12.0 still decodes; such a row re-derives on its version.
+    public var turnClassifyMinAngle: Double?
     public var turnMaxDuration: Double
     public var turnPeakRate: Double
     public var turnMinArc: Double
@@ -196,6 +224,7 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
         alphaProximity = records.alphaProximityM
         alphaMaxDistance = records.alphaMaxDistanceM
         turnMinAngle = turn.minAngleDeg
+        turnClassifyMinAngle = turn.classifyMinAngleDeg
         turnMaxDuration = turn.maxDurationS
         turnPeakRate = turn.peakRateDegS
         turnMinArc = turn.minArcM
@@ -771,19 +800,25 @@ public struct PumpEpisodeRecord: Sendable, Codable, Equatable {
 
 /// Session basics and the per-hour rates (docs/algorithms.md "Session rates").
 ///
-/// All four rates share one denominator — **elapsed** session time, first to last cleaned
-/// sample — so they answer "per hour on the water", not "per hour of flight". A rider who
-/// jibes forty times in two hours of drifting and a rider who does it in one are not having
-/// the same session, and only a wall-clock denominator says so.
+/// All four rates share one denominator — **timer time** (`timerTimeS`, T2: the sum of the
+/// non-gap steps, i.e. the session minus its pauses) since engine 0.13.0. They answer "per
+/// hour on the water", and an hour the recorder was not running is not an hour on the
+/// water: a Smart-Recording hole or a paused lunch break used to dilute every rate a rider
+/// read. `durationS` (T1, the elapsed cleaned span, gaps included) is still carried and is
+/// still what the phone and the web *display* as the session's duration — it is a different
+/// question, and the two are kept apart rather than blurred.
 ///
-/// Every rate is nil rather than 0 when there is no duration to divide by: a one-sample
+/// Every rate is nil rather than 0 when there is no timer time to divide by: a one-sample
 /// track has no answer, and a zero would read as "he did nothing". Mirrors
 /// `lab/src/wingfoil_lab/goldens.py` `session_rates`.
 public struct SessionRates: Sendable, Equatable {
     public var durationS: Double
+    /// Timer time (s, T2) — the rate denominator since engine 0.13.0.
+    public var timerTimeS: Double = 0
     public var avgSpeedKmh: Double?
-    /// **All** counted turns per hour: this one answers "how busy", which is a question
-    /// about activity and not about quality.
+    /// **Dry** counted turns per hour (engine 0.13.0): `turnsCounted - outcomes.fellIn`,
+    /// the same rule JPH applies, read over every counted turn. This one answers "how
+    /// busy", and a swim is not a maneuver made.
     public var turnsPerHour: Double?
     /// **Dry** jibes per hour (engine 0.7.0): the ones he came out of still sailing —
     /// flew-through and touchdown alike, since pumping straight back up out of a touchdown
@@ -801,16 +836,14 @@ public struct SessionRates: Sendable, Equatable {
     /// session's falls happen outside a counted turn, and the water does not care.
     public var wetPerHour: Double?
 
-    public init(durationS: Double, distanceM: Double, turnsCounted: Int, dryJibes: Int,
-                fellIn: Int, cleanJibes: Int = 0) {
-        guard durationS > 0 else {
-            self.durationS = max(durationS, 0)
-            return
-        }
-        self.durationS = durationS
-        let hours = durationS / 3600
-        avgSpeedKmh = distanceM / durationS * 3.6
-        turnsPerHour = Double(turnsCounted) / hours
+    public init(durationS: Double, timerTimeS: Double, distanceM: Double, dryTurns: Int,
+                dryJibes: Int, fellIn: Int, cleanJibes: Int = 0) {
+        self.durationS = max(durationS, 0)
+        self.timerTimeS = max(timerTimeS, 0)
+        guard timerTimeS > 0 else { return }
+        let hours = timerTimeS / 3600
+        avgSpeedKmh = distanceM / timerTimeS * 3.6
+        turnsPerHour = Double(dryTurns) / hours
         jibesPerHour = Double(dryJibes) / hours
         cleanJibesPerHour = Double(cleanJibes) / hours
         wetPerHour = Double(fellIn) / hours
@@ -929,12 +962,22 @@ public struct SessionSummary: Sendable, Codable, Equatable {
     public var foilPct: Double
     public var flightCount: Int
     public var longestFlightS: Double
-    public var longestFlightM: Double
+    /// The *largest* distance any one flight covered (engine 0.13.0, renamed from
+    /// `longestFlightM`) — not in general the longest flight's own, because six minutes of
+    /// pumping in a lull covers less water than three downwind. The value is unchanged; the
+    /// name now says what the number is rather than what a caption once claimed.
+    public var maxFlightM: Double
     public var distanceKm: Double
-    /// Elapsed session span (s), first to last cleaned sample — gaps included, because a
-    /// paused recording still spent that time on the water. The rate denominator.
+    /// Elapsed session span (s, T1), first to last cleaned sample — gaps included, because a
+    /// paused recording still spent that time on the water. The duration every surface
+    /// *displays*; since engine 0.13.0 no longer a denominator.
     public var durationS: Double = 0
+    /// Timer time (s, T2): the sum of the non-gap steps, the session minus its pauses. The
+    /// denominator of `foilPct` and, since engine 0.13.0, of `avgSpeedKmh` and all four
+    /// per-hour rates.
+    public var timerTimeS: Double = 0
     public var avgSpeedKmh: Double?
+    /// **Dry** counted turns per hour (engine 0.13.0) — see `SessionRates.turnsPerHour`.
     public var turnsPerHour: Double?
     public var jibesPerHour: Double?
     /// The strict jibe rate (engine 0.10.0) — see `SessionRates.cleanJibesPerHour`.
@@ -948,18 +991,80 @@ public struct SessionSummary: Sendable, Codable, Equatable {
     public var takeoff = TakeoffSummary()
 
     public init(foilTimeS: Double, foilPct: Double, flightCount: Int, longestFlightS: Double,
-                longestFlightM: Double, distanceKm: Double) {
+                maxFlightM: Double, distanceKm: Double) {
         self.foilTimeS = foilTimeS
         self.foilPct = foilPct
         self.flightCount = flightCount
         self.longestFlightS = longestFlightS
-        self.longestFlightM = longestFlightM
+        self.maxFlightM = maxFlightM
         self.distanceKm = distanceKm
     }
 
-    /// Fills the six session-rate fields from one computed rate block.
+    enum CodingKeys: String, CodingKey {
+        case foilTimeS, foilPct, flightCount, longestFlightS, maxFlightM, distanceKm
+        case durationS, timerTimeS, avgSpeedKmh, turnsPerHour, jibesPerHour
+        case cleanJibesPerHour, wetPerHour, windowRates, turns, flightEnds
+        case outcomeSplit, takeoff
+        /// The pre-0.13.0 spelling of `maxFlightM`, read so a stored document still opens.
+        case longestFlightM
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        foilTimeS = try c.decode(Double.self, forKey: .foilTimeS)
+        foilPct = try c.decode(Double.self, forKey: .foilPct)
+        flightCount = try c.decode(Int.self, forKey: .flightCount)
+        longestFlightS = try c.decode(Double.self, forKey: .longestFlightS)
+        // 0.13.0 renamed the key; the *value* never moved, so a 0.12.0 document's
+        // `longestFlightM` is the same number under its old name and is read as one. Such a
+        // row is stale by `engineVersion` anyway and `reanalyzeStale()` re-derives it.
+        maxFlightM = try c.decodeIfPresent(Double.self, forKey: .maxFlightM)
+            ?? c.decodeIfPresent(Double.self, forKey: .longestFlightM) ?? 0
+        distanceKm = try c.decode(Double.self, forKey: .distanceKm)
+        durationS = try c.decodeIfPresent(Double.self, forKey: .durationS) ?? 0
+        timerTimeS = try c.decodeIfPresent(Double.self, forKey: .timerTimeS) ?? 0
+        avgSpeedKmh = try c.decodeIfPresent(Double.self, forKey: .avgSpeedKmh)
+        turnsPerHour = try c.decodeIfPresent(Double.self, forKey: .turnsPerHour)
+        jibesPerHour = try c.decodeIfPresent(Double.self, forKey: .jibesPerHour)
+        cleanJibesPerHour = try c.decodeIfPresent(Double.self, forKey: .cleanJibesPerHour)
+        wetPerHour = try c.decodeIfPresent(Double.self, forKey: .wetPerHour)
+        windowRates = try c.decodeIfPresent(SessionWindowRates.self,
+                                            forKey: .windowRates) ?? SessionWindowRates()
+        turns = try c.decodeIfPresent(TurnSummary.self, forKey: .turns) ?? TurnSummary()
+        flightEnds = try c.decodeIfPresent(FlightEndSummary.self,
+                                           forKey: .flightEnds) ?? FlightEndSummary()
+        outcomeSplit = try c.decodeIfPresent(OutcomeSplit.self,
+                                             forKey: .outcomeSplit) ?? OutcomeSplit()
+        takeoff = try c.decodeIfPresent(TakeoffSummary.self,
+                                        forKey: .takeoff) ?? TakeoffSummary()
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(foilTimeS, forKey: .foilTimeS)
+        try c.encode(foilPct, forKey: .foilPct)
+        try c.encode(flightCount, forKey: .flightCount)
+        try c.encode(longestFlightS, forKey: .longestFlightS)
+        try c.encode(maxFlightM, forKey: .maxFlightM)
+        try c.encode(distanceKm, forKey: .distanceKm)
+        try c.encode(durationS, forKey: .durationS)
+        try c.encode(timerTimeS, forKey: .timerTimeS)
+        try c.encode(avgSpeedKmh, forKey: .avgSpeedKmh)     // explicit null per schema
+        try c.encode(turnsPerHour, forKey: .turnsPerHour)
+        try c.encode(jibesPerHour, forKey: .jibesPerHour)
+        try c.encode(cleanJibesPerHour, forKey: .cleanJibesPerHour)
+        try c.encode(wetPerHour, forKey: .wetPerHour)
+        try c.encode(windowRates, forKey: .windowRates)
+        try c.encode(turns, forKey: .turns)
+        try c.encode(flightEnds, forKey: .flightEnds)
+        try c.encode(outcomeSplit, forKey: .outcomeSplit)
+        try c.encode(takeoff, forKey: .takeoff)
+    }
+
+    /// Fills the seven session-rate fields from one computed rate block.
     public mutating func apply(_ rates: SessionRates) {
         durationS = rates.durationS
+        timerTimeS = rates.timerTimeS
         avgSpeedKmh = rates.avgSpeedKmh
         turnsPerHour = rates.turnsPerHour
         jibesPerHour = rates.jibesPerHour
@@ -1109,21 +1214,23 @@ public enum SessionSummarizer {
             foilPct: segmentation.foilPct,
             flightCount: segmentation.flights.count,
             longestFlightS: longest?.durationS ?? 0,
-            longestFlightM: segmentation.flights.map(\.distM).max() ?? 0,
+            maxFlightM: segmentation.flights.map(\.distM).max() ?? 0,
             distanceKm: records.totalDistanceM / 1000)
         summary.turns = turnSummary
         summary.flightEnds = endSummary
         summary.outcomeSplit = FlightEndClassifier.split(turns: turnSummary, ends: endSummary)
         summary.takeoff = TakeoffAnalyzer.summarize(takeoffs)
-        // Session rates (docs/algorithms.md "Session rates"): elapsed wall clock as the one
-        // denominator, *dry* jibes as the JPH numerator — a jibe he swam out of is one he
-        // did not make — and *every* fell-in end as the wet count, since most of a session's
-        // swims happen outside a counted turn.
+        // Session rates (docs/algorithms.md "Session rates"): **timer time** as the one
+        // denominator since engine 0.13.0 — the hour a rate divides by has to be an hour
+        // the recorder was running — *dry* turns and *dry* jibes as the TPH/JPH numerators
+        // (one he swam out of is one he did not make) and *every* fell-in end as the wet
+        // count, since most of a session's swims happen outside a counted turn.
         let dryJibeTs = SessionSummarizer.dryJibeTimes(turns)
         let wetTs = ends.filter { $0.outcome == .fellIn }.map(\.t)
         summary.apply(SessionRates(durationS: clean.spanS,
+                                   timerTimeS: clean.timerTimeS,
                                    distanceM: records.totalDistanceM,
-                                   turnsCounted: turnSummary.turnsCounted,
+                                   dryTurns: turnSummary.outcomes.dry,
                                    dryJibes: dryJibeTs.count,
                                    fellIn: endSummary.all.fellIn,
                                    cleanJibes: turnSummary.jibesSuccessful))

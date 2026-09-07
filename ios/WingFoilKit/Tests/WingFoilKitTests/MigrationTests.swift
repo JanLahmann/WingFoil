@@ -236,9 +236,12 @@ import Testing
             #expect(session.wetExits == summary.flightEnds.all.fellIn)
             #expect(session.rateSeconds == summary.durationS)
             // And it is the rate the engine published, to the decimal — which is the whole
-            // claim: WPH over a period is this count over these hours.
-            if let wet = session.wetExits, let wph = summary.wetPerHour, summary.durationS > 0 {
-                #expect(abs(Double(wet) / (summary.durationS / 3600) - wph) < 1e-9)
+            // claim: WPH is this count over these hours. The hours are the **timer** clock
+            // since engine 0.13.0; `rateDurationS` stays the elapsed span it has always
+            // been, because it is also what the period block prints as "hours on the
+            // water", and moving that is a presentation decision and not this column's.
+            if let wet = session.wetExits, let wph = summary.wetPerHour, summary.timerTimeS > 0 {
+                #expect(abs(Double(wet) / (summary.timerTimeS / 3600) - wph) < 1e-9)
             }
             if session.rateDurationS != session.durationS { sawADifference = true }
         }

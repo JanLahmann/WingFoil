@@ -47,9 +47,13 @@ struct SessionFoilGrid: View {
             StatCard(title: "Flights", value: "\(summary.flightCount)",
                      caption: summary.flightCount == 0 ? "none detected" : "detected",
                      help: .flights)
+            // The caption is `maxFlightM` (engine 0.13.0): the furthest any *one* flight
+            // went, which is not in general the longest one's own distance. It used to read
+            // "N m" under "Longest flight" and so claimed a fact the number does not carry.
             StatCard(title: "Longest flight",
                      value: Fmt.duration(summary.longestFlightS),
-                     caption: Fmt.meters(summary.longestFlightM), help: .longestFlight)
+                     caption: "max \(Fmt.meters(summary.maxFlightM)) in one flight",
+                     help: .longestFlight)
             StatCard(title: "Distance", value: Fmt.km(summary.distanceKm),
                      caption: Fmt.duration(detail.durationS) + " elapsed",
                      help: .distance)
