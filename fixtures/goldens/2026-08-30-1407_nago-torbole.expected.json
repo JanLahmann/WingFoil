@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.12.0",
+  "engineVersion": "0.13.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -20,6 +20,7 @@
     "alphaCandidatePruneMinCogSpread": 90.0,
     "minSpeedFilter": null,
     "turnMinAngle": 60.0,
+    "turnClassifyMinAngle": 90.0,
     "turnMaxDuration": 8.0,
     "turnPeakRate": 25.0,
     "turnContinueRate": 5.0,
@@ -36,7 +37,7 @@
     "turnOutcomeLookahead": 12.0,
     "turnRecoverPct": 70.0,
     "turnRecoverHold": 2.0,
-    "turnOutcomeWindow": 60.0,
+    "turnOutcomeWindow": 12.0,
     "turnBaroDrop": 25.0,
     "windMinSpeed": 2.0,
     "windBinDeg": 10.0,
@@ -349,10 +350,10 @@
       "twaOutDeg": -161.03,
       "arcM": 42.4,
       "radiusM": 20.63,
-      "outcome": "fell_in",
+      "outcome": "touchdown",
       "borderline": false,
-      "offFoilS": 54.0,
-      "stoppedS": 13.0,
+      "offFoilS": 11.0,
+      "stoppedS": 3.0,
       "pumped": false,
       "submerged": false,
       "outcomeWindowS": 12.0
@@ -379,8 +380,8 @@
       "radiusM": 19.34,
       "outcome": "fell_in",
       "borderline": false,
-      "offFoilS": 59.0,
-      "stoppedS": 23.0,
+      "offFoilS": 11.0,
+      "stoppedS": 10.0,
       "pumped": false,
       "submerged": false,
       "outcomeWindowS": 12.0
@@ -656,24 +657,25 @@
     "foilPct": 67.34,
     "flightCount": 2,
     "longestFlightS": 392.0,
-    "longestFlightM": 2199.7,
+    "maxFlightM": 2199.7,
     "distanceKm": 2.54,
     "durationS": 645.0,
-    "avgSpeedKmh": 14.18,
-    "turnsPerHour": 55.8,
-    "jibesPerHour": 44.7,
-    "cleanJibesPerHour": 27.9,
+    "timerTimeS": 640.0,
+    "avgSpeedKmh": 14.29,
+    "turnsPerHour": 50.6,
+    "jibesPerHour": 50.6,
+    "cleanJibesPerHour": 28.1,
     "wetPerHour": 11.2,
     "windowRates": {
       "windowMin": 15.0,
-      "bestJph": 44.7,
+      "bestJph": 50.2,
       "bestJphStartTs": 0.0,
       "bestWph": 11.2,
       "bestWphStartTs": 0.0,
       "series": [
         {
           "ts": 0.0,
-          "jph": 44.7,
+          "jph": 50.2,
           "wph": 11.2
         }
       ]
@@ -691,12 +693,12 @@
       "port": 5,
       "starboard": 5,
       "unknownSide": 0,
-      "longestDryStreak": 8,
+      "longestDryStreak": 9,
       "longestFlewStreak": 8,
       "outcomes": {
         "flewThrough": 8,
-        "touchdown": 0,
-        "fellIn": 2,
+        "touchdown": 1,
+        "fellIn": 1,
         "borderline": 0
       },
       "tackOutcomes": {
@@ -707,8 +709,8 @@
       },
       "jibeOutcomes": {
         "flewThrough": 8,
-        "touchdown": 0,
-        "fellIn": 2,
+        "touchdown": 1,
+        "fellIn": 1,
         "borderline": 0
       }
     },
@@ -736,9 +738,9 @@
       }
     },
     "outcomeSplit": {
-      "turnFalls": 2,
+      "turnFalls": 1,
       "straightFalls": 0,
-      "turnTouchdowns": 0,
+      "turnTouchdowns": 1,
       "straightTouchdowns": 0,
       "glideOuts": 0,
       "unknownEnds": 0

@@ -120,6 +120,10 @@ class TurnConfig:
     """docs/algorithms.md "Turn detection & classification" defaults."""
 
     min_angle_deg: float = 60.0           # turnMinAngle: net unwrapped COG change
+    #: turnClassifyMinAngle (engine 0.13.0): below this a sweep is never a tack or a jibe.
+    #: It is still *detected* -- a course change is a real thing that happened and the page
+    #: marks it -- but it is filed as a bear-away/round-up and counted in no tally.
+    classify_min_angle_deg: float = 90.0
     max_duration_s: float = 8.0           # turnMaxDuration: window for the net change
     peak_rate_deg_s: float = 25.0         # turnPeakRate: at >= 1 sample
     continue_rate_deg_s: float = 5.0      # lab-added: edge trim, below this is not turning
@@ -138,7 +142,7 @@ class TurnConfig:
     outcome_lookahead_s: float = 12.0     # turnOutcomeLookahead: cap on the tail searched
     recover_pct: float = 70.0             # turnRecoverPct: of entry speed = flying again
     recover_hold_s: float = 2.0           # turnRecoverHold: held this long = turn is over
-    outcome_window_s: float = 60.0        # turnOutcomeWindow: cap on following the recovery
+    outcome_window_s: float = 12.0        # turnOutcomeWindow: = lookahead (engine 0.13.0)
     baro_drop_m: float = 25.0             # turnBaroDrop: below median altitude = submerged
 
     # --- 360 spins: EXPERIMENTAL, and dark unless the flag below is set (see
@@ -261,6 +265,16 @@ class OutcomeCounts:
     @property
     def total(self) -> int:
         return self.flew_through + self.touchdown + self.fell_in
+
+    @property
+    def dry(self) -> int:
+        """The ones he stayed out of the water for: everything that is not `fell_in`.
+
+        The same "dry" rule `jibesPerHour` applies to the jibe lane, read here over
+        whichever family this tally covers -- and over `outcomes` it is the
+        `turnsPerHour` numerator (engine 0.13.0; docs/algorithms.md "Session rates").
+        """
+        return self.flew_through + self.touchdown
 
 
 @dataclass
@@ -860,7 +874,7 @@ def _build_turn(c: _Candidate, wind: WindEstimate | None, cfg: TurnConfig) -> Tu
     stayed_up = min_dop > cfg.foil_exit_speed_kmh * KMH_TO_MPS
     success = bool(score >= cfg.success_pct / 100.0 and stayed_up)
 
-    kind, side, twa_in, twa_out = _classify(u[i], u[j], wind)
+    kind, side, twa_in, twa_out = _classify(u[i], u[j], wind, cfg.classify_min_angle_deg)
     return Turn(
         start_t=start_t, end_t=end_t, min_t=float(t[min_idx]), kind=kind,
         counted=kind in COUNTED_TYPES, net_deg=net, peak_rate_deg_s=peak,
@@ -873,31 +887,46 @@ def _build_turn(c: _Candidate, wind: WindEstimate | None, cfg: TurnConfig) -> Tu
     )
 
 
-def _classify(cog_in: float, cog_out: float,
-              wind: WindEstimate | None) -> tuple[str, str, float, float]:
+def _classify(cog_in: float, cog_out: float, wind: WindEstimate | None,
+              classify_min_angle_deg: float = 0.0) -> tuple[str, str, float, float]:
     """(kind, side, twa_in, twa_out) from the unwrapped COG sweep and the wind estimate.
 
-    Without a *usable* wind axis every turn stays `UNCLASSIFIED`; with one, the naming is
-    `classify_sweep`'s.
+    Below `classify_min_angle_deg` (`turnClassifyMinAngle`, 90 deg since engine 0.13.0)
+    nothing is a maneuver, **wind axis or not**. A tack and a jibe both take the board
+    through the wind and out the other side; a 70 deg sweep that happens to clip dead
+    downwind is a rider bearing away, and calling it a jibe put a course change into the
+    number he judges his session by. Detection keeps it -- the sweep happened, and the page
+    marks it -- but it is filed as the same uncounted course change the no-crossing branch
+    already produces, and it feeds `rejected` and nothing else.
+
+    Without a *usable* wind axis a sweep at or above the floor stays `UNCLASSIFIED` (which
+    *is* counted -- an unnamed maneuver is still a maneuver); one below it is a course
+    change, and the two labels are indistinguishable with no axis to measure against, so it
+    takes the bear-away label. The verdict that matters -- not counted -- is the same
+    either way.
     """
+    below = abs(cog_out - cog_in) < classify_min_angle_deg
     if wind is None or not wind.usable:
-        return UNCLASSIFIED, "unknown", float("nan"), float("nan")
-    return classify_sweep(cog_in, cog_out, wind.dir_deg)
+        kind = BEAR_AWAY if below else UNCLASSIFIED
+        return kind, "unknown", float("nan"), float("nan")
+    return classify_sweep(cog_in, cog_out, wind.dir_deg, classify_min_angle_deg)
 
 
-def classify_sweep(cog_in: float, cog_out: float,
-                   dir_deg: float) -> tuple[str, str, float, float]:
+def classify_sweep(cog_in: float, cog_out: float, dir_deg: float,
+                   min_angle_deg: float = 0.0) -> tuple[str, str, float, float]:
     """(kind, side, twa_in, twa_out) for one sweep against one candidate wind direction.
 
     The sweep is carried onto TWA unwrapped, so "crosses head-to-wind" is "passes a
     multiple of 360" and "crosses dead downwind" is "passes 180 + a multiple of 360".
     A sweep wide enough to do both is named after whichever crossing sits nearer its
-    middle.
+    middle. A sweep narrower than `min_angle_deg` is not named at all -- see `_classify`.
 
     Split out of `_classify` because the 180 deg-ambiguity prior in `wind.py` has to name
     the same sweep under *both* ends of the axis, before any of them is the wind: flipping
     `dir_deg` by 180 deg shifts every TWA by 180 deg, which turns each head-to-wind crossing
-    into a dead-downwind one and so swaps tack and jibe.
+    into a dead-downwind one and so swaps tack and jibe. The prior calls it without a floor:
+    it is asking which *way* the rider turns, over every sweep it can see, and narrowing its
+    evidence to the wide ones would answer a different question.
     """
     twa_in = _wrap180(cog_in - dir_deg)
     twa_out = twa_in + (cog_out - cog_in)
@@ -906,7 +935,7 @@ def classify_sweep(cog_in: float, cog_out: float,
     head = _nearest_crossing(lo, hi, 0.0, mid)
     down = _nearest_crossing(lo, hi, 180.0, mid)
     side = "port" if twa_in > 0 else "starboard"
-    if head is None and down is None:
+    if (head is None and down is None) or abs(cog_out - cog_in) < min_angle_deg:
         kind = BEAR_AWAY if abs(twa_out) > abs(twa_in) else ROUND_UP
     elif down is None or (head is not None and abs(head - mid) <= abs(down - mid)):
         kind = TACK

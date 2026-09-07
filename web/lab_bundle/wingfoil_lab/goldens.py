@@ -115,6 +115,38 @@ verdict as a new `clean` key beside `success`, and `turns.jibesSuccessful` — h
 unchanged and still reported per turn; `tacksSuccessful` and `turnsSuccessful` still read
 it, because "clean" is a jibe word. Nothing outside those three places moves: no parameter,
 no detection, no score, no outcome, no streak (the streaks already ran on the outcome).
+
+Engine 0.13.0 moves four things at once, and every number in the summary with it.
+
+*The rate denominator is now timer time.* `avgSpeedKmh`, `turnsPerHour`, `jibesPerHour`,
+`cleanJibesPerHour` and `wetPerHour` divide by `summary.timerTimeS` (T2, the sum of the
+non-gap steps) instead of `summary.durationS` (T1, the elapsed cleaned span). An hour a
+rate divides by has to be an hour the recorder was running; a Smart-Recording hole or a
+paused lunch break is not time the rider spent jibing, and it used to deflate every rate on
+the page. `durationS` keeps its meaning and stays in the block — it is the duration every
+surface *displays* — and `timerTimeS` joins it as a named key so the denominator is
+readable rather than implied. The null-on-no-duration rule keys on `timerTimeS <= 0`. The
+rolling 15-minute window rates are untouched and stay on the elapsed clock: a window is a
+wall-clock span, and its peak has to fall at a time the rider can point to.
+
+*TPH counts dry turns.* `turnsPerHour` reads `turnsCounted - turns.outcomes.fellIn` — the
+same "dry" rule JPH has applied since 0.7.0, now over every counted turn. A swim is not a
+maneuver made, and the busy-ness number should not be one a rider can raise by falling.
+
+*A classification floor, and a narrower outcome window.* `turnClassifyMinAngle` (**90°**) is
+new: below it a sweep is never named a tack or a jibe, wind axis or not. A tack and a jibe
+both take the board through the wind and out the other side, and a 70° sweep that happens to
+clip dead downwind is a rider bearing away — it used to land in the count he judges his
+session by. Detection is unchanged (`turnMinAngle` stays 60°, so the course change is still
+found and still marked); it is now filed under `rejected` like every other one. And
+`turnOutcomeWindow` moves 60 s -> **12 s**, equal to `turnOutcomeLookahead`, so a fall the
+ladder blames on a turn is always inside the tail that turn is actually judged over and
+everything later is a straight-line fall. `turnMaxDuration` stays at 8 s: a 12 s sweep window
+pulls a slow exit into the minimum and cost 16 clean jibes on the corpus.
+
+*`longestFlightM` is renamed `maxFlightM`*, because it was never the longest flight's
+distance — it is the largest distance any one flight covered. The value is unchanged; only
+the name now says what it is.
 """
 
 from __future__ import annotations
@@ -256,17 +288,23 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
 class SessionRates:
     """Session basics and the per-hour rates (docs/algorithms.md "Session rates").
 
-    All four rates share one denominator -- **elapsed** session time, first to last cleaned
-    sample -- so they answer "per hour on the water", not "per hour of flight". A rider who
-    jibes forty times in two hours of drifting and a rider who does it in one are not having
-    the same session, and only a wall-clock denominator says so.
+    All four rates share one denominator -- **timer time** (`timer_time_s`, T2: the sum of
+    the non-gap steps, i.e. the session minus its pauses) since engine 0.13.0. They answer
+    "per hour on the water", and an hour the recorder was not running is not an hour on the
+    water: a Smart-Recording hole or a paused lunch break used to dilute every rate a rider
+    read. `duration_s` (T1, the elapsed cleaned span, gaps included) is still carried and is
+    still what the phone and the web *display* as the session's duration -- it is a
+    different question, and the two are kept apart rather than blurred.
 
-    Every rate is `None` rather than 0.0 when the session has no duration to divide by: a
+    Every rate is `None` rather than 0.0 when there is no timer time to divide by: a
     one-sample track has no answer, and a zero would read as "he did nothing".
     """
 
     duration_s: float = 0.0
+    #: Timer time (s, T2) -- the rate denominator since engine 0.13.0.
+    timer_time_s: float = 0.0
     avg_speed_kmh: float | None = None
+    #: **Dry** turns per hour (engine 0.13.0): counted turns he did not swim out of.
     turns_per_hour: float | None = None
     #: **Dry** jibes per hour: the ones he came out of still sailing. See `session_rates`.
     jibes_per_hour: float | None = None
@@ -313,7 +351,9 @@ def session_duration_s(ct: CleanTrack) -> float:
 
     The *cleaned* track, because that is the timeline every other number in the summary was
     measured on. It includes gaps -- a recording paused mid-session still spent that time on
-    the water -- which is what separates it from `timer_time_s`, the foil-% denominator.
+    the water -- which is what separates it from `timer_time_s`, the denominator foil % and
+    (since engine 0.13.0) every session rate divide by. T1 in docs/algorithms.md's clock
+    table: the number the phone and the web print as "duration".
     """
     t = ct.records["t"]
     return 0.0 if len(t) < 2 else float(t.iloc[-1] - t.iloc[0])
@@ -326,16 +366,27 @@ def session_start_t(ct: CleanTrack) -> float:
     return 0.0 if len(t) == 0 else float(t.iloc[0])
 
 
-def session_rates(duration_s: float, distance_m: float, turns_counted: int, dry_jibes: int,
-                  fell_in: int, clean_jibes: int = 0) -> SessionRates:
-    """The rate block.
+def session_rates(duration_s: float, timer_time_s: float, distance_m: float,
+                  dry_turns: int, dry_jibes: int, fell_in: int,
+                  clean_jibes: int = 0) -> SessionRates:
+    """The rate block, over **timer time** (engine >= 0.13.0).
+
+    `timer_time_s` is T2 -- the sum of the non-gap steps, the session minus its pauses --
+    and since 0.13.0 it is the denominator of all four rates *and* of `avgSpeedKmh`. The
+    hour a rate divides by has to be an hour the recorder was running: a Smart-Recording
+    hole, or the twenty minutes the board spent on the beach while the watch sat paused,
+    is not time the rider was out there jibing, and dividing by it quietly deflates every
+    number he reads. `duration_s` (T1, elapsed, gaps included) stays in the block because
+    it is the duration every surface *displays*; it is simply no longer a denominator.
+
+    `dry_turns` is the counted turns he did not swim out of -- `turnsCounted -
+    outcomes.fellIn`, the same "dry" rule JPH applies, read over every counted turn
+    (engine >= 0.13.0). TPH answers "how busy", and a swim is not a maneuver made.
 
     `dry_jibes` is the jibes he came out of **still sailing** -- `jibes - jibeOutcomes.
     fellIn`, so flew-through and touchdown alike, since pumping straight back up out of a
     touchdown is a jibe he made. A jibe he swam out of is one he did not, and counting it
-    would let a rider raise his headline number by falling more often. `turnsPerHour` beside
-    it is deliberately still **all** counted turns: that one answers "how busy", which is a
-    question about activity and not about quality.
+    would let a rider raise his headline number by falling more often.
 
     `clean_jibes` is the strict reading of the same set -- `turns.jibesSuccessful`, the jibes
     he carved all the way through carrying his speed *and* flew out of (engine >= 0.12.0;
@@ -348,13 +399,15 @@ def session_rates(duration_s: float, distance_m: float, turns_counted: int, dry_
     is how often the rider got wet, and the water does not care whether he was mid-jibe at
     the time.
     """
-    if duration_s <= 0:
-        return SessionRates(duration_s=max(duration_s, 0.0))
-    hours = duration_s / 3600.0
+    if timer_time_s <= 0:
+        return SessionRates(duration_s=max(duration_s, 0.0),
+                            timer_time_s=max(timer_time_s, 0.0))
+    hours = timer_time_s / 3600.0
     return SessionRates(
-        duration_s=duration_s,
-        avg_speed_kmh=distance_m / duration_s * 3.6,
-        turns_per_hour=turns_counted / hours,
+        duration_s=max(duration_s, 0.0),
+        timer_time_s=timer_time_s,
+        avg_speed_kmh=distance_m / timer_time_s * 3.6,
+        turns_per_hour=dry_turns / hours,
         jibes_per_hour=dry_jibes / hours,
         clean_jibes_per_hour=clean_jibes / hours,
         wet_per_hour=fell_in / hours,
@@ -403,6 +456,12 @@ def window_rates(dry_jibe_ts: list[float], wet_ts: list[float], start_t: float,
     goldens already timestamp them -- a dry jibe at its turn's `ts`, a swim at its flight
     end's `ts` -- so a reader can find every event in the window by looking it up in the
     lists above.
+
+    `duration_s` here is deliberately the **elapsed** span (T1) and not the timer time the
+    session rates moved to in 0.13.0: a window is a wall-clock span with a start and an end
+    on the session's own timeline, and "the busiest fifteen minutes" has to mean fifteen
+    minutes that actually elapsed. Extrapolating a pause out of a window would put its peak
+    at a time the rider could not point to.
     """
     cfg = cfg or RateConfig()
     window_s = cfg.window_rate_min * 60.0
@@ -447,12 +506,17 @@ def build_golden(a: Analysis) -> dict:
     caps = a.track.capabilities
     fr, rec = a.flights, a.records
     longest_s = fr.longest.duration_s if fr.longest else 0.0
-    longest_m = max((f.dist_m for f in fr.flights), default=0.0)
+    # `maxFlightM` (engine 0.13.0, renamed from `longestFlightM`): the *largest* distance
+    # any one flight covered, which is not in general the longest flight's own -- six
+    # minutes of pumping in a lull covers less water than three downwind. The name now says
+    # what the number is rather than what a caption once claimed it was.
+    max_m = max((f.dist_m for f in fr.flights), default=0.0)
     dry_ts, wet_ts = dry_jibe_times(a.turns), wet_times(a.flight_ends)
     duration_s = session_duration_s(a.clean)
-    rates = session_rates(duration_s, rec.distance_m, a.turn_summary.turns_counted,
-                          len(dry_ts), a.flight_end_summary.all_ends.fell_in,
-                          a.turn_summary.jibes_successful)
+    ts = a.turn_summary
+    rates = session_rates(duration_s, float(a.clean.timer_time_s), rec.distance_m,
+                          ts.outcomes.dry, len(dry_ts),
+                          a.flight_end_summary.all_ends.fell_in, ts.jibes_successful)
     windows = window_rates(dry_ts, wet_ts, session_start_t(a.clean), duration_s,
                            a.rate_config)
     pumps = {k.flight_index: k.pumps_to_takeoff for k in a.takeoffs.takeoffs}
@@ -496,12 +560,16 @@ def build_golden(a: Analysis) -> dict:
             "foilPct": round(fr.foil_pct, 2),
             "flightCount": fr.flight_count,
             "longestFlightS": round(longest_s, 1),
-            "longestFlightM": round(longest_m, 1),
+            "maxFlightM": round(max_m, 1),
             "distanceKm": round(rec.distance_m / 1000.0, 3),
-            # Session basics and the per-hour rates, all over elapsed session time.
+            # The two clocks (docs/algorithms.md "Session rates"): `durationS` is T1, the
+            # elapsed cleaned span and the duration every surface displays; `timerTimeS` is
+            # T2, the non-gap total, and since engine 0.13.0 the denominator of avgSpeedKmh
+            # and of all four per-hour rates.
             "durationS": round(rates.duration_s, 1),
+            "timerTimeS": round(rates.timer_time_s, 1),
             "avgSpeedKmh": _round(rates.avg_speed_kmh, 2),
-            "turnsPerHour": _round(rates.turns_per_hour, 1),
+            "turnsPerHour": _round(rates.turns_per_hour, 1),   # DRY turns (engine 0.13.0)
             "jibesPerHour": _round(rates.jibes_per_hour, 1),   # DRY jibes (engine 0.7.0)
             # CLEAN jibes (engine 0.10.0) -- the strict verdict, per hour.
             "cleanJibesPerHour": _round(rates.clean_jibes_per_hour, 1),
@@ -568,6 +636,7 @@ def _config_dict(a: Analysis) -> dict:
         "minSpeedFilter": None,
         # turn detection & classification
         "turnMinAngle": t.min_angle_deg,
+        "turnClassifyMinAngle": t.classify_min_angle_deg,
         "turnMaxDuration": t.max_duration_s,
         "turnPeakRate": t.peak_rate_deg_s,
         "turnContinueRate": t.continue_rate_deg_s,

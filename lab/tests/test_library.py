@@ -107,9 +107,11 @@ def test_a_record_row_names_its_session_and_carries_no_certification():
     assert speed[0]["certified"] is False
 
 
-def test_the_longest_flight_names_its_distance_in_a_caption():
+def test_the_longest_flight_names_the_furthest_one_flight_went():
+    """`maxFlightM` (engine 0.13.0) is the largest distance any *one* flight covered, not
+    the winning flight's own -- which is what the old "N m of it" caption claimed."""
     rows = records_of([entry("a", "2026-08-03", 1000.0, longestFlightM=642.4)])
-    assert rows["longestFlight"]["caption"] == "642 m of it"
+    assert rows["longestFlight"]["caption"] == "max 642 m in one flight"
 
 
 def test_a_kind_nobody_set_is_dropped_rather_than_shown_as_zero():

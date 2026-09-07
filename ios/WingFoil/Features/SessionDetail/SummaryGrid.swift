@@ -54,12 +54,13 @@ struct SessionFoilGrid: View {
             StatCard(title: "Flights", value: "\(summary.flightCount)",
                      caption: summary.flightCount == 0 ? "none detected" : "detected",
                      help: .flights)
-            // engine 0.13.0: `longestFlightM` is renamed `maxFlightM` — it is the maximum
-            // flight *distance*, which is the longest flight's own distance only by
-            // coincidence. The caption's wording follows the field when it lands.
+            // The caption is `maxFlightM` (engine 0.13.0): the furthest any *one* flight
+            // went, which is not in general the longest one's own distance. It used to read
+            // "N m" under "Longest flight" and so claimed a fact the number does not carry.
             StatCard(title: "Longest flight",
                      value: Fmt.duration(summary.longestFlightS),
-                     caption: Fmt.meters(summary.longestFlightM), help: .longestFlight)
+                     caption: "max \(Fmt.meters(summary.maxFlightM)) in one flight",
+                     help: .longestFlight)
             // The caption is the **engine's** cleaned span (`summary.durationS`), the same
             // number and the same spelling the key-metrics block prints two cards up. It
             // used to be `detail.durationS`, the raw sample span, which is 10338 s against

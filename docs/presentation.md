@@ -1015,17 +1015,18 @@ The **speed table** is the nine GP3S kinds above, and it is the only one that ca
 `uncertified` mark (§ "Uncertified speed"). Under it sits the **session records** table: the
 best *afternoons* rather than the best windows, in this order on both platforms —
 
-`Longest flight` (with a distance in the row, because six minutes downwind and six minutes
-of pumping in a lull are not the same flight — though the field it prints,
-`longestFlightM`, is the *maximum* flight distance rather than the longest flight's own,
-which engine 0.13.0 renames `maxFlightM`; the caption follows the field when it lands) ·
-`Most flights` · `Highest on-foil share` ·
+`Longest flight` (captioned `max N m in one flight` — `summary.maxFlightM`, the **furthest
+any one flight went**, because six minutes downwind and six minutes of pumping in a lull are
+not the same flight. Deliberately not the winning flight's *own* distance: the number never
+was that, and until engine 0.13.0 the caption said it was) · `Most flights` ·
+`Highest on-foil share` ·
 `Most clean jibes` · `Best CPH` · `Best clean-jibe rate` · `Longest dry streak` · `Longest
 flew streak` · `Longest session` · `Most distance`.
 
-- **CPH is `jibesSuccessful / (durationS / 3600)`** — clean jibes per hour of session time,
-  the elapsed hour and not the on-water one, so the number a rider quotes is the one the
-  afternoon actually cost him.
+- **CPH is `jibesSuccessful / (timerTimeS / 3600)`** (engine ≥ 0.13.0) — clean jibes per
+  hour of **timer** time: the hour the recorder was running, not the elapsed span it was
+  running across, so a paused break does not quietly deflate the number a rider quotes.
+  `durationS` is still what the row prints as the session's *duration*.
 - **The clean-jibe rate needs at least five jibes**, and the row says so. Four out of four is
   a good afternoon; it is not a rate. The floor is one constant on each side
   (`SessionRecordKind.minJibesForRate`, `library.MIN_JIBES_FOR_RATE`).

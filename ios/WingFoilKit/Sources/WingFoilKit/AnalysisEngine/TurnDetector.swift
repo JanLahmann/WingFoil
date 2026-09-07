@@ -5,6 +5,10 @@ import Foundation
 public struct TurnConfig: Sendable, Equatable {
     /// turnMinAngle: net unwrapped COG change.
     public var minAngleDeg: Double = 60.0
+    /// turnClassifyMinAngle (engine 0.13.0): below this a sweep is never a tack or a jibe.
+    /// It is still *detected* — a course change is a real thing that happened and the page
+    /// marks it — but it is filed as a bear-away/round-up and counted in no tally.
+    public var classifyMinAngleDeg: Double = 90.0
     /// turnMaxDuration: window for the net change.
     public var maxDurationS: Double = 8.0
     /// turnPeakRate: at ≥ 1 sample.
@@ -36,8 +40,10 @@ public struct TurnConfig: Sendable, Equatable {
     public var outcomeLookaheadS: Double = 12.0
     public var recoverPct: Double = 70.0
     public var recoverHoldS: Double = 2.0
-    /// turnOutcomeWindow: cap on following the recovery.
-    public var outcomeWindowS: Double = 60.0
+    /// turnOutcomeWindow: cap on following the recovery. Equal to `outcomeLookaheadS` since
+    /// engine 0.13.0, so a fall the ladder blames on a turn is always inside the tail that
+    /// turn is judged over, and anything later is a straight-line fall.
+    public var outcomeWindowS: Double = 12.0
     /// turnBaroDrop: apparent altitude below the session median that means "submerged".
     public var baroDropM: Double = 25.0
 
@@ -135,6 +141,13 @@ public struct OutcomeCounts: Sendable, Codable, Equatable {
     public init() {}
 
     public var total: Int { flewThrough + touchdown + fellIn }
+
+    /// The ones he stayed out of the water for: everything that is not `fellIn`.
+    ///
+    /// The same "dry" rule `jibesPerHour` applies to the jibe lane, read here over whichever
+    /// family this tally covers — and over `outcomes` it is the `turnsPerHour` numerator
+    /// (engine 0.13.0; docs/algorithms.md "Session rates").
+    public var dry: Int { flewThrough + touchdown }
 
     mutating func add(_ turn: Turn) {
         switch turn.outcome {
@@ -551,7 +564,8 @@ public enum TurnDetector {
         let stayedUp = minDop > config.foilExitSpeedKmh * kmhToMps
         let success = score >= config.successPct / 100 && stayedUp
 
-        let k = classify(cogIn: c.cogIn, cogOut: c.cogOut, wind: wind)
+        let k = classify(cogIn: c.cogIn, cogOut: c.cogOut, wind: wind,
+                         minAngleDeg: config.classifyMinAngleDeg)
         return Turn(startT: startT, endT: endT, minT: t[max(minIdx, 0)], kind: k.kind,
                     netDeg: net, peakRateDegS: peak,
                     direction: net >= 0 ? "starboard" : "port", side: k.side,
@@ -563,12 +577,29 @@ public enum TurnDetector {
     }
 
     /// (kind, side, twaIn, twaOut) from the unwrapped COG sweep and the wind estimate.
-    /// Without a *usable* wind axis every turn stays unclassified; with one, the naming is
-    /// `classifySweep`'s.
-    static func classify(cogIn: Double, cogOut: Double, wind: WindEstimate?)
+    ///
+    /// Below `classifyMinAngleDeg` (`turnClassifyMinAngle`, 90° since engine 0.13.0)
+    /// nothing is a maneuver, **wind axis or not**. A tack and a jibe both take the board
+    /// through the wind and out the other side; a 70° sweep that happens to clip dead
+    /// downwind is a rider bearing away, and calling it a jibe put a course change into the
+    /// number he judges his session by. Detection keeps it — the sweep happened, and the
+    /// page marks it — but it is filed as the same uncounted course change the no-crossing
+    /// branch already produces, and it feeds `rejected` and nothing else.
+    ///
+    /// Without a *usable* wind axis a sweep at or above the floor stays unclassified (which
+    /// *is* counted — an unnamed maneuver is still a maneuver); one below it is a course
+    /// change, and the two labels are indistinguishable with no axis to measure against, so
+    /// it takes the bear-away label. The verdict that matters — not counted — is the same
+    /// either way. Mirrors the lab's `_classify`.
+    static func classify(cogIn: Double, cogOut: Double, wind: WindEstimate?,
+                         minAngleDeg: Double = 0)
     -> (kind: TurnKind, side: String, twaIn: Double, twaOut: Double) {
-        guard let wind, wind.usable else { return (.unclassified, "unknown", .nan, .nan) }
-        return classifySweep(cogIn: cogIn, cogOut: cogOut, dirDeg: wind.dirDeg)
+        let below = abs(cogOut - cogIn) < minAngleDeg
+        guard let wind, wind.usable else {
+            return (below ? .bearAway : .unclassified, "unknown", .nan, .nan)
+        }
+        return classifySweep(cogIn: cogIn, cogOut: cogOut, dirDeg: wind.dirDeg,
+                             minAngleDeg: minAngleDeg)
     }
 
     /// (kind, side, twaIn, twaOut) for one sweep against one candidate wind direction.
@@ -576,13 +607,16 @@ public enum TurnDetector {
     /// The sweep is carried onto TWA unwrapped, so "crosses head-to-wind" is "passes a
     /// multiple of 360" and "crosses dead downwind" is "passes 180 + a multiple of 360".
     /// A sweep wide enough to do both is named after whichever crossing sits nearer its
-    /// middle.
+    /// middle. A sweep narrower than `minAngleDeg` is not named at all — see `classify`.
     ///
     /// Split out of `classify` because the 180° ambiguity prior in `WindEstimator` has to
     /// name the same sweep under *both* ends of the axis, before either of them is the
     /// wind: flipping `dirDeg` by 180° shifts every TWA by 180°, turning each head-to-wind
-    /// crossing into a dead-downwind one and so swapping tack and jibe.
-    static func classifySweep(cogIn: Double, cogOut: Double, dirDeg: Double)
+    /// crossing into a dead-downwind one and so swapping tack and jibe. The prior calls it
+    /// without a floor: it is asking which *way* the rider turns, over every sweep it can
+    /// see, and narrowing its evidence to the wide ones would answer a different question.
+    static func classifySweep(cogIn: Double, cogOut: Double, dirDeg: Double,
+                              minAngleDeg: Double = 0)
     -> (kind: TurnKind, side: String, twaIn: Double, twaOut: Double) {
         let twaIn = WindEstimator.wrap180(cogIn - dirDeg)
         let twaOut = twaIn + (cogOut - cogIn)
@@ -592,7 +626,7 @@ public enum TurnDetector {
         let down = nearestCrossing(lo: lo, hi: hi, offset: 180, mid: mid)
         let side = twaIn > 0 ? "port" : "starboard"
         let kind: TurnKind
-        if head == nil && down == nil {
+        if (head == nil && down == nil) || abs(cogOut - cogIn) < minAngleDeg {
             kind = abs(twaOut) > abs(twaIn) ? .bearAway : .roundUp
         } else if down == nil || (head != nil && abs(head! - mid) <= abs(down! - mid)) {
             kind = .tack

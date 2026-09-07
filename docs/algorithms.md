@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.8.2** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.13.0** (bump on any change that alters outputs; triggers phone re-analysis)
 
 ## Flight (foil) detection — hysteresis state machine
 
@@ -21,6 +21,20 @@ States: `OFF_FOIL → (entry) → ON_FOIL → (exit) → OFF_FOIL`. A third deri
 | `exitHold` | 3 | s | … sustained this long ⇒ OFF_FOIL (flight end backdated to first sub-exit sample) |
 | `minFlightDuration` | 5 | s | shorter flights discarded (no lap, not counted) |
 | `touchdownMergeGap` | 0 (off) | s | phone-only: merge flights separated by ≤ gap as one flight + touchdown event (v2) |
+| `foilTimeS` · `foilPct` · `timerTimeS` | — | s, %, s | **Foil % = `foilTimeS ÷ timerTimeS`.** `foilTimeS` is the sum of the kept flights' durations; the denominator is **T2, timer time** (the clocks, below) — the session minus its pauses and gaps, *not* the elapsed span and *not* the FIT's `total_elapsed_time`. A recording that sat paused on the beach did not spend that time off the foil, and dividing by elapsed reported the corpus roughly 19 points low. The watch computes the same ratio over its own native timer (`Activity.Info.timerTime`); see the divergence list |
+| `maxFlightM` | — | m | the **largest** distance any one flight covered. Deliberately not the *longest* flight's own distance: six minutes downwind and six minutes of pumping in a lull are not the same flight, and the two questions have different answers. Named `longestFlightM` before engine 0.13.0, which is what its captions claimed it was |
+
+### The clocks — three of them, and only two are engine outputs
+
+| # | name | key | definition | who reads it |
+|---|---|---|---|---|
+| **T1** | elapsed cleaned span | `summary.durationS` | last − first **cleaned** sample; **gaps included** | the duration the phone and the web *display*; the period block's "hours on the water" (`rateDurationS`); the rolling window rates' timeline |
+| **T2** | timer time | `summary.timerTimeS` | Σ dt over **non-gap** steps — the session minus its pauses | **the denominator of `foilPct`, `avgSpeedKmh` and all four per-hour rates** (engine ≥ 0.13.0) |
+| — | watch clocks | — | `Activity.Info.timerTime` (moving) and `Activity.Info.elapsedTime` (wall) | the watch prints its session timer and its foil % over its own timer, and its post-save summary over its own elapsed. Neither is T1 or T2 — they are the device's, measured live |
+
+T1 is what a rider means by "how long was I out"; T2 is what a rate has to divide by, because
+an hour the recorder was not running is not an hour on the water. They are kept as two named
+keys rather than one blurred number, and every surface says which it is showing.
 
 Prior art anchors: WindsportTracker wingfoil threshold ≈ 9.7 km/h; Surf Tracker run recipe
 (9 km/h entry / 6 s / 13 km/h peak). Our entry is higher because takeoff pumping produces
@@ -117,14 +131,15 @@ with a numeric offset (`+02:00`) is the exporter naming the local clock, and win
 | `alphaBoundary` | interpolate | fractional samples at window edges (phone only) |
 | `hourSearch` | forward + backward | avoids the classic missing-samples bug |
 | `minSpeedFilter` | none | GPSResults-style 5 kn floors distort results — never applied |
-| watch live set | 2 s, 10 s, 5×10 s, 500 m, NM (flag), alpha-lite | alpha-lite: armed 120 s after a ≥90° turn, 1 Hz two-pointer, `~`-labeled |
+| watch live set | **2 s and 10 s only** (shipped) | rolling means over the last 2 and 10 *samples*, reset on any GPS gap — `garmin/…/SpeedRecords.mc`. 5×10 s, 500 m, NM and alpha-lite are **planned, not shipped** (`SpeedRecords.mc`, "phase 3"; FIT ids 28–31 reserved and unwritten). The divergence check compares six records against a watch that can supply two — harmlessly, since it skips zero-valued pairs |
 
 ## Turn detection & classification
 
 | param | default | units | notes |
 |---|---|---|---|
-| `turnMinAngle` | 60 | deg | net unwrapped COG change |
-| `turnMaxDuration` | 8 | s | window for the net change |
+| `turnMinAngle` | 60 | deg | net unwrapped COG change — the **detection** floor. A course change is a real thing that happened and the page marks it, so this stays where it is |
+| `turnClassifyMinAngle` | **90** | deg | the **classification** floor (engine ≥ 0.13.0). Below it a sweep is never named a tack or a jibe — **wind axis or not** — and is filed as the same uncounted bear-away/round-up the no-crossing branch already produces. A tack and a jibe both take the board through the wind and out the other side; a 70° sweep that happens to clip dead downwind is a rider bearing away, and calling it a jibe put a course change into the number he judges his session by. With no usable axis the two course-change labels are indistinguishable, so such a sweep takes the bear-away label — the verdict that matters, *not counted*, is the same either way. At or above the floor the rule is unchanged: tack/jibe by the crossings, or a counted `turn` (unclassified) with no usable axis |
+| `turnMaxDuration` | 8 | s | window for the net change. Deliberately **not** widened to 12 s with the outcome window: a 12 s sweep pulls a slow exit into the scored minimum, and on the corpus that cost 16 clean jibes |
 | `turnPeakRate` | 25 | deg/s | at ≥1 sample (Richterich: jibes ~30–40°/s for ~4 s) |
 | `turnContext` | ON_FOIL or ≤3 s after | | turns while swimming don't count |
 | `turnCogSpeedFloor` | 2.0 | m/s | COG geometry read only from steps above this (same COAPS caveat as wind); a capsize below it otherwise reads as a multi-turn spin |
@@ -141,7 +156,7 @@ with a numeric offset (`+02:00`) is the exporter naming the local clock, and win
 | `turnRecoverPct` | 70 | % | of entry speed: back above this ⇒ flying again ⇒ the turn is over and its window closes early. Floored at `foilEntrySpeed` — nothing below that is flying, however slowly the turn was entered |
 | `turnRecoverHold` | 2 | s | recovery must hold this long, same both-ends-qualify convention as flight `entryHold` |
 | `turnBaroDrop` | 25 | m | apparent altitude below the session median that means the wrist is under water |
-| `turnOutcomeWindow` | 60 | s | cap on following the recovery, so a turn taken before a break does not absorb it |
+| `turnOutcomeWindow` | **12** | s | cap on following the recovery (engine ≥ 0.13.0; was 60 s). Equal to `turnOutcomeLookahead` on purpose: a fall the ladder blames on a turn is then always inside the tail that turn is actually *judged* over, and a fall later than that is a straight-line fall the flight-end channel counts. At 60 s a mush-out three quarters of a minute past the exit was charged to the turn |
 | classification | | | tack = COG crosses wind axis through upwind; jibe = through downwind; requires wind axis; bear-away/round-up (no axis crossing) excluded from counts |
 | port/starboard | | | side before the turn, from sign of TWA |
 | `detectThreeSixty` | **false** | | **EXPERIMENTAL, UNVALIDATED.** Runs the 360 pass below. Off: with it down nothing detects a spin and the serialized document is byte-identical to one written before the detector existed — no `threeSixties`, no parameter echo |
@@ -154,6 +169,46 @@ with a numeric offset (`+02:00`) is the exporter naming the local clock, and win
 Entry/minimum speeds come from `speedChannelManeuvers` (positional); the "never dropped off
 foil" half of the success test stays on Doppler so it agrees with flight segmentation.
 Overlapping candidates are non-maximum-suppressed by net angle, widest sweep wins.
+
+The minimum is searched to `minSpeedLag` (2 s) **past** the sweep's end because the speed
+trough lags the heading: the rider finishes turning the board and the collapse of a botched
+exit lands a second or two later, so a window that stopped at the COG sweep would score the
+speed he still had rather than the speed he ended up with.
+
+**What the two 0.13.0 threshold changes did to the corpus.** Measured across 21 sessions
+(the fixture corpus plus the sessions not committed to `fixtures/`):
+
+| | 0.12.0 | 0.13.0 |
+|---|---|---|
+| jibes | 773 | 768 |
+| course changes (`rejected`) | 124 | *see note* |
+| clean jibes | 263 | 263 |
+| jibe outcome `fell_in` | 147 | 50 |
+| jibe outcome `touchdown` | 159 | 252 |
+| straight-line falls | 78 | 88 |
+
+Five sweeps in a thousand were narrow enough to reclassify: the 90° floor is a guard against
+a class of mislabel, not a re-tune. Nothing clean moved, which is the check that matters —
+the headline metric is unchanged and the change is confined to what the *outcome* ladder
+blames on a turn. (Note: the 124 → 17 course-change figure quoted while the change was being
+weighed came from an earlier draft that raised `turnMinAngle` itself to 90°, which stopped
+detecting those sweeps at all. That was reverted: detection stays at 60° and the course-change
+markers stay on the page, so `rejected` **rises** with the reclassified sweeps instead. On the
+17 committed fixtures: jibes 504 → 499, `rejected` 94 → 99, clean 152 → 152, jibe `fell_in`
+106 → 32, jibe `touchdown` 128 → 197.)
+
+### Glossary — four words that are not synonyms
+
+| word | what it is | where it lives |
+|---|---|---|
+| **flew through** | an *outcome*: the ladder found no touchdown and no fall in the tail past the sweep. One of three rungs, and the only one that is not a loss | `turn.outcome == "flew_through"` |
+| **carried** | the *score verdict*: `score ≥ turnSuccessPct` **and** the Doppler minimum stayed above `foilExitSpeed`. It says what the turn cost in speed and says nothing about how it ended | `turn.success` |
+| **clean** | **carried AND flew through**, and only for a **jibe**. The product's headline verdict (engine ≥ 0.12.0). A strict subset of both | `turn.clean`, `turns.jibesSuccessful`, `cleanJibesPerHour` |
+| **dry** | outcome is **not** `fell_in` — flew through *or* touched down. "He did not swim out of it" | the JPH and (since 0.13.0) TPH numerators |
+
+They nest: clean ⊂ flew through ⊂ dry. `carried` cuts across all three, which is exactly why
+it needs its own word — a jibe can be carried and still swum out of, and before 0.12.0 that
+one was called clean.
 
 ### What a turn records — the shape, not only the endpoints (engine 0.11.0)
 
@@ -297,11 +352,11 @@ inventing turns):
 - **Doppler only.** There is no positional speed channel live, so the sharp `min(Doppler,
   positional)` test degrades to the firmware's ~3–4 s smoothed Doppler: short touchdowns the
   positional channel would expose can read as fly-throughs on the watch.
-- **The outcome window is the judging window.** The lab follows an off-foil run past the
-  window to `turnOutcomeWindow` (60 s) to measure the stop; the watch measures the stop inside
-  the recovery-gated window only, capped at `turnOutcomeLookahead`. A stop long enough to be a
-  fall still exceeds `turnFallStop` well inside that cap, so the verdict agrees; `stopped_s`
-  itself is not reported by the watch.
+- **The outcome window is the judging window.** The watch measures the stop inside the
+  recovery-gated window only, capped at `turnOutcomeLookahead`. Since engine 0.13.0 the phone
+  does the same — `turnOutcomeWindow` is 12 s, equal to the lookahead — so this is **no longer
+  a divergence in the cap**, only in what is reported: `stopped_s` is not published by the
+  watch.
 - **Recovery is searched from the sweep end**, not from the speed minimum, and the entry speed
   is the max over `entrySpeedWindow` of the *Doppler* history.
 - **Submersion is read in the pressure domain.** `turnBaroDrop` (25 m of apparent altitude) is
@@ -309,6 +364,17 @@ inventing turns):
   refuses to adapt while a spike is in progress. Same positive-only semantics.
 - **No pump corroboration** (step 3 of the ladder): the watch cannot promote a fly-through to a
   touchdown on accel evidence, so it reports slightly more fly-throughs than the phone.
+- **No `turnClassifyMinAngle`** (engine 0.13.0, phone-side only until the watch follows). The
+  watch names any sweep that crosses the axis a tack or a jibe, however narrow, so it counts
+  the handful of ≥60°-but-<90° course changes the phone now files under `rejected`. Five
+  sweeps in a thousand on the corpus, always in the *flattering* direction — the watch says
+  "jibe" where the phone says "course change" — so a re-import can lower a jibe count the
+  rider watched climb on his wrist.
+- **Foil % is the same ratio over a different clock.** The phone divides `foilTimeS` by
+  `timerTimeS` (T2, the cleaned track's non-gap total); the watch's screens and FIT field 22
+  divide by `Activity.Info.timerTime`, its own native moving clock. Both exclude pauses, so
+  the two agree to within what the cleaner trims — but they are not the same clock, and the
+  divergence check's "Foil time" comparison (> 5 %) is a comparison across them.
 - **Bear-aways are dropped, not carried.** They increment a `rejected` counter and are not
   given an outcome, so the watch has no equivalent of the lab's bear-away outcome window.
 - **Wind is manual only** and classification is not retroactive: turns detected before the
@@ -319,10 +385,13 @@ inventing turns):
   shows *clean jibes per hour* on the Turns page and on the post-save turns screen —
   `TurnDetector.cleanJibeCount` over `SessionController.elapsedNowS()`, which is the engine's
   own timer while recording and the FIT's `total_elapsed_time` (pauses included) once saved.
-  The phone's rates divide by `durationS`, the elapsed span of the **cleaned** track, so the
-  two denominators differ by whatever the cleaner trims off the ends plus, live, by any time
-  the rider spent paused. Neither number is wrong; they answer the same question over slightly
-  different afternoons, and the watch has no cleaned track to offer. The **no-rate floor** is
+  Since engine 0.13.0 the phone's rates divide by `timerTimeS` — the **cleaned track's**
+  non-gap total (T2) — which is the same *kind* of clock the data field uses and much closer
+  to the device app's live one than the elapsed span they used to divide by. The two still
+  differ by whatever the cleaner trims off the ends, by the different gap definitions, and,
+  after save, by the pauses the device app's `total_elapsed_time` puts back in. Neither number
+  is wrong; they answer the same question over slightly different afternoons, and the watch
+  has no cleaned track to offer. The **no-rate floor** is
   60 s rather than the engine's `durationS <= 0`: the watch is asked the question live, and one
   clean jibe forty seconds in is not "ninety an hour". Below the floor it prints `--`, never a
   number and never a flattering zero.
@@ -580,10 +649,10 @@ is the reason: that session has **25 falls, and only 8 of them are in a counted 
 other 17 arrive as non-turn events — 13 straight-line, 4 owned by bear-aways — alongside one
 straight-line touchdown, 18 events in all. Read through the turn channel alone a streak
 misses two thirds of the session's swims, which is precisely how a run of 10 survived two of
-them. 2026-08-07 moves **5 / 2 → 4 / 2** on the same rule.
+them. 2026-08-07 moves **5 / 2 → 6 / 2** on the same rule.
 
 The two numbers still say what the tallies cannot. 2026-08-29 (51 counted turns, 35 flew /
-8 touchdown / 8 fell) reads 11 / 5; 2026-08-07 (30 counted, 9 / 9 / 12) reads 4 / 2. The
+12 touchdown / 4 fell) reads 11 / 5; 2026-08-07 (30 counted, 9 / 14 / 7) reads 6 / 2. The
 first rider strung his good turns together and the second did not, and that is the whole
 point of carrying the streaks beside the counts.
 
@@ -684,30 +753,44 @@ FIT** (docs/fit-schema.md is untouched by this version):
 
 | field | definition | units |
 |---|---|---|
-| `durationS` | last − first sample of the **cleaned** track | s, 1 dp |
-| `avgSpeedKmh` | `records.distanceM / durationS × 3.6` | km/h, 2 dp |
-| `turnsPerHour` | `turns.turnsCounted / (durationS/3600)` | 1/h, 1 dp |
-| `jibesPerHour` | **dry** jibes: `(turns.jibes − turns.jibeOutcomes.fellIn) / (durationS/3600)` | 1/h, 1 dp |
-| `cleanJibesPerHour` | **clean** jibes: `turns.jibesSuccessful / (durationS/3600)` | 1/h, 1 dp |
-| `wetPerHour` | `flightEnds.all.fellIn / (durationS/3600)` | 1/h, 1 dp |
+| `durationS` | last − first sample of the **cleaned** track (T1, gaps included) — the duration every surface *displays*, and since 0.13.0 **not** a denominator | s, 1 dp |
+| `timerTimeS` | Σ dt over the non-gap steps (T2) — the session minus its pauses. **The denominator** (engine ≥ 0.13.0) | s, 1 dp |
+| `avgSpeedKmh` | `records.distanceM / timerTimeS × 3.6` | km/h, 2 dp |
+| `turnsPerHour` | **dry** counted turns: `(turns.turnsCounted − turns.outcomes.fellIn) / (timerTimeS/3600)` | 1/h, 1 dp |
+| `jibesPerHour` | **dry** jibes: `(turns.jibes − turns.jibeOutcomes.fellIn) / (timerTimeS/3600)` | 1/h, 1 dp |
+| `cleanJibesPerHour` | **clean** jibes: `turns.jibesSuccessful / (timerTimeS/3600)` | 1/h, 1 dp |
+| `wetPerHour` | `flightEnds.all.fellIn / (timerTimeS/3600)` | 1/h, 1 dp |
 | `windowRates` | the rolling `windowRateMin`-minute view of the same two events (below) | object |
 
-**One denominator, and it is elapsed time.** Not `foilTimeS` and not `timerTimeS`: the
-question every one of these answers is "per hour *on the water*". A rider who jibes forty
-times in two hours of drifting between gusts and one who does it in one are not having the
-same session, and only a wall-clock denominator says so. The span is measured on the
-*cleaned* track because that is the timeline every other summary number was measured on, and
-it deliberately **includes gaps** — a Smart-Recording hole is time the rider spent out there,
-not time that did not happen. That also makes `avgSpeedKmh` an honest moving-plus-waiting
-average, always well below `distanceKm / foilTimeS`; it is a session-shape number, never a
-speed record, and the GP3S block remains the only place records live.
+**One denominator, and since engine 0.13.0 it is timer time.** The question every one of
+these answers is "per hour *on the water*", and an hour the recorder was not running is not
+an hour on the water. `timerTimeS` sums the non-gap steps of the *cleaned* track — the same
+timeline every other summary number was measured on — so a Smart-Recording hole, a paused
+lunch break, or the twenty minutes the board spent on the beach come out of the divisor.
+Until 0.13.0 the rates divided by the elapsed span (T1) and every one of them was deflated
+by exactly those minutes: on the Rheinstetten afternoon that is 7742 s against 4712 s of
+timer, and a JPH of 13.0 that should have read 31.3.
+
+`durationS` stays in the block and keeps its meaning — a rider who jibes forty times in two
+hours of drifting between gusts and one who does it in one are not having the same afternoon,
+and T1 is what says so. It is what every surface prints as the session's duration. The two
+are two named keys rather than one blurred number.
+
+`avgSpeedKmh` moves with them: it is still an honest moving-plus-waiting average, well below
+`distanceKm / foilTimeS`, and still a session-shape number and never a speed record — the
+GP3S block remains the only place records live.
+
+**TPH counts dry turns** (engine ≥ 0.13.0). The numerator is `turnsCounted −
+turns.outcomes.fellIn`: the same "dry" rule JPH has applied since 0.7.0, read over every
+counted turn. A swim is not a maneuver made, and a busy-ness number a rider can raise by
+falling is not a measure of his afternoon.
 
 **JPH counts the jibes he sailed out of** (engine ≥ 0.7.0). The numerator is `turns.jibes −
 turns.jibeOutcomes.fellIn`, i.e. `flewThrough + touchdown` — a touchdown counts, because
 pumping straight back up out of one is a jibe he made, and a swim does not, because it is a
 jibe he did not. The alternative is a headline number a rider can raise by falling more
 often, which is the one thing a rate on the front screen must never reward. On 2026-08-29
-that is 43 of 50 jibes: **22.0** an hour where the all-jibes count read 25.6.
+that is 47 of 50 jibes: **25.1** an hour where the all-jibes count read 26.7.
 
 **CPH counts the jibes he *rode*** (engine ≥ 0.10.0). `cleanJibesPerHour` is
 `turns.jibesSuccessful` over the same hour — the strict verdict, a counted jibe flown all the
@@ -715,9 +798,9 @@ way through carrying its speed (docs/presentation.md "Clean jibe"), which is the
 per-turn `clean` flag and not a new measurement. Same denominator, same 1 dp, same
 null-on-no-duration rule. The two jibe rates are deliberately both here because they answer
 questions a rider asks in that order: JPH says he got away with it, CPH says he rode it. On
-2026-08-29 that is 24 of 50 jibes, **12.3** an hour against JPH's 22.0; on 2026-08-07 it is 3
-of 30, **2.1** against 12.8 — a 5.9× gap between the two sessions where the dry number,
-which forgives every touchdown, sees only 1.7×. CPH is the harder number to move and the
+2026-08-29 that is 24 of 50 jibes, **12.8** an hour against JPH's 25.1; on 2026-08-07 it is 3
+of 30, **2.6** against 20.3 — a 4.9× gap between the two sessions where the dry number,
+which forgives every touchdown, sees only 1.2×. CPH is the harder number to move and the
 one the front screen carries (docs/presentation.md, key metrics).
 
 Since 0.12.0 **CPH nests inside JPH by construction** rather than by luck: clean requires
@@ -728,44 +811,49 @@ in principle have printed a CPH above its JPH. The numerator fell on eleven of t
 fixtures when the rule narrowed (e.g. 2026-08-29: 25 → 24; 2026-08-02: 14 → 9), which is the
 size of the population that had been carrying its speed and still getting wet.
 
-`turnsPerHour` beside them is deliberately **all** counted turns, outcome and all. The three
-answer different questions — "how busy was the afternoon", "how much of it did I sail out
-of", "how much of it did I ride" — and filtering the busy-ness number by quality would leave
-the session with no honest measure of activity at all. Wet turns are already counted twice over, by `wetPerHour` and by the
-outcome ladder; JPH is the only place they are *subtracted*, and only because the word
-"jibe" in a rider's mouth means one he came out of.
+`turnsPerHour` beside them is deliberately **every kind** of counted turn — tacks, jibes and
+unclassified alike — and not only jibes. The three answer different questions: "how busy was
+the afternoon", "how many jibes did I sail out of", "how many did I ride". What all three now
+share is the dry rule: a maneuver that ended in the water is not one the rider made, on any
+of the three.
 
 **Wet is every fall, not every fallen jibe.** `wetPerHour` counts **all** `fell_in` flight
 ends — straight-line swims and turn-owned swims alike (`flightEnds.all`, which is exactly
 `straight.fellIn + inTurn.fellIn`). Deliberately *not* the turn ladder's `turns.outcomes.
-fellIn`: on 2026-08-29 that would read 8 where the rider swam 25 times, because 17 of his
-swims happened outside a counted turn — the same blind spot documented under "Turn streaks".
-The two channels count genuinely different events and neither bounds the other: a mid-turn
-swim that never ended a flight (a short turn touchdown, or a fall inside a flight that ran
-on) is a `fell_in` **turn** and no flight end at all, which is why 2026-06-13 reads 15 turn
-falls against 9 fell-in ends while 2026-08-29 reads 8 against 25. The rider-facing question
+fellIn`: on 2026-08-29 that would read 4 where the rider swam 25 times, because 21 of his
+swims happened outside a counted turn — the same blind spot documented under "Turn streaks",
+and one the 12 s outcome window of engine 0.13.0 widened on purpose (a fall a quarter of a
+minute past a sweep is a straight-line fall, not that turn's). The two channels count
+genuinely different events and neither bounds the other: a mid-turn swim that never ended a
+flight is a `fell_in` **turn** and no flight end at all, which is why 2026-06-13 reads 2 turn
+falls against 9 fell-in ends while 2026-08-29 reads 4 against 25. The rider-facing question
 is "how often did I get in the water", so the flight-end channel — one event per actual
 swim — is the one that answers it.
 
-**No duration, no rate.** `durationS ≤ 0` (a one-sample track, an empty clean) makes all five
-derived values **null**, never 0.0 — and both window peaks with them, over an empty series.
-Zero would claim "he did nothing in an hour on the water"; null says there is no hour to
-divide by. `durationS` itself stays 0.0. Rates are computed from unrounded inputs and
-rounded only on the way into JSON.
+**No timer time, no rate.** `timerTimeS ≤ 0` (a one-sample track, an empty clean) makes all
+five derived values **null**, never 0.0 — and both window peaks with them, over an empty
+series. Zero would claim "he did nothing in an hour on the water"; null says there is no hour
+to divide by. `durationS` and `timerTimeS` themselves stay 0.0. Rates are computed from
+unrounded inputs and rounded only on the way into JSON.
 
-Corpus, for scale — the two CIQ sessions:
+Corpus, for scale — the two CIQ sessions, regenerated from `fixtures/goldens/` at
+engine 0.13.0:
 
-| session | `durationS` | `avgSpeedKmh` | `turnsPerHour` | `jibesPerHour` | `cleanJibesPerHour` | `wetPerHour` |
-|---|---|---|---|---|---|---|
-| 2026-08-07 am (30 counted turns, 30 jibes of which 12 wet, 4 clean, 16 fell-in ends) | 5080.0 | 9.05 | 21.3 | 12.8 | 2.8 | 11.3 |
-| 2026-08-29 pm (51 counted, 50 jibes of which 7 wet, 25 clean, 25 fell-in ends) | 7029.0 | 11.77 | 26.1 | 22.0 | 12.8 | 12.8 |
+| session | `durationS` (T1) | `timerTimeS` (T2) | `avgSpeedKmh` | `turnsPerHour` | `jibesPerHour` | `cleanJibesPerHour` | `wetPerHour` |
+|---|---|---|---|---|---|---|---|
+| 2026-08-07 am (30 counted turns, 30 jibes of which 7 wet, 3 clean, 16 fell-in ends) | 5080.0 | 4088.0 | 11.24 | 20.3 | 20.3 | 2.6 | 14.1 |
+| 2026-08-29 pm (51 counted, 50 jibes of which 3 wet, 24 clean, 25 fell-in ends) | 7029.0 | 6748.0 | 12.26 | 25.1 | 25.1 | 12.8 | 13.3 |
 
-The afternoon session is the busier *and* the faster one, and it is wetter per hour despite
-a far better turn success rate — because it is long enough that the straight-line swims
-dominate. That is the pair of facts the counts alone never surfaced. The dry numerator adds
-a third: on the morning session, where two jibes in five ended in the water, JPH drops from
-21.3 to 12.8, while the afternoon barely moves — which is the whole difference between the
-two afternoons, and nothing in the tallies said it.
+Read the two clocks first: the morning lost nearly a thousand seconds to gaps and the
+afternoon barely twenty per cent of that, which is why the morning's rates move the further
+when the denominator becomes T2. The afternoon is still the busier *and* the faster session,
+and it is now the *drier* one per hour too — 13.3 swims against 14.1 — where on the elapsed
+clock the morning looked better. That flip is the point of the change: the two afternoons
+were never being compared over the same kind of hour.
+
+TPH and JPH read the same on both sessions here because almost every counted turn on this
+corpus is a jibe; where a session carries tacks the two part. CPH is where the pair actually
+separates: 2.6 against 12.8, a 4.9× gap, where the dry numbers differ by 1.2×.
 
 ### The rolling window — `summary.windowRates` (engine ≥ 0.7.0)
 
@@ -1195,6 +1283,18 @@ next tuning step, and needs a session where he actually reached his max.
 Banner when watch session fields vs phone recompute differ by: foil time > 5 % · any speed
 record > 0.3 kn · flight/turn/attempt counts off by > 1. Divergences are tuning issues, not bugs
 by definition — file them against the session fixture.
+
+**Its scope is deliberately narrow, and this is the statement of it.** Twelve metrics are
+compared: foil time, six speed records (2 s, 10 s, 5×10 s, 500 m, NM, alpha 500 — of which the
+watch only ever supplies the first two, see "Speed records"), flights, tacks, jibes, takeoff
+attempts and takeoff successes. Nothing compares **clean jibes**, the streaks, the outcome
+tallies, the wind axis, foil *percentage*, or `total_pump_strokes` — the last of which the
+watch's own divergence list says *will* differ on installed watches. The check exists to
+catch a *recording* fault (a channel the watch and the phone read differently), not to police
+metrics whose divergences are already enumerated and intended above; adding clean jibes would
+mean picking a threshold for a metric whose watch-side evidence is documented as coarser.
+The foil-time comparison is of the **seconds**, not the percentage, which matters because the
+two sides normalise that percentage by different clocks (see the watch divergence list).
 
 ---
 
