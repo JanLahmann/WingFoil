@@ -56,6 +56,12 @@ struct TurnsAnalysisView: View {
                 .font(.headline)
             filters
             tallyStrip
+            #if TUNING
+            // The dev build's session diff (docs/presentation.md, "Dev workbench"): what the
+            // tuned thresholds did to *this* session against the published defaults. Absent
+            // when nothing is tuned, and compiled out of the public build entirely.
+            DevTuningDiffView(detail: detail, opened: $opened)
+            #endif
             if !detail.segments.isEmpty { map }
             list
             footnote

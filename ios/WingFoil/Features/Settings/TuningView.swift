@@ -38,6 +38,8 @@ struct TuningView: View {
     /// tuning thresholds is a rider who wants to see the effect now.
     @State private var touched = false
     @State private var confirmResetAll = false
+    /// Read here only for the row's count — the page itself lives in `TuningLabelsView`.
+    @State private var labels = TurnLabelStore.shared
 
     init(initial: TuningOverrides) {
         _overrides = State(initialValue: initial)
@@ -57,6 +59,7 @@ struct TuningView: View {
                     Text(group.blurb)
                 }
             }
+            labelsSection
             footerSection
         }
         .navigationTitle("Tuning")
@@ -65,7 +68,13 @@ struct TuningView: View {
         // fingerprint has just made true of every row). Doing it on the way out is the same
         // trip, taken while the rider is still thinking about the slider he moved.
         .onDisappear {
-            guard touched, !store.sessions.isEmpty else { return }
+            guard touched else { return }
+            // The workbench's cached default analyses were built against the previous setting.
+            // The version key would catch this on its own once the library re-derives; dropping
+            // them here means the next session opened cannot show a comparison from before the
+            // slider moved even for the instant between the two.
+            DevWorkbench.shared.invalidateAll()
+            guard !store.sessions.isEmpty else { return }
             Task { await store.reanalyzeTuned() }
         }
         .confirmationDialog("Reset every threshold to its published default?",
@@ -105,6 +114,29 @@ struct TuningView: View {
                  + "part of the analysis' version, so a stale session rebuilds the next time "
                  + "it is opened, and the whole library rebuilds at the next launch. The "
                  + "button is the same trip, taken now.")
+        }
+    }
+
+    /// **The workbench's one entry point outside a session** (docs/presentation.md, "Dev
+    /// workbench"). It belongs here rather than in Settings proper because it is the answer to
+    /// the question this page asks: a slider says what a threshold *is*, and this says whether
+    /// moving it brought the engine closer to what the rider saw.
+    private var labelsSection: some View {
+        Section {
+            NavigationLink {
+                TuningLabelsView()
+            } label: {
+                LabeledContent("Labels") {
+                    Text(labels.totalLabels == 0
+                         ? "none yet"
+                         : "\(labels.totalLabels) turn"
+                            + "\(labels.totalLabels == 1 ? "" : "s")")
+                }
+            }
+        } footer: {
+            Text("Your own verdict on a turn — *I flew · I touched · I fell* — left on the "
+                 + "turn's page and scored against the engine here. Labels live on this phone, "
+                 + "outside the analysis, and survive every re-derivation.")
         }
     }
 
