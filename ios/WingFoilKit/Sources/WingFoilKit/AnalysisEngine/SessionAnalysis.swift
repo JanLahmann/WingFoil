@@ -254,10 +254,14 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
     public var turnRecoverPct: Double
     public var turnOutcomeWindow: Double
     public var turnBaroDrop: Double
-    /// The pump rung's gate, a switch since engine 0.18.0 and **on** at its default. Optional
-    /// so a stored `analysis.json` from before it still decodes as nil, which reads as "this
-    /// document does not say"; such a row is stale by `engineVersion` and re-derives.
+    /// The pump rung's gate, a switch since engine 0.18.0 and **on** at its default, and the
+    /// speed it corroborates against (**8.0** km/h, at which it cannot fire). Optional so a
+    /// stored `analysis.json` from before them still decodes as nil, which reads as "this
+    /// document does not say"; such a row is stale by `engineVersion` and re-derives. The speed
+    /// is the one the "why" line prints, so a document that carries no echo of it gets the
+    /// wording without the number rather than a guess (`TurnAnalytics.outcomeText`).
     public var turnPumpedOutIsTouchdown: Bool?
+    public var turnPumpedMarginalSpeed: Double?
     // Wind axis
     public var windMinSpeed: Double
     public var windBinDeg: Double
@@ -318,6 +322,7 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
         turnOutcomeWindow = turn.outcomeWindowS
         turnBaroDrop = turn.baroDropM
         turnPumpedOutIsTouchdown = turn.pumpedOutIsTouchdown
+        turnPumpedMarginalSpeed = turn.pumpedMarginalSpeedKmh
         windMinSpeed = wind.minSpeedMps
         windBinDeg = wind.binDeg
         windMinConfidence = wind.minConfidence

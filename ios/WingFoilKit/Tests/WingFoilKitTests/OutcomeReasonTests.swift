@@ -38,34 +38,35 @@ import Testing
         // A touchdown that lost the foil briefly and never stopped.
         #expect(TurnAnalytics.outcomeText(
             try record(reason: "off_foil", outcome: "touchdown", offFoilS: 2, stoppedS: 0.4),
-            foilExitSpeedKmh: 8) == "touchdown · off the foil 2 s, no stop")
+            marginalSpeedKmh: 8) == "touchdown · off the foil 2 s, no stop")
         // …and one that did stop, briefly.
         #expect(TurnAnalytics.outcomeText(
             try record(reason: "off_foil", outcome: "touchdown", offFoilS: 2, stoppedS: 1.2),
-            foilExitSpeedKmh: 8) == "touchdown · off the foil 2 s, stopped 1 s")
+            marginalSpeedKmh: 8) == "touchdown · off the foil 2 s, stopped 1 s")
         // A stop in the ambiguous band: nearly a fall, and the word for that is borderline.
         #expect(TurnAnalytics.outcomeText(
             try record(reason: "stop", outcome: "touchdown", borderline: true,
                        offFoilS: 6, stoppedS: 4),
-            foilExitSpeedKmh: 8) == "touchdown · stopped 4 s, borderline")
+            marginalSpeedKmh: 8) == "touchdown · stopped 4 s, borderline")
         // A fall the stop decided, and one the wrist decided.
         #expect(TurnAnalytics.outcomeText(
             try record(reason: "stop", outcome: "fell_in", offFoilS: 20, stoppedS: 7),
-            foilExitSpeedKmh: 8) == "fell in · stopped 7 s")
+            marginalSpeedKmh: 8) == "fell in · stopped 7 s")
         #expect(TurnAnalytics.outcomeText(
             try record(reason: "submerged", outcome: "fell_in", offFoilS: 30, stoppedS: 12),
-            foilExitSpeedKmh: 8) == "fell in · wrist under")
+            marginalSpeedKmh: 8) == "fell in · wrist under")
     }
 
     /// The pump rung's wording. Unreachable at the published defaults since 0.18.0, and kept
     /// because a stored document written by an older engine still carries it.
     @Test func thePumpRungNamesTheSpeedFromTheDocumentsOwnConfig() throws {
         let turn = try record(reason: "pumped_marginal", outcome: "touchdown")
-        #expect(TurnAnalytics.outcomeText(turn, foilExitSpeedKmh: 8)
+        #expect(TurnAnalytics.outcomeText(turn, marginalSpeedKmh: 8)
                 == "touchdown · pumped out below 4.3 kn, no sample off the foil")
-        // A different exit speed is a different sentence — the number is never a literal.
-        #expect(TurnAnalytics.outcomeText(turn, foilExitSpeedKmh: 10)
-                == "touchdown · pumped out below 5.4 kn, no sample off the foil")
+        // A run that revived the rung at 12 km/h says *its* speed — the 0.17.0 sentence, and
+        // the number is never a literal.
+        #expect(TurnAnalytics.outcomeText(turn, marginalSpeedKmh: 12)
+                == "touchdown · pumped out below 6.5 kn, no sample off the foil")
         // No config echo to read it off ⇒ the plainer wording, never an invented number.
         #expect(TurnAnalytics.outcomeText(turn)
                 == "touchdown · pumped out below min foil speed, no sample off the foil")
@@ -74,13 +75,13 @@ import Testing
     /// Nothing to explain, and nothing recorded to explain it with.
     @Test func aFlyThroughAndAnOlderDocumentSayNothing() throws {
         #expect(TurnAnalytics.outcomeText(
-            try record(reason: nil, outcome: "flew_through"), foilExitSpeedKmh: 8) == nil)
+            try record(reason: nil, outcome: "flew_through"), marginalSpeedKmh: 8) == nil)
         // A document written before 0.18.0 carries no reason at all. Rebuilding one from
         // `stoppedS` would be a guess about a ladder that may not have been climbed that way.
         let old = try record(reason: nil, outcome: "touchdown", offFoilS: 2, stoppedS: 1,
                              omitReason: true)
         #expect(old.outcomeReason == nil)
-        #expect(TurnAnalytics.outcomeText(old, foilExitSpeedKmh: 8) == nil)
+        #expect(TurnAnalytics.outcomeText(old, marginalSpeedKmh: 8) == nil)
     }
 
     /// Whole seconds, half **away from zero** — the one rounding rule the three languages
@@ -88,16 +89,48 @@ import Testing
     @Test func aHalfSecondRoundsUpOnEveryPlatform() throws {
         #expect(TurnAnalytics.outcomeText(
             try record(reason: "stop", outcome: "fell_in", offFoilS: 9, stoppedS: 6.5),
-            foilExitSpeedKmh: 8) == "fell in · stopped 7 s")
+            marginalSpeedKmh: 8) == "fell in · stopped 7 s")
     }
 
     // MARK: - The rung itself
 
-    /// The published default is **on**, and it is inert: `flying` already requires speed above
-    /// `foilExitSpeed`, so on the branch the rung lives on there is nothing left below it.
+    /// The published default is **on**, and inert: the speed it corroborates against is the
+    /// foil exit speed, and `flying` already requires speed above that — so on the branch the
+    /// rung lives on there is nothing left below it.
     @Test func thePumpRungIsOnByDefaultAndCannotFire() {
-        #expect(TurnConfig().pumpedOutIsTouchdown)
-        #expect(TurnConfig().foilExitSpeedKmh < TurnConfig().foilEntrySpeedKmh)
+        let config = TurnConfig()
+        #expect(config.pumpedOutIsTouchdown)
+        #expect(config.pumpedMarginalSpeedKmh == 8.0)
+        // The retirement, stated as the equality it rests on: the band the rung judges is
+        // (foilExitSpeed, pumpedMarginalSpeed], and at the default that band is empty.
+        #expect(config.pumpedMarginalSpeedKmh == config.foilExitSpeedKmh)
+        // …and 0.17.0's reading is the entry speed, which is what raising it restores.
+        #expect(config.foilExitSpeedKmh < config.foilEntrySpeedKmh)
+    }
+
+    /// **The retirement is a setting, not a deletion.** Raising the speed revives the rung, and
+    /// the switch beside it still refuses it — the two answer different questions.
+    @Test func theMarginalSpeedIsItsOwnSliderAndRevivesTheRung() {
+        let spec = TuningParameter.turnPumpedMarginalSpeed.spec
+        #expect(spec.kind == .slider)
+        #expect(spec.group == .outcomes)
+        #expect(spec.defaultValue == 8)
+        #expect(spec.range == 4...20)
+        #expect(spec.step == 0.5)
+        #expect(spec.title == "Pumped out below this speed is a touchdown")
+        #expect(spec.formatted(8) == "8.0 km/h")
+
+        var overrides = TuningOverrides()
+        overrides[.turnPumpedMarginalSpeed] = 12
+        #expect(overrides.apply().turn.pumpedMarginalSpeedKmh == 12)
+        // It moves *only* the rung's speed. Pushing it onto `foilExitSpeed` would re-segment
+        // every flight in the library off a knob that says nothing about flights.
+        #expect(overrides.apply().turn.foilExitSpeedKmh == TurnConfig().foilExitSpeedKmh)
+        #expect(overrides.apply().flight.foilExitSpeedKmh == FlightConfig().foilExitSpeedKmh)
+        // And the switch is the other question: off, the revived speed asks nothing.
+        overrides[.turnPumpedOutIsTouchdown] = 0
+        #expect(overrides.apply().turn.pumpedMarginalSpeedKmh == 12)
+        #expect(!overrides.apply().turn.pumpedOutIsTouchdown)
     }
 
     /// The tuning row is a **switch**, not a slider, and it reads in the rider's words.
@@ -143,9 +176,14 @@ import Testing
         let on = AnalysisConfig(filter: FilterConfig(), flight: FlightConfig(),
                                 records: RecordsConfig(), turn: turn)
         #expect(on.turnPumpedOutIsTouchdown == true)
+        #expect(on.turnPumpedMarginalSpeed == 8.0)
         turn.pumpedOutIsTouchdown = false
+        turn.pumpedMarginalSpeedKmh = 12.0
         let off = AnalysisConfig(filter: FilterConfig(), flight: FlightConfig(),
                                  records: RecordsConfig(), turn: turn)
         #expect(off.turnPumpedOutIsTouchdown == false)
+        // The speed is echoed because the "why" line prints it: a document analysed with the
+        // rung revived has to be able to say which speed it was revived at.
+        #expect(off.turnPumpedMarginalSpeed == 12.0)
     }
 }

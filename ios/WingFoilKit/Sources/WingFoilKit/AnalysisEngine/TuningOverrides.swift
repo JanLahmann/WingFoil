@@ -199,6 +199,10 @@ public struct TuningOverrides: Sendable, Equatable {
         // unchanged — a second storage shape for one boolean would have been a second set of
         // bugs. `.toggle` is a *rendering* fact, and it lives in the spec.
         if let v = self[.turnPumpedOutIsTouchdown] { out.turn.pumpedOutIsTouchdown = v >= 0.5 }
+        // The speed the rung corroborates against — its own knob, and not pushed onto
+        // `foilExitSpeed`: they share a default and answer different questions, and moving the
+        // exit speed here would silently re-segment every flight in the library.
+        if let v = self[.turnPumpedMarginalSpeed] { out.turn.pumpedMarginalSpeedKmh = v }
         // Flights — and the two speeds every channel is judged against.
         if let v = self[.foilEntrySpeed] {
             out.flight.foilEntrySpeedKmh = v
@@ -363,6 +367,7 @@ public enum TuningParameter: String, CaseIterable, Sendable, Codable {
     case turnRecoverHold
     case turnOutcomeWindow
     case turnPumpedOutIsTouchdown
+    case turnPumpedMarginalSpeed
     // Flights
     case foilEntrySpeed
     case foilExitSpeed
@@ -531,6 +536,12 @@ public struct TuningParameterSpec: Sendable, Equatable {
                   + "flight-end speed still counts as a touchdown when on; off, it flew "
                   + "through and the chip says it pumped out",
               kind: .toggle),
+        .init(parameter: .turnPumpedMarginalSpeed, group: .outcomes, unit: "km/h",
+              defaultValue: 8, range: 4...20, step: 0.5,
+              title: "Pumped out below this speed is a touchdown",
+              note: "when the switch above is on and no sample was off the foil, a pump burst "
+                  + "that dropped below this speed still counts as a touchdown; at the "
+                  + "flight-end speed it can never fire, raise it to revive the rule"),
 
         .init(parameter: .foilEntrySpeed, group: .flights, unit: "km/h", defaultValue: 12,
               range: 6...25, step: 0.5,

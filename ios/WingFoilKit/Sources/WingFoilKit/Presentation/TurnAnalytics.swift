@@ -485,11 +485,12 @@ public enum TurnAnalytics {
     /// reconstructed from `stoppedS` alone would be a guess about a ladder that may not have
     /// been climbed that way.
     ///
-    /// `foilExitSpeedKmh` is the analysis' own config echo, converted to knots for the one
-    /// wording that names a speed. Without it that wording drops the number rather than
-    /// printing a default the run may not have used.
+    /// `marginalSpeedKmh` is the analysis' own `turnPumpedMarginalSpeed` echo, converted to
+    /// knots for the one wording that names a speed. Without it that wording drops the number
+    /// rather than printing a default the run may not have used — and a tuned run that revived
+    /// the rung by raising the speed says *its* speed, not the published one.
     public static func outcomeText(_ turn: TurnRecord,
-                                   foilExitSpeedKmh: Double? = nil) -> String? {
+                                   marginalSpeedKmh: Double? = nil) -> String? {
         guard let reason = turn.outcomeReason.flatMap(OutcomeReason.init(rawValue:)) else {
             return nil
         }
@@ -507,7 +508,7 @@ public enum TurnAnalytics {
         case .submerged:
             return "fell in · wrist under"
         case .pumpedMarginal:
-            guard let kmh = foilExitSpeedKmh, kmh.isFinite else {
+            guard let kmh = marginalSpeedKmh, kmh.isFinite else {
                 return "touchdown · pumped out below min foil speed, no sample off the foil"
             }
             return String(format: "touchdown · pumped out below %.1f kn, "
