@@ -7,11 +7,11 @@
   "flightCount": 40,
   "markers": {
     "flewThrough": 7,
-    "touchdown": 14,
+    "touchdown": 13,
     "fellIn": 2,
-    "courseChange": 17
+    "courseChange": 16
   },
-  "cleanJibes": 2,
+  "cleanJibes": 3,
   "flightEnds": {
     "drawn": 1,
     "ownedByTurn": 9,
@@ -40,7 +40,7 @@
     {
       "type": "both",
       "side": "both",
-      "count": 22,
+      "count": 21,
       "flewThrough": 7
     },
     {
@@ -52,13 +52,13 @@
     {
       "type": "both",
       "side": "starboard",
-      "count": 10,
+      "count": 9,
       "flewThrough": 5
     },
     {
       "type": "jibes",
       "side": "both",
-      "count": 22,
+      "count": 21,
       "flewThrough": 7
     },
     {
@@ -70,7 +70,7 @@
     {
       "type": "jibes",
       "side": "starboard",
-      "count": 10,
+      "count": 9,
       "flewThrough": 5
     },
     {

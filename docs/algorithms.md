@@ -139,8 +139,8 @@ with a numeric offset (`+02:00`) is the exporter naming the local clock, and win
 |---|---|---|---|
 | `turnMinAngle` | 60 | deg | net unwrapped COG change — the **detection** floor. A course change is a real thing that happened and the page marks it, so this stays where it is |
 | `turnClassifyMinAngle` | **90** | deg | the **classification** floor (engine ≥ 0.13.0). Below it a sweep is never named a tack or a jibe — **wind axis or not** — and is filed as the same uncounted bear-away/round-up the no-crossing branch already produces. A tack and a jibe both take the board through the wind and out the other side; a 70° sweep that happens to clip dead downwind is a rider bearing away, and calling it a jibe put a course change into the number he judges his session by. With no usable axis the two course-change labels are indistinguishable, so such a sweep takes the bear-away label — the verdict that matters, *not counted*, is the same either way. At or above the floor the rule is unchanged: tack/jibe by the crossings, or a counted `turn` (unclassified) with no usable axis |
-| `turnMaxDuration` | **12** | s | window for the net change (engine ≥ 0.14.0; was 8 s). The slowest carves sweep 150–180° over ten or eleven seconds, and an 8 s window sees only 120° of one and files the rest as a course change. Widening it is not free — a 12 s sweep pulls a slow exit into the scored minimum, which is what costs clean jibes (see the corpus table) — but a jibe the engine never counted cannot be clean either, and the rider's own count is the number this serves |
-| `turnPeakRate` | **18** | deg/s | at ≥1 sample (engine ≥ 0.14.0; was 25). Richterich's ~30–40°/s for ~4 s is a *pivoted* jibe; a **carved** one is a different maneuver. At 11 kn on a 25 m radius the board turns at a steady ~13°/s and never spikes at all, so a floor set at the pivot's peak rejected exactly the jibes the rider was riding best. 18°/s is the floor below which nothing new appears but grey course-change markers |
+| `turnMaxDuration` | 8 | s | window for the net change. Deliberately **not** widened to 12 s, and measured twice: a 12 s sweep pulls a slow exit into the scored minimum, and on the 17 fixtures that costs **26 clean jibes to buy 6 jibes** (18°/s at 8 s gives 538 jibes / 160 clean; at 12 s, 544 / 134). A carve longer than 8 s is therefore reported as the 8 s share of itself — a 10 s, 150° jibe counts as a 135° one, which is over `turnClassifyMinAngle` with room to spare and lands the verdict the rider reads. Counting it a little short beats scoring it a little more generously |
+| `turnPeakRate` | **18** | deg/s | at ≥1 sample (engine ≥ 0.14.0; was 25). Richterich's ~30–40°/s for ~4 s is a *pivoted* jibe; a **carved** one is a different maneuver. At 11 kn on a 25 m radius the board turns at a steady ~13°/s and never spikes at all, so a floor set at the pivot's peak rejected exactly the jibes the rider was riding best — on one flight of the 4 Sep afternoon, three of eight ridden reversals were invisible. 18°/s is the floor below which nothing new appears but grey course-change markers |
 | `turnContext` | ON_FOIL or ≤3 s after | | turns while swimming don't count |
 | `turnCogSpeedFloor` | 2.0 | m/s | COG geometry read only from steps above this (same COAPS caveat as wind); a capsize below it otherwise reads as a multi-turn spin |
 | `turnMinArc` | 12 | m | **spatial gate**: path length travelled across the COG sweep |
@@ -161,7 +161,7 @@ with a numeric offset (`+02:00`) is the exporter naming the local clock, and win
 | port/starboard | | | side before the turn, from sign of TWA |
 | `detectThreeSixty` | **false** | | **EXPERIMENTAL, UNVALIDATED.** Runs the 360 pass below. Off: with it down nothing detects a spin and the serialized document is byte-identical to one written before the detector existed — no `threeSixties`, no parameter echo |
 | `threeSixtyMinDeg` | 300 | deg | net rotation that makes a sweep a full turn. Not 360: the COG at the entry and the exit of a spin is the *board's* heading, and a rider who exits a rotation 40° off the line he entered on has still been all the way round. Below ~300° the shape stops being distinguishable from a wide round-up into a bear-away |
-| `threeSixtyMaxS` | 10 | s | window the rotation must fit in. A spin is a single continuous carve; at the 30–40°/s a jibe already reaches (Richterich), 360° takes 9–12 s, and the cap is what stops two maneuvers a minute apart from summing into one. Since engine 0.14.0 it is *narrower* than `turnMaxDuration` (12 s), which is sized for a slowly carved 180 — the detector is dark by default and this cap has never been re-measured against the wider sweep |
+| `threeSixtyMaxS` | 10 | s | window the rotation must fit in. A spin is a single continuous carve; at the 30–40°/s a jibe already reaches (Richterich), 360° takes 9–12 s, and the cap is what stops two maneuvers a minute apart from summing into one. Deliberately wider than `turnMaxDuration` (8 s), which is sized for a 180 |
 | `threeSixtyReversalDeg` | 25 | deg | largest back-swing off the running extreme still called monotone. This is the parameter that refuses a tack-then-jibe pair: two same-direction sweeps that add to 360 are only a spin if nothing between them turns back, and 25° is the steering wobble a carve carries without changing its mind |
 | `threeSixtyMinKmh` | 5 | km/h | Doppler floor **inside** the sweep — the gate that exists because a stopped rider's COG spins freely: with no way on, the bearing between fixes is decided by a metre of GPS noise and a rider sitting on his board produces a perfect monotone 360 out of nothing. Well below foiling speed on purpose: a spin ridden on the foil and dropped halfway is still a spin |
 | 360 entry | `foilEntrySpeed` | km/h | Doppler at the sweep's first sample — "entered on foil". The stricter half of the same guard |
@@ -197,43 +197,44 @@ markers stay on the page, so `rejected` **rises** with the reclassified sweeps i
 17 committed fixtures: jibes 504 → 499, `rejected` 94 → 99, clean 152 → 152, jibe `fell_in`
 106 → 32, jibe `touchdown` 128 → 197.)
 
-**What 0.14.0 did to the corpus.** Over the 17 committed fixtures, regenerated from the
-goldens in this release:
+**What 0.14.0 did to the corpus.** `turnPeakRate` 25 → 18 °/s is the whole change;
+`turnMaxDuration` stays at 8 s. Over the 17 committed fixtures, regenerated from the goldens
+in this release:
 
 | | 0.13.0 | 0.14.0 |
 |---|---|---|
-| jibes | 499 | 544 |
-| counted turns | 501 | 544 |
-| course changes (`rejected`) | 99 | 145 |
-| clean jibes | 152 | 134 |
-| jibe outcome `flew_through` | 270 | 279 |
-| jibe outcome `touchdown` | 197 | 223 |
-| jibe outcome `fell_in` | 32 | 42 |
-| straight-line falls | 58 | 41 |
+| jibes | 499 | 538 |
+| counted turns | 501 | 540 |
+| course changes (`rejected`) | 99 | 147 |
+| clean jibes | 152 | **160** |
+| jibe outcome `flew_through` | 270 | 289 |
+| jibe outcome `touchdown` | 197 | 212 |
+| jibe outcome `fell_in` | 32 | 37 |
+| straight-line falls | 58 | 45 |
 
-Forty-five jibes the engine had never counted, and forty-six more course changes marked on
-the page beside them. Straight-line falls drop by seventeen because a fall that used to have
-no maneuver to belong to now has one — the same swim, differently attributed.
+Thirty-nine jibes the engine had never counted, forty-eight more course changes marked on the
+page beside them, and eight more clean jibes. Straight-line falls drop by thirteen because a
+fall that used to have no maneuver to belong to now has one — the same swim, differently
+attributed. **Every number a rider reads moves the right way**: JPH and CPH both rise, and no
+session in the corpus loses a clean jibe.
 
-**Clean jibes fall, and it is the sweep window that spends them.** Isolating the two
-thresholds over the same 17 fixtures:
+**Why the sweep window stayed at 8 s.** Widening it to 12 s was measured alongside the peak
+floor and rejected, which is the second time this parameter has been proposed and declined:
 
 | | jibes | clean | course changes |
 |---|---|---|---|
 | 25°/s, 8 s (0.13.0) | 499 | 152 | 99 |
-| **18°/s**, 8 s | 538 | **160** | 147 |
-| 25°/s, **12 s** | 504 | **128** | 99 |
-| **18°/s, 12 s** (0.14.0) | 544 | **134** | 145 |
+| **18°/s, 8 s (0.14.0)** | **538** | **160** | **147** |
+| 25°/s, 12 s | 504 | 128 | 99 |
+| 18°/s, 12 s | 544 | 134 | 145 |
 
-The peak floor alone is pure gain: +39 jibes and +8 clean. The 12 s window is what costs 26
-of them, for exactly the reason 0.13.0 gave when it declined to widen this parameter — a
-longer sweep pulls a slow exit into the minimum `turnSuccessPct` divides by, so a jibe that
-scored clean over 8 s of carve scores merely carried over 12 s of carve-and-recovery. The
-owner's 21-session study saw the same shape (clean 263 → 278 at 18°/s, then back to 260 with
-the 12 s sweep) and judged it worth paying: a jibe the engine files as a course change is
-missing from the count the rider checks, and no scoring subtlety fixes that. **CPH therefore
-moves down on most sessions in this release while JPH moves up**, and the two headline
-numbers diverging is the intended, understood consequence rather than a regression.
+Going to 12 s on top of the 18°/s floor buys **6 more jibes and costs 26 clean ones** — and
+on the 4 Sep session that motivated the change it added no jibe at all. The mechanism is the
+one 0.13.0 already named: a longer sweep pulls the slow exit into the minimum
+`turnSuccessPct` divides by, so a jibe that scored clean over 8 s of carve scores merely
+*carried* over 12 s of carve-and-recovery. A carve that runs past 8 s is instead reported as
+its first 8 s — a 10 s, 150° jibe is counted as a 135° one, which is the verdict that matters
+and well clear of `turnClassifyMinAngle`.
 
 ### Glossary — four words that are not synonyms
 
@@ -360,8 +361,7 @@ fast.
 The sensitivity is one-sided and says the same thing. `threeSixtyMinKmh` at `foilExitSpeed`
 (8 km/h) removes all three and leaves **zero**; at 2 km/h the count goes to **9**, and the six
 that appear are unmistakable pivots (radius down to 1.4 m, arc down to 8 m) — again all nine
-`fell_in`. `threeSixtyMaxS` at 8 s (the `turnMaxDuration` value until engine 0.14.0 widened
-that to 12 s; this sensitivity was measured before the change) also leaves zero: all three
+`fell_in`. `threeSixtyMaxS` at 8 s (the `turnMaxDuration` value) also leaves zero: all three
 take the full ten seconds, which is itself evidence that they are collapses rather than
 carves. `threeSixtyReversalDeg` is not binding at all — at 60° the count is still 3.
 

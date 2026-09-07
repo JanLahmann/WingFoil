@@ -7,11 +7,11 @@
   "flightCount": 23,
   "markers": {
     "flewThrough": 9,
-    "touchdown": 13,
-    "fellIn": 13,
-    "courseChange": 5
+    "touchdown": 15,
+    "fellIn": 11,
+    "courseChange": 6
   },
-  "cleanJibes": 4,
+  "cleanJibes": 3,
   "flightEnds": {
     "drawn": 5,
     "ownedByTurn": 16,

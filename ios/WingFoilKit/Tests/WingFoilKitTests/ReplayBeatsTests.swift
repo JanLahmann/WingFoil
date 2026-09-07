@@ -25,11 +25,8 @@ import Testing
     @Test func beatsCoverTheEventsWorthWatching() throws {
         let beats = ReplayBeats.make(try torbole())
 
-        // Engine 0.14.0's 12 s sweep window opens each carve a beat or two earlier than the
-        // 8 s one did, so five of these instants moved a few seconds left. The session is
-        // the same ten jibes it always was.
-        #expect(beats.map(\.t) == [85, 149, 218, 255, 278, 292, 319, 362, 396, 441, 467,
-                                   542, 570])
+        #expect(beats.map(\.t) == [85, 151, 222, 255, 278, 292, 320, 362, 399, 441, 467,
+                                   542, 571])
         #expect(beats.map(\.t) == beats.map(\.t).sorted(), "beats must be in time order")
         #expect(Set(beats.map(\.id)).count == beats.count, "ids must be unique")
 
@@ -48,7 +45,7 @@ import Testing
         // Every jibe carries its verdict, which is what the tick's colour reads.
         let jibes = beats.filter { if case .jibe = $0.kind { return true }; return false }
         #expect(jibes.count == 10)
-        #expect(jibes.filter { $0.kind == .jibe(.fellIn) }.map(\.t) == [467, 570])
+        #expect(jibes.filter { $0.kind == .jibe(.fellIn) }.map(\.t) == [467, 571])
         #expect(jibes.filter { $0.kind == .jibe(.flewThrough) }.count == 8)
         #expect(jibes.first?.label == "Jibe · flew through")
         #expect(beats.allSatisfy { !$0.label.isEmpty })
@@ -80,14 +77,14 @@ import Testing
         let beats = ReplayBeats.make(try torbole())
 
         #expect(ReplayBeats.beat(after: 0, in: beats)?.t == 85)
-        #expect(ReplayBeats.beat(after: 85, in: beats)?.t == 149)
-        #expect(ReplayBeats.beat(before: 149, in: beats)?.t == 85)
+        #expect(ReplayBeats.beat(after: 85, in: beats)?.t == 151)
+        #expect(ReplayBeats.beat(before: 151, in: beats)?.t == 85)
         #expect(ReplayBeats.beat(before: 85, in: beats) == nil)
-        #expect(ReplayBeats.beat(after: 570, in: beats) == nil)
+        #expect(ReplayBeats.beat(after: 571, in: beats) == nil)
 
         // A playhead a hair off a beat — where 20 Hz playback leaves it — still counts as
         // being on that beat, so "next" advances rather than snapping back to it.
-        #expect(ReplayBeats.beat(after: 85.2, in: beats)?.t == 149)
+        #expect(ReplayBeats.beat(after: 85.2, in: beats)?.t == 151)
         #expect(ReplayBeats.beat(before: 84.9, in: beats) == nil)
 
         // Walking forward from the start visits every beat exactly once.

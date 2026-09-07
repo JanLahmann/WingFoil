@@ -21,7 +21,7 @@
     "minSpeedFilter": null,
     "turnMinAngle": 60.0,
     "turnClassifyMinAngle": 90.0,
-    "turnMaxDuration": 12.0,
+    "turnMaxDuration": 8.0,
     "turnPeakRate": 18.0,
     "turnContinueRate": 5.0,
     "turnCogSpeedFloor": 2.0,

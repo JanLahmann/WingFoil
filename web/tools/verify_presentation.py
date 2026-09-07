@@ -79,11 +79,10 @@ SESSIONS = REPO / "fixtures" / "sessions"
 
 CIQ = "2026-08-07-0754_nago-torbole-windsurfen_ciq"
 # A fixture whose flights end in a straight line: `glide_out` ends no turn owns, which is
-# what makes it one that can prove the folding rule below. Engine 0.14.0's slower turn
-# detector claims ends the old one left unexplained, so glide-outs are scarcer across the
-# whole corpus now (2 at the most, where 0.13.0 had 3); this fixture is one of the four
-# holding the new maximum, and 2026-08-03-0741 -- which held it before -- is down to 1.
-GLIDE_OUT = "2026-08-01-0804_nago-torbole-windsurfen_native"
+# what makes it one that can prove the folding rule below. Engine 0.14.0's lower peak floor
+# claims ends the old one left unexplained, so glide-outs are scarcer across the whole
+# corpus (2 at the most, where 0.13.0 had 3) and five fixtures now tie at the maximum.
+GLIDE_OUT = "2026-08-03-0741_nago-torbole-windsurfen_native"
 
 PASSED = 0
 FAILED: list[str] = []

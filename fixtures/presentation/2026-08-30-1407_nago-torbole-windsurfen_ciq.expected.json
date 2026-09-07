@@ -9,9 +9,9 @@
     "flewThrough": 8,
     "touchdown": 0,
     "fellIn": 2,
-    "courseChange": 1
+    "courseChange": 0
   },
-  "cleanJibes": 3,
+  "cleanJibes": 5,
   "flightEnds": {
     "drawn": 0,
     "ownedByTurn": 2,
