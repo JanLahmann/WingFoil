@@ -300,16 +300,21 @@ def check_digest_fidelity() -> None:
     # in a second place — and a second place is where two answers come from.
     check("  cleanJibesPerHour == golden", d["cleanJibesPerHour"], s["cleanJibesPerHour"])
     # Schema 7: the three facts a *period* needs and a session row never carried.
-    # `rateDurationS` is the engine's own cleaned span — the denominator all four session
-    # rates divide by — and is deliberately **not** `durationS`, which is the FIT's
-    # `total_elapsed_time` and is what the stored id is built from.
+    # `rateDurationS` is the engine's own cleaned span (T1) and is deliberately **not**
+    # `durationS`, which is the FIT's `total_elapsed_time` and is what the stored id is
+    # built from. It is the period block's "hours on the water".
     check("  rateDurationS == the engine's own span", d["rateDurationS"], s["durationS"])
     check("  …which is not the row's durationS on this session",
           d["rateDurationS"] != d["durationS"], True)
     check("  wetExits == the fell-in flight ends WPH counts",
           d["wetExits"], s["flightEnds"]["all"]["fellIn"])
-    check("  …and WPH is exactly that over the engine's hour",
-          round(d["wetExits"] / (d["rateDurationS"] / 3600.0), 1), s["wetPerHour"])
+    # The session's own WPH divides by the **timer** clock since engine 0.13.0 — the hour
+    # the recorder was actually running — which is why it stands above the same count over
+    # the elapsed span the period block prints.
+    check("  …and WPH is exactly that over the engine's timer hour",
+          round(d["wetExits"] / (s["timerTimeS"] / 3600.0), 1), s["wetPerHour"])
+    check("  …and the elapsed span gives a lower number, which is the point",
+          d["wetExits"] / (d["rateDurationS"] / 3600.0) < s["wetPerHour"], True)
     check("  geo is the view's anchor fix, degrees only",
           d["geo"], {"lat": round(doc["view"]["geo"]["lat"], 6),
                      "lon": round(doc["view"]["geo"]["lon"], 6)})
@@ -466,8 +471,8 @@ def check_session_records(digests: list[dict]) -> None:
     check("  the table's order matches the catalogue",
           [r["key"] for r in agg["sessionRecords"]],
           [k for k, *_ in library.SESSION_RECORD_KINDS if k in rows])
-    check("  the longest flight names its distance",
-          rows["longestFlight"]["caption"].endswith("m of it"), True)
+    check("  the longest flight names the furthest one flight went",
+          rows["longestFlight"]["caption"].endswith("m in one flight"), True)
     check("  the clean-jibe rate states its floor",
           rows["bestCleanJibeRate"]["caption"], "Sessions with at least 5 jibes.")
 

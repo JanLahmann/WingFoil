@@ -54,8 +54,10 @@ from datetime import datetime, timedelta, timezone
 # a metric with an engine field must not be re-derived by a reader. Null on every row written
 # before it, where `_cph` still does the division — see there.
 # v7 carries the three facts a *period* needs and a session never did: `rateDurationS` (the
-# engine's own cleaned session span, which is the denominator every per-hour rate divides by
-# and is not `durationS`), `wetExits` (the fell-in flight ends WPH counts), and `geo` (one
+# engine's own cleaned session span, T1, which is not the FIT's `durationS`; since engine
+# 0.13.0 the session's own rates divide by the *timer* clock instead, and this stays the
+# elapsed one because it is also the period block's "hours on the water"), `wetExits` (the
+# fell-in flight ends WPH counts), and `geo` (one
 # lat/lon, so an afternoon can be placed at a spot without trusting a filename). All three
 # null on a row written before them; `periods` degrades one metric at a time rather than
 # refusing to describe a library.
@@ -336,7 +338,11 @@ def digest(doc, file_name: str | None = None) -> dict:
         "foilTimeS": _num(summ.get("foilTimeS")),
         "flightCount": int(summ.get("flightCount") or 0),
         "longestFlightS": _num(summ.get("longestFlightS")),
-        "longestFlightM": _num(summ.get("longestFlightM")),
+        # `maxFlightM` since engine 0.13.0 — the same number under an honester name (it was
+        # never the longest flight's distance). The stored digest key keeps its spelling:
+        # renaming it would blank the caption on every row saved before this build, and the
+        # digest's names are a storage contract, not the engine's.
+        "longestFlightM": _num(summ.get("maxFlightM", summ.get("longestFlightM"))),
         # The engine's own strict jibe rate (0.10.0, schema 6). Copied, never recomputed:
         # `_cph` divides for a stored row that predates it and reads this everywhere else.
         "cleanJibesPerHour": _num(summ.get("cleanJibesPerHour")),
@@ -573,10 +579,12 @@ def _streak(d: dict, key: str):
 
 
 def _flight_caption(d: dict):
-    """The longest flight's *distance*, which is the fact the duration alone leaves out —
-    six minutes downwind and six minutes of pumping in a lull are not the same flight."""
+    """The **furthest** any one flight went (`summary.maxFlightM`), which is the fact the
+    duration alone leaves out — six minutes downwind and six minutes of pumping in a lull
+    are not the same flight. Deliberately not "N m of it": it is not in general the winning
+    flight's own distance, and the caption used to claim it was."""
     metres = _num(d.get("longestFlightM"))
-    return None if metres is None else f"{int(round(metres))} m of it"
+    return None if metres is None else f"max {int(round(metres))} m in one flight"
 
 
 # The session records, in the order the second table shows them, and identical to iOS's
@@ -1050,10 +1058,15 @@ PERIOD_LEAN_KEYS = ["sessions", "hours", "cleanJibes", "cph", "best2s"]
 def _rate_duration_s(d: dict):
     """The seconds a period's rates divide by, for one session.
 
-    `rateDurationS` (schema 7) is the engine's own cleaned span — the denominator every
-    per-session rate already uses — so a month holding one afternoon reports that
-    afternoon's CPH and not a second opinion about it. `durationS` is the fallback for a
-    row saved before the field, where it is the closest thing stored.
+    `rateDurationS` (schema 7) is the engine's own cleaned span (T1) — the same seconds the
+    block prints as the period's hours on the water. `durationS` is the fallback for a row
+    saved before the field, where it is the closest thing stored.
+
+    Since engine 0.13.0 a *session's* own rates divide by its timer time (T2) instead, so a
+    month holding one afternoon can report a CPH slightly under that afternoon's own. The
+    two are different questions — "how busy was the time he was recording" against "how much
+    of the season was that" — and this one deliberately stays on the clock its hours are
+    printed from rather than quoting an hour the block does not show.
     """
     engine = _num(d.get("rateDurationS"))
     return engine if engine is not None else _num(d.get("durationS"))
