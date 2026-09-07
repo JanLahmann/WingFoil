@@ -1404,6 +1404,18 @@ The padded context track is the off-foil grey at low opacity. Ticks one second a
 across the line, so the drawing carries time as well as shape. The low point is a hollow
 ring; the end of the sweep is the outcome dot in the ladder's ink (`outcome.*`).
 
+**The axis crossing is a tick, not a dot** (engine 0.15.0). Jan's definition of a jibe is "a
+turn through the wind axis", and the engine now records *when* it went through (`axisTs`). The
+drawing marks that instant with a longer tick across the line — twice the length of the second
+ticks, drawn perpendicular to the heading like them — labelled `axis` just off its outboard
+end. Deliberately **not** a third dot: the drawing spends its two dots on the two things that
+happened to the rider (the hollow ring at the low point, the filled outcome dot at the end),
+and a third would read as a third verdict. The crossing is not a verdict; it is the instant the
+maneuver is *named* by. It is drawn in the same ink as the `N` and `wind` references top right
+rather than in a hue of its own, because it belongs to the wind and not to the speed ramp the
+line is coloured with. Absent — silently, like the wind arrow — where the engine recorded no
+crossing: a course change, a session with no usable wind, or an analysis stored before 0.15.0.
+
 **The ghost.** One comparison turn may be laid underneath, dashed, in the clean-jibe ink
 (`clean.jibe`) at low opacity, behind a remembered toggle. The selection rule is exact:
 
@@ -1450,6 +1462,16 @@ with the values in force from `TurnConfig` rather than prose that could drift:
 | `outcome` | `endTs … endTs + outcomeLookaheadS` | stop, recovery and the verdict |
 | lighter, inside `outcome` | `endTs … recoverRt` | the recovery: where the speed was back at `turnRecoverPct` |
 
+The strip carries one more rule, dashed and captioned `axis`, at `axisTs − ts` — the same
+crossing the drawing ticks. It has **no dot**: the other three rules each mark a speed the
+score is made of, and a fourth point on the trace would claim the crossing was a fourth
+reading. It is an instant, so it gets a line. The crossing sits inside the sweep by
+construction and therefore lands near "low" on most jibes, so the caption is **lifted onto a
+line of its own** when it comes within `captionGapS` of a caption already on the top edge —
+lifted rather than dropped, which is where "low" and "out" go when they collide, because the
+bottom edge is not free: the three window bands print their own words there and the crossing is
+inside the `sweep` band, so sending "axis" down would trade one overprint for another.
+
 The `TurnSlice` used to clamp `minRt` to the sweep's end, which drew "low" at the sweep's
 last sample whenever the true minimum came a moment later — the "low 5.4 while out 8.2"
 that looked like a contradiction on Jibe 23. It clamps to `endTs + minSpeedLagS` now.
@@ -1468,6 +1490,15 @@ point by more than a knot. The footnote now says which channel this is and why t
 page reads differently. Score is spelled "held 71 % of entry speed"; `direction` is spelled
 "clockwise / counter-clockwise" and never "port/starboard", which is the entry tack's word
 ("Filter semantics").
+
+**The crossing, in numbers.** Under the grid, one row and not two cells:
+`Through the axis · 87° before, 72° after` — the engine's `axisBeforeDeg` and `axisAfterDeg`
+as integers (docs/algorithms.md, "The crossing, as an event"). One row because the two angles
+are a single fact read either side of a single instant; two cells in the grid above would
+invite a reader to compare them with the speeds. **Absent, never zeroed**, on a turn the engine
+gave no crossing: "he started on the axis" and "nobody knows where the axis was" are different
+sentences and only the second is ever true here. The footnote gains one sentence saying what
+the tick is.
 
 **The chips under the numbers**, in order: the outcome, `clean` where the engine says so,
 `pumped out` where `pumped`, `wrist under` where `submerged`.
@@ -1687,9 +1718,10 @@ out of it.
 
 ## Tuning — the thresholds on sliders, in the dev build, on one phone
 
-**What it is.** Settings → Tuning puts 22 of the docs/algorithms.md parameters on sliders so
+**What it is.** Settings → Tuning puts 24 of the docs/algorithms.md parameters on sliders so
 a threshold can be tried against a real library in a minute instead of an afternoon: turn
-detection and scoring (`turnMinAngle`, `turnClassifyMinAngle`, `turnMaxDuration`,
+detection and scoring (`turnMinAngle`, `turnClassifyMinAngle`, `turnAxisBeforeDeg`,
+`turnAxisAfterDeg`, `turnMaxDuration`,
 `turnPeakRate`, `turnContinueRate`, `turnMinArc`, `turnMinRadius`, `entrySpeedWindow`,
 `minSpeedLag`, `turnSuccessPct`), the stop ladder (`turnStopSpeedFloor`,
 `turnTouchdownMaxStop`, `turnFallStop`, `turnOutcomeLookahead`, `turnRecoverPct`,
@@ -1709,7 +1741,7 @@ by a dev build installed over the same bundle id is not even read.
 outcomes, clean jibes, records, trends, periods and the share card are all derived from the
 same analysis. So a moved slider marks the whole library stale by the mechanism an engine
 bump already uses: the overrides' fingerprint rides in the analysis' `engineVersion` as
-`0.14.0+tuned.<n>.<hash8>` (`TuningStamp`), which is the string `reanalyzeStale()`,
+`0.15.0+tuned.<n>.<hash8>` (`TuningStamp`), which is the string `reanalyzeStale()`,
 `SessionArchive.analysis(for:)` and `SessionStore.detail(for:)` already compare on. Sessions
 re-derive lazily on open and in bulk at the next launch; "Re-analyse all sessions now" is the
 same trip taken immediately, and leaving the page takes it automatically.

@@ -8,7 +8,7 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
 
 ```json
 {
-  "engineVersion": "0.14.0",
+  "engineVersion": "0.15.0",
   "config": { "foilEntrySpeed": 12.0, "...": "params actually used" },
   "capabilities": { "hasDoppler": true, "hasDevFields": false, "hasWatchLaps": false,
                      "hasAccel": false, "hasHR": true, "sampleRateHz": 1 },
@@ -18,7 +18,9 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
                  "counted": true, "entryKn": 0.0, "minKn": 0.0, "exitKn": 0.0, "score": 0.0,
                  "success": false, "clean": false, "side": "port|starboard|unknown",
                  "direction": "port|starboard", "netDeg": 0.0, "peakRateDegS": 0.0,
-                 "twaInDeg": null, "twaOutDeg": null, "arcM": 0.0, "radiusM": 0.0,
+                 "twaInDeg": null, "twaOutDeg": null,
+                 "axisTs": null, "axisBeforeDeg": null, "axisAfterDeg": null,
+                 "arcM": 0.0, "radiusM": 0.0,
                  "outcome": "flew_through|touchdown|fell_in", "borderline": false,
                  "offFoilS": 0.0, "stoppedS": 0.0, "pumped": false, "submerged": false,
                  "outcomeWindowS": 0.0 } ],
@@ -196,6 +198,17 @@ exit into the scored minimum. A carve running past 8 s is reported as its first 
 Turn counts, outcomes, streaks, all four session rates, `windowRates` and the HR block's swim
 events move with the new floor; **`flights`, `records`, `wind`, `takeoffs` and `pumpEpisodes`
 are byte-identical**, which is the check that says the change is confined to the turn channel.
+
+Engine 0.15.0 makes the **wind-axis crossing** an event and **moves no number at all**. Three
+keys join each entry of `turns` — `axisTs`, `axisBeforeDeg`, `axisAfterDeg` (docs/algorithms.md,
+"The crossing, as an event") — and two join `config`: `turnAxisBeforeDeg` and
+`turnAxisAfterDeg`, both **0**, i.e. off. The diff between a 0.14.0 golden and a 0.15.0 one is
+therefore exactly the `engineVersion` stamp, the two config keys and the three per-turn keys,
+and nothing else on any of the seventeen fixtures — which is the check that says the crossing is
+a measurement being *recorded* rather than a threshold being moved. The three obey the
+never-a-flattering-zero rule the TWA pair does: explicit **null** on a course change, on an
+unclassified turn and on a session with no usable wind axis, because 0° before the axis would
+read as "he started dead downwind".
 
 ### Fixture provenance — one converted recording, and why
 
@@ -994,7 +1007,7 @@ which sat unreviewed for weeks because attaching is not submitting).
 
 Both variants read and write the *same* library on a phone that has had both installed. That
 is deliberate — the point of the dev build is to try thresholds against real sessions — but it
-means a phone that ran the dev build has a library stamped `0.14.0+tuned.…` until the public
+means a phone that ran the dev build has a library stamped `0.15.0+tuned.…` until the public
 build's own `reanalyzeStale()` sweep re-derives it on the published defaults, which it does at
 the first launch because the stamped version does not match.
 
