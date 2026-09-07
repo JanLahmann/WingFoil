@@ -104,17 +104,36 @@ public struct TakeoffAttemptRow: Codable, FetchableRecord, PersistableRecord, Se
 public enum RecordKind: String, CaseIterable, Sendable, Codable {
     case best2s, best10s, best5x10s, best100m, best250m, best500m, bestNm, bestHour, alpha500
 
+    /// **One spelling per record, everywhere a record is named** — the records tables on
+    /// both platforms, the divergence banner, the map's window picker
+    /// (docs/presentation.md, "Label table"). `library.RECORD_KINDS` carries the identical
+    /// strings.
+    ///
+    /// The one sanctioned divergence is the key-metrics block's `max 2 s` (and the `5×10 s`
+    /// / `alpha 500` beside it), which is a lowercase caption naming the *window* rather
+    /// than the record, and says so in the contract. Before this the same record answered
+    /// to five spellings — `2 s`, `Best 2 s`, `max 2 s`, `Best 2s` — across four surfaces.
     public var label: String {
         switch self {
-        case .best2s: "2 s"
-        case .best10s: "10 s"
-        case .best5x10s: "5 × 10 s"
-        case .best100m: "100 m"
-        case .best250m: "250 m"
-        case .best500m: "500 m"
-        case .bestNm: "1 NM"
-        case .bestHour: "1 h"
+        case .best2s: "Best 2 s"
+        case .best10s: "Best 10 s"
+        case .best5x10s: "Best 5×10 s"
+        case .best100m: "Best 100 m"
+        case .best250m: "Best 250 m"
+        case .best500m: "Best 500 m"
+        case .bestNm: "Best 1 NM"
+        case .bestHour: "Best hour"
         case .alpha500: "Alpha 500"
+        }
+    }
+
+    /// The record's **window**, without the "Best " the label carries — for a sentence,
+    /// where "13.47 kn over Best 2 s" reads as a stutter and "over 2 s" reads as English.
+    /// The label is for a table, a chip or a banner; this is for prose.
+    public var windowLabel: String {
+        switch self {
+        case .alpha500: "alpha 500"
+        default: label.hasPrefix("Best ") ? String(label.dropFirst(5)) : label
         }
     }
 
@@ -155,6 +174,17 @@ public enum SessionRecordKind: String, CaseIterable, Sendable, Codable {
     /// obeys is the rule the reader is told. `library.MIN_JIBES_FOR_RATE` is its twin.
     public static let minJibesForRate = 5
 
+    /// A session must last one rate window to hold the **CPH** record —
+    /// `PersonalBestDetector.cphMinDurationS`, and `library.CPH_MIN_DURATION_S` in the
+    /// analyzer.
+    ///
+    /// The celebration has applied this since engine 0.10.0 and the table did not, so a
+    /// four-minute evening could hold the row while the confetti named a different
+    /// afternoon, both labelled "Best CPH" (docs/presentation.md, "All-time records").
+    /// One clean jibe in four minutes is fifteen an hour, and a personal best a rider can
+    /// set by going home early is not one. The *count* takes no such floor.
+    public static let cphMinDurationS = PersonalBestDetector.cphMinDurationS
+
     /// How the value should read. The view formats; the kit does not build strings.
     public enum Unit: Sendable { case seconds, count, percent, perHour, km }
 
@@ -186,7 +216,9 @@ public enum SessionRecordKind: String, CaseIterable, Sendable, Codable {
     /// The line under the row, where the number needs one. Nil where the label says it all.
     public var caption: String? {
         switch self {
-        case .bestCph: "Clean jibes per hour of session time."
+        case .bestCph:
+            "Clean jibes per hour of session time. Sessions of at least "
+                + String(Int(Self.cphMinDurationS / 60)) + " minutes."
         case .bestCleanJibeRate: "Sessions with at least \(Self.minJibesForRate) jibes."
         case .longestDryStreak: "Maneuvers in a row without a swim."
         case .longestFlewStreak: "Maneuvers in a row that never touched down."
@@ -205,11 +237,16 @@ public enum SessionRecordKind: String, CaseIterable, Sendable, Codable {
         case .mostFlights: row.flightCount.map(Double.init)
         case .bestFoilPct: row.foilPct
         case .mostCleanJibes: row.jibesSuccessful.map(Double.init)
-        case .bestCph: row.cleanJibesPerHour
+        // The floor is the celebration's own, so the table and the confetti can never name
+        // two different afternoons under the words "Best CPH".
+        case .bestCph: row.rateSeconds >= Self.cphMinDurationS ? row.cleanJibesPerHour : nil
         case .bestCleanJibeRate: row.cleanJibeRatePct
         case .longestDryStreak: row.longestDryStreak.map(Double.init)
         case .longestFlewStreak: row.longestFlewStreak.map(Double.init)
-        case .longestSession: row.durationS
+        // The engine's cleaned span (v12's `rateDurationS`), not the raw sample span: the
+        // web's record reads the same clock, and the two used to differ by 43 minutes on
+        // the corpus's Rheinstetten afternoon (docs/presentation.md, "One clock").
+        case .longestSession: row.rateSeconds
         case .mostDistance: row.distanceKm
         }
     }

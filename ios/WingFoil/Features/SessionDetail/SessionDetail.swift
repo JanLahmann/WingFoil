@@ -814,14 +814,13 @@ struct SessionDetail: Sendable {
         return out
     }
 
-    /// "Best 10 s" — the record's own name with the word the legend chip needs in front of
-    /// it. The two composites already read as names and take no prefix.
-    static func effortLabel(_ kind: RecordKind) -> String {
-        switch kind {
-        case .best5x10s, .alpha500: return kind.label
-        default: return "Best \(kind.label)"
-        }
-    }
+    /// "Best 10 s" — the record's own name, and nothing else.
+    ///
+    /// It used to prefix "Best " onto a bare `RecordKind.label` ("10 s") for every kind but
+    /// the two composites, which is what left the app calling one record `2 s` in the
+    /// session table and `Best 2 s` in the chip. The prefix now lives in the label itself,
+    /// once, for every surface that names a record (docs/presentation.md, "Label table").
+    static func effortLabel(_ kind: RecordKind) -> String { kind.label }
 
     /// The positioned track between two session-clock times.
     private static func points(_ positioned: [RecordSample], from start: Double,

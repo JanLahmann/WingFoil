@@ -135,31 +135,31 @@ export const TOKENS = {
     "order": [
       {
         "id": "best2s",
-        "label": "2 s"
+        "label": "Best 2 s"
       },
       {
         "id": "best10s",
-        "label": "10 s"
+        "label": "Best 10 s"
       },
       {
         "id": "best5x10s",
-        "label": "5 × 10 s"
+        "label": "Best 5×10 s"
       },
       {
         "id": "best100m",
-        "label": "100 m"
+        "label": "Best 100 m"
       },
       {
         "id": "best250m",
-        "label": "250 m"
+        "label": "Best 250 m"
       },
       {
         "id": "best500m",
-        "label": "500 m"
+        "label": "Best 500 m"
       },
       {
         "id": "bestNm",
-        "label": "1 NM"
+        "label": "Best 1 NM"
       },
       {
         "id": "alpha500",

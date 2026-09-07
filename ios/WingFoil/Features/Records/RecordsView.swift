@@ -241,7 +241,13 @@ private struct SessionRecordRowView: View {
 
     private var value: String {
         switch best.kind.unit {
-        case .seconds: Fmt.duration(best.value)
+        // A **session** duration follows the block's rule (`10:45 min` / `1:57 h`), so the
+        // record and the session page it opens print the same string. A *flight* keeps the
+        // long spelling: it is a clip-scale clock, minutes and seconds by design, and
+        // "6 m 12 s" is how the flight table and the replay caption already say it.
+        case .seconds:
+            best.kind == .longestSession ? KeyMetrics.duration(best.value)
+                                         : Fmt.duration(best.value)
         case .count: "\(Int(best.value.rounded()))"
         case .percent: String(format: "%.1f %%", best.value)
         case .perHour: String(format: "%.2f / h", best.value)

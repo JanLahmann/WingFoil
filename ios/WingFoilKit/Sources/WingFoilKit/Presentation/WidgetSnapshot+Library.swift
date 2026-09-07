@@ -25,7 +25,9 @@ extension WidgetSnapshot {
                 foilPct: latest.foilPct,
                 best2sKn: latest.best2sKn,
                 flightCount: latest.flightCount,
-                durationS: latest.durationS,
+                // The engine's cleaned span (`rateSeconds`), the same clock the session
+                // page and the library row print (docs/presentation.md, "One clock").
+                durationS: latest.rateSeconds,
                 flewThrough: latest.turnsFlewThrough ?? 0,
                 touchdown: latest.turnsTouchdown ?? 0,
                 fellIn: latest.turnsFellIn ?? 0)
@@ -34,12 +36,12 @@ extension WidgetSnapshot {
         let weekAgo = now.addingTimeInterval(-7 * 24 * 3600)
         let recent = sorted.filter { $0.startDate >= weekAgo && $0.startDate <= now }
         snapshot.weeklySessions = recent.count
-        snapshot.weeklyHours = recent.reduce(0) { $0 + $1.durationS } / 3600
+        snapshot.weeklyHours = recent.reduce(0) { $0 + $1.rateSeconds } / 3600
         // foilTimeS is a schema-v2 column; older rows fall back to the percentage, which
         // is the same quantity with a rounding error rather than a missing bar.
         snapshot.weeklyFoilMinutes = recent.reduce(0.0) { total, row in
             if let foilTimeS = row.foilTimeS { return total + foilTimeS / 60 }
-            if let pct = row.foilPct { return total + row.durationS * pct / 100 / 60 }
+            if let pct = row.foilPct { return total + row.rateSeconds * pct / 100 / 60 }
             return total
         }
         return snapshot
