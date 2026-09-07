@@ -14,15 +14,15 @@
  *   marker number is the turn's row number in the Turns table
  */
 
-import { keyMetricEntries } from "./cardstats.js";
+import { hm, keyMetricEntries } from "./cardstats.js";
 import { renderFigures } from "./session.js";
-import { C, OUTCOME_COLOR, OUTCOME_LABEL, SVGNS, clockAt, esc, hms, int, marker, nf,
-         sessionDate } from "./viz.js";
+import { C, OUTCOME_COLOR, OUTCOME_LABEL, SVGNS, clockAt, esc, hms, int, marker, nf, pct,
+         pctDigits, sessionDate } from "./viz.js";
 
 // Re-exported so the rest of the app keeps one import site for the shared helpers; the
 // split into viz.js is an internal arrangement of the rendering layer.
-export { C, clockAt, esc, figureWidth, hideTip, hms, int, isNarrow, nf, sessionDate,
-         showTip, svg, zonedFormat } from "./viz.js";
+export { C, clockAt, esc, figureWidth, hideTip, hms, int, isNarrow, nf, pct, pctDigits,
+         sessionDate, showTip, svg, zonedFormat } from "./viz.js";
 // `renderFigures` travels with them because js/sections.js needs the figures redrawn on
 // their own, without the two long tables being rebuilt for nothing (see wireSections).
 export { clearPlayhead, closePopover, renderFigures, resetSession } from "./session.js";
@@ -189,18 +189,27 @@ function renderSummary(result, isExample = false) {
     : { k: "Wind axis", v: "—", n: "no usable axis in the COG distribution" };
 
   const tiles = [
-    { k: "Duration", v: hms(meta.durationS), n: `moving ${hms(meta.timerTimeS)}` },
-    { k: "Distance", v: nf(s.distanceKm, 2), unit: "km", n: `best 500 m ${nf(rec.best500mKn, 1)} kn` },
-    { k: "On foil", v: `${nf(s.foilPct, 0)}%`, n: `${hms(s.foilTimeS)} flying` },
+    // **One clock.** The engine's cleaned span (`summary.durationS`), in the block's own
+    // spelling — the same number and the same string the "duration" cell prints a few
+    // pixels above. This tile used to read the FIT's `total_elapsed_time` through `hms`,
+    // so the page carried `1:57 h` over `1:57:12` of a *different* clock. The "moving"
+    // note stays the file's own timer time, which is what that word means here.
+    { k: "Duration", v: hm(s.durationS), n: `moving ${hms(meta.timerTimeS)}` },
+    { k: "Distance", v: nf(s.distanceKm, 1), unit: "km", n: `best 500 m ${nf(rec.best500mKn, 1)} kn` },
+    { k: "On foil", v: pct(s.foilPct), n: `${hms(s.foilTimeS)} foil time` },
+    // engine 0.13.0: `longestFlightM` becomes `maxFlightM` — the maximum flight distance,
+    // which is this flight's own only by coincidence. The note follows the field.
     { k: "Flights", v: int(s.flightCount),
       n: `longest ${hms(s.longestFlightS)} · ${int(s.longestFlightM)} m` },
     { k: "Best 2 s", v: nf(rec.best2sKn, 2), unit: "kn", n: `10 s ${nf(rec.best10sKn, 2)} kn` },
     { k: "Best 5×10 s", v: nf(rec.best5x10sKn, 2), unit: "kn", n: `1 NM ${nf(rec.bestNmKn, 2)} kn` },
     { k: "Alpha 500", v: nf(rec.alpha500Kn, 2), unit: "kn", n: `250 m ${nf(rec.best250mKn, 2)} kn` },
     { k: "Turns", v: int(s.turns.turnsCounted),
-      // `successPct` is the score verdict over every counted turn, not the clean count —
-      // "carried" since engine 0.12.0, where clean also demands the outcome.
-      n: `${s.turns.jibes} jibes · ${s.turns.tacks} tacks · ${nf(s.turns.successPct, 0)}% carried` },
+      // The **outcome** share over every counted turn. It used to print `successPct`, the
+      // engine's score verdict, which is not one of the rider's two tiers (flew through,
+      // and clean) and had no business on a tile under any name.
+      n: `${s.turns.jibes} jibes · ${s.turns.tacks} tacks · `
+         + `${pct(100 * s.turns.outcomes.flewThrough / (s.turns.turnsCounted || 1))} flew through` },
     { k: "Outcomes", v: `${s.turns.outcomes.flewThrough}/${s.turns.outcomes.touchdown}/${s.turns.outcomes.fellIn}`,
       n: "flew through / touchdown / fell in" },
     windTile,
@@ -220,7 +229,10 @@ function renderTakeoffs(host, g, meta) {
   const accel = g.capabilities.hasAccel;
   const rows = [
     ["Attempts", int(k.takeoffAttempts)],
-    ["Successful", `${int(k.takeoffSuccesses)} (${nf(k.successPct, 0)} %)`],
+    // A *takeoff* success is a third, unrelated meaning of the word — "the attempt got up"
+    // — and it is the engine's own field name. It stays; the tier vocabulary in
+    // docs/presentation.md is about turns.
+    ["Successful", `${int(k.takeoffSuccesses)} (${pct(k.successPct)})`],
     ["Failed", int(k.failedAttempts)],
     ["Avg time to foil", k.avgTakeoffS === null ? "—" : `${nf(k.avgTakeoffS, 1)} s`],
     ["Median time to foil", k.medianTakeoffS === null ? "—" : `${nf(k.medianTakeoffS, 1)} s`],
@@ -255,25 +267,42 @@ const yn = (b) => (b ? "yes" : "–");
 
 function renderTurns(table, caption, g, v, meta) {
   const s = g.summary.turns;
-  // Two verdicts, so two clauses, and since engine 0.12.0 they are no longer the same
-  // reading. **Clean** is the strict one and jibes only: the speed carried *and* the turn
-  // flown through, which is what a rider means by the word. `turnsSuccessful` and
-  // `tacksSuccessful` are still the score half alone — named "carried" here so a caption
-  // can never call a jibe he swam out of clean.
+  // **Two tiers, and the score verdict is neither of them.** The rider reads *flew
+  // through* — the outcome, no touchdown and no swim — and *clean*, which is a jibe that
+  // flew through **and** held its speed. The caption used to lead with `turnsSuccessful`
+  // and `tacksSuccessful`, the engine's score reading on its own, which is an internal
+  // quantity no label should name; it is gone from here and from the table beside it.
+  //
+  // The threshold is the **document's own** (`config.turnSuccessPct`), never a literal: the
+  // caption said "≥ 70 %" whatever the analysis had been run with, and it named only half
+  // the rule. Both halves are stated now — the score against `turnSuccessPct` on the
+  // maneuver channel, and a minimum that never dropped below the foil exit speed
+  // (docs/algorithms.md, "Turn success").
+  const cfg = g.config || {};
+  const threshold = cfg.turnSuccessPct === null || cfg.turnSuccessPct === undefined
+    ? null : `${nf(cfg.turnSuccessPct, 0)} %`;
+  const floor = cfg.foilExitSpeed === null || cfg.foilExitSpeed === undefined
+    ? "the foil exit speed" : `${nf(cfg.foilExitSpeed, 0)} km/h`;
+  const cleanRule = threshold === null
+    ? "flew through and held their speed"
+    : `flew through, held ≥ ${threshold} of entry speed and never dropped below ${floor}`;
+  const o = s.outcomes;
   caption.textContent =
     `${s.turnsCounted} counted (${s.jibes} jibes, ${s.tacks} tacks), ${s.rejected} bear-aways rejected · ` +
-    `${s.jibesSuccessful} clean jibes · ` +
-    `${s.turnsSuccessful} carried ≥ 70 % of entry speed (${nf(s.successPct, 0)} %), ` +
-    `${s.tacksSuccessful} of those tacks · ` +
+    `${o.flewThrough} flew through ` +
+    `(${pct(100 * o.flewThrough / (s.turnsCounted || 1))}), ` +
+    `${o.touchdown} touchdown, ${o.fellIn} fell in · ` +
+    `${s.jibesSuccessful} clean jibes — jibes that ${cleanRule} · ` +
     `port/starboard ${s.port}/${s.starboard}`;
 
-  // "carried" is the score verdict on its own; "clean" is the engine's `clean` flag, which
-  // for a jibe also demands the outcome. Both columns, because the pair is exactly where
-  // the two used to be conflated.
-  const head = ["#", "time", "type", "turn", "tack", "entry kn", "min kn", "score", "carried",
+  // `score` is a *number* — the share of the entry speed the turn held — and stays: it is
+  // the evidence behind the verdict, not a verdict itself. The `carried` column beside it
+  // was the engine's score boolean, which is not a tier the rider has; `clean` is, and it
+  // is the engine's own per-turn flag, read and never re-derived.
+  const head = ["#", "time", "type", "turn", "tack", "entry kn", "min kn", "score",
                 "clean", "outcome", "stop s", "off foil s", "pump", "wet", "arc m", "R m"];
   table.innerHTML = `<thead><tr>${head
-    .map((h, i) => `<th${i <= 4 || i === 10 ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
+    .map((h, i) => `<th${i <= 4 || i === 9 ? ' class="l"' : ""}>${esc(h)}</th>`).join("")}</tr></thead>
     <tbody>${g.turns.map((t, i) => `
       <tr>
         <td class="l">${i + 1}</td>
@@ -284,7 +313,6 @@ function renderTurns(table, caption, g, v, meta) {
         <td>${nf(t.entryKn, 2)}</td>
         <td>${nf(t.minKn, 2)}</td>
         <td>${nf(t.score * 100, 0)} %</td>
-        <td>${yn(t.success)}</td>
         <td>${yn(t.clean)}</td>
         <td class="l">${outcomePill(t.outcome)}${t.borderline ? ' <span class="pill">borderline</span>' : ""}</td>
         <td>${nf(t.stoppedS, 1)}</td>

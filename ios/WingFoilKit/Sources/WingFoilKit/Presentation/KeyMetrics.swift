@@ -153,9 +153,14 @@ public struct KeyMetrics: Sendable, Equatable {
                          caption: "of \(t.jibes) jibes · \(t.jibesSuccessful) clean")
         }
         guard t.turnsCounted > 0 else { return nil }
+        // **No clean clause on the fallback.** It used to read
+        // "of N turns · \(turnsSuccessful) clean", which prints the engine's score verdict
+        // over every counted turn under the word for a stricter, jibe-only one. A session
+        // whose wind axis named no jibes has no clean jibes to report, and the score
+        // verdict is not a tier the rider has (7 Sep 2026).
         let o = t.outcomes
         return Tally(flewThrough: o.flewThrough, touchdown: o.touchdown, fellIn: o.fellIn,
-                     caption: "of \(t.turnsCounted) turns · \(t.turnsSuccessful) clean")
+                     caption: "of \(t.turnsCounted) turns")
     }
 
     /// JPH · CPH · WPH, one decimal.
@@ -180,12 +185,21 @@ public struct KeyMetrics: Sendable, Equatable {
     /// the precise lie the TPH fallback exists to avoid. Where jibes *were* named, a 0.0 CPH
     /// is a measured verdict and is printed as one. WPH needs no fallback of any kind — a
     /// fell-in flight end is a fall whatever the wind was doing.
+    ///
+    /// **The gate is `turns.jibes`, not `jibesPerHour`** (7 Sep 2026). It was the rate, and
+    /// a rate cannot tell "the wind axis named no jibes" from "it named fifteen and he swam
+    /// out of every one" — both are `jibesPerHour == 0` beside a positive TPH, and the
+    /// second is precisely the session the contract says must print `0.0` JPH *and* `0.0`
+    /// CPH. `turns.jibes` is the count the tally one row up already gates on, so the two
+    /// rows can never disagree about whether this session had jibes in it. The
+    /// `turnsPerHour <= 0` half of the test is unchanged: a session with a duration and
+    /// genuinely no turns keeps JPH and CPH at their measured zeroes.
     static func rates(_ s: SessionSummary) -> [Metric] {
         guard let wet = s.wetPerHour else { return [] }
         var out: [Metric] = []
-        if let jibes = s.jibesPerHour, jibes > 0 || (s.turnsPerHour ?? 0) <= 0 {
+        if s.turns.jibes > 0 || (s.turnsPerHour ?? 0) <= 0 {
             out.append(Metric(key: "jph", label: "JPH · dry jibes per hour",
-                              value: rate(jibes)))
+                              value: rate(s.jibesPerHour ?? 0)))
             out.append(Metric(key: "cph", label: "CPH · clean jibes per hour",
                               value: rate(s.cleanJibesPerHour ?? 0)))
         } else if let turns = s.turnsPerHour {
@@ -231,7 +245,13 @@ public struct KeyMetrics: Sendable, Equatable {
     /// Rounded to the nearest minute above the hour and to the nearest second below it —
     /// never truncated, in both cases for the same reason: `0:00` over a recording that
     /// exists reads as a failure to measure. Twin of `hm` in web/js/cardstats.js.
-    static func duration(_ seconds: Double) -> String {
+    /// **Public**, because it is the platform's one session-duration formatter and the app
+    /// target prints session durations too — the library row, the Distance card's caption,
+    /// the "Longest session" record. They read `Fmt.duration` (`1 h 24 m`) and the block
+    /// read this, so the same afternoon came out in two spellings a tap apart
+    /// (docs/presentation.md, "One clock"). `Fmt.duration` stays for a *clip* or a
+    /// *flight* clock, which is minutes and seconds by design.
+    public static func duration(_ seconds: Double) -> String {
         let total = max(0, Int(seconds.rounded()))
         if total >= 3600 {
             let minutes = Int((Double(total) / 60).rounded())

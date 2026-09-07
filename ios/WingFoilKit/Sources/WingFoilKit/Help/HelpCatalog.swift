@@ -334,9 +334,14 @@ public enum HelpCatalog {
                 + "(12 km/h by default) for 2 seconds, and ends when it stays below the exit "
                 + "threshold (8 km/h) for 3 seconds. The start and end are backdated to the "
                 + "first qualifying sample, so the flight covers the whole time you were up.",
-                "Foil % is that flying time divided by the elapsed session time — taxiing, "
-                + "swimming, and the drift back upwind all count against it. Anything under "
-                + "5 seconds is not counted as a flight at all.",
+                "\"On foil\" is that flying time divided by the session's timer time — the "
+                + "total time minus the pauses, meaning any stretch where the recording "
+                + "stopped or the GPS dropped out. Taxiing, swimming and the drift back "
+                + "upwind all count against it; a gap in the recording does not, because "
+                + "nothing was measured there. Anything under 5 seconds is not counted as "
+                + "a flight at all.",
+                "\"Foil time\" is the number of minutes; \"on foil\" is the share of the "
+                + "session they are.",
             ],
             related: [.flights, .longestFlight, .sourceClass]),
 
@@ -576,21 +581,44 @@ public enum HelpCatalog {
 
         HelpTopic(
             id: .turnSuccess, section: .turns, title: "Clean jibes",
-            summary: "A jibe you fly all the way through, carrying your speed.",
+            summary: "A jibe you fly all the way through without losing much speed.",
             body: [
-                "A clean jibe is one you fly all the way through, carrying your speed — no "
-                + "touchdown, no swim, and at or above the success threshold of the speed "
-                + "you entered with. That threshold is a published, configurable parameter "
-                + "(`turnSuccessPct`), 70 % by default.",
-                "Both halves have to hold: your minimum speed through the turn stays at or "
-                + "above that share of your entry speed, and you never drop below the foil "
-                + "exit speed during the sweep. The score under each turn in the list is the "
-                + "first half of that as a number, 0–100.",
-                "Outcome says what happened; clean says what it cost. They can disagree on "
-                + "purpose: a jibe carved cleanly through the sweep stays clean even if the "
-                + "foil is lost afterwards in the recovery — the outcome is what records "
-                + "that. So the clean count is always the stricter of the two, and it is "
-                + "normally the smaller number.",
+                "There are two things a turn can be, and the second is stricter than the "
+                + "first. **Flew through** is how it ended: you never lost the foil, from "
+                + "the moment the turn started until you were demonstrably flying again — "
+                + "no touchdown, no swim. **Clean** is a jibe that flew through *and* held "
+                + "its speed.",
+                "Holding the speed means two things, and both have to be true: your "
+                + "minimum speed through the turn stays at or above 70 % of the speed you "
+                + "entered with (that share is a published, configurable parameter), and "
+                + "you never drop below the foil exit speed at any point in it. The score "
+                + "under each turn in the list is the first of those as a number, 0–100 — "
+                + "how much of your entry speed you kept.",
+                "So clean is a strict subset of flew through: every clean jibe flew "
+                + "through, and some jibes that flew through were not clean because they "
+                + "cost too much speed. A jibe that held its speed all the way round and "
+                + "then lost the foil coming out is not clean either — the foil was lost, "
+                + "and no rider calls that one clean. (Before engine 0.12.0 it counted, "
+                + "which is why an old session may show fewer clean jibes than you "
+                + "remember.)",
+                "Clean is a jibe word. A tack has no clean or dirty reading to carry, so "
+                + "the Tacks card reports how its tacks ended and nothing more.",
+            ],
+            items: [
+                .init(term: "Flew through",
+                      detail: "The outcome: you kept the foil through the turn and through "
+                          + "the recovery out of it. No touchdown, no swim."),
+                .init(term: "Clean",
+                      detail: "A jibe that flew through and held at least 70 % of its "
+                          + "entry speed. The strict one, and the one CPH counts."),
+                .init(term: "Dry",
+                      detail: "You did not fall in. A touchdown still counts as dry — you "
+                          + "got it back without swimming — which is why JPH (dry jibes "
+                          + "per hour) is never below CPH."),
+                .init(term: "Score",
+                      detail: "The share of your entry speed you held through the turn, "
+                          + "0–100. A number, not a verdict: it is the evidence behind "
+                          + "\"clean\", printed beside every turn."),
             ],
             related: [.turnOutcomes, .alpha500]),
 

@@ -128,7 +128,7 @@ public enum TurnCoach {
             return "The speed went before the \(mid) — \(kn(slice.speed.minKn)) with the turn "
                 + "still to come."
         case .slowedLate:
-            return "You carried it into the \(mid) and the speed went on the way out — "
+            return "You held it into the \(mid) and the speed went on the way out — "
                 + "down to \(kn(slice.speed.minKn))."
         case .plain:
             return "\(kn(turn.entryKn)) in, \(kn(turn.minKn)) at the low point, "

@@ -335,7 +335,7 @@ private struct TurnDetailPage: View {
                  + "Ticks are one second apart; the line is coloured by speed on the ramp at "
                  + "the foot of the picture — cold at a standstill, teal at the speed you "
                  + "came in at, hot above it. North and the wind are marked top right.")
-            Text("Score is how much of your entry speed you carried through. Speed here is "
+            Text("Score is how much of your entry speed you held through the turn. Speed here is "
                  + "the manoeuvre channel the verdict was scored on, derived from position — "
                  + "the GPS Doppler speed the records use is smoothed through a turn and "
                  + "would read lower at the low point.")
