@@ -44,6 +44,9 @@ struct TrackMapView: View {
     @State private var focusTick = 0
     /// The turn whose detail sheet the callout's "Details" affordance opened.
     @State private var openedTurn: TurnDetailRequest?
+    /// The flight end whose detail page the callout's "Details" affordance opened — the
+    /// hollow rings' half of the same drill-in (`FlightEndDetailSheet`).
+    @State private var openedFlightEnd: FlightEndDetailRequest?
 
     /// Direction chevrons for the camera as it stands. State rather than a computed value:
     /// the spacing is measured in screen points, so it is a function of the camera and has
@@ -92,10 +95,13 @@ struct TrackMapView: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
             if let callout {
-                TrackCalloutCard(callout: callout,
-                                 open: callout.turnIndex.map { index in
-                                     { openedTurn = TurnDetailRequest(id: index) }
-                                 }) { self.callout = nil }
+                // One affordance, two destinations: a solid dot opens its turn, a hollow
+                // ring opens its flight end. Absent on everything that is neither — a
+                // takeoff, a splash, a course change — which is what keeps "Details" a
+                // promise rather than a decoration.
+                TrackCalloutCard(callout: callout, open: drillIn(callout)) {
+                    self.callout = nil
+                }
             }
             // The chips, and their `?`. The caption that used to sit under them ("Tap the
             // track to move the replay playhead — on a mark or a flight for what it was")
@@ -126,6 +132,9 @@ struct TrackMapView: View {
         .sheet(item: $openedTurn) { request in
             TurnDetailSheet(detail: detail, start: request.id)
         }
+        .sheet(item: $openedFlightEnd) { request in
+            FlightEndDetailSheet(detail: detail, start: request.id)
+        }
         #if DEBUG && targetEnvironment(simulator)
         .onAppear(perform: stageCalloutForScreenshot)
         #endif
@@ -152,6 +161,17 @@ struct TrackMapView: View {
     /// session. Both tolerances scale with how much water the map is showing — the span the
     /// camera has *now*, not the one it opened on, which is what keeps them a fingertip after
     /// the rider has zoomed into one jibe.
+    /// What "Details ›" opens, or nil where there is nothing to open.
+    private func drillIn(_ callout: SessionDetail.Callout) -> (() -> Void)? {
+        if let index = callout.turnIndex {
+            return { openedTurn = TurnDetailRequest(id: index) }
+        }
+        if let index = callout.flightEndIndex {
+            return { openedFlightEnd = FlightEndDetailRequest(id: index) }
+        }
+        return nil
+    }
+
     private func tapped(_ coordinate: CLLocationCoordinate2D) {
         let spanM = (visibleRegion ?? detail.region).span.latitudeDelta * 110_540
         if let mark = detail.mark(nearLat: coordinate.latitude, lon: coordinate.longitude,
