@@ -158,7 +158,8 @@ with a numeric offset (`+02:00`) is the exporter naming the local clock, and win
 | `turnOutcomeLookahead` | 12 | s | **cap** on the tail past the COG sweep the outcome is judged over. A stalling foil bleeds from foiling speed to a standstill in roughly 10 s, so a shorter cap (the 5 s this started at) systematically misses the mush-out and scores it a fly-through |
 | `turnRecoverPct` | 70 | % | of entry speed: back above this ⇒ flying again ⇒ the turn is over and its window closes early. Floored at `foilEntrySpeed` — nothing below that is flying, however slowly the turn was entered |
 | `turnRecoverHold` | 2 | s | recovery must hold this long, same both-ends-qualify convention as flight `entryHold` |
-| `turnPumpedOutIsTouchdown` | **on** | switch | the **pump rung's gate** (engine ≥ 0.18.0). With it set, a turn that never left the foil is still a `touchdown` when the accelerometer heard a burst in the window *and* a sample fell below `foilExitSpeed` (step 3 above). The threshold is the change: it was `foilEntrySpeed` until 0.17.0, which is the speed a flight *starts* at rather than the speed the foil stops carrying at, and it cost Jan's Jibe 50 of 4 Sep its fly-through. Since `flying` already requires speed above `foilExitSpeed`, the rung is now **unreachable at the published defaults** — the switch is kept on so the rule is retired in the open rather than deleted, and so a document from an older engine still reads. Corpus: 13 of 270 jibe touchdowns become fly-throughs. This is the one parameter the tuning page draws as a **switch** rather than a slider (docs/presentation.md, "Tuning") |
+| `turnPumpedOutIsTouchdown` | **on** | switch | the **pump rung's gate** (engine ≥ 0.18.0). With it set, a turn that never left the foil is still a `touchdown` when the accelerometer heard a burst in the window *and* a sample fell below `turnPumpedMarginalSpeed` (step 3 above). Off, the rung is refused whatever that speed says. The two are separate on purpose: this is whether the question is asked, the speed below is what it asks. This is the one parameter the tuning page draws as a **switch** rather than a slider (docs/presentation.md, "Tuning") |
+| `turnPumpedMarginalSpeed` | **8.0** | km/h | the **speed the pump rung corroborates against** (engine ≥ 0.18.0), and the change that retired it. It was hard-wired to `foilEntrySpeed` (12) until 0.17.0 — the speed a flight *starts* at rather than the speed the foil stops carrying at — and it cost Jan's Jibe 50 of 4 Sep its fly-through. The default is the same number `foilExitSpeed` carries, and since `flying` already requires speed above the exit speed the rung is thereby **unreachable at the published defaults**: the band it judges is `(foilExitSpeed, this]`, which is empty at 8.0. Deliberately its own parameter and not a reference to `foilExitSpeed`, so the retirement is a *setting* — raise it and the rule comes back over the band it opens, and at **12.0** it is the 0.17.0 reading exactly. Corpus at the default: 13 of 270 jibe touchdowns become fly-throughs. Moving it moves nothing else — flight segmentation reads `foilExitSpeed` and never this |
 | `turnBaroDrop` | 25 | m | apparent altitude below the session median that means the wrist is under water |
 | `turnOutcomeWindow` | **12** | s | cap on following the recovery (engine ≥ 0.13.0; was 60 s). Equal to `turnOutcomeLookahead` on purpose: a fall the ladder blames on a turn is then always inside the tail that turn is actually *judged* over, and a fall later than that is a straight-line fall the flight-end channel counts. At 60 s a mush-out three quarters of a minute past the exit was charged to the turn |
 | classification | | | tack = COG crosses wind axis through upwind; jibe = through downwind; requires wind axis; bear-away/round-up (no axis crossing) excluded from counts |
@@ -741,31 +742,41 @@ score says what the turn cost. Every turn gets an outcome, bear-aways included.
 3. **Did he have to pump it out? (accelerometer — class (a) only, corroborating)** Pump
    strokes per *Pumping (accelerometer)* below. The rider pumps a wing for many reasons, so
    this never decides an outcome alone: a pump burst turns a fly-through into a `touchdown`
-   only when the speed channels *also* saw the foil go marginal — below **`foilExitSpeed`**
-   (engine ≥ 0.18.0; it was `foilEntrySpeed` until 0.17.0) — somewhere in the same window,
-   and only while `turnPumpedOutIsTouchdown` is set. Speed says the foil stopped carrying,
-   accel says he had to pump it back; either alone is not enough. It can only ever promote
-   `flew_through` → `touchdown`, never touch a fall.
+   only when the speed channels *also* saw the foil go marginal — below
+   **`turnPumpedMarginalSpeed`** (engine ≥ 0.18.0; it was hard-wired to `foilEntrySpeed` until
+   0.17.0) — somewhere in the same window, and only while `turnPumpedOutIsTouchdown` is set.
+   Speed says the foil stopped carrying, accel says he had to pump it back; either alone is not
+   enough. It can only ever promote `flew_through` → `touchdown`, never touch a fall.
 
-   **This rung is retired, and step 3 no longer fires.** The corroborating speed used to be
-   `foilEntrySpeed`, 12 km/h — the speed at which a *flight starts*. That is the wrong
-   question: the speed below which the foil stops carrying is the **exit** speed, 8 km/h, and
-   Jan put it plainly on 7 Sep 2026 — *"change to '…below min foil speed…'"*. His **Jibe 50**
-   of 4 Sep 07:58 sagged to 5.5 kn = 10.2 km/h, below entry and comfortably above exit, and
-   was called a touchdown by this rung alone — no off-foil sample, no stop, no wrist under.
-   He flew it. Working the wing through a soft patch is riding.
+   **This rung is retired at the published defaults, and step 3 no longer fires.** The
+   corroborating speed used to be `foilEntrySpeed`, 12 km/h — the speed at which a *flight
+   starts*. That is the wrong question: the speed below which the foil stops carrying is the
+   exit speed, 8 km/h, and Jan put it plainly on 7 Sep 2026 — *"change to '…below min foil
+   speed…'"*. His **Jibe 50** of 4 Sep 07:58 sagged to 5.5 kn = 10.2 km/h, below entry and
+   comfortably above exit, and was called a touchdown by this rung alone — no off-foil sample,
+   no stop, no wrist under. He flew it. Working the wing through a soft patch is riding.
 
-   Moving the threshold to `foilExitSpeed` makes the rung **unreachable by construction**, and
-   that is the point rather than an accident: step 1 defines *flying* as in a flight, not
-   submerged, and above `foilExitSpeed`, so on the only branch step 3 lives on — no non-flying
-   sample anywhere in the window — every sample is already above the speed step 3 tests
-   against. `turnPumpedOutIsTouchdown` is kept, and kept **on**, because it is the *rule* being
-   retired and not the reading behind it: `pumped` is still set, the "pumped out · N strokes"
-   chip still prints, and a stored document written by an older engine still decodes its
-   verdict. Over the 21-session corpus the rung was the sole reason for **13 of 270 jibe
-   touchdowns** (3 of which held their speed): jibes 493 → 506 flew through, 270 → 257 touched
-   down, 55 fell in unchanged, and clean jibes 263 → 266. The watch keeps the old rule at the
-   old speed — see *Watch divergences*.
+   At `turnPumpedMarginalSpeed`'s default of **8.0** the rung is **unreachable by
+   construction**, and that is the point rather than an accident: step 1 defines *flying* as in
+   a flight, not submerged, and above `foilExitSpeed`, so on the only branch step 3 lives on —
+   no non-flying sample anywhere in the window — every sample is already above 8 km/h. The band
+   step 3 judges is `(foilExitSpeed, turnPumpedMarginalSpeed]`, and at the default that band is
+   empty.
+
+   **It is a parameter rather than a reference to `foilExitSpeed`, so the retirement is a
+   setting somebody can disagree with.** Raise it and the rule comes back over the band it
+   opens; at **12.0** it is exactly the 0.17.0 reading, restored — which is what
+   `test_jibe_50_flew_through_and_the_old_speed_takes_it_back` asserts, in both directions, on
+   the recording the change came from. `turnPumpedOutIsTouchdown` sits beside it as the gate,
+   kept **on**, because the two answer different questions: the switch is whether the rung is
+   asked at all, the speed is what it asks. Either way `pumped` is still set, the "pumped out ·
+   N strokes" chip still prints, and a stored document from an older engine still decodes its
+   verdict.
+
+   Over the 21-session corpus the rung was the sole reason for **13 of 270 jibe touchdowns**
+   (3 of which held their speed): jibes 493 → 506 flew through, 270 → 257 touched down, 55 fell
+   in unchanged, and clean jibes 263 → 266. The watch keeps the old rule at the old speed — see
+   *Watch divergences*.
 4. **Stopped how long?** The off-foil run is followed until foiling resumes (capped by
    `turnOutcomeWindow`) and the longest contiguous spell below `turnStopSpeedFloor` is
    measured, on `min(Doppler, positional)`. Both channels *over*-read at rest — wrist
@@ -790,7 +801,7 @@ the phone and the web cannot word one fact two ways.
 | `stop` | step 5 | a stop past `turnTouchdownMaxStop` (a *borderline* touchdown) or past `turnFallStop` (a fall) |
 | `off_foil` | step 5 | off the foil, with no stop long enough to be worth naming — the ordinary short touch |
 | `submerged` | step 2 | the wrist went under, **and that is what decided the fall**. It wins the wording wherever it fires, because step 2 is tested first and is proof of a swim on its own — even where the stop would have carried the verdict anyway |
-| `pumped_marginal` | step 3 | the pump rung fired. Unreachable at the published defaults (above); present only in a document written by an engine before 0.18.0, or under a config whose evidence and turn thresholds disagree |
+| `pumped_marginal` | step 3 | the pump rung fired. Unreachable at the published defaults (above); present in a document written by an engine before 0.18.0, or in one analysed with `turnPumpedMarginalSpeed` raised above `foilExitSpeed` |
 | **null** | — | a `flew_through`. Nothing happened, so there is nothing to explain — the fourth state, and the common one |
 
 The invariant, asserted on every fixture by `verify_presentation.py` §6 and by `GoldenTests`:
