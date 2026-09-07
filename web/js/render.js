@@ -200,7 +200,7 @@ function renderSummary(result, isExample = false) {
     // engine 0.13.0: `longestFlightM` becomes `maxFlightM` — the maximum flight distance,
     // which is this flight's own only by coincidence. The note follows the field.
     { k: "Flights", v: int(s.flightCount),
-      n: `longest ${hms(s.longestFlightS)} · ${int(s.longestFlightM)} m` },
+      n: `longest ${hms(s.longestFlightS)} · max ${int(s.maxFlightM)} m` },
     { k: "Best 2 s", v: nf(rec.best2sKn, 2), unit: "kn", n: `10 s ${nf(rec.best10sKn, 2)} kn` },
     { k: "Best 5×10 s", v: nf(rec.best5x10sKn, 2), unit: "kn", n: `1 NM ${nf(rec.bestNmKn, 2)} kn` },
     { k: "Alpha 500", v: nf(rec.alpha500Kn, 2), unit: "kn", n: `250 m ${nf(rec.best250mKn, 2)} kn` },

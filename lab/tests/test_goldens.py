@@ -31,7 +31,7 @@ CAP_KEYS = {"hasDoppler", "hasDevFields", "hasWatchLaps", "hasAccel", "hasHR", "
 RECORD_KEYS = {"best2sKn", "best10sKn", "best5x10sKn", "best100mKn", "best250mKn",
                "best500mKn", "bestNmKn", "bestHourKn", "alpha500Kn", "windows"}
 SUMMARY_KEYS = {"foilTimeS", "foilPct", "flightCount", "longestFlightS",
-                "longestFlightM", "distanceKm", "durationS", "avgSpeedKmh",
+                "maxFlightM", "distanceKm", "durationS", "timerTimeS", "avgSpeedKmh",
                 "turnsPerHour", "jibesPerHour", "cleanJibesPerHour", "wetPerHour",
                 "windowRates",
                 "turns", "flightEnds", "outcomeSplit", "takeoff"}
@@ -77,7 +77,7 @@ def smoke_golden():
 def test_schema_shape(smoke_golden):
     g = smoke_golden
     assert list(g.keys()) == TOP_KEYS
-    assert g["engineVersion"] == "0.12.0"
+    assert g["engineVersion"] == "0.13.0"
     assert set(g["capabilities"].keys()) == CAP_KEYS
     assert set(g["records"].keys()) == RECORD_KEYS
     assert set(g["summary"].keys()) == SUMMARY_KEYS
@@ -137,14 +137,16 @@ def test_smoke_content(smoke_golden):
 
 
 def test_session_rates_on_a_synthetic_session():
-    """Two hours, 40 km, 60 counted turns of which 44 dry jibes, 9 swims.
+    """Two hours of timer time, 40 km, 60 dry turns of which 44 dry jibes, 9 swims.
 
-    Every rate is per hour of *elapsed* session, so the arithmetic is deliberately trivial
-    and hand-checkable: 60 turns in 2 h is 30/h, 9 swims is 4.5/h, 40 km in 2 h is 20 km/h.
+    Every rate is per hour of *timer* time (engine 0.13.0), so the arithmetic is
+    deliberately trivial and hand-checkable: 60 turns in 2 h is 30/h, 9 swims is 4.5/h,
+    40 km in 2 h is 20 km/h.
     """
-    r = session_rates(7200.0, 40_000.0, turns_counted=60, dry_jibes=44, fell_in=9,
+    r = session_rates(7800.0, 7200.0, 40_000.0, dry_turns=60, dry_jibes=44, fell_in=9,
                       clean_jibes=22)
-    assert r.duration_s == 7200.0
+    assert r.duration_s == 7800.0          # T1 is carried, and is no longer a denominator
+    assert r.timer_time_s == 7200.0
     assert r.avg_speed_kmh == pytest.approx(20.0)
     assert r.turns_per_hour == pytest.approx(30.0)
     assert r.jibes_per_hour == pytest.approx(22.0)
@@ -153,19 +155,31 @@ def test_session_rates_on_a_synthetic_session():
     assert r.wet_per_hour == pytest.approx(4.5)
 
     # Unrounded inputs, rounded only for JSON: a half-hour session divides by 0.5, not by 1.
-    half = session_rates(1800.0, 9_000.0, turns_counted=7, dry_jibes=7, fell_in=1)
+    half = session_rates(1800.0, 1800.0, 9_000.0, dry_turns=7, dry_jibes=7, fell_in=1)
     assert half.avg_speed_kmh == pytest.approx(18.0)
     assert half.turns_per_hour == pytest.approx(14.0)
     assert half.wet_per_hour == pytest.approx(2.0)
 
+    # The pause is the whole point: an hour of elapsed time with only half an hour of
+    # timer time behind it is half an hour of sailing, and every rate doubles against it.
+    paused = session_rates(3600.0, 1800.0, 9_000.0, dry_turns=7, dry_jibes=7, fell_in=1)
+    assert paused.duration_s == 3600.0
+    assert paused.turns_per_hour == pytest.approx(14.0)
+    assert paused.avg_speed_kmh == pytest.approx(18.0)
 
-@pytest.mark.parametrize("duration", [0.0, -12.0])
-def test_session_rates_without_a_duration_are_none_not_zero(duration):
+
+@pytest.mark.parametrize("timer", [0.0, -12.0])
+def test_session_rates_without_a_timer_time_are_none_not_zero(timer):
     """A one-sample track has no hour to divide by. Every rate is null -- 0.0 would read as
-    "he did nothing in an hour on the water", which is a different (and wrong) claim."""
-    r = session_rates(duration, 1234.0, turns_counted=7, dry_jibes=5, fell_in=2,
+    "he did nothing in an hour on the water", which is a different (and wrong) claim.
+
+    The test is on the *timer* clock since 0.13.0: that is what the rates divide by, so a
+    track with an elapsed span but no non-gap step in it still has no answer to give.
+    """
+    r = session_rates(1800.0, timer, 1234.0, dry_turns=7, dry_jibes=5, fell_in=2,
                       clean_jibes=3)
-    assert r.duration_s == 0.0
+    assert r.duration_s == 1800.0
+    assert r.timer_time_s == 0.0
     assert r.avg_speed_kmh is None
     assert r.turns_per_hour is None
     assert r.jibes_per_hour is None
@@ -176,9 +190,11 @@ def test_session_rates_without_a_duration_are_none_not_zero(duration):
 def test_rates_reconcile_with_the_numbers_beside_them(smoke_golden):
     s = smoke_golden["summary"]
     assert s["durationS"] == pytest.approx(60.0, abs=1.5)
-    hours = s["durationS"] / 3600.0
+    # Timer time is the denominator since 0.13.0; on a gap-free minute it is the same hour.
+    hours = s["timerTimeS"] / 3600.0
     assert s["avgSpeedKmh"] == pytest.approx(s["distanceKm"] / hours, abs=0.05)
-    assert s["turnsPerHour"] == pytest.approx(s["turns"]["turnsCounted"] / hours, abs=0.05)
+    dry_turns = s["turns"]["turnsCounted"] - s["turns"]["outcomes"]["fellIn"]
+    assert s["turnsPerHour"] == pytest.approx(dry_turns / hours, abs=0.05)
     dry = s["turns"]["jibes"] - s["turns"]["jibeOutcomes"]["fellIn"]
     assert s["jibesPerHour"] == pytest.approx(dry / hours, abs=0.05)
     assert s["cleanJibesPerHour"] == pytest.approx(
@@ -191,8 +207,8 @@ def test_wet_per_hour_counts_straight_falls_as_well_as_turn_falls():
     """"How often did he get wet" is a question about the rider, not about the turn channel.
 
     2026-08-29 is the session that proves the difference matters: 25 fell-in flight ends, and
-    only 8 of them inside a counted turn. A rate built from turn outcomes alone would tell
-    this rider he swam a third as often as he did.
+    only a handful of them inside a counted turn. A rate built from turn outcomes alone would
+    tell this rider he swam a fraction as often as he did.
     """
     g = build_golden(analyze(CIQ_LONG))
     s = g["summary"]
@@ -204,12 +220,13 @@ def test_wet_per_hour_counts_straight_falls_as_well_as_turn_falls():
     # Strictly more than the turn ladder sees -- the straight-line swims are the difference.
     assert ends["all"]["fellIn"] > turns["outcomes"]["fellIn"]
 
-    hours = s["durationS"] / 3600.0
+    hours = s["timerTimeS"] / 3600.0
     assert hours > 0
     assert s["wetPerHour"] == pytest.approx(ends["all"]["fellIn"] / hours, abs=0.05)
     assert s["wetPerHour"] > turns["outcomes"]["fellIn"] / hours
     # And the other three rates still speak for their own channels.
-    assert s["turnsPerHour"] == pytest.approx(turns["turnsCounted"] / hours, abs=0.05)
+    dry_turns = turns["turnsCounted"] - turns["outcomes"]["fellIn"]
+    assert s["turnsPerHour"] == pytest.approx(dry_turns / hours, abs=0.05)
     dry = turns["jibes"] - turns["jibeOutcomes"]["fellIn"]
     assert s["jibesPerHour"] == pytest.approx(dry / hours, abs=0.05)
     assert s["avgSpeedKmh"] == pytest.approx(s["distanceKm"] / hours, abs=0.05)
@@ -219,37 +236,42 @@ def test_wet_per_hour_counts_straight_falls_as_well_as_turn_falls():
 def test_jibes_per_hour_counts_only_the_jibes_he_sailed_out_of():
     """The 0.7.0 numerator: dry jibes, not every jibe the detector named.
 
-    2026-08-29 is the session that shows the size of it -- 50 jibes, 7 of them swum, so the
-    headline reads 22.0 an hour and not 25.6. A rider cannot raise this number by falling
+    2026-08-29 is the session that shows the size of it -- 50 jibes, 3 of them swum, so the
+    headline reads 25.1 an hour and not 26.7. A rider cannot raise this number by falling
     more often, which is the whole point of the change.
     """
     a = analyze(CIQ_LONG)
     g = build_golden(a)
     s = g["summary"]
     jibes, fell = s["turns"]["jibes"], s["turns"]["jibeOutcomes"]["fellIn"]
-    assert (jibes, fell) == (50, 7)
+    assert (jibes, fell) == (50, 3)
 
     # The per-turn list and the tally agree on what "dry" means -- flew-through and
     # touchdown alike, because pumping back up out of a touchdown is a jibe he made.
     dry = dry_jibe_times(a.turns)
-    assert len(dry) == jibes - fell == 43
+    assert len(dry) == jibes - fell == 47
     assert dry == sorted(dry)
     outcomes = s["turns"]["jibeOutcomes"]
     assert len(dry) == outcomes["flewThrough"] + outcomes["touchdown"]
 
-    hours = s["durationS"] / 3600.0
-    assert s["jibesPerHour"] == pytest.approx(len(dry) / hours, abs=0.05) == 22.0
-    # `turnsPerHour` is untouched: it answers "how busy", not "how well".
-    assert s["turnsPerHour"] == pytest.approx(s["turns"]["turnsCounted"] / hours, abs=0.05)
+    # Timer time, not elapsed (engine 0.13.0): the 281 s this recording spent paused are
+    # not an hour on the water, and dividing by them deflated every rate on the page.
+    hours = s["timerTimeS"] / 3600.0
+    assert s["timerTimeS"] < s["durationS"]
+    assert s["jibesPerHour"] == pytest.approx(len(dry) / hours, abs=0.05) == 25.1
+    # `turnsPerHour` asks the same "dry" question over *every* counted turn (0.13.0).
+    turn_out = s["turns"]["outcomes"]
+    dry_turns = s["turns"]["turnsCounted"] - turn_out["fellIn"]
+    assert s["turnsPerHour"] == pytest.approx(dry_turns / hours, abs=0.05)
     assert s["jibesPerHour"] < jibes / hours
 
     # And CPH is the stricter reading of the same 50 jibes: 24 he rode all the way through,
-    # 12.3 an hour against the dry 22.0. Never above JPH -- since engine 0.12.0 a clean jibe
+    # 12.8 an hour against the dry 25.1. Never above JPH -- since engine 0.12.0 a clean jibe
     # is a `flew_through` one by *definition* and not merely in practice, so the nesting is
-    # structural: every clean jibe is one of the 43 dry ones.
+    # structural: every clean jibe is one of the 47 dry ones.
     clean = s["turns"]["jibesSuccessful"]
     assert clean == 24
-    assert s["cleanJibesPerHour"] == pytest.approx(clean / hours, abs=0.05) == 12.3
+    assert s["cleanJibesPerHour"] == pytest.approx(clean / hours, abs=0.05) == 12.8
     assert s["cleanJibesPerHour"] < s["jibesPerHour"]
     assert clean <= outcomes["flewThrough"]
     # 0.12.0's whole point: `success` alone starred jibes the rider swam out of. One of the

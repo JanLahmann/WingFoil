@@ -350,9 +350,9 @@ import Testing
     /// `KeyMetrics` applies, because it is the same list.
     @Test func shareCardHidesTheRatesWhenTheBlockHasNone() {
         var summary = SessionSummary(foilTimeS: 0, foilPct: 0, flightCount: 0,
-                                     longestFlightS: 0, longestFlightM: 0, distanceKm: 0)
-        summary.apply(SessionRates(durationS: 0, distanceM: 0, turnsCounted: 0, dryJibes: 0,
-                                   fellIn: 0))
+                                     longestFlightS: 0, maxFlightM: 0, distanceKm: 0)
+        summary.apply(SessionRates(durationS: 0, timerTimeS: 0, distanceM: 0, dryTurns: 0,
+                                   dryJibes: 0, fellIn: 0))
         let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
         let stats = ShareCardStats.make(row: sampleRow(), title: "x", metrics: block, timeZone: fixtureZone)
         #expect(stats.stats.map(\.key) == ["duration", "distance", "avgSpeed", "max2s"])
@@ -476,10 +476,10 @@ import Testing
     /// against this one, so it is the one pinned here.
     private func torboleSummary() -> SessionSummary {
         var summary = SessionSummary(foilTimeS: 3780, foilPct: 53.8, flightCount: 31,
-                                     longestFlightS: 424, longestFlightM: 1580,
+                                     longestFlightS: 424, maxFlightM: 1580,
                                      distanceKm: 22.985)
-        summary.apply(SessionRates(durationS: 7029, distanceM: 22_985, turnsCounted: 51,
-                                   dryJibes: 43, fellIn: 25, cleanJibes: 12))
+        summary.apply(SessionRates(durationS: 7029, timerTimeS: 7029, distanceM: 22_985,
+                                   dryTurns: 51, dryJibes: 43, fellIn: 25, cleanJibes: 12))
         summary.turns.turnsCounted = 51
         summary.turns.jibes = 50
         // The strict verdict: 12 of the 50 jibes were flown all the way through with the
@@ -527,9 +527,9 @@ import Testing
     /// than printing "0.0 JPH" over a rider who was never given an hour to divide by.
     @Test func keyMetricsHideTheRateRowWithoutADuration() {
         var summary = SessionSummary(foilTimeS: 0, foilPct: 0, flightCount: 0,
-                                     longestFlightS: 0, longestFlightM: 0, distanceKm: 0)
-        summary.apply(SessionRates(durationS: 0, distanceM: 0, turnsCounted: 0, dryJibes: 0,
-                                   fellIn: 0))
+                                     longestFlightS: 0, maxFlightM: 0, distanceKm: 0)
+        summary.apply(SessionRates(durationS: 0, timerTimeS: 0, distanceM: 0, dryTurns: 0,
+                                   dryJibes: 0, fellIn: 0))
         let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
         #expect(block.rates.isEmpty)
         #expect(block.basics[0].value == "0:00 min")
@@ -547,10 +547,10 @@ import Testing
     /// jibe rate too, and there is no jibe here to rate.
     @Test func keyMetricsFallBackToTurnsWhenNoJibeWasNamed() {
         var summary = SessionSummary(foilTimeS: 600, foilPct: 30, flightCount: 4,
-                                     longestFlightS: 60, longestFlightM: 300,
+                                     longestFlightS: 60, maxFlightM: 300,
                                      distanceKm: 5)
-        summary.apply(SessionRates(durationS: 3600, distanceM: 5000, turnsCounted: 12,
-                                   dryJibes: 0, fellIn: 3))
+        summary.apply(SessionRates(durationS: 3600, timerTimeS: 3600, distanceM: 5000,
+                                   dryTurns: 12, dryJibes: 0, fellIn: 3))
         summary.turns.turnsCounted = 12
         summary.turns.turnsSuccessful = 4
         summary.turns.unclassified = 12
@@ -576,9 +576,9 @@ import Testing
     /// for turns the wind axis could not name.
     @Test func keyMetricsKeepJPHWhenThereWereNoTurnsAtAll() {
         var summary = SessionSummary(foilTimeS: 30, foilPct: 50, flightCount: 1,
-                                     longestFlightS: 30, longestFlightM: 100,
+                                     longestFlightS: 30, maxFlightM: 100,
                                      distanceKm: 0.226)
-        summary.apply(SessionRates(durationS: 59, distanceM: 226, turnsCounted: 0,
+        summary.apply(SessionRates(durationS: 59, timerTimeS: 59, distanceM: 226, dryTurns: 0,
                                    dryJibes: 0, fellIn: 0))
         let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
         #expect(block.rates.map(\.key) == ["jph", "cph", "wph"])
@@ -595,9 +595,9 @@ import Testing
     /// ride a single one, and no rider is told the second by being shown the first.
     @Test func keyMetricsPrintAMeasuredZeroCPHBesideANonZeroJPH() {
         var summary = SessionSummary(foilTimeS: 600, foilPct: 30, flightCount: 4,
-                                     longestFlightS: 60, longestFlightM: 300, distanceKm: 5)
-        summary.apply(SessionRates(durationS: 3600, distanceM: 5000, turnsCounted: 15,
-                                   dryJibes: 9, fellIn: 6, cleanJibes: 0))
+                                     longestFlightS: 60, maxFlightM: 300, distanceKm: 5)
+        summary.apply(SessionRates(durationS: 3600, timerTimeS: 3600, distanceM: 5000,
+                                   dryTurns: 15, dryJibes: 9, fellIn: 6, cleanJibes: 0))
         summary.turns.turnsCounted = 15
         summary.turns.jibes = 15
         summary.turns.jibesSuccessful = 0
@@ -754,7 +754,7 @@ import Testing
     ///
     /// Asserted against a decoded golden rather than a hand-built session, for the reason
     /// `ReplayBeatsTests` gives: a synthetic analysis can be made to agree with any rule at
-    /// all. 29 Aug Torbole has 51 counted turns (35 · 8 · 8), 11 uncounted ones, and seven
+    /// all. 29 Aug Torbole has 51 counted turns (35 · 12 · 4), 11 uncounted ones, and seven
     /// splashes across three turns and four straight-line flight ends.
     @Test func thumbnailEventsAreTheLadderPlusTheSplashes() throws {
         let url = testFixturesDir.appendingPathComponent(
@@ -765,8 +765,8 @@ import Testing
         let counts = Dictionary(grouping: events, by: \.kind).mapValues(\.count)
 
         #expect(counts[.flewThrough] == 35)
-        #expect(counts[.touchdown] == 8)
-        #expect(counts[.fellIn] == 8)
+        #expect(counts[.touchdown] == 12)
+        #expect(counts[.fellIn] == 4)
         #expect(counts[.splash] == 7)
         // 62 turns in the session, 51 of them counted: the eleven course changes are not
         // verdicts and are not marked.

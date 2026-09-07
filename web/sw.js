@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v42";     // v42: flew-through/clean vocabulary, one clock, one percent rule
+const VERSION = "v43";     // v43: engine 0.13.0 (rates on timer time, maxFlightM) + flew-through/clean vocabulary, one clock, one percent rule
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.

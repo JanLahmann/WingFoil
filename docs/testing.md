@@ -8,7 +8,7 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
 
 ```json
 {
-  "engineVersion": "0.12.0",
+  "engineVersion": "0.13.0",
   "config": { "foilEntrySpeed": 12.0, "...": "params actually used" },
   "capabilities": { "hasDoppler": true, "hasDevFields": false, "hasWatchLaps": false,
                      "hasAccel": false, "hasHR": true, "sampleRateHz": 1 },
@@ -55,32 +55,60 @@ notebook result is human-validated; asserted by Python `pytest` (self-check) and
                            "failed": 0, "successPct": null, "avgCostBpm": null,
                            "medianCostBpm": null, "costValid": 0, "costTotal": 0,
                            "avgBaselineBpm": null, "avgPumps": null, "meanBpm": null } ],
-               "summary": { "usablePct": null, "avgTakeoffCostBpm": null,
+               "summary": { "usablePct": null,
+                            "avgTakeoffCostBpm": null, "medianTakeoffCostBpm": null,
                             "takeoffCostValid": 0, "takeoffCostTotal": 0,
+                            "approximateTakeoffs": 0, "medianPeakLagS": null,
+                            "bpmPerStroke": null, "medianBpmPerStroke": null,
+                            "bpmPerStrokeValid": 0, "bpmPerStrokeTotal": 0,
                             "pumpCruise": { "pumpingBpm": null, "cruisingBpm": null,
-                                            "deltaBpm": null, "...": "" }, "...": "" } },
+                                            "deltaBpm": null,
+                                            "pumpingSpans": 0, "cruisingSpans": 0,
+                                            "pumpingCoveredS": 0.0, "pumpingSpanS": 0.0,
+                                            "cruisingCoveredS": 0.0, "cruisingSpanS": 0.0 },
+                            "medianTakeoffRecoveryS": null,
+                            "takeoffRecoveryValid": 0, "takeoffRecoveryTotal": 0,
+                            "medianSwimRecoveryS": null,
+                            "swimRecoveryValid": 0, "swimRecoveryTotal": 0,
+                            "avgSwimCostBpm": null,
+                            "swimCostValid": 0, "swimCostTotal": 0 } },
   "summary": { "foilTimeS": 0, "foilPct": 0.0, "flightCount": 0, "longestFlightS": 0,
-               "longestFlightM": 0.0, "distanceKm": 0.0,
-               "durationS": 0.0, "avgSpeedKmh": null, "turnsPerHour": null,
+               "maxFlightM": 0.0, "distanceKm": 0.0,
+               "durationS": 0.0, "timerTimeS": 0.0,
+               "avgSpeedKmh": null, "turnsPerHour": null,
                "jibesPerHour": null, "cleanJibesPerHour": null, "wetPerHour": null,
                "windowRates": { "windowMin": 15, "bestJph": null, "bestJphStartTs": null,
                                 "bestWph": null, "bestWphStartTs": null,
                                 "series": [ { "ts": 0, "jph": 0.0, "wph": 0.0 } ] },
-               "turns":       { "tacks": 0, "jibes": 0, "unclassified": 0, "rejected": 0,
+               "turns":       { "tacks": 0, "tacksSuccessful": 0,
+                                "jibes": 0, "jibesSuccessful": 0,
+                                "unclassified": 0, "rejected": 0,
                                 "turnsCounted": 0, "turnsSuccessful": 0, "successPct": 0.0,
-                                "port": 0, "starboard": 0,
+                                "port": 0, "starboard": 0, "unknownSide": 0,
                                 "longestDryStreak": 0, "longestFlewStreak": 0,
-                                "outcomes": { "flewThrough": 0, "touchdown": 0,
-                                              "fellIn": 0, "borderline": 0 },
-                                "tackOutcomes": {}, "jibeOutcomes": {} },
-               "flightEnds":  { "all": { "glideOut": 0, "touchdown": 0, "fellIn": 0,
-                                         "unknown": 0, "borderline": 0 },
-                                "straight": {}, "inTurn": {} },
+                                "outcomes":     { "flewThrough": 0, "touchdown": 0,
+                                                  "fellIn": 0, "borderline": 0 },
+                                "tackOutcomes": { "flewThrough": 0, "touchdown": 0,
+                                                  "fellIn": 0, "borderline": 0 },
+                                "jibeOutcomes": { "flewThrough": 0, "touchdown": 0,
+                                                  "fellIn": 0, "borderline": 0 } },
+               "flightEnds":  { "all":      { "glideOut": 0, "touchdown": 0, "fellIn": 0,
+                                              "unknown": 0, "borderline": 0 },
+                                "straight": { "glideOut": 0, "touchdown": 0, "fellIn": 0,
+                                              "unknown": 0, "borderline": 0 },
+                                "inTurn":   { "glideOut": 0, "touchdown": 0, "fellIn": 0,
+                                              "unknown": 0, "borderline": 0 } },
                "outcomeSplit": { "turnFalls": 0, "straightFalls": 0, "turnTouchdowns": 0,
                                  "straightTouchdowns": 0, "glideOuts": 0, "unknownEnds": 0 },
                "takeoff":     { "takeoffAttempts": 0, "takeoffSuccesses": 0,
-                                "avgPumpsToTakeoff": null, "totalPumpStrokes": null,
-                                "successPct": null, "failedAttempts": 0, "...": "" } }
+                                "successPct": null, "failedAttempts": 0,
+                                "unknownAttempts": 0, "recoveryEpisodes": 0,
+                                "inFlightEpisodes": 0, "inFlightPumpStrokes": null,
+                                "runsJudged": 0, "runsTruncated": 0,
+                                "freeTakeoffs": 0, "pumpedTakeoffs": 0,
+                                "avgPumpsToTakeoff": null, "medianPumpsToTakeoff": null,
+                                "avgPumpsWhenPumped": null, "totalPumpStrokes": null,
+                                "avgTakeoffS": null, "medianTakeoffS": null } }
 }
 ```
 
@@ -137,6 +165,22 @@ parameter, score, outcome or streak. Exactly four things changed on any fixture:
 `engineVersion` stamp, the new `clean` key on every turn, `turns.jibesSuccessful`, and
 `summary.cleanJibesPerHour`. The Swift cross-check asserts `clean` per turn *and* re-derives
 it from the four fields, so a golden that carries the key cannot carry a wrong one.
+
+Engine 0.13.0 moves four things at once, and every number in `summary` with them.
+`summary.timerTimeS` is a **new key** (T2: the sum of the non-gap steps) and it is now the
+denominator of `avgSpeedKmh` and of all four per-hour rates; `summary.durationS` (T1, the
+elapsed cleaned span) keeps its meaning and is what every surface still *displays*, so the
+two clocks are two named keys and the null-on-no-duration rule reads `timerTimeS <= 0`.
+`turnsPerHour` counts **dry** counted turns (`turnsCounted − turns.outcomes.fellIn`), the
+rule JPH has used since 0.7.0. `turnClassifyMinAngle` (90°) joins the config echo and files
+every sweep narrower than it as an uncounted course change, wind axis or not — five sweeps
+in a thousand on the corpus, and no clean jibe moved. `turnOutcomeWindow` drops 60 s → 12 s,
+which is where most of the movement is: a fall a quarter of a minute past a sweep is now a
+straight-line fall, so the jibe ladder's `fellIn` collapses into `touchdown` (106 → 32 and
+128 → 197 across the seventeen fixtures) and the HR block's swim events move with it. And
+`summary.longestFlightM` is renamed **`maxFlightM`** — same value, honester name: it is the
+largest distance any one flight covered and never was the longest flight's own. The rolling
+`windowRates` are deliberately untouched and stay on the elapsed clock.
 
 ### Fixture provenance — one converted recording, and why
 
