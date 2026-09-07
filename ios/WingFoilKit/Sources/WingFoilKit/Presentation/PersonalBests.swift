@@ -193,7 +193,7 @@ extension PersonalBestDetector {
     /// The standing clean-jibe records across a library, one session each.
     ///
     /// CPH is recomputed from the row rather than stored, and from the same two numbers the
-    /// engine divides — `jibesSuccessful` over `durationS` — so a library row and a session
+    /// engine divides — `jibesSuccessful` over `timerTimeS` — so a library row and a session
     /// page can never disagree about a rider's best afternoon.
     ///
     /// Ties keep the **earlier** session, the way the window peak keeps the earliest window:
@@ -203,13 +203,14 @@ extension PersonalBestDetector {
         for session in sessions.sorted(by: { $0.startDate < $1.startDate }) {
             guard let clean = session.jibesSuccessful, clean > 0 else { continue }
             consider(.cleanJibes, Double(clean), session.id, into: &best)
-            // `rateSeconds` — the engine's own cleaned span where the row carries it, which
-            // is the denominator `summary.cleanJibesPerHour` divides by. It was the raw
-            // sample span, 10338 s against 7742 s on the corpus's Rheinstetten afternoon,
-            // so the celebration's CPH and the records table's could differ by a third for
-            // the same session (docs/presentation.md, "One clock").
+            // Two clocks, two jobs. The floor is a **length** and is measured on
+            // `rateSeconds` (T1): "at least 15 minutes" means the afternoon lasted a quarter
+            // of an hour. The rate itself divides by `timerSeconds` (T2), which is what
+            // `summary.cleanJibesPerHour` divides by since engine 0.13.0 — so the
+            // celebration's CPH and the records table's can never name two different numbers
+            // for one session (docs/presentation.md, "One clock").
             guard session.rateSeconds >= cphMinDurationS else { continue }
-            consider(.cleanJibesPerHour, Double(clean) / (session.rateSeconds / 3600),
+            consider(.cleanJibesPerHour, Double(clean) / (session.timerSeconds / 3600),
                      session.id, into: &best)
         }
         return CleanJibeRecordKind.allCases.compactMap { best[$0] }

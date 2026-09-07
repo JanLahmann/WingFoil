@@ -356,6 +356,14 @@ extension LibraryStore {
     /// minutes with one clean jibe and three hours with three is not "6.0 and 1.0, so 3.5 an
     /// hour"; it is four clean jibes in three hours and ten minutes. The same rule already
     /// governs the gear rollup's on-foil share.
+    ///
+    /// **Two clocks, and what a number is decides which one it gets.** "Hours on the water"
+    /// is a *duration*, so it sums `rateSeconds` (T1, the engine's cleaned elapsed span)
+    /// like every duration on every surface. CPH and WPH are *rates*, so they divide by
+    /// summed `timerSeconds` (T2, the session minus its pauses) — the denominator the engine
+    /// gives the session's own rates since 0.13.0, which is what makes a month holding one
+    /// afternoon report that afternoon's CPH instead of a deflated second opinion about it
+    /// (docs/presentation.md, "One clock"; docs/algorithms.md, "Session rates").
     static func facts(_ rows: [SessionRow]) -> PeriodBlock.Facts {
         func sum<T: Numeric>(_ pick: (SessionRow) -> T?) -> T? {
             let values = rows.compactMap(pick)
@@ -365,8 +373,14 @@ extension LibraryStore {
         f.sessions = rows.count
         f.spots = spotClusters(rows).count
 
+        // The shown duration (T1). Not a divisor — see `rateHours` below.
         let seconds = rows.reduce(0.0) { $0 + $1.rateSeconds }
         f.hours = seconds > 0 ? seconds / 3600 : nil
+        // The rate denominator (T2), and the only thing it is used for. Deliberately a
+        // second local rather than a reuse of `f.hours`: the one line that blurred them is
+        // the bug this pair replaces.
+        let timerSeconds = rows.reduce(0.0) { $0 + $1.timerSeconds }
+        let rateHours: Double? = timerSeconds > 0 ? timerSeconds / 3600 : nil
         f.distanceKm = sum { $0.distanceKm }
         f.flights = sum { $0.flightCount }
         // The engine's own denominator for its own foil share, recovered the way the analyzer
@@ -382,15 +396,17 @@ extension LibraryStore {
         let clean = sum { $0.jibesSuccessful }
         let jibes = sum { $0.jibes }
         f.cleanJibes = clean
-        if let clean, let hours = f.hours { f.cph = Double(clean) / hours }
+        // Rate: timer hours. (`f.hours` is the displayed duration and is not a divisor.)
+        if let clean, let rateHours { f.cph = Double(clean) / rateHours }
         f.turns = sum { $0.turnsCounted }
         // The same floor as the session record, over the period's own total: four clean out
         // of four is a good week, and it is still not a rate.
         if let clean, let jibes, jibes >= SessionRecordKind.minJibesForRate {
             f.cleanJibeRatePct = 100 * Double(clean) / Double(jibes)
         }
-        if let wet: Int = sum({ $0.wetExits }), let hours = f.hours {
-            f.wph = Double(wet) / hours
+        // Rate: the same timer hours as CPH, and the same divisor `summary.wetPerHour` uses.
+        if let wet: Int = sum({ $0.wetExits }), let rateHours {
+            f.wph = Double(wet) / rateHours
         }
         f.best2sKn = rows.compactMap(\.best2sKn).max()
         f.best10sKn = rows.compactMap(\.best10sKn).max()

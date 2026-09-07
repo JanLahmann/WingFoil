@@ -33,7 +33,7 @@ public struct AppDatabase: Sendable {
     /// Every migration this build knows, oldest first — the migration test asserts a v1
     /// database moves through all of them.
     public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
-                                        "v10", "v11", "v12"]
+                                        "v10", "v11", "v12", "v13"]
 
     /// The schema version this build writes — the `N` of the last `vN` migration.
     ///
@@ -289,6 +289,38 @@ public struct AppDatabase: Sendable {
                 t.add(column: "rateDurationS", .double)
                 t.add(column: "wetExits", .integer)
             }
+            try db.execute(sql: "UPDATE session SET engineVersion = NULL")
+        }
+
+        // v13: the *other* clock — the one a rate divides by.
+        //
+        // v12 stored `rateDurationS` (T1, the engine's cleaned elapsed span) as "the
+        // denominator all four session rates use", and at the time it was. Engine 0.13.0
+        // moved them: JPH, TPH, CPH and WPH — and `avgSpeedKmh` and `foilPct` with them —
+        // divide by **timer time** (T2, the session minus its pauses), because an hour the
+        // recorder was not running is not an hour on the water. T1 stayed behind as what
+        // every surface *displays*, which is a different question and rightly a different
+        // number.
+        //
+        // The session row was left holding only T1, so a period went on summing it for its
+        // JPH/TPH/CPH/WPH and a month holding a single afternoon reported a CPH *under*
+        // that afternoon's own — the exact disagreement v12 existed to end, one clock along.
+        // The rule both platforms now keep, and the one this column exists to make keepable:
+        // **every displayed duration is T1, every rate denominator is timer time.**
+        //
+        // Backfilled from `rateSeconds` (`rateDurationS ?? durationS`) so no row is left
+        // without a divisor, then the same `engineVersion = NULL` sweep v11 and v12 used:
+        // `reanalyzeStale()` re-reads each archived recording and `apply(_:)` writes the
+        // engine's own `summary.timerTimeS` over the seed. The seed is elapsed, so it
+        // over-counts the pauses and under-states the rate — the error those rows already
+        // carried, and a great deal smaller than dropping the afternoon out of its own month.
+        migrator.registerMigration("v13") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "timerTimeS", .double)
+            }
+            try db.execute(sql: """
+                UPDATE session SET timerTimeS = COALESCE(rateDurationS, durationS)
+                """)
             try db.execute(sql: "UPDATE session SET engineVersion = NULL")
         }
         return migrator
@@ -694,10 +726,32 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// a counted turn, and the water does not care. nil, never 0, on a row without it.
     public var wetExits: Int?
 
-    /// The seconds a rate over this session divides by. The engine's own span where the row
-    /// has it (v12), the raw sample span otherwise — the closest thing an un-refilled row
-    /// stores, and the number this layer used before the column existed.
+    /// The seconds this session is **shown** as lasting. The engine's own cleaned elapsed
+    /// span (T1) where the row has it (v12), the raw sample span otherwise — the closest
+    /// thing an un-refilled row stores, and the number this layer used before the column
+    /// existed.
+    ///
+    /// A duration, not a divisor: read `timerSeconds` for anything per-hour
+    /// (docs/presentation.md, "One clock").
     public var rateSeconds: Double { rateDurationS ?? durationS }
+
+    // MARK: schema v13
+    /// The engine's **timer** time in seconds (`summary.timerTimeS`, T2): the sum of the
+    /// non-gap steps, the session minus its pauses. nil on a row this build has not
+    /// re-derived yet; read `timerSeconds`, which falls back to `rateSeconds`.
+    public var timerTimeS: Double?
+
+    /// **The seconds a rate over this session divides by**, and the only thing that may
+    /// divide one.
+    ///
+    /// Timer time since engine 0.13.0 (docs/algorithms.md, "Session rates"): the four
+    /// per-hour rates answer "per hour *on the water*", and an hour the recorder sat paused
+    /// on the beach is not one. Summing this is what makes a period's CPH agree with the
+    /// CPH on the page of every session in it.
+    ///
+    /// Falls back to `rateSeconds` for a row the v13 sweep has not refilled — elapsed, the
+    /// closest clock it stores, and the number it was already divided by.
+    public var timerSeconds: Double { timerTimeS ?? rateSeconds }
 
     /// `startUtcOffsetSource` as the closed vocabulary, or nil for "unrecorded" — which
     /// includes a stored string this version has never heard of.
@@ -768,16 +822,15 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     ///
     /// **The engine's number where the row has it** (`summary.cleanJibesPerHour`, engine
     /// 0.10.0, schema v11). The division below is the fallback for a row the v11 sweep could
-    /// not refill — an archived FIT gone missing — and it divides by `rateSeconds`, the
-    /// engine's own cleaned span where v12 filled it in. It used to divide by `durationS`,
-    /// the raw sample span: the two are 7742 s against 10338 s on one afternoon in the
-    /// corpus, and the fallback therefore printed a CPH a third below the session's own.
+    /// not refill — an archived FIT gone missing — and it divides by `timerSeconds`, the
+    /// engine's own denominator since 0.13.0 (v13 filled the column in). It is the same
+    /// arithmetic the engine does, in the one place a stored row can still be asked.
     ///
-    /// nil when neither can answer: no clean count, or no length to divide by.
+    /// nil when neither can answer: no clean count, or no timer to divide by.
     public var cleanJibesPerHour: Double? {
         if let stored = engineCleanJibesPerHour { return stored }
-        guard let clean = jibesSuccessful, rateSeconds > 0 else { return nil }
-        return Double(clean) * 3600 / rateSeconds
+        guard let clean = jibesSuccessful, timerSeconds > 0 else { return nil }
+        return Double(clean) * 3600 / timerSeconds
     }
 
     /// Share of jibes that were clean, over sessions with enough jibes to mean anything —
@@ -848,6 +901,9 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
         // they share (docs/algorithms.md "Session rates").
         engineCleanJibesPerHour = s.cleanJibesPerHour
         rateDurationS = s.durationS
+        // T2, the rate denominator (v13). Both clocks, because they answer two questions:
+        // `rateDurationS` is what a duration is shown as, this is what a rate divides by.
+        timerTimeS = s.timerTimeS
         wetExits = s.flightEnds.all.fellIn
 
         let k = s.takeoff

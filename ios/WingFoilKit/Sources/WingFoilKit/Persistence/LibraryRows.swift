@@ -238,7 +238,10 @@ public enum SessionRecordKind: String, CaseIterable, Sendable, Codable {
         case .bestFoilPct: row.foilPct
         case .mostCleanJibes: row.jibesSuccessful.map(Double.init)
         // The floor is the celebration's own, so the table and the confetti can never name
-        // two different afternoons under the words "Best CPH".
+        // two different afternoons under the words "Best CPH". It gates on `rateSeconds`
+        // because it is a *length* and not a denominator — "sessions of at least 15 minutes"
+        // means the afternoon lasted a quarter of an hour, not that the recorder ran for
+        // one. The rate it gates is the engine's, divided by timer time.
         case .bestCph: row.rateSeconds >= Self.cphMinDurationS ? row.cleanJibesPerHour : nil
         case .bestCleanJibeRate: row.cleanJibeRatePct
         case .longestDryStreak: row.longestDryStreak.map(Double.init)
