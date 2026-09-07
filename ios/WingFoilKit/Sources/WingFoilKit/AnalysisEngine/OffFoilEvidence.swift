@@ -28,6 +28,39 @@ public struct OffFoilEvidence: Sendable {
     public var count: Int { t.count }
 }
 
+/// One spell the barometer says the wrist spent under water (engine 0.16.0).
+///
+/// **Presentation evidence, never a verdict.** The `submerged` flags on turns and flight
+/// ends are the outcome ladder's input and are computed exactly as they always were; this is
+/// the same mask read a second way — as events with a time, a length and a depth, so a map
+/// can put one mark on each of them instead of one mark on the maneuver that owned one.
+/// Mirrors `lab/src/wingfoil_lab/evidence.py`'s `Submersion`.
+public struct Submersion: Sendable, Equatable {
+    /// First submerged sample of the run.
+    public var startT: Double
+    /// Last submerged sample of the run.
+    public var endT: Double
+    /// Gap-aware elapsed time between the two.
+    public var durationS: Double
+    /// The deepest sample of the run below `Evidence.submergedReference`.
+    public var dropM: Double
+    /// The counted turn whose outcome window this run overlaps, else nil.
+    public var turnIndex: Int?
+    /// Failing that, the drawn flight end whose window it overlaps, else nil — and a run
+    /// with neither happened while the rider was already off the foil.
+    public var flightEndIndex: Int?
+
+    public init(startT: Double, endT: Double, durationS: Double, dropM: Double,
+                turnIndex: Int? = nil, flightEndIndex: Int? = nil) {
+        self.startT = startT
+        self.endT = endT
+        self.durationS = durationS
+        self.dropM = dropM
+        self.turnIndex = turnIndex
+        self.flightEndIndex = flightEndIndex
+    }
+}
+
 /// Builders and the shared window/stop primitives.
 public enum Evidence {
 
@@ -67,16 +100,94 @@ public enum Evidence {
         return m
     }
 
+    /// The altitude the submersion test is measured *against*: the session median of the
+    /// finite samples, or nil when there is no altitude channel at all.
+    ///
+    /// Spelled once because two things read it — the mask below, and `dropM` on a submersion
+    /// episode, which is how far under this same line the deepest sample of the run got.
+    /// Mirrors the lab's `submerged_reference`.
+    static func submergedReference(_ alt: [Double?]) -> Double? {
+        let finite = alt.compactMap { $0.flatMap { $0.isFinite ? $0 : nil } }
+        guard !finite.isEmpty else { return nil }
+        return median(finite)
+    }
+
     /// Per sample: the barometer reads `dropM` below the session median ⇒ wrist wet.
     /// A source without an altitude channel yields all-false, so it simply loses this
     /// evidence instead of failing.
     static func submergedMask(_ alt: [Double?], dropM: Double) -> [Bool] {
-        let finite = alt.compactMap { $0.flatMap { $0.isFinite ? $0 : nil } }
-        guard !finite.isEmpty else { return [Bool](repeating: false, count: alt.count) }
-        let threshold = median(finite) - dropM
+        guard let reference = submergedReference(alt) else {
+            return [Bool](repeating: false, count: alt.count)
+        }
+        let threshold = reference - dropM
         return alt.map { value in
             guard let v = value, v.isFinite else { return false }
             return v < threshold
+        }
+    }
+
+    /// Two runs closer together than this are one submersion (docs/algorithms.md
+    /// "Submersion episodes"): a dunk and the wave that follows it are one event to the
+    /// rider, and a slew-limited altimeter can cross the threshold twice on the way back up.
+    public static let submersionMergeS = 2.0
+
+    /// The mask's contiguous true-runs, per gap-free segment, with near ones merged —
+    /// unattributed. Mirrors the lab's `submersion_runs`.
+    ///
+    /// A recording gap always breaks a run: the samples either side of it are not evidence
+    /// about one another, which is the rule every other window in this type obeys.
+    static func submersionRuns(t: [Double], gap: [Bool], submerged: [Bool], alt: [Double?],
+                               mergeS: Double = submersionMergeS) -> [Submersion] {
+        guard let reference = submergedReference(alt) else { return [] }
+        var spans: [(Int, Int)] = []
+        var i = 0
+        while i < t.count {
+            guard submerged[i] else { i += 1; continue }
+            var b = i
+            while b + 1 < t.count, submerged[b + 1], !gap[b + 1] { b += 1 }
+            if let last = spans.last {
+                let near = t[i] - t[last.1] < mergeS
+                let broken = ((last.1 + 1)...i).contains { gap[$0] }
+                if near && !broken {
+                    spans[spans.count - 1] = (last.0, b)
+                    i = b + 1
+                    continue
+                }
+            }
+            spans.append((i, b))
+            i = b + 1
+        }
+        return spans.map { a, b in
+            let deepest = (a...b).compactMap { alt[$0].flatMap { $0.isFinite ? $0 : nil } }
+                .min() ?? reference
+            return Submersion(startT: t[a], endT: t[b],
+                              durationS: elapsed(t: t, gap: gap, a: a, b: b),
+                              dropM: reference - deepest)
+        }
+    }
+
+    /// Name what each episode happened *during*, in place. Mirrors the lab's
+    /// `attribute_submersions`.
+    ///
+    /// Order matters and is the map's: a counted turn's outcome window first, because that
+    /// is the maneuver a rider remembers going under in; then a drawn flight end's window,
+    /// which is the straight-line swim; and otherwise nothing at all — the rider was already
+    /// off the foil, which is a real answer and not a missing one. First match wins.
+    static func attribute(_ subs: inout [Submersion],
+                          turnWindows: [(index: Int, start: Double, end: Double)],
+                          endWindows: [(index: Int, start: Double, end: Double)]) {
+        for i in subs.indices {
+            if let hit = turnWindows.first(where: {
+                subs[i].startT <= $0.end && subs[i].endT >= $0.start
+            }) {
+                subs[i].turnIndex = hit.index
+                continue
+            }
+            if let hit = endWindows.first(where: {
+                subs[i].startT <= $0.end && subs[i].endT >= $0.start
+            }) {
+                subs[i].flightEndIndex = hit.index
+            }
         }
     }
 

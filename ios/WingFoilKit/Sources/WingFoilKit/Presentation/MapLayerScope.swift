@@ -48,6 +48,11 @@ public enum MapLayerScope: String, CaseIterable, Sendable, Identifiable, Codable
     ///
     /// **Takeoffs draws the pumping spans**, because an attempt is the burst plus what came
     /// of it, and it draws its neutral route for the same reason Turns does.
+    ///
+    /// **All three draw `splash`** ("wrist under", engine 0.16.0). It joined the Turns map on
+    /// 7 Sep 2026: the overlay set has to be consistent across the three maps or a rider who
+    /// finds a submersion diamond on the ride cannot find the same one on the page that is
+    /// about the maneuver he went under in.
     /// The order is the legend's, not the catalogue's: the route group (the line categories
     /// plus `direction`, which is about the route even though it hides like a marker) and
     /// then the events, clean jibe first. `effort` closes the route group because its chip
@@ -61,7 +66,8 @@ public enum MapLayerScope: String, CaseIterable, Sendable, Identifiable, Codable
                     .cleanJibe, .flewThrough, .touchdown, .fellIn, .courseChange,
                     .takeoff, .splash]
         case .turns:
-            return [.direction, .cleanJibe, .flewThrough, .touchdown, .fellIn, .courseChange]
+            return [.direction, .cleanJibe, .flewThrough, .touchdown, .fellIn, .courseChange,
+                    .splash]
         case .takeoffs:
             return [.pumping, .direction, .takeoff, .splash]
         }
@@ -107,8 +113,8 @@ extension MapLayerVisibility {
     ///
     /// Three conditions, and each one is a bug it prevents. Only the scope's layers, or a
     /// map would report a filter on something it cannot draw. Only categories the session
-    /// has any of, or a rider who hid "splash" months ago is told something is off on every
-    /// session he never went under on. And only hidden ones, obviously — the number's whole
+    /// has any of, or a rider who hid "wrist under" months ago is told something is off
+    /// on every session he never went under on. And only hidden ones, obviously — the number's whole
     /// job is to be the reason to open the block.
     public func hiddenCount(in scope: MapLayerScope, tally: MapLayerTally) -> Int {
         scope.layers.filter { !isVisible($0) && tally.count($0) > 0 }.count

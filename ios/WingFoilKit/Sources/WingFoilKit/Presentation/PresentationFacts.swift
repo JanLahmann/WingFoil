@@ -66,15 +66,20 @@ public enum PresentationRules {
         analysis.turns.filter(\.clean)
     }
 
-    /// Turns whose swim the barometer actually saw. Evidence, not a census — and the UI
-    /// never re-derives it.
-    public static func splashTurns(_ analysis: SessionAnalysis) -> [TurnRecord] {
-        analysis.turns.filter { $0.submerged && $0.counted }
-    }
-
-    /// The same evidence on the other channel, under the same ownership rule.
-    public static func splashEnds(_ analysis: SessionAnalysis) -> [FlightEndRecord] {
-        drawnFlightEnds(analysis).filter(\.submerged)
+    /// **"Wrist under"** — every submersion episode the engine found, in time order
+    /// (`SessionAnalysis.submersions`, engine 0.16.0). One mark each, at the sample the
+    /// pressure stepped, on all three maps and on the thumbnails.
+    ///
+    /// Read, never re-derived: the engine owns the mask, the run-splitting, the 2 s merge
+    /// and the attribution, so the phone, the web and the card cannot disagree about how
+    /// many times a rider went under. Until 0.16.0 this layer was the `submerged` *flag* on
+    /// a turn or a flight end — one mark per maneuver that happened to own a dunk, drawn at
+    /// the maneuver's own start — which is how an afternoon with 35 submersions in it showed
+    /// four marks, none of them where the wrist actually went in.
+    ///
+    /// Still evidence and not a census: the barometer has to see the pressure step.
+    public static func submersions(_ analysis: SessionAnalysis) -> [SubmersionRecord] {
+        analysis.submersions
     }
 
     /// The records this session can highlight: a value *and* the window provenance the map
@@ -198,6 +203,9 @@ public struct PresentationFacts: Sendable, Equatable {
     public let cleanJibes: Int
     public let flightEnds: FlightEndCounts
     public let takeoff: TakeoffCounts
+    /// **"Wrist under"** — one per submersion episode (engine 0.16.0). Keyed `splash` after
+    /// the layer id, which is unchanged; what moved is what it counts, from "turns and ends
+    /// the barometer flagged" to "times the wrist actually went under".
     public let splash: Int
     public let pumpingSpans: Int
     /// Catalogue order, achieved windows only.
@@ -229,8 +237,7 @@ public struct PresentationFacts: Sendable, Equatable {
         takeoff = TakeoffCounts(pumped: analysis.takeoffs.count - free, free: free,
                                 failed: PresentationRules.failedAttempts(analysis).count)
 
-        splash = PresentationRules.splashTurns(analysis).count
-            + PresentationRules.splashEnds(analysis).count
+        splash = PresentationRules.submersions(analysis).count
         pumpingSpans = PresentationRules.attemptEpisodes(analysis).count
 
         let windows = PresentationRules.achievedRecordWindows(analysis)

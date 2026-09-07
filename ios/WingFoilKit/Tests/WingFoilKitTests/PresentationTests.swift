@@ -752,14 +752,16 @@ import Testing
     // MARK: - Thumbnail marks
 
     /// The card's three semantics and no more: the verdict ladder on the *counted* turns,
-    /// and the barometer's submersion evidence on both of its channels. A bear-away is a
-    /// course change, not a verdict, and gets no dot — the same rule the map draws by.
+    /// and one diamond per **submersion episode** (engine 0.16.0). A bear-away is a course
+    /// change, not a verdict, and gets no dot — the same rule the map draws by.
     ///
     /// Asserted against a decoded golden rather than a hand-built session, for the reason
     /// `ReplayBeatsTests` gives: a synthetic analysis can be made to agree with any rule at
     /// all. Under engine 0.14.0's lower peak floor 29 Aug Torbole has 56 counted turns
-    /// (38 · 12 · 6), 20 uncounted ones, and seven splashes across three turns and four
-    /// straight-line flight ends.
+    /// (38 · 12 · 6) and 20 uncounted ones. Its submersions moved from **7** to **35** at
+    /// 0.16.0 and that is the point of the change: the seven were the turns and flight ends
+    /// whose *windows* the mask fired in, and the thirty-five are the times the wrist
+    /// actually went under.
     @Test func thumbnailEventsAreTheLadderPlusTheSplashes() throws {
         let url = testFixturesDir.appendingPathComponent(
             "goldens/2026-08-29-1440_nago-torbole-windsurfen_ciq.expected.json")
@@ -771,10 +773,10 @@ import Testing
         #expect(counts[.flewThrough] == 38)
         #expect(counts[.touchdown] == 12)
         #expect(counts[.fellIn] == 6)
-        #expect(counts[.splash] == 7)
+        #expect(counts[.splash] == 35)
         // 76 turns in the session, 56 of them counted: the twenty course changes are not
         // verdicts and are not marked.
-        #expect(events.count == 63)
+        #expect(events.count == 91)
         #expect(events.map(\.t) == events.map(\.t).sorted(), "marks must be in time order")
     }
 
@@ -1242,10 +1244,13 @@ import Testing
     /// loudest thing on the figure — so the route tints and the record glow are absent
     /// rather than present-and-inert.
     @Test func theAnalysisMapsDeclareOnlyTheLayersTheyActuallyDraw() {
+        // `splash` ("wrist under") joined on 7 Sep 2026: the three maps carry one overlay
+        // set, so a submersion diamond a rider finds on the ride map is on the maneuver page
+        // too. It is the event layer that is not a verdict, so it is last.
         let turns = Set(MapLayerScope.turns.layers)
         #expect(turns == [.direction, .cleanJibe, .flewThrough, .touchdown, .fellIn,
-                          .courseChange])
-        for absent in [MapLayer.flying, .offFoil, .effort, .pumping, .takeoff, .splash] {
+                          .courseChange, .splash])
+        for absent in [MapLayer.flying, .offFoil, .effort, .pumping, .takeoff] {
             #expect(!MapLayerScope.turns.draws(absent),
                     "the turns map cannot draw \(absent.rawValue), so it must not offer a chip")
         }
@@ -2697,7 +2702,11 @@ import Testing
             #expect(got.takeoff.failed == want.takeoff.failed, "\(name): failed attempts")
             #expect(got.takeoff.total == want.takeoff.total, "\(name): takeoff layer total")
 
-            #expect(got.splash == want.splash, "\(name): splash marks")
+            // "Wrist under": one per submersion episode, read straight off the engine's own
+            // list. Same key as before the rename; what moved is what it counts.
+            #expect(got.splash == want.splash, "\(name): wrist-under episodes")
+            #expect(got.splash == analysis.submersions.count,
+                    "\(name): the tally is the engine's list, never re-derived")
             #expect(got.pumpingSpans == want.pumpingSpans, "\(name): pumping spans")
 
             // One takeoff starts every flight, one end stops it — docs/presentation.md

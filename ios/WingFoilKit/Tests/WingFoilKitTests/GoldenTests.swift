@@ -115,6 +115,7 @@ import Testing
         checkWind(stem, json, analysis)
         checkTurns(stem, json, analysis)
         checkFlightEnds(stem, json, analysis)
+        checkSubmersions(stem, json, analysis)
         checkTakeoffs(stem, json, analysis)
         checkPumpEpisodes(stem, json, analysis)
         checkHr(stem, json, analysis)
@@ -391,6 +392,36 @@ import Testing
             if let v = num(exp["stoppedS"]) {
                 #expect(abs(act.stoppedS - v) <= 1.0, "\(stem) flightEnds[\(i)].stoppedS")
             }
+        }
+    }
+
+    /// The submersion episodes (engine 0.16.0) against the lab's own list: one entry per run
+    /// of the mask, in the same order, at the same instant, with the same attribution. This
+    /// is the layer a rider counts on a map, so an off-by-one between the two engines would
+    /// be a different afternoon rather than a rounding difference.
+    private func checkSubmersions(_ stem: String, _ json: [String: Any],
+                                  _ analysis: SessionAnalysis) {
+        guard let expSubs = json["submersions"] as? [[String: Any]] else { return }
+        #expect(analysis.submersions.count == expSubs.count,
+                "\(stem): submersion count \(analysis.submersions.count) != \(expSubs.count)")
+        for (i, pair) in zip(expSubs, analysis.submersions).enumerated() {
+            let (exp, act) = pair
+            if let v = num(exp["ts"]) {
+                #expect(abs(act.ts - v) <= 1.0, "\(stem) submersions[\(i)].ts")
+            }
+            if let v = num(exp["endTs"]) {
+                #expect(abs(act.endTs - v) <= 1.0, "\(stem) submersions[\(i)].endTs")
+            }
+            if let v = num(exp["durationS"]) {
+                #expect(abs(act.durationS - v) <= 1.0, "\(stem) submersions[\(i)].durationS")
+            }
+            if let v = num(exp["dropM"]) {
+                #expect(abs(act.dropM - v) <= 1.0, "\(stem) submersions[\(i)].dropM")
+            }
+            #expect(int(exp["turnIndex"]) == act.turnIndex,
+                    "\(stem) submersions[\(i)].turnIndex: \(describe(act.turnIndex)) vs \(describe(int(exp["turnIndex"])))")
+            #expect(int(exp["flightEndIndex"]) == act.flightEndIndex,
+                    "\(stem) submersions[\(i)].flightEndIndex: \(describe(act.flightEndIndex)) vs \(describe(int(exp["flightEndIndex"])))")
         }
     }
 
@@ -963,14 +994,17 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.15.0")
+        #expect(analysis.engineVersion == "0.16.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)
         let obj = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         #expect(Set(obj.keys) == ["engineVersion", "config", "capabilities", "flights",
-                                  "turns", "flightEnds", "records", "wind", "takeoffs",
-                                  "pumpEpisodes", "hr", "summary"])
+                                  "turns", "flightEnds", "submersions", "records", "wind",
+                                  "takeoffs", "pumpEpisodes", "hr", "summary"])
+        // No altitude channel at all ⇒ no submersion episodes, and an empty list rather
+        // than a missing key: "this source has no barometer" is a fact about the source.
+        #expect((obj["submersions"] as? [Any])?.isEmpty == true)
         #expect(obj["wind"] is NSNull)                       // explicit null, not omitted
         #expect((obj["turns"] as? [Any])?.isEmpty == true)   // no positions ⇒ no COG ⇒ no turns
 

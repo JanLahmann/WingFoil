@@ -278,11 +278,10 @@ public struct TrackThumbnail: Codable, Sendable, Equatable {
             }
             out.append(Event(t: turn.ts, kind: kind))
         }
-        for turn in PresentationRules.splashTurns(analysis) {
-            out.append(Event(t: turn.ts, kind: .splash))
-        }
-        for end in PresentationRules.splashEnds(analysis) {
-            out.append(Event(t: end.ts, kind: .splash))
+        // One diamond per submersion episode, at the sample the pressure stepped (engine
+        // 0.16.0) — the same list, at the same instants, the maps draw.
+        for sub in PresentationRules.submersions(analysis) {
+            out.append(Event(t: sub.ts, kind: .splash))
         }
         return out.sorted { $0.t < $1.t }
     }
