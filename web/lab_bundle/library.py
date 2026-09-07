@@ -59,7 +59,13 @@ from datetime import datetime, timedelta, timezone
 # lat/lon, so an afternoon can be placed at a spot without trusting a filename). All three
 # null on a row written before them; `periods` degrades one metric at a time rather than
 # refusing to describe a library.
-SCHEMA = 7
+# v8 (7 Sep 2026) splits the per-entry-tack turn counts by **outcome** rather than by the
+# engine's score verdict. The score verdict is not a rider-facing concept — the rider's two
+# tiers are *flew through* (the outcome) and *clean* (flew through and held its speed) — so
+# `bySide` gains `flewThrough`/`flewThroughPct` beside the old pair, and the entry-tack chart
+# reads the new one. Absent on a row written before it, where the chart simply has no point
+# for that session: a gap in a line is "not measured", which is exactly what this is.
+SCHEMA = 8
 
 # The project-wide "same session" rule, in one place: a session start within +/-60 s AND a
 # duration within +/-60 s of an existing entry is the same session recorded twice (watch
@@ -232,12 +238,20 @@ def _outcomes(raw) -> dict | None:
 def _turn_split(turns) -> dict:
     """Counted turns grouped by the tack they were *entered* on.
 
-    `golden.summary.turns` already publishes the port/starboard entry counts, but not the
-    success split, which is the whole point of the trend. Counting it here keeps the split
-    on the same `counted`/`success` definitions the rest of the engine uses.
+    `golden.summary.turns` already publishes the port/starboard entry counts, but not how
+    each side went, which is the whole point of the trend.
+
+    **The split the chart reads is `flewThrough`** (schema 8): how many of the turns entered
+    on that tack never lost the foil. That is the rider's own question — "which side do I
+    swim out of?" — and it is the same quantity iOS plots in `TurnSideSplit`, so the two
+    platforms draw one metric. `successes` is the engine's score verdict, kept for stored
+    rows that predate the outcome split and read by nothing else: it is not a rider-facing
+    number and no label names it.
     """
-    out = {s: {"entries": 0, "successes": 0, "successPct": None} for s in SIDES}
-    out["unknown"] = {"entries": 0, "successes": 0, "successPct": None}
+    keys = {"entries": 0, "successes": 0, "successPct": None,
+            "flewThrough": 0, "flewThroughPct": None}
+    out = {s: dict(keys) for s in SIDES}
+    out["unknown"] = dict(keys)
     for t in turns or []:
         if not t.get("counted"):
             continue
@@ -246,9 +260,13 @@ def _turn_split(turns) -> dict:
         bucket["entries"] += 1
         if t.get("success"):
             bucket["successes"] += 1
+        if t.get("outcome") == "flew_through":
+            bucket["flewThrough"] += 1
     for bucket in out.values():
         if bucket["entries"]:
             bucket["successPct"] = round(100.0 * bucket["successes"] / bucket["entries"], 2)
+            bucket["flewThroughPct"] = round(
+                100.0 * bucket["flewThrough"] / bucket["entries"], 2)
     return out
 
 
@@ -530,6 +548,23 @@ def _records(ds: list) -> list:
 # ------------------------------------------------------- the non-speed session records
 
 
+def _rate_duration_s(d: dict):
+    """**The one clock a session's duration is shown and divided by**, for one digest.
+
+    `rateDurationS` (schema 7) is the engine's own cleaned span — the denominator every
+    per-session rate already uses — so a month holding one afternoon reports that
+    afternoon's CPH and not a second opinion about it. `durationS` is the FIT's
+    `total_elapsed_time`; it is the fallback for a row saved before the field, and it stays
+    the dedupe key and the stored id, neither of which may move.
+
+    Everything a rider *reads* as a session's length goes through here: the period block's
+    hours, the week bar's tooltip, the "Longest session" record and the CPH floor
+    (docs/presentation.md, "One clock").
+    """
+    engine = _num(d.get("rateDurationS"))
+    return engine if engine is not None else _num(d.get("durationS"))
+
+
 def _clean_jibes(d: dict):
     """Clean jibes in this session (`summary.turns.jibesSuccessful`), or None if the digest
     predates schema 5 and never carried the number."""
@@ -553,10 +588,30 @@ def _cph(d: dict):
     stored = _num(d.get("cleanJibesPerHour"))
     if stored is not None:
         return stored
-    clean, duration = _clean_jibes(d), _num(d.get("durationS"))
+    clean, duration = _clean_jibes(d), _rate_duration_s(d)
     if clean is None or duration is None or duration <= 0:
         return None
     return clean * 3600.0 / duration
+
+
+#: A session must last one rate window to hold the **CPH record**.
+#:
+#: The rolling window's "never a flattering peak" rule (docs/algorithms.md) applied to a
+#: session: one clean jibe in a four-minute evening sail is fifteen an hour, and a personal
+#: best a rider can set by going home early is not one. `presentation.md` has stated the
+#: floor as a flat rule since 0.10.0 and the phone's *celebration* has always applied it
+#: (`CleanJibeBest.cphMinDurationS`) — but neither records **table** did, so the table and
+#: the confetti could name two different afternoons under one label. The *count* takes no
+#: floor: nine clean jibes are nine clean jibes however long it took.
+CPH_MIN_DURATION_S = 15 * 60
+
+
+def _cph_record(d: dict):
+    """`_cph`, but only for a session long enough to hold the record."""
+    seconds = _rate_duration_s(d)
+    if seconds is None or seconds < CPH_MIN_DURATION_S:
+        return None
+    return _cph(d)
 
 
 def _clean_jibe_rate(d: dict):
@@ -596,15 +651,19 @@ SESSION_RECORD_KINDS = [
     ("bestFoilPct", "Highest on-foil share", "%", 1,
      lambda d: _num(d.get("foilPct")), None),
     ("mostCleanJibes", "Most clean jibes", "", 0, _clean_jibes, None),
-    ("bestCph", "Best CPH", "/h", 2, _cph, "Clean jibes per hour of session time."),
+    ("bestCph", "Best CPH", "/h", 2, _cph_record,
+     f"Clean jibes per hour of session time. Sessions of at least "
+     f"{int(CPH_MIN_DURATION_S // 60)} minutes."),
     ("bestCleanJibeRate", "Best clean-jibe rate", "%", 1, _clean_jibe_rate,
      f"Sessions with at least {MIN_JIBES_FOR_RATE} jibes."),
     ("longestDryStreak", "Longest dry streak", "", 0,
      lambda d: _streak(d, "longestDryStreak"), "Maneuvers in a row without a swim."),
     ("longestFlewStreak", "Longest flew streak", "", 0,
      lambda d: _streak(d, "longestFlewStreak"), "Maneuvers in a row that never touched down."),
-    ("longestSession", "Longest session", "s", 0,
-     lambda d: _num(d.get("durationS")), None),
+    # The engine's cleaned span, not the FIT's `total_elapsed_time`: iOS reads the same
+    # number now, and the same rider used to get two different "Longest session" records
+    # depending on which app he opened (docs/presentation.md, "One clock").
+    ("longestSession", "Longest session", "s", 0, _rate_duration_s, None),
     ("mostDistance", "Most distance", "km", 2,
      lambda d: _num(d.get("distanceKm")), None),
 ]
@@ -667,9 +726,28 @@ def _y_axis(charts_lines, percent: bool) -> dict:
     return {"yMax": round(math.ceil(top / step) * step, 6), "yStep": round(step, 6)}
 
 
+def _flew_through_pct(d: dict):
+    """Share of this session's counted turns that never lost the foil.
+
+    The digest's own outcome tally over its own counted count (schema 5). None where the
+    row carries no tally, or counted nothing — absent, never a flattering or damning zero.
+    """
+    turns = d.get("turns") or {}
+    outcomes, counted = turns.get("outcomes"), _count(turns.get("counted"))
+    if not isinstance(outcomes, dict) or not counted:
+        return None
+    return 100.0 * int(outcomes.get("flewThrough") or 0) / counted
+
+
 def _side_pct(d: dict, side: str):
+    """The **flew-through** share for one entry tack, or None.
+
+    None on a digest written before schema 8, which carried only the score split: the chart
+    then has no point for that session, and a gap in a line already means "this could not
+    be measured" rather than zero. Re-saving the session fills it in.
+    """
     by = ((d.get("turns") or {}).get("bySide") or {}).get(side) or {}
-    return _num(by.get("successPct"))
+    return _num(by.get("flewThroughPct"))
 
 
 def _trends(ds: list) -> dict:
@@ -723,7 +801,11 @@ def _weeks(ds: list) -> list:
             continue
         b = buckets.setdefault(key, {"weekStart": key, "count": 0, "hours": 0.0})
         b["count"] += 1
-        b["hours"] += (_num(d.get("durationS")) or 0.0) / 3600.0
+        # The **engine's** cleaned span, the same clock the period block's "hours on the
+        # water" divides by (`_rate_duration_s`). The bar's tooltip used to sum the FIT's
+        # `total_elapsed_time`, so a week and the month containing it reported different
+        # hours for the same afternoons (docs/presentation.md, "One clock").
+        b["hours"] += (_rate_duration_s(d) or 0.0) / 3600.0
     if not buckets:
         return []
     cursor = datetime.strptime(min(buckets), "%Y-%m-%d").date()
@@ -747,19 +829,28 @@ def _charts(ds: list) -> list:
         {"key": "longestFlight", "label": "Longest flight", "unit": "s",
          "lines": [{"key": "longestFlightS", "label": "longest flight", "role": "primary",
                     "points": _points(ds, lambda d: _num(d.get("longestFlightS")))}]},
-        {"key": "turnSuccess", "label": "Clean jibe rate", "unit": "%", "percent": True,
-         "lines": [{"key": "successPct", "label": "clean", "role": "primary",
-                    "points": _points(ds, lambda d: _num((d.get("turns") or {}).get("successPct")))}]},
-        {"key": "cleanJibes", "label": "Clean jibes per session", "unit": "",
+        # **The outcome share, not the score verdict.** This chart plotted `successPct` —
+        # the engine's score reading over every counted turn — under the title "Clean jibe
+        # rate", which is a third number again. The rider has two tiers, *flew through* and
+        # *clean*, and the score verdict is not one of them: the chart now plots the share
+        # of counted turns that never lost the foil, which is what iOS plots beside it.
+        {"key": "turnSuccess", "label": "Flew-through rate", "unit": "%", "percent": True,
+         "lines": [{"key": "flewThroughPct", "label": "flew through", "role": "primary",
+                    "points": _points(ds, _flew_through_pct)}]},
+        {"key": "cleanJibes", "label": "Clean jibes", "unit": "per session",
          "lines": [{"key": "cleanJibes", "label": "clean jibes", "role": "primary",
                     "points": _points(ds, _clean_jibes)}]},
-        {"key": "cph", "label": "Clean jibes per hour", "unit": "/h",
+        {"key": "cph", "label": "CPH", "unit": "clean jibes / h",
          "lines": [{"key": "cph", "label": "CPH", "role": "primary",
                     "points": _points(ds, _cph)}]},
         {"key": "pumps", "label": "Avg pumps to takeoff", "unit": "",
          "lines": [{"key": "avgPumpsToTakeoff", "label": "pumps", "role": "primary",
                     "points": _points(ds, lambda d: _num((d.get("takeoff") or {}).get("avgPumpsToTakeoff")))}]},
-        {"key": "turnSide", "label": "Clean jibes by entry tack", "unit": "%", "percent": True,
+        # The flew-through share by the tack the turn was ENTERED on — the same metric and
+        # the same title iOS draws (`TurnSideSplit`). It read the score split and was titled
+        # "Clean jibes by entry tack", which named neither the metric nor the tier.
+        {"key": "turnSide", "label": "Flew through by entry tack", "unit": "%",
+         "percent": True,
          "lines": [
              {"key": "port", "label": "port entry", "role": "sidePort",
               "points": _points(ds, lambda d: _side_pct(d, "port"))},
@@ -794,14 +885,29 @@ def _totals(ds: list) -> dict:
     flights = sum(int(d.get("flightCount") or 0) for d in ds)
     counted = sum(int((d.get("turns") or {}).get("counted") or 0) for d in ds)
     ok = sum(int((d.get("turns") or {}).get("successful") or 0) for d in ds)
+    # The **outcome** total, which is the one the totals row prints: counted turns that
+    # never lost the foil. `ok` above is the engine's score verdict and is kept only because
+    # the shape has always carried it — nothing rider-facing reads it (7 Sep 2026).
+    # Rows with no stored tally contribute to neither side of the fraction, so a library
+    # half of which predates the field reports the share of the half that can answer.
+    flew = flew_of = 0
+    for d in ds:
+        turns = d.get("turns") or {}
+        outcomes, n = turns.get("outcomes"), _count(turns.get("counted"))
+        if isinstance(outcomes, dict) and n:
+            flew += int(outcomes.get("flewThrough") or 0)
+            flew_of += n
     by_side = {}
     for side in SIDES:
         e = sum(int((((d.get("turns") or {}).get("bySide") or {}).get(side) or {}).get("entries") or 0)
                 for d in ds)
         s = sum(int((((d.get("turns") or {}).get("bySide") or {}).get(side) or {}).get("successes") or 0)
                 for d in ds)
-        by_side[side] = {"entries": e, "successes": s,
-                         "successPct": round(100.0 * s / e, 2) if e else None}
+        f = sum(int((((d.get("turns") or {}).get("bySide") or {}).get(side) or {}).get("flewThrough") or 0)
+                for d in ds)
+        by_side[side] = {"entries": e, "successes": s, "flewThrough": f,
+                         "successPct": round(100.0 * s / e, 2) if e else None,
+                         "flewThroughPct": round(100.0 * f / e, 2) if e else None}
     return {
         "sessions": len(ds),
         "distanceKm": round(dist, 2),
@@ -813,6 +919,9 @@ def _totals(ds: list) -> dict:
         "turnsCounted": counted,
         "turnsSuccessful": ok,
         "turnSuccessPct": round(100.0 * ok / counted, 2) if counted else None,
+        "turnsFlewThrough": flew,
+        "turnsFlewThroughOf": flew_of,
+        "flewThroughPct": round(100.0 * flew / flew_of, 2) if flew_of else None,
         "turnsBySide": by_side,
         "firstUtc": ds[0].get("startUtc") if ds else None,
         "lastUtc": ds[-1].get("startUtc") if ds else None,
@@ -994,7 +1103,10 @@ def _f_km(v):
 
 
 def _f_pct(v):
-    return f"{v:.1f} %"
+    """The one percent rule: a decimal below 10 %, none at or above, always a space before
+    the sign. `Fmt.pct` on iOS and `pct` in web/js/viz.js are its twins
+    (docs/presentation.md, "Label table")."""
+    return f"{v:.1f} %" if abs(v) < 10 else f"{v:.0f} %"
 
 
 def _f_rate(v):
@@ -1045,18 +1157,6 @@ PERIOD_BLOCK = [
 #: Keys, not a rebuilt list, so the preset can only ever *drop* an entry: the same rule the
 #: session card's `LEAN_KEYS` follows and for the same reason.
 PERIOD_LEAN_KEYS = ["sessions", "hours", "cleanJibes", "cph", "best2s"]
-
-
-def _rate_duration_s(d: dict):
-    """The seconds a period's rates divide by, for one session.
-
-    `rateDurationS` (schema 7) is the engine's own cleaned span — the denominator every
-    per-session rate already uses — so a month holding one afternoon reports that
-    afternoon's CPH and not a second opinion about it. `durationS` is the fallback for a
-    row saved before the field, where it is the closest thing stored.
-    """
-    engine = _num(d.get("rateDurationS"))
-    return engine if engine is not None else _num(d.get("durationS"))
 
 
 def _sum(ds: list, pick):

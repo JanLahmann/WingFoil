@@ -303,10 +303,12 @@ function buildModel(result) {
         // bottom of the turn says what it cost, the exit says whether he carried it out.
         ["speed", `${nf(turn.entryKn, 2)} → ${nf(turn.minKn, 2)} → ` +
                   `${nf(turn.exitKn, 2)} kn`],
-        // The score verdict is the *carried* half alone; "clean" needs the outcome too and
-        // is only ever said when the engine's own flag says it (engine 0.12.0).
-        ["score", `${nf(turn.score * 100, 0)} % · ${turn.success ? "carried" : "not carried"}` +
-                  (clean ? " · clean" : "")],
+        // The score is a **number** — the share of the entry speed the turn held — and it
+        // stays. The boolean beside it was the engine's score verdict, which is not one of
+        // the rider's two tiers (docs/presentation.md, "Clean jibe"): the outcome is on
+        // the row above and "clean" is said only when the engine's own flag says it.
+        ["score", `held ${nf(turn.score * 100, 0)} % of entry speed`
+                  + (clean ? " · clean" : "")],
         ["stopped", `${nf(turn.stoppedS, 1)} s · off foil ${nf(turn.offFoilS, 1)} s`],
         ["arc", `${nf(turn.arcM, 0)} m · R ${nf(turn.radiusM, 0)} m`],
       ],

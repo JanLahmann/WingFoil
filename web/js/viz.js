@@ -72,6 +72,30 @@ export const nf = (v, d = 1) =>
 export const int = (v) =>
   (v === null || v === undefined ? "—" : Math.round(v).toLocaleString("en-US"));
 
+/**
+ * **A share, under the one percent rule** — `Fmt.pct` on iOS and `library._f_pct` in the
+ * analyzer are its twins (docs/presentation.md, "Label table").
+ *
+ * One decimal below 10 %, none at or above it, and always a space before the sign.
+ *
+ * The magnitude switch is the whole of the rule and it exists for the small numbers: a
+ * 0.4 % clean-jibe rate printed at no decimals is `0 %`, which reads as "none", and an
+ * afternoon with one clean jibe in three hundred is not an afternoon with none. Above ten
+ * points the decimal is noise — nobody rides the difference between 53 % and 53.4 % on the
+ * foil — and it costs a character in a cell that is often the narrowest on the row. The
+ * space follows every other unit in both apps (`2.6 km`, `13.47 kn`, `10:45 min`); the
+ * percent sign was the one that rode tight against its digits, in some places but not
+ * others, which is how the same share came out `47%` on a card and `47.3 %` in a block.
+ */
+export const pctDigits = (v) =>
+  (v === null || v === undefined || Number.isNaN(v)
+    ? "—" : v.toFixed(Math.abs(v) < 10 ? 1 : 0));
+
+export const pct = (v) => {
+  const digits = pctDigits(v);
+  return digits === "—" ? digits : `${digits} %`;
+};
+
 export function hms(sec) {
   if (sec === null || sec === undefined) return "—";
   const s = Math.round(sec);

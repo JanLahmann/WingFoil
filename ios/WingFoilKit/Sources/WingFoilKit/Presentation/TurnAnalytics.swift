@@ -234,10 +234,13 @@ public struct TurnListItem: Sendable, Equatable, Identifiable {
 /// about.
 ///
 /// **The rate is the flew-through share, and it is labelled as such.** The **clean jibe**
-/// count beside it is a *different* number — the engine's score-based `success` flag
-/// against `turnSuccessPct` — and on the corpus session the two are 30 % and 13 %. Both
-/// are true; they answer different questions ("how did it end" against "did you carry it
-/// through"), so neither ever borrows the other's name.
+/// count beside it is a *different* number — the engine's per-turn `clean` flag, which
+/// since 0.12.0 demands the score against `turnSuccessPct` **and** a `flew_through`
+/// outcome. Both are true; they answer different questions ("how did it end" against "did
+/// you ride it"), so neither ever borrows the other's name. Clean is now a strict subset
+/// of flew-through rather than a verdict that could disagree with it, which is exactly why
+/// the two must stay visibly separate: the distinction is "this one is narrower", and a
+/// surface that drew them alike would claim every jibe that flew was ridden.
 ///
 /// nil rather than 0 when nothing survives the filter: "you have never tacked" and "you
 /// fail every tack" are opposite facts and must not print the same.
@@ -245,10 +248,11 @@ public struct TurnOutcomeTally: Sendable, Equatable {
     public let flewThrough: Int
     public let touchdown: Int
     public let fellIn: Int
-    /// How many of the filtered turns were **clean** — flown all the way through with the
-    /// speed carried (`turnSuccessPct`). Not one of the three counts and never drawn on
-    /// the ladder's inks: it is the stricter verdict laid over the same set, and since
-    /// engine 0.12.0 a strict *subset* of `flewThrough`.
+    /// How many of the filtered turns were **clean** — the engine's per-turn `clean` flag,
+    /// read and never re-derived: a counted jibe that carried its speed (score at or above
+    /// `turnSuccessPct`, and never below the foil exit speed) *and* flew through. Not one
+    /// of the three counts and never drawn on the ladder's inks: it is the stricter verdict
+    /// laid over the same set, and since engine 0.12.0 a strict *subset* of `flewThrough`.
     public let clean: Int
     /// How many of the filtered turns were jibes — the denominator the clean line divides
     /// by, and the reason a tacks-only filter has no clean line at all rather than a "0 of

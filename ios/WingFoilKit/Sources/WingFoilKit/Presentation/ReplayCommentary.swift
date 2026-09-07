@@ -65,7 +65,8 @@ public struct ReplayMilestone: Sendable, Equatable, Identifiable {
 /// **Nothing here invents a number format.** Knots come from `KeyMetrics.knots`, distance
 /// from `KeyMetrics.km`, durations from `FlightPairing.clock` (the replay's own `m:ss`,
 /// which is what the scrubber's elapsed field beside the map already shows) and the record
-/// window's name from `RecordKind.label`. A commentary line that rounded differently from
+/// window's name from `RecordKind.windowLabel` — the record's name without the "Best"
+/// a table gives it, because this is a sentence. A commentary line that rounded differently from
 /// the metrics block six inches above it would read as a second, disagreeing measurement.
 public enum ReplayCommentary {
 
@@ -216,7 +217,7 @@ public enum ReplayCommentary {
                 // Not "Top speed — 13.47 kn" full stop: the number is a two-second window,
                 // and `KeyMetrics` refuses to call it a top speed for exactly that reason.
                 // Naming the window keeps the rider's word without making his claim bigger.
-                text: "Top speed — \(KeyMetrics.knots(best)) over \(RecordKind.best2s.label)"))
+                text: "Top speed — \(KeyMetrics.knots(best)) over \(RecordKind.best2s.windowLabel)"))
         }
         if let longest = analysis.flights.enumerated().max(by: {
             let (a, b) = ($0.element, $1.element)

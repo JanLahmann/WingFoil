@@ -151,13 +151,13 @@ public enum DesignTokens {
     public enum RecordWindows {
         public static let defaultID = "best2s"
         public static let catalogue: [DesignTokenEntry] = [
-            DesignTokenEntry(id: "best2s", label: "2 s"),
-            DesignTokenEntry(id: "best10s", label: "10 s"),
-            DesignTokenEntry(id: "best5x10s", label: "5 × 10 s"),
-            DesignTokenEntry(id: "best100m", label: "100 m"),
-            DesignTokenEntry(id: "best250m", label: "250 m"),
-            DesignTokenEntry(id: "best500m", label: "500 m"),
-            DesignTokenEntry(id: "bestNm", label: "1 NM"),
+            DesignTokenEntry(id: "best2s", label: "Best 2 s"),
+            DesignTokenEntry(id: "best10s", label: "Best 10 s"),
+            DesignTokenEntry(id: "best5x10s", label: "Best 5×10 s"),
+            DesignTokenEntry(id: "best100m", label: "Best 100 m"),
+            DesignTokenEntry(id: "best250m", label: "Best 250 m"),
+            DesignTokenEntry(id: "best500m", label: "Best 500 m"),
+            DesignTokenEntry(id: "bestNm", label: "Best 1 NM"),
             DesignTokenEntry(id: "alpha500", label: "Alpha 500"),
         ]
         public static let order: [String] = catalogue.map(\.id)

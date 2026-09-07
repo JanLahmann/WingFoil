@@ -563,7 +563,11 @@ import Testing
         #expect(!block.rates.contains { $0.key == "cph" })
         #expect(block.rates[0].label == "TPH · turns per hour")
         #expect(block.rates[0].value == "12.0")
-        #expect(block.tally?.caption == "of 12 turns · 4 clean")
+        // …and the fallback caption carries **no** clean clause. It used to append
+        // `turnsSuccessful` there — the engine's score verdict over every counted turn —
+        // under the word for a stricter, jibe-only one. A session that named no jibes has
+        // no clean jibes to report, and the score verdict is not a tier the rider has.
+        #expect(block.tally?.caption == "of 12 turns")
         #expect(block.tally?.flewThrough == 6)
     }
 
@@ -605,6 +609,39 @@ import Testing
         #expect(block.rates[0].value == "9.0")
         #expect(block.rates[1].value == "0.0")
         // …and the tally above names the same set the two jibe rates are about.
+        #expect(block.tally?.caption == "of 15 jibes · 0 clean")
+    }
+
+    /// **The afternoon he swam out of every jibe still gets both jibe rates.**
+    ///
+    /// Fifteen jibes, all of them fallen in: `jibesPerHour` is 0.0 and `turnsPerHour` is
+    /// 15.0, which is byte-for-byte what a session whose wind axis named *no* jibes looks
+    /// like from the rates alone. The old gate read the rate and could not tell the two
+    /// apart, so it printed the TPH fallback and no CPH cell over a session made entirely
+    /// of jibes — the precise inverse of the rule the fallback exists for. The gate is the
+    /// jibe *count* now, so this session keeps JPH 0.0 and CPH 0.0, both measured, and the
+    /// tally one row up is about the same fifteen turns.
+    ///
+    /// Its twin is `card_parity.mjs`'s `allWetJibes` case, asserted by
+    /// `verify_presentation.py` §5a: no corpus fixture is this session, so both platforms
+    /// write it down instead.
+    @Test func keyMetricsKeepBothJibeRatesWhenEveryJibeWasSwum() {
+        var summary = SessionSummary(foilTimeS: 600, foilPct: 30, flightCount: 4,
+                                     longestFlightS: 60, longestFlightM: 300, distanceKm: 5)
+        summary.apply(SessionRates(durationS: 3600, distanceM: 5000, turnsCounted: 15,
+                                   dryJibes: 0, fellIn: 15, cleanJibes: 0))
+        summary.turns.turnsCounted = 15
+        summary.turns.jibes = 15
+        summary.turns.jibesSuccessful = 0
+        summary.turns.outcomes = outcomes(0, 0, 15)
+        summary.turns.jibeOutcomes = outcomes(0, 0, 15)
+        let block = KeyMetrics.make(summary: summary, records: GP3SRecords())
+
+        #expect(summary.jibesPerHour == 0)
+        #expect((summary.turnsPerHour ?? 0) > 0)          // the shape that used to mislead
+        #expect(block.rates.map(\.key) == ["jph", "cph", "wph"])
+        #expect(block.rates[0].value == "0.0")
+        #expect(block.rates[1].value == "0.0")
         #expect(block.tally?.caption == "of 15 jibes · 0 clean")
     }
 

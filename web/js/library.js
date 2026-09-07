@@ -12,7 +12,7 @@
 
 import { ask, askBytes } from "./rpc.js";
 import { sportCorrected } from "./cardstats.js";
-import { esc, hms, int, nf, sessionDate, zonedFormat } from "./render.js";
+import { esc, hms, int, nf, pct, sessionDate, zonedFormat } from "./render.js";
 import { askRider } from "./rider.js";
 import {
   getAnalysisJson, getFitBlob, listEntries, putSession, removeSession, storageLabel, usage,
@@ -182,8 +182,8 @@ function renderRows(entries) {
         <td class="l stack-block"${th(1)}><span class="lib-spot">${esc(spotLabel(e))}
           ${tags(e)}</span>
           <span class="lib-file">${esc(e.fileName || "")}</span></td>
-        <td${th(2)}>${nf(e.foilPct, 0)} %</td>
-        <td${th(3)}>${nf(e.distanceKm, 2)} km</td>
+        <td${th(2)}>${pct(e.foilPct)}</td>
+        <td${th(3)}>${nf(e.distanceKm, 1)} km</td>
         <td${th(4)}>${int(e.flightCount)}</td>
         <td${th(5)}>${hms(e.longestFlightS)}</td>
         <td${th(6)}>${int(e.turns?.counted)}</td>

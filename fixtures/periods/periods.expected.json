@@ -293,7 +293,7 @@
         {
           "key": "foilPct",
           "label": "on foil",
-          "value": "52.0 %"
+          "value": "52 %"
         },
         {
           "key": "cleanJibes",
@@ -313,7 +313,7 @@
         {
           "key": "cleanJibeRate",
           "label": "clean-jibe rate",
-          "value": "56.5 %"
+          "value": "57 %"
         },
         {
           "key": "wph",
@@ -387,7 +387,7 @@
         {
           "key": "foilPct",
           "label": "on foil",
-          "value": "55.7 %"
+          "value": "56 %"
         },
         {
           "key": "cleanJibes",
@@ -407,7 +407,7 @@
         {
           "key": "cleanJibeRate",
           "label": "clean-jibe rate",
-          "value": "58.8 %"
+          "value": "59 %"
         },
         {
           "key": "wph",
@@ -481,7 +481,7 @@
         {
           "key": "foilPct",
           "label": "on foil",
-          "value": "50.0 %"
+          "value": "50 %"
         },
         {
           "key": "cleanJibes",
@@ -553,7 +553,7 @@
         {
           "key": "foilPct",
           "label": "on foil",
-          "value": "40.0 %"
+          "value": "40 %"
         },
         {
           "key": "cleanJibes",
@@ -573,7 +573,7 @@
         {
           "key": "cleanJibeRate",
           "label": "clean-jibe rate",
-          "value": "42.9 %"
+          "value": "43 %"
         },
         {
           "key": "wph",
@@ -645,7 +645,7 @@
         {
           "key": "foilPct",
           "label": "on foil",
-          "value": "40.0 %"
+          "value": "40 %"
         },
         {
           "key": "cleanJibes",
@@ -665,7 +665,7 @@
         {
           "key": "cleanJibeRate",
           "label": "clean-jibe rate",
-          "value": "33.3 %"
+          "value": "33 %"
         },
         {
           "key": "wph",
@@ -737,7 +737,7 @@
         {
           "key": "foilPct",
           "label": "on foil",
-          "value": "40.0 %"
+          "value": "40 %"
         },
         {
           "key": "cleanJibes",
@@ -757,7 +757,7 @@
         {
           "key": "cleanJibeRate",
           "label": "clean-jibe rate",
-          "value": "40.0 %"
+          "value": "40 %"
         },
         {
           "key": "wph",
@@ -833,7 +833,7 @@
         {
           "key": "foilPct",
           "label": "on foil",
-          "value": "52.5 %"
+          "value": "52 %"
         },
         {
           "key": "cleanJibes",
@@ -853,7 +853,7 @@
         {
           "key": "cleanJibeRate",
           "label": "clean-jibe rate",
-          "value": "52.5 %"
+          "value": "53 %"
         },
         {
           "key": "wph",
@@ -925,7 +925,7 @@
         {
           "key": "foilPct",
           "label": "on foil",
-          "value": "50.0 %"
+          "value": "50 %"
         },
         {
           "key": "cleanJibes",
@@ -945,7 +945,7 @@
         {
           "key": "cleanJibeRate",
           "label": "clean-jibe rate",
-          "value": "62.5 %"
+          "value": "62 %"
         },
         {
           "key": "wph",
@@ -1019,7 +1019,7 @@
         {
           "key": "foilPct",
           "label": "on foil",
-          "value": "50.0 %"
+          "value": "50 %"
         },
         {
           "key": "cleanJibes",
@@ -1099,7 +1099,7 @@
         {
           "key": "foilPct",
           "label": "on foil",
-          "value": "48.5 %"
+          "value": "48 %"
         },
         {
           "key": "cleanJibes",
@@ -1119,7 +1119,7 @@
         {
           "key": "cleanJibeRate",
           "label": "clean-jibe rate",
-          "value": "49.5 %"
+          "value": "49 %"
         },
         {
           "key": "wph",
@@ -1198,7 +1198,7 @@
         {
           "key": "foilPct",
           "label": "on foil",
-          "value": "55.0 %"
+          "value": "55 %"
         },
         {
           "key": "cleanJibes",
@@ -1218,7 +1218,7 @@
         {
           "key": "cleanJibeRate",
           "label": "clean-jibe rate",
-          "value": "57.1 %"
+          "value": "57 %"
         },
         {
           "key": "wph",
@@ -1292,7 +1292,7 @@
         {
           "key": "foilPct",
           "label": "on foil",
-          "value": "50.0 %"
+          "value": "50 %"
         },
         {
           "key": "cleanJibes",
@@ -1312,7 +1312,7 @@
         {
           "key": "cleanJibeRate",
           "label": "clean-jibe rate",
-          "value": "62.5 %"
+          "value": "62 %"
         },
         {
           "key": "wph",
@@ -1387,7 +1387,7 @@
         {
           "key": "foilPct",
           "label": "on foil",
-          "value": "44.0 %"
+          "value": "44 %"
         },
         {
           "key": "cleanJibes",
@@ -1407,7 +1407,7 @@
         {
           "key": "cleanJibeRate",
           "label": "clean-jibe rate",
-          "value": "50.0 %"
+          "value": "50 %"
         },
         {
           "key": "wph",

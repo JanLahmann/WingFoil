@@ -203,8 +203,13 @@ extension PersonalBestDetector {
         for session in sessions.sorted(by: { $0.startDate < $1.startDate }) {
             guard let clean = session.jibesSuccessful, clean > 0 else { continue }
             consider(.cleanJibes, Double(clean), session.id, into: &best)
-            guard session.durationS >= cphMinDurationS else { continue }
-            consider(.cleanJibesPerHour, Double(clean) / (session.durationS / 3600),
+            // `rateSeconds` — the engine's own cleaned span where the row carries it, which
+            // is the denominator `summary.cleanJibesPerHour` divides by. It was the raw
+            // sample span, 10338 s against 7742 s on the corpus's Rheinstetten afternoon,
+            // so the celebration's CPH and the records table's could differ by a third for
+            // the same session (docs/presentation.md, "One clock").
+            guard session.rateSeconds >= cphMinDurationS else { continue }
+            consider(.cleanJibesPerHour, Double(clean) / (session.rateSeconds / 3600),
                      session.id, into: &best)
         }
         return CleanJibeRecordKind.allCases.compactMap { best[$0] }

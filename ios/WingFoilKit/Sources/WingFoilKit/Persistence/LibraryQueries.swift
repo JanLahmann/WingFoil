@@ -101,6 +101,11 @@ public struct TrendPoint: Sendable, Identifiable, Equatable {
     public var flightCount: Int?
     public var distanceKm: Double?
     public var jibeFlewThroughPct: Double?
+    /// The flew-through share over every counted turn — what the "Flew-through rate" chart
+    /// plots on both platforms. `turnSuccessPct` beside it is the engine's score verdict:
+    /// carried on the point because the row has it, and drawn by nothing, because it is not
+    /// one of the rider's two tiers (7 Sep 2026).
+    public var flewThroughPct: Double?
     public var turnSuccessPct: Double?
     /// Clean jibes in the session and the same count per hour of it — the two series the
     /// Trends screen adds beside the rates. nil, never 0, on a row that has no count.
@@ -123,12 +128,15 @@ public struct TrendPoint: Sendable, Identifiable, Equatable {
     public init(_ row: SessionRow, turnSides: TurnSideSplit = TurnSideSplit()) {
         sessionId = row.id
         date = row.startDate
-        durationS = row.durationS
+        // The engine's own cleaned span — the clock every trend hour and every displayed
+        // session duration divides by (docs/presentation.md, "One clock").
+        durationS = row.rateSeconds
         foilPct = row.foilPct
         longestFlightS = row.longestFlightS
         flightCount = row.flightCount
         distanceKm = row.distanceKm
         jibeFlewThroughPct = row.jibeFlewThroughPct
+        flewThroughPct = row.flewThroughPct
         turnSuccessPct = (row.turnsCounted ?? 0) > 0 ? row.turnSuccessPct : nil
         cleanJibes = row.jibesSuccessful
         cleanJibesPerHour = row.cleanJibesPerHour
@@ -374,7 +382,7 @@ public struct LibraryStore: Sendable {
             let key = startOfWeek(row.startDate)
             var bucket = buckets[key] ?? WeekBucket(weekStart: key, count: 0, hours: 0)
             bucket.count += 1
-            bucket.hours += row.durationS / 3600
+            bucket.hours += row.rateSeconds / 3600
             buckets[key] = bucket
         }
         var out: [WeekBucket] = []
@@ -421,9 +429,9 @@ public struct LibraryStore: Sendable {
         var foilNumerator = 0.0, foilDenominator = 0.0
         var jibes = 0, jibesFlew = 0
         for row in rows {
-            if let pct = row.foilPct, row.durationS > 0 {
-                foilNumerator += pct * row.durationS
-                foilDenominator += row.durationS
+            if let pct = row.foilPct, row.rateSeconds > 0 {
+                foilNumerator += pct * row.rateSeconds
+                foilDenominator += row.rateSeconds
             }
             jibes += row.jibes ?? 0
             jibesFlew += row.jibesFlewThrough ?? 0
@@ -431,7 +439,7 @@ public struct LibraryStore: Sendable {
         return GearAggregate(
             gear: gear,
             sessions: rows.count,
-            hours: rows.reduce(0) { $0 + $1.durationS } / 3600,
+            hours: rows.reduce(0) { $0 + $1.rateSeconds } / 3600,
             distanceKm: rows.reduce(0) { $0 + ($1.distanceKm ?? 0) },
             foilPct: foilDenominator > 0 ? foilNumerator / foilDenominator : nil,
             best2sKn: rows.compactMap(\.best2sKn).max(),
