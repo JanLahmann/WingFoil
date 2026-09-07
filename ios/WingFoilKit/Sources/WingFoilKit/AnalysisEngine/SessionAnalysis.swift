@@ -135,7 +135,20 @@ public enum AnalysisEngine {
     ///
     /// *`longestFlightM` is renamed `maxFlightM`*, because it was never the longest
     /// flight's distance — it is the largest distance any one flight covered.
-    public static let version = "0.14.0"
+    ///
+    /// 0.15.0 makes **the wind-axis crossing an event**, and moves no number at its defaults.
+    /// Jan's definition of a jibe is "a turn through the wind axis"; the crossing was already
+    /// the thing `classifySweep` names a turn by, and the engine found it and threw it away.
+    /// Every counted tack and jibe now records `axisTs` (when the unwrapped TWA passed the
+    /// axis, interpolated), `axisBeforeDeg` (how far from the axis the sweep began) and
+    /// `axisAfterDeg` (the furthest the heading carried past it, in the turn's own sense, by
+    /// the end of the outcome window) — all three nil on a course change and on a turn with no
+    /// usable wind. Two parameters read them, `turnAxisBeforeDeg` and `turnAxisAfterDeg`, and
+    /// both default to **0**: below the first a sweep is not a maneuver at all, below the
+    /// second it cannot be *carried* (and so cannot be clean) while its outcome is untouched.
+    /// At 0 every fixture is what 0.14.0 said it was; the bump is what makes a stored document
+    /// re-derive so the crossing is there to draw.
+    public static let version = "0.15.0"
 }
 
 /// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's
@@ -172,6 +185,10 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
     /// The classification floor (engine 0.13.0). Optional only so a stored `analysis.json`
     /// from 0.12.0 still decodes; such a row re-derives on its version.
     public var turnClassifyMinAngle: Double?
+    /// The two wind-axis requirements (engine 0.15.0), both 0 by default. Optional so a stored
+    /// `analysis.json` from before them still decodes; such a row re-derives on its version.
+    public var turnAxisBeforeDeg: Double?
+    public var turnAxisAfterDeg: Double?
     public var turnMaxDuration: Double
     public var turnPeakRate: Double
     public var turnMinArc: Double
@@ -235,6 +252,8 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
         alphaMaxDistance = records.alphaMaxDistanceM
         turnMinAngle = turn.minAngleDeg
         turnClassifyMinAngle = turn.classifyMinAngleDeg
+        turnAxisBeforeDeg = turn.axisBeforeDeg
+        turnAxisAfterDeg = turn.axisAfterDeg
         turnMaxDuration = turn.maxDurationS
         turnPeakRate = turn.peakRateDegS
         turnMinArc = turn.minArcM
@@ -325,7 +344,8 @@ public struct FlightRecord: Sendable, Codable, Equatable {
 /// Golden-schema turn: the 0.1.0 keys (`ts`/`type`/`entryKn`/`minKn`/`score`/`side`) plus
 /// the phase-2 geometry, the three-way outcome, the 0.11.0 shape-of-the-maneuver fields
 /// (`minTs`, `exitKn`, `peakRateDegS`, `twaInDeg`, `twaOutDeg`) — all five computed by the
-/// detector since 0.1.0 and, until then, thrown away — and 0.12.0's `clean`.
+/// detector since 0.1.0 and, until then, thrown away — 0.12.0's `clean`, and 0.15.0's
+/// wind-axis crossing (`axisTs`, `axisBeforeDeg`, `axisAfterDeg`).
 public struct TurnRecord: Sendable, Codable, Equatable {
     public var ts: Double
     public var endTs: Double
@@ -358,6 +378,16 @@ public struct TurnRecord: Sendable, Codable, Equatable {
     public var twaInDeg: Double?
     /// True wind angle leaving the sweep; nil under the same rule as `twaInDeg`.
     public var twaOutDeg: Double?
+    /// **The wind-axis crossing** (engine 0.15.0): the session-clock instant the unwrapped TWA
+    /// passed the axis the sweep is named after — 180 + k·360 for a jibe, k·360 for a tack —
+    /// interpolated between the two samples astride it. **nil** on a course change and on a
+    /// turn with no usable wind axis: there was no crossing, and a 0 would be a time.
+    public var axisTs: Double?
+    /// |TWA at the sweep's start − the axis|; nil under the same rule as `axisTs`.
+    public var axisBeforeDeg: Double?
+    /// The furthest the heading got past the axis in the turn's own sense, from the crossing
+    /// to the end of the outcome window; nil under the same rule as `axisTs`.
+    public var axisAfterDeg: Double?
     public var arcM: Double
     public var radiusM: Double
     /// "flew_through" | "touchdown" | "fell_in".
@@ -387,6 +417,9 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         peakRateDegS = turn.peakRateDegS
         twaInDeg = turn.twaInDeg.isFinite ? turn.twaInDeg : nil
         twaOutDeg = turn.twaOutDeg.isFinite ? turn.twaOutDeg : nil
+        axisTs = turn.axisT.isFinite ? turn.axisT : nil
+        axisBeforeDeg = turn.axisBeforeDeg.isFinite ? turn.axisBeforeDeg : nil
+        axisAfterDeg = turn.axisAfterDeg.isFinite ? turn.axisAfterDeg : nil
         arcM = turn.arcM
         radiusM = turn.radiusM
         outcome = turn.outcome.rawValue
@@ -402,6 +435,7 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         case ts, endTs, minTs, type, counted, entryKn, minKn, exitKn, score, success, clean
         case side, direction, netDeg, peakRateDegS, twaInDeg, twaOutDeg, arcM, radiusM
         case outcome, borderline, offFoilS, stoppedS, pumped, submerged, outcomeWindowS
+        case axisTs, axisBeforeDeg, axisAfterDeg
     }
 
     /// The 0.11.0 keys decode as *optional*, so an `analysis.json` written by an older
@@ -447,6 +481,12 @@ public struct TurnRecord: Sendable, Codable, Equatable {
             ?? (counted && type == "jibe" && success && outcome == "flew_through")
         twaInDeg = try c.decodeIfPresent(Double.self, forKey: .twaInDeg)
         twaOutDeg = try c.decodeIfPresent(Double.self, forKey: .twaOutDeg)
+        // 0.15.0: absent in every older document, and there is nothing to derive them from —
+        // the crossing is a measurement over samples this record does not carry. nil is the
+        // honest fallback, and it renders exactly as "the wind axis is not known here" does.
+        axisTs = try c.decodeIfPresent(Double.self, forKey: .axisTs)
+        axisBeforeDeg = try c.decodeIfPresent(Double.self, forKey: .axisBeforeDeg)
+        axisAfterDeg = try c.decodeIfPresent(Double.self, forKey: .axisAfterDeg)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -468,6 +508,9 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         try c.encode(peakRateDegS, forKey: .peakRateDegS)
         try c.encode(twaInDeg, forKey: .twaInDeg)           // explicit null
         try c.encode(twaOutDeg, forKey: .twaOutDeg)         // explicit null
+        try c.encode(axisTs, forKey: .axisTs)               // explicit null
+        try c.encode(axisBeforeDeg, forKey: .axisBeforeDeg) // explicit null
+        try c.encode(axisAfterDeg, forKey: .axisAfterDeg)   // explicit null
         try c.encode(arcM, forKey: .arcM)
         try c.encode(radiusM, forKey: .radiusM)
         try c.encode(outcome, forKey: .outcome)

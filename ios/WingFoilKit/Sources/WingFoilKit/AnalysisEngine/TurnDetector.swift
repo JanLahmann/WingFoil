@@ -21,6 +21,16 @@ public struct TurnConfig: Sendable, Equatable {
     public var minArcM: Double = 12.0
     /// turnMinRadius: arc ÷ |net angle| in radians.
     public var minRadiusM: Double = 6.0
+    /// turnAxisBeforeDeg (engine 0.15.0): how far the sweep must start *from* the axis it
+    /// crosses before it may be a tack or a jibe. 0 = off, and at 0 no verdict moves. Below
+    /// it the sweep is filed as the same uncounted course change `classifyMinAngleDeg`
+    /// produces.
+    public var axisBeforeDeg: Double = 0.0
+    /// turnAxisAfterDeg (engine 0.15.0): how far the heading must carry on *past* the axis,
+    /// in the turn's own sense, before the turn may be called carried — and so clean. 0 = off.
+    /// Jan's rule: it is a requirement for a *successful* jibe, not for a touch-down or a
+    /// failed one, so it moves `success` and never the outcome ladder.
+    public var axisAfterDeg: Double = 0.0
     /// turnContext: ON_FOIL or ≤ this after a flight.
     public var contextAfterS: Double = 3.0
     /// entrySpeedWindow: max speed before the turn start.
@@ -93,6 +103,17 @@ public struct Turn: Sendable, Equatable {
     public var success: Bool
     public var twaInDeg: Double
     public var twaOutDeg: Double
+    /// **The wind-axis crossing** (engine 0.15.0): the session-clock instant the unwrapped TWA
+    /// passed the axis the sweep was named after — 180 + k·360 for a jibe, k·360 for a tack —
+    /// linearly interpolated between the two samples astride it. `.nan` on a course change and
+    /// on a turn with no usable wind: a 0 would be a time, and there was no crossing.
+    public var axisT: Double = .nan
+    /// |TWA at the sweep's start − the axis|: how far from the wind the turn began. `.nan`
+    /// under the same rule as `axisT`.
+    public var axisBeforeDeg: Double = .nan
+    /// The furthest the heading got **past** the axis, in the turn's own sense, by the end of
+    /// the outcome window. `.nan` under the same rule as `axisT`.
+    public var axisAfterDeg: Double = .nan
     /// Path length travelled across the COG sweep.
     public var arcM: Double = 0
     public var chordM: Double = 0
@@ -562,18 +583,126 @@ public enum TurnDetector {
         let exitMan = man[min(searchSortedLeft(t, endT), t.count - 1)]
         let score = entryMan > 0 ? minMan / entryMan : 0
         let stayedUp = minDop > config.foilExitSpeedKmh * kmhToMps
-        let success = score >= config.successPct / 100 && stayedUp
+        var success = score >= config.successPct / 100 && stayedUp
 
         let k = classify(cogIn: c.cogIn, cogOut: c.cogOut, wind: wind,
                          minAngleDeg: config.classifyMinAngleDeg)
-        return Turn(startT: startT, endT: endT, minT: t[max(minIdx, 0)], kind: k.kind,
+        var kind = k.kind
+        let axis = axisMeasures(c, wind: wind, kind: kind, config: config)
+        if let courseChange = axis.courseChange {
+            // Too close to the axis to have gone *through* it: filed as the same uncounted
+            // course change the classification floor produces, and its axis numbers with it.
+            kind = courseChange
+        } else if (kind == .tack || kind == .jibe), axis.afterDeg < config.axisAfterDeg {
+            // Not enough carry past the axis to call it carried. The outcome ladder is
+            // untouched (Jan: "not require that for a touch-down or failed jibe") — only
+            // `success`, and so only `clean`, which is the conjunction of the two.
+            success = false
+        }
+        return Turn(startT: startT, endT: endT, minT: t[max(minIdx, 0)], kind: kind,
                     netDeg: net, peakRateDegS: peak,
                     direction: net >= 0 ? "starboard" : "port", side: k.side,
                     entryKn: entryMan * mpsToKn, minKn: minMan * mpsToKn,
                     exitKn: exitMan * mpsToKn,
                     entryKnDoppler: entryDop * mpsToKn, minKnDoppler: minDop * mpsToKn,
                     score: score, success: success, twaInDeg: k.twaIn, twaOutDeg: k.twaOut,
+                    axisT: axis.t, axisBeforeDeg: axis.beforeDeg, axisAfterDeg: axis.afterDeg,
                     arcM: arc.0, chordM: arc.1, radiusM: radiusM)
+    }
+
+    // MARK: - The wind-axis crossing (engine 0.15.0)
+
+    /// The crossing, measured — or the three NaNs that say there was none to measure.
+    struct Axis {
+        var t: Double = .nan
+        var beforeDeg: Double = .nan
+        var afterDeg: Double = .nan
+        /// The sweep fails `turnAxisBeforeDeg` and has to be re-filed under this label.
+        var courseChange: TurnKind?
+    }
+
+    /// When and where the sweep went through the wind axis.
+    ///
+    /// Only a **named** maneuver has an axis to cross: a course change is precisely a sweep
+    /// that crossed neither line, and an unclassified turn is one whose axis nobody knows.
+    /// Both get the empty `Axis`, whose NaNs become JSON nulls in `TurnRecord`.
+    ///
+    /// The crossing is the one `classifySweep` named the turn after — the multiple of 360 (a
+    /// tack) or 180 + a multiple of 360 (a jibe) nearest the sweep's middle in unwrapped TWA.
+    /// TWA is COG minus a constant, so that value maps straight onto a COG on the detector's
+    /// own unwrapped array, and everything below is measured there, on the samples the sweep
+    /// was detected from. Mirrors `_axis_measures` in `lab/src/wingfoil_lab/turns.py`.
+    static func axisMeasures(_ c: Candidate, wind: WindEstimate?, kind: TurnKind,
+                             config: TurnConfig) -> Axis {
+        guard kind == .tack || kind == .jibe, let wind, wind.usable else { return Axis() }
+        let u = c.u, tu = c.tu, i = c.i, j = c.j
+        let twaIn = WindEstimator.wrap180(u[i] - wind.dirDeg)
+        let twaOut = twaIn + (u[j] - u[i])
+        let lo = min(twaIn, twaOut), hi = max(twaIn, twaOut)
+        guard let crossing = nearestCrossing(lo: lo, hi: hi,
+                                             offset: kind == .tack ? 0 : 180,
+                                             mid: 0.5 * (lo + hi)) else {
+            return Axis()             // unreachable: the kind was named by that crossing
+        }
+        let before = abs(twaIn - crossing)
+        if before < config.axisBeforeDeg {
+            return Axis(courseChange: abs(twaOut) > abs(twaIn) ? .bearAway : .roundUp)
+        }
+        // The same crossing, back on the COG array: TWA and unwrapped COG differ by a constant
+        // across the sweep, so `uAxis` is the heading the rider was on at the crossing.
+        let uAxis = u[i] + (crossing - twaIn)
+        guard let k = axisIndex(u, i: i, j: j, uAxis: uAxis) else {
+            return Axis()             // unreachable: uAxis lies between u[i] and u[j]
+        }
+        return Axis(t: axisTime(tu, u, k: k, uAxis: uAxis),
+                    beforeDeg: before,
+                    afterDeg: axisAfter(tu, u, k: k, uAxis: uAxis, netDeg: c.netDeg,
+                                        untilT: c.endT + config.outcomeLookaheadS))
+    }
+
+    /// The first step of the sweep that spans `uAxis` — index `k` with u[k]…u[k+1] astride.
+    ///
+    /// The *first*, not the nearest to the middle: a sweep that overshoots and comes back
+    /// passes the same heading more than once, and the moment a rider went through the wind is
+    /// the first one. The k-multiple ambiguity was already settled by `nearestCrossing`; this
+    /// is only about where in time that one value was reached.
+    static func axisIndex(_ u: [Double], i: Int, j: Int, uAxis: Double) -> Int? {
+        guard j > i else { return nil }
+        for k in i..<j where min(u[k], u[k + 1]) <= uAxis && uAxis <= max(u[k], u[k + 1]) {
+            return k
+        }
+        return nil
+    }
+
+    /// Session-clock instant of the crossing, linear between the two samples astride it.
+    static func axisTime(_ tu: [Double], _ u: [Double], k: Int, uAxis: Double) -> Double {
+        let a = u[k], b = u[k + 1]
+        guard a != b else { return tu[k] }
+        return tu[k] + (uAxis - a) / (b - a) * (tu[k + 1] - tu[k])
+    }
+
+    /// Furthest the heading got **past** the axis, in the turn's sense, by `untilT`.
+    ///
+    /// Measured on the detector's own unwrapped COG rather than at the sweep's endpoint, for
+    /// two reasons. A rider who keeps easing the board round after the sweep has closed is
+    /// still turning away from the wind — the sweep ended because he dropped below
+    /// `turnContinueRate`, not because he stopped — so the measurement runs to the end of the
+    /// outcome window. And it is a *maximum*, not the value at the end: a rider who carries on
+    /// round and then heads back up has still been that far past the axis.
+    ///
+    /// The array is the sailing run's, so a run that ends first — the rider stopped, the fix
+    /// was lost, the segment closed — simply ends the measurement. There is no heading after a
+    /// run ends, and extrapolating one would invent the very carry-on this is asking about.
+    static func axisAfter(_ tu: [Double], _ u: [Double], k: Int, uAxis: Double,
+                          netDeg: Double, untilT: Double) -> Double {
+        let sense: Double = netDeg >= 0 ? 1 : -1
+        var best = 0.0
+        var m = k + 1
+        while m < u.count, tu[m] <= untilT {
+            best = max(best, sense * (u[m] - uAxis))
+            m += 1
+        }
+        return best
     }
 
     /// (kind, side, twaIn, twaOut) from the unwrapped COG sweep and the wind estimate.
