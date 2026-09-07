@@ -1823,6 +1823,19 @@ detection and scoring (`turnMinAngle`, `turnClassifyMinAngle`, `turnAxisBeforeDe
 `foilExitSpeed`, `entryHold`, `exitHold`, `minFlightDuration`). `nil` means the published
 default; setting a slider back to the default clears the override rather than storing it.
 
+**How a row reads** (7 Sep 2026, Jan: "review all descriptions on the new tuning page for
+clarity"). Each row is named in the rider's words — "Fall: shortest stop", "Flying again
+at", "Quiet tail after the sweep, for clean" — with the docs/algorithms.md name printed
+small under it, so the page reads on its own *and* lines up with the parameter table. The
+caption under the slider is "default N · what moving it does to what you see", written as
+an effect, never a mechanism: "a stop longer than this is a fall", not "fall threshold".
+Where a verdict word has its threshold, the caption says what the word means there. The
+three group footers say what a rider will watch change (more or fewer turns; verdicts
+shifting between touchdown and fall; foil time and flight counts). **One tail, not two:**
+`turnOutcomeWindow` has equalled `turnOutcomeLookahead` since 0.13.0 and the lookahead
+slider moves both, so the window has no row of its own (`TuningParameterSpec.hidden`) — an
+explicit override stored by an earlier dev build is still applied and still wins.
+
 **Phone-only, and dev-build-only.** The watch computes live on the wrist with no way to be
 told, and the web reads documents the phone wrote — neither follows a slider, and neither is
 asked to. And the whole feature is compiled out of the app external testers get: it lives

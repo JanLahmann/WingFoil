@@ -142,7 +142,8 @@ public struct TuningOverrides: Sendable, Equatable {
     /// The one deliberate exception is `turnOutcomeWindow`: the turn's is 12 s and the flight
     /// end's is 60 s, they are *not* the same number today, and pushing the turn's slider onto
     /// the flight end would silently move a threshold the rider did not touch. It moves the
-    /// turn config only.
+    /// turn config only — and since it has equalled the turn's lookahead since 0.13.0, the
+    /// lookahead slider carries it and it has no row of its own.
     public func apply(to base: Configs = Configs()) -> Configs {
         var out = base
         // Turns — detection and scoring.
@@ -179,6 +180,10 @@ public struct TuningOverrides: Sendable, Equatable {
         if let v = self[.turnOutcomeLookahead] {
             out.turn.outcomeLookaheadS = v
             out.flightEnd.outcomeLookaheadS = v
+            // The off-foil search past the sweep has equalled the lookahead since 0.13.0
+            // (docs/algorithms.md); one slider keeps them equal. An explicit
+            // `turnOutcomeWindow` (stored by an older dev build) still wins below.
+            out.turn.outcomeWindowS = v
         }
         if let v = self[.turnRecoverPct] {
             out.turn.recoverPct = v
@@ -315,14 +320,15 @@ public enum TuningGroup: String, CaseIterable, Sendable {
     public var blurb: String {
         switch self {
         case .turns:
-            "What counts as a turn at all, and how its score is measured. Loosening these "
-                + "finds more turns; tightening them finds fewer, better-defined ones."
+            "What counts as a turn, which turns are tacks and jibes, and what a clean jibe has "
+                + "to do on top of flying through. Loosen these and the map shows more turns; "
+                + "tighten them and it shows fewer, better-defined ones."
         case .outcomes:
-            "The stop ladder: flew through, touched down, fell in. Shared with the flight-end "
-                + "verdict, which asks the same physical question."
+            "How a turn or a flight ended — flew through, touched down, fell in. One stop "
+                + "ladder decides both, so a number moved here moves both verdicts."
         case .flights:
-            "The speed hysteresis that decides when you are on the foil — and therefore foil "
-                + "time, flight count and every per-flight number."
+            "When you are on the foil. These decide foil time, the flight count and every "
+                + "per-flight number, and a turn only counts if it starts inside a flight."
         }
     }
 }
@@ -360,8 +366,10 @@ public enum TuningParameter: String, CaseIterable, Sendable, Codable {
 
     public var spec: TuningParameterSpec { TuningParameterSpec.table[self]! }
 
+    /// The rows the page shows, in table order. A `hidden` parameter is still applied and
+    /// still decoded from stored overrides; it just has no slider of its own any more.
     public static func all(in group: TuningGroup) -> [TuningParameter] {
-        allCases.filter { $0.spec.group == group }
+        allCases.filter { $0.spec.group == group && !$0.spec.hidden }
     }
 }
 
@@ -376,8 +384,16 @@ public struct TuningParameterSpec: Sendable, Equatable {
     public let defaultValue: Double
     public let range: ClosedRange<Double>
     public let step: Double
-    /// The half-line under the row, after "default N".
+    /// The row's name in the rider's words — "Fall: shortest stop". The docs/algorithms.md
+    /// name (`parameter.rawValue`) is printed small under it, so the page can be read on its
+    /// own *and* lined up with the table.
+    public let title: String
+    /// The half-line under the row, after "default N": what moving it does to what you see.
     public let note: String
+    /// Not on the page. `turnOutcomeWindow` has equalled `turnOutcomeLookahead` since engine
+    /// 0.13.0 and the lookahead slider moves both; a second slider for the same tail was one
+    /// more thing to explain and nothing to learn from.
+    public var hidden: Bool = false
 
     /// Decimals a value of this parameter is written with — one where the step is fractional,
     /// none where it is whole, so a 1 °/s step never prints "18.0".
@@ -401,81 +417,106 @@ public struct TuningParameterSpec: Sendable, Equatable {
     private static let list: [TuningParameterSpec] = [
         .init(parameter: .turnMinAngle, group: .turns, unit: "°", defaultValue: 60,
               range: 30...120, step: 5,
-              note: "net COG change that makes a sweep a turn at all"),
+              title: "Turn: smallest heading change",
+              note: "a sweep smaller than this is not a turn at all and gets no marker"),
         .init(parameter: .turnClassifyMinAngle, group: .turns, unit: "°", defaultValue: 90,
               range: 60...150, step: 5,
-              note: "below this a sweep is never named a tack or a jibe"),
+              title: "Tack or jibe: smallest heading change",
+              note: "a turn smaller than this is a course change, never a tack or a jibe"),
         .init(parameter: .turnAxisBeforeDeg, group: .turns, unit: "°", defaultValue: 0,
               range: 0...60, step: 5,
-              note: "how far from the wind axis the turn has to start — 0 asks nothing"),
+              title: "Turn before the wind axis",
+              note: "a tack or jibe must have turned this far before crossing the axis, or it is a course change — 0 asks nothing"),
         .init(parameter: .turnAxisAfterDeg, group: .turns, unit: "°", defaultValue: 0,
               range: 0...60, step: 5,
-              note: "how far past the axis it has to carry to count as clean — 0 asks nothing"),
+              title: "Carry past the wind axis, for clean",
+              note: "a jibe must carry this far past the axis to be clean; flew through is not affected — 0 asks nothing"),
         .init(parameter: .turnCleanQuietS, group: .turns, unit: "s", defaultValue: 10,
               range: 0...20, step: 1,
-              note: "seconds after the sweep with no touchdown, fall or wrist under, for a "
-                  + "clean jibe — 0 asks nothing"),
+              title: "Quiet tail after the sweep, for clean",
+              note: "no touchdown, fall or wrist under for this long after the sweep, or the jibe is not clean; flew through is not affected — 0 asks nothing"),
         .init(parameter: .turnMaxDuration, group: .turns, unit: "s", defaultValue: 8,
               range: 4...20, step: 1,
-              note: "window the net change has to happen inside"),
+              title: "Sweep time limit",
+              note: "the heading change has to happen within this many seconds; a slower carve is a course change"),
         .init(parameter: .turnPeakRate, group: .turns, unit: "°/s", defaultValue: 18,
               range: 5...40, step: 1,
-              note: "fastest instant of the sweep — a carve peaks lower than a pivot"),
+              title: "Fastest turning rate needed",
+              note: "the heading must turn at least this fast at some moment; a wide carve peaks lower than a pivot"),
         .init(parameter: .turnContinueRate, group: .turns, unit: "°/s", defaultValue: 5,
               range: 1...15, step: 1,
-              note: "edge trim: below this the rider is not turning any more"),
+              title: "Rate at which the sweep ends",
+              note: "the sweep ends once the heading turns slower than this, which is where “out” is read"),
         .init(parameter: .turnMinArc, group: .turns, unit: "m", defaultValue: 12,
               range: 4...40, step: 2,
-              note: "path actually travelled around the curve"),
+              title: "Shortest distance around the curve",
+              note: "shorter than this and it is GPS noise or a spin on the spot"),
         .init(parameter: .turnMinRadius, group: .turns, unit: "m", defaultValue: 6,
               range: 2...30, step: 1,
-              note: "arc ÷ swept angle — a pivot on the spot has none"),
+              title: "Smallest radius of the curve",
+              note: "how wide the turn is; a pivot on the spot has no radius"),
         .init(parameter: .entrySpeedWindow, group: .turns, unit: "s", defaultValue: 3,
               range: 1...8, step: 1,
-              note: "how far back the entry speed is read from"),
+              title: "Entry speed window",
+              note: "“in” is the fastest you went in these seconds before the sweep"),
         .init(parameter: .minSpeedLag, group: .turns, unit: "s", defaultValue: 2,
               range: 0...6, step: 1,
-              note: "how far past the sweep the speed minimum is still looked for"),
+              title: "Low point searched past the sweep",
+              note: "“low” is looked for this long past the end of the sweep, so it can sit after “out”"),
         .init(parameter: .turnSuccessPct, group: .turns, unit: "%", defaultValue: 70,
               range: 50...95, step: 5,
-              note: "of the entry speed you have to hold for the turn to succeed"),
+              title: "Speed to hold for the score",
+              note: "“low” must be at least this share of “in” for the turn to hold its speed, which a clean jibe requires"),
 
         .init(parameter: .turnStopSpeedFloor, group: .outcomes, unit: "m/s", defaultValue: 1.0,
               range: 0.3...3, step: 0.1,
-              note: "below this you are not making way"),
+              title: "Stopped below",
+              note: "slower than this counts as stopped; how long the stop lasts decides touchdown or fall"),
         .init(parameter: .turnTouchdownMaxStop, group: .outcomes, unit: "s", defaultValue: 3,
               range: 1...10, step: 0.5,
-              note: "longest stop still called a touchdown"),
+              title: "Touchdown: longest stop",
+              note: "a stop up to this long is a touchdown; between this and the fall limit it is a borderline touchdown"),
         .init(parameter: .turnFallStop, group: .outcomes, unit: "s", defaultValue: 5,
               range: 1...15, step: 0.5,
-              note: "a stop longer than this is a fall"),
+              title: "Fall: shortest stop",
+              note: "a stop longer than this is a fall — “fell in”"),
         .init(parameter: .turnOutcomeLookahead, group: .outcomes, unit: "s", defaultValue: 12,
               range: 5...30, step: 1,
-              note: "tail past the sweep the outcome is judged over"),
+              title: "How long the verdict looks after the sweep",
+              note: "the outcome is judged over this tail unless you are flying again sooner; the flight-end verdict uses the same tail"),
         .init(parameter: .turnRecoverPct, group: .outcomes, unit: "%", defaultValue: 70,
               range: 40...95, step: 5,
-              note: "of the entry speed that means you are flying again"),
+              title: "Flying again at",
+              note: "back at this share of the entry speed means recovered, and the verdict stops looking"),
         .init(parameter: .turnRecoverHold, group: .outcomes, unit: "s", defaultValue: 2,
               range: 0...6, step: 0.5,
-              note: "how long the recovery has to hold before it counts"),
+              title: "Recovery must last",
+              note: "the recovered speed has to hold this long before it counts"),
         .init(parameter: .turnOutcomeWindow, group: .outcomes, unit: "s", defaultValue: 12,
               range: 5...60, step: 1,
-              note: "cap on following the recovery (turns only)"),
+              title: "Off-foil search after the sweep",
+              note: "moves with the lookahead",
+              hidden: true),
 
         .init(parameter: .foilEntrySpeed, group: .flights, unit: "km/h", defaultValue: 12,
               range: 6...25, step: 0.5,
-              note: "speed at which a flight starts"),
+              title: "Flight starts above",
+              note: "faster than this, held for the entry hold, and you are on the foil"),
         .init(parameter: .foilExitSpeed, group: .flights, unit: "km/h", defaultValue: 8,
               range: 4...20, step: 0.5,
-              note: "speed at which a flight ends"),
+              title: "Flight ends below",
+              note: "slower than this, held for the exit hold, and the flight is over; turns and outcomes read “off the foil” from this speed too"),
         .init(parameter: .entryHold, group: .flights, unit: "s", defaultValue: 2,
               range: 0...6, step: 0.5,
-              note: "how long the entry speed has to hold"),
+              title: "Entry speed must hold",
+              note: "seconds above the start speed before a flight begins"),
         .init(parameter: .exitHold, group: .flights, unit: "s", defaultValue: 3,
               range: 0...8, step: 0.5,
-              note: "how long the exit speed has to hold"),
+              title: "Exit speed must hold",
+              note: "seconds below the end speed before a flight ends; a shorter dip is a touch, not an end"),
         .init(parameter: .minFlightDuration, group: .flights, unit: "s", defaultValue: 5,
               range: 1...20, step: 1,
-              note: "shorter than this and it was not a flight"),
+              title: "Shortest flight",
+              note: "shorter than this and it is not counted as a flight"),
     ]
 }
