@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.12.0",
+  "engineVersion": "0.13.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -20,6 +20,7 @@
     "alphaCandidatePruneMinCogSpread": 90.0,
     "minSpeedFilter": null,
     "turnMinAngle": 60.0,
+    "turnClassifyMinAngle": 90.0,
     "turnMaxDuration": 8.0,
     "turnPeakRate": 25.0,
     "turnContinueRate": 5.0,
@@ -36,7 +37,7 @@
     "turnOutcomeLookahead": 12.0,
     "turnRecoverPct": 70.0,
     "turnRecoverHold": 2.0,
-    "turnOutcomeWindow": 60.0,
+    "turnOutcomeWindow": 12.0,
     "turnBaroDrop": 25.0,
     "windMinSpeed": 2.0,
     "windBinDeg": 10.0,
@@ -475,10 +476,10 @@
       "twaOutDeg": 142.14,
       "arcM": 44.22,
       "radiusM": 19.89,
-      "outcome": "fell_in",
-      "borderline": false,
-      "offFoilS": 35.0,
-      "stoppedS": 23.0,
+      "outcome": "touchdown",
+      "borderline": true,
+      "offFoilS": 8.0,
+      "stoppedS": 5.0,
       "pumped": false,
       "submerged": false,
       "outcomeWindowS": 11.0
@@ -532,9 +533,9 @@
       "arcM": 42.89,
       "radiusM": 20.96,
       "outcome": "touchdown",
-      "borderline": true,
-      "offFoilS": 17.0,
-      "stoppedS": 5.0,
+      "borderline": false,
+      "offFoilS": 3.0,
+      "stoppedS": 0.0,
       "pumped": false,
       "submerged": false,
       "outcomeWindowS": 10.0
@@ -587,10 +588,10 @@
       "twaOutDeg": -121.97,
       "arcM": 44.37,
       "radiusM": 18.71,
-      "outcome": "fell_in",
+      "outcome": "touchdown",
       "borderline": false,
-      "offFoilS": 23.0,
-      "stoppedS": 8.0,
+      "offFoilS": 3.0,
+      "stoppedS": 1.0,
       "pumped": false,
       "submerged": false,
       "outcomeWindowS": 12.0
@@ -841,7 +842,7 @@
       "radiusM": 18.71,
       "outcome": "touchdown",
       "borderline": false,
-      "offFoilS": 6.0,
+      "offFoilS": 0.0,
       "stoppedS": 0.0,
       "pumped": false,
       "submerged": false,
@@ -897,8 +898,8 @@
       "radiusM": 10.78,
       "outcome": "fell_in",
       "borderline": false,
-      "offFoilS": 35.0,
-      "stoppedS": 13.0,
+      "offFoilS": 9.0,
+      "stoppedS": 7.0,
       "pumped": false,
       "submerged": false,
       "outcomeWindowS": 12.0
@@ -3404,14 +3405,15 @@
     "foilPct": 71.08,
     "flightCount": 52,
     "longestFlightS": 104.0,
-    "longestFlightM": 501.3,
+    "maxFlightM": 501.3,
     "distanceKm": 6.46,
     "durationS": 2524.0,
-    "avgSpeedKmh": 9.21,
-    "turnsPerHour": 24.2,
-    "jibesPerHour": 20.0,
-    "cleanJibesPerHour": 7.1,
-    "wetPerHour": 5.7,
+    "timerTimeS": 1708.0,
+    "avgSpeedKmh": 13.62,
+    "turnsPerHour": 33.7,
+    "jibesPerHour": 33.7,
+    "cleanJibesPerHour": 10.5,
+    "wetPerHour": 8.4,
     "windowRates": {
       "windowMin": 15.0,
       "bestJph": 40.0,
@@ -3421,72 +3423,72 @@
       "series": [
         {
           "ts": 0.0,
-          "jph": 12.0,
+          "jph": 20.0,
           "wph": 8.0
         },
         {
           "ts": 60.0,
-          "jph": 12.0,
+          "jph": 20.0,
           "wph": 8.0
         },
         {
           "ts": 120.0,
-          "jph": 12.0,
+          "jph": 20.0,
           "wph": 12.0
         },
         {
           "ts": 180.0,
-          "jph": 12.0,
+          "jph": 20.0,
           "wph": 12.0
         },
         {
           "ts": 240.0,
-          "jph": 12.0,
+          "jph": 16.0,
           "wph": 8.0
         },
         {
           "ts": 300.0,
-          "jph": 12.0,
+          "jph": 16.0,
           "wph": 8.0
         },
         {
           "ts": 360.0,
-          "jph": 20.0,
+          "jph": 24.0,
           "wph": 8.0
         },
         {
           "ts": 420.0,
-          "jph": 20.0,
+          "jph": 24.0,
           "wph": 8.0
         },
         {
           "ts": 480.0,
-          "jph": 28.0,
+          "jph": 32.0,
           "wph": 8.0
         },
         {
           "ts": 540.0,
-          "jph": 28.0,
+          "jph": 32.0,
           "wph": 8.0
         },
         {
           "ts": 600.0,
-          "jph": 28.0,
+          "jph": 32.0,
           "wph": 8.0
         },
         {
           "ts": 660.0,
-          "jph": 32.0,
+          "jph": 36.0,
           "wph": 8.0
         },
         {
           "ts": 720.0,
-          "jph": 32.0,
+          "jph": 36.0,
           "wph": 8.0
         },
         {
           "ts": 780.0,
-          "jph": 32.0,
+          "jph": 36.0,
           "wph": 8.0
         },
         {
@@ -3578,8 +3580,8 @@
       "longestFlewStreak": 7,
       "outcomes": {
         "flewThrough": 12,
-        "touchdown": 2,
-        "fellIn": 3,
+        "touchdown": 4,
+        "fellIn": 1,
         "borderline": 1
       },
       "tackOutcomes": {
@@ -3590,8 +3592,8 @@
       },
       "jibeOutcomes": {
         "flewThrough": 12,
-        "touchdown": 2,
-        "fellIn": 3,
+        "touchdown": 4,
+        "fellIn": 1,
         "borderline": 1
       }
     },
@@ -3619,9 +3621,9 @@
       }
     },
     "outcomeSplit": {
-      "turnFalls": 3,
+      "turnFalls": 1,
       "straightFalls": 1,
-      "turnTouchdowns": 2,
+      "turnTouchdowns": 4,
       "straightTouchdowns": 3,
       "glideOuts": 0,
       "unknownEnds": 45

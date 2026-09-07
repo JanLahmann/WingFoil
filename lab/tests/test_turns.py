@@ -15,8 +15,9 @@ from wingfoil_lab.flightend import GLIDE_OUT, UNKNOWN, FlightEnd, classify_fligh
 from wingfoil_lab.parse import parse_fit
 from wingfoil_lab.pump import pump_track_from_arrays
 from wingfoil_lab.turns import (BEAR_AWAY, COUNTED_TYPES, FELL_IN, FLEW_THROUGH, JIBE,
-                                OUTCOMES, TACK, THREE_SIXTY, TOUCHDOWN, UNCLASSIFIED, Turn,
-                                TurnConfig, detect_turns, streaks, summarize_turns)
+                                OUTCOMES, ROUND_UP, TACK, THREE_SIXTY, TOUCHDOWN,
+                                UNCLASSIFIED, Turn, TurnConfig, detect_turns, streaks,
+                                summarize_turns)
 from wingfoil_lab.wind import WindEstimate, estimate_wind
 
 FIXTURES = Path(__file__).resolve().parents[2] / "fixtures"
@@ -105,8 +106,42 @@ def test_tack_crosses_head_to_wind():
 
 # --- the false positive wind-axis awareness exists to kill -----------------------------
 
+def test_a_narrow_sweep_through_downwind_is_a_course_change_not_a_jibe():
+    """`turnClassifyMinAngle` (90 deg, engine 0.13.0): a sweep this narrow is not a maneuver.
+
+    The sweep crosses dead downwind, so every rule before 0.13.0 called it a jibe -- but 80
+    deg of it is a rider bearing off and coming back onto the other gybe by geometry alone.
+    It is still *detected* (`turnMinAngle` is still 60 deg, and the page marks the course
+    change); it simply counts towards nothing.
+    """
+    course, speed = _join(_leg(140.0, 40),
+                          _ramp(140.0, 220.0, 4, [6.0] * 4),
+                          _leg(220.0, 40))
+    turns = _detect(course, speed)
+    assert len(turns) == 1
+    assert abs(turns[0].net_deg) == pytest.approx(80.0, abs=5.0)
+    assert turns[0].kind in (BEAR_AWAY, ROUND_UP) and not turns[0].counted
+    assert summarize_turns(turns).rejected == 1
+    # Drop the floor and the same sweep is the jibe every earlier engine called it.
+    named = _detect(course, speed, config=TurnConfig(classify_min_angle_deg=0.0))[0]
+    assert named.kind == JIBE and named.counted
+
+
+def test_a_narrow_sweep_without_a_wind_axis_is_a_course_change_too():
+    """No axis is not a licence to count it: below the floor nothing is a maneuver."""
+    course, speed = _join(_leg(140.0, 40),
+                          _ramp(140.0, 220.0, 4, [6.0] * 4),
+                          _leg(220.0, 40))
+    turns = _detect(course, speed, wind=None)
+    assert len(turns) == 1
+    assert not turns[0].counted and turns[0].side == "unknown"
+    # Wide enough, and no axis: an unnamed maneuver is still a maneuver.
+    wide = _detect(*_clean_jibe(), wind=None)
+    assert len(wide) == 1 and wide[0].kind == UNCLASSIFIED and wide[0].counted
+
+
 def test_bear_away_is_not_counted_as_a_turn():
-    # 60 deg course change that stays on one side of the wind: close reach -> broad reach
+    # 90 deg course change that stays on one side of the wind: close reach -> broad reach
     course, speed = _join(_leg(50.0, 40),
                           _ramp(50.0, 140.0, 4, [6.0] * 4),
                           _leg(140.0, 40))
@@ -295,8 +330,10 @@ def test_fall_is_a_long_stop():
     turns = _detect(*_jibe_then([0.3] * 11))
     assert len(turns) == 1
     assert turns[0].outcome == FELL_IN and not turns[0].borderline
-    assert turns[0].stopped_s == pytest.approx(10.0)
-    assert turns[0].off_foil_s >= 10.0
+    # 9 s of it, not the full 10: `turnOutcomeWindow` is 12 s since engine 0.13.0, so the
+    # stop is measured over the same tail the outcome is judged over and no further.
+    assert turns[0].stopped_s == pytest.approx(9.0)
+    assert turns[0].off_foil_s >= 9.0
 
 
 def test_stop_between_the_two_thresholds_is_a_borderline_touchdown():
@@ -331,10 +368,22 @@ def _mush_out(exit_speed=4.0, decay=0.25, n=16):
 
 
 def test_mush_out_after_the_turn_is_the_turns_fault():
-    """The window runs to *recovery*, so a slow collapse 6-12 s out still belongs here."""
+    """The 12 s tail catches the mush-out; what happens after it is not the turn's.
+
+    The turn is charged with the collapse it can be seen to have caused -- the exit is off
+    the foil inside the window, so this is a **touchdown** and not a fly-through. The
+    standstill this fixture eventually reaches lands past `turnOutcomeWindow` (12 s since
+    engine 0.13.0, equal to `turnOutcomeLookahead`), and a fall a quarter of a minute after
+    the sweep is a straight-line fall: the flight-end channel counts it, and WPH with it.
+    """
     turn = _detect(*_mush_out())[0]
-    assert turn.outcome == FELL_IN
+    assert turn.outcome == TOUCHDOWN
     assert turn.outcome_window_s > 5.0            # the old fixed 5 s tail saw none of this
+
+    # With the 60 s window 0.13.0 replaced, the same fixture read as the turn's own fall --
+    # the turn was blamed for a collapse three quarters of a minute past its exit.
+    wide = _detect(*_mush_out(), config=TurnConfig(outcome_window_s=60.0))[0]
+    assert wide.outcome == FELL_IN
 
 
 def test_a_short_lookahead_would_have_called_the_mush_out_a_fly_through():
