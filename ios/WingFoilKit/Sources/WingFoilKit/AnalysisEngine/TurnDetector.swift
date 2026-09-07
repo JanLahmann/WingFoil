@@ -63,24 +63,29 @@ public struct TurnConfig: Sendable, Equatable {
     public var baroDropM: Double = 25.0
     /// turnPumpedOutIsTouchdown (engine 0.18.0), **on by default**. Gates the pump rung: a turn
     /// with no off-foil sample at all is a `touchdown` when the accelerometer heard a burst in
-    /// the window *and* a sample fell below `foilExitSpeedKmh`.
-    ///
-    /// **That speed is the change.** It was `foilEntrySpeedKmh` (12 km/h, where a *flight
-    /// starts*) until 0.17.0, and entry speed is the wrong question — the speed below which the
-    /// foil stops carrying is the exit speed. Jan, 7 Sep 2026: *"change to '…below min foil
-    /// speed…'"*. His Jibe 50 of 4 Sep 07:58 sagged to 5.5 kn = 10.2 km/h, below entry and well
-    /// above exit, and was called a touchdown by this rule alone — no off-foil sample, no stop,
-    /// no wrist under. He flew it.
-    ///
-    /// **At the exit speed the rung can no longer fire, and that is the point.** `flying` is
-    /// defined as in a flight, not submerged, and `speed > foilExitSpeed`
-    /// (`Evidence.flyingMask`), so on the branch this rung lives on — no non-flying sample
-    /// anywhere in the window — `marginal` is provably false. The switch is kept, and kept on,
-    /// because it is the rule being retired and not the reading behind it; `pumped` and the
-    /// "pumped out · N strokes" chip are untouched either way. Over the 21-session corpus the
-    /// rung is the sole reason for **13 of 270 jibe touchdowns**, 3 of which held their speed.
-    /// The watch keeps the old rule at the old speed (docs/algorithms.md, "Watch divergences").
+    /// the window *and* a sample fell below `pumpedMarginalSpeedKmh`. Off, the rung is refused
+    /// whatever that speed says; either way `pumped` and its chip are untouched.
     public var pumpedOutIsTouchdown = true
+    /// turnPumpedMarginalSpeed (engine 0.18.0), km/h: **the speed the pump rung corroborates
+    /// against**.
+    ///
+    /// It was hard-wired to `foilEntrySpeedKmh` (12 km/h, where a *flight starts*) until 0.17.0,
+    /// and entry speed is the wrong question — the speed below which the foil stops carrying is
+    /// the exit speed. Jan, 7 Sep 2026: *"change to '…below min foil speed…'"*. His Jibe 50 of
+    /// 4 Sep 07:58 sagged to 5.5 kn = 10.2 km/h, below entry and well above exit, and was called
+    /// a touchdown by this rule alone — no off-foil sample, no stop, no wrist under. He flew it.
+    ///
+    /// **At the default the rung cannot fire, and that is the point.** `flying` is defined as in
+    /// a flight, not submerged, and above `foilExitSpeed` (`Evidence.flyingMask`), so on the
+    /// branch this rung lives on every sample is above 8 km/h already and `marginal` is provably
+    /// false. It is a *parameter* rather than a reference to `foilExitSpeedKmh` so the
+    /// retirement is a setting somebody can argue with: the band between the exit speed and this
+    /// one is the band the rung judges, empty at 8.0 and, at 12.0, the 0.17.0 reading restored.
+    ///
+    /// Over the 21-session corpus the rung was the sole reason for **13 of 270 jibe
+    /// touchdowns**, 3 of which held their speed. The watch keeps the old rule at the old speed
+    /// (docs/algorithms.md, "Watch divergences").
+    public var pumpedMarginalSpeedKmh: Double = 8.0
 
     public init() {}
 }
@@ -1006,12 +1011,13 @@ public enum TurnDetector {
             turn.borderline = false
             turn.offFoilS = 0
             turn.stoppedS = 0
-            // Nothing off the foil at all. The corroborating speed is the **exit** speed since
-            // 0.18.0 — the speed below which the foil stops carrying, not the one a flight
-            // starts at — which is why this rung no longer fires: `flying` already requires
-            // speed above it. Left standing, gated and measured, rather than deleted.
+            // Nothing off the foil at all. The corroborating speed is `turnPumpedMarginalSpeed`
+            // since 0.18.0 — 8.0 km/h, the speed below which the foil stops carrying, not the
+            // 12 a flight starts at — which is why this rung no longer fires at the defaults:
+            // `flying` already requires speed above 8. Left standing, gated, measured and
+            // *settable*, rather than deleted.
             let marginal = win.contains {
-                ev.speed[$0] < config.foilExitSpeedKmh * kmhToMps
+                ev.speed[$0] < config.pumpedMarginalSpeedKmh * kmhToMps
             }
             if config.pumpedOutIsTouchdown && turn.pumped && marginal {
                 turn.outcome = .touchdown
