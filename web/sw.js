@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v45";     // v45: engine 0.14.0 — turnPeakRate 25→18 °/s, so the carved jibes the peak gate threw away are counted
+const VERSION = "v46";     // v46: engine 0.15.0 — the wind-axis crossing is persisted per turn (axisTs/axisBeforeDeg/axisAfterDeg); no verdict moves
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
