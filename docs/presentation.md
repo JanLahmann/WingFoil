@@ -1436,6 +1436,24 @@ to the first sample back at `turnRecoverPct` of the entry speed, the engine's ow
 again" threshold — is shaded lighter behind it, so the band's early end reads as "the turn
 was done" rather than "the drawing stopped short".
 
+**Every window, drawn and named** (7 Sep 2026). Jan, reading a fall the engine had called a
+touchdown: "It's not clear when the jibe starts and ends, and what extended windows we look
+at and why. That should be clearly defined and indicated on the chart." So the strip now
+carries a small word under each band it reads from, and the footnote says how long each is,
+with the values in force from `TurnConfig` rather than prose that could drift:
+
+| band | span | what the engine reads there |
+|---|---|---|
+| `entry` | `−entrySpeedWindowS … 0` | `entryKn` is the maximum; "in" sits at that sample |
+| `sweep` | `0 … endTs` | the heading's turn; `exitKn` is the sample at its end |
+| (no band) | `… endTs + minSpeedLagS` | `minKn` is searched to here, so "low" may sit *after* "out" — the footnote says so |
+| `outcome` | `endTs … endTs + outcomeLookaheadS` | stop, recovery and the verdict |
+| lighter, inside `outcome` | `endTs … recoverRt` | the recovery: where the speed was back at `turnRecoverPct` |
+
+The `TurnSlice` used to clamp `minRt` to the sweep's end, which drew "low" at the sweep's
+last sample whenever the true minimum came a moment later — the "low 5.4 while out 8.2"
+that looked like a contradiction on Jibe 23. It clamps to `endTs + minSpeedLagS` now.
+
 **One channel, one set of numbers.** The numbers row prints the *engine's* `entryKn`,
 `minKn`, `exitKn`, `score`, `stoppedS`, `offFoilS`, `radiusM`, `netDeg`, `side`, `direction`
 and `outcome` — those are the verdict and nothing may re-derive them. The strip draws **the
