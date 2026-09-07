@@ -155,11 +155,12 @@ private struct TurnDetailPage: View {
     }
 
     /// Why this turn is a touchdown or a fall (engine 0.18.0) — the kit's wording, with this
-    /// analysis' own exit speed, so the one sentence that names a speed names the speed the
-    /// run was actually judged against. nil on a fly-through and on a stored document written
-    /// before the reason existed.
+    /// analysis' own `turnPumpedMarginalSpeed`, so the one sentence that names a speed names
+    /// the speed the run was actually judged against rather than the published default. nil on
+    /// a fly-through and on a stored document written before the reason existed.
     private func outcomeText(_ turn: TurnRecord) -> String? {
-        TurnAnalytics.outcomeText(turn, foilExitSpeedKmh: detail.analysis.config.foilExitSpeed)
+        TurnAnalytics.outcomeText(
+            turn, marginalSpeedKmh: detail.analysis.config.turnPumpedMarginalSpeed)
     }
 
     private var windUp: Bool { windUpPreferred && windKnown }
