@@ -6,7 +6,7 @@ Single source of truth for detection/metric parameters. Three implementations fo
 re-tuned in lab notebooks against the labeled fixture corpus; changed defaults are updated HERE
 first, with the tuning notebook referenced in the commit.
 
-`ENGINE_VERSION`: **0.15.0** (bump on any change that alters outputs; triggers phone re-analysis)
+`ENGINE_VERSION`: **0.16.0** (bump on any change that alters outputs; triggers phone re-analysis)
 
 ## Flight (foil) detection — hysteresis state machine
 
@@ -686,6 +686,57 @@ swum. The evidence ladder above reads 9 / 9 / 12, and every turn it moved has a 
 The same code with no accel and no barometer still moves 2026-08-05 am from 15/1/1 to 12/2/3
 and 2026-08-04 pm from 42/7/5 to 35/11/8, so the correction is not an artifact of the one
 session that has extra channels.
+
+### Submersion episodes — `submersions` (engine ≥ 0.16.0)
+
+The barometer's submersion mask (step 2 above) is computed over the **whole track** and has
+always been read in exactly two places: inside a turn's outcome window, and inside a flight
+end's. That is the right input for a *verdict* — "did the wrist go under while this maneuver
+was being judged" — and the wrong shape for a *map*. A rider asking "do we see all my
+wrist-under events?" (Jan, 7 Sep 2026) got four marks on an afternoon the mask fired 35
+times, and each of the four sat at its turn's start rather than at the dip.
+
+So the same mask is now also serialized as **events**: `submersions`, a list beside `turns`
+and `flightEnds`, one entry per spell under water.
+
+* **A run is a maximal contiguous true-run of the mask, within one gap-free segment.** A
+  recording gap always breaks a run — the samples either side of one are not evidence about
+  each other, the rule every other window in `evidence.py` obeys — so a Smart-Recording hole
+  mid-dunk yields two episodes rather than one three-minute swim.
+* **Runs less than `2 s` apart are merged** (`SUBMERSION_MERGE_S`, not a tunable in `config`).
+  One dunk and the wave right after it are one event to the rider, and a slew-limited
+  altimeter can cross the threshold twice on the way back up. On the present corpus this
+  merges nothing at all — the closest two runs are 3 s apart, and every source but one is
+  1 Hz, where two runs cannot be closer than 2 s — so it is a guard for the 4 Hz sources
+  rather than a correction to today's numbers. At 4 s it would merge exactly one pair.
+* `durationS` is the gap-aware elapsed time from the first submerged sample to the last, the
+  same clock every other span in the engine is measured on. A single-sample run is `0`.
+* `dropM` is the deepest sample of the run below **the same reference the mask itself uses** —
+  the session median of the finite altitude samples (`submerged_reference`, spelled once so
+  the two cannot drift). It is therefore always at least `turnBaroDrop`, and on the corpus it
+  runs 27–347 m: the wrist altimeter's rendering of 30 cm of water is a ~250 m "drop".
+* **Attribution, first match wins**, in this order: a *counted* turn whose outcome window
+  (`ts` → `endTs + outcomeWindowS`) the run overlaps ⇒ `turnIndex`; failing that a *drawn*
+  flight end (no turn owns it, the recording did not stop) whose window (`ts` → `ts +
+  windowS`) it overlaps ⇒ `flightEndIndex`; failing that neither, which means the rider was
+  already off the foil when he went under. That is a real answer and the map says it
+  ("while off foil"), not a missing one. The windows are rebuilt from what each record
+  already carries, so an episode is never attributed to a window a verdict was not read from.
+* **The verdict flags do not move.** `turns[].submerged` and `flightEnds[].submerged` are the
+  outcome ladder's inputs and are computed exactly as before, from the same mask at the same
+  threshold. The episodes are presentation evidence laid over them, and the relationship is
+  one-way: every flagged turn or end has at least one episode overlapping its window, while
+  an episode need not belong to any (119 of the corpus's 154 do not).
+* **A source with no barometer gets an empty list.** Nothing is invented from GPS altitude:
+  the episodes are the mask's runs and the mask is all-false without a finite altitude
+  channel, and flat below `turnBaroDrop` of variation. Of the seventeen fixtures, ten have no
+  episodes at all. The one converted GPX is the interesting case — it carries the FIT's own
+  `<ele>`, so it reproduces that session's single episode to the metre, which is the same
+  parity every other channel on that pair shows.
+
+**The watch computes none of this.** Its swim detection was withdrawn in 0.9.2 (drift reads
+as swim) and `garmin/` has no submersion channel at all; the episodes are a phone/web
+analysis of a recorded barometer trace, and nothing in this section has a live approximation.
 
 ### Turn streaks — `longestDryStreak` · `longestFlewStreak`
 
