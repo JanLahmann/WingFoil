@@ -526,8 +526,11 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    and `UI_ICU_KEY=…` seeds a key through the real keychain path afterwards, so the
    first-run setup card and the "key stored, sync rejected" card can both be captured
    without reinstalling. `UI_IMPORT_FIXTURES=1`, `UI_OPEN_SESSION=latest|<name>`,
-   `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings|import` and
+   `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings|import|tuning` and
    `UI_HELP_TOPIC=<HelpTopicID>` park the app on a given screen, since `simctl` cannot tap.
+   `UI_SHEET=tuning` needs the **dev** build (`TUNING`, below) — it opens Settings → Tuning
+   as a sheet of its own rather than "Settings, then push", because `simctl` cannot tap the
+   row either. On the public build the value is simply unknown and nothing opens.
    **Since the session page became a four-way switcher** (`SessionSection`,
    docs/presentation.md "Sections"), every session hook that names a place also **selects
    the section that place lives on** — `UI_SCROLL_TO` through `SessionSection.section(owning:)`,
@@ -922,6 +925,78 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    UI and `fitContributions` rendering in Garmin Connect. Do early.
 6. **Watch-vs-phone divergence banner** — standing field-regression alarm on every class-(a)
    import (thresholds in `algorithms.md`).
+
+## Two TestFlight variants — the dev build and the public one
+
+One App Store Connect app, one bundle id, one `MARKETING_VERSION`, **two builds from the same
+commit**. They differ by one compilation condition:
+
+| | scheme | configuration | `TUNING` | group | build |
+|---|---|---|---|---|---|
+| **dev** | `WingFoil Dev` | `Dev Release` | defined | internal (no beta review) | N |
+| **public** | `WingFoil` | `Release` | not defined | external (beta review) | N+1 |
+
+`TUNING` compiles in Settings → Tuning, the "tuned thresholds" chip and banner, the turn
+footnote's "Measured at:" line, and " · dev" after the version in Settings → About
+(docs/presentation.md "Tuning"). It is set on the **phone app target only**, in
+`ios/project.yml`, as `SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) TUNING` under the
+`Dev Debug` / `Dev Release` configurations. Nothing else in the project reads it, and the
+watch, the widgets and the complication are built identically in both variants — they only
+need their own `Dev Release` signing block, which they have.
+
+**The check that the public build is clean** (run it before archiving; it must print nothing
+containing `TUNING`):
+
+```sh
+cd ios
+xcodebuild -project WingFoil.xcodeproj -scheme WingFoil -configuration Release \
+  -showBuildSettings | grep SWIFT_ACTIVE_COMPILATION_CONDITIONS
+```
+
+**The two archive commands.** Same commit, same `MARKETING_VERSION`; bump
+`CURRENT_PROJECT_VERSION` in `ios/project.yml` (all four targets) and re-run `xcodegen
+generate` between them, so the dev build is N and the public one N+1.
+
+```sh
+cd ios
+
+# 1. dev build (TUNING) — build N
+xcodegen generate
+xcodebuild -project WingFoil.xcodeproj -scheme "WingFoil Dev" \
+  -configuration "Dev Release" -destination 'generic/platform=iOS' \
+  -archivePath build/WingFoilDev.xcarchive archive
+xcodebuild -exportArchive -archivePath build/WingFoilDev.xcarchive \
+  -exportOptionsPlist ExportOptions.plist -exportPath build/exportDev
+
+# 2. bump CURRENT_PROJECT_VERSION to N+1 in project.yml, then the public build
+xcodegen generate
+xcodebuild -project WingFoil.xcodeproj -scheme WingFoil \
+  -configuration Release -destination 'generic/platform=iOS' \
+  -archivePath build/WingFoil.xcarchive archive
+xcodebuild -exportArchive -archivePath build/WingFoil.xcarchive \
+  -exportOptionsPlist ExportOptions.plist -exportPath build/export
+```
+
+Upload both (Transporter or `xcrun altool`), then attach each to its group:
+
+```sh
+uv run --with pyjwt --with cryptography --with requests \
+  python ios/tools/testflight_publish.py N   --group internal --wait
+uv run --with pyjwt --with cryptography --with requests \
+  python ios/tools/testflight_publish.py N+1 --group external --wait
+```
+
+`--group internal` attaches to the internal group and **skips the beta-review submission** —
+internal testers need no review, and submitting a build we never intend to ship would put it
+in front of Apple's reviewers ahead of the one we do. `--group external` is the default and
+is unchanged: attach, set What to Test, submit for beta review (the lesson of builds 6–15,
+which sat unreviewed for weeks because attaching is not submitting).
+
+Both variants read and write the *same* library on a phone that has had both installed. That
+is deliberate — the point of the dev build is to try thresholds against real sessions — but it
+means a phone that ran the dev build has a library stamped `0.14.0+tuned.…` until the public
+build's own `reanalyzeStale()` sweep re-derives it on the published defaults, which it does at
+the first launch because the stamped version does not match.
 
 ## The bundled example session
 
