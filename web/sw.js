@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v41";     // v41: key metrics row 2 gains 5×10 s and alpha 500 (block-only)
+const VERSION = "v42";     // v42: flew-through/clean vocabulary, one clock, one percent rule
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
