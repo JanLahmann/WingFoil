@@ -243,68 +243,77 @@ def render(stem: str, doc: dict) -> str:
 #   c1 c2      two winter afternoons 46 days apart: one season, no trip
 #   a6         no anchor fix, so it is placed by name; no swims, no streak, no 10 s
 #              record and only three jibes — a period built of it alone has to drop
-#              four entries rather than print four zeroes
+#              four entries rather than print four zeroes; and no `timerTimeS`, which
+#              is a row saved before digest schema 9 / GRDB v13 and makes the fallback
+#              to the elapsed span part of the contract rather than an untested branch
+#
+# Every session carries **three** clocks, and they are all different on purpose: `durationS`
+# (the file's own elapsed time, the dedupe key), `rateDurationS` (T1, the engine's cleaned
+# span — what "hours on the water" sums and what every duration is *shown* as) and
+# `timerTimeS` (T2, the session minus its pauses — what every rate *divides* by). T2 is
+# below T1 on every row that has one, so a fixture that divided a rate by the wrong clock
+# could not possibly still match.
 #
 # and the seasons it produces are the two spellings: 2026 reaches February 2027 and is
 # therefore "2026/27", while 2027 has not crossed a year and is just "2027".
 PERIOD_SESSIONS = [
     {"id": "a1", "spot": "Nago Torbole", "startUtc": "2026-07-31T10:00:00Z",
      "utcOffsetS": 7200, "lat": 45.8760, "lon": 10.8710,
-     "rateDurationS": 3600.0, "durationS": 3700.0, "distanceKm": 12.0,
+     "rateDurationS": 3600.0, "timerTimeS": 3000.0, "durationS": 3700.0, "distanceKm": 12.0,
      "foilTimeS": 1800.0, "foilPct": 50.0, "flightCount": 9, "longestFlightS": 120.0,
      "jibes": 8, "jibesSuccessful": 5, "turnsCounted": 12, "longestDryStreak": 6,
      "wetExits": 4, "best2sKn": 14.00, "best10sKn": 12.00},
     {"id": "a2", "spot": "Nago Torbole", "startUtc": "2026-08-01T10:00:00Z",
      "utcOffsetS": 7200, "lat": 45.8762, "lon": 10.8712,
-     "rateDurationS": 7200.0, "durationS": 7300.0, "distanceKm": 24.0,
+     "rateDurationS": 7200.0, "timerTimeS": 6000.0, "durationS": 7300.0, "distanceKm": 24.0,
      "foilTimeS": 4320.0, "foilPct": 60.0, "flightCount": 18, "longestFlightS": 240.0,
      "jibes": 20, "jibesSuccessful": 11, "turnsCounted": 26, "longestDryStreak": 9,
      "wetExits": 7, "best2sKn": 15.50, "best10sKn": 13.20},
     {"id": "a3", "spot": "Nago Torbole", "startUtc": "2026-08-04T10:00:00Z",
      "utcOffsetS": 7200, "lat": 45.8758, "lon": 10.8705,
-     "rateDurationS": 1800.0, "durationS": 1850.0, "distanceKm": 6.0,
+     "rateDurationS": 1800.0, "timerTimeS": 1500.0, "durationS": 1850.0, "distanceKm": 6.0,
      "foilTimeS": 900.0, "foilPct": 50.0, "flightCount": 5, "longestFlightS": 90.0,
      "jibes": 6, "jibesSuccessful": 4, "turnsCounted": 8, "longestDryStreak": 3,
      "wetExits": 2, "best2sKn": 13.10, "best10sKn": 11.40},
     {"id": "a4", "spot": "Nago Torbole", "startUtc": "2026-08-09T10:00:00Z",
      "utcOffsetS": 7200, "lat": 45.8759, "lon": 10.8709,
-     "rateDurationS": 3600.0, "durationS": 3650.0, "distanceKm": 10.0,
+     "rateDurationS": 3600.0, "timerTimeS": 2700.0, "durationS": 3650.0, "distanceKm": 10.0,
      "foilTimeS": 1440.0, "foilPct": 40.0, "flightCount": 7, "longestFlightS": 150.0,
      "jibes": 10, "jibesSuccessful": 3, "turnsCounted": 14, "longestDryStreak": 4,
      "wetExits": 6, "best2sKn": 12.80, "best10sKn": 10.90},
     {"id": "b1", "spot": "Malcesine", "startUtc": "2026-08-02T12:00:00Z",
      "utcOffsetS": 7200, "lat": 45.7650, "lon": 10.8100,
-     "rateDurationS": 5400.0, "durationS": 5500.0, "distanceKm": 18.0,
+     "rateDurationS": 5400.0, "timerTimeS": 4500.0, "durationS": 5500.0, "distanceKm": 18.0,
      "foilTimeS": 2700.0, "foilPct": 50.0, "flightCount": 12, "longestFlightS": 200.0,
      "jibes": 14, "jibesSuccessful": 7, "turnsCounted": 18, "longestDryStreak": 5,
      "wetExits": 5, "best2sKn": 13.60, "best10sKn": 11.80},
     {"id": "b2", "spot": "Malcesine", "startUtc": "2026-08-03T12:00:00Z",
      "utcOffsetS": 7200, "lat": 45.7655, "lon": 10.8105,
-     "rateDurationS": 3600.0, "durationS": 3700.0, "distanceKm": 11.0,
+     "rateDurationS": 3600.0, "timerTimeS": 3000.0, "durationS": 3700.0, "distanceKm": 11.0,
      "foilTimeS": 1980.0, "foilPct": 55.0, "flightCount": 8, "longestFlightS": 130.0,
      "jibes": 9, "jibesSuccessful": 6, "turnsCounted": 11, "longestDryStreak": 7,
      "wetExits": 3, "best2sKn": 14.40, "best10sKn": 12.60},
     {"id": "a5", "spot": "Nago Torbole", "startUtc": "2026-08-31T22:30:00Z",
      "utcOffsetS": 7200, "lat": 45.8761, "lon": 10.8711,
-     "rateDurationS": 1800.0, "durationS": 1900.0, "distanceKm": 5.0,
+     "rateDurationS": 1800.0, "timerTimeS": 1200.0, "durationS": 1900.0, "distanceKm": 5.0,
      "foilTimeS": 720.0, "foilPct": 40.0, "flightCount": 4, "longestFlightS": 70.0,
      "jibes": 5, "jibesSuccessful": 2, "turnsCounted": 7, "longestDryStreak": 2,
      "wetExits": 3, "best2sKn": 11.90, "best10sKn": 10.20},
     {"id": "c1", "spot": "Rheinstetten", "startUtc": "2026-12-30T09:00:00Z",
      "utcOffsetS": 3600, "lat": 48.9700, "lon": 8.3200,
-     "rateDurationS": 5400.0, "durationS": 5600.0, "distanceKm": 14.0,
+     "rateDurationS": 5400.0, "timerTimeS": 4200.0, "durationS": 5600.0, "distanceKm": 14.0,
      "foilTimeS": 2160.0, "foilPct": 40.0, "flightCount": 10, "longestFlightS": 110.0,
      "jibes": 12, "jibesSuccessful": 4, "turnsCounted": 15, "longestDryStreak": 5,
      "wetExits": 8, "best2sKn": 12.20, "best10sKn": 10.60},
     {"id": "c2", "spot": "Rheinstetten", "startUtc": "2027-02-14T09:00:00Z",
      "utcOffsetS": 3600, "lat": 48.9702, "lon": 8.3205,
-     "rateDurationS": 3600.0, "durationS": 3700.0, "distanceKm": 9.0,
+     "rateDurationS": 3600.0, "timerTimeS": 2700.0, "durationS": 3700.0, "distanceKm": 9.0,
      "foilTimeS": 1440.0, "foilPct": 40.0, "flightCount": 6, "longestFlightS": 95.0,
      "jibes": 7, "jibesSuccessful": 3, "turnsCounted": 9, "longestDryStreak": 4,
      "wetExits": 5, "best2sKn": 11.50, "best10sKn": 9.80},
     {"id": "a6", "spot": "Nago Torbole", "startUtc": "2027-05-10T10:00:00Z",
      "utcOffsetS": 7200, "lat": None, "lon": None,
-     "rateDurationS": 2400.0, "durationS": 2500.0, "distanceKm": 7.0,
+     "rateDurationS": 2400.0, "timerTimeS": None, "durationS": 2500.0, "distanceKm": 7.0,
      "foilTimeS": 1200.0, "foilPct": 50.0, "flightCount": 5, "longestFlightS": 100.0,
      "jibes": 3, "jibesSuccessful": 2, "turnsCounted": 5, "longestDryStreak": None,
      "wetExits": None, "best2sKn": 12.00, "best10sKn": None},
@@ -340,6 +349,9 @@ def period_digest(s: dict) -> dict:
         "dateLocal": library._local_date(epoch, s["utcOffsetS"]),
         "utcOffsetS": s["utcOffsetS"], "geo": geo,
         "durationS": s["durationS"], "rateDurationS": s["rateDurationS"],
+        # T2 (schema 9) — the rate denominator, deliberately below T1 on every session but
+        # `a6`, whose `None` is a row saved before schema 9 and is what pins the fallback.
+        "timerTimeS": s["timerTimeS"],
         "distanceKm": s["distanceKm"], "foilTimeS": s["foilTimeS"], "foilPct": s["foilPct"],
         "flightCount": s["flightCount"], "longestFlightS": s["longestFlightS"],
         "wetExits": s["wetExits"],

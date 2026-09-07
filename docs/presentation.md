@@ -1142,15 +1142,15 @@ hand-written test suites agreeing today is not two implementations that cannot d
 | # | key | label | how it is derived |
 |---|---|---|---|
 | 1 | `sessions` | sessions | count |
-| 2 | `hours` | hours on the water | Σ `summary.durationS` (the engine's cleaned span) |
+| 2 | `hours` | hours on the water | Σ `summary.durationS` (T1, the engine's cleaned span) |
 | 3 | `distance` | distance | Σ `distanceKm` |
 | 4 | `flights` | flights | Σ `flightCount` |
 | 5 | `foilPct` | on foil | Σ foil time ÷ Σ **on-water** time |
 | 6 | `cleanJibes` | clean jibes | Σ `jibesSuccessful` |
-| 7 | `cph` | CPH · clean jibes per hour | clean jibes ÷ hours |
+| 7 | `cph` | CPH · clean jibes per hour | clean jibes ÷ Σ `summary.timerTimeS` (T2) |
 | 8 | `turns` | turns | Σ counted turns |
 | 9 | `cleanJibeRate` | clean-jibe rate | Σ clean ÷ Σ jibes, ≥ 5 jibes |
-| 10 | `wph` | WPH · swims per hour | Σ fell-in flight ends ÷ hours |
+| 10 | `wph` | WPH · swims per hour | Σ fell-in flight ends ÷ Σ `summary.timerTimeS` (T2) |
 | 11 | `best2s` | best 2 s | max |
 | 12 | `best10s` | best 10 s | max |
 | 13 | `longestFlight` | longest flight | max |
@@ -1161,13 +1161,23 @@ hand-written test suites agreeing today is not two implementations that cannot d
   rates.** Ten minutes with one clean jibe and three hours with three is not "6.0 and 1.0,
   so 3.5 an hour"; it is four clean jibes in three hours and ten minutes. The same rule
   already governs the library totals' on-foil share and the gear rollup's.
-- **The hours are the engine's own session spans** — `summary.durationS`, the *cleaned*
-  first-to-last span every per-session rate divides by (docs/algorithms.md "Session rates").
-  It is deliberately **not** the row's other duration: the analyzer's `durationS` is the
-  FIT's `total_elapsed_time` and the iOS row's is the raw sample span, and on the corpus's
-  Rheinstetten afternoon those are 10338 s against 7742 s. A month holding a single session
-  has to report that session's CPH and not a second opinion about it, so both platforms
-  store the engine's span beside the other one (digest schema 7 `rateDurationS`, GRDB v12).
+- **Two clocks, and what a number *is* decides which one it gets: every displayed duration
+  is T1, every rate denominator is timer time.** "Hours on the water" is a duration, so it
+  sums `summary.durationS` — the *cleaned* first-to-last span, gaps included — like every
+  duration on every surface. CPH and WPH are rates, so they divide by summed
+  `summary.timerTimeS`, the session minus its pauses, which is what the engine's own
+  `cleanJibesPerHour` and `wetPerHour` divide by since 0.13.0 (docs/algorithms.md, "Session
+  rates"). A month holding a single afternoon has to report that afternoon's CPH and not a
+  second opinion about it, and until 7 Sep 2026 it reported one *under* it: the block summed
+  T1 for the rates too, so every paused break the rider took deflated his own month.
+- Neither clock is the row's other duration: the analyzer's `durationS` is the FIT's
+  `total_elapsed_time` and the iOS row's is the raw sample span, and on the corpus's
+  Rheinstetten afternoon those are 10338 s against 7742 s of T1 against 4712 s of timer. So
+  both platforms store both engine clocks beside it — digest schema 7 `rateDurationS` and
+  schema 9 `timerTimeS`, GRDB v12 and v13. A row saved before either falls back one step at
+  a time (timer → elapsed → the row's own duration): elapsed is the closest clock it stores
+  and is the number it was already divided by, which is a smaller error than dropping the
+  afternoon out of its own month.
 - **On-foil share is weighted by time on the water**, not by elapsed time and not as a mean
   of the percentages: the engine divides by its own cleaned timer time, which excludes the
   gaps and the parked stretches, and summing elapsed time instead reports a library-wide
@@ -1520,10 +1530,19 @@ session" record was a different number on the phone and on the web.
   is the dedupe key and the stored id, and neither may move.
 - **The web** reads `summary.durationS` on the session page and `library._rate_duration_s`
   (`rateDurationS ?? durationS`) over stored digests.
-- **Rate denominators** are a separate question and are the engine's: `foilPct` divides by
-  timer time (total minus pauses), the four per-hour rates by this span
-  (`docs/algorithms.md`, "Session rates"). Engine 0.13.0 revisits the rate denominators;
-  this section is about what is *displayed*.
+- **Rate denominators are a separate question, and since engine 0.13.0 a separate clock.**
+  The rule, in one line: **every displayed duration is T1 (the cleaned elapsed span), every
+  rate denominator is timer time (T2, total minus pauses).** `foilPct`, `avgSpeedKmh` and all
+  four per-hour rates divide by T2 (`docs/algorithms.md`, "Session rates"); everything in
+  this section is about the other half, what is *displayed*.
+- **A period obeys the same split**, which is what closed the last gap on 7 Sep 2026: the
+  block's "hours on the water" sums T1 and its CPH and WPH divide by summed T2, so a month
+  holding one afternoon prints that afternoon's own rate. Stored as `timerTimeS` on both
+  sides — digest schema 9, GRDB v13 — because a rate a *library* computes has to reach the
+  same denominator as the session page without re-reading the recording. The accessors are
+  `library._timer_s` and `SessionRow.timerSeconds`, and their duration twins are
+  `library._rate_duration_s` and `SessionRow.rateSeconds`; a call site picks by asking what
+  the number is, not by which one is nearer.
 
 **One duration formatter per platform**, the one this document already specifies —
 `M:SS min` under an hour, `H:MM h` at or above one, rounded not truncated, unit inside the

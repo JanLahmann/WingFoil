@@ -67,7 +67,15 @@ from datetime import datetime, timedelta, timezone
 # `bySide` gains `flewThrough`/`flewThroughPct` beside the old pair, and the entry-tack chart
 # reads the new one. Absent on a row written before it, where the chart simply has no point
 # for that session: a gap in a line is "not measured", which is exactly what this is.
-SCHEMA = 8
+# v9 (7 Sep 2026) carries `timerTimeS` (T2, the session minus its pauses), because since
+# engine 0.13.0 that is what a *rate* divides by and a stored row had no way to say it. A
+# period's JPH/TPH/CPH/WPH summed `rateDurationS` (T1) instead, so a month holding one
+# afternoon reported a CPH under that afternoon's own — the exact disagreement schema 7 was
+# added to end, reappearing one clock along. The rule both platforms now keep: **every
+# displayed duration is T1, every rate denominator is timer time.** Null on a row written
+# before it, where `_timer_s` falls back to `rateDurationS` — elapsed, the closest stored
+# clock, and the number those rows were already divided by.
+SCHEMA = 9
 
 # The project-wide "same session" rule, in one place: a session start within +/-60 s AND a
 # duration within +/-60 s of an existing entry is the same session recorded twice (watch
@@ -371,6 +379,13 @@ def digest(doc, file_name: str | None = None) -> dict:
         # divide by *this*, or a month holding one session would report a rate that
         # disagreed with that session's own page.
         "rateDurationS": _num(summ.get("durationS")),
+        # Timer time (T2, schema 9): the sum of the non-gap steps, the session minus its
+        # pauses — **the denominator every rate divides by** since engine 0.13.0
+        # (docs/algorithms.md "Session rates"). Stored beside `rateDurationS` rather than
+        # instead of it, because the two answer different questions: T1 is what a duration
+        # is *shown* as, T2 is what a per-hour number is *divided* by, and a period that
+        # blurs them reports a CPH the sessions in it disagree with.
+        "timerTimeS": _num(summ.get("timerTimeS")),
         # Every fell-in flight end — turn swims and straight-line swims alike, which is what
         # WPH counts (`summary.wetPerHour`). Absent, never 0, on a row written before it.
         "wetExits": _count(((summ.get("flightEnds") or {}).get("all") or {}).get("fellIn")),
@@ -571,6 +586,27 @@ def _rate_duration_s(d: dict):
     return engine if engine is not None else _num(d.get("durationS"))
 
 
+def _timer_s(d: dict):
+    """**The one clock a rate is divided by**, for one digest.
+
+    `timerTimeS` (schema 9) is the engine's timer time (T2) — the session minus its pauses —
+    and since engine 0.13.0 it is the denominator of every per-hour rate the engine
+    publishes (docs/algorithms.md, "Session rates"). Summing it is what lets a period's CPH
+    agree with the CPH on the page of every session in it.
+
+    The fallback for a row written before schema 9 is `_rate_duration_s`: elapsed, the
+    closest stored clock, and the number those rows were divided by when they were saved. It
+    over-counts by whatever the recorder sat paused, which deflates the rate — the same
+    error the row already carried, and a great deal smaller than dropping the afternoon out
+    of its own month.
+
+    The rule, in one line: **every displayed duration is `_rate_duration_s`, every rate
+    denominator is this** (docs/presentation.md, "One clock").
+    """
+    timer = _num(d.get("timerTimeS"))
+    return timer if timer is not None else _rate_duration_s(d)
+
+
 def _clean_jibes(d: dict):
     """Clean jibes in this session (`summary.turns.jibesSuccessful`), or None if the digest
     predates schema 5 and never carried the number."""
@@ -582,7 +618,8 @@ def _cph(d: dict):
 
     The division below is the **fallback for a stored row written before that field
     existed**, and nothing else. It is the same arithmetic the engine does — clean jibes
-    over elapsed session time — kept here because a library saved last month is still the
+    over **timer** time, the rate denominator since 0.13.0 — kept here because a library
+    saved last month is still the
     rider's library and its afternoons still hold records; dropping those rows out of the
     CPH record and the CPH trend line would be a worse answer than re-deriving a number
     whose inputs the digest already carries.
@@ -594,7 +631,8 @@ def _cph(d: dict):
     stored = _num(d.get("cleanJibesPerHour"))
     if stored is not None:
         return stored
-    clean, duration = _clean_jibes(d), _rate_duration_s(d)
+    # Rate denominator, so: timer time (`_timer_s`), never the elapsed span.
+    clean, duration = _clean_jibes(d), _timer_s(d)
     if clean is None or duration is None or duration <= 0:
         return None
     return clean * 3600.0 / duration
@@ -613,7 +651,13 @@ CPH_MIN_DURATION_S = 15 * 60
 
 
 def _cph_record(d: dict):
-    """`_cph`, but only for a session long enough to hold the record."""
+    """`_cph`, but only for a session long enough to hold the record.
+
+    The floor is a **length**, not a denominator, so it is measured on T1
+    (`_rate_duration_s`) like every other duration a rider is shown: "sessions of at least
+    15 minutes" means the afternoon lasted a quarter of an hour, not that the recorder ran
+    for one. The rate it gates is still divided by timer time.
+    """
     seconds = _rate_duration_s(d)
     if seconds is None or seconds < CPH_MIN_DURATION_S:
         return None
@@ -809,8 +853,9 @@ def _weeks(ds: list) -> list:
             continue
         b = buckets.setdefault(key, {"weekStart": key, "count": 0, "hours": 0.0})
         b["count"] += 1
-        # The **engine's** cleaned span, the same clock the period block's "hours on the
-        # water" divides by (`_rate_duration_s`). The bar's tooltip used to sum the FIT's
+        # The **engine's** cleaned span (T1), the same clock the period block's "hours on
+        # the water" sums (`_rate_duration_s`) — a bar's height is a duration, not a rate,
+        # so it is this one and not the timer. The bar's tooltip used to sum the FIT's
         # `total_elapsed_time`, so a week and the month containing it reported different
         # hours for the same afternoons (docs/presentation.md, "One clock").
         b["hours"] += (_rate_duration_s(d) or 0.0) / 3600.0
@@ -1192,9 +1237,22 @@ def _period_facts(ds: list, spots: int) -> dict:
     hour"; they are four clean jibes in three hours and ten minutes. The same rule already
     governs the library totals' on-foil share, which is total foil time over total on-water
     time and not the average of the percentages.
+
+    **Two clocks, and which one a number gets is decided by what the number is.** "Hours on
+    the water" is a *duration*, so it sums T1 (`_rate_duration_s`, the engine's cleaned
+    elapsed span) like every duration on every surface. CPH and WPH are *rates*, so they
+    divide by summed **timer** time (`_timer_s`, T2) — the same denominator the engine gives
+    the session's own rates since 0.13.0, which is what makes a month holding one afternoon
+    report that afternoon's CPH instead of a deflated second opinion about it
+    (docs/presentation.md, "One clock"; docs/algorithms.md, "Session rates").
     """
     seconds = _sum(ds, _rate_duration_s) or 0.0
     hours = seconds / 3600.0 if seconds > 0 else None
+    # The rate denominator, and the only thing it is used for. Deliberately a second local
+    # rather than a reuse of `hours`: the one line that blurred them is the bug this pair
+    # replaces.
+    timer_s = _sum(ds, _timer_s) or 0.0
+    rate_hours = timer_s / 3600.0 if timer_s > 0 else None
     clean = _sum(ds, _clean_jibes)
     jibes = _sum(ds, lambda d: _count((d.get("turns") or {}).get("jibes")))
     wet = _sum(ds, lambda d: _count(d.get("wetExits")))
@@ -1207,14 +1265,16 @@ def _period_facts(ds: list, spots: int) -> dict:
         "flights": _sum(ds, lambda d: _count(d.get("flightCount"))),
         "foilPct": (100.0 * foil / on_water) if foil is not None and on_water else None,
         "cleanJibes": None if clean is None else float(clean),
-        "cph": None if clean is None or hours is None else clean / hours,
+        # Rate: timer hours. (`hours` above is the displayed duration and is not a divisor.)
+        "cph": None if clean is None or rate_hours is None else clean / rate_hours,
         "turns": _sum(ds, lambda d: _count((d.get("turns") or {}).get("counted"))),
         # Same floor as the session record, over the period's own total: four clean out of
         # four is a good week, and it is still not a rate.
         "cleanJibeRate": (100.0 * clean / jibes)
                          if clean is not None and jibes and jibes >= MIN_JIBES_FOR_RATE
                          else None,
-        "wph": None if wet is None or hours is None else wet / hours,
+        # Rate: timer hours, the same divisor as CPH and as `summary.wetPerHour`.
+        "wph": None if wet is None or rate_hours is None else wet / rate_hours,
         "best2s": _max(ds, lambda d: _num((d.get("records") or {}).get("best2sKn"))),
         "best10s": _max(ds, lambda d: _num((d.get("records") or {}).get("best10sKn"))),
         "longestFlight": _max(ds, lambda d: _num(d.get("longestFlightS"))),

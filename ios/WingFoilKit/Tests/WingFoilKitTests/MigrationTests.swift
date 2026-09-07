@@ -172,8 +172,8 @@ import Testing
         }
         #expect(columns.isSuperset(of: ["longestDryStreak", "longestFlewStreak"]))
         #expect(stale == harness.v1Ids.count)
-        #expect(AppDatabase.migrationNames.last == "v12")
-        #expect(AppDatabase.schemaVersion == 12)
+        #expect(AppDatabase.migrationNames.last == "v13")
+        #expect(AppDatabase.schemaVersion == 13)
 
         _ = try await harness.ingestor.reanalyzeStale()
         for session in try await harness.ingestor.allSessions() {
@@ -205,14 +205,18 @@ import Testing
             #expect(session.cleanJibesPerHour == summary.cleanJibesPerHour)
         }
 
-        // The fallback, and that it is a *different* answer — which is what makes the
-        // column worth a migration rather than a rename.
+        // The fallback for a row this sweep could not refill. It divides by `timerSeconds`
+        // — the engine's own denominator since 0.13.0 — so where v13 filled that column it
+        // reproduces the engine's rate exactly; what makes the columns worth their
+        // migrations is that this is emphatically *not* what dividing by the row's own
+        // `durationS` used to give.
         var orphan = try #require(try await harness.ingestor.allSessions().first)
         let engine = try #require(orphan.cleanJibesPerHour)
         orphan.engineCleanJibesPerHour = nil
         let divided = try #require(orphan.cleanJibesPerHour)
-        #expect(divided == Double(orphan.jibesSuccessful ?? 0) * 3600 / orphan.durationS)
-        #expect(abs(divided - engine) >= 0)
+        #expect(divided == Double(orphan.jibesSuccessful ?? 0) * 3600 / orphan.timerSeconds)
+        #expect(abs(divided - engine) < 1e-9)
+        #expect(divided != Double(orphan.jibesSuccessful ?? 0) * 3600 / orphan.durationS)
     }
 
     /// v12 adds the two facts a period needs and a session row never carried. Same sweep,
@@ -246,6 +250,46 @@ import Testing
             if session.rateDurationS != session.durationS { sawADifference = true }
         }
         #expect(sawADifference, "the corpus must contain a session the two spans disagree about")
+    }
+
+    /// v13 adds the **other** clock — the one a rate divides by.
+    ///
+    /// v12's `rateDurationS` is T1, the engine's cleaned elapsed span, and engine 0.13.0
+    /// moved every per-hour rate off it onto timer time (T2). The column has to be filled
+    /// *and* has to be a different number from T1 on the real corpus, or a period would go
+    /// on dividing by the wrong clock and nothing would say so.
+    @Test func v13FillsTheTimerClockTheRatesDivideBy() async throws {
+        let harness = try migratedV1Library()
+        defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
+
+        let columns = try await harness.database.writer.read { db in
+            Set(try db.columns(in: "session").map(\.name))
+        }
+        #expect(columns.contains("timerTimeS"))
+
+        // The migration seeds every row from `rateSeconds` so none is left without a
+        // divisor, before the sweep replaces the seed with the engine's own number.
+        let seeded = try await harness.database.writer.read { db in
+            try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM session WHERE timerTimeS IS NULL")
+        }
+        #expect(seeded == 0)
+
+        _ = try await harness.ingestor.reanalyzeStale()
+        var sawADifference = false
+        for session in try await harness.ingestor.allSessions() {
+            let summary = try await harness.ingestor.analysis(for: session).summary
+            #expect(session.timerTimeS == summary.timerTimeS)
+            #expect(session.timerSeconds == summary.timerTimeS)
+            // Both clocks stored, both meaning what they say: T1 is the displayed duration,
+            // T2 is the divisor, and the engine's CPH is this count over *these* hours.
+            #expect(session.rateSeconds == summary.durationS)
+            if let clean = session.jibesSuccessful, let cph = summary.cleanJibesPerHour,
+               summary.timerTimeS > 0 {
+                #expect(abs(Double(clean) / (session.timerSeconds / 3600) - cph) < 1e-9)
+            }
+            if session.timerTimeS != session.rateDurationS { sawADifference = true }
+        }
+        #expect(sawADifference, "the corpus must contain a session the two clocks disagree about")
     }
 
     @Test func deletingASessionCascadesToItsDerivedRows() async throws {

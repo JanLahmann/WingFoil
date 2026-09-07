@@ -239,7 +239,7 @@ def check_attribution() -> None:
         e.pop("schema")
     check("  a schema-1 library is unchanged", library.aggregate(old)["count"], 2)
     check("  digest stamps the current schema",
-          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 8)
+          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 9)
 
     # Schema 3 (engine 0.8.2): the session's own UTC offset, and the local calendar date it
     # implies. `dateUtc` stays what it always was — the UTC day — so an entry written before
@@ -733,11 +733,20 @@ def check_periods(digests: list[dict]) -> None:
           [e["key"] for e in ps["seasons"][0]["block"]],
           [k for k, _l, _f in library.PERIOD_BLOCK])
     seconds = sum(d["rateDurationS"] for d in digests)
+    timer = sum(d["timerTimeS"] for d in digests)
     clean = sum(d["turns"]["jibesSuccessful"] for d in digests)
-    check("  hours are the engine's own spans, summed",
+    wet = sum(d["wetExits"] for d in digests)
+    check("  hours are the engine's own spans (T1), summed",
           block["hours"], f"{seconds / 3600.0:.1f} h")
-    check("  CPH is the summed count over the summed hours",
-          block["cph"], f"{clean / (seconds / 3600.0):.1f}")
+    # Every displayed duration is T1; every rate denominator is timer time. The corpus has
+    # to make the two disagree, or the next two checks would pass on a coincidence.
+    check("  the corpus's two clocks disagree", timer < seconds, True)
+    check("  CPH is the summed count over the summed *timer* hours",
+          block["cph"], f"{clean / (timer / 3600.0):.1f}")
+    check("  …and not over the elapsed hours",
+          block["cph"] != f"{clean / (seconds / 3600.0):.1f}", True)
+    check("  WPH divides by the same timer hours",
+          block["wph"], f"{wet / (timer / 3600.0):.1f}")
     check("  best 2 s is the library's own record",
           block["best2s"], f"{max(d['records']['best2sKn'] for d in digests):.2f} kn")
 
