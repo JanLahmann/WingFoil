@@ -135,18 +135,23 @@ struct TuningView: View {
     /// Name · value · unit on the first line, the slider under it, "default N · what it does"
     /// in the caption, and a reset that appears only once the row has something to reset.
     ///
-    /// The row is named with the parameter's docs/algorithms.md name rather than a friendly
-    /// paraphrase: this page is read next to that table, by someone who wants to change the
-    /// number the table names, and inventing a second vocabulary for it would make the two
-    /// documents impossible to line up.
+    /// The row is named in the rider's words (`spec.title`), with the parameter's
+    /// docs/algorithms.md name printed small under it: the page has to read on its own (Jan,
+    /// 7 Sep 2026: "review all descriptions on the tuning page for clarity") *and* line up
+    /// with that table for whoever is changing the number the table names.
     private func row(_ parameter: TuningParameter) -> some View {
         let spec = parameter.spec
         let value = overrides.value(for: parameter)
         let overridden = overrides.isOverridden(parameter)
         return VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 8) {
-                Text(parameter.rawValue)
-                    .font(.subheadline.weight(overridden ? .semibold : .regular))
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(spec.title)
+                        .font(.subheadline.weight(overridden ? .semibold : .regular))
+                    Text(parameter.rawValue)
+                        .font(.caption2.monospaced())
+                        .foregroundStyle(.tertiary)
+                }
                 Spacer(minLength: 8)
                 Text(spec.formatted(value))
                     .font(.subheadline.monospacedDigit())
@@ -159,7 +164,7 @@ struct TuningView: View {
                         Image(systemName: "arrow.uturn.backward.circle")
                     }
                     .buttonStyle(.borderless)
-                    .accessibilityLabel("Reset \(parameter.rawValue)")
+                    .accessibilityLabel("Reset \(spec.title)")
                 }
             }
             Slider(value: Binding(
@@ -169,7 +174,7 @@ struct TuningView: View {
                     commit()
                 }),
                    in: spec.range, step: spec.step) {
-                Text(parameter.rawValue)
+                Text(spec.title)
             } minimumValueLabel: {
                 Text(spec.format(spec.range.lowerBound)).font(.caption2).foregroundStyle(.tertiary)
             } maximumValueLabel: {

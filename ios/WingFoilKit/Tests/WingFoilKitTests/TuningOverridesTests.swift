@@ -47,11 +47,23 @@ import Testing
                     "\(parameter.rawValue) default outside its slider range")
             #expect(spec.step > 0)
             #expect(!spec.note.isEmpty)
+            #expect(!spec.title.isEmpty)
         }
-        // The page renders three sections and every parameter belongs to exactly one.
+        // The page renders three sections and every *shown* parameter belongs to exactly one;
+        // the hidden ones (`turnOutcomeWindow`, carried by the lookahead slider) stay off it.
         let grouped = TuningGroup.allCases.flatMap { TuningParameter.all(in: $0) }
-        #expect(Set(grouped) == Set(TuningParameter.allCases))
-        #expect(grouped.count == TuningParameter.allCases.count)
+        let shown = TuningParameter.allCases.filter { !$0.spec.hidden }
+        #expect(Set(grouped) == Set(shown))
+        #expect(grouped.count == shown.count)
+        #expect(TuningParameter.turnOutcomeWindow.spec.hidden)
+    }
+
+    @Test func lookaheadCarriesTheOffFoilWindowUnlessSetOnItsOwn() {
+        var overrides = TuningOverrides()
+        overrides[.turnOutcomeLookahead] = 20
+        #expect(overrides.apply().turn.outcomeWindowS == 20)
+        overrides[.turnOutcomeWindow] = 30
+        #expect(overrides.apply().turn.outcomeWindowS == 30)
     }
 
     // MARK: - Applying
