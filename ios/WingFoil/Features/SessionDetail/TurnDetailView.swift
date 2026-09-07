@@ -145,6 +145,7 @@ private struct TurnDetailPage: View {
                                       windUp: windUp, playheadRt: playheadRt)
                     if !slice.hasGeometry { noGeometryNote }
                     TurnDetailStripView(slice: slice, ghost: showsGhost ? ghost : nil,
+                                        windows: .init(config: detail.analysis.config),
                                         playheadRt: $playheadRt)
                     numbers(turn, slice: slice)
                     coach(turn, slice: slice)
@@ -329,6 +330,27 @@ private struct TurnDetailPage: View {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    #if TUNING
+    /// "Measured at: turnSuccessPct 70 % · minSpeedLag 2 s · turnOutcomeLookahead 12 s" —
+    /// the three parameters that define what the strip actually draws, taken from the stored
+    /// analysis' `config` echo, which is by construction the values the run used.
+    ///
+    /// `minSpeedLag` is optional in the echo because it was only written down from engine
+    /// 0.14.0; an older stored document simply omits that clause rather than guessing.
+    private var thresholdLine: String {
+        let config = detail.analysis.config
+        // Formatted by the tuning page's own specs, so the footnote and the slider that moved
+        // the value print the same string for the same number.
+        func say(_ parameter: TuningParameter, _ value: Double) -> String {
+            "\(parameter.rawValue) \(parameter.spec.formatted(value))"
+        }
+        var parts = [say(.turnSuccessPct, config.turnSuccessPct)]
+        if let lag = config.minSpeedLag { parts.append(say(.minSpeedLag, lag)) }
+        parts.append(say(.turnOutcomeLookahead, config.turnOutcomeLookahead))
+        return "Measured at: " + parts.joined(separator: " · ") + "."
+    }
+    #endif
+
     private func footnote(_ turn: TurnRecord) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text("The drawing is \(Int(TurnSlice.defaultPadS)) s either side of the sweep. "
@@ -339,13 +361,18 @@ private struct TurnDetailPage: View {
                  + "the manoeuvre channel the verdict was scored on, derived from position — "
                  + "the GPS Doppler speed the records use is smoothed through a turn and "
                  + "would read lower at the low point.")
+            // The windows are read off this analysis' own config echo, not `TurnConfig()`:
+            // on a dev build with tuning on, the defaults are exactly what these are not.
+            let windows = TurnDetailStripView.Windows(config: detail.analysis.config)
             Text("The bands under the strip are the engine's windows: \"entry\" is the "
-                 + "\(Int(TurnConfig().entrySpeedWindowS)) s before the sweep, where the entry "
-                 + "speed is the maximum; \"sweep\" is where the heading turned; the low point "
-                 + "is searched to \(Int(TurnConfig().minSpeedLagS)) s past the sweep, so it can "
-                 + "sit after \"out\"; \"outcome\" is the \(Int(TurnConfig().outcomeLookaheadS)) s "
-                 + "the verdict is read from, and the lighter band inside it ends where you "
-                 + "were flying again.")
+                 + "\(Int(windows.entryS)) s before the sweep, where the entry speed is the "
+                 + "maximum; \"sweep\" is where the heading turned; the low point is searched "
+                 + "to \(Int(windows.minLagS)) s past the sweep, so it can sit after \"out\"; "
+                 + "\"outcome\" is the \(Int(windows.outcomeS)) s the verdict is read from, and "
+                 + "the lighter band inside it ends where you were flying again.")
+            #if TUNING
+            Text(thresholdLine)
+            #endif
         }
         .font(.caption2)
         .foregroundStyle(.tertiary)

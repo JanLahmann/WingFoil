@@ -1685,6 +1685,51 @@ so the tap that asks "what was this stretch?" answers on both figures at once. T
 transient like every other zoom, and the reset affordance the zoom already has is the way
 out of it.
 
+## Tuning — the thresholds on sliders, in the dev build, on one phone
+
+**What it is.** Settings → Tuning puts 22 of the docs/algorithms.md parameters on sliders so
+a threshold can be tried against a real library in a minute instead of an afternoon: turn
+detection and scoring (`turnMinAngle`, `turnClassifyMinAngle`, `turnMaxDuration`,
+`turnPeakRate`, `turnContinueRate`, `turnMinArc`, `turnMinRadius`, `entrySpeedWindow`,
+`minSpeedLag`, `turnSuccessPct`), the stop ladder (`turnStopSpeedFloor`,
+`turnTouchdownMaxStop`, `turnFallStop`, `turnOutcomeLookahead`, `turnRecoverPct`,
+`turnRecoverHold`, `turnOutcomeWindow`) and flight hysteresis (`foilEntrySpeed`,
+`foilExitSpeed`, `entryHold`, `exitHold`, `minFlightDuration`). `nil` means the published
+default; setting a slider back to the default clears the override rather than storing it.
+
+**Phone-only, and dev-build-only.** The watch computes live on the wrist with no way to be
+told, and the web reads documents the phone wrote — neither follows a slider, and neither is
+asked to. And the whole feature is compiled out of the app external testers get: it lives
+behind `#if TUNING`, which only the "WingFoil Dev" scheme defines (docs/testing.md, "Two
+TestFlight variants"). In the public build `SessionIngestor.tuning` is never assigned, so the
+engine can only run the published defaults, and a `tuningOverrides.v1` left in UserDefaults
+by a dev build installed over the same bundle id is not even read.
+
+**What changing one does.** Everything. Foil time, flight count, turn counts, scores,
+outcomes, clean jibes, records, trends, periods and the share card are all derived from the
+same analysis. So a moved slider marks the whole library stale by the mechanism an engine
+bump already uses: the overrides' fingerprint rides in the analysis' `engineVersion` as
+`0.14.0+tuned.<n>.<hash8>` (`TuningStamp`), which is the string `reanalyzeStale()`,
+`SessionArchive.analysis(for:)` and `SessionStore.detail(for:)` already compare on. Sessions
+re-derive lazily on open and in bulk at the next launch; "Re-analyse all sessions now" is the
+same trip taken immediately, and leaving the page takes it automatically.
+
+**The mark, and where it must appear.** A tuned number may never be shown unmarked:
+
+| surface | mark | read from |
+|---|---|---|
+| session header, beside the discipline badge | `tuned · N` chip | that session's stored `engineVersion` |
+| session page, in the divergence banner's slot | "Analysed with tuned thresholds (N changed) — Settings → Tuning" | that session's analysis |
+| Records header, Trends header | `tuned thresholds · N` chip | the *current* setting — these are aggregates over the library |
+| Settings → About | `0.15.0 · dev` | the build variant itself |
+| turn detail footnote | "Measured at: turnSuccessPct 70 % · minSpeedLag 2 s · turnOutcomeLookahead 12 s" | the analysis' own `config` echo |
+
+The session-level marks read the *analysis*, not the current setting, because a session
+analysed under tuned thresholds stays tuned until it is re-derived — that is the only honest
+answer, and it is why the chip survives a "Reset all" until the sweep has run. The chip is
+neutral rather than a warning: a tuned analysis is not wrong, it is measured against
+different thresholds. What it may never be is absent.
+
 ## Enforcement
 
 1. `design/tokens.json` + generated constants + a CI staleness check (bundle_lab-style) —

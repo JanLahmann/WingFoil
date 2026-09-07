@@ -55,6 +55,15 @@ struct TrendsView: View {
 
                     LibraryFilterBar(filter: $filter)
 
+                    #if TUNING
+                    // Same rule as Records: a trend line drawn on tuned thresholds is not the
+                    // trend line anyone else would draw, and the charts cannot say so
+                    // themselves.
+                    if !store.tuning.isEmpty {
+                        TunedChip(count: store.tuning.changedCount)
+                    }
+                    #endif
+
                     if points.isEmpty {
                         ContentUnavailableView("Nothing in this range",
                                                systemImage: "chart.xyaxis.line",

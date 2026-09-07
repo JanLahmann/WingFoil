@@ -30,6 +30,28 @@ packages:
     url: https://github.com/garmin/connectiq-companion-app-sdk-ios
     from: 1.8.0
 
+# FOUR CONFIGURATIONS, TWO VARIANTS OF ONE APP (7 Sep 2026).
+#
+# `Debug`/`Release` build the app every external TestFlight tester gets: the published
+# analysis thresholds, and no way to move them. `Dev Debug`/`Dev Release` build the same app
+# with `TUNING` defined, which is what compiles in Settings → Tuning, the "tuned thresholds"
+# chip and banner, and the turn-footnote line naming the values in force (see
+# WingFoil/Features/Settings/TuningView.swift).
+#
+# Same bundle id, same MARKETING_VERSION, consecutive build numbers: one App Store Connect
+# app, two builds, and `CFBundleVersion` is what tells them apart — plus " · dev" after the
+# version in Settings → About, so a screenshot says which variant it came from.
+#
+# The `Dev Release` block is repeated on every embedded target (widgets, watch app, watch
+# complication) because manual signing is per configuration: a configuration those targets
+# have no Release-equivalent block for archives with automatic signing and fails the export.
+# Only the *phone app* gets the TUNING flag — nothing in the watch or the widgets reads it.
+configs:
+  Debug: debug
+  Release: release
+  Dev Debug: debug
+  Dev Release: release
+
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -82,6 +104,17 @@ targets:
         # watch widgets: every embedded binary must carry the same certificate as its parent,
         # and the export re-signs with these same profiles (ios/ExportOptions.plist).
         Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "WingFoil App Store"
+        # The dev variant: the ONLY place `TUNING` is ever defined, and only on this target.
+        # `$(inherited)` already carries DEBUG here — XcodeGen sets it at project level for
+        # every configuration typed `debug`, `Dev Debug` included — so naming it again would
+        # only make the flag list read "DEBUG DEBUG TUNING".
+        Dev Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) TUNING"
+        Dev Release:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) TUNING"
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "WingFoil App Store"
@@ -289,6 +322,11 @@ targets:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "WingFoil Widgets App Store"
+        # Same signing for the dev variant's archive. No TUNING: nothing here reads it.
+        Dev Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "WingFoil Widgets App Store"
     info:
       path: WingFoilWidgets/Info.plist
       properties:
@@ -377,6 +415,12 @@ targets:
         # watch widgets: every embedded binary must carry the same certificate as its parent,
         # and the export re-signs with these same profiles (ios/ExportOptions.plist).
         Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "WingFoil Watch App Store"
+        # Same signing for the dev variant's archive. The watch is NOT tuned and never will
+        # be: it computes live, on the wrist, with no way to be told what the phone is set to.
+        Dev Release:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "WingFoil Watch App Store"
@@ -489,6 +533,11 @@ targets:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "WingFoil Watch Widgets App Store"
+        # Same signing for the dev variant's archive.
+        Dev Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "WingFoil Watch Widgets App Store"
     info:
       path: WingFoilWatchWidgets/Info.plist
       properties:
@@ -499,3 +548,32 @@ targets:
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
         ITSAppUsesNonExemptEncryption: false
+
+# The second scheme. "WingFoil" (generated from the target's own `scheme:` block above) builds
+# Debug/Release and has NO `TUNING` — that is the app external testers get, and the check that
+# it stays that way is one command:
+#
+#     xcodebuild -project WingFoil.xcodeproj -scheme WingFoil -showBuildSettings \
+#       | grep SWIFT_ACTIVE_COMPILATION_CONDITIONS
+#
+# "WingFoil Dev" builds `Dev Debug`/`Dev Release` and is the only way to get TUNING. Archive
+# lines for both are in docs/testing.md, "Two TestFlight variants".
+schemes:
+  WingFoil Dev:
+    build:
+      targets:
+        WingFoil: all
+    run:
+      config: Dev Debug
+      environmentVariables:
+        - variable: ICU_API_KEY
+          value: ""
+          isEnabled: false
+    test:
+      config: Dev Debug
+    profile:
+      config: Dev Release
+    analyze:
+      config: Dev Debug
+    archive:
+      config: Dev Release

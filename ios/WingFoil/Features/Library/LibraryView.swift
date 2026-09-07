@@ -7,6 +7,10 @@ struct LibraryView: View {
     @State private var showImporter = false
     @State private var showSettings = false
     @State private var showHelp = false
+    #if DEBUG && targetEnvironment(simulator) && TUNING
+    /// Screenshot hook only (`UI_SHEET=tuning`), dev build only.
+    @State private var showTuning = false
+    #endif
     @State private var helpTopic: HelpTopicID?
     @State private var path: [String] = []
 
@@ -58,6 +62,12 @@ struct LibraryView: View {
                 }
             }
             .sheet(isPresented: $showSettings) { SettingsView() }
+            #if DEBUG && targetEnvironment(simulator) && TUNING
+            // `UI_SHEET=tuning` — a sheet of its own rather than "Settings, then push",
+            // because `simctl` cannot tap the row. Same hook family, same reason as
+            // `UI_SHEET=help` above; dev build only, like the page.
+            .sheet(isPresented: $showTuning) { NavigationStack { TuningView(initial: store.tuning) } }
+            #endif
             .sheet(isPresented: $showImporter) { ImportView() }
             .sheet(isPresented: $showHelp) { HelpView() }
             // A named topic opens as itself rather than as "the index, then the topic":
@@ -123,6 +133,9 @@ struct LibraryView: View {
                 // real Health database, because the app is a reader there and staging a
                 // workout would mean shipping code that writes fake ones into it.
                 case "import": showImporter = true
+                #if TUNING
+                case "tuning": showTuning = true
+                #endif
                 default: break
                 }
                 // `UI_SCROLL_TO=setup` parks the (very tall) onboarding card on its
