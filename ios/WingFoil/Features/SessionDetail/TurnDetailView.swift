@@ -170,6 +170,13 @@ private struct TurnDetailPage: View {
                                         playheadRt: $playheadRt)
                     numbers(turn, slice: slice)
                     coach(turn, slice: slice)
+                    #if TUNING
+                    // The dev build's turn workbench (docs/presentation.md, "Dev workbench"):
+                    // the ground-truth label, the outcome ladder's working, the what-if against
+                    // the published defaults and the per-sample evidence table. One insertion,
+                    // one view, compiled out of the app external testers get.
+                    DevTurnWorkbenchView(detail: detail, index: index)
+                    #endif
                     footnote(turn)
                 } else {
                     ProgressView().frame(maxWidth: .infinity, minHeight: 200)
