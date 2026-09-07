@@ -38,8 +38,9 @@ import Testing
                       direction: String = "starboard", netDeg: Double = 90,
                       radiusM: Double = 20, outcome: String = "flew_through",
                       offFoilS: Double = 0, stoppedS: Double = 0,
-                      pumped: Bool = false, submerged: Bool = false) throws -> TurnRecord {
-        let json: [String: Any] = [
+                      pumped: Bool = false, submerged: Bool = false,
+                      axisTs: Double? = nil) throws -> TurnRecord {
+        var json: [String: Any] = [
             "ts": ts, "endTs": endTs, "minTs": minTs, "type": type, "counted": counted,
             "entryKn": entryKn, "minKn": minKn, "exitKn": exitKn,
             "score": score, "success": success,
@@ -51,6 +52,13 @@ import Testing
             "offFoilS": offFoilS, "stoppedS": stoppedS, "pumped": pumped,
             "submerged": submerged, "outcomeWindowS": 11.0,
         ]
+        // Engine 0.15.0. Left out entirely by default, which is what a stored analysis from
+        // an older engine looks like — the same shape the axis marks have to survive.
+        if let axisTs {
+            json["axisTs"] = axisTs
+            json["axisBeforeDeg"] = 87.4
+            json["axisAfterDeg"] = 72.1
+        }
         return try JSONDecoder().decode(TurnRecord.self,
                                         from: JSONSerialization.data(withJSONObject: json))
     }
@@ -270,6 +278,38 @@ import Testing
         let derived = try JSONDecoder().decode(
             TurnRecord.self, from: JSONSerialization.data(withJSONObject: json))
         #expect(derived.clean)
+    }
+
+    /// The wind-axis crossing arrives on the turn's own clock, and stays absent where the
+    /// engine recorded none (engine 0.15.0). Both marks that draw it — the tick on the map,
+    /// the rule on the strip — read this one property, so they cannot land at two instants.
+    @Test func theAxisCrossingIsOnTheTurnsOwnClockOrIsAbsent() throws {
+        let withAxis = slice(try turn(axisTs: 103.5))
+        #expect(withAxis.axisRt == 3.5)
+        #expect(withAxis.turn.axisBeforeDeg == 87.4)
+        #expect(withAxis.turn.axisAfterDeg == 72.1)
+        // A stored document from before 0.15.0: no keys, no crossing, and nothing drawn.
+        let older = slice(try turn())
+        #expect(older.turn.axisTs == nil)
+        #expect(older.axisRt == nil)
+        // A crossing outside the drawn window is one neither surface may mark.
+        #expect(slice(try turn(axisTs: 400)).axisRt == nil)
+    }
+
+    /// The three keys survive a round trip through the document, and a record that never had
+    /// them decodes rather than throwing — the trip an older stored analysis has to make to
+    /// `reanalyzeStale()`.
+    @Test func theAxisKeysSurviveEncodingAndTheirAbsenceDecodes() throws {
+        let recorded = try turn(axisTs: 103.5)
+        let back = try JSONDecoder().decode(TurnRecord.self,
+                                            from: JSONEncoder().encode(recorded))
+        #expect(back == recorded)
+        #expect(back.axisTs == 103.5)
+        let older = try turn()
+        let backOlder = try JSONDecoder().decode(TurnRecord.self,
+                                                 from: JSONEncoder().encode(older))
+        #expect(backOlder.axisTs == nil && backOlder.axisBeforeDeg == nil)
+        #expect(backOlder == older)
     }
 
     /// The strip's three markers are the record's own `entryKn` / `minKn` at `minTs` / `exitKn`

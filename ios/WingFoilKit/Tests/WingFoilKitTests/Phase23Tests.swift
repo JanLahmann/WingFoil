@@ -43,6 +43,92 @@ import Testing
         #expect(TurnDetector.classify(cogIn: 135, cogOut: 225, wind: nil).kind == .unclassified)
     }
 
+    // MARK: - The wind-axis crossing (engine 0.15.0)
+
+    /// The crossing, measured on a hand-built sweep whose every number is exact.
+    ///
+    /// Wind from north, 135° → 225° at 18°/s: the axis is dead downwind, so it is passed
+    /// between the samples at 171° and 189° — two and a half seconds in — 45° after the sweep
+    /// began, and the run-out leg holds 45° past it. Mirrors `_axis_measures` in the lab.
+    @Test func theCrossingIsFoundInterpolatedAndMeasuredBothWays() {
+        let candidate = axisCandidate()
+        let axis = TurnDetector.axisMeasures(candidate, wind: WindEstimate(userDirDeg: 0),
+                                             kind: .jibe, config: TurnConfig())
+        #expect(axis.courseChange == nil)
+        #expect(abs(axis.t - 2.5) < 1e-9, "interpolated, not snapped to a sample")
+        #expect(abs(axis.beforeDeg - 45) < 1e-9)
+        // 45°, from the run-out that holds past the sweep — not the 0° the sweep's own last
+        // sample would give if the measurement stopped where the heading stopped changing.
+        #expect(abs(axis.afterDeg - 45) < 1e-9)
+    }
+
+    /// Below `turnAxisBeforeDeg` the sweep is not a maneuver: it takes the same course-change
+    /// label the classification floor hands out, and its three axis numbers go with it.
+    @Test func axisBeforeDegRefilesASweepThatBarelyReachedTheAxis() {
+        var config = TurnConfig()
+        config.axisBeforeDeg = 60
+        let axis = TurnDetector.axisMeasures(axisCandidate(), wind: WindEstimate(userDirDeg: 0),
+                                             kind: .jibe, config: config)
+        #expect(axis.courseChange == .bearAway)
+        #expect(axis.t.isNaN && axis.beforeDeg.isNaN && axis.afterDeg.isNaN)
+    }
+
+    /// A turn with no axis to cross carries no crossing — NaN, which the record writes as
+    /// null. 0 would read as "he started dead downwind", which is a claim.
+    @Test func aCourseChangeAndAnAxisLessTurnCarryNoCrossing() {
+        for kind in [TurnKind.bearAway, .roundUp, .unclassified] {
+            let axis = TurnDetector.axisMeasures(axisCandidate(),
+                                                 wind: WindEstimate(userDirDeg: 0),
+                                                 kind: kind, config: TurnConfig())
+            #expect(axis.t.isNaN && axis.beforeDeg.isNaN && axis.afterDeg.isNaN)
+        }
+        var weak = WindEstimate(userDirDeg: 0)
+        weak.usable = false
+        let noWind = TurnDetector.axisMeasures(axisCandidate(), wind: weak, kind: .jibe,
+                                               config: TurnConfig())
+        #expect(noWind.t.isNaN && noWind.beforeDeg.isNaN && noWind.afterDeg.isNaN)
+    }
+
+    /// `turnAxisAfterDeg` costs the *carried* verdict and nothing else. Jan: "an additional
+    /// requirement for a successful jibe … but not require that for a touch-down or failed
+    /// jibe" — so the turn stays a counted jibe with the outcome it had, and only `success`
+    /// (and therefore `clean`) moves. Mirrors `test_axis_after_deg_costs_the_clean_verdict…`.
+    @Test func axisAfterDegCostsTheCleanVerdictAndNothingElse() throws {
+        // 90° → 190° through dead downwind at 20°/s, then straight: 10° past the axis.
+        var cog = Array(repeating: 90.0, count: 40)
+        cog += (1...5).map { 90 + 20 * Double($0) }
+        cog += Array(repeating: 190.0, count: 40)
+        let track = courseTrack(cog, speedMps: 6)
+        let flights = FlightSegmenter.segment(track)
+        let north = WindEstimate(userDirDeg: 0)
+
+        let carried = try #require(TurnDetector.detect(track, flights: flights,
+                                                       wind: north).first)
+        #expect(carried.kind == .jibe && carried.counted)
+        #expect(abs(carried.axisAfterDeg - 10) < 1)
+        #expect(carried.success && carried.clean)
+
+        var config = TurnConfig()
+        config.axisAfterDeg = 30
+        let strict = try #require(TurnDetector.detect(track, flights: flights, wind: north,
+                                                      config: config).first)
+        #expect(strict.kind == .jibe && strict.counted, "still a jibe he made")
+        #expect(strict.outcome == carried.outcome, "the outcome ladder is untouched")
+        #expect(!strict.success && !strict.clean)
+        #expect(TurnDetector.summarize([strict]).jibesSuccessful == 0)
+    }
+
+    /// One sweep, hand-built: unwrapped COG 135° → 225° at 18°/s over six 1 Hz samples, with
+    /// twelve more holding 225° so the measurement has a run-out to read.
+    private func axisCandidate() -> TurnDetector.Candidate {
+        let u = (0...5).map { 135 + 18 * Double($0) } + Array(repeating: 225.0, count: 12)
+        let tu = (0..<u.count).map(Double.init)
+        let speed = Array(repeating: 6.0, count: u.count)
+        return TurnDetector.Candidate(t: tu, man: speed, dop: speed, tu: tu, u: u,
+                                      rate: TurnDetector.rates(tu, u), i: 0, j: 5,
+                                      arc: (36, 32))
+    }
+
     // MARK: - Spatial gate
 
     /// `turnMinArc` / `turnMinRadius`: a heading flip on the spot covers no water however

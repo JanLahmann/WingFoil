@@ -1,6 +1,15 @@
 {
-  "originHash" : "acac77ac61ec974f68d97c108d13cf117cf5a41656d64dc38936ee49049cb330",
+  "originHash" : "3eee7a3e7632aa5a18edc579fc829c9c89a2122f500ab8f8d14383173a6020cb",
   "pins" : [
+    {
+      "identity" : "connectiq-companion-app-sdk-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/garmin/connectiq-companion-app-sdk-ios",
+      "state" : {
+        "revision" : "f0d29ff691d700a132d86205ed9bb091e336c2f7",
+        "version" : "1.8.0"
+      }
+    },
     {
       "identity" : "fitfileparser",
       "kind" : "remoteSourceControl",

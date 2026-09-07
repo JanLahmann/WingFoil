@@ -216,6 +216,22 @@ public struct TurnSlice: Sendable, Equatable {
     /// `turn.endTs - turn.ts`, the shaded band's width.
     public var durationS: Double { max(turn.endTs - turn.ts, 0) }
 
+    /// **The wind-axis crossing**, on the turn's own clock — seconds from `turn.ts` (engine
+    /// 0.15.0). nil where the engine recorded none: a course change, a turn with no usable
+    /// wind, or a stored analysis written before the crossing was persisted.
+    ///
+    /// Derived here rather than in each view because both surfaces that draw it — the tick on
+    /// the drawing and the rule on the strip — have to put it at the same instant, and because
+    /// a crossing outside the drawn window is a crossing neither of them may mark. The engine
+    /// puts it inside the sweep by construction; the clamp is what keeps a rounded or a
+    /// hand-edited record from drawing a tick off the edge of the frame.
+    public var axisRt: Double? {
+        guard let axisTs = turn.axisTs, axisTs.isFinite else { return nil }
+        let rt = axisTs - turn.ts
+        guard rt >= timeDomain.lowerBound, rt <= timeDomain.upperBound else { return nil }
+        return rt
+    }
+
     /// The strip's x domain: the whole padded window.
     public var timeDomain: ClosedRange<Double> { -padS ... max(durationS + padS, -padS + 1) }
 

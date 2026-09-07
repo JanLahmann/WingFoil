@@ -332,6 +332,37 @@ import Testing
                             "\(stem) turns[\(i)].twaOutDeg: \(describe(act.twaOutDeg))")
                 }
             }
+            // Engine 0.15.0: the wind-axis crossing. Null exactly when the turn has no axis
+            // to cross — a course change, or a session with no usable wind — so, like the TWA
+            // pair, the presence of the key has to agree and not only the number under it.
+            if exp.keys.contains("axisTs") {
+                if let v = num(exp["axisTs"]), let a = act.axisTs {
+                    #expect(abs(a - v) <= 1.0, "\(stem) turns[\(i)].axisTs: \(a) vs \(v)")
+                    #expect(a >= act.ts - 1.0 && a <= act.endTs + 1.0,
+                            "\(stem) turns[\(i)].axisTs outside its own sweep")
+                } else {
+                    #expect(exp["axisTs"] is NSNull && act.axisTs == nil,
+                            "\(stem) turns[\(i)].axisTs: \(describe(act.axisTs))")
+                }
+            }
+            if exp.keys.contains("axisBeforeDeg") {
+                if let v = num(exp["axisBeforeDeg"]), let a = act.axisBeforeDeg {
+                    #expect(abs(a - v) <= 1.0,
+                            "\(stem) turns[\(i)].axisBeforeDeg: \(a) vs \(v)")
+                } else {
+                    #expect(exp["axisBeforeDeg"] is NSNull && act.axisBeforeDeg == nil,
+                            "\(stem) turns[\(i)].axisBeforeDeg: \(describe(act.axisBeforeDeg))")
+                }
+            }
+            if exp.keys.contains("axisAfterDeg") {
+                if let v = num(exp["axisAfterDeg"]), let a = act.axisAfterDeg {
+                    #expect(abs(a - v) <= 2.0,
+                            "\(stem) turns[\(i)].axisAfterDeg: \(a) vs \(v)")
+                } else {
+                    #expect(exp["axisAfterDeg"] is NSNull && act.axisAfterDeg == nil,
+                            "\(stem) turns[\(i)].axisAfterDeg: \(describe(act.axisAfterDeg))")
+                }
+            }
             if let v = num(exp["stoppedS"]) {
                 #expect(abs(act.stoppedS - v) <= 1.0, "\(stem) turns[\(i)].stoppedS")
             }
@@ -932,7 +963,7 @@ import Testing
         raw.capabilities.hasSpeed = true
         raw.capabilities.sampleRateHz = 1
         let analysis = SessionSummarizer.analyze(raw)
-        #expect(analysis.engineVersion == "0.14.0")
+        #expect(analysis.engineVersion == "0.15.0")
         #expect(analysis.flights.count == 1)
 
         let data = try JSONEncoder().encode(analysis)
