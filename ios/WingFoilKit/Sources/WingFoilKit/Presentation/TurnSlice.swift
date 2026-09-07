@@ -329,8 +329,11 @@ public struct TurnSlice: Sendable, Equatable {
     /// they sit on the drawn line by construction and print the same digits as the row.
     private static func marks(_ window: [Sample], turn: TurnRecord) -> SpeedMarks {
         let duration = max(turn.endTs - turn.ts, 0)
-        let minRt = min(max(turn.minTs - turn.ts, 0), duration)
         let config = TurnConfig()
+        // The engine searches the minimum to `minSpeedLagS` PAST the sweep (the speed trough
+        // lags the heading), so the low point may legitimately sit after "out". Clamping it
+        // into the sweep drew "low 5.4" under a line reading 8.2 on Jan's phone (7 Sep 2026).
+        let minRt = min(max(turn.minTs - turn.ts, 0), duration + config.minSpeedLagS)
         // The entry speed is the engine's maximum over the window *before* the sweep; put
         // the mark where that maximum sits on the drawn line.
         let entryWindow = window.filter {

@@ -339,6 +339,13 @@ private struct TurnDetailPage: View {
                  + "the manoeuvre channel the verdict was scored on, derived from position — "
                  + "the GPS Doppler speed the records use is smoothed through a turn and "
                  + "would read lower at the low point.")
+            Text("The bands under the strip are the engine's windows: \"entry\" is the "
+                 + "\(Int(TurnConfig().entrySpeedWindowS)) s before the sweep, where the entry "
+                 + "speed is the maximum; \"sweep\" is where the heading turned; the low point "
+                 + "is searched to \(Int(TurnConfig().minSpeedLagS)) s past the sweep, so it can "
+                 + "sit after \"out\"; \"outcome\" is the \(Int(TurnConfig().outcomeLookaheadS)) s "
+                 + "the verdict is read from, and the lighter band inside it ends where you "
+                 + "were flying again.")
         }
         .font(.caption2)
         .foregroundStyle(.tertiary)

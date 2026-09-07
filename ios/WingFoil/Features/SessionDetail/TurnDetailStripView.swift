@@ -29,16 +29,35 @@ struct TurnDetailStripView: View {
     var body: some View {
         Chart {
             // The sweep, shaded — everything outside it is approach and run-out.
+            // Every window the engine reads, drawn and named (Jan, 7 Sep 2026: "it's not
+            // clear when the jibe starts and ends, and what extended windows we look at").
+            // Entry: the seconds before the sweep the entry speed is the maximum of.
+            RectangleMark(xStart: .value("Entry window", -Self.config.entrySpeedWindowS),
+                          xEnd: .value("Turn start", 0))
+                .foregroundStyle(Color.secondary.opacity(0.10))
+                .annotation(position: .bottom, alignment: .center, spacing: 2) {
+                    windowLabel("entry")
+                }
+            // Sweep: where the heading turned. "low" is searched to `minSpeedLagS` past it.
             RectangleMark(xStart: .value("Turn start", 0),
                           xEnd: .value("Turn end", slice.speed.exitRt))
                 .foregroundStyle(DesignTokens.Phase.flying.opacity(0.14))
-            // The sweep ends when the heading stops moving; the speed usually comes back a
-            // second or two later. That recovery is shaded too, lighter, so the band's early
-            // end reads as "the turn was done" rather than "the drawing stopped short".
+                .annotation(position: .bottom, alignment: .center, spacing: 2) {
+                    windowLabel("sweep")
+                }
+            // Outcome: the lookahead the verdict is read from; the lighter band inside it
+            // ends where the speed was back at the recovery threshold — flying again.
+            RectangleMark(xStart: .value("Turn end", slice.speed.exitRt),
+                          xEnd: .value("Outcome window",
+                                       slice.speed.exitRt + Self.config.outcomeLookaheadS))
+                .foregroundStyle(TurnOutcomeStyle.color(.touchdown).opacity(0.05))
+                .annotation(position: .bottom, alignment: .center, spacing: 2) {
+                    windowLabel("outcome")
+                }
             if let recoverRt = slice.speed.recoverRt, recoverRt > slice.speed.exitRt {
                 RectangleMark(xStart: .value("Turn end", slice.speed.exitRt),
                               xEnd: .value("Flying again", recoverRt))
-                    .foregroundStyle(DesignTokens.Phase.flying.opacity(0.06))
+                    .foregroundStyle(DesignTokens.Phase.flying.opacity(0.08))
             }
 
             if let ghost, ghost.hasGeometry {
@@ -96,6 +115,16 @@ struct TurnDetailStripView: View {
     /// engine's entry-window maximum, up to `entrySpeedWindowS` before 0; it never collides
     /// with "low", which is inside the sweep.)
     private static let captionGapS = 1.5
+
+    /// The engine's own windows, so the strip is labelled with the numbers in force.
+    private static let config = TurnConfig()
+
+    /// The small word under a window band.
+    private func windowLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 8, weight: .medium))
+            .foregroundStyle(.tertiary)
+    }
 
     @ChartContentBuilder
     private func mark(at rt: Double, kn: Double, label: String, below: Bool) -> some ChartContent {
