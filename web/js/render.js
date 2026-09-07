@@ -193,7 +193,7 @@ function renderSummary(result, isExample = false) {
     { k: "Distance", v: nf(s.distanceKm, 2), unit: "km", n: `best 500 m ${nf(rec.best500mKn, 1)} kn` },
     { k: "On foil", v: `${nf(s.foilPct, 0)}%`, n: `${hms(s.foilTimeS)} flying` },
     { k: "Flights", v: int(s.flightCount),
-      n: `longest ${hms(s.longestFlightS)} · ${int(s.longestFlightM)} m` },
+      n: `longest ${hms(s.longestFlightS)} · max ${int(s.maxFlightM)} m` },
     { k: "Best 2 s", v: nf(rec.best2sKn, 2), unit: "kn", n: `10 s ${nf(rec.best10sKn, 2)} kn` },
     { k: "Best 5×10 s", v: nf(rec.best5x10sKn, 2), unit: "kn", n: `1 NM ${nf(rec.bestNmKn, 2)} kn` },
     { k: "Alpha 500", v: nf(rec.alpha500Kn, 2), unit: "kn", n: `250 m ${nf(rec.best250mKn, 2)} kn` },
