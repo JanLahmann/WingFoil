@@ -1,0 +1,221 @@
+import SwiftUI
+import WingFoilKit
+
+// **Dev build only** — the whole file compiles only under the `TUNING` condition, which only
+// the "WingFoil Dev" scheme sets (ios/project.yml, `Dev Debug` / `Dev Release`). The app that
+// goes to external TestFlight testers has no tuning page, no tuning row in Settings, no chip
+// and no banner: `SessionIngestor.tuning` is never assigned there, so the engine can only run
+// the published defaults and a `tuningOverrides.v1` left in UserDefaults by a dev build
+// installed over the same bundle id is not even read.
+//
+// A compile-time variant rather than a hidden runtime switch on purpose: a threshold slider
+// that *exists* in the shipping binary is a threshold slider that can be reached by accident,
+// by a URL, or by a future refactor — and the numbers it moves are the numbers riders compare
+// with each other.
+#if TUNING
+
+/// **Settings → Tuning** — the published thresholds, on sliders, on this phone.
+///
+/// Jan, 7 Sep 2026: *"can we make some of the parameters configurable (for now) on a details
+/// page in the app? That might speed up tuning the parameters."* Tuning a threshold used to
+/// mean editing `TurnConfig`, rebuilding, re-importing a corpus and reading a diff — an
+/// afternoon per question, and the question is usually "what would 22°/s have done to *my*
+/// sessions". This page answers it in a minute, against the library already on the phone.
+///
+/// **It is a testing tool and it says so.** Every number in docs/algorithms.md is a contract
+/// the watch, the lab and the web all keep; this page is the one place that contract can be
+/// broken, so it is broken loudly — the sessions it produces carry a fingerprint in their
+/// engine version (`TuningStamp`), and every screen that shows a tuned number wears a chip
+/// saying so. Nothing here reaches the watch or the web.
+struct TuningView: View {
+    @Environment(SessionStore.self) private var store
+
+    /// Seeded by the caller, because the page has to open on the rider's current settings and
+    /// a view cannot read the environment in `init`.
+    @State private var overrides: TuningOverrides
+    /// Whether anything moved while the page was open. What decides if leaving it is worth a
+    /// re-analysis — the lazy sweep would get there on its own at the next launch, but a rider
+    /// tuning thresholds is a rider who wants to see the effect now.
+    @State private var touched = false
+    @State private var confirmResetAll = false
+
+    init(initial: TuningOverrides) {
+        _overrides = State(initialValue: initial)
+    }
+
+    var body: some View {
+        Form {
+            statusSection
+            ForEach(TuningGroup.allCases, id: \.self) { group in
+                Section {
+                    ForEach(TuningParameter.all(in: group), id: \.self) { parameter in
+                        row(parameter)
+                    }
+                } header: {
+                    Text(group.rawValue)
+                } footer: {
+                    Text(group.blurb)
+                }
+            }
+            footerSection
+        }
+        .navigationTitle("Tuning")
+        .navigationBarTitleDisplayMode(.inline)
+        // The lazy path would pick this up at the next launch (`reanalyzeStale`, which the
+        // fingerprint has just made true of every row). Doing it on the way out is the same
+        // trip, taken while the rider is still thinking about the slider he moved.
+        .onDisappear {
+            guard touched, !store.sessions.isEmpty else { return }
+            Task { await store.reanalyzeTuned() }
+        }
+        .confirmationDialog("Reset every threshold to its published default?",
+                            isPresented: $confirmResetAll, titleVisibility: .visible) {
+            Button("Reset \(overrides.changedCount) threshold"
+                   + "\(overrides.changedCount == 1 ? "" : "s")", role: .destructive) {
+                overrides.resetAll()
+                commit()
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+    }
+
+    // MARK: - Sections
+
+    private var statusSection: some View {
+        Section {
+            if overrides.isEmpty {
+                Label("Every threshold is at its published default",
+                      systemImage: "checkmark.seal")
+                    .foregroundStyle(.secondary)
+            } else {
+                TunedChip(count: overrides.changedCount)
+                Button("Reset all", role: .destructive) { confirmResetAll = true }
+            }
+            Button {
+                Task { await store.reanalyzeTuned() }
+            } label: {
+                HStack {
+                    Text("Re-analyse all sessions now")
+                    if store.isBusy { Spacer(); ProgressView().controlSize(.small) }
+                }
+            }
+            .disabled(store.isBusy || store.sessions.isEmpty)
+        } footer: {
+            Text("Sessions re-derive themselves whenever a threshold moves — the tuning is "
+                 + "part of the analysis' version, so a stale session rebuilds the next time "
+                 + "it is opened, and the whole library rebuilds at the next launch. The "
+                 + "button is the same trip, taken now.")
+        }
+    }
+
+    private var footerSection: some View {
+        Section {
+            LabeledContent("Analysis engine", value: AnalysisEngine.version)
+            if let fingerprint = overrides.fingerprint {
+                LabeledContent("Tuning fingerprint", value: fingerprint)
+                    .font(.caption.monospaced())
+            }
+        } header: {
+            Text("Beta · testing tool")
+        } footer: {
+            Text("These sliders override the published defaults **on this phone only**. They "
+                 + "change every number the app shows — foil time, flights, turn counts, "
+                 + "scores, outcomes, records and trends — so a session analysed with them is "
+                 + "not comparable with one analysed anywhere else.\n\n"
+                 + "The watch and the web are not touched: the watch computes live with no "
+                 + "way to be told, and the web reads what the phone wrote. While anything "
+                 + "here is moved, the session header, Records and Trends carry a *tuned "
+                 + "thresholds* chip, and a session's own page says how many thresholds "
+                 + "were moved — so a tuned number can never be mistaken for a published one.")
+        }
+    }
+
+    // MARK: - One parameter
+
+    /// Name · value · unit on the first line, the slider under it, "default N · what it does"
+    /// in the caption, and a reset that appears only once the row has something to reset.
+    ///
+    /// The row is named with the parameter's docs/algorithms.md name rather than a friendly
+    /// paraphrase: this page is read next to that table, by someone who wants to change the
+    /// number the table names, and inventing a second vocabulary for it would make the two
+    /// documents impossible to line up.
+    private func row(_ parameter: TuningParameter) -> some View {
+        let spec = parameter.spec
+        let value = overrides.value(for: parameter)
+        let overridden = overrides.isOverridden(parameter)
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Text(parameter.rawValue)
+                    .font(.subheadline.weight(overridden ? .semibold : .regular))
+                Spacer(minLength: 8)
+                Text(spec.formatted(value))
+                    .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(overridden ? Color.accentColor : Color.secondary)
+                if overridden {
+                    Button {
+                        overrides.reset(parameter)
+                        commit()
+                    } label: {
+                        Image(systemName: "arrow.uturn.backward.circle")
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel("Reset \(parameter.rawValue)")
+                }
+            }
+            Slider(value: Binding(
+                get: { overrides.value(for: parameter) },
+                set: { newValue in
+                    overrides[parameter] = newValue
+                    commit()
+                }),
+                   in: spec.range, step: spec.step) {
+                Text(parameter.rawValue)
+            } minimumValueLabel: {
+                Text(spec.format(spec.range.lowerBound)).font(.caption2).foregroundStyle(.tertiary)
+            } maximumValueLabel: {
+                Text(spec.format(spec.range.upperBound)).font(.caption2).foregroundStyle(.tertiary)
+            }
+            Text("default \(spec.formatted(spec.defaultValue)) · \(spec.note)")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .contain)
+    }
+
+    /// Written through on every change rather than on leaving: a page that loses a slider drag
+    /// because the app was backgrounded mid-tune is a page nobody trusts twice.
+    private func commit() {
+        store.tuning = overrides
+        touched = true
+    }
+}
+
+/// "tuned thresholds · N" — the mark that follows a tuned number everywhere it is shown.
+///
+/// One capsule, one wording, one place: the session header next to the discipline badge, the
+/// Records and Trends headers, and the session page's banner line. It is not a warning — a
+/// tuned analysis is not wrong, it is measured against different thresholds — so it is a
+/// neutral chip and not a red one; what it may never be is absent.
+struct TunedChip: View {
+    /// How many thresholds stand away from their published default.
+    let count: Int
+    var compact = false
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "slider.horizontal.3").font(.caption2)
+            Text(compact ? "tuned · \(count)" : "tuned thresholds · \(count)")
+                .font(.caption.weight(.medium))
+        }
+        .padding(.horizontal, 8).padding(.vertical, 3)
+        .background(Color.secondary.opacity(0.16), in: .capsule)
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Analysed with \(count) tuned threshold"
+                            + "\(count == 1 ? "" : "s")")
+    }
+}
+
+#endif

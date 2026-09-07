@@ -17,6 +17,9 @@ struct SettingsView: View {
                 notificationsSection
                 WatchLinkSection()
                 analysisSection
+                #if TUNING
+                tuningSection
+                #endif
                 healthSection
                 storageSection
                 // Right under Storage, which is the section that just told the rider how
@@ -224,6 +227,40 @@ struct SettingsView: View {
         }
     }
 
+    #if TUNING
+    /// **Dev build only.** The whole section — and the page behind it — is compiled out of the
+    /// app external testers get (`#if TUNING`, the "WingFoil Dev" scheme). A rider on the
+    /// public build has no tuning UI, no stored overrides read, and an engine that can only
+    /// run the published defaults.
+    ///
+    /// It sits under Analysis because that is the section it deepens: "Most of my turns are"
+    /// is the one engine setting *everybody* owns; this is every other one, for the two of us
+    /// working out where they should sit.
+    private var tuningSection: some View {
+        Section {
+            NavigationLink {
+                TuningView(initial: store.tuning)
+            } label: {
+                HStack {
+                    Label("Tuning", systemImage: "slider.horizontal.3")
+                    Spacer()
+                    if !store.tuning.isEmpty {
+                        Text("\(store.tuning.changedCount) changed")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        } header: {
+            Text("Tuning · beta")
+        } footer: {
+            Text("Dev build only. Puts the analysis thresholds on sliders so a parameter can "
+                 + "be tried against your own sessions in a minute instead of a rebuild. They "
+                 + "apply on this phone only, and every screen showing a tuned number says so.")
+        }
+    }
+    #endif
+
     /// Both directions, in one section, because the rider thinks of Health as one place.
     ///
     /// The read toggle appears only once a session has actually arrived that way (ADR-017):
@@ -293,12 +330,24 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         Section {
-            LabeledContent("App", value: SessionStore.appVersion)
+            // " · dev" on the dev variant. Both variants carry the same bundle id, the same
+            // marketing version and consecutive build numbers, so a screenshot is otherwise
+            // indistinguishable — and "which build is this" is the first question of every bug
+            // report that comes back from TestFlight.
+            LabeledContent("App", value: SessionStore.appVersion + Self.variantSuffix)
             LabeledContent("Analysis engine", value: AnalysisEngine.version)
         } header: {
             Text("About")
         } footer: {
             Text("Wind is estimated on this device from your track.")
         }
+    }
+
+    private static var variantSuffix: String {
+        #if TUNING
+        " · dev"
+        #else
+        ""
+        #endif
     }
 }

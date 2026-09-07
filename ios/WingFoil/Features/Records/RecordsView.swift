@@ -33,6 +33,17 @@ struct RecordsView: View {
                 Section {
                     LibraryFilterBar(filter: $filter)
                         .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    #if TUNING
+                    // An all-time record is the app's strongest claim, and it is the one place
+                    // a tuned threshold is easiest to forget: the table looks exactly the same.
+                    // The chip reads the *current* setting rather than any one session's,
+                    // because this page is an aggregate over the whole library.
+                    if !store.tuning.isEmpty {
+                        TunedChip(count: store.tuning.changedCount)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16,
+                                                      bottom: 8, trailing: 16))
+                    }
+                    #endif
                 }
                 .listRowBackground(Color.clear)
 
