@@ -77,8 +77,43 @@ into a touchdown only when the speed channels *also* saw the foil go marginal (b
 `foilEntrySpeed`) in the same window. Speed says the foil stopped carrying, accel says the
 rider had to pump it out; neither alone is enough.
 
+**That rung asked the wrong speed, and engine 0.18.0 moves it and makes it a switch**
+(`pumped_out_is_touchdown`, `turnPumpedOutIsTouchdown`, default **True**). Until 0.17.0 the
+corroborating speed was `foilEntrySpeed` -- 12 km/h, the speed at which a *flight starts*.
+That is the wrong question. Entry speed is the threshold a rider has to climb through to get
+up; the speed below which the foil is no longer carrying is `foilExitSpeed` (8 km/h), and Jan
+put it plainly on 7 Sep 2026: *"change to '...below min foil speed...'"*. His Jibe 50 of 4 Sep
+07:58 sagged to 5.5 kn = 10.2 km/h -- below entry, comfortably above exit -- and was called a
+touchdown by this rule alone, with no off-foil sample, no stop and no wrist under. He flew it.
+Working the wing through a soft patch is riding.
+
+**With the threshold at `foilExitSpeed` the rung can no longer fire, and that is the point.**
+It is not a coincidence to be tidied away later: `flying` is *defined* as in a flight, not
+submerged, and `speed > foilExitSpeed` (`evidence.flying_mask`), so on the branch this rung
+lives on -- no non-flying sample anywhere in the window -- every sample is above the exit
+speed already and `marginal` is provably False. The switch is kept, and kept **on**, because
+it is the rule that is being retired rather than the reading behind it: `pumped_out_is_touchdown`
+still names the rung, still gates it, and turning it off says the same thing twice. What the
+verdict no longer does is call a jibe a touchdown on the strength of the accelerometer and a
+speed the foil was still flying at. Over the 21-session corpus that is **13 of 270 jibe
+touchdowns**, 3 of which held their speed besides. (Not 34: that is the count of touchdowns
+whose `offFoilS` *rounds* to zero, and 21 of those had a real non-flying sample the ladder
+found on the branch below -- a single sample, so no elapsed time between its own two ends.
+Only a turn the rung actually decided carries `outcome_reason == "pumped_marginal"`, and
+counting those is the only honest way to ask what the rung was doing.)
+
+The evidence itself is not thrown away: `pumped` still says the rider worked for it and the
+page still prints "pumped out - N strokes". The watch keeps the old rule, at the old speed,
+unconditionally (docs/algorithms.md, "Watch divergences").
+
 The score%/success pair is kept as the secondary, continuous metric: outcome says *what
 happened*, score says *how much speed the turn cost*.
+
+**And every touchdown and fall says why** (engine 0.18.0). `outcome_reason` carries the rung
+of the ladder that decided it -- `stop`, `off_foil`, `submerged`, `pumped_marginal` -- and is
+None on a fly-through, which needs no explanation. It is a *code*, not a sentence: the words
+live in presentation (the kit's `TurnAnalytics.outcomeText`, the web's `outcomeText`), so the
+phone and the site say the same thing and the engine says nothing at all.
 
 **A clean jibe also needs a quiet tail** (engine 0.17.0, Jan's rule: *"no touch down or fall
 within 10 s afterwards"*). The outcome window closes at *recovery* -- speed back at
@@ -160,6 +195,17 @@ CLEAN_BLOCKED_REASONS = (BLOCKED_AXIS_AFTER, BLOCKED_QUIET_FLIGHT_END,
 #: quiet has to last (`turnCleanQuietS`).
 CLEAN_QUIET_OFF_FOIL_S = 1.0
 
+#: **Which rung of the ladder decided the outcome** (engine 0.18.0). A code, never a
+#: sentence: the words are presentation's (`TurnAnalytics.outcomeText` on the phone,
+#: `outcomeText` in `web/js/viz.js`), and the engine has no business choosing them.
+#: None -- the fourth state, and the common one -- is a fly-through: nothing happened, so
+#: there is nothing to explain.
+REASON_STOP = "stop"                    # a stop past turnTouchdownMaxStop or turnFallStop
+REASON_OFF_FOIL = "off_foil"            # off the foil, with no qualifying stop
+REASON_SUBMERGED = "submerged"          # the wrist went under, and that decided the fall
+REASON_PUMPED_MARGINAL = "pumped_marginal"   # pumped out below min foil speed, never off foil
+OUTCOME_REASONS = (REASON_STOP, REASON_OFF_FOIL, REASON_SUBMERGED, REASON_PUMPED_MARGINAL)
+
 
 @dataclass
 class TurnConfig:
@@ -205,6 +251,15 @@ class TurnConfig:
     recover_hold_s: float = 2.0           # turnRecoverHold: held this long = turn is over
     outcome_window_s: float = 12.0        # turnOutcomeWindow: = lookahead (engine 0.13.0)
     baro_drop_m: float = 25.0             # turnBaroDrop: below median altitude = submerged
+    #: turnPumpedOutIsTouchdown (engine 0.18.0), **on by default**. Gates the pump rung: a turn
+    #: with no off-foil sample at all is a `touchdown` when the accelerometer heard a burst in
+    #: the window *and* a sample fell below `foil_exit_speed_kmh`. That speed is the change --
+    #: it was `foil_entry_speed_kmh` until 0.17.0 -- and because `flying` already requires
+    #: speed above the exit speed, the rung is now unreachable in any configuration where the
+    #: evidence and the turn config were built from the same exit speed. Off, the rung is
+    #: refused explicitly. Either way `pumped` and the "pumped out" chip are untouched. See the
+    #: module docstring and ADR-022.
+    pumped_out_is_touchdown: bool = True
 
     # --- 360 spins: EXPERIMENTAL, and dark unless the flag below is set (see
     # `detect_three_sixties` and docs/algorithms.md "360 spins"). Nothing about the
@@ -254,6 +309,9 @@ class Turn:
     chord_m: float = 0.0             # straight-line displacement across the sweep
     radius_m: float = 0.0            # arc_m / |net_deg| in radians: how tightly it carved
     outcome: str = FLEW_THROUGH      # flew_through | touchdown | fell_in
+    #: **Why** (engine 0.18.0): one of `OUTCOME_REASONS`, or None on a fly-through. A code
+    #: the presentation layers turn into a sentence -- see the module docstring.
+    outcome_reason: str | None = None
     borderline: bool = False         # stop landed in the ambiguous 3-5 s band
     off_foil_s: float = 0.0          # time not flying, from the loss to the recovery
     stopped_s: float = 0.0           # longest contiguous spell below turnStopSpeedFloor
@@ -793,11 +851,14 @@ def _assign_outcomes(turns: list[Turn], clean: CleanTrack, flights: FlightResult
 
 def _outcome(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,
              pump: PumpTrack | None = None) -> None:
-    """Three-way outcome for one turn (see the module docstring).
+    """Three-way outcome for one turn (see the module docstring), and the reason for it.
 
     The loss of foil is looked for from the turn start to the end of the turn's *outcome
     window* (`_window_end`). Once lost, the off-foil run is followed until foiling resumes,
     capped at `outcomeWindow` so a turn taken just before a break does not absorb it.
+
+    `outcome_reason` names the rung that decided the verdict and is None on a fly-through.
+    It is set on the same branch that sets `outcome`, so the two can never disagree.
     """
     t = ev.t
     hi = _window_end(turn, ev, cfg)
@@ -810,8 +871,15 @@ def _outcome(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,
     if lost.size == 0:
         turn.borderline = False
         turn.off_foil_s = turn.stopped_s = 0.0
-        marginal = bool((ev.speed[win] < cfg.foil_entry_speed_kmh * KMH_TO_MPS).any())
-        turn.outcome = TOUCHDOWN if (turn.pumped and marginal) else FLEW_THROUGH
+        # Nothing off the foil at all. The corroborating speed is the **exit** speed since
+        # 0.18.0 -- the speed below which the foil stops carrying, not the one a flight starts
+        # at -- which is why this rung no longer fires: `flying` already requires speed above
+        # it. Left standing, gated and measured, rather than deleted; see the module docstring.
+        marginal = bool((ev.speed[win] < cfg.foil_exit_speed_kmh * KMH_TO_MPS).any())
+        if cfg.pumped_out_is_touchdown and turn.pumped and marginal:
+            turn.outcome, turn.outcome_reason = TOUCHDOWN, REASON_PUMPED_MARGINAL
+        else:
+            turn.outcome, turn.outcome_reason = FLEW_THROUGH, None
         return
 
     a = int(lost[0])
@@ -820,9 +888,16 @@ def _outcome(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig,
     turn.stopped_s = longest_stop(t, ev.gap, ev.speed, a, b, cfg.stop_speed_floor_mps)
     if turn.submerged or turn.stopped_s > cfg.fall_stop_s:
         turn.outcome, turn.borderline = FELL_IN, False
+        # The wrist wins the wording when it is what decided: the mask is proof of a swim
+        # wherever it appears, and it is tested first above, so a submerged fall is named
+        # after the wrist even where the stop would have carried the verdict on its own.
+        turn.outcome_reason = REASON_SUBMERGED if turn.submerged else REASON_STOP
     else:
         turn.outcome = TOUCHDOWN
         turn.borderline = turn.stopped_s > cfg.touchdown_max_stop_s
+        # A stop long enough to be worth naming (the borderline band) is what the reader is
+        # told about; a short touch is off-foil time and nothing more.
+        turn.outcome_reason = REASON_STOP if turn.borderline else REASON_OFF_FOIL
 
 
 def _window_end(turn: Turn, ev: OffFoilEvidence, cfg: TurnConfig) -> int:

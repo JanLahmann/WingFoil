@@ -27,7 +27,8 @@
 
 import {
   C, OUTCOME_LABEL, bandSwatch, clockAt, endStyle, esc, figureWidth, glyphSwatch, hideTip,
-  hms, isNarrow, label, lineSwatch, marker, nf, showTip, svg, tipTarget, turnStyle,
+  hms, isNarrow, label, lineSwatch, marker, nf, outcomeText, showTip, svg, tipTarget,
+  turnStyle,
 } from "./viz.js";
 import { TOKENS } from "./tokens.js";
 
@@ -346,6 +347,12 @@ function buildModel(result) {
         ["entry tack", `${turn.side} · turns to ${turn.direction}`],
         ["outcome", `${OUTCOME_LABEL[turn.outcome] || turn.outcome}` +
                     (turn.borderline ? " (borderline)" : "")],
+        // **Why it ended that way** (engine 0.18.0), in the words the phone's turn page uses
+        // under its chips and the table below this map uses in its `why` column — one
+        // sentence, one wording, three surfaces. Absent on a fly-through, and on a document
+        // written before the engine recorded a reason.
+        ...(outcomeText(turn, (g.config || {}).foilExitSpeed)
+            ? [["why", outcomeText(turn, (g.config || {}).foilExitSpeed)]] : []),
         // entry → min → exit, all three on the maneuver channel (engine 0.11.0): the
         // bottom of the turn says what it cost, the exit says whether he carried it out.
         ["speed", `${nf(turn.entryKn, 2)} → ${nf(turn.minKn, 2)} → ` +
