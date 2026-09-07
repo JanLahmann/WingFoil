@@ -1869,6 +1869,81 @@ answer, and it is why the chip survives a "Reset all" until the sweep has run. T
 neutral rather than a warning: a tuned analysis is not wrong, it is measured against
 different thresholds. What it may never be is absent.
 
+### The dev workbench — five tools that show the working
+
+A slider moves a threshold; it does not say what the threshold *did*. The dev build therefore
+carries five tools that answer the questions a moved slider actually raises, all of them
+**presentation** — computed on the fly from the stored `SessionAnalysis` and the session's own
+samples, storing nothing, changing no verdict, and compiled out of the public build with
+everything else behind `#if TUNING`. The pure halves live in the kit
+(`Presentation/Dev/`, no `#if` there) so a test can hold them; the app gates their use. Two of
+them are one insertion each on the turn page and the Turns tab, so the files they land in stay
+readable.
+
+**1. "Why this verdict" — the outcome ladder's working.** On the turn's page, a panel with one
+row per rung the ladder took, each timed in **seconds from the sweep's start** — the same clock
+as the strip above, so a finger can be put on the sample being talked about. Entry window and
+where `entryKn` was read; the sweep's end and the rate that ended it; the low point and how far
+past the sweep it was searched; **why the outcome window closed** — recovery at +N s, the
+lookahead cap, a recording gap, or the end of the recording; the first off-foil sample; the
+longest stop and the floor it was measured against; the pump burst; the wrist-under sample; the
+axis crossing with its two angles; what the quiet tail found in its ten seconds; and finally the
+two verdicts with the rule that fixed each. Every step is **re-derived** from the same channels
+the engine read, with the engine's own primitives, and then compared with the record — and
+**where the two disagree the step prints both and is marked in orange**, because that
+disagreement is the most informative thing this page can produce. `TurnWorkbenchTests` holds the
+other side of that promise: on the 2026-08-07 fixture no step may disagree on any counted turn,
+so a mark on Jan's phone means something. Where the stored `config` echo did not carry a field
+(several turn parameters were only written down from engine 0.14.0) the published default is
+assumed and **named** in its own note rather than guessed at in silence.
+
+**2. The evidence table — one row per sample.** Under the trace, ten seconds before the sweep to
+thirty after: `t` on the turn's clock, Doppler kn, the manoeuvre channel kn, heading, turn rate,
+TWA where the wind is known, and the four flags the ladder reads — flying, stopped, wrist under,
+pump strokes in that second. Monospaced, horizontally scrollable, capped in height, and tinted
+by the window each row falls in (entry / sweep / min-lag / outcome / quiet tail), one band per
+row with the most specific winning. **Gaps are shown, not closed up**: a row the far side of a
+recording hole is marked `⌁`, because every window in the engine stops at one and a table that
+hid them would make the ladder's short windows look arbitrary. A share button hands the same
+table out as CSV (`<session>-turn<N>.csv`) through the system share sheet — the file and the
+screen are the one function, so they cannot say different things.
+
+**3. Ground-truth labels — what the rider says happened.** A three-way control on every counted
+turn — *I flew · I touched · I fell*, plus clear — in the first person, because it is his claim
+about his own afternoon and not a second opinion about the engine's. A label is **never part of
+the analysis**: it lives in the app's own preferences as a small Codable sheet per session
+(`turnLabels.v1`, keyed by session id then turn index), so it survives every re-derivation the
+engine or the tuning forces, and so the thing being judged cannot see it. **Settings → Tuning →
+Labels** scores them against the analyses currently stored: agreement count and percentage, a
+confusion table (flew / touched / fell × the engine's verdict, agreement on the diagonal), and
+the disagreements listed newest session first, each one a tap from that turn's own page. Labels
+that no longer pair — the turn they were left on is not in the current analysis any more — are
+**counted and reported**, not silently dropped, so a tuning that dissolves half the corpus is
+visible rather than flattering. The page exports the labels as CSV (docs/testing.md,
+"Ground-truth labels").
+
+**4. What-if on one turn.** Also on the turn's page, and only where something is actually tuned:
+two columns — the verdict, the clean flag, the score, in/low/out and the outcome window under the
+**current tuning** against the same six under the **published defaults**. It is not a
+re-analysis of the library: the session alone is analysed a second time in memory with default
+configs, cached on `DevWorkbench` under the analysis' own stamped `engineVersion` (which already
+carries the tuning fingerprint, so a moved slider invalidates the cache for exactly the reason it
+makes the library stale). Turns are matched between the two runs by **start time, ±1 s** — index
+matching would report the whole rest of a session as changed the moment one extra turn was found.
+A turn the default run never found gets no second column and says so: the tuning is what
+*discovered* that maneuver, and a column of dashes would read as "the defaults said nothing
+happened".
+
+**5. The session's tuning diff.** On the Turns tab, above the map, from the same cached default
+analysis: *"Tuned vs default: +3 jibes, −2 clean, 4 verdicts changed"*, printing only the clauses
+that are not zero. Expanded, it lists the turns that actually moved — added, removed, verdict
+changed, clean changed — in time order, each opening its own page through the tab's existing
+`TurnDetailRequest` sheet. A **removed** turn is the one row that cannot be opened, because the
+tuned run does not have it; it is inert and labelled `default only` rather than opening whichever
+maneuver inherited the index. The whole block is absent when nothing is tuned: with no override
+the two runs are the same run, and "nothing changed" on every session would be noise on the one
+page that is about maneuvers.
+
 ## Enforcement
 
 1. `design/tokens.json` + generated constants + a CI staleness check (bundle_lab-style) —
