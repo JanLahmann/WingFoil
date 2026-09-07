@@ -470,6 +470,61 @@ public enum TurnAnalytics {
         }
     }
 
+    /// **Why this turn is a touchdown or a fall** — the line under the chips (engine 0.18.0).
+    ///
+    /// Jan, 7 Sep 2026: *"Can we add a short comment for the user why a jibe is a touchdown or
+    /// a fall?"* The page had the numbers — `stoppedS`, `offFoilS`, a wrist-under chip — and
+    /// left the rider to assemble the verdict out of them. The engine now writes down which
+    /// rung of the ladder decided (`outcomeReason`), and this is the one place that rung
+    /// becomes words. `web/js/viz.js` holds the same function for the site and
+    /// `verify_presentation.py` holds the two to each other, so a rider reading the same jibe
+    /// on the phone and on the web is told the same thing.
+    ///
+    /// nil for a fly-through — nothing happened, and "flew through" is already on the chip —
+    /// and nil for a document written before 0.18.0, which carries no reason: a sentence
+    /// reconstructed from `stoppedS` alone would be a guess about a ladder that may not have
+    /// been climbed that way.
+    ///
+    /// `foilExitSpeedKmh` is the analysis' own config echo, converted to knots for the one
+    /// wording that names a speed. Without it that wording drops the number rather than
+    /// printing a default the run may not have used.
+    public static func outcomeText(_ turn: TurnRecord,
+                                   foilExitSpeedKmh: Double? = nil) -> String? {
+        guard let reason = turn.outcomeReason.flatMap(OutcomeReason.init(rawValue:)) else {
+            return nil
+        }
+        switch reason {
+        case .stop:
+            let stopped = "stopped \(seconds(turn.stoppedS)) s"
+            if TurnOutcomeKind(turn.outcome) == .fellIn { return "fell in · \(stopped)" }
+            return "touchdown · \(stopped)" + (turn.borderline ? ", borderline" : "")
+        case .offFoil:
+            // "no stop" rather than "stopped 0 s": the rider did not stop, and a rounded zero
+            // reads as a measurement of one.
+            let stop = turn.stoppedS.rounded() >= 1
+                ? "stopped \(seconds(turn.stoppedS)) s" : "no stop"
+            return "touchdown · off the foil \(seconds(turn.offFoilS)) s, " + stop
+        case .submerged:
+            return "fell in · wrist under"
+        case .pumpedMarginal:
+            guard let kmh = foilExitSpeedKmh, kmh.isFinite else {
+                return "touchdown · pumped out below min foil speed, no sample off the foil"
+            }
+            return String(format: "touchdown · pumped out below %.1f kn, "
+                          + "no sample off the foil", kmh * kmhToKn)
+        }
+    }
+
+    /// Whole seconds, **half away from zero** — `.rounded()` here, `Math.round` in
+    /// `web/js/viz.js`, `floor(v + 0.5)` in `verify_presentation.py`. Spelled out rather
+    /// than left to each language's default formatter, because `%.0f` rounds 4.5 to 4
+    /// (banker's) while `toFixed(0)` rounds it to 5, and a stop of exactly 4.5 s is an
+    /// ordinary reading at 1 Hz.
+    static func seconds(_ value: Double) -> String { String(Int(value.rounded())) }
+
+    /// km/h to knots, for the one sentence that names a config speed in the rider's unit.
+    static let kmhToKn = 1.0 / 1.852
+
     /// Whole seconds from the sweep's end to the flight end that cost the jibe its star.
     static func secondsToLoss(_ turn: TurnRecord, ends: [FlightEndRecord],
                               quietS: Double?) -> Int? {

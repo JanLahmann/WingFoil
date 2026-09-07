@@ -173,7 +173,21 @@ public enum AnalysisEngine {
     /// **nothing else does** — not `success`, not the outcome, not a count, not a streak, not
     /// JPH or TPH. Each turn gains `cleanBlockedBy`, the reason a jibe the page cannot
     /// otherwise explain is not clean, and `config` gains `turnCleanQuietS`.
-    public static let version = "0.17.0"
+    ///
+    /// 0.18.0 moves **the pump rung to the minimum foiling speed**, which retires it — and
+    /// gives every touchdown and fall a **reason**. A turn with no off-foil sample at all was
+    /// still called a touchdown when the accelerometer heard a burst and any sample fell below
+    /// `foilEntrySpeed`, the speed a *flight starts* at. Jan, 7 Sep 2026: *"change to '…below
+    /// min foil speed…'"* — which in this engine is `foilExitSpeed`. His Jibe 50 of 4 Sep 07:58
+    /// sagged to 5.5 kn = 10.2 km/h, below entry and well above exit, and was called a touchdown
+    /// by that rule alone; he flew it. Because `flying` already requires speed above the exit
+    /// speed, the rung is now unreachable, and `turnPumpedOutIsTouchdown` (**true**) is kept as
+    /// its gate rather than deleted. Over the 21-session corpus this moves 13 of 270 jibe
+    /// touchdowns to fly-throughs (493 → 506) and 3 jibes to clean (263 → 266). Beside
+    /// it every turn gains `outcomeReason` — `stop` | `off_foil` | `submerged` |
+    /// `pumped_marginal`, nil on a fly-through — so the page can say *why* in one line
+    /// (`TurnAnalytics.outcomeText`) instead of leaving the rider to read `stoppedS`.
+    public static let version = "0.18.0"
 }
 
 /// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's
@@ -240,6 +254,10 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
     public var turnRecoverPct: Double
     public var turnOutcomeWindow: Double
     public var turnBaroDrop: Double
+    /// The pump rung's gate, a switch since engine 0.18.0 and **on** at its default. Optional
+    /// so a stored `analysis.json` from before it still decodes as nil, which reads as "this
+    /// document does not say"; such a row is stale by `engineVersion` and re-derives.
+    public var turnPumpedOutIsTouchdown: Bool?
     // Wind axis
     public var windMinSpeed: Double
     public var windBinDeg: Double
@@ -299,6 +317,7 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
         turnRecoverPct = turn.recoverPct
         turnOutcomeWindow = turn.outcomeWindowS
         turnBaroDrop = turn.baroDropM
+        turnPumpedOutIsTouchdown = turn.pumpedOutIsTouchdown
         windMinSpeed = wind.minSpeedMps
         windBinDeg = wind.binDeg
         windMinConfidence = wind.minConfidence
@@ -428,6 +447,11 @@ public struct TurnRecord: Sendable, Codable, Equatable {
     public var radiusM: Double
     /// "flew_through" | "touchdown" | "fell_in".
     public var outcome: String
+    /// **Why** (engine 0.18.0): "stop" | "off_foil" | "submerged" | "pumped_marginal", and nil
+    /// on a fly-through, which needs no explanation. A `String?` rather than the engine's
+    /// `OutcomeReason` so a value written by a newer build decodes rather than throwing — the
+    /// same rule `cleanBlockedBy` follows. The words are `TurnAnalytics.outcomeText`'s.
+    public var outcomeReason: String?
     public var borderline: Bool
     public var offFoilS: Double
     public var stoppedS: Double
@@ -460,6 +484,7 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         arcM = turn.arcM
         radiusM = turn.radiusM
         outcome = turn.outcome.rawValue
+        outcomeReason = turn.outcomeReason?.rawValue
         borderline = turn.borderline
         offFoilS = turn.offFoilS
         stoppedS = turn.stoppedS
@@ -472,7 +497,8 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         case ts, endTs, minTs, type, counted, entryKn, minKn, exitKn, score, success, clean
         case cleanBlockedBy
         case side, direction, netDeg, peakRateDegS, twaInDeg, twaOutDeg, arcM, radiusM
-        case outcome, borderline, offFoilS, stoppedS, pumped, submerged, outcomeWindowS
+        case outcome, outcomeReason
+        case borderline, offFoilS, stoppedS, pumped, submerged, outcomeWindowS
         case axisTs, axisBeforeDeg, axisAfterDeg
     }
 
@@ -526,6 +552,10 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         // tail is a measurement over samples this record does not carry. nil reads as "no
         // reason recorded", which is what the chip row does with it.
         cleanBlockedBy = try c.decodeIfPresent(String.self, forKey: .cleanBlockedBy)
+        // 0.18.0: absent in every older document. nil reads as "no reason recorded", which is
+        // exactly what the line under the chips does with it — it prints nothing rather than
+        // guessing a rung from `stoppedS` the ladder may not have used.
+        outcomeReason = try c.decodeIfPresent(String.self, forKey: .outcomeReason)
         axisTs = try c.decodeIfPresent(Double.self, forKey: .axisTs)
         axisBeforeDeg = try c.decodeIfPresent(Double.self, forKey: .axisBeforeDeg)
         axisAfterDeg = try c.decodeIfPresent(Double.self, forKey: .axisAfterDeg)
@@ -557,6 +587,7 @@ public struct TurnRecord: Sendable, Codable, Equatable {
         try c.encode(arcM, forKey: .arcM)
         try c.encode(radiusM, forKey: .radiusM)
         try c.encode(outcome, forKey: .outcome)
+        try c.encode(outcomeReason, forKey: .outcomeReason)   // explicit null
         try c.encode(borderline, forKey: .borderline)
         try c.encode(offFoilS, forKey: .offFoilS)
         try c.encode(stoppedS, forKey: .stoppedS)
