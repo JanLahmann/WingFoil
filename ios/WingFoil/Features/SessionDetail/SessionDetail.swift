@@ -136,9 +136,10 @@ struct SessionDetail: Sendable {
         }
     }
 
-    /// A moment the barometer says the wrist went under water — the turns and flight ends
-    /// the engine flagged `submerged`. Not every swim produces one (the sensor has to see
-    /// the pressure step), so this layer is evidence, not a census.
+    /// **One submersion episode** — a spell the barometer says the wrist spent under water
+    /// (`SessionAnalysis.submersions`, engine 0.16.0), marked at the sample the pressure
+    /// stepped. Not every swim produces one (the sensor has to see the step), so this layer
+    /// is evidence, not a census.
     struct SplashMark: Identifiable, Sendable {
         var id: Int
         var t: Double
@@ -207,7 +208,7 @@ struct SessionDetail: Sendable {
     let pumpSpans: [PumpSpan]
     /// One per takeoff the analysis carries.
     let takeoffMarks: [TakeoffMark]
-    /// Submersion evidence on turns and straight-line flight ends.
+    /// One per submersion episode, in time order — the "wrist under" layer.
     let splashMarks: [SplashMark]
     /// Positions of the counted turns, keyed by their index in `analysis.turns`.
     let turnPins: [TurnPin]
@@ -693,29 +694,67 @@ struct SessionDetail: Sendable {
         }
     }
 
-    /// Where the wrist went under. Both channels of the engine's `submerged` evidence: a
-    /// turn that ended in the water, and a straight-line flight end no turn explains. The
-    /// same ownership rule the outcome markers use keeps one swim from being marked twice.
+    /// **One mark per submersion episode**, at the sample the pressure stepped (engine
+    /// 0.16.0). The engine's list, verbatim and in its own order — the mask's runs, its 2 s
+    /// merge and its attribution all live there, so the phone, the web and the share card
+    /// cannot disagree about how many times a rider went under.
+    ///
+    /// Until 0.16.0 this was the `submerged` *flag* on a turn or a flight end: one mark per
+    /// maneuver that happened to own a dunk, placed at the maneuver's own start. Jan asked
+    /// "do we see all of them?" on 7 Sep 2026, and the answer on his 29 Aug session was 4
+    /// marks against 35 submersions — none of them where the wrist actually went in.
     private static func buildSplashMarks(_ analysis: SessionAnalysis,
                                          positioned: [RecordSample]) -> [SplashMark] {
         var out: [SplashMark] = []
-        func add(t: Double, title: String, detail: String) {
-            guard let sample = nearest(positioned, t: t),
-                  let lat = sample.lat, let lon = sample.lon else { return }
-            out.append(SplashMark(id: out.count, t: t, lat: lat, lon: lon,
-                                  title: title, detail: detail))
+        for sub in PresentationRules.submersions(analysis) {
+            guard let sample = nearest(positioned, t: sub.ts),
+                  let lat = sample.lat, let lon = sample.lon else { continue }
+            out.append(SplashMark(id: out.count, t: sub.ts, lat: lat, lon: lon,
+                                  title: splashTitle(sub),
+                                  detail: splashDetail(sub, analysis: analysis)))
         }
-        for turn in PresentationRules.splashTurns(analysis) {
-            add(t: turn.ts, title: "\(TurnAnalytics.typeLabel(turn.type)) · wrist under",
-                detail: String(format: "%.1f → %.1f kn", turn.entryKn, turn.minKn))
+        return out
+    }
+
+    /// "Wrist under · 4 s". The length is dropped rather than printed as "0 s" when the run
+    /// is a single sample: at 1 Hz that is an instant the recorder caught once, and a zero
+    /// would read as a measurement.
+    static func splashTitle(_ sub: SubmersionRecord) -> String {
+        guard sub.durationS.rounded() >= 1 else { return "Wrist under" }
+        return String(format: "Wrist under · %.0f s", sub.durationS)
+    }
+
+    /// What the episode happened *during*, in the engine's own attribution order: the turn
+    /// whose outcome window owns it, else the flight end's, else neither — which is not a
+    /// missing answer but a real one, and says so.
+    static func splashDetail(_ sub: SubmersionRecord, analysis: SessionAnalysis) -> String {
+        if let index = sub.turnIndex, analysis.turns.indices.contains(index) {
+            let turn = analysis.turns[index]
+            let kind = TurnAnalytics.typeLabel(turn.type).lowercased()
+            guard let ordinal = turnOrdinal(index, in: analysis) else {
+                return "during a \(kind)"
+            }
+            return "during \(kind) \(ordinal)"
         }
-        for end in PresentationRules.splashEnds(analysis) {
-            add(t: end.ts, title: "Wrist under",
-                detail: end.stoppedS > 0
-                    ? String(format: "straight-line · stopped %.0f s", end.stoppedS)
-                    : "straight-line")
+        if let index = sub.flightEndIndex, analysis.flightEnds.indices.contains(index) {
+            let end = analysis.flightEnds[index]
+            var line = "after flight \(end.flightIndex + 1) ended"
+            if end.stoppedS >= 1 { line += String(format: ", stopped %.0f s", end.stoppedS) }
+            return line
         }
-        return out.sorted { $0.t < $1.t }
+        return "while off foil"
+    }
+
+    /// "jibe 7" — the rider's ordinal among the session's counted turns *of the same kind*,
+    /// which is the numbering the turn sheet's title uses. His seventh jibe, not the seventh
+    /// thing the detector saw.
+    private static func turnOrdinal(_ index: Int, in analysis: SessionAnalysis) -> Int? {
+        let turn = analysis.turns[index]
+        guard turn.counted else { return nil }
+        return analysis.turns.enumerated()
+            .filter { $0.element.counted && $0.element.type == turn.type }
+            .firstIndex { $0.offset == index }
+            .map { $0 + 1 }
     }
 
     /// Positions for the counted turns, so the turns page can mark exactly the ones its

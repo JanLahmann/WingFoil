@@ -133,6 +133,19 @@ private struct TurnDetailPage: View {
                                          in: detail.analysis.pumpEpisodes)
     }
 
+    /// How long the wrist was under in this turn, where the engine caught an episode of it
+    /// (engine 0.16.0) — the longest one attributed to this turn, since the chip is about
+    /// the dunk a rider remembers. Nil under 1 s: at 1 Hz that is a single sample, and "0 s"
+    /// would read as a measurement.
+    private var submersionS: Double? {
+        guard let turn, turn.submerged else { return nil }
+        let longest = detail.analysis.submersions
+            .filter { $0.turnIndex == index }
+            .map(\.durationS)
+            .max()
+        return longest.flatMap { $0.rounded() >= 1 ? $0 : nil }
+    }
+
     private var windUp: Bool { windUpPreferred && windKnown }
     private var showsGhost: Bool { ghostEnabled && ghost != nil }
 
@@ -271,7 +284,14 @@ private struct TurnDetailPage: View {
                          tint: DesignTokens.Effort.pumping)
                 }
                 if turn.submerged {
-                    chip("wrist under", symbol: DesignTokens.Glyph.splash,
+                    // "wrist under 4 s" where an episode of the layer's own list falls in
+                    // this turn's outcome window (engine 0.16.0). The flag says the wrist
+                    // went under; the episode says for how long, and the two are read from
+                    // the one mask so the chip and the map's diamond cannot disagree. No
+                    // episode ⇒ the chip says exactly what it said before, never "0 s".
+                    chip(submersionS.map { String(format: "wrist under %.0f s", $0) }
+                            ?? "wrist under",
+                         symbol: DesignTokens.Glyph.splash,
                          tint: DesignTokens.Effort.splash)
                 }
                 Spacer(minLength: 0)
