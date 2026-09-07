@@ -3646,7 +3646,7 @@ function appVersionAgreesWithTheFitByte(logger as Test.Logger) as Boolean {
     // on without it, which is the same drift this test was written for one field over. It is
     // the source tree's ONE answer to "what is this build", so it now says what the manifests
     // say — and the parse below is what keeps it honest about the byte.
-    Test.assertEqual(FitSchema.APP_VERSION, "0.9.7");
+    Test.assertEqual(FitSchema.APP_VERSION, "0.9.8");
     Test.assertEqual(FitSchema.APP_MINOR, 9);
     // the string's minor field, parsed rather than assumed
     var v = FitSchema.APP_VERSION;
