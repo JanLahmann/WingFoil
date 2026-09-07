@@ -207,9 +207,11 @@ sample fell below `foilEntrySpeed` -- the speed a *flight starts* at, which is n
 below which a foil stops flying. Jan, 7 Sep 2026: *"change to '...below min foil speed...'"*,
 which in this engine is `foilExitSpeed`. His Jibe 50 of 4 Sep 07:58 sagged to 5.5 kn = 10.2
 km/h, below entry and well above exit, and was a touchdown on that rung alone; he flew it.
-Since `flying` already requires speed above the exit speed, moving the threshold makes the rung
-unreachable -- deliberately, and `turnPumpedOutIsTouchdown` (**true**) is kept as its gate so
-the retirement is visible and an older document still decodes. Beside it every turn gains
+The speed becomes `turnPumpedMarginalSpeed` (**8.0**), and since `flying` already requires
+speed above the exit speed the rung is thereby unreachable -- deliberately, and it is a
+*parameter* rather than a reference to `foilExitSpeed` so the retirement is a setting somebody
+can raise (at 12.0 it is the 0.17.0 reading, restored). `turnPumpedOutIsTouchdown` (**true**)
+is kept beside it as the gate. Beside it every turn gains
 `outcomeReason` (`stop` | `off_foil` | `submerged` | `pumped_marginal`, else null), the rung
 that decided, as a code whose words live in presentation. Over the 17 committed fixtures jibes
 go 289 -> 295 flew through, 212 -> 206 touched down, 37 fell in unchanged, and clean 150 -> 151;
@@ -766,8 +768,11 @@ def _config_dict(a: Analysis) -> dict:
         "turnRecoverHold": t.recover_hold_s,
         "turnOutcomeWindow": t.outcome_window_s,
         "turnBaroDrop": t.baro_drop_m,
-        # The pumped-out touchdown, now a switch and off by default (engine 0.18.0).
+        # The pump rung (engine 0.18.0): its gate, and the speed it corroborates against.
+        # At the default speed -- 8.0, the same number the foil exit speed carries -- the rung
+        # cannot fire, which is the retirement; raising it revives the rule.
         "turnPumpedOutIsTouchdown": bool(t.pumped_out_is_touchdown),
+        "turnPumpedMarginalSpeed": t.pumped_marginal_speed_kmh,
         # wind axis
         "windMinSpeed": w.min_speed_mps,
         "windBinDeg": w.bin_deg,

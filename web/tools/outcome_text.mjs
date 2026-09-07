@@ -29,20 +29,24 @@ const { outcomeText } = await import(new URL("../js/viz.js", import.meta.url).hr
 
 const fixtures = process.argv.slice(2).map((file) => {
   const doc = JSON.parse(readFileSync(file, "utf-8"));
-  const exit = (doc.config || {}).foilExitSpeed ?? null;
+  const marginal = (doc.config || {}).turnPumpedMarginalSpeed ?? null;
   return {
     file,
-    texts: (doc.turns || []).map((t) => outcomeText(t, exit) ?? null),
+    texts: (doc.turns || []).map((t) => outcomeText(t, marginal) ?? null),
   };
 });
 
 /** The shapes the seventeen fixtures cannot produce, written out by hand. */
 const CASES = {
-  // The pump rung, which no published-default run can reach any more — the wording has to
-  // survive anyway, because a stored document written by an older engine still carries it.
+  // The pump rung, which no published-default run can reach — the wording has to survive
+  // anyway, because a stored document from an older engine still carries it and because a
+  // tuned run can revive the rung by raising `turnPumpedMarginalSpeed`.
   pumpedMarginal: [{ outcome: "touchdown", outcomeReason: "pumped_marginal",
                      borderline: false, offFoilS: 0, stoppedS: 0 }, 8],
-  // …and the same turn out of a document whose config echo has no exit speed in it.
+  // A run that revived it at 12 km/h says *its* speed, not the published one.
+  pumpedMarginalRevived: [{ outcome: "touchdown", outcomeReason: "pumped_marginal",
+                            borderline: false, offFoilS: 0, stoppedS: 0 }, 12],
+  // …and the same turn out of a document whose config echo has no such speed in it.
   pumpedMarginalNoConfig: [{ outcome: "touchdown", outcomeReason: "pumped_marginal",
                              borderline: false, offFoilS: 0, stoppedS: 0 }, null],
   // A touchdown whose stop rounds to zero: "no stop", never "stopped 0 s".
