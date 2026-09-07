@@ -43,6 +43,7 @@
     "turnOutcomeWindow": 12.0,
     "turnBaroDrop": 25.0,
     "turnPumpedOutIsTouchdown": true,
+    "turnPumpedMarginalSpeed": 8.0,
     "windMinSpeed": 2.0,
     "windBinDeg": 10.0,
     "windSmoothDeg": 20.0,
