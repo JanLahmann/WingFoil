@@ -24,10 +24,104 @@ struct SessionLogView: View {
         SessionGearCard(sessionID: sessionID)
             .id("gear")
         WindDetailCard(detail: detail)
+        FlightEndsCard(detail: detail)
         RecordingCard(detail: detail)
         if !detail.divergences.isEmpty {
             DivergenceDetailCard(divergences: detail.divergences)
         }
+    }
+}
+
+// MARK: - Flight ends
+
+/// **Every loss no turn owns, as a list you can open.**
+///
+/// The Turns tab has been a list of maneuvers with a page behind every row since it was
+/// built. The other half of a session's losses — the gust that died, the ventilation on a
+/// reach, the tip that caught — existed only as hollow rings on the map: findable if you
+/// happened to tap the right forty metres of water, and invisible otherwise. This is the same
+/// list the map draws, in time order, and each row opens the same page the ring does.
+///
+/// It is on **Log** rather than on Ride or Turns on purpose. Ride is the map, Turns is the
+/// maneuvers, and a straight-line flight end is neither: it is what the *record* says happened
+/// when the foil stopped carrying, which is the question this tab exists to answer.
+private struct FlightEndsCard: View {
+    let detail: SessionDetail
+
+    @State private var opened: FlightEndDetailRequest?
+
+    private var indices: [Int] { FlightEndAnalytics.drawnIndices(detail.analysis) }
+
+    var body: some View {
+        if !indices.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 6) {
+                    Text("Flight ends").font(.headline)
+                    Spacer()
+                    Text("\(indices.count)")
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(indices, id: \.self) { index in
+                        row(index, end: detail.analysis.flightEnds[index])
+                        if index != indices.last { Divider() }
+                    }
+                }
+                // The two exclusions, said once, because a rider who counts the rings on the
+                // map and the rows here has to be told why the session's own tally is larger.
+                Text("Straight-line ends only. One inside a turn's window is that turn's, and "
+                     + "is on the Turns tab; one the recording cut short has no evidence to "
+                     + "judge.")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.secondary.opacity(0.10), in: .rect(cornerRadius: 14))
+            .id("flight-ends")
+            .sheet(item: $opened) { request in
+                FlightEndDetailSheet(detail: detail, start: request.id)
+            }
+            #if DEBUG && targetEnvironment(simulator)
+            // `UI_OPEN_FLIGHT_END=<index>` opens one flight end's page, for a picture of it.
+            // The same family as `UI_OPEN_TURN`, and the same index: into `flightEnds`.
+            .onAppear {
+                guard let raw = ProcessInfo.processInfo.environment["UI_OPEN_FLIGHT_END"],
+                      let id = Int(raw),
+                      detail.analysis.flightEnds.indices.contains(id) else { return }
+                opened = FlightEndDetailRequest(id: id)
+            }
+            #endif
+        }
+    }
+
+    private func row(_ index: Int, end: FlightEndRecord) -> some View {
+        Button {
+            opened = FlightEndDetailRequest(id: index)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: TurnOutcomeKind(end.outcome).symbolName)
+                    .font(.caption)
+                    .foregroundStyle(TurnOutcomeStyle.color(TurnOutcomeKind(end.outcome)))
+                    .frame(width: 16)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Flight \(end.flightIndex + 1)")
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+                    Text(FlightEndAnalytics.outcomeText(end))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.tertiary)
+            }
+            .padding(.vertical, 7)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
     }
 }
 

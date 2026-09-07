@@ -14,45 +14,167 @@ import WingFoilKit
 /// There is deliberately no ground under it. A satellite tile at 30 m across is a photograph
 /// of water, and it would bury every one of the six things this drawing is actually saying.
 struct TurnDetailMapView: View {
-    let slice: TurnSlice
+    /// The shape and its four marks. A turn hands over `TurnSlice.figure`, a straight-line
+    /// flight end `FlightEndSlice.figure`, and this view cannot tell which it got — see
+    /// `ManeuverFigure`.
+    let figure: ManeuverFigure
     /// The session's best clean jibe of the same rotation, laid underneath — see
-    /// `TurnSlice.ghost`. nil when the toggle is off or there is nothing to compare with.
-    let ghost: TurnSlice?
+    /// `TurnSlice.ghost`. nil when the toggle is off, when there is nothing to compare with,
+    /// or on a flight end, which has no comparison of its own.
+    let ghost: ManeuverFigure?
     let windUp: Bool
-    /// Seconds from the turn's start, when the strip is being scrubbed.
+    /// Seconds from `t = 0`, when a strip is being scrubbed.
     let playheadRt: Double?
+    /// **A tap on the drawing puts the playhead here**, so the strip's rule and the drawing's
+    /// dot are the same instant however the reader got there. nil makes the drawing inert,
+    /// which is what a thumbnail or a share card would want.
+    var onPick: ((Double) -> Void)?
+    /// The spoken sentence, which only the owning page can compose — it knows the verdict.
+    var spoken: String = ""
+
+    /// The turn page's own call, unchanged: the sheet passes a slice and this is what makes
+    /// that keep working while the drawing itself stopped knowing about turns.
+    init(slice: TurnSlice, ghost: TurnSlice?, windUp: Bool, playheadRt: Double?,
+         onPick: ((Double) -> Void)? = nil) {
+        self.figure = slice.figure
+        self.ghost = ghost?.figure
+        self.windUp = windUp
+        self.playheadRt = playheadRt
+        self.onPick = onPick
+        self.spoken = Self.turnSpoken(slice, windUp: windUp, hasGhost: ghost != nil)
+    }
+
+    init(figure: ManeuverFigure, ghost: ManeuverFigure? = nil, windUp: Bool,
+         playheadRt: Double?, onPick: ((Double) -> Void)? = nil, spoken: String) {
+        self.figure = figure
+        self.ghost = ghost
+        self.windUp = windUp
+        self.playheadRt = playheadRt
+        self.onPick = onPick
+        self.spoken = spoken
+    }
 
     /// Layout points reserved on every edge, so a mark centred on the outermost vertex is not
     /// clipped in half against the frame.
     private static let inset: CGFloat = 14
 
     private var frame: TurnSlice.Bounds? {
-        guard let base = slice.bounds(windUp: windUp) else { return nil }
+        guard let base = figure.bounds(windUp: windUp) else { return nil }
         guard let ghostBounds = ghost?.bounds(windUp: windUp) else { return base }
         return base.union(ghostBounds)
     }
 
     var body: some View {
-        Canvas { context, size in
-            guard let frame, slice.hasGeometry else { return }
-            let place = placer(frame, in: size)
+        GeometryReader { geometry in
+            Canvas { context, size in
+                guard let frame, figure.hasGeometry else { return }
+                let place = placer(frame, in: size)
 
-            drawGhost(context: &context, place: place)
-            drawContextTrack(context: &context, place: place)
-            drawTurn(context: &context, place: place)
-            drawSecondTicks(context: &context, place: place)
-            drawAxisTick(context: &context, place: place)
-            drawMarks(context: &context, place: place)
-            drawPlayhead(context: &context, place: place)
-            drawScaleBar(context: &context, size: size, scale: place.scale)
-            drawSpeedLegend(context: &context, size: size)
-            drawOrientationMarks(context: &context, size: size)
+                drawGhost(context: &context, place: place)
+                drawContextTrack(context: &context, place: place)
+                drawTurn(context: &context, place: place)
+                drawSecondTicks(context: &context, place: place)
+                drawTimeLabels(context: &context, place: place, size: size)
+                drawAxisTick(context: &context, place: place)
+                drawMarks(context: &context, place: place)
+                drawPlayhead(context: &context, place: place)
+                drawScaleBar(context: &context, size: size, scale: place.scale)
+                drawSpeedLegend(context: &context, size: size)
+                drawOrientationMarks(context: &context, size: size)
+            }
+            .contentShape(.rect)
+            .onTapGesture(coordinateSpace: .local) { pick($0, in: geometry.size) }
         }
         .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 14))
+        .overlay(alignment: .topLeading) { callout }
         .figureHeight(regular: 260, compact: 200)
         .accessibilityElement()
-        .accessibilityLabel(accessibilityText)
+        .accessibilityLabel(spoken)
     }
+
+    /// **What the rider was doing at the instant under the playhead** — four readings, in one
+    /// line, top left.
+    ///
+    /// It answers to the playhead rather than to the tap, deliberately: a finger on the strip
+    /// and a finger on the drawing are the same gesture asking the same question, and a
+    /// callout that only appeared for one of them would make the two surfaces feel like two
+    /// features. Absent until something is scrubbed — the drawing's own marks are the resting
+    /// state, and a permanent readout would compete with them.
+    ///
+    /// TWA is present **only where the wind is known**, which is the same gate that enables
+    /// wind up and names tacks and jibes. Heading is always there: it is a compass bearing and
+    /// it is true whatever the wind was doing — and it is read off the **north-up** vertex
+    /// even while the wind-up frame is drawn, because the rotation has already subtracted the
+    /// wind from those headings and printing one would say the TWA twice under two names.
+    @ViewBuilder
+    private var callout: some View {
+        if let playheadRt, let point = figure.point(atRelative: playheadRt, windUp: false) {
+            HStack(spacing: 8) {
+                reading(String(format: "%+.1f s", point.rt))
+                reading(String(format: "%.1f kn", point.kn))
+                if let heading = point.headingDeg {
+                    reading(String(format: "%.0f°", heading), caption: "hdg")
+                }
+                if let wind = figure.windDirDeg, let twa = point.twaDeg(windFromDeg: wind) {
+                    reading(String(format: "%.0f°", abs(twa)), caption: "TWA")
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(.thinMaterial, in: .rect(cornerRadius: 8))
+            .padding(8)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+    }
+
+    private func reading(_ value: String, caption: String? = nil) -> some View {
+        HStack(spacing: 2) {
+            Text(value).font(.caption2.monospacedDigit())
+            if let caption {
+                Text(caption).font(.system(size: 8)).foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    // MARK: - The tap
+
+    /// **A finger on the water picks the nearest sample.** The drawing has been readable
+    /// since it was built and inert since it was built: everything on it — the ticks, the
+    /// ring, the outcome dot — was something the *page* had decided to mark, and the rider's
+    /// own question ("what was I doing *there*, at the top of the arc") had no answer.
+    ///
+    /// It picks the nearest **vertex**, in metres, in whichever frame is drawn, and hands its
+    /// relative time to the page — which puts it in `playheadRt`, which the strips draw as
+    /// their rule and this view draws as its dot. So one gesture on either surface moves one
+    /// playhead, which is the app's rule everywhere else (docs/presentation.md, "Scrub and
+    /// zoom") and was the one place it did not hold.
+    ///
+    /// **A tap, and deliberately not a drag.** The first version was a
+    /// `DragGesture(minimumDistance: 0)`, so a finger run along the arc would keep picking.
+    /// Two things killed it on the simulator: both pages live inside a paging `TabView`, and a
+    /// zero-distance drag over the drawing both **swallowed the swipe to the next turn** and
+    /// fired spuriously as the pager settled — the flight-end page opened with a playhead ring
+    /// and a callout nobody had asked for. Scrubbing belongs to the strips, which are not
+    /// inside a horizontal gesture; the drawing answers a tap.
+    private func pick(_ location: CGPoint, in size: CGSize) {
+        guard let onPick, let frame, figure.hasGeometry else { return }
+        let place = placer(frame, in: size)
+        guard place.scale > 0 else { return }
+        let x = Double((location.x - place.offsetX) / place.scale)
+        let y = Double((place.offsetY - location.y) / place.scale)
+        // A fingertip is about 26 points; in metres that depends entirely on how wide the
+        // frame is, which is why the tolerance is computed and not a constant. Outside it
+        // the tap was on empty water and picks nothing.
+        let tolerance = Double(Self.tapToleranceP / place.scale)
+        guard let point = figure.point(nearX: x, y: y, windUp: windUp,
+                                       withinM: tolerance) else { return }
+        onPick(point.rt)
+    }
+
+    /// The tap radius, in layout points rather than metres — a fingertip is a fingertip
+    /// whatever the drawing is scaled to.
+    private static let tapToleranceP: CGFloat = 26
 
     // MARK: - Placement
 
@@ -107,7 +229,7 @@ struct TurnDetailMapView: View {
     /// The padded window, in neutral grey: where he came from and where he went. It is
     /// context, so it is drawn thin and it recedes.
     private func drawContextTrack(context: inout GraphicsContext, place: Placer) {
-        context.stroke(path(slice.points(windUp: windUp), place: place),
+        context.stroke(path(figure.points(windUp: windUp), place: place),
                        with: .color(DesignTokens.Phase.offFoil.opacity(0.45)),
                        style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
     }
@@ -125,14 +247,14 @@ struct TurnDetailMapView: View {
     /// colour too, and the legend at the foot of the card puts knots on all of it
     /// (docs/presentation.md, "Turn detail").
     private func drawTurn(context: inout GraphicsContext, place: Placer) {
-        let points = slice.points(windUp: windUp).filter(\.inTurn)
+        let points = figure.points(windUp: windUp).filter(\.inTurn)
         guard points.count >= 2 else { return }
         for index in 0..<(points.count - 1) {
             var segment = Path()
             segment.move(to: place(points[index]))
             segment.addLine(to: place(points[index + 1]))
             let kn = (points[index].kn + points[index + 1].kn) / 2
-            let position = TurnSpeedRamp.position(kn: kn, entryKn: slice.speed.entryKn)
+            let position = TurnSpeedRamp.position(kn: kn, entryKn: figure.entryKn)
             context.stroke(segment,
                            with: .color(TurnSpeedRamp.color(at: position)),
                            // The width ramp is read off the *entry* half of the colour ramp,
@@ -149,7 +271,7 @@ struct TurnDetailMapView: View {
     /// stopped. Drawn perpendicular to the heading, and skipped where the slice has no usable
     /// bearing to be perpendicular to.
     private func drawSecondTicks(context: inout GraphicsContext, place: Placer) {
-        let points = slice.points(windUp: windUp).filter(\.inTurn)
+        let points = figure.points(windUp: windUp).filter(\.inTurn)
         guard points.count >= 2 else { return }
         var next = ceil(points[0].rt)
         for point in points {
@@ -168,6 +290,76 @@ struct TurnDetailMapView: View {
         }
     }
 
+    /// **The clock, written on the path**: a small number every five seconds, on the outside
+    /// of the curve.
+    ///
+    /// The second ticks have carried *rhythm* since the drawing was built — bunched ticks are
+    /// a rider who stopped — but they could not carry *position*. A reader looking at the
+    /// strip's "low at 4.2 s" had to count ticks along the arc to find where on the water that
+    /// was, and on a turn whose ticks bunch exactly where he is counting, that is the one
+    /// stretch the counting fails on. Five seconds is the interval: closer and the numbers
+    /// crowd a six-second jibe, wider and a short turn gets none at all.
+    ///
+    /// **Across the whole drawn span, not just the sweep**, unlike the second ticks. The pads
+    /// are where the approach and the run-out are, and "−5" is exactly as much of an answer
+    /// as "+5" to a rider asking where he was before it started. The negative sign is kept —
+    /// it is what says which side of the sweep the number is on.
+    ///
+    /// **Outside the curve**, which is the side away from the centre of rotation, so the
+    /// numbers never sit inside the arc where the ring, the outcome dot and the ghost already
+    /// are. Where the sweep's own rate cannot say which side that is, the label goes to the
+    /// right of the heading, which is a choice and not a claim.
+    private func drawTimeLabels(context: inout GraphicsContext, place: Placer,
+                                size: CGSize) {
+        let points = figure.points(windUp: windUp)
+        guard points.count >= 2 else { return }
+        let axisAt = figure.axisRt.flatMap { figure.point(atRelative: $0, windUp: windUp) }
+            .map { place($0) }
+        for (rt, point) in figure.pathLabels(everyS: Self.labelEveryS, windUp: windUp) {
+            guard let heading = point.headingDeg else { continue }
+            let centre = place(point)
+            // The `axis` word owns its own patch of the drawing; a number printed over it
+            // makes two marks unreadable instead of one.
+            if let axisAt, hypot(axisAt.x - centre.x, axisAt.y - centre.y) < 26 { continue }
+            let outward = (heading + 90 * outwardSign(at: point, in: points)) * .pi / 180
+            let at = CGPoint(x: centre.x + CGFloat(sin(outward)) * Self.labelOffsetP,
+                             y: centre.y - CGFloat(cos(outward)) * Self.labelOffsetP)
+            // Top right is the north/wind block's; the foot of the frame is the scale
+            // bar's and the speed legend's. A number printed into either would be one more
+            // mark in a corner that already has two.
+            guard !Self.reserved(in: size).contains(where: { $0.contains(at) }) else { continue }
+            context.draw(Text(String(format: "%.0f", rt))
+                            .font(.system(size: 9, weight: .medium).monospacedDigit())
+                            .foregroundStyle(Color(.label).opacity(0.5)),
+                         at: at, anchor: .center)
+        }
+    }
+
+    private static let labelEveryS = 5.0
+    private static let labelOffsetP: CGFloat = 13
+
+    /// The two patches of the canvas that already belong to something: the north/wind block
+    /// top right, and the strip along the foot that carries the scale bar and the speed
+    /// legend.
+    private static func reserved(in size: CGSize) -> [CGRect] {
+        [CGRect(x: size.width - 74, y: 0, width: 74, height: 34),
+         CGRect(x: 0, y: size.height - 28, width: size.width, height: 28)]
+    }
+
+    /// +1 when the outside of the curve is to the right of the heading, −1 when it is to the
+    /// left. A board turning clockwise has its centre of rotation to the right, so the
+    /// outside is to the left, and vice versa.
+    private func outwardSign(at point: TurnSlice.Point, in points: [TurnSlice.Point]) -> Double {
+        guard let index = points.firstIndex(where: { $0.rt == point.rt }) else { return 1 }
+        let ahead = min(index + 2, points.count - 1)
+        let behind = max(index - 2, 0)
+        guard ahead != behind,
+              let from = points[behind].headingDeg,
+              let to = points[ahead].headingDeg else { return 1 }
+        let swept = TurnSlice.delta(from: from, to: to)
+        return swept > 0.5 ? -1 : (swept < -0.5 ? 1 : 1)
+    }
+
     /// **Where the board went through the wind** (engine 0.15.0) — a longer tick across the
     /// line at `axisTs`, with the word `axis` beside it.
     ///
@@ -182,8 +374,8 @@ struct TurnDetailMapView: View {
     /// Nothing is drawn where the engine recorded no crossing: a course change, a session with
     /// no usable wind, or a stored analysis written before 0.15.0 (`TurnSlice.axisRt`).
     private func drawAxisTick(context: inout GraphicsContext, place: Placer) {
-        guard let axisRt = slice.axisRt,
-              let point = slice.point(atRelative: axisRt, windUp: windUp),
+        guard let axisRt = figure.axisRt,
+              let point = figure.point(atRelative: axisRt, windUp: windUp),
               let heading = point.headingDeg else { return }
         let radians = (heading + 90) * .pi / 180
         let dx = CGFloat(sin(radians)) * 9
@@ -204,17 +396,19 @@ struct TurnDetailMapView: View {
 
     /// The two moments worth a mark: where the speed bottomed out, and how it ended.
     private func drawMarks(context: inout GraphicsContext, place: Placer) {
-        if let low = slice.point(atRelative: slice.speed.minRt, windUp: windUp) {
+        if let lowRt = figure.lowRt,
+           let low = figure.point(atRelative: lowRt, windUp: windUp) {
             let centre = place(low)
             let ring = CGRect(x: centre.x - 5, y: centre.y - 5, width: 10, height: 10)
             context.stroke(Path(ellipseIn: ring), with: .color(Color(.label).opacity(0.75)),
                            lineWidth: 2)
         }
-        if let end = slice.points(windUp: windUp).last(where: \.inTurn) {
+        if let endRt = figure.endRt,
+           let end = figure.point(atRelative: endRt, windUp: windUp) {
             let centre = place(end)
             let dot = CGRect(x: centre.x - 5.5, y: centre.y - 5.5, width: 11, height: 11)
             context.fill(Path(ellipseIn: dot),
-                         with: .color(TurnOutcomeStyle.color(TurnOutcomeKind(slice.turn.outcome))))
+                         with: .color(TurnOutcomeStyle.color(TurnOutcomeKind(figure.outcome))))
             context.stroke(Path(ellipseIn: dot), with: .color(Color(.systemBackground)),
                            lineWidth: 1.5)
         }
@@ -225,7 +419,7 @@ struct TurnDetailMapView: View {
     /// outcome.
     private func drawPlayhead(context: inout GraphicsContext, place: Placer) {
         guard let playheadRt,
-              let point = slice.point(atRelative: playheadRt, windUp: windUp) else { return }
+              let point = figure.point(atRelative: playheadRt, windUp: windUp) else { return }
         let centre = place(point)
         let halo = CGRect(x: centre.x - 11, y: centre.y - 11, width: 22, height: 22)
         context.fill(Path(ellipseIn: halo),
@@ -271,8 +465,8 @@ struct TurnDetailMapView: View {
         // drawn: a mark that moved between orientations would have to be re-found every time
         // the control is tapped.
         drawArrow(context: &context, centre: CGPoint(x: size.width - Self.inset - 10, y: y),
-                  rotationDeg: windUp ? -(slice.windDirDeg ?? 0) : 0, label: "N")
-        if let windDirDeg = slice.windDirDeg {
+                  rotationDeg: windUp ? -(figure.windDirDeg ?? 0) : 0, label: "N")
+        if let windDirDeg = figure.windDirDeg {
             // The heading the wind blows *toward*: the tail is where it comes from, so the
             // head is 180° round from the direction the estimate names. In wind up that is
             // straight down the page by construction.
@@ -312,9 +506,9 @@ struct TurnDetailMapView: View {
     /// entry speed and two labels instead of three: the top half of the ramp went unused, and
     /// printing a number nobody rode would be the overclaim.
     private func drawSpeedLegend(context: inout GraphicsContext, size: CGSize) {
-        let entryKn = slice.speed.entryKn
+        let entryKn = figure.entryKn
         guard entryKn >= TurnSpeedRamp.minReferenceKn else { return }
-        let drawn = slice.points(windUp: windUp).filter(\.inTurn).map(\.kn)
+        let drawn = figure.points(windUp: windUp).filter(\.inTurn).map(\.kn)
         let topKn = TurnSpeedRamp.legendTopKn(entryKn: entryKn, maxKn: drawn.max() ?? entryKn)
         let barWidth: CGFloat = 104
         let barHeight: CGFloat = 5
@@ -362,7 +556,11 @@ struct TurnDetailMapView: View {
 
     // MARK: - Spoken
 
-    private var accessibilityText: String {
+    /// A turn's spoken sentence, composed where the turn is still a turn. It moved out of
+    /// `body` when the drawing stopped knowing what it was drawing: the verdict, the radius
+    /// and the entry tack are the *slice's* facts, and a figure deliberately carries none of
+    /// them.
+    static func turnSpoken(_ slice: TurnSlice, windUp: Bool, hasGhost: Bool) -> String {
         let turn = slice.turn
         var parts = [
             "\(TurnAnalytics.typeLabel(turn.type)) drawn \(windUp ? "wind up" : "north up")",
@@ -379,7 +577,7 @@ struct TurnDetailMapView: View {
         if let axisRt = slice.axisRt {
             parts.append(String(format: "through the wind axis %.0f seconds in", axisRt))
         }
-        if ghost != nil { parts.append("compared with your best clean jibe, dashed") }
+        if hasGhost { parts.append("compared with your best clean jibe, dashed") }
         return parts.joined(separator: ", ")
     }
 }
