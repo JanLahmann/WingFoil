@@ -28,8 +28,8 @@ globalThis.window = { addEventListener() {} };
 
 const JS = new URL("../js/", import.meta.url);
 const { keyMetrics } = await import(new URL("render.js", JS).href);
-const { LEAN_KEYS, PERIOD_LEAN_KEYS, cardStats, periodCardStats, periodMapAvailable } =
-  await import(new URL("cardstats.js", JS).href);
+const { LEAN_KEYS, PERIOD_LEAN_KEYS, cardStats, keyMetricEntries, periodCardStats,
+        periodMapAvailable } = await import(new URL("cardstats.js", JS).href);
 const { stackPlacer } = await import(new URL("sharecard.js", JS).href);
 
 /**
@@ -104,6 +104,56 @@ const stacks = outlines.cases.map((c) => {
   };
 });
 
+/* The **rate row**, over the three shapes of session the corpus does not happen to contain.
+ *
+ * Row 4 has one branch the goldens cannot exercise: an afternoon whose wind axis named
+ * jibes and who swam out of every one of them. Its `jibesPerHour` is 0.0 beside a positive
+ * TPH, which is what the old `jibesPerHour > 0` gate read as "no jibes were named" — so the
+ * block dropped JPH *and* CPH and printed the TPH fallback, over a session that is nothing
+ * but jibes. The contract says the opposite (docs/presentation.md, "Row 4": "Where jibes
+ * were named, a `0.0` CPH is a measured verdict and is printed as one"), so the case is
+ * written down here rather than waited for. `verify_presentation.py` §5a says which keys
+ * each one must produce.
+ *
+ * Synthetic and minimal: only the fields `keyMetricEntries` reads, and only the ones the
+ * rate row's branch turns on. Nothing here is a claim about a real recording.
+ */
+const rateCase = (name, { jibes, turnsCounted, jibesPerHour, turnsPerHour,
+                          cleanJibesPerHour, wetPerHour }) => ({
+  name,
+  entries: keyMetricEntries({
+    summary: {
+      durationS: 3600, distanceKm: 12.0, avgSpeedKmh: 12.0,
+      jibesPerHour, turnsPerHour, cleanJibesPerHour, wetPerHour,
+      turns: {
+        jibes, turnsCounted, jibesSuccessful: 0, turnsSuccessful: 0,
+        longestFlewStreak: 0, longestDryStreak: 0,
+        jibeOutcomes: { flewThrough: 0, touchdown: 0, fellIn: jibes },
+        outcomes: { flewThrough: 0, touchdown: 0, fellIn: turnsCounted },
+      },
+    },
+    records: { best2sKn: 14.0, best5x10sKn: 12.0, alpha500Kn: 0.0 },
+  }).map((e) => ({ key: e.key, value: e.value })),
+});
+
+const rates = [
+  // Fifteen jibes, every one of them swum. JPH 0.0 and CPH 0.0 are both measured.
+  rateCase("allWetJibes", {
+    jibes: 15, turnsCounted: 15, jibesPerHour: 0.0, turnsPerHour: 15.0,
+    cleanJibesPerHour: 0.0, wetPerHour: 15.0,
+  }),
+  // No usable wind axis: turns, and none of them named. TPH, and no jibe rate at all.
+  rateCase("noJibesNamed", {
+    jibes: 0, turnsCounted: 15, jibesPerHour: 0.0, turnsPerHour: 15.0,
+    cleanJibesPerHour: 0.0, wetPerHour: 2.0,
+  }),
+  // An hour on the water with no turns in it: measured zeroes, not a fallback.
+  rateCase("noTurnsAtAll", {
+    jibes: 0, turnsCounted: 0, jibesPerHour: 0.0, turnsPerHour: 0.0,
+    cleanJibesPerHour: 0.0, wetPerHour: 0.0,
+  }),
+];
+
 const out = [];
 for (const path of process.argv.slice(2)) {
   const g = JSON.parse(readFileSync(path, "utf8"));
@@ -119,6 +169,7 @@ for (const path of process.argv.slice(2)) {
 }
 process.stdout.write(JSON.stringify({
   cards: out,
+  rates,
   periods,
   periodLeanKeys: [...PERIOD_LEAN_KEYS],
   stacks,

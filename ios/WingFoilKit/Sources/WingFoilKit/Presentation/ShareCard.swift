@@ -306,7 +306,9 @@ public struct ShareCardStats: Sendable, Equatable {
     static func rowOnlyStats(_ row: SessionRow) -> [Stat] {
         [
             Stat(key: Key.duration, label: "duration",
-                 value: KeyMetrics.duration(row.durationS)),
+                 // `rateSeconds`, so the placeholder card and the analysed one print the
+                 // same duration rather than two clocks a second apart in time.
+                 value: KeyMetrics.duration(row.rateSeconds)),
             Stat(key: Key.distance, label: "distance",
                  value: row.distanceKm.map(KeyMetrics.km) ?? "—"),
             Stat(key: Key.maxSpeed, label: "max 2 s",

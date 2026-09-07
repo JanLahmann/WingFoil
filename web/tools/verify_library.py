@@ -239,7 +239,7 @@ def check_attribution() -> None:
         e.pop("schema")
     check("  a schema-1 library is unchanged", library.aggregate(old)["count"], 2)
     check("  digest stamps the current schema",
-          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 7)
+          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 8)
 
     # Schema 3 (engine 0.8.2): the session's own UTC offset, and the local calendar date it
     # implies. `dateUtc` stays what it always was — the UTC day — so an entry written before
@@ -485,11 +485,26 @@ def check_session_records(digests: list[dict]) -> None:
           round(100.0 * 4 / library.MIN_JIBES_FOR_RATE, 1))
 
     # CPH is the engine's own rate (0.10.0), and the winner is the session that maximises
-    # it — not the one with the most clean jibes.
-    cph = max((d["cleanJibesPerHour"], d["id"]) for d in digests)
+    # it — not the one with the most clean jibes — **among the sessions long enough to hold
+    # the record**. The floor is one rate window (15 min): one clean jibe in a four-minute
+    # evening is fifteen an hour, and a personal best a rider can set by going home early is
+    # not one. The phone's celebration has applied it since 0.10.0 and this table did not,
+    # so the two could name different afternoons under one label.
+    eligible = [d for d in digests
+                if library._rate_duration_s(d) >= library.CPH_MIN_DURATION_S]
+    cph = max((d["cleanJibesPerHour"], d["id"]) for d in eligible)
     check("  CPH is the engine's summary.cleanJibesPerHour", rows["bestCph"]["value"],
           round(cph[0], 2))
     check("  CPH names the session that maximises it", rows["bestCph"]["id"], cph[1])
+    # The floor is load-bearing on this corpus, not a formality: the highest CPH of all
+    # belongs to a session under fifteen minutes, and it must not hold the record.
+    short = max((d["cleanJibesPerHour"], d["id"]) for d in digests)
+    check("  the corpus's highest CPH is set by a session under the floor",
+          short[1] != cph[1], True)
+    check("  and that session does not hold the record", rows["bestCph"]["id"] != short[1],
+          True)
+    check("  the row states the floor", rows["bestCph"]["caption"],
+          "Clean jibes per hour of session time. Sessions of at least 15 minutes.")
     # …and it is **not** the division the library used to do for itself, which is why the
     # switch was worth making rather than a rename. The engine divides by its own *cleaned*
     # session span — the denominator every per-hour rate in this project shares
@@ -564,9 +579,15 @@ def check_trends(digests: list[dict]) -> None:
     check("  foilPct series == digests in order", [p["v"] for p in foil["points"]],
           [d["foilPct"] for d in ordered])
     port = split["lines"][0]
-    check("  port series == the hand-countable split",
+    # Schema 8: the split is by **outcome**, not by the engine's score verdict. The rider's
+    # question is "which tack do I swim out of", and the score reading is not one of his two
+    # tiers (docs/presentation.md, "Clean jibe").
+    check("  port series == the hand-countable flew-through split",
           [p["v"] for p in port["points"]],
-          [d["turns"]["bySide"]["port"]["successPct"] for d in ordered])
+          [d["turns"]["bySide"]["port"]["flewThroughPct"] for d in ordered])
+    check("  the split counts outcomes, not the score verdict",
+          any(d["turns"]["bySide"]["port"]["flewThroughPct"]
+              != d["turns"]["bySide"]["port"]["successPct"] for d in ordered), True)
 
     # A session with no wrist accelerometer has no pump number: the point must be a
     # documented hole (null), never a zero the chart would draw as a collapse.
@@ -602,9 +623,15 @@ def check_trends(digests: list[dict]) -> None:
           {(b - a).days for a, b in zip(starts, starts[1:])} or {7}, {7})
     check("  the sessions all land in some bucket",
           sum(w["count"] for w in weeks), len(digests))
-    check("  hours sum to the library's elapsed time",
+    # The **engine's** cleaned span, the same clock the period block's hours divide by —
+    # not the FIT's `total_elapsed_time`, which is a different number on this corpus and was
+    # what a week bar's tooltip used to sum (docs/presentation.md, "One clock").
+    check("  hours sum to the library's own rate clock",
           round(sum(w["hours"] for w in weeks), 3),
-          round(sum(d["durationS"] for d in digests) / 3600.0, 3))
+          round(sum(library._rate_duration_s(d) for d in digests) / 3600.0, 3))
+    check("  and that clock is not the FIT's elapsed time on this corpus",
+          round(sum(library._rate_duration_s(d) for d in digests), 1)
+          != round(sum(d["durationS"] for d in digests), 1), True)
 
 
 def check_export() -> None:

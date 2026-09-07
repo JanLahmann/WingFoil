@@ -125,8 +125,12 @@ public enum PeriodBlock {
 
     static func count(_ value: Int) -> String { String(value) }
 
-    /// `59.7 %`, with the space the rest of both apps prints — `library._f_pct`'s twin.
-    static func percent(_ value: Double) -> String { String(format: "%.1f %%", value) }
+    /// `59.7 %` — the one percent rule, and `library._f_pct`'s twin: a decimal below
+    /// 10 %, none at or above it, always a space before the sign
+    /// (docs/presentation.md, "Label table").
+    static func percent(_ value: Double) -> String {
+        String(format: abs(value) < 10 ? "%.1f %%" : "%.0f %%", value)
+    }
 }
 
 // MARK: - The period card

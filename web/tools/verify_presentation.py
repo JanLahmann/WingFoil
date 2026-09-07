@@ -36,6 +36,8 @@ Six groups:
    beside it to check against. The drawing cannot be golden-tested; the content derivation
    is a pure function (`web/js/cardstats.js`) and so it is, through
    `web/tools/card_parity.mjs` (needs `node` — skipped without it).
+5a. **The rate row's three branches**, on synthetic sessions the corpus does not contain —
+   the one that named jibes and swam out of all of them included.
 5b. **The rider's own title and caption.** The normalizers, the per-session key, the
    `localStorage` round trip and the one piece of the card's geometry that depends on what
    was typed.
@@ -67,6 +69,7 @@ TOOLS = WEB / "tools"
 sys.path.insert(0, str(TOOLS))
 sys.path.insert(0, str(WEB / "lab_bundle"))
 
+import library                                              # noqa: E402
 import make_presentation_goldens as gen                     # noqa: E402
 
 GOLDENS = REPO / "fixtures" / "goldens"
@@ -128,6 +131,23 @@ def check_shape() -> None:
     check("  the record catalogue is the contract's, in order", gen.RECORD_ORDER, record_ids)
     check("  the default window is the contract's",
           gen.RECORD_DEFAULT, tokens["recordWindows"]["default"])
+
+    # **One spelling per record, across the four surfaces that name one.**
+    # `design/tokens.json` is the table; `RecordKind.label` is checked against it by
+    # `PresentationTests.designTokensCarryTheSameCataloguesAsTheCode`, and this is the
+    # analyzer's half. The same record used to answer to five spellings — `2 s`,
+    # `Best 2 s`, `max 2 s`, `Best 2s` — depending on which screen you were on
+    # (docs/presentation.md, "Label table").
+    token_labels = {entry["id"]: entry["label"] for entry in tokens["recordWindows"]["order"]}
+    library_labels = {key.removesuffix("Kn"): label
+                      for key, _w, label, _u in library.RECORD_KINDS}
+    check("  the analyzer names every picker record the way the contract does",
+          {k: v for k, v in library_labels.items() if k in token_labels}, token_labels)
+    # `bestHour` is the ninth record and is deliberately not in the picker (an hour-long
+    # window lights the whole track), so the contract's catalogue does not carry it. It
+    # still needs a name, and the records table still prints one.
+    check("  and it names the ninth, which the picker leaves out",
+          library_labels.get("bestHour"), "Best hour")
 
     names = fixtures()
     check("  every analysis golden has a presentation golden", names,
@@ -532,7 +552,11 @@ def expected_card_values(doc: dict) -> dict[str, str]:
         # the smaller of the two.
         out["streaks"] = f"{t['longestFlewStreak']} flew · {t['longestDryStreak']} dry"
     if s.get("wetPerHour") is not None:
-        if s["jibesPerHour"] > 0 or not s["turnsPerHour"] > 0:
+        # The gate is `turns.jibes`, the count, not `jibesPerHour`, the rate: a session
+        # that named jibes and swam out of every one has a 0.0 rate and a measured 0.0 CPH
+        # that has to be printed (docs/presentation.md, "Row 4"). §5a asserts that branch
+        # against a synthetic case, because no corpus fixture happens to be one.
+        if t["jibes"] > 0 or not s["turnsPerHour"] > 0:
             out["jph"] = f"{s['jibesPerHour']:.1f}"
             # CPH beside JPH since engine 0.10.0 — and only beside it: a session whose wind
             # axis named no jibes gets the TPH fallback and no jibe rate of any kind.
@@ -619,6 +643,42 @@ def check_card() -> None:
     # Stashed rather than checked here, so the period card's section prints after the
     # session card's two — one `card_parity.mjs` run answers both questions.
     _CARD_DUMP.append(dumped)
+
+
+#: The rate row, per synthetic case in `card_parity.mjs`: which keys row 4 must carry, and
+#: what each must say. Written here rather than derived, because the whole point of the
+#: three cases is that the corpus contains none of them.
+#:
+#: `allWetJibes` is the one the old gate got wrong: fifteen jibes, every one swum. It is a
+#: session made of jibes, so JPH and CPH are both *measured* and both `0.0` — not an
+#: absence, and never the TPH fallback, which exists only for a session whose wind axis
+#: named no jibes at all (docs/presentation.md, "Row 4").
+RATE_CASES = {
+    "allWetJibes": {"jph": "0.0", "cph": "0.0", "wph": "15.0"},
+    "noJibesNamed": {"tph": "15.0", "wph": "2.0"},
+    "noTurnsAtAll": {"jph": "0.0", "cph": "0.0", "wph": "0.0"},
+}
+
+#: The keys row 4 may ever produce — so a case asserting `tph` also asserts the absence of
+#: `jph` and `cph`, rather than only the presence of what it named.
+RATE_KEYS = ("jph", "tph", "cph", "wph")
+
+
+def check_rate_row() -> None:
+    """Row 4's branch, on the three sessions the corpus does not contain.
+
+    The block's rate row has three shapes and the seventeen fixtures exercise one of them.
+    The missing pair is the interesting pair: a session that named jibes and swam out of
+    every one (`jibesPerHour == 0` beside a positive TPH, which the gate read for a year as
+    "no jibes were named"), and a session with a duration and genuinely no turns. Both must
+    print measured zeroes; only a session with turns and *no named jibes* gets TPH.
+    """
+    if not _CARD_DUMP:
+        return
+    section("5a. the rate row, on the sessions the corpus has none of")
+    for case in _CARD_DUMP[-1].get("rates", []):
+        got = {e["key"]: e["value"] for e in case["entries"] if e["key"] in RATE_KEYS}
+        check(f"  {case['name']}: row 4", got, RATE_CASES[case["name"]])
 
 
 #: What the **period** card's `lean` keeps — `PeriodBlock.leanKeys` on iOS and
@@ -1088,6 +1148,7 @@ def main(argv=None) -> int:
     else:
         check_engine()
     check_card()
+    check_rate_row()
     check_card_text()
     check_period_card()
     check_outline_stack()
