@@ -745,6 +745,19 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
 
     /// Share of jibes that never left the foil (`flew_through`) — the Trends series and
     /// the per-gear aggregate. nil when no jibe was classified, which is *not* 0 %.
+    /// Share of the session's **counted turns** that never lost the foil — the
+    /// flew-through rate, and the one the Trends chart plots. nil, never 0, when the row
+    /// counted no turn or predates the outcome columns.
+    ///
+    /// It is the outcome, deliberately, and not `turnSuccessPct`: the engine's score
+    /// verdict is an internal quantity, and the rider's two tiers are *flew through* and
+    /// *clean* (docs/presentation.md, "Clean jibe").
+    public var flewThroughPct: Double? {
+        guard let counted = turnsCounted, counted > 0, let flew = turnsFlewThrough
+        else { return nil }
+        return Double(flew) / Double(counted) * 100
+    }
+
     public var jibeFlewThroughPct: Double? {
         guard let jibes, jibes > 0 else { return nil }
         return Double(jibesFlewThrough ?? 0) / Double(jibes) * 100
@@ -755,16 +768,16 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     ///
     /// **The engine's number where the row has it** (`summary.cleanJibesPerHour`, engine
     /// 0.10.0, schema v11). The division below is the fallback for a row the v11 sweep could
-    /// not refill — an archived FIT gone missing — and nothing else, because it is not quite
-    /// the same number: the engine divides by its own *cleaned* session span and this row's
-    /// `durationS` is the raw sample span. Those agree on most afternoons and are 7742 s
-    /// against 10338 s on one in the corpus, which is why the column exists at all.
+    /// not refill — an archived FIT gone missing — and it divides by `rateSeconds`, the
+    /// engine's own cleaned span where v12 filled it in. It used to divide by `durationS`,
+    /// the raw sample span: the two are 7742 s against 10338 s on one afternoon in the
+    /// corpus, and the fallback therefore printed a CPH a third below the session's own.
     ///
     /// nil when neither can answer: no clean count, or no length to divide by.
     public var cleanJibesPerHour: Double? {
         if let stored = engineCleanJibesPerHour { return stored }
-        guard let clean = jibesSuccessful, durationS > 0 else { return nil }
-        return Double(clean) * 3600 / durationS
+        guard let clean = jibesSuccessful, rateSeconds > 0 else { return nil }
+        return Double(clean) * 3600 / rateSeconds
     }
 
     /// Share of jibes that were clean, over sessions with enough jibes to mean anything —

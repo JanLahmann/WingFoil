@@ -146,16 +146,24 @@ struct TrendsView: View {
         // wore the takeoff blue until app-ui-review.md §5.4 — jibes-flown-through is a
         // verdict and may have the ladder's green, and the port share is a side, so it
         // takes the side ink rather than the unowned magenta of §5.3.
-        TrendChart(title: "Foil time", unit: "%", points: points,
+        // "On foil" is the *share*; "Foil time" is a duration and belongs to the number of
+        // seconds (docs/presentation.md, "Label table"). The web chart has always been
+        // titled this; the two now plot one metric under one name.
+        TrendChart(title: "On foil", unit: "%", points: points,
                    tone: DesignTokens.Phase.flying,
                    value: \.foilPct, domain: 0...100)
         TrendChart(title: "Longest flight", unit: "min", points: points,
                    tone: DesignTokens.Phase.flying,
                    value: { $0.longestFlightS.map { $0 / 60 } })
-        TrendChart(title: "Jibes flown through", unit: "%", points: points,
+        // **"Flew-through rate", over every counted turn** — the same metric and the same
+        // title the analyzer's chart now carries, where it plotted `successPct` (the
+        // engine's score verdict) under the name "Clean jibe rate". Both platforms draw one
+        // number under one name; the stricter reading is the "Clean jibes" chart below.
+        TrendChart(title: "Flew-through rate", unit: "%", points: points,
                    tone: DesignTokens.Outcome.flew,
-                   value: \.jibeFlewThroughPct, domain: 0...100,
-                   note: "Share of jibes that never touched down.")
+                   value: \.flewThroughPct, domain: 0...100,
+                   note: "Turns that never lost the foil — every counted turn, not "
+                       + "jibes alone.")
         // Clean jibes and CPH are **counts of maneuvers**, not ladder verdicts, so they
         // deliberately do not wear `Outcome.flew`: on a page where the green line already
         // means "flew through", a second green line would read as a second flew-through
@@ -165,8 +173,8 @@ struct TrendsView: View {
         TrendChart(title: "Clean jibes", unit: "per session", points: points,
                    tone: Color.accentColor,
                    value: { $0.cleanJibes.map(Double.init) },
-                   note: "The engine's `success` verdict, which is stricter than "
-                       + "flown-through above.")
+                   note: "Jibes that flew all the way through and held at least 70 % of "
+                       + "their entry speed — a strict subset of the rate above.")
         TrendChart(title: "CPH", unit: "clean jibes / h", points: points,
                    tone: Color.accentColor,
                    value: \.cleanJibesPerHour,
@@ -187,11 +195,12 @@ struct TrendsView: View {
     /// The flew-through share split by the tack he *entered* on — the "am I one-sided?"
     /// chart that the share chart above can only hint at.
     ///
-    /// **It is not the clean-jibe rate**, and since the naming pass the title no longer
-    /// says "success", which used to imply it was. `TurnSideSplit` counts outcomes, so
-    /// the two lines are the ladder's green over the entries on each tack; the clean count
-    /// (the engine's `success` flag) is the stricter, and different, number the session
-    /// screen reports.
+    /// **It is the outcome, per entry tack** — the two lines are the ladder's green over
+    /// the entries on each side. It is not the clean-jibe rate: clean also demands the
+    /// score, and it is a jibe word, where this counts every turn entered on a tack. The
+    /// analyzer draws the same metric under the same title (`library._side_pct`, digest
+    /// schema 8), which it did not before: it plotted the score verdict per side and
+    /// called it "Clean jibes by entry tack".
     ///
     /// Two series rather than one difference line: a rider whose port jibes are at 40 %
     /// and starboard at 20 % and one at 80/60 have the same gap and completely different

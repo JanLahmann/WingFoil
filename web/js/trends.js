@@ -14,7 +14,7 @@
 
 import { ask } from "./rpc.js";
 import { sportCorrected } from "./cardstats.js";
-import { C, esc, figureWidth, hideTip, hms, int, isNarrow, nf, showTip, svg,
+import { C, esc, figureWidth, hideTip, hms, int, isNarrow, nf, pct, pctDigits, showTip, svg,
          zonedFormat } from "./render.js";
 
 const el = (id) => document.getElementById(id);
@@ -157,10 +157,15 @@ function renderTotals(host, t) {
     ["Sessions", int(t.sessions)],
     ["Distance", `${nf(t.distanceKm, 1)} km`],
     ["Time on foil", hms(t.foilTimeS)],
-    ["On foil", `${nf(t.foilPct, 1)} %`],
+    ["On foil", pct(t.foilPct)],
     ["Flights", int(t.flightCount)],
     ["Turns counted", int(t.turnsCounted)],
-    ["Clean jibes", `${int(t.turnsSuccessful)} (${nf(t.turnSuccessPct, 0)} %)`],
+    // **The outcome, not the score verdict.** This row printed `turnsSuccessful` — the
+    // engine's score reading over every counted turn — under the label "Clean jibes", which
+    // is a different and stricter number (`jibesSuccessful`: flew through *and* held its
+    // speed). The rider has two tiers and the score verdict is neither of them, so the row
+    // prints the one a rider recognises: counted turns that never lost the foil.
+    ["Flew through", `${int(t.turnsFlewThrough)} (${pct(t.flewThroughPct)})`],
     ["Port / starboard entries",
      `${int(t.turnsBySide.port.entries)} / ${int(t.turnsBySide.starboard.entries)}`],
   ];
@@ -208,8 +213,8 @@ function renderRecords(table, records) {
 function recordValue(r) {
   switch (r.unit) {
     case "s": return `${hms(r.value)}<span class="dim"> h:m:s</span>`;
-    case "%": return `<strong>${nf(r.value, 1)}</strong> <span class="dim">%</span>`;
-    case "km": return `<strong>${nf(r.value, 2)}</strong> <span class="dim">km</span>`;
+    case "%": return `<strong>${pctDigits(r.value)}</strong> <span class="dim">%</span>`;
+    case "km": return `<strong>${nf(r.value, 1)}</strong> <span class="dim">km</span>`;
     case "/h": return `<strong>${nf(r.value, 2)}</strong> <span class="dim">/ h</span>`;
     default: return `<strong>${int(r.value)}</strong>`;
   }

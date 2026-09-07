@@ -42,16 +42,31 @@ struct SessionFoilGrid: View {
 
     var body: some View {
         cardSection("Foil", help: .foilPct) {
-            StatCard(title: "Foil time", value: Fmt.pct(summary.foilPct),
-                     caption: Fmt.duration(summary.foilTimeS), help: .foilPct)
+            // **"On foil" is the share; "Foil time" is the duration.** The card prints the
+            // percentage, so it takes the share's name — the one the web tile, the period
+            // block and the watch's own "Foil %" already use. It was titled "Foil time"
+            // over a percentage while the watch printed a *duration* under those same two
+            // words, so a rider reading the watch and then the phone saw one label over two
+            // quantities (docs/presentation.md, "Label table"). The duration is still here,
+            // in the caption, which is where it now reads as what the share is a share of.
+            StatCard(title: "On foil", value: Fmt.pct(summary.foilPct),
+                     caption: Fmt.duration(summary.foilTimeS) + " foil time", help: .foilPct)
             StatCard(title: "Flights", value: "\(summary.flightCount)",
                      caption: summary.flightCount == 0 ? "none detected" : "detected",
                      help: .flights)
+            // engine 0.13.0: `longestFlightM` is renamed `maxFlightM` — it is the maximum
+            // flight *distance*, which is the longest flight's own distance only by
+            // coincidence. The caption's wording follows the field when it lands.
             StatCard(title: "Longest flight",
                      value: Fmt.duration(summary.longestFlightS),
                      caption: Fmt.meters(summary.longestFlightM), help: .longestFlight)
+            // The caption is the **engine's** cleaned span (`summary.durationS`), the same
+            // number and the same spelling the key-metrics block prints two cards up. It
+            // used to be `detail.durationS`, the raw sample span, which is 10338 s against
+            // 7742 s on the corpus's Rheinstetten afternoon — two clocks, one word, eight
+            // points apart on the screen (docs/presentation.md, "One clock").
             StatCard(title: "Distance", value: Fmt.km(summary.distanceKm),
-                     caption: Fmt.duration(detail.durationS) + " elapsed",
+                     caption: KeyMetrics.duration(summary.durationS) + " elapsed",
                      help: .distance)
         }
     }
@@ -113,7 +128,9 @@ struct SessionRecordsTable: View {
 
     private var headerRow: some View {
         HStack(spacing: 10) {
-            Text("record").frame(width: 74, alignment: .leading)
+            // 92 pt, not 74: the record names carry their "Best " prefix now, and
+            // "Best 5×10 s" is the widest of them.
+            Text("record").frame(width: 92, alignment: .leading)
             Text("kn").frame(width: 62, alignment: .trailing)
             Text("where").frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -135,7 +152,7 @@ struct SessionRecordsTable: View {
             HStack(spacing: 10) {
                 Text(SessionDetail.effortLabel(kind))
                     .font(.subheadline)
-                    .frame(width: 74, alignment: .leading)
+                    .frame(width: 92, alignment: .leading)
                 Text(Fmt.kn(value))
                     .font(.subheadline.weight(.semibold).monospacedDigit())
                     .foregroundStyle(value == nil ? .secondary : .primary)
@@ -196,16 +213,28 @@ struct SessionTurnsSection: View {
                                                      clean: t.jibesSuccessful),
                              help: .turnTypes)
                     StatCard(title: "Tacks", value: "\(t.tacks)",
-                             caption: outcomeCaption(t.tackOutcomes,
-                                                     clean: t.tacksSuccessful),
+                             caption: outcomeCaption(t.tackOutcomes),
                              help: .turnTypes)
                     if t.unclassified > 0 {
                         StatCard(title: "Unclassified turns", value: "\(t.unclassified)",
                                  caption: "no usable wind axis", help: .windAxis)
                     }
-                    StatCard(title: "Clean jibes",
-                             value: Fmt.pct(t.successPct),
-                             caption: "\(t.turnsSuccessful) clean of \(t.turnsCounted) turns",
+                    // **"Flew through", and the outcome share under it.**
+                    //
+                    // This card was titled "Clean jibes" and printed `successPct` — the
+                    // engine's *score* verdict over every counted turn, tacks and unnamed
+                    // sweeps included. On the 7 Aug golden it read 13.3 % / "4 clean of 30
+                    // turns" where the session's clean jibes are 3: the app's namesake
+                    // metric as a title, over a different number.
+                    //
+                    // The rider has two tiers and the score verdict is neither of them:
+                    // **flew through** is the outcome (no touchdown, no swim) and **clean**
+                    // is a jibe that flew through *and* held its speed. So the card is the
+                    // flew-through share of the jibes, with the clean count qualifying it —
+                    // lenient then strict, the order the key-metrics block reads in.
+                    StatCard(title: "Flew through",
+                             value: Fmt.pct(flewThroughPct(t)),
+                             caption: flewThroughCaption(t),
                              help: .turnSuccess)
                     StatCard(title: "Port / starboard",
                              value: "\(t.port) / \(t.starboard)",
@@ -238,17 +267,46 @@ struct SessionTurnsSection: View {
         }
     }
 
-    /// The ladder's three counts, and the **clean** count of the same set beside them.
+    /// The ladder's three counts, and — on the jibe card only — the **clean** count of the
+    /// same set beside them.
     ///
-    /// The clean number rides last rather than joining the three: it is the stricter verdict
-    /// over the same turns, not a fourth rung of the ladder, and it never wears the ladder's
-    /// inks (docs/presentation.md, "Clean jibe"). It is what puts `tacksSuccessful` — clean
-    /// tacks — on a screen for the first time; the engine has counted them since the first
-    /// turn tally and nothing had ever printed them.
-    private func outcomeCaption(_ counts: OutcomeCounts, clean: Int) -> String {
+    /// The clean number rides last rather than joining the three: it is the stricter
+    /// reading of the same turns, not a fourth rung of the ladder, and it never wears the
+    /// ladder's inks (docs/presentation.md, "Clean jibe").
+    ///
+    /// **The Tacks card carries no fourth number.** It used to print `tacksSuccessful`
+    /// under the word "clean" — the engine's score verdict, which is not a tier the rider
+    /// has, and which `turns.py` says outright must never be called clean ("'clean' is a
+    /// jibe word in the product, and a tack has no clean/dirty reading to carry"). The
+    /// three outcomes are the whole of what a tack has to report.
+    private func outcomeCaption(_ counts: OutcomeCounts, clean: Int? = nil) -> String {
         guard counts.total > 0 else { return "none detected" }
-        return "\(counts.flewThrough) flew · \(counts.touchdown) touch · \(counts.fellIn) fell"
-            + " · \(clean) clean"
+        let ladder = "\(counts.flewThrough) flew · \(counts.touchdown) touch · "
+            + "\(counts.fellIn) fell"
+        guard let clean else { return ladder }
+        return ladder + " · \(clean) clean"
+    }
+
+    /// The share of the session's **jibes** that never lost the foil, or of every counted
+    /// turn on a session whose wind axis named no jibes — the same fallback the
+    /// key-metrics tally takes, and for the same reason: an empty verdict over an
+    /// afternoon of turns would read as "nothing happened".
+    private func flewThroughPct(_ t: TurnSummary) -> Double? {
+        if t.jibes > 0 { return Double(t.jibeOutcomes.flewThrough) / Double(t.jibes) * 100 }
+        guard t.turnsCounted > 0 else { return nil }
+        return Double(t.outcomes.flewThrough) / Double(t.turnsCounted) * 100
+    }
+
+    /// "24 of 35 jibes · 12 clean" — what the share is out of, and how many of them were
+    /// the stricter thing. The clean clause is dropped on the turn fallback: a session
+    /// with no named jibes has no clean jibes to report.
+    private func flewThroughCaption(_ t: TurnSummary) -> String {
+        if t.jibes > 0 {
+            return "\(t.jibeOutcomes.flewThrough) of \(t.jibes) jibes "
+                + "· \(t.jibesSuccessful) clean"
+        }
+        guard t.turnsCounted > 0 else { return "no counted turns" }
+        return "\(t.outcomes.flewThrough) of \(t.turnsCounted) turns"
     }
 }
 

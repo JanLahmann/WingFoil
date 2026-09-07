@@ -175,11 +175,14 @@ export function keyMetricEntries(g) {
   // turns the three counts describe — a strict *subset* of the ladder's green — and it
   // rides in the caption rather than in a cell of its own because row 3 has no fifth cell
   // to give it that the streaks pair would not lose.
+  //
+  // **The fallback carries no clean clause.** It used to print `turnsSuccessful` there —
+  // the engine's score verdict over every counted turn — under the word for a stricter,
+  // jibe-only one. A session whose wind axis named no jibes has no clean jibes to report.
   const tally = t.jibes > 0
     ? { o: t.jibeOutcomes, of: `of ${t.jibes} jibes · ${int(t.jibesSuccessful)} clean` }
     : (t.turnsCounted > 0
-        ? { o: t.outcomes,
-            of: `of ${t.turnsCounted} turns · ${int(t.turnsSuccessful)} clean` }
+        ? { o: t.outcomes, of: `of ${t.turnsCounted} turns` }
         : null);
 
   const out = [
@@ -220,7 +223,14 @@ export function keyMetricEntries(g) {
   // `durationS <= 0` makes the engine report every rate as null: there is no hour to
   // divide by, which is an absence and never a flattering 0.0. The row disappears.
   if (s.wetPerHour !== null && s.wetPerHour !== undefined) {
-    const namedJibes = s.jibesPerHour > 0 || !(s.turnsPerHour > 0);
+    // The gate is the *count* of named jibes, not the rate (7 Sep 2026). A rate cannot
+    // tell "the wind axis named no jibes" from "it named fifteen and he swam out of every
+    // one": both read `jibesPerHour === 0` beside a positive TPH, and the second is
+    // exactly the session whose `0.0` CPH is a measured verdict the block must print.
+    // `t.jibes` is what the tally three rows up already gates on. The `turnsPerHour`
+    // half is unchanged: a session with a duration and genuinely no turns keeps its
+    // measured zeroes.
+    const namedJibes = t.jibes > 0 || !(s.turnsPerHour > 0);
     out.push(namedJibes
       ? { key: "jph", label: "JPH · dry jibes per hour", value: nf(s.jibesPerHour, 1), row: 3 }
       : { key: "tph", label: "TPH · turns per hour", value: nf(s.turnsPerHour, 1), row: 3 });
@@ -403,9 +413,17 @@ export function cardDateLine(meta) {
 }
 
 /** Set when the session's records cannot be certified, so the card cannot be read as a
- *  speed claim it has no right to make (`meta.sourceClass === "c"` — a degraded source). */
+ *  speed claim it has no right to make.
+ *
+ *  **The flag, not the rule.** `certified` is one line of Python (`web_entry`'s meta,
+ *  `source_class != "c"`), the same line `LibraryQueries.certified` is on iOS. This used to
+ *  re-derive it from `meta.sourceClass === "c"` in JavaScript, which is a second spelling
+ *  of a one-line rule and one more place for it to drift. A digest written before the flag
+ *  existed carries no `certified` at all, so the class is still the fallback — an absence
+ *  must not certify a degraded recording by default. */
 export function cardDisclaimer(meta) {
-  return meta?.sourceClass === "c" ? "Speeds from a degraded source — uncertified" : null;
+  const certified = meta?.certified ?? (meta?.sourceClass !== "c");
+  return certified ? null : "Speeds from a degraded source — uncertified";
 }
 
 /* ------------------------------------------------------- what the rider calls it
