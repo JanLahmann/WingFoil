@@ -23,6 +23,8 @@
     <string id="SetAlertFlight">Vibrate on longest flight</string>
     <string id="SetAlertTurn">Vibrate on turn outcome</string>
     <string id="SetAlertCleanJibe">Vibrate on clean jibe</string>
+    <string id="SetMapAfterSave">Map after save (experimental)</string>
+    <string id="SetMapAfterSaveNote">After you save a session, START on the summary's track page opens the watch's own map under your track. Experimental: the map view has crashed the app during recording on the fenix 8, so it is only offered once the session is saved — if it crashes, the session is already safe.</string>
     <string id="SetAlertCleanJibeNote">A clean jibe — a jibe you fly all the way through carrying your speed — gets its own rising three-tick buzz instead of the plain fly-through tick, so you can tell one from the other without looking. Turn it off to get the ordinary turn-outcome buzz back.</string>
     <string id="SetWindDir">Wind direction (deg from, -1 = unset)</string>
     <string id="SetAutoWind">Estimate wind on the watch</string>

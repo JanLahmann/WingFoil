@@ -436,7 +436,13 @@ class SummaryDelegate extends WatchUi.BehaviorDelegate {
         return true;
     }
 
+    // START exits — except on the Track page with the post-save map switched on, where it
+    // opens the firmware's map over the saved track (SavedMapView; an experiment, see there).
     function onSelect() as Boolean {
+        if (SummaryNav.pageAt(SummaryNav.index) == SummaryNav.S_TRACK && SavedMap.available()) {
+            WatchUi.pushView(new SavedMapView(), new SavedMapDelegate(), WatchUi.SLIDE_LEFT);
+            return true;
+        }
         System.exit();
     }
 
