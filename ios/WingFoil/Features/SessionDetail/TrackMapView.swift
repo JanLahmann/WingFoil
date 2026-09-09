@@ -478,7 +478,11 @@ struct TrackContent: MapContent {
     /// Foil-teal is the same teal on every ground — it is the contract. The other two are
     /// **ink**, not hue, so over photography they resolve to the light end rather than the
     /// dark one; see `TrackHalo.ink`.
-    private static func color(_ line: TrackLineStyle, on style: MapStyleChoice) -> Color {
+    ///
+    /// Not private, because the exported session video draws the same track on the same
+    /// grounds (`ReelScene`). A reel that picked its own teal would be the one surface where
+    /// the phase colours mean something else, on the one surface that leaves the phone.
+    static func color(_ line: TrackLineStyle, on style: MapStyleChoice) -> Color {
         switch line {
         case .flying: return DesignTokens.Phase.flying
         case .offFoil:
@@ -490,7 +494,8 @@ struct TrackContent: MapContent {
         }
     }
 
-    private static func width(_ style: TrackLineStyle) -> CGFloat {
+    /// See `color(_:on:)` for why this is not private either.
+    static func width(_ style: TrackLineStyle) -> CGFloat {
         switch style {
         case .flying: return 4
         case .offFoil: return 2

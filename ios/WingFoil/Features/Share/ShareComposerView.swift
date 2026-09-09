@@ -57,6 +57,9 @@ struct ShareComposerView: View {
     /// first layout pass, and the snapshot waits for it — see `ShareCardMap`.
     @State private var trackBox: CGRect = .zero
     @State private var rendered: Image?
+    /// The session video's own sheet — the picker, the progress bar and the finished file
+    /// (`ReelExportSheet`).
+    @State private var showReel = false
     /// Width the sheet has for the preview; 0 until the first layout pass.
     @State private var availableWidth: CGFloat = 0
     /// Off by default — see the type comment. Flipping it re-runs the scrub.
@@ -377,6 +380,23 @@ struct ShareComposerView: View {
             .font(.caption2)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
+
+        // The other thing a rider makes to show somebody. It sits under the card rather
+        // than beside it as a third `Payload` tab, because it is the same picture of the
+        // same afternoon in motion — and because the card is what most riders want, and a
+        // segmented control that made them choose first would put a decision in front of
+        // the thing they came for.
+        if let detail, detail.timeRange != nil {
+            Button { showReel = true } label: {
+                Label("Export video", systemImage: "film")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .sheet(isPresented: $showReel) {
+                ReelExportSheet(detail: detail, title: displayTitle)
+            }
+        }
     }
 
     // MARK: - The recording
