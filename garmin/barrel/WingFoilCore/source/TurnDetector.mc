@@ -113,7 +113,12 @@ class TurnDetector {
         EVENT_TURN = 1,        // sweep confirmed, kind known -> controller writes turn_marker
         EVENT_FLEW = 2,        // outcome resolved: flew through
         EVENT_TOUCHDOWN = 3,
-        EVENT_FELL = 4
+        EVENT_FELL = 4,
+        // The quiet tail decided (device app 0.9.9, engine 0.17.0): `lastCleanJibe` says
+        // which way. Fired up to CLEAN_QUIET_S after the sweep, after EVENT_FLEW has
+        // already been returned for the same turn — the outcome is final at EVENT_FLEW, the
+        // star is not. Consumers that log or mark *outcomes* must ignore it.
+        EVENT_CLEAN_SETTLED = 5
     }
     enum {
         KIND_NONE = 0,
@@ -152,6 +157,13 @@ class TurnDetector {
     const RECOVER_PCT = 0.70;
     const RECOVER_HOLD_S = 2.0;
     const SUCCESS_PCT = 70;
+    // THE QUIET TAIL (engine 0.17.0, Jan 7 Sep 2026: "no touch down or fall within 10 s
+    // afterwards" for a clean jibe). The outcome window closes at recovery, often 3–5 s past
+    // the sweep, so a touchdown at +7 s was invisible to the star. A clean candidate is now
+    // held for CLEAN_QUIET_S after the sweep end and withdrawn if the foil is lost for
+    // QUIET_OFF_FOIL_S or the wrist goes under; the outcome itself is not touched.
+    const CLEAN_QUIET_S = 10.0;
+    const QUIET_OFF_FOIL_S = 1.0;
     const DEG2RAD = 0.017453292;
 
     // How long an unowned flight end is judged for, before its evidence is called. The turn
@@ -184,6 +196,9 @@ class TurnDetector {
     // that already reacts to a resolved turn can tell the two apart without a second event
     // nibble; false again on the next turn that is not one.
     var lastCleanJibe as Boolean = false;
+    // A clean candidate waiting out its quiet tail. While true, `lastCleanJibe` is not yet
+    // this turn's answer and the clean-jibe buzz must wait for EVENT_CLEAN_SETTLED.
+    var cleanPending as Boolean = false;
     var lastKind as Number = KIND_NONE;
     // The geometry of the sweep just confirmed, published at EVENT_TURN: the UNWRAPPED entry
     // bearing and the net rotation (signed, and free to exceed 180 deg). It is what a sweep is
@@ -267,6 +282,10 @@ class TurnDetector {
     hidden var _lostFoil as Boolean = false;
     hidden var _wet as Boolean = false;
     hidden var _recoverHeld as Float = 0.0;
+    // the quiet tail: when it ends, and the off-foil spell inside it (both-ends convention)
+    hidden var _cleanPendingUntil as Float = 0.0;
+    hidden var _quietOffRun as Float = 0.0;
+    hidden var _quietWasOff as Boolean = false;
 
     // Unowned flight ends — the straight-line half of the streak rule. Same evidence as
     // `_track` collects for a turn, kept separately because the two windows can overlap in
@@ -309,6 +328,9 @@ class TurnDetector {
         // Before the state machine, and on every tick whatever state it is in: the edge this
         // watches for is the one the state machine does not see.
         _flightEndTick(dt, speedMps, flying, submerged);
+        // Likewise the quiet tail: it outlives the outcome window and runs whatever the
+        // state machine is doing, including the next sweep.
+        var settled = _quietTick(dt, speedMps, flying, submerged);
 
         var u = _unwrap(cogDeg, speedMps);
         var event = EVENT_NONE;
@@ -322,7 +344,41 @@ class TurnDetector {
             event = _outcomeTick(dt, speedMps, submerged);
         }
         _lastSpeed = speedMps;
+        if (event == EVENT_NONE && settled) {
+            event = EVENT_CLEAN_SETTLED;
+        }
         return event;
+    }
+
+    // The quiet tail, one sample at a time. Off the foil here is what the phone's flying mask
+    // says: not in a flight, or below foilExit, or under water. A spell of QUIET_OFF_FOIL_S
+    // (both-ends convention, so two consecutive off-foil samples at 1 Hz) or any submerged
+    // sample withdraws the candidate; the clock running out grants it. Returns true on the
+    // tick the answer is known.
+    hidden function _quietTick(dt as Float, speedMps as Float, flying as Boolean,
+            submerged as Boolean) as Boolean {
+        if (!cleanPending) {
+            return false;
+        }
+        var offFoil = !flying || submerged || speedMps <= _cfg.foilExitMps;
+        if (offFoil && _quietWasOff) {
+            _quietOffRun += dt;
+        } else {
+            _quietOffRun = 0.0;
+        }
+        _quietWasOff = offFoil;
+        if (submerged || _quietOffRun >= QUIET_OFF_FOIL_S) {
+            cleanPending = false;
+            lastCleanJibe = false;
+            return true;
+        }
+        if (_clockS >= _cleanPendingUntil) {
+            cleanPending = false;
+            lastCleanJibe = true;
+            cleanJibeCount++;
+            return true;
+        }
+        return false;
     }
 
     // GPS gap / pause: heading continuity and the detection window are both broken.
@@ -334,6 +390,11 @@ class TurnDetector {
         // An unjudgeable end is dropped, not called a fall: a GPS gap is missing evidence,
         // and "he might have swum" must never break a run the rider actually kept.
         _endOpen = false;
+        // Same for the quiet tail: the phone's window stops at a gap and calls what it saw,
+        // and what it saw was nothing against the star. Settled on the next tick.
+        if (cleanPending) {
+            _cleanPendingUntil = _clockS;
+        }
     }
 
     function resetLap() as Void {
@@ -672,8 +733,18 @@ class TurnDetector {
             // the sweep closing and here. A touchdown in the recovery tail is enough to lose
             // the star — same rule as `Turn.clean` on the phone.
             if (lastKind == KIND_JIBE && outcome == OUTCOME_FLEW) {
-                cleanJibeCount++;
-                lastCleanJibe = true;
+                // ...pending the quiet tail (0.9.9): the star is granted at
+                // end + CLEAN_QUIET_S unless the foil is lost before then. A window that
+                // already ran that long without a loss has answered the question.
+                cleanPending = true;
+                _cleanPendingUntil = _endT + CLEAN_QUIET_S;
+                _quietOffRun = 0.0;
+                _quietWasOff = false;
+                if (_clockS >= _cleanPendingUntil) {
+                    cleanPending = false;
+                    lastCleanJibe = true;
+                    cleanJibeCount++;
+                }
             }
         }
         state = ST_IDLE;

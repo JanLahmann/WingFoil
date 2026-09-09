@@ -53,10 +53,12 @@ An iPhone app with the full analysis — maps, turn forensics, replay with comme
 
 ### What's New (live text)
 
-**0.9.8 uploaded 7 September 2026** (Internal 16, awaiting Garmin review); **0.9.7 uploaded and approved 7 September 2026** (Internal 15); **0.9.6 uploaded 5 September 2026**; **0.9.5 was uploaded and approved on 3 September 2026** (listing shows 0.9.5, Internal 13); everything under it is the store's own text as transcribed on
+**0.9.9 uploaded 9 September 2026** (pending); **0.9.8 uploaded 7 September 2026** (Internal 16); **0.9.7 uploaded and approved 7 September 2026** (Internal 15); **0.9.6 uploaded 5 September 2026**; **0.9.5 was uploaded and approved on 3 September 2026** (listing shows 0.9.5, Internal 13); everything under it is the store's own text as transcribed on
 2 September 2026.
 
 ```
+0.9.9: a clean jibe now needs a quiet ten seconds after the turn — no touchdown, no swim, no dunked wrist — so the star, the clean count and CPH match the phone's new rule. The clean-jibe buzz therefore arrives up to ten seconds after the turn; the fly-through, touchdown and fell-in verdicts are unchanged and still buzz at once.
+
 0.9.8: carved jibes now count. A smooth, wide jibe turns at a steady 15–20° per second and the old detector waited for a 25°/s spike that a carved turn never makes, so the smoothest jibes were missing from the tally; the floor is 18°/s now. Expect more jibes, more clean jibes and a higher CPH on the same riding.
 
 0.9.7: a tack or a jibe now needs a real 90° sweep — smaller course changes still show as grey markers but are never counted as a jibe. The summary card sent to your phone now computes foil % over timer time (total time minus pauses), the same way every other screen does.
@@ -198,6 +200,7 @@ field. Dates are the commit dates; a store release usually follows by a day.
 | 0.9.3 | 2026-08-31 | `16568d5` | Pump strokes counted only inside real pumping bursts, so the totals match the phone. Renamed to CleanJibe. |
 | 0.9.2 | 2026-08-31 | `2b3bc66` | The map page becomes the app's own drawing (works while paused, on every watch); all text full white, bigger numbers. |
 | 0.9.1 | 2026-08-30 | `b891e08` | The fenix 8 crash: the map page is pushed, never switched to. Not separately listed in the store's What's New. |
+| 0.9.9 | 2026-09-09 | — | The quiet tail (engine 0.17.0): a clean candidate is held for 10 s past the sweep and withdrawn on a 1 s loss of the foil or a dunked wrist; `EVENT_CLEAN_SETTLED` carries the answer and the buzz. Corrected the docs: the watch never had the phone's pump rung. |
 | 0.9.8 | 2026-09-07 | — | Engine 0.14.0: peak floor 18°/s so carved jibes are detected (the 12 s sweep was measured and rejected: +6 jibes, −26 clean). Uploaded the same day as 0.9.7 (public Internal 16, private 0.9.8-dev Internal 20). |
 | 0.9.7 | 2026-09-07 | `347669a` | The 90° classification floor for tacks and jibes (engine 0.13.0), and the companion card's foil % on timer time. Uploaded to both listings. |
 | 0.9.6 | 2026-09-05 | `459ae1d` | A clean jibe has to fly through: the star, the clean count and CPH drop jibes that touched down or fell in after the sweep (engine 0.12.0 on the phone and the web, same day). Uploaded to both listings; public Internal 14 pending review. |

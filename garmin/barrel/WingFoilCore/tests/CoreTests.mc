@@ -609,6 +609,67 @@ function rejectedSweepsAreInvisibleToStreaks(logger as Test.Logger) as Boolean {
     return true;
 }
 
+// ---- The quiet tail (device app 0.9.9, engine 0.17.0, docs/algorithms.md "The quiet tail") ----
+// A clean candidate is held for CLEAN_QUIET_S past the sweep end. The phone's rule: no off-foil
+// spell of 1 s, no flight end, no wrist under in that tail, or the jibe is not clean; the
+// outcome itself is untouched. Three corners: lost the foil inside the tail, dunked the wrist
+// inside the tail, and a GPS gap inside the tail (which grants, as the phone's window stops at
+// a gap and calls what it saw).
+(:test)
+function quietTailWithdrawsTheStarButNotTheOutcome(logger as Test.Logger) as Boolean {
+    var cfg = coreDefaults();
+    cfg.setWindDirection(0);
+
+    // (a) carried jibe, recovered at t = 15, then 2 s below foilExit at t = 16..17: withdrawn
+    var d = new TurnDetector(cfg);
+    runStraight(d, 5, 120.0, 8.0);
+    runSweep(d, 120.0, 30.0, 4, 8.0);           // sweep ends t = 9, tail runs to t = 19
+    var ev = runStraight(d, 6, 240.0, 8.0);     // t = 15: EVENT_FLEW, star pending
+    Test.assertMessage(ev == TurnDetector.EVENT_FLEW && d.cleanPending, "pending after FLEW");
+    ev = runStraight(d, 2, 240.0, 1.5);         // 1.5 m/s < foilExit 2.2: a 1 s spell, both ends
+    Test.assertMessage(ev == TurnDetector.EVENT_CLEAN_SETTLED,
+        "the loss must settle the tail, got " + ev.toString());
+    Test.assertMessage(!d.cleanPending && !d.lastCleanJibe && d.cleanJibeCount == 0,
+        "a jibe followed by a loss inside 10 s is not clean, count "
+        + d.cleanJibeCount.toString());
+    Test.assertMessage(d.flewCount == 1 && d.touchdownCount == 0,
+        "the outcome stays flew through: the tail only touches the star");
+    runStraight(d, 10, 240.0, 8.0);
+    Test.assertMessage(d.cleanJibeCount == 0, "a withdrawn star must not come back");
+
+    // (b) a single sub-exit sample is not a spell: the star survives it
+    var s = new TurnDetector(cfg);
+    runStraight(s, 5, 120.0, 8.0);
+    runSweep(s, 120.0, 30.0, 4, 8.0);
+    runStraight(s, 6, 240.0, 8.0);
+    runStraight(s, 1, 240.0, 1.5);              // one sample: no both-ends spell yet
+    ev = runStraight(s, 4, 240.0, 8.0);         // t = 20: tail ran out
+    Test.assertMessage(ev == TurnDetector.EVENT_CLEAN_SETTLED && s.cleanJibeCount == 1,
+        "one dropped sample must not cost the star, count " + s.cleanJibeCount.toString());
+
+    // (c) the wrist goes under inside the tail: withdrawn on that sample
+    var w = new TurnDetector(cfg);
+    runStraight(w, 5, 120.0, 8.0);
+    runSweep(w, 120.0, 30.0, 4, 8.0);
+    runStraight(w, 6, 240.0, 8.0);
+    ev = w.tick(1.0, 240.0, 8.0, 8.0, true, true);
+    Test.assertMessage(ev == TurnDetector.EVENT_CLEAN_SETTLED && w.cleanJibeCount == 0
+        && !w.lastCleanJibe, "a dunk inside the tail is not clean");
+
+    // (d) a GPS gap inside the tail grants: missing evidence is not a loss
+    var g = new TurnDetector(cfg);
+    runStraight(g, 5, 120.0, 8.0);
+    runSweep(g, 120.0, 30.0, 4, 8.0);
+    runStraight(g, 6, 240.0, 8.0);
+    g.onGap();
+    ev = g.tick(1.0, null, 8.0, 8.0, true, false);
+    Test.assertMessage(ev == TurnDetector.EVENT_CLEAN_SETTLED && g.cleanJibeCount == 1
+        && g.lastCleanJibe, "a gap settles the tail as clean, count "
+        + g.cleanJibeCount.toString());
+    logger.debug("quiet tail: withdrawn by a 1 s spell or a dunk, granted by the clock or a gap");
+    return true;
+}
+
 // ---- Clean jibes (device app 0.9.5, docs/presentation.md "Clean jibe") ----
 // `cleanJibeCount` is the count the watch's CPH divides by an hour, and it is the INTERSECTION
 // of two facts decided at two different moments: the sweep was classified a JIBE when it
@@ -625,12 +686,21 @@ function cleanJibesAreSuccessfulJibesAndNothingElse(logger as Test.Logger) as Bo
     var d = new TurnDetector(cfg);
     runStraight(d, 5, 120.0, 8.0);
     runSweep(d, 120.0, 30.0, 4, 8.0);
-    runStraight(d, 6, 240.0, 8.0);
+    var ev = runStraight(d, 6, 240.0, 8.0);
     Test.assertMessage(d.jibeCount == 1, "not a jibe: " + d.jibeCount.toString());
     Test.assertMessage(d.successCount == 1, "a jibe carried at 8 m/s throughout is successful");
+    // 0.9.9: the outcome is final here (EVENT_FLEW at recovery), the star is not — the quiet
+    // tail runs to 10 s past the sweep end, which is t = 19 and this is t = 15.
+    Test.assertMessage(ev == TurnDetector.EVENT_FLEW, "flew through, event " + ev.toString());
+    Test.assertMessage(d.cleanPending && d.cleanJibeCount == 0,
+        "the star must wait for the quiet tail, got " + d.cleanJibeCount.toString());
+    ev = runStraight(d, 5, 240.0, 8.0);         // t = 20: the tail ran out with nothing against it
+    Test.assertMessage(ev == TurnDetector.EVENT_CLEAN_SETTLED,
+        "the tail must settle with its own event, got " + ev.toString());
     Test.assertMessage(d.cleanJibeCount == 1,
         "a successful jibe must be a clean jibe, got " + d.cleanJibeCount.toString());
-    Test.assertMessage(d.lastCleanJibe, "lastCleanJibe was not published for a clean jibe");
+    Test.assertMessage(d.lastCleanJibe && !d.cleanPending,
+        "lastCleanJibe was not published for a clean jibe");
 
     // (2) 300 -> 60, the same shape through HEAD to wind: a tack, equally well carried, and
     // NOT a clean jibe. This is the assertion that stops cleanJibeCount drifting into being a
