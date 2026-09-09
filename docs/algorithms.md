@@ -554,29 +554,28 @@ inventing turns):
   `jibeCount` is never backfilled into `cleanJibeCount`, and the watch's CPH under-reads for
   the opening minutes of a session with no manual axis. Conservative, like every other item on
   this list, and visible only as a rate that climbs once the axis is known.
-- **The watch has no quiet tail** (engine 0.17.0). `cleanJibeCount` is incremented when the
-  turn's own outcome resolves and is never revisited, so the ten seconds after the sweep are
-  not examined: a jibe followed by a touchdown or a swim still counts as clean on the wrist.
-  Together with the axis bullet above, the phone now applies **two** clean gates the watch does
-  not, and this one is on by default — so the watch will report **more** clean jibes than the
-  phone on any session with a fall shortly after a jibe. On the 21-session corpus that is 15
-  jibes in 278, about **6 %**; on a session where the rider was falling out of the recovery it
-  is larger. The direction is the flattering one, which is why it is written down: live on the
-  wrist there is nothing to fix here — the count would have to be held back ten seconds and
-  then withdrawn on the glass — and the phone recompute is authoritative, as ADR-005 says.
-- **The watch still promotes a pumped-out jibe to a touchdown, at the old speed** (engine
-  0.18.0). The phone's step 3 now tests `foilExitSpeed` and is therefore unreachable; the
-  watch's `TurnDetector` keeps the rule it has always had — a pump burst plus any sample below
-  `foilEntrySpeed` — and `garmin/` is deliberately untouched, because the wrist decides live
-  and has no second pass to correct itself with. So the watch will call **more touchdowns than
-  the phone** on the same session: over the 21-session corpus the rung fires on 13 jibes in
-  818, which is about **5 % more jibe touchdowns** than the phone now reports (13 against the
-  phone's 257) and a matching 13 fewer fly-throughs. This is the *unflattering* direction — the
-  wrist is harder on the rider than the phone is — which is the one direction that needs no
-  urgency: a rider who is told he touched down and then sees a fly-through on the phone reads
-  it as good news, and ADR-005 says the phone is authoritative. Correcting it on the watch
-  means re-tuning a threshold in Monkey C and shipping a store release, and it will ride along
-  with the next one that has another reason to exist.
+- **The watch holds the star for the quiet tail** (device app 0.9.9, engine 0.17.0). A clean
+  candidate — a jibe that flew through and held its speed — is not counted when its outcome
+  resolves; `cleanPending` is set and the detector watches the samples until
+  `CLEAN_QUIET_S` (10 s) past the sweep end, on every tick whatever the state machine is
+  doing. An off-foil spell of `QUIET_OFF_FOIL_S` (1 s, both-ends convention: two consecutive
+  samples not in a flight, below `foilExit`, or submerged at 1 Hz) or any submerged sample
+  withdraws it; the clock running out grants it and increments `cleanJibeCount`; a GPS gap
+  settles it as clean on the next tick, as the phone's window stops at a gap and calls what
+  it saw. `EVENT_CLEAN_SETTLED` carries the answer to the controller, which buzzes the
+  clean-jibe flourish or the ordinary fly-through tick *then* rather than at `EVENT_FLEW`
+  — so on the wrist a clean jibe's buzz arrives up to ten seconds after the turn, and the
+  count on the glass never has to be withdrawn. The outcome (`EVENT_FLEW`, the FIT marker,
+  the history log) is still final at resolve. What the watch cannot see is a *flight end*
+  the phone classifies inside the tail; the 1 s off-foil spell covers the same loss one way
+  or another, so the two agree on the corpus fixtures.
+- **The watch never had the pump rung** (engine 0.18.0, corrected 9 Sep 2026). An earlier
+  version of this list claimed the watch "keeps the old rule at the old speed"; it does not
+  and never did — `TurnDetector._resolve` has three rungs, submerged-or-stop → fell in, any
+  loss of the foil → touchdown, else flew through, and the accelerometer feeds none of them.
+  So at the 0.18.0 defaults, where the phone's rung is unreachable, the two agree; only a
+  dev build with `turnPumpedMarginalSpeed` raised above `foilExitSpeed` diverges from the
+  wrist, and in the phone's direction.
 - **No pump corroboration reaches the clean flag either.** Success is the score pair only
   (`score >= turnSuccessPct` and the minimum stayed above `foilExitSpeed`), read off the
   firmware's smoothed Doppler, so the watch calls slightly *more* jibes clean than the phone
@@ -775,7 +774,7 @@ score says what the turn cost. Every turn gets an outcome, bear-aways included.
 
    Over the 21-session corpus the rung was the sole reason for **13 of 270 jibe touchdowns**
    (3 of which held their speed): jibes 493 → 506 flew through, 270 → 257 touched down, 55 fell
-   in unchanged, and clean jibes 263 → 266. The watch keeps the old rule at the old speed — see
+   in unchanged, and clean jibes 263 → 266. The watch never had the rung, so at these defaults the two agree — see
    *Watch divergences*.
 4. **Stopped how long?** The off-foil run is followed until foiling resumes (capped by
    `turnOutcomeWindow`) and the longest contiguous spell below `turnStopSpeedFloor` is

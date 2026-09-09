@@ -112,11 +112,16 @@ class SessionController {
                     PbFlash.fire(engine.records.best2sMps);
                 }
             }
-            if (turnEvent >= TurnDetector.EVENT_FLEW) {
+            if (turnEvent >= TurnDetector.EVENT_FLEW && turnEvent <= TurnDetector.EVENT_FELL
+                    && !engine.turns.cleanPending) {
                 // One turn, one buzz: `turnResolved` picks the clean-jibe flourish over the
                 // ladder rhythm when this one was a clean jibe, rather than firing both and
-                // letting the global floor eat whichever lost the race.
+                // letting the global floor eat whichever lost the race. A clean *candidate*
+                // buzzes nothing yet — its quiet tail (0.9.9) answers within ten seconds.
                 AlertManager.turnResolved(engine.turns.lastOutcome,
+                    engine.turns.lastCleanJibe);
+            } else if (turnEvent == TurnDetector.EVENT_CLEAN_SETTLED) {
+                AlertManager.turnResolved(TurnDetector.OUTCOME_FLEW,
                     engine.turns.lastCleanJibe);
             }
             if (pumpEvent == PumpDetector.EVENT_TAKEOFF) {

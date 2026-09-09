@@ -34,12 +34,12 @@ Consequence: engine **0.18.0**. Over the 21-session corpus 13 of 270 jibe touchd
 fly-throughs (493 → 506 flew through, 270 → 257 touched down, 55 fell in unchanged) and 3 jibes
 become clean (263 → 266). One new per-turn key, two new config echoes, two new tuning rows —
 one of them the first that is a **switch** rather than a slider (`TuningParameterSpec.kind`).
-One new watch
-divergence, and for once the *unflattering* one: `garmin/` keeps the old rule at the old speed,
-so the wrist now reports about 5 % more jibe touchdowns than the phone. That direction needs no
-urgency — a rider told he touched down who then sees a fly-through reads it as good news, and
-ADR-005 makes the phone authoritative — so the watch side rides along with the next store
-release that has another reason to exist. Rejected: deleting the rung outright (a stored
+No new watch
+divergence, despite what this ADR first said: the watch's `TurnDetector` never had the pump
+rung (its ladder is submerged-or-stop → fell in, any loss of the foil → touchdown, else flew
+through, and the accelerometer feeds none of it), so at the 0.18.0 defaults the wrist and the
+phone agree, and only a dev build that raises the marginal speed diverges from the wrist —
+corrected 9 Sep 2026 while porting the quiet tail to device app 0.9.9. Rejected: deleting the rung outright (a stored
 document would then decode a verdict nothing in the tree explains), and writing the speed as a
 reference to `foilExitSpeed` (it would have made the retirement unarguable and the switch inert
 at every setting, which is a knob that lies about what it does).

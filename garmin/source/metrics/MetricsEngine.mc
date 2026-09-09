@@ -145,7 +145,7 @@ class MetricsEngine {
         hrCost.tick(dt, hr, pump.attemptOpen(), pumpEvent == PumpDetector.EVENT_TAKEOFF);
 
         history.tick(dt, detector.state == FlightDetector.STATE_ON, speedMps);
-        if (turnEvent >= TurnDetector.EVENT_FLEW) {
+        if (turnEvent >= TurnDetector.EVENT_FLEW && turnEvent <= TurnDetector.EVENT_FELL) {
             history.logTurn(turns.lastOutcome);
         }
         var windEvent = _autoWindTick(dt, cog, turnEvent);
