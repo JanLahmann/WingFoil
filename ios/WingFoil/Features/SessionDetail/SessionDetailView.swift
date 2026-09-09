@@ -181,6 +181,14 @@ struct SessionDetailView: View {
                 // first — a sheet attached to an unselected tab's subtree never appears.
                 if environment["UI_OPEN_FLIGHT_END"] != nil { tab = .log }
                 if let anchor = environment["UI_SCROLL_TO"] { jump(to: anchor, proxy: proxy) }
+                // `UI_EXPORT_REEL=1` renders a session video with no taps at all and
+                // leaves it in Documents (`ReelHook`). It is deliberately not
+                // `UI_SHEET=reel`: a sheet can be photographed but a video cannot, and
+                // what has to be checked here is the file.
+                if ReelHook.isRequested, let detail, let row {
+                    Task { await ReelHook.run(detail: detail, title: SessionDisplay.title(row),
+                                              store: store) }
+                }
             }
             #endif
             }
