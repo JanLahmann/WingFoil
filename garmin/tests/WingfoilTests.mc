@@ -3866,3 +3866,26 @@ function colourVocabularyIsUnambiguous(logger as Test.Logger) as Boolean {
     return true;
 }
 
+
+// ---- The post-save map (0.9.9, GitHub #4) ----
+// The gate, not the view: MapTrackView cannot be rendered headless (docs/watch-ui-review.md
+// §12.1), so what is pinned is that the page is never offered unless the rider asked for it,
+// and that asking for it is enough on a watch that has the view.
+(:test)
+function savedMapIsOfferedOnlyWhenAskedFor(logger as Test.Logger) as Boolean {
+    var was = AppSettings.mapAfterSave;
+    AppSettings.mapAfterSave = false;
+    Test.assertMessage(!SavedMap.available(), "the post-save map must be off by default");
+    AppSettings.mapAfterSave = true;
+    var hasView = (Toybox.WatchUi has :MapTrackView) && (Toybox.WatchUi has :MapPolyline);
+    Test.assertMessage(SavedMap.available() == hasView,
+        "with the setting on, availability is the firmware's: " + hasView.toString());
+    Test.assertMessage((SavedMap.padDeg(0.0) - 0.00045).abs() < 1.0e-9,
+        "a one-line track still gets ~50 m of water either side");
+    Test.assertMessage((SavedMap.padDeg(0.02) - 0.0016).abs() < 1.0e-9,
+        "the pad is 8 % of the span");
+    AppSettings.mapAfterSave = was;
+    logger.debug("post-save map gate: setting off -> never; on -> firmware has MapTrackView "
+        + hasView.toString());
+    return true;
+}

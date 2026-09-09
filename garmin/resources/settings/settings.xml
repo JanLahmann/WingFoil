@@ -53,6 +53,10 @@
              prompt="@Strings.SetAlertCleanJibeNote">
         <settingConfig type="boolean"/>
     </setting>
+    <setting propertyKey="@Properties.mapAfterSave" title="@Strings.SetMapAfterSave"
+             prompt="@Strings.SetMapAfterSaveNote">
+        <settingConfig type="boolean"/>
+    </setting>
     <setting propertyKey="@Properties.windDirDeg" title="@Strings.SetWindDir">
         <settingConfig type="numeric" min="-1" max="359"/>
     </setting>

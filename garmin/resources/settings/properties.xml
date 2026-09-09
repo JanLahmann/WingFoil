@@ -17,6 +17,10 @@
          (AlertManager.turnResolved). Off = the 0.9.4 turn-outcome buzz, not silence. -->
     <property id="alertCleanJibe" type="boolean">true</property>
     <property id="alertTakeoff" type="boolean">true</property>
+    <!-- 0.9.9, GitHub #4: START on the summary's Track page opens the firmware's map over the
+         saved track. Experimental — the native map view killed the app during recording on the
+         fenix 8 three releases running; this trial runs it only after the session is saved. -->
+    <property id="mapAfterSave" type="boolean">false</property>
     <!-- wind the turn classifier splits tacks from jibes on; -1 = unset -->
     <property id="windDirDeg" type="number">-1</property>
     <!-- 0.9.0: estimate the wind axis on the watch when the rider set none. The manual

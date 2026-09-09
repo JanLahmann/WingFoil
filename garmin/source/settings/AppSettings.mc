@@ -23,6 +23,7 @@ module AppSettings {
     // (AlertManager.turnResolved). Default ON — it is the metric the app is named after, and a
     // rider who does not want it turns it off and gets the 0.9.4 buzz back, not silence.
     var alertCleanJibe as Boolean = true;
+    var mapAfterSave as Boolean = false;     // 0.9.9 experiment, GitHub #4
     var alertTakeoff as Boolean = true;
     var alertIntervalMin as Number = 0;     // 0 = off
     var alertIntervalKm as Float = 0.0;     // 0 = off
@@ -83,6 +84,7 @@ module AppSettings {
         alertFlight = _bool("alertFlight", true);
         alertTurn = _bool("alertTurn", true);
         alertCleanJibe = _bool("alertCleanJibe", true);
+        mapAfterSave = _bool("mapAfterSave", false);
         alertTakeoff = _bool("alertTakeoff", true);
         alertIntervalMin = _num("alertIntervalMin", 0.0).toNumber();
         alertIntervalKm = _num("alertIntervalKm", 0.0);
