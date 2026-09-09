@@ -941,6 +941,132 @@ service can ever be one — those files are DRM'd, the APIs hand out stream hand
 samples, and the terms forbid redistribution outright. Hence the rider's own file, and the
 caption saying whose responsibility the rights are.
 
+## Session video — the reel, and the clock it is drawn on
+
+A second thing that leaves the phone, beside the card and the shared FIT: **a 9:16 video of
+one session**, 1080 × 1920 at 30 fps, H.264, in which the breadcrumb draws itself over a
+still map while the afternoon's highlights are called out as they pass, and which ends on the
+key-metrics card. "Export video" sits under the share card in the share sheet
+(`ShareComposerView`), and it is a **rider feature on both builds** — a card, a FIT and a
+video are the same kind of thing, something a rider makes to show somebody, and none of them
+is a threshold.
+
+**It is not the cinema clip, and the two do not merge.** The clip (`ReplayCinemaView`,
+`ReplayRecorder`) records the live glass with ReplayKit, at whatever the phone's screen is,
+with the rider free to pan and zoom the map while it runs — it is *his* replay, captured. The
+reel is rendered offscreen frame by frame (`ReelRenderer`: `AVAssetWriter` +
+`AVAssetWriterInputPixelBufferAdaptor`, Core Graphics into the pixel buffer) and is the same
+video from every phone: one fixed size, one fixed type scale, no Dynamic Type, no notification
+banner in frame, no camera moves, faster than real time. That also makes it the only one of
+the two a Mac can check, since `RPScreenRecorder` writes a zero-byte file in the Simulator
+(docs/testing.md).
+
+### The cut
+
+Default **20 s**, settable 15 / 20 / 30 in the export sheet. The last **3 s** are the end
+card; the rest is map.
+
+**The whole session draws over the cut, and the clock is not linear.** `ReelPlan` (kit, pure,
+tested) lays an *attention density* over the session's span: 1 everywhere, rising to **5×** in
+a raised-cosine bump of half-width `halfWidthS` around every moment worth stopping for. Reel
+time is that density's integral, normalised to the length of the map section:
+
+```
+reelTime(t) = mapS · ∫ d / ∫ d          (from the span's start to t, over the whole span)
+```
+
+so the clock **slows around the highlights and speeds up between them**, the whole track
+draws (nothing is ever skipped), and both ends land exactly. The plan answers in both
+directions — `sessionTime(atReelTime:)` for "where is frame 317", `reelTime(ofSessionTime:)`
+for "which frame is this jibe on" — which is the one thing `ReplayDriver` cannot do: the
+cinema replay's warp is a rate field ticked forward one frame at a time, right for a live view
+and useless to a renderer that wants random access.
+
+**The moments** are read off one analysis, all of them:
+
+| moment | where | slows the clock |
+|---|---|---|
+| the **longest flight's takeoff** | `flights`, longest by time, ties to the earlier | yes |
+| **every counted jibe** | `turns` where `counted && type == "jibe"`, with its outcome and its `clean` flag | yes |
+| **each record window** — 2 s, 5×10 s, alpha 500 | `records.windows`, at the window's own start | yes |
+| **every submersion** | `submersions` | **no** |
+
+Every counted jibe, not a selection: a jibe drawn at 200× is a smear and at 20× it is a
+maneuver, which is a statement about drawing rather than about narration — and it is why the
+reel's list is a third list beside `ReplayBeats` ("where can I scrub to") and
+`ReplayCommentary` ("what would a friend say"). A submersion gets its callout but no bump: it
+is evidence rather than an event, it usually already belongs to a turn
+(`SubmersionRecord.turnIndex`), and slowing twice for one moment is slowing wrong.
+
+**The bump shrinks.** Forty jibes at three seconds each is two minutes of premium inside a
+twenty-second cut, and the dips would merge into one flat slow reel that never gets anywhere.
+`halfWidthS` starts at `span / 8` and halves until the extra density mass is at most **60 %**
+of the whole — the same move `ReplayPacing.budget` makes, for the same reason — with a floor
+of 0.75 s, below which the warp is near-linear, which is the right answer for a session where
+nothing is special because everything is.
+
+### The ground and the track
+
+**One `MKMapSnapshotter` snapshot**, taken once at the region the whole track fits in, and
+every frame draws over the same pixels: a reel is a breadcrumb drawing itself over a
+photograph of the water, not a moving map. The framing arithmetic is the share card's
+(`ShareCardMapper.frame`, and the same attribution band asked for and cropped away), and the
+**rider's own `MapStyleChoice` is honoured** — a reel of a session is a reel of his map.
+Taken in points at 2× rather than pixels at 1×, so MapKit draws labels and coastlines at the
+weight a phone shows them at.
+
+The track is drawn in **the map's own phase colours**, through the map's own code path:
+`MapLayerVisibility.lineStyle(flying:)` → `TrackContent.color(_:on:)`, so a rider who has
+hidden a phase on his map gets the same neutral line here, and `TrackHalo` puts the dark outer
+edge under everything on imagery, in one pass under the whole track. Marks are the same
+vocabulary every map draws — the outcome ladder as dots, a clean jibe as a **star**, a
+submersion as the **cyan diamond** — popping to size over their first half-second on the
+session clock, so an outcome lands as it happens.
+
+### The overlays
+
+- **The live strip**, along the bottom: *elapsed* (`FlightPairing.clock`), *speed* in knots,
+  and the **on-foil flag** — a filled foil-teal pill while he is flying, an outline while he
+  is not, the same ink as the track under it. Under them the counters that only go up:
+  `"5 flew · 11 dry"`, and `"· 3 ★ clean"` when there are clean jibes to count. *Dry* is
+  flew-through plus touchdown, the same set JPH counts, so the strip and the end card's rates
+  are about the same turns.
+- **Callouts**, one at a time, popping for **1.5 s of reel time** on a dark plate with the
+  moment's own ink down its leading edge — `ReplayCommentaryBubble`'s shape, so a rider who
+  has watched the replay has already learned to read it. `takeoff` · `jibe · flew through` /
+  `jibe · touchdown` / `jibe · fell in` · `clean jibe` · `best 2 s 13.47 kn` · `wrist under`.
+  Every word is borrowed — `TurnOutcomeKind.label` for the verdicts, `RecordKind.windowLabel`
+  for the records, `KeyMetrics.knots` for the number — so the reel cannot invent a second
+  vocabulary on the one surface that leaves the phone. The window opens at the moment's own
+  instant and never before it: a callout that appears before the thing it names is a spoiler.
+  When two are open the latest wins, because two labels over a moving map is two things to
+  read and time for neither.
+- **The header**, top left: the session's title and date line, from the same `ShareCardStats`
+  the card's header uses.
+- **A progress hairline** across the very bottom.
+- The **uncertified mark** rides on the strip on a class-(c) source, exactly as it rides on
+  the card: the video leaves the device, so it cannot be read as a speed claim.
+
+### The end card
+
+The last three seconds are **`ReplayOutroCardView`** — the cinema clip's own closing card,
+which is drawn against a 390 × 700 reference and therefore lands at 9:16 without a layout
+change — rendered once through `ImageRenderer` and cross-faded in over the finished track.
+Using the clip's card rather than drawing a new one is what guarantees the footer is *the
+share card's*: the mark, the wordmark, **the call to action and the QR**, in that order and
+character for character (`Branding.callToAction`, `BrandQRImage`). Its numbers are
+`ShareCardStats.outro` — duration, distance, avg speed, max 2 s, the flew · touchdown · fell
+tally with its clean caption, the longest flight, and JPH / CPH / WPH.
+
+### Where the file goes
+
+The caches directory, under `Reel/`, named the way the shared FIT and the cinema clip are
+(`FitShareFilter.filename`), so a rider's three exports of one afternoon sort together. The
+sheet plays it back, hands it to the system share sheet, and **clears the directory when it
+closes** — the share sheet has already taken its copy by then, and a video nobody asked to
+keep is ten megabytes of somebody's phone. The render runs off the main actor, reports
+progress, and cancels at whatever frame it is on.
+
 ## Sections — how a session divides
 
 Both apps open on the key-metrics block and then **switch between four sections**, in this
