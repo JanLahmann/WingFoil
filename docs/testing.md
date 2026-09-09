@@ -745,6 +745,31 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    `AVAudioSession.playback` for exactly that, and a Mac has no ring switch to check it
    against); `ReplayClipSoundtrackTests` settles the schedule and the mux, not the listening.
    And whether a clip actually reaches the camera roll.
+   **The session video is the opposite case, and that is the point.** The reel
+   (`ReelRenderer`, docs/presentation.md "Session video") never touches ReplayKit: it draws
+   1080 × 1920 frames into a `CVPixelBuffer` with Core Graphics and writes them through an
+   `AVAssetWriter`, so it produces a real, playable .mp4 **on a Mac**. `UI_EXPORT_REEL=1`
+   renders one headlessly — no taps, no sheet — and leaves `reel.mp4` in the app's Documents
+   directory, with `UI_EXPORT_REEL_LENGTH=15|20|30` picking the cut. It prints one line naming
+   the frame count, the staging and encode times and the file size, so a failed render says so
+   in the log rather than silently writing nothing.
+
+   ```sh
+   SIMCTL_CHILD_UI_IMPORT_FIXTURES=1 SIMCTL_CHILD_UI_OPEN_SESSION=latest \
+   SIMCTL_CHILD_UI_EXPORT_REEL=1 xcrun simctl launch <device> de.lahmann.wingfoil
+   ffmpeg -ss 2 -i "$(xcrun simctl get_app_container <device> de.lahmann.wingfoil data)"/Documents/reel.mp4 \
+       -frames:v 1 frame.png
+   ```
+
+   Pulling three frames out — early, mid-cut, and inside the last three seconds — is the check
+   that actually finds things, and it found the two worth naming: `CGContext.draw(_:in:)` puts a
+   bitmap in *unflipped* space, so a frame drawn top-left like the rest of the app comes out
+   with the map and the end card upside down under a correctly placed track; and a semantic ink
+   resolved against the wrong appearance disappears, because off-foil grey resolved dark is
+   invisible on the light standard map the snapshot is deliberately taken on. Neither is
+   catchable in a unit test and both are obvious in one frame.
+   `ReelPlanTests` covers the half that is arithmetic — the moments, the warp's monotonicity
+   and its two exact endpoints, the round trip, the callout window and the running tally.
    **Apple Health has no hook, and cannot have one** (ADR-017). Every other staging hook fills
    in state the app owns; a workout lives in a database the app is only a *reader* of, and
    writing one to stage a screenshot would mean shipping a code path that puts fake workouts in
