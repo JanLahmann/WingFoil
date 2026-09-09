@@ -48,11 +48,17 @@ enum ReelHook {
             let url = try await Task.detached(priority: .userInitiated) {
                 try ReelRenderer.render(scene, to: output)
             }.value
-            let bytes = ReelRenderer.size(of: url)
-            print(String(format: "[reel] %@ · %d frames · stage %.1f s · encode %.1f s · %d bytes",
-                         url.lastPathComponent, scene.plan.frameCount,
-                         staged.timeIntervalSince(started), Date().timeIntervalSince(staged),
-                         bytes))
+            let line = String(
+                format: "%@ · %d frames · %d moments · stage %.1f s · encode %.1f s · %d bytes",
+                url.lastPathComponent, scene.plan.frameCount, scene.plan.moments.count,
+                staged.timeIntervalSince(started), Date().timeIntervalSince(staged),
+                ReelRenderer.size(of: url))
+            print("[reel] " + line)
+            // Beside the film, because `simctl launch --console` does not reliably flush a
+            // Swift `print` from an app that stays alive, and "how long did the render take"
+            // is exactly the thing a headless run exists to answer.
+            try? line.write(to: url.deletingPathExtension().appendingPathExtension("txt"),
+                            atomically: true, encoding: .utf8)
         } catch {
             print("[reel] failed: \(error)")
         }
