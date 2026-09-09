@@ -53,7 +53,7 @@ An iPhone app with the full analysis — maps, turn forensics, replay with comme
 
 ### What's New (live text)
 
-**0.9.9 uploaded 9 September 2026** (pending); **0.9.8 uploaded 7 September 2026** (Internal 16); **0.9.7 uploaded and approved 7 September 2026** (Internal 15); **0.9.6 uploaded 5 September 2026**; **0.9.5 was uploaded and approved on 3 September 2026** (listing shows 0.9.5, Internal 13); everything under it is the store's own text as transcribed on
+**0.9.9 uploaded 9 September 2026** (public Internal 17, awaiting Garmin review; private 0.9.9-dev Internal 21); **0.9.8 uploaded 7 September 2026** (Internal 16); **0.9.7 uploaded and approved 7 September 2026** (Internal 15); **0.9.6 uploaded 5 September 2026**; **0.9.5 was uploaded and approved on 3 September 2026** (listing shows 0.9.5, Internal 13); everything under it is the store's own text as transcribed on
 2 September 2026.
 
 ```
