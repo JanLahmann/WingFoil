@@ -144,9 +144,15 @@ struct ReplayOutroCardView: View {
     /// "flew · touchdown · fell" in a 60 pt column for no gain, which is why the count is
     /// asked rather than fixed. It is the same question the exported card asks
     /// (`ShareCardView.columnCount`), and it is asked of the same list.
+    ///
+    /// **And the squeeze only happens where rows are actually scarce**, which is the wide
+    /// frame — the case the paragraph above is about. A 9:16 frame is the other extreme: a
+    /// fourth row costs nothing there and a fourth *column* costs the tally cell its middle
+    /// number, which came out of the exported session video as "30 · … · 0" over a caption
+    /// reading "of 40 jibes · 17 cl…". Three across in a tall frame, four in a wide one.
     private var columns: [GridItem] {
         Array(repeating: GridItem(.flexible(), spacing: 8),
-              count: stats.stats.count > 9 ? 4 : 3)
+              count: isWide && stats.stats.count > 9 ? 4 : 3)
     }
 
     /// The box the card was designed against — an upright phone's glass. Everything below is
