@@ -29,19 +29,20 @@ func findFixtureFIT(stem: String) -> URL? {
 }
 
 /// Every **recording** under fixtures/sessions and fixtures/synthetic, sorted by filename:
-/// FIT, and since engine 0.9.0 GPX (docs/plan.md's input class (c)).
+/// FIT, GPX (engine 0.9.0, docs/plan.md's input class (c)) and TCX (class (b) or (c),
+/// depending on whether the file states a speed).
 ///
 /// Kept apart from `allFixtureFITs` on purpose. Most of the suite is about the FIT parser
 /// — sanitizer, developer fields, the share filter — and handing those a GPX would ask
-/// them a question they are not about. The golden suite is the one that must see both,
-/// because the goldens are where the two source classes are compared.
+/// them a question they are not about. The golden suite is the one that must see them all,
+/// because the goldens are where the source classes are compared.
 func allFixtureTracks() -> [URL] {
     var tracks: [URL] = []
     for sub in ["sessions", "synthetic"] {
         let dir = testFixturesDir.appendingPathComponent(sub)
         let found = FileManager.default.enumerator(at: dir, includingPropertiesForKeys: nil)?
             .compactMap { $0 as? URL }
-            .filter { ["fit", "gpx"].contains($0.pathExtension.lowercased()) } ?? []
+            .filter { ["fit", "gpx", "tcx"].contains($0.pathExtension.lowercased()) } ?? []
         tracks.append(contentsOf: found)
     }
     return tracks.sorted { $0.lastPathComponent < $1.lastPathComponent }

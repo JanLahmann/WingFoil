@@ -58,7 +58,52 @@ import ZIPFoundation
         #expect(try IcuPayload.unwrap(gz) == fit)
     }
 
-    @Test func rejectsNonFitPayloads() throws {
+    /// `/file` hands back **whatever the device uploaded**, and for a Polar, Suunto or Coros
+    /// rider that is a GPX or a TCX rather than a FIT. All three are formats the engine
+    /// reads, so all three have to survive the unwrap — in every wrapper, exactly as a FIT
+    /// does. Before this, the sync threw `notAFitFile` on a perfectly readable recording.
+    @Test func unwrapsGpxAndTcxOriginalsInEveryWrapper() throws {
+        let gpx = Data("""
+            <?xml version="1.0"?><gpx version="1.1" \
+            xmlns="http://www.topografix.com/GPX/1/1"><trk><trkseg/></trk></gpx>
+            """.utf8)
+        let tcx = Data("""
+            <?xml version="1.0"?><TrainingCenterDatabase \
+            xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2">\
+            <Activities/></TrainingCenterDatabase>
+            """.utf8)
+        for original in [gpx, tcx] {
+            #expect(IcuPayload.isRecording(original))
+            #expect(try IcuPayload.unwrap(original) == original)
+            #expect(try IcuPayload.unwrap(try Gzip.compress(original)) == original)
+        }
+        #expect(try IcuPayload.unwrap(try zip(entries: [("ride.gpx", gpx)])) == gpx)
+        #expect(try IcuPayload.unwrap(try zip(entries: [("ride.tcx", tcx)])) == tcx)
+        // A FIT beside a GPX of the same ride: the measured channel wins, whatever order
+        // the archive happens to list them in.
+        let fit = fakeFit(marker: 0x3c)
+        #expect(try IcuPayload.unwrap(try zip(entries: [("ride.gpx", gpx),
+                                                        ("ride.fit", fit)])) == fit)
+    }
+
+    /// And a walked container carries them too — a GDPR ZIP or an AirDropped archive reaches
+    /// the library through `ZipWalker`, and a format missing from its ladder is not merely
+    /// unclassified, it is silently dropped as noise.
+    @Test func theWalkerFindsATcxInsideAnArchive() throws {
+        let tcx = Data("""
+            <?xml version="1.0"?><TrainingCenterDatabase \
+            xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2">\
+            <Activities/></TrainingCenterDatabase>
+            """.utf8)
+        let result = ZipWalker.walk(data: try zip(entries: [("ride.tcx", tcx),
+                                                            ("notes.json", Data("{}".utf8))]),
+                                    name: "export.zip")
+        #expect(result.fits.count == 1)
+        #expect(result.ignoredEntries == 1)
+        #expect(result.fits.first?.data == tcx)
+    }
+
+    @Test func rejectsNonRecordingPayloads() throws {
         #expect(throws: IcuPayload.Error.self) { try IcuPayload.unwrap(Data()) }
         #expect(throws: IcuPayload.Error.self) {
             try IcuPayload.unwrap(Data("<html>404 not found</html>".utf8))
@@ -179,7 +224,7 @@ import ZIPFoundation
         let client = IcuClient(apiKey: "k", transport: StubTransport(
             recorder: recorder, status: 200, body: try Gzip.compress(fit)))
 
-        #expect(try await client.originalFit(activityID: "i111") == fit)
+        #expect(try await client.originalRecording(activityID: "i111") == fit)
         #expect(recorder.request?.url?.path.hasSuffix("/activity/i111/file") == true)
     }
 

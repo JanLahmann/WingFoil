@@ -38,7 +38,7 @@ import Testing
         let stem = String(url.lastPathComponent.dropLast(".expected.json".count))
         guard let fitURL = findFixtureTrack(stem: stem) else {
             let where_ = "fixtures/sessions or fixtures/synthetic"
-            Issue.record("golden \(stem): no \(stem).fit or \(stem).gpx under \(where_)")
+            Issue.record("golden \(stem): no \(stem).fit, .gpx or .tcx under \(where_)")
             return
         }
         guard let json = try JSONSerialization.jsonObject(with: Data(contentsOf: url))

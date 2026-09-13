@@ -80,7 +80,7 @@ public struct IcuSyncService: Sendable {
             let label = activity.name ?? activity.id
             progress?("Downloading \(index + 1)/\(watersports.count): \(label)")
             do {
-                let fit = try await client.originalFit(activityID: activity.id)
+                let fit = try await client.originalRecording(activityID: activity.id)
                 switch try await ingestor.ingest(fitData: fit, filename: Self.filename(for: activity),
                                                  source: .icu, icuActivityId: activity.id) {
                 case .imported: summary.imported += 1
@@ -124,7 +124,7 @@ public struct IcuSyncService: Sendable {
         if SessionTombstones.blocks(activity, tombstones: tombstones) != nil {
             return .skipped(reason: "previously deleted")
         }
-        let fit = try await client.originalFit(activityID: activity.id)
+        let fit = try await client.originalRecording(activityID: activity.id)
         return try await ingestor.ingest(fitData: fit, filename: Self.filename(for: activity),
                                          source: .icu, icuActivityId: activity.id,
                                          utcOffsetS: activity.utcOffsetS)
