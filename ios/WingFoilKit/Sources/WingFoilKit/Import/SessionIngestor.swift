@@ -128,6 +128,15 @@ public struct SessionIngestor: Sendable {
     /// set applies nothing and stamps nothing — an untuned library is byte-identical to one
     /// produced by a build without the feature.
     public var tuning = TuningOverrides()
+    /// **Settings → "I mostly ride"**: the preset every imported session gets when its
+    /// recording does not say (docs/presentation.md, "Confirming the discipline on import").
+    ///
+    /// Wingfoil by default, and on a wingfoil rider's phone this property changes nothing at
+    /// all — it is the value the resolver already fell back to. It exists for the windsurfer,
+    /// whose every file arrives tagged as something else or as nothing: Garmin, Strava,
+    /// intervals.icu and Apple Health have no wingfoil, and the one sport code they do agree
+    /// on is the one ADR-004 made unusable as evidence.
+    public var riderDiscipline: Discipline = .wingfoil
     public var dedupeToleranceS: TimeInterval = 60
     public var spotRadiusM: Double = SpotClusterer.defaultRadiusM
 
@@ -185,7 +194,18 @@ public struct SessionIngestor: Sendable {
         // analysis, flag cleared — instead of appearing beside it. Replacing rather than
         // inserting keeps the gear the rider already picked, keeps anything holding the id
         // valid, and means the library never shows one session twice.
-        let analysis = analyze(track)
+        // **Which preset this session is read under**, decided once, here (docs/algorithms.md
+        // "Disciplines"). The recording's own `discipline` field if it has one — the CleanJibe
+        // watch app's, authoritative, never asked about again. Else whatever the rider already
+        // settled on a provisional row this FIT is taking over. Else his declared default,
+        // which is a *guess* and says so in the column below. The sport code is not consulted
+        // at any rung: it is not an argument to `Discipline.imported`.
+        let stated = Discipline.stated(tag: caps.discipline)
+        let settled = existing.flatMap {
+            $0.disciplineGuessed ? nil : Discipline.stated(tag: $0.disciplineOverride)
+        }
+        let preset = settled ?? stated ?? riderDiscipline
+        let analysis = analyze(track, discipline: preset)
         let id = existing?.id ?? UUID().uuidString
         try archive.storeOriginal(fitData, id: id)
         do {
@@ -198,6 +218,13 @@ public struct SessionIngestor: Sendable {
                              sourceClass: caps.sourceClass)
         row.sport = caps.sport
         row.discipline = caps.discipline
+        // The override column holds only what the *tag* does not already say, exactly as
+        // `setDiscipline` writes it: a rider default that agrees with the recording is not an
+        // override, it is an agreement, and storing it would make a later "he said so" and a
+        // "nobody asked" indistinguishable.
+        row.disciplineOverride = preset == Discipline.resolve(tag: caps.discipline)
+            ? nil : preset.rawValue
+        row.disciplineGuessed = settled == nil && stated == nil
         row.originalFilename = filename
         // What clock this session's times are drawn on, and how well we know it — see
         // `resolveUtcOffset`. It survives a provisional-row upgrade the same way the id
@@ -442,9 +469,28 @@ public struct SessionIngestor: Sendable {
         var updated = row
         let fromTag = Discipline.resolve(tag: row.discipline)
         updated.disciplineOverride = discipline == fromTag ? nil : discipline.rawValue
+        // He has answered, so the preset is no longer a guess — whichever way he answered.
+        updated.disciplineGuessed = false
         let stored = updated
         try await database.writer.write { db in try stored.update(db) }
         return try await reanalyze(stored)
+    }
+
+    /// **The rider looked at the guess and let it stand.** The review step's "keep it": the
+    /// preset does not move, so nothing is re-derived and no analysis is touched — the only
+    /// thing that changes is that the app stops marking these sessions as unasked.
+    ///
+    /// Separate from `setDiscipline` rather than a no-op call into it, because the two are
+    /// different facts and only this one is free. Re-deriving a session to record that its
+    /// numbers were already right would be the slowest possible way of changing nothing.
+    public func confirmDiscipline(for rows: [SessionRow]) async throws {
+        let ids = rows.filter(\.disciplineGuessed).map(\.id)
+        guard !ids.isEmpty else { return }
+        let holes = ids.map { _ in "?" }.joined(separator: ", ")
+        try await database.writer.write { db in
+            try db.execute(sql: "UPDATE session SET disciplineGuessed = 0 WHERE id IN (\(holes))",
+                           arguments: StatementArguments(ids))
+        }
     }
 
     public func rawTrack(for row: SessionRow) throws -> RawTrack {

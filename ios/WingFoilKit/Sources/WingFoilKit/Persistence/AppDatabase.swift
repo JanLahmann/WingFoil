@@ -33,7 +33,7 @@ public struct AppDatabase: Sendable {
     /// Every migration this build knows, oldest first — the migration test asserts a v1
     /// database moves through all of them.
     public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
-                                        "v10", "v11", "v12", "v13", "v14"]
+                                        "v10", "v11", "v12", "v13", "v14", "v15"]
 
     /// The schema version this build writes — the `N` of the last `vN` migration.
     ///
@@ -336,6 +336,26 @@ public struct AppDatabase: Sendable {
         migrator.registerMigration("v14") { db in
             try db.alter(table: "session") { t in
                 t.add(column: "disciplineOverride", .text)
+            }
+        }
+
+        // v15: **was this session's preset a guess?** (docs/presentation.md, "Confirming the
+        // discipline on import").
+        //
+        // Wingfoil does not exist in Garmin, Strava, intervals.icu or Apple Health, so every
+        // recording that is not the CleanJibe watch app's own arrives with its discipline
+        // unsaid and the rider's default answering for it. This column is the difference
+        // between "nobody has said" and "the rider said" — the review step lists the first,
+        // the library row marks it with a `?`, and both go quiet the moment he answers.
+        //
+        // `false` on every existing row, which is the honest reading of a library imported
+        // before the question was asked: those sessions were analysed as wingfoil under the
+        // old rule, the rider has lived with them, and a banner offering to review two years
+        // of afternoons is not a confirmation, it is a chore. No `engineVersion = NULL` sweep:
+        // this migration changes no number anywhere.
+        migrator.registerMigration("v15") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "disciplineGuessed", .boolean).notNull().defaults(to: false)
             }
         }
         return migrator
@@ -787,6 +807,19 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     public var analysisDiscipline: Discipline {
         Discipline.resolve(tag: discipline, override: disciplineOverride)
     }
+
+    // MARK: schema v15
+    /// **Nobody has confirmed what this session is.** True for a session whose preset came
+    /// from the rider's default because the recording said nothing (`Discipline.isGuess`) —
+    /// which is every source but the CleanJibe watch app, since wingfoil exists in neither
+    /// Garmin nor Strava nor intervals.icu nor Apple Health.
+    ///
+    /// It is a fact about *provenance*, not about the preset: a guess of "wingfoil" and a
+    /// confirmed "wingfoil" analyse identically and differ only in what the app may say about
+    /// them — the review step lists the first and the library row marks it `?`. Cleared by the
+    /// rider answering, either way round: changing the preset clears it and letting it stand
+    /// clears it too, because both are him having looked.
+    public var disciplineGuessed = false
 
     /// `startUtcOffsetSource` as the closed vocabulary, or nil for "unrecorded" — which
     /// includes a stored string this version has never heard of.

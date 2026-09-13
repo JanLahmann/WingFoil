@@ -1162,6 +1162,21 @@ public enum HelpCatalog {
                 "A session can be analysed as **Wingfoil**, **Windsurf foil** or **Windsurf "
                 + "fin**. The row is on the session's Log tab, under \"Analyse as\", and "
                 + "changing it re-derives that one session and nothing else.",
+                // Why the app asks at all, in the rider's own terms. It is the first question
+                // a windsurfer has about this feature and the first complaint a wingfoiler
+                // has about his Garmin, and both have the same one-line answer.
+                "**Why CleanJibe asks after an import.** Wingfoil is not a sport in Garmin, "
+                + "Strava, intervals.icu or Apple Health — there is no code for it, so most "
+                + "riders record under the windsurf profile. A new session therefore cannot "
+                + "say which rig it was ridden on, and the sport code in the file is no help: "
+                + "\"windsurfing\" is what a wingfoil session says too. So it is read as "
+                + "whatever you set under Settings → \"I mostly ride\", marked with a **?** "
+                + "in the list until you have looked, and listed for you after each import. "
+                + "Confirming changes nothing; correcting re-derives that session from the "
+                + "original recording. Skipping costs nothing either — the ? stays and the "
+                + "session page can change it whenever you like.",
+                "Sessions recorded with the CleanJibe watch app are never asked about: they "
+                + "say what they are in the file itself.",
                 "**What works.** Jibes and tacks are the same detector, with the same "
                 + "thresholds and the same three verdicts — flew through, touchdown, fell in "
                 + "— and a clean jibe means exactly what it means on a wing. So do the speed "
