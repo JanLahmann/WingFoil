@@ -100,11 +100,27 @@ public enum SessionTombstones {
         if let byId = tombstones.first(where: { $0.icuActivityId == activity.id }) {
             return byId
         }
-        guard let start = activity.startDate else { return nil }
+        return blocks(startDate: activity.startDate,
+                      movingTimeS: activity.movingTimeS.map(Double.init),
+                      tombstones: tombstones, toleranceS: toleranceS)
+    }
+
+    /// The same rule, asked of any source that can state a start and (perhaps) a length —
+    /// the Strava sync, which has no intervals.icu id to match on and is otherwise held to
+    /// exactly the same promise: a session the rider deleted does not come back, whichever
+    /// door it knocks on (docs/decisions.md ADR-023).
+    ///
+    /// `movingTimeS` stays *optional* and stays one-sided for the reason spelled out above:
+    /// an activity summary reports moving time while the library stored elapsed time, so a
+    /// session with a beach break in it is genuinely shorter on the cloud's side.
+    public static func blocks(startDate: Date?, movingTimeS: Double?,
+                              tombstones: [SessionTombstoneRow],
+                              toleranceS: TimeInterval = 60) -> SessionTombstoneRow? {
+        guard let start = startDate else { return nil }
         return tombstones.first { stone in
             guard abs(stone.startDate.timeIntervalSince(start)) <= toleranceS else { return false }
-            guard let moving = activity.movingTimeS else { return true }
-            return Double(moving) <= stone.durationS + toleranceS
+            guard let moving = movingTimeS else { return true }
+            return moving <= stone.durationS + toleranceS
         }
     }
 
