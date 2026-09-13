@@ -202,9 +202,11 @@ native Garmin FIT cannot have. This is the architecture working as designed: *th
 degrades on capabilities, not on formats* (docs/plan.md §3.3).
 
 It is also why `SessionDisplay.sourceClassNote` consults `importSource` as well as the class.
-The standard class-(b) sentence is "Standard Garmin recording — everything except pump and
+The standard class-(b) sentence is "Measured speed channel — everything except pump and
 takeoff effort", and printing that over a session that visibly has a pump chart would read as a
-bug. A watch session gets its own line instead.
+bug. A watch session gets its own line instead. (The sentence used to open "Standard Garmin
+recording"; a TCX stating `Extensions/TPX/Speed` is class (b) too and did not come off a
+Garmin, so the line now says what the class actually asserts.)
 
 ## Capability mapping
 

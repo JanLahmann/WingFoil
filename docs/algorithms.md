@@ -118,6 +118,66 @@ and the count is reported (`session["gpxTracks"]`).
 yields no offset and the longitude rung of the ladder below takes over. A timestamp written
 with a numeric offset (`+02:00`) is the exporter naming the local clock, and wins.
 
+## TCX import — class (b) *or* class (c), decided by one element
+
+`lab/src/wingfoil_lab/tcx.py` · `ios/…/TcxImport/TcxSessionParser.swift`
+
+A TCX (Garmin's Training Center Database v2) is the other XML door, and it is the only
+format in this engine that is **not one input class**. It carries positions and a clock
+exactly as a GPX does, and it *may* also carry the receiver's own speed in the per-point
+`TPX` extension. Polar, Suunto and Coros sessions reach CleanJibe this way through
+intervals.icu, so this is a common file and not an exotic one.
+
+**The rule, and it is the whole of the difference:**
+
+| the file says | class | speed channel | records |
+|---|---|---|---|
+| `Extensions/TPX/Speed` present (m/s) | **(b)** | the receiver's own, carried through untouched | **certified** |
+| no `TPX/Speed` anywhere | **(c)** | differentiated from positions, `gpx.py`'s arithmetic | **uncertified** |
+
+`capabilities.hasDoppler` is the flag, as always, and it is a question about *the file*, not
+about coverage: one stated speed anywhere makes the session class (b), and the samples that
+carry none get a null that `clean` drops — the same treatment a FIT with dropped samples
+already gets. A negative or unparseable `Speed` is not a measurement of anything, so it
+leaves the file having said nothing.
+
+| what is read | from | notes |
+|---|---|---|
+| time | `Trackpoint/Time` | ISO 8601; **a point without one is not a sample at all**, the GPX rule verbatim |
+| position | `Position/LatitudeDegrees`, `LongitudeDegrees` | a point without both is skipped (an indoor trackpoint is exactly this) |
+| altitude | `Trackpoint/AltitudeMeters` | feeds `turnBaroDrop` where the exporter wrote a barometric value |
+| heart rate | `HeartRateBpm/Value` | `Value` counts as heart rate *only* inside `HeartRateBpm`; TCX reuses the tag for a lap's average and maximum |
+| speed | `Extensions/…/Speed` | m/s. The element above, matched on local tag name so either activity-extension namespace and any prefix are read |
+| laps | `Lap/@StartTime`, `TotalTimeSeconds`, `DistanceMeters` | carried verbatim; `hasWatchLaps` is `laps > 1`, the FIT rule |
+
+**Segments.** TCX nests `Activity > Lap > Track > Trackpoint`, and the two container levels
+mean different things. A `<Lap>` is a *marker* — the rider pressed lap, or the watch closed
+one on a distance — and the board kept moving through it, so a lap boundary is **not** a
+gap. A second `<Track>` is the recorder having stopped and started again, which is exactly
+what a GPX `<trkseg>` boundary says, so **that** is the join marked `gap_before`.
+
+**Several activities.** The first `<Activity>` is analysed and the count is reported
+(`session["tcxActivities"]`) — several activities are several sessions, the same rule GPX
+applies to several `<trk>`s.
+
+**Sport is not read.** `Activity/@Sport` admits only `Running`, `Biking` and `Other`, so
+every watersport session is `Other`; filing that as `capabilities.sport` would turn "this
+file cannot say" into a claim that a watersport gate downstream would act on.
+
+**Time zone, accelerometer, developer fields.** All three as for GPX: the same ladder (a
+`Z` states an instant and hands over to longitude, a numeric offset wins), no accelerometer
+so no strokes and no `pumpEpisodes`, nothing of ours so no watch summary and no divergence
+check.
+
+Everything a TCX shares with a GPX is *shared code* rather than a second spelling — the
+ISO-8601 scanner and the positional-speed differentiation both — because two XML parsers
+disagreeing about the same metres would be a bug no golden could see. The fixture pair
+`fixtures/sessions/tcx/2026-08-30-1407_nago-torbole-{speed,nospeed}.tcx` is that claim's
+experiment: the 2026-08-30 CIQ afternoon converted twice by `lab/tools/fit_to_tcx.py`,
+differing by the one element. The speedless one reproduces the GPX golden's numbers
+(13.65 kn best-2 s, 67.3 % foil); the speed-bearing one reproduces the FIT's (13.47 kn,
+67.9 %).
+
 ## Speed records (GP3S set)
 
 2 s peak · 10 s peak · 5×10 s (mean of best 5 **disjoint** 10 s windows) · 100 m · 250 m ·
