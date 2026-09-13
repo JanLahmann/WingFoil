@@ -138,8 +138,7 @@ public enum CompanionLinkError: Error, Equatable, Sendable {
         case .notReady(let state): state.headline
         case .invalidWind(let degrees): "\(degrees)° is not a wind direction."
         case .mapUnavailable:
-            "No map to send yet — import a session with a GPS fix, and be online once "
-            + "while the map is drawn."
+            "No spot to send yet — the library has no session with a GPS fix."
         case .transmitFailed(let reason): "The watch did not take it (\(reason))."
         }
     }
