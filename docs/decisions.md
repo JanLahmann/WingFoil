@@ -2,6 +2,46 @@
 
 Newest first. One paragraph each: context → decision → consequence.
 
+## ADR-023 · Strava as a read source: class (c) **by construction**, and read-only on purpose
+The second cloud source beside intervals.icu, and the one that reaches the riders who have no
+Garmin account, no Apple Watch and no intention of setting up intervals.icu — which, on the
+water, is most of them. **Decision: the mapper writes a GPX.** What
+`/activities/{id}/streams` returns is positions, an elapsed clock, an elevation and a heart
+rate; channel for channel that *is* a GPX, so `StravaImport` emits one and `GpxSessionParser`
+decides everything after it. Nothing in the Strava path sets a source class, marks a record
+uncertified or derives a speed — all three fall out of the format, in the one place they are
+already decided for every positions-only source, and a Strava session cannot drift away from a
+GPX of the same afternoon because after the mapper the two are the same file. Strava's
+`velocity_smooth` is fetched and thrown away: it is computed from the positions and then
+smoothed, so treating it as measured would be a claim the data cannot support, and carrying it
+beside the engine's own derivation would put two differently-filtered answers in one column.
+`hasSpeed` false, `source_class` `c`, speed records **uncertified** everywhere — and the
+Import screen, the Strava screen and the help all say so before the rider imports rather than
+after, plus the sentence that matters most to a Garmin owner: *if the same session is on
+intervals.icu, take it from there instead.*
+
+**Read-only, and not as a stage.** CleanJibe lists and downloads; it writes nothing to
+anybody's Strava account. Write-back — a CleanJibe block in the activity description — stays
+issue #5, with its own consent and its own opt-in, and nothing in this change is a step
+towards doing it quietly. The scope asked for is `activity:read_all`, and a rider who narrows
+it on Strava's own consent screen is *told* (`stravaScopeIsNarrow`), because a connection that
+works and lists nothing is indistinguishable from a bug.
+
+**Consequences, all of them configuration.** The API application is registered under Jan's
+Strava account — category *Performance analysis*, website `cleanjibe.org`, client id `279015`
+— and its secret lives in an untracked `ios/Strava.xcconfig` (template:
+`ios/Strava.example.xcconfig`, created automatically by `xcodegen generate` so a fresh clone of
+a public repository still builds, with the Strava row explaining what is missing rather than
+failing). Strava validates the redirect against the application's **single** Authorization
+Callback Domain, `cleanjibe.org`, and refuses custom schemes — so the round trip has one hop
+more than it looks like it should: Strava → `https://cleanjibe.org/strava/callback`, a
+self-contained static page that forwards `code` and `state` to `cleanjibe://strava`, where
+`ASWebAuthenticationSession` is waiting. Until Strava reviews the application it allows **one
+connected athlete** and 1 000 requests a day, so `StravaClient.Error.athleteLimit` is its own
+cause with its own sentence, and the help says plainly that Strava import is single-rider for
+now. Rate limits (100 / 15 min) stop a run rather than retrying into them, and what was
+already imported stays imported.
+
 ## ADR-022 · The pumped-out touchdown is an opinion, so it is a switch — and it asks the wrong speed
 Step 3 of the outcome ladder promoted a fly-through to a `touchdown` when the accelerometer
 heard a pump burst *and* the speed channels went below `foilEntrySpeed` somewhere in the same

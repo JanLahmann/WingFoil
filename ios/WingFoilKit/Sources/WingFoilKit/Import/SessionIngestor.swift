@@ -41,6 +41,12 @@ public enum ImportSource: String, Sendable, CaseIterable {
     /// `.surfingSports` workouts on the same afternoon, and the rider would have imported a
     /// session in order to be shown it twice.
     case appleHealth = "applehealth"
+    /// An activity pulled from **Strava** (docs/decisions.md ADR-023). The second cloud
+    /// source beside intervals.icu, and the one that is class (c) by construction: Strava
+    /// hands back positions, a clock, an elevation and a heart rate — no Doppler channel and
+    /// no accelerometer — so `StravaImport` writes exactly what it has, a GPX, and the source
+    /// class follows from the format rather than from a special case anywhere downstream.
+    case strava
 
     /// Whether a merged `session.importSource` names this source.
     ///

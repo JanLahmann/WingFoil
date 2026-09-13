@@ -1,12 +1,17 @@
 import Foundation
 import Security
 
-/// Minimal keychain wrapper for the one secret the app holds: the intervals.icu personal
-/// API key. Generic-password item, device-only, no iCloud sync.
+/// Minimal keychain wrapper for the secrets the app holds: the intervals.icu personal API
+/// key, and the Strava OAuth token pair. Generic-password items, device-only, no iCloud sync.
 enum Keychain {
 
     static let service = "de.lahmann.wingfoil"
     static let icuApiKey = "intervals.icu.apiKey"
+    /// Strava's access **and** refresh token, as one JSON blob under one account
+    /// (`StravaTokens`). One item rather than two on purpose: a half-stored pair is a
+    /// connection that can neither be used nor repaired, and nothing here is atomic across
+    /// two `SecItemAdd`s.
+    static let stravaTokens = "strava.tokens"
 
     static func string(for account: String) -> String? {
         var query = baseQuery(account: account)

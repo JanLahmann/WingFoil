@@ -142,6 +142,7 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
 /// Every explainable metric, as an enum so a `?` button cannot point at a missing topic.
 public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
     case icuSetup, exampleSession, appleWorkoutApp, icuTroubleshooting, icuPrivacy, libraryBackup
+    case stravaImport, shareFromWatchApp, whichWatch
     case foilPct, flights, longestFlight, distance, mapLegend
     case recordSet, best2s, best10s, best5x10s, best500m, bestNm, alpha500, uncertified
     case turnTypes, turnOutcomes, turnSuccess, portStarboard, falls, touchdowns, glideOuts
@@ -260,6 +261,187 @@ public enum HelpCatalog {
                           + "else in Health, and nothing about the session leaves the device."),
             ],
             related: [.sourceClass, .uncertified, .icuSetup, .exampleSession]),
+
+        // The second cloud source (docs/decisions.md ADR-023). It sits here rather than
+        // under "Where the numbers come from" for the same reason the Apple Watch topic
+        // does: for a rider whose sessions are only on Strava this is not a footnote about
+        // data quality, it is the way in. What it costs is said plainly and early, because
+        // a rider who finds out afterwards that his speed records are uncertified has been
+        // told too late.
+        HelpTopic(
+            id: .stravaImport, section: .setup, title: "Import from Strava",
+            summary: "Connect once, then pick the sessions you want. Positions only, so "
+                + "speed records are uncertified.",
+            body: [
+                "If your sessions are already on Strava, CleanJibe can list them and import "
+                + "the ones you pick. Import → Strava → Connect Strava opens Strava, you say "
+                + "yes, and the list appears. CleanJibe only ever reads: it never writes, "
+                + "renames or posts anything to your Strava account.",
+                "Strava has no wingfoil activity, so it offers Windsurf, Kitesurf, Surf and "
+                + "Workout by default and you can switch on Sail and Stand-up paddling. "
+                + "Whatever types you pick, an activity whose name says wing, foil, kite, "
+                + "surf or SUP is offered too — so naming a session \"Wingfoil\" on Strava "
+                + "is enough to find it whatever it was filed under.",
+                "What a Strava session shows is everything that comes from the track: foil "
+                + "time, flights, every turn with its verdict, the wind axis, the map. What "
+                + "it cannot show is what Strava does not hand over. There is no speed "
+                + "channel — Strava works speed out from the positions, exactly as CleanJibe "
+                + "would — so the speed records from these sessions are marked uncertified. "
+                + "And nothing recorded your wrist, so there are no pump strokes and no "
+                + "failed takeoff attempts.",
+                "So if the same afternoon is also on intervals.icu, import it from there "
+                + "instead: that is the original file off your watch, with the receiver's "
+                + "own speed in it, and those records certify. Importing both is harmless — "
+                + "the same session is recognised whichever door it came in by, and it is "
+                + "never added twice.",
+                "Strava has not reviewed CleanJibe yet. Until it does, Strava allows one "
+                + "connected rider and a hundred requests every fifteen minutes, so a first "
+                + "import of a long history takes its time and may ask you to come back in a "
+                + "few minutes. If Strava refuses to connect at all, that ceiling is why, "
+                + "and it is nothing to do with your account.",
+            ],
+            items: [
+                .init(term: "Connect",
+                      detail: "Import → Strava → Connect Strava. Strava's own consent screen "
+                          + "opens; leave the private-activities box ticked or the sessions "
+                          + "you marked \"Only you\" will be missing from the list."),
+                .init(term: "Pick, or take everything new",
+                      detail: "Tap the sessions you want, or use Import all new. Anything "
+                          + "already in your library is marked and cannot be picked twice."),
+                .init(term: "Keep it automatic",
+                      detail: "Once one session has come in this way, a toggle appears: "
+                          + "CleanJibe then checks Strava whenever you open the app and "
+                          + "imports anything new of the types you chose."),
+                .init(term: "Disconnecting",
+                      detail: "Import → Strava → Disconnect, or Settings → Strava. The "
+                          + "sessions you already imported stay in your library — they are "
+                          + "yours now, analysed on this phone."),
+            ],
+            related: [.sourceClass, .uncertified, .icuSetup, .shareFromWatchApp, .whichWatch]),
+
+        // The topic for the rider who owns none of the three things CleanJibe has a door
+        // for — no Garmin, no Apple Watch, no intervals.icu account — but does own a watch
+        // and a phone. The vendor paths are verified against the vendors' own help pages and
+        // each one says when; an unverified path is labelled rather than dressed up.
+        HelpTopic(
+            id: .shareFromWatchApp, section: .setup,
+            title: "Share from your watch app straight into CleanJibe",
+            summary: "Polar, Suunto and COROS can hand a session to CleanJibe as a file. "
+                + "Garmin's phone app cannot.",
+            body: [
+                "Every watch app can export a recording as a file — FIT, GPX or TCX — and "
+                + "CleanJibe can read all three. On an iPhone that means the share sheet: "
+                + "export the session, choose CleanJibe from the row of apps, and it is "
+                + "imported. If CleanJibe is not in the row, tap Save to Files instead, then "
+                + "open Files, tap the file, and share it from there.",
+                "Which format to pick, if you are asked: FIT, every time. A FIT carries the "
+                + "receiver's own speed, so its speed records certify; a GPX or a TCX "
+                + "carries positions only, and CleanJibe works the speed out from them and "
+                + "marks those records uncertified. Everything else — foil time, flights, "
+                + "turns, the map, the wind axis — is the same either way.",
+                "There is one watch this does not work for, and it is the popular one. "
+                + "Garmin Connect's phone app has no export at all: every path Garmin "
+                + "documents starts with signing in to connect.garmin.com in a browser. So "
+                + "Garmin owners have two better routes — connect the watch to intervals.icu "
+                + "once and let CleanJibe sync it (Get set up with intervals.icu), or, on a "
+                + "computer, open the activity at connect.garmin.com, use the gear menu → "
+                + "Export File, and put the file somewhere your phone can reach it.",
+            ],
+            items: [
+                .init(term: "Suunto — verified 13 Sep 2026",
+                      detail: "Calendar (second icon on the bottom bar) → tap the workout → "
+                          + "⋯ top right → FIT. Then Save to Files, or pick CleanJibe "
+                          + "straight from the share sheet. The menu also offers GPX "
+                          + "(Workout) and GPX (Route) — take FIT: Route drops everything "
+                          + "but the track."),
+                .init(term: "COROS — verified 13 Sep 2026",
+                      detail: "Activities → tap the activity → ⋯ top right → Export (older "
+                          + "versions call it Export Data) → FIT. Then choose how to send "
+                          + "it, which is the iOS share sheet. GPX is offered too; TCX and "
+                          + "KML appear in some versions — unverified, and FIT makes the "
+                          + "question moot."),
+                .init(term: "Polar — verified 13 Sep 2026, but not on the phone",
+                      detail: "The Polar Flow app cannot export a file. The web service can: "
+                          + "flow.polar.com → Diary → click the session → Export (top right) "
+                          + "→ FIT (TCX, GPX and CSV are there too). Opening flow.polar.com "
+                          + "in Safari on the phone may work — unverified — so a computer is "
+                          + "the reliable way."),
+                .init(term: "Garmin — verified 13 Sep 2026: no phone export",
+                      detail: "Garmin Connect on the phone cannot export an activity file at "
+                          + "all. On a computer: connect.garmin.com → Activities → the "
+                          + "activity → gear icon top right → Export File, which gives the "
+                          + "original FIT. (The menu used to say \"Export Original\".) "
+                          + "intervals.icu is the path that needs no computer."),
+                .init(term: "Anything else",
+                      detail: "If an app can produce a FIT, a GPX or a TCX, CleanJibe can "
+                          + "read it — and so can AirDrop, Mail and Files. A ZIP full of "
+                          + "recordings works too: Import → FIT, GPX or ZIP."),
+            ],
+            links: [
+                HelpLink(title: "Suunto: exporting a FIT from the phone app",
+                         url: URL(string: "https://www.suunto.com/Support/faq-articles/suunto-app/how-do-i-download-a-.fit-file-from-suunto-app-for-ios")!),
+                HelpLink(title: "COROS: exporting workout data",
+                         url: URL(string: "https://support.coros.com/hc/en-us/articles/360043975752-Exporting-Workout-Data-and-Uploading-to-3rd-Party-Apps")!),
+                HelpLink(title: "Polar: exporting a session from Flow",
+                         url: URL(string: "https://support.polar.com/en/export-training-sessions-flow")!),
+                HelpLink(title: "Garmin: exporting data out of Garmin Connect",
+                         url: URL(string: "https://support.garmin.com/en-US/?faq=W1TvTPW8JZ6LfJSfK512Q8")!),
+            ],
+            related: [.whichWatch, .icuSetup, .stravaImport, .sourceClass, .uncertified]),
+
+        // One table, so the question "will my watch work" has one place to be answered
+        // instead of being spread across five topics that each answer a third of it.
+        HelpTopic(
+            id: .whichWatch, section: .setup, title: "Which watches work with CleanJibe",
+            summary: "All of them, one way or another — and here is exactly what each one "
+                + "costs you.",
+            body: [
+                "CleanJibe analyses a recording, not a brand. Anything that can produce a "
+                + "GPS track of a session can be read, and every metric degrades gracefully "
+                + "rather than failing: a source that cannot answer a question leaves that "
+                + "number blank and says why, and nothing is ever guessed.",
+                "Two things separate the rows below. **Certified speed** means the file "
+                + "carried the receiver's own speed, measured fix by fix; where it did not, "
+                + "speed is worked out from the positions and every speed record is marked "
+                + "uncertified. **Pump strokes and takeoff effort** need a wrist "
+                + "accelerometer recorded during the session, which only the CleanJibe watch "
+                + "apps do — no Garmin profile, no Apple workout and no exported file has "
+                + "one.",
+            ],
+            items: [
+                .init(term: "Garmin, with the CleanJibe watch app",
+                      detail: "Everything: flights, turns, certified speed records, the wind "
+                          + "axis, pump strokes, failed takeoff attempts and "
+                          + "accelerometer-confirmed touchdowns. Sessions arrive through "
+                          + "intervals.icu, or over Bluetooth as a summary the moment you "
+                          + "stop."),
+                .init(term: "Garmin, with Garmin's own profile or another app",
+                      detail: "Everything except pump strokes and takeoff effort. Speed "
+                          + "records certify. Get the sessions in through intervals.icu, or "
+                          + "export the FIT from connect.garmin.com on a computer."),
+                .init(term: "Apple Watch",
+                      detail: "Record with Apple's Workout app — Surfing, Water Sports or "
+                          + "Sailing — and import from Health; or use the CleanJibe watch "
+                          + "app, which adds the wrist accelerometer and hands the recording "
+                          + "straight to the phone. Speed records certify either way."),
+                .init(term: "Polar, Suunto, COROS and the rest",
+                      detail: "Two ways in: connect the watch to intervals.icu once and let "
+                          + "CleanJibe sync, or export one session from the phone app and "
+                          + "share it in. A FIT certifies its speed records; a GPX or a TCX "
+                          + "does not. No accelerometer either way."),
+                .init(term: "Anything that ends up on Strava",
+                      detail: "Connect Strava and pick the sessions. Strava hands over "
+                          + "positions, altitude and heart rate but no speed channel, so "
+                          + "those records are uncertified — worth knowing before you choose "
+                          + "this door over intervals.icu for the same session."),
+                .init(term: "A phone in a pocket, or no watch at all",
+                      detail: "Any app that records a GPX of your session works: AirDrop it, "
+                          + "mail it to yourself, or share it in. Positions only, so "
+                          + "uncertified speed records — but the flights, the turns and the "
+                          + "map are all there."),
+            ],
+            related: [.shareFromWatchApp, .icuSetup, .appleWorkoutApp, .stravaImport,
+                      .sourceClass, .uncertified]),
 
         HelpTopic(
             id: .icuTroubleshooting, section: .setup, title: "When the sync does not work",
@@ -889,13 +1071,15 @@ public enum HelpCatalog {
                 .init(term: "A GPX or TCX, or any file with no speed channel",
                       detail: "These imports work: the track, the flights, every turn with "
                           + "its verdict, the wind axis. Polar, Suunto and Coros sessions "
-                          + "usually arrive as one of the two, through intervals.icu. A GPX "
-                          + "never carries a speed channel and a TCX sometimes does; without "
-                          + "one, speed is estimated from positions and the speed records are "
-                          + "marked uncertified. Neither format carries an accelerometer, so "
-                          + "pump strokes and takeoff effort are missing either way."),
+                          + "usually arrive as one of the two, through intervals.icu or the "
+                          + "share sheet. A GPX never carries a speed channel and a TCX "
+                          + "sometimes does; without one, speed is estimated from positions "
+                          + "and the speed records are marked uncertified. A session imported "
+                          + "from Strava is this case as well: Strava hands over positions "
+                          + "and no speed channel. Neither format carries an accelerometer, "
+                          + "so pump strokes and takeoff effort are missing either way."),
             ],
-            related: [.uncertified, .divergence, .engineVersion]),
+            related: [.uncertified, .divergence, .engineVersion, .whichWatch, .stravaImport]),
 
         HelpTopic(
             id: .divergence, section: .quality,
