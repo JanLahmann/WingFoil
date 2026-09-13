@@ -203,8 +203,11 @@ public struct IcuClient: Sendable {
         }
     }
 
-    /// The original uploaded file, unwrapped to FIT bytes (gzip / ZIP / plain all handled).
-    public func originalFit(activityID: String) async throws -> Data {
+    /// The original uploaded file, unwrapped to recording bytes (gzip / ZIP / plain all
+    /// handled). Not necessarily a FIT: intervals.icu hands back what the device uploaded,
+    /// and a Polar, Suunto or Coros app leaves a GPX or a TCX there. `TrackParser` reads
+    /// whichever of the three arrived.
+    public func originalRecording(activityID: String) async throws -> Data {
         let url = baseURL.appendingPathComponent("activity/\(activityID)/file")
         return try IcuPayload.unwrap(try await get(url))
     }

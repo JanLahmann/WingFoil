@@ -4,23 +4,27 @@ import ZIPFoundation
 
 /// Container sniffing + unwrapping for downloaded activity files.
 ///
-/// `GET /api/v1/activity/{id}/file` hands back whatever the device uploaded, in whatever
-/// wrapper intervals.icu kept: a plain FIT, a gzip stream, or a ZIP holding the FIT
-/// (Garmin's GDPR export nests ZIPs inside ZIPs). Mirrors `lab/tools/download_icu.py:unwrap`.
+/// `GET /api/v1/activity/{id}/file` hands back **whatever the device uploaded**, in whatever
+/// wrapper intervals.icu kept: a plain recording, a gzip stream, or a ZIP holding it
+/// (Garmin's GDPR export nests ZIPs inside ZIPs). And what the device uploaded is not always
+/// a FIT — a Polar, Suunto or Coros app syncing into intervals.icu commonly leaves a GPX or
+/// a TCX, and all three are formats this engine reads. So the sniff is for *a recording*
+/// rather than for a FIT, and the parser is chosen from the same bytes further down
+/// (`TrackParser`). Mirrors `lab/tools/download_icu.py:unwrap`.
 public enum IcuPayload {
 
     public enum Error: Swift.Error, Equatable, CustomStringConvertible {
         case empty
-        case notAFitFile(prefix: String)
-        case zipContainsNoFit
+        case notARecording(prefix: String)
+        case zipContainsNoRecording
         case unreadableZip
         case gzipFailed
 
         public var description: String {
             switch self {
             case .empty: "empty payload"
-            case .notAFitFile(let p): "not a FIT file (header \(p))"
-            case .zipContainsNoFit: "ZIP contains no .fit"
+            case .notARecording(let p): "not a FIT, GPX or TCX file (header \(p))"
+            case .zipContainsNoRecording: "ZIP contains no .fit, .gpx or .tcx"
             case .unreadableZip: "unreadable ZIP"
             case .gzipFailed: "gzip decompression failed"
             }
@@ -32,6 +36,12 @@ public enum IcuPayload {
         guard data.count >= 12 else { return false }
         let start = data.startIndex
         return data[(start + 8)..<(start + 12)].elementsEqual(Array(".FIT".utf8))
+    }
+
+    /// Any of the three recording formats, by content. The one question `unwrap` asks, and
+    /// the same three tests `TrackParser.format` runs to pick a parser.
+    public static func isRecording(_ data: Data) -> Bool {
+        isFit(data) || TcxSessionParser.isTcx(data) || GpxSessionParser.isGpx(data)
     }
 
     public static func isGzip(_ data: Data) -> Bool {
@@ -46,30 +56,48 @@ public enum IcuPayload {
         return data[start] == 0x50 && data[start + 1] == 0x4b   // "PK"
     }
 
-    /// Unwrap a single-activity payload down to FIT bytes. Gzip is decompressed, a ZIP
-    /// yields its first `.fit` entry, plain FIT passes through; anything else throws.
+    /// Extensions a ZIP may hold a recording under, **best first**. An export that holds the
+    /// FIT and a GPX of the same ride side by side is a real shape, and the FIT is the better
+    /// source of the two, so the order is a preference rather than a list.
+    static let recordingSuffixes = [".fit", ".tcx", ".gpx"]
+
+    /// Unwrap a single-activity payload down to recording bytes. Gzip is decompressed, a ZIP
+    /// yields its first FIT / TCX / GPX entry, a plain recording passes through; anything
+    /// else throws. Which of the three it turned out to be is deliberately not reported: the
+    /// bytes answer that again at `TrackParser`, and a caller carrying a stale opinion about
+    /// a format is exactly the drift deciding everything from content exists to avoid.
     public static func unwrap(_ data: Data) throws -> Data {
         guard !data.isEmpty else { throw Error.empty }
         var payload = data
         if isGzip(payload) { payload = try Gzip.decompress(payload) }
         if isZip(payload) {
-            guard let fit = try firstFit(inZip: payload) else { throw Error.zipContainsNoFit }
-            payload = fit
+            guard let found = try firstRecording(inZip: payload) else {
+                throw Error.zipContainsNoRecording
+            }
+            payload = found
         }
-        guard isFit(payload) else {
-            throw Error.notAFitFile(prefix: hexPrefix(payload))
+        guard isRecording(payload) else {
+            throw Error.notARecording(prefix: hexPrefix(payload))
         }
         return payload
     }
 
-    /// First `.fit` entry of a ZIP (recursing into nested ZIPs), or nil when there is none.
-    static func firstFit(inZip data: Data, depth: Int = 0) throws -> Data? {
-        for entry in try zipEntries(data) where entry.name.lowercased().hasSuffix(".fit") {
-            return entry.data
+    /// First recording entry of a ZIP (recursing into nested ZIPs), or nil when there is
+    /// none. Named entries are tried in `recordingSuffixes` order before any recursion, so a
+    /// FIT at the top level beats a GPX one archive down.
+    static func firstRecording(inZip data: Data, depth: Int = 0) throws -> Data? {
+        let entries = try zipEntries(data)
+        for suffix in recordingSuffixes {
+            if let hit = entries.first(where: { $0.name.lowercased().hasSuffix(suffix)
+                                                && !ZipWalker.isNoise($0.name) }) {
+                return hit.data
+            }
         }
         guard depth < ZipWalker.maxDepth else { return nil }
-        for entry in try zipEntries(data) where isZip(entry.data) {
-            if let nested = try firstFit(inZip: entry.data, depth: depth + 1) { return nested }
+        for entry in entries where isZip(entry.data) {
+            if let nested = try firstRecording(inZip: entry.data, depth: depth + 1) {
+                return nested
+            }
         }
         return nil
     }

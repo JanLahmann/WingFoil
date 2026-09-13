@@ -8,6 +8,11 @@ import Foundation
 public enum TrackFormat: String, Sendable, CaseIterable {
     case fit
     case gpx
+    /// Garmin's Training Center Database v2 — how a Polar, Suunto or Coros session usually
+    /// reaches CleanJibe through intervals.icu. The one format that is not one input class:
+    /// with `Extensions/TPX/Speed` it is class (b) and its records certify, without it class
+    /// (c) like a GPX (`TcxSessionParser`).
+    case tcx
     /// The CleanJibe watch container (`docs/watch-session-schema.md`) — what the watchOS app
     /// hands the phone over `WCSession.transferFile`. Named for the extension it is stored
     /// under rather than for the watch, because like the other two this is a *format* and the
@@ -20,8 +25,8 @@ public enum TrackFormat: String, Sendable, CaseIterable {
 
 /// The single door every recording comes through (engine 0.9.0).
 ///
-/// Before GPX there was one parser and every caller named it. Now there are two, and the
-/// choice between them is a property of the *file* rather than of the caller — so it is
+/// Before GPX there was one parser and every caller named it. Now there are several, and
+/// the choice between them is a property of the *file* rather than of the caller — so it is
 /// made here, once, and nothing downstream of `RawTrack` + `SourceCapabilities` knows or
 /// needs to know which door a track came in by. That is the whole point of the input-class
 /// split (docs/plan.md §3.3): the pipeline degrades on capabilities, not on formats.
@@ -30,17 +35,21 @@ public enum TrackFormat: String, Sendable, CaseIterable {
 public enum TrackParser {
 
     /// FIT until the bytes say otherwise. The FIT signature (`.FIT` at byte 8) is the
-    /// stronger test, but the other two announce themselves in their first four bytes —
-    /// `CJWS` for a watch container, a leading `<` for a GPX — so both go first and FIT
-    /// stays the fallback it has always been.
+    /// stronger test, but the others announce themselves at the very front of the file —
+    /// `CJWS` for a watch container, a leading `<` plus a root element for the two XML
+    /// formats — so they all go first and FIT stays the fallback it has always been. TCX is
+    /// tested before GPX only because both start with `<`; their root elements are
+    /// unambiguous, so the order is a convention rather than a tie-break.
     public static func format(_ data: Data) -> TrackFormat {
         if WatchSessionContainer.isContainer(data) { return .watch }
+        if TcxSessionParser.isTcx(data) { return .tcx }
         return GpxSessionParser.isGpx(data) ? .gpx : .fit
     }
 
     public static func parse(data: Data) throws -> RawTrack {
         switch format(data) {
         case .gpx: try GpxSessionParser.parse(data: data)
+        case .tcx: try TcxSessionParser.parse(data: data)
         case .watch: try WatchSessionParser.parse(data: data)
         case .fit: try FitSessionParser.parse(data: data)
         }
