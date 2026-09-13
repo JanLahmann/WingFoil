@@ -58,6 +58,15 @@
             <iq:product id="d2mach1"/>
             <iq:product id="d2mach2"/>
             <iq:product id="descentmk343mm"/>
+            <iq:product id="venu2"/>
+            <iq:product id="venu2s"/>
+            <iq:product id="venu2plus"/>
+            <iq:product id="venu3"/>
+            <iq:product id="venu3s"/>
+            <iq:product id="vivoactive5"/>
+            <iq:product id="vivoactive6"/>
+            <iq:product id="instinct3amoled45mm"/>
+            <iq:product id="instinct3amoled50mm"/>
         </iq:products>
         <iq:permissions>
             <iq:uses-permission id="Communications"/>

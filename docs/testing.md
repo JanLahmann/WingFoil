@@ -906,6 +906,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    | `fenix7s` | 240 px MIP | the narrowest shipped |
    | `epix2pro42mm` | 390 px AMOLED | the size added with Tier A (0.9.4) — also marq2, marq2aviator, descentmk343mm, fr57042mm |
    | `fr255` | 260 px MIP | the smallest memory tier (524 KB) **and** the Forerunner font set |
+   | `venu3` | 454 px AMOLED, Venu font set | 0.9.10: the Venu / vivoactive / Instinct 3 AMOLED families — touch-first, two buttons, their own fonts. Their first run found the hero fitter's half-pixel rounding. Also worth a run: `venu2s` (360 px, the smallest AMOLED glass shipped) |
 
    The layout suite reads its canvas from `System.getDeviceSettings().screenWidth`, so the same
    assertions are genuinely different measurements per device, and every finding that has ever
