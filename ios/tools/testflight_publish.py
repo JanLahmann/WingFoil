@@ -27,28 +27,26 @@ BASE = "https://api.appstoreconnect.apple.com/v1"
 
 WHATS_NEW = """New here? cleanjibe.org/start — a 20-minute test of the watch routes, and where to send feedback.
 
-0.15.0 (build 41) — the session video, the iPad, and a wider way in.
+0.15.0 (build 43) — two fixes from the first day of build 41.
 
-- Export video: a session becomes a short film — the map draws itself along your track, the numbers land, and it shares like any other clip. Open a session → share → Export video.
-- CleanJibe is an iPad app now, with the library kept beside the session on a big screen; the same build runs on an Apple silicon Mac.
-- Send map to watch: the phone draws the shore of your spot and pushes it to a Garmin running CleanJibe 0.9.10, so the live map has ground under the breadcrumb. Settings → Garmin watch.
-- Imports take GPX and TCX as well as FIT, so Polar, Suunto and Coros sessions come in through intervals.icu. Without a speed channel the speed records are estimated and marked uncertified.
-- Import from Strava: connect your account under Import and pick the sessions. Positions only, so speed records are uncertified — and single-rider until Strava approves the app.
-- Analysis engine 0.18.0: the pump rung now asks the minimum foil speed, and every touchdown and fall says why it ended that way on the turn page — which also scrolls properly again.
+- Send map to watch works on every CleanJibe watch build: the phone now finds the one you have installed (release, public beta or dev) instead of assuming the release one. "Failure_AppNotFound" is gone. Settings → Garmin watch → Send map to watch, on a watch running CleanJibe 0.9.10.
+- The turn page scrolls from anywhere: a vertical finger on a strip scrolls the page, a sideways one scrubs the playhead, a tap places it. The small window words no longer overprint each other.
 
-Please check: does a video export finish, and does it look right on your own session? On an iPad, does any screen read as a stretched phone?"""
+Still in from build 41: Export video, iPad, GPX/TCX and Strava imports, analysis engine 0.18.0.
+
+Please check: does a vertical swipe on the speed strip scroll the page every time?"""
 
 # What the dev variant's testers are told instead. It is a different build of the same version,
 # so saying which one this is matters more than the release notes do.
 WHATS_NEW_INTERNAL = """New here? cleanjibe.org/start — a 20-minute test of the watch routes, and where to send feedback.
 
-Dev build 42 (tuning). Same 0.15.0 as public build 41, plus Settings → Tuning: the analysis thresholds on sliders, and the workbench on the turn page.
+Dev build 44 (tuning). Same 0.15.0 as public build 43, plus Settings → Tuning: the analysis thresholds on sliders, and the workbench on the turn page.
 
 Settings → About says "· dev" on this one. Moving any slider re-analyses your library with the new thresholds and marks every screen that shows a tuned number with a "tuned thresholds" chip — those numbers are not comparable with anyone else's. "Reset all" puts the published defaults back.
 
-New in this pair, same as the public build: the session video export, iPad support, Send map to watch, GPX and TCX imports, and analysis engine 0.18.0 — the pump rung asks the minimum foil speed and every touchdown says why. The turn page scrolls properly again.
+Fixed since 42, same as the public build: Send map to watch finds the installed watch build (the dev-beta one included), so Failure_AppNotFound is gone; the turn page scrolls from a vertical finger on any strip, and the window words on wide workbench windows no longer overprint.
 
-Please check: does a threshold you believe in actually improve the jibe count on your own sessions?"""
+Please check: does the map push reach a watch running the 0.9.10 dev build?"""
 
 
 def tok():
