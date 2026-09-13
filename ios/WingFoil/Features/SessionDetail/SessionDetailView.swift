@@ -137,6 +137,8 @@ struct SessionDetailView: View {
                     ProgressView("Analyzing…")
                         .frame(maxWidth: .infinity, minHeight: 200)
                 }
+                // With the session in it, so the mail names this afternoon by itself.
+                FeedbackFooter(session: row)
             }
             .padding(.horizontal)
             .padding(.bottom, 32)

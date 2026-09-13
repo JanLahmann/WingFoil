@@ -76,6 +76,7 @@ struct GearView: View {
                          + "it just drops out of the pickers. Swipe to delete removes the link "
                          + "for good.")
                 }
+                FeedbackFooter.section
             }
             // Same measure as the library list: a form of named things, in the middle of
             // the window rather than stretched across it.

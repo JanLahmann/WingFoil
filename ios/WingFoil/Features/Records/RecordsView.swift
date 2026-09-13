@@ -99,6 +99,7 @@ struct RecordsView: View {
                              + "are not claims its speed channel makes.")
                     }
                 }
+                FeedbackFooter.section
             }
             .listStyle(.insetGrouped)
             // Two tables of "a number, a session and a date". Left to fill an iPad they put
