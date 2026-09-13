@@ -56,7 +56,7 @@ enum FeedbackMail {
         // the dev build may claim any: a public build with a leftover tuning blob in its
         // defaults is running the published thresholds, and saying otherwise would send a
         // reader looking for a difference that is not there.
-        let tuned = store.tuning.changedCount
+        let tuned = store.tuning.totalChangedCount
         #else
         let isDev = false
         let tuned = 0
