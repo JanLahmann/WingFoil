@@ -1828,6 +1828,18 @@ final class SessionStore {
         set { UserDefaults.standard.set(newValue, forKey: "lastCompanionCard") }
     }
 
+    /// The watch build tag off the last card (`CompanionSummary.appVersion`,
+    /// `APP_MINOR * 256 + FIT schema`), or nil when none has ever arrived.
+    ///
+    /// Remembered for one reader — the beta feedback mail, which answers "which watch build
+    /// produced these numbers" without asking the rider to go and look. The link itself
+    /// cannot say: it knows which watch is paired, not what is installed on it, and the card
+    /// is the only thing that ever says so out loud.
+    var lastCardWatchAppVersion: Int? {
+        get { UserDefaults.standard.object(forKey: "lastCompanionCardApp") as? Int }
+        set { UserDefaults.standard.set(newValue, forKey: "lastCompanionCardApp") }
+    }
+
     /// The wind the rider last pushed, remembered so the next push starts where the last
     /// one left off (the wind at a spot rarely changes by 180° between sessions).
     var windToSend: Int {
@@ -1890,6 +1902,7 @@ final class SessionStore {
                 break
             }
             lastCardAt = Date()
+            lastCardWatchAppVersion = card.appVersion
             await load()
         } catch {
             errorMessage = "Could not store the session your watch sent: \(error)"

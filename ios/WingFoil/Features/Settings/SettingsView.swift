@@ -88,11 +88,18 @@ struct SettingsView: View {
             } label: {
                 Label("What the numbers mean", systemImage: "questionmark.circle")
             }
+            // The third row is the other direction: the two above answer the rider, this one
+            // asks him. It sits here rather than in About because a rider who cannot find an
+            // answer in Help is one tap from telling us what he was looking for.
+            FeedbackMailRow(title: "Send feedback")
         } footer: {
             Text("The welcome screen again — what the app measures, and the example "
                  + "session. Then plain-language explanations of every metric: foil %, the "
                  + "GP3S record set, turn outcomes, takeoff attempts, the wind axis and "
-                 + "what an uncertified record means.")
+                 + "what an uncertified record means.\n\n"
+                 + "Feedback opens a mail to \(FeedbackReport.recipient) with this build, "
+                 + "this phone and your library's shape already written in. Nothing is sent "
+                 + "until you tap Send, and you can edit every line of it first.")
         }
     }
 
