@@ -214,6 +214,7 @@ final class SessionStore {
                                        archive: SessionArchive(root: archiveRoot))
         ingestor.windConfig.defaultTurnType = Self.storedDefaultTurnType
         ingestor.riderDiscipline = Self.storedRiderDiscipline
+        ingestor.windsurfEnabled = Self.storedWindsurfEnabled
         #if TUNING
         // Dev build only. In the shipping app this assignment does not exist, so
         // `ingestor.tuning` stays empty, the engine runs on the published defaults, and a
@@ -795,6 +796,40 @@ final class SessionStore {
     // where it does not; the second of those is a guess, and this section is the app owning up
     // to it. See docs/presentation.md, "Confirming the discipline on import".
 
+    static let windsurfEnabledKey = "windsurfEnabled.v1"
+
+    static var storedWindsurfEnabled: Bool {
+        UserDefaults.standard.bool(forKey: windsurfEnabledKey)
+    }
+
+    /// **Settings → Analysis → "Windsurf (experimental)"** — the one switch every
+    /// windsurf-facing control hangs off, off on a fresh install (Jan, 13 Sep 2026:
+    /// *"windsurf should be hidden. Maybe enable with a switch"*).
+    ///
+    /// With it off this is the wingfoil-only app it was before the preset existed: no "I
+    /// mostly ride" row, no "Analyse as" card, no review sheet, no library banner, no `?`, no
+    /// windsurf topic on the Help index, and imports that are wingfoil and confirmed.
+    ///
+    /// **It hides controls and nothing else.** A session somebody already analysed as windsurf
+    /// keeps its preset, its numbers, its badge and its amber chip — turning a switch off is
+    /// not the rider saying that afternoon was a wingfoil afternoon, so nothing is re-derived
+    /// in either direction. Turning it back on does not raise a review either: the sessions
+    /// imported while it was off were written down as confirmed, and the rider who wants one
+    /// of them read differently has "Analyse as" on the session that matters.
+    ///
+    /// A stored property rather than a computed read of `UserDefaults`, because this one is
+    /// observed: flipping it has to redraw the Settings rows it hides, in place.
+    private(set) var windsurfEnabled = SessionStore.storedWindsurfEnabled
+
+    func setWindsurfEnabled(_ enabled: Bool) {
+        guard enabled != windsurfEnabled else { return }
+        windsurfEnabled = enabled
+        UserDefaults.standard.set(enabled, forKey: Self.windsurfEnabledKey)
+        ingestor.windsurfEnabled = enabled
+        // A sheet raised a moment ago is a question about a feature that is now off.
+        if !enabled { disciplineReview = nil }
+    }
+
     static let riderDisciplineKey = "riderDiscipline"
 
     /// **Settings → "I mostly ride"**: the preset an imported session gets when its recording
@@ -838,7 +873,8 @@ final class SessionStore {
 
     /// Everything nobody has confirmed, newest first.
     var disciplineToReview: [SessionRow] {
-        DisciplineReview.pending(in: sessions, dismissed: dismissedDisciplineIDs)
+        DisciplineReview.pending(in: sessions, dismissed: dismissedDisciplineIDs,
+                                 windsurfEnabled: windsurfEnabled)
     }
 
     /// The library's quiet banner: "3 new sessions analysed as Wingfoil".

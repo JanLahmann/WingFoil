@@ -41,16 +41,29 @@ struct HelpIndexPage: View {
 private struct HelpIndexList: View {
     var initialTopic: HelpTopicID?
 
+    @Environment(SessionStore.self) private var store
+
     @State private var query = ""
     @State private var selected: HelpTopicID?
 
+    /// What this index may list: the catalogue, minus the topics a feature switch is hiding
+    /// (`HelpCatalog.indexTopics`). The list a rider browses is a menu, and a topic on it is
+    /// an offer — "Windsurf (experimental)" is not one until he has turned it on in Settings.
+    /// The page itself stays reachable: a `?` on a session that *is* read as windsurf still
+    /// opens it, which is why the filter is here and not in the catalogue.
+    private var visible: [HelpTopic] {
+        HelpCatalog.indexTopics(windsurfEnabled: store.windsurfEnabled)
+    }
+
     private var sections: [(section: HelpSection, topics: [HelpTopic])] {
-        if query.trimmingCharacters(in: .whitespaces).isEmpty {
-            return HelpCatalog.sections.map { ($0, HelpCatalog.topics(in: $0)) }
-        }
-        let hits = HelpCatalog.search(query)
+        let listed = Set(visible.map(\.id))
+        // Search reads the whole catalogue, so it is filtered by the same set — typing
+        // "windsurf" must not advertise the feature the list is hiding.
+        let matched = query.trimmingCharacters(in: .whitespaces).isEmpty
+            ? visible
+            : HelpCatalog.search(query).filter { listed.contains($0.id) }
         return HelpCatalog.sections.compactMap { section in
-            let topics = hits.filter { $0.section == section }
+            let topics = matched.filter { $0.section == section }
             return topics.isEmpty ? nil : (section, topics)
         }
     }

@@ -121,6 +121,13 @@ struct LibraryView: View {
             // `UI_OPEN_SESSION=latest` takes the newest; any other value is matched
             // against the archived filename (e.g. `UI_OPEN_SESSION=ciq`).
             .task {
+                // Before the import, not after it: the review question is asked *at* import
+                // time (`SessionIngestor.windsurfEnabled` writes the row down as confirmed
+                // while the switch is off), so a hook that wants the sheet has to turn the
+                // feature on before there is anything to ask about.
+                if ProcessInfo.processInfo.environment["UI_SHEET"] == "discipline" {
+                    store.setWindsurfEnabled(true)
+                }
                 if ProcessInfo.processInfo.environment["UI_IMPORT_FIXTURES"] == "1" {
                     await store.importFixtures()
                 }
