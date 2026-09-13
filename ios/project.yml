@@ -260,10 +260,26 @@ targets:
           - de.lahmann.wingfoil.refresh
         # Storyboard-free launch screen: the tile mark centred on the brand navy, so the
         # cold-start frame is the app's own colour instead of a white flash.
+        #
+        # `SplashMark` rather than `LaunchMark`, and the difference is the point of the whole
+        # asset. iOS draws this image at its NATURAL POINT SIZE (measured on the simulator:
+        # a 512 px 1× asset came out 512 pt wide, cropped by both edges of a 402 pt phone),
+        # centred in the safe area. `SplashMark` is 140 / 280 / 420 px at 1×/2×/3×, so it is
+        # 140 pt on every device — which is exactly where and how big `SplashView` draws it
+        # the moment our own code takes over, so the handover from this frame to that one
+        # moves nothing. `LaunchMark` stays what it always was, the artwork at full
+        # resolution for the share card, the QR's centre and the welcome screen.
         UILaunchScreen:
           UIColorName: LaunchBackground
-          UIImageName: LaunchMark
+          UIImageName: SplashMark
           UIImageRespectsSafeAreaInsets: true
+        # The clock and the battery, read against that navy. This key is the *initial* status
+        # bar style and it is what the launch screen shows; `SplashView` asks for the same
+        # with `preferredColorScheme(.dark)`, so the handover does not flip the clock from
+        # black to white. It changes nothing afterwards — `UIViewControllerBasedStatusBarAppearance`
+        # defaults to YES, so every screen in the app still decides for itself and the library
+        # keeps its black clock on white.
+        UIStatusBarStyle: UIStatusBarStyleLightContent
         UIApplicationSupportsIndirectInputEvents: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
