@@ -279,7 +279,14 @@ extension ConnectIQCompanionLink: IQAppMessageDelegate {
     /// app: `CompanionSummary` either produces a whole valid card or throws, so nothing
     /// downstream ever holds a half-trusted payload. A rejection is counted and dropped in
     /// silence — the FIT is still coming, and it is the one that matters.
-    nonisolated func received(_ message: Any!, from app: IQApp!) {
+    ///
+    /// The selector is spelled out because the SDK does not check for it: the protocol
+    /// method is `@optional`, so a Swift method whose name only *nearly* matches compiles
+    /// without a word and the app aborts with "unrecognized selector" the first time the
+    /// watch says anything. That first time was build 48, 13 Sep 2026, seconds after the
+    /// phone started listening on the app id the watch actually has.
+    @objc(receivedMessage:fromApp:)
+    nonisolated func receivedMessage(_ message: Any!, from app: IQApp!) {
         guard let card = try? CompanionSummary(payload: message) else {
             Task { @MainActor in self.rejectedCards += 1 }
             return
