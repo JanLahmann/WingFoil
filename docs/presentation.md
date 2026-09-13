@@ -2056,19 +2056,50 @@ badge, on the session page and in the library row. Beside it and never instead o
 says what the *recording* is, the chip says how it is being read and that the reading is not one
 anybody has checked yet.
 
-**The badge.** Every session carries one — `Wingfoil`, `Windsurf foil`, `Windsurf fin`, or the
-word the recording's own `discipline` field used (`Kitefoil`). Three rungs, the engine's own
-(`SessionDisplay.badge`): the rider's answer, then the recording's field, then the preset the
-import settled on. The FIT **sport code is no longer the fallback** — it was, and it is the one
+**The badge.** `Wingfoil`, `Windsurf foil`, `Windsurf fin`, or the word the recording's own
+`discipline` field used (`Kitefoil`). Three rungs, the engine's own (`SessionDisplay.badge`):
+the rider's answer, then the recording's field, then the preset the import settled on. The
+session page carries it always; **the library row carries it only when it says something**
+(`DisciplineReview.showsBadge`) — with the switch below off, a library of one rig spelling
+`Wingfoil` on every row is a column of noise, while the rows that disagree with it (a session
+read as windsurf back when the controls were visible, a recording that names its own rig) keep
+theirs. The FIT **sport code is no longer the fallback** — it was, and it is the one
 piece of evidence that is systematically wrong here, so every `…-windsurfen…` afternoon in
 Jan's corpus wore a `Windsurf` badge over a wingfoil session's numbers. The code still appears,
 once, as a hint on the review row below, where it is shown as what a watch said rather than as
 what the session is.
 
+### Behind one switch — Settings → Analysis → "Windsurf (experimental)"
+
+**Off on a fresh install** (Jan, 13 Sep 2026: *"windsurf should be hidden. Maybe enable with a
+switch"*). One `UserDefaults` bool, `windsurfEnabled.v1`, exposed on the store
+(`SessionStore.windsurfEnabled`) so the two kit-facing rules read the same flag —
+`DisciplineReview.pending` and `…showsBadge` / `…showsGuessMark` — and its footer is the honest
+version of *experimental*, in the order a rider needs it: "Analyse sessions as windsurf foil or
+fin. Untested: jibes and tacks work, pumping is off, planing thresholds are provisional."
+
+With it **off** the app is the wingfoil-only one it was before the preset existed: no "I mostly
+ride" row (the rider default is wingfoil, whatever a stored value from earlier says, and the
+Analysis footer drops the paragraph that explained it), no "Analyse as" card on the Log tab, no
+review sheet after an import, no library banner, no `?` on any row, and no **Windsurf
+(experimental)** topic on the Help index or in its search (`HelpCatalog.indexTopics` — the topic
+stays *in* the catalogue, so a `?` on a windsurf session and any deep link still open it).
+Imports are wingfoil and are written down as **confirmed** rather than as guesses
+(`SessionIngestor.windsurfEnabled`); a recording that states its own discipline is still
+believed, because that is the file talking and not a setting.
+
+**It hides controls and nothing else.** A session already analysed as windsurf keeps its
+preset, its numbers, its badge and its amber chip — switching the switch off is not the rider
+saying that afternoon was a wingfoil afternoon, so nothing is re-derived in either direction.
+Nor does turning it back on raise a review of everything imported meanwhile: those rows are
+confirmed, and the rider who wants one of them read differently has "Analyse as" on the session
+that matters. `UI_SHEET=discipline` turns the switch on before it imports the fixtures, because
+the question is asked at import time.
+
 ### Where the override lives
 
-**Session → Log → "Analyse as"**, a three-way segmented control (Wingfoil / Windsurf foil /
-Windsurf fin) under the Recording card, with the footnote:
+**Session → Log → "Analyse as"** — with the switch above on — a three-way segmented control
+(Wingfoil / Windsurf foil / Windsurf fin) under the Recording card, with the footnote:
 
 > Experimental — windsurf analysis is untested; jibes and tacks work, pumping is off, planing
 > thresholds are provisional. Tell us what you see.
@@ -2079,7 +2110,8 @@ offered a choice he has no way to evaluate. Log is the tab about the *record* ra
 riding, which is the question this row asks — not "what did you do", but "how should this be
 read". Changing it re-derives **this session and nothing else** (docs/algorithms.md,
 "Disciplines"); the anchor is `discipline`, and `UI_DISCIPLINE=windsurfFin` sets it for a
-screenshot. Help: **Windsurf (experimental)**, under "Where the numbers come from".
+screenshot. Help: **Windsurf (experimental)**, under "Where the numbers come from" — on the
+Help index only while the switch is on, and reachable from this card's `?` either way.
 
 **The web has no override.** There is no per-session settings place on the session page to hang
 one on, so a session is read in whatever preset its `discipline` developer field asked for —
@@ -2096,14 +2128,16 @@ nothing, dressed up as `windsurfing`, which is the profile ADR-004 files a wingf
 under. So the import *states* a preset and then owns up to having guessed it.
 
 **The rider default.** Settings → Analysis → **"I mostly ride"**, a three-way picker (Wingfoil
-· Windsurf foil · Windsurf fin) above "Most of my turns are" — which rig, then which turn. It
-decides the preset for every imported session whose source does not say, and it changes nothing
+· Windsurf foil · Windsurf fin) above "Most of my turns are" — which rig, then which turn. It is
+on the screen only while the windsurf switch is on (a picker with one answer is a row that takes
+up space to say nothing), and with the switch off the default *is* wingfoil, whatever a value stored
+while it was on says. It decides the preset for every imported session whose source does not say, and it changes nothing
 at all on a wingfoiler's phone: wingfoil is what the resolver already fell back to. It applies
 to **future imports only**, which the footer says out loud — declaring a habit is not a
 statement about any particular afternoon, and silently re-reading two years of sessions off a
 Settings row would be the app answering a question nobody asked.
 
-**The review step.** After an import the rider asked for — files, a ZIP, Apple Health, a
+**The review step**, and only with the switch on. After an import the rider asked for — files, a ZIP, Apple Health, a
 pull-to-refresh sync, a Strava import — a sheet lists what just landed with an unconfirmed
 preset: date · spot · source, the sport-code hint where there is one ("Filed as windsurfing —
 which is also how a Garmin files a wingfoil session"), and a three-way picker per row. Above
@@ -2123,14 +2157,16 @@ what was already done rather than asking a question, and opens the same sheet wh
 banner counts only sessions he has not skipped past; the `?` below outlives a skip, the banner
 does not.
 
-**Three badge states**, in the library row: `Wingfoil` (confirmed, or stated by the recording),
-`Wingfoil ?` (the preset came from the rider's default and nobody has said), and the amber
-`windsurf · experimental` chip beside either where the preset is a windsurf one. The `?` goes
-when he answers, whichever way he answers — agreeing is an answer. Its accessibility label
-spells it out: "Analysed as Wingfoil, not confirmed".
+**Three badge states**, in the library row with the switch on: `Wingfoil` (confirmed, or stated
+by the recording), `Wingfoil ?` (the preset came from the rider's default and nobody has said),
+and the amber `windsurf · experimental` chip beside either where the preset is a windsurf one.
+The `?` goes when he answers, whichever way he answers — agreeing is an answer. Its
+accessibility label spells it out: "Analysed as Wingfoil, not confirmed". With the switch off
+there is no `?` at all and no `Wingfoil` capsule — only a badge that disagrees with wingfoil is
+drawn, and the chip stays wherever a windsurf preset is still in force.
 
 Storage is one column, `session.disciplineGuessed` (schema v15), false on every row that
-existed before the question was asked: a library imported under the old rule has been lived
+existed before the question was asked and on every row imported while the switch is off: a library imported under the old rule has been lived
 with, and a banner offering to review two years of afternoons is a chore, not a confirmation.
 `UI_SHEET=discipline` raises the sheet for a screenshot. Help: **Windsurf (experimental)**.
 
