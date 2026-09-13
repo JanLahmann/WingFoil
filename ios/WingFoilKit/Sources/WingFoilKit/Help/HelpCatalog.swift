@@ -107,6 +107,11 @@ public enum HelpAction: String, Sendable, Equatable {
 /// Where a topic sits in the Help index.
 public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
     case setup, foil, records, turns, takeoff, effort, conditions, sharing, quality
+    /// The beta test, last on purpose. It is not a metric and belongs under none of the
+    /// nine sections above; it is also the one topic whose content lives on the web, so
+    /// it sits at the bottom of the index where a reader lands after everything that
+    /// explains a number, rather than in front of them.
+    case beta
 
     public var id: String { rawValue }
 
@@ -121,6 +126,7 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
         case .conditions: "Conditions"
         case .sharing: "Sharing"
         case .quality: "Where the numbers come from"
+        case .beta: "The beta"
         }
     }
 
@@ -135,6 +141,7 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
         case .conditions: "wind"
         case .sharing: "square.and.arrow.up"
         case .quality: "checkmark.seal"
+        case .beta: "testtube.2"
         }
     }
 }
@@ -151,6 +158,7 @@ public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
     case windAxis
     case shareCard, replayClip, shareFit, riderAttribution
     case sourceClass, divergence, engineVersion
+    case betaGettingStarted
 
     public var id: String { rawValue }
 }
@@ -1110,6 +1118,38 @@ public enum HelpCatalog {
                 + "it can be dropped and rebuilt at any time from Settings.",
             ],
             related: [.sourceClass, .divergence]),
+
+        // MARK: The beta
+        //
+        // The only topic that deliberately does not finish its own subject. The test it
+        // describes runs across three apps and two stores, changes whenever a route does,
+        // and half of it happens before CleanJibe is even open — so the steps live on the
+        // web, where they can be fixed the same day, and this topic's job is to say what
+        // the test is for, that it takes twenty minutes on land, and where it is.
+        HelpTopic(
+            id: .betaGettingStarted, section: .beta, title: "Getting started (beta test)",
+            summary: "A 20-minute test on land, and where to send what you find.",
+            body: [
+                "CleanJibe is a beta, and the most useful thing a new tester can do is the "
+                + "short test on land: record three to five minutes on your watch — a walk "
+                + "or a bike ride, no wing and no wind — get it onto the phone, and see "
+                + "whether the session arrives and reads the way it should.",
+                "It takes about twenty minutes and it is worth doing before your next real "
+                + "session, because it separates \"my watch route is not set up\" from "
+                + "\"CleanJibe read my riding wrong\" — and those two are told apart by two "
+                + "completely different people.",
+                "The walkthrough is a web page rather than a screen in here: it covers all "
+                + "three ways in (Apple's Workout app, the CleanJibe watch app, and a Garmin "
+                + "through intervals.icu), it says what a working result looks like, and it "
+                + "carries the three places a report can go — a mail with the fields already "
+                + "filled in, TestFlight's own feedback, and the Connect IQ listing.",
+            ],
+            // Built from `Branding.site` rather than typed out, for the same reason the
+            // analyzer link above is: the hostname is one constant on this platform and a
+            // second copy of it is a second thing to forget.
+            links: [HelpLink(title: "Open \(Branding.site)/start",
+                             url: URL(string: Branding.siteURL + "/start")!)],
+            related: [.icuSetup, .appleWorkoutApp, .exampleSession]),
     ]
 
     /// Fast lookup by identifier. Total by construction — see `topic(_:)`.

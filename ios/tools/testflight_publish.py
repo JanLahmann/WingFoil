@@ -25,19 +25,27 @@ KEY_PATH = "/Users/majl/.appstoreconnect/private_keys/AuthKey_HZT9694JZ4.p8"
 APP = "6800401377"
 BASE = "https://api.appstoreconnect.apple.com/v1"
 
-WHATS_NEW = """0.15.0 - for Apple Watch riders.
+WHATS_NEW = """New here? cleanjibe.org/start — a 20-minute test of the watch routes, and where to send feedback.
 
-- Import from Apple Health: sessions you recorded with Apple's Workout app (Surfing, Water Sports or Sailing) come into the library with foil time, flights, turns, clean jibes and records. Import → Apple Health, or turn on automatic pickup in Settings.
-- The CleanJibe watch app gets a complication (tap the mark on your watch face to start a session) and Siri: "Start a CleanJibe session", "Stop my CleanJibe session".
-- Everything from 0.14.0 is still new to most of you: CPH beside JPH and TPH, the clean-jibe star on the map, session records, periods and the period share card.
+0.15.0 (build 41) — the session video, the iPad, and a wider way in.
 
-Please check: does a Health import look right next to a Garmin session? Does the complication start a session with one tap, and does Siri understand you?"""
+- Export video: a session becomes a short film — the map draws itself along your track, the numbers land, and it shares like any other clip. Open a session → share → Export video.
+- CleanJibe is an iPad app now, with the library kept beside the session on a big screen; the same build runs on an Apple silicon Mac.
+- Send map to watch: the phone draws the shore of your spot and pushes it to a Garmin running CleanJibe 0.9.10, so the live map has ground under the breadcrumb. Settings → Garmin watch.
+- Imports take GPX and TCX as well as FIT, so Polar, Suunto and Coros sessions come in through intervals.icu. Without a speed channel the speed records are estimated and marked uncertified.
+- Analysis engine 0.18.0: the pump rung now asks the minimum foil speed, and every touchdown and fall says why it ended that way on the turn page — which also scrolls properly again.
+
+Please check: does a video export finish, and does it look right on your own session? On an iPad, does any screen read as a stretched phone?"""
 
 # What the dev variant's testers are told instead. It is a different build of the same version,
 # so saying which one this is matters more than the release notes do.
-WHATS_NEW_INTERNAL = """Dev build (tuning). Same 0.15.0 as the public build, plus Settings → Tuning: the analysis thresholds on sliders.
+WHATS_NEW_INTERNAL = """New here? cleanjibe.org/start — a 20-minute test of the watch routes, and where to send feedback.
+
+Dev build 42 (tuning). Same 0.15.0 as public build 41, plus Settings → Tuning: the analysis thresholds on sliders, and the workbench on the turn page.
 
 Settings → About says "· dev" on this one. Moving any slider re-analyses your library with the new thresholds and marks every screen that shows a tuned number with a "tuned thresholds" chip — those numbers are not comparable with anyone else's. "Reset all" puts the published defaults back.
+
+New in this pair, same as the public build: the session video export, iPad support, Send map to watch, GPX and TCX imports, and analysis engine 0.18.0 — the pump rung asks the minimum foil speed and every touchdown says why. The turn page scrolls properly again.
 
 Please check: does a threshold you believe in actually improve the jibe count on your own sessions?"""
 

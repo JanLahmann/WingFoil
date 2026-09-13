@@ -31,10 +31,18 @@ text — the whole description was rewritten for the open beta.
 
 ### Description (live text)
 
+**One line ahead of the store:** the `NEW TO IT?` paragraph pointing at cleanjibe.org/start
+is written here first and goes into the Connect IQ form by hand at the next upload. It is the
+one deviation from this file's rule, and it is deliberate — the page it names is live now, and
+a listing that had it and a file that did not would be the wrong way round to get caught.
+Delete this note the day the store text matches.
+
 ```
 CleanJibe tells you what your wingfoil session actually did: how much of it you spent on the foil, how long each flight lasted, your speed records, and — for every turn — whether you flew through it, touched down, or fell in.
 
 OPEN BETA, FREE. Install and ride — no key, no account. It's a beta: tell us what's wrong and what's missing at cleanjibe.org/invite, or use Contact Developer on this page. The detection thresholds are still being tuned and may change between versions; they are published, with the reasoning, at github.com/JanLahmann/WingFoil.
+
+NEW TO IT? cleanjibe.org/start walks you through a 20-minute test on land — record a few minutes, get it onto your phone, see what you should see — and says exactly where to send what you find.
 
 ON THE WATER
 - Live foil state: it knows when the board is up on the foil, and counts every flight and touchdown while you ride.
