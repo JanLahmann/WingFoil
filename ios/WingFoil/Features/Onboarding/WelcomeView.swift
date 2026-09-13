@@ -59,6 +59,22 @@ struct WelcomeView: View {
             // supported phone the identity block alone is taller than the safe area.
             .scrollBounceBehavior(.basedOnSize)
         }
+        // A way out that looks like one. The three buttons all leave the screen, but the
+        // rider who opened it *again* from the menu is not choosing a way in, he is reading
+        // — and a page with no close control reads as a gate (Jan, 13 Sep 2026). Same
+        // answer as "Later": nothing is armed or loaded, the screen just goes.
+        .overlay(alignment: .topTrailing) {
+            Button(action: onLater) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Brand.paper.opacity(0.85))
+                    .frame(width: 34, height: 34)
+                    .background(Brand.paper.opacity(0.12), in: .circle)
+            }
+            .accessibilityLabel("Close")
+            .padding(.top, 10)
+            .padding(.trailing, 16)
+        }
         .foregroundStyle(Brand.paper)
         // The brand navy is dark whatever the phone is set to, so the status bar and every
         // system control on top of it have to be told.
