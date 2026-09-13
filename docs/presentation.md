@@ -2458,6 +2458,42 @@ takeoff effort** (was a wrist accelerometer recorded, which only the CleanJibe w
 | Anything that reaches Strava | Import → Strava | uncertified | no |
 | A phone in a pocket, any GPX | the share sheet | uncertified | no |
 
+## Start screen — the mark, held for two seconds
+
+**The phone opens on the brand, and the handover is invisible.** iOS draws `UILaunchScreen`
+(ios/project.yml) before a line of our code runs: the `SplashMark` asset on the
+`LaunchBackground` navy, and — measured on the simulator rather than assumed — it draws that
+image at its **natural point size, centred in the safe area**. The asset is therefore
+140 / 280 / 420 px at 1×/2×/3×, which puts a 140 pt mark at the centre of the safe area on
+every device, and `SplashView` opens with the same artwork at the same size in the same
+place. Nothing moves when our own first frame replaces the system's; the mark carries no
+shadow and no corner clip for exactly that reason, because a launch screen can draw neither.
+(`LaunchMark` is unchanged and still the full-resolution artwork the share card, the QR's
+centre mark and the welcome screen use.)
+
+Under the mark, and the only thing that moves — they fade up over 0.35 s — the wordmark
+**CleanJibe** and the share card's call to action *without its address*: "analyze your
+wingfoil sessions free". Same line, one source (`Branding.callToAction`), minus the
+`cleanjibe.org` that exists for a receiver who does not have the app yet.
+
+**It stays for max(2 s, the library).** Jan set the floor — *"Don't make it too short; can be
+2 seconds or so"* — and the second half of the rule is what makes it honest: a cold start
+still reading the library at the end of those two seconds goes on showing the brand rather
+than handing over to an empty list (on a simulator stuffed with fixtures that is a minute or
+more, by design). Then a **0.4 s crossfade** into Sessions — under Reduce Motion, a cut after
+the same hold. It is **cold start only**: the view is built once per process, so a return
+from the background shows nothing. It is one accessibility element labelled "CleanJibe", and
+it dismisses itself on a clock, so VoiceOver has one thing to say and nothing to escape. The
+simulator screenshot hooks switch it off outright — any `UI_` variable means an automated
+launch, the hold is 0 s and the splash is never built, so every existing shot is unchanged.
+
+**The watch has no splash, and the mark is simply on the start page.** A phone app opens into
+a library that takes a moment to read; a watch app opens into a button the rider is standing
+in the shallows waiting to press, and two seconds of brand there would be two seconds of
+nothing at the worst possible moment. So `StartView` wears the mark above its own name — the
+first thing seen, one lockup with the wordmark — and the GPS line and START are where they
+always were.
+
 ## iPad and Mac — one column, wider glass
 
 The iPhone app **is** the iPad app (`TARGETED_DEVICE_FAMILY: "1,2"` on the app and the widget
