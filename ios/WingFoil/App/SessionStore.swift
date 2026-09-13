@@ -735,6 +735,9 @@ final class SessionStore {
         await load()
         await refreshPersonalBests(celebrate: true)
         await writeNewSessionsToHealth()
+        // An import can promote a new spot into the watch's two slots — a first week at a
+        // new lake does exactly that. Cheap when it has not (`automaticPassIsWorthIt`).
+        await refreshWatchMapIfNeeded()
         return summary
     }
 
@@ -1914,6 +1917,71 @@ final class SessionStore {
         companionState = companion.state
         status = companionState.headline
         return true
+    }
+
+    // MARK: The map snapshot
+
+    /// The two spots the watch would get a map of, most-ridden first. The settings row
+    /// names them, so the rider can see *which* ground he is about to send.
+    var watchMapSpots: [SpotAggregate] { WatchMapSender.targets(from: spots) }
+
+    /// The last send's one line — "sent 2.1 KB · 14:02", "Already on the watch · 14:02", or
+    /// the failure. Kept in defaults so the row still says something after a relaunch: the
+    /// question it answers ("did that work?") outlives the process that answered it.
+    private(set) var watchMapStatus: String? =
+        UserDefaults.standard.string(forKey: "watchMap.lastResult")
+    /// True while MapKit is drawing. Two snapshots on a cold tile cache take a second or
+    /// two, which is long enough that a row with no spinner reads as a dead button.
+    private(set) var isSendingWatchMap = false
+
+    /// The manual "Send map to watch" button: renders both spots and pushes them whether or
+    /// not this watch already has them, because the rider asked to see it happen.
+    func sendMapsToWatch() async {
+        await sendMaps(force: true)
+    }
+
+    /// The automatic half: at launch and after every import, push only what this watch does
+    /// not already have. Silent — no status line, no banner — because the answer is
+    /// "nothing to do" almost every time, and a row that announces that on every launch is
+    /// a row the rider learns to stop reading.
+    func refreshWatchMapIfNeeded() async {
+        refreshCompanionState()
+        guard companionState.canSend, !watchMapSpots.isEmpty,
+              let deviceKey = companion.deviceKey,
+              WatchMapSender.automaticPassIsWorthIt(spots: spots, deviceKey: deviceKey,
+                                                    in: .standard)
+        else { return }
+        await sendMaps(force: false, quiet: true)
+        // Remembered only when nothing went wrong: a failed render must be retried at the
+        // next launch, not written off as "already handled".
+        if watchMapFailed == false {
+            WatchMapSender.rememberAutomaticPass(spots: spots, deviceKey: deviceKey,
+                                                 in: .standard)
+        }
+    }
+
+    /// Whether the last pass hit anything. Kept apart from `watchMapStatus`, which is a
+    /// sentence for a person to read.
+    private var watchMapFailed = false
+
+    private func sendMaps(force: Bool, quiet: Bool = false) async {
+        guard !isSendingWatchMap else { return }
+        isSendingWatchMap = true
+        defer { isSendingWatchMap = false }
+        if !quiet { status = "Drawing the map…" }
+        let report = await WatchMapSender.send(
+            spots: spots, through: companion, force: force,
+            progress: { name in if !quiet { self.status = "Drawing \(name)…" } })
+        watchMapFailed = report.failure != nil
+        // A quiet pass that did nothing leaves the row exactly as it was: only a send or a
+        // failure is news.
+        guard !quiet || report.didSomething || report.failure != nil else { return }
+        let line = report.line(at: Date())
+        watchMapStatus = line
+        UserDefaults.standard.set(line, forKey: "watchMap.lastResult")
+        if let failure = report.failure, !quiet { errorMessage = failure }
+        if !quiet { status = line }
+        refreshCompanionState()
     }
 
     /// Manual by decision (docs/decisions.md ADR-013): an automatic push needs this app
