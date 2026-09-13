@@ -28,6 +28,11 @@ import Foundation
 ///
 /// Phone-only, on purpose: the watch computes live with no way to be told, and the web reads
 /// documents the phone wrote. Neither is asked to follow a slider on someone's phone.
+///
+/// **One set per discipline** (engine 0.18.0, Jan: *"for the windsurf analysis, we need to be
+/// able to set other parameters (min planing speed, etc) than for wingfoil"*). A set knows
+/// which discipline it belongs to, because "the default" is a different number on a fin board
+/// — `TuningOverrideSets` holds the three of them and is what the app actually stores.
 public struct TuningOverrides: Sendable, Equatable {
 
     /// Override values, keyed by `TuningParameter.rawValue` — the docs/algorithms.md name, so
@@ -37,16 +42,40 @@ public struct TuningOverrides: Sendable, Equatable {
     /// build is then simply dropped instead of failing the whole decode.
     public private(set) var values: [String: Double]
 
-    public init() { values = [:] }
+    /// **Which discipline's defaults this set stands against.** It is not stored (the encoded
+    /// shape is still the bare parameter map, keyed by discipline one level up) and it moves
+    /// no number on its own — it decides exactly two things: what `value(for:)` reads where
+    /// nothing is overridden, and which value counts as "back to the default" and is therefore
+    /// dropped rather than stored. Both have to be the *preset's* number or a fin slider
+    /// dragged to 20 km/h would read as an override of wingfoil's 12, and one dragged to 12
+    /// would be silently cleared and snap back to 20.
+    public private(set) var discipline: Discipline
 
-    /// Sanitising initialiser: unknown names are dropped, values are clamped into the
-    /// parameter's range, and anything equal to the published default is dropped as a no-op.
-    public init(values: [String: Double]) {
+    public init(discipline: Discipline = .wingfoil) {
+        values = [:]
+        self.discipline = discipline
+    }
+
+    /// Sanitising initialiser: unknown names are dropped, a parameter this discipline does not
+    /// have is dropped (the pump rows on a windsurf preset), values are clamped into the
+    /// parameter's range, and anything equal to *this discipline's* default is dropped as a
+    /// no-op.
+    public init(values: [String: Double], discipline: Discipline = .wingfoil) {
         self.values = [:]
+        self.discipline = discipline
         for (name, value) in values {
-            guard let parameter = TuningParameter(rawValue: name) else { continue }
+            guard let parameter = TuningParameter(rawValue: name),
+                  parameter.spec.available(in: discipline) else { continue }
             self[parameter] = value
         }
+    }
+
+    /// The same overrides, read against another discipline's defaults — re-sanitised, so a
+    /// value that is this discipline's published default (or a channel it does not have)
+    /// stops being an override rather than quietly becoming one.
+    public func forDiscipline(_ discipline: Discipline) -> TuningOverrides {
+        discipline == self.discipline ? self
+                                      : TuningOverrides(values: values, discipline: discipline)
     }
 
     // MARK: - Access
@@ -57,7 +86,10 @@ public struct TuningOverrides: Sendable, Equatable {
         get { values[parameter.rawValue] }
         set {
             let spec = parameter.spec
-            guard let newValue, newValue.isFinite else {
+            // A channel this discipline does not have is refused here rather than only in the
+            // sanitising initialiser, so there is one door and the page's disabled row cannot
+            // be got round by any other path.
+            guard let newValue, newValue.isFinite, spec.available(in: discipline) else {
                 values[parameter.rawValue] = nil
                 return
             }
@@ -68,7 +100,7 @@ public struct TuningOverrides: Sendable, Equatable {
             // drags a knob back to its default has cleared it, not set it.
             let clamped = min(max(newValue, spec.range.lowerBound), spec.range.upperBound)
             let snapped = (clamped * 10_000).rounded() / 10_000
-            if abs(snapped - spec.defaultValue) < 1e-6 {
+            if abs(snapped - spec.presetDefault(for: discipline)) < 1e-6 {
                 values[parameter.rawValue] = nil
             } else {
                 values[parameter.rawValue] = snapped
@@ -76,10 +108,10 @@ public struct TuningOverrides: Sendable, Equatable {
         }
     }
 
-    /// What the engine will actually use: the override where there is one, the published
+    /// What the engine will actually use: the override where there is one, this discipline's
     /// default where there is not. This is the number the tuning page prints.
     public func value(for parameter: TuningParameter) -> Double {
-        values[parameter.rawValue] ?? parameter.spec.defaultValue
+        values[parameter.rawValue] ?? parameter.spec.presetDefault(for: discipline)
     }
 
     public func isOverridden(_ parameter: TuningParameter) -> Bool {
@@ -220,6 +252,27 @@ public struct TuningOverrides: Sendable, Equatable {
         return out
     }
 
+    /// The same, over the **four** configs a discipline preset moves (`Discipline.Configs`).
+    ///
+    /// It exists so the two layers can be composed in the one order that is defensible —
+    /// *preset first, the rider's overrides on top* — which is what `SessionSummarizer.analyze`
+    /// does. The other order would let a preset stomp a slider the rider had just moved.
+    ///
+    /// The takeoff analyser's exit speed travels with the other three for the reason
+    /// docs/algorithms.md gives for the preset moving all four: it reads "off the foil" off
+    /// the same number, and a takeoff judged against a speed no flight was segmented on is a
+    /// planing start in the wrong second.
+    public func apply(to base: Discipline.Configs) -> Discipline.Configs {
+        var out = base
+        let three = apply(to: Configs(turn: base.turn, flight: base.flight,
+                                      flightEnd: base.flightEnd))
+        out.turn = three.turn
+        out.flight = three.flight
+        out.flightEnd = three.flightEnd
+        if let v = self[.foilExitSpeed] { out.takeoff.foilExitSpeedKmh = v }
+        return out
+    }
+
     // MARK: - Fingerprint
 
     /// A stable 8-hex digest of the overrides, or nil when nothing is overridden.
@@ -264,6 +317,129 @@ extension TuningOverrides: Codable {
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         try container.encode(values)
+    }
+}
+
+// MARK: - One set per discipline
+
+/// **The three sets the app actually stores** — wingfoil, windsurf foil, windsurf fin.
+///
+/// Jan, 13 Sep 2026: *"for the windsurf analysis, we need to be able to set other parameters
+/// (min planing speed, etc) than for wingfoil."* One global set could not answer that: a fin
+/// board planes at 20 km/h and a foil flies at 12, so a single `foilEntrySpeed` slider is
+/// either wrong for the fin or wrong for the wing, and moving it for one rig re-derived the
+/// other rig's sessions for nothing.
+///
+/// **What each set stands against is its own preset**, not the published wingfoil numbers: the
+/// fin set's "default" for `foilEntrySpeed` is 20.0, and dragging that slider home clears the
+/// override rather than storing a 20 that would only ever repeat what the preset already says
+/// (`TuningOverrides.discipline`).
+///
+/// **And each set is its own staleness key.** The fingerprint that rides in `engineVersion` is
+/// the fingerprint of *that discipline's* set, composed inside the discipline stamp
+/// (`0.18.0+disc.windsurfFin+tuned.2.a1b2c3d4`), so a fin slider marks fin sessions stale and
+/// leaves every wingfoil session on the number it was already analysed with. That is the whole
+/// point of the split, and `TuningOverrideSetsTests` asserts it.
+public struct TuningOverrideSets: Sendable, Equatable {
+
+    /// Only the non-empty sets, so "nothing tuned anywhere" has exactly one representation —
+    /// the same rule, one level up, that drops an override equal to its default.
+    private var sets: [Discipline: TuningOverrides]
+
+    public init() { sets = [:] }
+
+    public init(_ sets: [Discipline: TuningOverrides]) {
+        self.sets = [:]
+        for (discipline, overrides) in sets { self[discipline] = overrides }
+    }
+
+    /// One discipline's set — always tagged with that discipline, whatever it was tagged with
+    /// on the way in, and re-sanitised against that discipline's defaults by the tagging.
+    public subscript(discipline: Discipline) -> TuningOverrides {
+        get { sets[discipline] ?? TuningOverrides(discipline: discipline) }
+        set {
+            let tagged = newValue.forDiscipline(discipline)
+            sets[discipline] = tagged.isEmpty ? nil : tagged
+        }
+    }
+
+    /// Nothing tuned, in any discipline — the published contract everywhere.
+    public var isEmpty: Bool { sets.isEmpty }
+
+    /// Is this discipline's set untouched?
+    public func isEmpty(_ discipline: Discipline) -> Bool { sets[discipline] == nil }
+
+    /// How many thresholds one discipline has moved — the number that discipline's chip says.
+    public func changedCount(_ discipline: Discipline) -> Int {
+        sets[discipline]?.changedCount ?? 0
+    }
+
+    /// Thresholds moved across every discipline. What the *aggregate* screens (Records,
+    /// Trends) say, because they are a reading of the whole library and the library may hold
+    /// sessions of more than one rig.
+    public var totalChangedCount: Int { sets.values.reduce(0) { $0 + $1.changedCount } }
+
+    /// Which disciplines have anything moved, in the picker's order.
+    public var tuned: [Discipline] { Discipline.allCases.filter { sets[$0] != nil } }
+
+    public mutating func resetAll(_ discipline: Discipline) { sets[discipline] = nil }
+
+    public mutating func resetEverything() { sets = [:] }
+
+    /// **The whole composition, in one place**: the preset for this discipline, then that
+    /// discipline's overrides on top. Nothing else may apply the two, and nothing else decides
+    /// the order.
+    public func configs(for discipline: Discipline,
+                        base: Discipline.Configs = Discipline.Configs()) -> Discipline.Configs {
+        self[discipline].apply(to: discipline.apply(to: base))
+    }
+
+    /// The version a run of this discipline under these overrides is stamped with — the
+    /// discipline stamp with that discipline's own tuning fingerprint inside it. The staleness
+    /// key, and the reason a fin slider cannot make a wingfoil session stale.
+    public func engineVersionKey(base: String = AnalysisEngine.version,
+                                 discipline: Discipline) -> String {
+        self[discipline].engineVersionKey(base: DisciplineStamp.key(base: base,
+                                                                    discipline: discipline))
+    }
+}
+
+// MARK: - Codable (and the one migration)
+
+extension TuningOverrideSets: Codable {
+    /// **Stored under the key the flat set used to live at** (`tuningOverrides.v1`), and the
+    /// shape decides which it is:
+    ///
+    /// - `{"wingfoil": {"turnPeakRate": 22}, "windsurfFin": {"foilEntrySpeed": 22}}` — the
+    ///   per-discipline shape, written by this build.
+    /// - `{"turnPeakRate": 22}` — the flat v1 set written by an older dev build. Its values
+    ///   are wingfoil's by construction (the windsurf presets did not exist when the only set
+    ///   did), so **a stored flat set becomes the wingfoil set** and the other two start
+    ///   empty. That is the whole migration, and it needs no version bump: the two shapes
+    ///   cannot be confused, since a flat set's values are numbers and never objects.
+    /// - `{}` — either, and empty in both readings.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let nested = try? container.decode([String: [String: Double]].self) {
+            self.init()
+            for (name, values) in nested {
+                guard let discipline = Discipline(rawValue: name) else { continue }
+                self[discipline] = TuningOverrides(values: values, discipline: discipline)
+            }
+            return
+        }
+        let flat = try container.decode([String: Double].self)
+        self.init()
+        self[.wingfoil] = TuningOverrides(values: flat, discipline: .wingfoil)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        var out: [String: [String: Double]] = [:]
+        for (discipline, overrides) in sets where !overrides.isEmpty {
+            out[discipline.rawValue] = overrides.values
+        }
+        try container.encode(out)
     }
 }
 
@@ -418,10 +594,41 @@ public struct TuningParameterSpec: Sendable, Equatable {
     /// 0.13.0 and the lookahead slider moves both; a second slider for the same tail was one
     /// more thing to explain and nothing to learn from.
     public var hidden: Bool = false
+    /// Asks a question of the **pump channel**, which a windsurf preset does not build
+    /// (docs/algorithms.md "Disciplines"). Such a row is shown on the windsurf sets but
+    /// disabled, with "off for windsurf" where its default caption would be — shown rather
+    /// than removed so the page does not change length when the picker moves, and disabled
+    /// rather than live because there is no burst for the rung to corroborate.
+    public var pumpChannel: Bool = false
 
     /// Decimals a value of this parameter is written with — one where the step is fractional,
     /// none where it is whole, so a 1 °/s step never prints "18.0".
     public var decimals: Int { step < 1 ? 1 : 0 }
+
+    /// **The default this discipline's slider stands against** — `defaultValue` is the
+    /// published wingfoil number, and a preset moves three of them.
+    ///
+    /// Read *out of the preset* rather than restated here: whatever `Discipline.apply` moves
+    /// is what the caption says and what dragging a slider home clears against, so the two can
+    /// never drift apart. Everything the preset does not touch answers `defaultValue`, which
+    /// is the whole of the parameter table for wingfoil.
+    public func presetDefault(for discipline: Discipline) -> Double {
+        guard discipline.isWindsurf else { return defaultValue }
+        let presets = discipline.apply(to: Discipline.Configs())
+        switch parameter {
+        case .foilEntrySpeed: return presets.flight.foilEntrySpeedKmh
+        case .foilExitSpeed: return presets.flight.foilExitSpeedKmh
+        case .turnPumpedOutIsTouchdown: return presets.turn.pumpedOutIsTouchdown ? 1 : 0
+        default: return defaultValue
+        }
+    }
+
+    /// Is this parameter asked at all under this discipline? False for the pump rows on a
+    /// windsurf preset — the row is drawn, disabled, and an override of it is dropped rather
+    /// than stored, so the count and the fingerprint never carry a knob that moves nothing.
+    public func available(in discipline: Discipline) -> Bool {
+        !pumpChannel || discipline.pumping
+    }
 
     /// A switch reads "on" / "off" — never "1" / "0", which is the stored shape and not the
     /// rider's word for it.
@@ -535,13 +742,14 @@ public struct TuningParameterSpec: Sendable, Equatable {
               note: "with no sample off the foil, a pump burst that dropped below the "
                   + "flight-end speed still counts as a touchdown when on; off, it flew "
                   + "through and the chip says it pumped out",
-              kind: .toggle),
+              kind: .toggle, pumpChannel: true),
         .init(parameter: .turnPumpedMarginalSpeed, group: .outcomes, unit: "km/h",
               defaultValue: 8, range: 4...20, step: 0.5,
               title: "Pumped out below this speed is a touchdown",
               note: "when the switch above is on and no sample was off the foil, a pump burst "
                   + "that dropped below this speed still counts as a touchdown; at the "
-                  + "flight-end speed it can never fire, raise it to revive the rule"),
+                  + "flight-end speed it can never fire, raise it to revive the rule",
+              pumpChannel: true),
 
         .init(parameter: .foilEntrySpeed, group: .flights, unit: "km/h", defaultValue: 12,
               range: 6...25, step: 0.5,
