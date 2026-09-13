@@ -47,16 +47,38 @@ coarser 60 × 60 grid instead — the watch reads `mw`/`mh` and does not assume 
 
 - The **two most-ridden spots** in the library (by session count), rendered with
   `MKMapSnapshotter` at 360 × 360 points, muted standard style, no points of interest, then
-  classified per pixel and majority-downsampled 3 × 3 into the grid. Classification: a pixel
-  is *water* when its hue sits in the blue band and its saturation is above the map's water
-  tint threshold; *road* when it is near-white or the map's road yellow and not water;
-  everything else is *land*. The thresholds are tuned on Nago-Torbole and Fehmarn in a kit
-  test that asserts the lake is water and the Via Linfano is road.
+  classified per pixel and majority-downsampled 3 × 3 into the grid (360 = 3 × 120 = 6 × 60,
+  so both downsamples are whole-pixel blocks and nothing is ever resampled). Classification
+  is in HSL, because the map's palette is a set of *tints* — the same blue at four
+  lightnesses for lake, sea, river and the antialiased edge between them — and a hue band
+  survives a tint where three RGB ranges do not. A pixel is **water** when its hue is
+  **185°–210°**, its saturation is **≥ 0.30** and its lightness is **0.35–0.95**; **road**
+  when it is not water and either near-white (**lightness ≥ 0.925, saturation ≤ 0.45**) or
+  the map's road yellow (**hue 30°–65°, saturation ≥ 0.45, lightness ≥ 0.85**); everything
+  else is **land**. Every number is a gap in the measured histogram rather than a guess:
+  Apple's water is 196° to within a degree across both fixtures, its lightest land green is
+  0.910 against a road's 0.937, and the water band stops at 210° because the blue road
+  shields (the `SS 240` lozenge over Torbole) sit at 213–216° with a saturation and a
+  lightness indistinguishable from the lake's — without that ceiling every shield punches a
+  three-cell lake into a hillside. A tie in the majority vote goes to the **lower** class,
+  which is deterministic and errs towards the water. The thresholds are tuned on
+  Nago-Torbole and Fehmarn in a kit test that asserts the lake is water and the Via Linfano
+  is road, against two committed 360 × 360 PNGs under
+  `ios/WingFoilKit/Tests/Fixtures/watchmap-*.png`. Those two boxes encode to **1 027** and
+  **702** bytes, which is where the "1–3 KB" above comes from.
 - Sent when the companion link is ready and the spot's mask hash differs from the one last
-  acknowledged for that watch (kept in UserDefaults keyed by device id); re-checked at every
-  app launch and after every import that changes the top two spots.
-- A manual **"Send map to watch"** row under Settings → Watch link with the spot names and the
-  last send result, for the rider who wants to see it happen.
+  acknowledged for that watch (`watchMap.ack.<device uuid>.<spot id>` in UserDefaults, written
+  only after Garmin's own `.success`, so a failed push is retried rather than written off);
+  re-checked at every app launch and after every import. In front of that check sits a cheap
+  one, because the honest one costs two map renders to reach: a fingerprint of *which watch,
+  which two spots, at which centres to the metre* (`watchMap.lastAuto`). Same fingerprint,
+  nothing happens and MapKit is never woken — so the automatic pass is free on every launch
+  after the first, and a re-cluster that nudges a centroid by a metre is correctly a new box.
+  The device UUID and not the friendly name, so renaming a watch in Garmin Connect does not
+  re-push everything it already has.
+- A manual **"Send map to watch"** row under Settings → Garmin watch with the spot names and
+  the last send result, for the rider who wants to see it happen. It ignores both gates: the
+  point of pressing it is to watch it happen.
 - The iOS side keeps rendering pure: `WatchMapMask` in the kit (classification of a bitmap,
   downsampling, RLE encode/decode, the hash) with tests; MapKit and ConnectIQ only in the app.
 
