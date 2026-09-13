@@ -610,6 +610,14 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    without reinstalling. `UI_IMPORT_FIXTURES=1`, `UI_OPEN_SESSION=latest|<name>`,
    `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings|import|tuning|discipline` and
    `UI_HELP_TOPIC=<HelpTopicID>` park the app on a given screen, since `simctl` cannot tap.
+   On the **Sessions** tab, `UI_GROUP_BY=none|month|year|spot` and `UI_FILTER_SOURCE=<raw>`
+   (`icu`, `file`, `gdpr`, `airdrop`, `fixtures`, `example`, `watch`, `applewatch`,
+   `applehealth`, `strava`) stage the list's two controls (docs/presentation.md, "Session
+   list"): a segmented control and a toolbar menu are both taps `simctl` cannot make, and
+   the grouped headings and the chip row are the whole point of the screenshot. `UI_GROUP_BY`
+   writes the stored preference exactly as a tap would; the source filter is per-visit, like
+   the control it stands in for. Pair either with `UI_IMPORT_FIXTURES=1`, since the rules
+   want a library with more than one month and more than one door in it.
    `UI_SHEET=discipline` raises the post-import review sheet over whatever is in the library
    (docs/presentation.md, "Confirming the discipline on import"): the sheet the import itself
    raises has usually been and gone by the time a screenshot is taken, and the banner that
