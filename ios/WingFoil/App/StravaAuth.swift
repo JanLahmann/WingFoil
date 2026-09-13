@@ -178,3 +178,16 @@ enum StravaAuth {
         }
     }
 }
+
+/// The window the Strava consent sheet is presented over. Asked for by the screen that
+/// starts the connect — Import or Settings — rather than inside the store, because a window
+/// is a property of a screen and not of the library. One helper for both, so the two
+/// screens cannot pick different windows.
+enum StravaConsent {
+    @MainActor
+    static func anchor() -> ASPresentationAnchor? {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.keyWindow
+    }
+}

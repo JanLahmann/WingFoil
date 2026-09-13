@@ -89,7 +89,7 @@ struct StravaImportView: View {
     private var connectSection: some View {
         Section {
             Button {
-                Task { await store.connectStrava(anchor: Self.anchor()) }
+                Task { await store.connectStrava(anchor: StravaConsent.anchor()) }
             } label: {
                 Label("Connect Strava", systemImage: "link")
             }
@@ -255,14 +255,6 @@ struct StravaImportView: View {
         await store.importFromStrava(ids)
     }
 
-    /// The window the consent sheet is presented over. Asked for here rather than inside the
-    /// store, because a window is a property of the screen and not of the library.
-    @MainActor
-    private static func anchor() -> ASPresentationAnchor? {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first?.keyWindow
-    }
 }
 
 /// One activity, as much as can be said about it before its streams have been fetched: when,
