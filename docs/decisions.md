@@ -2,6 +2,29 @@
 
 Newest first. One paragraph each: context → decision → consequence.
 
+## ADR-025 · The session list's filters narrow the list, never the records
+The library grew past the length a flat newest-first list answers questions on, and the
+questions that arrived with it — "how many afternoons in August", "everything at Torbole",
+"what came in from Strava" — are all about sets of sessions. A filter is the obvious answer
+and the dangerous one: the same chips would read perfectly well over Records and Trends, and
+a rider who left "Nago-Torbole, 2025" on last week would then be quoting a personal best that
+silently means "at that spot, that year".
+
+Decision: **group by and filter are a view of the Sessions tab and of nothing else.** The
+rules are a separate kit type (`LibraryListFilter` / `LibraryGrouping` in
+`Presentation/LibraryListing.swift`) from the SQL-side `LibraryFilter` that Records, Trends,
+Periods, the gear rollups and the widget go through, so the two cannot be wired together by
+accident. The narrowing is per-visit — a question, not a setting — while the grouping is
+remembered (`library.groupBy.v1`), and its default (Month from twenty sessions up) is read off
+the *unfiltered* library so a chip can never change how the list is shaped.
+
+Consequence: the count line has to say both numbers ("3 of 41 sessions") and a filter that
+matches nothing gets its own empty state, because the fresh-library card in front of a rider
+with forty sessions is the app being wrong about him. Records and Trends keep their own spot
+and gear pickers, which say on the screen what they narrow. Dates are read on each session's
+own clock; the custom range's two ends are read on the reader's, inclusively, exactly as the
+Periods screen's own range is.
+
 ## ADR-024 · Windsurf is a **preset, not a fork** — and it ships marked experimental
 Issue #6 asks for windsurf as a discipline: engine presets, a vocabulary, the share card.
 There were two ways to have it. A second detector tuned on windsurf sessions would be honest
