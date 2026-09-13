@@ -15,6 +15,15 @@ options:
   createIntermediateGroups: true
   generateEmptyDirectories: true
   minimumXcodeGenVersion: "2.42.0"
+  # The Strava API application's credentials live in `ios/Strava.xcconfig`, which is
+  # gitignored because it holds a client SECRET and this repository is public. A fresh clone
+  # therefore does not have it, and an xcconfig reference to a file that is not there is a
+  # build warning on every single compile — so the file is created from the tracked example
+  # before the project is generated. The copy holds no secret (the example's secret line is
+  # empty), the app reads "not configured" and the Strava row on the Import screen explains
+  # itself instead of failing. Jan's own checkout already has the real one and this never
+  # touches it.
+  preGenCommand: test -f Strava.xcconfig || cp Strava.example.xcconfig Strava.xcconfig
 
 packages:
   WingFoilKit:
@@ -81,6 +90,15 @@ targets:
       # there; without it the target builds and installs nothing.
       - target: WingFoilWatch
         embed: true
+    # The Strava client id and secret, as build settings the Info.plist below substitutes
+    # into `STRAVA_CLIENT_ID` / `STRAVA_CLIENT_SECRET`. Untracked and gitignored; see
+    # `ios/Strava.example.xcconfig` and the `preGenCommand` above. All four configurations
+    # read the same file — there is one Strava application, not a dev one and a public one.
+    configFiles:
+      Debug: Strava.xcconfig
+      Release: Strava.xcconfig
+      Dev Debug: Strava.xcconfig
+      Dev Release: Strava.xcconfig
     settings:
       base:
         PRODUCT_NAME: WingFoil
@@ -198,6 +216,27 @@ targets:
             CFBundleTypeRole: Editor
             CFBundleURLSchemes:
               - wingfoil-ciq
+          # The way back from Strava's consent screen (ADR-023). Strava itself will not
+          # redirect to a custom scheme — it validates the redirect against the API
+          # application's single Authorization Callback Domain, which is `cleanjibe.org` —
+          # so it redirects to https://cleanjibe.org/strava/callback, and that page bounces
+          # the `code` and `state` here. `ASWebAuthenticationSession` is what is waiting,
+          # so the sheet closes on it and nothing in the app has to answer this scheme at
+          # all: it is registered so that iOS knows it belongs to us, and for no other
+          # reason.
+          - CFBundleURLName: de.lahmann.wingfoil.strava
+            CFBundleTypeRole: Editor
+            CFBundleURLSchemes:
+              - cleanjibe
+        # --- Strava API application (ADR-023) ---
+        # Substituted from `ios/Strava.xcconfig`, which is untracked. A build without it
+        # gets empty strings, `StravaConfig.isConfigured` is false, and the Import screen's
+        # Strava row says what is missing rather than failing halfway through OAuth. The
+        # client id is public by construction (it travels in every authorize URL); the
+        # secret is not, and is why the file is gitignored.
+        STRAVA_CLIENT_ID: $(STRAVA_CLIENT_ID)
+        STRAVA_CLIENT_SECRET: $(STRAVA_CLIENT_SECRET)
+        STRAVA_REDIRECT_URI: $(STRAVA_REDIRECT_URI)
         # iOS demands both strings from any app whose process touches Bluetooth, and the
         # SDK does on our behalf. Real sentences, not placeholders: TestFlight review
         # rejects the build otherwise, and the rider deserves to know why we are asking.
@@ -269,6 +308,23 @@ targets:
                 - gpx
               public.mime-type:
                 - application/gpx+xml
+          # TCX — Garmin's Training Center format, and the one Polar Flow exports. Declared
+          # for exactly the reason the GPX type is: without it, "Open in CleanJibe" does not
+          # appear in the share sheet when Suunto, Polar, COROS or Files hands a workout
+          # over, and a rider who has the file has no way to use it. Imported, not exported
+          # — the schema is Garmin's — and `public.xml` conformant, because a TCX *is* XML
+          # and saying so is what makes the share sheet offer us a file another app wrote.
+          - UTTypeIdentifier: de.lahmann.wingfoil.tcx
+            UTTypeDescription: TCX activity file
+            UTTypeConformsTo:
+              - public.xml
+              - public.data
+              - public.content
+            UTTypeTagSpecification:
+              public.filename-extension:
+                - tcx
+              public.mime-type:
+                - application/vnd.garmin.tcx+xml
         CFBundleDocumentTypes:
           - CFBundleTypeName: Activity recording
             CFBundleTypeRole: Viewer
@@ -276,6 +332,7 @@ targets:
             LSItemContentTypes:
               - de.lahmann.wingfoil.fit
               - de.lahmann.wingfoil.gpx
+              - de.lahmann.wingfoil.tcx
               - public.zip-archive
     scheme:
       environmentVariables:

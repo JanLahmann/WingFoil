@@ -1,0 +1,37 @@
+// Strava API application — the template. Copy to `Strava.xcconfig` and fill in the secret:
+//
+//     cd ios && cp Strava.example.xcconfig Strava.xcconfig
+//
+// `Strava.xcconfig` is GITIGNORED and must stay that way: this repository is public, and
+// STRAVA_CLIENT_SECRET is the one value here that is actually a secret. `xcodegen generate`
+// creates the copy for you if it is missing, so a fresh clone builds with no Strava
+// credentials at all — the app then reports "No Strava application configured" on the
+// Import screen and everything else works exactly as before.
+//
+// Where these come from: https://www.strava.com/settings/api
+//   Application name              CleanJibe
+//   Category                      Performance analysis
+//   Website                       https://cleanjibe.org
+//   Authorization Callback Domain cleanjibe.org
+//
+// The callback domain is the load-bearing one. Strava validates the redirect against it and
+// refuses anything whose host is not that domain — custom schemes included — which is why
+// the redirect below is an https URL on our own site. `web/strava/callback/index.html` is a
+// static page whose only job is to forward the `code` and `state` to `cleanjibe://strava`,
+// where ASWebAuthenticationSession is waiting. Change one of the two and you must change
+// the other, plus the `cleanjibe` entry in project.yml's CFBundleURLTypes.
+
+// Public by construction: it travels in every authorize URL.
+STRAVA_CLIENT_ID = 279015
+
+// SECRET. Copy it from the "My API Application" page. Never commit the file that holds it.
+STRAVA_CLIENT_SECRET =
+
+// Must match the Authorization Callback Domain above. Leave it as it is unless the Strava
+// application is re-registered against a different domain.
+//
+// `//` inside a value starts a comment in an xcconfig, so the scheme separator has to be
+// spelled through a variable — `SLASH` below is that trick, and it is why this line looks
+// the way it does.
+SLASH = /
+STRAVA_REDIRECT_URI = https:$(SLASH)$(SLASH)cleanjibe.org/strava/callback

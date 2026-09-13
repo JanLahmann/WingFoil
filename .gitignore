@@ -5,6 +5,11 @@
 .env
 *.local
 
+# Strava API application credentials (ADR-023). The client id is public, the client secret
+# is not, and this repository is. `ios/Strava.example.xcconfig` is the tracked template;
+# `xcodegen generate` copies it here when this file is missing, so a fresh clone builds.
+ios/Strava.xcconfig
+
 # Python (lab/)
 __pycache__/
 *.pyc
