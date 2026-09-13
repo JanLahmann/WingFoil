@@ -610,6 +610,10 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    without reinstalling. `UI_IMPORT_FIXTURES=1`, `UI_OPEN_SESSION=latest|<name>`,
    `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings|import|tuning` and
    `UI_HELP_TOPIC=<HelpTopicID>` park the app on a given screen, since `simctl` cannot tap.
+   `UI_DISCIPLINE=windsurfFoil|windsurfFin` re-analyses the session `UI_OPEN_SESSION` picked
+   under that preset (docs/algorithms.md "Disciplines") **before** the page opens — `simctl`
+   cannot tap a segmented control, and setting it afterwards would photograph the wingfoil
+   reading with a windsurf chip on it.
    `UI_SHEET=tuning` needs the **dev** build (`TUNING`, below) — it opens Settings → Tuning
    as a sheet of its own rather than "Settings, then push", because `simctl` cannot tap the
    row either. On the public build the value is simply unknown and nothing opens.
