@@ -66,14 +66,22 @@ enum WatchMapSender {
     /// offline with nothing cached is the ordinary reason, and it is not an error worth a
     /// banner: the rider will be online again before he is on the water.
     static func grid(centreLat: Double, centreLon: Double) async -> WatchMapMask.Grid? {
-        guard let rgba = await snapshotRGBA(centreLat: centreLat, centreLon: centreLon) else {
-            return nil
-        }
-        return WatchMapMask.grid(rgba: rgba)
+        await gridOrReason(centreLat: centreLat, centreLon: centreLon).grid
+    }
+
+    /// The same, with the reason MapKit gave when it could not draw — for the status line,
+    /// which used to say "no map to send yet" for a failed render *and* for an empty
+    /// library, and the rider could not tell which (Jan, 13 Sep 2026).
+    static func gridOrReason(centreLat: Double, centreLon: Double) async
+    -> (grid: WatchMapMask.Grid?, reason: String?) {
+        let shot = await snapshotRGBA(centreLat: centreLat, centreLon: centreLon)
+        guard let rgba = shot.bytes else { return (nil, shot.reason ?? "no image") }
+        return (WatchMapMask.grid(rgba: rgba), nil)
     }
 
     /// `WatchMapMask.snapshotSide` square pixels of Apple's muted standard map, as RGBA.
-    private static func snapshotRGBA(centreLat: Double, centreLon: Double) async -> [UInt8]? {
+    private static func snapshotRGBA(centreLat: Double, centreLon: Double) async
+    -> (bytes: [UInt8]?, reason: String?) {
         let side = WatchMapMask.snapshotSide
         let box = WatchMapMask.Box(centreLat: centreLat, centreLon: centreLon)
         let northWest = MKMapPoint(CLLocationCoordinate2D(latitude: box.north, longitude: box.west))
@@ -81,7 +89,7 @@ enum WatchMapSender {
         let rect = MKMapRect(x: northWest.x, y: northWest.y,
                              width: southEast.x - northWest.x,
                              height: southEast.y - northWest.y)
-        guard rect.width > 0, rect.height > 0 else { return nil }
+        guard rect.width > 0, rect.height > 0 else { return (nil, "the box has no area") }
 
         let options = MKMapSnapshotter.Options()
         options.mapRect = rect
@@ -102,9 +110,16 @@ enum WatchMapSender {
         options.preferredConfiguration = configuration
         options.showsBuildings = false
 
-        guard let snapshot = try? await MKMapSnapshotter(options: options).start(),
-              let image = snapshot.image.cgImage,
-              image.width == side, image.height == side else { return nil }
+        let snapshot: MKMapSnapshotter.Snapshot
+        do {
+            snapshot = try await MKMapSnapshotter(options: options).start()
+        } catch {
+            return (nil, error.localizedDescription)
+        }
+        guard let image = snapshot.image.cgImage else { return (nil, "no image") }
+        guard image.width == side, image.height == side else {
+            return (nil, "the snapshot came back \(image.width)×\(image.height), not \(side)")
+        }
 
         var bytes = [UInt8](repeating: 0, count: side * side * 4)
         let info = CGImageAlphaInfo.premultipliedLast.rawValue
@@ -112,9 +127,9 @@ enum WatchMapSender {
             CGContext(data: raw.baseAddress, width: side, height: side,
                       bitsPerComponent: 8, bytesPerRow: side * 4,
                       space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: info)
-        }) else { return nil }
+        }) else { return (nil, "no drawing context") }
         context.draw(image, in: CGRect(x: 0, y: 0, width: side, height: side))
-        return bytes
+        return (bytes, nil)
     }
 
     // MARK: - Sending
@@ -143,9 +158,11 @@ enum WatchMapSender {
             let spot = WatchMapMask.Spot(clusterKey: target.spot.id, name: target.spot.name)
             let spotID = WatchMapMask.spotID(clusterKey: spot.clusterKey)
             progress(spot.name)
-            guard let grid = await grid(centreLat: target.spot.lat, centreLon: target.spot.lon)
-            else {
-                report.failure = report.failure ?? CompanionLinkError.mapUnavailable.riderMessage
+            let drawn = await gridOrReason(centreLat: target.spot.lat, centreLon: target.spot.lon)
+            guard let grid = drawn.grid else {
+                report.failure = report.failure
+                    ?? "MapKit could not draw \(spot.name): \(drawn.reason ?? "no image"). "
+                    + "Be online once while it draws, then send again."
                 continue
             }
             let mask = grid.encoded

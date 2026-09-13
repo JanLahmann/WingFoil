@@ -125,6 +125,20 @@ struct LibraryView: View {
                 if ProcessInfo.processInfo.environment["UI_LOAD_EXAMPLE"] == "1" {
                     await store.loadExampleSession()
                 }
+                // `UI_SEND_WATCH_MAP=1` renders the first spot's watch map headless and
+                // writes what happened to Documents/watchmap-probe.txt — the one way to
+                // see MapKit's answer without a watch on the desk.
+                if ProcessInfo.processInfo.environment["UI_SEND_WATCH_MAP"] == "1" {
+                    var lines = ["spots: \(store.watchMapSpots.map { "\($0.spot.name) ×\($0.sessions) @\($0.spot.lat),\($0.spot.lon)" })"]
+                    if let first = store.watchMapSpots.first {
+                        let drawn = await WatchMapSender.gridOrReason(
+                            centreLat: first.spot.lat, centreLon: first.spot.lon)
+                        lines.append(drawn.grid.map { "grid \($0.width)×\($0.height), \($0.encoded.count) bytes" }
+                                     ?? "failed: \(drawn.reason ?? "?")")
+                    }
+                    let url = URL.documentsDirectory.appending(path: "watchmap-probe.txt")
+                    try? lines.joined(separator: "\n").write(to: url, atomically: true, encoding: .utf8)
+                }
                 // `UI_SHEET=help` parks the app on the Help index for a screenshot;
                 // `UI_HELP_TOPIC=icuSetup` opens one topic straight away.
                 if let raw = ProcessInfo.processInfo.environment["UI_HELP_TOPIC"],
