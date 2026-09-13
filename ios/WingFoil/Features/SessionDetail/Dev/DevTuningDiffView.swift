@@ -27,7 +27,7 @@ struct DevTuningDiffView: View {
 
     var body: some View {
         Group {
-            if !store.tuning.isEmpty {
+            if !store.tuning[detail.row.analysisDiscipline].isEmpty {
                 if let base {
                     card(TuningDiffBuilder.diff(tuned: detail.analysis, base: base))
                 } else {
@@ -40,11 +40,15 @@ struct DevTuningDiffView: View {
         .task(id: detail.row.id) { await workbench.load(detail: detail, store: store) }
     }
 
+    /// How many thresholds **this session's rig** has moved — the comparison below is that
+    /// set against its own preset, and a count taken from another discipline's sliders would
+    /// be a number about a session that is not on screen.
+    private var moved: Int { store.tuning.changedCount(detail.row.analysisDiscipline) }
+
     private func card(_ diff: TuningDiff) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(diff.headline).font(.subheadline.weight(.semibold))
-            Text("\(store.tuning.changedCount) threshold"
-                 + "\(store.tuning.changedCount == 1 ? "" : "s") moved · this session only, "
+            Text("\(moved) threshold\(moved == 1 ? "" : "s") moved · this session only, "
                  + "computed in memory, nothing stored.")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)

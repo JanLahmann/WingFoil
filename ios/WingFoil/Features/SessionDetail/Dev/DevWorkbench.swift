@@ -106,15 +106,20 @@ final class DevWorkbench {
             // The rider's non-tunable settings stay — `defaultTurnType` is his declaration
             // about how he sails, not a threshold — so "default" here means exactly "the
             // published thresholds", which is what the card claims.
-            let base = ingestor.tuning.isEmpty
+            //
+            // **This session's own discipline, with its tuning taken off.** The preset is not
+            // a tuning: a fin session's defaults are 20/15, and comparing a tuned fin run
+            // against a wingfoil run would answer a question nobody asked. So the comparison
+            // is built for the same rig, and it is built only where *that rig's* set has
+            // something in it.
+            let discipline = row.analysisDiscipline
+            let base = ingestor.tuning[discipline].isEmpty
                 ? nil
                 : SessionSummarizer.analyze(track,
                                             filterConfig: ingestor.filterConfig,
-                                            flightConfig: FlightConfig(),
                                             recordsConfig: ingestor.recordsConfig,
-                                            turnConfig: TurnConfig(),
                                             windConfig: ingestor.windConfig,
-                                            flightEndConfig: FlightEndConfig())
+                                            discipline: discipline)
             return Entry(context: context, base: base, complete: true)
         }
         running[key] = work
