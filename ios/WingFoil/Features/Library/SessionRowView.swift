@@ -9,8 +9,25 @@ import WingFoilKit
 struct SessionRowView: View {
     let row: SessionRow
     @Environment(ThumbnailStore.self) private var thumbnails
+    @Environment(SessionStore.self) private var store
 
     private var thumbnail: TrackThumbnail? { thumbnails.thumbnail(for: row.id) }
+
+    /// The discipline capsule, and whether it says anything this reader needs
+    /// (`DisciplineReview.showsBadge`): with the windsurf switch off, a library of one rig
+    /// spelling "Wingfoil" on every row is a column of noise, while the rows that disagree —
+    /// a session read as windsurf, a recording that names its own rig — keep it.
+    private var showsBadge: Bool {
+        DisciplineReview.showsBadge(SessionDisplay.badge(row),
+                                    windsurfEnabled: store.windsurfEnabled)
+    }
+
+    /// The `?`: "nobody has said this is what it is". Never drawn while the switch is off —
+    /// it is the visible half of a question the app is no longer asking.
+    private var isGuess: Bool {
+        DisciplineReview.showsGuessMark(guessed: SessionDisplay.badgeIsGuess(row),
+                                        windsurfEnabled: store.windsurfEnabled)
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -43,17 +60,18 @@ struct SessionRowView: View {
                 }
                 // The `?` says nobody has confirmed the discipline yet — a wrong guess is
                 // visible at a glance in the list rather than only on the session page.
-                Text(SessionDisplay.badge(row)
-                     + (SessionDisplay.badgeIsGuess(row) ? " ?" : ""))
+                if showsBadge {
+                    Text(SessionDisplay.badge(row) + (isGuess ? " ?" : ""))
                         .font(.caption2.weight(.semibold))
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
                         .background(SessionDisplay.badgeColor(row).opacity(0.16), in: .capsule)
                         .foregroundStyle(SessionDisplay.badgeColor(row))
                         .accessibilityLabel(
-                            SessionDisplay.badgeIsGuess(row)
+                            isGuess
                             ? "Analysed as \(SessionDisplay.badge(row)), not confirmed"
                             : SessionDisplay.badge(row))
+                }
                 }
 
                 // The engine's cleaned span in the block's own spelling — the same number and

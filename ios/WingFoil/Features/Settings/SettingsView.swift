@@ -18,6 +18,7 @@ struct SettingsView: View {
                 notificationsSection
                 WatchLinkSection()
                 analysisSection
+                windsurfSection
                 #if TUNING
                 tuningSection
                 #endif
@@ -266,10 +267,16 @@ struct SettingsView: View {
             // a sport in Garmin, Strava, intervals.icu or Apple Health (docs/presentation.md,
             // "Confirming the discipline on import"). Above the turn habit because it is the
             // more basic of the two questions — which rig, then which turn.
-            Picker("I mostly ride", selection: Binding(
-                get: { store.riderDiscipline },
-                set: { store.riderDiscipline = $0 })) {
-                ForEach(Discipline.allCases, id: \.self) { Text($0.title).tag($0) }
+            //
+            // Only worth asking where there is more than one answer: with the windsurf switch
+            // off, "I mostly ride" has one option, and a picker with one option is a row that
+            // takes up space to say nothing.
+            if store.windsurfEnabled {
+                Picker("I mostly ride", selection: Binding(
+                    get: { store.riderDiscipline },
+                    set: { store.riderDiscipline = $0 })) {
+                    ForEach(Discipline.allCases, id: \.self) { Text($0.title).tag($0) }
+                }
             }
             Picker("Most of my turns are", selection: Binding(
                 get: { store.defaultTurnType },
@@ -287,16 +294,49 @@ struct SettingsView: View {
         } header: {
             Text("Analysis")
         } footer: {
-            Text("Wingfoil is not a sport in Garmin, Strava, intervals.icu or Apple Health, "
-                 + "so a new session cannot say which rig you were on — what you mostly ride "
-                 + "answers for it, and CleanJibe asks you to confirm after each import. "
-                 + "Sessions already in your library are not changed.\n\n"
-                 + "The wind axis comes out of your track as a *line* — which end of it the "
-                 + "wind blew from is the hard half. Usually the no-go zone settles it: you "
-                 + "can sail any downwind course but none straight into the wind. When a "
-                 + "session cannot settle it that way, your habit does, because flipping "
-                 + "the wind end for end turns every jibe into a tack. Sessions already in "
-                 + "the library only change if you re-run the analysis.")
+            Text(analysisFooter)
+        }
+    }
+
+    /// The rig paragraph only where there is a rig row to explain: with the windsurf switch
+    /// off nothing above it asks which rig this was, and a footer that answers an unasked
+    /// question is the app talking to itself.
+    private var analysisFooter: String {
+        let rig = "Wingfoil is not a sport in Garmin, Strava, intervals.icu or Apple Health, "
+            + "so a new session cannot say which rig you were on — what you mostly ride "
+            + "answers for it, and CleanJibe asks you to confirm after each import. "
+            + "Sessions already in your library are not changed.\n\n"
+        let wind = "The wind axis comes out of your track as a *line* — which end of it the "
+            + "wind blew from is the hard half. Usually the no-go zone settles it: you "
+            + "can sail any downwind course but none straight into the wind. When a "
+            + "session cannot settle it that way, your habit does, because flipping "
+            + "the wind end for end turns every jibe into a tack. Sessions already in "
+            + "the library only change if you re-run the analysis."
+        return store.windsurfEnabled ? rig + wind : wind
+    }
+
+    /// **"Windsurf (experimental)"** — the one switch every windsurf-facing control hangs off
+    /// (Jan, 13 Sep 2026: *"windsurf should be hidden. Maybe enable with a switch"*).
+    ///
+    /// Off on a fresh install, and off is the app a wingfoiler downloaded: no rig picker above,
+    /// no "Analyse as" card on a session's Log tab, no question after an import, no `?` on a
+    /// library row and no windsurf topic on the Help index. On, everything is where it was.
+    ///
+    /// Its own section rather than a fourth row in Analysis, because the footer is a warning
+    /// about what the feature cannot do yet and it has to sit under the switch it is warning
+    /// about rather than under three unrelated rows — and because a switch that changes what
+    /// the section above it contains should not be inside that section.
+    private var windsurfSection: some View {
+        Section {
+            Toggle("Windsurf (experimental)", isOn: Binding(
+                get: { store.windsurfEnabled },
+                set: { store.setWindsurfEnabled($0) }))
+        } footer: {
+            // The honest version of "experimental": what works, what is switched off, and
+            // what is a guess — in that order, so a windsurfer who turns it on knows which
+            // numbers he may believe before he sees one.
+            Text("Analyse sessions as windsurf foil or fin. Untested: jibes and tacks work, "
+                 + "pumping is off, planing thresholds are provisional.")
         }
     }
 

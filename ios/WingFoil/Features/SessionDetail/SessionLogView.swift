@@ -18,6 +18,8 @@ struct SessionLogView: View {
     let detail: SessionDetail
     let sessionID: String
 
+    @Environment(SessionStore.self) private var store
+
     var body: some View {
         // Gear first: it is the only block here the rider can *change*, and the only one he
         // came looking for. The rest are the record answering for itself.
@@ -26,7 +28,13 @@ struct SessionLogView: View {
         WindDetailCard(detail: detail)
         FlightEndsCard(detail: detail)
         RecordingCard(detail: detail)
-        DisciplineCard(detail: detail)
+        // Behind Settings → Analysis → "Windsurf (experimental)", and gated here rather than
+        // inside the card so the stack does not keep a gap where it used to be. A session
+        // already analysed as windsurf keeps that analysis, its badge and its chip with the
+        // switch off — only the control that could change it is gone.
+        if store.windsurfEnabled {
+            DisciplineCard(detail: detail)
+        }
         if !detail.divergences.isEmpty {
             DivergenceDetailCard(divergences: detail.divergences)
         }
