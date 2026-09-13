@@ -172,16 +172,20 @@ targets:
           Imports sessions you recorded with Apple's Workout app: their GPS route and heart
           rate, so CleanJibe can analyse them. Everything stays on this phone; CleanJibe never
           uploads your health data.
-        # The phone never asks for location — this string exists for the WATCH. watchOS
-        # stores a companion watch app's location permission under the iPhone app, and since
-        # watchOS 10 the watch simply never shows its own prompt when this key is missing
-        # here: no error, `.notDetermined` forever, "Asking for location" on the start screen
-        # for a whole session, and a recording with heart rate and zero fixes (4 Sep 2026,
-        # ADR-019). Keep it in step with the watch target's string below.
+        # This string covers two prompts, and the WATCH is the reason it has to exist at
+        # all. watchOS stores a companion watch app's location permission under the iPhone
+        # app, and since watchOS 10 the watch simply never shows its own prompt when this
+        # key is missing here: no error, `.notDetermined` forever, "Asking for location" on
+        # the start screen for a whole session, and a recording with heart rate and zero
+        # fixes (4 Sep 2026, ADR-019). Keep it in step with the watch target's string below.
+        # The phone's own half is one fix on a tap — Settings → Garmin watch → Map for the
+        # watch → "Where I am now" (App/PhoneLocation.swift) — and nothing else on this
+        # device ever asks.
         NSLocationWhenInUseUsageDescription: >-
           Records your track and speed on your Apple Watch while you ride. CleanJibe uses the
           watch's GPS only during a session you started, and the recording is sent straight
-          to this phone. The phone itself never tracks your location.
+          to this phone. The phone reads its own position only when you choose "Where I am
+          now" for the watch map, once per send, and never in the background.
         # The end-of-recording sheet's "Save to Photos" (App/PhotoLibrarySaver.swift). ADD
         # ONLY: the app asks for `.addOnly` authorization and can never read an asset back,
         # which is why there is no `NSPhotoLibraryUsageDescription` beside it. The photos a

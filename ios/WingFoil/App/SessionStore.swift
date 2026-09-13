@@ -2156,8 +2156,59 @@ final class SessionStore {
 
     // MARK: The map snapshot
 
-    /// The two spots the watch would get a map of, most-ridden first. The settings row
-    /// names them, so the rider can see *which* ground he is about to send.
+    /// Which maps the rider asked the watch to hold (`WatchMapChoice`). Empty means
+    /// automatic — the two most-ridden spots, which is what every install had before there
+    /// was a picker and what a rider who never opens the page keeps having.
+    private(set) var watchMapChoice = WatchMapChoice.load(from: .standard)
+
+    /// The picker's one write. Saved on the spot: "which ground goes to my watch" is a
+    /// fact about the rider, not about this launch.
+    func setWatchMapChoice(_ choice: WatchMapChoice) {
+        watchMapChoice = choice
+        choice.save(to: .standard)
+    }
+
+    /// Where the phone was standing the last time it was asked — never persisted, because
+    /// "here" is a fact with a shelf life of an afternoon and a stale one on the next
+    /// launch would draw the watch a map of the car park at home.
+    private var lastPhoneFix: (lat: Double, lon: Double)?
+
+    /// The one place in the app that asks Core Location anything. One fix, on a tap.
+    private let phoneLocation = PhoneLocation()
+
+    /// Whether the phone would answer "where am I" without a prompt. The picker reads it
+    /// after a tap to tell "denied" from "no sky yet".
+    var phoneLocationIsAuthorized: Bool { phoneLocation.isAuthorized }
+
+    /// Ask the phone where it is, once, prompting if it has never been asked. True when a
+    /// fix came back. The picker calls this on the tap that adds "Where I am now", so the
+    /// permission sheet appears under the finger that asked for it.
+    @discardableResult
+    func refreshPhoneFix() async -> Bool {
+        guard let fix = await phoneLocation.current() else { return false }
+        lastPhoneFix = fix
+        return true
+    }
+
+    /// The fix a send needs, if the send needs one. `mayPrompt` is the whole difference
+    /// between the button and the launch: a manual send may put a permission sheet on the
+    /// screen because the rider just pressed something, the automatic pass may never.
+    private func refreshPhoneFixIfPicked(mayPrompt: Bool) async {
+        guard watchMapChoice.contains(.here) else { return }
+        guard mayPrompt || phoneLocation.isAuthorized else { return }
+        await refreshPhoneFix()
+    }
+
+    /// The maps the watch would get, in order: what the settings row names and what the
+    /// sender draws, so the rider can see *which* ground he is about to send.
+    var watchMapTargets: [WatchMapTarget] {
+        WatchMapChoice.resolve(watchMapChoice, spots: spots, here: lastPhoneFix,
+                               limit: WatchMapSender.slots)
+    }
+
+    /// The automatic pair as library rows — the headless `UI_SEND_WATCH_MAP` probe's view
+    /// of the world, which is about whether MapKit can draw a spot at all and therefore
+    /// wants the spots and not the rider's choice.
     var watchMapSpots: [SpotAggregate] { WatchMapSender.targets(from: spots) }
 
     /// The last send's one line — "sent 2.1 KB · 14:02", "Already on the watch · 14:02", or
@@ -2172,6 +2223,7 @@ final class SessionStore {
     /// The manual "Send map to watch" button: renders both spots and pushes them whether or
     /// not this watch already has them, because the rider asked to see it happen.
     func sendMapsToWatch() async {
+        await refreshPhoneFixIfPicked(mayPrompt: true)
         await sendMaps(force: true)
     }
 
@@ -2181,16 +2233,22 @@ final class SessionStore {
     /// a row the rider learns to stop reading.
     func refreshWatchMapIfNeeded() async {
         refreshCompanionState()
-        guard companionState.canSend, !watchMapSpots.isEmpty,
-              let deviceKey = companion.deviceKey,
-              WatchMapSender.automaticPassIsWorthIt(spots: spots, deviceKey: deviceKey,
+        guard companionState.canSend, let deviceKey = companion.deviceKey else { return }
+        // Never a prompt on this path: a permission sheet at launch for a feature nobody
+        // opened would be the app begging. With "Where I am now" ticked and location
+        // already granted the fix is refreshed here; otherwise that pick simply does not
+        // resolve and the other map still goes.
+        await refreshPhoneFixIfPicked(mayPrompt: false)
+        let targets = watchMapTargets
+        guard !targets.isEmpty,
+              WatchMapSender.automaticPassIsWorthIt(targets: targets, deviceKey: deviceKey,
                                                     in: .standard)
         else { return }
         await sendMaps(force: false, quiet: true)
         // Remembered only when nothing went wrong: a failed render must be retried at the
         // next launch, not written off as "already handled".
         if watchMapFailed == false {
-            WatchMapSender.rememberAutomaticPass(spots: spots, deviceKey: deviceKey,
+            WatchMapSender.rememberAutomaticPass(targets: targets, deviceKey: deviceKey,
                                                  in: .standard)
         }
     }
@@ -2205,7 +2263,7 @@ final class SessionStore {
         defer { isSendingWatchMap = false }
         if !quiet { status = "Drawing the map…" }
         let report = await WatchMapSender.send(
-            spots: spots, through: companion, force: force,
+            targets: watchMapTargets, through: companion, force: force,
             progress: { name in if !quiet { self.status = "Drawing \(name)…" } })
         watchMapFailed = report.failure != nil
         // A quiet pass that did nothing leaves the row exactly as it was: only a send or a
