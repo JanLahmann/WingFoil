@@ -117,9 +117,11 @@ enum WatchMapSender {
             return (nil, error.localizedDescription)
         }
         guard let image = snapshot.image.cgImage else { return (nil, "no image") }
-        guard image.width == side, image.height == side else {
-            return (nil, "the snapshot came back \(image.width)×\(image.height), not \(side)")
-        }
+        // `options.scale = 1` is not honoured on iOS 26: the snapshot comes back at the
+        // screen's scale, 1080 px on a 3× phone (measured, 13 Sep 2026 — this is what
+        // Jan's "no map to send yet" was). So the image is drawn into the 360-px context
+        // below whatever size it arrived at; a 3× image drawn at 1× is a 3 × 3 box
+        // average, which is the same whole-block downsample the pipeline wanted.
 
         var bytes = [UInt8](repeating: 0, count: side * side * 4)
         let info = CGImageAlphaInfo.premultipliedLast.rawValue
