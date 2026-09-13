@@ -250,7 +250,21 @@ struct LibraryView: View {
         let match = wanted == "latest"
             ? store.sessions.first
             : store.sessions.first { ($0.originalFilename ?? "").contains(wanted) }
-        if let match { path = [match.id] }
+        guard let match else { return }
+        // `UI_DISCIPLINE=windsurfFin` re-analyses that session under a preset before the page
+        // opens (docs/algorithms.md "Disciplines"). `simctl` cannot tap a segmented control,
+        // and the preset has to be in force *before* the detail loads or the shot is of the
+        // wingfoil reading with a windsurf chip on it.
+        if let raw = ProcessInfo.processInfo.environment["UI_DISCIPLINE"],
+           let discipline = Discipline(rawValue: raw),
+           discipline != match.analysisDiscipline {
+            Task {
+                await store.setDiscipline(discipline, for: match)
+                path = [match.id]
+            }
+            return
+        }
+        path = [match.id]
     }
     #endif
 

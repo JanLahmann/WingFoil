@@ -351,7 +351,8 @@ function buildModel(result) {
         // under its chips and the table below this map uses in its `why` column — one
         // sentence, one wording, three surfaces. Absent on a fly-through, and on a document
         // written before the engine recorded a reason.
-        ...(outcomeText(turn, (g.config || {}).turnPumpedMarginalSpeed)
+        ...(outcomeText(turn, (g.config || {}).turnPumpedMarginalSpeed,
+                        (g.config || {}).discipline)
             ? [["why", outcomeText(turn, (g.config || {}).turnPumpedMarginalSpeed)]] : []),
         // entry → min → exit, all three on the maneuver channel (engine 0.11.0): the
         // bottom of the turn says what it cost, the exit says whether he carried it out.

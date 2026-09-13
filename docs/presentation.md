@@ -2020,6 +2020,64 @@ both apps already gets (`2.6 km`, `13.47 kn`, `10:45 min`). One implementation p
 **Distance is one decimal**, everywhere: `12.8 km`. The web session tile and the library
 list printed two, eight points from a block printing one.
 
+## Discipline lexicon — the same table, in the words of the rig (EXPERIMENTAL)
+
+A windsurfer on a fin does not fly and has no foil to lose. Every word below is a word the
+engine has no opinion about — the numbers, the verdicts and the map layers are identical, and
+only their spelling changes — so the swap lives in presentation: `DisciplineLexicon` in the
+kit, `web/js/lexicon.js` on the site, one table, and **the wingfoil column is the strings both
+already printed, character for character**. `.wingfoil` is the default of every function that
+takes a discipline, so a surface that has not been taught about disciplines is unmoved.
+
+| wingfoil | windsurf (both presets) | where |
+|---|---|---|
+| `flying` | `planing` | map legend chip, track tint |
+| `Foil time` / `foil time` | `Planing time` / `planing time` | the Foil card's caption, the divergence table |
+| `On foil` / `on foil` | `Planing` / `planing` | the Foil card's title, the period block |
+| `Takeoff` / `Takeoffs` | `Planing start` / `Planing starts` | the section tab, the attempt map and list |
+| `lost the foil` | `stopped planing` | the outcome ladder, in a sentence |
+| `off the foil` | `off the plane` | `TurnAnalytics.outcomeText`, the turn page's "why" line |
+| `Foil` (the card) | `Planing` | the Ride tab's flight facts |
+| `Flights` | `Planing runs` | the same card |
+
+**Not translated, on purpose:** the whole turn vocabulary. *tack*, *jibe*, *flew through*,
+*touchdown*, *fell in*, *clean*, *dry*, *wrist under* mean the same thing on either rig, and
+"clean jibe" is the phrase this product is named after (see the spelling contract above).
+
+**Pumping is absent, not zero.** On a windsurf preset the pump channel was never run
+(docs/algorithms.md "Disciplines"), so the pump chips, the "pumps to takeoff" tile, the pump
+strokes, the failed-attempt headline, the attempt filter, the stroke column and the whole "What
+pumping cost" card are **not drawn**. A dash is a measurement that failed; nothing was
+measured. The Takeoffs tab reduces to two tiles — how many planing starts, and how long the run
+to planing took — and a list with no stroke column.
+
+**The chip.** A windsurf session wears `windsurf · experimental` in amber beside the discipline
+badge, on the session page and in the library row. Beside it and never instead of it: the badge
+says what the *recording* is, the chip says how it is being read and that the reading is not one
+anybody has checked yet.
+
+### Where the override lives
+
+**Session → Log → "Analyse as"**, a three-way segmented control (Wingfoil / Windsurf foil /
+Windsurf fin) under the Recording card, with the footnote:
+
+> Experimental — windsurf analysis is untested; jibes and tacks work, pumping is off, planing
+> thresholds are provisional. Tell us what you see.
+
+Log rather than Ride, and a row rather than a prominent control, because Jan's brief was to
+*hide it a bit*: the rider looking for it will find it, and the rider who is not will never be
+offered a choice he has no way to evaluate. Log is the tab about the *record* rather than the
+riding, which is the question this row asks — not "what did you do", but "how should this be
+read". Changing it re-derives **this session and nothing else** (docs/algorithms.md,
+"Disciplines"); the anchor is `discipline`, and `UI_DISCIPLINE=windsurfFin` sets it for a
+screenshot. Help: **Windsurf (experimental)**, under "Where the numbers come from".
+
+**The web has no override.** There is no per-session settings place on the session page to hang
+one on, so a session is read in whatever preset its `discipline` developer field asked for —
+`meta.analysedAs`, written by `web_entry.analyze_bytes`. Trends and Records are untouched:
+windsurf sessions sit in the library like any other and there is no separate record set, which
+the help topic says out loud.
+
 ## Formatter rules
 
 - **A missing value is absent, never 0.** No dashes-grid where a whole card has nothing to

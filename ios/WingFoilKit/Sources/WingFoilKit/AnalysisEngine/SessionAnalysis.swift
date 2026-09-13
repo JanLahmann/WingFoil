@@ -207,6 +207,13 @@ public struct RatesConfig: Sendable, Equatable {
 /// Echo of the parameters actually used, keyed by their docs/algorithms.md names.
 /// Speeds in km/h, holds in s, accel in m/s².
 public struct AnalysisConfig: Sendable, Codable, Equatable {
+    /// Which **preset** produced this document (docs/algorithms.md "Disciplines"), or nil
+    /// for the default. Absent rather than `"wingfoil"`, the same rule the experimental 360
+    /// block follows: the config block records what produced *this* document, and a key
+    /// printed on every golden would be an announcement of a layer that, for the default, is
+    /// not even reached — and a change to every committed file for a preset that changed no
+    /// number in one.
+    public var discipline: String?
     public var foilEntrySpeed: Double
     public var entryHold: Double
     public var foilExitSpeed: Double
@@ -287,7 +294,9 @@ public struct AnalysisConfig: Sendable, Codable, Equatable {
     public init(filter: FilterConfig, flight: FlightConfig, records: RecordsConfig,
                 turn: TurnConfig = TurnConfig(), wind: WindConfig = WindConfig(),
                 pump: PumpConfig = PumpConfig(), takeoff: TakeoffConfig = TakeoffConfig(),
-                rates: RatesConfig = RatesConfig()) {
+                rates: RatesConfig = RatesConfig(),
+                discipline: Discipline = .wingfoil) {
+        self.discipline = discipline.isWindsurf ? discipline.rawValue : nil
         foilEntrySpeed = flight.foilEntrySpeedKmh
         entryHold = flight.entryHoldS
         foilExitSpeed = flight.foilExitSpeedKmh
@@ -1380,7 +1389,18 @@ public enum SessionSummarizer {
                                pumpConfig: PumpConfig = PumpConfig(),
                                takeoffConfig: TakeoffConfig = TakeoffConfig(),
                                hrConfig: HrConfig = HrConfig(),
-                               ratesConfig: RatesConfig = RatesConfig()) -> SessionAnalysis {
+                               ratesConfig: RatesConfig = RatesConfig(),
+                               discipline: Discipline = .wingfoil) -> SessionAnalysis {
+        // The preset, over whatever the caller handed in (docs/algorithms.md "Disciplines").
+        // Identity for wingfoil — not merely equal to it, *not applied*, so neither the
+        // published contract nor a tuning slider can be moved by a default.
+        let presets = discipline.apply(to: Discipline.Configs(
+            flight: flightConfig, turn: turnConfig, flightEnd: flightEndConfig,
+            takeoff: takeoffConfig))
+        let flightConfig = presets.flight
+        let turnConfig = presets.turn
+        let flightEndConfig = presets.flightEnd
+        let takeoffConfig = presets.takeoff
         let clean = TrackCleaner.clean(raw, config: filterConfig)
         let segmentation = FlightSegmenter.segment(clean, config: flightConfig)
         let records = GP3SCalculator.records(for: clean, config: recordsConfig)
@@ -1389,7 +1409,12 @@ public enum SessionSummarizer {
         // config, or the prior and the session would be talking about different turns.
         let wind = WindEstimator.estimate(clean, flights: segmentation, config: windConfig,
                                           turnConfig: turnConfig)
-        let pump = PumpAnalyzer.track(raw, config: pumpConfig)
+        // No wing, no pump: on a windsurf preset the accelerometer hears the rig and the
+        // chop, and every number built on it would be noise presented as effort. `nil` is the
+        // same state a source with no accelerometer is already in, so every stage below
+        // degrades the way it has always degraded — no stroke counts, no episodes, no
+        // `pumped` flag, no HR pump cost — rather than through a second code path.
+        let pump = discipline.pumping ? PumpAnalyzer.track(raw, config: pumpConfig) : nil
         // The turn ladder and the flight-end ladder read the same three channels of the
         // same track, so the whole-track evidence is built once here and handed to both.
         // It is only shared while both configs agree on the two parameters it is built
@@ -1464,7 +1489,7 @@ public enum SessionSummarizer {
             config: AnalysisConfig(filter: filterConfig, flight: flightConfig,
                                    records: recordsConfig, turn: turnConfig, wind: windConfig,
                                    pump: pumpConfig, takeoff: takeoffConfig,
-                                   rates: ratesConfig),
+                                   rates: ratesConfig, discipline: discipline),
             capabilities: AnalysisCapabilities(raw.capabilities),
             flights: segmentation.flights.enumerated().map {
                 FlightRecord($0.element, takeoffPumps: pumpsByFlight[$0.offset])

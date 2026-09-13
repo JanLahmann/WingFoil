@@ -26,7 +26,7 @@ import zipfile
 
 import numpy as np
 
-from wingfoil_lab import ENGINE_VERSION
+from wingfoil_lab import ENGINE_VERSION, discipline
 from wingfoil_lab.filters import hybrid_speed
 from wingfoil_lab.flightend import UNKNOWN
 from wingfoil_lab.goldens import analyze, build_golden
@@ -109,13 +109,21 @@ def analyze_bytes(data, name: str = "session.fit") -> dict:
     try:
         with open(path, "wb") as fh:
             fh.write(raw)
+        # **The preset is read off the recording, and only off the recording.** The web has
+        # no per-session settings place to hang an override on (the phone does), so a
+        # windsurf session is one whose `discipline` developer field says so. The wingfoil
+        # pass runs first and is re-run only when the tag moves the preset — which is never
+        # on the corpus, so the common path still parses once.
         a = analyze(path)
+        disc = discipline.resolve(a.track.capabilities.discipline)
+        if disc is not discipline.Discipline.WINGFOIL:
+            a = analyze(path, discipline=disc)
         return {
             "schema": SCHEMA,
             "engineVersion": ENGINE_VERSION,
             "file": {"name": inner or name, "bytes": len(raw),
                      "container": "zip" if inner else suffix.lstrip(".")},
-            "meta": _meta(a),
+            "meta": _meta(a, disc),
             "golden": build_golden(a),
             "view": _view(a),
         }
@@ -133,7 +141,7 @@ def analyze_json(data, name: str = "session.fit") -> str:
 # --------------------------------------------------------------------------- meta
 
 
-def _meta(a) -> dict:
+def _meta(a, disc=None) -> dict:
     """Session identity + the watch's own session-level dev fields (docs/fit-schema.md)."""
     caps = a.track.capabilities
     s = a.track.session
@@ -181,6 +189,10 @@ def _meta(a) -> dict:
         "sport": caps.sport,
         "subSport": caps.sub_sport,
         "discipline": caps.discipline,
+        # Which **preset** the engine was run under (docs/algorithms.md "Disciplines") —
+        # a different fact from the tag above, which is what the watch wrote down. The page
+        # reads this one for its lexicon and for the experimental chip.
+        "analysedAs": (disc or discipline.Discipline.WINGFOIL).value,
         "windDirUserDeg": wind_user,
         "windDirAutoDeg": wind_auto,
         "appVersion": None if app_version is None else int(app_version),

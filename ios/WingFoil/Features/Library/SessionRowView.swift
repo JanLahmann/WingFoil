@@ -34,7 +34,14 @@ struct SessionRowView: View {
                             .frame(maxWidth: 130, alignment: .trailing)
                     }
                     if row.isProvisional { ProvisionalBadge() }
-                    Text(SessionDisplay.badge(row))
+                    if let chip = row.analysisDiscipline.lexicon.chip {
+                    Text(chip)
+                        .font(.caption2.weight(.semibold))
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(Color.orange.opacity(0.16), in: .capsule)
+                        .foregroundStyle(.orange)
+                }
+                Text(SessionDisplay.badge(row))
                         .font(.caption2.weight(.semibold))
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)

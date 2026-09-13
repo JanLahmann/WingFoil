@@ -2,6 +2,7 @@
   "web_entry.py",
   "library.py",
   "wingfoil_lab/__init__.py",
+  "wingfoil_lab/discipline.py",
   "wingfoil_lab/evidence.py",
   "wingfoil_lab/filters.py",
   "wingfoil_lab/flight.py",

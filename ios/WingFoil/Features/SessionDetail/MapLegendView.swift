@@ -57,12 +57,18 @@ struct MapLegendView: View {
     /// route because that is what it is about — the route, not the events on it — even
     /// though it hides outright the way a marker layer does.
     private var routeLayers: [MapLayer] {
-        scope.layers.filter { $0.isLine || $0 == .direction }
+        layers.filter { $0.isLine || $0 == .direction }
     }
 
     private var markerLayers: [MapLayer] {
-        scope.layers.filter { !($0.isLine || $0 == .direction) }
+        layers.filter { !($0.isLine || $0 == .direction) }
     }
+
+    /// This map's chips **for this session's discipline**: the pumping chip is not offered
+    /// where the pump channel was never run (docs/algorithms.md "Disciplines").
+    private var layers: [MapLayer] { scope.layers(discipline) }
+
+    private var discipline: Discipline { detail.row.analysisDiscipline }
 
     /// Whether the marker row has anything to say on *this* session. A map whose event
     /// categories are all empty draws no second row rather than a row of inert captions.

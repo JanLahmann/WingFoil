@@ -34,8 +34,35 @@ import Testing
         }
     }
 
+    /// The **discipline presets** (docs/algorithms.md "Disciplines"), cross-checked against
+    /// the lab on one recording per preset.
+    ///
+    /// They live in `fixtures/goldens/discipline/` rather than beside the corpus, and that is
+    /// load-bearing in three places at once: the corpus sweep above, `test_corpus.py` and
+    /// `make_presentation_goldens.py` all glob `goldens/*.expected.json` non-recursively, and
+    /// a preset run of a recording the corpus already holds is a *re-reading* of it, not a
+    /// nineteenth session. Which preset a document was written under is read off the document
+    /// itself (`config.discipline`), so the file name is a convenience and never the contract.
+    @Test func disciplineGoldensMatchWhenPresent() throws {
+        let dir = testFixturesDir.appendingPathComponent("goldens/discipline")
+        let goldens = ((try? FileManager.default.contentsOfDirectory(
+            at: dir, includingPropertiesForKeys: nil)) ?? [])
+            .filter { $0.lastPathComponent.hasSuffix(".expected.json") }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+        guard !goldens.isEmpty else { return }
+        for golden in goldens {
+            try check(golden: golden)
+        }
+    }
+
     private func check(golden url: URL) throws {
-        let stem = String(url.lastPathComponent.dropLast(".expected.json".count))
+        // `<stem>.<discipline>.expected.json` for a preset run, `<stem>.expected.json` for the
+        // corpus. The tag is stripped to find the recording; the preset itself comes off the
+        // config echo below, which is the document's own statement about how it was produced.
+        var stem = String(url.lastPathComponent.dropLast(".expected.json".count))
+        for discipline in Discipline.allCases where discipline.isWindsurf {
+            stem = stem.replacingOccurrences(of: ".\(discipline.rawValue)", with: "")
+        }
         guard let fitURL = findFixtureTrack(stem: stem) else {
             let where_ = "fixtures/sessions or fixtures/synthetic"
             Issue.record("golden \(stem): no \(stem).fit, .gpx or .tcx under \(where_)")
@@ -101,13 +128,18 @@ import Testing
             if let v = num(cfg["hrMaxSampleGap"]) { hrCfg.maxSampleGapS = v }
             if let v = num(cfg["windowRateMin"]) { ratesCfg.windowRateMin = v }
         }
+        // Absent means wingfoil — the preset layer is invisible on a default document, and a
+        // stored `"wingfoil"` would be an announcement of a layer that was never reached.
+        let discipline = ((json["config"] as? [String: Any])?["discipline"] as? String)
+            .flatMap(Discipline.init(rawValue:)) ?? .wingfoil
         // The same door `make_goldens.py` uses: FIT or GPX, decided by the file itself.
         let raw = try TrackParser.parse(url: fitURL)
         let analysis = SessionSummarizer.analyze(raw, filterConfig: filter,
                                                  flightConfig: flight, recordsConfig: recCfg,
                                                  turnConfig: turnCfg, windConfig: windCfg,
                                                  pumpConfig: pumpCfg, takeoffConfig: takeoffCfg,
-                                                 hrConfig: hrCfg, ratesConfig: ratesCfg)
+                                                 hrConfig: hrCfg, ratesConfig: ratesCfg,
+                                                 discipline: discipline)
 
         checkCapabilities(stem, json, analysis, raw)
         checkFlights(stem, json, analysis)
