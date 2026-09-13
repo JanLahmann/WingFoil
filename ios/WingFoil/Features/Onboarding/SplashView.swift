@@ -44,6 +44,13 @@ struct SplashView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Branding.appName)
+        // The navy is dark whatever the phone is set to, so the clock and the battery on top
+        // of it have to be told — `WelcomeView` does the same, for the same reason. The other
+        // half of that sentence is `UIStatusBarStyle: UIStatusBarStyleLightContent` in
+        // project.yml, which is what the *launch* screen reads: without it the handover would
+        // flip the clock from black to white, which is the one thing on this screen that is
+        // allowed to move and it is not one of them.
+        .preferredColorScheme(.dark)
         .task { await hold() }
     }
 
@@ -65,6 +72,7 @@ struct SplashView: View {
                 .font(isShort ? .title.weight(.bold) : .largeTitle.weight(.bold))
                 .kerning(0.5)
                 .foregroundStyle(Brand.paper)
+                .multilineTextAlignment(.center)
 
             // In landscape there is no room under a 140 pt mark for two lines, and the
             // wordmark is the half that carries the brand.
@@ -76,7 +84,12 @@ struct SplashView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .frame(maxWidth: 320)
+        // A width of its own, and this is load-bearing: an overlay is *proposed* the size of
+        // the thing it hangs off, which here is a 140 pt square, and "CleanJibe" set in the
+        // largest type the app owns came out of that proposal hyphenated across two lines.
+        // 320 pt is the width of the narrowest phone still supported, so the block never
+        // overhangs a screen it has to be centred on.
+        .frame(width: 320)
         .opacity(wordsShown ? 1 : 0)
     }
 
