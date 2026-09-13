@@ -101,7 +101,10 @@ struct ImportView: View {
                     Button {
                         showStravaImporter = true
                     } label: {
-                        Label("Strava…", systemImage: "figure.wave")
+                        // "Import from Strava…" under a "Strava" header, exactly as the
+                        // Health row reads under "Apple Health": the header names the
+                        // service, the row names the action, and neither repeats the other.
+                        Label("Import from Strava…", systemImage: "figure.wave")
                     }
                     .disabled(store.isBusy)
                     if store.isStravaConnected, let athlete = store.stravaAthlete {
