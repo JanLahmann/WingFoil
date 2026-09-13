@@ -2329,6 +2329,34 @@ maneuver inherited the index. The whole block is absent when nothing is tuned: w
 the two runs are the same run, and "nothing changed" on every session would be noise on the one
 page that is about maneuvers.
 
+## The watch link — Settings → Garmin watch
+
+One section, and every row in it is a fact the rider can act on: which watch, whether it is
+reachable, when a summary last came through, and the two things this phone can push to it.
+There is no "connect" button, because there is nothing here to connect — Garmin Connect
+Mobile owns the Bluetooth link and this app is a guest on it, so each state says what is
+missing (`CompanionLinkState.headline` / `.detail`) rather than that something failed.
+
+**Send wind to watch.** An eight-point compass, not a 0–359 field: nobody knows the wind to
+the degree, the watch only uses it to decide which side of the axis a turn happened on, and a
+wrong 12° costs nothing while a wrong 120° relabels every tack as a jibe. Manual by decision
+(ADR-013).
+
+**Send map to watch.** The watch cannot have a Garmin map — the firmware's own map view kills
+the app on the fenix 8 (docs/watch-map-snapshot.md, GitHub #4) — so the phone draws one for
+it: a coarse land/water/road mask of a 3 km box around a spot, a kilobyte or two, blitted
+under the breadcrumb. The row names **the two spots it would send**, which are the two
+most-ridden in the library, because the watch holds exactly two slots and there is therefore
+no choice to offer — only the answer, so the rider can see which ground is about to go over.
+Under it, the last result in one line: `sent 2.1 KB · 14:02`, or `Already on the watch ·
+14:02`, or the failure in the rider's words. The button re-sends unconditionally and shows a
+spinner while MapKit draws, which on a cold tile cache is a second or two; a row that said
+nothing for that long would read as a row that did nothing. The push is also automatic — at
+launch and after every import — and **silent**, because the answer is "nothing to change"
+almost every time and a line that announces that on every launch is a line the rider learns
+to stop reading. Nothing goes over the radio unless the mask's hash differs from the one this
+watch last acknowledged.
+
 ## iPad and Mac — one column, wider glass
 
 The iPhone app **is** the iPad app (`TARGETED_DEVICE_FAMILY: "1,2"` on the app and the widget
