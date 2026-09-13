@@ -266,11 +266,11 @@ not committed, so the test is `skipif`-guarded and skips in CI; the repo-only ha
 argument is `test_raising_the_marginal_speed_revives_the_rung`, on a synthetic jibe, which runs
 everywhere.
 
-### Fixture provenance — one converted recording, and why
+### Fixture provenance — the converted recordings, and why
 
 Every fixture in `fixtures/sessions/**` is one of Jan's own recordings kept as it came off
-the watch. Two are touched, and both are the same afternoon: the bundled example is
-*scrubbed* (see below), and **one is not a recording at all**.
+the watch. The exceptions are all the same afternoon: the bundled example is *scrubbed*
+(see below), and **three are not recordings at all**.
 `fixtures/sessions/gpx/2026-08-30-1407_nago-torbole.gpx` is that same 2026-08-30 CIQ
 session converted by `lab/tools/fit_to_gpx.py`
 (track points, `<ele>`, `<time>`, and heart rate in Garmin's `TrackPointExtension`; the
@@ -286,8 +286,21 @@ outcome, wind axis to the degree; foil % 67.9 → 67.3; speed records within 0.1
 13.472 → 13.655 — positional differentiation reads *high*, which is the whole reason those
 records are marked uncertified); every pump field null and `pumpEpisodes` empty.
 
-`fixtures/README.md` carries the row; `make_goldens.py` picks up `.fit` and `.gpx` alike and
-`analyze` routes on the file itself, so nothing in the tooling needs to know which is which.
+**The TCX pair, and the element between them.** The other two converted fixtures are
+`fixtures/sessions/tcx/2026-08-30-1407_nago-torbole-{speed,nospeed}.tcx`, the same afternoon
+again through `lab/tools/fit_to_tcx.py`. They exist because a TCX is the one format that is
+not one input class (docs/algorithms.md, "TCX import"): with `Extensions/TPX/Speed` it is
+class (b) and its speed records certify, without it class (c) like a GPX. The pair differs
+by **exactly that element**, which is what makes it an experiment rather than two fixtures —
+and both ends of it land where they should. `-speed` reproduces the CIQ FIT's own numbers
+(2 s 13.472 kn, foil 67.9 %, `hasDoppler` true, class b); `-nospeed` reproduces the GPX
+golden's to the digit (13.655 kn, 67.3 %, class c), because it is differentiated by the same
+shared arithmetic. `TcxParseTests` asserts the second of those directly, sample by sample:
+two XML parsers disagreeing about the same metres is the bug that pairing exists to catch.
+
+`fixtures/README.md` carries the rows; `make_goldens.py` picks up `.fit`, `.gpx` and `.tcx`
+alike and `analyze` routes on the file itself, so nothing in the tooling needs to know which
+is which.
 
 ## Presentation goldens
 
