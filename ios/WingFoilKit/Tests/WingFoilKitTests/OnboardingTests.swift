@@ -82,19 +82,21 @@ import Testing
         let privacy = HelpCatalog.topic(.icuPrivacy)
         #expect(privacy.body.contains(IcuSetupGuide.privacyNote))
 
-        // The setup section is reachable from the index and holds exactly these nine, in
+        // The setup section is reachable from the index and holds exactly these ten, in
         // this order — the example session sits second, right after the path it is an
         // alternative to; the Apple Workout app sits third because for a rider with no
         // Garmin it is not a footnote about data quality but the whole way in (ADR-017);
         // Strava and the share sheet follow it for exactly the same reason (ADR-023), with
         // the watch table under them answering "will mine work" once instead of a third of
         // an answer in each; the two intervals.icu troubleshooting topics stay together; and
-        // the backup topic sits last because it is the one a rider reads before he leaves a
-        // phone rather than when he arrives on one.
+        // the backup topic sits under them because it is the one a rider reads before he
+        // leaves a phone rather than when he arrives on one — with "Sending feedback" last
+        // of all, which is the section's way back out: every topic above it is how a session
+        // gets in, and that one is what to do when it did not.
         #expect(HelpCatalog.topics(in: .setup).map(\.id)
                 == [.icuSetup, .exampleSession, .appleWorkoutApp, .stravaImport,
                     .shareFromWatchApp, .whichWatch, .icuTroubleshooting,
-                    .icuPrivacy, .libraryBackup])
+                    .icuPrivacy, .libraryBackup, .sendingFeedback])
     }
 
     /// The topic for the rider who owns no Garmin (ADR-017). It has one job — get him from
