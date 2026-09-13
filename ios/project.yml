@@ -269,6 +269,21 @@ targets:
                 - gpx
               public.mime-type:
                 - application/gpx+xml
+          # TCX, on the same terms as GPX and for the same reason: it is Garmin's schema,
+          # not ours, and it is how a Polar, Suunto or Coros session usually reaches the
+          # phone. Imported, conforming to public.xml, so "Open in" offers CleanJibe for a
+          # file any of those apps wrote.
+          - UTTypeIdentifier: de.lahmann.wingfoil.tcx
+            UTTypeDescription: TCX activity file
+            UTTypeConformsTo:
+              - public.xml
+              - public.data
+              - public.content
+            UTTypeTagSpecification:
+              public.filename-extension:
+                - tcx
+              public.mime-type:
+                - application/vnd.garmin.tcx+xml
         CFBundleDocumentTypes:
           - CFBundleTypeName: Activity recording
             CFBundleTypeRole: Viewer
@@ -276,6 +291,7 @@ targets:
             LSItemContentTypes:
               - de.lahmann.wingfoil.fit
               - de.lahmann.wingfoil.gpx
+              - de.lahmann.wingfoil.tcx
               - public.zip-archive
     scheme:
       environmentVariables:

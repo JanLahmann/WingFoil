@@ -145,7 +145,11 @@ public enum GpxSessionParser {
     /// detector and the record windows reading different sessions. A repeated instant
     /// divides by zero, so a non-finite result becomes nil and the row is dropped by the
     /// cleaner exactly as a missing speed is.
-    private static func segmentSpeed(t: [Double], x: [Double], y: [Double]) -> [Double?] {
+    ///
+    /// Internal rather than private because `TcxSessionParser` derives a speedless TCX's
+    /// speed with it. Two XML parsers differentiating the same positions two ways would be
+    /// a disagreement no golden could see, so the arithmetic is spelled once.
+    static func segmentSpeed(t: [Double], x: [Double], y: [Double]) -> [Double?] {
         let n = t.count
         guard n >= 2 else { return Array(repeating: nil, count: n) }
         var out = [Double?](repeating: nil, count: n)

@@ -99,8 +99,9 @@ class SourceCapabilities:
         if self.has_dev_fields:
             return "a"  # our CIQ app
         if self.has_speed:
-            return "b"  # native/other FIT
-        return "c"      # degraded (e.g. GPX-derived)
+            return "b"  # the file measured its own speed: a native/other FIT, or a TCX
+                        # stating Extensions/TPX/Speed
+        return "c"      # degraded: every GPX, and a TCX with no stated speed
 
 
 @dataclass
@@ -222,23 +223,39 @@ def parse_fit(path: str | Path) -> RawTrack:
 
 
 def parse_track(path: str | Path) -> RawTrack:
-    """Parse whatever this file is — FIT or GPX — into one `RawTrack`.
+    """Parse whatever this file is — FIT, GPX or TCX — into one `RawTrack`.
 
-    The single door every consumer should come through (engine 0.9.0). The format is
-    decided by extension and confirmed by content: a `.gpx` is XML and a FIT carries the
-    `.FIT` signature at byte 8, so a mislabelled file is read for what it *is* rather than
-    for what it is called. Everything downstream — clean, flights, turns, records — is
-    already written against `RawTrack` plus `SourceCapabilities` and needs to know nothing
-    about which door the track came in by; that is the whole point of the class (a)/(b)/(c)
-    split (docs/plan.md §3.3).
+    The single door every consumer should come through (engine 0.9.0; TCX joined it later).
+    The format is decided by **content**, with the extension as a last resort: each of the
+    three announces itself at the front of the file — the `.FIT` signature at byte 8, a
+    `<gpx` root element, a `<TrainingCenterDatabase>` one — so a mislabelled file is read
+    for what it *is* rather than for what it is called. That matters more with three formats
+    than it did with two: a browser unpacking a zip and a phone archiving an original both
+    name the file from whatever the uploader called it, and "ride.gpx" holding TCX bytes is
+    a real shape.
+
+    Everything downstream — clean, flights, turns, records — is already written against
+    `RawTrack` plus `SourceCapabilities` and needs to know nothing about which door the
+    track came in by; that is the whole point of the class (a)/(b)/(c) split (docs/plan.md
+    §3.3). A TCX is the one format that can be either (b) or (c), and `tcx.py` decides which
+    from the file itself.
     """
     path = Path(path)
-    from .gpx import is_gpx, parse_gpx        # local: gpx imports this module
-    if path.suffix.lower() == ".gpx":
-        return parse_gpx(path)
+    from .gpx import is_gpx, parse_gpx        # local: gpx/tcx import this module
+    from .tcx import is_tcx, parse_tcx
     with open(path, "rb") as fh:
         head = fh.read(2048)
-    return parse_gpx(path) if is_gpx(head) else parse_fit(path)
+    if is_tcx(head):
+        return parse_tcx(path)
+    if is_gpx(head):
+        return parse_gpx(path)
+    # Nothing announced itself — a truncated XML header, an exotic wrapper. The extension is
+    # the only thing left to go on, and FIT stays the fallback it has always been.
+    if path.suffix.lower() == ".tcx":
+        return parse_tcx(path)
+    if path.suffix.lower() == ".gpx":
+        return parse_gpx(path)
+    return parse_fit(path)
 
 
 #: The rungs of the UTC-offset ladder, best answer first — the vocabulary of

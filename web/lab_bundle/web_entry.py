@@ -50,30 +50,47 @@ def _as_bytes(data) -> bytes:
     return bytes(data)
 
 
+#: Extensions a zipped recording may arrive under. Mirrors `parse.parse_track`'s reach.
+RECORDING_SUFFIXES = (".fit", ".gpx", ".tcx")
+
+
 def _unzip(raw: bytes) -> tuple[bytes, str | None]:
     """A .zip holding exactly one recording (what intervals.icu and Garmin exports give)."""
     with zipfile.ZipFile(io.BytesIO(raw)) as zf:
         fits = [n for n in zf.namelist()
-                if n.lower().endswith((".fit", ".gpx")) and not n.startswith("__MACOSX/")]
+                if n.lower().endswith(RECORDING_SUFFIXES) and not n.startswith("__MACOSX/")]
         if not fits:
-            raise ValueError("zip contains no .fit or .gpx file")
+            raise ValueError("zip contains no .fit, .gpx or .tcx file")
         if len(fits) > 1:
             raise ValueError(f"zip contains {len(fits)} recordings; expected exactly one")
         return zf.read(fits[0]), os.path.basename(fits[0])
 
 
-def _is_gpx(raw: bytes) -> bool:
-    """Content sniff, mirroring `wingfoil_lab.gpx.is_gpx`."""
+def _sniff(raw: bytes) -> str | None:
+    """-> ".fit" | ".gpx" | ".tcx" | None, by content.
+
+    Mirrors `wingfoil_lab.parse.parse_track`'s own three tests, in the same order, and the
+    kit's `TrackParser.format`. The suffix it returns is only ever used to name the
+    temporary file `analyze` is handed — which then sniffs the bytes again.
+    """
+    if len(raw) >= 14 and raw[8:12] == b".FIT":
+        return ".fit"
     head = raw[:512].lstrip(b"\xef\xbb\xbf \t\r\n")
-    return head.startswith(b"<") and b"<gpx" in raw[:2048].lower()
+    if not head.startswith(b"<"):
+        return None
+    window = raw[:2048].lower()
+    if b"<trainingcenterdatabase" in window:
+        return ".tcx"
+    return ".gpx" if b"<gpx" in window else None
 
 
 def analyze_bytes(data, name: str = "session.fit") -> dict:
     """Recording bytes -> the full result document (plain Python dict).
 
-    FIT, GPX (engine 0.9.0), or a zip holding exactly one of either. Which it is comes off
-    the bytes, not the name: a browser hands us whatever the rider dragged in, and the two
-    formats have unmistakable signatures — `.FIT` at byte 8, a `<gpx` root element.
+    FIT, GPX (engine 0.9.0), TCX, or a zip holding exactly one of them. Which it is comes
+    off the bytes, not the name: a browser hands us whatever the rider dragged in, and all
+    three formats have unmistakable signatures — `.FIT` at byte 8, a `<gpx` root element, a
+    `<TrainingCenterDatabase>` one.
     """
     raw = _as_bytes(data)
     inner = None
@@ -81,11 +98,11 @@ def analyze_bytes(data, name: str = "session.fit") -> dict:
         raw = gzip.decompress(raw)
     if raw[:2] == b"PK":
         raw, inner = _unzip(raw)
-    gpx = _is_gpx(raw)
-    if not gpx and (len(raw) < 14 or raw[8:12] != b".FIT"):
-        raise ValueError("not a FIT or GPX file (no .FIT signature, no <gpx> root)")
+    suffix = _sniff(raw)
+    if suffix is None:
+        raise ValueError("not a FIT, GPX or TCX file (no .FIT signature, no <gpx> or "
+                         "<TrainingCenterDatabase> root)")
 
-    suffix = ".gpx" if gpx else ".fit"
     tmpdir = tempfile.mkdtemp(prefix="wingfoil-")
     fallback = name if name.lower().endswith(suffix) else f"session{suffix}"
     path = os.path.join(tmpdir, inner or fallback)

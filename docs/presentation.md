@@ -902,11 +902,16 @@ staring at while the clip loops — the one frame worth pointing a camera at.
 ### Uncertified speed — the one mark a degraded source always wears
 
 A speed record is only trustworthy when it came off the receiver's Doppler channel. A source
-that carries positions but no speed channel — **every GPX** (engine 0.9.0), and the occasional
-converted export — has its speed differentiated from positions instead, which is noisier and
-biased upward on a bad fix. Those records are still shown, because they are still the rider's
-session; they are shown **marked**, because an all-time best is exactly where a number nobody
-can verify does the most damage.
+that carries positions but no speed channel — **every GPX** (engine 0.9.0), a **TCX without
+`Extensions/TPX/Speed`**, and the occasional converted export — has its speed differentiated
+from positions instead, which is noisier and biased upward on a bad fix. Those records are
+still shown, because they are still the rider's session; they are shown **marked**, because an
+all-time best is exactly where a number nobody can verify does the most damage.
+
+A TCX *with* that element is class (b) and certifies like any FIT, which is also why the
+class-(b) badge says **"measured speed channel"** rather than "standard Garmin recording": a
+Polar, Suunto or Coros session arriving through intervals.icu never came off a Garmin, and the
+thing the class asserts is that the file measured its own speed.
 
 The rule is read from one field, `sourceClass == "c"`, and nothing downstream of the parser
 knows the word GPX:

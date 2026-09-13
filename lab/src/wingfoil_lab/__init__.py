@@ -3,6 +3,7 @@
 Module map (mirrors the analysis pipeline in docs/plan.md §3.3):
     parse    FIT -> RawTrack + SourceCapabilities (`parse_track` is the door)
     gpx      GPX 1.1 -> the same RawTrack, class (c)              [engine 0.9.0]
+    tcx      TCX v2  -> the same RawTrack, class (b) with TPX speed, else (c)
     filters  sample hygiene (GP3S gates, projection, hybrid speed)   [phase 1]
     flight   foil/flight segmentation (hysteresis)                    [phase 1]
     turns    turn detection + scoring + classification                [phase 2]
