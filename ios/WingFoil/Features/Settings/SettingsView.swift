@@ -261,6 +261,16 @@ struct SettingsView: View {
     /// exactly that, in the rider's words rather than the estimator's.
     private var analysisSection: some View {
         Section {
+            // **"I mostly ride"** — the preset every imported session gets when its recording
+            // does not say, which is every source but the CleanJibe watch app: wingfoil is not
+            // a sport in Garmin, Strava, intervals.icu or Apple Health (docs/presentation.md,
+            // "Confirming the discipline on import"). Above the turn habit because it is the
+            // more basic of the two questions — which rig, then which turn.
+            Picker("I mostly ride", selection: Binding(
+                get: { store.riderDiscipline },
+                set: { store.riderDiscipline = $0 })) {
+                ForEach(Discipline.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
             Picker("Most of my turns are", selection: Binding(
                 get: { store.defaultTurnType },
                 set: { newValue in
@@ -277,7 +287,11 @@ struct SettingsView: View {
         } header: {
             Text("Analysis")
         } footer: {
-            Text("The wind axis comes out of your track as a *line* — which end of it the "
+            Text("Wingfoil is not a sport in Garmin, Strava, intervals.icu or Apple Health, "
+                 + "so a new session cannot say which rig you were on — what you mostly ride "
+                 + "answers for it, and CleanJibe asks you to confirm after each import. "
+                 + "Sessions already in your library are not changed.\n\n"
+                 + "The wind axis comes out of your track as a *line* — which end of it the "
                  + "wind blew from is the hard half. Usually the no-go zone settles it: you "
                  + "can sail any downwind course but none straight into the wind. When a "
                  + "session cannot settle it that way, your habit does, because flipping "

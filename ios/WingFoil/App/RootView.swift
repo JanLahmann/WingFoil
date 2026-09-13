@@ -87,6 +87,18 @@ struct RootView: View {
                              set: { if $0 == nil { store.declineReAdd() } })) { offer in
             ReAddDeletedSheet(offer: offer)
         }
+        // "Analysed as Wingfoil — is that right?". The fourth question the app owns, and the
+        // only one asked *after* the work rather than before it: wingfoil is not a sport in
+        // Garmin, Strava, intervals.icu or Apple Health, so every import that is not the
+        // CleanJibe watch app's own is a guess the rider gets to correct. Here rather than on
+        // the Import screen for the same reason the rider prompt is: an import also arrives by
+        // itself, from a sync or a file tapped in another app. It goes through the store's
+        // same "is anything else up?" predicate, so it can never stack on the other three —
+        // and an automatic pickup never raises it at all, it only leaves the library's banner.
+        .sheet(item: Binding(get: { store.disciplineReview },
+                             set: { if $0 == nil { store.dismissDisciplineReview() } })) {
+            DisciplineReviewView(request: $0)
+        }
         // The first thing a first launch shows, in front of the setup card the library
         // would otherwise open on. A cover rather than a sheet: it is one screen with three
         // answers on it and nothing behind it worth peeking at, and a half-swipe that
