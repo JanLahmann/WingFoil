@@ -108,7 +108,7 @@ targets:
         OTHER_LDFLAGS: "-ObjC"
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil
         MARKETING_VERSION: "0.15.0"
-        CURRENT_PROJECT_VERSION: "40"
+        CURRENT_PROJECT_VERSION: "42"
         TARGETED_DEVICE_FAMILY: "1,2"        # iPhone and iPad (and therefore the Mac,
                                              # which runs it as "Designed for iPad")
         CODE_SIGN_STYLE: Automatic
@@ -388,7 +388,7 @@ targets:
         PRODUCT_NAME: WingFoilWidgets
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.widgets
         MARKETING_VERSION: "0.15.0"
-        CURRENT_PROJECT_VERSION: "40"
+        CURRENT_PROJECT_VERSION: "42"
         TARGETED_DEVICE_FAMILY: "1,2"        # same families as its host app
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB
@@ -483,7 +483,7 @@ targets:
         PRODUCT_NAME: WingFoilWatch
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.watchkitapp
         MARKETING_VERSION: "0.15.0"
-        CURRENT_PROJECT_VERSION: "40"
+        CURRENT_PROJECT_VERSION: "42"
         TARGETED_DEVICE_FAMILY: "4"          # Apple Watch
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB
@@ -598,7 +598,7 @@ targets:
         PRODUCT_NAME: WingFoilWatchWidgets
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.watchkitapp.widgets
         MARKETING_VERSION: "0.15.0"
-        CURRENT_PROJECT_VERSION: "40"
+        CURRENT_PROJECT_VERSION: "42"
         TARGETED_DEVICE_FAMILY: "4"          # Apple Watch
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB
