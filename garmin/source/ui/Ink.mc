@@ -110,4 +110,23 @@ module Ink {
     function dim() as Number {
         return isMip() ? DesignTokens.PHASE_OFF_FOIL_MIP : Graphics.COLOR_DK_GRAY;
     }
+
+    // ---- the ground (device app 0.9.10, docs/watch-map-snapshot.md) ----
+    // The phone-rendered map under the breadcrumb: three inks, all subordinate. Nothing here
+    // may be brighter than the dim track ink, so the teal trail and the white marker stay the
+    // brightest things on the glass. Water is a near-black navy (the page's black is the sea
+    // already; the tint only says "this was water, not nothing"), land a dark grey, roads a
+    // step lighter. MIP has 64 colours and no near-blacks, so it takes the darkest blue and
+    // the two greys the palette has.
+    function mapWater() as Number {
+        return isMip() ? 0x0000AA : 0x0A1E2E;
+    }
+
+    function mapLand() as Number {
+        return isMip() ? 0x555555 : 0x2A2A2A;
+    }
+
+    function mapRoad() as Number {
+        return isMip() ? 0xAAAAAA : 0x4A4A4A;
+    }
 }

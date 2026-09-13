@@ -3646,7 +3646,7 @@ function appVersionAgreesWithTheFitByte(logger as Test.Logger) as Boolean {
     // on without it, which is the same drift this test was written for one field over. It is
     // the source tree's ONE answer to "what is this build", so it now says what the manifests
     // say — and the parse below is what keeps it honest about the byte.
-    Test.assertEqual(FitSchema.APP_VERSION, "0.9.9");
+    Test.assertEqual(FitSchema.APP_VERSION, "0.9.10");
     Test.assertEqual(FitSchema.APP_MINOR, 9);
     // the string's minor field, parsed rather than assumed
     var v = FitSchema.APP_VERSION;
@@ -3887,5 +3887,89 @@ function savedMapIsOfferedOnlyWhenAskedFor(logger as Test.Logger) as Boolean {
     AppSettings.mapAfterSave = was;
     logger.debug("post-save map gate: setting off -> never; on -> firmware has MapTrackView "
         + hasView.toString());
+    return true;
+}
+
+// ---- The phone-rendered ground (0.9.10, docs/watch-map-snapshot.md) ----
+// The gate on an untrusted push and the framing arithmetic. The bitmap itself is not drawn
+// headless here (createBufferedBitmap is exercised on the device); what is pinned is that a
+// bad mask never reaches Storage and a good one is found by position.
+function mapMask(w as Number, h as Number, cls as Number) as ByteArray {
+    // one run per row of `w` cells (w <= 64) of class `cls`
+    var b = new [h]b;
+    for (var r = 0; r < h; r++) {
+        b[r] = ((cls << 6) | (w - 1));
+    }
+    return b;
+}
+
+function mapMessage(id as Number, laS as Number, loW as Number, w as Number, h as Number,
+        mask as ByteArray) as Dictionary {
+    return {
+        "mv" => 1, "mi" => id, "mn" => "Torbole",
+        "la" => laS, "lo" => loW, "lh" => laS + 2700, "lx" => loW + 3800,
+        "mw" => w, "mh" => h, "mp" => mask
+    };
+}
+
+(:test)
+function mapSnapshotKeepsGoodMasksAndDropsBadOnes(logger as Test.Logger) as Boolean {
+    MapSnapshot.clearAll();
+    var good = mapMessage(11, 4585000, 1085000, 8, 8, mapMask(8, 8, MapSnapshot.LAND));
+    Test.assertMessage(MapSnapshot.store(good), "a well-formed snapshot must be kept");
+    Test.assertMessage(MapSnapshot.slotForPosition(45.86, 10.87) != null,
+        "a position inside the box must find the slot");
+    Test.assertMessage(MapSnapshot.slotForPosition(45.00, 10.87) == null,
+        "a position outside the box must find nothing");
+    var slot = MapSnapshot.slotForPosition(45.86, 10.87) as String;
+    Test.assertMessage(MapSnapshot.name(slot).equals("Torbole"), "the name rides along");
+    var frame = MapSnapshot.frame(slot, 300);
+    Test.assertMessage(frame != null && frame.size() == 6 && frame[5] > 0.0,
+        "the frame carries the box, the squeeze and a positive scale");
+
+    // a row that does not sum to mw: 7 rows for 8
+    var short = mapMessage(12, 4585000, 1085000, 8, 8, mapMask(8, 7, MapSnapshot.WATER));
+    Test.assertMessage(!MapSnapshot.store(short), "a short mask must be dropped");
+    // wrong schema
+    var bad = mapMessage(13, 4585000, 1085000, 8, 8, mapMask(8, 8, MapSnapshot.WATER));
+    bad["mv"] = 2;
+    Test.assertMessage(!MapSnapshot.store(bad), "an unknown schema must be dropped");
+    // oversized grid
+    var big = mapMessage(14, 4585000, 1085000, 200, 8, mapMask(8, 8, MapSnapshot.WATER));
+    Test.assertMessage(!MapSnapshot.store(big), "a grid over 120 cells must be dropped");
+    // an inverted box
+    var inv = mapMessage(15, 4585000, 1085000, 8, 8, mapMask(8, 8, MapSnapshot.WATER));
+    inv["lh"] = 4580000;
+    Test.assertMessage(!MapSnapshot.store(inv), "a box with south above north must be dropped");
+
+    // two slots, round robin: a third spot evicts the oldest, the same id replaces in place
+    Test.assertMessage(MapSnapshot.store(mapMessage(21, 5400000, 1100000, 8, 8,
+        mapMask(8, 8, MapSnapshot.ROAD))), "second spot kept");
+    Test.assertMessage(MapSnapshot.store(mapMessage(31, 5500000, 1200000, 8, 8,
+        mapMask(8, 8, MapSnapshot.WATER))), "third spot kept");
+    Test.assertMessage(MapSnapshot.slotForPosition(45.86, 10.87) == null,
+        "the oldest spot was evicted by the third");
+    Test.assertMessage(MapSnapshot.slotForPosition(54.01, 11.01) != null
+        && MapSnapshot.slotForPosition(55.01, 12.01) != null, "the two newest remain");
+    Test.assertMessage(MapSnapshot.store(mapMessage(31, 5500000, 1200000, 8, 8,
+        mapMask(8, 8, MapSnapshot.LAND))), "re-send of a known spot");
+    Test.assertMessage(MapSnapshot.slotForPosition(54.01, 11.01) != null,
+        "a re-send replaces its own slot and evicts nobody");
+    MapSnapshot.clearAll();
+    logger.debug("map snapshot: gate and slots as specified");
+    return true;
+}
+
+(:test)
+function phoneMapPushIsToldApartFromWind(logger as Test.Logger) as Boolean {
+    MapSnapshot.clearAll();
+    var was = AppSettings.cfg.windDirection;
+    Test.assertMessage(PhoneLink.applyMessage({"wd" => 90}), "a wind push still lands");
+    Test.assertMessage(PhoneLink.applyMessage(mapMessage(41, 4585000, 1085000, 8, 8,
+        mapMask(8, 8, MapSnapshot.LAND))), "a map push lands through the same handler");
+    Test.assertMessage(!PhoneLink.applyMessage({"mv" => 1}), "a map push with no mask is dropped");
+    Test.assertMessage(MapSnapshot.slotForPosition(45.86, 10.87) != null, "and it was stored");
+    AppSettings.storeWindDirection(was);
+    MapSnapshot.clearAll();
     return true;
 }

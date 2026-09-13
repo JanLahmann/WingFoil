@@ -2091,8 +2091,23 @@ class RecordingView extends WatchUi.View {
         var cy = dc.getHeight() / 2;
         var radius = fitRadius(dc, false, foilArc);
         var box = mapBox(dc, radius);
-        if (!TrackDraw.draw(dc, e.trackLat, e.trackLon, e.trackFly, e.trackN, cx, cy, box,
-                true)) {
+        // The phone-rendered ground, when the rider is inside a snapshot the phone sent
+        // (docs/watch-map-snapshot.md): the snapshot's box becomes the frame and the trail is
+        // drawn into it. Otherwise the 0.9.9 auto-fit, unchanged.
+        var slot = e.trackN > 0 && e.trackLat != null && e.trackLon != null
+            ? MapSnapshot.slotForPosition(e.trackLat[e.trackN - 1], e.trackLon[e.trackN - 1])
+            : null;
+        var drawn;
+        if (slot != null) {
+            var frame = MapSnapshot.frame(slot, box);
+            drawn = frame != null && TrackDraw.drawFramed(dc, e.trackLat, e.trackLon,
+                e.trackFly, e.trackN, cx, cy, box, true, frame,
+                MapSnapshot.bitmap(slot, box));
+        } else {
+            drawn = TrackDraw.draw(dc, e.trackLat, e.trackLon, e.trackFly, e.trackN, cx, cy,
+                box, true);
+        }
+        if (!drawn) {
             drawFittedRow(dc, cx, cy, radius, cy, 0, MAP_WAITING, Graphics.COLOR_WHITE);
             return;
         }
