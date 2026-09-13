@@ -14,6 +14,7 @@ Module map (mirrors the analysis pipeline in docs/plan.md §3.3):
     hrcost   HR cost of pumping: per takeoff, fatigue, recovery        [phase 3, exploratory]
     jump     jump detection + support-corrected height        [theoretical, UNCALIBRATED]
     goldens  golden-file writer/loader (schema: docs/testing.md)
+    discipline  wingfoil / windsurfFoil / windsurfFin presets     [EXPERIMENTAL]
 Canonical parameters live in docs/algorithms.md — keep code defaults in sync.
 """
 
