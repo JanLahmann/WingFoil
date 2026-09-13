@@ -697,7 +697,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    about the same centre; it is the only way to check the direction chevrons at a second
    scale, since their spacing is measured in screen points and therefore *changes* with the
    camera. Both are staging-only, transient, and never written back to any preference.
-   `UI_FEEDBACK=fallback` opens the beta feedback mail's **fallback sheet** from Settings —
+   `UI_FEEDBACK=fallback` opens the beta feedback mail's **fallback sheet** from Settings (only the Settings row answers the hook; the page footers and the menu's Support item share its composer but stay quiet) —
    the report in full, with the copy button. It is the only one of the three routes a
    simulator can photograph: `MFMailComposeViewController` refuses to appear where no mail
    account exists, and `simctl` cannot tap the row in any case.

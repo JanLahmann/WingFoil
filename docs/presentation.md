@@ -2650,8 +2650,9 @@ intervals.icu, deliberately: for the same afternoon intervals.icu hands over the
 off the watch and Strava hands over positions, and the footer says so in one sentence — *if the
 same session is on intervals.icu, take it from there instead.*
 
-* **Connect / Disconnect** (`StravaImportView`, and the state repeated in Settings → Strava).
-  Connecting opens Strava's own consent screen; CleanJibe only ever **reads**, and the words
+* **Connect / Disconnect** (`StravaImportView`, and the same two buttons under Settings →
+  Strava, so a rider who goes to Settings to "set up Strava" is not sent to another screen
+  first; importing stays on Import). Connecting opens Strava's own consent screen; CleanJibe only ever **reads**, and the words
   say so on both screens. A build with no API keys behind it shows *"No Strava application
   configured"* and where the keys go — a Connect button that always fails would be worse than
   no button.
@@ -2750,9 +2751,14 @@ gate (Jan, 13 Sep 2026). ✕ does what "Later" does: nothing is armed or loaded.
 
 ## Feedback mail — the report the app writes and the rider signs
 
-Three doors open one mail to `info@cleanjibe.org`: **Menu → Support** on the Sessions tab,
-**Settings → Send feedback**, under the two help rows, and **Report a problem with this
-session…** at the foot of a session's share sheet.
+One mail to `info@cleanjibe.org`, reachable from wherever the rider is when something looks
+wrong: **Menu → Support** on the Sessions tab, **Settings → Send feedback** under the two help
+rows, **Report a problem with this session…** at the foot of a session's share sheet, and a
+quiet line at the **foot of every page** — *Something off? Send feedback* under the last row
+of Sessions, Records, Trends and Gear, and under the last card of a session (`FeedbackFooter`).
+The session page's line carries the session, so the mail names the afternoon by itself; the
+card is attached only from the share sheet, where it is already drawn. Every door climbs the
+same ladder (`feedbackMail(on:)`): Mail, then the `mailto:` handler, then the copy sheet.
 The subject is `CleanJibe beta feedback · build <N>[ dev] · <watch>` — the build number, not
 the marketing version, because the two TestFlight variants of a release share the latter.
 
