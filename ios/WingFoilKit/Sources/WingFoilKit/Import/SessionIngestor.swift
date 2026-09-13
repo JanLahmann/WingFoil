@@ -323,30 +323,44 @@ public struct SessionIngestor: Sendable {
 
     // MARK: - Analysis access (lazy re-analysis)
 
-    /// What a document produced *by this ingestor* is stamped with: the engine version, plus
-    /// the tuning fingerprint where the rider has moved a threshold (`TuningStamp`). It is the
-    /// staleness key everything below compares on, which is what makes a moved slider behave
-    /// exactly like an engine bump — the library re-derives itself, lazily, on the next pass.
-    public var analysisVersion: String { tuning.engineVersionKey() }
+    /// What a document produced *by this ingestor* is stamped with: the engine version, the
+    /// discipline preset where it is not the default (`DisciplineStamp`), and the tuning
+    /// fingerprint where the rider has moved a threshold (`TuningStamp`). It is the staleness
+    /// key everything below compares on, which is what makes both a moved slider and a
+    /// switched discipline behave exactly like an engine bump — the library re-derives
+    /// itself, lazily, on the next pass, through one mechanism rather than three.
+    public func analysisVersion(for discipline: Discipline = .wingfoil) -> String {
+        tuning.engineVersionKey(base: DisciplineStamp.key(discipline: discipline))
+    }
 
-    private func analyze(_ track: RawTrack) -> SessionAnalysis {
+    /// The stamp of a plain wingfoil run — what a session with no discipline of its own gets.
+    public var analysisVersion: String { analysisVersion(for: .wingfoil) }
+
+    private func analyze(_ track: RawTrack,
+                         discipline: Discipline = .wingfoil) -> SessionAnalysis {
         let configs = tuning.apply(to: TuningOverrides.Configs(flight: flightConfig))
         var analysis = SessionSummarizer.analyze(track, filterConfig: filterConfig,
                                                  flightConfig: configs.flight,
                                                  recordsConfig: recordsConfig,
                                                  turnConfig: configs.turn,
                                                  windConfig: windConfig,
-                                                 flightEndConfig: configs.flightEnd)
+                                                 flightEndConfig: configs.flightEnd,
+                                                 discipline: discipline)
         // The engine states its own version; the stamp is the *ingestor's* fact about how it
         // was run, so it is applied here rather than threaded through the analyzer. On an
-        // untuned install this assignment changes nothing.
-        analysis.engineVersion = analysisVersion
+        // untuned wingfoil install this assignment changes nothing.
+        analysis.engineVersion = analysisVersion(for: discipline)
         return analysis
     }
 
     /// Cached `analysis.json`, recomputed from the archived FIT when missing or stale.
+    ///
+    /// "Stale" is now a **per-row** question: the expected stamp carries this session's own
+    /// discipline, so switching one session to a windsurf preset re-derives that session and
+    /// leaves every other one alone.
     public func analysis(for row: SessionRow) async throws -> SessionAnalysis {
-        if let cached = archive.analysis(for: row.id, engineVersion: analysisVersion),
+        let expected = analysisVersion(for: row.analysisDiscipline)
+        if let cached = archive.analysis(for: row.id, engineVersion: expected),
            row.engineVersion == cached.engineVersion {
             return cached
         }
@@ -356,7 +370,7 @@ public struct SessionIngestor: Sendable {
     @discardableResult
     public func reanalyze(_ row: SessionRow) async throws -> SessionAnalysis {
         let track = try archive.rawTrack(for: row.id)
-        let analysis = analyze(track)
+        let analysis = analyze(track, discipline: row.analysisDiscipline)
         try? archive.writeAnalysis(analysis, id: row.id)
         var updated = row
         if updated.startLat == nil,
@@ -388,14 +402,18 @@ public struct SessionIngestor: Sendable {
     /// library on one set of thresholds and half on another.
     @discardableResult
     public func reanalyzeStale(progress: (@Sendable (Int, Int) -> Void)? = nil) async throws -> Int {
-        let stale = try await database.writer.read { db in
+        let rows = try await database.writer.read { db in
             // Provisional rows are excluded because there is nothing to re-derive from:
             // a card carries no track, so re-analysis would fail on every pass for ever
             // and the app would announce "re-derived 1 session" at every single launch.
-            try SessionRow.filter(sql: """
-                isProvisional = 0 AND (engineVersion IS NULL OR engineVersion <> ?)
-                """, arguments: [analysisVersion])
+            try SessionRow.filter(sql: "isProvisional = 0")
                 .order(Column("startDate")).fetchAll(db)
+        }
+        // The comparison moved out of SQL when the discipline did: the version a row *should*
+        // carry depends on that row's own preset, and one `engineVersion <> ?` cannot ask a
+        // different question per row. It is the same rule, asked in Swift.
+        let stale = rows.filter {
+            $0.engineVersion != analysisVersion(for: $0.analysisDiscipline)
         }
         guard !stale.isEmpty else { return 0 }
         for (index, row) in stale.enumerated() {
@@ -403,6 +421,24 @@ public struct SessionIngestor: Sendable {
             _ = try? await reanalyze(row)
         }
         return stale.count
+    }
+
+    /// **Analyse this session as another discipline** (docs/algorithms.md "Disciplines").
+    ///
+    /// Writes the rider's answer into `disciplineOverride` and re-derives that one session
+    /// through the ordinary path — the new stamp is what makes the stored document stale, so
+    /// there is no second invalidation rule to keep in step with the first. Passing the
+    /// preset the recording already resolves to clears the override rather than storing it,
+    /// the same way a tuning slider dragged back to its default clears rather than sets.
+    @discardableResult
+    public func setDiscipline(_ discipline: Discipline,
+                              for row: SessionRow) async throws -> SessionAnalysis {
+        var updated = row
+        let fromTag = Discipline.resolve(tag: row.discipline)
+        updated.disciplineOverride = discipline == fromTag ? nil : discipline.rawValue
+        let stored = updated
+        try await database.writer.write { db in try stored.update(db) }
+        return try await reanalyze(stored)
     }
 
     public func rawTrack(for row: SessionRow) throws -> RawTrack {
