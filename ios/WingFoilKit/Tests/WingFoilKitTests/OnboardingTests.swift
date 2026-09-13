@@ -82,14 +82,18 @@ import Testing
         let privacy = HelpCatalog.topic(.icuPrivacy)
         #expect(privacy.body.contains(IcuSetupGuide.privacyNote))
 
-        // The setup section is reachable from the index and holds exactly these six — the
-        // example session sits second, right after the path it is an alternative to; the
-        // Apple Workout app sits third because for a rider with no Garmin it is not a
-        // footnote about data quality but the whole way in (ADR-017); and the backup topic
-        // sits last because it is the one a rider reads before he leaves a phone rather than
-        // when he arrives on one.
+        // The setup section is reachable from the index and holds exactly these nine, in
+        // this order — the example session sits second, right after the path it is an
+        // alternative to; the Apple Workout app sits third because for a rider with no
+        // Garmin it is not a footnote about data quality but the whole way in (ADR-017);
+        // Strava and the share sheet follow it for exactly the same reason (ADR-023), with
+        // the watch table under them answering "will mine work" once instead of a third of
+        // an answer in each; the two intervals.icu troubleshooting topics stay together; and
+        // the backup topic sits last because it is the one a rider reads before he leaves a
+        // phone rather than when he arrives on one.
         #expect(HelpCatalog.topics(in: .setup).map(\.id)
-                == [.icuSetup, .exampleSession, .appleWorkoutApp, .icuTroubleshooting,
+                == [.icuSetup, .exampleSession, .appleWorkoutApp, .stravaImport,
+                    .shareFromWatchApp, .whichWatch, .icuTroubleshooting,
                     .icuPrivacy, .libraryBackup])
     }
 
@@ -109,6 +113,67 @@ import Testing
         // The promise the permission prompt is about to make, made here first.
         #expect(prose.contains("never reads anything else"))
         #expect(HelpCatalog.search("Apple Watch").contains { $0.id == .appleWorkoutApp })
+    }
+
+    /// The Strava topic (ADR-023) has one job the others do not: it must say what the source
+    /// **costs** before the rider imports, not after he finds the pump card empty and his
+    /// speed records marked. Both ceilings Strava puts on the application are named here too,
+    /// because "it will not connect" is otherwise a mystery nobody can solve.
+    @Test func theStravaTopicSaysWhatItCostsBeforeTheRiderImports() {
+        let topic = HelpCatalog.topic(.stravaImport)
+        #expect(topic.section == .setup)
+        let prose = (topic.body + topic.items.flatMap { [$0.term, $0.detail] })
+            .joined(separator: " ").lowercased()
+        for phrase in ["uncertified", "pump strokes", "intervals.icu", "never writes",
+                       "one connected rider", "fifteen minutes", "disconnect"] {
+            #expect(prose.contains(phrase), "the Strava topic never mentions \(phrase)")
+        }
+        // The one recommendation that saves a rider from importing the worse copy.
+        #expect(prose.contains("import it from there instead"))
+        #expect(HelpCatalog.search("Strava").contains { $0.id == .stravaImport })
+    }
+
+    /// The share-sheet topic exists for the rider whose watch is neither a Garmin nor an
+    /// Apple Watch. Two things make it trustworthy rather than merely helpful: every vendor
+    /// path carries the date it was checked against that vendor's own help page, and the one
+    /// app that *cannot* do it says so rather than being quietly left out.
+    @Test func theShareSheetTopicDatesEveryVendorPathAndNamesTheOneThatCannot() {
+        let topic = HelpCatalog.topic(.shareFromWatchApp)
+        #expect(topic.section == .setup)
+        let terms = topic.items.map(\.term)
+        for vendor in ["Suunto", "COROS", "Polar", "Garmin"] {
+            #expect(terms.contains { $0.hasPrefix(vendor) },
+                    "no path for \(vendor)")
+        }
+        // Dated, every one of them — a menu path with no date on it rots silently.
+        #expect(terms.filter { $0.contains("2026") }.count == 4)
+        let prose = (topic.body + topic.items.map(\.detail)).joined(separator: " ").lowercased()
+        // Garmin's phone app cannot export at all, and the rider is sent somewhere that works
+        // rather than left hunting for a menu item that does not exist.
+        #expect(prose.contains("cannot export"))
+        #expect(prose.contains("intervals.icu"))
+        // FIT over GPX/TCX, and why.
+        #expect(prose.contains("fit, every time"))
+        #expect(prose.contains("uncertified"))
+        // Each vendor path links to the page it was verified against.
+        #expect(topic.links.count == 4)
+        #expect(topic.links.allSatisfy { $0.url.scheme == "https" })
+    }
+
+    /// One table, so "will my watch work" is answered in one place. Every door the app has
+    /// must appear in it — a row missing here is a rider concluding his watch is unsupported.
+    @Test func theWatchTableCoversEveryDoorTheAppHas() {
+        let topic = HelpCatalog.topic(.whichWatch)
+        #expect(topic.section == .setup)
+        let prose = (topic.body + topic.items.flatMap { [$0.term, $0.detail] })
+            .joined(separator: " ").lowercased()
+        for door in ["garmin", "apple watch", "polar", "suunto", "coros", "strava", "gpx"] {
+            #expect(prose.contains(door), "the watch table never mentions \(door)")
+        }
+        // The two axes the table is actually about.
+        #expect(prose.contains("certified"))
+        #expect(prose.contains("accelerometer"))
+        #expect(topic.items.count == 6)
     }
 
     /// The backup topic has to answer three questions in order, because a rider who reads
