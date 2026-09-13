@@ -22,6 +22,16 @@ web/
 │                               installs — the Connect IQ store link and the public
 │                               TestFlight link — and where a tester sends what they find.
 │                               No JS, and deliberately NOT in the sw.js precache.
+├── strava/callback/index.html  the STRAVA OAUTH BOUNCE (cleanjibe.org/strava/callback):
+│                               the one page on this site that exists for the iPhone app
+│                               rather than for a reader. Strava validates its redirect
+│                               against the API application's single callback domain and
+│                               refuses custom schemes, so it sends the rider here and this
+│                               page forwards ?code and ?state to cleanjibe://strava, where
+│                               ASWebAuthenticationSession is waiting (docs/decisions.md
+│                               ADR-023). Self-contained on purpose — no stylesheet, no
+│                               analytics, nothing third-party anywhere near an
+│                               authorization code — noindex, and not in the sw.js precache.
 ├── app/index.html              the ANALYZER (cleanjibe.org/app/): page shell, three views
 │                               (analyze / library / trends). Called "CleanJibe session
 │                               analyzer" on the page — "Lab" and the module name are gone
