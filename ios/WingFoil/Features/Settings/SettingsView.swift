@@ -1,3 +1,4 @@
+import AuthenticationServices
 import SwiftUI
 import WingFoilKit
 
@@ -92,7 +93,7 @@ struct SettingsView: View {
             // The third row is the other direction: the two above answer the rider, this one
             // asks him. It sits here rather than in About because a rider who cannot find an
             // answer in Help is one tap from telling us what he was looking for.
-            FeedbackMailRow(title: "Send feedback")
+            FeedbackMailRow(title: "Send feedback", stagesFallbackHook: true)
         } footer: {
             Text("The welcome screen again — what the app measures, and the example "
                  + "session. Then plain-language explanations of every metric: foil %, the "
@@ -161,14 +162,22 @@ struct SettingsView: View {
                 }
                 .disabled(store.isBusy)
             } else {
-                Text("Not connected")
-                    .foregroundStyle(.secondary)
+                // The same connect as the Import screen's, here as well (Jan, 13 Sep 2026):
+                // a rider who opens Settings to "set up Strava" should not be told to go
+                // and find another screen first. Importing stays on Import.
+                Button {
+                    Task { await store.connectStrava(anchor: StravaConsent.anchor()) }
+                } label: {
+                    Label("Connect Strava", systemImage: "link")
+                }
+                .disabled(store.isReadingStrava)
             }
         } header: {
             Text("Strava")
         } footer: {
             if store.isStravaConfigured {
-                Text("Connect and import on the Import screen. CleanJibe only ever **reads** "
+                Text("Strava opens, you say yes, and CleanJibe can list your activities on "
+                     + "the Import screen. CleanJibe only ever **reads** "
                      + "your Strava account — it never writes, renames or posts anything. "
                      + "Sessions imported this way are analysed from positions alone, so "
                      + "their speed records are marked uncertified.\n\n"

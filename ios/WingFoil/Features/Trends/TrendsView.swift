@@ -74,6 +74,7 @@ struct TrendsView: View {
                         summaryStrip
                         charts
                     }
+                    FeedbackFooter()
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 28)

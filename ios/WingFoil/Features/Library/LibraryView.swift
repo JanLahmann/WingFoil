@@ -69,6 +69,7 @@ struct LibraryView: View {
                             }
                         }
                     }
+                    FeedbackFooter.section
                 }
             }
             .listStyle(.insetGrouped)

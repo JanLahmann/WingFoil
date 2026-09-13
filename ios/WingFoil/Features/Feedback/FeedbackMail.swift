@@ -223,13 +223,17 @@ struct FeedbackMailRow: View {
     /// PNG nobody asked for.
     var card: () -> Data? = { nil }
 
+    /// True on the Settings row only — see `FeedbackMailPresenter.stagesFallbackHook`.
+    var stagesFallbackHook = false
+
     @State private var request = 0
 
     var body: some View {
         Button { request += 1 } label: {
             Label(title, systemImage: systemImage)
         }
-        .feedbackMail(on: $request, session: session, card: card)
+        .feedbackMail(on: $request, session: session, card: card,
+                      stagesFallbackHook: stagesFallbackHook)
     }
 }
 
@@ -242,8 +246,47 @@ extension View {
     /// it never presents. The modifier sits on a view that stays — the list, the form — and
     /// the item only has to bump the number.
     func feedbackMail(on request: Binding<Int>, session: SessionRow? = nil,
-                      card: @escaping () -> Data? = { nil }) -> some View {
-        modifier(FeedbackMailPresenter(request: request, session: session, card: card))
+                      card: @escaping () -> Data? = { nil },
+                      stagesFallbackHook: Bool = false) -> some View {
+        modifier(FeedbackMailPresenter(request: request, session: session, card: card,
+                                       stagesFallbackHook: stagesFallbackHook))
+    }
+}
+
+/// **The feedback door at the foot of every page** — the four tabs and the session page.
+///
+/// One quiet line, centred, under the last thing on the page: a rider who has just read
+/// something wrong is at the bottom of the screen, and the menu is at the top of a different
+/// one. On the session page it carries the session, so the mail names the afternoon the
+/// rider was looking at without him having to. The card is not attached from here — the
+/// share sheet's "Report a problem" does that, because there the card is already drawn.
+struct FeedbackFooter: View {
+    var session: SessionRow? = nil
+
+    @State private var request = 0
+
+    var body: some View {
+        Button { request += 1 } label: {
+            Label("Something off? Send feedback", systemImage: "envelope")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 14)
+        .accessibilityHint("Opens a mail to \(FeedbackReport.recipient) with this build already written in")
+        .feedbackMail(on: $request, session: session)
+    }
+
+    /// The same line as a `List` section, with no card behind it, so it reads as the page's
+    /// last words rather than as one more row of it.
+    static var section: some View {
+        Section {
+            FeedbackFooter()
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(.init(top: 0, leading: 16, bottom: 0, trailing: 16))
+        }
     }
 }
 
@@ -254,6 +297,10 @@ private struct FeedbackMailPresenter: ViewModifier {
     @Binding var request: Int
     let session: SessionRow?
     let card: () -> Data?
+    /// Exactly one presenter answers `UI_FEEDBACK=fallback` — the Settings row's. With a
+    /// footer on every page there are five on screen at launch, and five would raise five
+    /// sheets on top of each other.
+    let stagesFallbackHook: Bool
 
     @Environment(SessionStore.self) private var store
     @Environment(\.openURL) private var openURL
@@ -286,7 +333,7 @@ private struct FeedbackMailPresenter: ViewModifier {
             // `UI_FEEDBACK=fallback` opens the fallback sheet on launch: a simulator can never
             // send mail, and `simctl` cannot tap the row that would prove it.
             .task {
-                guard session == nil,
+                guard stagesFallbackHook,
                       ProcessInfo.processInfo.environment["UI_FEEDBACK"] == "fallback"
                 else { return }
                 fallback = Draft(facts: FeedbackMail.facts(store: store), attachment: nil)
