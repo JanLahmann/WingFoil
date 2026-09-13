@@ -26,6 +26,7 @@ struct SessionLogView: View {
         WindDetailCard(detail: detail)
         FlightEndsCard(detail: detail)
         RecordingCard(detail: detail)
+        DisciplineCard(detail: detail)
         if !detail.divergences.isEmpty {
             DivergenceDetailCard(divergences: detail.divergences)
         }
@@ -241,6 +242,65 @@ private struct RecordingCard: View {
         return "Engine \(detail.analysis.engineVersion) · \(rate) Hz · "
             + "sport \(SessionDisplay.sportLabel(detail.row.sport))"
             + (detail.row.importSource.map { " · via \($0)" } ?? "")
+    }
+}
+
+// MARK: - Analyse as
+
+/// **"Analyse as" — the discipline this session is read in** (docs/algorithms.md
+/// "Disciplines", GitHub issue #6).
+///
+/// It is on Log, under Recording, and that placement is the feature's first decision. Jan's
+/// brief was to *hide it a bit and mark it as experimental*: windsurf analysis has never been
+/// checked against a windsurf session with ground truth, so the row belongs where a rider who
+/// is looking for it will find it and a rider who is not will never be offered a choice he
+/// has no way to evaluate. Log is the tab about the *record* rather than the riding, which is
+/// exactly the question this row asks — not "what did you do", but "how should this be read".
+///
+/// Changing it re-derives **this session and nothing else**: the preset rides in the stored
+/// analysis' `engineVersion` (`DisciplineStamp`), which is the staleness key the library has
+/// swept on since tuning existed, so there is no second invalidation rule here.
+private struct DisciplineCard: View {
+    let detail: SessionDetail
+
+    @Environment(SessionStore.self) private var store
+
+    /// What is on screen while the re-analysis runs — the picker moves at once, the numbers
+    /// a second later, and a control that snaps back to its old value would read as a bug.
+    @State private var pending: Discipline?
+
+    private var current: Discipline { pending ?? detail.row.analysisDiscipline }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Text("Analyse as").font(.headline)
+                HelpButton(topic: .windsurf, size: .footnote)
+                Spacer()
+            }
+            Picker("Analyse as", selection: Binding(
+                get: { current },
+                set: { choice in
+                    guard choice != current else { return }
+                    pending = choice
+                    Task {
+                        await store.setDiscipline(choice, for: detail.row)
+                        pending = nil
+                    }
+                })) {
+                    ForEach(Discipline.allCases, id: \.self) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityLabel("Analysis discipline")
+            Text(DisciplineLexicon.experimentalNote)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.secondary.opacity(0.10), in: .rect(cornerRadius: 14))
+        .id("discipline")
     }
 }
 
