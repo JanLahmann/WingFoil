@@ -15,8 +15,30 @@ import Foundation
 /// re-derived from the archived recording the moment he says otherwise.
 public enum DisciplineReview {
 
+    /// **The switch this whole question hangs off** — Settings → Analysis → *"Windsurf
+    /// (experimental)"*, off until a rider asks for it (docs/presentation.md, Settings).
+    ///
+    /// Everything here exists because a session might not be a wingfoil session. On a phone
+    /// whose owner only ever wings, that is not a question at all: asking it after every
+    /// import is the app being uncertain out loud about something it has no reason to doubt.
+    /// So the flag is threaded through the two rules the library reads rather than checked in
+    /// the views — `pending` below, and `showsBadge`/`showsGuessMark` — and each of them
+    /// defaults to `true`, so a caller that has never heard of the switch behaves exactly as
+    /// this type did before it existed.
+    ///
+    /// It hides *controls*, never analysis. A session somebody already analysed as windsurf
+    /// keeps its preset, its numbers and its amber chip with the switch off; turning the
+    /// switch off is not an answer to any question, so it re-derives nothing.
+
     /// The sessions nobody has confirmed, newest first — what the review sheet lists and what
     /// the library banner counts.
+    ///
+    /// **Empty while the windsurf switch is off**, which is what makes the review sheet and
+    /// the library banner disappear without either of them learning about the setting: with
+    /// no windsurf preset on offer, "which rig was this?" has one possible answer and is not
+    /// worth a sheet. The import marks those sessions confirmed on the way in
+    /// (`SessionIngestor.windsurfEnabled`), so turning the switch on later does not bring a
+    /// season's worth of unasked questions with it.
     ///
     /// `dismissed` is the ids he has already skipped past. They keep their `?` on the library
     /// row (nothing was confirmed, and pretending otherwise would be the app answering for
@@ -30,8 +52,10 @@ public enum DisciplineReview {
     /// watch's BLE card with no recording behind it yet: there is nothing to re-derive, so the
     /// question cannot be acted on, and the FIT that replaces it will carry the real answer.
     public static func pending(in rows: [SessionRow],
-                               dismissed: Set<String> = []) -> [SessionRow] {
-        rows.filter {
+                               dismissed: Set<String> = [],
+                               windsurfEnabled: Bool = true) -> [SessionRow] {
+        guard windsurfEnabled else { return [] }
+        return rows.filter {
             $0.disciplineGuessed && !$0.isExample && !$0.isProvisional
                 && !dismissed.contains($0.id)
         }
@@ -53,6 +77,33 @@ public enum DisciplineReview {
             return "\(noun) analysed — check the discipline"
         }
         return "\(noun) analysed as \(only.title)"
+    }
+
+    /// **Does the library row wear a discipline badge at all?**
+    ///
+    /// With the switch on, always — the library may hold two rigs and the row has to say which
+    /// one it is reading. With the switch off it wears one only when it says something other
+    /// than `Wingfoil`: a wingfoil-only library repeating the word on every row is a column of
+    /// noise, and the rows that *do* differ — a session analysed as windsurf back when the
+    /// controls were visible, a recording whose own field says `Kitefoil` — are exactly the
+    /// ones a reader would be surprised by, so they keep their badge either way.
+    ///
+    /// It takes the rendered badge rather than the row because the badge has three rungs
+    /// (`SessionDisplay.badge`) and the honest question here is the one the reader asks: does
+    /// this capsule say anything but "Wingfoil"?
+    public static func showsBadge(_ badge: String, windsurfEnabled: Bool = true) -> Bool {
+        windsurfEnabled
+            || badge.caseInsensitiveCompare(Discipline.wingfoil.title) != .orderedSame
+    }
+
+    /// **The `?` after the badge** — "nobody has said this is what it is".
+    ///
+    /// Never drawn while the switch is off. It is the visible half of a question the app is no
+    /// longer asking, and a mark of doubt beside a session nobody will ever be asked about is
+    /// just a blemish. Sessions imported while the switch is off are not marked as guesses in
+    /// the first place; this covers the ones imported before it was turned off.
+    public static func showsGuessMark(guessed: Bool, windsurfEnabled: Bool = true) -> Bool {
+        guessed && windsurfEnabled
     }
 
     /// What the recording's sport code says, as a **hint on the row and never as a decision**.

@@ -138,6 +138,20 @@ public struct SessionIngestor: Sendable {
     /// intervals.icu and Apple Health have no wingfoil, and the one sport code they do agree
     /// on is the one ADR-004 made unusable as evidence.
     public var riderDiscipline: Discipline = .wingfoil
+    /// **Settings → Analysis → "Windsurf (experimental)"**, off on a fresh install
+    /// (docs/presentation.md, Settings). `true` here, because the kit is not the place the
+    /// default lives: the app reads the stored flag and sets this, and a caller that has never
+    /// heard of the switch keeps the behaviour this type had before it existed.
+    ///
+    /// With it off, an import does two things differently and nothing else: the rider's
+    /// declared default is not consulted (there is no picker to declare it with, so a stale
+    /// stored value must not outlive the switch), and the row is written down as **confirmed**
+    /// rather than as a guess. Confirmed because on a wingfoil-only phone nothing was guessed
+    /// — wingfoil is the only reading on offer — and because a rider who turns the switch on a
+    /// year later should meet the feature, not a backlog of questions about afternoons he has
+    /// already looked at. A recording that states its own discipline is still believed: that
+    /// is the file talking, not a setting.
+    public var windsurfEnabled = true
     public var dedupeToleranceS: TimeInterval = 60
     public var spotRadiusM: Double = SpotClusterer.defaultRadiusM
 
@@ -205,7 +219,7 @@ public struct SessionIngestor: Sendable {
         let settled = existing.flatMap {
             $0.disciplineGuessed ? nil : Discipline.stated(tag: $0.disciplineOverride)
         }
-        let preset = settled ?? stated ?? riderDiscipline
+        let preset = settled ?? stated ?? (windsurfEnabled ? riderDiscipline : .wingfoil)
         let analysis = analyze(track, discipline: preset)
         let id = existing?.id ?? UUID().uuidString
         try archive.storeOriginal(fitData, id: id)
@@ -225,7 +239,8 @@ public struct SessionIngestor: Sendable {
         // "nobody asked" indistinguishable.
         row.disciplineOverride = preset == Discipline.resolve(tag: caps.discipline)
             ? nil : preset.rawValue
-        row.disciplineGuessed = settled == nil && stated == nil
+        // Nobody is asked about a rig on a phone that only knows one (`windsurfEnabled`).
+        row.disciplineGuessed = windsurfEnabled && settled == nil && stated == nil
         row.originalFilename = filename
         // What clock this session's times are drawn on, and how well we know it — see
         // `resolveUtcOffset`. It survives a provisional-row upgrade the same way the id

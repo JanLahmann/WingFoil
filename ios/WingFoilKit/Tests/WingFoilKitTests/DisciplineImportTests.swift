@@ -204,6 +204,78 @@ import Testing
                 == "2 new sessions analysed — check the discipline")
     }
 
+    // MARK: - Behind the switch
+    //
+    // Settings → Analysis → "Windsurf (experimental)", off on a fresh install. Everything
+    // windsurf-facing hangs off it, and with it off the app is the wingfoil-only one it was
+    // before the preset existed — without unlearning a single session already read as
+    // windsurf (docs/presentation.md, "Confirming the discipline on import").
+
+    @Test func nothingIsReviewedWhileTheSwitchIsOff() {
+        let rows = [guessed("a", 1), guessed("b", 2, preset: .windsurfFin)]
+        #expect(DisciplineReview.pending(in: rows).count == 2)      // the switch is on
+        #expect(DisciplineReview.pending(in: rows, windsurfEnabled: false).isEmpty)
+        // …so the banner has nothing to count either, which is how the library loses it.
+        #expect(DisciplineReview.banner(
+            DisciplineReview.pending(in: rows, windsurfEnabled: false)) == nil)
+    }
+
+    @Test func theBadgeSaysWingfoilOnlyWhenSomebodyMightDisagree() {
+        // Switch on: every row wears its badge, because the library may hold two rigs.
+        #expect(DisciplineReview.showsBadge("Wingfoil"))
+        #expect(DisciplineReview.showsBadge("Windsurf fin"))
+        // Switch off: the word "Wingfoil" on every row is a column of noise…
+        #expect(!DisciplineReview.showsBadge("Wingfoil", windsurfEnabled: false))
+        // …but anything that disagrees with it keeps its badge — a session analysed as
+        // windsurf while the controls were visible, and a recording that names its own rig.
+        #expect(DisciplineReview.showsBadge("Windsurf foil", windsurfEnabled: false))
+        #expect(DisciplineReview.showsBadge("Windsurf fin", windsurfEnabled: false))
+        #expect(DisciplineReview.showsBadge("Kitefoil", windsurfEnabled: false))
+    }
+
+    @Test func theQuestionMarkNeverAppearsWhileTheSwitchIsOff() {
+        #expect(DisciplineReview.showsGuessMark(guessed: true))
+        #expect(!DisciplineReview.showsGuessMark(guessed: false))
+        // A mark of doubt beside a session nobody will ever be asked about is a blemish.
+        #expect(!DisciplineReview.showsGuessMark(guessed: true, windsurfEnabled: false))
+    }
+
+    @Test func theHelpIndexHidesTheTopicButTheCatalogueKeepsIt() {
+        #expect(HelpCatalog.indexTopics().map(\.id) == HelpCatalog.topics.map(\.id))
+        let hidden = HelpCatalog.indexTopics(windsurfEnabled: false).map(\.id)
+        #expect(!hidden.contains(.windsurf))
+        #expect(hidden.count == HelpCatalog.topics.count - 1)
+        // Every other topic survives, in catalogue order.
+        #expect(hidden == HelpCatalog.topics.map(\.id).filter { $0 != .windsurf })
+        // The page itself is still there: a `?` on a session that *is* read as windsurf, and
+        // any deep link written down elsewhere, must still open it.
+        #expect(HelpCatalog.topic(.windsurf).title == "Windsurf (experimental)")
+    }
+
+    @Test func anImportWithTheSwitchOffIsWingfoilAndNobodyIsAsked() async throws {
+        var (ingestor, root) = try makeIngestor()
+        defer { try? FileManager.default.removeItem(at: root.deletingLastPathComponent()) }
+        let url = try #require(allFixtureFITs().first, "no fixture FITs available")
+        // A stored default from the days the picker was visible must not outlive the switch.
+        ingestor.riderDiscipline = .windsurfFin
+        ingestor.windsurfEnabled = false
+
+        guard case .imported(let row) = try await ingestor.ingest(
+            fitData: try Data(contentsOf: url), filename: url.lastPathComponent,
+            source: .file) else {
+            Issue.record("expected a fresh import")
+            return
+        }
+        guard row.discipline == nil else { return }   // a CleanJibe FIT states its own rig
+        #expect(row.analysisDiscipline == .wingfoil)
+        #expect(row.disciplineOverride == nil)
+        #expect(row.engineVersion == AnalysisEngine.version)
+        // Confirmed on the way in, so turning the switch on a year later meets the feature
+        // rather than a backlog of questions about afternoons he has already looked at.
+        #expect(!row.disciplineGuessed)
+        #expect(DisciplineReview.pending(in: [row]).isEmpty)
+    }
+
     @Test func theHintIsTheSportCodeAndOnlyWhereItSaysSomething() {
         #expect(DisciplineReview.sportHint(nil) == nil)
         #expect(DisciplineReview.sportHint("") == nil)
