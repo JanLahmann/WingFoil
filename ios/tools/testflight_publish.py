@@ -27,26 +27,27 @@ BASE = "https://api.appstoreconnect.apple.com/v1"
 
 WHATS_NEW = """New here? cleanjibe.org/start — a 20-minute test of the watch routes, and where to send feedback.
 
-0.15.0 (build 43) — two fixes from the first day of build 41.
+0.15.0 (build 45) — the session list learns to group and to narrow.
 
-- Send map to watch works on every CleanJibe watch build: the phone now finds the one you have installed (release, public beta or dev) instead of assuming the release one. "Failure_AppNotFound" is gone. Settings → Garmin watch → Send map to watch, on a watch running CleanJibe 0.9.10.
-- The turn page scrolls from anywhere: a vertical finger on a strip scrolls the page, a sideways one scrubs the playhead, a tap places it. The small window words no longer overprint each other.
+- Group by: None, Month, Year or Spot at the top of the Sessions list, newest group first. A library of twenty sessions or more opens grouped by month until you choose otherwise.
+- Filter menu beside Import: one spot, one source (intervals.icu, Strava, Apple Health, Garmin watch, file…), a date window (this year, last year, or a range of your own). What is active shows as chips you can tap away, and the count line reads "3 of 41 sessions". Records and Trends keep reading the whole library on purpose.
+- The full-screen map's legend no longer floats up to the middle of the screen after a keyboard was used elsewhere.
 
-Still in from build 41: Export video, iPad, GPX/TCX and Strava imports, analysis engine 0.18.0.
+Still in from builds 41–43: Export video, iPad, GPX/TCX and Strava imports, Send map to watch, analysis engine 0.18.0.
 
-Please check: does a vertical swipe on the speed strip scroll the page every time?"""
+Please check: does the grouped list feel like your library, and does a filter ever hide a session you expected to see?"""
 
 # What the dev variant's testers are told instead. It is a different build of the same version,
 # so saying which one this is matters more than the release notes do.
 WHATS_NEW_INTERNAL = """New here? cleanjibe.org/start — a 20-minute test of the watch routes, and where to send feedback.
 
-Dev build 44 (tuning). Same 0.15.0 as public build 43, plus Settings → Tuning: the analysis thresholds on sliders, and the workbench on the turn page.
+Dev build 46 (tuning). Same 0.15.0 as public build 45, plus Settings → Tuning: the analysis thresholds on sliders, and the workbench on the turn page.
 
 Settings → About says "· dev" on this one. Moving any slider re-analyses your library with the new thresholds and marks every screen that shows a tuned number with a "tuned thresholds" chip — those numbers are not comparable with anyone else's. "Reset all" puts the published defaults back.
 
-Fixed since 42, same as the public build: Send map to watch finds the installed watch build (the dev-beta one included), so Failure_AppNotFound is gone; the turn page scrolls from a vertical finger on any strip, and the window words on wide workbench windows no longer overprint.
+New since 44, same as the public build: the Sessions list groups by none, month, year or spot, and a filter menu beside Import narrows it by spot, source, discipline (with the windsurf switch on) or date window, with chips for what is active. The full-screen map's legend stays at the bottom after a keyboard was used elsewhere.
 
-Please check: does the map push reach a watch running the 0.9.10 dev build?"""
+Please check: with the windsurf switch on, does the discipline filter agree with the badge on each row?"""
 
 
 def tok():
