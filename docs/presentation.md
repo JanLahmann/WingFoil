@@ -2329,6 +2329,71 @@ maneuver inherited the index. The whole block is absent when nothing is tuned: w
 the two runs are the same run, and "nothing changed" on every session would be noise on the one
 page that is about maneuvers.
 
+## iPad and Mac — one column, wider glass
+
+The iPhone app **is** the iPad app (`TARGETED_DEVICE_FAMILY: "1,2"` on the app and the widget
+extension, 13 Sep 2026), and because `SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD` is on by default
+an Apple-silicon Mac gets the same binary from the App Store as **"Designed for iPad"**. There
+is no third UI: one build, three shapes of window.
+
+**What is deliberately unchanged.** The tab bar is still four tabs, the library is still a
+list that pushes a session, and the session is still one scrolling page over the four-way
+switcher of "Sections". There is no `NavigationSplitView`, no sidebar, no two-column
+library-and-session, and no iPad-only screen. A sidebar would make the session page the
+*detail* of a list, and the session page is the app — the tabs are four ways of asking about
+the library, not four folders to keep open beside it. The phone layout is the answer at every
+width; the iPad only changes how much glass one answer is entitled to.
+
+**What changes at regular width** — and only at regular width in *both* axes
+(`SizeClass.isWideScreen`, because a Pro Max phone on its side is horizontally regular and is
+still a phone):
+
+* **One readable column, centred** (`ContentWidth.column`, 740 pt — `readableColumn()`). Every
+  scrolling surface takes it: the library, Records, Trends, Gear & spots, Periods, the session
+  page, the turn and flight-end pages, Settings, Tuning, a help topic, both card composers.
+  Without it the key-metrics block puts three numbers a hand's width apart, a card grid
+  (`GridItem(.adaptive(minimum: 150))`) lays six tiles across a row that holds four facts and
+  orphans the seventh, and a footnote runs twenty-five words to the line.
+* **The figures buy their room back in height, not width** (`figureHeight(regular:compact:wide:)`).
+  Inside a 740 pt column a phone-height map would gain nothing from an iPad at all, and an
+  iPad has the vertical room a phone does not: the track map goes 260 → 380 pt, the speed
+  chart 190 → 260, the turn map 260 → 340, the turn strip 170 → 220, the heading strip
+  140 → 180, the baro strip 120 → 155, the focus map 240 → 330. The full-screen map
+  (`FullScreenMapView`) is still full-bleed — it is the one surface whose whole point is all
+  the glass there is. The one thing this costs is worth naming: on an iPad *in landscape* the
+  map and the speed chart no longer both fit above the fold. They did not quite fit at the
+  phone's heights either (a 1 024 pt window minus the key-metrics block leaves about 530 pt
+  for a 260 pt map, its two control rows and a 190 pt chart), and the "one instrument" rule
+  of "Pairing" is about the shared playhead and the shared tap, not about a scroll — which is
+  why the compact heights exist for the one screen where it *is* about the fold, a phone on
+  its side.
+* **The speed table's fixed columns widen** (`RecordColumns`): 66 / 58 / 56 pt on a phone,
+  112 / 78 / 64 on an iPad. The three fixed columns are what makes the table scannable, and at
+  the phone's widths `Best 5×10 s` printed as `Best 5×…` with 300 pt of empty "when · where"
+  beside it.
+* **Sheets are pages, not form sheets** (`.presentationSizing(.page)`). A `.large` detent is a
+  compact-width idea; on an iPad the system's default form sheet is about 570 × 640 pt, which
+  is a *smaller* window than the phone's. The screens that are screens get `.page` — the turn
+  and flight-end drill-ins, Settings, Tuning, the Help index and each help topic, both card
+  composers, the clip setup and the video export (whose finished state is a 420 pt tall 9 : 16
+  player with a share button under it). The sheets that are questions keep the form sheet,
+  which is what a question should look like: the rider prompt, the re-add offer, the gear
+  editor, Import.
+* **All four orientations** (`UISupportedInterfaceOrientations~ipad`). An iPad has no wrong
+  way up; the phone list still leaves upside-down out, because a phone flipped over hides the
+  earpiece.
+
+The **navigation bar belongs to the window, not to the column**: on the four tab roots the
+large title and the toolbar buttons stay at the window's edges while the list under them is
+centred. That is left alone deliberately — pulling the whole `NavigationStack` into the column
+would centre the title at the cost of a 740 pt bar with hard edges and empty glass beside it
+every time the content scrolls under it, which is a worse thing to look at than a title above
+a centred card. The session page does not have the question at all: its title is inline.
+
+**Widgets.** The extension ships for both families too. It declares `.systemSmall` and
+`.systemMedium`, which are valid on iPad, on the Home Screen and in Today view alike; the
+snapshot it draws is the same JSON the phone writes.
+
 ## Enforcement
 
 1. `design/tokens.json` + generated constants + a CI staleness check (bundle_lab-style) —
