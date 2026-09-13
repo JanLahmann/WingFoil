@@ -6,7 +6,13 @@ import WingFoilKit
 struct RootView: View {
     @Environment(SessionStore.self) private var store
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selection = Tab.sessions
+    /// The brand screen the launch screen hands over to (`SplashView`). Initialised here and
+    /// never set back to `true`, which is exactly the rule: `RootView` is built once per
+    /// process, so "the splash is up" and "this is a cold start" are the same fact. A return
+    /// from the background rebuilds nothing and therefore shows nothing.
+    @State private var isShowingSplash = Splash.isWanted
 
     enum Tab: String, Hashable {
         case sessions, records, trends, gear
@@ -18,6 +24,29 @@ struct RootView: View {
     /// three named groups are what the comments were already describing anyway.
     var body: some View {
         hooks(presentations(tabs))
+            .overlay { splash }
+    }
+
+    /// The launch screen, continued — in front of the tabs rather than instead of them, so
+    /// the library goes on loading underneath and the hold is spent on work rather than on
+    /// waiting. See `SplashView` for what "the same picture" means and `Splash` for the
+    /// numbers both screens obey.
+    @ViewBuilder private var splash: some View {
+        if isShowingSplash {
+            SplashView(onFinished: dismissSplash)
+                .transition(.opacity)
+        }
+    }
+
+    /// A 0.4 s crossfade into the Sessions list — or, under Reduce Motion, a cut after the
+    /// same hold. The animation lives here rather than in the splash because the thing being
+    /// faded *to* is the thing this view owns.
+    private func dismissSplash() {
+        guard !reduceMotion else {
+            isShowingSplash = false
+            return
+        }
+        withAnimation(.easeInOut(duration: Splash.crossfade)) { isShowingSplash = false }
     }
 
     private var tabs: some View {
