@@ -19,6 +19,7 @@
  * so nothing downstream has to know a token from a literal.
  */
 
+import { lexicon } from "./lexicon.js";
 import { TOKENS } from "./tokens.js";
 
 export const C = {
@@ -87,7 +88,7 @@ const KMH_TO_KN = 1 / 1.852;
  * where it is missing the one wording that names a speed drops the number rather than
  * inventing one — so a tuned run that revived the rung by raising the speed says *its* speed.
  */
-export function outcomeText(turn, marginalSpeed = null) {
+export function outcomeText(turn, marginalSpeed = null, discipline = "wingfoil") {
   // Whole seconds, **half away from zero** — `Math.round` here, `.rounded()` in Swift,
   // `floor(v + 0.5)` in the verifier. Spelled out rather than left to each language's
   // default formatter, because `%.0f` rounds 4.5 to 4 (banker's) and `toFixed(0)` rounds it
@@ -103,7 +104,8 @@ export function outcomeText(turn, marginalSpeed = null) {
       // as a measurement of one.
       const stop = Math.round(turn.stoppedS) >= 1
         ? `stopped ${s0(turn.stoppedS)} s` : "no stop";
-      return `touchdown · off the foil ${s0(turn.offFoilS)} s, ${stop}`;
+      return `touchdown · ${lexicon(discipline).offTheFoil} ${s0(turn.offFoilS)} s, `
+             + stop;
     }
     case "submerged":
       return "fell in · wrist under";

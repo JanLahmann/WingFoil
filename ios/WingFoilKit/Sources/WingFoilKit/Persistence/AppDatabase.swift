@@ -33,7 +33,7 @@ public struct AppDatabase: Sendable {
     /// Every migration this build knows, oldest first — the migration test asserts a v1
     /// database moves through all of them.
     public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
-                                        "v10", "v11", "v12", "v13"]
+                                        "v10", "v11", "v12", "v13", "v14"]
 
     /// The schema version this build writes — the `N` of the last `vN` migration.
     ///
@@ -322,6 +322,21 @@ public struct AppDatabase: Sendable {
                 UPDATE session SET timerTimeS = COALESCE(rateDurationS, durationS)
                 """)
             try db.execute(sql: "UPDATE session SET engineVersion = NULL")
+        }
+
+        // v14: **which discipline the rider says this session is** (docs/algorithms.md
+        // "Disciplines", GitHub issue #6).
+        //
+        // A column of its own rather than an edit to `discipline`, which is the *recording's*
+        // tag — what the watch wrote down — and has to stay readable as that. This one is the
+        // rider's answer to a different question: how should the engine read it. Null on
+        // every existing row and on every import, which resolves to the tag, which resolves
+        // to wingfoil — so this migration changes no number anywhere and is deliberately the
+        // first since v9 with **no** `engineVersion = NULL` sweep behind it.
+        migrator.registerMigration("v14") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "disciplineOverride", .text)
+            }
         }
         return migrator
     }
@@ -752,6 +767,26 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// Falls back to `rateSeconds` for a row the v13 sweep has not refilled — elapsed, the
     /// closest clock it stores, and the number it was already divided by.
     public var timerSeconds: Double { timerTimeS ?? rateSeconds }
+
+    // MARK: schema v14
+    /// **What the rider says this session is** — `Discipline.rawValue`, or nil for "he has
+    /// not said", which is by far the common case.
+    ///
+    /// Deliberately separate from `discipline`, the recording's own developer-field tag: that
+    /// one is what the watch wrote down and has to stay readable as that, this one is the
+    /// answer to a different question — how the engine should read the recording. See
+    /// `analysisDiscipline`, which puts the two in their order of authority.
+    public var disciplineOverride: String?
+
+    /// **The preset this session is analysed under** (docs/algorithms.md "Disciplines").
+    ///
+    /// The rider's override first, the recording's `discipline` tag second, wingfoil third.
+    /// `sport` is not consulted at any rung and must not be: ADR-004 records FIT sport 43
+    /// (windsurfing) for a *wingfoil* session, so the sport code is the one piece of evidence
+    /// here that is systematically wrong about the question.
+    public var analysisDiscipline: Discipline {
+        Discipline.resolve(tag: discipline, override: disciplineOverride)
+    }
 
     /// `startUtcOffsetSource` as the closed vocabulary, or nil for "unrecorded" — which
     /// includes a stored string this version has never heard of.

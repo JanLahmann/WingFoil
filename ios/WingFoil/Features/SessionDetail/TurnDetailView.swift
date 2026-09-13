@@ -173,7 +173,8 @@ private struct TurnDetailPage: View {
     /// a fly-through and on a stored document written before the reason existed.
     private func outcomeText(_ turn: TurnRecord) -> String? {
         TurnAnalytics.outcomeText(
-            turn, marginalSpeedKmh: detail.analysis.config.turnPumpedMarginalSpeed)
+            turn, marginalSpeedKmh: detail.analysis.config.turnPumpedMarginalSpeed,
+            discipline: detail.row.analysisDiscipline)
     }
 
     private var windUp: Bool { windUpPreferred && windKnown }

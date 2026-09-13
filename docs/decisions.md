@@ -2,6 +2,50 @@
 
 Newest first. One paragraph each: context → decision → consequence.
 
+## ADR-024 · Windsurf is a **preset, not a fork** — and it ships marked experimental
+Issue #6 asks for windsurf as a discipline: engine presets, a vocabulary, the share card.
+There were two ways to have it. A second detector tuned on windsurf sessions would be honest
+about the differences and would immediately give the product two engines to keep in step
+across four implementations — the exact failure ADR-001's golden-file contract exists to
+prevent — and it would have to be tuned on a corpus that does not exist: Jan has no fin
+session recorded, and every `…-windsurfen…` file he *does* have is a wingfoil afternoon under
+Garmin's windsurf profile. Jan, 13 Sep 2026: *"jibe analysis applies, but not pumping"*, and
+*"hide it a bit and mark as an experimental/untested feature"*.
+
+Decision: **a `Discipline` preset over the existing configs — `wingfoil` (default),
+`windsurfFoil`, `windsurfFin` — and nothing else.** `wingfoil` is not merely equal to today's
+behaviour, it is **not applied**: the preset function returns its input, so a wingfoil run is
+byte-identical to one produced before the type existed and a tuning slider survives it
+untouched. `windsurfFoil` is the wingfoil reading with the **pump channel never built** — the
+analyser is handed the `nil` a source with no accelerometer already hands it, so every stage
+degrades through the path it has always had rather than through a second one, and every
+pump-related number is *absent rather than zero*. `windsurfFin` also moves the two speeds that
+decide when the board is up, into all four configs that carry them: 20 km/h in, 15 km/h out,
+which makes "on the foil" read as planing and "lost the foil" as stopped planing. Those two
+numbers are **PROVISIONAL and say so** — in the code, in algorithms.md, in the help topic and
+under the control itself — because they are a guess, not a reading. The vocabulary is one
+lexicon table keyed by discipline (`DisciplineLexicon`, `web/js/lexicon.js`) whose wingfoil
+column is the strings both platforms already printed; the *turn* vocabulary is untranslated,
+because a jibe is a jibe and "clean jibe" is what this product is called.
+
+Consequence: `ENGINE_VERSION` stays **0.18.0** — a preset is not a new engine — and the preset
+rides in the analysis' `engineVersion` as `+disc.<name>`, composing inside the tuning stamp, so
+switching one session's discipline makes exactly that session stale and `reanalyzeStale()`
+re-derives it through the mechanism tuning already built (the staleness comparison moves out of
+SQL into Swift, because the version a row *should* carry now depends on the row). One new
+column (`session.disciplineOverride`, schema v14, no re-analysis sweep behind it — every
+existing row resolves to wingfoil), one optional config echo (`config.discipline`, **absent**
+on a wingfoil document so no committed golden moves), two cross-check goldens under
+`fixtures/goldens/discipline/`, one help topic, and one segmented control on the session's Log
+tab under a footnote that calls the whole thing untested. The **FIT sport code is never
+consulted**: ADR-004 records sport 43 for wingfoiling, so a windsurf-profile recording of a
+wingfoil session — the common case in the corpus — stays wing unless the dev-field tag or the
+rider says otherwise, and `Discipline.resolve` does not take a sport as an argument. Rejected:
+a second engine (two contracts, four implementations, no corpus); switching on the sport code
+(would have re-read most of Jan's library as windsurf on day one); and echoing
+`"discipline": "wingfoil"` unconditionally (nineteen goldens rewritten to announce a layer the
+default never reaches). The watch and the Trends/Records pages are untouched — there is no
+separate windsurf record set, which the help topic states rather than leaves to be discovered.
 ## ADR-023 · Strava as a read source: class (c) **by construction**, and read-only on purpose
 The second cloud source beside intervals.icu, and the one that reaches the riders who have no
 Garmin account, no Apple Watch and no intention of setting up intervals.icu — which, on the

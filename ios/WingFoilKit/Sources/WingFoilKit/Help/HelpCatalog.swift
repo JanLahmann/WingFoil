@@ -157,7 +157,7 @@ public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
     case heartRate
     case windAxis
     case shareCard, replayClip, shareFit, riderAttribution
-    case sourceClass, divergence, engineVersion
+    case sourceClass, divergence, engineVersion, windsurf
     case betaGettingStarted
 
     public var id: String { rawValue }
@@ -1119,6 +1119,38 @@ public enum HelpCatalog {
             ],
             related: [.sourceClass, .divergence]),
 
+        HelpTopic(
+            id: .windsurf, section: .quality, title: "Windsurf (experimental)",
+            summary: "The same engine, minus the wing — and the planing speeds are a guess.",
+            body: [
+                "A session can be analysed as **Wingfoil**, **Windsurf foil** or **Windsurf "
+                + "fin**. The row is on the session's Log tab, under \"Analyse as\", and "
+                + "changing it re-derives that one session and nothing else.",
+                "**What works.** Jibes and tacks are the same detector, with the same "
+                + "thresholds and the same three verdicts — flew through, touchdown, fell in "
+                + "— and a clean jibe means exactly what it means on a wing. So do the speed "
+                + "records, the wind axis, the wrist-under marks, the map and the session "
+                + "rates.",
+                "**What is off.** Pumping. There is no wing to load, so the pump chips, the "
+                + "stroke counts, the pumps-to-takeoff number and the heart-rate cost of "
+                + "pumping are **absent rather than zero** on a windsurf session. A takeoff "
+                + "becomes a planing start: the run that got you going, with no strokes "
+                + "counted through it.",
+                "**Windsurf foil** is the wingfoil reading with pumping switched off — every "
+                + "speed and every threshold is the same, because a foil flies the same way "
+                + "under either rig.",
+                "**Windsurf fin** also moves the two speeds that decide when you are up and "
+                + "going: 20 km/h to start planing, 15 km/h to stop, against 12 and 8 on a "
+                + "foil. \"Foil time\" reads as planing time, \"on foil\" as planing, and "
+                + "\"lost the foil\" as stopped planing.",
+                "**Those two speeds are provisional.** They are a first guess, not a reading "
+                + "off real fin sessions — there are none in the corpus yet. If your planing "
+                + "time looks wrong, that is the number to report.",
+                "Windsurf sessions sit in your library like any other and count towards your "
+                + "trends. There is no separate windsurf record set yet: a personal best is "
+                + "a speed, and a speed is a speed on any board.",
+            ],
+            related: [.foilPct, .turnOutcomes, .pumpsToTakeoff, .engineVersion]),
         // MARK: The beta
         //
         // The only topic that deliberately does not finish its own subject. The test it

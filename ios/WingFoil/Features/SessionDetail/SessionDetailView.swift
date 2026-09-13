@@ -225,6 +225,9 @@ struct SessionDetailView: View {
         .task(id: sessionID) { await load() }
     }
 
+    /// The preset every word and every hidden pump chip on this page reads from.
+    private var discipline: Discipline { row?.analysisDiscipline ?? .wingfoil }
+
     private func load() async {
         guard detail == nil, let row else { return }
         do {
@@ -274,7 +277,10 @@ struct SessionDetailView: View {
     /// under it.
     private var switcher: some View {
         Picker("Section", selection: $tab) {
-            ForEach(SessionSection.allCases) { Text($0.label).tag($0) }
+            // The tab's word in this session's discipline: a windsurfer does not take
+            // off, he gets planing (docs/presentation.md, "Discipline lexicon"). Every
+            // other segment is the same word on either rig.
+            ForEach(SessionSection.allCases) { Text($0.label(discipline)).tag($0) }
         }
         .pickerStyle(.segmented)
         .padding(.vertical, 8)
@@ -380,6 +386,16 @@ struct SessionDetailView: View {
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(SessionDisplay.badgeColor(row).opacity(0.16), in: .capsule)
                         .foregroundStyle(SessionDisplay.badgeColor(row))
+                    // Beside the discipline badge and never instead of it: the badge says
+                    // what the *recording* is, this says how it is being read and that the
+                    // reading is not one anybody has checked yet.
+                    if let chip = row.analysisDiscipline.lexicon.chip {
+                        Text(chip)
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(Color.orange.opacity(0.16), in: .capsule)
+                            .foregroundStyle(.orange)
+                    }
                     #if TUNING
                     // Beside the discipline badge, because it is the same kind of fact: what
                     // this session *is*, before any of its numbers are read.
