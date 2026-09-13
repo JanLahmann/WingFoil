@@ -254,4 +254,8 @@ extension UTType {
     /// this one conforms to `.xml` — a GPX *is* XML, and saying so lets a picker show it
     /// under any app that already claims XML rather than only under ours.
     static let gpxTrack = UTType(filenameExtension: "gpx", conformingTo: .xml) ?? .xml
+    /// And TCX — how a Polar, Suunto or Coros session usually arrives. Same treatment as
+    /// GPX for the same reasons; the two are read by the same picker and told apart by
+    /// their bytes (`TrackParser`), never by which type the system resolved.
+    static let tcxTrack = UTType(filenameExtension: "tcx", conformingTo: .xml) ?? .xml
 }

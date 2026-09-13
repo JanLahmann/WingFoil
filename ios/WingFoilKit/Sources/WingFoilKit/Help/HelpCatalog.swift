@@ -171,8 +171,17 @@ public enum HelpCatalog {
             body: [
                 IcuSetupGuide.rationale,
                 "Nothing is uploaded and nothing is changed on either side: CleanJibe lists "
-                + "your activities, downloads the original FIT of the watersport ones, and "
-                + "analyses them on the phone.",
+                + "your activities, downloads the original recording of the watersport ones, "
+                + "and analyses them on the phone.",
+                // The one sentence that turns "a Garmin bridge" into "the way in for every
+                // other brand". Their apps already sync to intervals.icu, so the setup above
+                // is the whole of the work — and the second half says what the recording they
+                // leave there is worth, before the rider imports one and finds out.
+                "Polar, Suunto and Coros are supported this way too: their own apps sync to "
+                + "intervals.icu, and CleanJibe syncs from there. What comes back decides how "
+                + "much of the analysis you get — a FIT gives the full one, while a GPX, or a "
+                + "TCX without a speed channel, gives a positions-only analysis whose speed "
+                + "records are estimated and marked uncertified.",
             ],
             items: IcuSetupGuide.steps.map {
                 .init(term: "\($0.number). \($0.title)", detail: $0.detail)
@@ -877,12 +886,14 @@ public enum HelpCatalog {
                           + "recorded the accelerometer. An Apple Watch workout imported from "
                           + "Health is this case: its speed came off the watch's own GPS "
                           + "receiver, so those records certify."),
-                .init(term: "A GPX, or any file with no speed channel",
-                      detail: "GPX imports work: the track, the flights, every turn with its "
-                          + "verdict, the wind axis. But a GPX carries no speed channel, so "
-                          + "speed is estimated from positions and the speed records are "
-                          + "marked uncertified — and no GPX carries an accelerometer, so "
-                          + "pump strokes and takeoff effort are missing too."),
+                .init(term: "A GPX or TCX, or any file with no speed channel",
+                      detail: "These imports work: the track, the flights, every turn with "
+                          + "its verdict, the wind axis. Polar, Suunto and Coros sessions "
+                          + "usually arrive as one of the two, through intervals.icu. A GPX "
+                          + "never carries a speed channel and a TCX sometimes does; without "
+                          + "one, speed is estimated from positions and the speed records are "
+                          + "marked uncertified. Neither format carries an accelerometer, so "
+                          + "pump strokes and takeoff effort are missing either way."),
             ],
             related: [.uncertified, .divergence, .engineVersion]),
 
