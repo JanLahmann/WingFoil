@@ -15,4 +15,6 @@
          hairlines, and what is left is the jibe track and the wing, which is the half of the
          artwork that carries the name. -->
     <bitmap id="BrandBadge" filename="brand_badge.png" dithering="none"/>
+    <!-- 0.9.10: the splash page's cut (BrandSplashView), a third of the glass tall. -->
+    <bitmap id="BrandHero" filename="brand_hero.png" dithering="none"/>
 </drawables>

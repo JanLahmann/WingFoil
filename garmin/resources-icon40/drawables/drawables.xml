@@ -20,4 +20,6 @@
          either screen draws, which is why it is the jibe track and the wing and nothing
          else: at 26 px there is no room for a detail that is not the shape of the name. -->
     <bitmap id="BrandBadge" filename="brand_badge.png" dithering="none"/>
+    <!-- 0.9.10: the splash page's cut (BrandSplashView), a third of the glass tall. -->
+    <bitmap id="BrandHero" filename="brand_hero.png" dithering="none"/>
 </drawables>

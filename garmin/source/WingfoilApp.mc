@@ -68,6 +68,11 @@ class WingfoilApp extends Application.AppBase {
             return [new LockView(), new LockDelegate()];
         }
         controller.startGps();
+        // The GPS is already warming while the splash is up, so the second and a half it
+        // holds costs the rider nothing on the way to a fix (BrandSplashView, 0.9.10).
+        if (BrandSplash.due()) {
+            return [new BrandSplashView(), new BrandSplashDelegate()];
+        }
         return [new StartView(), new StartDelegate()];
     }
 }

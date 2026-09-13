@@ -106,15 +106,24 @@ MIP_MAST_RGB = (0x00, 0x00, 0x00)
 # logo that has wandered into the number's space. Measured on the fenix 8: the 46 px mark
 # centred on that eyebrow reaches the top of the giant's digits, and the 19 px badge sits
 # exactly inside the word's own band.
+# THREE cuts per directory since 0.9.10: `brand_hero` is the splash page's (BrandSplashView),
+# the one place the mark is the whole point of the screen — about a third of the glass tall,
+# with nothing but the wordmark under it. The start page's `brand_mark` grew a step at the same
+# time (Jan, 13 Sep 2026: "adding our logo more visibly"); `Brand.fits()` still decides per
+# glass whether the air holds it, and the layout suite asserts it does on the matrix.
 TARGETS = [
-    ("resources",        "brand_mark",  46, "amoled"),   # the six 454 px AMOLED products
+    ("resources",        "brand_mark",  56, "amoled"),   # the 454 px AMOLED products
     ("resources",        "brand_badge", 19, "amoled"),
-    ("resources-icon60", "brand_mark",  41, "amoled"),   # epix 2 / MARQ 2 / fenix 8 43 mm
+    ("resources",        "brand_hero", 150, "amoled"),
+    ("resources-icon60", "brand_mark",  50, "amoled"),   # epix 2 / MARQ 2 / fenix 8 43 mm / Venu
     ("resources-icon60", "brand_badge", 17, "amoled"),
-    ("resources-icon54", "brand_mark",  41, "amoled"),   # fr570 42 mm, 390 px
+    ("resources-icon60", "brand_hero", 130, "amoled"),
+    ("resources-icon54", "brand_mark",  44, "amoled"),   # fr570 42 mm, vivoactive, Venu 2S (360 px: 50 ran off the glass)
     ("resources-icon54", "brand_badge", 17, "amoled"),
-    ("resources-icon40", "brand_mark",  22, "mip"),      # the thirteen 8 bpp, 240-280 px
+    ("resources-icon54", "brand_hero", 120, "amoled"),
+    ("resources-icon40", "brand_mark",  26, "mip"),      # the 8 bpp, 240-280 px
     ("resources-icon40", "brand_badge", 16, "mip"),
+    ("resources-icon40", "brand_hero",  80, "mip"),
 ]
 
 

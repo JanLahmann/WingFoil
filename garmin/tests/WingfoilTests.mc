@@ -3973,3 +3973,38 @@ function phoneMapPushIsToldApartFromWind(logger as Test.Logger) as Boolean {
     MapSnapshot.clearAll();
     return true;
 }
+
+// ---- The splash page (0.9.10) ----
+// The hero and the wordmark under it are one lockup centred on the glass; the hero's corners
+// must sit inside the page radius on every glass, and the lockup must not run off the top
+// or the bottom. Measured with the device's own fonts and the directory's own cut.
+(:test)
+function brandSplashLockupFitsRoundDisplay(logger as Test.Logger) as Boolean {
+    var dc = testDc();
+    var cx = dc.getWidth() / 2;
+    var cy = dc.getHeight() / 2;
+    var radius = RecordingView.fitRadius(dc, false, false);
+    var heroH = Brand.heroH();
+    var heroW = Brand.hero().getWidth();
+    var wordH = dc.getFontHeight(Graphics.FONT_LARGE);
+    var yHero = BrandSplash.heroY(cy, heroH, wordH);
+    var yWord = BrandSplash.wordY(cy, heroH, wordH);
+    Test.assertMessage(yHero - heroH / 2 >= 0, "the hero runs off the top of the glass");
+    Test.assertMessage(yWord + wordH / 2 <= dc.getHeight(), "the wordmark runs off the bottom");
+    Test.assertMessage(cornerRadius(heroW, heroH, yHero, cy) <= radius.toFloat(),
+        "the hero's corners sit outside the page radius on a " + screenPx().toString()
+        + "px glass");
+    Test.assertMessage(cornerRadius(dc.getTextWidthInPixels(START_TITLE, Graphics.FONT_LARGE),
+        wordH, yWord, cy) <= radius.toFloat(), "the wordmark's corners sit outside the radius");
+    Test.assertMessage(yWord - yHero >= (heroH + wordH) / 2, "hero and wordmark overlap");
+    Brand.releaseHero();
+    // the gate: a version once seen is not shown again until the version changes
+    Toybox.Application.Storage.deleteValue(BrandSplash.STORE_SEEN);
+    Test.assertMessage(BrandSplash.due(), "a fresh install gets the splash");
+    BrandSplash.markSeen();
+    Test.assertMessage(!BrandSplash.due(), "the same version does not show it twice");
+    Toybox.Application.Storage.deleteValue(BrandSplash.STORE_SEEN);
+    logger.debug("splash lockup: hero " + heroW.toString() + "x" + heroH.toString()
+        + " on " + screenPx().toString() + " px");
+    return true;
+}
