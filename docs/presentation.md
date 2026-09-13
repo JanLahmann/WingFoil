@@ -2553,6 +2553,87 @@ almost every time and a line that announces that on every launch is a line the r
 to stop reading. Nothing goes over the radio unless the mask's hash differs from the one this
 watch last acknowledged.
 
+## Session list — group by, and the filters that narrow it
+
+A library is a list of afternoons until it is about forty of them, at which point the
+questions a rider brings to it stop being "what did I do on Saturday" and start being about
+*sets*: how many afternoons in August, everything at Torbole, what came in from Strava.
+Flat and newest-first, the list answered those by scrolling. Two controls answer them
+instead — **group by** at the top of the list, and one **filter** menu in the toolbar — and
+both live only on the Sessions tab.
+
+**Group by: None · Month · Year · Spot.** A segmented control at the top of the list,
+because there are four fixed answers and the one in force is worth seeing without opening
+anything. Groups are list sections, **newest group first**, sessions inside a group newest
+first like the flat list they came from, and the header carries the count: `August 2026 ·
+9 sessions`, `2025 · 41 sessions`, `Nago-Torbole · 31 sessions`. Month names are written out
+in full and in en-GB, the same table the period headings use ("Formatter rules"), so one
+month reads the same on both screens.
+
+Under **Spot**, sessions with no spot — and sessions whose spot the table can no longer name,
+which is the same thing as far as a heading goes — fall into a last group called **No spot**.
+Last whatever its dates say: it is not a place, so it has no place in the sequence.
+
+The default is **Month from twenty sessions up, None below**, counted over the *unfiltered*
+library. A library of nine is a screen and headings on it are furniture; a library of two
+hundred is already being scrolled by month. The count is the whole library on purpose: the
+default is a fact about how much the rider has, not about what a chip is showing him this
+second, and a list that ungrouped itself because a filter narrowed it to nineteen would be
+answering a different question at every tap. Once he moves the control the choice is
+remembered (`library.groupBy.v1`), because "I read my library by month" is a fact about the
+rider; the *filter* is not remembered, because a narrowing is a question and not a setting.
+
+**The filter menu** is one toolbar menu next to Import, with four sections and a single
+choice in each:
+
+| section | entries |
+|---|---|
+| Spot | **All spots**, then every spot in the library |
+| Source | **All sources**, then the doors this library actually holds — intervals.icu, File, Garmin export, AirDrop, Garmin watch, Apple Watch, Apple Health, Strava, Example |
+| Discipline | **All**, Wingfoil, Windsurf foil, Windsurf fin — shown only with the windsurf switch on |
+| Date | **All time**, This year, Last year, Custom range… |
+
+A door that brought nothing in is not offered: a filter that can only ever empty the list is
+not a filter, it is a trap. The demo doors (the bundled example, the repo's fixtures) are
+hidden until the library holds such a row and are then called **Example** — "fixtures" is a
+thing this repository has, not a thing the rider imported. **Source is containment, never
+equality**: `session.importSource` is a `+`-joined set (`file+icu` once the same afternoon has
+arrived twice), so a session that came in both ways answers to both doors — and `watch` never
+matches `applewatch`, which is a Garmin summary card being mistaken for an Apple Watch
+recording. Discipline reads the preset the session is *analysed* under, the rider's override
+first and the recording's own tag second, so the menu agrees with the chip on the row.
+
+Dates are read on **each session's own clock** where it recorded one: an evening session
+either side of midnight belongs to the month the rider had, not to the month the reader's
+phone is in. The two ends of a custom range are the other way round — they are days picked
+off the reader's own calendar — and they are **inclusive at day granularity**, with the
+Periods screen's own sentence under them: *Both dates count.*
+
+**The chips say what is on without being opened.** When any filter is active a row of
+capsules sits under the title, above the group-by control, one per narrowing, in menu
+order: `Nago-Torbole ×`, `Strava ×`, `2025 ×`, `12 Jul – 3 Aug ×`. Tapping a chip clears
+that one; from two chips up a plain **Clear all** sits at the end. A whole calendar year is
+chipped as the year, because there is no second way to have picked 1 January to 31 December.
+The failure this row exists to prevent is a list quietly three sessions long because a chip
+was left on last week.
+
+The footer counts what is shown against what there is — `3 of 41 sessions · pull to sync
+intervals.icu` — and a filter that matches nothing gets its own empty state, **"No session
+matches these filters"** with a **Clear filters** button. Not the fresh-library card: telling
+a rider with forty sessions that he has none is the app being wrong about him.
+
+**Records, Trends, Periods, the gear rollups and the widget keep reading the whole library**
+(docs/decisions.md ADR-025). The filter is a view of one list. A chip that hides half the
+list must never be able to hide half a personal best — "best 2 s: 24.1 kn" that quietly meant
+"…at this spot, this year" is a number the rider would go on quoting long after the chip was
+forgotten. Those screens have their own spot and gear pickers, which say so on the screen
+they narrow.
+
+iOS: `LibraryListing.swift` in the kit (`LibraryListFilter`, `LibraryGrouping`,
+`LibraryGroup`, `LibraryDateWindow`), pinned by `LibraryListingTests`; the list itself is
+`LibraryView`, the menu and the chips `LibraryFilterMenu.swift`. Not on the web session
+viewer, which has no library to group.
+
 ## Import — the doors a session comes in by
 
 The Import sheet is a list of doors, in the order a rider meets them: **Full history** (the
