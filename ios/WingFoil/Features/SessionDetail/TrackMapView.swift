@@ -333,6 +333,12 @@ struct FullScreenMapView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(.thinMaterial)
         }
+        // There is nothing to type on this screen, so the keyboard's share of the safe area
+        // is never ours. Without this line a keyboard dismissed somewhere else — a rename
+        // field, the Strava sign-in sheet — can leave its inset behind on the stack, and the
+        // legend, which sits on the bottom safe-area edge, floats up to where the keyboard
+        // was, with a third of the map bare underneath it (Jan's phone, 13 Sep 2026).
+        .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 }
 
