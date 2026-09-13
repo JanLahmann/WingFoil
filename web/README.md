@@ -22,6 +22,14 @@ web/
 │                               installs — the Connect IQ store link and the public
 │                               TestFlight link — and where a tester sends what they find.
 │                               No JS, and deliberately NOT in the sw.js precache.
+├── start/index.html            the GETTING-STARTED PAGE (cleanjibe.org/start/): what
+│                               happens after the install — a 20-minute test on land, the
+│                               three watch routes (Apple Workout app, CleanJibe watch app,
+│                               Garmin via intervals.icu), what a working result looks
+│                               like, and the three feedback doors with the report template
+│                               prefilled into the mail link. Same no-JS, no-precache rules
+│                               as /invite/; linked from it and printed in TestFlight's
+│                               "What to Test" and on the Connect IQ listing.
 ├── app/index.html              the ANALYZER (cleanjibe.org/app/): page shell, three views
 │                               (analyze / library / trends). Called "CleanJibe session
 │                               analyzer" on the page — "Lab" and the module name are gone
@@ -192,12 +200,13 @@ cd web
 python3 -m http.server 8765
 # open http://127.0.0.1:8765/         the project homepage
 # open http://127.0.0.1:8765/invite/  the beta page (both installs + feedback)
+# open http://127.0.0.1:8765/start/   getting started (the 20-minute watch test)
 # open http://127.0.0.1:8765/app/     the analyzer
 ```
 
-> The site has three documents. `/` is the project homepage and `/invite/` the beta page
-> (both static HTML, one extra stylesheet, no JavaScript at all); `/app/` is this
-> analyzer. Everything the analyzer
+> The site has four documents. `/` is the project homepage, `/invite/` the beta page and
+> `/start/` the getting-started walkthrough (all three static HTML, one extra stylesheet,
+> no JavaScript at all); `/app/` is this analyzer. Everything the analyzer
 > loads — `css/`, `js/`, `icons/`, `example/`, `lab_bundle/` — stays at the site root and is
 > reached with `../`, so the two pages share one copy of the aesthetic and one service
 > worker. `js/app.js` resolves the example FIT and `sw.js` against `import.meta.url` rather
@@ -516,7 +525,9 @@ it on install is the one installing the *analyzer*, who reaches the homepage onl
 back out and reaches it online. Its box is still reserved by `aspect-ratio`.
 
 `/invite/` is not precached at all — it is a page you read once, at a desk, with a watch in
-your hand. Neither is the umami script; see **Privacy** above.
+your hand. `/start/` is out for the same reason and more so: it is read *while* doing the
+thing it describes, with a phone, a watch and a store app all wanting the network anyway.
+Neither is the umami script; see **Privacy** above.
 
 Icons live in `web/icons/`, copied from `brand/` (`icon-tile-*` for the normal icon,
 `icon-square-*` full-bleed for the maskable one). Nothing outside `web/` is referenced.
@@ -596,6 +607,15 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    listed only its own two doors would be implying otherwise. Every mail address on the site
    is `info@cleanjibe.org`; grepping the `.html` files for the old personal address must come
    back empty.
+0a2. **The getting-started page.** <http://127.0.0.1:8765/start/>. The three routes read in
+   order at both widths and every internal link resolves — `../`, `../invite/`, `../app/`,
+   `../privacy/`, `../impressum/` — as do the two external ones (testflight.apple.com and
+   the Connect IQ listing `e77867b5-…`). The mail link must open a composer with the
+   **report template already in the body**: tap it on a phone rather than trusting the
+   `%0A`s. TestFlight's own feedback is named by the two strings the app actually shows,
+   *Send Beta Feedback* and *Share Beta Feedback*, and the Garmin door names *Contact
+   Developer* and *Report a Problem*. The page must load no JavaScript of its own and
+   register no service worker.
 0b. **The social card** (the link preview — not the rider's share card below). View source
    on both documents: `og:image` must be the absolute
    `https://cleanjibe.org/social-card.png`, with `og:image:width`/`:height` and
