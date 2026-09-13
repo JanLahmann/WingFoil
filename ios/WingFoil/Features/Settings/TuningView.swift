@@ -27,12 +27,33 @@ import WingFoilKit
 /// broken, so it is broken loudly — the sessions it produces carry a fingerprint in their
 /// engine version (`TuningStamp`), and every screen that shows a tuned number wears a chip
 /// saying so. Nothing here reaches the watch or the web.
+///
+/// **One page, three sets** (13 Sep 2026, Jan: *"for the windsurf analysis, we need to be able
+/// to set other parameters (min planing speed, etc) than for wingfoil. Is that possible on the
+/// settings/details page?"*). The picker at the top says which rig is being tuned, and every
+/// row below it — its value, its "default N" caption, its reset, the count in the chip — is
+/// about that rig alone. A fin board planes at 20 km/h where a foil flies at 12, so a single
+/// `foilEntrySpeed` slider was always wrong for one of them; and because each set is its own
+/// staleness key, moving a fin threshold re-derives fin sessions and nothing else.
 struct TuningView: View {
     @Environment(SessionStore.self) private var store
 
     /// Seeded by the caller, because the page has to open on the rider's current settings and
     /// a view cannot read the environment in `init`.
-    @State private var overrides: TuningOverrides
+    @State private var sets: TuningOverrideSets
+    /// Which rig the rows below are about. Wingfoil, always, on the way in: it is the
+    /// validated one, and a page that opened on a windsurf set would be a page claiming the
+    /// windsurf numbers are the ones to argue with.
+    @State private var selected: Discipline = Self.initialDiscipline
+
+    /// `UI_TUNING_DISCIPLINE=windsurfFin` — screenshot hook only (docs/testing.md), and
+    /// dev-build-only by construction, since this whole file is behind `TUNING`. A segmented
+    /// control is a tap `simctl` cannot make, so the one state the picker reaches is staged
+    /// from the environment the same way `UI_HELP_TOPIC` stages a help topic.
+    private static var initialDiscipline: Discipline {
+        ProcessInfo.processInfo.environment["UI_TUNING_DISCIPLINE"]
+            .flatMap(Discipline.init(rawValue:)) ?? .wingfoil
+    }
     /// Whether anything moved while the page was open. What decides if leaving it is worth a
     /// re-analysis — the lazy sweep would get there on its own at the next launch, but a rider
     /// tuning thresholds is a rider who wants to see the effect now.
@@ -41,12 +62,17 @@ struct TuningView: View {
     /// Read here only for the row's count — the page itself lives in `TuningLabelsView`.
     @State private var labels = TurnLabelStore.shared
 
-    init(initial: TuningOverrides) {
-        _overrides = State(initialValue: initial)
+    init(initial: TuningOverrideSets) {
+        _sets = State(initialValue: initial)
     }
+
+    /// The set on screen. Every read below goes through it, so a row can never print one
+    /// discipline's value under another one's caption.
+    private var overrides: TuningOverrides { sets[selected] }
 
     var body: some View {
         Form {
+            disciplineSection
             statusSection
             ForEach(TuningGroup.allCases, id: \.self) { group in
                 Section {
@@ -71,6 +97,7 @@ struct TuningView: View {
         // fingerprint has just made true of every row). Doing it on the way out is the same
         // trip, taken while the rider is still thinking about the slider he moved.
         .onDisappear {
+            let selected = selected
             guard touched else { return }
             // The workbench's cached default analyses were built against the previous setting.
             // The version key would catch this on its own once the library re-derives; dropping
@@ -78,13 +105,14 @@ struct TuningView: View {
             // slider moved even for the instant between the two.
             DevWorkbench.shared.invalidateAll()
             guard !store.sessions.isEmpty else { return }
-            Task { await store.reanalyzeTuned() }
+            Task { await store.reanalyzeTuned(for: selected) }
         }
-        .confirmationDialog("Reset every threshold to its published default?",
+        .confirmationDialog("Reset every \(selected.title.lowercased()) threshold to its "
+                            + "default?",
                             isPresented: $confirmResetAll, titleVisibility: .visible) {
             Button("Reset \(overrides.changedCount) threshold"
                    + "\(overrides.changedCount == 1 ? "" : "s")", role: .destructive) {
-                overrides.resetAll()
+                sets.resetAll(selected)
                 commit()
             }
             Button("Cancel", role: .cancel) {}
@@ -93,21 +121,63 @@ struct TuningView: View {
 
     // MARK: - Sections
 
+    /// **Which rig is being tuned.** A segmented picker rather than three pages, because the
+    /// question a rider asks here is comparative — *what does the fin need that the wing does
+    /// not* — and the answer is only readable if the same row sits in the same place under
+    /// both. The page never jumps: every row is drawn for every discipline, and the ones a
+    /// windsurf preset does not ask are disabled rather than removed.
+    private var disciplineSection: some View {
+        Section {
+            Picker("Tuning for", selection: $selected) {
+                ForEach(Discipline.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("Tuning for")
+        } header: {
+            Text("Tuning for")
+        } footer: {
+            Text(selectedFooter)
+        }
+    }
+
+    /// What the set on screen stands against: its preset, in one line, and the other sets'
+    /// counts where there are any — so a rider tuning the fin can see at a glance that the
+    /// wing is carrying overrides of its own.
+    private var selectedFooter: String {
+        var line = selected.isWindsurf
+            ? "Each discipline has its own set of overrides, over its own preset — "
+                + "\(selected.title.lowercased()) starts above "
+                + "\(preset(.foilEntrySpeed)) and ends below \(preset(.foilExitSpeed)). "
+                + DisciplineLexicon.experimentalNote
+            : "Each discipline has its own set of overrides, over its own preset. These rows "
+                + "are the published wingfoil contract — the only validated one."
+        let others = sets.tuned.filter { $0 != selected }
+        if !others.isEmpty {
+            line += "\n\nAlso tuned: "
+                + others.map { "\($0.title.lowercased()) · \(sets.changedCount($0))" }
+                    .joined(separator: " · ")
+                + ". Those sets are untouched by anything on this screen."
+        }
+        return line
+    }
+
     private var statusSection: some View {
         Section {
             if overrides.isEmpty {
-                Label("Every threshold is at its published default",
+                Label("Every \(selected.title.lowercased()) threshold is at its preset default",
                       systemImage: "checkmark.seal")
                     .foregroundStyle(.secondary)
             } else {
                 TunedChip(count: overrides.changedCount)
-                Button("Reset all", role: .destructive) { confirmResetAll = true }
+                Button("Reset all \(selected.title.lowercased())", role: .destructive) {
+                    confirmResetAll = true
+                }
             }
             Button {
-                Task { await store.reanalyzeTuned() }
+                Task { await store.reanalyzeTuned(for: selected) }
             } label: {
                 HStack {
-                    Text("Re-analyse all sessions now")
+                    Text("Re-analyse stale sessions now")
                     if store.isBusy { Spacer(); ProgressView().controlSize(.small) }
                 }
             }
@@ -115,8 +185,10 @@ struct TuningView: View {
         } footer: {
             Text("Sessions re-derive themselves whenever a threshold moves — the tuning is "
                  + "part of the analysis' version, so a stale session rebuilds the next time "
-                 + "it is opened, and the whole library rebuilds at the next launch. The "
-                 + "button is the same trip, taken now.")
+                 + "it is opened, and the rest at the next launch. The button is the same "
+                 + "trip, taken now: it sweeps every session whose stored version is no "
+                 + "longer the one its own discipline produces, which after a move on this "
+                 + "screen is the \(selected.title.lowercased()) sessions and no others.")
         }
     }
 
@@ -146,6 +218,7 @@ struct TuningView: View {
     private var footerSection: some View {
         Section {
             LabeledContent("Analysis engine", value: AnalysisEngine.version)
+            LabeledContent("Tuning set", value: selected.title)
             if let fingerprint = overrides.fingerprint {
                 LabeledContent("Tuning fingerprint", value: fingerprint)
                     .font(.caption.monospaced())
@@ -161,7 +234,11 @@ struct TuningView: View {
                  + "way to be told, and the web reads what the phone wrote. While anything "
                  + "here is moved, the session header, Records and Trends carry a *tuned "
                  + "thresholds* chip, and a session's own page says how many thresholds "
-                 + "were moved — so a tuned number can never be mistaken for a published one.")
+                 + "were moved — so a tuned number can never be mistaken for a published one."
+                 + "\n\nThe fingerprint above is this discipline's set alone. It rides inside "
+                 + "that discipline's stamp in the analysis' version, which is why moving a "
+                 + "windsurf threshold re-derives windsurf sessions and leaves every wingfoil "
+                 + "session on the numbers it was already analysed with.")
         }
     }
 
@@ -174,10 +251,16 @@ struct TuningView: View {
     /// docs/algorithms.md name printed small under it: the page has to read on its own (Jan,
     /// 7 Sep 2026: "review all descriptions on the tuning page for clarity") *and* line up
     /// with that table for whoever is changing the number the table names.
+    ///
+    /// **The caption says the selected discipline's default**, which is the preset's number
+    /// and not always the published one: on the fin set the flight rows read "default 20.0
+    /// km/h" and "default 15.0 km/h", because that is what the slider is standing away from
+    /// and what dragging it home will clear it to.
     private func row(_ parameter: TuningParameter) -> some View {
         let spec = parameter.spec
         let value = overrides.value(for: parameter)
         let overridden = overrides.isOverridden(parameter)
+        let available = spec.available(in: selected)
         return VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 heading(spec, parameter: parameter, overridden: overridden)
@@ -191,8 +274,7 @@ struct TuningView: View {
                 }
                 if overridden {
                     Button {
-                        overrides.reset(parameter)
-                        commit()
+                        update { $0.reset(parameter) }
                     } label: {
                         Image(systemName: "arrow.uturn.backward.circle")
                     }
@@ -201,13 +283,23 @@ struct TuningView: View {
                 }
             }
             control(spec, parameter: parameter)
-            Text("default \(spec.formatted(spec.defaultValue)) · \(spec.note)")
+                .disabled(!available)
+            Text(available
+                 ? "default \(spec.formatted(spec.presetDefault(for: selected))) · \(spec.note)"
+                 : "off for windsurf — there is no pump channel to corroborate against, so "
+                    + "the rung is refused rather than merely unreachable")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.vertical, 2)
+        .opacity(available ? 1 : 0.55)
         .accessibilityElement(children: .contain)
+    }
+
+    /// One parameter's preset default, in the words the slider prints it in.
+    private func preset(_ parameter: TuningParameter) -> String {
+        parameter.spec.formatted(parameter.spec.presetDefault(for: selected))
     }
 
     /// The row's name in the rider's words, with the docs/algorithms.md name small under it —
@@ -235,8 +327,7 @@ struct TuningView: View {
             Toggle(isOn: Binding(
                 get: { spec.isOn(overrides.value(for: parameter)) },
                 set: { isOn in
-                    overrides[parameter] = isOn ? 1 : 0
-                    commit()
+                    update { $0[parameter] = isOn ? 1 : 0 }
                 })) {
                     Text(spec.title)
                 }
@@ -247,8 +338,7 @@ struct TuningView: View {
             Slider(value: Binding(
                 get: { overrides.value(for: parameter) },
                 set: { newValue in
-                    overrides[parameter] = newValue
-                    commit()
+                    update { $0[parameter] = newValue }
                 }),
                    in: spec.range, step: spec.step) {
                 Text(spec.title)
@@ -260,10 +350,19 @@ struct TuningView: View {
         }
     }
 
+    /// **Every change to the set on screen goes through here**, so the selected discipline is
+    /// read in exactly one place and a row can never write into another rig's set.
+    private func update(_ change: (inout TuningOverrides) -> Void) {
+        var set = sets[selected]
+        change(&set)
+        sets[selected] = set
+        commit()
+    }
+
     /// Written through on every change rather than on leaving: a page that loses a slider drag
     /// because the app was backgrounded mid-tune is a page nobody trusts twice.
     private func commit() {
-        store.tuning = overrides
+        store.tuning = sets
         touched = true
     }
 }

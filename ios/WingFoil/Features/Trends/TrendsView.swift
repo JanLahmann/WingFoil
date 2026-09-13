@@ -60,7 +60,7 @@ struct TrendsView: View {
                     // trend line anyone else would draw, and the charts cannot say so
                     // themselves.
                     if !store.tuning.isEmpty {
-                        TunedChip(count: store.tuning.changedCount)
+                        TunedChip(count: store.tuning.totalChangedCount)
                     }
                     #endif
 
