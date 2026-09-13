@@ -61,7 +61,7 @@ struct ImportView: View {
                     // intervals.icu sentence names the other watch brands because the sync
                     // button above is the only way most of their riders get in at all: their
                     // apps sync to intervals.icu, and CleanJibe syncs from there.
-                    Text("Garmin Connect → activity → \"Export Original\" gives one FIT; "
+                    Text("Garmin Connect → activity → \"Export File\" gives one FIT; "
                          + "AirDrop and the share sheet land here too. Polar, Suunto and "
                          + "Coros are supported through intervals.icu — their apps sync "
                          + "there, and CleanJibe syncs from there. A FIT gives the full "
