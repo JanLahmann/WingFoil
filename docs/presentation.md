@@ -2724,10 +2724,35 @@ takeoff effort** (was a wrist accelerometer recorded, which only the CleanJibe w
 | Anything that reaches Strava | Import → Strava | uncertified | no |
 | A phone in a pocket, any GPX | the share sheet | uncertified | no |
 
+## The library menu — one menu, in the order a new rider needs it
+
+The Sessions tab's top-left button (`line.3.horizontal`, "Menu") is the app's one menu. It
+used to be a gear with two rows; it is a menu now because a gear promises switches and the
+first thing a new rider needs is not a switch. Five items, two dividers, one line of small
+print, in this order and for this reason:
+
+1. **Getting started** — the beta test guide as a help topic (`HelpTopicID.betaGettingStarted`,
+   the same text as cleanjibe.org/start). First, because it is what "I just installed this"
+   is looking for.
+2. **Settings** — the switches, the watch, the accounts.
+3. **Support** — the feedback mail (`feedbackMail(on:)`, the same composer as Settings →
+   Send feedback and the share sheet's "Report a problem"). Above the two "what is this"
+   screens because a rider who has a question after reading them is one tap from asking it.
+4. **What CleanJibe does** — the welcome screen again (`SessionStore.replayWelcome`).
+5. **What the numbers mean** — the Help index.
+6. The build line, not tappable: *CleanJibe 0.15.0 (45)* with " · dev" on the dev variant —
+   the same string as Settings → About, and the first question of every support mail.
+
+**The welcome screen closes.** Replayed from the menu it has a circular ✕ at the top right,
+because its three buttons are *ways in* and a rider who came back to read it is not choosing
+one; a page whose only exits are labelled "Try the example", "Connect" and "Later" reads as a
+gate (Jan, 13 Sep 2026). ✕ does what "Later" does: nothing is armed or loaded.
+
 ## Feedback mail — the report the app writes and the rider signs
 
-Two rows open one mail to `info@cleanjibe.org`: **Settings → Send feedback**, under the two
-help rows, and **Report a problem with this session…** at the foot of a session's share sheet.
+Three doors open one mail to `info@cleanjibe.org`: **Menu → Support** on the Sessions tab,
+**Settings → Send feedback**, under the two help rows, and **Report a problem with this
+session…** at the foot of a session's share sheet.
 The subject is `CleanJibe beta feedback · build <N>[ dev] · <watch>` — the build number, not
 the marketing version, because the two TestFlight variants of a release share the latter.
 
