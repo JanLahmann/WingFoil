@@ -127,8 +127,11 @@ struct TurnHeadingStripView: View {
             }
 
             if let axisRt {
+                // Captioned on the TOP edge: the crossing sits inside the sweep window by
+                // definition, and two words on the bottom edge there read as "axisweep".
                 StripChrome.rule(at: axisRt, dash: [3, 3],
-                                 tint: Color(.label).opacity(0.35), caption: "axis")
+                                 tint: Color(.label).opacity(0.35), caption: "axis",
+                                 onTop: true)
             }
             StripChrome.playhead(playheadRt)
         }
