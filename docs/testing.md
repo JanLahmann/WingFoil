@@ -677,6 +677,10 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    about the same centre; it is the only way to check the direction chevrons at a second
    scale, since their spacing is measured in screen points and therefore *changes* with the
    camera. Both are staging-only, transient, and never written back to any preference.
+   `UI_FEEDBACK=fallback` opens the beta feedback mail's **fallback sheet** from Settings —
+   the report in full, with the copy button. It is the only one of the three routes a
+   simulator can photograph: `MFMailComposeViewController` refuses to appear where no mail
+   account exists, and `simctl` cannot tap the row in any case.
    In the share sheet (`UI_SHEET=share`), `UI_SHARE=fit` flips to the recording tab,
    `UI_SHAPE=portrait|square|landscape` picks the aspect and `UI_STATS=lean|complete` picks
    the stat preset — three controls `simctl` likewise cannot tap. The last one sets the same
