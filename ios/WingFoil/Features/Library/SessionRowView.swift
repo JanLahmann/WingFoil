@@ -41,12 +41,19 @@ struct SessionRowView: View {
                         .background(Color.orange.opacity(0.16), in: .capsule)
                         .foregroundStyle(.orange)
                 }
-                Text(SessionDisplay.badge(row))
+                // The `?` says nobody has confirmed the discipline yet — a wrong guess is
+                // visible at a glance in the list rather than only on the session page.
+                Text(SessionDisplay.badge(row)
+                     + (SessionDisplay.badgeIsGuess(row) ? " ?" : ""))
                         .font(.caption2.weight(.semibold))
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
                         .background(SessionDisplay.badgeColor(row).opacity(0.16), in: .capsule)
                         .foregroundStyle(SessionDisplay.badgeColor(row))
+                        .accessibilityLabel(
+                            SessionDisplay.badgeIsGuess(row)
+                            ? "Analysed as \(SessionDisplay.badge(row)), not confirmed"
+                            : SessionDisplay.badge(row))
                 }
 
                 // The engine's cleaned span in the block's own spelling — the same number and

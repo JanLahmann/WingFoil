@@ -44,9 +44,23 @@ enum SessionDisplay {
         return SessionNaming.sportCorrected(title)
     }
 
-    /// Discipline badge: the `discipline` developer field wins over the FIT sport code
-    /// (docs/fit-schema.md — sport 43 alone does not mean wingfoil).
+    /// **Discipline badge: what this session is being read as**, on every row.
+    ///
+    /// Three rungs, and they are the same three the engine resolves the preset on
+    /// (docs/algorithms.md, "Disciplines"): the rider's own answer first, the recording's
+    /// `discipline` developer field second, and — where neither has spoken — the preset the
+    /// import settled on from his declared default.
+    ///
+    /// What is **no longer** on the ladder is the FIT sport code. It used to be the fallback,
+    /// and it is the one piece of evidence here that is systematically wrong: ADR-004 files a
+    /// wingfoil afternoon under Garmin's windsurf profile, so every "…-windsurfen…" recording
+    /// in Jan's corpus wore a `Windsurf` badge over a wingfoil session's numbers. The code is
+    /// not thrown away — it is the hint on the review row, where it is shown as what a watch
+    /// said rather than as what this session is.
     static func badge(_ row: SessionRow) -> String {
+        if let override = row.disciplineOverride, let stated = Discipline(rawValue: override) {
+            return stated.title
+        }
         if let discipline = row.discipline?.trimmingCharacters(in: .whitespaces),
            !discipline.isEmpty {
             switch discipline.lowercased() {
@@ -56,8 +70,14 @@ enum SessionDisplay {
             default: return discipline.capitalized
             }
         }
-        return sportLabel(row.sport)
+        return row.analysisDiscipline.title
     }
+
+    /// The `?` after the badge: **nobody has said this is what it is.** True for a session
+    /// whose preset came from the rider's default because the recording said nothing — which
+    /// is every source but the CleanJibe watch app. It goes the moment he answers, either way
+    /// round (docs/presentation.md, "Confirming the discipline on import").
+    static func badgeIsGuess(_ row: SessionRow) -> Bool { row.disciplineGuessed }
 
     static func sportLabel(_ sport: String?) -> String {
         switch (sport ?? "").lowercased() {

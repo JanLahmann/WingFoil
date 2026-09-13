@@ -1,0 +1,96 @@
+import Foundation
+
+/// **"Is this a wingfoil session?" — the question the import cannot answer itself**
+/// (docs/presentation.md, "Confirming the discipline on import").
+///
+/// Wingfoil is not a sport in Garmin, Strava, intervals.icu or Apple Health. Every recording
+/// that is not the CleanJibe watch app's own therefore arrives saying either nothing or
+/// something else, and the something else — sport 43, *windsurfing* — is the code ADR-004
+/// files a wingfoil afternoon under. So the import states a preset from the rider's declared
+/// default (`SessionIngestor.riderDiscipline`), marks that it was nobody's answer
+/// (`SessionRow.disciplineGuessed`), and this type is what the app asks him about afterwards.
+///
+/// *Afterwards*, not before: a bulk import of two hundred files must not stop on its first
+/// question, and a session analysed under the wrong preset loses nothing — every number is
+/// re-derived from the archived recording the moment he says otherwise.
+public enum DisciplineReview {
+
+    /// The sessions nobody has confirmed, newest first — what the review sheet lists and what
+    /// the library banner counts.
+    ///
+    /// `dismissed` is the ids he has already skipped past. They keep their `?` on the library
+    /// row (nothing was confirmed, and pretending otherwise would be the app answering for
+    /// him) but they stop raising a banner, because a banner that returns after being
+    /// dismissed is not a reminder, it is a nag.
+    ///
+    /// Two sessions are never asked about, whatever the column says. **The example** is a
+    /// recording nobody in this library rode — it is a demonstration, we know what it is, and
+    /// a first launch that answers "try the example session" with a question about its rig has
+    /// made a worse first impression than no example at all. **A provisional row** is the
+    /// watch's BLE card with no recording behind it yet: there is nothing to re-derive, so the
+    /// question cannot be acted on, and the FIT that replaces it will carry the real answer.
+    public static func pending(in rows: [SessionRow],
+                               dismissed: Set<String> = []) -> [SessionRow] {
+        rows.filter {
+            $0.disciplineGuessed && !$0.isExample && !$0.isProvisional
+                && !dismissed.contains($0.id)
+        }
+        .sorted { $0.startDate > $1.startDate }
+    }
+
+    /// The library banner, or nil when there is nothing to review.
+    ///
+    /// It names the preset the sessions were read under rather than asking a question,
+    /// because the honest headline here is *what the app has already done* — the numbers are
+    /// on screen and they were produced under some preset. "3 new sessions analysed as
+    /// Wingfoil" is checkable at a glance; "3 sessions need attention" is an alarm about
+    /// something that is very probably right.
+    public static func banner(_ pending: [SessionRow]) -> String? {
+        guard !pending.isEmpty else { return nil }
+        let noun = "\(pending.count) new session\(pending.count == 1 ? "" : "s")"
+        let presets = Set(pending.map(\.analysisDiscipline))
+        guard presets.count == 1, let only = presets.first else {
+            return "\(noun) analysed — check the discipline"
+        }
+        return "\(noun) analysed as \(only.title)"
+    }
+
+    /// What the recording's sport code says, as a **hint on the row and never as a decision**.
+    ///
+    /// It is shown because leaving it out would make the app look wrong on exactly the
+    /// sessions a rider is most likely to query — his Garmin says windsurfing, CleanJibe says
+    /// Wingfoil, and without this line the disagreement is silent. Saying it out loud, next to
+    /// the reason, turns a bug into a sentence he can agree with in one tap.
+    ///
+    /// nil for a sport that says nothing about the question (no code at all, or a watersport
+    /// this app has no opinion about), because a hint that adds nothing is noise on every row.
+    public static func sportHint(_ sport: String?) -> String? {
+        guard let name = sportName(sport) else { return nil }
+        if name == "windsurfing" {
+            return "Filed as windsurfing — which is also how a Garmin files a wingfoil session"
+        }
+        return "Filed as \(name)"
+    }
+
+    /// The FIT sport code (or its name) in the rider's words, lowercase, or nil for one this
+    /// app has nothing to say about. Sport 43 is windsurfing, 44 kitesurfing (ADR-004).
+    static func sportName(_ sport: String?) -> String? {
+        switch (sport ?? "").lowercased() {
+        case "windsurfing", "43": "windsurfing"
+        case "kitesurfing", "44": "kitesurfing"
+        case "sailing", "32": "sailing"
+        case "stand_up_paddleboarding": "stand-up paddleboarding"
+        case "surfing": "surfing"
+        default: nil
+        }
+    }
+
+    /// The footer under the sheet's list: what skipping costs, said plainly, because the
+    /// answer is "nothing" and a rider who does not know that will answer questions he has no
+    /// way to answer rather than leave them.
+    public static let footnote =
+        "Wingfoil does not exist in Garmin, Strava, intervals.icu or Apple Health, so a "
+        + "recording cannot say which rig it was ridden on. You can change this later on any "
+        + "session — Log → \"Analyse as\" — and everything is re-derived from the original "
+        + "file."
+}

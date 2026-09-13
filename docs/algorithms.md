@@ -58,6 +58,14 @@ ADR-004 records sport 43 (windsurfing) for a *wingfoil* session, so every
 piece of evidence here that is systematically wrong about the question. `Discipline.resolve`
 does not take it as an argument, which is how that is enforced rather than promised.
 
+A session that has never been imported has no override, so on the way *in* the ladder is the
+developer field first and the rider's declared default second (Settings → "I mostly ride",
+`SessionIngestor.riderDiscipline`, wingfoil unless he says otherwise) — the sport code is a
+hint shown beside the question and still decides nothing. A preset that came from the default
+rather than from the recording is marked as a guess (`session.disciplineGuessed`, schema v15)
+and the app asks him to confirm it (docs/presentation.md, "Confirming the discipline on
+import"); confirming changes no number, and correcting it writes the override above.
+
 **In the document.** `config.discipline` carries the preset's name — and only when there is
 one to carry: absent, never `"wingfoil"`, the same rule the experimental 360 block follows, so
 no committed golden moves for a layer that the default never reaches. `ENGINE_VERSION` is
