@@ -2541,9 +2541,9 @@ wrong 12° costs nothing while a wrong 120° relabels every tack as a jibe. Manu
 **Send map to watch.** The watch cannot have a Garmin map — the firmware's own map view kills
 the app on the fenix 8 (docs/watch-map-snapshot.md, GitHub #4) — so the phone draws one for
 it: a coarse land/water/road mask of a 3 km box around a spot, a kilobyte or two, blitted
-under the breadcrumb. The row names **the two spots it would send**, which are the two
-most-ridden in the library, because the watch holds exactly two slots and there is therefore
-no choice to offer — only the answer, so the rider can see which ground is about to go over.
+under the breadcrumb. The row names **the two maps it would send** — `Nago-Torbole ·
+Fehmarn` — so the rider can see which ground is about to go over, and it opens the page that
+chooses them.
 Under it, the last result in one line: `sent 2.1 KB · 14:02`, or `Already on the watch ·
 14:02`, or the failure in the rider's words. The button re-sends unconditionally and shows a
 spinner while MapKit draws, which on a cold tile cache is a second or two; a row that said
@@ -2552,6 +2552,26 @@ launch and after every import — and **silent**, because the answer is "nothing
 almost every time and a line that announces that on every launch is a line the rider learns
 to stop reading. Nothing goes over the radio unless the mask's hash differs from the one this
 watch last acknowledged.
+
+**Map for the watch** — the page behind that row. Three sections of ticks, because two slots
+is a fact about the watch and not a shape for a form: a rider who wants one map should not
+have to fill a second picker with "none". **Automatic** holds one row, *Two most-ridden
+spots*, ticked until he says otherwise — the rule that has always run, still the right answer
+for a library with a home spot in it, and the thing a tap here goes back to. **Spots** lists
+every spot in the library that has a coordinate, most-ridden first (the same order the
+automatic rule picks in, so the row above and the list below tell one story), each with
+`31 sessions` under the name. **Now** holds one row, *Where I am now*, with a location pin:
+the phone's own position, for the afternoon at a lake the library has never seen and can
+therefore never name. Its caption says what it costs — *Asks this phone for its position
+once, each time a map is sent* — and ticking it asks straight away, so the permission sheet
+lands under the finger that asked for it rather than surprising him mid-send; if location is
+off, one footnote under the row says so (`Location is off for CleanJibe in iPhone Settings`)
+and nothing else changes. The footer is the rule in the rider's words: *The watch holds two
+maps. Pick up to two; a third replaces the oldest pick.* A third tick is never refused — a
+picker that goes dead on the third row reads as broken — it drops the oldest pick, because
+the one he just made is the one he is thinking about. The phone never tracks him: one fix on
+a tap, one per send, never in the background, and the automatic launch pass never prompts
+at all (docs/watch-map-snapshot.md).
 
 ## Session list — group by, and the filters that narrow it
 

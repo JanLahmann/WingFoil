@@ -45,7 +45,25 @@ coarser 60 × 60 grid instead — the watch reads `mw`/`mh` and does not assume 
 
 ## What the phone sends, and when
 
-- The **two most-ridden spots** in the library (by session count), rendered with
+- **Which two maps**: the rider's choice, and by default there is none. With no choice
+  stored (`watchMap.choice.v1`, `WatchMapChoice` in the kit) the phone sends the **two
+  most-ridden spots** in the library by session count, ties broken on the name so the pair
+  cannot swap between launches — the rule every install had before there was a picker, and
+  the one a rider who never opens Settings → Garmin watch → **Map for the watch** keeps.
+  There he can instead tick up to two of: any spot in the library that has a coordinate, and
+  **"Where I am now"**, which is the phone's own position — the afternoon at a lake the
+  library has never seen, which no cluster can name. A third tick replaces the oldest, so
+  the phone does the evicting where the rider can see it rather than the watch doing it
+  blind. A pick that has gone stale is skipped, not raised: a spot the library re-clustered
+  away, or "here" on a phone with no fix, and the other map still goes.
+  **The phone's position is read once per send** (`PhoneLocation`, one
+  `CLLocationManager.requestLocation`, never a running update and never in the background).
+  A manual send may put the permission sheet on the screen — and so may the tick itself, so
+  the sheet lands under the finger that asked for it; the automatic pass at launch **never
+  prompts**, and includes "here" only when location is already authorized. `mi` for "here"
+  is the hash of the literal cluster key `here`, so a second send from a second beach
+  *replaces* the first rather than filling both slots with the rider.
+- Each chosen box is rendered with
   `MKMapSnapshotter` at 360 × 360 points, muted standard style, no points of interest, then
   classified per pixel and majority-downsampled 3 × 3 into the grid (360 = 3 × 120 = 6 × 60,
   so both downsamples are whole-pixel blocks and nothing is ever resampled). Classification
@@ -71,9 +89,11 @@ coarser 60 × 60 grid instead — the watch reads `mw`/`mh` and does not assume 
   only after Garmin's own `.success`, so a failed push is retried rather than written off);
   re-checked at every app launch and after every import. In front of that check sits a cheap
   one, because the honest one costs two map renders to reach: a fingerprint of *which watch,
-  which two spots, at which centres to the metre* (`watchMap.lastAuto`). Same fingerprint,
+  which two maps, at which centres to the metre* (`watchMap.lastAuto`). Same fingerprint,
   nothing happens and MapKit is never woken — so the automatic pass is free on every launch
   after the first, and a re-cluster that nudges a centroid by a metre is correctly a new box.
+  So is a rider who walked fifty metres with "Where I am now" ticked, which is also right and
+  is why that pick belongs to the manual button rather than to the launch.
   The device UUID and not the friendly name, so renaming a watch in Garmin Connect does not
   re-push everything it already has.
 - A manual **"Send map to watch"** row under Settings → Garmin watch with the spot names and
