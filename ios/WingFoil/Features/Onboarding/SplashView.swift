@@ -48,8 +48,8 @@ struct SplashView: View {
         // of it have to be told — `WelcomeView` does the same, for the same reason. The other
         // half of that sentence is `UIStatusBarStyle: UIStatusBarStyleLightContent` in
         // project.yml, which is what the *launch* screen reads: without it the handover would
-        // flip the clock from black to white, which is the one thing on this screen that is
-        // allowed to move and it is not one of them.
+        // flip the clock from black to white, and the words fading up are the only thing on
+        // this screen allowed to change.
         .preferredColorScheme(.dark)
         .task { await hold() }
     }
