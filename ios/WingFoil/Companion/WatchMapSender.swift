@@ -15,8 +15,11 @@ import WingFoilKit
 /// WHY TWO SPOTS AND NOT EVERY SPOT. The watch keeps two slots (`MapSnapshot.mc`), because
 /// a fenix's storage is small and a rider is at one of two places on any given afternoon.
 /// Sending a third would evict one of the two he actually uses, so the phone sends exactly
-/// what the watch can hold, chosen the way the watch would choose if it could: by how often
-/// he has been there.
+/// what the watch can hold. *Which* two is `WatchMapChoice` in the kit: by default the two
+/// he has ridden most, and otherwise whatever he ticked in Settings — up to two of the
+/// library's spots and "Where I am now", the phone's own position, for the afternoon at a
+/// lake the library has never seen. By the time a target reaches this file the choosing is
+/// over; what arrives is a name and a centre.
 ///
 /// WHY IT IS SO SHY ABOUT SENDING. Every push is a couple of kilobytes over BLE through
 /// Garmin Connect Mobile, and the ground under a spot does not change. So a mask goes out
@@ -26,8 +29,9 @@ import WingFoilKit
 @MainActor
 enum WatchMapSender {
 
-    /// How many spots the watch can hold — `MapSnapshot.SLOTS` is the other half.
-    static let slots = 2
+    /// How many spots the watch can hold — `MapSnapshot.SLOTS` is the other half, and
+    /// `WatchMapChoice.slots` in the kit is the number this one is spelled from.
+    static let slots = WatchMapChoice.slots
 
     /// What one send produced, for the settings row and for the log.
     struct Report: Equatable {
@@ -45,19 +49,15 @@ enum WatchMapSender {
 
     // MARK: - Choosing
 
-    /// The two most-ridden spots that have a coordinate, most-ridden first.
+    /// The two most-ridden spots that have a coordinate, most-ridden first — what the
+    /// watch gets when the rider has not said otherwise.
     ///
-    /// Ties break on the spot name so the answer is total: two spots with four afternoons
-    /// each must not swap places between launches and re-push two masks for nothing.
+    /// The rule itself lives in `WatchMapChoice.mostRidden`, in the kit, where it is tested
+    /// and where the picker reads it too: the order the rider chooses from and the order
+    /// the automatic answer picks in have to be one order, or the "Two most-ridden spots"
+    /// row would name a different pair than the list under it.
     static func targets(from spots: [SpotAggregate], limit: Int = slots) -> [SpotAggregate] {
-        spots
-            .filter { $0.sessions > 0 && $0.spot.lat.isFinite && $0.spot.lon.isFinite }
-            .sorted {
-                $0.sessions == $1.sessions ? $0.spot.name < $1.spot.name
-                                           : $0.sessions > $1.sessions
-            }
-            .prefix(limit)
-            .map { $0 }
+        WatchMapChoice.mostRidden(spots, limit: limit)
     }
 
     // MARK: - Rendering
@@ -136,17 +136,16 @@ enum WatchMapSender {
 
     // MARK: - Sending
 
-    /// Render and push the two spots. `force` sends even a mask the watch already has —
+    /// Render and push the chosen maps. `force` sends even a mask the watch already has —
     /// the manual button, for the rider who wants to watch it happen.
     ///
     /// `progress` is called with a spot name before each render, because drawing two map
     /// snapshots takes a second or two on a cold tile cache and a row that says nothing for
     /// that long reads as a row that did nothing.
-    static func send(spots: [SpotAggregate], through link: ConnectIQCompanionLink,
+    static func send(targets: [WatchMapTarget], through link: ConnectIQCompanionLink,
                      force: Bool, defaults: UserDefaults = .standard,
                      progress: (String) -> Void = { _ in }) async -> Report {
         var report = Report()
-        let targets = targets(from: spots)
         guard !targets.isEmpty else {
             report.failure = CompanionLinkError.mapUnavailable.riderMessage
             return report
@@ -157,10 +156,10 @@ enum WatchMapSender {
         }
 
         for target in targets {
-            let spot = WatchMapMask.Spot(clusterKey: target.spot.id, name: target.spot.name)
+            let spot = WatchMapMask.Spot(clusterKey: target.clusterKey, name: target.name)
             let spotID = WatchMapMask.spotID(clusterKey: spot.clusterKey)
             progress(spot.name)
-            let drawn = await gridOrReason(centreLat: target.spot.lat, centreLon: target.spot.lon)
+            let drawn = await gridOrReason(centreLat: target.lat, centreLon: target.lon)
             guard let grid = drawn.grid else {
                 report.failure = report.failure
                     ?? "MapKit could not draw \(spot.name): \(drawn.reason ?? "no image"). "
@@ -173,7 +172,7 @@ enum WatchMapSender {
                 report.unchanged.append(spot.name)
                 continue
             }
-            let box = WatchMapMask.Box(centreLat: target.spot.lat, centreLon: target.spot.lon)
+            let box = WatchMapMask.Box(centreLat: target.lat, centreLon: target.lon)
             do {
                 try await link.sendMapSnapshot(
                     WatchMapMask.message(spot: spot, box: box, grid: grid))
@@ -193,32 +192,36 @@ enum WatchMapSender {
 
     // MARK: - When it is worth even looking
 
-    /// What the automatic pass compares: which watch, which two spots, and where their
+    /// What the automatic pass compares: which watch, which two maps, and where their
     /// centres are to the metre.
     ///
     /// The acknowledged-hash check is the honest one, but it costs two map renders to
     /// reach — and the automatic pass runs at every launch and after every import. This is
     /// the cheap gate in front of it: if the same watch is still looking at the same two
-    /// spots at the same centres, the masks cannot have changed either, and the whole thing
+    /// boxes at the same centres, the masks cannot have changed either, and the whole thing
     /// is skipped without touching MapKit. A re-cluster that nudges a centroid by a metre
-    /// does move it, which is right — that is a different box.
-    static func fingerprint(spots: [SpotAggregate], deviceKey: String) -> String {
-        let parts = targets(from: spots).map {
-            "\($0.spot.id):\(WatchMapMask.micro($0.spot.lat)):\(WatchMapMask.micro($0.spot.lon))"
+    /// does move it, which is right — that is a different box. So does a rider who walked
+    /// fifty metres with "Where I am now" ticked, which is also right and is the reason
+    /// that pick is worth a manual send rather than a launch.
+    static func fingerprint(targets: [WatchMapTarget], deviceKey: String) -> String {
+        let parts = targets.map {
+            "\($0.clusterKey):\(WatchMapMask.micro($0.lat)):\(WatchMapMask.micro($0.lon))"
         }
         return ([deviceKey] + parts).joined(separator: "|")
     }
 
     private static let fingerprintKey = "watchMap.lastAuto"
 
-    static func automaticPassIsWorthIt(spots: [SpotAggregate], deviceKey: String,
+    static func automaticPassIsWorthIt(targets: [WatchMapTarget], deviceKey: String,
                                        in defaults: UserDefaults) -> Bool {
-        defaults.string(forKey: fingerprintKey) != fingerprint(spots: spots, deviceKey: deviceKey)
+        defaults.string(forKey: fingerprintKey)
+            != fingerprint(targets: targets, deviceKey: deviceKey)
     }
 
-    static func rememberAutomaticPass(spots: [SpotAggregate], deviceKey: String,
+    static func rememberAutomaticPass(targets: [WatchMapTarget], deviceKey: String,
                                       in defaults: UserDefaults) {
-        defaults.set(fingerprint(spots: spots, deviceKey: deviceKey), forKey: fingerprintKey)
+        defaults.set(fingerprint(targets: targets, deviceKey: deviceKey),
+                     forKey: fingerprintKey)
     }
 
     // MARK: - What this watch already has

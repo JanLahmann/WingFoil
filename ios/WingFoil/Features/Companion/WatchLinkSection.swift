@@ -72,24 +72,28 @@ struct WatchLinkSection: View {
         .disabled(!state.canSend)
     }
 
-    /// The map push. Two spots, not a picker: the watch holds two slots and the phone fills
-    /// them with the two places the rider actually goes, so there is no choice here to
-    /// offer — only the names, so he can see which ground is about to go over
-    /// (docs/watch-map-snapshot.md).
+    /// The map push. The row names the ground that is about to go over
+    /// (docs/watch-map-snapshot.md) and opens the picker that chooses it: by default the
+    /// two most-ridden spots, as it always was, and otherwise up to two of the library's
+    /// spots and "Where I am now" — the afternoon at a lake the library has never seen
+    /// (Jan, 13 Sep 2026).
     ///
     /// The button exists even though the push is automatic, for the same reason the wind
     /// one does: a link that only ever works silently is a link nobody believes in. It
     /// re-sends unconditionally, which is the point of pressing it.
     @ViewBuilder
     private var mapRow: some View {
-        let spots = store.watchMapSpots
-        if spots.isEmpty {
-            LabeledContent("Map for the watch", value: "No spot with a fix yet")
-        } else {
+        let targets = store.watchMapTargets
+        NavigationLink {
+            WatchMapChoiceView()
+        } label: {
             LabeledContent("Map for the watch") {
-                Text(spots.map(\.spot.name).joined(separator: " · "))
+                Text(targets.isEmpty ? "No spot with a fix yet"
+                                     : targets.map(\.name).joined(separator: " · "))
                     .multilineTextAlignment(.trailing)
             }
+        }
+        if !targets.isEmpty {
             if let result = store.watchMapStatus {
                 LabeledContent("Last map", value: result)
             }
