@@ -1257,6 +1257,24 @@ public enum HelpCatalog {
         topics.filter { $0.section == section }
     }
 
+    /// Topics that are **in the catalogue but off the index** while the windsurf switch is off
+    /// (Settings → Analysis → "Windsurf (experimental)").
+    ///
+    /// In the catalogue, deliberately: `topic(_:)` stays total, the `?` on a session that *is*
+    /// analysed as windsurf still opens the page that explains it, and a deep link written
+    /// down in docs or in a mail keeps working. Off the index because a browsable list is a
+    /// menu — a topic on it is an offer, and this is a feature the rider has not accepted yet.
+    static let behindWindsurfSwitch: Set<HelpTopicID> = [.windsurf]
+
+    /// **What the Help index lists**, which is not quite what the catalogue holds.
+    ///
+    /// The one filter the index applies, in one place, so the list and its search agree: a
+    /// topic that cannot be browsed to must not be searchable either, or "windsurf" typed into
+    /// the search field would advertise the switch the list is hiding.
+    public static func indexTopics(windsurfEnabled: Bool = true) -> [HelpTopic] {
+        windsurfEnabled ? topics : topics.filter { !behindWindsurfSwitch.contains($0.id) }
+    }
+
     /// Sections that actually have topics, in declaration order.
     public static var sections: [HelpSection] {
         HelpSection.allCases.filter { !topics(in: $0).isEmpty }
