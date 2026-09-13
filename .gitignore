@@ -47,3 +47,4 @@ fixtures/footage/**
 !fixtures/footage/*/README.md
 !fixtures/footage/*/truth.json
 !fixtures/footage/*/align.json
+ios/Strava.xcconfig
