@@ -1061,14 +1061,19 @@ final class SessionStore {
     #if TUNING
     static let tuningKey = "tuningOverrides.v1"
 
-    /// The rider's tuning overrides (`TuningOverrides`), persisted as the bare parameter map.
+    /// The rider's tuning overrides — **one set per discipline** (`TuningOverrideSets`),
+    /// persisted under the key the single flat set used to live at. A stored v1 flat map is
+    /// read as the wingfoil set and re-encoded in the new shape the first time anything is
+    /// saved; the decoder owns that rule, so there is one migration and it is written down in
+    /// one place.
     ///
-    /// Unlike `defaultTurnType`, moving one of these *does* make every stored analysis stale:
-    /// the fingerprint rides in the analysis' `engineVersion` (`TuningStamp`), so the ordinary
-    /// lazy sweep — `reanalyzeStale()` on the next launch, and `analysis(for:)` on the next
-    /// session opened — re-derives the library with the new thresholds without anyone asking
-    /// it to. `reanalyzeTuned()` is the same trip taken now, with a count to watch.
-    var tuning: TuningOverrides {
+    /// Unlike `defaultTurnType`, moving one of these *does* make stored analyses stale — but
+    /// only the ones it is about: the fingerprint rides in the analysis' `engineVersion`
+    /// inside that discipline's own stamp (`TuningStamp` within `DisciplineStamp`), so the
+    /// ordinary lazy sweep — `reanalyzeStale()` on the next launch, and `analysis(for:)` on
+    /// the next session opened — re-derives the sessions of *that* rig and leaves the rest
+    /// alone. `reanalyzeTuned()` is the same trip taken now, with a count to watch.
+    var tuning: TuningOverrideSets {
         get { Self.storedTuning }
         set {
             if let data = try? JSONEncoder().encode(newValue) {
@@ -1078,21 +1083,26 @@ final class SessionStore {
         }
     }
 
-    private static var storedTuning: TuningOverrides {
+    private static var storedTuning: TuningOverrideSets {
         guard let data = UserDefaults.standard.data(forKey: tuningKey),
-              let decoded = try? JSONDecoder().decode(TuningOverrides.self, from: data)
-        else { return TuningOverrides() }
+              let decoded = try? JSONDecoder().decode(TuningOverrideSets.self, from: data)
+        else { return TuningOverrideSets() }
         return decoded
     }
 
     /// Brings the library up to the thresholds currently set — the lazy sweep, run on demand
     /// because a rider who has just moved a slider wants to see what it did, not to relaunch.
     ///
-    /// Deliberately `reanalyzeStale` and not `rerunAnalysis`: after a tuning change *every*
-    /// row is stale by fingerprint, so the two do the same work — but this one is also correct
-    /// (and cheap) when nothing changed, which is what makes it safe to call on leaving the
-    /// page.
-    func reanalyzeTuned() async {
+    /// Deliberately `reanalyzeStale` and not `rerunAnalysis`: a row is stale exactly where the
+    /// stamp it carries is not the stamp its own discipline's set now produces, so the sweep
+    /// re-derives the sessions the moved slider was about and no others — a fin slider costs a
+    /// fin session's re-analysis and leaves a hundred wingfoil afternoons untouched. It is
+    /// also correct (and cheap) when nothing changed, which is what makes it safe to call on
+    /// leaving the page.
+    ///
+    /// `discipline` is only the *wording*: which set's count the status line reports. The
+    /// sweep itself is the library's own per-row question and takes no argument.
+    func reanalyzeTuned(for discipline: Discipline = .wingfoil) async {
         guard !isBusy else { return }
         isBusy = true
         defer { isBusy = false }
@@ -1108,11 +1118,12 @@ final class SessionStore {
         // Which parts of a track were flown moves with `foilEntrySpeed`, so the cached
         // outlines are stale for exactly the same reason the summaries were.
         for row in rows { thumbnails.invalidate(row.id) }
+        let moved = tuning.changedCount(discipline)
         status = "Re-analysed \(done) session\(done == 1 ? "" : "s") "
-            + (tuning.isEmpty
-               ? "with the published thresholds"
-               : "with \(tuning.changedCount) tuned threshold"
-                 + "\(tuning.changedCount == 1 ? "" : "s")")
+            + (moved == 0
+               ? "with the published \(discipline.title.lowercased()) thresholds"
+               : "with \(moved) tuned \(discipline.title.lowercased()) threshold"
+                 + "\(moved == 1 ? "" : "s")")
         await load()
         await refreshPersonalBests(celebrate: false)
     }

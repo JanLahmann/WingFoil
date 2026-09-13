@@ -304,7 +304,7 @@ struct SettingsView: View {
                     Label("Tuning", systemImage: "slider.horizontal.3")
                     Spacer()
                     if !store.tuning.isEmpty {
-                        Text("\(store.tuning.changedCount) changed")
+                        Text("\(store.tuning.totalChangedCount) changed")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

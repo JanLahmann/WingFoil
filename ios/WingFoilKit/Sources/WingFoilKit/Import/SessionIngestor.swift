@@ -123,11 +123,12 @@ public struct SessionIngestor: Sendable {
     /// Carries the rider's declared `defaultTurnType` into the wind estimator
     /// (docs/algorithms.md "Default turn type").
     public var windConfig = WindConfig()
-    /// Settings → Tuning: the published thresholds, moved by hand on this phone
-    /// (`TuningOverrides`). Empty on every install that has not touched the page, and an empty
-    /// set applies nothing and stamps nothing — an untuned library is byte-identical to one
-    /// produced by a build without the feature.
-    public var tuning = TuningOverrides()
+    /// Settings → Tuning: the published thresholds, moved by hand on this phone — **one set
+    /// per discipline** (`TuningOverrideSets`). Empty on every install that has not touched
+    /// the page, and an empty set applies nothing and stamps nothing, so an untuned library is
+    /// byte-identical to one produced by a build without the feature. A session is analysed
+    /// under its own discipline's set and no other.
+    public var tuning = TuningOverrideSets()
     public var dedupeToleranceS: TimeInterval = 60
     public var spotRadiusM: Double = SpotClusterer.defaultRadiusM
 
@@ -330,13 +331,15 @@ public struct SessionIngestor: Sendable {
     // MARK: - Analysis access (lazy re-analysis)
 
     /// What a document produced *by this ingestor* is stamped with: the engine version, the
-    /// discipline preset where it is not the default (`DisciplineStamp`), and the tuning
-    /// fingerprint where the rider has moved a threshold (`TuningStamp`). It is the staleness
-    /// key everything below compares on, which is what makes both a moved slider and a
-    /// switched discipline behave exactly like an engine bump — the library re-derives
-    /// itself, lazily, on the next pass, through one mechanism rather than three.
+    /// discipline preset where it is not the default (`DisciplineStamp`), and the fingerprint
+    /// of **that discipline's** tuning set where the rider has moved a threshold in it
+    /// (`TuningStamp`). It is the staleness key everything below compares on, which is what
+    /// makes both a moved slider and a switched discipline behave exactly like an engine bump
+    /// — the library re-derives itself, lazily, on the next pass, through one mechanism rather
+    /// than three. Because the fingerprint is the *set's* and not the whole page's, a fin
+    /// slider moves the fin stamp alone and leaves every wingfoil session where it was.
     public func analysisVersion(for discipline: Discipline = .wingfoil) -> String {
-        tuning.engineVersionKey(base: DisciplineStamp.key(discipline: discipline))
+        tuning.engineVersionKey(discipline: discipline)
     }
 
     /// The stamp of a plain wingfoil run — what a session with no discipline of its own gets.
@@ -344,14 +347,15 @@ public struct SessionIngestor: Sendable {
 
     private func analyze(_ track: RawTrack,
                          discipline: Discipline = .wingfoil) -> SessionAnalysis {
-        let configs = tuning.apply(to: TuningOverrides.Configs(flight: flightConfig))
+        // The two layers compose inside `analyze`, in the one order that is defensible —
+        // preset, then this discipline's own overrides on top — so the ingestor hands over
+        // its own base configs and the set to read them against, and never applies either.
         var analysis = SessionSummarizer.analyze(track, filterConfig: filterConfig,
-                                                 flightConfig: configs.flight,
+                                                 flightConfig: flightConfig,
                                                  recordsConfig: recordsConfig,
-                                                 turnConfig: configs.turn,
                                                  windConfig: windConfig,
-                                                 flightEndConfig: configs.flightEnd,
-                                                 discipline: discipline)
+                                                 discipline: discipline,
+                                                 tuning: tuning[discipline])
         // The engine states its own version; the stamp is the *ingestor's* fact about how it
         // was run, so it is applied here rather than threaded through the analyzer. On an
         // untuned wingfoil install this assignment changes nothing.

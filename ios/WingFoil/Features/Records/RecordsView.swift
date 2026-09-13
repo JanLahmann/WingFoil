@@ -37,9 +37,12 @@ struct RecordsView: View {
                     // An all-time record is the app's strongest claim, and it is the one place
                     // a tuned threshold is easiest to forget: the table looks exactly the same.
                     // The chip reads the *current* setting rather than any one session's,
-                    // because this page is an aggregate over the whole library.
+                    // because this page is an aggregate over the whole library — and for the
+                    // same reason it counts every discipline's set, not the one that happens
+                    // to be selected on the tuning page: a library with one fin session in it
+                    // has a record that was measured at the fin's thresholds.
                     if !store.tuning.isEmpty {
-                        TunedChip(count: store.tuning.changedCount)
+                        TunedChip(count: store.tuning.totalChangedCount)
                             .listRowInsets(EdgeInsets(top: 0, leading: 16,
                                                       bottom: 8, trailing: 16))
                     }

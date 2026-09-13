@@ -171,7 +171,9 @@ struct TuningLabelsView: View {
                 ForEach(score.disagreements) { entry in
                     Button { Task { await open(entry) } } label: {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("\(entry.sessionTitle) · \(Fmt.clock(entry.ts))")
+                            Text("\(entry.sessionTitle) · \(Fmt.clock(entry.ts))"
+                                 + (discipline(entry).map { " · \($0.title.lowercased())" }
+                                    ?? ""))
                                 .font(.caption)
                             Text("\(TurnAnalytics.typeLabel(entry.type).lowercased()) — you "
                                  + "said \(entry.label.label.lowercased()), the engine said "
@@ -248,6 +250,16 @@ struct TuningLabelsView: View {
         }.value
         entries = found
         writeCSV(found)
+    }
+
+    /// The rig a disagreement was scored on, where it is not the default — nil for wingfoil,
+    /// so the common row stays the line it has always been. The engine that judged this turn
+    /// was given that discipline's preset *and* that discipline's tuning set, and a label
+    /// scored against a fin's 20 km/h is not evidence about the wing's 12. It is a lookup in
+    /// the library the page already holds, which is the whole reason the chip is affordable.
+    private func discipline(_ entry: LabelledTurn) -> Discipline? {
+        let discipline = store.session(id: entry.sessionID)?.analysisDiscipline
+        return discipline?.isWindsurf == true ? discipline : nil
     }
 
     private func open(_ entry: LabelledTurn) async {
