@@ -15,6 +15,7 @@
  */
 
 import { hm, keyMetricEntries } from "./cardstats.js";
+import { EXPERIMENTAL_NOTE, lexicon } from "./lexicon.js";
 import { renderFigures } from "./session.js";
 import { C, OUTCOME_COLOR, OUTCOME_LABEL, SVGNS, clockAt, esc, hms, int, marker, nf,
          outcomeText, pct, pctDigits, sessionDate } from "./viz.js";
@@ -133,6 +134,10 @@ export function clockNoteFor(meta) {
 function renderSummary(result, isExample = false) {
   const g = result.golden, meta = result.meta, caps = g.capabilities;
   const s = g.summary, rec = g.records, w = g.wind;
+  // The words this session is read in (docs/presentation.md, "Discipline lexicon"). The
+  // config echo is the engine's own statement about which preset produced this document —
+  // absent on a wingfoil run, which is the default this resolves to.
+  const words = lexicon(g.config?.discipline);
 
   el("session-title").textContent = sessionDate(meta);
   const clockNote = clockNoteFor(meta);
@@ -153,6 +158,11 @@ function renderSummary(result, isExample = false) {
                  "The bundled demonstration session — not your own data"]);
   }
   if (meta.discipline) badges.push([meta.discipline, true]);
+  // Beside the discipline badge and never instead of it: the badge says what the *recording*
+  // is, this says how it was read and that the reading is not one anybody has checked yet
+  // (docs/algorithms.md "Disciplines"). The web has no override — the preset is whatever the
+  // recording's own developer field asked for.
+  if (words.chip) badges.push([words.chip, false, EXPERIMENTAL_NOTE]);
   // What the recording is, said in the words the rider owns. The three source classes are
   // parse.py's (`a` our watch app's developer fields, `b` a standard FIT with speed, `c`
   // something degraded) and their internal names were on the page verbatim — "CIQ dev
@@ -198,7 +208,8 @@ function renderSummary(result, isExample = false) {
     // note stays the file's own timer time, which is what that word means here.
     { k: "Duration", v: hm(s.durationS), n: `moving ${hms(meta.timerTimeS)}` },
     { k: "Distance", v: nf(s.distanceKm, 1), unit: "km", n: `best 500 m ${nf(rec.best500mKn, 1)} kn` },
-    { k: "On foil", v: pct(s.foilPct), n: `${hms(s.foilTimeS)} foil time` },
+    { k: words.onFoil, v: pct(s.foilPct),
+      n: `${hms(s.foilTimeS)} ${words.foilTimeLower}` },
     // engine 0.13.0: `longestFlightM` becomes `maxFlightM` — the maximum flight distance,
     // which is this flight's own only by coincidence. The note follows the field.
     { k: "Flights", v: int(s.flightCount),
@@ -326,7 +337,8 @@ function renderTurns(table, caption, g, v, meta) {
         <td>${nf(t.score * 100, 0)} %</td>
         <td>${yn(t.clean)}</td>
         <td class="l">${outcomePill(t.outcome)}${t.borderline ? ' <span class="pill">borderline</span>' : ""}</td>
-        <td class="l dim">${esc(outcomeText(t, cfg.turnPumpedMarginalSpeed) ?? "")}</td>
+        <td class="l dim">${esc(outcomeText(t, cfg.turnPumpedMarginalSpeed,
+                                          g.config?.discipline) ?? "")}</td>
         <td>${nf(t.stoppedS, 1)}</td>
         <td>${nf(t.offFoilS, 1)}</td>
         <td class="dim">${yn(t.pumped)}</td>
