@@ -126,7 +126,48 @@ module TrackDraw {
         var midLon = (lonLo + lonHi) / 2.0;
         var squeeze = Math.cos(midLat * 0.017453292);
         var s = scale(box, (lonHi - lonLo) * squeeze, latHi - latLo);
+        drawRuns(dc, lat, lon, fly, n, cx, cy, midLat, midLon, squeeze, s, marker);
+        return true;
+    }
 
+    // The same trail inside a FRAME the caller chose (device app 0.9.10): the phone-rendered
+    // snapshot's box, scaled into the square exactly as a track is, with the ground blitted
+    // first and the trail clipped to the square. `frame` is MapSnapshot.frame's
+    // [latS, lonW, latN, lonE, squeeze, scale]; `ground` may be null (no bitmap could be
+    // made), in which case the frame still holds so the picture does not jump when the
+    // bitmap arrives a frame later. Returns false only when there is no trail to draw — the
+    // ground is drawn regardless, because a rider standing on the beach with the app open
+    // deserves to see the beach.
+    function drawFramed(dc as Dc, lat as Array<Float>?, lon as Array<Float>?,
+            fly as Array<Boolean>?, n as Number, cx as Number, cy as Number, box as Number,
+            marker as Boolean, frame as Array<Float>,
+            ground as Graphics.BufferedBitmapReference?) as Boolean {
+        var x0 = cx - box / 2;
+        var y0 = cy - box / 2;
+        dc.setClip(x0, y0, box, box);
+        if (ground != null) {
+            var bmp = ground.get();
+            if (bmp != null) {
+                dc.drawBitmap(x0, y0, bmp as Graphics.BufferedBitmap);
+            }
+        }
+        var drawn = false;
+        if (n >= 2 && lat != null && lon != null && fly != null) {
+            var midLat = (frame[0] + frame[2]) / 2.0;
+            var midLon = (frame[1] + frame[3]) / 2.0;
+            drawRuns(dc, lat, lon, fly, n, cx, cy, midLat, midLon, frame[4], frame[5], marker);
+            drawn = true;
+        }
+        dc.clearClip();
+        return drawn;
+    }
+
+    // The trail itself, given the projection: `(lon - midLon) * squeeze * s` across,
+    // `(lat - midLat) * s` up. Shared by the auto-fit and the framed drawing so the two can
+    // never disagree about a run's colour or the marker.
+    function drawRuns(dc as Dc, lat as Array<Float>, lon as Array<Float>, fly as Array<Boolean>,
+            n as Number, cx as Number, cy as Number, midLat as Float, midLon as Float,
+            squeeze as Float, s as Float, marker as Boolean) as Void {
         // One setColor per RUN, not per segment: see TrackTint. The first point of the next run
         // belongs to this one too, or the trail shows a hole at every state change.
         dc.setPenWidth(3);
@@ -158,7 +199,6 @@ module TrackDraw {
             dc.fillCircle(cx + ((lon[n - 1] - midLon) * squeeze * s).toNumber(),
                 cy - ((lat[n - 1] - midLat) * s).toNumber(), r);
         }
-        return true;
     }
 
     // The "you are here" dot. Scaled off the glass like every other bezel dimension, and never

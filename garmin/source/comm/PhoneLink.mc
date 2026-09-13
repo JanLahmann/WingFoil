@@ -370,7 +370,13 @@ module PhoneLink {
         if (!(data instanceof Lang.Dictionary)) {
             return false;
         }
-        return applyWind((data as Dictionary)[KEY_IN_WIND]);
+        var d = data as Dictionary;
+        // A map snapshot (0.9.10, docs/watch-map-snapshot.md) carries its own schema key and
+        // never a wind; the two pushes are told apart by that key, not by size.
+        if (d[MapSnapshot.K_SCHEMA] != null) {
+            return MapSnapshot.store(d);
+        }
+        return applyWind(d[KEY_IN_WIND]);
     }
 
     // The validation, split out so it can be driven without a Message: the phone may only set

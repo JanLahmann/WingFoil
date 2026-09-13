@@ -265,13 +265,30 @@ class SummaryView extends WatchUi.View {
         var e = c.engine;
         var cx = dc.getWidth() / 2;
         var cy = dc.getHeight() / 2;
-        if (!TrackDraw.draw(dc, e.trackLat, e.trackLon, e.trackFly, e.trackN, cx, cy,
-                trackBox(dc), false)) {
+        var box = trackBox(dc);
+        // Same rule as the live page: inside a phone-sent snapshot the ground is drawn and the
+        // snapshot's box is the frame (docs/watch-map-snapshot.md); otherwise auto-fit.
+        var slot = e.trackN > 0 && e.trackLat != null && e.trackLon != null
+            ? MapSnapshot.slotForPosition(e.trackLat[0], e.trackLon[0]) : null;
+        var drawn;
+        if (slot != null) {
+            var frame = MapSnapshot.frame(slot, box);
+            drawn = frame != null && TrackDraw.drawFramed(dc, e.trackLat, e.trackLon,
+                e.trackFly, e.trackN, cx, cy, box, false, frame,
+                MapSnapshot.bitmap(slot, box));
+        } else {
+            drawn = TrackDraw.draw(dc, e.trackLat, e.trackLon, e.trackFly, e.trackN, cx, cy,
+                box, false);
+        }
+        if (!drawn) {
             return;
         }
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, trackCaptionY(dc), Graphics.FONT_SMALL,
-            (e.distM / 1000.0).format("%.1f") + " km", CV);
+        var caption = (e.distM / 1000.0).format("%.1f") + " km";
+        if (slot != null && !MapSnapshot.name(slot).equals("")) {
+            caption = MapSnapshot.name(slot) + " · " + caption;
+        }
+        dc.drawText(cx, trackCaptionY(dc), Graphics.FONT_SMALL, caption, CV);
     }
 
     // Ink centre of the distance caption: hung off the bottom of the track box. FONT_SMALL,
