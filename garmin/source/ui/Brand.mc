@@ -61,6 +61,30 @@ module Brand {
         return _badge as WatchUi.BitmapResource;
     }
 
+    // The splash page's cut (0.9.10): a third of the glass tall, loaded for the second and a
+    // half the page is on screen and released with it.
+    var _hero as WatchUi.BitmapResource? = null;
+
+    function hero() as WatchUi.BitmapResource {
+        if (_hero == null) {
+            _hero = WatchUi.loadResource(Rez.Drawables.BrandHero) as WatchUi.BitmapResource;
+        }
+        return _hero as WatchUi.BitmapResource;
+    }
+
+    function heroH() as Number {
+        return hero().getHeight();
+    }
+
+    function drawHero(dc as Dc, x as Number, y as Number) as Void {
+        var b = hero();
+        dc.drawBitmap(x - b.getWidth() / 2, y - b.getHeight() / 2, b);
+    }
+
+    function releaseHero() as Void {
+        _hero = null;
+    }
+
     function release() as Void {
         _mark = null;
         _badge = null;
