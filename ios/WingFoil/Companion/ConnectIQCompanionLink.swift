@@ -25,10 +25,20 @@ import WingFoilKit
 @MainActor
 final class ConnectIQCompanionLink: NSObject, CompanionLink {
 
-    /// Our CIQ app's UUID — the `id` attribute of `garmin/manifest.xml`. The watch app and
-    /// this constant are the same identity; change one and the link goes quiet with no
-    /// error anywhere, because the SDK simply routes messages to an app nobody is running.
-    static let appUUID = UUID(uuidString: "b1ef484c-77b9-4a69-b33d-18574f3bcbde")!
+    /// Our CIQ app's UUIDs — the `id` attributes of the three watch manifests. The watch
+    /// app and these constants are the same identity; change one and the link goes quiet
+    /// with no error anywhere, because the SDK simply routes messages to an app nobody is
+    /// running. There are three because the store keeps three builds of us apart: the
+    /// release, the public-beta invite listing and the private dev listing each carry
+    /// their own id, and a rider has exactly one of them on the wrist. "Send map failed
+    /// (Failure_AppNotFound)" on a dev-beta watch (Jan, 13 Sep 2026) was this list being
+    /// one entry long. The order is the order of preference when, improbably, more than
+    /// one is installed.
+    static let appUUIDs: [UUID] = [
+        UUID(uuidString: "b1ef484c-77b9-4a69-b33d-18574f3bcbde")!,   // garmin/manifest.xml
+        UUID(uuidString: "28942317-5a50-4fed-8a9e-d62f6847a2db")!,   // manifest-invite.xml
+        UUID(uuidString: "953f7547-c152-42c2-8d33-69fb59ad0bf6")!,   // manifest-beta.xml
+    ]
 
     /// Must match `CFBundleURLSchemes` in project.yml. GCM reopens us on this scheme with
     /// the rider's device choice in the URL.
@@ -41,6 +51,12 @@ final class ConnectIQCompanionLink: NSObject, CompanionLink {
     private(set) var state: CompanionLinkState = .noDevice
 
     private var device: IQDevice?
+    /// One handle per known build, all registered for incoming cards: the watch does not
+    /// say which build it is, and a card from the invite build must not be dropped because
+    /// the phone was only listening for the release one.
+    private var apps: [IQApp] = []
+    /// The build the watch actually has — the one sends go to. Nil until a probe has found
+    /// it; `transmit` probes on demand rather than guessing.
     private var app: IQApp?
     private let continuation: AsyncStream<CompanionSummary>.Continuation
     private let stream: AsyncStream<CompanionSummary>
@@ -98,7 +114,14 @@ final class ConnectIQCompanionLink: NSObject, CompanionLink {
     /// One message onto the radio, with Garmin's own failure word kept verbatim.
     private func transmit(_ message: sending [String: Any]) async throws {
         refresh()
-        guard let app, state.canSend else { throw CompanionLinkError.notReady(state) }
+        guard state.canSend else { throw CompanionLinkError.notReady(state) }
+        // Which build is on the wrist is asked, not assumed: the answer is cached from the
+        // last probe, and a first send waits the few hundred milliseconds for it rather
+        // than firing at the release id and reading Failure_AppNotFound off a dev watch.
+        if app == nil { app = await Self.installedApp(among: apps) }
+        guard let app else {
+            throw CompanionLinkError.transmitFailed("no CleanJibe build installed on the watch")
+        }
         let result: IQSendMessageResult = await withCheckedContinuation { continuation in
             ConnectIQ.sharedInstance().sendMessage(message, to: app, progress: nil) { result in
                 continuation.resume(returning: result)
@@ -152,8 +175,9 @@ final class ConnectIQCompanionLink: NSObject, CompanionLink {
     /// Forget the watch — the only way back out of a wrong choice.
     func forgetDevice() {
         if let device { ConnectIQ.sharedInstance().unregister(forDeviceEvents: device, delegate: self) }
-        if let app { ConnectIQ.sharedInstance().unregister(forAppMessages: app, delegate: self) }
+        for app in apps { ConnectIQ.sharedInstance().unregister(forAppMessages: app, delegate: self) }
         device = nil
+        apps = []
         app = nil
         StoredDevice.clear()
         state = .noDevice
@@ -161,13 +185,13 @@ final class ConnectIQCompanionLink: NSObject, CompanionLink {
 
     private func adopt(_ device: IQDevice) {
         self.device = device
-        let app = IQApp(uuid: Self.appUUID, store: nil, device: device)
-        self.app = app
+        apps = Self.appUUIDs.compactMap { IQApp(uuid: $0, store: nil, device: device) }
+        app = nil
         ConnectIQ.sharedInstance().register(forDeviceEvents: device, delegate: self)
         // Registered unconditionally, not only when the watch is connected: the card
         // arrives on this callback the moment the rider is back in Bluetooth range, and
         // registering "once we are ready" would miss exactly that edge.
-        if let app { ConnectIQ.sharedInstance().register(forAppMessages: app, delegate: self) }
+        for app in apps { ConnectIQ.sharedInstance().register(forAppMessages: app, delegate: self) }
     }
 
     // MARK: - State
@@ -194,16 +218,33 @@ final class ConnectIQCompanionLink: NSObject, CompanionLink {
         // turns out to be impossible fails with Garmin's own reason, which is better
         // wording than any guess made here.
         state = .ready(name: name)
-        guard let app else { return }
-        ConnectIQ.sharedInstance().getAppStatus(app) { [weak self] status in
-            let installed = status?.isInstalled ?? false
-            Task { @MainActor in self?.apply(appInstalled: installed, name: name) }
+        guard !apps.isEmpty else { return }
+        let apps = self.apps
+        Task { [weak self] in
+            let found = await Self.installedApp(among: apps)
+            self?.apply(installed: found, name: name)
         }
     }
 
-    private func apply(appInstalled: Bool, name: String) {
+    private func apply(installed: IQApp?, name: String) {
+        app = installed
         guard case .ready = state else { return }
-        state = appInstalled ? .ready(name: name) : .appNotRunning(name: name)
+        state = installed != nil ? .ready(name: name) : .appNotRunning(name: name)
+    }
+
+    /// The first of `candidates` the watch reports as installed, in list order. Each probe
+    /// is one asynchronous SDK call; they run one after another because the SDK's own
+    /// queue serialises them anyway, and three is not a number worth a task group.
+    private static func installedApp(among candidates: [IQApp]) async -> IQApp? {
+        for candidate in candidates {
+            let installed: Bool = await withCheckedContinuation { continuation in
+                ConnectIQ.sharedInstance().getAppStatus(candidate) { status in
+                    continuation.resume(returning: status?.isInstalled ?? false)
+                }
+            }
+            if installed { return candidate }
+        }
+        return nil
     }
 
     private static func name(of device: IQDevice) -> String {
