@@ -413,6 +413,26 @@ final class SessionStore {
         }
     }
 
+    /// **Analyse this session as another discipline** (docs/algorithms.md "Disciplines").
+    ///
+    /// One session, re-derived on the spot. It takes the same shape as a rename — write, then
+    /// `load()` — with one addition: which parts of a track were *flying* can move with the
+    /// preset (a fin planes at 20 km/h, a foil flies at 12), so the cached outline is stale
+    /// by construction and is dropped the way a re-analysis drops it.
+    func setDiscipline(_ discipline: Discipline, for row: SessionRow) async {
+        guard discipline != row.analysisDiscipline else { return }
+        let ingestor = self.ingestor
+        do {
+            _ = try await Task.detached(priority: .userInitiated) {
+                try await ingestor.setDiscipline(discipline, for: row)
+            }.value
+            thumbnails.invalidate(row.id)
+            await load()
+        } catch {
+            errorMessage = "Could not re-analyse this session: \(error)"
+        }
+    }
+
     /// Deletes a session, and — through `SessionIngestor.delete` — records that it was
     /// deleted, so the next intervals.icu sync leaves it alone.
     ///

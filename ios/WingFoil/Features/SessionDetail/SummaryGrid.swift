@@ -40,8 +40,11 @@ struct SessionFoilGrid: View {
 
     private var summary: SessionSummary { detail.analysis.summary }
 
+    /// The words this session is read in (docs/presentation.md, "Discipline lexicon").
+    private var words: DisciplineLexicon { detail.row.analysisDiscipline.lexicon }
+
     var body: some View {
-        cardSection("Foil", help: .foilPct) {
+        cardSection(words.isExperimental ? "Planing" : "Foil", help: .foilPct) {
             // **"On foil" is the share; "Foil time" is the duration.** The card prints the
             // percentage, so it takes the share's name — the one the web tile, the period
             // block and the watch's own "Foil %" already use. It was titled "Foil time"
@@ -49,9 +52,11 @@ struct SessionFoilGrid: View {
             // words, so a rider reading the watch and then the phone saw one label over two
             // quantities (docs/presentation.md, "Label table"). The duration is still here,
             // in the caption, which is where it now reads as what the share is a share of.
-            StatCard(title: "On foil", value: Fmt.pct(summary.foilPct),
-                     caption: Fmt.duration(summary.foilTimeS) + " foil time", help: .foilPct)
-            StatCard(title: "Flights", value: "\(summary.flightCount)",
+            StatCard(title: words.onFoil, value: Fmt.pct(summary.foilPct),
+                     caption: Fmt.duration(summary.foilTimeS) + " " + words.foilTimeLower,
+                     help: .foilPct)
+            StatCard(title: words.isExperimental ? "Planing runs" : "Flights",
+                     value: "\(summary.flightCount)",
                      caption: summary.flightCount == 0 ? "none detected" : "detected",
                      help: .flights)
             // The caption is `maxFlightM` (engine 0.13.0): the furthest any *one* flight
@@ -323,12 +328,29 @@ struct SessionTakeoffSection: View {
 
     private var summary: SessionSummary { detail.analysis.summary }
 
+    private var words: DisciplineLexicon { detail.row.analysisDiscipline.lexicon }
+
     var body: some View {
         let k = summary.takeoff
         if k.takeoffSuccesses > 0 {
             VStack(alignment: .leading, spacing: 14) {
                 failedHeadline(k)
-                cardSection("Takeoff & pumping", anchor: "takeoff", help: .takeoffAttempts) {
+                // **Absent, not zero.** With no pump channel there are no attempts to fail,
+                // no strokes to count and no success rate to quote — an attempt *is* a
+                // pumping burst — so the section reduces to the two facts the speed channel
+                // alone can state: how many times he got planing, and how long the run took.
+                cardSection(words.pumping ? "Takeoff & pumping" : "Planing starts",
+                            anchor: "takeoff", help: .takeoffAttempts) {
+                    if !words.pumping {
+                        StatCard(title: "Planing starts", value: "\(k.takeoffSuccesses)",
+                                 caption: "one per planing run", help: .takeoffAttempts)
+                        StatCard(title: "Run to planing",
+                                 value: k.avgTakeoffS.map { String(format: "%.1f s", $0) } ?? "—",
+                                 caption: k.runsTruncated > 0
+                                     ? "\(k.runsJudged) judged · \(k.runsTruncated) not in the record"
+                                     : "average over \(k.runsJudged) runs",
+                                 dimmed: k.avgTakeoffS == nil)
+                    } else {
                     StatCard(title: "Pumps to takeoff",
                              value: k.avgPumpsToTakeoff.map { String(format: "%.1f", $0) } ?? "—",
                              caption: k.avgPumpsToTakeoff == nil
@@ -359,6 +381,7 @@ struct SessionTakeoffSection: View {
                                      + "\(k.inFlightEpisodes) episodes",
                                  help: .pumpStrokes)
                     }
+                    }
                 }
             }
         }
@@ -378,7 +401,10 @@ struct SessionTakeoffSection: View {
     /// the rider on a perfect session he was never measured for.
     @ViewBuilder
     private func failedHeadline(_ k: TakeoffSummary) -> some View {
-        if detail.analysis.capabilities.hasAccel {
+        // `words.pumping` as well as the capability: a windsurf recording off a CleanJibe
+        // watch *has* an accelerometer, and the preset simply never asked it anything —
+        // "0 failed attempts · every attempt got up" would be a congratulation nobody earned.
+        if detail.analysis.capabilities.hasAccel, words.pumping {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Failed attempts")
                     .font(.caption)

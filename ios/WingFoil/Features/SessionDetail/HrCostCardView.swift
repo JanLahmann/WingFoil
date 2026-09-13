@@ -19,7 +19,12 @@ import WingFoilKit
 struct HrCostCardView: View {
     let detail: SessionDetail
 
-    private var card: HrCostCard? { HrCostCard.make(detail.analysis.hr) }
+    /// nil on a windsurf preset — the whole card prices *pumping*, and there was none to
+    /// price (docs/algorithms.md "Disciplines"). Absent rather than a card of dashes: a
+    /// heart-rate cost of "—" per stroke reads as a measurement that failed.
+    private var card: HrCostCard? {
+        detail.row.analysisDiscipline.pumping ? HrCostCard.make(detail.analysis.hr) : nil
+    }
 
     private let columns = [GridItem(.adaptive(minimum: 150), spacing: 12)]
 

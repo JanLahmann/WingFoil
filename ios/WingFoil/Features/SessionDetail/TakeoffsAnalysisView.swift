@@ -34,6 +34,12 @@ struct TakeoffsAnalysisView: View {
 
     private var visibility: MapLayerVisibility { store.mapLayers(for: .takeoffs) }
 
+    /// The words, and the switch behind half this page: an *attempt* is a pumping burst and
+    /// what came of it, so with no pump channel every attempt is a success and the outcome
+    /// filter, the pumping runs and the stroke column have nothing to say
+    /// (docs/algorithms.md "Disciplines").
+    private var words: DisciplineLexicon { detail.row.analysisDiscipline.lexicon }
+
     /// The attempts that survived the outcome chips, in time order (`takeoffMarks` already
     /// is).
     private var attempts: [SessionDetail.TakeoffMark] {
@@ -57,9 +63,11 @@ struct TakeoffsAnalysisView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("All \(detail.takeoffMarks.count) attempts")
+            Text(words.pumping
+                 ? "All \(detail.takeoffMarks.count) attempts"
+                 : "All \(detail.takeoffMarks.count) planing starts")
                 .font(.headline)
-            chips
+            if words.pumping { chips }
             if !detail.segments.isEmpty { map }
             list
             footnote
@@ -107,7 +115,7 @@ struct TakeoffsAnalysisView: View {
             // Under the glyphs, because a pumping run is the context for the attempt that
             // ends it and not a thing to read on its own — the same order the session map
             // draws them in.
-            if visibility.isVisible(.pumping) {
+            if visibility.isVisible(.pumping), words.pumping {
                 ForEach(spans) { span in
                     MapPolyline(coordinates: span.points.map(\.coordinate))
                         .stroke(EventMarkerStyle.pumping.opacity(0.75),
@@ -150,10 +158,9 @@ struct TakeoffsAnalysisView: View {
     }
 
     private var caption: String {
-        attempts.isEmpty
-            ? "Nothing to mark — widen the filter."
-            : "\(attempts.count) \(filter.description) marked · "
-                + "tap a pin or a row to point at one."
+        if attempts.isEmpty { return "Nothing to mark — widen the filter." }
+        let noun = words.pumping ? filter.description : "planing starts"
+        return "\(attempts.count) \(noun) marked · tap a pin or a row to point at one."
     }
 
     // MARK: - List
@@ -173,7 +180,8 @@ struct TakeoffsAnalysisView: View {
                 Divider()
                 ForEach(attempts) { mark in
                     Button { focused = focused == mark.id ? nil : mark.id } label: {
-                        AttemptRowView(mark: mark, focused: focused == mark.id)
+                        AttemptRowView(mark: mark, focused: focused == mark.id,
+                                       pumping: words.pumping)
                     }
                     .buttonStyle(.plain)
                     Divider()
@@ -187,8 +195,11 @@ struct TakeoffsAnalysisView: View {
     private var headerRow: some View {
         HStack(spacing: 10) {
             Text("at").frame(width: 46, alignment: .leading)
-            Text("pumps").frame(width: 52, alignment: .trailing)
-            Text("to foil").frame(width: 56, alignment: .trailing)
+            // The stroke column is not blanked on a windsurf session, it is **not drawn**:
+            // a column of dashes is a measurement that failed, and nothing was measured.
+            if words.pumping { Text("pumps").frame(width: 52, alignment: .trailing) }
+            Text(words.pumping ? "to foil" : "to planing")
+                .frame(width: 56, alignment: .trailing)
             Text("outcome").frame(maxWidth: .infinity, alignment: .leading)
         }
         .font(.caption2)
@@ -200,10 +211,14 @@ struct TakeoffsAnalysisView: View {
     private var footnote: some View {
         let k = detail.analysis.summary.takeoff
         return VStack(alignment: .leading, spacing: 3) {
-            Text("An attempt is a pumping burst and what came of it. The ones that got up "
-                 + "are the engine's takeoffs; the ones that did not are the pumping "
-                 + "episodes it judged failed, which is why a recording with no "
-                 + "accelerometer shows successes only.")
+            Text(words.pumping
+                 ? "An attempt is a pumping burst and what came of it. The ones that got up "
+                    + "are the engine's takeoffs; the ones that did not are the pumping "
+                    + "episodes it judged failed, which is why a recording with no "
+                    + "accelerometer shows successes only."
+                 : "A planing start is the speed rise that ended in a planing run. Windsurf "
+                    + "analysis reads no pump channel, so a start that never happened leaves "
+                    + "no trace to count — every start listed here is one that worked.")
             if k.runsTruncated > 0 {
                 Text("\(k.runsTruncated) run\(k.runsTruncated == 1 ? "" : "s") "
                      + "not in the record — the recording started or stopped inside them, "
@@ -224,6 +239,9 @@ struct TakeoffsAnalysisView: View {
 private struct AttemptRowView: View {
     let mark: SessionDetail.TakeoffMark
     let focused: Bool
+    /// Whether this session has a pump channel at all. Where it has not, the stroke cell is
+    /// absent rather than a dash (docs/algorithms.md "Disciplines").
+    var pumping = true
 
     var body: some View {
         HStack(spacing: 10) {
@@ -231,10 +249,12 @@ private struct AttemptRowView: View {
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
                 .frame(width: 46, alignment: .leading)
-            Text(mark.pumps.map(String.init) ?? "—")
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(mark.pumps == nil ? .tertiary : .secondary)
-                .frame(width: 52, alignment: .trailing)
+            if pumping {
+                Text(mark.pumps.map(String.init) ?? "—")
+                    .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(mark.pumps == nil ? .tertiary : .secondary)
+                    .frame(width: 52, alignment: .trailing)
+            }
             Text(mark.timeToFoilS.map { String(format: "%.0f s", $0) } ?? "—")
                 .font(.subheadline.monospacedDigit())
                 .foregroundStyle(mark.timeToFoilS == nil ? .tertiary : .secondary)
