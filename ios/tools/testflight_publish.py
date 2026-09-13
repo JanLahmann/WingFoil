@@ -31,6 +31,9 @@ WHATS_NEW = """New here? cleanjibe.org/start — a 20-minute test of the watch r
 
 - Group by: None, Month, Year or Spot at the top of the Sessions list, newest group first. A library of twenty sessions or more opens grouped by month until you choose otherwise.
 - Filter menu beside Import: one spot, one source (intervals.icu, Strava, Apple Health, Garmin watch, file…), a date window (this year, last year, or a range of your own). What is active shows as chips you can tap away, and the count line reads "3 of 41 sessions". Records and Trends keep reading the whole library on purpose.
+- The menu at the top left of Sessions, in the order a new rider needs it: Getting started, Settings, Support, then What CleanJibe does and What the numbers mean, with the build number at the foot. The welcome screen has a close button now.
+- "Something off? Send feedback" at the foot of every page — the four tabs and the session page, where the mail names the session by itself.
+- Connect Strava from Settings → Strava as well as from Import.
 - The full-screen map's legend no longer floats up to the middle of the screen after a keyboard was used elsewhere.
 
 Still in from builds 41–43: Export video, iPad, GPX/TCX and Strava imports, Send map to watch, analysis engine 0.18.0.
@@ -45,7 +48,7 @@ Dev build 46 (tuning). Same 0.15.0 as public build 45, plus Settings → Tuning:
 
 Settings → About says "· dev" on this one. Moving any slider re-analyses your library with the new thresholds and marks every screen that shows a tuned number with a "tuned thresholds" chip — those numbers are not comparable with anyone else's. "Reset all" puts the published defaults back.
 
-New since 44, same as the public build: the Sessions list groups by none, month, year or spot, and a filter menu beside Import narrows it by spot, source, discipline (with the windsurf switch on) or date window, with chips for what is active. The full-screen map's legend stays at the bottom after a keyboard was used elsewhere.
+New since 44, same as the public build: the Sessions list groups by none, month, year or spot, and a filter menu beside Import narrows it by spot, source, discipline (with the windsurf switch on) or date window, with chips for what is active. The Sessions menu is reordered (Getting started, Settings, Support, then the two "what is this" screens, build number at the foot), the welcome screen closes, every page ends in a "Send feedback" line, and Connect Strava is under Settings too. The full-screen map's legend stays at the bottom after a keyboard was used elsewhere.
 
 Please check: with the windsurf switch on, does the discipline filter agree with the badge on each row?"""
 
