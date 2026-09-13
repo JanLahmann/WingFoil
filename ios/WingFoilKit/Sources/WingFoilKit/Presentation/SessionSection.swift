@@ -74,6 +74,14 @@ public enum SessionSection: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
+    /// The switcher's words **in this session's discipline** (docs/presentation.md,
+    /// "Discipline lexicon"). Only one tab has a word to swap — a windsurfer does not take
+    /// off, he gets planing — and `.wingfoil` returns `label` unchanged, character for
+    /// character.
+    public func label(_ discipline: Discipline) -> String {
+        self == .takeoffs ? discipline.lexicon.takeoffs : label
+    }
+
     /// The scroll anchors each section contains, in the order they appear on it.
     ///
     /// These are the ids the views attach with `.id(_:)` and the names the screenshot hooks
@@ -91,7 +99,7 @@ public enum SessionSection: String, CaseIterable, Sendable, Identifiable {
         case .ride: ["chart", "replay", "Foil", "summary"]
         case .turns: ["turns", "filters", "tally", "turnsMap", "turnList"]
         case .takeoffs: ["takeoff", "takeoffFilters", "takeoffsMap", "takeoffList", "hr"]
-        case .log: ["gear", "wind", "recording", "divergence"]
+        case .log: ["gear", "wind", "recording", "discipline", "divergence"]
         }
     }
 

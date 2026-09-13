@@ -73,7 +73,20 @@ public enum MapLayerScope: String, CaseIterable, Sendable, Identifiable, Codable
         }
     }
 
+    /// The same list **for this session's discipline**: on a windsurf preset the pump
+    /// channel was never run (docs/algorithms.md "Disciplines"), so the chip that would
+    /// offer to hide something that does not exist is not drawn at all. Absent, not an empty
+    /// category — a chip that can only ever say "nothing here" is a chip that teaches the
+    /// reader the map is broken.
+    public func layers(_ discipline: Discipline) -> [MapLayer] {
+        discipline.pumping ? layers : layers.filter { $0 != .pumping }
+    }
+
     public func draws(_ layer: MapLayer) -> Bool { layers.contains(layer) }
+
+    public func draws(_ layer: MapLayer, discipline: Discipline) -> Bool {
+        layers(discipline).contains(layer)
+    }
 
     /// What is off when a rider first opens this map.
     ///

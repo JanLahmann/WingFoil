@@ -78,6 +78,20 @@ public enum MapLayer: String, CaseIterable, Codable, Sendable, Identifiable {
         }
     }
 
+    /// The same chip **in this session's discipline** (docs/presentation.md, "Discipline
+    /// lexicon"). Three chips have a word to swap — the two track tints and the flight-start
+    /// marker — and every other one, the whole outcome ladder included, is the same word on
+    /// either rig. `.wingfoil` returns `label` unchanged, character for character.
+    public func label(_ discipline: Discipline) -> String {
+        let words = discipline.lexicon
+        switch self {
+        case .flying: return words.flying
+        case .offFoil: return discipline.isWindsurf ? "off the plane" : label
+        case .takeoff: return words.takeoffLower
+        default: return label
+        }
+    }
+
     /// The noun VoiceOver reads after "Hide" / "Show".
     public var accessibilityNoun: String {
         switch self {

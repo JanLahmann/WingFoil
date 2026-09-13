@@ -490,7 +490,8 @@ public enum TurnAnalytics {
     /// rather than printing a default the run may not have used — and a tuned run that revived
     /// the rung by raising the speed says *its* speed, not the published one.
     public static func outcomeText(_ turn: TurnRecord,
-                                   marginalSpeedKmh: Double? = nil) -> String? {
+                                   marginalSpeedKmh: Double? = nil,
+                                   discipline: Discipline = .wingfoil) -> String? {
         guard let reason = turn.outcomeReason.flatMap(OutcomeReason.init(rawValue:)) else {
             return nil
         }
@@ -504,7 +505,8 @@ public enum TurnAnalytics {
             // reads as a measurement of one.
             let stop = turn.stoppedS.rounded() >= 1
                 ? "stopped \(seconds(turn.stoppedS)) s" : "no stop"
-            return "touchdown · off the foil \(seconds(turn.offFoilS)) s, " + stop
+            return "touchdown · \(discipline.lexicon.offTheFoil) "
+                + "\(seconds(turn.offFoilS)) s, " + stop
         case .submerged:
             return "fell in · wrist under"
         case .pumpedMarginal:
