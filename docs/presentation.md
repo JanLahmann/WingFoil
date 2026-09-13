@@ -2471,6 +2471,11 @@ shadow and no corner clip for exactly that reason, because a launch screen can d
 (`LaunchMark` is unchanged and still the full-resolution artwork the share card, the QR's
 centre mark and the welcome screen use.)
 
+The clock moves as little as the mark does: `UIStatusBarStyle: UIStatusBarStyleLightContent`
+is what the *launch* screen reads and `preferredColorScheme(.dark)` is what the splash asks
+for, so the status bar is white over that navy on both frames. It changes nothing afterwards —
+`UIViewControllerBasedStatusBarAppearance` defaults to on, so the library keeps its own.
+
 Under the mark, and the only thing that moves — they fade up over 0.35 s — the wordmark
 **CleanJibe** and the share card's call to action *without its address*: "analyze your
 wingfoil sessions free". Same line, one source (`Branding.callToAction`), minus the
@@ -2492,7 +2497,11 @@ a library that takes a moment to read; a watch app opens into a button the rider
 in the shallows waiting to press, and two seconds of brand there would be two seconds of
 nothing at the worst possible moment. So `StartView` wears the mark above its own name — the
 first thing seen, one lockup with the wordmark — and the GPS line and START are where they
-always were.
+always were. The mark is **a fraction of the glass** (14 %, clamped to 26–36 pt: 28 pt on a
+40 mm SE, 35 pt on an Ultra) and the page **scrolls** now, both for the same reason: a 40 mm
+watch has about 165 pt of usable height and the page had already spent it, so at a fixed size
+the "Allow Apple Health to record heart rate" note lost its second line and truncated
+mid-word. Nothing moves under the thumb when everything fits (`.basedOnSize`).
 
 ## iPad and Mac — one column, wider glass
 
