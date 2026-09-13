@@ -730,6 +730,7 @@ Three releases, three ways for the same page to kill the app:
 | 0.8.x–0.9.0 | `switchToView` onto `WatchUi.MapTrackView` | Type Error on device; fine in the simulator |
 | 0.9.1 | `pushView`, the documented way for a native base view | fenix 8 killed the app on the page during a recording session, **with no CIQ_LOG entry at all** |
 | 0.9.2 | draws the trail itself, inside `RecordingView.onUpdate` | — |
+| 0.9.9 | `pushView` of `MapTrackView` **after save**, from the summary's Track page, behind an off-by-default setting (GitHub #4) | fenix 8, SW 23.31: the app died the moment the page opened — no recording running, no FIT open. The native map is out on current firmware, recording or not. |
 
 A crash a rider reproduces and a log cannot see is not a crash to keep chasing, and there was
 never a second opinion available: `MapTrackView` is a *View*, so the layout suite could not
