@@ -912,6 +912,12 @@ A TCX *with* that element is class (b) and certifies like any FIT, which is also
 class-(b) badge says **"measured speed channel"** rather than "standard Garmin recording": a
 Polar, Suunto or Coros session arriving through intervals.icu never came off a Garmin, and the
 thing the class asserts is that the file measured its own speed.
+that carries positions but no speed channel — **every GPX** (engine 0.9.0), **every session
+imported from Strava** (ADR-023, which is a GPX by the time the app sees it), and the occasional
+converted export — has its speed differentiated from positions instead, which is noisier and
+biased upward on a bad fix. Those records are still shown, because they are still the rider's
+session; they are shown **marked**, because an all-time best is exactly where a number nobody
+can verify does the most damage.
 
 The rule is read from one field, `sourceClass == "c"`, and nothing downstream of the parser
 knows the word GPX:
@@ -2361,6 +2367,96 @@ launch and after every import — and **silent**, because the answer is "nothing
 almost every time and a line that announces that on every launch is a line the rider learns
 to stop reading. Nothing goes over the radio unless the mask's hash differs from the one this
 watch last acknowledged.
+
+## Import — the doors a session comes in by
+
+The Import sheet is a list of doors, in the order a rider meets them: **Full history** (the
+Garmin GDPR ZIP), **Single sessions** (a picked FIT/GPX/ZIP, and the intervals.icu sync),
+**Apple Health**, **Strava**. Each section's footer answers the same two questions before the
+rider taps rather than after — *what does this door bring in*, and *what does it cost* — because
+a rider who discovers only afterwards that his speed records are marked has been told too late.
+
+### Import from Strava
+
+Strava is the second cloud source (docs/decisions.md ADR-023), and the one that reaches a rider
+with no Garmin account and no intention of setting up intervals.icu. Its section is **under**
+intervals.icu, deliberately: for the same afternoon intervals.icu hands over the original file
+off the watch and Strava hands over positions, and the footer says so in one sentence — *if the
+same session is on intervals.icu, take it from there instead.*
+
+* **Connect / Disconnect** (`StravaImportView`, and the state repeated in Settings → Strava).
+  Connecting opens Strava's own consent screen; CleanJibe only ever **reads**, and the words
+  say so on both screens. A build with no API keys behind it shows *"No Strava application
+  configured"* and where the keys go — a Connect button that always fails would be worse than
+  no button.
+* **The list**: the matching activities of the last two years, newest first, each one marked
+  *In your library* where the ±60 s key or the remembered Strava id already knows it. Tap to
+  pick, or **Import all new**. Once one session has arrived this way the automatic-pickup
+  toggle appears, exactly as it does for Apple Health and for the same reason: a toggle for a
+  source the rider has never used is a question about nothing.
+* **Which activities** — Strava has no wingfoil type, so the rider picks the set once
+  (Windsurf, Kitesurf, Surf, Workout on; Sail and Stand-up paddling off, because for most
+  people those buckets hold boats and flat water). Whatever is picked, an activity whose *name*
+  says wing, foil, kite, surf or SUP is offered too.
+* **Both ceilings are said out loud.** Strava allows a hundred requests every fifteen minutes,
+  and a run that hits it stops and reports *"Strava asked us to wait"* rather than retrying into
+  the quota. And until Strava reviews the application it allows **one connected rider**: that
+  refusal is its own sentence — *"Strava has not approved CleanJibe for more riders yet"* — and
+  never a generic error, because it is the one failure a rider can do nothing about.
+* **Class (c), and the mark that follows from it.** A Strava session is positions-only, so
+  every speed record it produces wears the `uncertified` chip and the session badge names both
+  absences. Nothing about that is special-cased: the mapper writes a GPX, and the rest of the
+  app has never known the word Strava.
+
+### Share from the vendor app straight into CleanJibe
+
+The door for a rider whose watch is not a Garmin and not an Apple Watch. Every vendor's phone
+app can export a recording as a file, and CleanJibe declares the UTIs for all three of them
+(`ios/project.yml`: `de.lahmann.wingfoil.fit`, `.gpx`, `.tcx`, all `CFBundleDocumentTypes`), so
+**Open in CleanJibe** appears in the iOS share sheet wherever one of them is offered. Save to
+Files and sharing from there is the same path with one more step, and it is the fallback the
+help names for the case where the app row is short.
+
+One rule covers the choice of format: **take the FIT.** A FIT carries the receiver's own speed
+and certifies; a GPX or a TCX carries positions and does not. Everything else — foil time,
+flights, turns, the map, the wind axis — is identical either way.
+
+The paths below are the help topic *Share from your watch app straight into CleanJibe*
+(`HelpCatalog.shareFromWatchApp`), verified against the vendors' own current help pages on
+**13 September 2026**. Each is dated in the app itself, and anything that could not be
+confirmed is labelled unverified rather than dressed up:
+
+| app | path | formats | verified |
+|---|---|---|---|
+| Suunto | Calendar → the workout → ⋯ top right → FIT | FIT, GPX (Workout), GPX (Route) | ✅ 13 Sep 2026 |
+| COROS | Activities → the activity → ⋯ top right → Export → FIT | FIT, GPX (TCX/KML unverified) | ✅ 13 Sep 2026 |
+| Polar | **not on the phone.** flow.polar.com → Diary → the session → Export → FIT | FIT, TCX, GPX, CSV | ✅ 13 Sep 2026 (web only; mobile Safari unverified) |
+| Garmin | **no phone export at all.** connect.garmin.com on a computer → the activity → gear → Export File | original FIT (plus TCX, GPX, KML) | ✅ 13 Sep 2026 |
+
+Garmin is the row that matters most, because it is the popular watch and the answer is "you
+cannot do it from the phone": every export path Garmin documents begins with signing in to
+connect.garmin.com in a browser. So the topic sends Garmin owners to the two doors that do work
+without a computer — intervals.icu, or the CleanJibe watch app — and names the computer path
+for completeness, with the current menu wording (**Export File**; the label read *Export
+Original* until Garmin renamed it, and the Import screen's own footer still says the old words
+where it describes that page).
+
+### Which watches work with CleanJibe
+
+One table, in the help (`HelpCatalog.whichWatch`), so "will my watch work" has one place to be
+answered instead of a third of an answer in each of five topics. Two axes and nothing else:
+**certified speed** (did the file carry the receiver's own speed) and **pump strokes and
+takeoff effort** (was a wrist accelerometer recorded, which only the CleanJibe watch apps do).
+
+| what you ride with | how it gets in | speed records | pump / takeoff effort |
+|---|---|---|---|
+| Garmin + the CleanJibe watch app | intervals.icu, or the BLE card | certified | yes |
+| Garmin, any other profile or app | intervals.icu, or the FIT from a computer | certified | no |
+| Apple Watch (Workout app) | Import → Apple Health | certified | no |
+| Apple Watch + the CleanJibe watch app | straight to the phone | certified | yes |
+| Polar / Suunto / COROS | intervals.icu, or the share sheet | FIT certifies; GPX and TCX do not | no |
+| Anything that reaches Strava | Import → Strava | uncertified | no |
+| A phone in a pocket, any GPX | the share sheet | uncertified | no |
 
 ## iPad and Mac — one column, wider glass
 

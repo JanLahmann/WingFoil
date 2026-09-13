@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Returning to CleanJibe…</title>
+<meta name="theme-color" content="#101010">
+<meta name="color-scheme" content="dark">
+
+<!-- This page exists for one reason, and it is a rule of Strava's, not a choice of ours.
+     A Strava API application has exactly ONE "Authorization Callback Domain" — ours is
+     cleanjibe.org — and Strava refuses to redirect anywhere else, custom URL schemes very
+     much included. So the round trip has one hop more than it looks like it should: the
+     app opens Strava's consent screen with redirect_uri=https://cleanjibe.org/strava/callback,
+     Strava sends the rider here with ?code=…&state=…, and this page forwards both to
+     cleanjibe://strava — which is where ASWebAuthenticationSession is waiting. The sheet
+     closes on it, and the rider sees this page for about a frame.
+
+     Deliberately self-contained: no stylesheet, no analytics, no service-worker precache,
+     nothing third-party. An authorization code is a credential for the next thirty seconds,
+     and it must not be handed to anybody's script but ours. (The service worker does answer
+     same-origin navigations from cache, which is harmless here: the markup is identical
+     every time and the script below reads the LIVE query string, never a cached one.)
+
+     If you are changing the scheme: it is also in ios/project.yml (CFBundleURLTypes) and in
+     StravaConfig.defaultAppCallbackURI. All three must agree. -->
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="../../icons/icon.svg">
+
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: #101010;
+    color: #f2f2f2;
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    text-align: center;
+  }
+  main { max-width: 32rem; }
+  h1 { font-size: 1.25rem; font-weight: 600; margin: 0 0 .5rem; }
+  p { margin: 0 0 1rem; color: #b8b8b8; }
+  a.btn {
+    display: inline-block;
+    padding: .7rem 1.2rem;
+    border-radius: 10px;
+    background: #f2f2f2;
+    color: #101010;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .quiet { font-size: .85rem; }
+</style>
+</head>
+<body>
+
+<main>
+  <h1>Returning to CleanJibe…</h1>
+  <p id="note">Strava has answered. Handing the result back to the app.</p>
+  <!-- The visible fallback. It carries the same URL the script uses, so a browser that
+       refuses an automatic scheme navigation still gets the rider home with one tap. -->
+  <p><a class="btn" id="back" href="cleanjibe://strava">Return to CleanJibe</a></p>
+  <p class="quiet">You can close this page once CleanJibe is open.</p>
+</main>
+
+<script>
+(function () {
+  // Forward exactly what Strava sent and nothing else: the code, the granted scope, the
+  // state we asked it to echo, and — when the rider said no — the error. Rebuilt rather
+  // than passed through verbatim so a stray parameter cannot ride along into the app.
+  var incoming = new URLSearchParams(location.search);
+  var out = new URLSearchParams();
+  ["code", "scope", "state", "error", "error_description"].forEach(function (key) {
+    var value = incoming.get(key);
+    if (value !== null) out.set(key, value);
+  });
+
+  var target = "cleanjibe://strava" + (out.toString() ? "?" + out.toString() : "");
+  document.getElementById("back").href = target;
+
+  if (!incoming.get("code") && !incoming.get("error")) {
+    // Somebody opened the page directly. Say so instead of bouncing them into an app that
+    // is not waiting for anything.
+    document.getElementById("note").textContent =
+      "This page is part of connecting CleanJibe to Strava. There is nothing to do here.";
+    return;
+  }
+
+  location.replace(target);
+})();
+</script>
+
+</body>
+</html>
