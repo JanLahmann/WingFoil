@@ -202,8 +202,13 @@ struct DevTurnWorkbenchView: View {
 
     @ViewBuilder
     private func whatIfCard() -> some View {
-        if store.tuning.isEmpty {
-            Text("Nothing is tuned, so the published defaults *are* what you are looking at.")
+        // This session's own rig, and no other: the comparison below is the tuned run against
+        // its own preset, so it is the *fin* set that decides whether a fin session has
+        // anything to compare with.
+        if store.tuning[detail.row.analysisDiscipline].isEmpty {
+            Text("Nothing is tuned for "
+                 + "\(detail.row.analysisDiscipline.title.lowercased()), so the preset "
+                 + "defaults *are* what you are looking at.")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         } else if let card = TurnWhatIf.make(turnIndex: index, tuned: detail.analysis,
