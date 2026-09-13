@@ -2458,6 +2458,33 @@ takeoff effort** (was a wrist accelerometer recorded, which only the CleanJibe w
 | Anything that reaches Strava | Import → Strava | uncertified | no |
 | A phone in a pocket, any GPX | the share sheet | uncertified | no |
 
+## Feedback mail — the report the app writes and the rider signs
+
+Two rows open one mail to `info@cleanjibe.org`: **Settings → Send feedback**, under the two
+help rows, and **Report a problem with this session…** at the foot of a session's share sheet.
+The subject is `CleanJibe beta feedback · build <N>[ dev] · <watch>` — the build number, not
+the marketing version, because the two TestFlight variants of a release share the latter.
+
+The body opens with **What happened** and an empty line, and everything the phone knows is
+*below* it: a mail that opens with twenty lines of diagnostics makes the reporter scroll past
+them to write his report. Prefilled, in this order (`FeedbackReport`, composed in the kit and
+asserted line by line in `FeedbackReportTests`):
+
+| section | what it carries |
+|---|---|
+| App | marketing version and build, dev (TUNING) or public, `AnalysisEngine.version`, and the count of tuned thresholds — that last line only when there are some, and only on the dev build, which is the only one that applies them |
+| Phone | the model identifier (`iPhone18,2`) with its marketing name in front of it where the table knows one, the iOS version, the locale |
+| Watch | the paired Garmin's name from the companion link, the CleanJibe watch app's version decoded from the last BLE card's build tag (`APP_MINOR * 256 + FIT schema`), whether an Apple Watch is paired (`WCSession`, omitted when it cannot be asked), Health auto-import on or off |
+| Library | how many sessions, and the count per door they came in by — a session merged from two sources is counted under both, which is the answer a duplicate report needs |
+| Session | *only from a session page*: its date in its own zone, spot, discipline, duration, source-class letter, the `engineVersion` stamp (tuning fingerprint included) and the stable row id — with that session's **share card attached** as a PNG |
+
+It closes with `sent from CleanJibe`. **Nothing leaves the phone until the rider taps Send**:
+the mail is `MFMailComposeViewController`, every line of it is editable, and there is no
+CleanJibe server for it to go to in any case. Where Mail is not configured
+(`canSendMail == false`) the same subject and body go to the system's `mailto:` handler; where
+that too goes nowhere, a sheet shows the report in full with one button that copies it. The
+help topic is "Sending feedback", last in *Getting set up* — the section's way back out.
+
 ## iPad and Mac — one column, wider glass
 
 The iPhone app **is** the iPad app (`TARGETED_DEVICE_FAMILY: "1,2"` on the app and the widget
