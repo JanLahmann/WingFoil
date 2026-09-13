@@ -1,5 +1,6 @@
 import CoreLocation
 import SwiftUI
+import WatchKit
 
 /// Before the session: is the watch ready, and one button to go.
 ///
@@ -20,10 +21,28 @@ struct StartView: View {
     @Environment(SessionRecorder.self) private var recorder
 
     /// Big enough to be read as the mark rather than as a bullet, small enough to leave the
-    /// 40 mm screen its GPS line, its button and both of the notes that can appear below.
-    private static let markSide: CGFloat = 34
+    /// screen its GPS line, its button and both of the notes that can appear below it — which
+    /// is why it is a fraction of the glass and not a constant. At 34 pt flat, a 40 mm SE
+    /// (162 × 197 pt) pushed "Allow Apple Health to record heart rate" off the bottom edge and
+    /// truncated it mid-word; this gives that watch 28 pt and an Ultra (205 × 251) its 35.
+    private static var markSide: CGFloat {
+        min(36, max(26, (WKInterfaceDevice.current().screenBounds.height * 0.14).rounded()))
+    }
 
     var body: some View {
+        // The screen scrolls now, and the mark is what made it have to. A 40 mm SE has about
+        // 165 pt of usable glass and the page already spent it: on the launch where Health has
+        // not been allowed yet, "Allow Apple Health to record heart rate" lost its second line
+        // to the mark and truncated mid-word. `FailureView` already scrolls for the same
+        // reason. `.basedOnSize` so that the ordinary case — GPS line, button, nothing else —
+        // is still a page that does not move under the thumb.
+        ScrollView {
+            content
+        }
+        .scrollBounceBehavior(.basedOnSize)
+    }
+
+    private var content: some View {
         VStack(spacing: 8) {
             // Mark and wordmark tight together — one lockup, not two things in a list.
             VStack(spacing: 3) {

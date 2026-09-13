@@ -273,6 +273,13 @@ targets:
           UIColorName: LaunchBackground
           UIImageName: SplashMark
           UIImageRespectsSafeAreaInsets: true
+        # The clock and the battery, read against that navy. This key is the *initial* status
+        # bar style and it is what the launch screen shows; `SplashView` asks for the same
+        # with `preferredColorScheme(.dark)`, so the handover does not flip the clock from
+        # black to white. It changes nothing afterwards — `UIViewControllerBasedStatusBarAppearance`
+        # defaults to YES, so every screen in the app still decides for itself and the library
+        # keeps its black clock on white.
+        UIStatusBarStyle: UIStatusBarStyleLightContent
         UIApplicationSupportsIndirectInputEvents: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait

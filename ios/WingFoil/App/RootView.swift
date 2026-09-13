@@ -122,7 +122,13 @@ struct RootView: View {
         // reveals an empty list is not a fourth answer. Raised here for the same reason the
         // two prompts above are — it belongs to the app, not to any one tab — and it goes
         // through the same "is anything else up?" predicate, so it can never stack.
-        .fullScreenCover(isPresented: Binding(get: { store.isShowingWelcome },
+        //
+        // `&& !isShowingSplash` is the one thing the splash asks of the rest of the app: on a
+        // genuine first run both want the screen in the same second, and a cover raised over
+        // the brand screen would cut the hold in half. The welcome is not *cancelled* by the
+        // wait — the store still thinks it is showing, and the cover goes up the moment the
+        // splash crossfades out.
+        .fullScreenCover(isPresented: Binding(get: { store.isShowingWelcome && !isShowingSplash },
                                               set: { if !$0 { store.dismissWelcome() } })) {
             WelcomeView(
                 onTryExample: {
