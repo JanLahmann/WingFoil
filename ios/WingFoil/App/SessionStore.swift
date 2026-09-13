@@ -467,9 +467,9 @@ final class SessionStore {
 
     enum ShareError: Swift.Error, CustomStringConvertible {
         case notAWalkableFIT
-        /// The archived recording is a GPX. `FitShareFilter` scrubs FIT messages, and there
-        /// is nothing for it to walk here — so the file is not offered rather than handed
-        /// on unscrubbed, which is the one recovery that would be worse than refusing.
+        /// The archived recording is a GPX or a TCX. `FitShareFilter` scrubs FIT messages,
+        /// and there is nothing for it to walk here — so the file is not offered rather than
+        /// handed on unscrubbed, which is the one recovery that would be worse than refusing.
         case notAFit
 
         var description: String {
@@ -477,8 +477,8 @@ final class SessionStore {
             case .notAWalkableFIT:
                 "the archived file is not a plain FIT this app can rewrite safely"
             case .notAFit:
-                "this session was imported from a GPX, and only FIT recordings can be "
-                    + "scrubbed for sharing"
+                "this session was imported from a GPX or TCX, and only FIT recordings can "
+                    + "be scrubbed for sharing"
             }
         }
     }

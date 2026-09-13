@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 """Regenerate golden files for the whole fixture corpus.
 
-Runs parse -> clean -> flights -> records over every FIT **and GPX** under
+Runs parse -> clean -> flights -> records over every FIT, **GPX and TCX** under
 fixtures/sessions/** and fixtures/synthetic/, writes fixtures/goldens/<stem>.expected.json,
-and prints a summary table. Since engine 0.9.0 the corpus holds both formats; `analyze`
-dispatches on the file itself (`parse.parse_track`), so nothing here needs to know which
-is which beyond the glob — and the `cls` column in the table is where the difference shows.
+and prints a summary table. Since engine 0.9.0 the corpus holds more than one format;
+`analyze` dispatches on the file itself (`parse.parse_track`), so nothing here needs to
+know which is which beyond the glob — and the `cls` column in the table is where the
+difference shows, including the two TCX fixtures that differ only by whether the file
+states a speed (b) or not (c).
 
 Usage: cd lab && uv run python tools/make_goldens.py [--fixtures DIR] [--out DIR] [--dry-run]
 """
@@ -22,7 +24,7 @@ REPO = Path(__file__).resolve().parents[2]
 
 #: What counts as a session recording. Extensions only — `analyze` confirms by
 #: content, so a mislabelled file is still read for what it is.
-TRACK_SUFFIXES = {".fit", ".gpx"}
+TRACK_SUFFIXES = {".fit", ".gpx", ".tcx"}
 
 HEADER = (f"{'file':<52} {'cls':>3} {'hz':>4} {'foil%':>6} {'fl':>4} {'long_s':>7} "
           f"{'2s':>6} {'10s':>6} {'5x10s':>6} {'500m':>6} {'alpha':>6} {'km':>7} "

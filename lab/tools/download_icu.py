@@ -12,6 +12,11 @@ wing/foil/surf keywords — catches the Walk-typed FoilMotion/"Wingfoiling" reco
 downloads each original file via GET /api/v1/activity/{id}/file, and writes
 fixtures/sessions/{windsurf-native|other-apps|ciq}/YYYY-MM-DD_<slug>_<source>.fit
 per the fixtures/README.md naming convention.
+
+The endpoint hands back whatever the device uploaded, which is not always a FIT — a Polar,
+Suunto or Coros app syncing into intervals.icu commonly leaves a GPX or a TCX. `unwrap`
+sniffs all three (inside gzip and ZIP wrappers too, the way the kit and the web bundle do)
+and a non-FIT original is filed under fixtures/sessions/<kind>/ rather than renamed.
 """
 
 from __future__ import annotations
@@ -68,22 +73,55 @@ def source_of(a: dict) -> tuple[str, str]:
     return "other-apps", "unknown"
 
 
-def unwrap(data: bytes) -> bytes:
-    """/file may return raw FIT, gzip, or a ZIP containing the FIT."""
+#: Extensions a /file ZIP may hold a recording under, best first. The FIT is the one the
+#: corpus wants; a GPX or a TCX is what a Polar, Suunto or Coros upload leaves behind.
+RECORDING_SUFFIXES = (".fit", ".gpx", ".tcx")
+
+
+def sniff(data: bytes) -> str | None:
+    """-> "fit" | "gpx" | "tcx" | None, by content. Mirrors `wingfoil_lab.parse.parse_track`.
+
+    The names in a ZIP are the uploader's and the FIT signature is the file's, so the
+    decision is made on bytes here exactly as it is in the engine — the kit's
+    `IcuPayload.unwrap` and the web's `web_entry` run the same three tests in the same
+    order, and a fourth spelling of "what is this blob" is a fourth chance to disagree.
+    """
+    if data[8:12] == b".FIT":
+        return "fit"
+    head = data[:512].lstrip(b"\xef\xbb\xbf \t\r\n")
+    if not head.startswith(b"<"):
+        return None
+    window = data[:2048].lower()
+    if b"<trainingcenterdatabase" in window:
+        return "tcx"
+    return "gpx" if b"<gpx" in window else None
+
+
+def unwrap(data: bytes) -> tuple[bytes, str]:
+    """/file may return a raw recording, gzip, or a ZIP containing one -> (bytes, kind).
+
+    `GET /api/v1/activity/{id}/file` hands back **whatever the device uploaded**, and that
+    is not always a FIT: a Polar, Suunto or Coros app syncing into intervals.icu commonly
+    leaves a GPX or a TCX there. All three are recordings this engine reads, so all three
+    come back from here rather than one of them coming back and two raising.
+    """
     if data[:2] == b"\x1f\x8b":
         data = gzip.decompress(data)
     if data[:2] == b"PK":
         with zipfile.ZipFile(io.BytesIO(data)) as z:
-            fits = [n for n in z.namelist() if n.lower().endswith(".fit")]
-            if not fits:
-                raise ValueError("ZIP contains no .fit")
-            data = z.read(fits[0])
-    if data[8:12] != b".FIT":
-        raise ValueError(f"not a FIT file (header {data[:16]!r})")
-    return data
+            names = [n for n in z.namelist() if not n.startswith("__MACOSX/")]
+            hit = next((n for suffix in RECORDING_SUFFIXES
+                        for n in names if n.lower().endswith(suffix)), None)
+            if hit is None:
+                raise ValueError("ZIP contains no .fit, .gpx or .tcx")
+            data = z.read(hit)
+    kind = sniff(data)
+    if kind is None:
+        raise ValueError(f"not a FIT, GPX or TCX file (header {data[:16]!r})")
+    return data, kind
 
 
-def download(key: str, activity_id: str) -> bytes:
+def download(key: str, activity_id: str) -> tuple[bytes, str]:
     r = requests.get(f"{BASE}/activity/{activity_id}/file", auth=auth(key), headers=UA, timeout=120)
     r.raise_for_status()
     return unwrap(r.content)
@@ -137,8 +175,15 @@ def main() -> int:
         if args.dry_run or state == "exists":
             continue
         try:
-            data = download(args.key, a["id"])
-            if b"foil_state" in data:  # our dev-field name: definitionally a WingFoil CIQ file
+            data, kind = download(args.key, a["id"])
+            if kind != "fit":
+                # The corpus is organised by source, and a GPX or a TCX is a different
+                # source with a different input class; it lands beside its own kind rather
+                # than under a `.fit` name that would lie about what the file is.
+                dest = dest.with_suffix(f".{kind}")
+                dest = FIXTURES / kind / dest.name
+                print(f"     {kind} original -> {dest.relative_to(FIXTURES.parent)}")
+            elif b"foil_state" in data:  # our dev-field name: definitionally a CIQ file
                 dest = ciq_dest
                 print(f"     ciq dev fields found -> {dest.relative_to(FIXTURES.parent)}")
             dest.parent.mkdir(parents=True, exist_ok=True)

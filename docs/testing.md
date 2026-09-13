@@ -266,11 +266,11 @@ not committed, so the test is `skipif`-guarded and skips in CI; the repo-only ha
 argument is `test_raising_the_marginal_speed_revives_the_rung`, on a synthetic jibe, which runs
 everywhere.
 
-### Fixture provenance — one converted recording, and why
+### Fixture provenance — the converted recordings, and why
 
 Every fixture in `fixtures/sessions/**` is one of Jan's own recordings kept as it came off
-the watch. Two are touched, and both are the same afternoon: the bundled example is
-*scrubbed* (see below), and **one is not a recording at all**.
+the watch. The exceptions are all the same afternoon: the bundled example is *scrubbed*
+(see below), and **three are not recordings at all**.
 `fixtures/sessions/gpx/2026-08-30-1407_nago-torbole.gpx` is that same 2026-08-30 CIQ
 session converted by `lab/tools/fit_to_gpx.py`
 (track points, `<ele>`, `<time>`, and heart rate in Garmin's `TrackPointExtension`; the
@@ -286,8 +286,21 @@ outcome, wind axis to the degree; foil % 67.9 → 67.3; speed records within 0.1
 13.472 → 13.655 — positional differentiation reads *high*, which is the whole reason those
 records are marked uncertified); every pump field null and `pumpEpisodes` empty.
 
-`fixtures/README.md` carries the row; `make_goldens.py` picks up `.fit` and `.gpx` alike and
-`analyze` routes on the file itself, so nothing in the tooling needs to know which is which.
+**The TCX pair, and the element between them.** The other two converted fixtures are
+`fixtures/sessions/tcx/2026-08-30-1407_nago-torbole-{speed,nospeed}.tcx`, the same afternoon
+again through `lab/tools/fit_to_tcx.py`. They exist because a TCX is the one format that is
+not one input class (docs/algorithms.md, "TCX import"): with `Extensions/TPX/Speed` it is
+class (b) and its speed records certify, without it class (c) like a GPX. The pair differs
+by **exactly that element**, which is what makes it an experiment rather than two fixtures —
+and both ends of it land where they should. `-speed` reproduces the CIQ FIT's own numbers
+(2 s 13.472 kn, foil 67.9 %, `hasDoppler` true, class b); `-nospeed` reproduces the GPX
+golden's to the digit (13.655 kn, 67.3 %, class c), because it is differentiated by the same
+shared arithmetic. `TcxParseTests` asserts the second of those directly, sample by sample:
+two XML parsers disagreeing about the same metres is the bug that pairing exists to catch.
+
+`fixtures/README.md` carries the rows; `make_goldens.py` picks up `.fit`, `.gpx` and `.tcx`
+alike and `analyze` routes on the file itself, so nothing in the tooling needs to know which
+is which.
 
 ## Presentation goldens
 
@@ -1047,15 +1060,23 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
 6. **Watch-vs-phone divergence banner** — standing field-regression alarm on every class-(a)
    import (thresholds in `algorithms.md`).
 
-## Two TestFlight variants — the dev build and the public one
+## Two TestFlight variants — the public build and the dev one
 
 One App Store Connect app, one bundle id, one `MARKETING_VERSION`, **two builds from the same
 commit**. They differ by one compilation condition:
 
 | | scheme | configuration | `TUNING` | group | build |
 |---|---|---|---|---|---|
-| **dev** | `WingFoil Dev` | `Dev Release` | defined | internal (no beta review) | N |
-| **public** | `WingFoil` | `Release` | not defined | external (beta review) | N+1 |
+| **public** | `WingFoil` | `Release` | not defined | external (beta review) | N |
+| **dev** | `WingFoil Dev` | `Dev Release` | defined | internal (no beta review) | N+1 |
+
+**The public build takes the lower number**, and that is the point of the order. A build
+number is what a reviewer and an external tester see beside the version, and the canonical
+build of a release is the one that ships — so it is the one that should read N. The dev
+build is not deprived of anything by coming second: our internal group has automatic
+distribution on, so every processed build reaches Jan's phone by itself whichever number it
+carries. (It was the other way round through build 40, when the dev build was archived
+first out of habit; nothing but the archiving order changes here.)
 
 `TUNING` compiles in Settings → Tuning, the "tuned thresholds" chip and banner, the turn
 footnote's "Measured at:" line, and " · dev" after the version in Settings → About
@@ -1076,39 +1097,39 @@ xcodebuild -project WingFoil.xcodeproj -scheme WingFoil -configuration Release \
 
 **The two archive commands.** Same commit, same `MARKETING_VERSION`; bump
 `CURRENT_PROJECT_VERSION` in `ios/project.yml` (all four targets) and re-run `xcodegen
-generate` between them, so the dev build is N and the public one N+1.
+generate` between them, so the public build is N and the dev one N+1.
 
 ```sh
 cd ios
 
-# 1. dev build (TUNING) — build N
-xcodegen generate
-xcodebuild -project WingFoil.xcodeproj -scheme "WingFoil Dev" \
-  -configuration "Dev Release" -destination 'generic/platform=iOS' \
-  -archivePath build/WingFoilDev.xcarchive archive
-xcodebuild -exportArchive -archivePath build/WingFoilDev.xcarchive \
-  -exportOptionsPlist ExportOptions.plist -exportPath build/exportDev
-
-# 2. bump CURRENT_PROJECT_VERSION to N+1 in project.yml, then the public build
+# 1. public build (no TUNING) — build N
 xcodegen generate
 xcodebuild -project WingFoil.xcodeproj -scheme WingFoil \
   -configuration Release -destination 'generic/platform=iOS' \
   -archivePath build/WingFoil.xcarchive archive
 xcodebuild -exportArchive -archivePath build/WingFoil.xcarchive \
   -exportOptionsPlist ExportOptions.plist -exportPath build/export
+
+# 2. bump CURRENT_PROJECT_VERSION to N+1 in project.yml, then the dev build
+xcodegen generate
+xcodebuild -project WingFoil.xcodeproj -scheme "WingFoil Dev" \
+  -configuration "Dev Release" -destination 'generic/platform=iOS' \
+  -archivePath build/WingFoilDev.xcarchive archive
+xcodebuild -exportArchive -archivePath build/WingFoilDev.xcarchive \
+  -exportOptionsPlist ExportOptions.plist -exportPath build/exportDev
 ```
 
 Upload both (Transporter or `xcrun altool`), then attach each to its group:
 
 ```sh
 uv run --with pyjwt --with cryptography --with requests \
-  python ios/tools/testflight_publish.py N   --group internal --wait
+  python ios/tools/testflight_publish.py N   --group external --wait
 uv run --with pyjwt --with cryptography --with requests \
-  python ios/tools/testflight_publish.py N+1 --group external --wait
+  python ios/tools/testflight_publish.py N+1 --group internal --wait
 ```
 
 Our internal group has automatic distribution on (`hasAccessToAllBuilds`), so **every**
-processed build — the public N+1 included — reaches internal testers by itself, and Apple
+processed build — the public N included — reaches internal testers by itself, and Apple
 refuses a manual assignment to that group (build 29: 422 "Builds cannot be assigned to this
 internal group"). The script sees the flag and skips the assignment; it still sets What to
 Test. `--group internal` therefore mainly **skips the beta-review submission** —

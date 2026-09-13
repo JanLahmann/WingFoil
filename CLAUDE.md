@@ -36,9 +36,10 @@ xcodebuild -project WingFoil.xcodeproj -scheme "WingFoil Dev" -configuration "De
   -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build      # dev (TUNING)
 ```
 
-Two TestFlight builds per release from one commit: dev build N (`WingFoil Dev`, internal
-group, receives every build automatically) and public build N+1 (`WingFoil`, external group,
-beta review). `ios/tools/testflight_publish.py <build> --group internal|external --wait`.
+Two TestFlight builds per release from one commit: public build N (`WingFoil`, external
+group, beta review) and dev build N+1 (`WingFoil Dev`, internal group, receives every build
+automatically — including the public one, so the lower number is the canonical one reviewers
+and testers see). `ios/tools/testflight_publish.py <build> --group internal|external --wait`.
 Everything dev-only lives behind `#if TUNING`; the public binary must not contain it.
 
 ## Rules

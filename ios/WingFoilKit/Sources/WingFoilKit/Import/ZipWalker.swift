@@ -63,6 +63,7 @@ public enum ZipWalker {
             payload = inflated
         }
         if IcuPayload.isFit(payload) { return .track(payload) }
+        if TcxSessionParser.isTcx(payload) { return .track(payload) }
         if GpxSessionParser.isGpx(payload) { return .track(payload) }
         // A CleanJibe watch container. Every file import in the app comes through here —
         // `SessionStore.runImport` calls `ingestContainer` for a hand-picked file exactly as

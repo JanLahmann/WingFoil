@@ -42,7 +42,7 @@ struct ImportView: View {
                     Button {
                         showFileImporter = true
                     } label: {
-                        Label("FIT, GPX or ZIP…", systemImage: "doc.badge.plus")
+                        Label("FIT, GPX, TCX or ZIP…", systemImage: "doc.badge.plus")
                     }
                     .disabled(store.isBusy)
                     Button {
@@ -54,15 +54,20 @@ struct ImportView: View {
                 } header: {
                     Text("Single sessions")
                 } footer: {
-                    // The picker offers GPX (engine 0.9.0), so the next question is what it
-                    // costs — answered here, before the rider imports one and wonders why
-                    // the pump section is missing, rather than after.
+                    // The picker offers GPX (engine 0.9.0) and TCX, so the next question is
+                    // what they cost — answered here, before the rider imports one and
+                    // wonders why the pump section is missing, rather than after. The
+                    // intervals.icu sentence names the other watch brands because the sync
+                    // button above is the only way most of their riders get in at all: their
+                    // apps sync to intervals.icu, and CleanJibe syncs from there.
                     Text("Garmin Connect → activity → \"Export Original\" gives one FIT; "
-                         + "AirDrop and the share sheet land here too. GPX works as well, "
-                         + "with two limits: it carries no speed channel, so its speed "
-                         + "records are estimated from positions and marked uncertified, "
-                         + "and it carries no accelerometer, so there is no pump or takeoff "
-                         + "effort.")
+                         + "AirDrop and the share sheet land here too. Polar, Suunto and "
+                         + "Coros are supported through intervals.icu — their apps sync "
+                         + "there, and CleanJibe syncs from there. A FIT gives the full "
+                         + "analysis; a GPX, or a TCX without a speed channel, gives a "
+                         + "positions-only analysis with speed records estimated from "
+                         + "positions and marked uncertified. None of the three carries an "
+                         + "accelerometer, so there is no pump or takeoff effort.")
                 }
 
                 // The third door, and the only one that needs no account, no cable and no
@@ -113,7 +118,8 @@ struct ImportView: View {
                 }
             }
             .fileImporter(isPresented: $showFileImporter,
-                          allowedContentTypes: [.fitActivity, .gpxTrack, .zip, .gzip],
+                          allowedContentTypes: [.fitActivity, .gpxTrack, .tcxTrack,
+                                                .zip, .gzip],
                           allowsMultipleSelection: true) { result in
                 if case .success(let urls) = result {
                     Task { await store.importPicked(urls: urls) }

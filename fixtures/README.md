@@ -2,14 +2,16 @@
 
 Naming: `YYYY-MM-DD-HHMM_<spot>_<source>.fit` (e.g. `2026-08-05-1356_garda_foilmotion.fit`;
 start time disambiguates multiple sessions per day). Since engine 0.9.0 a fixture may also
-be a `.gpx`; `make_goldens.py` reads both and `analyze` routes on the file itself.
+be a `.gpx`, and now a `.tcx`; `make_goldens.py` reads all three and `analyze` routes on the
+file itself.
 Sources: `native` (Fenix 8 Windsurf profile) · `wingfoil` (our CIQ app) · `foilmotion` ·
-`wingfoiling` (the CIQ app that produced "<location> Wingfoiling" activities) · `gpx`.
+`wingfoiling` (the CIQ app that produced "<location> Wingfoiling" activities) · `gpx` · `tcx`.
 
 - `sessions/windsurf-native/` — Jan's native Windsurf-profile FITs (source class b)
 - `sessions/ciq/` — our app's recordings (class a; grows from phase 1)
 - `sessions/other-apps/` — FoilMotion / "Wingfoiling" FITs (Walk-typed; parser contrast cases)
-- `sessions/gpx/` — GPX imports (class c; the one converted fixture, see Provenance)
+- `sessions/gpx/` — GPX imports (class c; one converted fixture, see Provenance)
+- `sessions/tcx/` — TCX imports (class **b or c**, decided by `TPX/Speed`; the converted pair)
 - `sessions/accel/` — sessions that include a SensorLogging accelerometer stream
 - `clips/` — 60–180 s FIT cuts around labeled events, for simulator replay (`lab/tools/clip_fit.py`)
 - `goldens/` — `<fixture>.expected.json` (schema in `docs/testing.md`)
@@ -17,12 +19,14 @@ Sources: `native` (Fenix 8 Windsurf profile) · `wingfoil` (our CIQ app) · `foi
 
 ## Provenance
 
-Every recording here is one of Jan's own, kept as it came off the watch — with two
-deliberate exceptions, both of them the same afternoon:
+Every recording here is one of Jan's own, kept as it came off the watch — with four
+deliberate exceptions, all of them the same afternoon:
 
 | file | provenance |
 |---|---|
 | `sessions/ciq/2026-08-30-1407_nago-torbole-windsurfen_ciq.fit` | 10 m 45 s early-afternoon Ora, **scrubbed** with `lab/tools/scrub_fit.py` (serials zeroed; `user_profile`, paired-accessory and Garmin-private lifetime blobs dropped; GPS, HR, accelerometer and all 14 developer fields kept, analysis provably identical). This is the file the iOS app and the web app ship as **the bundled example** — `ios/WingFoilKit/…/Resources/ExampleSession.fit` and `web/example/ExampleSession.fit` are byte-identical copies of it. See docs/testing.md, "The bundled example session". |
+| `sessions/tcx/2026-08-30-1407_nago-torbole-speed.tcx` | **Converted**, not recorded: the CIQ row above through `lab/tools/fit_to_tcx.py --speed` — trackpoints, `<Time>`, `<Position>`, `<AltitudeMeters>`, `<HeartRateBpm>` **and the FIT's own Doppler channel written into `Extensions/TPX/Speed`**. A stated speed is what makes a TCX input class **(b)**, so this fixture's speed records certify and reproduce the FIT's to three decimals. |
+| `sessions/tcx/2026-08-30-1407_nago-torbole-nospeed.tcx` | The same conversion **without** `TPX/Speed`. No stated speed makes a TCX class **(c)**: the speed is differentiated from positions by the shared arithmetic `gpx.py` uses, and the golden reproduces the GPX one's numbers to the digit. The pair differs by exactly one element, which is the whole experiment — see docs/algorithms.md, "TCX import". |
 | `sessions/gpx/2026-08-30-1407_nago-torbole.gpx` | **Converted**, not recorded: the row above, run through `lab/tools/fit_to_gpx.py` (track points, `<ele>`, `<time>`, heart rate in Garmin's `TrackPointExtension`; no speed channel, no accelerometer, no developer fields, no laps, no session summary — because no GPX carries them). A real GPX from another afternoon would test the parser and prove nothing about the *degradation*, having no FIT to be compared against; this one shares its positions and its clock with the fixture above, so every difference between the two goldens is the source class and nothing else. See docs/testing.md, "Fixture provenance". |
 
 ## Ground-truth table

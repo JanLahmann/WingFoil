@@ -226,15 +226,15 @@ function updateSaveButton() {
 export async function analyzeFile(file, { isExample = false } = {}) {
   if (state.busy) return;
   const name = file.name || "session.fit";
-  if (!/\.(fit|gpx|zip)$/i.test(name)) {
+  if (!/\.(fit|gpx|tcx|zip)$/i.test(name)) {
     // Say what to bring instead. The rejection states the rule *and* the way out: since
-    // engine 0.9.0 a GPX is a way out, so the one format people used to be turned away
-    // with is now the second thing offered — with its two limits named, because a rider
+    // engine 0.9.0 a GPX is a way out, and a TCX now too — so the formats people used to be
+    // turned away with are offered here instead, with their limits named, because a rider
     // who brings one should learn what it costs here rather than from a missing section.
-    fail(`"${name}" is not a .fit, .gpx or .zip file. CleanJibe reads the .fit file a ` +
-         `watch records — from the CleanJibe watch app, Garmin's own Windsurf profile, ` +
-         `or another wingfoil Connect IQ app. A .gpx works too, with estimated speed ` +
-         `records and no pump data. .tcx is not supported.`);
+    fail(`"${name}" is not a .fit, .gpx, .tcx or .zip file. CleanJibe reads the .fit file ` +
+         `a watch records — from the CleanJibe watch app, Garmin's own Windsurf profile, ` +
+         `or another wingfoil Connect IQ app. A .gpx or .tcx works too: no pump data, and ` +
+         `unless the file carries its own speed channel the speed records are estimates.`);
     return;
   }
   state.busy = true;
@@ -375,7 +375,7 @@ function wireDownload() {
     const blob = new Blob([JSON.stringify(state.last, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `${state.last.file.name.replace(/\.(fit|gpx|zip)$/i, "")}.analysis.json`;
+    a.download = `${state.last.file.name.replace(/\.(fit|gpx|tcx|zip)$/i, "")}.analysis.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   });

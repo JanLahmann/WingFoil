@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Headless checks for `web/lab_bundle/web_entry.py` — the only Python the web app adds.
 
-Two things can break without a browser noticing:
+Three things can break without a browser noticing:
 
 1. **Golden drift.** `web_entry.analyze_bytes` must reproduce
    `fixtures/goldens/<stem>.expected.json` byte-for-byte for the same FIT. This is the
@@ -10,6 +10,9 @@ Two things can break without a browser noticing:
    single NaN anywhere in the document fails the *whole* analysis. A Doppler-only track
    has an all-NaN projection, and the map bounds/markers are where that used to leak out.
    The view must degrade to `hasPositions: false` and stay serializable.
+3. **The TCX class rule.** A TCX certifies its speed records only when the file states one
+   (`Extensions/TPX/Speed`). The two fixtures differ by exactly that element, and
+   `meta.certified` is what the card and the library read off the browser's document.
 
 Run it from the repo root (or anywhere — paths are resolved from this file):
 
@@ -92,8 +95,36 @@ def check_position_less_track() -> str:
             f"{len(ends)} flight ends, view serializes")
 
 
+def check_tcx_class_rule() -> str:
+    """The two TCX fixtures reach the browser as different input classes.
+
+    A TCX is the one format that is not one input class: with `Extensions/TPX/Speed` it is
+    class (b) and its speed records certify, without it class (c) like a GPX. The pair under
+    `fixtures/sessions/tcx/` is the same afternoon converted twice and differing by exactly
+    that element, so this is the place the rule is checked on the *browser's* path — where
+    `meta.certified` is the one line the share card and the library both read.
+    """
+    tcx = REPO / "fixtures" / "sessions" / "tcx"
+    fast = tcx / "2026-08-30-1407_nago-torbole-speed.tcx"
+    slow = tcx / "2026-08-30-1407_nago-torbole-nospeed.tcx"
+    if not (fast.exists() and slow.exists()):
+        return "SKIP tcx class rule (fixtures missing)"
+    out = {}
+    for path in (fast, slow):
+        result = web_entry.analyze_bytes(path.read_bytes(), path.name)
+        json.dumps(result, allow_nan=False)      # the shape the worker actually posts
+        if result["file"]["container"] != "tcx":
+            raise SystemExit(f"FAIL: {path.name} was not read as a TCX")
+        out[path.stem.rsplit("-", 1)[-1]] = result["meta"]
+    if not (out["speed"]["sourceClass"] == "b" and out["speed"]["certified"] is True):
+        raise SystemExit("FAIL: a TCX with TPX/Speed must be class (b) and certify")
+    if not (out["nospeed"]["sourceClass"] == "c" and out["nospeed"]["certified"] is False):
+        raise SystemExit("FAIL: a TCX without TPX/Speed must be class (c) and not certify")
+    return "OK  tcx class rule: TPX/Speed -> b/certified, no TPX/Speed -> c/uncertified"
+
+
 def main() -> int:
-    for check in (check_golden, check_position_less_track):
+    for check in (check_golden, check_position_less_track, check_tcx_class_rule):
         print(check())
     return 0
 
