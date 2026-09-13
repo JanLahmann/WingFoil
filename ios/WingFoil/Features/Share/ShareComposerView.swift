@@ -57,6 +57,9 @@ struct ShareComposerView: View {
     /// first layout pass, and the snapshot waits for it — see `ShareCardMap`.
     @State private var trackBox: CGRect = .zero
     @State private var rendered: Image?
+    /// The same picture, kept as the PNG source for the one thing that needs bytes rather
+    /// than a `SwiftUI.Image`: the feedback mail's attachment.
+    @State private var renderedImage: UIImage?
     /// The session video's own sheet — the picker, the progress bar and the finished file
     /// (`ReelExportSheet`).
     @State private var showReel = false
@@ -144,6 +147,16 @@ struct ShareComposerView: View {
                     case .card: cardSection
                     case .fit: fitSection
                     }
+
+                    // The one row in the app that reports a *session* rather than the app:
+                    // it is here because "this card says 3 jibes and there were 5" is a
+                    // thought a rider has while looking at the card, and the mail leaves
+                    // with that card attached and the session's own stamp in the text.
+                    FeedbackMailRow(title: "Report a problem with this session…",
+                                    systemImage: "exclamationmark.bubble",
+                                    session: row, card: { renderedImage?.pngData() })
+                        .font(.footnote)
+                        .padding(.top, 4)
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 28)
@@ -611,6 +624,7 @@ struct ShareComposerView: View {
         renderer.isOpaque = true
         if let image = renderer.uiImage {
             rendered = Image(uiImage: image)
+            renderedImage = image
         }
     }
 
