@@ -153,7 +153,7 @@ struct TurnHeadingStripView: View {
         .chartOverlay { proxy in
             StripChrome.scrubSurface(proxy, domain: domain, playheadRt: $playheadRt)
         }
-        .figureHeight(regular: 140, compact: 110)
+        .figureHeight(regular: 140, compact: 110, wide: 180)
         .accessibilityElement()
         .accessibilityLabel(spoken)
     }

@@ -198,6 +198,8 @@ struct ReplaySetupSheet: View {
             #endif
         }
         .presentationDetents([.medium, .large])
+        // Detents are the compact-width half of this; `.page` is the regular-width half.
+        .presentationSizing(.page)
     }
 
     // MARK: - Length

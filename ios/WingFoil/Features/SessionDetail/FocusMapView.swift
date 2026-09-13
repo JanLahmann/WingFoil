@@ -68,7 +68,7 @@ struct FocusMapView<Marks: MapContent>: View {
                 marks()
             }
             .mapStyle(store.mapStyle.mapStyle)
-            .figureHeight(regular: 240, compact: 180)
+            .figureHeight(regular: 240, compact: 180, wide: 330)
             .clipShape(.rect(cornerRadius: 14))
             .onMapCameraChange(frequency: .onEnd) { context in
                 direction.camera(moved: context, detail: detail)

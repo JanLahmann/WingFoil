@@ -119,7 +119,7 @@ struct TurnDetailStripView: View {
         .chartOverlay { proxy in
             StripChrome.scrubSurface(proxy, domain: domain, playheadRt: $playheadRt)
         }
-        .figureHeight(regular: 170, compact: 130)
+        .figureHeight(regular: 170, compact: 130, wide: 220)
         .accessibilityElement()
         .accessibilityLabel(accessibilityText)
     }

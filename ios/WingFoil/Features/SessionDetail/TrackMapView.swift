@@ -70,7 +70,7 @@ struct TrackMapView: View {
                                  onMarkTap: tapped)
                 }
                 .mapStyle(mapStyle.mapStyle)
-                .figureHeight(regular: 260, compact: 190)
+                .figureHeight(regular: 260, compact: 190, wide: 380)
                 .clipShape(.rect(cornerRadius: 14))
                 .onMapCameraChange(frequency: .onEnd) { context in
                     visibleRegion = context.region

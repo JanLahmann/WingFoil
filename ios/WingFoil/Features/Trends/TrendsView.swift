@@ -77,6 +77,11 @@ struct TrendsView: View {
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 28)
+                // The charts are read as a stack of small multiples — one metric each, the
+                // same x axis down the page. A 1 366 pt wide `Chart` with eleven sessions in
+                // it is a row of dots with a metre of white between them, and the range
+                // picker above becomes three words lost in a long bar.
+                .readableColumn()
                 #if DEBUG && targetEnvironment(simulator)
                 // Same hook family as the session page's: `simctl` cannot scroll, so
                 // `UI_SCROLL_TO=sideSuccess` parks the screen on the port/starboard

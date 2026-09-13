@@ -91,7 +91,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil
         MARKETING_VERSION: "0.15.0"
         CURRENT_PROJECT_VERSION: "36"
-        TARGETED_DEVICE_FAMILY: "1"          # iPhone only
+        TARGETED_DEVICE_FAMILY: "1,2"        # iPhone and iPad (and therefore the Mac,
+                                             # which runs it as "Designed for iPad")
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB         # Jan-Rainer Lahmann (personal + program team)
         GENERATE_INFOPLIST_FILE: NO
@@ -229,6 +230,15 @@ targets:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+        # An iPad has no "wrong way up": it is held in all four, and an app that refuses one
+        # of them shows a rotated home screen behind a letterboxed window. Upside-down is
+        # left out of the phone list on purpose — a phone flipped over hides the earpiece —
+        # and the `~ipad` key is a separate list rather than an addition to the one above.
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         LSSupportsOpeningDocumentsInPlace: true
         # FIT has no system UTI; importing it makes .fit files pickable in the Files
         # importer and lets the share sheet hand recordings to the app.
@@ -308,7 +318,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.widgets
         MARKETING_VERSION: "0.15.0"
         CURRENT_PROJECT_VERSION: "36"
-        TARGETED_DEVICE_FAMILY: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"        # same families as its host app
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB
         GENERATE_INFOPLIST_FILE: NO

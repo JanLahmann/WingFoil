@@ -72,6 +72,9 @@ struct FlightEndDetailSheet: View {
             }
         }
         .presentationDetents([.large])
+        // Same trade as the turn sheet: a detent is a compact-width idea, `.page` is the
+        // regular-width one, and each is ignored where the other applies.
+        .presentationSizing(.page)
         .presentationDragIndicator(.visible)
     }
 
@@ -142,6 +145,8 @@ private struct FlightEndDetailPage: View {
             }
             .padding(.horizontal)
             .padding(.bottom, 24)
+            // Page-sized sheet on an iPad, same readable measure inside it as the turn page.
+            .readableColumn()
         }
         .task(id: buildKey) { build() }
     }
@@ -468,7 +473,7 @@ private struct FlightEndStripView: View {
         .chartOverlay { proxy in
             StripChrome.scrubSurface(proxy, domain: domain, playheadRt: $playheadRt)
         }
-        .figureHeight(regular: 170, compact: 130)
+        .figureHeight(regular: 170, compact: 130, wide: 220)
         .accessibilityElement()
         .accessibilityLabel(spoken)
     }

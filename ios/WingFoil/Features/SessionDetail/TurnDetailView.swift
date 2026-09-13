@@ -74,6 +74,13 @@ struct TurnDetailSheet: View {
             }
         }
         .presentationDetents([.large])
+        // `.large` is a *detent*, and detents are a compact-width idea: on an iPad the same
+        // sheet came up as the system's default form sheet — about 570 × 640 pt — with the
+        // turn drawing, its strip and the numbers row folded into a window smaller than the
+        // phone's. `.page` is the regular-width answer to the same request ("as much of the
+        // screen as a sheet may have"), and it is ignored on the phone, where the detent
+        // above is still what decides.
+        .presentationSizing(.page)
         .presentationDragIndicator(.visible)
     }
 
@@ -204,6 +211,9 @@ private struct TurnDetailPage: View {
             }
             .padding(.horizontal)
             .padding(.bottom, 24)
+            // The sheet is page-sized on an iPad, so the page inside it needs the same
+            // measure every other column of the app keeps.
+            .readableColumn()
         }
         .task(id: buildKey) { build() }
     }

@@ -13,24 +13,43 @@ import SwiftUI
 ///
 /// `verticalSizeClass == .compact` is exactly "a phone in landscape" (an iPad stays
 /// `.regular` in both orientations, and it has the room), so the figures shrink there and
-/// nowhere else. Deliberately two constants rather than a fraction of the screen: a figure
-/// whose height chased the container would resize as the page scrolls under a keyboard or
-/// a callout appears.
+/// nowhere else. Deliberately constants rather than a fraction of the screen: a figure whose
+/// height chased the container would resize as the page scrolls under a keyboard or a
+/// callout appears.
 private struct AdaptiveFigureHeight: ViewModifier {
     let regular: CGFloat
     let compact: CGFloat
+    let wide: CGFloat?
 
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 
+    /// Order matters. A Pro Max phone in landscape is horizontally *regular* and is still a
+    /// phone in landscape, so the "no room" case is asked first and answers first.
+    private var height: CGFloat {
+        if verticalSizeClass == .compact { return compact }
+        if SizeClass.isWideScreen(horizontalSizeClass, verticalSizeClass) {
+            return wide ?? regular
+        }
+        return regular
+    }
+
     func body(content: Content) -> some View {
-        content.frame(height: verticalSizeClass == .compact ? compact : regular)
+        content.frame(height: height)
     }
 }
 
 extension View {
 
-    /// `regular` on a portrait phone and on any iPad, `compact` on a phone in landscape.
-    func figureHeight(regular: CGFloat, compact: CGFloat) -> some View {
-        modifier(AdaptiveFigureHeight(regular: regular, compact: compact))
+    /// `regular` on a portrait phone, `compact` on a phone in landscape, and `wide` — when a
+    /// figure is given one — on an iPad-sized window.
+    ///
+    /// The third number exists because the iPad fixes the wrong half of the problem by
+    /// itself: the column is capped at a readable measure (`ContentWidth`), so a figure that
+    /// kept its phone height would sit at a phone's *width* too and gain nothing at all from
+    /// 1 000 pt of glass. An iPad has vertical room a phone does not, and a map and a chart
+    /// are the two things on the page that can spend it.
+    func figureHeight(regular: CGFloat, compact: CGFloat, wide: CGFloat? = nil) -> some View {
+        modifier(AdaptiveFigureHeight(regular: regular, compact: compact, wide: wide))
     }
 }

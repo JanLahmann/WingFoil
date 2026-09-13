@@ -65,6 +65,7 @@ struct PeriodShareView: View {
                     exportRow
                 }
                 .padding()
+                .readableColumn()
             }
             .navigationTitle("Share this period")
             .navigationBarTitleDisplayMode(.inline)
@@ -78,6 +79,9 @@ struct PeriodShareView: View {
             .task(id: mapKey) { await loadMap() }
             .task(id: renderKey) { render() }
             .onChange(of: preset) { ShareCardPresetStore.save(preset, to: .standard) }
+            // The session composer's trade, for the same reason: a card preview and an
+            // export button do not fit the system's form sheet.
+            .presentationSizing(.page)
         }
     }
 

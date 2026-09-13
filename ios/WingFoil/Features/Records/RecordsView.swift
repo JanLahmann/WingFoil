@@ -98,6 +98,9 @@ struct RecordsView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            // Two tables of "a number, a session and a date". Left to fill an iPad they put
+            // the knots and the afternoon they were ridden on opposite edges of the glass.
+            .readableColumn()
             .navigationTitle("Records")
             .navigationDestination(for: String.self) { SessionDetailView(sessionID: $0) }
             .refreshable { await reload() }
@@ -173,19 +176,7 @@ struct RecordsView: View {
         }
     }
 
-    /// The table's column names. A header row rather than four repeated labels down the
-    /// page: naming a column once is the whole economy a table buys.
-    private var recordsHeader: some View {
-        HStack(spacing: 10) {
-            Text("record").frame(width: 66, alignment: .leading)
-            Text("kn").frame(width: 58, alignment: .trailing)
-            Text("+Δ PB").frame(width: 56, alignment: .trailing)
-            Text("when · where").frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .font(.caption2)
-        .foregroundStyle(.tertiary)
-        .accessibilityHidden(true)
-    }
+    private var recordsHeader: some View { RecordTableHeader() }
 
     private var footnote: String {
         let certified = records.filter(\.certified).count
@@ -267,6 +258,53 @@ private struct SessionRecordRowView: View {
     }
 }
 
+/// **The speed table's column widths**, in one place because the header and every row have
+/// to agree on them to the point.
+///
+/// They are constants on a phone and were constants everywhere, which is what made `Best
+/// 5×10 s` read as `Best 5×…` — a 66 pt column truncates the two longest record names at
+/// any screen width, and on an iPad it did it with 300 pt of empty "when · where" beside it.
+/// The three fixed columns are the scannable part of the table, so on an iPad-sized window
+/// they get the room to print what they are rather than the room a 390 pt phone could spare.
+private struct RecordColumns {
+    let name: CGFloat
+    let value: CGFloat
+    let delta: CGFloat
+
+    static let phone = RecordColumns(name: 66, value: 58, delta: 56)
+    static let wide = RecordColumns(name: 112, value: 78, delta: 64)
+
+    init(name: CGFloat, value: CGFloat, delta: CGFloat) {
+        self.name = name
+        self.value = value
+        self.delta = delta
+    }
+
+    init(horizontal: UserInterfaceSizeClass?, vertical: UserInterfaceSizeClass?) {
+        self = SizeClass.isWideScreen(horizontal, vertical) ? .wide : .phone
+    }
+}
+
+/// The table's column names. A header row rather than four repeated labels down the page:
+/// naming a column once is the whole economy a table buys.
+private struct RecordTableHeader: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
+    var body: some View {
+        let columns = RecordColumns(horizontal: horizontalSizeClass, vertical: verticalSizeClass)
+        HStack(spacing: 10) {
+            Text("record").frame(width: columns.name, alignment: .leading)
+            Text("kn").frame(width: columns.value, alignment: .trailing)
+            Text("+Δ PB").frame(width: columns.delta, alignment: .trailing)
+            Text("when · where").frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .font(.caption2)
+        .foregroundStyle(.tertiary)
+        .accessibilityHidden(true)
+    }
+}
+
 /// One record, as a table row.
 ///
 /// It was a ~245 pt card: a gold gradient disc containing the same text as the label beside
@@ -290,7 +328,11 @@ private struct RecordRowView: View {
     let title: String
     var isNew = false
 
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
     var body: some View {
+        let columns = RecordColumns(horizontal: horizontalSizeClass, vertical: verticalSizeClass)
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 10) {
                 HStack(spacing: 5) {
@@ -300,11 +342,11 @@ private struct RecordRowView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                 }
-                .frame(width: 66, alignment: .leading)
+                .frame(width: columns.name, alignment: .leading)
 
                 Text(Fmt.kn(best.valueKn))
                     .font(.subheadline.weight(.semibold).monospacedDigit())
-                    .frame(width: 58, alignment: .trailing)
+                    .frame(width: columns.value, alignment: .trailing)
 
                 // The delta was the smallest text in the old row and it is the reason a
                 // rider opens this screen: it is a column of its own now.
@@ -317,7 +359,7 @@ private struct RecordRowView: View {
                     }
                 }
                 .font(.caption.monospacedDigit())
-                .frame(width: 56, alignment: .trailing)
+                .frame(width: columns.delta, alignment: .trailing)
 
                 Text("\(Fmt.shortDate(best.achievedAt, zone: best.displayZone)) · \(title)")
                     .font(.caption)
@@ -330,7 +372,7 @@ private struct RecordRowView: View {
             // a second line only on the rows that have one.
             if isNew || !best.certified || best.history.count == 1 {
                 HStack(spacing: 6) {
-                    Spacer().frame(width: 66)
+                    Spacer().frame(width: columns.name)
                     if isNew { badge("NEW", Color.accentColor) }
                     if !best.certified { badge("uncertified", .orange) }
                     if best.previousBest == nil, best.history.count == 1 {

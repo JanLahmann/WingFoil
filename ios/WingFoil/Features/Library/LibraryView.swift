@@ -38,6 +38,10 @@ struct LibraryView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            // A session row is a thumbnail, a title, a date and five numbers; stretched over
+            // an iPad it puts the sport badge a hand's width from the name it belongs to.
+            // The list keeps its own card shape and sits in the middle of the window.
+            .readableColumn()
             .navigationTitle("Sessions")
             .navigationDestination(for: String.self) { SessionDetailView(sessionID: $0) }
             .refreshable { await store.syncFromIntervals() }
@@ -66,7 +70,10 @@ struct LibraryView: View {
             // `UI_SHEET=tuning` — a sheet of its own rather than "Settings, then push",
             // because `simctl` cannot tap the row. Same hook family, same reason as
             // `UI_SHEET=help` above; dev build only, like the page.
-            .sheet(isPresented: $showTuning) { NavigationStack { TuningView(initial: store.tuning) } }
+            .sheet(isPresented: $showTuning) {
+                NavigationStack { TuningView(initial: store.tuning) }
+                    .presentationSizing(.page)
+            }
             #endif
             .sheet(isPresented: $showImporter) { ImportView() }
             .sheet(isPresented: $showHelp) { HelpView() }

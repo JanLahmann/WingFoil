@@ -54,6 +54,7 @@ struct PeriodsView: View {
                       + "winter it belongs to.")
         }
         .listStyle(.insetGrouped)
+        .readableColumn()
         .navigationTitle("Periods")
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await reload() }

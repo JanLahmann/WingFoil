@@ -21,6 +21,9 @@ struct HelpView: View {
                         Button("Done") { dismiss() }
                     }
                 }
+            // Sixty topics in nine sections, searchable — a screen, not a question. Same
+            // trade as Settings: `.page` at regular width, the phone unchanged.
+            .presentationSizing(.page)
         }
     }
 }
@@ -220,6 +223,10 @@ struct HelpTopicSheet: View {
                 .padding(.horizontal)
                 .padding(.bottom, 32)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                // A help topic is prose with a picture in it, and the sheet it lives in is
+                // page-sized on an iPad: without this the paragraphs would run the width of
+                // the sheet, which is the one thing prose may not do.
+                .readableColumn()
             }
             .navigationTitle(topic.title)
             .navigationBarTitleDisplayMode(.inline)
@@ -231,6 +238,7 @@ struct HelpTopicSheet: View {
             // A "see also" opens on top rather than replacing: the reader can always get
             // back to the metric they started from.
             .sheet(item: $next) { HelpTopicSheet(id: $0) }
+            .presentationSizing(.page)
         }
     }
 }

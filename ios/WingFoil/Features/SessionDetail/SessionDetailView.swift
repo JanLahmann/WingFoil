@@ -140,6 +140,13 @@ struct SessionDetailView: View {
             }
             .padding(.horizontal)
             .padding(.bottom, 32)
+            // One column, a readable measure wide, in the middle of an iPad's glass. The
+            // page is a stack of cards and paragraphs and it does not get better by being
+            // 1 366 pt across: the key-metrics row would put three numbers a hand's width
+            // apart, and the card grids — `GridItem(.adaptive(minimum: 150))` — would lay
+            // six tiles in a row and orphan the seventh. The two figures buy their room
+            // back in height instead (`figureHeight(… wide:)`).
+            .readableColumn()
             #if DEBUG && targetEnvironment(simulator)
             // Headless-driving hook (see LibraryView): `simctl launch` cannot scroll or
             // tap, so `UI_SCROLL_TO=<anchor>` parks the page on a card section for a
