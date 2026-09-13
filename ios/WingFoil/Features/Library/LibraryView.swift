@@ -13,9 +13,19 @@ struct LibraryView: View {
     #endif
     @State private var helpTopic: HelpTopicID?
     @State private var path: [String] = []
+    /// **The two controls at the top of the list** (docs/presentation.md, "Session list").
+    /// The filter is per-visit — a narrowing is a question, not a setting — while the
+    /// grouping is remembered, because "I read my library by month" is a fact about the
+    /// rider. Empty string means he has never said, which is what lets the default rule
+    /// (`LibraryGrouping.default`) answer for him until he does.
+    @AppStorage("library.groupBy.v1") private var groupByRaw = ""
+    @State private var filter = LibraryListFilter()
+    @State private var editingRange = false
 
     var body: some View {
         @Bindable var store = store
+        let visible = filter.apply(to: store.sessions)
+        let groups = grouping.groups(visible, spotName: { store.spot(id: $0)?.name })
         NavigationStack(path: $path) {
             ScrollViewReader { proxy in
             List {
@@ -29,15 +39,33 @@ struct LibraryView: View {
                         disciplineBannerRow(banner)
                             .listRowInsets(.init(top: 6, leading: 16, bottom: 6, trailing: 16))
                     }
-                    Section {
-                        ForEach(store.sessions, id: \.id) { row in
-                            NavigationLink(value: row.id) { SessionRowView(row: row) }
+                    if filter.isActive {
+                        LibraryFilterChips(filter: $filter)
+                            .listRowInsets(.init(top: 4, leading: 16, bottom: 0, trailing: 16))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
+                    groupControl
+                    if groups.isEmpty {
+                        noMatchState
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
+                    ForEach(groups) { group in
+                        Section {
+                            ForEach(group.rows, id: \.id) { row in
+                                NavigationLink(value: row.id) { SessionRowView(row: row) }
+                            }
+                            .onDelete { delete($0, in: group.rows) }
+                        } header: {
+                            if !group.title.isEmpty { Text(group.title) }
+                        } footer: {
+                            // One count line for the whole list, under the last section —
+                            // a footer per month would say the same thing over and over.
+                            if group.id == groups.last?.id {
+                                Text(countLine(showing: visible.count, of: store.sessions.count))
+                            }
                         }
-                        .onDelete(perform: delete)
-                    } footer: {
-                        Text("\(store.sessions.count) session"
-                             + (store.sessions.count == 1 ? "" : "s")
-                             + " · pull to sync intervals.icu")
                     }
                 }
             }
@@ -62,12 +90,22 @@ struct LibraryView: View {
                         Label("Settings", systemImage: "gearshape")
                     }
                 }
+                // Beside Import rather than in the list: the filter is about the list, and a
+                // control that narrows a list is not one of the list's rows.
+                ToolbarItem(placement: .topBarTrailing) {
+                    LibraryFilterMenu(filter: $filter, editingRange: $editingRange,
+                                      library: store.sessions)
+                        .disabled(store.sessions.isEmpty)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showImporter = true } label: {
                         Label("Import", systemImage: "square.and.arrow.down")
                     }
                     .disabled(store.isBusy)
                 }
+            }
+            .sheet(isPresented: $editingRange) {
+                LibraryDateRangeSheet(filter: $filter, seed: rangeSeed)
             }
             .sheet(isPresented: $showSettings) { SettingsView() }
             #if DEBUG && targetEnvironment(simulator) && TUNING
@@ -106,7 +144,8 @@ struct LibraryView: View {
             // screen opened — most of all Settings, which is where the key that *arms* the
             // offer is usually typed. The sheets are this view's state and the alert is two
             // levels up, so the state is reported rather than guessed at.
-            .onChange(of: showSettings || showImporter || showHelp || helpTopic != nil) {
+            .onChange(of: showSettings || showImporter || showHelp || editingRange
+                      || helpTopic != nil) {
                 _, presenting in store.isPresentingSheet = presenting
             }
             // Where a tapped "new session" notification lands. Two hooks rather than one:
@@ -149,6 +188,19 @@ struct LibraryView: View {
                     }
                     let url = URL.documentsDirectory.appending(path: "watchmap-probe.txt")
                     try? lines.joined(separator: "\n").write(to: url, atomically: true, encoding: .utf8)
+                }
+                // `UI_GROUP_BY=none|month|year|spot` and `UI_FILTER_SOURCE=<raw>` stage the
+                // two controls at the top of the list (docs/presentation.md, "Session
+                // list"): a segmented control and a menu are both taps `simctl` cannot make.
+                // The group-by hook writes the stored preference, exactly as a tap would —
+                // there is nothing to leak, the list is drawn from it either way.
+                if let raw = ProcessInfo.processInfo.environment["UI_GROUP_BY"],
+                   let grouping = LibraryGrouping(rawValue: raw) {
+                    groupByRaw = grouping.rawValue
+                }
+                if let raw = ProcessInfo.processInfo.environment["UI_FILTER_SOURCE"],
+                   let source = ImportSource(rawValue: raw) {
+                    filter.source = source
                 }
                 // `UI_SHEET=help` parks the app on the Help index for a screenshot;
                 // `UI_HELP_TOPIC=icuSetup` opens one topic straight away.
@@ -211,6 +263,63 @@ struct LibraryView: View {
                 Text(store.errorMessage ?? "")
             }
             }
+        }
+    }
+
+    // MARK: - Grouping
+
+    /// What the rider last chose, or — until he chooses — what the size of his library
+    /// says (`LibraryGrouping.default`). The count is the **whole** library, never the
+    /// filtered view: the default is a fact about how much he has, not about what a chip
+    /// is showing him this second.
+    private var grouping: LibraryGrouping {
+        LibraryGrouping(rawValue: groupByRaw)
+            ?? .default(librarySize: store.sessions.count)
+    }
+
+    /// **None · Month · Year · Spot**, at the top of the list where the list's own shape is
+    /// decided. A segmented control rather than a menu: four fixed answers, and the one in
+    /// force is worth seeing without opening anything.
+    private var groupControl: some View {
+        Picker("Group by", selection: Binding(
+            get: { grouping },
+            set: { groupByRaw = $0.rawValue })) {
+            ForEach(LibraryGrouping.allCases) { Text($0.title).tag($0) }
+        }
+        .pickerStyle(.segmented)
+        .listRowInsets(.init(top: 6, leading: 16, bottom: 6, trailing: 16))
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
+    }
+
+    /// **"3 of 41 sessions"** while a filter is on, the plain count otherwise. The footer
+    /// has always said how much there is; under a filter it has to say how much there is
+    /// *and* how much it is not showing, or the number becomes a quiet lie about the library.
+    private func countLine(showing: Int, of total: Int) -> String {
+        let tail = " · pull to sync intervals.icu"
+        guard filter.isActive else { return LibraryListing.sessionCount(total) + tail }
+        return "\(showing) of \(LibraryListing.sessionCount(total))" + tail
+    }
+
+    /// The seed for "Custom range…": the month of the newest session the library holds.
+    private var rangeSeed: ClosedRange<Date> {
+        let newest = store.sessions.first?.startDate ?? Date()
+        let calendar = Calendar.current
+        let start = calendar.date(from: calendar.dateComponents([.year, .month], from: newest))
+        return (start ?? newest)...newest
+    }
+
+    /// What a filter that matches nothing says. Distinct from the empty-library state on
+    /// purpose: "you have no sessions" in front of a rider with forty of them is the app
+    /// being wrong about him, and the way out is one button, not a hunt through the menu.
+    private var noMatchState: some View {
+        ContentUnavailableView {
+            Label("No session matches these filters", systemImage: "line.3.horizontal.decrease.circle")
+        } description: {
+            Text("Nothing in the library answers to all of them at once.")
+        } actions: {
+            Button("Clear filters") { filter = LibraryListFilter() }
+                .buttonStyle(.borderedProminent)
         }
     }
 
@@ -324,9 +433,13 @@ struct LibraryView: View {
     }
     #endif
 
-    private func delete(at offsets: IndexSet) {
-        let rows = offsets.map { store.sessions[$0] }
-        Task { for row in rows { await store.delete(row) } }
+    /// A swipe deletes the row that was swiped, which since the list has sections is an
+    /// offset **into that section** and not into the library. Resolved against the group's
+    /// own rows for that reason: indexing `store.sessions` here would delete August's third
+    /// session because September's third was swiped.
+    private func delete(_ offsets: IndexSet, in rows: [SessionRow]) {
+        let doomed = offsets.map { rows[$0] }
+        Task { for row in doomed { await store.delete(row) } }
     }
 }
 
