@@ -608,8 +608,13 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    and `UI_ICU_KEY=…` seeds a key through the real keychain path afterwards, so the
    first-run setup card and the "key stored, sync rejected" card can both be captured
    without reinstalling. `UI_IMPORT_FIXTURES=1`, `UI_OPEN_SESSION=latest|<name>`,
-   `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings|import|tuning` and
+   `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings|import|tuning|discipline` and
    `UI_HELP_TOPIC=<HelpTopicID>` park the app on a given screen, since `simctl` cannot tap.
+   `UI_SHEET=discipline` raises the post-import review sheet over whatever is in the library
+   (docs/presentation.md, "Confirming the discipline on import"): the sheet the import itself
+   raises has usually been and gone by the time a screenshot is taken, and the banner that
+   brings it back is a tap `simctl` cannot make. Pair it with `UI_RESET=1 UI_IMPORT_FIXTURES=1`,
+   since a session already in the library has been through the migration and counts as settled.
    `UI_DISCIPLINE=windsurfFoil|windsurfFin` re-analyses the session `UI_OPEN_SESSION` picked
    under that preset (docs/algorithms.md "Disciplines") **before** the page opens — `simctl`
    cannot tap a segmented control, and setting it afterwards would photograph the wingfoil

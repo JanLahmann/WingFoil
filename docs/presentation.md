@@ -2056,6 +2056,15 @@ badge, on the session page and in the library row. Beside it and never instead o
 says what the *recording* is, the chip says how it is being read and that the reading is not one
 anybody has checked yet.
 
+**The badge.** Every session carries one — `Wingfoil`, `Windsurf foil`, `Windsurf fin`, or the
+word the recording's own `discipline` field used (`Kitefoil`). Three rungs, the engine's own
+(`SessionDisplay.badge`): the rider's answer, then the recording's field, then the preset the
+import settled on. The FIT **sport code is no longer the fallback** — it was, and it is the one
+piece of evidence that is systematically wrong here, so every `…-windsurfen…` afternoon in
+Jan's corpus wore a `Windsurf` badge over a wingfoil session's numbers. The code still appears,
+once, as a hint on the review row below, where it is shown as what a watch said rather than as
+what the session is.
+
 ### Where the override lives
 
 **Session → Log → "Analyse as"**, a three-way segmented control (Wingfoil / Windsurf foil /
@@ -2077,6 +2086,53 @@ one on, so a session is read in whatever preset its `discipline` developer field
 `meta.analysedAs`, written by `web_entry.analyze_bytes`. Trends and Records are untouched:
 windsurf sessions sit in the library like any other and there is no separate record set, which
 the help topic says out loud.
+
+### Confirming the discipline on import
+
+**Wingfoil is not a sport anywhere but here.** Garmin, Strava, intervals.icu and Apple Health
+have no code for it, so a recording can only arrive saying one of two things: the CleanJibe
+watch app's `discipline` developer field, which is authoritative and is never asked about — or
+nothing, dressed up as `windsurfing`, which is the profile ADR-004 files a wingfoil afternoon
+under. So the import *states* a preset and then owns up to having guessed it.
+
+**The rider default.** Settings → Analysis → **"I mostly ride"**, a three-way picker (Wingfoil
+· Windsurf foil · Windsurf fin) above "Most of my turns are" — which rig, then which turn. It
+decides the preset for every imported session whose source does not say, and it changes nothing
+at all on a wingfoiler's phone: wingfoil is what the resolver already fell back to. It applies
+to **future imports only**, which the footer says out loud — declaring a habit is not a
+statement about any particular afternoon, and silently re-reading two years of sessions off a
+Settings row would be the app answering a question nobody asked.
+
+**The review step.** After an import the rider asked for — files, a ZIP, Apple Health, a
+pull-to-refresh sync, a Strava import — a sheet lists what just landed with an unconfirmed
+preset: date · spot · source, the sport-code hint where there is one ("Filed as windsurfing —
+which is also how a Garmin files a wingfoil session"), and a three-way picker per row. Above
+two rows it also offers **"All N as …"**, which is what makes a two-hundred-file ZIP one
+decision. **Confirm** clears the question and re-derives nothing; **Not now** keeps every guess
+— nothing is lost, and the session page can change any of them for ever.
+
+*After* the import, not before it, and that is the opposite of the rider prompt next door: "whose
+session is this" gates Records and Health and cannot be taken back, while this one is re-derived
+from the archived recording the moment the preset moves. It is also the only order a bulk import
+survives — a question per file would stop on the first one.
+
+**Automatic pickups never raise it.** A Health auto-import, a Strava poll, an intervals.icu
+pickup: the rider did not ask for those and may not have the app in his hand. They leave the
+library's quiet banner instead — *"3 new sessions analysed as Wingfoil · Review"* — which names
+what was already done rather than asking a question, and opens the same sheet when tapped. The
+banner counts only sessions he has not skipped past; the `?` below outlives a skip, the banner
+does not.
+
+**Three badge states**, in the library row: `Wingfoil` (confirmed, or stated by the recording),
+`Wingfoil ?` (the preset came from the rider's default and nobody has said), and the amber
+`windsurf · experimental` chip beside either where the preset is a windsurf one. The `?` goes
+when he answers, whichever way he answers — agreeing is an answer. Its accessibility label
+spells it out: "Analysed as Wingfoil, not confirmed".
+
+Storage is one column, `session.disciplineGuessed` (schema v15), false on every row that
+existed before the question was asked: a library imported under the old rule has been lived
+with, and a banner offering to review two years of afternoons is a chore, not a confirmation.
+`UI_SHEET=discipline` raises the sheet for a screenshot. Help: **Windsurf (experimental)**.
 
 ## Formatter rules
 
@@ -2591,8 +2647,8 @@ still a phone):
   and flight-end drill-ins, Settings, Tuning, the Help index and each help topic, both card
   composers, the clip setup and the video export (whose finished state is a 420 pt tall 9 : 16
   player with a share button under it). The sheets that are questions keep the form sheet,
-  which is what a question should look like: the rider prompt, the re-add offer, the gear
-  editor, Import.
+  which is what a question should look like: the rider prompt, the discipline review, the
+  re-add offer, the gear editor, Import.
 * **All four orientations** (`UISupportedInterfaceOrientations~ipad`). An iPad has no wrong
   way up; the phone list still leaves upside-down out, because a phone flipped over hides the
   earpiece.
