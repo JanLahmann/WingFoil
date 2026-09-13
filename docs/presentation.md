@@ -2212,6 +2212,41 @@ question and its answer: whether the rung is asked, and what it asks. Moving the
 nothing else — flight segmentation reads `foilExitSpeed` and never this — which is why it is
 its own knob and not pushed onto the flight hysteresis the way the shared thresholds are.
 
+**One set per discipline** (13 Sep 2026, Jan: *"for the windsurf analysis, we need to be able
+to set other parameters (min planing speed, etc) than for wingfoil. Is that possible on the
+settings/details page?"*). The page opens with a segmented picker — **Tuning for: Wingfoil ·
+Windsurf foil · Windsurf fin** — and everything under it belongs to the rig it names: the
+values, the "default N" captions, the per-row reset, "Reset all", the chip's count and the
+fingerprint in the footer. A fin board planes at 20 km/h where a foil flies at 12, so one
+`foilEntrySpeed` slider was always wrong for one of them.
+
+- **Each set stands against its own preset, not the published wingfoil numbers.** On the fin
+  set the flight rows read *default 20.0 km/h* and *default 15.0 km/h* (docs/algorithms.md,
+  "Disciplines"), dragging one home clears the override rather than storing a number that only
+  repeats the preset, and a fin slider set to wingfoil's 12.0 is a real override that is kept.
+  Only the three thresholds a preset moves differ; every other row is the parameter table.
+- **The pump rows are shown disabled on the windsurf sets**, captioned *"off for windsurf —
+  there is no pump channel to corroborate against, so the rung is refused rather than merely
+  unreachable"*. Disabled rather than hidden so the page does not change length when the picker
+  moves; and an override of one is dropped rather than stored, so no count or fingerprint ever
+  carries a knob that moves nothing.
+- **Applying to a session: the preset first, then that session's discipline's overrides on
+  top.** The other order would let a preset stomp a slider the rider has just moved. The two
+  speeds still travel in all four configs together, tuned or not.
+- **Each set is its own staleness key.** The fingerprint rides *inside* that discipline's stamp
+  — `0.18.0+disc.windsurfFin+tuned.2.a1b2c3d4` — so moving a fin threshold re-derives fin
+  sessions and leaves every wingfoil session on the numbers it was already analysed with. "Re-
+  analyse stale sessions now" is that same per-row sweep taken immediately, which after a move
+  on this screen is the selected discipline's sessions and no others. The session page's chip,
+  the turn page's "Measured at" line and the workbench's what-if all read the session's own
+  discipline set; the Records and Trends chips count **every** set, because they are aggregates
+  over a library that may hold more than one rig.
+- **Stored under the key the single set used to live at** (`tuningOverrides.v1`), now as
+  `{"wingfoil": {…}, "windsurfFin": {…}}`. The migration is one rule: **a stored flat map
+  becomes the wingfoil set** — its values were wingfoil's by construction, since the presets
+  did not exist while the single set did — and the other two start empty, so nothing re-derives
+  because of the upgrade.
+
 **Phone-only, and dev-build-only.** The watch computes live on the wrist with no way to be
 told, and the web reads documents the phone wrote — neither follows a slider, and neither is
 asked to. And the whole feature is compiled out of the app external testers get: it lives
@@ -2235,7 +2270,7 @@ same trip taken immediately, and leaving the page takes it automatically.
 |---|---|---|
 | session header, beside the discipline badge | `tuned · N` chip | that session's stored `engineVersion` |
 | session page, in the divergence banner's slot | "Analysed with tuned thresholds (N changed) — Settings → Tuning" | that session's analysis |
-| Records header, Trends header | `tuned thresholds · N` chip | the *current* setting — these are aggregates over the library |
+| Records header, Trends header | `tuned thresholds · N` chip | the *current* setting, summed over every discipline's set — these are aggregates over a library that may hold more than one rig |
 | Settings → About | `0.18.0 · dev` | the build variant itself |
 | turn detail footnote | "Measured at: turnSuccessPct 70 % · minSpeedLag 2 s · turnOutcomeLookahead 12 s" | the analysis' own `config` echo |
 
