@@ -158,12 +158,14 @@ function renderSummary(result, isExample = false) {
   // something degraded) and their internal names were on the page verbatim — "CIQ dev
   // fields" names a Garmin SDK concept, and "degraded source" sounds like an accusation
   // about the rider rather than a note about the file. The title carries the detail.
-  badges.push([{ a: "CleanJibe recording", b: "standard FIT", c: "limited data" }[meta.sourceClass],
+  badges.push([{ a: "CleanJibe recording", b: "measured speed", c: "limited data" }[meta.sourceClass],
                meta.sourceClass === "a",
                { a: "Recorded by the CleanJibe watch app — every metric available",
-                 b: "A standard FIT recording — everything but pump and takeoff effort",
-                 c: "A GPX or another source with no speed channel — speed records are "
-                    + "estimated from positions and uncertified, and there is no pump data"
+                 b: "The recording carries its own speed channel — everything but pump and "
+                    + "takeoff effort",
+                 c: "A GPX, a TCX without a speed channel, or another source with none — "
+                    + "speed records are estimated from positions and uncertified, and "
+                    + "there is no pump data"
                }[meta.sourceClass]]);
   if (meta.sport) badges.push([meta.sport, false]);
   if (caps.hasAccel) badges.push(["accelerometer", false]);

@@ -130,10 +130,12 @@ function corsFallback(err) {
     </p>
     <ol class="note" style="margin-top:8px">
       <li>Open the activity on <a href="https://intervals.icu/" rel="noopener" target="_blank">intervals.icu</a>.</li>
-      <li>Use the <em>⋯</em> menu → <em>Download original file</em> (the FIT the watch recorded — not the CSV or GPX).</li>
+      <li>Use the <em>⋯</em> menu → <em>Download original file</em> — the file your watch uploaded, not intervals.icu's own CSV or GPX export.</li>
       <li>Drop that file onto the drop zone at the top of this page.</li>
     </ol>
-    <p class="note" style="margin-top:8px">The original FIT is what this engine needs: only it
-      carries the developer fields and the wrist accelerometer stream.</p>
+    <p class="note" style="margin-top:8px">The original is what this engine needs: for a Garmin
+      it is a FIT, and only that carries the developer fields and the wrist accelerometer
+      stream. A Polar, Suunto or Coros original is usually a .gpx or .tcx, and those work
+      too — with estimated speed records unless the file carries its own speed channel.</p>
     <p class="note" style="margin-top:8px">Browser said: <code>${esc(err?.message || err)}</code></p>`;
 }
