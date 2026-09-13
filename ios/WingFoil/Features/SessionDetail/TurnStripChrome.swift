@@ -96,9 +96,18 @@ enum StripChrome {
                 Rectangle()
                     .fill(.clear)
                     .contentShape(.rect)
-                    .gesture(
+                    // `simultaneousGesture`, not `gesture`, and a vertical finger is refused:
+                    // with three strips and the workbench on the page, an exclusive drag
+                    // recogniser on every plot meant most of the turn page could not be
+                    // scrolled at all (Jan, 13 Sep 2026: "cannot scroll, so quite some data
+                    // is hidden below"). The page keeps every vertical drag; a tap or a
+                    // mostly-horizontal drag scrubs, which is the only scrub anyone makes.
+                    .simultaneousGesture(
                         DragGesture(minimumDistance: 0)
                             .onChanged { value in
+                                let dx = abs(value.translation.width)
+                                let dy = abs(value.translation.height)
+                                guard dy <= dx || (dx < 4 && dy < 4) else { return }
                                 guard let rt: Double =
                                         proxy.value(atX: value.location.x - frame.origin.x)
                                 else { return }
