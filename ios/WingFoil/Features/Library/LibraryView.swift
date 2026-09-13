@@ -25,6 +25,10 @@ struct LibraryView: View {
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                 } else {
+                    if let banner = store.disciplineBanner {
+                        disciplineBannerRow(banner)
+                            .listRowInsets(.init(top: 6, leading: 16, bottom: 6, trailing: 16))
+                    }
                     Section {
                         ForEach(store.sessions, id: \.id) { row in
                             NavigationLink(value: row.id) { SessionRowView(row: row) }
@@ -154,6 +158,17 @@ struct LibraryView: View {
                 // real Health database, because the app is a reader there and staging a
                 // workout would mean shipping code that writes fake ones into it.
                 case "import": showImporter = true
+                // `UI_SHEET=discipline` raises the post-import review over whatever the
+                // fixtures just imported — simctl cannot tap the banner, and the sheet the
+                // import itself raises has usually been and gone by the time a screenshot
+                // is taken.
+                case "discipline":
+                    // The library has to be in memory before there is anything to review,
+                    // and on a fixture run it is still importing when this task starts.
+                    for _ in 0..<60 where store.disciplineToReview.isEmpty {
+                        try? await Task.sleep(for: .milliseconds(500))
+                    }
+                    store.raiseDisciplineReview()
                 #if TUNING
                 case "tuning": showTuning = true
                 #endif
@@ -212,6 +227,40 @@ struct LibraryView: View {
                 Button("Sync intervals.icu") { Task { await store.syncFromIntervals() } }
             }
         }
+    }
+
+    /// **"3 new sessions analysed as Wingfoil · Review".**
+    ///
+    /// What an import the rider did not ask for is allowed to do: a Health auto-import, a
+    /// Strava poll or an intervals.icu pickup must not throw a sheet in front of somebody who
+    /// opened the app to look at yesterday's afternoon. It is not urgent either — the numbers
+    /// are right under one preset and re-derivable under another, for ever — so it sits at the
+    /// top of the list, says what was already done rather than asking a question, and goes
+    /// away for good when he taps it or says "not now" to the sheet behind it.
+    private func disciplineBannerRow(_ banner: String) -> some View {
+        Button {
+            store.raiseDisciplineReview()
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "questionmark.circle")
+                    .foregroundStyle(.teal)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(banner)
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(.primary)
+                    Text("Review")
+                        .font(.footnote)
+                        .foregroundStyle(.teal)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+            .background(Color.teal.opacity(0.10), in: .rect(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
     }
 
     @ViewBuilder

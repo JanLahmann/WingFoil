@@ -213,6 +213,7 @@ final class SessionStore {
         var ingestor = SessionIngestor(database: database!,
                                        archive: SessionArchive(root: archiveRoot))
         ingestor.windConfig.defaultTurnType = Self.storedDefaultTurnType
+        ingestor.riderDiscipline = Self.storedRiderDiscipline
         #if TUNING
         // Dev build only. In the shipping app this assignment does not exist, so
         // `ingestor.tuning` stays empty, the engine runs on the published defaults, and a
@@ -759,6 +760,10 @@ final class SessionStore {
         // An import can promote a new spot into the watch's two slots — a first week at a
         // new lake does exactly that. Cheap when it has not (`automaticPassIsWorthIt`).
         await refreshWatchMapIfNeeded()
+        // …and, last, the one question the file could not answer: is this wingfoil?
+        // After the import rather than before it, so a two-hundred-file ZIP never stops on
+        // its first question (see "Discipline on import" below).
+        raiseDisciplineReview()
         return summary
     }
 
@@ -778,6 +783,148 @@ final class SessionStore {
         init(_ sink: @escaping @Sendable (Value) -> Void) { self.sink = sink }
 
         func send(_ value: Value) { sink(value) }
+    }
+
+    // MARK: - Discipline on import
+    //
+    // **Wingfoil is not a sport anywhere but here.** Garmin, Strava, intervals.icu and Apple
+    // Health have no code for it, so the corpus is full of wingfoil afternoons recorded under
+    // Garmin's *windsurf* profile (ADR-004) — which is exactly why the sport code is not
+    // allowed to decide anything (docs/algorithms.md, "Disciplines"). What decides is the
+    // recording's own `discipline` field where it has one, and the rider's declared default
+    // where it does not; the second of those is a guess, and this section is the app owning up
+    // to it. See docs/presentation.md, "Confirming the discipline on import".
+
+    static let riderDisciplineKey = "riderDiscipline"
+
+    /// **Settings → "I mostly ride"**: the preset an imported session gets when its recording
+    /// does not say. Wingfoil by default, which is what the engine already fell back to — so
+    /// this setting changes nothing at all on a wingfoiler's phone.
+    ///
+    /// It applies to *future* imports only. The library is not re-derived, and deliberately
+    /// not: the rider declaring a habit is not him saying anything about any particular
+    /// afternoon, and silently re-reading two years of sessions off a Settings row would be
+    /// the app answering a question nobody asked.
+    var riderDiscipline: Discipline {
+        get { Self.storedRiderDiscipline }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: Self.riderDisciplineKey)
+            ingestor.riderDiscipline = newValue
+        }
+    }
+
+    static var storedRiderDiscipline: Discipline {
+        UserDefaults.standard.string(forKey: riderDisciplineKey)
+            .flatMap(Discipline.init(rawValue:)) ?? .wingfoil
+    }
+
+    /// The batch the review sheet is up for — `RootView` presents it, beside the other
+    /// questions the app owns. The ids are the payload; the rows are re-read from the library
+    /// as they change, so a picker moved on one row shows the re-derived session underneath.
+    struct DisciplineReviewRequest: Identifiable, Sendable {
+        let id = UUID()
+        let sessionIDs: [String]
+    }
+
+    var disciplineReview: DisciplineReviewRequest?
+
+    static let disciplineDismissedKey = "disciplineReviewDismissed.v1"
+
+    /// The sessions he has already skipped past. They keep their `?` on the library row —
+    /// nothing was confirmed — but they stop raising a banner, because a banner that comes
+    /// back after being dismissed is not a reminder.
+    private var dismissedDisciplineIDs: Set<String> =
+        Set(UserDefaults.standard.stringArray(forKey: SessionStore.disciplineDismissedKey) ?? [])
+
+    /// Everything nobody has confirmed, newest first.
+    var disciplineToReview: [SessionRow] {
+        DisciplineReview.pending(in: sessions, dismissed: dismissedDisciplineIDs)
+    }
+
+    /// The library's quiet banner: "3 new sessions analysed as Wingfoil".
+    ///
+    /// The whole of what an *automatic* pickup gets — a Health auto-import, a Strava poll, an
+    /// intervals.icu sync at launch. None of those may throw a sheet in front of a rider who
+    /// opened the app to look at yesterday's session, and none of them is urgent: the numbers
+    /// are right under one preset and re-derivable under another, for ever.
+    var disciplineBanner: String? { DisciplineReview.banner(disciplineToReview) }
+
+    /// Raises the sheet for whatever is outstanding — after a rider-initiated import, and when
+    /// he taps the banner. Silent when there is nothing to ask, or when another question the
+    /// app owns is already on screen: the two must never stack.
+    /// True while an *automatic* pickup is running — a Health auto-import, a Strava poll.
+    /// Nothing raises a sheet in here: the rider did not ask for these sessions and may not
+    /// even have this screen in his hand, and the banner is waiting for him either way.
+    private var isAutomaticPickup = false
+
+    /// Runs an import that the rider did not ask for, with the sheet held back.
+    func asAutomaticPickup(_ work: () async -> Void) async {
+        isAutomaticPickup = true
+        await work()
+        isAutomaticPickup = false
+    }
+
+    func raiseDisciplineReview() {
+        guard !isAutomaticPickup, disciplineReview == nil, pendingImport == nil,
+              pendingReAdd == nil, !isShowingWelcome, !isAskingAboutNewActivities else { return }
+        let pending = disciplineToReview
+        guard !pending.isEmpty else { return }
+        disciplineReview = DisciplineReviewRequest(sessionIDs: pending.map(\.id))
+    }
+
+    /// One row's picker. The same call the session page's "Analyse as" card makes, so a
+    /// discipline changed here and one changed there are the same act with the same
+    /// consequences — and either way the `?` goes, because he has now looked.
+    func setReviewDiscipline(_ discipline: Discipline, for row: SessionRow) async {
+        guard discipline != row.analysisDiscipline else {
+            await confirmDisciplines([row])
+            return
+        }
+        await setDiscipline(discipline, for: row)
+    }
+
+    /// "Apply to all N" — the button that makes a bulk import one decision instead of two
+    /// hundred. Sequential rather than concurrent: each one re-derives a session from its
+    /// archived recording, and a phone asked to do forty at once is a phone that stutters.
+    func applyDisciplineToAllInReview(_ discipline: Discipline) async {
+        for id in disciplineReview?.sessionIDs ?? [] {
+            guard let row = session(id: id) else { continue }
+            await setReviewDiscipline(discipline, for: row)
+        }
+    }
+
+    /// "Confirm" — he has looked at the list and it is right. Nothing is re-analysed; the only
+    /// thing that changes is that the app stops marking these sessions as unasked.
+    func confirmDisciplineReview() async {
+        let rows = (disciplineReview?.sessionIDs ?? []).compactMap { session(id: $0) }
+        disciplineReview = nil
+        await confirmDisciplines(rows)
+    }
+
+    private func confirmDisciplines(_ rows: [SessionRow]) async {
+        guard !rows.isEmpty else { return }
+        let ingestor = self.ingestor
+        do {
+            try await Task.detached(priority: .userInitiated) {
+                try await ingestor.confirmDiscipline(for: rows)
+            }.value
+            await load()
+        } catch {
+            errorMessage = "Could not save that: \(error)"
+        }
+    }
+
+    /// "Not now". The guesses stand, the `?` stays on the rows, and the banner goes quiet for
+    /// these sessions — the session page can still change any of them, for ever.
+    func dismissDisciplineReview() {
+        dismissedDisciplineIDs.formUnion(disciplineReview?.sessionIDs ?? [])
+        disciplineReview = nil
+        // Only ids that are still unconfirmed are worth remembering, so the list cannot grow
+        // without bound over the life of a library.
+        let live = Set(sessions.filter(\.disciplineGuessed).map(\.id))
+        dismissedDisciplineIDs.formIntersection(live)
+        UserDefaults.standard.set(Array(dismissedDisciplineIDs),
+                                  forKey: Self.disciplineDismissedKey)
     }
 
     // MARK: - Library backup & restore
@@ -1364,7 +1511,10 @@ final class SessionStore {
                                                            imported: importedHealthWorkouts)
         let fresh = await markAlreadyImported(found).filter { !$0.isAlreadyImported }
         guard !fresh.isEmpty else { return }
-        await importFromHealth(fresh.map(\.id))
+        // Nobody asked for these, so nothing about them may land in front of whatever the
+        // rider is looking at — the library's banner is where they announce themselves
+        // (see "Discipline on import").
+        await asAutomaticPickup { await importFromHealth(fresh.map(\.id)) }
     }
 
     /// Registers the HealthKit observer and sweeps once.
@@ -1432,6 +1582,10 @@ final class SessionStore {
             if !sessions.isEmpty { errorMessage = problem.alertText }
         }
         await load()
+        // intervals.icu knows no wingfoil either, so a sync is a batch of guesses like any
+        // other. Only the rider's own pull reaches this method — the background poller never
+        // does — so this is a question he is standing in front of.
+        raiseDisciplineReview()
     }
 
     // MARK: - Deleted sessions, and asking for them back
@@ -2218,6 +2372,7 @@ final class SessionStore {
             await writeNewSessionsToHealth()
             await refreshWatchMapIfNeeded()
             await refreshStravaCandidates()
+            raiseDisciplineReview()
         } catch {
             errorMessage = Self.stravaMessage(for: error)
         }
@@ -2231,7 +2386,7 @@ final class SessionStore {
         await refreshStravaCandidates()
         let fresh = stravaCandidates.filter { !$0.isAlreadyImported }.map(\.id)
         guard !fresh.isEmpty else { return }
-        await importFromStrava(fresh)
+        await asAutomaticPickup { await importFromStrava(fresh) }
     }
 
     /// One sentence per cause. A rate limit and a dead connection need different actions from

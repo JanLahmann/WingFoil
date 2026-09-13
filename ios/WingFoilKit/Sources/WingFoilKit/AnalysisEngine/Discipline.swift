@@ -56,20 +56,56 @@ public enum Discipline: String, Sendable, Codable, CaseIterable, Equatable {
     /// wingfoil, the default.
     public static func resolve(tag: String?, override: String? = nil) -> Discipline {
         for value in [override, tag] {
-            guard let key = value?.lowercased()
-                .replacingOccurrences(of: "_", with: "")
-                .replacingOccurrences(of: "-", with: "")
-                .replacingOccurrences(of: " ", with: ""), !key.isEmpty else { continue }
-            switch key {
-            case "windsurffin", "windsurfingfin", "fin": return .windsurfFin
-            case "windsurf", "windsurfing", "windsurffoil", "windsurfingfoil", "windfoil":
-                return .windsurfFoil
-            case "wingfoil", "wing", "wingfoiling": return .wingfoil
-            default: continue
-            }
+            if let stated = stated(tag: value) { return stated }
         }
         return .wingfoil
     }
+
+    /// The preset a tag **states**, or nil where it states nothing.
+    ///
+    /// The difference between this and `resolve` is the whole of the import question: a
+    /// recording that carries the `discipline` developer field has *said* what it is and is
+    /// never asked about again, and one that does not has said nothing — not "wingfoil". Only
+    /// the CleanJibe watch app writes the field, so "nothing" is what a Garmin native profile,
+    /// an Apple Health workout, an intervals.icu download, a Strava activity and a GPX all
+    /// say, however confidently their sport code reads.
+    public static func stated(tag: String?) -> Discipline? {
+        guard let key = tag?.lowercased()
+            .replacingOccurrences(of: "_", with: "")
+            .replacingOccurrences(of: "-", with: "")
+            .replacingOccurrences(of: " ", with: ""), !key.isEmpty else { return nil }
+        switch key {
+        case "windsurffin", "windsurfingfin", "fin": return .windsurfFin
+        case "windsurf", "windsurfing", "windsurffoil", "windsurfingfoil", "windfoil":
+            return .windsurfFoil
+        case "wingfoil", "wing", "wingfoiling": return .wingfoil
+        // A tag this version has never heard of (`kitefoil`) states nothing *about this
+        // question*, so it falls through to the rider's default rather than to wingfoil: he
+        // is the one who knows which rig he was on.
+        default: return nil
+        }
+    }
+
+    /// **The preset a freshly imported session is read under**, before anybody has confirmed
+    /// anything (docs/presentation.md, "Confirming the discipline on import").
+    ///
+    /// The recording's own field if it has one — authoritative, and the review step never
+    /// asks about it. Otherwise the rider's declared default (Settings → "I mostly ride"),
+    /// because the *only* other evidence in the file is the sport code and the sport code is
+    /// systematically wrong about this question: ADR-004 records FIT sport 43 (windsurfing)
+    /// for wingfoiling, so a corpus of wingfoil afternoons would flip itself to windsurf the
+    /// moment a sport code were allowed to decide. It is shown to the rider as a *hint* on the
+    /// review row and never consulted here — it is not an argument to this function, which is
+    /// how that is enforced rather than promised.
+    public static func imported(tag: String?, riderDefault: Discipline = .wingfoil)
+    -> Discipline {
+        stated(tag: tag) ?? riderDefault
+    }
+
+    /// Whether an imported session's preset was a **guess** — the recording said nothing and
+    /// the rider's default answered for it. What the review step lists, and what the `?`
+    /// beside the library badge means.
+    public static func isGuess(tag: String?) -> Bool { stated(tag: tag) == nil }
 
     /// The four configs that carry the two speeds, and the pump rung's switch.
     public struct Configs: Sendable, Equatable {
