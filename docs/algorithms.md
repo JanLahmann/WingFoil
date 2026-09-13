@@ -118,6 +118,40 @@ and the count is reported (`session["gpxTracks"]`).
 yields no offset and the longitude rung of the ladder below takes over. A timestamp written
 with a numeric offset (`+02:00`) is the exporter naming the local clock, and wins.
 
+## Strava import — input class (c) by construction (phone, engine ≥ 0.9.0)
+
+`ios/…/Strava/StravaImport.swift` · docs/decisions.md ADR-023
+
+`GET /activities/{id}/streams?keys=time,latlng,altitude,heartrate,velocity_smooth&key_by_type=true`
+returns parallel arrays on one elapsed clock. Channel for channel that is what a GPX holds,
+so the mapper **writes a GPX** and `GpxSessionParser` does the rest: no line of the import
+decides a source class, marks a record uncertified or derives a speed, and a Strava session
+and a converted GPX of the same afternoon analyse to the same numbers because after the
+mapper they are the same file.
+
+| what is read | from | notes |
+|---|---|---|
+| position | `latlng[i]` | `[lat, lon]`; a `[0, 0]` pair is the "no fix" sentinel and is dropped |
+| time | `time[i]` | seconds from the activity start; the instant is `start_date + t` |
+| altitude | `altitude[i]` | `<ele>`, feeds `turnBaroDrop` where the watch wrote a barometric value |
+| heart rate | `heartrate[i]` | written as `gpxtpx:hr`, read back by the GPX parser's HR rule |
+| clock | `utc_offset` / `timezone` | written into every `<time>` as `+02:00`, so the offset ladder's rung 1 applies |
+
+**`velocity_smooth` is fetched and discarded.** Strava computes it from the positions and
+then smooths it, so it is not a measurement and the file cannot prove one; carrying it beside
+the engine's own positional derivation would put two differently-filtered answers in the same
+column, which is the disagreement the GPX rule above exists to prevent. `hasSpeed` is
+therefore false, `source_class` is `c`, and every surface marks these speed records
+**uncertified** (docs/presentation.md).
+
+**Pauses.** Strava's `time` is *elapsed*, so a paused recording is a jump in it. A jump over
+**10 s** starts a new `<trkseg>`, which `filters.clean` ORs into its dt-aware gap rule — the
+same threshold and the same argument as `HealthImport.gapThresholdS`, and for the case the dt
+rule alone cannot see once Strava has thinned an old stream to 3–5 s per point.
+
+No accelerometer and no developer fields, exactly as for a GPX: `pumpEpisodes` empty, every
+stroke count null, no watch summary and so no divergence check.
+
 ## Speed records (GP3S set)
 
 2 s peak · 10 s peak · 5×10 s (mean of best 5 **disjoint** 10 s windows) · 100 m · 250 m ·
