@@ -33,6 +33,7 @@ WHATS_NEW = """New here? cleanjibe.org/start — a 20-minute test of the watch r
 - CleanJibe is an iPad app now, with the library kept beside the session on a big screen; the same build runs on an Apple silicon Mac.
 - Send map to watch: the phone draws the shore of your spot and pushes it to a Garmin running CleanJibe 0.9.10, so the live map has ground under the breadcrumb. Settings → Garmin watch.
 - Imports take GPX and TCX as well as FIT, so Polar, Suunto and Coros sessions come in through intervals.icu. Without a speed channel the speed records are estimated and marked uncertified.
+- Import from Strava: connect your account under Import and pick the sessions. Positions only, so speed records are uncertified — and single-rider until Strava approves the app.
 - Analysis engine 0.18.0: the pump rung now asks the minimum foil speed, and every touchdown and fall says why it ended that way on the turn page — which also scrolls properly again.
 
 Please check: does a video export finish, and does it look right on your own session? On an iPad, does any screen read as a stretched phone?"""
