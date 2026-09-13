@@ -71,19 +71,39 @@
        a key until 0.9.4 clears review, and a page that pretended otherwise would strand
        whoever installs it today. -->
   <section class="hero">
-    <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Open beta · free · nothing to request</p>
-    <h1>Get the beta</h1>
-    <p class="lede">
-      Both CleanJibe apps are free, open betas. The watch app installs from the Connect IQ
-      store; the iPhone app installs from a public TestFlight link. There is no invite to
-      apply for, no code to send in, and nobody to wait on.
-    </p>
-    <p class="lede">
-      <strong>Not sure you want either yet?</strong> The
-      <a href="../app/">browser analyzer</a> is not a beta at all — it reads a
-      <code>.fit</code> file from any Garmin watch and gives you the whole session back.
-      There is an example inside if you have no file to hand.
-    </p>
+    <!-- The copy is wrapped, exactly as on the homepage. `.hero` is a two-column grid above
+         761 px (the homepage puts the share card in the second one), so a hero whose
+         paragraphs are direct children hands them to the grid one cell at a time: the
+         headline landed beside the eyebrow and the ledes alternated columns, which read as
+         a shuffled page at every desktop width. There is no card here, so the second column
+         is simply empty and the copy runs in its own order down the first. -->
+    <div class="hero-copy">
+      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Open beta · free · nothing to request</p>
+      <h1>Get the beta</h1>
+      <p class="lede">
+        Both CleanJibe apps are free, open betas. The watch app installs from the Connect IQ
+        store; the iPhone app installs from a public TestFlight link. There is no invite to
+        apply for, no code to send in, and nobody to wait on.
+      </p>
+      <!-- The link that closes the gap this page used to leave open. /invite/ hands over two
+           install links and stops there, and "installed" is not "this works for me" — the
+           watch route runs through three apps before a session shows up on the phone. /start/
+           is the walkthrough, with a 20-minute test on land whose answer is written down. It
+           sits in the hero rather than at the foot because the person who needs it is the one
+           who has not scrolled yet. -->
+      <p class="lede">
+        <strong>Installed, and now what?</strong>
+        <a href="../start/" data-umami-event="invite-start">Get started: the 20-minute
+        test</a> — one short workout on the watch, into the phone, and what you should see.
+        No water needed.
+      </p>
+      <p class="lede">
+        <strong>Not sure you want either yet?</strong> The
+        <a href="../app/">browser analyzer</a> is not a beta at all — it reads a
+        <code>.fit</code> file from any Garmin watch and gives you the whole session back.
+        There is an example inside if you have no file to hand.
+      </p>
+    </div>
   </section>
 
   <!-- ---------------------------------------------------------------- garmin -->
