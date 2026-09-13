@@ -141,7 +141,8 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
 
 /// Every explainable metric, as an enum so a `?` button cannot point at a missing topic.
 public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
-    case icuSetup, exampleSession, appleWorkoutApp, icuTroubleshooting, icuPrivacy, libraryBackup
+    case icuSetup, exampleSession, sendingFeedback, appleWorkoutApp, icuTroubleshooting
+    case icuPrivacy, libraryBackup
     case stravaImport, shareFromWatchApp, whichWatch
     case foilPct, flights, longestFlight, distance, mapLegend
     case recordSet, best2s, best10s, best5x10s, best500m, bestNm, alpha500, uncertified
@@ -514,6 +515,41 @@ public enum HelpCatalog {
                 + "brought up to date as it is read.",
             ],
             related: [.icuSetup, .riderAttribution, .shareFit, .icuPrivacy]),
+
+        // Last in "Getting set up", under the backup topic, because the section runs
+        // "here is the way in" and this is the way back out: the six topics above it are
+        // what a rider reads to get his sessions onto the phone, and this is what he reads
+        // when one of them did not work or one of the numbers is wrong. It is deliberately
+        // not filed under "Where the numbers come from" — that section explains why a number
+        // is what it is, and this one is about what to do when the explanation does not fit.
+        HelpTopic(
+            id: .sendingFeedback, section: .setup, title: "Sending feedback",
+            summary: "The app writes down which build, which phone and which session. "
+                + "You write the sentence.",
+            body: [
+                "Settings → Send feedback, and the share sheet's \"Report a problem with this "
+                + "session…\", both open a mail that is already filled in: the app version and "
+                + "build, whether it is the dev or the public one, the analysis engine "
+                + "version and any tuned thresholds, your phone model, iOS version and "
+                + "locale, the watch this phone is paired with and its CleanJibe version, and "
+                + "how many sessions your library holds and which doors they came in by. From "
+                + "a session it also carries that session's date, spot, discipline, duration, "
+                + "source class, engine stamp and identifier, with its share card attached.",
+                "Nothing leaves the phone until you tap Send. The mail is Apple's own "
+                + "composer: every line of it is there to read and to edit, the address is "
+                + "\(FeedbackReport.recipient), and no part of CleanJibe sends anything "
+                + "anywhere by itself — there is no CleanJibe server to send it to. If this "
+                + "phone has no mail account, the app hands the same text to whatever you do "
+                + "use, or lets you copy it.",
+                "There are two other routes, and they are better for different things. In "
+                + "TestFlight, a screenshot taken inside the app offers Share → Send Beta "
+                + "Feedback, which attaches the screenshot and the device logs — that is "
+                + "the one for a crash or for something that has to be seen. Anything about "
+                + "the watch app itself can go through its Connect IQ store listing. For a "
+                + "number that looks wrong, the mail here is the one worth sending: it is the "
+                + "only one that says which engine and which thresholds produced it.",
+            ],
+            related: [.sourceClass, .engineVersion, .divergence]),
 
         // MARK: On the foil
 
