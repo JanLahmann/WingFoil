@@ -1390,13 +1390,16 @@ public enum SessionSummarizer {
                                takeoffConfig: TakeoffConfig = TakeoffConfig(),
                                hrConfig: HrConfig = HrConfig(),
                                ratesConfig: RatesConfig = RatesConfig(),
-                               discipline: Discipline = .wingfoil) -> SessionAnalysis {
-        // The preset, over whatever the caller handed in (docs/algorithms.md "Disciplines").
-        // Identity for wingfoil — not merely equal to it, *not applied*, so neither the
-        // published contract nor a tuning slider can be moved by a default.
-        let presets = discipline.apply(to: Discipline.Configs(
+                               discipline: Discipline = .wingfoil,
+                               tuning: TuningOverrides = TuningOverrides()) -> SessionAnalysis {
+        // **Preset first, the rider's overrides on top** (docs/presentation.md "Tuning").
+        // The preset is identity for wingfoil — not merely equal to it, *not applied* — and
+        // the overrides are this discipline's own set, so a fin slider says what the fin's
+        // threshold is and a preset can never stomp a knob the rider has just moved. Both are
+        // no-ops on an untuned wingfoil run, which is why a golden cannot move here.
+        let presets = tuning.apply(to: discipline.apply(to: Discipline.Configs(
             flight: flightConfig, turn: turnConfig, flightEnd: flightEndConfig,
-            takeoff: takeoffConfig))
+            takeoff: takeoffConfig)))
         let flightConfig = presets.flight
         let turnConfig = presets.turn
         let flightEndConfig = presets.flightEnd
