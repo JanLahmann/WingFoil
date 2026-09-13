@@ -81,8 +81,8 @@ struct TurnDetailStripView: View {
             // bottomed out at the exit — the fallen ones — and two captions on one x
             // overprint into "bout 9.0". When they are that close, "out" takes the bottom
             // edge; when the minimum is at the entry it is "low" that steps down instead.
-            let lowNearIn = abs(slice.speed.minRt) < Self.captionGapS
-            let outNearLow = abs(slice.speed.exitRt - slice.speed.minRt) < Self.captionGapS
+            let lowNearIn = abs(slice.speed.minRt) < captionGap
+            let outNearLow = abs(slice.speed.exitRt - slice.speed.minRt) < captionGap
             mark(at: slice.speed.entryRt, kn: slice.speed.entryKn, label: "in", below: false)
             mark(at: slice.speed.minRt, kn: slice.speed.minKn, label: "low", below: lowNearIn)
             mark(at: slice.speed.exitRt, kn: slice.speed.exitKn, label: "out",
@@ -164,6 +164,14 @@ struct TurnDetailStripView: View {
     /// strips agree on what "close" means.
     private static let captionGapS = StripChrome.captionGapS
 
+    /// The gap two top-edge captions need, in the strip's seconds. A caption is ~55 pt
+    /// wide whatever the window, so the seconds it covers grow with the drawn span: at the
+    /// dev build's 24 s window "low 9.1" and "out 10.7" 1.9 s apart printed as "low 9o1t"
+    /// (Jan, 13 Sep 2026). An eighth of the span is a caption's width at any zoom.
+    private var captionGap: Double {
+        max(Self.captionGapS, (domain.upperBound - domain.lowerBound) / 8)
+    }
+
     /// The engine's windows, read off the analysis' own config echo so the strip is drawn
     /// to the numbers in force — on a tuned dev build those are not `TurnConfig()`'s.
     struct Windows {
@@ -198,7 +206,7 @@ struct TurnDetailStripView: View {
     /// the part of it that is *visible*.
     private func quietOverprints(_ rt: Double) -> Bool {
         let visibleEnd = min(slice.speed.exitRt + windows.outcomeS, domain.upperBound)
-        return abs(rt - 0.5 * (slice.speed.exitRt + visibleEnd)) < Self.captionGapS
+        return abs(rt - 0.5 * (slice.speed.exitRt + visibleEnd)) < captionGap
     }
 
     /// The end of the quiet tail: a thin dashed rule, captioned on the **bottom** edge where
@@ -221,7 +229,7 @@ struct TurnDetailStripView: View {
         let occupied = [slice.speed.entryRt]
             + (lowNearIn ? [] : [slice.speed.minRt])
             + (outNearLow && !lowNearIn ? [] : [slice.speed.exitRt])
-        return occupied.contains { abs($0 - axisRt) < Self.captionGapS }
+        return occupied.contains { abs($0 - axisRt) < captionGap }
     }
 
     /// The crossing: a dashed rule and the word `axis`, and deliberately no dot.
