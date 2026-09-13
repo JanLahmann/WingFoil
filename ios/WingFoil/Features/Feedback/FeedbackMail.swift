@@ -211,7 +211,8 @@ struct MailComposeView: UIViewControllerRepresentable {
 /// One view for both homes — Settings, and the session's share sheet — because the only
 /// difference between them is the title, the session in the facts and whether the card comes
 /// along. Two copies of the "is Mail configured, and what if it is not" ladder would be two
-/// places to get the fallback wrong.
+/// places to get the fallback wrong. The ladder itself is `feedbackMail(on:)` below, so a
+/// third home that is not a row at all — the library's menu — climbs the same one.
 struct FeedbackMailRow: View {
     let title: String
     var systemImage = "envelope"
@@ -221,6 +222,38 @@ struct FeedbackMailRow: View {
     /// the tap rather than held, so a sheet that has not finished drawing does not pay for a
     /// PNG nobody asked for.
     var card: () -> Data? = { nil }
+
+    @State private var request = 0
+
+    var body: some View {
+        Button { request += 1 } label: {
+            Label(title, systemImage: systemImage)
+        }
+        .feedbackMail(on: $request, session: session, card: card)
+    }
+}
+
+extension View {
+
+    /// Composes and presents the feedback mail every time `request` changes.
+    ///
+    /// A counter rather than a Bool because the thing that asks is not always in the view
+    /// tree when it asks: a `Menu` item is gone the moment it is tapped, and a sheet hung on
+    /// it never presents. The modifier sits on a view that stays — the list, the form — and
+    /// the item only has to bump the number.
+    func feedbackMail(on request: Binding<Int>, session: SessionRow? = nil,
+                      card: @escaping () -> Data? = { nil }) -> some View {
+        modifier(FeedbackMailPresenter(request: request, session: session, card: card))
+    }
+}
+
+/// Mail if the phone has it, the system's `mailto:` handler if not, and the sheet with
+/// the copy button when even that goes nowhere — a phone with no mail app at all, which
+/// is a real configuration and is exactly the one a rider cannot fix from here.
+private struct FeedbackMailPresenter: ViewModifier {
+    @Binding var request: Int
+    let session: SessionRow?
+    let card: () -> Data?
 
     @Environment(SessionStore.self) private var store
     @Environment(\.openURL) private var openURL
@@ -238,33 +271,29 @@ struct FeedbackMailRow: View {
         var body: String { FeedbackReport.body(facts) }
     }
 
-    var body: some View {
-        Button { compose() } label: {
-            Label(title, systemImage: systemImage)
-        }
-        .sheet(item: $draft) { draft in
-            MailComposeView(subject: draft.subject, messageBody: draft.body,
-                            attachment: draft.attachment) { self.draft = nil }
-                .ignoresSafeArea()
-        }
-        .sheet(item: $fallback) { draft in
-            FeedbackFallbackSheet(subject: draft.subject, report: draft.body)
-        }
-        #if DEBUG && targetEnvironment(simulator)
-        // `UI_FEEDBACK=fallback` opens the fallback sheet on launch: a simulator can never
-        // send mail, and `simctl` cannot tap the row that would prove it.
-        .task {
-            guard session == nil,
-                  ProcessInfo.processInfo.environment["UI_FEEDBACK"] == "fallback"
-            else { return }
-            fallback = Draft(facts: FeedbackMail.facts(store: store), attachment: nil)
-        }
-        #endif
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: request) { _, _ in compose() }
+            .sheet(item: $draft) { draft in
+                MailComposeView(subject: draft.subject, messageBody: draft.body,
+                                attachment: draft.attachment) { self.draft = nil }
+                    .ignoresSafeArea()
+            }
+            .sheet(item: $fallback) { draft in
+                FeedbackFallbackSheet(subject: draft.subject, report: draft.body)
+            }
+            #if DEBUG && targetEnvironment(simulator)
+            // `UI_FEEDBACK=fallback` opens the fallback sheet on launch: a simulator can never
+            // send mail, and `simctl` cannot tap the row that would prove it.
+            .task {
+                guard session == nil,
+                      ProcessInfo.processInfo.environment["UI_FEEDBACK"] == "fallback"
+                else { return }
+                fallback = Draft(facts: FeedbackMail.facts(store: store), attachment: nil)
+            }
+            #endif
     }
 
-    /// Mail if the phone has it, the system's `mailto:` handler if not, and the sheet with
-    /// the copy button when even that goes nowhere — a phone with no mail app at all, which
-    /// is a real configuration and is exactly the one a rider cannot fix from here.
     private func compose() {
         let png = card()
         let attachment = png.flatMap { data in

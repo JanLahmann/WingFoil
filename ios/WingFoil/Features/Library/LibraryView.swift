@@ -21,6 +21,8 @@ struct LibraryView: View {
     @AppStorage("library.groupBy.v1") private var groupByRaw = ""
     @State private var filter = LibraryListFilter()
     @State private var editingRange = false
+    /// Bumped by the menu's Support item; `feedbackMail(on:)` on the list does the rest.
+    @State private var supportRequest = 0
 
     var body: some View {
         @Bindable var store = store
@@ -78,16 +80,35 @@ struct LibraryView: View {
             .navigationDestination(for: String.self) { SessionDetailView(sessionID: $0) }
             .refreshable { await store.syncFromIntervals() }
             .toolbar {
+                // The app's one menu (docs/presentation.md, "The library menu"), in the
+                // order a new rider needs its answers: how to start, where the switches
+                // are, who to write to, and only then the two "what is this" screens.
+                // The line at the foot is the build, because it is the first thing every
+                // support mail asks and the last thing a rider can find in Settings.
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
+                        Button { helpTopic = .betaGettingStarted } label: {
+                            Label("Getting started", systemImage: "book")
+                        }
                         Button { showSettings = true } label: {
                             Label("Settings", systemImage: "gearshape")
+                        }
+                        Button { supportRequest += 1 } label: {
+                            Label("Support", systemImage: "envelope")
+                        }
+                        Divider()
+                        // Asked for, not re-armed: the welcome screen again, raised by
+                        // RootView once the menu is gone (SessionStore.replayWelcome).
+                        Button { store.replayWelcome() } label: {
+                            Label("What CleanJibe does", systemImage: "hand.wave")
                         }
                         Button { showHelp = true } label: {
                             Label("What the numbers mean", systemImage: "questionmark.circle")
                         }
+                        Divider()
+                        Text(Self.buildLine)
                     } label: {
-                        Label("Settings", systemImage: "gearshape")
+                        Label("Menu", systemImage: "line.3.horizontal")
                     }
                 }
                 // Beside Import rather than in the list: the filter is about the list, and a
@@ -107,6 +128,7 @@ struct LibraryView: View {
             .sheet(isPresented: $editingRange) {
                 LibraryDateRangeSheet(filter: $filter, seed: rangeSeed)
             }
+            .feedbackMail(on: $supportRequest)
             .sheet(isPresented: $showSettings) { SettingsView() }
             #if DEBUG && targetEnvironment(simulator) && TUNING
             // `UI_SHEET=tuning` — a sheet of its own rather than "Settings, then push",
@@ -264,6 +286,16 @@ struct LibraryView: View {
             }
             }
         }
+    }
+
+    /// "CleanJibe 0.15.0 (45)", with " · dev" on the dev variant — the same string as
+    /// Settings → About, so the two never disagree about which build this is.
+    private static var buildLine: String {
+        #if TUNING
+        "\(Branding.appName) \(SessionStore.appVersion) · dev"
+        #else
+        "\(Branding.appName) \(SessionStore.appVersion)"
+        #endif
     }
 
     // MARK: - Grouping
