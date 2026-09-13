@@ -404,7 +404,12 @@ class RecordingView extends WatchUi.View {
 
     // Half the chord available to a box of ink height `h` whose centre is `dy` from the middle.
     static function chordHalf(radius as Number, dy as Number, h as Number) as Number {
-        var d = dy.abs() + h / 2;
+        // (h + 1) / 2, not h / 2: an odd ink height rounded DOWN put the box's corner half a
+        // pixel outside the chord the fitter thought it had, and on the Venu 3's font set
+        // (0.9.10) that half pixel was the whole margin — the hero giant landed 0.4 px over
+        // the fit radius. Rounding up keeps the fitter on the safe side of the test's own
+        // corner arithmetic on every glass.
+        var d = dy.abs() + (h + 1) / 2;
         var v = radius * radius - d * d;
         return v > 0 ? Math.sqrt(v.toFloat()).toNumber() : 0;
     }

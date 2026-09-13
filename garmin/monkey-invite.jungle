@@ -46,3 +46,16 @@ marq2.resourcePath = $(marq2.resourcePath);resources-icon60
 marq2aviator.resourcePath = $(marq2aviator.resourcePath);resources-icon60
 d2mach1.resourcePath = $(d2mach1.resourcePath);resources-icon60
 descentmk343mm.resourcePath = $(descentmk343mm.resourcePath);resources-icon60
+
+# 0.9.10: Venu, vivoactive and Instinct 3 AMOLED. Mark cut by glass size (icon60's 55x41 for
+# 390-416 px, icon54's for the vivoactives whose launcher is 54-56 px and for the 360 px Venu 2S);
+# venu3 (454) takes the base cut. Launcher icons on the Venus are 70x70, which no directory
+# holds, so monkeyc rescales the 65x65 and warns — accepted rather than a fifth directory.
+venu2.resourcePath = $(venu2.resourcePath);resources-icon60
+venu2plus.resourcePath = $(venu2plus.resourcePath);resources-icon60
+venu3s.resourcePath = $(venu3s.resourcePath);resources-icon60
+instinct3amoled45mm.resourcePath = $(instinct3amoled45mm.resourcePath);resources-icon60
+instinct3amoled50mm.resourcePath = $(instinct3amoled50mm.resourcePath);resources-icon60
+vivoactive5.resourcePath = $(vivoactive5.resourcePath);resources-icon54
+vivoactive6.resourcePath = $(vivoactive6.resourcePath);resources-icon54
+venu2s.resourcePath = $(venu2s.resourcePath);resources-icon54
