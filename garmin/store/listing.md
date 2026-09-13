@@ -57,6 +57,8 @@ An iPhone app with the full analysis — maps, turn forensics, replay with comme
 2 September 2026.
 
 ```
+0.9.10: nine more watches — Venu 2 / 2S / 2 Plus / 3 / 3S, vívoactive 5 / 6 and Instinct 3 AMOLED. They pass our layout checks in the simulator but have NOT been tested on the water on a real device yet; if you ride with one, please tell us how the pages look and whether the touch controls behave (Contact Developer, or cleanjibe.org/invite). Also new: the live map page and the post-save track can draw the shore of your spot under the trail, sent from the CleanJibe iPhone app (Settings → Garmin watch → Send map to watch).
+
 0.9.9: a clean jibe now needs a quiet ten seconds after the turn — no touchdown, no swim, no dunked wrist — so the star, the clean count and CPH match the phone's new rule. The clean-jibe buzz therefore arrives up to ten seconds after the turn; the fly-through, touchdown and fell-in verdicts are unchanged and still buzz at once.
 
 0.9.8: carved jibes now count. A smooth, wide jibe turns at a steady 15–20° per second and the old detector waited for a 25°/s spike that a carved turn never makes, so the smoothest jibes were missing from the tally; the floor is 18°/s now. Expect more jibes, more clean jibes and a higher CPH on the same riding.
