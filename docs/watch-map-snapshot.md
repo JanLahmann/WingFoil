@@ -79,6 +79,15 @@ coarser 60 × 60 grid instead — the watch reads `mw`/`mh` and does not assume 
 - A manual **"Send map to watch"** row under Settings → Garmin watch with the spot names and
   the last send result, for the rider who wants to see it happen. It ignores both gates: the
   point of pressing it is to watch it happen.
+- The phone addresses **whichever build of the watch app is installed**. The store keeps
+  three builds of us apart — release (`manifest.xml`), public-beta invite
+  (`manifest-invite.xml`) and private dev (`manifest-beta.xml`) — each under its own app id,
+  and Garmin's `sendMessage` is routed by that id: aimed at the release id on a watch that
+  runs the dev build it comes back as `Failure_AppNotFound`, which is exactly the error
+  build 41 showed on Jan's Fenix. `ConnectIQCompanionLink` now holds all three ids, registers
+  all three for incoming cards, probes `getAppStatus` for each on every refresh and sends
+  wind and map to the first one reported installed; a first send before the probe has
+  answered waits for it rather than guessing.
 - The iOS side keeps rendering pure: `WatchMapMask` in the kit (classification of a bitmap,
   downsampling, RLE encode/decode, the hash) with tests; MapKit and ConnectIQ only in the app.
 
