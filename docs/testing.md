@@ -617,6 +617,9 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    `UI_SHEET=tuning` needs the **dev** build (`TUNING`, below) — it opens Settings → Tuning
    as a sheet of its own rather than "Settings, then push", because `simctl` cannot tap the
    row either. On the public build the value is simply unknown and nothing opens.
+   `UI_TUNING_DISCIPLINE=wingfoil|windsurfFoil|windsurfFin` picks which of the page's three
+   sets it opens on (docs/presentation.md "Tuning") — same reason as `UI_DISCIPLINE` above,
+   a segmented control is a tap `simctl` cannot make. Dev build only, like the page itself.
    **Since the session page became a four-way switcher** (`SessionSection`,
    docs/presentation.md "Sections"), every session hook that names a place also **selects
    the section that place lives on** — `UI_SCROLL_TO` through `SessionSection.section(owning:)`,

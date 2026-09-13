@@ -40,6 +40,11 @@ they agree, and the outcome ladder's "lost the foil" rung is read off the exit s
 on a fin board is what *stopped planing* means. Holds, `minFlightDuration` and every turn
 parameter are unchanged: a plane holds like a flight does, and a jibe is a jibe.
 
+**Tuning is per preset too.** The dev build's threshold sliders are three sets, one per
+discipline, applied *after* the preset and stamped inside that preset's own staleness key —
+which is how a fin threshold is argued with without re-deriving a library of wingfoil
+afternoons (docs/presentation.md, "Tuning").
+
 **`windsurfFin`'s 20/15 are provisional.** They are a first guess at planing thresholds, not a
 reading off a corpus — there is no fin session in one. GitHub issue #6 gates them on 5–10
 windsurf sessions with ground truth; until then every windsurf reading is marked experimental
