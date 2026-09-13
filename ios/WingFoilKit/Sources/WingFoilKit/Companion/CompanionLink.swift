@@ -28,6 +28,20 @@ public protocol CompanionLink: Sendable {
     /// every tack as a jibe. Automatic can come later, once the link is proven on water.
     func sendWind(degreesFrom: Int) async throws
 
+    /// The map snapshot: one `WatchMapMask.message` dictionary, straight onto the wire.
+    ///
+    /// It takes the built dictionary rather than the mask, the box and the name, because
+    /// the *shape* of that dictionary is the contract (docs/watch-map-snapshot.md) and it
+    /// is built and checked in the kit, by `WatchMapMask.message`. This method's whole job
+    /// is the radio hop, which is the one part no test can reach.
+    ///
+    /// `sending` because `[String: Any]` cannot be proven `Sendable` and the real
+    /// implementation is an isolated object. Every caller hands over a dictionary it has
+    /// just built and does not keep, which is exactly what `sending` asks for; the
+    /// alternative — a parallel `Sendable` struct that the adapter unpacks back into a
+    /// dictionary — would mean the wire format was written down twice.
+    func sendMapSnapshot(_ message: sending [String: Any]) async throws
+
     /// Cards pushed by the watch, in arrival order, already decoded and validated.
     ///
     /// A stream rather than a delegate: the consumer is `SessionStore`, which wants to
@@ -110,6 +124,9 @@ public enum CompanionLinkError: Error, Equatable, Sendable {
     /// Outside 0…359 and not the -1 that clears it. Rejected here rather than on the
     /// watch, so a bad value never costs a BLE round trip.
     case invalidWind(Int)
+    /// The map snapshot could not be drawn: no spot with a coordinate in the library, or
+    /// MapKit declined (offline, and the tiles for that box have never been cached).
+    case mapUnavailable
     /// The radio accepted the message and then failed; the string is Garmin's own.
     case transmitFailed(String)
 
@@ -120,6 +137,9 @@ public enum CompanionLinkError: Error, Equatable, Sendable {
         switch self {
         case .notReady(let state): state.headline
         case .invalidWind(let degrees): "\(degrees)° is not a wind direction."
+        case .mapUnavailable:
+            "No map to send yet — import a session with a GPS fix, and be online once "
+            + "while the map is drawn."
         case .transmitFailed(let reason): "The watch did not take it (\(reason))."
         }
     }
@@ -147,6 +167,10 @@ public actor FakeCompanionLink: CompanionLink {
     public private(set) var state: CompanionLinkState
     /// Every wind value handed to `sendWind`, in order — including ones a test made fail.
     public private(set) var sentWind: [Int] = []
+    /// One entry per accepted `sendMapSnapshot`: the spot id and the mask's byte count.
+    /// Two integers rather than the dictionary itself, because a `[String: Any]` cannot
+    /// leave an actor — and a test asks "which spot, how big", never "what bytes".
+    public private(set) var sentMaps: [(spotID: Int, bytes: Int)] = []
     /// Set to make the next sends fail, the way a watch going out of range does.
     public var nextSendError: CompanionLinkError?
 
@@ -172,6 +196,22 @@ public actor FakeCompanionLink: CompanionLink {
         sentWind.append(degreesFrom)
         if let error = nextSendError { throw error }
         guard state.canSend else { throw CompanionLinkError.notReady(state) }
+    }
+
+    /// The same shape as the real adapter: validate the dictionary the way the watch will,
+    /// then record it. A fake that accepted a malformed message would let a test pass that
+    /// the radio would fail.
+    public func sendMapSnapshot(_ message: sending [String: Any]) throws {
+        guard message["mv"] as? Int == WatchMapMask.schema,
+              let spotID = message["mi"] as? Int,
+              let width = message["mw"] as? Int, let height = message["mh"] as? Int,
+              let mask = message["mp"] as? Data,
+              WatchMapMask.decode(mask, width: width, height: height) != nil else {
+            throw CompanionLinkError.mapUnavailable
+        }
+        if let error = nextSendError { throw error }
+        guard state.canSend else { throw CompanionLinkError.notReady(state) }
+        sentMaps.append((spotID: spotID, bytes: mask.count))
     }
 
     // MARK: Test control
