@@ -833,10 +833,35 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    names no asset it does not have, and `PresentationTests` would fail if it did.
 
    Orientation is the one thing no hook stages: `simctl` cannot rotate a simulator and
-   Simulator.app's Rotate menu is not reachable from a headless run. To photograph the
-   landscape frame, temporarily cut `UISupportedInterfaceOrientations` in `ios/project.yml`
-   down to `UIInterfaceOrientationLandscapeRight`, `xcodegen generate`, build, shoot, and put
-   it back.
+   Simulator.app's Rotate menu is not reachable from a headless run (`osascript` clicks it and
+   nothing turns — the app has no device window when the device was booted by `simctl` alone,
+   and none at all while the Mac is locked). To photograph the landscape frame, temporarily cut
+   `UISupportedInterfaceOrientations` — or `…~ipad`, for an iPad — in `ios/project.yml` down to
+   `UIInterfaceOrientationLandscapeRight`, `xcodegen generate`, build, shoot, and put it back.
+
+   **The iPad is the same recipe with a different `-destination`.** The app ships for both
+   families (docs/presentation.md, "iPad and Mac"), and everything that is iPad-specific about
+   the layout — the 740 pt column, the taller figures, the page-sized sheets, the wider record
+   columns — only exists when *both* size classes are regular, which no phone simulator ever
+   reports. So it is only ever seen by shooting one:
+
+   ```sh
+   xcrun simctl list devices available | grep -i ipad     # or `create` an iPad Pro 13-inch
+   xcrun simctl boot <ipad>
+   cd ios && xcodegen generate
+   xcodebuild -project WingFoil.xcodeproj -scheme "WingFoil Dev" -configuration "Dev Debug" \
+       -destination "platform=iOS Simulator,id=<ipad>" -derivedDataPath /tmp/dd build
+   xcrun simctl install <ipad> "/tmp/dd/Build/Products/Dev Debug-iphonesimulator/WingFoil.app"
+   SIMCTL_CHILD_UI_IMPORT_FIXTURES=1 xcrun simctl launch <ipad> de.lahmann.wingfoil
+   xcrun simctl io <ipad> screenshot library.png
+   ```
+
+   Every hook above works there unchanged, and the screens worth a look are the ones whose
+   shape the size class actually changes: the library, all four session sections, the turn and
+   flight-end sheets, Records (the speed table's fixed columns), Trends, Gear & spots,
+   Settings, Tuning, Help and both card composers. The fixture import is the slow part — about
+   75 s — and it only has to happen on the run that passes `UI_IMPORT_FIXTURES=1`; every later
+   launch on the same simulator opens in a few seconds against the library already there.
 3. **Monkey C units (Toybox.Test)** — the core suite lives in the `WingFoilCore` barrel
    (`garmin/barrel/WingFoilCore/tests/`) and is therefore compiled into **both** consumers'
    `--unit-test` builds: `bin/WingFoilTests.prg` (device app) and `bin/WingFoilFieldTests.prg`
