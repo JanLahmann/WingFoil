@@ -30,6 +30,7 @@ struct WatchLinkSection: View {
                 }
             default:
                 windRow
+                mapRow
                 Button { store.chooseWatch() } label: {
                     Label("Choose a different watch…", systemImage: "arrow.triangle.2.circlepath")
                 }
@@ -69,6 +70,42 @@ struct WatchLinkSection: View {
             Label("Send wind to watch", systemImage: "wind")
         }
         .disabled(!state.canSend)
+    }
+
+    /// The map push. Two spots, not a picker: the watch holds two slots and the phone fills
+    /// them with the two places the rider actually goes, so there is no choice here to
+    /// offer — only the names, so he can see which ground is about to go over
+    /// (docs/watch-map-snapshot.md).
+    ///
+    /// The button exists even though the push is automatic, for the same reason the wind
+    /// one does: a link that only ever works silently is a link nobody believes in. It
+    /// re-sends unconditionally, which is the point of pressing it.
+    @ViewBuilder
+    private var mapRow: some View {
+        let spots = store.watchMapSpots
+        if spots.isEmpty {
+            LabeledContent("Map for the watch", value: "No spot with a fix yet")
+        } else {
+            LabeledContent("Map for the watch") {
+                Text(spots.map(\.spot.name).joined(separator: " · "))
+                    .multilineTextAlignment(.trailing)
+            }
+            if let result = store.watchMapStatus {
+                LabeledContent("Last map", value: result)
+            }
+            Button {
+                Task { await store.sendMapsToWatch() }
+            } label: {
+                HStack {
+                    Label("Send map to watch", systemImage: "map")
+                    if store.isSendingWatchMap {
+                        Spacer()
+                        ProgressView()
+                    }
+                }
+            }
+            .disabled(!state.canSend || store.isSendingWatchMap)
+        }
     }
 
     /// Sixteen points would be false precision on a link whose whole job is telling port
