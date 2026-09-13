@@ -237,6 +237,8 @@ from .flightend import (FlightEnd, FlightEndConfig, FlightEndSummary, OutcomeSpl
 from .gp3s import GP3SRecords, RecordWindow
 from .hrcost import (Coverage, FatigueBin, HrAnalysis, HrConfig, HrEvent, HrSummary,
                      PumpCruiseHr, analyze_hr)
+from . import discipline as discipline_preset
+from .discipline import Discipline
 from .parse import RawTrack, parse_track
 from .pump import PumpConfig, PumpTrack, pump_track
 from .takeoff import (PumpEpisode, Takeoff, TakeoffAnalysis, TakeoffConfig, TakeoffSummary,
@@ -291,6 +293,9 @@ class Analysis:
     takeoff_config: TakeoffConfig
     hr_config: HrConfig
     rate_config: RateConfig
+    #: Which preset produced this document (docs/algorithms.md "Disciplines"). Defaulted so
+    #: every existing construction of `Analysis` still reads as what it was: a wingfoil run.
+    discipline: Discipline = Discipline.WINGFOIL
 
 
 def analyze(path: str | Path, filter_config: FilterConfig | None = None,
@@ -301,7 +306,8 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
             pump_config: PumpConfig | None = None,
             takeoff_config: TakeoffConfig | None = None,
             hr_config: HrConfig | None = None,
-            rate_config: RateConfig | None = None) -> Analysis:
+            rate_config: RateConfig | None = None,
+            discipline: Discipline = Discipline.WINGFOIL) -> Analysis:
     """Full pipeline: parse -> clean -> flights -> records -> wind -> turns -> ends ->
     takeoffs -> HR cost."""
     fcfg = filter_config or FilterConfig()
@@ -313,6 +319,9 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
     tocfg = takeoff_config or TakeoffConfig()
     hcfg = hr_config or HrConfig()
     rcfg = rate_config or RateConfig()
+    # The preset, over whatever the caller handed in. Identity for wingfoil -- not merely
+    # equal to it, *not applied*, so the published contract cannot be moved by a default.
+    flcfg, tcfg, fecfg, tocfg = discipline_preset.apply(discipline, flcfg, tcfg, fecfg, tocfg)
 
     track = parse_track(path)
     ct = clean(track, fcfg)
@@ -322,7 +331,12 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
     # votes on the very sweeps `detect_turns` is about to report -- one turn config, or the
     # prior and the session would be talking about different turns.
     wind = estimate_wind(ct, fr, wcfg, tcfg)
-    pt = pump_track(track, pcfg)
+    # No wing, no pump: on a windsurf preset the accelerometer hears the rig and the chop,
+    # and every number built on it would be noise presented as effort. `None` is the same
+    # state a source with no accelerometer is already in, so every stage below degrades the
+    # way it has always degraded -- no stroke counts, no episodes, no `pumped` flag, no HR
+    # pump cost -- rather than through a second code path.
+    pt = pump_track(track, pcfg) if discipline.pumping else None
 
     # One off-foil evidence object for the whole session: turns, flight ends and takeoffs
     # all read the same three channels (evidence.py) and none of them mutate it. It is
@@ -364,6 +378,7 @@ def analyze(path: str | Path, filter_config: FilterConfig | None = None,
         takeoffs=takeoffs, takeoff_summary=summarize_takeoffs(takeoffs), pump=pt, hr=hr,
         wind_config=wcfg, turn_config=tcfg, flight_end_config=fecfg,
         pump_config=pcfg, takeoff_config=tocfg, hr_config=hcfg, rate_config=rcfg,
+        discipline=discipline,
     )
 
 
@@ -691,9 +706,20 @@ def build_golden(a: Analysis) -> dict:
     }
 
 
-def golden_path(fit_path: str | Path, goldens_dir: str | Path) -> Path:
-    """fixtures/goldens/<fixture stem>.expected.json (stems are unique across the corpus)."""
-    return Path(goldens_dir) / f"{Path(fit_path).stem}.expected.json"
+def golden_path(fit_path: str | Path, goldens_dir: str | Path,
+                discipline: Discipline = Discipline.WINGFOIL) -> Path:
+    """fixtures/goldens/<fixture stem>.expected.json (stems are unique across the corpus).
+
+    A **windsurf preset writes into a subdirectory of its own**, `goldens/discipline/`, with
+    the preset in the name: `<stem>.windsurfFin.expected.json`. The corpus test and the
+    presentation-golden generator both glob `goldens/*.expected.json`, non-recursively, and
+    the corpus is the wingfoil contract -- a preset run of the same recording is a
+    cross-check between the lab and the Swift kit, not a nineteenth session.
+    """
+    if discipline is Discipline.WINGFOIL:
+        return Path(goldens_dir) / f"{Path(fit_path).stem}.expected.json"
+    return (Path(goldens_dir) / "discipline"
+            / f"{Path(fit_path).stem}.{discipline.value}.expected.json")
 
 
 def write_golden(golden: dict, path: str | Path) -> Path:
@@ -716,6 +742,10 @@ def _config_dict(a: Analysis) -> dict:
     # block is a record of what produced *this* document, and a `detectThreeSixty: false`
     # printed on every golden would be an announcement of a feature the engine did not run
     # -- and a change to every committed file for a detector that changed no number in one.
+    # Same rule as the experimental block below: the key is echoed only when it says
+    # something. A `"discipline": "wingfoil"` printed on every golden would be a change to
+    # every committed file for a preset that is, by construction, not applied.
+    disc = {"discipline": a.discipline.value} if a.discipline.is_windsurf else {}
     three_sixty = {
         "detectThreeSixty": t.detect_three_sixty,          # EXPERIMENTAL, UNVALIDATED
         "threeSixtyMinDeg": t.three_sixty_min_deg,
@@ -724,6 +754,7 @@ def _config_dict(a: Analysis) -> dict:
         "threeSixtyMinKmh": t.three_sixty_min_kmh,
     } if t.detect_three_sixty else {}
     return {
+        **disc,
         "foilEntrySpeed": flcfg.foil_entry_speed_kmh,
         "entryHold": flcfg.entry_hold_s,
         "foilExitSpeed": flcfg.foil_exit_speed_kmh,

@@ -18,6 +18,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from wingfoil_lab.discipline import Discipline
 from wingfoil_lab.goldens import analyze, build_golden, golden_path, write_golden
 
 REPO = Path(__file__).resolve().parents[2]
@@ -25,6 +26,14 @@ REPO = Path(__file__).resolve().parents[2]
 #: What counts as a session recording. Extensions only — `analyze` confirms by
 #: content, so a mislabelled file is still read for what it is.
 TRACK_SUFFIXES = {".fit", ".gpx", ".tcx"}
+
+#: The one recording the **windsurf presets** are frozen on (docs/algorithms.md
+#: "Disciplines"). It is a wingfoil session ridden under Garmin's windsurf profile — which
+#: is exactly the point: a preset is a *re-reading* of a recording, so the cross-check
+#: between the lab and the Swift kit only needs a recording both can open. The wingfoil
+#: golden of the same fixture is the corpus's; these two live under `goldens/discipline/`
+#: so that no corpus sweep, presentation golden or web verifier picks them up.
+DISCIPLINE_CROSSCHECK = "2026-08-30-1407_nago-torbole-windsurfen_ciq"
 
 HEADER = (f"{'file':<52} {'cls':>3} {'hz':>4} {'foil%':>6} {'fl':>4} {'long_s':>7} "
           f"{'2s':>6} {'10s':>6} {'5x10s':>6} {'500m':>6} {'alpha':>6} {'km':>7} "
@@ -76,6 +85,23 @@ def main(argv: list[str] | None = None) -> int:
               f"{r['best500mKn']:>6.2f} {r['alpha500Kn']:>6.2f} {s['distanceKm']:>7.2f} "
               f"{hr_cost:>8} {hr_n:>7}")
     print("-" * len(HEADER))
+
+    # The discipline cross-check, off to the side (see DISCIPLINE_CROSSCHECK).
+    crosscheck = next((f for f in fits if f.stem == DISCIPLINE_CROSSCHECK), None)
+    if crosscheck is None:
+        print(f"note: {DISCIPLINE_CROSSCHECK} not in the corpus, no discipline goldens")
+    else:
+        for disc in (d for d in Discipline if d is not Discipline.WINGFOIL):
+            g = build_golden(analyze(crosscheck, discipline=disc))
+            gs = g["summary"]
+            if not args.dry_run:
+                write_golden(g, golden_path(crosscheck, out_dir, disc))
+                written += 1
+            print(f"{crosscheck.stem + '.' + disc.value:<52} {'-':>3} {'-':>4} "
+                  f"{gs['foilPct']:>6.1f} {gs['flightCount']:>4d} "
+                  f"{gs['longestFlightS']:>7.1f}")
+        print("-" * len(HEADER))
+
     print(f"{written} goldens written to {out_dir}" if not args.dry_run
           else f"dry run: {len(fits)} fixtures analyzed, nothing written")
     return 0
