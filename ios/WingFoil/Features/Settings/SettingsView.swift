@@ -13,6 +13,7 @@ struct SettingsView: View {
             Form {
                 helpSection
                 icuSection
+                stravaSection
                 deletedSessionsSection
                 notificationsSection
                 WatchLinkSection()
@@ -127,6 +128,49 @@ struct SettingsView: View {
             Text("Downloads the original FIT of every windsurf, wing, kite, surf and SUP "
                  + "activity in your intervals.icu account, going two years back. "
                  + "Activities already in the library are never downloaded again.")
+        }
+    }
+
+    /// The second cloud source's connection state (ADR-023). It is a *state*, not a control:
+    /// connecting means a browser sheet and a list to pick from, and both of those live on
+    /// the Import screen where the sessions do. All this page owns is "am I connected, as
+    /// whom, and how do I stop" — plus the sentence about the ceiling Strava has put on the
+    /// application until it reviews it, which belongs where a rider wondering why it will not
+    /// connect would go looking.
+    @ViewBuilder
+    private var stravaSection: some View {
+        Section {
+            if !store.isStravaConfigured {
+                Text("Not available in this build")
+                    .foregroundStyle(.secondary)
+            } else if store.isStravaConnected {
+                LabeledContent("Connected",
+                               value: store.stravaAthlete ?? "your Strava account")
+                Button(role: .destructive) {
+                    Task { await store.disconnectStrava() }
+                } label: {
+                    Text("Disconnect Strava")
+                }
+                .disabled(store.isBusy)
+            } else {
+                Text("Not connected")
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("Strava")
+        } footer: {
+            if store.isStravaConfigured {
+                Text("Connect and import on the Import screen. CleanJibe only ever **reads** "
+                     + "your Strava account — it never writes, renames or posts anything. "
+                     + "Sessions imported this way are analysed from positions alone, so "
+                     + "their speed records are marked uncertified.\n\n"
+                     + "Strava has not reviewed CleanJibe yet, and until it does Strava lets "
+                     + "one rider connect. If Strava refuses, that is why, and it is nothing "
+                     + "about your account.")
+            } else {
+                Text("This build carries no Strava API keys, so the Strava source is not "
+                     + "offered. Everything else works as usual.")
+            }
         }
     }
 

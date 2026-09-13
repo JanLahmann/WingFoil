@@ -13,6 +13,7 @@ struct ImportView: View {
     @State private var showBulkImporter = false
     @State private var showFileImporter = false
     @State private var showHealthImporter = false
+    @State private var showStravaImporter = false
     @State private var log: [ImportLogRow] = []
 
     var body: some View {
@@ -91,6 +92,34 @@ struct ImportView: View {
                     }
                 }
 
+                // The second cloud source (ADR-023), under intervals.icu rather than beside
+                // it — deliberately in that order, because for the same afternoon
+                // intervals.icu hands over the original file from the watch and Strava hands
+                // over positions. The footer says so, so a rider with both accounts does not
+                // have to find out by importing the worse copy.
+                Section {
+                    Button {
+                        showStravaImporter = true
+                    } label: {
+                        Label("Strava…", systemImage: "figure.wave")
+                    }
+                    .disabled(store.isBusy)
+                    if store.isStravaConnected, let athlete = store.stravaAthlete {
+                        LabeledContent("Connected as", value: athlete)
+                    }
+                } header: {
+                    Text("Strava")
+                } footer: {
+                    Text("Connect your Strava account and import the sessions you pick — "
+                         + "Windsurf, Kitesurf, Surf and Workout by default, and anything "
+                         + "whose name says wing or foil. Strava hands over positions, a "
+                         + "clock, elevation and heart rate, so the analysis is complete "
+                         + "except for two things: speed is worked out from the positions, "
+                         + "so those records are marked uncertified, and nothing records "
+                         + "your wrist, so there are no pump strokes. If the same session is "
+                         + "on intervals.icu, take it from there instead.")
+                }
+
                 if !log.isEmpty {
                     Section("Recent imports") {
                         ForEach(log) { entry in ImportLogRowView(entry: entry) }
@@ -106,6 +135,7 @@ struct ImportView: View {
                 log = (try? await store.library.importLog()) ?? []
             }
             .sheet(isPresented: $showHealthImporter) { HealthImportView() }
+            .sheet(isPresented: $showStravaImporter) { StravaImportView() }
             .fileImporter(isPresented: $showBulkImporter,
                           allowedContentTypes: [.zip], allowsMultipleSelection: false) { result in
                 if case .success(let urls) = result {

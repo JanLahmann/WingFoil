@@ -1,3 +1,4 @@
+import AuthenticationServices
 import Foundation
 import Observation
 import WingFoilKit
@@ -2000,6 +2001,202 @@ final class SessionStore {
             errorMessage = "Could not send the wind direction: \(error)"
         }
         refreshCompanionState()
+    }
+
+    // MARK: - Strava
+
+    /// Which Strava activity types the Import screen offers (`StravaActivityType`).
+    ///
+    /// Strava has no wingfoil type, so there is nothing to infer: the rider says once what he
+    /// files his sessions under, and it is remembered. Defaults are Windsurf, Kitesurf, Surf
+    /// and Workout — the four buckets wingfoil sessions actually land in.
+    var stravaTypes: Set<StravaActivityType> {
+        get {
+            guard let stored = UserDefaults.standard.stringArray(forKey: Self.stravaTypesKey)
+            else { return StravaActivityType.defaults }
+            return Set(stored.compactMap(StravaActivityType.init(rawValue:)))
+        }
+        set {
+            UserDefaults.standard.set(newValue.map(\.rawValue).sorted(),
+                                      forKey: Self.stravaTypesKey)
+            stravaCandidates = []
+        }
+    }
+
+    static let stravaTypesKey = "stravaActivityTypes"
+    static let stravaImportedKey = "stravaImportedActivities"
+    static let stravaAutoKey = "stravaAutoImport"
+    static let stravaDidImportKey = "stravaDidImport"
+
+    /// Strava activity ids already pulled in.
+    ///
+    /// Belt to the ±60 s dedupe key's braces, and it earns its keep on the case the key
+    /// cannot see: an activity the rider imported and then *deleted*. The tombstone stops the
+    /// sync bringing it back; this stops the app asking Strava about it again on every open.
+    private var importedStravaActivities: Set<String> {
+        get { Set(UserDefaults.standard.stringArray(forKey: Self.stravaImportedKey) ?? []) }
+        set {
+            UserDefaults.standard.set(newValue.sorted(), forKey: Self.stravaImportedKey)
+        }
+    }
+
+    /// What Strava is offering right now. Empty until the screen asks, and emptied whenever
+    /// the type selection changes — a stale list is a list of the wrong sport.
+    private(set) var stravaCandidates: [StravaCandidate] = []
+    private(set) var isReadingStrava = false
+    /// The connected athlete's name, when there is a connection. nil is "not connected", and
+    /// it is read straight off the stored tokens so the UI and the keychain cannot disagree.
+    private(set) var stravaAthlete: String?
+    private(set) var isStravaConnected = false
+    /// Set when Strava granted a narrower scope than we asked for — the connection works and
+    /// lists nothing, which looks exactly like a bug unless the app says what happened.
+    private(set) var stravaScopeIsNarrow = false
+
+    /// True once a session has actually arrived this way. The automatic pickup is offered only
+    /// after this: a toggle for a source the rider has never used is a question about nothing.
+    var hasImportedFromStrava: Bool {
+        get { UserDefaults.standard.bool(forKey: Self.stravaDidImportKey) }
+        set { UserDefaults.standard.set(newValue, forKey: Self.stravaDidImportKey) }
+    }
+
+    /// "Import new Strava activities automatically" — off until asked for.
+    var stravaAutoImport: Bool {
+        get { UserDefaults.standard.bool(forKey: Self.stravaAutoKey) }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Self.stravaAutoKey)
+            guard newValue else { return }
+            Task { await checkStravaForNewActivities() }
+        }
+    }
+
+    /// Whether this build has a Strava API application behind it at all. False is a state the
+    /// Import screen explains rather than a failure it hides (`StravaAuth.config`).
+    var isStravaConfigured: Bool { StravaAuth.config.isConfigured }
+
+    func refreshStravaConnection() {
+        let tokens = StravaAuth.loadTokens()
+        isStravaConnected = tokens != nil
+        stravaAthlete = tokens?.athleteName
+        stravaScopeIsNarrow = tokens.map { !$0.hasActivityReadAll } ?? false
+    }
+
+    /// The browser round trip. `anchor` is the window the sheet is presented over, handed
+    /// down by the screen that owns it — the store has no window of its own and must not
+    /// invent one.
+    func connectStrava(anchor: ASPresentationAnchor?) async {
+        guard !isReadingStrava else { return }
+        isReadingStrava = true
+        defer { isReadingStrava = false }
+        do {
+            let tokens = try await StravaAuth.connect(anchor: anchor)
+            refreshStravaConnection()
+            status = tokens.athleteName.map { "Connected to Strava as \($0)" }
+                ?? "Connected to Strava"
+            await refreshStravaCandidates()
+        } catch StravaAuth.ConnectError.cancelled {
+            // Backing out of the consent screen is a decision, not a failure. Nothing is
+            // said, because nothing happened.
+            refreshStravaConnection()
+        } catch {
+            refreshStravaConnection()
+            errorMessage = Self.stravaMessage(for: error)
+        }
+    }
+
+    func disconnectStrava() async {
+        await StravaAuth.disconnect()
+        stravaCandidates = []
+        refreshStravaConnection()
+        status = "Disconnected from Strava"
+    }
+
+    /// One request: the activity list, each row already marked "in your library" or not.
+    func refreshStravaCandidates() async {
+        guard isStravaConfigured, StravaAuth.loadTokens() != nil else { return }
+        isReadingStrava = true
+        defer { isReadingStrava = false }
+        let types = stravaTypes
+        let known = importedStravaActivities
+        let ingestor = self.ingestor
+        do {
+            let client = try await StravaAuth.client()
+            stravaCandidates = try await StravaSyncService(client: client, ingestor: ingestor)
+                .candidates(types: types, known: known)
+            refreshStravaConnection()
+        } catch {
+            errorMessage = Self.stravaMessage(for: error)
+            refreshStravaConnection()
+        }
+    }
+
+    /// Fetches each activity's streams, maps them to a GPX and sends the bytes through the
+    /// ordinary import door — same `SessionIngestor`, same ±60 s dedupe, same archive.
+    func importFromStrava(_ ids: [String]) async {
+        guard !ids.isEmpty, !isBusy, !isReadingStrava else { return }
+        let wanted = stravaCandidates.filter { ids.contains($0.id) }.map(\.activity)
+        guard !wanted.isEmpty else { return }
+
+        isBusy = true
+        status = "Reading \(wanted.count) activit\(wanted.count == 1 ? "y" : "ies") from Strava…"
+        importProgress = ImportSummary()
+        defer {
+            isBusy = false
+            importProgress = nil
+        }
+
+        let ingestor = self.ingestor
+        let known = importedStravaActivities
+        let producer = "CleanJibe \(Self.appVersion) (Strava import)"
+        do {
+            let client = try await StravaAuth.client()
+            let relay = ProgressRelay { [weak self] snapshot in
+                Task { @MainActor in self?.importProgress = snapshot }
+            }
+            let outcome = await Task.detached(priority: .userInitiated) {
+                let service = StravaSyncService(client: client, ingestor: ingestor,
+                                                producer: producer)
+                return await service.importActivities(wanted, known: known,
+                                                      progress: { line in
+                    var partial = ImportSummary()
+                    partial.current = line
+                    relay.send(partial)
+                })
+            }.value
+
+            importedStravaActivities.formUnion(outcome.importedIds)
+            if outcome.summary.imported > 0 { hasImportedFromStrava = true }
+            status = outcome.summary.shortDescription
+            if !outcome.summary.failed.isEmpty {
+                errorMessage = outcome.summary.failed.joined(separator: "\n")
+            }
+            await load()
+            await refreshPersonalBests(celebrate: true)
+            await writeNewSessionsToHealth()
+            await refreshWatchMapIfNeeded()
+            await refreshStravaCandidates()
+        } catch {
+            errorMessage = Self.stravaMessage(for: error)
+        }
+    }
+
+    /// Launch, foreground and the toggle's own kick: whatever Strava has that the library
+    /// does not. Silent on the ordinary pass, where there is nothing new.
+    func checkStravaForNewActivities() async {
+        guard stravaAutoImport, isStravaConfigured, !isBusy, !isReadingStrava,
+              StravaAuth.loadTokens() != nil else { return }
+        await refreshStravaCandidates()
+        let fresh = stravaCandidates.filter { !$0.isAlreadyImported }.map(\.id)
+        guard !fresh.isEmpty else { return }
+        await importFromStrava(fresh)
+    }
+
+    /// One sentence per cause. A rate limit and a dead connection need different actions from
+    /// the rider, and "the operation could not be completed" asks him to guess which.
+    static func stravaMessage(for error: any Error) -> String {
+        if let strava = error as? StravaClient.Error { return strava.description }
+        if let connect = error as? StravaAuth.ConnectError { return connect.description }
+        if let callback = error as? StravaOAuth.CallbackError { return callback.description }
+        return "Strava could not be reached: \(error.localizedDescription)"
     }
 
     // MARK: - Credentials
