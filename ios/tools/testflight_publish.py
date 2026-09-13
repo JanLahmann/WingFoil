@@ -27,30 +27,25 @@ BASE = "https://api.appstoreconnect.apple.com/v1"
 
 WHATS_NEW = """New here? cleanjibe.org/start — a 20-minute test of the watch routes, and where to send feedback.
 
-0.15.0 (build 45) — the session list learns to group and to narrow.
+0.15.0 (build 47) — you choose which maps the watch gets.
 
-- Group by: None, Month, Year or Spot at the top of the Sessions list, newest group first. A library of twenty sessions or more opens grouped by month until you choose otherwise.
-- Filter menu beside Import: one spot, one source (intervals.icu, Strava, Apple Health, Garmin watch, file…), a date window (this year, last year, or a range of your own). What is active shows as chips you can tap away, and the count line reads "3 of 41 sessions". Records and Trends keep reading the whole library on purpose.
-- The menu at the top left of Sessions, in the order a new rider needs it: Getting started, Settings, Support, then What CleanJibe does and What the numbers mean, with the build number at the foot. The welcome screen has a close button now.
-- "Something off? Send feedback" at the foot of every page — the four tabs and the session page, where the mail names the session by itself.
-- Connect Strava from Settings → Strava as well as from Import.
-- The full-screen map's legend no longer floats up to the middle of the screen after a keyboard was used elsewhere.
+- Map for the watch is a page now: the two most-ridden spots by default, or up to two picks among your spots and "Where I am now". The phone reads its own position once per send, only when you picked it, never in the background. Settings → Garmin watch → Map for the watch.
 
-Still in from builds 41–43: Export video, iPad, GPX/TCX and Strava imports, Send map to watch, analysis engine 0.18.0.
+Still in from build 45: the grouped and filtered Sessions list, the reordered menu, Send feedback at the foot of every page, Connect Strava under Settings, the full-screen map legend fix.
 
-Please check: does the grouped list feel like your library, and does a filter ever hide a session you expected to see?"""
+Please check: pick "Where I am now" at a spot the library has never seen, send, and see whether the watch draws the shore there."""
 
 # What the dev variant's testers are told instead. It is a different build of the same version,
 # so saying which one this is matters more than the release notes do.
 WHATS_NEW_INTERNAL = """New here? cleanjibe.org/start — a 20-minute test of the watch routes, and where to send feedback.
 
-Dev build 46 (tuning). Same 0.15.0 as public build 45, plus Settings → Tuning: the analysis thresholds on sliders, and the workbench on the turn page.
+Dev build 48 (tuning). Same 0.15.0 as public build 47, plus Settings → Tuning: the analysis thresholds on sliders, and the workbench on the turn page.
 
 Settings → About says "· dev" on this one. Moving any slider re-analyses your library with the new thresholds and marks every screen that shows a tuned number with a "tuned thresholds" chip — those numbers are not comparable with anyone else's. "Reset all" puts the published defaults back.
 
-New since 44, same as the public build: the Sessions list groups by none, month, year or spot, and a filter menu beside Import narrows it by spot, source, discipline (with the windsurf switch on) or date window, with chips for what is active. The Sessions menu is reordered (Getting started, Settings, Support, then the two "what is this" screens, build number at the foot), the welcome screen closes, every page ends in a "Send feedback" line, and Connect Strava is under Settings too. The full-screen map's legend stays at the bottom after a keyboard was used elsewhere.
+New since 46, same as the public build: Map for the watch opens a picker with the automatic pair, every spot with its session count, and "Where I am now", read once per send. A third pick replaces the oldest.
 
-Please check: with the windsurf switch on, does the discipline filter agree with the badge on each row?"""
+Please check: does the location prompt appear only when you tap "Where I am now", and does a relaunch stay quiet?"""
 
 
 def tok():
