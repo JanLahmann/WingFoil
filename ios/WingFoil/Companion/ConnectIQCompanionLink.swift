@@ -73,13 +73,32 @@ final class ConnectIQCompanionLink: NSObject, CompanionLink {
         guard CompanionWind.isValid(degreesFrom) else {
             throw CompanionLinkError.invalidWind(degreesFrom)
         }
-        refresh()
-        guard let app, state.canSend else { throw CompanionLinkError.notReady(state) }
-
         // The wire format is the watch's `PhoneLink.KEY_IN_WIND`: one key, one integer,
         // and the watch refuses anything else (a Float there would silently relabel every
         // tack as a jibe for the rest of the session).
         let message: [String: Any] = ["wd": degreesFrom]
+        try await transmit(message)
+    }
+
+    /// The map snapshot, built by `WatchMapMask.message` and sent unchanged.
+    ///
+    /// Nothing is inspected here beyond the size. A `sendMessage` payload to a device app
+    /// is not a file transfer — Garmin's own limit is a few kilobytes and a payload over it
+    /// comes back as a failure result on some firmware and, on others, as a success that
+    /// never arrives. `WatchMapMask.maxBytes` is the ceiling the sender already respected;
+    /// this is the belt to that pair of braces, so a future caller that skipped
+    /// `WatchMapSender` cannot quietly push four kilobytes of city into the void.
+    func sendMapSnapshot(_ message: sending [String: Any]) async throws {
+        if let mask = message["mp"] as? Data, mask.count > WatchMapMask.maxBytes {
+            throw CompanionLinkError.transmitFailed("mask too large (\(mask.count) bytes)")
+        }
+        try await transmit(message)
+    }
+
+    /// One message onto the radio, with Garmin's own failure word kept verbatim.
+    private func transmit(_ message: sending [String: Any]) async throws {
+        refresh()
+        guard let app, state.canSend else { throw CompanionLinkError.notReady(state) }
         let result: IQSendMessageResult = await withCheckedContinuation { continuation in
             ConnectIQ.sharedInstance().sendMessage(message, to: app, progress: nil) { result in
                 continuation.resume(returning: result)
@@ -89,6 +108,13 @@ final class ConnectIQCompanionLink: NSObject, CompanionLink {
             throw CompanionLinkError.transmitFailed(NSStringFromSendMessageResult(result))
         }
     }
+
+    /// The chosen watch's stable handle, for anything that has to remember what it already
+    /// told *this* watch. Nil when no watch has been chosen.
+    ///
+    /// The UUID and not the friendly name: a rider renames a watch in Garmin Connect, and
+    /// a cache keyed on the name would then re-send every mask it had already sent.
+    var deviceKey: String? { device?.uuid?.uuidString }
 
     // MARK: - Device selection
 

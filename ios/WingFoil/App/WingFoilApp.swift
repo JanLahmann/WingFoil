@@ -36,6 +36,10 @@ struct WingFoilApp: App {
                     // stale; the aggregate tabs must not read those.
                     await store.refreshDerived()
                     await store.nameSpots()
+                    // Last, and after the spots have their names: the watch's map snapshot
+                    // (docs/watch-map-snapshot.md). A no-op unless the top two spots or the
+                    // chosen watch have actually changed since the last successful push.
+                    await store.refreshWatchMapIfNeeded()
                 }
                 // The watch's session cards, for as long as the app is alive. A separate
                 // task from the load above because it never finishes: it is a stream, not
