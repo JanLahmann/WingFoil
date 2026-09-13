@@ -101,6 +101,7 @@ struct ReelExportSheet: View {
                     }
                 }
             }
+            .readableColumn()
             .navigationTitle("Session video")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -109,6 +110,9 @@ struct ReelExportSheet: View {
                 }
             }
             .interactiveDismissDisabled(isBusy)
+            // The finished state is a 9 : 16 video 420 pt tall with a share button under it,
+            // which is more than the system's form sheet has room for on an iPad.
+            .presentationSizing(.page)
         }
         .onDisappear {
             model.cancel()

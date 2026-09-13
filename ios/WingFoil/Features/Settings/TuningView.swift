@@ -62,6 +62,9 @@ struct TuningView: View {
             labelsSection
             footerSection
         }
+        // Thirty sliders. A slider stretched to 950 pt is a slider whose thumb moves a
+        // centimetre per degree; the column keeps it the size the numbers were chosen at.
+        .readableColumn()
         .navigationTitle("Tuning")
         .navigationBarTitleDisplayMode(.inline)
         // The lazy path would pick this up at the next launch (`reanalyzeStale`, which the

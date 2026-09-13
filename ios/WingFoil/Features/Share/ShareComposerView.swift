@@ -147,6 +147,9 @@ struct ShareComposerView: View {
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 28)
+                // The composer is one column — two fields, a switcher, the preview, the
+                // share button — and the preview sizes itself to the column it is in.
+                .readableColumn()
             }
             .navigationTitle("Share")
             .navigationBarTitleDisplayMode(.inline)
@@ -220,6 +223,11 @@ struct ShareComposerView: View {
                 }
             }
             #endif
+            // The card is a portrait picture with a share button under it. In the system's
+            // 570 × 640 form sheet the button was below the fold on every aspect, so the one
+            // thing the sheet exists to do could not be seen — `.page` gives it the room the
+            // `.large` detent gives it on a phone.
+            .presentationSizing(.page)
         }
     }
 

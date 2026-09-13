@@ -31,6 +31,8 @@ struct SettingsView: View {
                 #endif
                 aboutSection
             }
+            // …and inside the page-sized sheet, the same measure every other list keeps.
+            .readableColumn()
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -50,6 +52,12 @@ struct SettingsView: View {
                 Text("Cached analysis.json files are dropped and recomputed from the archived "
                      + "FITs. Original recordings are never touched.")
             }
+            // Twelve sections of form. On an iPad the default sheet is the system's form
+            // sheet — about 570 × 640 pt — which is a smaller window than the phone's for a
+            // screen that scrolls twice as far as any other in the app. `.page` is the
+            // regular-width way to ask for the room a `.large` detent asks for on a phone,
+            // and it does nothing at compact width, where there is no other size to have.
+            .presentationSizing(.page)
         }
     }
 

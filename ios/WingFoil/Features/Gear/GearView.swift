@@ -77,6 +77,9 @@ struct GearView: View {
                          + "for good.")
                 }
             }
+            // Same measure as the library list: a form of named things, in the middle of
+            // the window rather than stretched across it.
+            .readableColumn()
             .navigationTitle("Gear & spots")
             .sheet(item: $editing) { gear in
                 GearEditor(gear: gear) { saved in Task { await store.saveGear(saved) } }

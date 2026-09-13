@@ -87,7 +87,7 @@ struct TurnDetailMapView: View {
         }
         .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 14))
         .overlay(alignment: .topLeading) { callout }
-        .figureHeight(regular: 260, compact: 200)
+        .figureHeight(regular: 260, compact: 200, wide: 340)
         .accessibilityElement()
         .accessibilityLabel(spoken)
     }

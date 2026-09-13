@@ -98,7 +98,7 @@ struct TurnBaroStripView: View {
         .chartOverlay { proxy in
             StripChrome.scrubSurface(proxy, domain: domain, playheadRt: $playheadRt)
         }
-        .figureHeight(regular: 120, compact: 95)
+        .figureHeight(regular: 120, compact: 95, wide: 155)
         .accessibilityElement()
         .accessibilityLabel(spoken)
     }
