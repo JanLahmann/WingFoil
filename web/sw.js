@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v49";     // v49: engine 0.18.0 — the pump rung moves to the min foil speed, and every touchdown/fall says why (outcomeReason)
+const VERSION = "v50";     // v49: engine 0.18.0 — the pump rung moves to the min foil speed, and every touchdown/fall says why (outcomeReason)
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
