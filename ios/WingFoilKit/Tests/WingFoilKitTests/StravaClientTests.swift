@@ -316,6 +316,14 @@ struct StravaClientTests {
         #expect(stub.requests.count == 1)          // asked once, and not again
     }
 
+    /// The alert gets the status and nothing else. A response body can echo the request —
+    /// a token included — straight back, and `description` is what a rider reads.
+    @Test func aServerErrorKeepsTheStatusAndDropsTheBody() {
+        let error = StravaClient.Error.http(status: 502, body: "<html>secret echo</html>")
+        #expect(error.description == "Strava answered with an error (HTTP 502)")
+        #expect(!error.description.contains("secret echo"))
+    }
+
     @Test func missingStreamsAndAStaleTokenAreDistinctCauses() async {
         await #expect(throws: StravaClient.Error.noStreams) {
             try await StravaClient(accessToken: "a",
