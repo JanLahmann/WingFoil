@@ -15,9 +15,19 @@ file — verified against all 15 corpus fixtures (see *Verification* below).
 
 ```
 web/
-├── index.html                  the PROJECT HOMEPAGE (cleanjibe.org/) — what CleanJibe is,
-│                               the watch app, the iPhone app, this analyzer, and what a
-│                               rider actually needs to own to use any of them. No JS.
+├── index.html                  the PROJECT HOMEPAGE (cleanjibe.org/) — the SHORT half since
+│                               14 Sep 2026: the share card as the hero (with its map
+│                               background), the headline and the two doors, the three
+│                               pieces at one line each, the recording-class table, what is
+│                               coming, and the tell-us line. Nothing else. No JS but the
+│                               section nav's ten lines.
+├── learn/index.html            "MORE ABOUT HOW IT WORKS" (cleanjibe.org/learn/) — the LONG
+│                               half, split off the homepage the day Jan said the front door
+│                               was too long: the three pieces in full with their
+│                               screenshots, the FAQ, the vocabulary list with the track
+│                               motif, and the two build claims. Nothing here was rewritten
+│                               in the move. Precached (it is the front page's one outbound
+│                               link); same no-manifest, no-JS rules as /watches/.
 ├── invite/index.html           the BETA PAGE (cleanjibe.org/invite/): both open-beta
 │                               installs — the Connect IQ store link and the public
 │                               TestFlight link — and where a tester sends what they find.
@@ -69,12 +79,15 @@ web/
 │   ├── phone-session.png       the iOS session detail, from the simulator's UI_* hooks
 │   ├── web-report.png          this analyzer on the bundled example
 │   ├── share-card.png          the bundled example's own SHARE CARD, 440x550 - the
-│                               portrait/complete export reduced from 1080x1350. The
-│                               homepage's HERO image: the product's real output, with a
-│                               working QR, standing where the drawn motif used to. Never
-│                               rendered wider than 440 (420 at the top breakpoint) so the
-│                               33-module QR stays decodable. Rendered headlessly through
-│                               js/sharecard.js, not screenshotted
+│                               portrait/complete export reduced from 1080x1350, WITH THE
+│                               MAP BACKGROUND ON since 14 Sep 2026. The homepage's HERO
+│                               image: the product's real output, over the water it happened
+│                               on, with a working QR. The tiles are baked into the PNG, so
+│                               a visitor fetches nothing from OSM and the privacy page's
+│                               sentence stays true. Never rendered wider than 440 (420 at
+│                               the top breakpoint) so the 33-module QR stays decodable.
+│                               Rendered headlessly through js/sharecard.js, not
+│                               screenshotted - the recipe is in tools/hero_card.html
 │   └── peek-{track,speed,turns}.png
 │                               the dropzone's "what you get" strip — the only images in
 │                               the precache, because they are on the app's first screen
@@ -82,17 +95,26 @@ web/
 │                               ABSOLUTE URL (scrapers do not resolve relative ones)
 ├── tools/social_card.html      the tile's source; rasterize with headless Chrome to
 │                               regenerate it — see "The social card" below
+├── tools/hero_card.html        the homepage hero's source: a headless driver that calls
+│                               js/sharecard.js's own `drawCard` over the bundled example
+│                               with `{ map: true }`. Three commands in its header comment
+│                               regenerate img/share-card.png
 ├── app/manifest.webmanifest    PWA metadata — beside the app so `scope`/`start_url` are
-│                               /app/ and an installed icon opens the analyzer
-├── sw.js                       service worker: app-shell precache + Pyodide runtime cache.
-│                               Stays at the ROOT: its default scope is its own directory,
-│                               so one registration covers homepage and app alike.
+│                               /app/ and an installed icon opens the analyzer. Carries the
+│                               `share_target` that puts CleanJibe in Android's share sheet
+├── sw.js                       service worker: app-shell precache + Pyodide runtime cache,
+│                               and the one POST this site answers — Android's share sheet
+│                               (see "Android's share sheet" in the file). Stays at the ROOT:
+│                               its default scope is its own directory, so one registration
+│                               covers homepage, /learn/, the app and /app/share-target.
 ├── icons/                      copied from brand/ — nothing is hotlinked outside web/
 │   └── qr-cleanjibe.png        33 x 33, one pixel per module: the share card's QR, drawn
 │                               nearest-neighbour so a decoder sees hard edges. Unmarked -
 │                               the brand mark is composited at draw time (sharecard.js)
 ├── css/tokens.css              GENERATED from design/tokens.json — do not edit
-├── css/style.css               dark styling + the data-viz palette (reads the tokens)
+├── css/style.css               the aesthetic + the data-viz palette (reads the tokens), and
+│                               the LIGHT THEME at the foot of the file — one mapping, two
+│                               triggers (the system setting, or `data-theme="light"`)
 ├── css/home.css                the homepage's own layout, layered on top of style.css
 ├── js/app.js                   file intake, view routing, save-to-library, SW updates
 ├── js/rpc.js                   the one channel to the worker (request/response by id)
@@ -541,30 +563,93 @@ choices above are made from the documented behaviour, not from a measured device
   *Reload to update*. Bump `VERSION` in `sw.js` whenever anything under `web/` changes; the
   old caches are deleted on activate. **This is not optional for a CSS or JS edit**: the
   shell is served cache-first, so without the bump every already-installed client keeps the
-  old stylesheet indefinitely. Current value: `v24` (the share card takes the hero, the
-  motif moves down to the glossary, and umami goes into all three heads).
+  old stylesheet indefinitely. Current value: `v53` (the light theme, the card takes the
+  fold, `/learn/` splits off, and Android's share target).
 
-The worker precaches **both** documents — `/` and `/app/` — and its offline navigation
-fallback picks between them by path, so an offline deep link to `/app/#/library` gets the
-analyzer's shell and not the front door.
+The worker precaches **three** documents — `/`, `/learn/` and `/app/` — and its offline
+navigation fallback picks between them by path, so an offline deep link to `/app/#/library`
+gets the analyzer's shell and not the front door. `/learn/` joined the list on 14 September
+2026 with the homepage split: it is the front page's one outbound link, and an offline
+reader who followed it into a 503 would be reading a page whose only invitation is broken.
+
+### Android's share sheet (GitHub issue #9)
+
+*"Will this provide a share in / open in capability on android?"* — yes, once the analyzer
+is **installed**, and the two halves of that sentence are the whole feature.
+
+- `app/manifest.webmanifest` declares a **`share_target`**: `POST`,
+  `multipart/form-data`, one `files` param accepting `.fit`, `.gpx`, `.tcx`, `.zip` and
+  `application/octet-stream` (Android hands over a generic type more often than a correct
+  one). An installed web app with that entry appears in Android's share sheet like any
+  other app.
+- The POST it produces reaches **`sw.js`**, not a server — there is no server. The worker
+  takes the file out of the form, parks it in a cache of its own (`wingfoil-share`) under
+  one fixed key, and answers **303** to `app/?shared=1`. A POST cannot hand a `File` to a
+  page; this is the standard way round that, and it is why the feature can exist at all on
+  a site that uploads nothing.
+- **`js/app.js`** reads the key on load (`takeSharedFile`), empties it, and feeds the file
+  to the same `analyzeFile` a drop or a picker uses. `?shared=1` is stripped from the
+  address bar immediately, so a reload cannot look like a lost file. Every failure — no
+  file part, no `caches`, a private window — lands on the ordinary drop zone.
+- The install itself is offered by **`#install-banner`** in `app/index.html`, on
+  `beforeinstallprompt` and nothing else: Chrome fires that event exactly when an install
+  is available, so the bar never appears on iOS, in a browser that cannot install, or once
+  it is installed. *Later* is remembered in `localStorage` behind try/catch.
+- Documented for riders on **/watches/#none** (Android) and in **/learn/#faq** (the Android
+  answer), in the two steps they actually take: install from Chrome's menu, then
+  *Share → CleanJibe*.
+
+**Not tested on a real Android device.** The worker half is: `stashShared` was driven in
+node against a fake `ServiceWorkerGlobalScope` — a multipart POST with a file named
+`Mörgen ride.fit` produced a 303 to `app/?shared=1` with the bytes and the decoded name
+parked under the right key, a POST with no file part produced a 303 to `app/`, and a GET to
+the same path was not hijacked. What only a phone can show is whether Android's sheet
+actually lists CleanJibe and what MIME type it attaches.
+
+### Light theme
+
+The site followed no theme until 14 September 2026: it was dark, and `data-theme="dark"` was
+hard-coded on every `<html>`, which is what kept the reader's own setting from being heard.
+It now follows `prefers-color-scheme`, with the dark palette still the default for a browser
+that expresses no preference and for an engine that does not understand the query. The whole
+of it is at the foot of `css/style.css` under **LIGHT THEME**: the colours are written once
+(`--lt-*`), two selectors map them (`@media (prefers-color-scheme: light)
+:root:not([data-theme="dark"])`, and `:root[data-theme="light"]` for the day a switch is
+added), and the fifteen components that carried a literal read a variable instead.
+
+Two deliberate exceptions, both for the same reason: **the pictures keep their own plate.**
+The analyzer's two figures (`.figure`) and the homepage motif are drawn in the presentation
+tokens from `design/tokens.json` — `js/viz.js` paints white ink and a `#1a1a19` surface into
+the markup itself, and those tokens are stepped for a dark surface and shared with the iOS
+app. Re-stepping them for paper would be a second palette for one vocabulary. Everything
+around them turns with the page.
+
+Where a token was used as **text** it gets a darker twin on paper (`--good-text`,
+`--warn-text`, `--bad-text`, `--foil-text`; the tokens themselves in dark), because `#fab219`
+on white is 1.8:1. Every text/background pair in the light palette is at or above 4.5:1: ink
+18.3, ink-2 9.5, ink-3 6.3, links 6.1, the verdict pills 6.0–6.9. `/strava/callback/` is the
+one page that stays dark — it is self-contained, on screen for a frame, and holds a
+credential.
 
 **Images are precached only when they are on a first screen.** The dropzone's three
-`img/peek-*.png` (~58 KB) are, so they are in `APP_SHELL`; the homepage's four pictures
-(~196 KB — three card screenshots and the share card) are not. Three of them are below the
-fold, `loading="lazy"`, and sit in boxes sized by `aspect-ratio`, so offline they leave tidy
-empty plates and cost nobody anything on install.
+`img/peek-*.png` (~58 KB) are, so they are in `APP_SHELL`; the site's four pictures are not.
+Three of them (the card screenshots, ~97 KB) are on `/learn/` now rather than on the front
+page, all below its fold, `loading="lazy"`, and in boxes sized by `aspect-ratio`, so offline
+they leave tidy empty plates and cost nobody anything on install.
 
-`img/share-card.png` is the exception worth naming, because it moved: it is the homepage's
-hero now, above the fold and `loading="eager" fetchpriority="high"`, so the old "furthest
-down the page" argument no longer applies to it. It stays out anyway on the argument that
-always did the real work — it is the largest of the four at 99 KB, and the person paying for
-it on install is the one installing the *analyzer*, who reaches the homepage only on the way
-back out and reaches it online. Its box is still reserved by `aspect-ratio`.
+`img/share-card.png` is the exception worth naming, because it moved twice: it is the
+homepage's hero, above the fold and `loading="eager" fetchpriority="high"`, and since 14
+September 2026 it carries its map background. It stays out anyway on the argument that always
+did the real work — the person paying for it on install is the one installing the *analyzer*,
+who reaches the homepage only on the way back out and reaches it online. (It is also 28 KB
+now, a third of what it was: the map made the picture, and an octree quantize made the file.)
+Its box is still reserved by `aspect-ratio`.
 
 `/invite/` is not precached at all — it is a page you read once, at a desk, with a watch in
 your hand. `/start/` is out for the same reason and more so: it is read *while* doing the
 thing it describes, with a phone, a watch and a store app all wanting the network anyway.
-`/watches/`, `/whats-new/`, `/privacy/` and `/impressum/` are out on the same argument, and
+`/watches/`, `/whats-new/`, `/privacy/` and `/impressum/` are out on the same argument
+(`/learn/` is in, and only because the front page's one "read more" points at it), and
 `/whats-new/` additionally because it changes every few days. Nor is the umami script; see
 **Privacy** above.
 
@@ -625,21 +710,35 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
 ### Manual browser test checklist
 
 0. **The homepage.** `cd web && python3 -m http.server 8765`, open
-   <http://127.0.0.1:8765/>. Static HTML: the hero — the brand mark at 64–84 px beside the
-   eyebrow, the headline, **two equal `.btn primary` doors** (*Get the beta* → `/invite/`,
-   *Try the analyzer* → `/app/`) with the example link in the note under them and the
-   *Installed?* line to `/start/` below that, and `img/share-card.png` as the hero image,
-   beside the copy from 761 px up and under it below — then the three cards each with a real
-   screenshot above its bullets, the **FAQ** (six questions: watches, Android, another brand,
-   Strava, clean jibe, data), the vocabulary list with **the track motif and its colour key
-   above it**, and the two build claims. The card is never drawn wider than its 440 native
-   pixels; hold a phone camera to the QR at 1280 and it must open cleanjibe.org. Everything is
-   named **CleanJibe** — the wordmark, both app cards. The *Open the analyzer* buttons land on
-   `/app/`; *an example session* lands on `/app/#example` and must **run the bundled session on
-   arrival**, not just show the drop zone; the "all three make the card at the top of this
-   page" line under the row jumps to `#card`; and the analyzer's own wordmark comes back here.
-   The footer carries the issue link before the mail address, the two new pages beside *Get the
-   beta*, and one line naming umami.
+   <http://127.0.0.1:8765/>. Static HTML, and **four sections long**: the hero, the three
+   pieces, the class table, what is coming. The hero is `img/share-card.png` **first** — in
+   the markup and on a phone, where it is the first thing on the screen — with its map
+   background under the track; from 761 px up it sits to the right of the copy (`order` in
+   home.css swaps them, the DOM order does not change). Then the brand mark at 64–84 px
+   beside the eyebrow, the headline, **two equal `.btn primary` doors** (*Get the beta* →
+   `/invite/`, *Try the analyzer* → `/app/`) with the example link in the note under them and
+   the *Installed?* line to `/start/` below that. Then the three cards at **one line each**
+   and no screenshots, the `beta` pill on the iPhone card with its legend under the row, the
+   **More about how it works** link to `/learn/`, the class table (`Class B+` carries a pill),
+   and the two channel lists. The card is never drawn wider than its 440 native pixels; hold a
+   phone camera to the QR at 1280 and it must open cleanjibe.org. Everything is named
+   **CleanJibe**. *An example session* lands on `/app/#example` and must **run the bundled
+   session on arrival**, not just show the drop zone. The footer carries the issue link before
+   the mail address, `/learn/` first among the page links, and one line naming umami.
+0-light. **Both themes.** Toggle the OS (or DevTools → Rendering → *Emulate CSS
+   prefers-color-scheme*) on every page. Dark must be **byte-identical to what it always
+   was**; light must keep the analyzer's two figures and the homepage motif on their own dark
+   plate while everything around them turns. Check the sticky topbar and section nav, the
+   panels, the pills in the turns table, the code spans, the tables' hairlines, the footer,
+   and the share-card dialog. `/strava/callback/` stays dark by design.
+0learn. **More about how it works.** <http://127.0.0.1:8765/learn/>. Everything the homepage
+   used to carry below its fold, unrewritten: the three pieces in full with their three
+   screenshots and their bullets, the FAQ (seven questions: watches, Android, another brand,
+   no watch, Strava, clean jibe, data), the vocabulary list with **the track motif and its
+   colour key above it**, and the two build claims. The `beta` pills on the iPhone card come
+   from docs/channels.md and the legend under the row says what the word means. Every link
+   back to the homepage's own anchors resolves (`../#card`, `../#need`) — `verify_links.py`
+   checks that, but the *pieces-foot* line is the one a reader actually presses.
 0a. **The beta page.** <http://127.0.0.1:8765/invite/>. Both installs read in order at both
    widths: the Connect IQ store link opens apps.garmin.com and the TestFlight link opens
    testflight.apple.com. Nothing on the page asks anyone to request an invite — the one

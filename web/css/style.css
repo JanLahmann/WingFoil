@@ -943,3 +943,228 @@ footer .fineprint { margin-top: 8px; font-size: 11.5px; color: var(--ink-4, var(
 @media (max-height: 460px) and (orientation: landscape) {
   .topbar { position: static; }
 }
+
+/* ==========================================================================
+   LIGHT THEME
+   ==========================================================================
+
+   Jan, 14 Sep 2026: *"Do we have a light mode… might be needed for some visual preferences
+   or disabilities."* The site was dark only, and dark-only is not a style choice for a
+   reader with low vision, glare sensitivity, or a phone held in Italian sun — it is a page
+   they cannot read.
+
+   HOW IT TURNS ON. The dark palette at the top of this file stays the DEFAULT, so an engine
+   that does not understand the query below, or a browser that reports no preference, gets
+   exactly the site that shipped yesterday. Light arrives two ways:
+
+     - the reader's own system setting, unless the document has pinned dark;
+     - an explicit `data-theme="light"` on <html>, for the day a switch is added.
+
+   `data-theme="dark"` still pins dark against a light system, which is what the `:not()`
+   reads. The documents no longer hard-code it — that is exactly what kept the system
+   preference from being heard at all — and their `<meta name="color-scheme">` now says
+   `light dark`.
+
+   WHY THE VALUES ARE WRITTEN ONCE AND MAPPED TWICE. CSS cannot join a media-conditional
+   selector to an unconditional one, so the two triggers need two rule blocks. Every colour
+   lives in exactly ONE place — the `--lt-*` list below, inert while the page is dark — and
+   the two blocks do nothing but point the semantic names at it. The same goes for the
+   components that carried a literal: they read a variable now, in one rule each, at the
+   foot of this section. Two triggers, one theme, nothing to drift.
+
+   WHAT STAYS DARK, ON PURPOSE. The two session figures (`.figure`) are PICTURES drawn in
+   the presentation tokens (design/tokens.json) — js/viz.js paints white ink and a #1a1a19
+   plate into the markup itself, and those tokens are stepped for a dark surface and shared
+   with the iOS app. Re-stepping them for paper would be a second palette for one
+   vocabulary, which is the thing docs/presentation.md exists to forbid. So a figure keeps
+   its own plate on a light page, the way a photograph keeps its own sky. Everything around
+   it — legend, chips, readout, tables, panels — turns with the page.
+
+   CONTRAST. Every text-on-background pair below is at or above 4.5:1 (WCAG AA, body text):
+   ink 18.3, ink-2 9.5, ink-3 6.3, links 6.1 on the panel white, the pills 6.0–6.9, the
+   verdict inks 5.5–6.5. The verdict TOKENS are untouched and still draw every dot, swatch,
+   stroke and marker; only the places that used a token as TEXT get a darker twin
+   (`--good-text` and its three siblings), because #fab219 on paper is 1.8:1.
+   ========================================================================== */
+
+:root {
+  /* --- the dark defaults for everything the light blocks re-point. These are the values
+     the rules above this section were written with; the rules at the foot of this section
+     read them, so the dark page is byte-identical to what it always was. */
+
+  /* Verdict and phase inks used as TEXT. On dark they are the tokens themselves. */
+  --good-text: var(--good);
+  --warn-text: var(--warn);
+  --bad-text:  var(--bad);
+  --foil-text: var(--foil);
+
+  --banner-bg: #14293f;   --banner-line: #2a5a91;  --banner-ink: #d9e8fb;
+  --accent-bg: #14293f;   --accent-line: #2a5a91;  --accent-ink: #9ec8f5;
+  --hot-bg:    #17283c;   --link-hover:  #6fa9ea;
+
+  --pill-good-bg: #11240f; --pill-good-line: #245a24; --pill-good-ink: #7fd67f;
+  --pill-warn-bg: #26200c; --pill-warn-line: #6a5117; --pill-warn-ink: #f6c86a;
+  --pill-bad-bg:  #2a1414; --pill-bad-line:  #6b2626; --pill-bad-ink:  #ee8b8b;
+
+  --danger-ink: #ee8b8b;  --danger-ink-hover: #ffb4b4;
+  --rider-bg: #201b33;    --rider-line: #453a6b;   --rider-ink: #b9a7f2;
+  --rider-on-bg: #2b2447; --rider-on-line: #6b5aa8; --rider-on-ink: #d5c9ff;
+
+  --float-bg: #0b0b0bf2;  --float-shadow: #000000a8;
+  --tip-bg: #000000e6;    --tip-shadow: #00000000;
+  --modal-shadow: #000000aa; --backdrop: #000000a6;
+  --mark-ring: #ffffff22; --mark-ring-hover: #ffffff55;
+  --figure-plate: var(--surface-1);
+  /* Drop shadows under the homepage's two pieces of artwork. A shadow is a hole in the
+     light, so on paper it is a fifth of the one that reads on a black page. */
+  --art-shadow: #00000059; --art-shadow-strong: #00000073;
+
+  /* --- the light palette, defined once. Nothing reads these until one of the two blocks
+     below does. The surfaces mirror the dark stack's ROLES rather than its lightnesses:
+     the page, the panel raised off it, and the trough a control sits in. */
+  --lt-surface-0: #f5f6f3;
+  --lt-surface-1: #ffffff;
+  --lt-surface-2: #e9ebe5;
+  --lt-line:      #c6c8c0;
+  --lt-line-soft: #dcded7;
+  --lt-ink:       #141513;
+  --lt-ink-2:     #45463f;
+  --lt-ink-3:     #5f6159;
+  --lt-series-1:  #1a5fbf;
+  --lt-series-1-tint: #16437f;
+  --lt-good-text: #0a7a12;
+  --lt-warn-text: #835500;
+  --lt-bad-text:  #b52424;
+  --lt-foil-text: #0a6b7e;
+}
+
+/* The whole theme, as a mapping. Written twice because CSS gives no way to write it once;
+   both copies are var-to-var, so the colours themselves stay single-sourced above. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --surface-0: var(--lt-surface-0);
+    --surface-1: var(--lt-surface-1);
+    --surface-2: var(--lt-surface-2);
+    --line:      var(--lt-line);
+    --line-soft: var(--lt-line-soft);
+    --ink:       var(--lt-ink);
+    --ink-2:     var(--lt-ink-2);
+    --ink-3:     var(--lt-ink-3);
+    --series-1:  var(--lt-series-1);
+    --series-1-tint: var(--lt-series-1-tint);
+    --good-text: var(--lt-good-text);
+    --warn-text: var(--lt-warn-text);
+    --bad-text:  var(--lt-bad-text);
+    --foil-text: var(--lt-foil-text);
+
+    --banner-bg: #e7f0fb;   --banner-line: #9dc0e8;  --banner-ink: #14324f;
+    --accent-bg: #e7f0fb;   --accent-line: #9dc0e8;  --accent-ink: #12447d;
+    --hot-bg:    #e6eefa;   --link-hover:  #17457f;
+
+    --pill-good-bg: #eaf6ea; --pill-good-line: #a8d5a8; --pill-good-ink: #15661f;
+    --pill-warn-bg: #fbf3e2; --pill-warn-line: #e2c98a; --pill-warn-ink: #7a5600;
+    --pill-bad-bg:  #fbecec; --pill-bad-line:  #e5b2b2; --pill-bad-ink:  #9b2222;
+
+    --danger-ink: #a32424;  --danger-ink-hover: #7d1b1b;
+    --rider-bg: #f0edfa;    --rider-line: #cfc6ee;   --rider-ink: #4b3c86;
+    --rider-on-bg: #e6e0fa; --rider-on-line: #8b7ac8; --rider-on-ink: #3a2d70;
+
+    --float-bg: #fffffff2;  --float-shadow: #0000002e;
+    --tip-bg: #fffffff5;    --tip-shadow: #00000026;
+    --modal-shadow: #00000038; --backdrop: #10141c66;
+    --mark-ring: #00000026; --mark-ring-hover: #00000044;
+    --figure-plate: #1a1a19;
+    --art-shadow: #0000001f; --art-shadow-strong: #00000029;
+  }
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --surface-0: var(--lt-surface-0);
+  --surface-1: var(--lt-surface-1);
+  --surface-2: var(--lt-surface-2);
+  --line:      var(--lt-line);
+  --line-soft: var(--lt-line-soft);
+  --ink:       var(--lt-ink);
+  --ink-2:     var(--lt-ink-2);
+  --ink-3:     var(--lt-ink-3);
+  --series-1:  var(--lt-series-1);
+  --series-1-tint: var(--lt-series-1-tint);
+  --good-text: var(--lt-good-text);
+  --warn-text: var(--lt-warn-text);
+  --bad-text:  var(--lt-bad-text);
+  --foil-text: var(--lt-foil-text);
+
+  --banner-bg: #e7f0fb;   --banner-line: #9dc0e8;  --banner-ink: #14324f;
+  --accent-bg: #e7f0fb;   --accent-line: #9dc0e8;  --accent-ink: #12447d;
+  --hot-bg:    #e6eefa;   --link-hover:  #17457f;
+
+  --pill-good-bg: #eaf6ea; --pill-good-line: #a8d5a8; --pill-good-ink: #15661f;
+  --pill-warn-bg: #fbf3e2; --pill-warn-line: #e2c98a; --pill-warn-ink: #7a5600;
+  --pill-bad-bg:  #fbecec; --pill-bad-line:  #e5b2b2; --pill-bad-ink:  #9b2222;
+
+  --danger-ink: #a32424;  --danger-ink-hover: #7d1b1b;
+  --rider-bg: #f0edfa;    --rider-line: #cfc6ee;   --rider-ink: #4b3c86;
+  --rider-on-bg: #e6e0fa; --rider-on-line: #8b7ac8; --rider-on-ink: #3a2d70;
+
+  --float-bg: #fffffff2;  --float-shadow: #0000002e;
+  --tip-bg: #fffffff5;    --tip-shadow: #00000026;
+  --modal-shadow: #00000038; --backdrop: #10141c66;
+  --mark-ring: #00000026; --mark-ring-hover: #00000044;
+  --figure-plate: #1a1a19;
+  --art-shadow: #0000001f; --art-shadow-strong: #00000029;
+}
+
+/* --- the components that carried a literal, now reading the variable. One rule each, both
+   themes, placed here so "does this survive paper" has one block to read rather than
+   fifteen scattered overrides. */
+
+.update-banner { background: var(--banner-bg); border-bottom-color: var(--banner-line);
+                 color: var(--banner-ink); }
+.badge.accent  { border-color: var(--accent-line); background: var(--accent-bg);
+                 color: var(--accent-ink); }
+.dropzone.hot  { background: var(--hot-bg); }
+.linkish:hover { color: var(--link-hover); }
+
+.pill.flew_through, .pill.glide_out {
+  color: var(--pill-good-ink); border-color: var(--pill-good-line);
+  background: var(--pill-good-bg);
+}
+.pill.touchdown {
+  color: var(--pill-warn-ink); border-color: var(--pill-warn-line);
+  background: var(--pill-warn-bg);
+}
+.pill.fell_in {
+  color: var(--pill-bad-ink); border-color: var(--pill-bad-line);
+  background: var(--pill-bad-bg);
+}
+
+button.ghost.danger { color: var(--danger-ink); }
+button.ghost.danger:hover {
+  background: var(--pill-bad-bg); border-color: var(--pill-bad-line);
+  color: var(--danger-ink-hover);
+}
+.icu-status.bad { color: var(--danger-ink); }
+
+.lib-tag.rider { color: var(--rider-ink); border-color: var(--rider-line);
+                 background: var(--rider-bg); }
+.rider-known .lib-tag.on { border-color: var(--rider-on-line); background: var(--rider-on-bg);
+                           color: var(--rider-on-ink); }
+
+.popover { background: var(--float-bg); box-shadow: 0 10px 30px var(--float-shadow); }
+.tip     { background: var(--tip-bg); box-shadow: 0 6px 18px var(--tip-shadow); }
+.ask     { box-shadow: 0 24px 60px var(--modal-shadow); }
+.ask::backdrop { background: var(--backdrop); }
+#card-canvas   { box-shadow: 0 6px 20px var(--modal-shadow); }
+.mark { box-shadow: inset 0 0 0 1px var(--mark-ring); }
+a.brand:hover .mark { box-shadow: inset 0 0 0 1px var(--mark-ring-hover); }
+
+/* The verdict inks where they are TEXT rather than a mark. */
+.tally .flew { color: var(--good-text); }
+.tally .touchdown { color: var(--warn-text); }
+.tally .fell { color: var(--bad-text); }
+.readout .phase.flying { color: var(--foil-text); }
+
+/* The pictures keep their own plate — see "WHAT STAYS DARK" above. */
+.figure { background: var(--figure-plate); }

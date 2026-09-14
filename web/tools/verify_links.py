@@ -30,6 +30,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # web/
 
 PAGES = [
     "index.html",
+    "learn/index.html",
     "invite/index.html",
     "start/index.html",
     "privacy/index.html",

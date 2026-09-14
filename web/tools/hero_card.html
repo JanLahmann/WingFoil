@@ -1,0 +1,72 @@
+<!doctype html>
+<!--
+  The homepage's hero image, regenerated.
+
+  `web/img/share-card.png` is not a screenshot and not a mock-up: it is a real share card,
+  of the bundled example session, drawn by `js/sharecard.js` — the same function the Share
+  card dialog calls — with the map background switched on. This page is the headless driver
+  for it, so the picture on the front page can be reproduced rather than remembered.
+
+  It renders the 1080x1350 portrait card and shows it at exactly 440x550, which is the
+  reduction the committed file is. The cap is about the QR rather than about sharpness: the
+  code is 33 modules at one image pixel per module, and a decoder that meets a blurred
+  module edge simply declines.
+
+  TO REGENERATE (from the repo root):
+
+    # 1. the analysis document, from the bundled example, through the real web entry point
+    cd lab && uv run python -c "import sys; sys.path.insert(0, '../web/lab_bundle'); \
+      import web_entry, json; \
+      open('../web/tools/hero_card.json', 'w').write(json.dumps(web_entry.analyze_bytes( \
+        open('../web/example/ExampleSession.fit','rb').read(), 'ExampleSession.fit')))"
+    cd ..
+
+    # 2. serve web/ (the modules are ES modules; file:// will not load them) and shoot it.
+    #    The tiles come from tile.openstreetmap.org, so this step needs the network — and it
+    #    is the ONLY moment anything in this repo asks OSM for anything.
+    python3 -m http.server 8917 -d web &
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new \
+      --disable-gpu --force-device-scale-factor=1 --window-size=440,550 --hide-scrollbars \
+      --virtual-time-budget=30000 --screenshot=/tmp/hero.png \
+      http://127.0.0.1:8917/tools/hero_card.html
+
+    # 3. quantize. FASTOCTREE, not the median cut the social card uses: the card's verdict
+    #    inks are a handful of pixels each (the red "fell in" dot, the amber in the tally)
+    #    and median cut drops them into the map's greens. 105 KB -> 28 KB.
+    python3 -c "from PIL import Image; \
+      Image.open('/tmp/hero.png').convert('RGB') \
+           .quantize(colors=256, method=Image.Quantize.FASTOCTREE) \
+           .save('web/img/share-card.png', optimize=True)"
+
+    rm web/tools/hero_card.json        # generated, not committed
+
+  Then update the <img>'s alt text in web/index.html: it names every number on the card, and
+  an engine bump moves some of them.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CleanJibe — hero card renderer</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #ffffff; }
+  /* Exactly the committed file's pixels, so the screenshot needs no resampling of its own. */
+  #out { display: block; width: 440px; height: 550px; }
+</style>
+</head>
+<body>
+<img id="out" alt="">
+<script type="module">
+  import { drawCard, cardContent } from "../js/sharecard.js";
+
+  const result = await (await fetch("./hero_card.json")).json();
+  // The one thing typed into the card. Everything else is what the analysis produced.
+  const content = cardContent(result, "complete", { title: "Nago Torbole Wingfoil" });
+  const canvas = document.createElement("canvas");
+  await drawCard(canvas, content, "portrait", { map: true });
+  const img = document.getElementById("out");
+  await new Promise((resolve) => { img.onload = resolve; img.src = canvas.toDataURL("image/png"); });
+  // A marker for a driver that waits on the title rather than on a virtual-time budget.
+  document.title = "DONE";
+</script>
+</body>
+</html>
