@@ -3188,6 +3188,37 @@ conversation. Either button answers it and the card is gone. **Settings → Beta
 report** is the permanent door, for the rider who did not wait to be asked and the one who
 said Not now and changed his mind.
 
+### Start over
+
+**Beta and dev only** (`#if BETA`, docs/channels.md), last row of the Beta section, red, and
+the only destructive button in the app. It exists because deleting the app does not do what a
+tester means by it: iOS keeps keychain items across a delete, so the intervals.icu key and the
+Strava connection come back with the reinstall and the fresh first run he was trying to see
+never happens (Jan, 14 September 2026 — he deleted the app, reinstalled it, and found both
+already there).
+
+The confirmation names everything that goes, because a rider cannot check "all data" and
+because the two items he would never guess at are the whole point: *your whole library —
+every session, its analysis and its archived recording, the deleted-session memory and any
+backup file still waiting on this phone; your intervals.icu key and your Strava connection,
+both of which live in the iOS keychain, which is why deleting the app leaves them behind and
+this does not; every setting — the welcome screen's flag, map style and layers, replay length,
+framing and music, the notification choices, the map picks for the watch and the tuning
+sliders; the beta's usage counters and the widgets' snapshot; cached thumbnails, imported
+files and anything half-exported.* It closes with what is **not** touched — the sessions on
+intervals.icu, the activities on Strava and the recordings on the watch are somebody else's
+copy — and with "make a backup first if you want one", because there is no undo.
+
+**It does not ask for a relaunch.** Settings closes, the library's GRDB pool is parked in
+memory, the container, the defaults domain and the two keychain items go, a new pool is
+opened on the same path where the migrator writes an empty schema, every property that
+mirrors a default is read back from the now-empty domain, and the empty library is read —
+which is the same event a first launch has, so `RootView` raises the welcome screen by the
+ordinary route. The one thing that can fail is reopening the file, and there the app says so
+rather than running on a library that is not on disk: one full screen, *"Start over done —
+close the app and open it again"*, with no button, because iOS gives an app no supported way
+to quit itself and `exit(0)` reads as a crash in the feature the rider just used.
+
 ## Start screen — the mark, held for two seconds
 
 **The phone opens on the brand, and the handover is invisible.** iOS draws `UILaunchScreen`
