@@ -3190,6 +3190,82 @@ watch has about 165 pt of usable height and the page had already spent it, so at
 the "Allow Apple Health to record heart rate" note lost its second line and truncated
 mid-word. Nothing moves under the thumb when everything fits (`.basedOnSize`).
 
+## Home-screen widgets — three, and what each of them says
+
+Beta and dev only (docs/channels.md): the release app embeds no widget extension. All three
+read one small JSON blob the app publishes after every library change and decode it and
+nothing else — the extension does not link the kit and cannot open the library (ADR-011), so
+every question that needs a library row is answered on the app's side and arrives here
+already answered.
+
+| widget | families | what it says |
+|---|---|---|
+| **Last session** | small · medium · large | the last afternoon **ridden**: its name, its date, on-foil share, best 2 s, flights, the turn tally, and the track behind the numbers |
+| **This week** | small · medium | foil time over the last seven days — or, in a week with nothing in it, "since your last session" |
+| **Personal bests** | small · medium | best 2 s, longest flight, best JPH, each with where and when |
+
+**The last session is the last one ridden**, which is not the same as the newest row. On
+14 September 2026 the newest row in Jan's library was a dry test recording and his home
+screen read `FOIL 0 % · BEST 2 S — · FLIGHTS 0` while the afternoon before it sat one row
+down. The rule is the newest non-provisional row with foil time on it
+(`WidgetSnapshot.isRidden`), falling back to the newest row of all only when the library
+holds no ridden session at all — a rider whose library is one dry test still gets his row.
+A provisional row is excluded for the same reason it is badged in the library: it is the
+watch's BLE card with no analysis behind it, and it has no numbers to print. The title is
+the library's own (`SessionDisplay.title`: the rider's name for it, else the spot the
+filename implies), the date under it, and the tally is shown only when the session has one.
+
+**The track behind the numbers.** The session's outline is drawn as one thin line in the
+brand green *behind* the block, at 38 % on medium, 45 % on large and 16 % on small, where
+the numbers own every pixel. It is the app's own outline and not a second drawing: the
+snapshot carries the cached `TrackThumbnail`'s vertices, already normalized into a unit
+square with the aspect preserved by the same projection the list row, the map and the share
+card use, thinned to ~150 evenly-spaced points and rounded to four decimals in the *builder*.
+The widget owns no projection code and must not — a second projection is a second shape. A
+session with no positions, or one whose thumbnail has not been built yet, simply has no
+track, and the widget draws none.
+
+**"Since your last session" — the week with nothing in it.** A week away from the water used
+to render `0 m on the foil · 2 sessions · 0.0 h out`, which is both dispiriting and, with
+two dry test rows in it, wrong. Both windows now count ridden afternoons only, and when the
+seven days ending on the day the widget is *drawn* hold none of them the widget switches:
+
+* **days since the last session**, counted against that day rather than against the day the
+  snapshot was written;
+* **the season so far** — the app's own season, 1 April → 31 March, labelled the way the
+  Periods screen labels it ("Season 2026/27") — sessions, hours on the foil, clean jibes;
+* **one rotating fact**, changing at midnight.
+
+The rotation is the season's own bests — best 2 s, longest flight, best JPH, longest dry
+streak — plus **on this day**: a session in the *same ISO week* of an earlier year, which is
+the honest window for a sport whose calendar is weather ("Two years ago this week: Nago
+Torbole, 11 flights, best 2 s 24.13 kn"). Before the first afternoon of a new season the
+rotation falls back to the all-time bests rather than going blank. The fact of the day is
+picked by **ordinal day of year**, so it stays put for the day it is the day's fact; the
+timeline carries one entry per day for a week, which is also what turns "11 days" into
+"12 days" at midnight without the app being opened.
+
+**Personal bests are three, and JPH is one of them.** Rates are additive (CLAUDE.md): JPH
+sits beside the speed and the flight here, and displaces CPH nowhere. The speed record is
+**certified sources only** (`RecordBest.certified`) — a class (c) recording can misreport a
+speed, and a personal best nobody can stand behind is worse than none — while the flight and
+the rate take no such filter, because how long an afternoon flew is not a claim its speed
+channel makes. JPH takes the same session-length floor "Best CPH" takes
+(`SessionRecordKind.cphMinDurationS`): a rate a rider can set by going home early is not a
+record. JPH itself is the engine's — dry jibes over timer hours, read back off the `turn`
+table by `LibraryStore.jibeRates`, because the session index denormalizes CPH and not JPH.
+
+**The words and the numbers are the app's.** The extension cannot call `Fmt` or
+`KeyMetrics`, so `WidgetFormat` copies the four rules it needs and names, in each doc
+comment, the kit function it may not drift from: the percent rule (`47 %`, one decimal below
+ten), knots at two decimals, the `1:57 h` / `10:45 min` duration, and a rate at one decimal.
+Rider vocabulary throughout — *flew through*, *touchdown*, *fell in*, *clean*, *dry*.
+
+**When the widget shows nothing.** Two different empty states, and they say different
+things: "No sessions yet." for an empty library, and "Open CleanJibe to finish setting up
+the widget." when the shared container is not reachable, which is a setup fact and worth
+saying out loud (ADR-011 — the App Store profile carries no app group today).
+
 ## iPad and Mac — one column, wider glass
 
 The iPhone app **is** the iPad app (`TARGETED_DEVICE_FAMILY: "1,2"` on the app and the widget
@@ -3251,9 +3327,10 @@ would centre the title at the cost of a 740 pt bar with hard edges and empty gla
 every time the content scrolls under it, which is a worse thing to look at than a title above
 a centred card. The session page does not have the question at all: its title is inline.
 
-**Widgets.** The extension ships for both families too. It declares `.systemSmall` and
-`.systemMedium`, which are valid on iPad, on the Home Screen and in Today view alike; the
-snapshot it draws is the same JSON the phone writes.
+**Widgets.** The extension ships for both families too. Its three widgets declare
+`.systemSmall` and `.systemMedium` (and `.systemLarge` on the last-session one), every one
+of which is valid on iPad, on the Home Screen and in Today view alike; the snapshot they
+draw is the same JSON the phone writes.
 
 ## Enforcement
 
