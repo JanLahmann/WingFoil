@@ -101,8 +101,12 @@ import Testing
     }
 
     /// `.none` is one section with no heading at all — the flat list the library has always
-    /// been, ordered newest first.
+    /// been, ordered newest first. Its segment is labelled **"All"** while its raw value
+    /// stays `none`, which is what the stored preference and `UI_GROUP_BY` already hold.
     @Test func noneIsOneHeadlessSection() {
+        #expect(LibraryGrouping.none.title == "All")
+        #expect(LibraryGrouping.none.rawValue == "none")
+        #expect(LibraryGrouping.allCases.map(\.title) == ["All", "Month", "Year", "Spot"])
         let rows = [row("b", day(2026, 7, 4)), row("a", day(2026, 8, 2))]
         let groups = LibraryGrouping.none.groups(rows, spotName: names, calendar: utc)
         #expect(groups.count == 1)

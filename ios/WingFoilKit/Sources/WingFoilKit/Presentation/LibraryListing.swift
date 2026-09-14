@@ -6,7 +6,7 @@ import Foundation
 /// The library grew past the length a flat newest-first list answers questions on: "how many
 /// afternoons in August", "everything at Torbole", "what came in from Strava" are all
 /// questions about a *set* of sessions, and a rider was scrolling for them. Two controls
-/// answer them — **group by** (none · month · year · spot) and one **filter** menu (spot,
+/// answer them — **group by** (all · month · year · spot) and one **filter** menu (spot,
 /// source, discipline, a date window) — and both live here rather than in the view, for the
 /// reason every other file in this folder exists: the decision "which month is this session
 /// in" is a calendar question with a zone in it, and a zone question settled inside a
@@ -201,10 +201,14 @@ public enum LibraryGrouping: String, Sendable, CaseIterable, Identifiable {
 
     public var id: String { rawValue }
 
-    /// The segmented control's four words.
+    /// The segmented control's four words. The ungrouped case is called **"All"** rather
+    /// than "None" (Jan, 14 Sep 2026): the segment beside Month and Year is not the absence
+    /// of a list, it is the whole library in one piece, and "None" read as "nothing shown".
+    /// The raw value stays `none` — it is what `library.groupBy.v1` already holds on every
+    /// phone, and what `UI_GROUP_BY` takes.
     public var title: String {
         switch self {
-        case .none: "None"
+        case .none: "All"
         case .month: "Month"
         case .year: "Year"
         case .spot: "Spot"
