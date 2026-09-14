@@ -604,10 +604,18 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
 
    iOS screenshot hooks (DEBUG **and** simulator only, passed as `SIMCTL_CHILD_…`
    environment variables to `xcrun simctl launch`): `UI_RESET=1` restores the fresh-install
-   state — keychain key, sync history, PB snapshot, database and FIT archive all removed —
-   and `UI_ICU_KEY=…` seeds a key through the real keychain path afterwards, so the
-   first-run setup card and the "key stored, sync rejected" card can both be captured
-   without reinstalling. `UI_IMPORT_FIXTURES=1`, `UI_OPEN_SESSION=latest|<name>`,
+   state — both keychain items, the whole defaults domain and the app group's, and
+   everything in Application Support, Caches, tmp and Documents (database, FIT archive,
+   replay-music copy, widget snapshot) — and `UI_ICU_KEY=…` seeds a key through the real
+   keychain path afterwards, so the first-run setup card and the "key stored, sync rejected"
+   card can both be captured without reinstalling. It runs in `WingFoilApp.init`, before the
+   store reads the keychain, and the wipe it runs is `StartOver.wipe` — the same one
+   **Settings → Beta → Start over** runs, so there is one wipe and not two
+   (docs/presentation.md, "Start over"). `UI_START_OVER=1` is its in-process twin: it waits
+   for the first library read and then calls `SessionStore.startOver()`, the very method the
+   button calls, so a screenshot taken after it is the real result of the real door rather
+   than of a launch-time shortcut. Beta and dev channels only have the button; the hook
+   compiles in any DEBUG build. `UI_IMPORT_FIXTURES=1`, `UI_OPEN_SESSION=latest|<name>`,
    `UI_TAB=records|trends|gear`, `UI_SHEET=help|settings|import|tuning|discipline` and
    `UI_HELP_TOPIC=<HelpTopicID>` park the app on a given screen, since `simctl` cannot tap.
    On the **Sessions** tab, `UI_GROUP_BY=none|month|year|spot` and `UI_FILTER_SOURCE=<raw>`
