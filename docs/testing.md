@@ -1188,6 +1188,16 @@ xcodebuild -exportArchive -archivePath build/WingFoilDev.xcarchive \
 `provisioningProfiles` map. An entry for a bundle id an archive does not contain is ignored,
 so the release export reads the first line and nothing else.
 
+Two traps met on 14 September 2026. **A stale local profile**: regenerating a profile through
+the API (after adding a capability such as App Groups) leaves the copy under
+`~/Library/Developer/Xcode/UserData/Provisioning Profiles` as it was, and the archive fails
+with "doesn't include the App Groups capability" although the portal's profile does. The
+`-allowProvisioningUpdates` line with the API key, shown on the dev archive above, makes
+Xcode fetch the current one; it is harmless on the other two archives. **The export is the
+upload**: `destination: upload` in ExportOptions.plist means `-exportArchive` sends the build
+to App Store Connect itself, and without the same three authentication flags it fails with
+"Failed to Use Accounts" — there is no separate altool step.
+
 Upload each (Transporter or `xcrun altool`), then attach it to its group. `--app` names the
 App Store Connect record: `release` (the default) is the App Store app, which holds both the
 release and the beta channel's builds; `dev` is the separate "CleanJibe Dev" record
