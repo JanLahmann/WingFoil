@@ -1,3 +1,6 @@
+// Apple Health, writing sessions as workouts: a BETA door (docs/channels.md), and the
+// other half of the entitlement the release channel does not have.
+#if BETA
 import Foundation
 import HealthKit
 import WingFoilKit
@@ -79,3 +82,5 @@ actor HealthWriter {
         return metadata
     }
 }
+
+#endif

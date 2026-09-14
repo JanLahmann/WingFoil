@@ -64,8 +64,8 @@ public struct StravaSyncSummary: Sendable, Equatable {
 /// therefore re-analysed on an engine bump like every other, and can be shared, backed up
 /// and restored with no special case anywhere downstream.
 ///
-/// **Rate limits are a first-class outcome, not an exception.** Strava allows 100 requests
-/// per fifteen minutes; a 429 stops the run, is reported as `rateLimited`, and leaves
+/// **Rate limits are a first-class outcome, not an exception.** Strava allows 200 read
+/// requests per fifteen minutes; a 429 stops the run, is reported as `rateLimited`, and leaves
 /// everything it had already imported in place. Nothing is retried in a loop — a retry
 /// against a quota is how an app turns a five-minute wait into a fifteen-minute one.
 public struct StravaSyncService: Sendable {

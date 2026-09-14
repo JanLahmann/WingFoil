@@ -255,6 +255,10 @@ private struct RecordingCard: View {
 
 // MARK: - Analyse as
 
+/// **DEV only** (docs/channels.md) — windsurf, and the per-discipline thresholds with it.
+/// The card is behind `store.windsurfEnabled`, which is the constant `false` in the release
+/// and beta channels, so it is already unreachable there; this note says why.
+///
 /// **"Analyse as" — the discipline this session is read in** (docs/algorithms.md
 /// "Disciplines", GitHub issue #6).
 ///

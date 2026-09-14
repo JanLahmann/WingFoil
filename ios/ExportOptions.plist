@@ -13,18 +13,17 @@
     <key>signingCertificate</key>
     <string>Apple Distribution</string>
     <!--
-      Manual signing needs one profile per embedded bundle id. The WidgetKit extension
-      (de.lahmann.wingfoil.widgets) is embedded in the app as of the widgets change, so
-      exporting this archive needs a profile for it too.
+      Manual signing needs one profile per embedded bundle id, and this one file serves all
+      three channels (docs/channels.md) because a bundle id appears in exactly one of them:
 
-      Until that profile exists in the developer portal, export with automatic signing
-      (Xcode Organizer → Distribute App, or signingStyle=automatic here), which creates it.
-      Once it exists, uncomment the second entry below and manual export works again:
+        release  de.lahmann.wingfoil                        — no widgets, no watch app
+        beta     de.lahmann.wingfoil + the three embedded ids
+        dev      de.lahmann.wingfoil.dev + its own three
 
-          <key>de.lahmann.wingfoil.widgets</key>
-          <string>WingFoil Widgets App Store</string>
-
-      See docs/decisions.md, "Widgets and the app group".
+      An entry for a bundle id the archive does not contain is ignored, so the release
+      export reads the first line and nothing else. The four "CleanJibe Dev …" profiles were
+      created through the ASC API on 14 Sep 2026; see docs/decisions.md, "Widgets and the
+      app group", for what the App Groups capability still needs from the portal.
     -->
     <key>provisioningProfiles</key>
     <dict>
@@ -41,6 +40,15 @@
         -->
         <key>de.lahmann.wingfoil.watchkitapp.widgets</key>
         <string>WingFoil Watch Widgets App Store</string>
+        <!-- The dev channel: a second app, so a second set of four. -->
+        <key>de.lahmann.wingfoil.dev</key>
+        <string>CleanJibe Dev App Store</string>
+        <key>de.lahmann.wingfoil.dev.widgets</key>
+        <string>CleanJibe Dev Widgets App Store</string>
+        <key>de.lahmann.wingfoil.dev.watchkitapp</key>
+        <string>CleanJibe Dev Watch App Store</string>
+        <key>de.lahmann.wingfoil.dev.watchkitapp.widgets</key>
+        <string>CleanJibe Dev Watch Widgets App Store</string>
     </dict>
     <key>uploadSymbols</key>
     <true/>

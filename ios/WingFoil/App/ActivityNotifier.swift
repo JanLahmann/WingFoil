@@ -21,8 +21,14 @@ final class ActivityNotifier: NSObject {
 
     // `nonisolated` because the notification-centre delegate reads them from whatever
     // thread iOS delivers a tap on.
-    /// Must match `BGTaskSchedulerPermittedIdentifiers` in project.yml.
-    nonisolated static let taskIdentifier = "de.lahmann.wingfoil.refresh"
+    /// Must match `BGTaskSchedulerPermittedIdentifiers` in project.yml, which spells it
+    /// `$(CJ_BUNDLE_ID).refresh` — so it is *derived* here rather than typed, and the dev
+    /// channel, which is a second app with its own bundle id (docs/channels.md), registers
+    /// its own identifier instead of colliding with the release one. The fallback is the
+    /// release id and can only be reached by a bundle with no identifier at all, which is
+    /// not a thing iOS will launch.
+    nonisolated static let taskIdentifier =
+        (Bundle.main.bundleIdentifier ?? "de.lahmann.wingfoil") + ".refresh"
     /// The rider's toggle (Settings → Notifications). Off until he asks.
     nonisolated static let enabledKey = "notifyOnNewActivities"
     /// Set the one time the app offers the feature by itself (`NewActivityPrompt`), so the

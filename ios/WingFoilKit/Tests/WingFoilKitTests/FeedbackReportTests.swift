@@ -24,8 +24,8 @@ import Testing
 
     // MARK: The subject
 
-    /// The build number, not the marketing version: the two TestFlight variants of a
-    /// release share the latter and differ only in the former.
+    /// The build number, not the marketing version: the three channels of a release share
+    /// the latter and differ only in the former (docs/channels.md).
     @Test func theSubjectNamesTheBuildAndTheWatch() {
         #expect(FeedbackReport.subject(facts())
                 == "CleanJibe beta feedback · build 17 · fenix 8")

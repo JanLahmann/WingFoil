@@ -303,11 +303,12 @@ public enum HelpCatalog {
                 + "own speed in it, and those records certify. Importing both is harmless — "
                 + "the same session is recognised whichever door it came in by, and it is "
                 + "never added twice.",
-                "Strava has not reviewed CleanJibe yet. Until it does, Strava allows one "
-                + "connected rider and a hundred requests every fifteen minutes, so a first "
-                + "import of a long history takes its time and may ask you to come back in a "
-                + "few minutes. If Strava refuses to connect at all, that ceiling is why, "
-                + "and it is nothing to do with your account.",
+                "Strava has not reviewed CleanJibe yet. Until it does, Strava allows ten "
+                + "connected riders and two hundred requests every fifteen minutes, so a "
+                + "first import of a long history takes its time and may ask you to come "
+                + "back in a few minutes. If connecting is refused because the app is full, "
+                + "that ceiling is why and it is nothing to do with your account — Menu → "
+                + "Support is the way to report it.",
             ],
             items: [
                 .init(term: "Connect",

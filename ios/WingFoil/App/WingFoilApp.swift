@@ -44,7 +44,11 @@ struct WingFoilApp: App {
                 // The watch's session cards, for as long as the app is alive. A separate
                 // task from the load above because it never finishes: it is a stream, not
                 // a step, and it must not delay the library appearing.
+                //
+                // DEV only, with the rest of the Garmin link (docs/channels.md).
+                #if DEV
                 .task { await store.watchForCompanionCards() }
+                #endif
                 // The Apple Watch recorder's own link. A separate WCSession delegate from
                 // the Garmin one above and unrelated to it: this one receives whole
                 // recordings over WatchConnectivity, that one receives summary cards through
@@ -54,7 +58,12 @@ struct WingFoilApp: App {
                 // wrote into Health. Opt-in, so this returns immediately on every install
                 // that has not asked for it. It registers the HealthKit observer and sweeps
                 // once; the sweep is the half that always works (ADR-017).
+                //
+                // BETA only: the release channel has no HealthKit entitlement to observe
+                // with (docs/channels.md).
+                #if BETA
                 .task { await store.watchHealthForNewWorkouts() }
+                #endif
                 // The second cloud source (ADR-023). Reads the stored tokens so the Import
                 // and Settings screens know the connection state before anybody taps, then
                 // — only if the rider asked for automatic pickup — looks for new activities.
@@ -63,10 +72,14 @@ struct WingFoilApp: App {
                     await store.checkStravaForNewActivities()
                 }
                 // Two kinds of URL land here: Garmin Connect returning the watch the rider
-                // picked, and the share sheet handing us a FIT or a ZIP. The companion
-                // link answers only on its own scheme, so it gets first refusal.
+                // picked, and the share sheet handing us a recording. The companion link
+                // answers only on its own scheme, so it gets first refusal — and only in the
+                // dev channel, which is the only one that ever sent the rider to Garmin
+                // Connect in the first place (docs/channels.md).
                 .onOpenURL { url in
+                    #if DEV
                     guard !store.handleCompanionURL(url) else { return }
+                    #endif
                     Task { await store.importPicked(urls: [url]) }
                 }
                 // A background wake may have imported a session while the app was away —
@@ -79,7 +92,10 @@ struct WingFoilApp: App {
                         // The reliable half of the automatic Health pickup: the rider has
                         // just finished a workout and opened the app, which is the moment
                         // iOS's own background delivery is least likely to have run yet.
+                        // BETA only (docs/channels.md).
+                        #if BETA
                         await store.checkHealthForNewWorkouts()
+                        #endif
                         // …and the same reasoning for Strava: the rider's watch has just
                         // finished uploading, and opening the app is when he expects to see
                         // the session. Returns at once unless he switched the pickup on.
