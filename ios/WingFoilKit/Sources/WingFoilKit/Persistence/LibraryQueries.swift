@@ -346,6 +346,48 @@ public struct LibraryStore: Sendable {
         return out
     }
 
+    /// **JPH per session**, keyed by session id — dry jibes per hour of timer time.
+    ///
+    /// It is a query rather than a column because the session index denormalizes CPH and
+    /// not JPH (schema v11 added one rate, not four). The numerator is the engine's own
+    /// rule read back off the `turn` table — counted jibes he did **not** swim out of,
+    /// `SessionSummarizer.dryJibeTimes` — and the denominator is `timerSeconds`, the one
+    /// clock a rate may divide by since engine 0.13.0 (docs/algorithms.md, "Session
+    /// rates"). So the number here is the number on the session page, not a second
+    /// arithmetic that happens to be close.
+    ///
+    /// A session with a timer and genuinely no dry jibe reports a measured 0, exactly as
+    /// the engine does; a session with no timer to divide by is absent, never 0.
+    public func jibeRates(_ filter: LibraryFilter = LibraryFilter()) async throws
+        -> [String: Double] {
+        try await database.writer.read { db in
+            let counts = try Self.dryJibeCounts(filter, db: db)
+            var out: [String: Double] = [:]
+            for row in try Self.sessions(filter, db: db) where row.timerSeconds > 0 {
+                out[row.id] = Double(counts[row.id] ?? 0) * 3600 / row.timerSeconds
+            }
+            return out
+        }
+    }
+
+    /// Counted jibes that did not end in the water, per session — the JPH numerator.
+    /// Uncounted turns (bear-aways, round-ups) are excluded in the SQL, the same rule every
+    /// other turn number in the app follows.
+    static func dryJibeCounts(_ filter: LibraryFilter, db: Database) throws -> [String: Int] {
+        let (join, whereSQL, args) = clause(filter, alias: "s")
+        // `clause` always emits a WHERE (the example/provisional exclusions are
+        // unconditional), so appending conditions is safe.
+        let rows = try Row.fetchAll(db, sql: """
+            SELECT t.sessionId AS sessionId, COUNT(*) AS n
+            FROM turn t JOIN session s ON s.id = t.sessionId\(join)\(whereSQL)
+              AND t.counted = 1 AND t.type = 'jibe' AND t.outcome <> 'fell_in'
+            GROUP BY t.sessionId
+            """, arguments: args)
+        var out: [String: Int] = [:]
+        for row in rows { out[row["sessionId"]] = row["n"] }
+        return out
+    }
+
     /// Sessions per week over the filtered range, zero-filled between the first and the
     /// last session (or from `filter.since`, so an empty recent month reads as empty).
     public func weeks(_ filter: LibraryFilter = LibraryFilter(),

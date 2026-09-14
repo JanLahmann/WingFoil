@@ -613,6 +613,46 @@ import ZIPFoundation
         #expect(weeks[0].weekStart == calendar.date(byAdding: .day, value: -7,
                                                     to: weeks[1].weekStart))
     }
+
+    // MARK: - JPH per session (the widget's rate)
+
+    /// One turn, written straight into the child table: `TurnRow` is built from a
+    /// `TurnRecord` with thirty fields, and this test cares about exactly three of them.
+    private func insertTurn(_ db: Database, session: String, idx: Int, type: String,
+                            counted: Bool, outcome: String) throws {
+        try db.execute(sql: """
+            INSERT INTO turn (sessionId, idx, ts, endTs, type, counted, entryKn, minKn,
+                              score, success, side, direction, netDeg, outcome, borderline)
+            VALUES (?, ?, 0, 1, ?, ?, 20, 12, 80, 1, 'port', 'port', 170, ?, 0)
+            """, arguments: [session, idx, type, counted, outcome])
+    }
+
+    /// **JPH is the engine's, read back off the turn table.** Dry jibes — the ones he came
+    /// out of still sailing, flew-through and touchdown alike — over timer hours. A tack, an
+    /// uncounted course change and a jibe he swam out of are all outside the numerator.
+    @Test func jibeRatesCountDryJibesOverTimerHours() async throws {
+        let database = try AppDatabase.inMemory()
+        let row = sessionRow("s", day: 1) { $0.timerTimeS = 1800 }   // half an hour
+        let quiet = sessionRow("quiet", day: 2) { $0.timerTimeS = 3600 }
+        let stopped = sessionRow("stopped", day: 3) { $0.timerTimeS = 0 }
+        try await database.writer.write { db in
+            for session in [row, quiet, stopped] { try session.insert(db) }
+            try insertTurn(db, session: "s", idx: 0, type: "jibe", counted: true,
+                           outcome: "flew_through")
+            try insertTurn(db, session: "s", idx: 1, type: "jibe", counted: true,
+                           outcome: "touchdown")
+            try insertTurn(db, session: "s", idx: 2, type: "jibe", counted: true,
+                           outcome: "fell_in")
+            try insertTurn(db, session: "s", idx: 3, type: "tack", counted: true,
+                           outcome: "flew_through")
+            try insertTurn(db, session: "s", idx: 4, type: "jibe", counted: false,
+                           outcome: "flew_through")
+        }
+        let rates = try await LibraryStore(database: database).jibeRates()
+        #expect(rates["s"] == 4, "two dry jibes in half an hour")
+        #expect(rates["quiet"] == 0, "a measured zero, not a missing rate")
+        #expect(rates["stopped"] == nil, "no timer to divide by is not a rate of 0")
+    }
 }
 
 /// Store-mode ZIP builder shared by the library and GDPR import tests.

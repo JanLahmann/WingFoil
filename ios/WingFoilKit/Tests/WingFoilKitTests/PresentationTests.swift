@@ -1078,6 +1078,17 @@ import Testing
         return row
     }
 
+    /// A date in the reader's own calendar, so nothing here depends on the zone the test
+    /// host happens to be in.
+    private func day(_ year: Int, _ month: Int, _ day: Int) -> Date {
+        var parts = DateComponents()
+        parts.year = year
+        parts.month = month
+        parts.day = day
+        parts.hour = 12
+        return Calendar.current.date(from: parts)!
+    }
+
     @Test func widgetSnapshotTakesTheLatestSessionAndTheLastSevenDays() {
         let now = Date(timeIntervalSince1970: 1_785_000_000)
         let sessions = [
@@ -1096,6 +1107,40 @@ import Testing
         #expect(!snapshot.isEmpty)
     }
 
+    /// **The bug of 14 September 2026.** The newest row in Jan's library was a dry test
+    /// recording, so his home screen read "FOIL 0 % · BEST 2 S — · FLIGHTS 0" while the
+    /// afternoon before it sat one row down. The widget names the last session *ridden*.
+    @Test func widgetSnapshotNamesTheLastSessionActuallyRidden() {
+        let now = Date(timeIntervalSince1970: 1_785_000_000)
+        var dry = row(id: "dry", daysAgo: 0.5, now: now, durationS: 600, foilTimeS: 0)
+        dry.best2sKn = nil
+        dry.flightCount = 0
+        var provisional = row(id: "watch-card", daysAgo: 0.2, now: now, durationS: 5400,
+                              foilTimeS: 2400)
+        provisional.isProvisional = true
+        let ridden = row(id: "ridden", daysAgo: 2, now: now, durationS: 7200, foilTimeS: 3600)
+
+        let snapshot = WidgetSnapshot.make(sessions: [ridden, dry, provisional], now: now) {
+            "Spot " + $0.id
+        }
+        #expect(snapshot.lastSession?.id == "ridden")
+        // …and neither of the other two is a week on the water.
+        #expect(snapshot.weeklySessions == 1)
+        #expect(snapshot.recent?.count == 1)
+    }
+
+    /// A library of nothing but dry tests still gets its row — the fallback is the newest
+    /// session, never an empty widget.
+    @Test func widgetSnapshotFallsBackToTheNewestRowWithNothingRidden() {
+        let now = Date(timeIntervalSince1970: 1_785_000_000)
+        let dry = row(id: "dry", daysAgo: 1, now: now, durationS: 600, foilTimeS: 0)
+        let older = row(id: "older", daysAgo: 4, now: now, durationS: 600, foilTimeS: 0)
+        let snapshot = WidgetSnapshot.make(sessions: [older, dry], now: now) { $0.id }
+        #expect(snapshot.lastSession?.id == "dry")
+        #expect(snapshot.weeklySessions == 0, "a dry test is not a week on the water")
+        #expect(snapshot.season?.sessions == 0)
+    }
+
     /// Rows written before the schema-v2 `foilTimeS` column still have to contribute.
     @Test func widgetSnapshotFallsBackToTheFoilPercentage() {
         let now = Date(timeIntervalSince1970: 1_785_000_000)
@@ -1109,6 +1154,301 @@ import Testing
         let snapshot = WidgetSnapshot.make(sessions: [], now: Date()) { _ in "x" }
         #expect(snapshot.isEmpty)
         #expect(snapshot.lastSession == nil)
+        #expect(snapshot.facts?.isEmpty == true)
+        #expect(snapshot.bests?.isEmpty == true)
+    }
+
+    // MARK: - The track behind the numbers
+
+    /// A thumbnail with more vertices than the widget's budget, so the thinning has to bite.
+    private func thumbnail(points count: Int) -> TrackThumbnail {
+        let points = (0..<count).map { index -> TrackThumbnail.Point in
+            let along = Double(index) / Double(count - 1)
+            // A long reach: the full width of the box, a third of its height.
+            return TrackThumbnail.Point(x: along, y: 0.3 + sin(along * .pi * 4) * 0.1,
+                                        flying: index.isMultiple(of: 2))
+        }
+        let bounds = TrackThumbnail.Bounds(minX: -600, minY: -200, maxX: 600, maxY: 200,
+                                           lat0: 45.87, lon0: 10.87)
+        return TrackThumbnail(points: points, bounds: bounds, speed: [], maxKn: 0)
+    }
+
+    @Test func widgetTrackIsThinnedToTheBudgetAndKeepsItsShape() {
+        let source = thumbnail(points: 180)
+        let track = try! #require(WidgetSnapshot.track(from: source))
+
+        #expect(track.count == WidgetSnapshot.maxTrackPoints,
+                "a longer recording is thinned to the budget, not below it")
+        #expect(track.xy.count == track.count * 2)
+
+        // A thumbnail already inside the budget keeps every vertex it has.
+        let short = try! #require(WidgetSnapshot.track(from: thumbnail(points: 40)))
+        #expect(short.count == 40)
+        // The last vertex is always kept: a track that stopped short of where the rider
+        // came ashore is a different afternoon.
+        #expect(abs(track.point(track.count - 1).x - 1) < 0.001)
+
+        // The box is the drawn extent, not the unit square it was normalized into.
+        let xs = (0..<track.count).map { track.point($0).x }
+        let ys = (0..<track.count).map { track.point($0).y }
+        #expect(abs(track.minX - xs.min()!) < 1e-9)
+        #expect(abs(track.maxX - xs.max()!) < 1e-9)
+        #expect(abs(track.minY - ys.min()!) < 1e-9)
+        #expect(abs(track.maxY - ys.max()!) < 1e-9)
+        // Aspect preserved: this reach is far wider than it is tall, and it stays that way.
+        #expect(track.boxWidth > track.boxHeight * 2)
+        // The metres the normalization threw away are carried, so nothing has to project.
+        #expect(track.spanM == source.bounds?.spanM)
+    }
+
+    @Test func widgetTrackReachesTheLastSessionRidden() {
+        let now = Date(timeIntervalSince1970: 1_785_000_000)
+        let ridden = row(id: "ridden", daysAgo: 1, now: now, durationS: 7200, foilTimeS: 3600)
+        let dry = row(id: "dry", daysAgo: 0.5, now: now, durationS: 600, foilTimeS: 0)
+        var asked: [String] = []
+        let snapshot = WidgetSnapshot.make(sessions: [ridden, dry], now: now,
+                                           titleForRow: { $0.id },
+                                           trackForRow: { row in
+            asked.append(row.id)
+            return self.thumbnail(points: 180)
+        })
+        #expect(asked == ["ridden"], "one outline is built, for the session actually named")
+        #expect(snapshot.lastSession?.track?.isEmpty == false)
+    }
+
+    /// A single fix is a dot, not a line, and a widget draws nothing from it.
+    @Test func widgetTrackIsAbsentWithoutTwoVertices() {
+        let bare = TrackThumbnail(points: [TrackThumbnail.Point(x: 0.5, y: 0.5, flying: true)],
+                                  speed: [], maxKn: 0)
+        #expect(WidgetSnapshot.track(from: bare) == nil)
+    }
+
+    /// The whole blob has to stay small: it lives in `UserDefaults`, and a widget process
+    /// has 30 MB for everything it does. A real 150-vertex outline plus every fact is a
+    /// couple of kilobytes — the budget is 20 KB, which is room to spare rather than a
+    /// limit anyone is near.
+    @Test func widgetSnapshotStaysSmall() throws {
+        let now = Date(timeIntervalSince1970: 1_785_000_000)
+        let sessions = (0..<60).map {
+            row(id: "s\($0)", daysAgo: Double($0) * 3, now: now, durationS: 7200,
+                foilTimeS: 3600)
+        }
+        let snapshot = WidgetSnapshot.make(sessions: sessions, now: now,
+                                           titleForRow: { "Nago Torbole " + $0.id },
+                                           trackForRow: { _ in self.thumbnail(points: 400) })
+        let bytes = try JSONEncoder().encode(snapshot).count
+        #expect(bytes < 20_000, "the widget snapshot grew to \(bytes) bytes")
+    }
+
+    // MARK: - The season, and the facts
+
+    private func seasonRow(_ id: String, _ date: Date, foilTimeS: Double = 3600,
+                           _ build: (inout SessionRow) -> Void = { _ in }) -> SessionRow {
+        var row = SessionRow(id: id, startDate: date, durationS: 7200, sourceClass: "a")
+        row.foilTimeS = foilTimeS
+        row.rateDurationS = 7200
+        row.timerTimeS = 7200
+        build(&row)
+        return row
+    }
+
+    @Test func widgetSeasonIsTheAppsOwnSeasonSoFar() {
+        // 1 April → 31 March: the February afternoon belongs to the season that opened the
+        // previous April, and must not land in this one (`PeriodRules`).
+        let now = day(2026, 8, 15)
+        let rows = [
+            seasonRow("feb", day(2026, 2, 3)) { $0.jibesSuccessful = 4 },
+            seasonRow("may", day(2026, 5, 3)) { $0.jibesSuccessful = 7 },
+            seasonRow("aug", day(2026, 8, 1), foilTimeS: 1800) { $0.jibesSuccessful = 9 },
+        ]
+        let snapshot = WidgetSnapshot.make(sessions: rows, now: now) { $0.id }
+        let season = snapshot.season!
+        #expect(season.label == "2026")
+        #expect(season.sessions == 2)
+        #expect(abs(season.foilHours - 1.5) < 0.001)
+        #expect(season.cleanJibes == 16)
+    }
+
+    @Test func widgetFactsAreTheSeasonsOwnBests() {
+        let now = day(2026, 8, 15)
+        let rows = [
+            seasonRow("may", day(2026, 5, 3)) {
+                $0.best2sKn = 19; $0.longestFlightS = 120; $0.longestDryStreak = 4
+            },
+            seasonRow("jul", day(2026, 7, 3)) {
+                $0.best2sKn = 24.13; $0.longestFlightS = 372; $0.longestDryStreak = 17
+            },
+        ]
+        let snapshot = WidgetSnapshot.make(sessions: rows, now: now,
+                                           jibesPerHour: ["may": 8, "jul": 14.2],
+                                           titleForRow: { "Spot " + $0.id })
+        let facts = snapshot.facts ?? []
+        #expect(facts.map(\.kind) == [WidgetSnapshot.FactKind.best2s, .longestFlight,
+                                      .bestJph, .longestDryStreak].map(\.rawValue))
+        #expect(facts.allSatisfy { $0.factScope == .season })
+        let best = facts.first { $0.factKind == .best2s }!
+        #expect(best.value == 24.13)
+        #expect(best.spot == "Spot jul")
+        #expect(facts.first { $0.factKind == .bestJph }?.value == 14.2)
+        #expect(facts.first { $0.factKind == .longestDryStreak }?.value == 17)
+    }
+
+    /// The rotation is the ordinal day, so a fact stays put for the day it is the day's
+    /// fact and the next one arrives at midnight.
+    @Test func widgetFactRotatesByDayOfYear() {
+        let now = day(2026, 8, 15)
+        let rows = [seasonRow("jul", day(2026, 7, 3)) {
+            $0.best2sKn = 24.13; $0.longestFlightS = 372
+        }]
+        let snapshot = WidgetSnapshot.make(sessions: rows, now: now) { $0.id }
+        let facts = snapshot.facts ?? []
+        #expect(facts.count >= 2)
+
+        let today = snapshot.fact(on: now)
+        #expect(snapshot.fact(on: now.addingTimeInterval(3600)) == today,
+                "the same day is the same fact")
+        var seen: Set<String> = []
+        for offset in 0..<facts.count {
+            let date = Calendar.current.date(byAdding: .day, value: offset, to: now)!
+            if let fact = snapshot.fact(on: date) { seen.insert(fact.kind) }
+        }
+        #expect(seen.count == facts.count, "a week of days walks the whole rotation")
+    }
+
+    /// Before the first afternoon of a new season there is no season to boast about, and the
+    /// rotation falls back to the all-time bests rather than going blank.
+    @Test func widgetFactsFallBackToAllTimeInAnEmptySeason() {
+        let now = day(2026, 4, 2)                       // two days into a new season
+        let rows = [seasonRow("last", day(2026, 2, 3)) {
+            $0.best2sKn = 24.13; $0.longestFlightS = 372
+        }]
+        let snapshot = WidgetSnapshot.make(sessions: rows, now: now) { $0.id }
+        #expect(snapshot.season?.sessions == 0)
+        #expect(snapshot.facts?.allSatisfy { $0.factScope == .allTime } == true)
+        #expect(snapshot.facts?.contains { $0.factKind == .best2s } == true)
+    }
+
+    @Test func widgetBestsKeepJphBesideTheSpeedAndTheFlight() {
+        let now = day(2026, 8, 15)
+        let rows = [
+            seasonRow("a", day(2026, 5, 3)) { $0.best2sKn = 19; $0.longestFlightS = 372 },
+            seasonRow("b", day(2026, 7, 3)) { $0.best2sKn = 24.13; $0.longestFlightS = 120 },
+        ]
+        let snapshot = WidgetSnapshot.make(sessions: rows, now: now,
+                                           jibesPerHour: ["a": 8, "b": 14.2],
+                                           titleForRow: { "Spot " + $0.id })
+        // Rates are additive (CLAUDE.md): JPH has a row of its own here, and CPH keeps its
+        // own everywhere else.
+        #expect(snapshot.bests?.map(\.kind) == [WidgetSnapshot.FactKind.best2s,
+                                                .longestFlight, .bestJph].map(\.rawValue))
+        #expect(snapshot.best(.best2s)?.value == 24.13)
+        #expect(snapshot.best(.best2s)?.spot == "Spot b")
+        #expect(snapshot.best(.longestFlight)?.value == 372)
+        #expect(snapshot.best(.longestFlight)?.spot == "Spot a")
+        #expect(snapshot.best(.bestJph)?.value == 14.2)
+        #expect(snapshot.bests?.allSatisfy { $0.date != nil } == true)
+    }
+
+    /// A class (c) recording can misreport a speed, so it cannot hold the widget's speed
+    /// record — the rule `RecordBest.certified` states. Its flights and its jibes are not
+    /// claims its speed channel makes, and they are not filtered.
+    @Test func widgetSpeedBestIsCertifiedOnly() {
+        let now = day(2026, 8, 15)
+        var gpx = seasonRow("gpx", day(2026, 7, 3)) {
+            $0.best2sKn = 31; $0.longestFlightS = 400
+        }
+        gpx.sourceClass = "c"
+        let watch = seasonRow("watch", day(2026, 7, 4)) {
+            $0.best2sKn = 24.13; $0.longestFlightS = 120
+        }
+        let snapshot = WidgetSnapshot.make(sessions: [gpx, watch], now: now) { $0.id }
+        #expect(snapshot.best(.best2s)?.value == 24.13)
+        #expect(snapshot.best(.longestFlight)?.value == 400)
+    }
+
+    /// A short evening cannot hold the JPH record for the same reason it cannot hold
+    /// "Best CPH": a rate a rider sets by going home early is not a personal best
+    /// (`SessionRecordKind.cphMinDurationS`).
+    @Test func widgetJphTakesTheSameDurationFloorAsCph() {
+        let now = day(2026, 8, 15)
+        var quick = seasonRow("quick", day(2026, 7, 3))
+        quick.rateDurationS = SessionRecordKind.cphMinDurationS - 60
+        let long = seasonRow("long", day(2026, 7, 4))
+        let snapshot = WidgetSnapshot.make(sessions: [quick, long], now: now,
+                                           jibesPerHour: ["quick": 40, "long": 9]) { $0.id }
+        #expect(snapshot.best(.bestJph)?.value == 9)
+    }
+
+    // MARK: - On this day
+
+    @Test func widgetFindsTheSameIsoWeekOfAnEarlierYear() {
+        let now = Date()
+        let calendar = LibraryStore.isoCalendar
+        let parts = calendar.dateComponents([.weekOfYear, .yearForWeekOfYear], from: now)
+
+        func thursday(ofWeek week: Int, year: Int) -> Date {
+            var c = DateComponents()
+            c.weekOfYear = week
+            c.yearForWeekOfYear = year
+            c.weekday = 5                                   // Thursday, mid-week either way
+            c.hour = 12
+            return calendar.date(from: c)!
+        }
+        let week = parts.weekOfYear!
+        let year = parts.yearForWeekOfYear!
+
+        let sameWeek = seasonRow("garda", thursday(ofWeek: week, year: year - 2)) {
+            $0.flightCount = 11; $0.best2sKn = 24.13
+        }
+        let otherWeek = seasonRow("elsewhere",
+                                  thursday(ofWeek: week == 1 ? 20 : week - 6, year: year - 1))
+        let snapshot = WidgetSnapshot.make(sessions: [sameWeek, otherWeek], now: now) {
+            "Nago Torbole " + $0.id
+        }
+        let then = try! #require(snapshot.facts?.first { $0.factKind == .onThisDay })
+        #expect(then.spot == "Nago Torbole garda")
+        #expect(then.yearsAgo == 2)
+        #expect(then.flights == 11)
+        #expect(then.best2sKn == 24.13)
+    }
+
+    @Test func widgetHasNoOnThisDayFactWithoutAnEarlierYear() {
+        let now = day(2026, 8, 15)
+        let rows = [seasonRow("this year", day(2026, 8, 12))]
+        let snapshot = WidgetSnapshot.make(sessions: rows, now: now) { $0.id }
+        #expect(snapshot.facts?.contains { $0.factKind == .onThisDay } == false)
+    }
+
+    // MARK: - What the widget asks on the day it is drawn
+
+    /// The stored weekly window is right on the day it was written and drifts by a day every
+    /// day after it. The carried days are re-added against the entry's own date instead.
+    @Test func widgetReAddsTheWeekForTheDayItIsDrawnOn() {
+        let now = day(2026, 8, 15)
+        let rows = [seasonRow("mon", day(2026, 8, 10), foilTimeS: 3600),
+                    seasonRow("fri", day(2026, 8, 14), foilTimeS: 1800)]
+        let snapshot = WidgetSnapshot.make(sessions: rows, now: now) { $0.id }
+
+        let today = try! #require(snapshot.week(endingOn: now))
+        #expect(today.sessions == 2)
+        #expect(abs(today.foilMinutes - 90) < 0.001)
+        #expect(snapshot.hasRiddenWeek(endingOn: now))
+
+        // Four days later the Monday has fallen out of the window; a week after that there
+        // is nothing left in it and the widget switches to "since your last session".
+        let later = try! #require(snapshot.week(endingOn: day(2026, 8, 19)))
+        #expect(later.sessions == 1)
+        #expect(!snapshot.hasRiddenWeek(endingOn: day(2026, 8, 25)))
+        #expect(snapshot.daysSinceLastSession(on: day(2026, 8, 25)) == 11)
+    }
+
+    /// A blob written before `recent` existed has only its stored window, and says so by
+    /// returning nil rather than pretending the week was empty.
+    @Test func widgetWeekFallsBackToTheStoredWindowOnAnOlderBlob() {
+        var snapshot = WidgetSnapshot(generatedAt: Date(), weeklySessions: 2)
+        snapshot.recent = nil
+        #expect(snapshot.week(endingOn: Date()) == nil)
+        #expect(snapshot.hasRiddenWeek(endingOn: Date()))
     }
 
     /// The widget decodes what the app encodes — including a snapshot with no session yet.
@@ -1116,14 +1456,37 @@ import Testing
         let now = Date(timeIntervalSince1970: 1_785_000_000)
         let snapshot = WidgetSnapshot.make(
             sessions: [row(id: "s", daysAgo: 1, now: now, durationS: 3600, foilTimeS: 1800)],
-            now: now) { _ in "Torbole" }
+            now: now, titleForRow: { _ in "Torbole" },
+            trackForRow: { _ in self.thumbnail(points: 180) })
         let data = try JSONEncoder().encode(snapshot)
         let decoded = try JSONDecoder().decode(WidgetSnapshot.self, from: data)
         #expect(decoded == snapshot)
+        #expect(decoded.lastSession?.track?.count == snapshot.lastSession?.track?.count)
 
         let empty = try JSONDecoder().decode(
             WidgetSnapshot.self, from: try JSONEncoder().encode(WidgetSnapshot()))
         #expect(empty.lastSession == nil)
+    }
+
+    /// **Every field added after the first version is optional**, and this is why: the blob
+    /// already sitting in the shared container was written by a build that had never heard
+    /// of tracks, seasons or facts, and it has to keep decoding — a widget that went blank
+    /// until the rider next opened the app would be a worse bug than the one this fixes.
+    @Test func widgetSnapshotStillDecodesAVersionOneBlob() throws {
+        let v1 = Data("""
+            {"generatedAt":770000000,"weeklyFoilMinutes":214,"weeklySessions":3,
+             "weeklyHours":5.6,
+             "lastSession":{"id":"s","title":"Torbole","date":770000000,"durationS":5400,
+                            "flewThrough":9,"touchdown":9,"fellIn":12}}
+            """.utf8)
+        let decoded = try JSONDecoder().decode(WidgetSnapshot.self, from: v1)
+        #expect(decoded.weeklySessions == 3)
+        #expect(decoded.lastSession?.title == "Torbole")
+        #expect(decoded.lastSession?.track == nil)
+        #expect(decoded.recent == nil)
+        #expect(decoded.season == nil)
+        #expect(decoded.facts == nil)
+        #expect(decoded.fact(on: Date()) == nil)
     }
 
     /// The app group is not in the current provisioning profile, so the store must survive
@@ -1146,6 +1509,7 @@ import Testing
         #expect(shared == WidgetSnapshotStore.appGroupAvailable)
         if shared { #expect(WidgetSnapshotStore.sharedDefaults != nil) }
     }
+
 
     // MARK: - Map legend visibility
 
