@@ -1,12 +1,13 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Get started with the CleanJibe beta — your first session on the water</title>
 <meta name="description" content="The real test is one session on the water: charge, record, save, and read the verdicts on the phone against what you remember. Plus the routes for every watch, a 20-minute dry run if you cannot wait, and where to send what you find.">
-<meta name="theme-color" content="#101010">
-<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f6f3" media="(prefers-color-scheme: light)">
+<meta name="color-scheme" content="light dark">
 
 <!-- No manifest and no service-worker registration, for the same reason /invite/ has
      neither: the analyzer at /app/ is the installable PWA, and "add to home screen" from a
@@ -307,6 +308,15 @@
       kind of watch on a real session.
     </p>
 
+    <!-- Which routes need the beta, said once before the four cards rather than four times
+         inside them. Written from docs/channels.md: the Apple Watch recorder, reading Apple
+         Health, and the GPX/TCX imports are all beta-channel, so three of these four doors
+         are shut in an App Store build. Route A is not, which is why it carries no pill. -->
+    <p class="beta-legend">
+      <span class="tag beta">beta</span> in the public beta today, not yet in the App Store
+      release.
+    </p>
+
     <article class="panel piece" id="route-a">
       <div class="piece-head">
         <h3>Route A · Garmin</h3>
@@ -366,7 +376,7 @@
 
     <article class="panel piece" id="route-b">
       <div class="piece-head">
-        <h3>Route B · the CleanJibe watch app</h3>
+        <h3>Route B · the CleanJibe watch app<span class="tag beta">beta</span></h3>
         <span class="status">Apple Watch · second</span>
       </div>
       <p class="what">
@@ -407,7 +417,7 @@
 
     <article class="panel piece" id="route-c">
       <div class="piece-head">
-        <h3>Route C · Apple&rsquo;s own Workout app</h3>
+        <h3>Route C · Apple&rsquo;s own Workout app<span class="tag beta">beta</span></h3>
         <span class="status live">Apple Watch · do this first</span>
       </div>
       <p class="what">
@@ -450,7 +460,7 @@
          about moving one file. -->
     <article class="panel piece" id="route-d">
       <div class="piece-head">
-        <h3>Route D · Polar, Suunto, COROS — or anything else</h3>
+        <h3>Route D · Polar, Suunto, COROS — or anything else<span class="tag beta">beta</span></h3>
         <span class="status">no CleanJibe app on the wrist</span>
       </div>
       <p class="what">

@@ -280,6 +280,40 @@ export function analyzeBuffer(buffer, name) {
   return analyzeFile(new File([buffer], name));
 }
 
+/* ------------------------------------------------- Android's share sheet (issue #9) */
+
+/**
+ * Collect the file Android's share sheet handed to the service worker.
+ *
+ * The whole mechanism is in `sw.js` ("Android's share sheet"): a POST cannot pass a File to
+ * a page, so the worker parks it in a cache under one fixed key and redirects here with
+ * `?shared=1`. This reads the key, empties it, and hands back a real `File` for the same
+ * intake a drop or a picker uses — no second code path for a session that arrived by
+ * sharing.
+ *
+ * Every failure returns null and the analyzer simply shows its drop zone, which is where a
+ * rider would have gone anyway. `caches` is absent in a private window in some engines, and
+ * this must not be the line that stops the page booting.
+ */
+const SHARE_CACHE = "wingfoil-share";
+
+async function takeSharedFile() {
+  if (!("caches" in window)) return null;
+  // The same absolute URL `sw.js` parked it under: the worker built it from the app dir, the
+  // page builds it from its own location, and both land on <origin>/app/__shared__.
+  const key = new URL("__shared__", location.href).href;
+  try {
+    const cache = await caches.open(SHARE_CACHE);
+    const res = await cache.match(key);
+    if (!res) return null;
+    await cache.delete(key);
+    const name = decodeURIComponent(res.headers.get("x-shared-name") || "") || "session.fit";
+    return new File([await res.blob()], name);
+  } catch {
+    return null;
+  }
+}
+
 function wireDropzone() {
   const zone = el("dropzone");
   const stop = (ev) => { ev.preventDefault(); ev.stopPropagation(); };
@@ -608,6 +642,14 @@ mountLibrary({
 // worst version of this page's first impression. Read BEFORE showView, which normalizes
 // the hash to `#/analyze` on its way past.
 const openExampleOnLoad = location.hash === "#example";
+// `?shared=1` is the service worker saying "Android handed us a file". Read BEFORE showView
+// for the same reason as the hash above, and cleared from the address bar straight away: a
+// reload of this URL with the slot already emptied would otherwise look like a lost file.
+const openSharedOnLoad = new URLSearchParams(location.search).get("shared") === "1";
 showView(location.hash.replace("#/", ""));
 warmUp();
 if (openExampleOnLoad) runExample();
+if (openSharedOnLoad) {
+  history.replaceState(null, "", location.pathname + location.hash);
+  takeSharedFile().then((file) => { if (file) analyzeFile(file); });
+}

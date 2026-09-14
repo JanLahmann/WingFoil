@@ -1,12 +1,13 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Which watch — CleanJibe</title>
 <meta name="description" content="Every Garmin the CleanJibe watch app runs on, family by family, and which of them has been ridden on real water. Plus what happens with a Polar, a Suunto, a COROS, an Apple Watch or a phone in a pocket.">
-<meta name="theme-color" content="#101010">
-<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f6f3" media="(prefers-color-scheme: light)">
+<meta name="color-scheme" content="light dark">
 
 <!-- No manifest and no service-worker registration, for the same reason /invite/ and /start/
      have neither: the analyzer at /app/ is the installable PWA, and "add to home screen" from
@@ -254,7 +255,7 @@
                 absent, never as zero</td>
           </tr>
           <tr>
-            <td class="l stack-lead">Class B+ · Apple Watch app</td>
+            <td class="l stack-lead">Class B+ · Apple Watch app<span class="tag beta">beta</span></td>
             <td class="l" data-th="You record with">The CleanJibe Apple Watch app: class b
                 speed, plus the 50&nbsp;Hz wrist accelerometer</td>
             <td class="l" data-th="You get">Everything class b gets, and pump strokes and
@@ -275,6 +276,14 @@
         </tbody>
       </table>
     </div>
+
+    <!-- The legend, once for the whole page. The pills below are written from
+         docs/channels.md and from nowhere else; a row with no pill is in the App Store
+         release. -->
+    <p class="beta-legend">
+      <span class="tag beta">beta</span> in the public beta today, not yet in the App Store
+      release.
+    </p>
   </section>
 
   <!-- ------------------------------------------------------------------ other -->
@@ -344,12 +353,12 @@
           <tr>
             <td class="l stack-lead">Apple Watch (Apple's Workout app)</td>
             <td class="l" data-th="Class">Class B</td>
-            <td class="l" data-th="How it gets in">Import &rarr; Apple Health</td>
+            <td class="l" data-th="How it gets in">Import &rarr; Apple Health<span class="tag beta">beta</span></td>
             <td class="l" data-th="Speed records">Certified</td>
             <td class="l" data-th="Pump &amp; takeoff effort">No</td>
           </tr>
           <tr>
-            <td class="l stack-lead">Apple Watch + the CleanJibe watch app</td>
+            <td class="l stack-lead">Apple Watch + the CleanJibe watch app<span class="tag beta">beta</span></td>
             <td class="l" data-th="Class">Class B+</td>
             <td class="l" data-th="How it gets in">Straight to the phone</td>
             <td class="l" data-th="Speed records">Certified</td>
@@ -359,7 +368,8 @@
             <td class="l stack-lead">Polar · Suunto · COROS</td>
             <td class="l" data-th="Class">b with a FIT, c with a GPX</td>
             <td class="l" data-th="How it gets in">intervals.icu, or the iOS share sheet from the vendor's app</td>
-            <td class="l" data-th="Speed records">FIT certifies; GPX does not, TCX only with a speed channel</td>
+            <td class="l" data-th="Speed records">FIT certifies; GPX does not, TCX only with a
+                speed channel — and GPX and TCX are read by the beta<span class="tag beta">beta</span></td>
             <td class="l" data-th="Pump &amp; takeoff effort">No</td>
           </tr>
           <tr>
@@ -390,7 +400,7 @@
     </p>
     <div class="claims">
       <article class="panel claim">
-        <h3>Apple's own Workout app</h3>
+        <h3>Apple's own Workout app<span class="tag beta">beta</span></h3>
         <p>
           Record a <strong>Surfing</strong> or <em>Water Sports</em> workout the way you
           already do, then in CleanJibe on the phone use Import &rarr; <strong>Apple
@@ -400,7 +410,7 @@
         </p>
       </article>
       <article class="panel claim">
-        <h3>The CleanJibe watch app</h3>
+        <h3>The CleanJibe watch app<span class="tag beta">beta</span></h3>
         <p>
           CleanJibe has its own Apple Watch app, and it came along with the TestFlight install
           — there is nothing else to download. It records straight to the phone, with no
@@ -465,6 +475,21 @@
         <p>
           There is no CleanJibe app for Android and none is needed: open
           <a href="../app/">cleanjibe.org/app</a> in the phone browser and drop the file in.
+        </p>
+        <!-- GitHub issue #9: "Will this provide a share in / open in capability on android?"
+             It does, once the analyzer is installed — the manifest's share target is what
+             puts CleanJibe in the sheet, and an installed web app is what makes the manifest
+             count. Written as the two steps a rider actually takes, in the order they take
+             them, because "it is a PWA" answers nothing. -->
+        <p>
+          <strong>Install it, and it joins the share sheet.</strong> In Chrome, open
+          <a href="../app/">cleanjibe.org/app</a> and take <em>Add to Home screen</em> (or
+          <em>Install app</em>) from the menu — or press <em>Install</em> on the bar the page
+          offers you. It gets an icon, opens without browser chrome and works with no signal.
+          After that, hold a <code>.fit</code> or <code>.gpx</code> anywhere on the phone —
+          Files, Gmail, Drive, your watch's own app — and choose
+          <strong>Share &rarr; CleanJibe</strong>: the analysis opens on it, in the browser,
+          with the file still on the phone.
         </p>
         <ul>
           <li><strong>Strava</strong> — record in the app; the export is on strava.com, so open
