@@ -597,6 +597,10 @@ button.ghost.danger:hover { background: #2a1414; border-color: #6b2626; color: #
 #rider-file { font: 11.5px var(--mono); color: var(--ink-3); word-break: break-all; }
 .ask .note { margin: 0; }
 .ask-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+/* The share card's caption, when the browser would not carry it into the share sheet beside
+   the file: it goes on the clipboard instead and this line says so, next to the buttons where
+   the rider is already looking. Created by js/sharecard.js, never present until it is used. */
+.card-caption-note { margin: 6px 0 0; text-align: right; color: var(--ink-3); }
 
 /* The segmented control: two answers, one of them always chosen, in the same shape as the
    view tabs at the top of the page — the app already teaches that vocabulary, and "Mine"

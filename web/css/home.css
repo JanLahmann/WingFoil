@@ -21,6 +21,58 @@
 
 .home main { padding-bottom: 34px; }
 
+/* ------------------------------------------------------------- section nav
+ *
+ * The page's own table of contents, sticky under the topbar: these pages run six or seven
+ * screens and a reader arrives with one question out of six. It is furniture, so it wears
+ * the eyebrow's mono rather than the buttons' type, and it is one hairline tall.
+ *
+ * `--topbar-h` is written by the small script at the foot of each page that carries this
+ * nav, because the topbar is itself sticky and changes height at the 760 px breakpoint (the
+ * tagline goes, the padding shrinks). The fallback below is the desktop measurement, so a
+ * page whose script never ran is a few pixels out rather than broken.
+ *
+ * Below 720 px the row would eat three lines of a phone screen, so it becomes one select.
+ * The links are still in the markup and are what a reader WITHOUT JavaScript keeps: the
+ * swap is gated on the `js` class the same script sets, so the select can never be the only
+ * nav on a page where nothing can act on it.
+ */
+.sectionnav {
+  position: sticky; top: var(--topbar-h, 69px); z-index: 19;
+  background: var(--surface-1); border-bottom: 1px solid var(--line-soft);
+}
+.sectionnav-inner {
+  max-width: 1120px; margin: 0 auto;
+  padding: 6px var(--pad-x-r) 6px var(--pad-x-l);
+}
+.sectionnav ul {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 2px 18px;
+}
+.sectionnav a {
+  display: inline-block; padding: 5px 0; text-decoration: none;
+  font: 600 11px/1.4 var(--mono); letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.sectionnav a:hover { color: var(--ink); }
+.sectionnav .jump { display: none; }
+.sectionnav select {
+  width: 100%; min-height: var(--tap);
+  background: var(--surface-2); color: var(--ink-2);
+  border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px;
+  font: 600 12.5px/1 var(--mono);
+}
+
+/* Both sticky bars sit over an anchor's landing point, so every target the nav can reach
+   has to reserve their height above itself. */
+.home-section, .hero-card { scroll-margin-top: calc(var(--topbar-h, 69px) + 44px); }
+
+@media (max-width: 720px) {
+  .js .sectionnav ul { display: none; }
+  .js .sectionnav .jump { display: block; }
+  .sectionnav-inner { padding-top: 7px; padding-bottom: 7px; }
+}
+
 /* ---------------------------------------------------------------------- hero */
 
 /* Two halves at desktop, one stacked column on a phone. The section is the outer grid and
@@ -280,6 +332,20 @@
 .claims { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
 .claim h3 { font-size: 15px; margin-bottom: 6px; }
 .claim p { color: var(--ink-2); font-size: 14px; }
+/* A claim card that carries a list — the two channel lists under "what is coming" — wears
+   the piece card's hairline ticks rather than a second bullet style. */
+.claim ul {
+  margin: 8px 0 0; padding: 0; list-style: none;
+  display: grid; gap: 7px; font-size: 14px; color: var(--ink-2);
+}
+.claim li { position: relative; padding-left: 18px; }
+.claim li::before {
+  content: ""; position: absolute; left: 0; top: 10px;
+  height: 1px; width: 10px; background: var(--line); border-radius: 1px;
+}
+.claim p + p, .claim ul + p { margin-top: 8px; }
+.claim .piece-foot { margin-top: 12px; }
+.claim .piece-foot .btn { text-decoration: none; }
 
 /* -------------------------------------------------------------------- footer */
 

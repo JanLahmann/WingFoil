@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Privacy — CleanJibe</title>
-<meta name="description" content="What the CleanJibe iPhone and iPad app and cleanjibe.org do with your data. Short version: the analysis runs on your own device, there is no CleanJibe account and no CleanJibe server, and your sessions are never uploaded. Every exception is named: Strava, Apple Maps, the map drawn for the watch, the feedback mail.">
+<meta name="description" content="What the CleanJibe iPhone app and cleanjibe.org do with your data. Short version: the analysis runs on your own device, there is no CleanJibe account and no CleanJibe server, and your sessions are never uploaded. Every exception is named: Strava, Apple Maps, the map drawn for the watch, the feedback mail.">
 <meta name="theme-color" content="#101010">
 <meta name="color-scheme" content="dark">
 
@@ -49,8 +49,11 @@
       <p class="sub">Wing foiling, measured.</p>
     </div>
   </a>
+  <!-- The same two doors as every other page: the free thing that needs no install, and the
+       beta beside it. -->
   <div class="topbar-right">
-    <a class="btn primary" href="../app/">Open the analyzer</a>
+    <a class="btn primary" href="../app/" data-umami-event="analyze-cta-topbar">Open the analyzer</a>
+    <a class="btn ghost" href="../invite/" data-umami-event="beta-cta-topbar">Try the beta</a>
     <a class="btn ghost wide-only" href="../">About CleanJibe</a>
   </div>
 </header>
@@ -158,8 +161,8 @@
           end as well, use
           <a href="https://www.strava.com/settings/apps" rel="noopener">strava.com/settings/apps</a>,
           which is where any app's access is really revoked. Until Strava has reviewed
-          CleanJibe it allows <strong>one connected rider</strong> at a time, which the app
-          says out loud rather than reporting as a failure. Sessions that arrive this way carry
+          CleanJibe it allows <strong>ten connected riders</strong>, which the app says out
+          loud rather than reporting as a failure; if you are told the app is full, tell us. Sessions that arrive this way carry
           positions and no measured speed, so their speed records are marked uncertified — an
           accuracy note rather than a privacy one, and the Import screen makes it before you
           tap rather than after.
@@ -238,7 +241,7 @@
       <div class="term">
         <dt>TestFlight — crash reports, for as long as this is a beta</dt>
         <dd>
-          The iPhone and iPad app is installed through Apple's <strong>TestFlight</strong>, and
+          The iPhone app is installed through Apple's <strong>TestFlight</strong>, and
           TestFlight collects crash reports, plus the feedback you send from inside it, and
           passes them to us: the device model, the OS version, and the stack trace of what fell
           over. No session, no track, no file, nothing out of your library. That collection is
