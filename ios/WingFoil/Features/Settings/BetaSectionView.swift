@@ -41,6 +41,20 @@ enum ChannelFeatures {
         "iPad",
     ]
 
+    /// **Which build this is** — the one place the app answers that for the kit.
+    ///
+    /// The kit compiles every screen and every help topic in every channel and cannot see a
+    /// compile flag, so anything in it that has to know — today, `HelpCatalog`, which must
+    /// not offer a rider a page about a door his build does not have — is handed this.
+    /// Gated here and nowhere else, beside the two feature lists it belongs with.
+    #if DEV
+    static let channel: HelpChannel = .dev
+    #elseif BETA
+    static let channel: HelpChannel = .beta
+    #else
+    static let channel: HelpChannel = .release
+    #endif
+
     /// The public TestFlight link (docs/channels.md). Release only: in the beta it would
     /// point the reader at the build he is holding.
     static let testFlight = URL(string: "https://testflight.apple.com/join/nygqGGcn")!

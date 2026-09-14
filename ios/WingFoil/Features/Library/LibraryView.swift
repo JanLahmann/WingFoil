@@ -116,7 +116,7 @@ struct LibraryView: View {
                 // support mail asks and the last thing a rider can find in Settings.
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
-                        Button { helpTopic = .betaGettingStarted } label: {
+                        Button { helpTopic = .gettingStarted } label: {
                             Label("Getting started", systemImage: "book")
                         }
                         Button { showSettings = true } label: {
