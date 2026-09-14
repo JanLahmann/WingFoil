@@ -195,7 +195,7 @@ private struct HealthWorkoutRow: View {
                 Image(systemName: symbol)
                     .foregroundStyle(candidate.isAlreadyImported ? AnyShapeStyle(.secondary)
                                                                 : AnyShapeStyle(Color.accentColor))
-                    .frame(width: 22)
+                    .scaledColumn(22, alignment: .center)
                 VStack(alignment: .leading, spacing: 3) {
                     // `.current` deliberately, and it is the honest choice here: a workout
                     // Health has not been asked about yet carries no clock of its own, so the

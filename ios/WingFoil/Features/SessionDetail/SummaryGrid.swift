@@ -12,11 +12,25 @@ import WingFoilKit
 /// explicit placeholder rather than disappearing — the absence is information, and so is a
 /// nil stroke count on a source with no accelerometer.
 
-/// The columns every card grid on the page shares.
-private let cardColumns = [GridItem(.adaptive(minimum: 150), spacing: 12)]
+/// The columns every card grid on the page shares — **scaled**, because the minimum is the
+/// width of a card holding a title, a number and a caption, and all three grow with the
+/// rider's text size. At 150 pt flat, a phone set to an accessibility size kept laying two
+/// cards to a row and squeezed every one of them; scaled, the grid drops to one column of
+/// full-width cards at exactly the size where two stop fitting, which is what `.adaptive`
+/// is for.
+private struct CardGrid<Content: View>: View {
+    @ScaledMetric(relativeTo: .title3) private var minimum: CGFloat = 150
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: minimum), spacing: 12)],
+                  spacing: 12) { content }
+    }
+}
 
 /// A section heading with its `?`, over a grid of cards. Written once because four blocks
 /// draw it and a heading that differs between them reads as two different pages.
+@MainActor
 private func cardSection(_ title: String, anchor: String? = nil, help: HelpTopicID? = nil,
                          @ViewBuilder content: () -> some View) -> some View {
     VStack(alignment: .leading, spacing: 10) {
@@ -25,7 +39,7 @@ private func cardSection(_ title: String, anchor: String? = nil, help: HelpTopic
             if let help { HelpButton(topic: help, size: .footnote) }
             Spacer()
         }
-        LazyVGrid(columns: cardColumns, spacing: 12) { content() }
+        CardGrid { content() }
     }
     .id(anchor ?? title)
 }
@@ -128,6 +142,10 @@ struct SessionRecordsTable: View {
                 }
             }
             .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 12))
+            // Three columns — name, knots, where — and the third is a sentence. The columns
+            // scale with the text size, and the table stops at `.accessibility2`, the last
+            // size at which all three still fit a phone side by side.
+            .denseRowTypeSizeCap()
         }
         .id("summary")
     }
@@ -135,9 +153,10 @@ struct SessionRecordsTable: View {
     private var headerRow: some View {
         HStack(spacing: 10) {
             // 92 pt, not 74: the record names carry their "Best " prefix now, and
-            // "Best 5×10 s" is the widest of them.
-            Text("record").frame(width: 92, alignment: .leading)
-            Text("kn").frame(width: 62, alignment: .trailing)
+            // "Best 5×10 s" is the widest of them. Scaled, so the column still holds that
+            // name when the phone is set to a larger text size.
+            Text("record").scaledColumn(92, relativeTo: .subheadline)
+            Text("kn").scaledColumn(62, alignment: .trailing, relativeTo: .subheadline)
             Text("where").frame(maxWidth: .infinity, alignment: .leading)
         }
         .font(.caption2)
@@ -158,15 +177,16 @@ struct SessionRecordsTable: View {
             HStack(spacing: 10) {
                 Text(SessionDetail.effortLabel(kind))
                     .font(.subheadline)
-                    .frame(width: 92, alignment: .leading)
+                    .scaledColumn(92, relativeTo: .subheadline)
                 Text(Fmt.kn(value))
                     .font(.subheadline.weight(.semibold).monospacedDigit())
                     .foregroundStyle(value == nil ? .secondary : .primary)
-                    .frame(width: 62, alignment: .trailing)
+                    .scaledColumn(62, alignment: .trailing, relativeTo: .subheadline)
                 Text(value == nil ? "no qualifying run" : caption(for: records.windows[key]))
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.horizontal, 12)
@@ -455,11 +475,16 @@ struct StatCard: View {
                 .font(.title3.weight(.semibold))
                 .monospacedDigit()
                 .foregroundStyle(dimmed ? .secondary : .primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
             Text(caption)
                 .font(.caption2)
                 .foregroundStyle(captionColor ?? Color(.tertiaryLabel))
-                .lineLimit(2)
                 .minimumScaleFactor(0.8)
+                // No line limit: the card is as tall as its caption needs, and the grid row
+                // takes the tallest card. Two lines was a ceiling measured at the default
+                // text size and a truncation at every size above it.
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)

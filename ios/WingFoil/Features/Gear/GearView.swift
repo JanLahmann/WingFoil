@@ -128,6 +128,9 @@ private struct GearRowView: View {
                 stat(Fmt.pct(entry.jibeFlewThroughPct), "jibes")
             }
             .font(.caption)
+            // Five figures in one line. They scale, and stop where five of them stop
+            // fitting a phone — the name and the notes above them scale the whole way.
+            .denseRowTypeSizeCap()
             if let last = entry.lastUsed {
                 // `.current`: an aggregate over many sessions, which have no single zone
                 // between them. "How long since I rode this" is asked from here and now.
@@ -140,8 +143,9 @@ private struct GearRowView: View {
 
     private func stat(_ value: String, _ label: String) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(value).monospacedDigit()
+            Text(value).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
             Text(label).font(.caption2).foregroundStyle(.secondary)
+                .lineLimit(1).minimumScaleFactor(0.7)
         }
     }
 }

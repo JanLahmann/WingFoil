@@ -103,7 +103,16 @@ struct SplashView: View {
         // largest type the app owns came out of that proposal hyphenated across two lines.
         // 320 pt is the width of the narrowest phone still supported, so the block never
         // overhangs a screen it has to be centred on.
+        //
+        // That width is why this is the one screen in the app whose type has a ceiling. The
+        // words scale with the rider's setting like everything else, but they cannot be
+        // allowed past 320 pt, and "CleanJibe" set in `.largeTitle` fills 320 pt at about
+        // `.accessibility2`; beyond that it would hyphenate across two lines again — which
+        // is the one thing the wordmark may not do. It costs nothing: the screen holds three
+        // short lines for two seconds, it is one accessibility element, and every word on it
+        // is repeated on the Welcome screen, which scales the whole way.
         .frame(width: 320)
+        .dynamicTypeSize(...DynamicTypeSize.accessibility2)
         .opacity(wordsShown ? 1 : 0)
     }
 

@@ -188,18 +188,22 @@ struct TakeoffsAnalysisView: View {
                 }
             }
             .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 12))
+            // Header and rows share one ceiling, or the columns stop lining up above it.
+            .denseRowTypeSizeCap()
             .id("takeoffList")
         }
     }
 
     private var headerRow: some View {
         HStack(spacing: 10) {
-            Text("at").frame(width: 46, alignment: .leading)
+            Text("at").scaledColumn(46, relativeTo: .caption)
             // The stroke column is not blanked on a windsurf session, it is **not drawn**:
             // a column of dashes is a measurement that failed, and nothing was measured.
-            if words.pumping { Text("pumps").frame(width: 52, alignment: .trailing) }
+            if words.pumping {
+                Text("pumps").scaledColumn(52, alignment: .trailing, relativeTo: .subheadline)
+            }
             Text(words.pumping ? "to foil" : "to planing")
-                .frame(width: 56, alignment: .trailing)
+                .scaledColumn(56, alignment: .trailing, relativeTo: .subheadline)
             Text("outcome").frame(maxWidth: .infinity, alignment: .leading)
         }
         .font(.caption2)
@@ -248,17 +252,17 @@ private struct AttemptRowView: View {
             Text(Fmt.clock(mark.t))
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
-                .frame(width: 46, alignment: .leading)
+                .scaledColumn(46, relativeTo: .caption)
             if pumping {
                 Text(mark.pumps.map(String.init) ?? "—")
                     .font(.subheadline.monospacedDigit())
                     .foregroundStyle(mark.pumps == nil ? .tertiary : .secondary)
-                    .frame(width: 52, alignment: .trailing)
+                    .scaledColumn(52, alignment: .trailing, relativeTo: .subheadline)
             }
             Text(mark.timeToFoilS.map { String(format: "%.0f s", $0) } ?? "—")
                 .font(.subheadline.monospacedDigit())
                 .foregroundStyle(mark.timeToFoilS == nil ? .tertiary : .secondary)
-                .frame(width: 56, alignment: .trailing)
+                .scaledColumn(56, alignment: .trailing, relativeTo: .subheadline)
             HStack(spacing: 5) {
                 EventMarkerStyle.takeoffMark(mark, size: 11)
                 Text(mark.attemptKind.label)
@@ -271,6 +275,9 @@ private struct AttemptRowView: View {
         .padding(.vertical, 8)
         .background(focused ? Color.accentColor.opacity(0.12) : Color.clear)
         .contentShape(.rect)
+        // Four columns — clock, strokes, time to foil, outcome. Scaled up to
+        // `.accessibility2`, the last size at which a phone still holds the row.
+        .denseRowTypeSizeCap()
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(Fmt.clock(mark.t)), \(mark.title), \(mark.detail)")
     }

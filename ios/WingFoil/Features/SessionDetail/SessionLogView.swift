@@ -114,7 +114,7 @@ private struct FlightEndsCard: View {
                 Image(systemName: TurnOutcomeKind(end.outcome).symbolName)
                     .font(.caption)
                     .foregroundStyle(TurnOutcomeStyle.color(TurnOutcomeKind(end.outcome)))
-                    .frame(width: 16)
+                    .scaledColumn(16, alignment: .center, relativeTo: .caption)
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Flight \(end.flightIndex + 1)")
                         .font(.subheadline)
@@ -146,6 +146,8 @@ private struct FlightEndsCard: View {
 /// to know that is why, rather than wondering where his jibe count went.
 private struct WindDetailCard: View {
     let detail: SessionDetail
+
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         if detail.analysis.wind != nil || detail.windDirUserDeg != nil {
@@ -195,18 +197,40 @@ private struct WindDetailCard: View {
                 + "being guessed at. Setting the wind on the watch fixes it."
     }
 
+    /// Label beside value — until the label alone is wider than the phone, at which point
+    /// the pair stacks. A 150 pt title column scaled to an accessibility size leaves the
+    /// value nowhere to go, and the value is the half the rider came for.
+    @ViewBuilder
     private func row(_ title: String, _ value: String, note: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text(title)
-                .font(.subheadline)
-                .frame(width: 150, alignment: .leading)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(value).font(.subheadline.weight(.semibold))
-                Text(note).font(.caption2).foregroundStyle(.tertiary)
+        if typeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.subheadline)
+                    .fixedSize(horizontal: false, vertical: true)
+                rowValue(value, note: note)
             }
-            Spacer(minLength: 0)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(title)
+                    .font(.subheadline)
+                    .scaledColumn(150, relativeTo: .subheadline)
+                rowValue(value, note: note)
+                Spacer(minLength: 0)
+            }
+            .accessibilityElement(children: .combine)
         }
-        .accessibilityElement(children: .combine)
+    }
+
+    private func rowValue(_ value: String, note: String) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(value).font(.subheadline.weight(.semibold))
+            Text(note)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 }
 
@@ -348,9 +372,9 @@ private struct DivergenceDetailCard: View {
                 ForEach(divergences) { d in
                     HStack(spacing: 10) {
                         Text(d.metric).frame(maxWidth: .infinity, alignment: .leading)
-                        Text(d.watch).frame(width: 66, alignment: .trailing)
-                        Text(d.phone).frame(width: 66, alignment: .trailing)
-                        Text(d.delta).frame(width: 60, alignment: .trailing)
+                        Text(d.watch).scaledColumn(66, alignment: .trailing, relativeTo: .caption)
+                        Text(d.phone).scaledColumn(66, alignment: .trailing, relativeTo: .caption)
+                        Text(d.delta).scaledColumn(60, alignment: .trailing, relativeTo: .caption)
                             .foregroundStyle(.orange)
                     }
                     .font(.caption.monospacedDigit())
@@ -359,6 +383,10 @@ private struct DivergenceDetailCard: View {
                     Divider()
                 }
             }
+            // Four columns of numbers. They scale, and the table stops at
+            // `.accessibility2` — past that, metric + watch + phone + Δ is wider than a
+            // phone whatever the columns do.
+            .denseRowTypeSizeCap()
             .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 12))
             Text(advice)
                 .font(.caption2)
@@ -372,9 +400,9 @@ private struct DivergenceDetailCard: View {
     private var headerRow: some View {
         HStack(spacing: 10) {
             Text("metric").frame(maxWidth: .infinity, alignment: .leading)
-            Text("watch").frame(width: 66, alignment: .trailing)
-            Text("phone").frame(width: 66, alignment: .trailing)
-            Text("Δ").frame(width: 60, alignment: .trailing)
+            Text("watch").scaledColumn(66, alignment: .trailing, relativeTo: .caption)
+            Text("phone").scaledColumn(66, alignment: .trailing, relativeTo: .caption)
+            Text("Δ").scaledColumn(60, alignment: .trailing, relativeTo: .caption)
         }
         .font(.caption2)
         .foregroundStyle(.tertiary)

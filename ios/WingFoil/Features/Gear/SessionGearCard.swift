@@ -10,6 +10,11 @@ struct SessionGearCard: View {
     @State private var assigned: [GearKind: GearRow] = [:]
     @State private var loaded = false
 
+    /// "Wing" beside a wing's name is a two-column row, and at an accessibility text size
+    /// two columns do not fit a phone: the label takes the width and the name — the half the
+    /// rider is actually reading — truncates to "Arm…". Past `.xxxLarge` the pair stacks.
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -22,26 +27,15 @@ struct SessionGearCard: View {
                 }
             }
             ForEach(GearKind.allCases) { kind in
-                HStack {
-                    Label { Text(kind.label) } icon: { GearKindIcon(kind: kind, size: 14) }
-                        .font(.subheadline)
-                        .frame(width: 90, alignment: .leading)
-                    Menu {
-                        Button("None") { assign(kind, nil) }
-                        Divider()
-                        ForEach(options(kind)) { item in
-                            Button(item.name) { assign(kind, item) }
-                        }
-                    } label: {
-                        HStack {
-                            Text(assigned[kind]?.name ?? "Not set")
-                                .foregroundStyle(assigned[kind] == nil ? .secondary : .primary)
-                                .lineLimit(1)
-                            Spacer()
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
+                if typeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 4) {
+                        kindLabel(kind)
+                        picker(kind)
+                    }
+                } else {
+                    HStack {
+                        kindLabel(kind).scaledColumn(90, relativeTo: .subheadline)
+                        picker(kind)
                     }
                 }
             }
@@ -58,6 +52,33 @@ struct SessionGearCard: View {
             guard !loaded || assigned.isEmpty else { return }
             assigned = (try? await store.library.gearOfSession(sessionID)) ?? [:]
             loaded = true
+        }
+    }
+
+    private func kindLabel(_ kind: GearKind) -> some View {
+        Label { Text(kind.label) } icon: { GearKindIcon(kind: kind, size: 14) }
+            .font(.subheadline)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func picker(_ kind: GearKind) -> some View {
+        Menu {
+            Button("None") { assign(kind, nil) }
+            Divider()
+            ForEach(options(kind)) { item in
+                Button(item.name) { assign(kind, item) }
+            }
+        } label: {
+            HStack {
+                Text(assigned[kind]?.name ?? "Not set")
+                    .foregroundStyle(assigned[kind] == nil ? .secondary : .primary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                Spacer()
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 

@@ -183,6 +183,7 @@ struct RiderBadge: View {
         Label(name, systemImage: "person.crop.circle")
             .font(font.weight(.semibold))
             .lineLimit(1)
+            .minimumScaleFactor(0.8)
             .padding(.horizontal, 7)
             .padding(.vertical, 3)
             .background(Color.purple.opacity(0.16), in: .capsule)
