@@ -271,11 +271,12 @@ private struct StravaActivityRow: View {
                     .foregroundStyle(candidate.isAlreadyImported
                                      ? AnyShapeStyle(.secondary)
                                      : AnyShapeStyle(Color.accentColor))
-                    .frame(width: 22)
+                    .scaledColumn(22, alignment: .center)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(candidate.activity.name ?? "Strava activity")
                         .font(.subheadline)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                     Text(subtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)

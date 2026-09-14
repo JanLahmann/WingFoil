@@ -15,9 +15,16 @@ import WingFoilKit
 struct KeyMetricsView: View {
     let metrics: KeyMetrics
 
+    /// Three tiles to a row is a row at every ordinary text size and a row of ellipses at
+    /// an accessibility one — "13.47 kn" set at 180 % does not fit a third of a phone at any
+    /// scale factor its label is still legible at. Past the threshold each row of three
+    /// wraps into two columns instead, which keeps the grouping (basics, speed, turns,
+    /// rates) and gives every number half the width.
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top, spacing: 12) {
+            row {
                 ForEach(metrics.basics) { cell($0) }
             }
 
@@ -25,20 +32,20 @@ struct KeyMetricsView: View {
             // type: it is the one number a rider quotes, and the label says which window it
             // is rather than letting "max" imply a peak sample. The two composites sit
             // beside it at the ordinary size (6 Sep 2026 — the row was "a bit empty").
-            HStack(alignment: .top, spacing: 12) {
+            row {
                 cell(metrics.maxSpeed, font: .title.weight(.semibold))
                 ForEach(metrics.speedExtras) { cell($0) }
             }
 
             if metrics.tally != nil || metrics.streaks != nil {
-                HStack(alignment: .top, spacing: 12) {
+                row {
                     if let tally = metrics.tally { tallyCell(tally) }
                     if let streaks = metrics.streaks { cell(streaks) }
                 }
             }
 
             if !metrics.rates.isEmpty {
-                HStack(alignment: .top, spacing: 12) {
+                row {
                     ForEach(metrics.rates) { cell($0) }
                 }
             }
@@ -46,6 +53,25 @@ struct KeyMetricsView: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 12))
+        // Two tiles to a line at accessibility sizes, and a ceiling even so: past
+        // `.accessibility2` half a phone's width no longer holds a number and its label
+        // either, and the block would stop being readable rather than become so.
+        .denseRowTypeSizeCap()
+    }
+
+    /// One line of tiles: side by side, or two to a line once the type is large enough that
+    /// three would truncate. `.topLeading` so a tile whose label wraps onto three lines does
+    /// not drag its neighbour's number down with it.
+    @ViewBuilder
+    private func row(@ViewBuilder _ content: () -> some View) -> some View {
+        if typeSize.isAccessibilitySize {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12,
+                                                         alignment: .topLeading),
+                                     count: 2),
+                      alignment: .leading, spacing: 12) { content() }
+        } else {
+            HStack(alignment: .top, spacing: 12) { content() }
+        }
     }
 
     /// Number big, label small — the taste the watch review settled on and the library row
@@ -57,11 +83,13 @@ struct KeyMetricsView: View {
                 .font(font)
                 .monospacedDigit()
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .minimumScaleFactor(0.6)
+            // No line limit: a label that needs four lines at the rider's text size gets
+            // four. The row is `.top`-aligned, so a taller tile pushes nothing sideways.
             Text(metric.label)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
-                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
@@ -78,7 +106,7 @@ struct KeyMetricsView: View {
             Text("flew · touchdown · fell — \(tally.caption)")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
-                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

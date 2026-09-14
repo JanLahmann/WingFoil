@@ -27,11 +27,15 @@ struct LibraryNewerThanAppView: View {
 
     @State private var showRestorePicker = false
 
+    /// The hero glyph, in points rather than a text style because no text style is 44 pt —
+    /// `@ScaledMetric` pins it to `.largeTitle` so it still grows with the rider's setting.
+    @ScaledMetric(relativeTo: .largeTitle) private var heroGlyph: CGFloat = 44
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
                 Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
-                    .font(.system(size: 44))
+                    .font(.system(size: heroGlyph))
                     .foregroundStyle(.teal)
                     .padding(.top, 40)
 

@@ -90,6 +90,7 @@ struct ReAddDeletedSheet: View {
                     Text(stone.title ?? "Session")
                         .font(.headline)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                     // `.current`: a tombstone is four facts about a session whose row and whose
                     // recording are both gone, so there is nothing left that knows its zone.
                     Text("\(Fmt.date(stone.startDate, zone: .current)) · \(Fmt.duration(stone.durationS))")

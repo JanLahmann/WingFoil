@@ -65,11 +65,16 @@ struct WelcomeView: View {
         // answer as "Later": nothing is armed or loaded, the screen just goes.
         .overlay(alignment: .topTrailing) {
             Button(action: onLater) {
+                // Chrome, not content: the glyph follows the rider's text size like
+                // everything else, but a close button that grew to fill a third of the
+                // screen would cover the screen it closes, so it stops where the system's
+                // own navigation-bar buttons stop.
                 Image(systemName: "xmark")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Brand.paper.opacity(0.85))
                     .frame(width: 34, height: 34)
                     .background(Brand.paper.opacity(0.12), in: .circle)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
             }
             .accessibilityLabel("Close")
             .padding(.top, 10)

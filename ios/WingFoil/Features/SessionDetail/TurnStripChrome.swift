@@ -24,10 +24,25 @@ enum StripChrome {
     static let captionGapS = 1.5
 
     /// The small word under a window band, or beside a rule.
+    ///
+    /// It scales with the rider's text size, but only so far: these words sit *inside* a
+    /// figure whose height is fixed and whose bands are 1.5 s apart, so a word set at 310 %
+    /// would print over the next one rather than be easier to read. `StripLabel` grows to
+    /// 1.6× and stops — the point at which two neighbouring captions start to collide.
     static func label(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 8, weight: .medium))
-            .foregroundStyle(.tertiary)
+        StripLabel(text: text)
+    }
+
+    /// One of a strip's small words, scaled and clamped. See `StripChrome.label`.
+    private struct StripLabel: View {
+        let text: String
+        @ScaledMetric(relativeTo: .caption2) private var size: CGFloat = 8
+
+        var body: some View {
+            Text(text)
+                .font(.system(size: min(size, 8 * 1.6), weight: .medium))
+                .foregroundStyle(.tertiary)
+        }
     }
 
     /// A caption in the speed strip's own voice — bigger than a band's word, because it names

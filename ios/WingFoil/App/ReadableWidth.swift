@@ -71,3 +71,61 @@ extension View {
         modifier(ReadableColumn(maxWidth: maxWidth))
     }
 }
+
+/// A fixed-width column that grows with the rider's text size.
+///
+/// The tables in the app — the record windows, the turn list, the takeoff list, the log's
+/// watch/phone/Δ columns — are laid out as `HStack`s of `frame(width:)` columns, because a
+/// column of times that does not line up is not a table. Those widths were measured at the
+/// *default* text size, and a phone set to "Larger Text" renders the same string 30–60 %
+/// wider, which truncated the very column the width was chosen to hold.
+///
+/// `@ScaledMetric` is the system's answer: it multiplies a point value by the same curve
+/// that scales the text style it is pinned to, so a 92 pt column of `.subheadline` grows in
+/// step with the `.subheadline` inside it and the table stays a table.
+///
+/// Pin it to the style the column is *set in* (`relativeTo:`), not to `.body`, or the box
+/// and its contents grow at different rates.
+///
+/// A `nil` width means "no column at all": a row that has given the table up at an
+/// accessibility size passes nil rather than branching around the modifier at every cell.
+private struct ScaledColumnWidth: ViewModifier {
+    @ScaledMetric private var scaled: CGFloat
+    let alignment: Alignment
+    let isColumn: Bool
+
+    init(_ width: CGFloat?, alignment: Alignment, relativeTo textStyle: Font.TextStyle) {
+        _scaled = ScaledMetric(wrappedValue: width ?? 0, relativeTo: textStyle)
+        self.alignment = alignment
+        self.isColumn = width != nil
+    }
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if isColumn { content.frame(width: scaled, alignment: alignment) } else { content }
+    }
+}
+
+extension View {
+
+    /// `frame(width:)` for a column of text, scaled to the rider's text size.
+    ///
+    /// Use it wherever a literal width was holding a label or a number; pass the text style
+    /// that column is set in so the box and its contents grow together.
+    func scaledColumn(_ width: CGFloat?, alignment: Alignment = .leading,
+                      relativeTo textStyle: Font.TextStyle = .body) -> some View {
+        modifier(ScaledColumnWidth(width, alignment: alignment, relativeTo: textStyle))
+    }
+
+    /// The ceiling a **dense table or tile row** is allowed to grow to.
+    ///
+    /// Everything the rider reads as prose scales all the way to `.accessibility5`. A row
+    /// that is three or four columns wide cannot: at 310 % the columns alone are wider than
+    /// the phone, and the result is a truncated table rather than a big one. Those rows stop
+    /// at `.accessibility2` — still roughly double the default, and the last size at which
+    /// the row is a row. Named once so every capped surface caps at the same place, and so
+    /// the reason is written down where the cap is applied.
+    func denseRowTypeSizeCap() -> some View {
+        dynamicTypeSize(...DynamicTypeSize.accessibility2)
+    }
+}
