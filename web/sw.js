@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v50";     // v50: the homepage catches up with builds 41–49 and watch 0.9.10 (two doors, FAQ, which watch, what's new)
+const VERSION = "v51";     // v51: the beta round — invitations, on-water guide, classes, section nav, Try the beta, iPad off the copy
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
