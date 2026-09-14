@@ -62,7 +62,7 @@ struct SplashView: View {
     /// The mark, centred the way the launch screen centres it — a plain centred view in a
     /// stack whose *background* ignores the safe area and whose content does not.
     private var mark: some View {
-        Image("SplashMark")
+        Image(ChannelArt.splashMark)
             .resizable()
             .scaledToFit()
             .frame(width: Splash.markSide, height: Splash.markSide)

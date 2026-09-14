@@ -85,7 +85,7 @@ struct WelcomeView: View {
 
     private var identity: some View {
         VStack(spacing: isShort ? 8 : 14) {
-            Image("LaunchMark")
+            Image(ChannelArt.launchMark)
                 .resizable()
                 .scaledToFit()
                 .frame(width: isShort ? 56 : 88, height: isShort ? 56 : 88)

@@ -46,7 +46,7 @@ struct StartView: View {
         VStack(spacing: 8) {
             // Mark and wordmark tight together — one lockup, not two things in a list.
             VStack(spacing: 3) {
-                Image("BrandMark")
+                Image(ChannelArt.brandMark)
                     .resizable()
                     .scaledToFit()
                     .frame(width: Self.markSide, height: Self.markSide)
