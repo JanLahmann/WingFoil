@@ -17,13 +17,29 @@ struct SettingsView: View {
                 stravaSection
                 deletedSessionsSection
                 notificationsSection
+                // Settings → Garmin watch: DEV (docs/channels.md). Garmin Connect Mobile
+                // owns the Bluetooth link and it stays behind the flag until the link has
+                // real sessions behind it.
+                #if DEV
                 WatchLinkSection()
+                #endif
                 analysisSection
+                // Windsurf, and the per-discipline thresholds behind it: DEV.
+                #if DEV
                 windsurfSection
+                #endif
                 #if TUNING
                 tuningSection
                 #endif
+                // Apple Health, both directions: BETA. Unproven, and the release channel
+                // carries no HealthKit entitlement to ask with.
+                #if BETA
                 healthSection
+                betaSection
+                #endif
+                // Every channel, with the TestFlight link only where the reader is not
+                // already on it (docs/channels.md).
+                comingSoonSection
                 storageSection
                 // Right under Storage, which is the section that just told the rider how
                 // many megabytes his library is: "and here is how to keep a copy of it"
@@ -181,9 +197,10 @@ struct SettingsView: View {
                      + "your Strava account — it never writes, renames or posts anything. "
                      + "Sessions imported this way are analysed from positions alone, so "
                      + "their speed records are marked uncertified.\n\n"
-                     + "Strava has not reviewed CleanJibe yet, and until it does Strava lets "
-                     + "one rider connect. If Strava refuses, that is why, and it is nothing "
-                     + "about your account.")
+                     + "Strava has not reviewed CleanJibe yet, and until it does Strava "
+                     + "allows ten connected riders. If connecting is refused because the "
+                     + "app is full, that is why — it is nothing about your account. "
+                     + "Menu → Support is the way to report it.")
             } else {
                 Text("This build carries no Strava API keys, so the Strava source is not "
                      + "offered. Everything else works as usual.")
@@ -324,6 +341,7 @@ struct SettingsView: View {
         return store.windsurfEnabled ? rig + wind : wind
     }
 
+    #if DEV
     /// **"Windsurf (experimental)"** — the one switch every windsurf-facing control hangs off
     /// (Jan, 13 Sep 2026: *"windsurf should be hidden. Maybe enable with a switch"*).
     ///
@@ -348,6 +366,7 @@ struct SettingsView: View {
                  + "pumping is off, planing thresholds are provisional.")
         }
     }
+    #endif
 
     #if TUNING
     /// **Dev build only.** The whole section — and the page behind it — is compiled out of the
@@ -383,6 +402,7 @@ struct SettingsView: View {
     }
     #endif
 
+    #if BETA
     /// Both directions, in one section, because the rider thinks of Health as one place.
     ///
     /// The read toggle appears only once a session has actually arrived that way (ADR-017):
@@ -423,6 +443,17 @@ struct SettingsView: View {
             }
         }
     }
+    #endif
+
+    #if BETA
+    /// **Settings → Beta** — what this build has that the App Store one does not, and the
+    /// row that asks what neither has (docs/channels.md). See `BetaSectionView`.
+    private var betaSection: some View { BetaSectionView() }
+    #endif
+
+    /// **"Curious about what is coming"** — the same list read the other way round. Present
+    /// in every channel; the release one carries the TestFlight link.
+    private var comingSoonSection: some View { ComingSoonSection() }
 
     private var storageSection: some View {
         Section("Storage") {
@@ -465,9 +496,14 @@ struct SettingsView: View {
         }
     }
 
-    private static var variantSuffix: String {
-        #if TUNING
+    /// Which channel this screenshot came from, and the first question of every report that
+    /// comes back from TestFlight. The release channel says nothing, because there is nothing
+    /// to distinguish it from — it is the app (docs/channels.md).
+    static var variantSuffix: String {
+        #if DEV
         " · dev"
+        #elseif BETA
+        " · beta"
         #else
         ""
         #endif

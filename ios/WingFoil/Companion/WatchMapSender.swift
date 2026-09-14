@@ -1,3 +1,5 @@
+// The watch map renderer — DEV, with the rest of the Garmin link (docs/channels.md).
+#if DEV
 import CoreLocation
 import MapKit
 import UIKit
@@ -263,3 +265,5 @@ extension WatchMapSender.Report {
         return String(format: "sent %.1f KB · %@", kilobytes, time)
     }
 }
+
+#endif

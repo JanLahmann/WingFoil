@@ -1,3 +1,7 @@
+// Apple Health, reading Apple Workout recordings: a BETA door (docs/channels.md). The
+// release channel carries no HealthKit entitlement and no Health usage strings, so it
+// must carry no `import HealthKit` either.
+#if BETA
 import CoreLocation
 import Foundation
 import HealthKit
@@ -341,3 +345,5 @@ actor HealthImporter {
         }
     }
 }
+
+#endif

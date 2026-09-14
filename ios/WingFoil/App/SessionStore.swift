@@ -214,7 +214,16 @@ final class SessionStore {
                                        archive: SessionArchive(root: archiveRoot))
         ingestor.windConfig.defaultTurnType = Self.storedDefaultTurnType
         ingestor.riderDiscipline = Self.storedRiderDiscipline
+        // The ingestor's own default is `true`, so this assignment is load-bearing in every
+        // channel. DEV reads the switch; release and beta have no switch (docs/channels.md),
+        // so every import is wingfoil and written down as confirmed — and a
+        // `windsurfEnabled.v1` left in defaults by a dev build on the same phone is never
+        // read, exactly as a leftover tuning blob is not.
+        #if DEV
         ingestor.windsurfEnabled = Self.storedWindsurfEnabled
+        #else
+        ingestor.windsurfEnabled = false
+        #endif
         #if TUNING
         // Dev build only. In the shipping app this assignment does not exist, so
         // `ingestor.tuning` stays empty, the engine runs on the published defaults, and a
@@ -819,6 +828,14 @@ final class SessionStore {
     ///
     /// A stored property rather than a computed read of `UserDefaults`, because this one is
     /// observed: flipping it has to redraw the Settings rows it hides, in place.
+    ///
+    /// **DEV ONLY** (docs/channels.md). In the release and beta channels there is no switch
+    /// to flip, so this is the constant `false` and every windsurf-facing control reads it
+    /// exactly as it always did — `DisciplineReview.pending` returns nothing, the banner is
+    /// nil, the review sheet never fills, the filter menu has no Discipline section and the
+    /// Help index has no windsurf topic. One constant rather than a `#if DEV` in each of the
+    /// nine places that ask, and no behaviour to get wrong when the flag moves.
+    #if DEV
     private(set) var windsurfEnabled = SessionStore.storedWindsurfEnabled
 
     func setWindsurfEnabled(_ enabled: Bool) {
@@ -829,6 +846,13 @@ final class SessionStore {
         // A sheet raised a moment ago is a question about a feature that is now off.
         if !enabled { disciplineReview = nil }
     }
+    #else
+    let windsurfEnabled = false
+
+    /// Kept so the simulator's `UI_SHEET=discipline` hook compiles in every channel; it can
+    /// only ever be reached from a DEBUG simulator build, and here it does nothing.
+    func setWindsurfEnabled(_ enabled: Bool) {}
+    #endif
 
     static let riderDisciplineKey = "riderDiscipline"
 
@@ -1313,6 +1337,12 @@ final class SessionStore {
     #endif
 
     // MARK: - Apple Health (writing: opt-in, and only ever our own sessions)
+    //
+    // BOTH DIRECTIONS ARE BETA (docs/channels.md): unproven, off until switched on, and the
+    // release channel carries neither the HealthKit entitlement nor the usage strings that
+    // would let it ask. `HealthWriter` and `HealthImporter` — the only two files in the
+    // project that say `import HealthKit` on the phone — move with this flag.
+    #if BETA
 
     /// Off by default (plan phase 4: "optional Apple Health write").
     var healthWriteEnabled: Bool {
@@ -1574,6 +1604,20 @@ final class SessionStore {
     /// One observer per launch. `HKObserverQuery` is cheap but not free, and registering a
     /// second on every foreground would multiply the wake-ups the rider's battery pays for.
     private var isObservingHealth = false
+
+    #else
+
+    /// The release channel's Apple Health surface: nothing, said three ways. `false` rather
+    /// than an absent property because the feedback mail reports the pickup state of every
+    /// source it knows about, and "off" is the honest answer for a build that has no door.
+    var healthAutoImport: Bool { false }
+    /// Called from four import paths that are not about Health at all (a sync, a restore, a
+    /// background wake, a Strava pull); a no-op beats four `#if BETA` islands inside them.
+    func writeNewSessionsToHealth() async {}
+    func checkHealthForNewWorkouts() async {}
+    func watchHealthForNewWorkouts() async {}
+
+    #endif
 
     // MARK: - intervals.icu
 
@@ -2034,6 +2078,12 @@ final class SessionStore {
     }
 
     // MARK: - Companion link (phase 5)
+    //
+    // DEV ONLY (docs/channels.md). Garmin Connect Mobile owns the Bluetooth link and the
+    // link has no real sessions behind it yet, so the release and beta binaries hold no
+    // companion object, no ConnectIQ framework and no watch map. The kit's `CompanionLink`
+    // protocol is compiled in every channel; only this half of it moves with the flag.
+    #if DEV
 
     /// The watch link. Concrete rather than `any CompanionLink` because the app is also
     /// the only place that does the two things the protocol deliberately leaves out —
@@ -2071,6 +2121,8 @@ final class SessionStore {
         set { UserDefaults.standard.set(newValue, forKey: "windToSend") }
     }
 
+    #endif
+
     // MARK: - Apple Watch recordings
 
     /// Starts listening for `.cjw` containers from the CleanJibe watch app and imports
@@ -2100,6 +2152,8 @@ final class SessionStore {
         await importFiles(urls: pending, source: .appleWatch)
         for url in pending { try? FileManager.default.removeItem(at: url) }
     }
+
+    #if DEV
 
     /// Runs for the life of the app: one `for await` over every card the watch sends.
     /// Cards are already validated when they get here — an invalid one never leaves the
@@ -2294,6 +2348,15 @@ final class SessionStore {
         }
         refreshCompanionState()
     }
+
+    #else
+
+    /// The release and beta channels have no watch map to push, but the three import paths
+    /// that used to offer one call this in the middle of unrelated work — a no-op here is
+    /// one line against three `#if DEV` islands in code that has nothing to do with Garmin.
+    func refreshWatchMapIfNeeded() async {}
+
+    #endif
 
     // MARK: - Strava
 
