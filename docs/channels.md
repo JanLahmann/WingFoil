@@ -28,8 +28,9 @@ document type, no usage string and no entitlement in the channels that lack it.
 
 1. On the water in ten or more sessions by two or more riders without an open report. Jan's
    own fenix and iPhone count as one rider.
-2. Third parties are prerequisites, not features: Strava's application review clears the
-   one-rider cap before the release ships; Garmin Connect Mobile owns the Bluetooth link and
+2. Third parties are prerequisites, not features: Strava allows ten connected riders since the
+   14 September self-service upgrade; its Developer Program review lifts that cap and is
+   requested before the release ships; Garmin Connect Mobile owns the Bluetooth link and
    stays in dev until the link has real sessions behind it.
 3. Older than a fortnight. Strava is the one exception, by Jan's call.
 4. Reviewable without a watch: every release feature shows itself from the example session
@@ -43,7 +44,8 @@ privacy page and has no open report.
 | class | you record with | you get | you do not get |
 |---|---|---|---|
 | a | the CleanJibe watch app on a Garmin | everything: foil time, flights, every turn verdict and clean jibe, certified speed records, wind axis, pump strokes and takeoff attempts | nothing missing |
-| b | any other FIT with a Doppler speed channel (Garmin's Windsurf profile, another Connect IQ app, the CleanJibe Apple Watch app) | foil time, flights, turn verdicts and clean jibes, **certified** speed records, wind axis | pump strokes and takeoff attempts, shown as absent, never as zero |
+| b | any other FIT with a Doppler speed channel (Garmin's Windsurf profile, another Connect IQ app) | foil time, flights, turn verdicts and clean jibes, **certified** speed records, wind axis | pump strokes and takeoff attempts, shown as absent, never as zero |
+| b + wrist | the CleanJibe Apple Watch app: class b speed, plus the 50 Hz wrist accelerometer (ADR-016) | everything class b gets, and pump strokes and takeoff attempts analysed on the phone | nothing missing; the watch itself detects nothing live |
 | c | positions only (Strava, a GPX, a TCX without speed, a phone in a pocket) | foil time, flights, turn verdicts and clean jibes, wind axis, speed records **estimated from positions** and marked uncertified | certified records, pumps, takeoffs |
 
 Release: classes a and b through intervals.icu or a file, class c through Strava. Beta: class
@@ -58,7 +60,7 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 |---|---|---|
 | intervals.icu sync, pull to refresh, background check with notification | release | |
 | FIT from Files, Mail, AirDrop, the share sheet | release | |
-| Strava import | release | testers Jan and Robert; needs Strava's application review first |
+| Strava import | release | testers Jan and Robert; cap 10 riders today, Developer Program review for more |
 | GPX and TCX imports (Polar, Suunto, COROS route) | beta | in the beta from day one; the release text says "the beta reads their files" |
 | Garmin export ZIP (full history) | beta | until a rider asks for it |
 | Apple Health, read Apple Workout recordings | beta | unproven; off until switched on |
@@ -72,7 +74,7 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 | Engine 0.18.0: foil time, flights, touchdowns, falls, wind axis | release | |
 | Turn verdicts, clean jibes, JPH · CPH · WPH, dry streaks | release | |
 | GP3S record set, uncertified marking | release | |
-| Pump strokes, takeoff attempts | release | class a only; absence shown as absence |
+| Pump strokes, takeoff attempts | release | class a and the Apple Watch app (wrist accelerometer); absence shown as absence |
 | Turn page and flight-end page with the three strips | release | |
 | "Wrist under" layer, why-line on every touchdown | release | |
 | Windsurf discipline (foil, fin), per-discipline thresholds | dev | experimental |
