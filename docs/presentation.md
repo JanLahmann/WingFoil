@@ -2883,6 +2883,41 @@ CleanJibe server for it to go to in any case. Where Mail is not configured
 (`canSendMail == false`) the same subject and body go to the system's `mailto:` handler; where
 that too goes nowhere, a sheet shows the report in full with one button that copies it. The
 help topic is "Sending feedback", last in *Getting set up* — the section's way back out.
+
+### The beta's usage report
+
+**Beta only** (`#if BETA`, docs/channels.md). The same mail with one more block at the foot of
+it, under one sentence that says what the block is: *"The block below is what the beta counts
+on this phone. It helps development and is a key part of being in the beta; delete any line
+you would rather not send."* The subject is its own — **`CleanJibe beta usage report`** — so a
+mailbox sorted by subject does not file it as a bug report and answer it as one.
+
+The block is headed **Usage and features** (`UsageCounters.report`, asserted line by line in
+`UsageCountersTests`) and carries, in this order: the build, the first-launch date, how many
+days the app has been used on and the day the mail was written; then one line per door that
+has been opened — `share card · 12 · last 13 Sep`; then, on **one** line, every door that has
+not been opened at all, which is the half that decides what ships (channels.md, rule 1);
+then the failures this phone has shown, newest first, deduplicated by message with a count
+beside each — the rider-facing sentence, exactly as it was on the screen.
+
+Seventeen doors are counted, one call site each: app opened · the six import doors
+(intervals.icu, file, Strava, Apple Health, share sheet, Garmin ZIP), counted in **sessions**
+rather than in taps · session opened · turn page · share card · replay clip · session video ·
+backup made · backup restored · settings opened · feedback mail · Strava connected. Counts and
+a last-used date, never a timestamped trail: "share card · 12 · last 13 Sep" answers the
+question the beta has, and a log of twelve moments would additionally describe a rider's
+afternoons. They live in this phone's `UserDefaults` (`usage.counters.v1`), they are never
+uploaded, and the only way a number leaves the phone is that mail.
+
+**The ask.** After every fifth session imported, or a fortnight since the last ask — whichever
+comes first — the library shows one card at the top of the list: *Help the beta: send your
+usage report*, with **Write the mail** and **Not now**. A card in the list rather than an
+alert, because the honest answer is often "not while I am standing on a beach": it waits where
+the rider is already looking, and "Not now" buys a fortnight of quiet rather than ending the
+conversation. Either button answers it and the card is gone. **Settings → Beta → Send usage
+report** is the permanent door, for the rider who did not wait to be asked and the one who
+said Not now and changed his mind.
+
 ## Start screen — the mark, held for two seconds
 
 **The phone opens on the brand, and the handover is invisible.** iOS draws `UILaunchScreen`

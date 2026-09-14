@@ -1212,6 +1212,32 @@ still has a library stamped `0.15.0+tuned.…`; the release build's own `reanaly
 re-derives it on the published defaults at the first launch, because the stamped version does
 not match.
 
+### A library from a newer build — how to see the refusal
+
+The three channels are cut from one commit but not on one day, so the case that matters is an
+older build put back on a phone whose library a newer beta has already migrated. `AppDatabase`
+reads `PRAGMA user_version` and the `grdb_migrations` list **before** it migrates anything and
+throws `LibraryNewerThanApp` rather than opening a schema it does not know;
+`LibraryNewerThanAppTests` covers all four shapes — one version ahead, the `user_version = 99`
+recipe below, an unknown migration identifier, and the two that must still open (a library
+from before the stamp existed, and a half-migrated `upTo: "v1"` one).
+
+To see the **screen**, raise it on a simulator against a library that is really there:
+
+```sh
+xcrun simctl terminate booted de.lahmann.wingfoil                       # or …wingfoil.dev
+DIR=$(xcrun simctl get_app_container booted de.lahmann.wingfoil data)
+sqlite3 "$DIR/Library/Application Support/wingfoil.sqlite" "PRAGMA user_version=99;"
+xcrun simctl launch booted de.lahmann.wingfoil
+```
+
+The app opens on *This library was last used by a newer CleanJibe* with **Open TestFlight**
+and **Restore from backup**, and nothing behind it. Put it back with
+`sqlite3 … "PRAGMA user_version=15;"` — the number is `AppDatabase.schemaVersion`, which every
+successful open stamps for itself, so any value at or below it simply opens. Restoring instead
+moves the too-new file aside to `wingfoil.sqlite.v99.newer` and builds a fresh one from the
+backup; the aside file is never deleted, so the recipe is reversible by hand.
+
 ### Ground-truth labels — the CSV the dev build exports
 
 The dev build lets Jan label a counted turn with what actually happened — *I flew · I touched ·
