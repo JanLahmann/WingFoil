@@ -2972,13 +2972,15 @@ used to be a gear with two rows; it is a menu now because a gear promises switch
 first thing a new rider needs is not a switch. Five items, two dividers, one line of small
 print, in this order and for this reason:
 
-1. **Getting started** — the beta test guide as a help topic (`HelpTopicID.betaGettingStarted`,
-   the same text as cleanjibe.org/start). First, because it is what "I just installed this"
-   is looking for. The public page was reframed on 14 September 2026: the test is **one
+1. **Getting started** — the first-session guide as a help topic (`HelpTopicID.betaGettingStarted`,
+   the same text as cleanjibe.org/start, in every channel). First, because it is what "I just
+   installed this" is looking for. Both were reframed on 14 September 2026: the test is **one
    session on the water** — charge, record, save, sync, pull down on Sessions, read the turn
-   verdicts against what you remember, share a card, Menu → Support — and the 20-minute dry
-   run is kept as "the minimal check, if you cannot wait" after it. The help topic still leads
-   with the dry run; bringing the two back into step is an iOS change.
+   verdicts against what you remember, share a card, Menu → Support & ideas — then the three
+   routes in the order that gives the most (Garmin watch app, any speed FIT, positions only),
+   and the 20-minute dry run kept as "the minimal check, if you cannot wait" after them. The
+   topic names the beta once, as a place feedback can go; its help section is titled
+   "Getting started" (it was "The beta" until the same day).
 2. **Settings** — the switches, the watch, the accounts.
 3. **Support & ideas** — the feedback mail (`feedbackMail(on:)`, the same composer as
    Settings → Send feedback and the share sheet's "Report a problem"). Above the two "what is
