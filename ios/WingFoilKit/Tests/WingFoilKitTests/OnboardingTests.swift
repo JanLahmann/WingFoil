@@ -127,7 +127,7 @@ import Testing
         let prose = (topic.body + topic.items.flatMap { [$0.term, $0.detail] })
             .joined(separator: " ").lowercased()
         for phrase in ["uncertified", "pump strokes", "intervals.icu", "never writes",
-                       "one connected rider", "fifteen minutes", "disconnect"] {
+                       "ten connected riders", "fifteen minutes", "disconnect"] {
             #expect(prose.contains(phrase), "the Strava topic never mentions \(phrase)")
         }
         // The one recommendation that saves a rider from importing the worse copy.

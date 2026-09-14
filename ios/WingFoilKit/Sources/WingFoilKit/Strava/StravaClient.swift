@@ -27,7 +27,7 @@ public struct StravaURLSessionTransport: StravaTransport {
 /// consent and its own issue (#5), and nothing in this file is a step towards doing it
 /// quietly.
 ///
-/// **Rate limits.** Strava allows 100 requests per fifteen minutes and 1000 per day, per
+/// **Rate limits.** Strava allows 200 read requests per fifteen minutes and 2000 per day, per
 /// application, and answers a breach with 429. A sync of *n* new activities costs one list
 /// request plus one streams request each, so the budget is real but generous for a personal
 /// library. Two things keep it that way: known activities are never fetched again, and a
@@ -40,9 +40,9 @@ public struct StravaClient: Sendable {
         case notConnected
         case unauthorized
         /// **Strava will not connect another rider.** An unreviewed Strava API application
-        /// is allowed exactly one connected athlete and 1 000 requests a day; the second
-        /// person to tap Connect is refused, and the refusal has nothing to do with his
-        /// account. Its own case because it is the one failure here that no amount of
+        /// is allowed ten connected athletes and 2 000 read requests a day (200 per fifteen
+        /// minutes); the eleventh person to tap Connect is refused, and the refusal has
+        /// nothing to do with his account. Its own case because it is the one failure here that no amount of
         /// retrying, reconnecting or re-reading the help will fix — the fix is Strava
         /// approving the application, and the rider deserves to be told that rather than
         /// left staring at "Bad Request".
@@ -63,8 +63,8 @@ public struct StravaClient: Sendable {
             case .notConnected: "no Strava account is connected"
             case .unauthorized: "Strava rejected the connection — connect it again"
             case .athleteLimit:
-                "Strava has not approved CleanJibe for more riders yet — only one Strava "
-                    + "account can be connected until it does"
+                "Strava has not approved CleanJibe for more riders yet — it is full. "
+                    + "Menu → Support is the way to report it"
             case .rateLimited(let after):
                 if let after {
                     "Strava asked us to wait about \(max(1, after / 60)) more minute"
