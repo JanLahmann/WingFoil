@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v52";     // v52: classes named, ideas on the bench, structured feedback mail, Garmin-first start guide
+const VERSION = "v53";     // v53: light theme, the card takes the fold, /learn/ splits off, Android share target
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
@@ -30,12 +30,47 @@ const RUNTIME = `wingfoil-runtime-${VERSION}`;
 /** The analyzer's directory, relative to this worker's root scope. See APP_SHELL. */
 const APP_DIR = "app/";
 
+/* ------------------------------------------------------- Android's share sheet
+ *
+ * GitHub issue #9, "Will this provide a share in / open in capability on android?" — yes,
+ * and this is the whole of it. An installed web app that declares `share_target` in its
+ * manifest appears in Android's share sheet like any other app; when a rider picks it,
+ * Android POSTs a multipart form to the declared action. That POST never reaches a server
+ * (there isn't one) — it reaches THIS worker, which is the only reason the feature can
+ * exist on a site that uploads nothing.
+ *
+ * The dance, and why it is a dance: a POST cannot hand a File to a page. So the worker
+ * takes the file out of the form, parks it in a cache of its own under one fixed key, and
+ * answers with a 303 to `app/?shared=1`. The analyzer reads the key on load, deletes it,
+ * and feeds the file to the same intake a drop or a picker uses (js/app.js). One file at a
+ * time, deliberately: the intake analyses one session, and a second parked file would be a
+ * queue nobody asked for.
+ *
+ * PRIVACY IS UNCHANGED. The bytes go from Android's share sheet into this browser's own
+ * cache and out again into the tab next door. Nothing is fetched, nothing is posted
+ * anywhere, and the slot is emptied by the page that reads it — and by `activate`, below,
+ * on the next version bump.
+ */
+const SHARE_CACHE = "wingfoil-share";
+/** The action the manifest declares, as this worker sees it. */
+const SHARE_TARGET_PATH = new URL(`${APP_DIR}share-target`, self.location).pathname;
+/** The one key a shared file is parked under. Absolute, because the page resolves the same
+ *  string against its own URL and the two have to agree. */
+const SHARE_SLOT = new URL(`${APP_DIR}__shared__`, self.location).href;
+
 const APP_SHELL = [
   // Two documents now, both inside this worker's root scope: the project homepage at "/"
   // and the analyzer at "/app/". The homepage is 6 KB of HTML plus one stylesheet, so
   // precaching it costs nothing and buys the offline visitor a way back out of the app.
   "./",
   "index.html",
+  // /learn/ joined them on 14 September 2026, when the homepage's long half moved there.
+  // It is the ONE outbound link the front door now offers a reader who wants more than the
+  // card and the three names, and an offline visitor who followed it into a 503 would be
+  // reading a page whose only invitation is broken. ~30 KB of HTML, no pictures of its own
+  // above the fold, and the four it does carry are lazy and excluded below like the rest.
+  "learn/",
+  "learn/index.html",
   "app/",
   "app/index.html",
   "app/manifest.webmanifest",
@@ -71,19 +106,20 @@ const APP_SHELL = [
   // exactly the one who has nothing else to look at, and three broken image frames is a
   // worse empty state than the one they replaced.
   //
-  // The homepage's four pictures (img/watch-main, img/phone-session, img/web-report and
-  // img/share-card, ~196 KB) are deliberately NOT here. Three of them are below the fold on
-  // a page that is precached only as a way back out of the app, they are `loading="lazy"`,
-  // and the boxes they sit in are sized by `aspect-ratio` — so offline they leave tidy
-  // empty plates rather than a broken layout, and nobody pays for them on install.
+  // The site's four pictures are deliberately NOT here. Three of them (img/watch-main,
+  // img/phone-session, img/web-report, ~97 KB) are on /learn/ now rather than on the front
+  // page, all three below its fold, all three `loading="lazy"`, and the boxes they sit in
+  // are sized by `aspect-ratio` — so offline they leave tidy empty plates rather than a
+  // broken layout, and nobody pays for them on install.
   //
-  // img/share-card.png is the exception worth naming, because it moved: it is the
-  // HOMEPAGE'S HERO now, above the fold and `loading="eager"`, so the old "furthest down"
-  // argument for excluding it is gone. It stays out anyway, on the argument that always
-  // did the real work — it is 99 KB, the largest of the four, and the person paying for it
-  // on install is the one installing the ANALYZER, who reaches the homepage only on the way
-  // back out and reaches it online. Its box is still reserved by `aspect-ratio`, so offline
-  // the hero is one tidy empty plate beside a headline that says the same thing in words.
+  // img/share-card.png is the exception worth naming, because it moved twice: it is the
+  // HOMEPAGE'S HERO, above the fold and `loading="eager"`, and since 14 Sep 2026 it carries
+  // its map background. It stays out anyway, on the argument that always did the real work —
+  // the person paying for it on install is the one installing the ANALYZER, who reaches the
+  // homepage only on the way back out and reaches it online. (It is also 28 KB now, a third
+  // of what it was: the map made the picture, and an octree quantize made the file.) Its box
+  // is still reserved by `aspect-ratio`, so offline the hero is one tidy empty plate beside
+  // a headline that says the same thing in words.
   // /invite/ is not precached either: it is read once, at a desk, next to a watch. Nor is
   // /privacy/, for the same reason and more so — it is read once, before an install, by a
   // person deciding whether to trust the thing, which is not a decision anyone makes on a
@@ -127,7 +163,10 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
-    const keep = new Set([SHELL, RUNTIME]);
+    // SHARE_CACHE is version-less on purpose: a file parked by the old worker seconds before
+    // an update must still be there for the page that was opened to fetch it. It is kept,
+    // not deleted, and the page empties it as soon as it has read it.
+    const keep = new Set([SHELL, RUNTIME, SHARE_CACHE]);
     await Promise.all((await caches.keys())
       .filter((k) => k.startsWith("wingfoil-") && !keep.has(k))
       .map((k) => caches.delete(k)));
@@ -142,6 +181,12 @@ self.addEventListener("message", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
+  // Android's share sheet, before the GET guard below: this is the one POST this worker
+  // answers, and nothing on the network ever sees it.
+  if (req.method === "POST" && new URL(req.url).pathname === SHARE_TARGET_PATH) {
+    event.respondWith(stashShared(req));
+    return;
+  }
   if (req.method !== "GET") return;
   const url = new URL(req.url);
 
@@ -158,6 +203,41 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   event.respondWith(staleWhileRevalidate(req, SHELL));
 });
+
+/**
+ * Take the shared file out of Android's multipart POST, park it, and send the rider to the
+ * analyzer.
+ *
+ * A 303 rather than a 302: the browser must follow it with a GET, and only 303 says so for
+ * a POST. Every failure lands in the same place — the analyzer's ordinary front screen with
+ * its drop zone — because a rider who shared a file and got an error page would have no way
+ * to try the other thing.
+ */
+async function stashShared(request) {
+  const home = new URL(APP_DIR, self.location);
+  try {
+    const form = await request.formData();
+    // `getAll` rather than `get`: a sender may attach several, and the intake analyses one
+    // session. The first File wins; a text part under the same name is skipped.
+    const file = form.getAll("files").find((part) => part && typeof part !== "string");
+    if (!file) return Response.redirect(home.href, 303);
+    const cache = await caches.open(SHARE_CACHE);
+    await cache.put(SHARE_SLOT, new Response(file, {
+      headers: {
+        "content-type": file.type || "application/octet-stream",
+        // The name is what the intake sniffs the format from and what the library row is
+        // called, and Android sends names with spaces and umlauts in them — a header value
+        // may hold neither, so it travels percent-encoded and the page decodes it.
+        "x-shared-name": encodeURIComponent(file.name || "session.fit"),
+      },
+    }));
+    const target = new URL(APP_DIR, self.location);
+    target.search = "?shared=1";
+    return Response.redirect(target.href, 303);
+  } catch {
+    return Response.redirect(home.href, 303);
+  }
+}
 
 /**
  * The Pyodide runtime and the wheel: pinned versions at immutable URLs, so once we have

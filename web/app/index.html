@@ -1,11 +1,17 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>CleanJibe — session analyzer</title>
 <meta name="description" content="Drop a wingfoil .fit file and get the session back: foil time, flights, jibe outcomes, speed records, wind axis. Free, no account, nothing uploaded.">
-<meta name="theme-color" content="#101010">
+<!-- Two theme colours and `light dark`, like every other document here: the analyzer follows
+     the reader's system setting since 14 Sep 2026 (css/style.css, "LIGHT THEME"). The two
+     session figures keep their own dark plate on a light page — they are drawn in the
+     presentation tokens, which are stepped for a dark surface. -->
+<meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f6f3" media="(prefers-color-scheme: light)">
+<meta name="color-scheme" content="light dark">
 
 <!-- The share card. og:image is absolute on purpose: scrapers fetch the tag's value as-is
      and never resolve it against the page, so a relative path yields no preview at all.
@@ -92,6 +98,27 @@
   <span class="update-actions">
     <button class="primary" id="update-reload" type="button">Reload to update</button>
     <button class="ghost" id="update-dismiss" type="button">Later</button>
+  </span>
+</div>
+
+<!-- "Install CleanJibe", offered only where it is a real offer.
+     GitHub issue #9 asked whether Android gets a *share in / open in*. It does, and this bar
+     is the door to it: the share-target entry in manifest.webmanifest only reaches Android's
+     share sheet once the app is INSTALLED, and nothing on the page had ever said so. Chrome
+     fires `beforeinstallprompt` exactly when an install is available — never on iOS, never
+     in a browser that cannot, never once it is installed — so the bar's whole existence is
+     the browser's own answer rather than a guess from a user-agent string.
+     It wears the update banner's shape because it is the same kind of thing: one sentence
+     the page volunteers, two buttons, and a Later that means it. "Later" is remembered in
+     localStorage behind try/catch — a preference that cannot be read must never be the
+     reason a page misbehaves — so a rider who has said no once is not asked on every visit. -->
+<div id="install-banner" class="update-banner" role="status" hidden>
+  <span><strong>Install CleanJibe</strong> — it gets an icon, opens without browser chrome,
+        works with no signal, and joins your share sheet, so <em>Share &rarr; CleanJibe</em>
+        on a <code>.fit</code> or <code>.gpx</code> opens the analysis.</span>
+  <span class="update-actions">
+    <button class="primary" id="install-go" type="button">Install</button>
+    <button class="ghost" id="install-dismiss" type="button">Later</button>
   </span>
 </div>
 
@@ -513,6 +540,48 @@
   </p>
 </footer>
 
+<!-- The install offer, and nothing else. Inline and not a module: it is three listeners over
+     markup in this file, it has to be listening before js/app.js has finished loading (Chrome
+     fires `beforeinstallprompt` early and once), and it must not be part of the analyzer's
+     own bundle — an install prompt is chrome, not analysis. -->
+<script>
+  (function () {
+    var KEY = "cleanjibe.install.dismissed";
+    var bar = document.getElementById("install-banner");
+    var prompt = null;
+
+    function remembered() {
+      try { return localStorage.getItem(KEY) === "1"; } catch (e) { return false; }
+    }
+    function remember() {
+      try { localStorage.setItem(KEY, "1"); } catch (e) { /* private window: ask again */ }
+    }
+
+    addEventListener("beforeinstallprompt", function (ev) {
+      // Keep the event: Chrome only lets it be used later if its own banner was suppressed.
+      ev.preventDefault();
+      prompt = ev;
+      if (!remembered()) bar.hidden = false;
+    });
+
+    document.getElementById("install-go").addEventListener("click", function () {
+      bar.hidden = true;
+      if (!prompt) return;
+      prompt.prompt();
+      // Whatever the rider answers, the event is spent — Chrome will fire a fresh one on a
+      // later visit if the install is still available.
+      prompt.userChoice.then(function () { prompt = null; });
+    });
+
+    document.getElementById("install-dismiss").addEventListener("click", function () {
+      bar.hidden = true;
+      remember();
+    });
+
+    // Installed from Chrome's own menu instead: the offer is answered, so stop making it.
+    addEventListener("appinstalled", function () { bar.hidden = true; remember(); });
+  })();
+</script>
 <script type="module" src="../js/app.js"></script>
 </body>
 </html>

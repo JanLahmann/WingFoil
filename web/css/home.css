@@ -96,7 +96,7 @@
   width: clamp(64px, 15vw, 84px); aspect-ratio: 1; flex: none;
   border-radius: 21%;
   background: #0A1E30 url(../icons/icon.svg) center/cover no-repeat;
-  box-shadow: inset 0 0 0 1px #ffffff26, 0 10px 26px #00000059;
+  box-shadow: inset 0 0 0 1px var(--mark-ring), 0 10px 26px var(--art-shadow);
 }
 .hero-brand .eyebrow { min-width: 0; }
 
@@ -123,7 +123,7 @@
   display: block; width: 100%; max-width: 340px; height: auto; aspect-ratio: 440 / 550;
   background: var(--surface-2); border: 1px solid var(--line-soft);
   border-radius: var(--radius);
-  box-shadow: 0 18px 44px #00000073;
+  box-shadow: 0 18px 44px var(--art-shadow-strong);
 }
 .hero-card figcaption {
   color: var(--ink-3); font-size: 13px; line-height: 1.5; max-width: 46ch;
@@ -175,10 +175,14 @@
    It lives in the "What it counts" section now rather than in the hero, so it needs the
    margin the hero's grid gap used to give it. */
 .home-section > .motif { margin-bottom: 20px; }
+/* The plate is `--figure-plate`, not `--surface-1`: like the analyzer's two figures, this
+   drawing is inked in the presentation tokens, which are stepped for a dark surface and
+   shared with the iOS app (see "LIGHT THEME" in style.css). So the picture keeps its own
+   sky on a light page, and only its caption and key turn with the paper. */
 .motif {
   border: 1px solid var(--line-soft); border-radius: var(--radius);
   background:
-    radial-gradient(120% 140% at 12% 0%, #16232a 0%, var(--surface-1) 60%);
+    radial-gradient(120% 140% at 12% 0%, #16232a 0%, var(--figure-plate) 60%);
   padding: 16px 14px 12px;
 }
 .motif svg { display: block; width: 100%; height: auto; }
@@ -199,18 +203,25 @@
   fill: none; stroke: var(--wf-direction-ink); stroke-width: 2; opacity: 0.45;
   stroke-linecap: round; stroke-linejoin: round;
 }
-.motif .m-flew  { fill: var(--good); stroke: var(--surface-1); stroke-width: 2; }
-.motif .m-touch { fill: var(--warn); stroke: var(--surface-1); stroke-width: 2; }
+.motif .m-flew  { fill: var(--good); stroke: var(--figure-plate); stroke-width: 2; }
+.motif .m-touch { fill: var(--warn); stroke: var(--figure-plate); stroke-width: 2; }
 .motif .m-fell  { fill: none; stroke: var(--bad); stroke-width: 3.5; stroke-linecap: round; }
+/* The key sits ON the plate, not under it — and the plate is dark in both themes (see
+   `--figure-plate`). So its ink is the DARK theme's tertiary, spelled out rather than read
+   from `--ink-3`: on paper that variable is a near-black that would vanish into the navy. */
 .motif-key {
   display: flex; flex-wrap: wrap; gap: 8px 18px;
-  margin-top: 10px; font-size: 12.5px; color: var(--ink-3);
+  margin-top: 10px; font-size: 12.5px; color: #8a8a80;
 }
 .motif-key span { display: inline-flex; align-items: center; gap: 7px; }
 .motif-key i {
   width: 10px; height: 10px; flex: none; border-radius: 50%;
   background: currentColor; font-style: normal;
 }
+/* The four labels are the legend for the marks beside them, so they carry the marks' own
+   tokens and NOT the darker text twins — the twins exist for ink on paper, and this is ink
+   on the plate. A label in a different green from the disc it names would be a second
+   vocabulary for one thing. */
 .motif-key .k-flew { color: var(--good); }
 .motif-key .k-touch { color: var(--warn); }
 .motif-key .k-fell { color: var(--bad); }
@@ -274,7 +285,40 @@
   color: var(--ink-3); border: 1px solid var(--line); border-radius: 999px;
   padding: 5px 8px; white-space: nowrap;
 }
-.status.live { color: var(--foil); border-color: #3a6068; }
+.status.live {
+  color: var(--foil-text);
+  border-color: color-mix(in srgb, var(--foil-text) 40%, var(--line));
+}
+
+/* ------------------------------------------------------------------ beta pills
+ *
+ * A `beta` marker beside a feature that is real today but only inside the public beta, so a
+ * reader of any page can tell at a glance what an App Store install will and will not carry.
+ * docs/channels.md is the list; nothing here decides it.
+ *
+ * It is `.tag` (style.css) with one colour change, not a shape of its own: the site already
+ * teaches that capsule, and a second capsule vocabulary for the same kind of fact is how a
+ * page stops being scannable. Release features are unlabelled — an unmarked feature is the
+ * quiet majority, and marking both halves would double the noise to say the same thing.
+ *
+ * Lowercase, because it is a channel name rather than a shout, and `.tag` uppercases by
+ * default. The colour is the app's own blue at label weight in both themes: it must not
+ * borrow an outcome ink, which on this site means a verdict about foiling.
+ */
+.tag.beta {
+  text-transform: none; letter-spacing: .02em;
+  color: var(--series-1); border-color: color-mix(in srgb, var(--series-1) 45%, var(--line));
+}
+/* In a table cell and in a heading the pill rides the text's own baseline block, so it may
+   not add a line of height to the row it sits in. */
+h3 .tag.beta, td .tag.beta, dt .tag.beta, li .tag.beta { vertical-align: 2px; }
+
+/* The one-line legend, once per page that carries a pill. Quieter than the note it usually
+   follows: it explains furniture. */
+.beta-legend {
+  margin-top: 10px; font-size: 12.5px; color: var(--ink-3);
+}
+.beta-legend .tag.beta { margin-left: 0; margin-right: 6px; }
 
 /* --------------------------------------------------------------- vocabulary */
 
@@ -363,7 +407,13 @@
     grid-template-columns: minmax(0, 1fr) 400px;
     align-items: start;
   }
-  .hero-copy { gap: 24px; }
+  /* The card is FIRST in the markup, because on a phone it is the eye-catcher and has to be
+     the first thing on the screen. A wide window wants the other order — argument left,
+     output right — so the two halves swap here rather than in the document. `order` on a
+     grid item is exactly this and nothing else: the DOM order, and therefore the reading
+     order a screen reader and a keyboard get, is untouched. */
+  .hero-copy { gap: 24px; order: 1; }
+  .hero-card { order: 2; }
   .hero-card { justify-items: stretch; }
   .hero-card img { max-width: 400px; }
   .hero-card figcaption { text-align: left; }
