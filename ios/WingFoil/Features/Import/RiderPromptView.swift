@@ -59,9 +59,18 @@ struct RiderPromptView: View {
                             .onSubmit { confirm() }
                         if !known.isEmpty { knownRiders }
                     } footer: {
+                        // The list of what a friend's session stays out of is a list of
+                        // this build's doors: the Health export is a BETA one
+                        // (docs/channels.md), so the release must not name it.
+                        #if BETA
                         Text("A friend's session is shown in full — map, chart, replay, "
                              + "everything — but stays out of your records, trends, gear "
                              + "totals and Apple Health.")
+                        #else
+                        Text("A friend's session is shown in full — map, chart, replay, "
+                             + "everything — but stays out of your records, your trends and "
+                             + "your gear totals.")
+                        #endif
                     }
                 }
             }

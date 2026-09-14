@@ -2370,6 +2370,19 @@ feature has no row for it, no document type, no usage string and no entitlement 
 exception being "Curious about what is coming", which is the app naming the doors it does not
 have, on purpose, in one place.
 
+**The help catalogue follows the same rule, and it is the one place the kit had to be told.**
+The catalogue is pure data and compiles whole in every build, so every `HelpTopic` carries a
+`channel: HelpChannel` — the lowest channel that has the door it explains, `.release` for
+almost all of them — and the app hands its own channel in (`ChannelFeatures.channel`). The
+index lists and searches `HelpCatalog.indexTopics(channel:windsurfEnabled:)`; a topic page's
+"See also" renders `HelpCatalog.relatedTopics(of:channel:)`, so a visible page never offers a
+chevron onto a hidden one. `HelpCatalog.topic(_:)` is **not** filtered and stays total: a `?`
+on a card the build actually draws always opens. Bound today: *Recording with the Apple
+Workout app* (beta) and *Windsurf (experimental)* (dev, and also behind its own switch). Where
+one sentence serves two channels the release wording names the beta as the place a door is —
+"GPX and TCX files are read by the CleanJibe beta; a FIT is read by every build" — rather than
+describing a door this build does not have. docs/channels.md is the source for which is which.
+
 Settings → About and the library menu's last line carry the channel after the version —
 nothing for the release, " · beta", " · dev" — because "which build is this" is the first
 question of every report that comes back from TestFlight.
@@ -2972,15 +2985,16 @@ used to be a gear with two rows; it is a menu now because a gear promises switch
 first thing a new rider needs is not a switch. Five items, two dividers, one line of small
 print, in this order and for this reason:
 
-1. **Getting started** — the first-session guide as a help topic (`HelpTopicID.betaGettingStarted`,
+1. **Getting started** — the first-session guide as a help topic (`HelpTopicID.gettingStarted`,
    the same text as cleanjibe.org/start, in every channel). First, because it is what "I just
    installed this" is looking for. Both were reframed on 14 September 2026: the test is **one
    session on the water** — charge, record, save, sync, pull down on Sessions, read the turn
    verdicts against what you remember, share a card, Menu → Support & ideas — then the three
    routes in the order that gives the most (Garmin watch app, any speed FIT, positions only),
    and the 20-minute dry run kept as "the minimal check, if you cannot wait" after them. The
-   topic names the beta once, as a place feedback can go; its help section is titled
-   "Getting started" (it was "The beta" until the same day).
+   topic names the beta once, as a place feedback can go; it sits in its own first help
+   section "Getting started" (the section was "The beta" until the same day), and it is
+   channel-neutral: nothing in it says which build the reader is holding.
 2. **Settings** — the switches, the watch, the accounts.
 3. **Support & ideas** — the feedback mail (`feedbackMail(on:)`, the same composer as
    Settings → Send feedback and the share sheet's "Report a problem"). Above the two "what is
@@ -3024,8 +3038,13 @@ mail's own template. The release notes close on it too
 The session page's line carries the session, so the mail names the afternoon by itself; the
 card is attached only from the share sheet, where it is already drawn. Every door climbs the
 same ladder (`feedbackMail(on:)`): Mail, then the `mailto:` handler, then the copy sheet.
-The subject is `CleanJibe beta feedback · build <N>[ dev] · <watch>` — the build number, not
-the marketing version, because the two TestFlight variants of a release share the latter.
+The subject is `CleanJibe feedback · build <N>[ dev] · <watch>` — the build number, not
+the marketing version, because the two TestFlight variants of a release share the latter. It
+said *beta feedback* until the release channel was cut: the same composer is the App Store
+build's Support & ideas mail, and a subject that calls that build a beta is the app telling a
+rider he is holding a test version (docs/channels.md). The build number already separates the
+channels. The beta's own usage report keeps its own subject, *CleanJibe beta usage report*,
+because that door exists only in the beta.
 
 **The body opens with three labelled blanks, and the facts are under a rule.** The template
 was one word — *What happened* — and one empty line, which is a prompt for a paragraph rather

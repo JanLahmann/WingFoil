@@ -275,14 +275,19 @@ public enum FeedbackReport {
     /// spot, which is a map pin to where the reporter rides.
     public static let recipient = "info@cleanjibe.org"
 
-    /// "CleanJibe beta feedback · build 17 dev · fenix 8".
+    /// "CleanJibe feedback · build 17 dev · fenix 8".
     ///
     /// The build number rather than the marketing version, because the two TestFlight
     /// variants of a release share a marketing version and differ only here; the watch
     /// because a mailbox sorted by subject then groups the reports that are about one.
+    ///
+    /// It said *beta feedback* until the release channel was cut. The same composer is the
+    /// App Store build's Support & ideas mail, and a subject line that calls that build a
+    /// beta is the app telling a rider he is holding a test version (docs/channels.md).
+    /// The build number already tells the channels apart, which is what the word was doing.
     public static func subject(_ facts: FeedbackFacts) -> String {
         let build = facts.app.build + (facts.app.isDev ? " dev" : "")
-        return "\(Branding.appName) beta feedback · build \(build) · \(facts.watch.subjectName)"
+        return "\(Branding.appName) feedback · build \(build) · \(facts.watch.subjectName)"
     }
 
     /// The three questions a report has to answer, in the order a reporter thinks them.
