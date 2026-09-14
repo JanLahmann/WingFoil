@@ -126,7 +126,7 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
         case .conditions: "Conditions"
         case .sharing: "Sharing"
         case .quality: "Where the numbers come from"
-        case .beta: "The beta"
+        case .beta: "Getting started"
         }
     }
 
@@ -141,7 +141,7 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
         case .conditions: "wind"
         case .sharing: "square.and.arrow.up"
         case .quality: "checkmark.seal"
-        case .beta: "testtube.2"
+        case .beta: "sailboat"
         }
     }
 }
@@ -1290,30 +1290,42 @@ public enum HelpCatalog {
                 + "a speed, and a speed is a speed on any board.",
             ],
             related: [.foilPct, .turnOutcomes, .pumpsToTakeoff, .engineVersion]),
-        // MARK: The beta
+        // MARK: Getting started
         //
-        // The only topic that deliberately does not finish its own subject. The test it
-        // describes runs across three apps and two stores, changes whenever a route does,
-        // and half of it happens before CleanJibe is even open — so the steps live on the
-        // web, where they can be fixed the same day, and this topic's job is to say what
-        // the test is for, that it takes twenty minutes on land, and where it is.
+        // The only topic that deliberately does not finish its own subject. The first session
+        // runs across a watch, a phone and sometimes a third service, changes whenever a route
+        // does, and half of it happens before CleanJibe is even open — so the steps live on the
+        // web, where they can be fixed the same day, and this topic's job is to say what the
+        // first session is for, which route gives the most, and where a report goes. The same
+        // text in every channel: it names the beta only as a place feedback can go. Reframed
+        // 14 September 2026 with cleanjibe.org/start (Jan: the test is one session on the
+        // water, not a walk round the block); the dry run stays as the minimal check.
         HelpTopic(
-            id: .betaGettingStarted, section: .beta, title: "Getting started (beta test)",
-            summary: "A 20-minute test on land, and where to send what you find.",
+            id: .betaGettingStarted, section: .beta, title: "Getting started",
+            summary: "Your first session on the water, and where to send what you find.",
             body: [
-                "CleanJibe is a beta, and the most useful thing a new tester can do is the "
-                + "short test on land: record three to five minutes on your watch — a walk "
-                + "or a bike ride, no wing and no wind — get it onto the phone, and see "
-                + "whether the session arrives and reads the way it should.",
-                "It takes about twenty minutes and it is worth doing before your next real "
-                + "session, because it separates \"my watch route is not set up\" from "
-                + "\"CleanJibe read my riding wrong\" — and those two are told apart by two "
-                + "completely different people.",
-                "The walkthrough is a web page rather than a screen in here: it covers all "
-                + "three ways in (Apple's Workout app, the CleanJibe watch app, and a Garmin "
-                + "through intervals.icu), it says what a working result looks like, and it "
-                + "carries the three places a report can go — a mail with the fields already "
-                + "filled in, TestFlight's own feedback, and the Connect IQ listing.",
+                "The real test is one session on the water. Charge the watch, record the "
+                + "session the way you always do, save it, and let it reach the phone: pull "
+                + "down on Sessions once the recording has synced, open it, and read the turn "
+                + "verdicts against what you remember — which jibes you flew through, where "
+                + "you touched down, where you fell in. If it reads right, share a card. If "
+                + "it does not, say so: Menu → Support & ideas opens a mail with the facts "
+                + "already filled in, and a wish is as welcome as a fault.",
+                "Three ways in, in the order that gives the most. The CleanJibe watch app on "
+                + "a Garmin records everything, pump strokes and takeoff attempts included. "
+                + "Any watch that writes a .fit with a proper speed channel — Garmin's own "
+                + "Windsurf profile, another Connect IQ app — gives everything but the "
+                + "pumping, through intervals.icu or the file itself. A positions-only "
+                + "recording, from Strava or a phone in a pocket, still gives every flight "
+                + "and every turn, with estimated speed records that say so.",
+                "If you cannot wait for wind, the minimal check is a walk or a bike ride "
+                + "recorded on the watch: three to five minutes, no wing, no wind. It proves "
+                + "the route from the watch to the phone and nothing else — a session that "
+                + "arrives is a session that arrives.",
+                "The walkthrough is a web page rather than a screen in here: it covers each "
+                + "route step by step, says what a working first session looks like, and "
+                + "lists where a report can go — the mail above, TestFlight's own feedback "
+                + "if you are on the beta, and the Connect IQ listing for the watch app.",
             ],
             // Built from `Branding.site` rather than typed out, for the same reason the
             // analyzer link above is: the hostname is one constant on this platform and a
