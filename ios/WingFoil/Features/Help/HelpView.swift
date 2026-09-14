@@ -46,19 +46,25 @@ private struct HelpIndexList: View {
     @State private var query = ""
     @State private var selected: HelpTopicID?
 
-    /// What this index may list: the catalogue, minus the topics a feature switch is hiding
+    /// What this index may list: the catalogue, minus the topics this **channel** does not
+    /// have a door for and minus the ones a feature switch is hiding
     /// (`HelpCatalog.indexTopics`). The list a rider browses is a menu, and a topic on it is
-    /// an offer — "Windsurf (experimental)" is not one until he has turned it on in Settings.
+    /// an offer — "Recording with the Apple Workout app" is not one in the App Store build,
+    /// which has no Health door, and "Windsurf (experimental)" is not one until the rider has
+    /// turned it on in Settings.
+    ///
     /// The page itself stays reachable: a `?` on a session that *is* read as windsurf still
     /// opens it, which is why the filter is here and not in the catalogue.
     private var visible: [HelpTopic] {
-        HelpCatalog.indexTopics(windsurfEnabled: store.windsurfEnabled)
+        HelpCatalog.indexTopics(channel: ChannelFeatures.channel,
+                                windsurfEnabled: store.windsurfEnabled)
     }
 
     private var sections: [(section: HelpSection, topics: [HelpTopic])] {
         let listed = Set(visible.map(\.id))
         // Search reads the whole catalogue, so it is filtered by the same set — typing
-        // "windsurf" must not advertise the feature the list is hiding.
+        // "windsurf" must not advertise the feature the list is hiding, and typing "Health"
+        // in the App Store build must not advertise a door that build does not have.
         let matched = query.trimmingCharacters(in: .whitespaces).isEmpty
             ? visible
             : HelpCatalog.search(query).filter { listed.contains($0.id) }
@@ -117,9 +123,21 @@ struct HelpTopicSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openIcuSettings) private var openSettings
     @Environment(\.loadExampleSession) private var loadExample
+    /// Optional on purpose: a `?` is drawn on cards all over the app, and this sheet must
+    /// not be the one view that insists on a store being in the environment. Without one the
+    /// "see also" list is filtered by the channel alone, which is the filter that matters.
+    @Environment(SessionStore.self) private var store: SessionStore?
     @State private var next: HelpTopicID?
 
     private var topic: HelpTopic { HelpCatalog.topic(id) }
+
+    /// The topics this build may actually offer as a next step. A "see also" is a button,
+    /// and a button onto a topic the index hides would be a dead end wearing a chevron —
+    /// so it is filtered by the same rule the index uses (`HelpCatalog.relatedTopics`).
+    private var related: [HelpTopic] {
+        HelpCatalog.relatedTopics(of: topic, channel: ChannelFeatures.channel,
+                                  windsurfEnabled: store?.windsurfEnabled ?? true)
+    }
 
     var body: some View {
         NavigationStack {
@@ -214,15 +232,15 @@ struct HelpTopicSheet: View {
                         .padding(.top, 2)
                     }
 
-                    if !topic.related.isEmpty {
+                    if !related.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("See also")
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)
-                            ForEach(topic.related) { link in
-                                Button { next = link } label: {
+                            ForEach(related) { link in
+                                Button { next = link.id } label: {
                                     HStack(spacing: 6) {
-                                        Text(HelpCatalog.topic(link).title)
+                                        Text(link.title)
                                         Image(systemName: "chevron.right").font(.caption2)
                                         Spacer(minLength: 0)
                                     }
