@@ -11,27 +11,36 @@ import WingFoilKit
 /// * `BetaSectionView` — beta and dev only. What the tester has that the App Store build does
 ///   not, so a report can say "the video export" rather than "the thing that makes a film",
 ///   plus the one row that asks him what is missing.
-/// * `ComingSoonSection` — every channel. What is not in *this* build yet. In the release it
-///   carries the TestFlight link, because there the answer to "can I have it" is one tap; in
-///   the beta it is the same list with no link, because the reader is already there.
+/// * `ComingSoonSection` — every channel. What is being tried before it arrives here. In the
+///   release it carries the TestFlight link, because there the answer to "can I have it" is
+///   one tap; in the beta it is the same list with no link, because the reader is already
+///   there, plus the dev doors under it.
 enum ChannelFeatures {
 
-    /// The beta doors, in the order docs/channels.md lists them: getting a session in, the
-    /// analysis, the library, sharing, the watches.
+    /// The beta doors, one sentence each, in the order docs/channels.md lists them: getting
+    /// a session in, the library, sharing, the watches.
+    ///
+    /// **This list is docs/channels.md's beta rows and nothing else.** A row that is not in
+    /// that table is a promise nobody made; the Garmin export ZIP left this list on
+    /// 14 September 2026 when it became a release feature, and the release's own Import
+    /// screen has offered it all along ("FIT or ZIP…").
     static let beta: [String] = [
-        "GPX and TCX files, so a Polar, Suunto or Coros session opens straight from Files",
-        "Your whole Garmin history in one go, from the Export Your Data ZIP",
-        "Apple Health both ways — read what Apple's Workout app recorded, write your "
-            + "sessions back as workouts",
-        "The CleanJibe Apple Watch app: record on your wrist, live numbers, straight to "
-            + "the phone",
-        "Home-screen widgets and the watch complication",
-        "The session video — your afternoon as a film, not a card",
-        "Group the library by month, year or spot, and filter it",
+        ".gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS "
+            + "opens straight from Files.",
+        "Apple Health, both ways: what Apple's Workout app recorded is read in, and your "
+            + "sessions are written back as workouts.",
+        "The CleanJibe Apple Watch app, which records on your wrist with live numbers and "
+            + "hands the session to the phone.",
+        "Home-screen widgets and the watch complication.",
+        "The session video: your afternoon as a film rather than a card.",
+        "Grouping the library by month, year or spot, and filtering it.",
     ]
 
     /// The dev doors. Unproven by construction — a handful of hand-picked testers — and
     /// listed so a rider can ask for one rather than discover it does not exist.
+    ///
+    /// **Beta and dev only.** None of these is promised to anybody on the App Store: the
+    /// release build lists what is being tested one channel up, and nothing beyond it.
     static let dev: [String] = [
         "The Garmin link: a summary card from your watch the moment you stop, the map of "
             + "your spot and the wind direction sent back to it",
@@ -97,10 +106,15 @@ struct BetaSectionView: View {
 }
 #endif
 
-// MARK: - What is coming
+// MARK: - What is being tested
 
-/// **"Curious about what is coming"** — in Settings, and from the library menu in the
-/// release channel (docs/channels.md).
+/// **"What is being tested"** — in Settings, and from the library menu in the release
+/// channel (docs/channels.md).
+///
+/// It said *"Curious about what is coming"* until 14 September 2026. The App Store build is
+/// a finished app, and a row that opens with the app being curious about itself reads as an
+/// apology; what it actually points at is the place new things are ridden with first, so
+/// that is what it is called now.
 struct ComingSoonSection: View {
 
     var body: some View {
@@ -108,7 +122,7 @@ struct ComingSoonSection: View {
             NavigationLink {
                 ComingSoonPage()
             } label: {
-                Label("Curious about what is coming", systemImage: "binoculars")
+                Label("What is being tested", systemImage: "binoculars")
             }
         } footer: {
             Text(Self.footer)
@@ -117,10 +131,11 @@ struct ComingSoonSection: View {
 
     #if BETA
     private static let footer =
-        "The doors that are not open yet, including the ones only a handful of testers have."
+        "What is being ridden with in this build, and the doors only a handful of testers "
+        + "have behind it."
     #else
     private static let footer =
-        "What the beta already has, and what is being worked on behind it. Joining takes "
+        "The features still proving themselves in the public TestFlight beta. Joining takes "
         + "one tap and your library comes with you."
     #endif
 }
@@ -131,15 +146,26 @@ struct ComingSoonPage: View {
     var body: some View {
         List {
             Section {
+                Text(Self.intro)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Section {
                 ForEach(ChannelFeatures.beta, id: \.self) { row($0) }
             } header: {
-                Text("In the beta")
+                Text("In the public beta")
             } footer: {
-                Text("Ridden with every week and reported on. A feature moves into the App "
-                     + "Store build once it has ten sessions from two riders behind it, a "
+                Text("Ridden with every week and reported on. A feature arrives in the App "
+                     + "Store app once it has ten sessions from two riders behind it, a "
                      + "help topic, and no open report.")
             }
 
+            // Beta and dev only. The dev doors are on a handful of hand-picked phones and
+            // are promised to nobody; a list of them in the App Store build would be a
+            // roadmap the release cannot keep (docs/channels.md).
+            #if BETA
             Section {
                 ForEach(ChannelFeatures.dev, id: \.self) { row($0) }
             } header: {
@@ -148,6 +174,7 @@ struct ComingSoonPage: View {
                 Text("Experimental, and on a handful of phones. Ask for one and it will be "
                      + "worked on sooner — that is what the list is for.")
             }
+            #endif
 
             #if !BETA
             // Release only: in the beta this would point the reader at the build he is
@@ -168,9 +195,24 @@ struct ComingSoonPage: View {
             FeedbackFooter.section
         }
         .readableColumn()
-        .navigationTitle("What is coming")
+        .navigationTitle("What is being tested")
         .navigationBarTitleDisplayMode(.inline)
     }
+
+    /// The paragraph the page opens with. It says what the list *is*: not a wish list and
+    /// not an apology for something missing, but the room next door where a feature is
+    /// ridden with until it has earned its way into this app.
+    #if BETA
+    private static let intro =
+        "CleanJibe grows in the open. You are holding the public beta, so everything below "
+        + "is in your hands already — it is here to be ridden with and reported on, and it "
+        + "moves into the App Store app once it has held up."
+    #else
+    private static let intro =
+        "CleanJibe grows in the open. Everything in this app is finished and ridden with; "
+        + "the features that are still proving themselves are tried in a public TestFlight "
+        + "beta first, and arrive here once they have held up."
+    #endif
 
     private func row(_ feature: String) -> some View {
         Label {

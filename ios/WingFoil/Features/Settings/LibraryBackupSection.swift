@@ -34,7 +34,7 @@ struct LibraryBackupSection: View {
         } header: {
             Text("Library backup")
         } footer: {
-            Text("Setting up a new iPhone from this one carries your library across by "
+            Text(markdown: "Setting up a new iPhone from this one carries your library across by "
                  + "itself, and so does an iCloud backup — this is for the case neither "
                  + "covers: a phone set up as new, or the app deleted and installed again. "
                  + "The file holds every recording you have imported **and** the things "
