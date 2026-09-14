@@ -41,10 +41,7 @@ struct ImportView: View {
                 } header: {
                     Text("Full history")
                 } footer: {
-                    Text("Garmin Connect → Account → Export Your Data. The mail arrives with "
-                         + "a ZIP of ZIPs holding every original FIT you ever uploaded. Pick it "
-                         + "here: non-watersport activities are skipped and anything already in "
-                         + "the library is recognised as a duplicate, so re-running is safe.")
+                    Text(ImportClass.fullHistory + "\n\n" + ImportClass.fullHistoryDoor)
                 }
                 #endif
 
@@ -64,7 +61,7 @@ struct ImportView: View {
                 } header: {
                     Text("Single sessions")
                 } footer: {
-                    Text(Self.filePickerFooter)
+                    Text(Self.filePickerSection)
                 }
 
                 // The third door, and the only one that needs no account, no cable and no
@@ -83,14 +80,7 @@ struct ImportView: View {
                     } header: {
                         Text("Apple Health")
                     } footer: {
-                        Text("Record with Apple's Workout app on an Apple Watch — Surfing, "
-                             + "Water Sports or Sailing — and the GPS track and heart rate "
-                             + "land in Health. CleanJibe reads the workouts you pick and "
-                             + "analyses them on this phone: speed comes off the watch's own "
-                             + "GPS, so the speed records are certified. There is no "
-                             + "accelerometer in a Health workout, so pump strokes and "
-                             + "takeoff effort are missing — the same limit a Garmin "
-                             + "recording has.")
+                        Text(ImportClass.appleHealth + "\n\n" + ImportClass.healthDoor)
                     }
                 }
                 #endif
@@ -114,16 +104,18 @@ struct ImportView: View {
                         LabeledContent("Connected as", value: athlete)
                     }
                 } header: {
-                    Text("Strava")
+                    // Rule 2 of Strava's brand guidelines: attribution wherever Strava data
+                    // is shown. **Beside the section's own name and not above CleanJibe's
+                    // mark** — the guideline is that Strava's logo may not be given more
+                    // prominence than the app's own, and a section header is exactly the
+                    // level at which "this part of the screen is Strava's" is true.
+                    HStack {
+                        Text("Strava")
+                        Spacer(minLength: 12)
+                        StravaCompatibleMark()
+                    }
                 } footer: {
-                    Text("Connect your Strava account and import the sessions you pick — "
-                         + "Windsurf, Kitesurf, Surf and Workout by default, and anything "
-                         + "whose name says wing or foil. Strava hands over positions, a "
-                         + "clock, elevation and heart rate, so the analysis is complete "
-                         + "except for two things: speed is worked out from the positions, "
-                         + "so those records are marked uncertified, and nothing records "
-                         + "your wrist, so there are no pump strokes. If the same session is "
-                         + "on intervals.icu, take it from there instead.")
+                    Text(ImportClass.strava + "\n\n" + ImportClass.stravaDoor)
                 }
 
                 if !log.isEmpty {
@@ -164,6 +156,26 @@ struct ImportView: View {
         }
     }
 
+    // MARK: - Which class each door brings in
+
+    /// The class line that opens the **Single sessions** footer.
+    ///
+    /// Three classes in the beta, because the picker takes three kinds of file; two in the
+    /// release, because it takes one kind and syncs another (docs/channels.md). A footer that
+    /// named class C beside a picker that cannot open a GPX would be describing a door this
+    /// binary does not have.
+    #if BETA
+    private static let filePickerClasses = [RecordingClass.a, .b, .c]
+        .map(\.footerLine).joined(separator: "\n")
+    #else
+    private static let filePickerClasses = [RecordingClass.a, .b]
+        .map(\.footerLine).joined(separator: "\n")
+    #endif
+
+    /// The whole **Single sessions** footer: the classes, then the prose. Composed once here
+    /// rather than in the `Text(…)` — see the note in `ImportClass`.
+    private static let filePickerSection = filePickerClasses + "\n\n" + filePickerFooter
+
     // MARK: - What this channel can read
 
     /// FIT and zip everywhere; GPX and TCX in the beta (docs/channels.md). The label, the
@@ -200,6 +212,64 @@ struct ImportView: View {
         + "there, and CleanJibe syncs from there. Their own GPX and TCX "
         + "files are read by the CleanJibe beta."
     #endif
+}
+
+/// The class line each **section** of the Import screen opens with (docs/channels.md, "the
+/// three recording classes"; item 12 of the 14 Sep 2026 review).
+///
+/// **Before the import, not after it.** Every footer on this screen already answered *what
+/// does this door bring in and what does it cost* — in prose, in its own words, one door at a
+/// time. What none of them did was let a rider match the door in front of him to the row he
+/// read on cleanjibe.org. The class name does that in four words, so it goes first and the
+/// prose that was already there follows it.
+private enum ImportClass {
+
+    /// The Garmin GDPR ZIP holds whatever the watch originally wrote, so it is both of the
+    /// Garmin classes at once and the honest footer says so rather than picking one.
+    static let fullHistory =
+        "\(RecordingClass.a.name), or \(RecordingClass.b.name): whichever each recording "
+        + "originally was. The ZIP holds the untouched files, so a session is worth exactly "
+        + "what it was worth on the day it was ridden."
+
+    /// Apple's own Workout app is class B: its speed came off the watch's GPS receiver and
+    /// certifies, and nothing recorded the wrist. The B+ sentence is here because this is the
+    /// screen where an Apple Watch owner is thinking about Apple Watches, and the door that
+    /// gets him the missing half is the one door on this screen that is not on this screen.
+    static let appleHealth =
+        "\(RecordingClass.b.footerLine)\n"
+        + "\(RecordingClass.bPlus.name) is the other way: record with the CleanJibe watch app "
+        + "instead and the session arrives on its own, with the wrist in it. No import needed."
+
+    static let strava = RecordingClass.c.footerLine
+
+    // MARK: - The prose under each class line
+    //
+    // Hoisted out of the `Text(…)` calls in the list, and not for tidiness: a section footer
+    // built inline from a class line plus nine concatenated literals is an expression the
+    // Swift type-checker gives up on ("unable to type-check this expression in reasonable
+    // time"), because every `+` is an overload it has to resolve inside a result builder.
+    // Named constants type-check once, in one place, and the list reads as a list.
+
+    static let fullHistoryDoor =
+        "Garmin Connect → Account → Export Your Data. The mail arrives with a ZIP of ZIPs "
+        + "holding every original FIT you ever uploaded. Pick it here: non-watersport "
+        + "activities are skipped and anything already in the library is recognised as a "
+        + "duplicate, so re-running is safe."
+
+    static let healthDoor =
+        "Record with Apple's Workout app on an Apple Watch — Surfing, Water Sports or "
+        + "Sailing — and the GPS track and heart rate land in Health. CleanJibe reads the "
+        + "workouts you pick and analyses them on this phone: speed comes off the watch's "
+        + "own GPS, so the speed records are certified. There is no accelerometer in a "
+        + "Health workout, so pump strokes and takeoff effort are missing."
+
+    static let stravaDoor =
+        "Connect your Strava account and import the sessions you pick — Windsurf, Kitesurf, "
+        + "Surf and Workout by default, and anything whose name says wing or foil. Strava "
+        + "hands over positions, a clock, elevation and heart rate, so the analysis is "
+        + "complete except for two things: speed is worked out from the positions, so those "
+        + "records are marked uncertified, and nothing records your wrist, so there are no "
+        + "pump strokes. If the same session is on intervals.icu, take it from there instead."
 }
 
 /// Live counters while a container is being unpacked: found / imported / duplicates /
