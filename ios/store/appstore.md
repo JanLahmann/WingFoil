@@ -84,7 +84,7 @@ CleanJibe reads sessions recorded with the free CleanJibe Connect IQ watch app a
 
 Records with the Apple Workout app? Import from Health. Pick your Surfing, Water Sports or Sailing workouts and CleanJibe analyses the GPS track and heart rate your Apple Watch already saved - no Garmin, no cable, no account. Speed comes off the watch's own GPS receiver, so those speed records certify.
 
-No Garmin at all? The same analysis engine runs free in any browser at cleanjibe.org - which is also the Android answer, because it is a web page and not an app.
+No Garmin at all? The same analysis engine runs free in any browser at cleanjibe.org - a web page, no app and no account needed.
 
 ABOUT PRIVACY, PLAINLY
 

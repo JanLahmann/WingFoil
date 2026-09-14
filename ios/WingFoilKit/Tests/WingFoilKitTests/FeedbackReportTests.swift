@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import WingFoilKit
 
-/// The beta feedback mail. Every assertion here is about a fact a reply would need and a
+/// The feedback mail. Every assertion here is about a fact a reply would need and a
 /// reporter would never think to type: which build, which engine, whether the thresholds
 /// were standard, and which session the complaint is about.
 @Suite struct FeedbackReportTests {
@@ -161,6 +161,18 @@ import Testing
         let body = FeedbackReport.body(facts(watch: quiet))
         #expect(body.contains("  No Garmin watch chosen"))
         #expect(!body.contains("Apple Watch"))
+    }
+
+    /// The App Store build has no Health door and no Apple Watch app (docs/channels.md), so
+    /// it passes both facts as nil — and a report that answered either would be describing
+    /// a switch the reader cannot find.
+    @Test func aChannelWithoutTheDoorReportsNeitherHealthNorTheWatch() {
+        let release = FeedbackFacts.Watch(garminModel: nil, garminAppVersion: nil,
+                                          appleWatchPaired: nil, healthImport: nil)
+        let body = FeedbackReport.body(facts(watch: release))
+        #expect(!body.contains("Health import"))
+        #expect(!body.contains("Apple Watch"))
+        #expect(body.contains("  No Garmin watch chosen"))
     }
 
     @Test func theLibrarySectionCountsAndBreaksDown() {

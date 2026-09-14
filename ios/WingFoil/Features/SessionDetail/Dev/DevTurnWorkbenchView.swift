@@ -206,7 +206,7 @@ struct DevTurnWorkbenchView: View {
         // its own preset, so it is the *fin* set that decides whether a fin session has
         // anything to compare with.
         if store.tuning[detail.row.analysisDiscipline].isEmpty {
-            Text("Nothing is tuned for "
+            Text(markdown: "Nothing is tuned for "
                  + "\(detail.row.analysisDiscipline.title.lowercased()), so the preset "
                  + "defaults *are* what you are looking at.")
                 .font(.caption2)

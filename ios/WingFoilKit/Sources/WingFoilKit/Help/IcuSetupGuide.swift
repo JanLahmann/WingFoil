@@ -114,7 +114,8 @@ public enum IcuSetupGuide {
                   + "nothing was half-imported. Check your connection and sync again."),
         .init(term: "Older sessions are missing",
               detail: "The sync looks two years back and skips anything already in the "
-                  + "library. For a longer history use Import → Garmin export ZIP, which "
-                  + "reads the original FIT of every activity you ever uploaded."),
+                  + "library. For a longer history use Import → FIT or ZIP… with the "
+                  + "Garmin export ZIP, which holds the original FIT of every activity you "
+                  + "ever uploaded."),
     ]
 }

@@ -202,15 +202,15 @@ struct ImportView: View {
     #else
     private static let filePickerLabel = "FIT or ZIP…"
     private static let importableTypes: [UTType] = [.fitActivity, .zip, .gzip]
-    /// No GPX or TCX sentence, because there is no GPX or TCX door — and the last line says
-    /// where one is, because a Polar rider reading this screen deserves an answer rather
-    /// than a silence (docs/channels.md: "the release text says the beta reads their files").
+    /// No GPX or TCX sentence, because there is no GPX or TCX door — and no mention of the
+    /// beta either: this screen is the App Store app, and an answer that names a build the
+    /// reader does not have is not an answer. So the last line says which doors *this* app
+    /// has for a Polar, a Suunto or a COROS, and both of them work today.
     private static let filePickerFooter =
         "Garmin Connect → activity → \"Export File\" gives one FIT; "
         + "AirDrop and the share sheet land here too. Polar, Suunto and "
-        + "Coros are supported through intervals.icu — their apps sync "
-        + "there, and CleanJibe syncs from there. Their own GPX and TCX "
-        + "files are read by the CleanJibe beta."
+        + "COROS sessions come in through Strava, or through intervals.icu "
+        + "— their apps sync there, and CleanJibe syncs from there."
     #endif
 }
 

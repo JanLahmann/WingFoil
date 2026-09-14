@@ -269,21 +269,63 @@ import Testing
     }
 
     /// The rider with no watch at all gets a topic of his own, and it answers the one
-    /// question the vendor topic cannot: which app records the track in the first place.
-    @Test func thePhoneOnlyTopicNamesAppsAndTheClassItCosts() {
+    /// question the vendor topic cannot: how the track gets recorded in the first place.
+    ///
+    /// **It names no app and no other platform.** It used to list five trackers by name,
+    /// three of them Android ones, which App Store guideline 2.3.10 does not allow an iOS
+    /// app to do; the answer is the *kind* of app and the file it writes. Strava is the one
+    /// name that stays, because it is a door in this app rather than a recommendation.
+    @Test func thePhoneOnlyTopicNamesNoOtherPlatformAndNoOtherApp() {
         let topic = HelpCatalog.topic(.phoneOnly)
         let all = ([topic.title, topic.summary] + topic.body
                    + topic.items.flatMap { [$0.term, $0.detail] }).joined(separator: " ")
-        for app in ["Open GPX Tracker", "Komoot", "GPSLogger", "OsmAnd", "Strava"] {
-            #expect(all.contains(app), "the phone-only topic does not name \(app)")
+        for named in ["Android", "Open GPX Tracker", "Komoot", "GPSLogger", "OsmAnd"] {
+            #expect(!all.contains(named), "the phone-only topic still names \(named)")
         }
+        #expect(all.contains("Strava"))
+        #expect(all.contains(".fit") && all.contains(".gpx"))
         // The class it costs, and the pouch that keeps the track from dropping out.
         #expect(all.contains(RecordingClass.c.name))
         #expect(all.lowercased().contains("pouch"))
         // Strava's phone app has no export, so the topic must not send anyone looking for
-        // one — and the release channel has no GPX door, so the file route says whose it is.
+        // one.
         #expect(all.contains("cannot export"))
-        #expect(all.contains("beta"))
+    }
+
+    /// No topic names another platform or an app on one — guideline 2.3.10, and the reason
+    /// the phone-only topic was rewritten on 14 September 2026.
+    @Test func noHelpTopicNamesAnotherPlatform() {
+        for topic in HelpCatalog.topics {
+            let prose = ([topic.title, topic.summary] + topic.body
+                         + topic.items.flatMap { [$0.term, $0.detail] }
+                         + [topic.image?.caption].compactMap { $0 })
+                .joined(separator: " ")
+            #expect(!prose.contains("Android"), "\(topic.id.rawValue) names Android")
+        }
+    }
+
+    /// **Every line of the catalogue has to survive a markdown parser**, because that is
+    /// what draws it: the topics are written with `**bold**` and `*italic*` in them and the
+    /// help sheet renders every string through `Text(markdown:)` (`AttributedString`,
+    /// inline-only, whitespace preserved). A paragraph the parser refuses would fall back
+    /// to its own source and print the asterisks, which is the bug this pair of changes was
+    /// written to end — so it is asserted here rather than noticed in a screenshot.
+    @Test func everyHelpParagraphParsesAsMarkdown() throws {
+        let options = AttributedString.MarkdownParsingOptions(
+            interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        for topic in HelpCatalog.topics {
+            let strings = [topic.title, topic.summary] + topic.body
+                + topic.items.flatMap { [$0.term, $0.detail] }
+                + [topic.image?.caption].compactMap { $0 }
+            for string in strings {
+                let parsed = try #require(try? AttributedString(markdown: string,
+                                                               options: options),
+                                          "\(topic.id.rawValue): markdown refused \(string)")
+                // Inline-only keeps the text itself; only the emphasis markers go.
+                #expect(!String(parsed.characters).contains("**"),
+                        "\(topic.id.rawValue) has an unpaired ** in: \(string)")
+            }
+        }
     }
 
     /// The app says *you* and *CleanJibe*, never *we*. A help catalogue is the one place

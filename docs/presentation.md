@@ -2296,6 +2296,18 @@ with, and a banner offering to review two years of afternoons is a chore, not a 
   chips are the control and stay; the words are the `mapLegend` help topic. A number that
   was hiding in that prose is not help: "38 failed attempts" is a *takeoff* fact and now
   sits on the takeoff card at the size a number gets.
+- **Emphasis in rider copy is markdown, and it is drawn by a markdown-aware `Text`.**
+  `**bold**` and `*italic*` are how every long footer and every help paragraph marks the
+  word that carries the sentence — but SwiftUI parses markdown only in a
+  `LocalizedStringKey`, which is to say only in a literal, and all of this copy is assembled
+  at run time (a `+` chain, an interpolation, a paragraph out of `HelpCatalog`). Drawn with
+  `Text(_: String)` it printed the asterisks, on eleven screens at once, until the release
+  walkthrough of 14 September 2026 found them. One renderer now: `Text(markdown:)`
+  (`ios/WingFoil/App/MarkdownText.swift`) parses with `AttributedString`,
+  `.inlineOnlyPreservingWhitespace` — the interpretation that keeps the blank lines these
+  footers are built from — and falls back to the string verbatim if the parser refuses, so a
+  stray bracket costs the emphasis and never the sentence. Every help string goes through
+  it, and `PresentationTests.everyHelpParagraphParsesAsMarkdown` holds the other end.
 
 ## Scrub and zoom
 
@@ -2358,7 +2370,9 @@ Every rule in this file is written for the app; **docs/channels.md** says which 
 channels a given screen is in, and it is the single source for that — the website's "what is
 coming" list, the app's own Beta section and the store texts are written from it. Release is
 the App Store build (no compile flags, iPhone, no watch app or widgets); beta adds `BETA`
-(GPX/TCX, the Garmin export ZIP, Apple Health, the Apple Watch app and widgets, the session
+(GPX/TCX, the dedicated **Garmin export ZIP…** door with its Export-Your-Data walkthrough —
+the ZIP itself is read in every channel through *FIT or ZIP…*, docs/channels.md — Apple
+Health, the Apple Watch app and widgets, the session
 video, the library's grouping and filter controls, the Beta section); dev adds `DEV` and
 `TUNING` on top (the Garmin link and its Settings section, windsurf and the per-discipline
 sets, the Tuning section below, iPad).
@@ -2367,8 +2381,15 @@ Two rules follow for everything written here. **One wording per metric across ev
 a label does not change because a build is a beta, and nothing in this file is allowed to have
 a channel-specific spelling. **A gated door is gone, not greyed out:** a channel that lacks a
 feature has no row for it, no document type, no usage string and no entitlement — the one
-exception being "Curious about what is coming", which is the app naming the doors it does not
-have, on purpose, in one place.
+exception being "What is being tested", which is the app naming the doors one channel up,
+on purpose, in one place.
+
+A third rule, from the release walkthrough of 14 September 2026: **the release never calls
+itself a beta and never names a door it lacks.** Not in a help topic, not in a footer, not in
+the subject of the mail it writes. Where a sentence is about a feature that lives one channel
+up, it is written as a *fact about where the feature is* ("in the public beta"), never as a
+promise and never as the answer to the reader's question — the answer a release reader gets
+is a door his build actually has.
 
 **The help catalogue follows the same rule, and it is the one place the kit had to be told.**
 The catalogue is pure data and compiles whole in every build, so every `HelpTopic` carries a
@@ -2838,6 +2859,12 @@ The **Single sessions** footer names the classes its picker can actually open: A
 the beta, A and B in the release, which has no GPX or TCX door (docs/channels.md). The help
 topic *What your recording can and cannot show* carries the same four, in the same words.
 
+**The release footer names no beta.** It used to close on *"Their own GPX and TCX files are
+read by the CleanJibe beta"*, which answers a Polar owner's question with a build he does not
+have; since 14 September 2026 it closes on the two doors this binary actually has — *"Polar,
+Suunto and COROS sessions come in through Strava, or through intervals.icu"*. The beta's own
+footer is unchanged: there the picker really does open the file.
+
 ### Import from Strava
 
 Strava is the second cloud source (docs/decisions.md ADR-023), and the one that reaches a rider
@@ -2861,11 +2888,17 @@ same session is on intervals.icu, take it from there instead.*
   (Windsurf, Kitesurf, Surf, Workout on; Sail and Stand-up paddling off, because for most
   people those buckets hold boats and flat water). Whatever is picked, an activity whose *name*
   says wing, foil, kite, surf or SUP is offered too.
-* **Both ceilings are said out loud.** Strava allows a hundred requests every fifteen minutes,
-  and a run that hits it stops and reports *"Strava asked us to wait"* rather than retrying into
-  the quota. And until Strava reviews the application it allows **one connected rider**: that
-  refusal is its own sentence — *"Strava has not approved CleanJibe for more riders yet"* — and
-  never a generic error, because it is the one failure a rider can do nothing about.
+* **Both ceilings are said out loud, and neither says the app is unfinished** (reworded
+  14 September 2026). Strava answers **two hundred** requests every fifteen minutes — the real
+  number, in the same words on the Import screen and in the help topic, which used to disagree
+  with each other — and a run that hits it stops and reports *"Strava asked us to wait"* rather
+  than retrying into the quota. The rider ceiling is its own sentence too, but a neutral one:
+  *"Strava lets a new app connect a limited number of riders. If connecting is refused because
+  CleanJibe is full … Menu → Support & ideas is the way to say so, and Strava is asked for
+  more."* It used to read *"Strava has not reviewed CleanJibe yet"*, which tells an App Store
+  rider that the app in his hand is waiting for permission to exist. A server error is neutral
+  in the other direction as well: *"Strava answered with an error (HTTP 502)"*, never the
+  response body, which can echo a request — and a token — straight back at the screen.
 * **Strava's brand, used Strava's way** (developers.strava.com/guidelines, read 14 September
   2026; `ios/WingFoil/Features/Import/StravaBrand.swift`). Three rules, and breaking one can
   cost the application and with it a whole import door: (1) the connect action is **Strava's
@@ -2924,13 +2957,19 @@ where it describes that page).
 
 The topic beside the vendor one (`HelpCatalog.phoneOnly`, *Recording with a phone only*), for
 the rider who owns none of the three things this app has a door for. It answers the question
-the vendor topic cannot: which app records the track in the first place. **Open GPX Tracker**
-and **Komoot** on an iPhone; **GPSLogger**, **OsmAnd** and **Komoot** on Android; and
-**Strava**, which is its own route — Strava's phone app cannot export a recording as a file,
-so connecting *is* the export, and it is the one path that works in every channel. The file
-route is labelled as the beta's, because the release has no GPX or TCX door (docs/channels.md)
-and a topic that sent a release rider off to install a tracker and then had nothing to do with
-the result would be worse than no topic. It says where the phone goes — a waterproof pouch on
+the vendor topic cannot: how the track gets recorded in the first place.
+
+**It names no other platform and no other app, since 14 September 2026.** It used to list five
+trackers by name, three of them Android ones — which App Store guideline 2.3.10 does not allow
+an iOS app to do, and which the release walkthrough caught. The answer is the *kind* of app and
+the file it writes: **any GPS-logging app on your phone that writes a .fit or a .gpx**. The one
+name that stays is **Strava**, because it is a door in this app rather than a recommendation —
+Strava's phone app cannot export a recording as a file, so connecting *is* the export, and it
+is the one path that works in every channel. The file route is written in terms of the format
+rather than the channel: CleanJibe reads a `.fit` everywhere, `.gpx` and `.tcx` open in the
+public beta, and the sentence names Strava and intervals.icu as the route that works today —
+because a release reader must not be told that the answer to his question is a build he does
+not have. It says where the phone goes — a waterproof pouch on
 the upper arm or high on the chest, not a hip pocket that spends the bottom of every jibe
 underwater — and it says what it costs: Class C · positions only.
 
@@ -2943,13 +2982,21 @@ takeoff effort** (was a wrist accelerometer recorded, which only the CleanJibe w
 
 | what you ride with | how it gets in | speed records | pump / takeoff effort |
 |---|---|---|---|
-| Garmin + the CleanJibe watch app | intervals.icu, or the BLE card | certified | yes |
+| Garmin + the CleanJibe watch app | intervals.icu | certified | yes |
 | Garmin, any other profile or app | intervals.icu, or the FIT from a computer | certified | no |
-| Apple Watch (Workout app) | Import → Apple Health | certified | no |
-| Apple Watch + the CleanJibe watch app | straight to the phone | certified | yes |
-| Polar / Suunto / COROS | intervals.icu, or the share sheet | FIT certifies; GPX and TCX do not | no |
+| Apple Watch (Workout app) | Strava or intervals.icu; Apple Health in the beta | certified where the watch's own speed came with it | no |
+| Apple Watch + the CleanJibe watch app | straight to the phone (beta) | certified | yes |
+| Polar / Suunto / COROS | intervals.icu, or a FIT through the share sheet | FIT certifies; GPX and TCX do not | no |
 | Anything that reaches Strava | Import → Strava | uncertified | no |
-| A phone in a pocket, any GPX | the share sheet | uncertified | no |
+| A phone in a pocket | Strava, or the file: .fit anywhere, .gpx in the beta | uncertified | no |
+
+**Every row of it is true in every channel** (14 September 2026). The Bluetooth summary card
+is a dev door and the Health import and the Apple Watch app are beta doors, so the rows that
+used to promise them — *"or over Bluetooth as a summary the moment you stop"*, *"Import →
+Apple Health"* — now either name the door that exists in every build or say plainly where
+the other one lives. A `HelpTopic` body cannot branch on the channel (the catalogue is pure
+data, and the channel-bound filtering is on the *index*), so a sentence in it has to be true
+and complete everywhere: a fact about where a feature exists is allowed, a promise is not.
 
 The **same table is public**, at cleanjibe.org/watches, beside the watch app’s Connect IQ
 product list grouped into families (`web/watches/index.html`, kept in step with
@@ -3008,10 +3055,16 @@ print, in this order and for this reason:
    on those channels — the same string as Settings → About, and the first question of every
    support mail.
 
-In the release channel a seventh row sits straight under **What CleanJibe does**: *Curious
-about what is coming*, which opens the list of beta and dev doors and the TestFlight link
-(docs/channels.md). The beta has the same list in Settings and no row here — the reader is
-already through the door it offers.
+In the release channel a seventh row sits straight under **What CleanJibe does**: *What is
+being tested*, which opens the beta list and the TestFlight link (docs/channels.md). It said
+*Curious about what is coming* until 14 September 2026 — an App Store app that opens by being
+curious about itself reads as an apology, and what the row actually points at is the room
+where a feature is ridden with before it arrives here. The page says so in its first
+paragraph: CleanJibe grows in the open, and the features that are still proving themselves
+are tried in a public TestFlight beta first. The **dev** doors are not on it in that channel
+(`#if BETA`): tuning, iPad, the Garmin link and windsurf are on a handful of hand-picked
+phones and are promised to nobody. The beta has the same list in Settings, with the dev rows
+under it and no TestFlight link — the reader is already through the door it offers.
 
 **The welcome screen closes.** Replayed from the menu it has a circular ✕ at the top right,
 because its three buttons are *ways in* and a rider who came back to read it is not choosing
@@ -3040,11 +3093,14 @@ card is attached only from the share sheet, where it is already drawn. Every doo
 same ladder (`feedbackMail(on:)`): Mail, then the `mailto:` handler, then the copy sheet.
 The subject is `CleanJibe feedback · build <N>[ dev] · <watch>` — the build number, not
 the marketing version, because the two TestFlight variants of a release share the latter. It
-said *beta feedback* until the release channel was cut: the same composer is the App Store
-build's Support & ideas mail, and a subject that calls that build a beta is the app telling a
-rider he is holding a test version (docs/channels.md). The build number already separates the
-channels. The beta's own usage report keeps its own subject, *CleanJibe beta usage report*,
-because that door exists only in the beta.
+said *beta feedback* until 14 September 2026: the same kit writes the App Store app's mail,
+and a rider who joined nothing must not find his own mail calling the app he bought a test.
+The build number still says which channel it is to anybody who needs to know.
+
+**Two facts are left out where the channel has no door for them.** `Health import off` and
+`No Apple Watch paired` are answers to questions the App Store build never asks — Health and
+the watch app are beta doors — so the app passes both as `nil` outside `#if BETA` and
+`FeedbackReport` omits a nil fact rather than printing it (`FeedbackFacts.Watch`).
 
 **The body opens with three labelled blanks, and the facts are under a rule.** The template
 was one word — *What happened* — and one empty line, which is a prompt for a paragraph rather

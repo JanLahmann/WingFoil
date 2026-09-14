@@ -199,15 +199,15 @@ struct SettingsView: View {
             Text("Strava")
         } footer: {
             if store.isStravaConfigured {
-                Text("Strava opens, you say yes, and CleanJibe can list your activities on "
+                Text(markdown: "Strava opens, you say yes, and CleanJibe can list your activities on "
                      + "the Import screen. CleanJibe only ever **reads** "
                      + "your Strava account — it never writes, renames or posts anything. "
                      + "Sessions imported this way are analysed from positions alone, so "
                      + "their speed records are marked uncertified.\n\n"
-                     + "Strava has not reviewed CleanJibe yet, and until it does Strava "
-                     + "allows ten connected riders. If connecting is refused because the "
-                     + "app is full, that is why — it is nothing about your account. "
-                     + "Menu → Support & ideas is the way to report it.")
+                     + "Strava lets a new app connect a limited number of riders. If "
+                     + "connecting is refused because CleanJibe is full, it is nothing "
+                     + "about your account — Menu → Support & ideas is the way to say so, "
+                     + "and Strava is asked for more.")
             } else {
                 Text("This build carries no Strava API keys, so the Strava source is not "
                      + "offered. Everything else works as usual.")
@@ -327,7 +327,7 @@ struct SettingsView: View {
         } header: {
             Text("Analysis")
         } footer: {
-            Text(analysisFooter)
+            Text(markdown: analysisFooter)
         }
     }
 
@@ -426,7 +426,7 @@ struct SettingsView: View {
         } header: {
             Text("Apple Health")
         } footer: {
-            Text("Off by default. Each session is written as a **Surfing** workout — the "
+            Text(markdown: "Off by default. Each session is written as a **Surfing** workout — the "
                  + "closest type Apple Health offers, since it has no wingfoil or windsurf "
                  + "activity — carrying the discipline, foil share, flights and best 2 s in "
                  + "its metadata. Sessions you imported *from* Health are left alone, so a "
@@ -458,7 +458,7 @@ struct SettingsView: View {
     private var betaSection: some View { BetaSectionView() }
     #endif
 
-    /// **"Curious about what is coming"** — the same list read the other way round. Present
+    /// **"What is being tested"** — the same list read the other way round. Present
     /// in every channel; the release one carries the TestFlight link.
     private var comingSoonSection: some View { ComingSoonSection() }
 
