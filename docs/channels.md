@@ -13,11 +13,18 @@ other way round.
 | **beta** | scheme `WingFoil Beta`, `BETA` defined, iPhone only, same bundle id, watch app and widgets embedded | TestFlight, public link | 1.1.0 |
 | **dev** | scheme `WingFoil Dev`, `BETA DEV TUNING` defined, iPhone and iPad, its own bundle id `de.lahmann.wingfoil.dev` (widgets `.dev.widgets`, watch `.dev.watchkitapp`, complication `.dev.watchkitapp.widgets`), display name "CleanJibe Dev" | TestFlight, internal group, a handful of hand-picked testers | 1.1.0 |
 
+### Switching channels
+
 Release and beta share a bundle id, so a phone holds one of them; TestFlight swaps them in
 place with the library kept. Dev is a second app beside either. All three are cut from the
 same commit and differ only by flags, so the library schema is identical and switching is
 safe; a build that meets a newer schema says so and offers a restore from backup instead of
-failing to open.
+failing to open. What is *not* identical is when each was cut — an older App Store build put
+back on a phone a newer beta has already migrated is the real case — so `AppDatabase` checks
+`PRAGMA user_version` and the applied migration list before it migrates anything and throws
+`LibraryNewerThanApp`, which `RootView` turns into one full screen with *Open TestFlight* and
+*Restore from backup* on it; docs/testing.md says how to raise that screen in the simulator
+with one `sqlite3` line.
 
 Gates in code: `#if BETA` for beta rows (also true in dev), `#if DEV` for dev rows (also
 `TUNING` for the tuning page, which predates this file). The kit compiles everything; gating
@@ -120,6 +127,7 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 | Feedback mail with prefilled facts, footers on every page, menu Support | release | |
 | "Curious about what is coming" section with the TestFlight link and this list | release | the beta shows the list without the link |
 | Beta section: feature list, request a feature, extended feedback mail with usage and feature statistics | beta | counters kept on the phone, sent only in a mail the rider edits |
+| The usage report: seventeen counters, the failure list, and the card the library raises every fifth session or fortnight | beta | `UsageCounters` in the kit, `usage.counters.v1` on the phone; subject "CleanJibe beta usage report", Settings → Beta → Send usage report is the permanent door (docs/presentation.md, "The beta's usage report") |
 | Start screen, library menu order, Getting started topic | release | |
 
 ### Platforms
