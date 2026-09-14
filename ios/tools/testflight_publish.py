@@ -45,22 +45,15 @@ def app_id(app):
 
 WHATS_NEW = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-0.15.0 (build 53) — the beta channel, with its own icon.
+1.0.0 (build 56) — the App Store candidate.
 
-This is the first build of the BETA channel: the same app that goes to the App Store, plus the doors that are still proving themselves (GPX and TCX files, the Garmin export ZIP, Apple Health, the video export, grouping and filters in Sessions, the Apple Watch app). Settings → Beta lists them and has a "Request a feature" line.
+This is the build we intend to submit to the App Store: the plain app, without the beta doors. Installing it replaces the beta on your phone (same app, library kept); the beta channel continues with its next build, and TestFlight will offer it again then.
 
-- The icon and the start screen wear a red BETA label, so this build and the App Store one are told apart at a glance.
-- The app follows your phone's text size everywhere now, including the largest accessibility sizes; the dense tables stop growing where they would break.
-- Send feedback from the foot of every page, or Menu → Support & ideas; the mail starts with three blanks for you and the facts below them.
-- Settings → Beta → Send usage report: a mail with counters kept on your phone (imports, syncs, share cards, failures). Nothing is sent unless you send it; delete any line.
-- Sessions can be grouped by month, year or spot, and filtered by source.
-- Strava: the official Connect with Strava button on Import and in Settings; a Strava-imported session links back with View on Strava.
-- The three recording classes (Garmin watch app, any speed FIT, positions only) are named before you import, and in Help.
-- Since 51: a session that arrived as a card from the watch opens on its own numbers; the grouping segment reads "All"; the start screen carries cleanjibe.org.
+What is in: intervals.icu sync, .fit files from Files, Mail, AirDrop and the share sheet, Strava import, the full analysis (foil time, flights, every turn's verdict, speed records, the map, the replay and its clips), share cards, records and trends, gear and spots, backup and restore, the example session, the help catalogue, feedback from every page.
 
-The site: cleanjibe.org has a light theme, a shorter homepage with the card on top, and cleanjibe.org/learn for the long read. On Android, "Add to home screen" installs the analyzer and it appears in the share sheet for .fit, .gpx and .tcx files.
+What is deliberately NOT in this build: GPX and TCX files, the Garmin export ZIP, Apple Health, the video export, grouping and filters in Sessions, the Apple Watch app, widgets. They stay in the beta until proven.
 
-Please check: does the BETA icon show on your home screen? Does the text-size setting (Settings → Display → Text Size) change the app without cutting anything off?
+Please check: does everything you use day to day still work without those doors? Does the app open your existing library as before? Anything that reads wrong in the "Curious about what is coming" section?
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
