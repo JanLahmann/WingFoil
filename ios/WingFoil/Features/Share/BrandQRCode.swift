@@ -41,8 +41,10 @@ struct BrandQRCode: View {
     /// parameter because a session-specific deep link is the obvious next want.
     var url: String = Branding.siteURL
 
-    /// The drawn size of the whole plate, in points. At the card's 3× export 32 pt is a
-    /// 96 px code, which is the size a phone camera picks up from a photographed screen.
+    /// The drawn size of the whole plate, in points. At the card's 3× export 48 pt is a
+    /// 144 px code (`ShareCardView.qrSide`, and the web's `QR_SIZE`). 96 px was the floor a
+    /// phone camera picks up from a photographed screen; 144 leaves room for the screenshot
+    /// and the re-share that follow, which is what actually happens to a card.
     var size: CGFloat
 
     /// Corner rounding and the white margin, as fractions of `size`, so one number scales the
@@ -102,7 +104,7 @@ struct BrandQRCode: View {
     ZStack {
         Brand.cardGradient
         HStack(spacing: 24) {
-            BrandQRCode(size: 32)
+            BrandQRCode(size: 48)
             BrandQRCode(size: 64)
             BrandQRCode(size: 120)
         }

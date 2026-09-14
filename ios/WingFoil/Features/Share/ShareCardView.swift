@@ -57,6 +57,12 @@ struct ShareCardView: View {
     /// points the snapshot is drawn in.
     static let cardSpace = "shareCard"
 
+    /// The QR plate's side, in layout points — **144 exported px** at `renderScale`. The
+    /// twin of `QR_SIZE` in web/js/sharecard.js; the two cards must print the same code at
+    /// the same size or one of them ships a QR that is harder to scan than the other's. See
+    /// `footer` for why 48 and not 32.
+    static let qrSide: CGFloat = 48
+
     var size: CGSize {
         CGSize(width: shape.size.width / Self.renderScale,
                height: shape.size.height / Self.renderScale)
@@ -522,8 +528,17 @@ struct ShareCardView: View {
     ///
     /// The QR is trailing on every shape, which is where it fits without moving anything:
     /// the footer row was 18 pt of mark against 300-odd pt of slack, and the wordmark and its
-    /// subtitle stack into that height beside it. 32 pt exports at 96 px — see `BrandQRCode`
-    /// for why the number matters.
+    /// subtitle stack into that height beside it.
+    ///
+    /// **48 pt, not 32** (Jan, 14 Sep 2026; the web changed first, `QR_SIZE` in
+    /// web/js/sharecard.js). 32 pt exported at 96 px, and 96 px is the floor at which a phone
+    /// camera can frame a code *photographed off somebody else's screen in a chat thread* —
+    /// which is the only way this code is ever read. A floor is not a target: a card shared
+    /// into a group, screenshotted, forwarded and re-compressed spends that margin twice
+    /// over. 48 pt exports at 144 px and buys back a whole re-share. It costs 16 pt of the
+    /// footer's height, which comes out of the track box on the tall shapes and out of the
+    /// wordmark's width on the wide one; both are checked at all three shapes, and the
+    /// wordmark's `minimumScaleFactor` absorbs what is left.
     private var footer: some View {
         HStack(alignment: .center, spacing: 7) {
             Image("LaunchMark")
@@ -551,7 +566,7 @@ struct ShareCardView: View {
                     .multilineTextAlignment(.trailing)
                     .lineLimit(2)
             }
-            BrandQRCode(size: 32)
+            BrandQRCode(size: ShareCardView.qrSide)
         }
         .padding(.top, 4)
     }

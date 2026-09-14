@@ -117,7 +117,11 @@ struct SettingsView: View {
                  + "what an uncertified record means.\n\n"
                  + "Feedback opens a mail to \(FeedbackReport.recipient) with this build, "
                  + "this phone and your library's shape already written in. Nothing is sent "
-                 + "until you tap Send, and you can edit every line of it first.")
+                 + "until you tap Send, and you can edit every line of it first. "
+                 // The invitation, in the one place a rider is already reading about the
+                 // mail. It is the same sentence on the welcome screen and in the mail
+                 // itself, so wherever he meets the door first it says the same thing.
+                 + FeedbackInvitation.sentence)
         }
     }
 
@@ -181,10 +185,10 @@ struct SettingsView: View {
                 // The same connect as the Import screen's, here as well (Jan, 13 Sep 2026):
                 // a rider who opens Settings to "set up Strava" should not be told to go
                 // and find another screen first. Importing stays on Import.
-                Button {
+                // Strava's own artwork here too, for the same reason it is on Import: the
+                // guidelines are about the *action*, not about the screen it is on.
+                StravaConnectButton {
                     Task { await store.connectStrava(anchor: StravaConsent.anchor()) }
-                } label: {
-                    Label("Connect Strava", systemImage: "link")
                 }
                 .disabled(store.isReadingStrava)
             }
@@ -200,7 +204,7 @@ struct SettingsView: View {
                      + "Strava has not reviewed CleanJibe yet, and until it does Strava "
                      + "allows ten connected riders. If connecting is refused because the "
                      + "app is full, that is why — it is nothing about your account. "
-                     + "Menu → Support is the way to report it.")
+                     + "Menu → Support & ideas is the way to report it.")
             } else {
                 Text("This build carries no Strava API keys, so the Strava source is not "
                      + "offered. Everything else works as usual.")
