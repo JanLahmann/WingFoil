@@ -61,16 +61,13 @@ Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or
 # App Store one, so saying which one this is matters more than the release notes do.
 WHATS_NEW_INTERNAL = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-CleanJibe Dev, build 57 — the widgets learn to talk in a dry week.
+CleanJibe Dev, build 59 — Start over, and the reviewer's pass.
 
-Three home-screen widgets now (long-press the home screen → + → CleanJibe Dev):
-- Last session: the last session you actually RODE (a dry test no longer wins), the spot as its title, and the track drawn behind the numbers in the medium and large sizes.
-- This week: when the last seven days hold no session it becomes "since your last session" — days since, the season so far, and one fact that changes every day: the season's best 2 s, the longest flight, the best JPH, the longest dry streak, or the same week in an earlier year.
-- Personal bests: best 2 s, longest flight, best JPH, each with spot and date.
+- Settings → Beta → Start over: one red row, behind a confirm, that takes the whole library and its backups, the intervals.icu key and the Strava connection (the keychain keeps those across an app delete, which is why a reinstall was not a clean start), every setting, the usage counters and the widget snapshot — and lands on the welcome screen without a relaunch.
+- Everything from release candidate 58's reviewer pass: help shows only what a build has, the getting-started topic is one session on the water, bold and italic in help render, Strava's wording is calm.
+- The three widgets from build 57.
 
-Everything else as in build 54: the mirrored icon, the Garmin link, windsurf, iPad, Settings → Tuning.
-
-Please check: add all three widgets, then open the app once so it publishes the snapshot — do they fill? Does the track behind the numbers look like your spot? Is the daily fact right?
+Please check: Start over on a phone that had a key and a Strava connection — after it, does Settings show both empty? Does the welcome screen appear straight away?
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
