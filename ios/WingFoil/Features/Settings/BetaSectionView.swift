@@ -82,6 +82,10 @@ enum ChannelFeatures {
 /// still to come is the usage and feature statistics docs/channels.md promises beside it —
 /// counters kept on the phone and sent only in a mail the rider edits.
 struct BetaSectionView: View {
+    @Environment(SessionStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var confirmStartOver = false
 
     var body: some View {
         Section {
@@ -102,6 +106,10 @@ struct BetaSectionView: View {
             // because the library's own card (`UsageAskCard`) is occasional and because
             // "not now" has to leave a way back.
             UsageReportRow()
+            // Last row of the section, and the only destructive one in the app. See
+            // `SessionStore.startOver`: the thing deleting the app *should* do, and does
+            // not, because iOS keeps keychain items across a delete.
+            startOverRow
         } header: {
             Text("Beta")
         } footer: {
@@ -114,9 +122,55 @@ struct BetaSectionView: View {
                  + "\"Send usage report\" adds what this phone has counted — which parts of "
                  + "CleanJibe you have used, how often, and anything that has gone wrong. "
                  + "The counters never leave this phone except in that mail, and you can "
-                 + "delete any line of it before you send it.")
+                 + "delete any line of it before you send it.\n\n"
+                 + "\"Start over\" is here because deleting the app is not enough: iOS "
+                 + "keeps your intervals.icu key and your Strava connection in its keychain "
+                 + "and hands them back to the reinstall, so the first run you wanted to "
+                 + "test never happens. This removes those too.")
         }
     }
+
+    /// **Start over.** Red, last, and behind an alert that names everything it takes —
+    /// there is no undo and no backup made on the way out, so the list *is* the safeguard.
+    private var startOverRow: some View {
+        Button(role: .destructive) {
+            confirmStartOver = true
+        } label: {
+            Label("Start over", systemImage: "trash")
+        }
+        .disabled(store.isBusy)
+        .alert("Start over?", isPresented: $confirmStartOver) {
+            Button("Start over", role: .destructive) {
+                // Settings has to be out of the way before the welcome screen can come up —
+                // the store refuses to raise it over a sheet — so the same etiquette as
+                // "What CleanJibe does": dismiss first, then ask.
+                dismiss()
+                Task { await store.startOver() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(Self.warning)
+        }
+    }
+
+    /// Every line of it is a thing that actually goes. A confirmation that says "all data"
+    /// is a confirmation the rider cannot check, and the two items he would never guess at
+    /// — the keychain pair — are the whole reason this row exists, so they are named.
+    private static let warning =
+        "CleanJibe will be exactly as it was the day you installed it. This cannot be "
+        + "undone.\n\n"
+        + "• Your whole library: every session, its analysis and its archived recording, "
+        + "the deleted-session memory, and any backup file still waiting on this phone.\n"
+        + "• Your intervals.icu key and your Strava connection. Both live in the iOS "
+        + "keychain, which is why deleting the app leaves them behind — this does not.\n"
+        + "• Every setting: the welcome screen's flag, map style and layers, replay "
+        + "length, framing and music, the notification choices, the map picks for the "
+        + "watch, and the tuning sliders.\n"
+        + "• The beta's usage counters and the widgets' snapshot.\n"
+        + "• Cached thumbnails, imported files and anything half-exported.\n\n"
+        + "Nothing leaves this phone and nothing elsewhere is touched: your sessions on "
+        + "intervals.icu, your activities on Strava and the recordings on your watch are "
+        + "all still there. Make a backup first if you want one."
 }
 #endif
 

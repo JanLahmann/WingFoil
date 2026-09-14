@@ -27,7 +27,10 @@ final class ThumbnailStore {
     private var running: Set<String> = []
     private var queue: [SessionRow] = []
 
-    private let ingestor: SessionIngestor
+    /// `var`, for one caller: "Start over" hands the cache a new library. The struct it
+    /// holds carries an `AppDatabase`, which carries the GRDB pool — so a stale copy here
+    /// would keep the very file the wipe just deleted open (`SessionStore.startOver`).
+    private var ingestor: SessionIngestor
 
     init(ingestor: SessionIngestor) {
         self.ingestor = ingestor
@@ -57,6 +60,17 @@ final class ThumbnailStore {
         cache.removeAll()
         unavailable.removeAll()
     }
+
+#if BETA || DEBUG
+    /// Points the cache at a different library and forgets everything it knew about the old
+    /// one — both levels, the failures, and whatever was queued. Only "Start over" calls it.
+    func retarget(to ingestor: SessionIngestor) {
+        self.ingestor = ingestor
+        cache.removeAll()
+        unavailable.removeAll()
+        queue.removeAll()
+    }
+#endif
 
     private func pump() {
         while running.count < Self.maxConcurrent, !queue.isEmpty {

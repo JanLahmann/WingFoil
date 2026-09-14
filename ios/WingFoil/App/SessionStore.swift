@@ -2698,43 +2698,138 @@ final class SessionStore {
         set { UserDefaults.standard.set(newValue, forKey: "lastIcuSync") }
     }
 
+#if BETA || DEBUG
+
+    // MARK: - Start over
+
+    /// **The wipe could not reopen the library** — set only when `AppDatabase` refuses the
+    /// fresh file, which leaves the app running on an in-memory library that would lose
+    /// whatever came next. `RootView` puts one screen in front of everything asking for a
+    /// relaunch; on every ordinary run this stays false and nothing is asked of the rider.
+    private(set) var startOverNeedsRelaunch = false
+
+    /// **Settings → Beta → Start over** (beta and dev only, docs/channels.md), and the
+    /// `UI_START_OVER=1` simulator hook.
+    ///
+    /// Deleting the app is what a tester reaches for and it is not enough: iOS keeps
+    /// keychain items across a delete, so the intervals.icu key and the Strava connection
+    /// come back with the reinstall and the first run the tester wanted to see never
+    /// happens. This is the thing deleting the app *should* do — `StartOver.wipe` is the
+    /// whole list, shared with the screenshot hook so there is one wipe and not two.
+    ///
+    /// **In process, without a relaunch.** The only handle that has to survive the file
+    /// going away is the GRDB pool, and the app already knows how to swap one: the same
+    /// three lines `adoptFreshLibraryForRestore` uses when a restore lands on a library
+    /// this build refused to open. So the pool is parked in memory, the container is wiped,
+    /// a new pool is opened on the same path — where the migrator builds an empty schema —
+    /// and every property that mirrors a default is read back from the now-empty domain.
+    /// `load()` then finds nothing, bumps `libraryGeneration`, and `RootView` asks
+    /// `showWelcomeIfNeeded` the same question a genuine first launch asks it.
+    func startOver() async {
+        // Anything that sets `isBusy` is writing to the library or the archive right now.
+        guard !isBusy else { return }
+        isBusy = true
+        defer { isBusy = false }
+
+        // 1. Let go of the library. The thumbnail cache holds its own copy of the ingestor
+        //    struct — and therefore of the pool — so it is retargeted here rather than
+        //    left pointing at a file that is about to be unlinked.
+        let scratch = try? AppDatabase.inMemory()
+        if let scratch {
+            ingestor.database = scratch
+            thumbnails.retarget(to: ingestor)
+        }
+
+        // 2. The wipe itself: keychain, defaults, container.
+        StartOver.wipe()
+
+        // 3. A new library on the same path. The migrator writes an empty schema into it,
+        //    which is exactly what a first launch opens.
+        if let url = databaseURL, let fresh = try? AppDatabase.onDisk(at: url) {
+            ingestor.database = fresh
+            startOverNeedsRelaunch = false
+        } else {
+            // Nothing is lost — the wipe happened — but the app is now running on a
+            // library that is not on disk, and pretending otherwise would cost the rider
+            // the next session he imports. So it says so instead.
+            startOverNeedsRelaunch = true
+        }
+        thumbnails.retarget(to: ingestor)
+
+        // 4. The engine settings the ingestor carries, re-read from the empty domain.
+        ingestor.windConfig.defaultTurnType = Self.storedDefaultTurnType
+        ingestor.riderDiscipline = Self.storedRiderDiscipline
+        #if DEV
+        ingestor.windsurfEnabled = Self.storedWindsurfEnabled
+        windsurfEnabled = Self.storedWindsurfEnabled
+        #endif
+        #if TUNING
+        ingestor.tuning = Self.storedTuning
+        #endif
+
+        // 5. Every observable that mirrors a default or a keychain item. Read back rather
+        //    than assigned to a literal, so "what a fresh install has" stays defined in the
+        //    one place that already defines it.
+        apiKey = Self.loadApiKey()
+        keyCheck = nil
+        lastSyncProblem = Self.loadProblem()
+        mapStyle = Self.initialMapStyle()
+        mapLayersByScope = Self.initialMapLayers()
+        replayCommentary = Self.storedReplayCommentary
+        replayClipLength = Self.storedReplayClipLength
+        replayFraming = Self.storedReplayFraming
+        replayMusic = Self.storedReplayMusic
+        // The Garmin link's own two, which only the dev channel has (docs/channels.md).
+        #if DEV
+        watchMapChoice = WatchMapChoice.load(from: .standard)
+        watchMapStatus = nil
+        #endif
+        stravaCandidates = []
+        refreshStravaConnection()
+
+        // 6. And the transient state: a banner, a celebration or a half-answered question
+        //    from the library that no longer exists.
+        sessions = []
+        spots = []
+        gearAggregates = []
+        deletedSessionCount = 0
+        storage = StorageStats()
+        celebration = []
+        cleanJibeCelebration = []
+        importProgress = nil
+        pendingImport = nil
+        pendingReAdd = nil
+        backupFile = nil
+        restoreOffer = nil
+        errorMessage = nil
+        status = nil
+        isShowingWelcome = false
+        hasLoadedLibrary = false
+
+        // 7. Read the empty library, which is what tells `RootView` to say hello.
+        await load()
+        showWelcomeIfNeeded()
+    }
+
+#endif
+
     #if DEBUG
     /// Headless-driving hook (same family as `UI_IMPORT_FIXTURES` / `UI_TAB`): `UI_RESET=1`
     /// puts the app back into its fresh-install state — no key, no sessions, no stored
     /// sync history — so the first-run screens can be screenshotted without uninstalling.
     ///
     /// Simulator only, and it runs *before* the store exists, because the store reads the
-    /// keychain in a property initialiser.
+    /// keychain in a property initialiser — which is also why this is the static half of
+    /// the pair. The wipe is `StartOver.wipe`, the same one Settings → Beta → Start over
+    /// runs; the only thing that belongs here and not there is the key it seeds afterwards.
     static func resetIfRequested() {
         #if targetEnvironment(simulator)
         guard ProcessInfo.processInfo.environment["UI_RESET"] == "1" else { return }
-        Keychain.remove(Keychain.icuApiKey)
-        for key in ["lastIcuSync", problemKey, pbSnapshotKey, "healthExported",
-                    "healthWriteEnabled", defaultTurnTypeKey, welcomeShownKey,
-                    reAddDeclinedKey, replayLengthKey, replayFramingKey, replayMusicKey,
-                    ActivityNotifier.enabledKey, ActivityNotifier.markKey,
-                    ActivityNotifier.pendingImportKey, ActivityNotifier.promptedKey,
-                    MapStyleStore.defaultsKey]
-            + MapLayerVisibilityStore.allDefaultsKeys {
-            UserDefaults.standard.removeObject(forKey: key)
-        }
-        let fm = FileManager.default
-        for url in [try? AppPaths.databaseURL(), try? AppPaths.sessionsRoot()] {
-            if let url { try? fm.removeItem(at: url) }
-        }
-        // The copy of whatever song the last clip was made with — a fresh install has none.
-        ReplayMusicStore.keepOnly(nil)
+        StartOver.wipe()
         // `UI_ICU_KEY=…` seeds a key through the real keychain path afterwards, which is
         // how the "key stored, sync failed" card gets driven without typing.
         if let seed = ProcessInfo.processInfo.environment["UI_ICU_KEY"], !seed.isEmpty {
             Keychain.set(seed, for: Keychain.icuApiKey)
-        }
-        // GRDB's WAL and shared memory outlive the main file; a stale WAL would restore
-        // the very rows this hook exists to remove.
-        if let db = try? AppPaths.databaseURL() {
-            for suffix in ["-wal", "-shm"] {
-                try? fm.removeItem(at: URL(fileURLWithPath: db.path + suffix))
-            }
         }
         #endif
     }

@@ -35,6 +35,18 @@ struct RootView: View {
                         .transition(.opacity)
                 }
             }
+            // The other library state nothing behind it has an honest picture of: a
+            // "Start over" that wiped everything and then could not reopen the file it
+            // wiped. Beta and dev only, because the door that produces it is
+            // (docs/channels.md), and never seen on an ordinary run.
+            #if BETA || DEBUG
+            .overlay {
+                if store.startOverNeedsRelaunch {
+                    StartOverRelaunchView()
+                        .transition(.opacity)
+                }
+            }
+            #endif
     }
 
     /// The launch screen, continued — in front of the tabs rather than instead of them, so
@@ -229,6 +241,19 @@ struct RootView: View {
                let tab = Tab(rawValue: wanted) {
                 selection = tab
             }
+        }
+        // `UI_START_OVER=1` — the other half of `UI_RESET=1`, and the half that proves the
+        // rider-facing door rather than the screenshot one. `UI_RESET` wipes before the
+        // store exists; this runs the in-process reset a tap on Settings → Beta → Start
+        // over runs, so what a screenshot catches afterwards is the real result of the
+        // real button. It waits for the first library read, because a wipe racing the load
+        // that is still opening the file it is deleting proves nothing.
+        .task {
+            guard ProcessInfo.processInfo.environment["UI_START_OVER"] == "1" else { return }
+            for _ in 0..<100 where !store.hasLoadedLibrary {
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+            await store.startOver()
         }
         #endif
     }
