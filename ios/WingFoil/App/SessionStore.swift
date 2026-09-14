@@ -367,11 +367,42 @@ final class SessionStore {
         // towards this week's foil time. Same rule as `LibraryStore.clause`, restated here
         // because the widget reads the in-memory list rather than going through SQL.
         let rows = sessions.filter { !$0.isExample && $0.rider == nil }
-        let snapshot = WidgetSnapshot.make(sessions: rows) { SessionDisplay.title($0) }
+        // JPH per session is a query and not a column — the session index denormalizes CPH
+        // only — and the widget must print the session page's number, not one of its own.
+        let jibesPerHour = (try? await library.jibeRates()) ?? [:]
+        let archive = ingestor.archive
         await Task.detached(priority: .utility) {
+            let snapshot = WidgetSnapshot.make(
+                sessions: rows, jibesPerHour: jibesPerHour,
+                titleForRow: { SessionDisplay.title($0) },
+                trackForRow: { Self.widgetTrack(for: $0, archive: archive) })
             WidgetSnapshotStore.write(snapshot)
             WidgetRefresher.reloadTimelines()
         }.value
+    }
+
+    /// The outline the widget draws behind its numbers, for the one session it names.
+    ///
+    /// The cached `thumbnail.json` first — which is what the library list has usually
+    /// already built, so publishing costs a small JSON read. When it is missing (a fresh
+    /// import the rider has not scrolled to yet) it is built and cached here, off the main
+    /// actor, exactly the way `ThumbnailStore` builds one: **one** FIT parse, once, for the
+    /// newest ridden session, and never again for that session. A session whose archive is
+    /// gone returns nil and the widget simply draws no track, which is the right answer
+    /// rather than a straight line between two fixes.
+    private nonisolated static func widgetTrack(for row: SessionRow,
+                                                archive: SessionArchive) -> TrackThumbnail? {
+        if let cached = archive.thumbnail(for: row.id) { return cached }
+        guard let track = try? archive.rawTrack(for: row.id) else { return nil }
+        let analysis = archive.analysis(for: row.id)
+        let flights = analysis?.flights ?? []
+        let thumbnail = TrackThumbnail.make(track: track, flights: flights,
+                                            events: analysis.map(TrackThumbnail.events) ?? [])
+        guard !thumbnail.isEmpty else { return nil }
+        // Only cache an outline whose colouring is final — `ThumbnailStore`'s rule, for its
+        // reason: a track with no flights yet would freeze as a grey session.
+        if !flights.isEmpty { try? archive.writeThumbnail(thumbnail, id: row.id) }
+        return thumbnail
     }
 
     /// Brings every summary row up to the current engine (plan §3.3 lazy re-analysis).
