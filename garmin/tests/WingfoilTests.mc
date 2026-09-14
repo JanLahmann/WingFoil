@@ -3987,10 +3987,17 @@ function brandSplashLockupFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var heroH = Brand.heroH();
     var heroW = Brand.hero().getWidth();
     var wordH = dc.getFontHeight(Graphics.FONT_LARGE);
-    var yHero = BrandSplash.heroY(cy, heroH, wordH);
-    var yWord = BrandSplash.wordY(cy, heroH, wordH);
+    var domH = dc.getFontHeight(BrandSplash.DOMAIN_FONT);
+    var yHero = BrandSplash.heroY(cy, heroH, wordH, domH);
+    var yWord = BrandSplash.wordY(cy, heroH, wordH, domH);
+    var yDom = BrandSplash.domainY(cy, heroH, wordH, domH);
     Test.assertMessage(yHero - heroH / 2 >= 0, "the hero runs off the top of the glass");
     Test.assertMessage(yWord + wordH / 2 <= dc.getHeight(), "the wordmark runs off the bottom");
+    Test.assertMessage(yDom + domH / 2 <= dc.getHeight(), "the domain line runs off the bottom");
+    Test.assertMessage(cornerRadius(dc.getTextWidthInPixels(BrandSplash.DOMAIN,
+        BrandSplash.DOMAIN_FONT), domH, yDom, cy) <= radius.toFloat(),
+        "the domain line's corners sit outside the radius");
+    Test.assertMessage(yDom - yWord >= (wordH + domH) / 2, "wordmark and domain line overlap");
     Test.assertMessage(cornerRadius(heroW, heroH, yHero, cy) <= radius.toFloat(),
         "the hero's corners sit outside the page radius on a " + screenPx().toString()
         + "px glass");
