@@ -467,6 +467,73 @@ the only evidence there is of where the phase changed.
 **Direction chevrons**: small, semi-transparent, oriented to travel, subordinate to every
 marker — they indicate, never compete.
 
+## Text size and theme — the app follows the phone
+
+**There is no app appearance setting, and there is not going to be one.** The iPhone app
+follows the system's light/dark appearance and the system's text size, and both of them all
+the way down: the chrome is system materials, every surface is a semantic colour
+(`Color(.systemBackground)`, `Color(.secondarySystemBackground)`, `.primary`, `.secondary`,
+`.tertiary`, the accent), and every string is set in a text style rather than a point size.
+Two screens set `preferredColorScheme(.dark)` and only two — the **splash** and the
+**Welcome** screen — because both are painted in `Brand.navy` rather than on a system
+background, and the system controls and the status bar drawn on top of that navy have to be
+told what is underneath them. They are the launch screen continued; everything behind them
+is the phone's own appearance.
+
+**Point sizes are for figures, not for text.** A literal `font(.system(size:))` survives in
+exactly four places, and each is a picture rather than a paragraph: the **share card** and
+the **reel's clip cards**, which are rendered at a fixed pixel size into a PNG and an MP4 and
+must look identical on every phone; the **map annotations** (the outcome dots, the takeoff
+arrow, the clean-jibe star, the map legend) and the **turn page's canvas figures**, whose
+glyphs are sized against the drawing and not against the reader; and the cinema's 3·2·1
+countdown, one digit already larger than any text size would make it. The turn strips' small
+words are the one middle case: they scale, and stop at 1.6×, the point at which two
+neighbouring captions in a 1.5 s-wide band start to print over each other.
+
+**What is capped, and why.** Everything a rider reads as prose scales to `.accessibility5`.
+A row that is three or four *columns* wide cannot — at 310 % the columns alone are wider than
+the phone, and the result is a truncated table rather than a large one — so those rows stop
+at `.accessibility2`, roughly double the default and the last size at which a row is still a
+row (`denseRowTypeSizeCap()`, one name so every capped surface caps at the same place). The
+capped surfaces are: the **key-metrics block**, the **speed-records table**, the **all-time
+records table**, the **turn list** and the **takeoff list**, the **watch-vs-phone
+divergence table**, the **library row's two figure strips** (the row's title and date above
+them scale the whole way) and the **gear row's five figures**. The **splash** is capped for a
+different reason: its words
+hang in a 320 pt block — the width of the narrowest supported phone — and "CleanJibe" set in
+`.largeTitle` fills that at about `.accessibility2`, past which the wordmark would hyphenate,
+which is the one thing it may not do. Everything on it is repeated on the Welcome screen,
+which scales without a ceiling.
+
+**Columns grow with the type** (`scaledColumn(_:relativeTo:)`, a `@ScaledMetric` frame): a
+92 pt record-name column pinned to `.subheadline` grows in step with the `.subheadline`
+inside it, so the table stays a table instead of truncating the very name the width was
+chosen to hold. Card grids scale their `.adaptive` minimum the same way, so a two-up grid
+falls to one column of full-width cards exactly when two stop fitting. **Label-and-value
+pairs stack** at accessibility sizes rather than squeezing: the gear card's rows and the wind
+card's rows put the value under the label instead of beside it, and the key-metrics tiles go
+two to a line instead of three.
+
+**And two surfaces give the table up rather than shrink it.** Scaled columns hold to about
+`.accessibility2` and no further, so past the accessibility threshold the **all-time records
+row** stops being four columns: the name takes the width it needs, the value keeps the right
+edge, and the delta leads a second line with "when · where" behind it — the header
+disappears with the columns it named, because a heading over nothing is worse than none.
+The **spot/gear filter bar** on Records and Trends becomes a horizontal scroller for the same
+reason: "All spots" truncated to "All s…" is a filter that no longer says what it filters.
+
+**Data colours do not change with the theme, by design.** The generated palette in
+`DesignTokens` (`design/tokens.json`) is the contract — the outcome ladder (flew through /
+touchdown / fell in), the clean-jibe mint, the effort inks, the phase tints, the entry-tack
+brown — and the speed ramp's five authored stops. Those are *meanings*, not decoration: the
+same green means "flew through" in light and in dark. `TrackHalo.ink` (55 % black under a
+track drawn over satellite imagery) is fixed for the same reason, and `Brand` — the navy, the
+green, the paper — is fixed because the surfaces it paints (the exported card, the splash,
+the confetti) have no system background to adapt to. Everything that is *not* a data colour
+is semantic and flips with the theme; see "Colour and glyph vocabulary" above for which is
+which, and `TrackHalo.ink(_:on:opacity:overImagery:)` for the one place a semantic ink is
+resolved against the ground instead of the theme.
+
 ## Key metrics — the block that opens the session
 
 Both apps open the session analysis with the same block, above the map and the chart, in
