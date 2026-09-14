@@ -736,6 +736,16 @@ list, `keyMetrics` in `web/js/render.js` renders its HTML from it, and `cardStat
 filter it. `web/tools/verify_presentation.py` §5 asserts, per fixture, that the card's stat
 list *is* the rendered block.
 
+**The picture travels with one sentence** (`shareCaption`, 14 September 2026): the card's own
+title, its date line, the foil share and the clean-jibe count, then “— analysed with CleanJibe,
+free at cleanjibe.org”. It is passed as `text` and `url` beside the file, so a forwarded card
+carries what it is and where it came from in quotable words rather than only in 9.5 pt type in
+its footer. Built from what the card is already holding, so it can never describe a different
+session than the picture; the clean count is gated exactly as the tally's caption is (no named
+jibes, no clean clause). Where the browser will not carry text beside a file
+(`navigator.canShare({files, text})` false), the file still goes and the sentence goes on the
+clipboard instead, with *Caption copied* under the dialog's buttons.
+
 Two presets choose how much of it appears, and a preset may only **remove** entries:
 
 | preset | cells |
@@ -850,7 +860,7 @@ draw site.
 Three details of the QR are load-bearing rather than cosmetic and are the same on both
 platforms: it is **dark-on-light with its own light plate**, because the card's background is
 navy or somebody's photo and a decoder needs the light half to be light; it is drawn at
-**~96 px at 1080 width** from a **nearest-neighbour** upscale with a four-module quiet zone,
+**~144 px at 1080 width** from a **nearest-neighbour** upscale with a four-module quiet zone,
 because the generator emits one pixel per module and any smoothing turns every module edge
 into a grey ramp for a decoder to guess at after a chat app has recompressed the picture; and
 it carries the **brand mark in its centre**, below. iOS renders it with `CIQRCodeGenerator`
@@ -858,8 +868,17 @@ it carries the **brand mark in its centre**, below. iOS renders it with `CIQRCod
 correction level M — a short URL, a clean digital image, and bigger modules matter more here
 than damage tolerance. The web draws the same symbol from a committed 33 × 33 PNG
 (`web/icons/qr-cleanjibe.png`, one pixel per module, quiet zone included) with
-`imageSmoothingEnabled = false` at 99 px, which is the same 3× nearest-neighbour upscale: the
-URL is fixed, so a QR library in the bundle would be a dependency to draw a constant.
+`imageSmoothingEnabled = false`: the URL is fixed, so a QR library in the bundle would be a
+dependency to draw a constant.
+
+**It grew from 99 px to 144 px** (`QR_SIZE`, 33 → 48 layout points; web changed 14 September
+2026, iOS to follow in `ShareCardView`). 99 px was three whole pixels a module and read
+perfectly at 1:1 — and too small where a card is actually met, as a thumbnail on somebody
+else's phone at arm's length. Angular size beats crisp module edges for a camera, so the whole
+upscale is no longer an integer: 144 over 33 modules is 4.36 px a module, most of them four
+pixels wide and every twelfth five, hard-edged throughout, with level M's parity absorbing the
+edges that land a pixel out of true. The footer's height derives from `QR_SIZE`, so the tall
+shapes give the track 15 pt and the wide one gives the wordmark 15 pt of width.
 
 **The mark in the middle, and why it is exactly five modules.** An unbranded code in the
 corner of a picture is an anonymous grey square; the app's own icon on a small rounded white
@@ -2765,7 +2784,14 @@ takeoff effort** (was a wrist accelerometer recorded, which only the CleanJibe w
 The **same table is public**, at cleanjibe.org/watches, beside the watch app’s Connect IQ
 product list grouped into families (`web/watches/index.html`, kept in step with
 `garmin/manifest.xml` by hand) — so “will my watch work” has one answer for a rider who has
-installed nothing yet and the same answer inside the app. The public release notes live beside
+installed nothing yet and the same answer inside the app. The public copy carries one column
+this one does not: the **recording class** (a / b / b + wrist / c, docs/channels.md), printed
+above it as its own table — “what you need, what you get” — and repeated on the homepage,
+since the question arrives before the import rather than after it. The CleanJibe Apple Watch
+app is **b + wrist**: class b speed, plus the 50 Hz wrist accelerometer (ADR-016) the phone
+analyses afterwards, which is why its row here says *yes* to pump and takeoff effort and
+Apple's own Workout app does not. The public page also answers *no watch at all* with real
+instructions: which phone apps record a track and can export it. The public release notes live beside
 it at cleanjibe.org/whats-new, from `ios/tools/testflight_publish.py` and
 `garmin/store/listing.md`.
 
@@ -2778,7 +2804,11 @@ print, in this order and for this reason:
 
 1. **Getting started** — the beta test guide as a help topic (`HelpTopicID.betaGettingStarted`,
    the same text as cleanjibe.org/start). First, because it is what "I just installed this"
-   is looking for.
+   is looking for. The public page was reframed on 14 September 2026: the test is **one
+   session on the water** — charge, record, save, sync, pull down on Sessions, read the turn
+   verdicts against what you remember, share a card, Menu → Support — and the 20-minute dry
+   run is kept as "the minimal check, if you cannot wait" after it. The help topic still leads
+   with the dry run; bringing the two back into step is an iOS change.
 2. **Settings** — the switches, the watch, the accounts.
 3. **Support** — the feedback mail (`feedbackMail(on:)`, the same composer as Settings →
    Send feedback and the share sheet's "Report a problem"). Above the two "what is this"
