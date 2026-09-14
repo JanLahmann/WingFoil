@@ -239,6 +239,30 @@ public struct FeedbackFacts: Sendable, Equatable {
     }
 }
 
+/// One sentence, said in five places: *a wish is as welcome as a fault.*
+///
+/// Jan, 14 September 2026: nothing in the app ever invited an idea. Every door to the mail
+/// was named and worded for something being **wrong** — "Support", "Something off? Send
+/// feedback" — and a beta whose only invitation is to report faults gets faults reported and
+/// nothing else. So the invitation is written once, here, and the five surfaces that can
+/// carry it say the same words: the library menu's row (*Support & ideas*), the footer under
+/// every page, the welcome screen, Settings → Help, and the mail's own template.
+///
+/// It lives in the kit rather than in the app for the ordinary reason: it is wording, the
+/// test suite reads it, and five literals in five views is five chances to drift.
+public enum FeedbackInvitation {
+
+    /// The plain sentence, for prose that already has a paragraph around it (Settings, the
+    /// help topic, the mail).
+    public static let sentence = "Ideas and wishes are as welcome as bugs."
+
+    /// The same sentence with the way in on the end of it, for a surface that is not next to
+    /// the door — the welcome screen, which a rider reads before he has seen the menu.
+    /// "·" rather than a dash, like every other separator the app draws.
+    public static let welcomeSentence =
+        "Ideas and wishes are as welcome as bugs · Menu → Support & ideas"
+}
+
 /// The beta feedback mail, as text.
 ///
 /// Pure: a subject, a body and a `mailto:` URL out of a `FeedbackFacts`, with no framework
@@ -261,18 +285,62 @@ public enum FeedbackReport {
         return "\(Branding.appName) beta feedback · build \(build) · \(facts.watch.subjectName)"
     }
 
-    /// The prefilled body: an empty line for the rider, then everything the phone knows.
+    /// The three questions a report has to answer, in the order a reporter thinks them.
     ///
-    /// **The rider's line is first and the facts are below it**, which is the opposite of
+    /// The mail used to open with the single word **What happened** and one blank line,
+    /// which is a prompt for a paragraph rather than for a report — and what arrived was a
+    /// paragraph: one sentence, no expectation, no session. The three labels below are the
+    /// three follow-up mails that sentence always cost, asked once, in advance
+    /// (Jan, 14 Sep 2026).
+    ///
+    /// The first one is deliberately **two questions in one line**: a rider with a feature
+    /// wish must not have to decide whether the form is for him. See `FeedbackInvitation`.
+    public enum Prompt {
+        public static let what = "What happened, or what you would like:"
+        public static let expected = "What you expected instead:"
+        public static let session = "Which session (date, spot), if it is about one:"
+    }
+
+    /// The rule for the line between the rider's half of the mail and the phone's.
+    ///
+    /// **It exists to be readable, and to be deletable.** The facts under it are a phone
+    /// model, an iOS version, a locale, a library shape and sometimes a spot — which is a
+    /// map pin to where somebody rides. Nothing is sent until Send is tapped and every line
+    /// is editable, but a rider only knows that if the mail says so, in the mail, at the
+    /// point where the facts start.
+    public enum Separator {
+        /// Long enough to read as a rule at a mail client's default width, short enough not
+        /// to wrap on a phone.
+        public static let rule = String(repeating: "-", count: 40)
+        public static let note =
+            "Below is what the app knows about this phone and build. "
+            + "It helps analysis; delete any line you would rather not send."
+    }
+
+    /// The prefilled body: three labelled blanks for the rider, then everything the phone
+    /// knows, behind a rule that says what it is and that it may be deleted.
+    ///
+    /// **The rider's half is first and the facts are below it**, which is the opposite of
     /// how a machine would write it. A mail that opens with twenty lines of diagnostics
     /// makes the reporter scroll past his own report to write it, and half of them will
     /// give up and write one sentence into the subject instead.
+    ///
+    /// Each label is followed by **two lines** — one for the answer and one of air, so the
+    /// three questions read as three fields rather than as a paragraph with colons in it.
+    /// The session label is the one that can be answered for him: from the share sheet's
+    /// "Report a problem with this session…" the app already knows which afternoon, so the
+    /// date and the spot are written into the first of those two lines and the rider is
+    /// asked one question fewer.
     public static func body(_ facts: FeedbackFacts) -> String {
-        var out: [String] = [
-            "What happened",
-            "",
-            "",
-        ]
+        var out: [String] = []
+        out += prompt(Prompt.what)
+        out += prompt(Prompt.expected)
+        out += prompt(Prompt.session, answer: facts.session.map(sessionAnswer))
+        out.append(FeedbackInvitation.sentence)
+        out.append("")
+        out.append(Separator.rule)
+        out.append(Separator.note)
+        out.append("")
         out += section("App", lines: appLines(facts.app))
         out += section("Phone", lines: phoneLines(facts.phone))
         out += section("Watch", lines: watchLines(facts.watch))
@@ -305,6 +373,26 @@ public enum FeedbackReport {
     }
 
     // MARK: - Sections
+
+    /// One labelled blank: the question, the line the answer goes on, and a line of air.
+    ///
+    /// `answer` fills the first of the two rather than adding a third line, so a prefilled
+    /// field and an empty one are the same shape and the mail does not grow a ragged edge
+    /// depending on where it was opened from.
+    private static func prompt(_ label: String, answer: String? = nil) -> [String] {
+        [label, answer ?? "", ""]
+    }
+
+    /// "30 August 2026 · Torbole" — the session line, written for him.
+    ///
+    /// Deliberately only the two facts the *question* asks for. Everything else about the
+    /// session (duration, source class, engine stamp, the row id) is under the rule, in the
+    /// Session block, where the rest of the diagnostics are — repeating it up here would put
+    /// the machine's half back on top of the rider's.
+    private static func sessionAnswer(_ session: FeedbackFacts.Session) -> String {
+        guard let spot = session.spot, !spot.isEmpty else { return session.date }
+        return session.date + " · " + spot
+    }
 
     /// A heading, its facts indented two spaces, and a blank line after. Empty sections
     /// cannot happen — every one of the four always has at least one line.
