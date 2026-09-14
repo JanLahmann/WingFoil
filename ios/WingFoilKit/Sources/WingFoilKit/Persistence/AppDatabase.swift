@@ -12,12 +12,95 @@ import GRDB
 /// migration therefore clears `engineVersion` on every existing row: that is exactly the
 /// "stored engine version != current" condition that triggers lazy re-analysis
 /// (plan §3.3), so a v1 library re-derives itself — child tables included — on first use.
+/// The library on this phone was last used by a build newer than this one.
+///
+/// Thrown by `AppDatabase.init` before anything is migrated or read, so the app's answer is
+/// a screen rather than a crash and the library is left exactly as the newer build left it.
+/// The two numbers are in it because the screen behind it is the only place a rider can be
+/// told what happened, and "version 17, this one reads 15" is the difference between an
+/// explanation and an apology.
+public struct LibraryNewerThanApp: Error, Equatable, Sendable, CustomStringConvertible {
+    /// What the file says it is at — the higher of `PRAGMA user_version` and the highest
+    /// `vN` migration recorded in it.
+    public let storedVersion: Int
+    /// The last migration this build knows — `AppDatabase.schemaVersion`.
+    public let knownVersion: Int
+
+    public init(storedVersion: Int, knownVersion: Int) {
+        self.storedVersion = storedVersion
+        self.knownVersion = knownVersion
+    }
+
+    public var description: String {
+        "This library was last used by a newer \(Branding.appName) "
+            + "(library version \(storedVersion); this build reads up to \(knownVersion))."
+    }
+}
+
 public struct AppDatabase: Sendable {
     public let writer: any DatabaseWriter
 
     public init(_ writer: any DatabaseWriter) throws {
         self.writer = writer
+        if let newer = try Self.libraryIsNewer(writer) { throw newer }
         try Self.migrator.migrate(writer)
+        try Self.stampVersion(writer)
+    }
+
+    // MARK: - A library from a newer build
+
+    /// **The one thing three channels cut from one commit cannot promise.**
+    ///
+    /// Release, beta and dev are built from the same source, so on any given day their
+    /// schemas are identical and switching between them is safe (docs/channels.md). What is
+    /// not identical is *when* each was cut: a rider on the App Store build is two releases
+    /// behind the beta he tried last month, and TestFlight will happily put that older
+    /// binary back on the phone with the newer library still sitting under it.
+    ///
+    /// GRDB's migrator does not refuse that. It sees migrations it has never heard of,
+    /// finds nothing of its own left to run, and reports success — after which the app is
+    /// reading a schema with columns it does not know and tables it will not maintain,
+    /// which is the shape of corruption rather than of a crash. So the check is made here,
+    /// before a single migration runs, and the answer is a typed error the app can put a
+    /// screen behind (`RootView`) rather than a `fatalError` in a launch path.
+    ///
+    /// Two signals, because neither alone covers both directions of the fleet. The
+    /// `grdb_migrations` table names every migration that has been applied, which catches a
+    /// newer build whose migration is called something this one has never seen — but only
+    /// once such a build exists. `PRAGMA user_version` is the number this build *writes* on
+    /// every successful open, which catches the case the first one cannot: a future build
+    /// that renumbers or squashes its migration list. Older libraries carry `user_version`
+    /// 0 and are simply below every threshold, so nothing is refused that used to open.
+    static func libraryIsNewer(_ writer: any DatabaseWriter) throws -> LibraryNewerThanApp? {
+        let stored = try writer.read { db -> Int in
+            var highest = try Int.fetchOne(db, sql: "PRAGMA user_version") ?? 0
+            guard try db.tableExists("grdb_migrations") else { return highest }
+            let applied = try String.fetchAll(
+                db, sql: "SELECT identifier FROM grdb_migrations")
+            let known = Set(migrationNames)
+            for identifier in applied where !known.contains(identifier) {
+                // "v16" → 16. An identifier this build cannot even parse is still newer
+                // than anything it knows, so it counts as one past the end.
+                let number = Int(identifier.dropFirst()) ?? (schemaVersion + 1)
+                highest = max(highest, number)
+            }
+            return highest
+        }
+        guard stored > schemaVersion else { return nil }
+        return LibraryNewerThanApp(storedVersion: stored, knownVersion: schemaVersion)
+    }
+
+    /// Writes `PRAGMA user_version` after a successful migration, so the *next* open — by
+    /// this build or by an older one — has a number to compare against. Interpolated
+    /// rather than bound: SQLite's `PRAGMA` takes no statement arguments, and the value is
+    /// an `Int` this file owns.
+    private static func stampVersion(_ writer: any DatabaseWriter) throws {
+        try writer.write { db in
+            guard try Int.fetchOne(db, sql: "PRAGMA user_version") != schemaVersion else {
+                return
+            }
+            try db.execute(sql: "PRAGMA user_version = \(schemaVersion)")
+        }
     }
 
     public static func inMemory() throws -> AppDatabase {

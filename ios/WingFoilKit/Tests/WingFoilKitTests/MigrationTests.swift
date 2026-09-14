@@ -309,3 +309,95 @@ import Testing
         }
     }
 }
+
+/// **A library from a newer build** (docs/channels.md, "Switching channels").
+///
+/// The three channels are cut from one commit, so on any given day their schemas match.
+/// What does not match is when each was cut: TestFlight will put an older App Store build
+/// back on a phone whose library a newer beta has already migrated. GRDB's migrator sees
+/// nothing left of its own to run and reports success, so the refusal has to be made before
+/// it — and it has to be a typed error the app can put a screen behind.
+@Suite struct LibraryNewerThanAppTests {
+
+    /// A library one version past this build: the exact shape a rider who went back a
+    /// channel is holding.
+    @Test func aLibraryOneVersionAheadIsRefusedRatherThanOpened() throws {
+        let queue = try DatabaseQueue()
+        _ = try AppDatabase(queue)                      // a library this build wrote
+        try queue.write { db in
+            try db.execute(sql: "PRAGMA user_version = \(AppDatabase.schemaVersion + 1)")
+        }
+
+        #expect(throws: LibraryNewerThanApp(storedVersion: AppDatabase.schemaVersion + 1,
+                                            knownVersion: AppDatabase.schemaVersion)) {
+            _ = try AppDatabase(queue)
+        }
+    }
+
+    /// The simulator recipe in docs/testing.md is `PRAGMA user_version=99`, and it must
+    /// produce the same screen rather than a different error.
+    @Test func theSimulatorRecipeIsRefusedTheSameWay() throws {
+        let queue = try DatabaseQueue()
+        _ = try AppDatabase(queue)
+        try queue.write { db in try db.execute(sql: "PRAGMA user_version = 99") }
+
+        do {
+            _ = try AppDatabase(queue)
+            Issue.record("a library at version 99 opened")
+        } catch let error as LibraryNewerThanApp {
+            #expect(error.storedVersion == 99)
+            #expect(error.knownVersion == AppDatabase.schemaVersion)
+            #expect(error.description.contains("newer CleanJibe"))
+        }
+    }
+
+    /// The other signal, and the one that catches a future build that renumbers: a
+    /// migration identifier this build has never heard of, recorded in `grdb_migrations`.
+    @Test func aMigrationThisBuildHasNeverHeardOfIsAlsoRefused() throws {
+        let queue = try DatabaseQueue()
+        _ = try AppDatabase(queue)
+        try queue.write { db in
+            try db.execute(sql: "INSERT INTO grdb_migrations (identifier) VALUES ('v16')")
+            // …and the pragma deliberately left where this build wrote it, so the applied
+            // list is the only thing that can raise the alarm.
+            try db.execute(sql: "PRAGMA user_version = \(AppDatabase.schemaVersion)")
+        }
+
+        #expect(throws: LibraryNewerThanApp.self) { _ = try AppDatabase(queue) }
+    }
+
+    /// Nothing that used to open may stop opening. A library written before this check
+    /// existed carries `user_version` 0 and every migration name this build knows.
+    @Test func aLibraryFromBeforeTheStampStillOpens() throws {
+        let queue = try DatabaseQueue()
+        try AppDatabase.migrator.migrate(queue)
+        try queue.write { db in try db.execute(sql: "PRAGMA user_version = 0") }
+
+        let database = try AppDatabase(queue)
+        let stamped = try database.writer.read { db in
+            try Int.fetchOne(db, sql: "PRAGMA user_version")
+        }
+        #expect(stamped == AppDatabase.schemaVersion)
+    }
+
+    /// A fresh library is stamped on the way out, so the *next* open — by an older build —
+    /// has a number to compare against. Without this the guard would only ever fire on a
+    /// phone that had already seen a build with a renamed migration.
+    @Test func everyOpenLeavesTheVersionStamped() throws {
+        let queue = try DatabaseQueue()
+        let database = try AppDatabase(queue)
+        let stamped = try database.writer.read { db in
+            try Int.fetchOne(db, sql: "PRAGMA user_version")
+        }
+        #expect(stamped == AppDatabase.schemaVersion)
+    }
+
+    /// A half-migrated library — the shape `migrator.migrate(upTo:)` leaves — is behind,
+    /// not ahead, and must be migrated the rest of the way as it always was.
+    @Test func aV1LibraryIsStillMigratedForwards() throws {
+        let queue = try DatabaseQueue()
+        try AppDatabase.migrator.migrate(queue, upTo: "v1")
+        let database = try AppDatabase(queue)
+        #expect(try database.writer.read { try $0.tableExists("flight") })
+    }
+}
