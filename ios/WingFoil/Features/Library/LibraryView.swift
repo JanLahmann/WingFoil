@@ -122,11 +122,13 @@ struct LibraryView: View {
                         Button { showSettings = true } label: {
                             Label("Settings", systemImage: "gearshape")
                         }
-                        Button {
-                            Usage.record(.feedbackMail)
-                            supportRequest += 1
-                        } label: {
-                            Label("Support", systemImage: "envelope")
+                        // "& ideas" is not decoration: the row said "Support", which a rider
+                        // reads as *the place you go when something is broken*, and Jan's
+                        // point (14 Sep 2026) is that a wish is as welcome as a bug and
+                        // nothing in the app has ever said so. The name of the door is the
+                        // cheapest place to say it.
+                        Button { supportRequest += 1 } label: {
+                            Label("Support & ideas", systemImage: "envelope")
                         }
                         Divider()
                         // Asked for, not re-armed: the welcome screen again, raised by

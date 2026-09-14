@@ -45,15 +45,73 @@ import Testing
 
     // MARK: The body
 
-    /// The rider's own line comes first, before a single diagnostic — a mail that opens
+    /// The rider's own half comes first, before a single diagnostic — a mail that opens
     /// with twenty lines of facts makes him scroll past them to write his report.
-    @Test func theBodyOpensWithTheRidersOwnLine() {
+    ///
+    /// Three labelled blanks now, not one: the three follow-up mails "it said 3 jibes" used
+    /// to cost, asked in advance. Each label owns exactly two lines after it — one for the
+    /// answer, one of air — asserted by index, because a field that quietly lost its blank
+    /// line would still read fine in a diff and badly in a mail client.
+    @Test func theBodyOpensWithThreeLabelledBlanks() {
         let lines = FeedbackReport.body(facts()).split(separator: "\n",
                                                        omittingEmptySubsequences: false)
-        #expect(lines.first == "What happened")
+        #expect(lines[0] == "What happened, or what you would like:")
         #expect(lines[1] == "")
         #expect(lines[2] == "")
-        #expect(lines[3] == "App")
+        #expect(lines[3] == "What you expected instead:")
+        #expect(lines[4] == "")
+        #expect(lines[5] == "")
+        #expect(lines[6] == "Which session (date, spot), if it is about one:")
+        #expect(lines[7] == "")
+        #expect(lines[8] == "")
+    }
+
+    /// A wish is as welcome as a fault, and the mail is the fifth place that says so — the
+    /// same sentence as the menu row, the page footers, the welcome screen and Settings.
+    @Test func theMailInvitesIdeasAsWellAsFaults() {
+        #expect(FeedbackReport.body(facts()).contains(FeedbackInvitation.sentence))
+        #expect(FeedbackInvitation.welcomeSentence
+                .contains("Ideas and wishes are as welcome as bugs"))
+        // "·", like every other separator the app draws; never an em dash.
+        #expect(!FeedbackInvitation.welcomeSentence.contains("—"))
+    }
+
+    /// The rule between the two halves, and the sentence that makes the facts under it
+    /// deletable rather than merely present.
+    @Test func theFactsSitUnderARuleThatSaysWhatTheyAre() {
+        let lines = FeedbackReport.body(facts()).split(separator: "\n",
+                                                       omittingEmptySubsequences: false)
+        let rule = try! #require(lines.firstIndex(of: Substring(FeedbackReport.Separator.rule)))
+        #expect(lines[rule + 1] == Substring(FeedbackReport.Separator.note))
+        #expect(lines[rule + 1].contains("delete any line you would rather not send"))
+        #expect(lines[rule + 2] == "")
+        #expect(lines[rule + 3] == "App")
+        // Everything the rider writes is above it; every diagnostic is below it.
+        #expect(rule > lines.firstIndex(of: "What you expected instead:")!)
+    }
+
+    /// From the share sheet the app already knows which afternoon, so the third question is
+    /// answered for him — on the first of the label's two lines, not as a fourth line.
+    @Test func theSessionQuestionIsAnsweredWhenTheMailCameFromOne() {
+        let session = FeedbackFacts.Session(
+            id: "A1B2C3", date: "30 August 2026", spot: "Torbole",
+            discipline: "Wingfoil", duration: "1:42:11", sourceClass: "a",
+            engineStamp: nil)
+        let lines = FeedbackReport.body(facts(session: session))
+            .split(separator: "\n", omittingEmptySubsequences: false)
+        #expect(lines[6] == "Which session (date, spot), if it is about one:")
+        #expect(lines[7] == "30 August 2026 · Torbole")
+        #expect(lines[8] == "")
+    }
+
+    /// A session with no spot named still answers the question, with the half it has.
+    @Test func aSessionWithNoSpotStillFillsTheDate() {
+        let session = FeedbackFacts.Session(
+            id: "A1B2C3", date: "30 August 2026", spot: nil, discipline: nil,
+            duration: "1:42:11", sourceClass: "c", engineStamp: nil)
+        let lines = FeedbackReport.body(facts(session: session))
+            .split(separator: "\n", omittingEmptySubsequences: false)
+        #expect(lines[7] == "30 August 2026")
     }
 
     @Test func theAppSectionNamesTheVariantAndTheEngine() {

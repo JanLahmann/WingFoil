@@ -203,10 +203,26 @@ struct WelcomeView: View {
         }
     }
 
+    /// The credit, and — since 14 Sep 2026 — the invitation above it.
+    ///
+    /// This screen is where a new rider is told what the app is for, and it is the last
+    /// moment before he goes off to use it. One sentence here is what stops the first month
+    /// of the beta being bug reports only: *a wish is as welcome as a fault*, said once, in
+    /// the same words the menu row, the page footers, Settings and the mail itself use
+    /// (`FeedbackInvitation.sentence`). It is set a shade brighter than the credit under it,
+    /// because it is addressed to the reader and the credit is not.
     private var footer: some View {
-        Text(Branding.credit)
-            .font(.caption2)
-            .foregroundStyle(Brand.paper.opacity(0.45))
+        VStack(spacing: 6) {
+            Text(FeedbackInvitation.welcomeSentence)
+                .font(.caption2)
+                .foregroundStyle(Brand.paper.opacity(0.6))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(Branding.credit)
+                .font(.caption2)
+                .foregroundStyle(Brand.paper.opacity(0.45))
+        }
     }
 }
 

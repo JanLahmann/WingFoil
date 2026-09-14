@@ -387,7 +387,7 @@ struct ShareComposerView: View {
 
         if let rendered {
             ShareLink(item: rendered,
-                      subject: Text(stats.title),
+                      subject: Text(cardSubject),
                       message: Text(cardCaption),
                       preview: SharePreview(stats.title, image: rendered)) {
                 Label("Share card", systemImage: "square.and.arrow.up")
@@ -500,11 +500,36 @@ struct ShareComposerView: View {
                             timeZone: row.displayZone)
     }
 
-    /// The card's own message. Short: a PNG is not something a receiver can re-analyse, and
-    /// the card already carries the site in its footer pixels.
+    /// The card's own message: the afternoon in one sentence, ending in the offer.
+    ///
+    /// It used to be `ShareText.cardMessage` — place, date, "CleanJibe session ·
+    /// cleanjibe.org" — which says who made the picture and nothing about what is in it. The
+    /// numbers are there in the pixels, but the pixels are exactly what a notification, a
+    /// reply quote or a screen reader does not have (Jan, item 8, 14 Sep 2026). The web's
+    /// card has said the numbers for a while; this is the same sentence, from the same
+    /// formatter (`ShareCaption`), so the two platforms cannot drift.
+    ///
+    /// The two numbers are read off the **row**, not off `stats`: the card's cells are
+    /// formatted strings chosen by a preset, and a rider who picked `lean` would otherwise
+    /// get a different sentence for the same session.
     private var cardCaption: String {
-        ShareText.cardMessage(place: displayTitle, startedAt: row.startDate,
-                             timeZone: row.displayZone)
+        ShareCaption.line(title: displayTitle, dateLine: stats.dateLine,
+                          foilPct: row.foilPct, cleanJibes: cleanJibes)
+    }
+
+    /// The subject, where the share sheet has one. The facts, without the offer.
+    private var cardSubject: String {
+        ShareCaption.subject(title: displayTitle, dateLine: stats.dateLine)
+    }
+
+    /// The clean-jibe count, or nil when no jibes were measured at all.
+    ///
+    /// The same gate the tally uses and the web's caption uses: a session whose wind axis
+    /// named no jibes has no clean ones to report, and "0 clean jibes" would be a verdict
+    /// nobody reached.
+    private var cleanJibes: Int? {
+        guard let jibes = row.jibes, jibes > 0 else { return nil }
+        return row.jibesSuccessful
     }
 
     private var renderKey: String {

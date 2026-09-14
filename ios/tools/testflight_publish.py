@@ -54,7 +54,9 @@ WHATS_NEW = """New here? cleanjibe.org/start — a 20-minute test of the watch r
 
 The site caught up too: cleanjibe.org/watches lists every supported watch, cleanjibe.org/whats-new has these notes, and the privacy page names every new data flow (Strava, the one location prompt for the watch map).
 
-Please check: after a watch session, does the card row turn into the full session once intervals.icu has the recording (pull down on Sessions)?"""
+Please check: after a watch session, does the card row turn into the full session once intervals.icu has the recording (pull down on Sessions)?
+
+Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
 # What the dev variant's testers are told instead. It is a different build of the same version,
 # so saying which one this is matters more than the release notes do.
@@ -66,7 +68,9 @@ Settings → About says "· dev" on this one. Moving any slider re-analyses your
 
 Since 50: a card-only session from the watch opens on its own numbers and says how the recording follows; the grouping segment reads "All"; the start screen carries cleanjibe.org.
 
-Please check: pull down on Sessions once intervals.icu has last night's 23:21 recording — the card row should turn into the full session in place."""
+Please check: pull down on Sessions once intervals.icu has last night's 23:21 recording — the card row should turn into the full session in place.
+
+Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
 
 def tok():

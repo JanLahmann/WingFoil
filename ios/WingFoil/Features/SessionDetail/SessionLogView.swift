@@ -238,6 +238,17 @@ private struct RecordingCard: View {
             .font(.caption2)
             .foregroundStyle(.tertiary)
             .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Rule 3 of Strava's brand guidelines: anything showing data taken from Strava
+            // links back to the activity it came from. This is the card that says where the
+            // numbers came from, so it is the card the link belongs on — and the id is read
+            // back out of the recording's own filename rather than stored in a column of its
+            // own (`StravaImport.activityId`).
+            if let activity = StravaImport.activityId(
+                originalFilename: detail.row.originalFilename) {
+                StravaActivityLink(activityID: activity)
+                    .padding(.top, 2)
+            }
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)

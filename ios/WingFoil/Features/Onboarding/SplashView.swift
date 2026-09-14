@@ -72,9 +72,10 @@ struct SplashView: View {
     }
 
     private var words: some View {
-        VStack(spacing: isShort ? 4 : 8) {
+        VStack(spacing: isShort ? 6 : 10) {
             Text(Branding.appName)
-                .font(isShort ? .title.weight(.bold) : .largeTitle.weight(.bold))
+                .font(.system(size: isShort ? Splash.wordmarkPointShort : Splash.wordmarkPoint,
+                              weight: .semibold))
                 .kerning(0.5)
                 .foregroundStyle(Brand.paper)
                 .multilineTextAlignment(.center)
@@ -83,8 +84,8 @@ struct SplashView: View {
             // wordmark is the half that carries the brand.
             if !isShort {
                 Text(Splash.tagline)
-                    .font(.footnote)
-                    .foregroundStyle(Brand.paper.opacity(0.75))
+                    .font(.system(size: Splash.taglinePoint))
+                    .foregroundStyle(Brand.paper.opacity(0.8))
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -94,8 +95,8 @@ struct SplashView: View {
             // landscape where the tagline does not, because it is one short line rather than
             // a wrapping sentence, and because the whole point of it is the address.
             Text(Branding.site)
-                .font(.caption2)
-                .foregroundStyle(Brand.paper.opacity(0.55))
+                .font(.system(size: isShort ? Splash.sitePointShort : Splash.sitePoint))
+                .foregroundStyle(Brand.paper.opacity(0.8))
                 .multilineTextAlignment(.center)
         }
         // A width of its own, and this is load-bearing: an overlay is *proposed* the size of
@@ -143,6 +144,39 @@ enum Splash {
 
     /// The floor on the hold (see `SplashView.hold`).
     static let minimumHold: Duration = .seconds(2)
+
+    // MARK: - The type, in points rather than in text styles
+    //
+    // **Fixed sizes, on purpose, and this is the one screen that earns them.** Jan, 14 Sep
+    // 2026: the three lines were *too small on a phone* — the tagline was `.footnote` (13 pt)
+    // and the address `.caption2` (11 pt at 55 % of the paper), which is the size of small
+    // print on a screen whose entire job for two seconds is to be read from arm's length,
+    // often over somebody's shoulder on a beach. They are one **lockup** under a mark that is
+    // pinned to the pixel by the launch screen (see `markSide`), so they may not reflow with
+    // Dynamic Type: a rider on the largest accessibility size would otherwise push the
+    // address off the bottom of a phone in landscape, and the mark cannot move to make room.
+    // Every other screen in the app follows Dynamic Type; this one holds still for two
+    // seconds and then hands over to screens that do.
+    //
+    // The landscape numbers are the same lockup with the tagline dropped (`SplashView.words`)
+    // and the two survivors stepped down, so the block still clears the ~195 pt a compact
+    // height leaves below the centred mark: 140/2 + 16 + 28 + 6 + 14 ≈ 134 pt.
+
+    /// The wordmark. 34 pt is `.largeTitle`'s own size, said as a number because the weight
+    /// moved with it: **semibold**, not bold — at this size bold reads as a shout, and the
+    /// mark above it is already the loud half of the lockup.
+    static let wordmarkPoint: CGFloat = 34
+    /// Landscape, where the whole block has about 195 pt to live in.
+    static let wordmarkPointShort: CGFloat = 28
+
+    /// "analyze your wingfoil sessions free" — body size, because it is the sentence that
+    /// says what the app is and a reader who cannot make it out has been told nothing.
+    static let taglinePoint: CGFloat = 17
+
+    /// `cleanjibe.org`. Still the quietest line of the three, but quiet now means 80 % of the
+    /// paper rather than 55 % of it at 11 pt — an address nobody can read is not an address.
+    static let sitePoint: CGFloat = 15
+    static let sitePointShort: CGFloat = 14
 
     /// The crossfade into the library. Not applied under Reduce Motion, where the splash
     /// cuts after the same hold instead.

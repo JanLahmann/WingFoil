@@ -88,10 +88,11 @@ struct StravaImportView: View {
 
     private var connectSection: some View {
         Section {
-            Button {
+            // Strava's own button artwork, unaltered, and the wording is theirs too:
+            // "Connect with Strava" (developers.strava.com/guidelines). See `StravaBrand`
+            // for why an app that draws its own version of this risks its application.
+            StravaConnectButton {
                 Task { await store.connectStrava(anchor: StravaConsent.anchor()) }
-            } label: {
-                Label("Connect Strava", systemImage: "link")
             }
             .disabled(store.isReadingStrava)
         } header: {
@@ -102,7 +103,7 @@ struct StravaImportView: View {
                  + "renames or posts anything to your Strava account.\n\n"
                  + "Strava has not reviewed CleanJibe yet, and until it does Strava allows "
                  + "**ten connected riders**. If connecting is refused because the app is "
-                 + "full, that is why — Menu → Support is the way to report it.")
+                 + "full, that is why — Menu → Support & ideas is the way to report it.")
         }
     }
 

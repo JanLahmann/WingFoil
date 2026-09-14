@@ -253,6 +253,30 @@ public enum StravaImport {
         return "\(activity.id)_\(slug.isEmpty ? "session" : slug)_strava.gpx"
     }
 
+    /// The activity id back out of a stored row's `originalFilename`, or nil when that row
+    /// did not come from Strava.
+    ///
+    /// **Why this is read back rather than stored in a column.** Strava's brand guidelines
+    /// require an app that shows Strava data to link back to the activity on Strava, which
+    /// needs the id on a session page (`StravaActivityLink`). The id was never lost: it is
+    /// the first field of the name `filename(for:)` writes, and that name is kept verbatim on
+    /// the row. A migration to add a `stravaActivityId` column would add a schema version,
+    /// a backfill (which would read *this same filename* to fill it), and a nullable field
+    /// every future reader has to reason about — to store a fact the row already carries.
+    ///
+    /// The `_strava.gpx` suffix is what makes it safe: it is written by exactly one function
+    /// and no other door produces it, so a filename that ends in it came from this import and
+    /// a filename that does not is not guessed at. A leading field that is not all digits is
+    /// rejected for the same reason — a rider who renamed a file into that shape by hand gets
+    /// no link rather than a link to somebody else's ride.
+    public static func activityId(originalFilename: String?) -> String? {
+        guard let name = originalFilename, name.hasSuffix("_strava.gpx"),
+              let id = name.split(separator: "_").first, !id.isEmpty,
+              id.allSatisfy(\.isNumber)
+        else { return nil }
+        return String(id)
+    }
+
     // MARK: - Internals
 
     static func reading(_ series: [Double]?, _ index: Int) -> Double? {
