@@ -16,9 +16,14 @@ import WingFoilKit
 ///
 /// The words are the only thing the system's frame cannot show, so they are the only thing
 /// that moves: they fade up under a mark that is already where it was. They are the share
-/// card's footer minus its address — the same call to action a receiver reads on a shared
-/// PNG, which is the line that says what the app is for in the fewest words anyone has
-/// written for it.
+/// card's footer — the same call to action a receiver reads on a shared PNG, which is the
+/// line that says what the app is for in the fewest words anyone has written for it, with
+/// the address under it on a line of its own (`Branding.site`) because the start screen
+/// should say where to find us and not only who we are (Jan, 14 Sep 2026).
+///
+/// They hang off the mark as an **overlay** and grow downwards, which is what keeps the
+/// extra line from costing anything: the mark cannot be pushed off the centre the launch
+/// screen already put it on, whatever is written under it.
 ///
 /// It is one accessibility element labelled "CleanJibe" and it dismisses itself on a clock,
 /// so VoiceOver has one thing to say and nothing to escape from.
@@ -83,6 +88,15 @@ struct SplashView: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
+
+            // The address, quieter than everything above it — *"the start screen should say
+            // where to find us, not just who we are"* (Jan, 14 Sep 2026). It survives
+            // landscape where the tagline does not, because it is one short line rather than
+            // a wrapping sentence, and because the whole point of it is the address.
+            Text(Branding.site)
+                .font(.caption2)
+                .foregroundStyle(Brand.paper.opacity(0.55))
+                .multilineTextAlignment(.center)
         }
         // A width of its own, and this is load-bearing: an overlay is *proposed* the size of
         // the thing it hangs off, which here is a 140 pt square, and "CleanJibe" set in the
@@ -137,8 +151,9 @@ enum Splash {
     /// "analyze your wingfoil sessions free" — the share card's call to action without the
     /// address it ends in. Derived rather than retyped: the card's line is a contract
     /// (`docs/presentation.md`, the footer), and a second literal here would be a second
-    /// place for it to drift. The address is dropped because the reader of this screen is
-    /// already holding the app.
+    /// place for it to drift. The address is split off rather than dropped: it is set on its
+    /// own line under this one, smaller and quieter, so the screen reads mark · CleanJibe ·
+    /// what the app is for · cleanjibe.org.
     static let tagline = Branding.callToAction
         .replacingOccurrences(of: " — " + Branding.site, with: "")
 
