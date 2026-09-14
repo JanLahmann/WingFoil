@@ -43,32 +43,40 @@ def app_id(app):
         return APP_RELEASE
     return os.environ.get(DEV_APP_ID_ENV, "").strip() or APP_DEV
 
-WHATS_NEW = """New here? cleanjibe.org/start — a 20-minute test of the watch routes, and where to send feedback.
+WHATS_NEW = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-0.15.0 (build 51) — the card from the watch, and three small things.
+0.15.0 (build 53) — the beta channel, with its own icon.
 
-- A session that arrived as a summary card from the watch opens as what it is: the card's numbers, and how the full recording follows. It no longer says the file is damaged.
-- The Sessions list's first grouping reads "All" instead of "None".
-- The start screen shows cleanjibe.org under the name.
-- Build 49's crash fix for the watch link is in, of course.
+This is the first build of the BETA channel: the same app that goes to the App Store, plus the doors that are still proving themselves (GPX and TCX files, the Garmin export ZIP, Apple Health, the video export, grouping and filters in Sessions, the Apple Watch app). Settings → Beta lists them and has a "Request a feature" line.
 
-The site caught up too: cleanjibe.org/watches lists every supported watch, cleanjibe.org/whats-new has these notes, and the privacy page names every new data flow (Strava, the one location prompt for the watch map).
+- The icon and the start screen wear a red BETA label, so this build and the App Store one are told apart at a glance.
+- The app follows your phone's text size everywhere now, including the largest accessibility sizes; the dense tables stop growing where they would break.
+- Send feedback from the foot of every page, or Menu → Support & ideas; the mail starts with three blanks for you and the facts below them.
+- Settings → Beta → Send usage report: a mail with counters kept on your phone (imports, syncs, share cards, failures). Nothing is sent unless you send it; delete any line.
+- Sessions can be grouped by month, year or spot, and filtered by source.
+- Strava: the official Connect with Strava button on Import and in Settings; a Strava-imported session links back with View on Strava.
+- The three recording classes (Garmin watch app, any speed FIT, positions only) are named before you import, and in Help.
+- Since 51: a session that arrived as a card from the watch opens on its own numbers; the grouping segment reads "All"; the start screen carries cleanjibe.org.
 
-Please check: after a watch session, does the card row turn into the full session once intervals.icu has the recording (pull down on Sessions)?
+The site: cleanjibe.org has a light theme, a shorter homepage with the card on top, and cleanjibe.org/learn for the long read. On Android, "Add to home screen" installs the analyzer and it appears in the share sheet for .fit, .gpx and .tcx files.
+
+Please check: does the BETA icon show on your home screen? Does the text-size setting (Settings → Display → Text Size) change the app without cutting anything off?
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
-# What the dev variant's testers are told instead. It is a different build of the same version,
-# so saying which one this is matters more than the release notes do.
-WHATS_NEW_INTERNAL = """New here? cleanjibe.org/start — a 20-minute test of the watch routes, and where to send feedback.
+# What the dev app's testers are told instead. It is a second app ("CleanJibe Dev") beside the
+# App Store one, so saying which one this is matters more than the release notes do.
+WHATS_NEW_INTERNAL = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-Dev build 52 (tuning). Same 0.15.0 as public build 51, plus Settings → Tuning: the analysis thresholds on sliders, and the workbench on the turn page.
+CleanJibe Dev, build 54 — the first build of the dev channel as its own app.
 
-Settings → About says "· dev" on this one. Moving any slider re-analyses your library with the new thresholds and marks every screen that shows a tuned number with a "tuned thresholds" chip — those numbers are not comparable with anyone else's. "Reset all" puts the published defaults back.
+It installs BESIDE the App Store/beta app (bundle de.lahmann.wingfoil.dev), with its own library. Its icon is the mark mirrored — wing upper right — and the start screen shows the same. Everything the beta has (build 53's notes), plus: the Garmin link (summary card from the watch, map to the watch with the spot picker and "Where I am now"), windsurf discipline, iPad, and Settings → Tuning with the sliders and the turn workbench. Settings → About says "· dev".
 
-Since 50: a card-only session from the watch opens on its own numbers and says how the recording follows; the grouping segment reads "All"; the start screen carries cleanjibe.org.
+Moving any slider re-analyses your library with the new thresholds and marks every screen that shows a tuned number with a "tuned thresholds" chip — those numbers are not comparable with anyone else's. "Reset all" puts the published defaults back.
 
-Please check: pull down on Sessions once intervals.icu has last night's 23:21 recording — the card row should turn into the full session in place.
+The Garmin link talks to the dev-beta watch build (0.9.10-dev4, mirrored icon on the watch too) as well as the invite and public builds.
+
+Please check: both apps on one phone, told apart by their icons; a map sent to the watch; the text-size setting at its largest.
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
