@@ -1,12 +1,18 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>CleanJibe — wingfoil session analysis: free in your browser, on iPhone</title>
 <meta name="description" content="Drop a .fit, .gpx or .tcx file and see how much of the session you spent on the foil, how long each flight lasted, your speed records, and whether you flew through each jibe, touched down or fell in. Free, no account, nothing uploaded. Plus a Garmin watch app and an iPhone app.">
-<meta name="theme-color" content="#101010">
-<meta name="color-scheme" content="dark">
+<!-- Two theme colours, and `light dark` rather than `dark`: since 14 Sep 2026 the site
+     follows the reader's own system setting (css/style.css, "LIGHT THEME"). Nothing pins
+     `data-theme` on <html> any more — that attribute is what kept the preference from being
+     heard at all — and the dark palette is still the default for a browser that expresses
+     no preference. -->
+<meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f6f3" media="(prefers-color-scheme: light)">
+<meta name="color-scheme" content="light dark">
 
 <!-- The analyzer at /app/ is the installable PWA and owns the manifest; this page is a
      plain document and deliberately does not link one, so "add to home screen" from here
@@ -82,13 +88,14 @@
 </header>
 
 <!-- ------------------------------------------------------------ section nav -->
-<!-- The page is six screens long and a stranger arrives with one of six questions. The row
-     is the page's own table of contents, sticky under the topbar, in the same mono the
-     eyebrow uses so it reads as furniture rather than as another set of buttons. The labels
-     are the headings, word for word — a contents list that paraphrases its own sections is
-     a second vocabulary.
+<!-- Four entries now rather than seven. Jan, 14 Sep 2026: *"The entry web page is quite
+     long."* It was — six screens, and a stranger arriving with one question had to scroll
+     past five answers to somebody else's. The long half moved to /learn/ and this row is the
+     short half's table of contents: what comes out, the three names, which recording gives
+     you what, and what is coming. It is furniture, so it wears the eyebrow's mono rather
+     than the buttons' type, and the labels are the headings word for word.
 
-     Below 720 px the row would take three lines of a phone screen, so it collapses to one
+     Below 720 px the row would take two lines of a phone screen, so it collapses to one
      `Jump to` select. The links stay in the markup and are what a reader without JavaScript
      gets: the `js` class at the foot of this page is what hides them in favour of the
      select, so the nav can never be a control that does nothing. -->
@@ -98,9 +105,6 @@
       <li><a href="#card">What comes out</a></li>
       <li><a href="#pieces">The three pieces</a></li>
       <li><a href="#need">What you need</a></li>
-      <li><a href="#faq">Questions</a></li>
-      <li><a href="#counts">What it counts</a></li>
-      <li><a href="#built">How it is built</a></li>
       <li><a href="#coming">What is coming</a></li>
     </ul>
     <label class="jump">
@@ -110,9 +114,6 @@
         <option value="#card">What comes out</option>
         <option value="#pieces">The three pieces</option>
         <option value="#need">What you need</option>
-        <option value="#faq">Questions</option>
-        <option value="#counts">What it counts</option>
-        <option value="#built">How it is built</option>
         <option value="#coming">What is coming</option>
       </select>
     </label>
@@ -122,21 +123,57 @@
 <main>
 
   <!-- ------------------------------------------------------------------ hero -->
-  <!-- Two halves once there is room for two: the argument on the left, and on the right the
-       thing the argument produces. The drawing that used to sit here was a diagram of what
-       CleanJibe measures; the share card is an actual session that CleanJibe measured, made
-       by the free analyzer in a browser, and it carries its own way in — a QR that a phone
-       camera opens. A stranger now sees the OUTPUT before the prose, which is the order they
-       would meet it in the wild anyway: somebody posts a card, they scan it, they land here.
-       The motif did not go away — it moved to "What it counts", which is where its key was
-       always doing its real work. -->
+  <!-- THE CARD COMES FIRST, in the markup and on a phone. Jan, 14 Sep 2026: *"move the share
+       card to the very top… even better if it has a picture or map background."* It has one
+       now — real OpenStreetMap tiles under a real session, composited by the analyzer's own
+       map switch — so the first thing a stranger meets is a picture of a place with a ride
+       drawn on it, and the prose is underneath, where prose belongs. Above 760 px the two
+       halves sit side by side and the copy takes the left column (`order` in css/home.css),
+       which is the reading order a wide screen wants; the source order is the phone's. -->
   <section class="hero">
+
+    <!-- The bundled example session's own share card, exported through the analyzer's real
+         share dialog (portrait, complete, map background ON) at its full 1080x1350 and
+         reduced to 440. The only thing typed into it is the title; every number is what the
+         analysis produced. Anyone can make this one: "see an example session", then Share
+         card, then the map switch. Rendered headlessly through js/sharecard.js, so it is the
+         product's output rather than a screenshot of it.
+
+         THE TILES ARE BAKED IN. The picture is a static PNG, so a visitor to this page
+         fetches nothing from tile.openstreetmap.org — which is what keeps the privacy page's
+         sentence true: OSM is contacted only when a rider turns the map on inside the
+         analyzer. The credit the licence requires is drawn into the image itself, top right,
+         exactly as the composer draws it.
+
+         `loading="eager"` and `fetchpriority="high"`, because it is the largest-contentful
+         paint and deferring it would leave the hero a hole. `aspect-ratio` off the intrinsic
+         440x550 still reserves the box before the bytes land, so nothing reflows underneath.
+
+         It is never rendered WIDER than its 440 native pixels (420 at the top breakpoint),
+         and that cap is about the QR rather than about sharpness: the code is 33 modules
+         drawn one image pixel per module, so upscaling it past 1:1 is what makes a phone
+         camera hesitate. 420 keeps it decodable across a desk. -->
+    <figure class="hero-card" id="card">
+      <img src="img/share-card.png" width="440" height="550" loading="eager"
+           fetchpriority="high" decoding="async"
+           alt="What CleanJibe makes: a share card for the example session, titled Nago
+                Torbole Wingfoil, 30 August 2026, drawn over an OpenStreetMap picture of the
+                north end of Lake Garda. The whole track with every jibe marked, green where
+                it was flown through and red where it was not; then nine tiles - 10:45 min,
+                2.6 km, 7.83 kn average, 13.47 kn best 2 s, 8 flew and 0 touched down and 2
+                fell in of 10 jibes with 5 clean, best streaks 8 flew and 8 dry, 45.4 dry
+                jibes per hour, 28.3 clean jibes per hour, 11.3 swims per hour - and a footer
+                carrying the CleanJibe mark, the offer, and a QR code to cleanjibe.org.">
+      <figcaption>
+        <b>This is what comes out.</b> One real session, read in a browser — and nothing left
+        the device to make it.
+      </figcaption>
+    </figure>
+
     <div class="hero-copy">
     <!-- The hook is the free thing that works in ten seconds, not the architecture. A
          stranger arrives holding (at most) a .fit file and one question; the headline asks
-         it back, and the first CTA answers it without an install, an account or a watch.
-         "Read the source" moved to the footer, where the two people who want it will find
-         it: it was competing with the only button that matters. -->
+         it back, and the doors answer it without an install, an account or a watch. -->
     <!-- The mark at a size you can actually see it, beside the eyebrow rather than above
          the headline: the topbar's 26 px tile is navigation furniture and reads as a
          favicon, and this page had no brand presence of its own between it and the footer.
@@ -160,31 +197,23 @@
       how much of it you spent on the foil, how long each flight lasted, your speed records,
       and — for every turn — whether you flew through it, touched down, or fell in.
     </p>
-    <p class="lede">
-      Two ways in, and neither costs anything. The browser analyzer takes a
-      <code>.fit</code>, <code>.gpx</code> or <code>.tcx</code> file and hands you the whole
-      session back in a few seconds, with nothing to install. The beta is the pair of apps: a
-      watch app that shows the same numbers live on your wrist, and an iPhone app that keeps
-      every session you have ever ridden. Each one works on its own.
-    </p>
 
-    <!-- TWO EQUAL DOORS, because the page now has two products to hand over and the old
-         hero only had one. A stranger arrives either wanting to try something in ten seconds
-         or wanting the app on his phone, and the page used to answer only the first — the
-         beta was four screens down in a card. Both are `.btn primary`: neither is the
-         consolation prize. The example moved into the note under them, where it belongs —
-         it is a way of using the analyzer, not a third door. -->
+    <!-- TWO EQUAL DOORS, because the page has two products to hand over. A stranger arrives
+         either wanting to try something in ten seconds or wanting the app on his phone, and
+         both are `.btn primary`: neither is the consolation prize. The example lives in the
+         note under them, where it belongs — it is a way of using the analyzer, not a third
+         door. -->
     <p class="cta">
-      <!-- `#example` is a real route, not an anchor: js/app.js runs the bundled session on
-           arrival, so this link delivers the example rather than a drop target. -->
       <!-- The hero CTAs are the counted doors: umami's declarative form, so a blocked script
            leaves an ordinary link behind. -->
       <a class="btn primary" href="invite/" data-umami-event="beta-cta-hero">Get the beta</a>
+      <!-- `#example` is a real route, not an anchor: js/app.js runs the bundled session on
+           arrival, so that link delivers the example rather than a drop target. -->
       <a class="btn primary" href="app/" data-umami-event="analyze-cta">Try the analyzer</a>
-      <!-- The note is longer than the one line it used to be, and `.cta` is a wrapping flex
-           row: without a full-width basis it would set itself as a narrow ragged column
-           beside the two buttons at desktop widths. One declaration, stated where it is
-           needed, rather than a class in home.css for a single span. -->
+      <!-- `.cta` is a wrapping flex row: without a full-width basis the note would set
+           itself as a narrow ragged column beside the two buttons at desktop widths. One
+           declaration, stated where it is needed, rather than a class in home.css for a
+           single span. -->
       <span class="cta-note" style="flex-basis: 100%">
         Free. No account. The analyzer runs in your browser — the file is never uploaded, and
         there is <a href="app/#example" data-umami-event="example-cta">an example session</a>
@@ -198,49 +227,16 @@
       <strong>Installed?</strong>
       <a href="start/" data-umami-event="home-start">Start here: your first session on the
       water</a> — charge, record, save, and what you should see on the phone afterwards.
-      There is a short dry run at the end of it if you cannot wait for wind.
     </p>
     </div>
-
-    <!-- The bundled example's own share card — the same session the phone shot further down
-         shows, which is why the two carry the same name — exported through the analyzer's
-         real share dialog (portrait, complete) at its full 1080x1350 and reduced to 440.
-         The only thing typed into it is the title; everything else is what the analysis
-         produced. Anyone can make this one: "see an example session", then Share card.
-         Rendered headlessly through js/sharecard.js, so it is the product's output rather
-         than a screenshot of it.
-
-         Above the fold now, so the three attributes that kept it cheap down the page are
-         inverted: `loading="eager"` and `fetchpriority="high"` instead of lazy, because it
-         is the largest-contentful paint and deferring it would leave the hero a hole.
-         `aspect-ratio` off the intrinsic 440x550 still reserves the box before the bytes
-         land, so nothing reflows underneath it.
-
-         It is never rendered WIDER than its 440 native pixels (420 at the top breakpoint),
-         and that cap is about the QR rather than about sharpness: the code is 33 modules
-         drawn one image pixel per module, so upscaling it past 1:1 is what makes a phone
-         camera hesitate. 420 keeps it decodable across a desk. -->
-    <figure class="hero-card" id="card">
-      <img src="img/share-card.png" width="440" height="550" loading="eager"
-           fetchpriority="high" decoding="async"
-           alt="What CleanJibe makes: a share card for the example session, titled Nago
-                Torbole Wingfoil, 30 August 2026. The whole track with every jibe marked,
-                green where it was flown through and red where it was not; then eight tiles
-                - 10:45 min, 2.6 km, 7.71 kn average, 13.47 kn best 2 s, 8 flew and 0 touched
-                down and 2 fell in of 10 jibes, best streaks 8 flew and 8 dry, 44.7 dry jibes
-                per hour, 11.2 swims per hour - and a footer carrying the CleanJibe mark, the
-                offer, and a QR code to cleanjibe.org.">
-      <figcaption>
-        <b>This is what comes out.</b>
-        One real session, read in a browser: every jibe judged, the numbers it actually did,
-        and a code back to here for whoever it lands in front of. Nothing left the device to
-        make it.
-      </figcaption>
-    </figure>
 
   </section>
 
   <!-- --------------------------------------------------------------- pieces -->
+  <!-- One line each. The screenshots and the full feature lists moved to /learn/ with the
+       rest of the long half: three names and what each one is FOR is the whole of what this
+       section owes a stranger, and the card above has already shown what any of them
+       produces. -->
   <section class="home-section" id="pieces">
     <h2>The three pieces</h2>
     <p class="section-lede">
@@ -249,15 +245,6 @@
       thing wherever you read it. Use any one of them on its own.
     </p>
 
-    <!-- One picture per card, above the bullets. The page had no photograph or screenshot
-         of anything, so a stranger could read every word of it and still not know what
-         they would be looking at. Each shot is real and unretouched: the watch page comes
-         from the Connect IQ simulator harness (garmin/screenshots), the phone from the iOS
-         simulator's own example session (UI_LOAD_EXAMPLE / UI_OPEN_SESSION, docs/testing.md),
-         and the browser one from the analyzer running that same example. All three are
-         square so the row stays a row; all three are quantized to a small palette (the
-         social-card recipe in web/README.md) and lazily loaded, because none of them is
-         above the fold. -->
     <div class="pieces">
 
       <article class="panel piece">
@@ -266,20 +253,9 @@
           <span class="status">open beta · Connect IQ</span>
         </div>
         <p class="what">Connect IQ watch app — 39 watches, fenix 8 down to vívoactive</p>
-        <figure class="shot">
-          <img src="img/watch-main.png" width="454" height="454" loading="lazy" decoding="async"
-               alt="The watch's riding page: best 10 s speed 24.5 km/h, a turn tally of 35 flew,
-                    8 touched down, 8 fell in, and a dry streak of 7 of 11.">
-          <figcaption>On the water: speed, turn tally, dry streak.</figcaption>
-        </figure>
         <ul>
-          <li>Knows when the board is up on the foil, and counts every flight and touchdown as you ride.</li>
-          <li>Scores each jibe as flew through, touched down or fell in — and keeps your dry streak running.</li>
-          <li>Clean jibes and CPH on the wrist, with their own buzz, beside the tally.</li>
-          <li>Speed records live: best 2 s and best 10 s, with a PB alert.</li>
-          <li>Works out the wind direction by itself after a few minutes of riding.</li>
-          <li>Counts pump strokes and takeoff attempts from the wrist accelerometer.</li>
-          <li>Records as a Windsurf activity, so it no longer lands in Garmin Connect as a walk.</li>
+          <li>Foil time, every flight, a verdict on every jibe and your dry streak — live on
+              the wrist, while you ride.</li>
         </ul>
         <p class="piece-foot">
           <a class="btn ghost" href="invite/" data-umami-event="beta-garmin">Get the beta</a>
@@ -293,23 +269,13 @@
           <span class="status">open beta · TestFlight</span>
         </div>
         <p class="what">Your library, the replay and the season, on the phone in your pocket</p>
-        <figure class="shot">
-          <img src="img/phone-session.png" width="560" height="560" loading="lazy" decoding="async"
-               alt="A session on the phone: duration, distance, average and best 2 s speed, the
-                    flew / touched down / fell in tally, best streaks, and dry jibes per hour.">
-          <figcaption>Every session, re-analysed on the phone.</figcaption>
-        </figure>
+        <!-- The `beta` pill is written from docs/channels.md and from nowhere else. A feature
+             with no pill is in the App Store release; the clause it sits after is the half of
+             this line that is not. -->
         <ul>
-          <li>Every session in one library, each one re-analyzed on the phone — grouped by
-              month, year or spot, and narrowed by a filter when there are a hundred of them.</li>
-          <li>Export the session as a short video: the map draws itself along your track, the
-              numbers land, and it shares like any other clip.</li>
-          <li>A share card for any session: the numbers, the track, and a link back here.</li>
-          <li>Imports take FIT, GPX and TCX — from intervals.icu, from Apple Health, from
-              Strava, or straight out of any vendor app through the iOS share sheet.</li>
-          <li>Records, trends and the gear you were on, across everything you have ridden.</li>
-          <li>Something off? Menu &rarr; Support writes the report for you — build, phone,
-              watch, library — and you press Send.</li>
+          <li>Every session you have ever ridden, re-analyzed on the phone, with its records,
+              its trends and a share card — plus GPX and TCX imports, the Apple Watch
+              recorder and the session video.<span class="tag beta">beta</span></li>
         </ul>
         <p class="piece-foot"><a class="btn ghost" href="invite/#testflight" data-umami-event="beta-testflight">Get the beta</a></p>
       </article>
@@ -320,38 +286,27 @@
           <span class="status live">live now</span>
         </div>
         <p class="what">Any browser, any phone — nothing to install</p>
-        <figure class="shot">
-          <img src="img/web-report.png" width="560" height="560" loading="lazy" decoding="async"
-               alt="The analyzer's report in a browser: the session's key numbers above the
-                    track, drawn with the flown stretches picked out and every turn marked.">
-          <figcaption>The same analysis, free, in any browser.</figcaption>
-        </figure>
         <ul>
-          <li>Drop in a <code>.fit</code>, <code>.gpx</code> or <code>.tcx</code> file.
-              Garmin's own Windsurf recordings work, and so do files from other wingfoil
-              Connect IQ apps.</li>
-          <li>Keep a library of your sessions, with records and trends across all of them.</li>
-          <li>Make a share card, or hand a friend the analysis of the file they sent you —
-              their sessions stay out of your records.</li>
-          <li>The analysis runs inside your browser tab — the file is never uploaded to any server.</li>
-          <li>Free, no account, no sign-up.</li>
-          <li>No file to hand? There is an example session one click inside.</li>
+          <li>Drop a <code>.fit</code>, <code>.gpx</code> or <code>.tcx</code> in and the
+              whole session comes back — in your own tab, uploaded nowhere. On Android it
+              installs from Chrome's menu and joins the share sheet.</li>
         </ul>
         <p class="piece-foot"><a class="btn primary" href="app/" data-umami-event="analyze-cta-panel">Open the analyzer</a></p>
       </article>
 
     </div>
 
-    <!-- The share card used to sit here, as the row's output under the row. It is the hero
-         now, so the picture is not repeated: one 99 KB image twice on one page buys nothing
-         and costs a stranger the download twice on a cold cache. What stays is the sentence
-         that connected it to the row, because "all three make the same card" is a claim
-         about the three pieces and the hero cannot make it from up there. -->
+    <!-- The legend, once per page that carries a pill. It says which channel the word means
+         and nothing else; docs/channels.md is where the list itself is decided. -->
+    <p class="beta-legend">
+      <span class="tag beta">beta</span> in the public beta today, not yet in the App Store
+      release.
+    </p>
+
     <p class="section-lede pieces-foot">
-      All three make <a href="#card">the card at the top of this page</a>: any session, from
-      the watch, the phone or the browser, becomes one picture — the track with every jibe
-      judged, the numbers that session actually did, and a code back to here for whoever it
-      lands in front of. Nothing leaves your device to make it.
+      <strong><a href="learn/" data-umami-event="learn-more">More about how it works</a></strong>
+      — what each piece does in full, the questions people actually ask, the numbers it counts,
+      and what it is built out of.
     </p>
   </section>
 
@@ -398,7 +353,7 @@
                 absent, never as zero</td>
           </tr>
           <tr>
-            <td class="l stack-lead">Class B+ · Apple Watch app</td>
+            <td class="l stack-lead">Class B+ · Apple Watch app<span class="tag beta">beta</span></td>
             <td class="l" data-th="You record with">The CleanJibe Apple Watch app: class b
                 speed, plus the 50&nbsp;Hz wrist accelerometer</td>
             <td class="l" data-th="You get">Everything class b gets, and pump strokes and
@@ -420,6 +375,11 @@
       </table>
     </div>
 
+    <p class="beta-legend">
+      <span class="tag beta">beta</span> in the public beta today, not yet in the App Store
+      release.
+    </p>
+
     <p class="note">
       Which class a watch lands in, brand by brand, is on
       <a href="watches/#classes">Which watch</a> — including the phone-only route, which is
@@ -428,300 +388,13 @@
     </p>
   </section>
 
-  <!-- ------------------------------------------------------------------ faq -->
-  <!-- This was "What you need": three honesty cards answering the three questions a stranger
-       had to guess at ("I need the watch app", "there is nothing here for Android"). It is
-       six questions now and worded as questions, because that is how they arrive — in mails,
-       in issues, and on the beach. Every answer is three or four sentences and ends
-       somewhere a reader can go: /watches/, /privacy/, /invite/, the analyzer.
-
-       `.terms` rather than `.claims`: a question and its answer are a definition list, and
-       the two-column term grid is the shape this page already uses for eight of them. -->
-  <section class="home-section" id="faq">
-    <h2>Questions people actually ask</h2>
-    <dl class="terms">
-      <div class="term">
-        <dt>Which watches?</dt>
-        <dd>
-          The CleanJibe watch app runs on 39 Garmin products — the fenix 8 and fenix 7
-          families, epix 2, Forerunner 255/265/955/965/570/970, MARQ 2, Enduro 3, D2, Descent
-          Mk3, and, new in 0.9.10 and untested on real watches so far, Venu, vívoactive and
-          Instinct 3 AMOLED. <a href="watches/">Which watch</a> lists all of them, family by
-          family, and says which ones nobody has ridden yet. An Apple Watch has its own
-          CleanJibe app that records straight to the phone. Any other watch works too —
-          <a href="#need">what you get depends on the file</a>, not on the brand.
-        </dd>
-      </div>
-      <div class="term">
-        <dt>Android?</dt>
-        <dd>
-          There is no Android app and the analyzer does not need one: open
-          <a href="app/">cleanjibe.org/app</a> in your phone browser and it works the same,
-          library, records and trends included. Everything is stored in that browser, on that
-          phone. What Android does not get is the iPhone app's side of things — the video
-          export, and the map pushed to a Garmin.
-        </dd>
-      </div>
-      <div class="term">
-        <dt>Polar, Suunto, COROS — or an Apple Watch?</dt>
-        <dd>
-          All of them work. Polar, Suunto and COROS sessions come in either through
-          intervals.icu or straight out of the vendor's own app with <em>Open in
-          CleanJibe</em> in the iOS share sheet; take the <code>.fit</code> where the app
-          offers one, because a FIT carries the speed your watch measured and a GPX does not —
-          that is <a href="#need">class b rather than class c</a>. An Apple Watch works two
-          ways: Apple's own Workout app, read through Apple Health, or CleanJibe's watch app
-          recording straight to the phone — and only the second one reads the wrist, so it is
-          the Apple Watch route that gives you pump strokes and takeoff attempts. The table on
-          <a href="watches/">Which watch</a> has the whole of it.
-        </dd>
-      </div>
-      <!-- The phone-only route, asked every time somebody without a watch reads this page.
-           It is a real route and it is class c, so the answer is instructions rather than a
-           shrug — the full version, with the Android half, is on /watches/#none. -->
-      <div class="term">
-        <dt>No watch at all?</dt>
-        <dd>
-          A phone in a waterproof pouch on your body records a perfectly good track. On an
-          iPhone the simplest route is the <strong>Strava</strong> app — record there, then
-          Import &rarr; Strava in CleanJibe, and no file has to move; if you would rather keep
-          a file, <strong>Open GPX Tracker</strong> is free and shares its <code>.gpx</code>
-          straight into CleanJibe or into <a href="app/">the analyzer</a>. On Android, record
-          with Strava, <strong>OsmAnd</strong> or <strong>GPSLogger</strong> and drop the GPX
-          into the analyzer in your phone browser. Start it before you launch, stop it ashore.
-          This is <a href="#need">class c</a>: speed records estimated from positions and
-          marked uncertified, and no pump strokes. Step by step on
-          <a href="watches/#none">Which watch</a>.
-        </dd>
-      </div>
-      <div class="term">
-        <dt>Strava?</dt>
-        <dd>
-          Yes, on the iPhone app: Import &rarr; Strava, sign in on Strava's own consent page,
-          and pick the sessions you want. CleanJibe only ever <strong>reads</strong> — it
-          writes nothing back to your account — and Strava hands over positions rather than the
-          speed your watch measured, so speed records from a Strava import are marked
-          uncertified. Until Strava reviews the app it allows ten connected riders; if you are
-          told the app is full, tell us. The details are on the
-          <a href="privacy/#app-network">privacy page</a>.
-        </dd>
-      </div>
-      <div class="term">
-        <dt>What is a clean jibe?</dt>
-        <dd>
-          A jibe you flew all the way through — no touchdown, no swim — and came out of still
-          carrying your speed, with the ten seconds after it quiet too. It is the strictest of
-          the verdicts and the one this thing is named after: <em>flew through</em> is keeping
-          the foil, <em>dry</em> is staying out of the water, <em>clean</em> is both plus the
-          speed. CPH, clean jibes per hour, sits beside JPH and WPH on every screen, and the
-          exact thresholds are written down in the
-          <a href="https://github.com/JanLahmann/WingFoil/blob/main/docs/algorithms.md" rel="noopener">public
-          repository</a> rather than hidden in a product.
-        </dd>
-      </div>
-      <div class="term">
-        <dt>Where does my data go?</dt>
-        <dd>
-          Nowhere. There is no CleanJibe account, no CleanJibe login and no CleanJibe server —
-          the analysis runs on the device you are holding, in the browser tab or on the phone,
-          and your library lives there too. The exceptions are the ones you switch on yourself
-          (intervals.icu, Strava, a map drawn by Apple Maps) and they are all named, one by
-          one, on the <a href="privacy/">privacy page</a>.
-        </dd>
-      </div>
-    </dl>
-  </section>
-
-  <!-- ----------------------------------------------------------- vocabulary -->
-  <section class="home-section" id="counts">
-    <h2>What it counts</h2>
-    <p class="section-lede">
-      The same handful of numbers on the wrist, on the phone and on this site — so a session
-      means the same thing wherever you read it.
-    </p>
-
-    <!-- The motif came down from the hero to sit here, above the list it is the key to. It
-         was never decoration: it is a drawn sentence in the same vocabulary the eight
-         entries below define, and the four labels under it are the legend for every mark
-         the apps draw. In the hero it had to argue for the product; here it only has to
-         explain a word, which is the job it was always doing. The share card that replaced
-         it upstairs shows the same three verdicts on a real map — one picture of the idea,
-         one of the thing.
-
-         What it draws: an off-foil track with the flights drawn on it and the three turn
-         outcomes marked in the presentation tokens themselves (design/tokens.json —
-         green disc flew, amber triangle touched down, red cross fell in), exactly as the
-         apps draw them. Inline SVG, ~2.5 KB, no request, no image to scale badly.
-
-         IT IS NOT A DRAWING. It is 6 min 40 s of a real session, traced — seconds
-         1145 to 1545 of Nago-Torbole, 1 September 2026, 16:11, the third and last ride of
-         that day: 75 minutes, 16.3 km, 54 jibes, 45 of them flown through. Nine of those
-         jibes are inside this window, over 1715 m of sailing in 277 x 57 m of water.
-
-         What was done to it, and nothing else was:
-
-           - ROTATED. The frame's left-to-right runs 284.5 degrees true, which is the axis
-             he was reaching on, so the reaches lie across the box instead of up it.
-           - SCALED by one number in both axes: 0.547 m per unit. No vertical exaggeration,
-             which is luck rather than virtue — that stretch of water happens to be 4.86
-             wide for 1 tall and the frame is 5:1, so it fitted. The loops are as round as
-             they were.
-           - SIMPLIFIED, Douglas-Peucker at 1.2 m — about the width of the board, and the
-             smallest tolerance that gets the path under 2.5 KB. It takes out GPS jitter
-             and nothing you could see.
-
-         What was NOT done is the point of the rewrite. The version before this one laid
-         the reaches on even horizontal bands, spaced the jibe loops by hand and drew a
-         steady 4.3-degree upwind ladder, all of it reasoned from a real file but none of
-         it read off one. It looked like a diagram of wingfoiling. The uneven spacing is
-         the realism: the reach that runs three-quarters of the frame and the one that gives
-         up early, the two loops that nearly touch and the gap after them, the crossing in
-         the middle where he came back over his own line. A rider recognises his own water
-         by exactly that, and a drawn ladder is the one thing that reads as clip art.
-
-         The teardrop loops are still the reason the pattern says "wingfoil" rather than
-         "boat" or "snake" — you bear away, carve, and come out heading back up, so the exit
-         cuts across the entry short of the tip. They are teardrops here because that is
-         what the file does, not because anything exaggerated them.
-
-         The marks are read, not placed: seven green discs on jibes flown through, the amber
-         triangle on the touchdown at second 1379, the red cross on the jibe he fell in at
-         1268. Both greys are drawn because they happened — the long one at the left is the
-         26 seconds off the foil after that touchdown, and the shorter one under the middle
-         of the picture, mostly overdrawn by later reaches, is the 81-second swim out of the
-         fall. Neither was smoothed into the story; that is just where he was. The only
-         chosen thing left in the picture is WHICH two moments carry the direction chevrons;
-         their positions and headings are the track's, but the moments were picked for the
-         emptiest bit of line. -->
-
-    <div class="motif">
-      <!-- The colours come from classes in css/home.css rather than from `stroke="var(…)"`:
-           a custom property in an SVG *presentation attribute* is not reliably honoured,
-           whereas the same property applied by a stylesheet rule always is.
-
-           The four path strings below are generated, and the iOS welcome screen
-           (ios/WingFoil/Features/Onboarding/WelcomeView.swift) and the share card
-           (web/tools/social_card.html) carry the same strings character for character —
-           one table, three renditions, so `grep` catches any drift. -->
-      <svg viewBox="0 0 640 128" role="img" aria-label="A four-minute excerpt from a real session's track: five jibes flown through, one touched down, and one fallen in with the swim that followed.">
-        <!-- the whole excerpt, off the foil -->
-        <path class="m-track" d="M215 69Q162 89 140 94Q118 100 111 101Q105 102 91 100Q77 98 71 95Q65 93 62 87Q60 82 60 75Q60 69 63 64Q67 59 89 47Q112 35 130 34Q149 34 180 37Q211 40 248 38Q286 37 355 52Q424 67 455 67Q487 67 499 63Q511 60 515 55Q520 51 522 45Q524 39 523 33Q523 28 519 24Q516 20 507 16Q498 12 479 13Q461 15 447 18Q433 22 360 55Q287 88 273 91Q260 95 253 96Q247 98 232 97Q218 96 205 89Q192 83 189 75Q187 68 187 61Q188 54 197 45Q207 37 218 35Q230 33 243 35Q256 37 290 49Q324 62 375 71Q427 81 466 94Q506 108 527 112Q548 116 560 114Q573 112 576 107Q580 102 580 96Q580 91 577 87Q575 83 557 71Q539 59 525 54Q512 50 489 54Q467 58 396 81Q326 104 306 107Q286 111 266 110Q246 109 224 111Q203 114 196 110Q189 107 183 101Q178 95 178 82Q179 70 182 66Q186 62 205 54Q224 47 236 46Q249 46 270 48Q292 51 309 57Q326 64 330 68Q334 72 328 67Q323 62 312 60Q302 58 299 45Q296 33 299 35Q303 38 304 36Q306 34 300 28Q294 23 296 25Q298 27 296 28Q295 30 298 30Q301 30 305 29Q309 28 313 22Q317 17 324 18Q332 19 339 16Q346 14 360 13L374 13"/>
-
-        <!-- and the parts of it he was flying -->
-        <path class="m-foil" d="M215 69Q162 89 140 94Q118 100 111 101Q105 102 91 100Q77 98 71 95Q65 93 62 87Q60 82 60 75Q60 69 63 64Q67 59 89 47Q112 35 130 34Q149 34 180 37Q211 40 248 38Q286 37 355 52Q424 67 455 67Q487 67 499 63Q511 60 515 55Q520 51 522 45Q524 39 523 33Q523 28 519 24Q516 20 507 16Q498 12 479 13Q461 15 447 18Q433 22 360 55Q287 88 273 91Q260 95 253 96Q247 98 232 97Q218 96 205 89Q192 83 189 75Q187 68 187 61Q188 54 197 45Q207 37 218 35Q230 33 243 35Q256 37 290 49Q324 62 375 71Q427 81 466 94Q506 108 527 112Q548 116 560 114Q573 112 576 107Q580 102 580 96Q580 91 577 87Q575 83 557 71Q539 59 525 54Q512 50 489 54Q467 58 396 81Q326 104 306 107Q286 111 266 110Q246 109 224 111Q203 114 196 110Q189 107 183 101Q178 95 177 88Q177 82 178 76Q179 70 182 66Q186 62 197 56Q209 51 223 48Q238 45 257 47Q277 49 301 56Q326 64 330 68L334 72"/>
-
-        <!-- which way he went — set off the lines rather than on them, where a 2 px
-             chevron inside a 5 px stroke just reads as a nick in the paint -->
-        <g class="m-dir">
-          <path d="M-4 -5 L2 0 L-4 5" transform="translate(98,53) rotate(-33.2)"/>
-          <path d="M-4 -5 L2 0 L-4 5" transform="translate(435,32) rotate(168.1)"/>
-        </g>
-
-        <!-- flew through -->
-        <circle class="m-flew" cx="67" cy="59" r="7"/>
-        <circle class="m-flew" cx="508" cy="15" r="7"/>
-        <circle class="m-flew" cx="207" cy="37" r="7"/>
-        <circle class="m-flew" cx="179" cy="70" r="7"/>
-        <!-- touched down -->
-        <path class="m-touch" d="M560 66 L567 79 L553 79 Z"/>
-        <!-- fell in -->
-        <g class="m-fell">
-          <path d="M328 66 L340 78"/><path d="M340 66 L328 78"/>
-        </g>
-      </svg>
-      <p class="motif-key">
-        <span class="k-foil"><i></i>on the foil</span>
-        <span class="k-flew"><i></i>flew through</span>
-        <span class="k-touch"><i></i>touched down</span>
-        <span class="k-fell"><i></i>fell in</span>
-      </p>
-    </div>
-    <dl class="terms">
-      <div class="term">
-        <dt>Foil&nbsp;%</dt>
-        <dd>The share of the session actually flying, rather than merely moving.</dd>
-      </div>
-      <div class="term">
-        <dt>Flights &amp; touchdowns</dt>
-        <dd>One takeoff starts a flight; a touchdown or a swim ends it. Both are counted.</dd>
-      </div>
-      <div class="term">
-        <dt>Jibe outcomes</dt>
-        <!-- Where the name is explained, now that the hero's aside about it is gone. One
-             clause, in the entry that already defines the three verdicts, rather than a
-             paragraph of its own between the headline and the button. -->
-        <dd>
-          Every turn gets a verdict:
-          <span class="swatch" style="background: var(--good)" aria-hidden="true"></span>flew through,
-          <span class="swatch" style="background: var(--warn)" aria-hidden="true"></span>touched down,
-          <span class="swatch" style="background: var(--bad)" aria-hidden="true"></span>fell in.
-          A clean jibe is one you fly all the way through, carrying your speed.
-        </dd>
-      </div>
-      <div class="term">
-        <dt>Dry streak</dt>
-        <dd>How many jibes in a row you stayed out of the water — and the best run of the day.</dd>
-      </div>
-      <div class="term">
-        <dt>JPH</dt>
-        <dd>Dry jibes per hour. Falling in more often cannot raise it.</dd>
-      </div>
-      <div class="term">
-        <dt>CPH</dt>
-        <dd>Clean jibes per hour. The strict one, beside JPH rather than instead of it.</dd>
-      </div>
-      <div class="term">
-        <dt>WPH</dt>
-        <dd>Swims per hour. The number nobody wants, kept honest anyway.</dd>
-      </div>
-      <div class="term">
-        <dt>Speed records</dt>
-        <dd>GP3S-style windows: best 2 s, best 1 NM, alpha 500, best hour.</dd>
-      </div>
-      <div class="term">
-        <dt>Pump &amp; takeoff effort</dt>
-        <dd>Strokes counted off the accelerometer, and which attempts got you flying.</dd>
-      </div>
-    </dl>
-  </section>
-
-  <!-- --------------------------------------------------------------- claims -->
-  <section class="home-section" id="built">
-    <h2>How it is built</h2>
-    <!-- Two cards, not three. "One engine, everywhere" is now the first thing the pieces
-         section says, and a claim made twice on one page reads as a claim being sold. -->
-    <div class="claims">
-      <article class="panel claim">
-        <h3>Your file stays yours</h3>
-        <p>
-          The analyzer has no server to upload to. Your recording is read, analyzed and drawn
-          inside your own browser tab: no account, no upload, nothing to sign up for.
-          <!-- This used to end "no tracking", which stopped being exactly true the day a
-               cookieless page counter went into the head. The sentence it is making —
-               nothing about your ride goes anywhere — is untouched, and the counter is
-               named in the footer rather than quietly excluded from a claim. -->
-          These pages count visits with a cookie-free page counter that never sees your
-          session; nothing about your ride goes anywhere.
-        </p>
-      </article>
-      <article class="panel claim">
-        <h3>The thresholds are published</h3>
-        <p>
-          What counts as a flight, a touchdown or a fallen jibe is written down in the public
-          repository rather than hidden in a product, so you can check the numbers against
-          what you remember and argue with the ones that are wrong.
-        </p>
-      </article>
-    </div>
-  </section>
-
   <!-- ------------------------------------------------------------- what is coming -->
   <!-- Written from docs/channels.md and from nowhere else: that file decides which feature
        is in which channel, and this list, the app's Beta section and the store texts are all
        copies of it. Two lists, because there are two honest answers — the beta list is a
-       thing a reader can have today by installing the beta, and the dev list is a thing
-       nobody outside a handful of testers can have at all. Saying so plainly is cheaper than
-       a roadmap nobody can hold us to. -->
+       thing a reader can have today by installing the beta, and the bench is a thing nobody
+       outside a handful of testers can have at all. Saying so plainly is cheaper than a
+       roadmap nobody can hold us to. -->
   <section class="home-section" id="coming">
     <h2>Curious about what is coming</h2>
     <p class="section-lede">
@@ -730,7 +403,7 @@
     </p>
     <div class="claims">
       <article class="panel claim">
-        <h3>In the beta today</h3>
+        <h3>In the beta today<span class="tag beta">beta</span></h3>
         <p>
           Install the beta and you have all of it, this afternoon — there is no waiting list
           and no second install:
@@ -772,7 +445,7 @@
       </article>
     </div>
 
-    <!-- The one paragraph this whole site is asking for, in the same words on five pages:
+    <!-- The one paragraph this whole site is asking for, in the same words on six pages:
          a beta with no feedback is a private build with extra steps. Ideas are named first
          among equals because bug reports arrive by themselves and wishes do not. -->
     <p class="note" id="tell-us">
@@ -790,12 +463,14 @@
 <footer>
   <p>CleanJibe — open wingfoil tracking. Watch app, iPhone app, browser analyzer.</p>
   <!-- Both betas are open now — the watch app from the Connect IQ store, the phone app
-       from a public TestFlight link — so the footer's job is the two doors a stranger
-       needs: where the installs are (/invite/), and where a report goes. -->
+       from a public TestFlight link — so the footer's job is the doors a stranger needs:
+       the long half of this page (/learn/), where the installs are (/invite/), and where a
+       report goes. -->
   <p>
     Source, issues and the detection thresholds:
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">github.com/JanLahmann/WingFoil</a>
     (Apache-2.0; the CleanJibe name and mark are not part of the license)
+    · <a href="learn/">More about how it works</a>
     · <a href="invite/">Get the beta</a>
     · <a href="start/">Getting started</a>
     · <a href="watches/">Which watch</a>
@@ -811,18 +486,15 @@
   <!-- The one measurement this site takes, said out loud. umami is cookieless and stores no
        identifier, so there is no consent banner to show and nothing to opt out of; saying so
        in a line is cheaper than a banner and more honest than silence. It does NOT weaken
-       the analyzer's promise one section up — the .fit file is read in the browser tab and
-       still never leaves the device. What umami sees is that a page was opened.
+       the analyzer's promise — the .fit file is read in the browser tab and still never
+       leaves the device. What umami sees is that a page was opened.
 
        "and feature counts" earned its two words the day the buttons started counting: a
        handful of named events (a CTA pressed, an analysis finished, a card made) with a
-       name and nothing else — no filename, no number off a session, nothing about a rider.
-       A line that still said only "usage stats" would be true-ish, and true-ish is what
-       "No tracking" was before it came out of the sentence above. -->
-  <!-- The privacy page is reached from the footer of all three pages, in the same place on
-       each: it is the line a reader goes looking for, and the fineprint line is already the
-       one that talks about measurement. It says in full what this line says in eleven
-       words, plus everything the iPhone app does. -->
+       name and nothing else — no filename, no number off a session, nothing about a rider. -->
+  <!-- The privacy page is reached from the footer of every page, in the same place on each:
+       it is the line a reader goes looking for, and the fineprint line is already the one
+       that talks about measurement. -->
   <p class="fineprint">
     Anonymous, cookie-free usage stats and feature counts by umami.
     · <a href="privacy/">Privacy</a>
