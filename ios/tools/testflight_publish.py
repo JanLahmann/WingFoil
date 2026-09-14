@@ -61,15 +61,16 @@ Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or
 # App Store one, so saying which one this is matters more than the release notes do.
 WHATS_NEW_INTERNAL = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-CleanJibe Dev, build 54 — the first build of the dev channel as its own app.
+CleanJibe Dev, build 57 — the widgets learn to talk in a dry week.
 
-It installs BESIDE the App Store/beta app (bundle de.lahmann.wingfoil.dev), with its own library. Its icon is the mark mirrored — wing upper right — and the start screen shows the same. Everything the beta has (build 53's notes), plus: the Garmin link (summary card from the watch, map to the watch with the spot picker and "Where I am now"), windsurf discipline, iPad, and Settings → Tuning with the sliders and the turn workbench. Settings → About says "· dev".
+Three home-screen widgets now (long-press the home screen → + → CleanJibe Dev):
+- Last session: the last session you actually RODE (a dry test no longer wins), the spot as its title, and the track drawn behind the numbers in the medium and large sizes.
+- This week: when the last seven days hold no session it becomes "since your last session" — days since, the season so far, and one fact that changes every day: the season's best 2 s, the longest flight, the best JPH, the longest dry streak, or the same week in an earlier year.
+- Personal bests: best 2 s, longest flight, best JPH, each with spot and date.
 
-Moving any slider re-analyses your library with the new thresholds and marks every screen that shows a tuned number with a "tuned thresholds" chip — those numbers are not comparable with anyone else's. "Reset all" puts the published defaults back.
+Everything else as in build 54: the mirrored icon, the Garmin link, windsurf, iPad, Settings → Tuning.
 
-The Garmin link talks to the dev-beta watch build (0.9.10-dev4, mirrored icon on the watch too) as well as the invite and public builds.
-
-Please check: both apps on one phone, told apart by their icons; a map sent to the watch; the text-size setting at its largest.
+Please check: add all three widgets, then open the app once so it publishes the snapshot — do they fill? Does the track behind the numbers look like your spot? Is the daily fact right?
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
