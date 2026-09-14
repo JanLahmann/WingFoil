@@ -27,26 +27,28 @@ BASE = "https://api.appstoreconnect.apple.com/v1"
 
 WHATS_NEW = """New here? cleanjibe.org/start — a 20-minute test of the watch routes, and where to send feedback.
 
-0.15.0 (build 49) — a crash fix for the watch link.
+0.15.0 (build 51) — the card from the watch, and three small things.
 
-- The app no longer crashes when the Garmin watch sends something to the phone (a summary card, an answer to a map push). Builds 43 to 47 crashed the moment a message arrived from a watch running a CleanJibe beta build.
-- From build 47: Map for the watch is a page — the two most-ridden spots by default, or up to two picks among your spots and "Where I am now".
+- A session that arrived as a summary card from the watch opens as what it is: the card's numbers, and how the full recording follows. It no longer says the file is damaged.
+- The Sessions list's first grouping reads "All" instead of "None".
+- The start screen shows cleanjibe.org under the name.
+- Build 49's crash fix for the watch link is in, of course.
 
-Still in from build 45: the grouped and filtered Sessions list, the reordered menu, Send feedback at the foot of every page, Connect Strava under Settings.
+The site caught up too: cleanjibe.org/watches lists every supported watch, cleanjibe.org/whats-new has these notes, and the privacy page names every new data flow (Strava, the one location prompt for the watch map).
 
-Please check: send a map to the watch, then finish a short recording on the watch, and see whether the phone stays up and the session appears."""
+Please check: after a watch session, does the card row turn into the full session once intervals.icu has the recording (pull down on Sessions)?"""
 
 # What the dev variant's testers are told instead. It is a different build of the same version,
 # so saying which one this is matters more than the release notes do.
 WHATS_NEW_INTERNAL = """New here? cleanjibe.org/start — a 20-minute test of the watch routes, and where to send feedback.
 
-Dev build 50 (tuning). Same 0.15.0 as public build 49, plus Settings → Tuning: the analysis thresholds on sliders, and the workbench on the turn page.
+Dev build 52 (tuning). Same 0.15.0 as public build 51, plus Settings → Tuning: the analysis thresholds on sliders, and the workbench on the turn page.
 
 Settings → About says "· dev" on this one. Moving any slider re-analyses your library with the new thresholds and marks every screen that shows a tuned number with a "tuned thresholds" chip — those numbers are not comparable with anyone else's. "Reset all" puts the published defaults back.
 
-Fixed since 48: the crash right after "Send map to watch". The phone had finally started listening on the watch's app id, and the first message from the watch hit a delegate method with the wrong name. Same fix in the public build.
+Since 50: a card-only session from the watch opens on its own numbers and says how the recording follows; the grouping segment reads "All"; the start screen carries cleanjibe.org.
 
-Please check: Send map to watch, then a short recording on the watch — the phone must stay up and the summary card should arrive."""
+Please check: pull down on Sessions once intervals.icu has last night's 23:21 recording — the card row should turn into the full session in place."""
 
 
 def tok():
