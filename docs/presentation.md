@@ -2573,6 +2573,19 @@ the one he just made is the one he is thinking about. The phone never tracks him
 a tap, one per send, never in the background, and the automatic launch pass never prompts
 at all (docs/watch-map-snapshot.md).
 
+**The card, on the session page, before the recording.** A summary the watch sent lands in
+the library as a provisional row (ADR-013) with the blue line *From your watch — the
+recording has not synced yet* under its title. Opening it is **not an error**: the page
+shows the card's own numbers first — time on the session clock, foil %, flights, best 2 s,
+the outcome tally and the distance, each read off the row the card filled and never printed
+as zero where the card carried nothing — and then one block headed *From your watch* that
+says how the rest arrives: pull down on Sessions once intervals.icu has the activity, or
+share the `.fit` into CleanJibe, and the page fills with the map, every turn and the records.
+The first card ever to reach Jan's phone (14 Sep 2026, build 50, a 20-second test with no
+GPS fix) opened on *Could not open this session … the stored file is damaged*, which was the
+archive being asked for a file it could not have. Share is disabled on that page; there is
+no analysis to draw a card from yet.
+
 ## Session list — group by, and the filters that narrow it
 
 A library is a list of afternoons until it is about forty of them, at which point the
