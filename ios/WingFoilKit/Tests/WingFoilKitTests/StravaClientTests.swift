@@ -228,8 +228,8 @@ struct StravaClientTests {
         }
     }
 
-    /// **The single-rider ceiling.** An unreviewed Strava application may connect one athlete;
-    /// the second is refused, and the refusal is nothing the rider can fix by trying again.
+    /// **The athlete ceiling.** An unreviewed Strava application may connect ten athletes;
+    /// the eleventh is refused, and the refusal is nothing the rider can fix by trying again.
     @Test func theAthleteLimitIsItsOwnAnswerRatherThanAGenericRejection() async {
         let stub = Stub(status: 400, json: """
             {"message":"Bad Request","errors":[{"resource":"Application",
