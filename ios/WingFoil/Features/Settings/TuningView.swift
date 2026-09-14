@@ -209,7 +209,7 @@ struct TuningView: View {
                 }
             }
         } footer: {
-            Text("Your own verdict on a turn — *I flew · I touched · I fell* — left on the "
+            Text(markdown: "Your own verdict on a turn — *I flew · I touched · I fell* — left on the "
                  + "turn's page and scored against the engine here. Labels live on this phone, "
                  + "outside the analysis, and survive every re-derivation.")
         }
@@ -226,7 +226,7 @@ struct TuningView: View {
         } header: {
             Text("Beta · testing tool")
         } footer: {
-            Text("These sliders override the published defaults **on this phone only**. They "
+            Text(markdown: "These sliders override the published defaults **on this phone only**. They "
                  + "change every number the app shows — foil time, flights, turn counts, "
                  + "scores, outcomes, records and trends — so a session analysed with them is "
                  + "not comparable with one analysed anywhere else.\n\n"

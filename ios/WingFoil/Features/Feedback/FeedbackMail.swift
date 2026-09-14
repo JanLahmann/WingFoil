@@ -108,10 +108,21 @@ enum FeedbackMail {
         let garminModel: String? = nil
         let garminAppVersion: String? = nil
         #endif
+        // The Apple half is nil outside the beta channels for the same reason as the Garmin
+        // half above: the Apple Watch app and the Health import are beta doors
+        // (docs/channels.md), so an App Store report must not answer two questions the
+        // build it came from never asks. `FeedbackReport` leaves a nil fact out entirely.
+        #if BETA
+        let appleWatch = appleWatchPaired()
+        let healthImport: Bool? = store.healthAutoImport
+        #else
+        let appleWatch: Bool? = nil
+        let healthImport: Bool? = nil
+        #endif
         return FeedbackFacts.Watch(garminModel: garminModel,
                                    garminAppVersion: garminAppVersion,
-                                   appleWatchPaired: appleWatchPaired(),
-                                   healthImport: store.healthAutoImport)
+                                   appleWatchPaired: appleWatch,
+                                   healthImport: healthImport)
     }
 
     #if DEV

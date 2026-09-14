@@ -141,7 +141,7 @@ struct LibraryView: View {
                         // already past the door it opens (docs/channels.md).
                         #if !BETA
                         Button { showComingSoon = true } label: {
-                            Label("Curious about what is coming", systemImage: "binoculars")
+                            Label("What is being tested", systemImage: "binoculars")
                         }
                         #endif
                         Button { showHelp = true } label: {
