@@ -117,7 +117,7 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 | feature | channel | note |
 |---|---|---|
 | Apple Watch app: recording, live numbers, transfer to the phone | beta | in the beta from day one; release once Jan's daughters' sessions arrive by themselves |
-| Home-screen widgets (last session, this week) and the watch complication | beta | need the app group before they show anything |
+| Home-screen widgets (last session, this week — "since your last session" in a week off the water — and personal bests) and the watch complication | beta | need the app group before they show anything |
 | Garmin link: summary card from the watch | dev | |
 | Garmin link: send wind to watch | dev | potential feature on request only |
 | Garmin link: map to watch, spot picker, "Where I am now" | dev | the only location prompt in the app |
