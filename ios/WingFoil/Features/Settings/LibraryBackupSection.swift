@@ -169,7 +169,10 @@ struct LibraryBackupSection: View {
 /// when it was taken, how many sessions, which app version wrote it, and what restoring
 /// will and will not do — and a dialog that says all that is a wall of text with buttons
 /// under it.
-private struct RestoreConfirmation: View {
+/// Internal rather than private: the "library from a newer build" screen
+/// (`LibraryNewerThanAppView`) offers the same restore, and it must be the same sheet with
+/// the same wording — two spellings of "this is what is in the file" is one of them wrong.
+struct RestoreConfirmation: View {
     @Environment(SessionStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 

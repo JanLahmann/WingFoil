@@ -762,6 +762,7 @@ struct ReplayCinemaView: View {
         stage = .wrappingUp
         do {
             if let url = try await recorder.stop(named: ReplayRecorder.clipName(for: detail.row)) {
+                Usage.record(.clipExported)
                 stage = .clip(await framed(url))
             } else {
                 dismiss()

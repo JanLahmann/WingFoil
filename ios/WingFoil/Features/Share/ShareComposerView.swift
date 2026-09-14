@@ -60,6 +60,8 @@ struct ShareComposerView: View {
     /// The same picture, kept as the PNG source for the one thing that needs bytes rather
     /// than a `SwiftUI.Image`: the feedback mail's attachment.
     @State private var renderedImage: UIImage?
+    /// The beta's counter fires once per composer, not once per re-render (`render`).
+    @State private var countedCard = false
     /// The session video's own sheet — the picker, the progress bar and the finished file
     /// (`ReelExportSheet`). BETA, with the door that raises it.
     #if BETA
@@ -633,6 +635,14 @@ struct ShareComposerView: View {
         if let image = renderer.uiImage {
             rendered = Image(uiImage: image)
             renderedImage = image
+            // Counted once per visit to the composer, not once per redraw: every shape,
+            // preset, map and photo change re-renders, and "made a card" is the thing the
+            // beta is asking about. What happens after — `ShareLink` hands it to the
+            // system — is Apple's sheet, and it reports nothing back to say otherwise.
+            if !countedCard {
+                countedCard = true
+                Usage.record(.shareCard)
+            }
         }
     }
 

@@ -23,7 +23,15 @@ final class SessionStore {
     private(set) var status: String?
     private(set) var storage = StorageStats()
     /// Set when a background job failed; the UI shows it as a dismissible banner.
-    var errorMessage: String?
+    /// Every rider-facing failure in the app is shown through this one property, which is
+    /// what makes it the one place the beta's failure list can be filled from
+    /// (`UsageCounters`). Nothing is recorded outside the beta channel, and what is
+    /// recorded is exactly the sentence that was on the screen.
+    var errorMessage: String? {
+        didSet {
+            if let errorMessage, errorMessage != oldValue { Usage.failure(errorMessage) }
+        }
+    }
 
     /// Live counters of a running bulk import (nil when nothing is importing).
     private(set) var importProgress: ImportSummary?
@@ -190,14 +198,31 @@ final class SessionStore {
 
     // MARK: - Setup
 
+    /// **The library on this phone was last used by a newer build** — set when
+    /// `AppDatabase` refuses to open it (`LibraryNewerThanApp`), and nil in every ordinary
+    /// launch.
+    ///
+    /// It is a *state*, not an error message: `RootView` puts a full screen in front of
+    /// everything while it is set, because every tab behind it would be showing an empty
+    /// library that is not empty. See docs/channels.md, "Switching channels" — the case is
+    /// an older App Store build put back on a phone a newer beta has already migrated.
+    private(set) var libraryNewerThanApp: LibraryNewerThanApp?
+
     init() {
         var url: URL?
         var problem: String?
         var database: AppDatabase?
+        var newer: LibraryNewerThanApp?
         do {
             let dbURL = try AppPaths.databaseURL()
             url = dbURL
             database = try AppDatabase.onDisk(at: dbURL)
+        } catch let refusal as LibraryNewerThanApp {
+            // Deliberately *not* an `errorMessage`: a banner over an apparently empty
+            // library invites the rider to import everything again on top of a library
+            // that is still there. The screen `RootView` raises is the whole answer, and
+            // the file on disk is left exactly as the newer build left it.
+            newer = refusal
         } catch {
             problem = "Could not open the library database (\(error)). Running in memory."
         }
@@ -234,7 +259,40 @@ final class SessionStore {
         // The thumbnail cache only ever touches the archive, never the analyzer, so its
         // copy of the ingestor does not need the engine parameter kept in step.
         thumbnails = ThumbnailStore(ingestor: ingestor)
+        libraryNewerThanApp = newer
         errorMessage = problem
+    }
+
+    /// **Restoring over a library this build cannot read.**
+    ///
+    /// Called from `confirmRestore` and nowhere else, which is the only point at which the
+    /// rider has picked a file, read what is in it and tapped Restore. Up to here the
+    /// refusal has changed nothing on disk, and it must not: the rider's way out of this
+    /// screen is usually the other button, and reinstalling the newer build has to find its
+    /// library where it left it.
+    ///
+    /// The too-new file is **moved aside, not deleted** — `wingfoil.sqlite.v17.newer` beside
+    /// the new one — for the same reason. It costs the storage a rider is about to spend on
+    /// a restore anyway, and it is the difference between a mistake and a loss.
+    private func adoptFreshLibraryForRestore() {
+        guard let newer = libraryNewerThanApp, let url = databaseURL else { return }
+        let aside = url.deletingLastPathComponent()
+            .appendingPathComponent(url.lastPathComponent + ".v\(newer.storedVersion).newer")
+        do {
+            try? FileManager.default.removeItem(at: aside)
+            try FileManager.default.moveItem(at: url, to: aside)
+            // The journal files belong to the database that was just moved; left behind,
+            // SQLite would try to replay them into the fresh one.
+            for suffix in ["-wal", "-shm"] {
+                try? FileManager.default.removeItem(
+                    at: url.deletingLastPathComponent()
+                        .appendingPathComponent(url.lastPathComponent + suffix))
+            }
+            ingestor.database = try AppDatabase.onDisk(at: url)
+            libraryNewerThanApp = nil
+        } catch {
+            errorMessage = "Could not set the newer library aside: \(error)"
+        }
     }
 
     // MARK: - Library
@@ -764,6 +822,9 @@ final class SessionStore {
 
         status = summary.shortDescription
         if !summary.failed.isEmpty { errorMessage = summary.failed.joined(separator: "\n") }
+        // The one counted place every file-shaped door passes through — Files, the share
+        // sheet, a Garmin export ZIP, Apple Health — so each is counted once and by name.
+        Usage.recordImport(source, sessions: summary.imported)
         await load()
         await refreshPersonalBests(celebrate: true)
         await writeNewSessionsToHealth()
@@ -1090,6 +1151,7 @@ final class SessionStore {
             let bytes = Int64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
             backupFile = BackupFile(url: url, manifest: manifest, bytes: bytes)
             status = "Backup ready — \(Fmt.bytes(bytes))"
+            Usage.record(.backupMade)
         } catch is CancellationError {
             status = "Backup stopped"
         } catch {
@@ -1126,6 +1188,9 @@ final class SessionStore {
     func confirmRestore() {
         guard let offer = restoreOffer, !isBusy else { return }
         restoreOffer = nil
+        // The one path that is allowed to touch a library this build refused to open, and
+        // only now that the rider has picked a file and confirmed it.
+        adoptFreshLibraryForRestore()
         Task { await runRestore(offer) }
     }
 
@@ -1159,6 +1224,7 @@ final class SessionStore {
         do {
             let summary = try await work.value
             status = summary.shortDescription
+            Usage.record(.backupRestored)
             if !summary.failed.isEmpty {
                 errorMessage = summary.failed.prefix(5).joined(separator: "\n")
             }
@@ -1652,6 +1718,7 @@ final class SessionStore {
             // in intervals.icu yet). That is a cause the setup card can name, not a crash.
             setProblem(IcuDiagnosis.describe(summary))
             if !summary.failed.isEmpty { errorMessage = summary.failed.joined(separator: "\n") }
+            Usage.recordImport(.icu, sessions: summary.imported)
             lastSyncDate = Date()
         } catch {
             let problem = IcuDiagnosis.describe(error)
@@ -2447,6 +2514,7 @@ final class SessionStore {
             refreshStravaConnection()
             status = tokens.athleteName.map { "Connected to Strava as \($0)" }
                 ?? "Connected to Strava"
+            Usage.record(.stravaConnected)
             await refreshStravaCandidates()
         } catch StravaAuth.ConnectError.cancelled {
             // Backing out of the consent screen is a decision, not a failure. Nothing is
@@ -2520,6 +2588,7 @@ final class SessionStore {
 
             importedStravaActivities.formUnion(outcome.importedIds)
             if outcome.summary.imported > 0 { hasImportedFromStrava = true }
+            Usage.recordImport(.strava, sessions: outcome.summary.imported)
             status = outcome.summary.shortDescription
             if !outcome.summary.failed.isEmpty {
                 errorMessage = outcome.summary.failed.joined(separator: "\n")

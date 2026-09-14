@@ -231,7 +231,10 @@ struct SessionDetailView: View {
                 ShareComposerView(row: row, detail: detail)
             }
         }
-        .task(id: sessionID) { await load() }
+        .task(id: sessionID) {
+            Usage.record(.sessionOpened)
+            await load()
+        }
     }
 
     /// The preset every word and every hidden pump chip on this page reads from.

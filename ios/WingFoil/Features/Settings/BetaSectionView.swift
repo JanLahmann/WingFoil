@@ -74,6 +74,11 @@ struct BetaSectionView: View {
             // "CleanJibe 0.15.0 (52): …" reads like a bug report and gets answered like one.
             FeedbackMailRow(title: "Request a feature", systemImage: "lightbulb",
                             subjectOverride: "CleanJibe feature request")
+            // The usage and feature statistics docs/channels.md promises beside the list:
+            // counters kept on the phone, sent only in a mail the rider edits. Permanent,
+            // because the library's own card (`UsageAskCard`) is occasional and because
+            // "not now" has to leave a way back.
+            UsageReportRow()
         } header: {
             Text("Beta")
         } footer: {
@@ -82,7 +87,11 @@ struct BetaSectionView: View {
                  + "and reported on.\n\n"
                  + "\"Request a feature\" opens the same mail as Send feedback, with this "
                  + "build and your library's shape already written in. Nothing is sent "
-                 + "until you tap Send.")
+                 + "until you tap Send.\n\n"
+                 + "\"Send usage report\" adds what this phone has counted — which parts of "
+                 + "CleanJibe you have used, how often, and anything that has gone wrong. "
+                 + "The counters never leave this phone except in that mail, and you can "
+                 + "delete any line of it before you send it.")
         }
     }
 }

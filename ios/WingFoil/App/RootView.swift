@@ -24,7 +24,17 @@ struct RootView: View {
     /// three named groups are what the comments were already describing anyway.
     var body: some View {
         hooks(presentations(tabs))
+            // In front of everything, including the splash: a library this build cannot
+            // read is not a state the four tabs have an honest picture of, and the one
+            // screen that explains it is the whole of the app until it is resolved
+            // (docs/channels.md, "Switching channels").
             .overlay { splash }
+            .overlay {
+                if let refusal = store.libraryNewerThanApp {
+                    LibraryNewerThanAppView(refusal: refusal)
+                        .transition(.opacity)
+                }
+            }
     }
 
     /// The launch screen, continued — in front of the tabs rather than instead of them, so
@@ -176,6 +186,9 @@ struct RootView: View {
             if pending != nil { selection = .sessions }
         }
         .task {
+            // One per launch, not per return from the background: `RootView` is built once
+            // per process, which is exactly what "the app was opened" means here.
+            Usage.record(.appOpen)
             store.showWelcomeIfNeeded()
             store.askAboutNewActivitiesIfNeeded()
         }

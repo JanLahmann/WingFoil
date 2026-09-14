@@ -141,6 +141,7 @@ struct ReelExportSheet: View {
     // MARK: - Running it
 
     private func start() {
+        Usage.record(.videoExported)
         model.start(detail: detail, title: title, style: store.mapStyle,
                     visibility: store.mapLayers(for: .ride), length: length)
     }
