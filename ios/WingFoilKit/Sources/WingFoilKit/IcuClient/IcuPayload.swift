@@ -23,8 +23,12 @@ public enum IcuPayload {
         public var description: String {
             switch self {
             case .empty: "empty payload"
-            case .notARecording(let p): "not a FIT, GPX or TCX file (header \(p))"
-            case .zipContainsNoRecording: "ZIP contains no .fit, .gpx or .tcx"
+            // Named formats used to be spelled out here. They are not any more: the
+            // release channel has no GPX or TCX door (docs/channels.md), and an error that
+            // offers a rider two file types his build cannot open is worse than one that
+            // says only what happened. The header bytes still say which file it was.
+            case .notARecording(let p): "not a recording CleanJibe can read (header \(p))"
+            case .zipContainsNoRecording: "the ZIP holds no recording"
             case .unreadableZip: "unreadable ZIP"
             case .gzipFailed: "gzip decompression failed"
             }

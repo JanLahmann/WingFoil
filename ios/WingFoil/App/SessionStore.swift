@@ -598,8 +598,8 @@ final class SessionStore {
             case .notAWalkableFIT:
                 "the archived file is not a plain FIT this app can rewrite safely"
             case .notAFit:
-                "this session was imported from a GPX or TCX, and only FIT recordings can "
-                    + "be scrubbed for sharing"
+                "this session did not come in as a FIT file, and only a FIT can be scrubbed "
+                    + "for sharing"
             }
         }
     }

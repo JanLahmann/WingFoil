@@ -24,6 +24,17 @@ public struct HelpTopic: Sendable, Identifiable, Equatable {
 
     public let id: HelpTopicID
     public let section: HelpSection
+    /// **The lowest channel that actually has the door this topic describes**
+    /// (docs/channels.md). `.release` — the default, and almost every topic — means the
+    /// App Store build can do the thing being explained; `.beta` and `.dev` mean it cannot,
+    /// and the topic is off the index, out of the search and out of every "see also" in
+    /// the channels below it.
+    ///
+    /// It lives on the topic rather than in the app because the catalogue is the place the
+    /// sentence is written, and a channel-bound sentence that is filed anywhere else is a
+    /// sentence that will be edited without its gate. The kit cannot see `#if BETA`, so the
+    /// app hands its own channel in (`HelpCatalog.indexTopics(channel:)`).
+    public let channel: HelpChannel
     public let title: String
     /// One line, shown in the index and under the card's `?`.
     public let summary: String
@@ -41,12 +52,14 @@ public struct HelpTopic: Sendable, Identifiable, Equatable {
     /// Topics worth reading next; every id here must resolve (asserted in the tests).
     public let related: [HelpTopicID]
 
-    public init(id: HelpTopicID, section: HelpSection, title: String, summary: String,
+    public init(id: HelpTopicID, section: HelpSection, channel: HelpChannel = .release,
+                title: String, summary: String,
                 body: [String], items: [Item] = [], image: HelpImage? = nil,
                 links: [HelpLink] = [], action: HelpAction? = nil,
                 related: [HelpTopicID] = []) {
         self.id = id
         self.section = section
+        self.channel = channel
         self.title = title
         self.summary = summary
         self.body = body
@@ -104,19 +117,42 @@ public enum HelpAction: String, Sendable, Equatable {
     case loadExampleSession
 }
 
+/// **Which build is reading the catalogue** — the kit's half of docs/channels.md.
+///
+/// The kit compiles everything in every channel, so it cannot see `#if BETA` and must not
+/// try: the app knows which build it is and hands this value in. The order is the order the
+/// channels nest in — dev has everything the beta has, the beta everything the release has —
+/// so "this channel may read that topic" is one comparison and not a table.
+public enum HelpChannel: Int, Sendable, Comparable, CaseIterable, Identifiable {
+    /// The App Store build: no compile flags. The strictest reader.
+    case release = 0
+    /// TestFlight, `BETA` defined.
+    case beta = 1
+    /// `BETA DEV TUNING`, a handful of hand-picked testers.
+    case dev = 2
+
+    public var id: Int { rawValue }
+
+    public static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue < rhs.rawValue }
+
+    /// Whether a build on this channel has the door a topic on `required` describes.
+    public func has(_ required: HelpChannel) -> Bool { self >= required }
+}
+
 /// Where a topic sits in the Help index.
 public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
+    /// *Getting started*, first on purpose: it is not a metric and belongs under none of
+    /// the nine sections below, and it is what "I just installed this" is looking for. It
+    /// is also the one topic whose content lives on the web, so the page in here says what
+    /// the check is for and hands over the link.
+    case gettingStarted
     case setup, foil, records, turns, takeoff, effort, conditions, sharing, quality
-    /// The beta test, last on purpose. It is not a metric and belongs under none of the
-    /// nine sections above; it is also the one topic whose content lives on the web, so
-    /// it sits at the bottom of the index where a reader lands after everything that
-    /// explains a number, rather than in front of them.
-    case beta
 
     public var id: String { rawValue }
 
     public var title: String {
         switch self {
+        case .gettingStarted: "Getting started"
         case .setup: "Getting set up"
         case .foil: "On the foil"
         case .records: "Speed records"
@@ -126,12 +162,12 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
         case .conditions: "Conditions"
         case .sharing: "Sharing"
         case .quality: "Where the numbers come from"
-        case .beta: "Getting started"
         }
     }
 
     public var symbol: String {
         switch self {
+        case .gettingStarted: "book"
         case .setup: "link"
         case .foil: "figure.wave"
         case .records: "speedometer"
@@ -141,13 +177,13 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
         case .conditions: "wind"
         case .sharing: "square.and.arrow.up"
         case .quality: "checkmark.seal"
-        case .beta: "sailboat"
         }
     }
 }
 
 /// Every explainable metric, as an enum so a `?` button cannot point at a missing topic.
 public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
+    case gettingStarted
     case icuSetup, exampleSession, sendingFeedback, appleWorkoutApp, icuTroubleshooting
     case icuPrivacy, libraryBackup
     case stravaImport, shareFromWatchApp, whichWatch, phoneOnly
@@ -159,7 +195,6 @@ public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
     case windAxis
     case shareCard, replayClip, shareFit, riderAttribution
     case sourceClass, divergence, engineVersion, windsurf
-    case betaGettingStarted
 
     public var id: String { rawValue }
 }
@@ -169,6 +204,59 @@ public enum HelpCatalog {
     /// Every topic, in reading order. `topics` is the single source; the lookups below
     /// are derived from it, so a topic cannot exist in one and not the other.
     public static let topics: [HelpTopic] = [
+
+        // MARK: Getting started
+        //
+        // First in the catalogue because it is first on the index, and first on the index
+        // because it is what "I just installed this" is looking for — the library menu's own
+        // first row opens it by name.
+        //
+        // The only topic that deliberately does not finish its own subject. The check it
+        // describes runs across two or three apps, changes whenever a vendor moves a menu,
+        // and half of it happens before CleanJibe is even open — so the steps live on the
+        // web, where they can be fixed the same day, and this topic's job is to say what the
+        // check is for, that it takes twenty minutes on land, and where it is.
+        //
+        // Channel-neutral on purpose (docs/channels.md): the dry run is the same advice in
+        // every build, so nothing here says which build you are holding.
+        HelpTopic(
+            id: .gettingStarted, section: .gettingStarted,
+            title: "Getting started",
+            summary: "Your first session on the water, and where to send what you find.",
+            // Reframed 14 September 2026 with cleanjibe.org/start (Jan: the test is one
+            // session on the water, not a walk round the block); the dry run stays as the
+            // minimal check. Channel-neutral: it names the beta once, as a place feedback
+            // can go, and calls no build a beta.
+            body: [
+                "The real test is one session on the water. Charge the watch, record the "
+                + "session the way you always do, save it, and let it reach the phone: pull "
+                + "down on Sessions once the recording has synced, open it, and read the turn "
+                + "verdicts against what you remember — which jibes you flew through, where "
+                + "you touched down, where you fell in. If it reads right, share a card. If "
+                + "it does not, say so: Menu → Support & ideas opens a mail with the facts "
+                + "already filled in, and a wish is as welcome as a fault.",
+                "Three ways in, in the order that gives the most. The CleanJibe watch app on "
+                + "a Garmin records everything, pump strokes and takeoff attempts included. "
+                + "Any watch that writes a .fit with a proper speed channel — Garmin's own "
+                + "Windsurf profile, another Connect IQ app — gives everything but the "
+                + "pumping, through intervals.icu or the file itself. A positions-only "
+                + "recording, from Strava or a phone in a pocket, still gives every flight "
+                + "and every turn, with estimated speed records that say so.",
+                "If you cannot wait for wind, the minimal check is a walk or a bike ride "
+                + "recorded on the watch: three to five minutes, no wing, no wind. It proves "
+                + "the route from the watch to the phone and nothing else — a session that "
+                + "arrives is a session that arrives.",
+                "The walkthrough is a web page rather than a screen in here: it covers each "
+                + "route step by step, says what a working first session looks like, and "
+                + "lists where a report can go — the mail above, TestFlight's own feedback "
+                + "if you are on the beta, and the Connect IQ listing for the watch app.",
+            ],
+            // Built from `Branding.site` rather than typed out, for the same reason the
+            // analyzer link further down is: the hostname is one constant on this platform
+            // and a second copy of it is a second thing to forget.
+            links: [HelpLink(title: "Open \(Branding.site)/start",
+                             url: URL(string: Branding.siteURL + "/start")!)],
+            related: [.icuSetup, .exampleSession, .whichWatch, .sendingFeedback]),
 
         // MARK: Getting set up
         //
@@ -228,7 +316,7 @@ public enum HelpCatalog {
         // "Getting set up" rather than under "Where the numbers come from", because for that
         // rider it is not a footnote about data quality — it is the whole way in.
         HelpTopic(
-            id: .appleWorkoutApp, section: .setup,
+            id: .appleWorkoutApp, section: .setup, channel: .beta,
             title: "Recording with the Apple Workout app",
             summary: "No Garmin, no extra app: record on your Apple Watch and import from "
                 + "Health.",
@@ -339,16 +427,17 @@ public enum HelpCatalog {
             summary: "Polar, Suunto and COROS can hand a session to CleanJibe as a file. "
                 + "Garmin's phone app cannot.",
             body: [
-                "Every watch app can export a recording as a file — FIT, GPX or TCX — and "
-                + "CleanJibe can read all three. On an iPhone that means the share sheet: "
-                + "export the session, choose CleanJibe from the row of apps, and it is "
-                + "imported. If CleanJibe is not in the row, tap Save to Files instead, then "
-                + "open Files, tap the file, and share it from there.",
+                "Every watch app can export a recording as a file, and a FIT is the one to "
+                + "take: CleanJibe reads it in full. On an iPhone that means the share "
+                + "sheet — export the session, choose CleanJibe from the row of apps, and it "
+                + "is imported. If CleanJibe is not in the row, tap Save to Files instead, "
+                + "then open Files, tap the file, and share it from there.",
                 "Which format to pick, if you are asked: FIT, every time. A FIT carries the "
                 + "receiver's own speed, so its speed records certify; a GPX or a TCX "
-                + "carries positions only, and CleanJibe works the speed out from them and "
-                + "marks those records uncertified. Everything else — foil time, flights, "
-                + "turns, the map, the wind axis — is the same either way.",
+                + "carries positions only, so speed has to be worked out from them and those "
+                + "records are marked uncertified. Everything else — foil time, flights, "
+                + "turns, the map, the wind axis — is the same either way. GPX and TCX files "
+                + "are read by the CleanJibe beta; a FIT is read by every build.",
                 "There is one watch this does not work for, and it is the popular one. "
                 + "Garmin Connect's phone app has no export at all: every path Garmin "
                 + "documents starts with signing in to connect.garmin.com in a browser. So "
@@ -383,9 +472,10 @@ public enum HelpCatalog {
                           + "original FIT. (The menu used to say \"Export Original\".) "
                           + "intervals.icu is the path that needs no computer."),
                 .init(term: "Anything else",
-                      detail: "If an app can produce a FIT, a GPX or a TCX, CleanJibe can "
-                          + "read it — and so can AirDrop, Mail and Files. A ZIP full of "
-                          + "recordings works too: Import → FIT, GPX or ZIP."),
+                      detail: "If an app can produce a FIT, CleanJibe can read it, and it "
+                          + "makes no difference whether it arrives by AirDrop, by Mail or "
+                          + "out of Files. A ZIP full of recordings works too. GPX and TCX "
+                          + "files are the CleanJibe beta's door."),
             ],
             links: [
                 HelpLink(title: "Suunto: exporting a FIT from the phone app",
@@ -493,10 +583,12 @@ public enum HelpCatalog {
                           + "records certify. Get the sessions in through intervals.icu, or "
                           + "export the FIT from connect.garmin.com on a computer."),
                 .init(term: "Apple Watch",
-                      detail: "Record with Apple's Workout app — Surfing, Water Sports or "
-                          + "Sailing — and import from Health; or use the CleanJibe watch "
-                          + "app, which adds the wrist accelerometer and hands the recording "
-                          + "straight to the phone. Speed records certify either way."),
+                      detail: "Two doors, and both are in the CleanJibe beta today: read "
+                          + "what Apple's own Workout app recorded out of Health, or record "
+                          + "with the CleanJibe watch app, which adds the wrist "
+                          + "accelerometer and hands the session straight to the phone. "
+                          + "Speed records certify either way. Without the beta, record the "
+                          + "session in the Strava app and import it from Strava."),
                 .init(term: "Polar, Suunto, COROS and the rest",
                       detail: "Two ways in: connect the watch to intervals.icu once and let "
                           + "CleanJibe sync, or export one session from the phone app and "
@@ -508,10 +600,11 @@ public enum HelpCatalog {
                           + "those records are uncertified — worth knowing before you choose "
                           + "this door over intervals.icu for the same session."),
                 .init(term: "A phone in a pocket, or no watch at all",
-                      detail: "Any app that records a GPX of your session works: AirDrop it, "
-                          + "mail it to yourself, or share it in. Positions only, so "
-                          + "uncertified speed records — but the flights, the turns and the "
-                          + "map are all there."),
+                      detail: "Record in the Strava app and import from Strava — no file, no "
+                          + "cable, nothing to connect but the account. Any tracker app that "
+                          + "writes a GPX works too, through the CleanJibe beta. Positions "
+                          + "only either way, so uncertified speed records — but the "
+                          + "flights, the turns and the map are all there."),
             ],
             related: [.shareFromWatchApp, .icuSetup, .appleWorkoutApp, .stravaImport,
                       .phoneOnly, .sourceClass, .uncertified]),
@@ -621,13 +714,14 @@ public enum HelpCatalog {
                 + "anywhere by itself — there is no CleanJibe server to send it to. If this "
                 + "phone has no mail account, the app hands the same text to whatever you do "
                 + "use, or lets you copy it.",
-                "There are two other routes, and they are better for different things. In "
-                + "TestFlight, a screenshot taken inside the app offers Share → Send Beta "
-                + "Feedback, which attaches the screenshot and the device logs — that is "
-                + "the one for a crash or for something that has to be seen. Anything about "
-                + "the watch app itself can go through its Connect IQ store listing. For a "
-                + "number that looks wrong, the mail here is the one worth sending: it is the "
-                + "only one that says which engine and which thresholds produced it.",
+                "There are two other routes, and they are better for different things. If "
+                + "you are on the TestFlight beta, a screenshot taken inside the app offers "
+                + "Share → Send Beta Feedback, which attaches the screenshot and the device "
+                + "logs — that is the one for a crash or for something that has to be seen. "
+                + "Anything about the Garmin watch app itself can go through its Connect IQ "
+                + "store listing. For a number that looks wrong, the mail here is the one "
+                + "worth sending: it is the only one that says which engine and which "
+                + "thresholds produced it.",
             ],
             related: [.sourceClass, .engineVersion, .divergence]),
 
@@ -1171,12 +1265,13 @@ public enum HelpCatalog {
                 + "bought anything is the row you can find afterwards.",
                 "\(RecordingClass.a.name). \(RecordingClass.a.line)",
                 "\(RecordingClass.b.name). \(RecordingClass.b.line) Garmin's own Windsurf "
-                + "profile, another Connect IQ app, and Apple's Workout app imported from "
+                + "profile, another Connect IQ app, and Apple's Workout app read out of "
                 + "Health are all this class.",
                 "\(RecordingClass.bPlus.name). \(RecordingClass.bPlus.line) It is not a "
                 + "different recording from class B, it is a class B recording with the "
                 + "wrist beside it, which is why it is a plus rather than a letter of its "
-                + "own.",
+                + "own. Both Apple doors — the watch app and the Health import — are in the "
+                + "CleanJibe beta today.",
                 "\(RecordingClass.c.name). \(RecordingClass.c.line) A GPX never carries a "
                 + "speed channel and a TCX sometimes does; Strava hands over positions and "
                 + "no speed channel either, so a session imported from Strava belongs here "
@@ -1202,8 +1297,9 @@ public enum HelpCatalog {
                 .init(term: "A GPX or TCX, or any file with no speed channel",
                       detail: "These imports work: the track, the flights, every turn with "
                           + "its verdict, the wind axis. Polar, Suunto and Coros sessions "
-                          + "usually arrive as one of the two, through intervals.icu or the "
-                          + "share sheet. A GPX never carries a speed channel and a TCX "
+                          + "usually arrive as one of the two, through intervals.icu — their "
+                          + "own files are the CleanJibe beta's door. A GPX never carries a "
+                          + "speed channel and a TCX "
                           + "sometimes does; without one, speed is estimated from positions "
                           + "and the speed records are marked uncertified. A session imported "
                           + "from Strava is this case as well: Strava hands over positions "
@@ -1244,7 +1340,8 @@ public enum HelpCatalog {
             related: [.sourceClass, .divergence]),
 
         HelpTopic(
-            id: .windsurf, section: .quality, title: "Windsurf (experimental)",
+            id: .windsurf, section: .quality, channel: .dev,
+            title: "Windsurf (experimental)",
             summary: "The same engine, minus the wing — and the planing speeds are a guess.",
             body: [
                 "A session can be analysed as **Wingfoil**, **Windsurf foil** or **Windsurf "
@@ -1290,49 +1387,6 @@ public enum HelpCatalog {
                 + "a speed, and a speed is a speed on any board.",
             ],
             related: [.foilPct, .turnOutcomes, .pumpsToTakeoff, .engineVersion]),
-        // MARK: Getting started
-        //
-        // The only topic that deliberately does not finish its own subject. The first session
-        // runs across a watch, a phone and sometimes a third service, changes whenever a route
-        // does, and half of it happens before CleanJibe is even open — so the steps live on the
-        // web, where they can be fixed the same day, and this topic's job is to say what the
-        // first session is for, which route gives the most, and where a report goes. The same
-        // text in every channel: it names the beta only as a place feedback can go. Reframed
-        // 14 September 2026 with cleanjibe.org/start (Jan: the test is one session on the
-        // water, not a walk round the block); the dry run stays as the minimal check.
-        HelpTopic(
-            id: .betaGettingStarted, section: .beta, title: "Getting started",
-            summary: "Your first session on the water, and where to send what you find.",
-            body: [
-                "The real test is one session on the water. Charge the watch, record the "
-                + "session the way you always do, save it, and let it reach the phone: pull "
-                + "down on Sessions once the recording has synced, open it, and read the turn "
-                + "verdicts against what you remember — which jibes you flew through, where "
-                + "you touched down, where you fell in. If it reads right, share a card. If "
-                + "it does not, say so: Menu → Support & ideas opens a mail with the facts "
-                + "already filled in, and a wish is as welcome as a fault.",
-                "Three ways in, in the order that gives the most. The CleanJibe watch app on "
-                + "a Garmin records everything, pump strokes and takeoff attempts included. "
-                + "Any watch that writes a .fit with a proper speed channel — Garmin's own "
-                + "Windsurf profile, another Connect IQ app — gives everything but the "
-                + "pumping, through intervals.icu or the file itself. A positions-only "
-                + "recording, from Strava or a phone in a pocket, still gives every flight "
-                + "and every turn, with estimated speed records that say so.",
-                "If you cannot wait for wind, the minimal check is a walk or a bike ride "
-                + "recorded on the watch: three to five minutes, no wing, no wind. It proves "
-                + "the route from the watch to the phone and nothing else — a session that "
-                + "arrives is a session that arrives.",
-                "The walkthrough is a web page rather than a screen in here: it covers each "
-                + "route step by step, says what a working first session looks like, and "
-                + "lists where a report can go — the mail above, TestFlight's own feedback "
-                + "if you are on the beta, and the Connect IQ listing for the watch app.",
-            ],
-            // Built from `Branding.site` rather than typed out, for the same reason the
-            // analyzer link above is: the hostname is one constant on this platform and a
-            // second copy of it is a second thing to forget.
-            links: [HelpLink(title: "Open \(Branding.site)/start",
-                             url: URL(string: Branding.siteURL + "/start")!)],
-            related: [.icuSetup, .appleWorkoutApp, .exampleSession]),
     ]
 
     /// Fast lookup by identifier. Total by construction — see `topic(_:)`.
@@ -1366,13 +1420,47 @@ public enum HelpCatalog {
     /// menu — a topic on it is an offer, and this is a feature the rider has not accepted yet.
     static let behindWindsurfSwitch: Set<HelpTopicID> = [.windsurf]
 
+    /// **Whether this build may show that topic at all** — the two filters, in one place.
+    ///
+    /// The channel is the hard one: a topic about a door the running build does not have is
+    /// not a topic that is merely uninteresting, it is the app describing a screen the rider
+    /// cannot reach (docs/channels.md). The windsurf switch is the soft one: the feature is
+    /// compiled in, the rider has simply not accepted it yet.
+    ///
+    /// Deliberately *not* applied by `topic(_:)`, which stays total: a `?` on a card that the
+    /// build does draw must always open, and a deep link written down in docs or in a mail
+    /// must keep working. What this rules is what can be **browsed to, searched for and
+    /// linked on** — the surfaces where a topic is an offer.
+    public static func isListed(_ topic: HelpTopic, channel: HelpChannel,
+                                windsurfEnabled: Bool = true) -> Bool {
+        guard channel.has(topic.channel) else { return false }
+        return windsurfEnabled || !behindWindsurfSwitch.contains(topic.id)
+    }
+
     /// **What the Help index lists**, which is not quite what the catalogue holds.
     ///
-    /// The one filter the index applies, in one place, so the list and its search agree: a
-    /// topic that cannot be browsed to must not be searchable either, or "windsurf" typed into
-    /// the search field would advertise the switch the list is hiding.
-    public static func indexTopics(windsurfEnabled: Bool = true) -> [HelpTopic] {
-        windsurfEnabled ? topics : topics.filter { !behindWindsurfSwitch.contains($0.id) }
+    /// The filters the index applies, in one place, so the list and its search agree: a topic
+    /// that cannot be browsed to must not be searchable either, or "windsurf" typed into the
+    /// search field would advertise the switch the list is hiding — and "Health" typed into
+    /// the App Store build would advertise a door that build does not have.
+    ///
+    /// `channel` defaults to `.dev` — everything — because the kit's own tests and the lab
+    /// read the whole catalogue; the app always passes its own channel in.
+    public static func indexTopics(channel: HelpChannel = .dev,
+                                   windsurfEnabled: Bool = true) -> [HelpTopic] {
+        topics.filter { isListed($0, channel: channel, windsurfEnabled: windsurfEnabled) }
+    }
+
+    /// **The "see also" list a topic may actually render.**
+    ///
+    /// A related link is a button, and a button onto a topic this build hides would be a
+    /// dead end dressed as a next step — so the list is filtered by the same rule the index
+    /// is, rather than by a second one that could drift away from it.
+    public static func relatedTopics(of topic: HelpTopic, channel: HelpChannel,
+                                     windsurfEnabled: Bool = true) -> [HelpTopic] {
+        topic.related
+            .map(Self.topic)
+            .filter { isListed($0, channel: channel, windsurfEnabled: windsurfEnabled) }
     }
 
     /// Sections that actually have topics, in declaration order.
