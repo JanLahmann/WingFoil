@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import WingFoilKit
 
-/// The beta feedback mail. Every assertion here is about a fact a reply would need and a
+/// The feedback mail. Every assertion here is about a fact a reply would need and a
 /// reporter would never think to type: which build, which engine, whether the thresholds
 /// were standard, and which session the complaint is about.
 @Suite struct FeedbackReportTests {
@@ -28,19 +28,19 @@ import Testing
     /// the latter and differ only in the former (docs/channels.md).
     @Test func theSubjectNamesTheBuildAndTheWatch() {
         #expect(FeedbackReport.subject(facts())
-                == "CleanJibe beta feedback · build 17 · fenix 8")
+                == "CleanJibe feedback · build 17 · fenix 8")
     }
 
     @Test func theDevBuildSaysSoInTheSubject() {
         #expect(FeedbackReport.subject(facts(dev: true))
-                == "CleanJibe beta feedback · build 17 dev · fenix 8")
+                == "CleanJibe feedback · build 17 dev · fenix 8")
     }
 
     @Test func aRiderWithNoWatchStillGetsASubject() {
         let none = FeedbackFacts.Watch(garminModel: nil, garminAppVersion: nil,
                                        appleWatchPaired: nil, healthImport: true)
         #expect(FeedbackReport.subject(facts(watch: none))
-                == "CleanJibe beta feedback · build 17 · no watch")
+                == "CleanJibe feedback · build 17 · no watch")
     }
 
     // MARK: The body
@@ -161,6 +161,18 @@ import Testing
         let body = FeedbackReport.body(facts(watch: quiet))
         #expect(body.contains("  No Garmin watch chosen"))
         #expect(!body.contains("Apple Watch"))
+    }
+
+    /// The App Store build has no Health door and no Apple Watch app (docs/channels.md), so
+    /// it passes both facts as nil — and a report that answered either would be describing
+    /// a switch the reader cannot find.
+    @Test func aChannelWithoutTheDoorReportsNeitherHealthNorTheWatch() {
+        let release = FeedbackFacts.Watch(garminModel: nil, garminAppVersion: nil,
+                                          appleWatchPaired: nil, healthImport: nil)
+        let body = FeedbackReport.body(facts(watch: release))
+        #expect(!body.contains("Health import"))
+        #expect(!body.contains("Apple Watch"))
+        #expect(body.contains("  No Garmin watch chosen"))
     }
 
     @Test func theLibrarySectionCountsAndBreaksDown() {
