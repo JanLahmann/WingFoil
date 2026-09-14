@@ -70,9 +70,9 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 |---|---|---|
 | intervals.icu sync, pull to refresh, background check with notification | release | |
 | FIT from Files, Mail, AirDrop, the share sheet | release | |
-| Strava import | release | testers Jan and Robert; cap 10 riders today, Developer Program review for more |
-| GPX and TCX imports (Polar, Suunto, COROS route) | beta | in the beta from day one; the release text says "the beta reads their files" |
-| Garmin export ZIP (full history) | beta | until a rider asks for it |
+| Strava import | release | testers Jan and Robert; cap 10 riders today, Developer Program review for more. The rider-facing text never says Strava has not reviewed the app: "Strava lets a new app connect a limited number of riders", and Menu → Support & ideas is the way to say so |
+| GPX and TCX imports (Polar, Suunto, COROS route) | beta | in the beta from day one. The release names no beta as the answer: "Polar, Suunto and COROS sessions come in through Strava, or through intervals.icu" |
+| Garmin export ZIP (full history) | **release** | moved up 14 Sep 2026 from the release walkthrough: the release already declares `public.zip-archive`, its button already says "FIT or ZIP…" and `ZipWalker` / `ingestContainer` are ungated, so the door was open and only the list said otherwise. The beta keeps the dedicated **Garmin export ZIP…** button with the Export-Your-Data walkthrough on it |
 | Apple Health, read Apple Workout recordings | beta | unproven; off until switched on |
 | Apple Health, write sessions as workouts | beta | unproven; the release has no HealthKit entitlement |
 | Discipline review after import ("Which rig?") | dev | part of windsurf |
@@ -128,7 +128,7 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 | feature | channel | note |
 |---|---|---|
 | Feedback mail with prefilled facts, footers on every page, menu Support | release | |
-| "Curious about what is coming" section with the TestFlight link and this list | release | the beta shows the list without the link |
+| "What is being tested" section with the TestFlight link and the beta list | release | named *"Curious about what is coming"* until 14 Sep 2026; the App Store build is a finished app and the row points at where new things are tried, not at what it lacks. It lists the **beta** rows of this file and nothing else: the dev rows are `#if BETA`, because a handful of hand-picked phones is not a promise to anybody on the App Store. The beta shows the same list without the link, and the dev rows under it |
 | Beta section: feature list, request a feature, extended feedback mail with usage and feature statistics | beta | counters kept on the phone, sent only in a mail the rider edits |
 | The usage report: seventeen counters, the failure list, and the card the library raises every fifth session or fortnight | beta | `UsageCounters` in the kit, `usage.counters.v1` on the phone; subject "CleanJibe beta usage report", Settings → Beta → Send usage report is the permanent door (docs/presentation.md, "The beta's usage report") |
 | Start screen, library menu order, Getting started topic | release | |
@@ -199,7 +199,12 @@ folder alongside the App Store screenshots.
 1. Strava's application review, requested with the release description and the privacy page.
 2. The `BETA` and `DEV` flags and the gating above; the release build contains no GPX/TCX
    door, Garmin link, Health, video export, grouping, windsurf or location code and builds for
-   iPhone only; its share sheet declares only the FIT type.
+   iPhone only; its share sheet declares FIT and ZIP and nothing else.
+   The release also **never calls itself a beta and never names a door it lacks**: no other
+   platform or third-party app in the help (guideline 2.3.10), no "the beta reads their
+   files" on Import, no dev list under "What is being tested", and a feedback mail whose
+   subject is *CleanJibe feedback · build N · watch*. `strings` on the archived binary shows
+   no "Android", no "beta feedback" and no "not reviewed CleanJibe".
 3. The dev bundle ids, their App Store Connect record and profiles, URL schemes and display name.
 4. The Connect IQ release listing on app id `b1ef484c` only when the link graduates; the
    companion app URL on the Connect IQ listings once the App Store listing is live.
