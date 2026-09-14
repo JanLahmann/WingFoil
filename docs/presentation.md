@@ -2795,6 +2795,19 @@ instructions: which phone apps record a track and can export it. The public rele
 it at cleanjibe.org/whats-new, from `ios/tools/testflight_publish.py` and
 `garmin/store/listing.md`.
 
+**Where the public vocabulary lives, since 14 September 2026.** Jan: *"The entry web page is
+quite long."* The homepage (`web/index.html`) is now the short half — the share card as the
+hero, the three product names at one line each, the recording-class table, and the channel
+lists — and everything a reader goes *looking* for moved to **cleanjibe.org/learn**
+(`web/learn/index.html`): the three pieces in full, the FAQ, **"What it counts"** (the eight
+glossary entries and the track motif that is their key — the same four path strings the iOS
+welcome screen and `web/tools/social_card.html` carry, character for character), and "How it
+is built". Nothing was reworded in the move, so every metric name on that page is still the
+one this file fixes. Beta-channel features carry a small `beta` pill wherever they appear on
+the site — the homepage pieces, /learn, /watches and /start — written from
+`docs/channels.md` and from nowhere else, with one line of legend per page: *"beta: in the
+public beta today, not yet in the App Store release."* Release features are unlabelled.
+
 ## The library menu — one menu, in the order a new rider needs it
 
 The Sessions tab's top-left button (`line.3.horizontal`, "Menu") is the app's one menu. It
