@@ -38,7 +38,8 @@ effort.splash and phase.flying at once — a fourth meaning on that one entry is
 thing that file exists to prevent. The ramp used instead (0x00FFFF -> 0x00FFAA -> 0xAAFF55,
 wing 0xAAFF55) collides with no token.
 
-Usage:  python3 garmin/tools/make_brand_mark.py        # rewrites every brand_mark.png
+Usage:  python3 garmin/tools/make_brand_mark.py        # rewrites every brand_*.png, release
+        #                                              and the beta/dev channel cuts with them
 """
 
 import math
@@ -49,6 +50,18 @@ from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GARMIN = os.path.dirname(HERE)
+
+# The channel treatments (red BETA label, left-right mirror) are defined once, next to the
+# master artwork, and shared with brand/tools/make_channel_marks.py.
+sys.path.insert(0, os.path.join(os.path.dirname(GARMIN), "brand", "tools"))
+from channelmark import draw_label, mirror  # noqa: E402
+
+# Where a channel's cuts go: the same four size classes, under resources-<channel>/, which
+# monkey-invite.jungle (beta) and monkey-beta.jungle (dev) append to every product's
+# resourcePath so the ids override the release cuts (docs/channels.md).
+CHANNELS = ("beta", "dev")
+CHANNEL_DIR = {"resources": "icon65", "resources-icon60": "icon60",
+               "resources-icon54": "icon54", "resources-icon40": "icon40"}
 
 SS = 12                      # supersample factor: the 100-unit artwork is rasterised at 1200
 FLAT = 48                    # segments per quadratic bezier
@@ -214,7 +227,7 @@ def paint(img, mask, rgb_img, alpha=1.0):
     img.paste(rgb_img, (0, 0), mask)
 
 
-def render(tall, flavour):
+def render(tall, flavour, channel="release"):
     size = 100 * SS
     img = Image.new("RGB", (size, size), (0, 0, 0))
 
@@ -236,10 +249,17 @@ def render(tall, flavour):
     paint(img, mask_stroke(size, xform(list(MAST), WING_XFORM), MAST_W * WING_XFORM[3]),
           mast, 1.0 if flavour == "mip" else MAST_A)
 
+    if channel == "dev":
+        img = mirror(img)                  # the wing to the upper right, gradients with it
     box = img.getbbox()                    # the ink, without the tile's own padding
     img = img.crop(box)
     w = max(1, int(round(tall * img.width / float(img.height))))
     img = img.resize((w, tall), Image.LANCZOS)
+    if channel == "beta":
+        # The label in the cut's own upper-right air, a fifth of the cut tall: the word on
+        # the hero, a red block on the mark and the badge. Before the MIP quantise, so the
+        # label's red is a palette entry (0xFF5555) and not the firmware's guess.
+        draw_label(img, (img.width - 1, 1), max(4, int(round(tall * 0.2))))
     if flavour == "mip":
         img = quantise(img)
     return img
@@ -259,6 +279,13 @@ def main():
         img = render(tall, flavour)
         img.save(out, optimize=True)
         print(f"{out}  {img.width}x{img.height}  {flavour}  {os.path.getsize(out)} B")
+        for channel in CHANNELS:
+            cd = os.path.join(GARMIN, "resources-" + channel, CHANNEL_DIR[d], "drawables")
+            os.makedirs(cd, exist_ok=True)
+            out = os.path.join(cd, name + ".png")
+            img = render(tall, flavour, channel)
+            img.save(out, optimize=True)
+            print(f"{out}  {img.width}x{img.height}  {flavour}  {channel}  {os.path.getsize(out)} B")
     return 0
 
 

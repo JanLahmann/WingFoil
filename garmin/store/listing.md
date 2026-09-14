@@ -195,6 +195,13 @@ Naming trap in `garmin/bin/`: files called `*-beta-*.iq` from 0.9.4 on (`CleanJi
 `CleanJibeField-beta-0.9.x.iq`) carry the **invite** UUID, not the dev-beta one — "beta" there
 meant the "Invite Beta" listing. The dev-beta exports are the `*-devbeta-*.iq` files.
 
+The two listings are told apart on the wrist by their mark since 14 September 2026
+(docs/channels.md, "Telling the channels apart"): the invite build's launcher icon and
+splash wear a red BETA label, the dev-beta build's are mirrored (wing upper right), the
+public build's are the mark as drawn. `monkey-invite.jungle` appends `resources-beta/`,
+`monkey-beta.jungle` appends `resources-dev/` — the directory names follow the channel,
+not the jungle.
+
 ---
 
 ## Version history
