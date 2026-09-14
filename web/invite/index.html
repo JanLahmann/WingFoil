@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Get the beta — CleanJibe for Garmin and iPhone</title>
-<meta name="description" content="Both CleanJibe betas are open. Install the watch app from the Connect IQ store and the iPhone app from a public TestFlight link — no invite, no request code, no waiting. And where to send what you find.">
+<title>Get the beta — CleanJibe for Garmin, iPhone and iPad</title>
+<meta name="description" content="Both CleanJibe betas are open. Install the watch app from the Connect IQ store and the iPhone and iPad app from a public TestFlight link — no invite, no request code, no waiting. And the three doors for sending back what you find.">
 <meta name="theme-color" content="#101010">
 <meta name="color-scheme" content="dark">
 
@@ -82,8 +82,9 @@
       <h1>Get the beta</h1>
       <p class="lede">
         Both CleanJibe apps are free, open betas. The watch app installs from the Connect IQ
-        store; the iPhone app installs from a public TestFlight link. There is no invite to
-        apply for, no code to send in, and nobody to wait on.
+        store; the iPhone app — which is the iPad app too, and runs on an Apple silicon Mac —
+        installs from a public TestFlight link. There is no invite to apply for, no code to
+        send in, and nobody to wait on.
       </p>
       <!-- The link that closes the gap this page used to leave open. /invite/ hands over two
            install links and stops there, and "installed" is not "this works for me" — the
@@ -124,11 +125,16 @@
           store or from Connect IQ on your phone, the same way as any other watch app.
         </p>
         <p class="note">
-          Watches: the fenix 8 family (43&nbsp;mm, 47&nbsp;mm, Solar 47/51&nbsp;mm, Pro
-          47&nbsp;mm) and the fenix 7 family (7 / 7S / 7X and every Pro variant), with
-          0.9.4 widening that to thirty products — the epix 2 and Forerunner families,
-          MARQ 2, Enduro 3, D2 and Descent Mk3 among them. If the store does not offer
-          your watch the install button will say so.
+          Watches, as of <strong>0.9.10</strong> — 39 Connect IQ products: the fenix 8 family
+          (43&nbsp;mm, 47&nbsp;mm, Solar 47/51&nbsp;mm, Pro 47&nbsp;mm), the fenix 7 family
+          (7 / 7S / 7X and every Pro variant), epix 2 and epix 2 Pro, Forerunner
+          255 / 265 / 955 / 965 / 570 / 970, MARQ 2, Enduro 3, D2 Mach 1 and 2, Descent Mk3
+          43&nbsp;mm — and, new in 0.9.10, Venu 2 / 2S / 2 Plus / 3 / 3S, vívoactive 5 / 6 and
+          Instinct 3 AMOLED 45 / 50&nbsp;mm. <strong>Those last three families have passed the
+          layout checks in the simulator and have never been ridden on a real watch</strong>;
+          if yours is one of them, tell us how the pages look and whether the touch controls
+          behave. Full list, family by family, on <a href="../watches/">Which watch</a>. If the
+          store does not offer your watch, the install button will say so.
         </p>
       </li>
 
@@ -147,9 +153,10 @@
 
   <!-- ------------------------------------------------------------ testflight -->
   <section class="home-section" id="testflight">
-    <h2>The iPhone app</h2>
+    <h2>The iPhone and iPad app</h2>
     <p class="section-lede">
-      TestFlight, on a public link. Open it on the phone and you are in.
+      TestFlight, on a public link. Open it on the phone and you are in. The same build is the
+      iPad app, and installs on an Apple silicon Mac as &ldquo;Designed for iPad&rdquo;.
     </p>
 
     <ol class="steps-flow">
@@ -173,9 +180,18 @@
         <h3>Open the example first</h3>
         <p>
           The app ships with a real session already in it, so you can see the whole thing —
-          map, turn list, replay, records — before importing anything of your own. After
-          that: connect intervals.icu in Settings, or share a <code>.fit</code> file into the
-          app from Files or Mail.
+          map, turn list, replay, records — before importing anything of your own.
+        </p>
+        <p>
+          Then bring in your own. <strong>Import</strong> has four doors: the Garmin history
+          ZIP, single files, Apple Health, and <strong>Strava</strong> — which signs you in on
+          Strava's own consent page, reads only, and needs no Garmin account at all. Files can
+          be <code>.fit</code>, <code>.gpx</code> or <code>.tcx</code>, and they do not have to
+          be picked: <strong>Open in CleanJibe</strong> appears in the iOS share sheet wherever
+          one of the three is offered, which is how a Polar, Suunto or COROS session gets in
+          straight from the vendor's own app. Take the FIT where an app offers one — it carries
+          the speed the watch measured; a GPX does not, and a TCX does only when it has a speed
+          channel.
         </p>
       </li>
     </ol>
@@ -183,57 +199,71 @@
     <p class="note">
       The iPhone app does not need the watch app. It reads Garmin's own Windsurf recordings
       too; only pump strokes and takeoff effort need CleanJibe on the wrist, because only it
-      records the wrist accelerometer.
+      records the wrist accelerometer. Which brands get what is one table, on
+      <a href="../watches/">Which watch</a>; what has changed in each build is on
+      <a href="../whats-new/">What&rsquo;s new</a>.
     </p>
   </section>
 
   <!-- --------------------------------------------------------------- feedback -->
   <!-- The page's second job, and the reason an open beta is worth running at all: a tester
-       who hits something and has nowhere obvious to put it just uninstalls. Two doors, and
-       both of them go to the same person.
+       who hits something and has nowhere obvious to put it just uninstalls.
 
-       An ISSUE FIRST, mail second — the order was the other way round and it was the wrong
-       one. Both land with one developer, but an issue lands somewhere a second tester can
-       read it, add to it, and see that it was answered; a mail lands in an inbox where the
-       reply is the only trace anyone else ever gets. Mail is still here, and still first
-       for anyone who does not have a GitHub account, which is most riders. -->
+       THE IN-APP DOOR IS FIRST since build 45, and the order is an argument about what a
+       report has to carry rather than about which channel we like. Menu -> Support writes the
+       build, the phone, the iOS version, the watch and the library's shape into the mail
+       itself — the five lines a report is useless without and that nobody types correctly
+       from memory. An issue is second because it lands where the next rider can read it; a
+       mail from scratch is third because it is the one that arrives with nothing in it. All
+       three reach the same person. -->
   <section class="home-section" id="feedback">
     <h2>It&rsquo;s a beta — tell us what&rsquo;s wrong and what&rsquo;s missing</h2>
     <p class="section-lede">
-      Every report lands with the one developer. An issue is the best place for it; a mail
-      is fine too. A rough sentence beats a polished bug report you never send, and
-      &ldquo;this number looks wrong&rdquo; is a perfectly good one.
+      Every report lands with the one developer. A rough sentence beats a polished bug report
+      you never send, and &ldquo;this number looks wrong&rdquo; is a perfectly good one.
     </p>
     <div class="claims">
       <article class="panel claim">
-        <h3>A GitHub issue — best</h3>
+        <h3>From inside the app: Menu &rarr; Support</h3>
+        <p>
+          The best door, because it fills in the facts for you. Top left on the Sessions tab:
+          <strong>Menu &rarr; Support</strong>. The same mail is under Settings &rarr;
+          <em>Send feedback</em>, behind <em>Something off? Send feedback</em> at the foot of
+          every page, and behind <em>Report a problem with this session</em> on a session's
+          share sheet — that last one names the session and attaches its card. The build, your
+          phone, your iOS version, the paired watch and how big your library is are already in
+          it; you write what happened and press Send. Nothing leaves the phone until you do.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>A GitHub issue — for anything bigger</h3>
         <p>
           <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener"
              data-umami-event="invite-feedback-github">github.com/JanLahmann/WingFoil/issues</a>
-          — the preferred door. It takes a screenshot or a <code>.fit</code> file, it holds a
-          thread, and it stays visible to the next rider who hits the same thing instead of
-          disappearing into one inbox.
+          takes a screenshot or a <code>.fit</code> file, holds a thread, and stays visible to
+          the next rider who hits the same thing instead of disappearing into one inbox. Use it
+          for a feature, a number you disagree with, or a question whose answer other people
+          want too.
         </p>
       </article>
       <article class="panel claim">
-        <h3>Mail — also fine</h3>
+        <h3>Or plain mail</h3>
         <p>
           <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20beta%20feedback"
              data-umami-event="invite-feedback-mail">info@cleanjibe.org</a>
-          — no account needed. What you rode, what the app said, and what you expected it to
-          say. If a session was read wrong, attach the <code>.fit</code> file: with the file
-          the detection can be re-run and fixed, without it there is only guesswork.
-        </p>
-      </article>
-      <article class="panel claim">
-        <h3>What is most useful</h3>
-        <p>
-          Turns scored wrong, flights the watch missed or invented, a wind direction that
-          disagrees with the day, and anything that stopped, froze or drained the battery.
-          Which watch and which app version, if you have them to hand.
+          — no account, no app needed, and the right door when the app is the thing that will
+          not start. What you rode, what it said, and what you expected it to say. If a session
+          was read wrong, attach the <code>.fit</code> file: with the file the detection can be
+          re-run and fixed, without it there is only guesswork.
         </p>
       </article>
     </div>
+    <p class="note">
+      <strong>What is most useful:</strong> turns scored wrong, flights the watch missed or
+      invented, a wind direction that disagrees with the day, and anything that stopped, froze
+      or drained the battery. Which watch and which app version, if you have them to hand — and
+      if you came in through Menu &rarr; Support, you already have.
+    </p>
     <!-- Both stores have a report button, both of them reach the same developer, and a
          page that only listed its own two doors would be quietly telling testers those
          buttons go nowhere. They do not. -->
@@ -288,6 +318,9 @@
   <p>CleanJibe — open wingfoil tracking. Watch app, iPhone app, browser analyzer.</p>
   <p>
     <a href="../">About CleanJibe</a> ·
+    <a href="../start/">Getting started</a> ·
+    <a href="../watches/">Which watch</a> ·
+    <a href="../whats-new/">What&rsquo;s new</a> ·
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">github.com/JanLahmann/WingFoil</a>
     · Beta feedback: <a href="#feedback">open an issue</a>, or mail
     <a href="mailto:info@cleanjibe.org" data-umami-event="invite-feedback-mail">info@cleanjibe.org</a>

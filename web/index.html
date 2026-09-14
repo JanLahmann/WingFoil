@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>CleanJibe — wingfoil session analysis, free in your browser</title>
-<meta name="description" content="Drop a .fit file and see how much of the session you spent on the foil, how long each flight lasted, your speed records, and whether you flew through each jibe, touched down or fell in. Free, no account, nothing uploaded. Plus a Garmin watch app and an iPhone app.">
+<title>CleanJibe — wingfoil session analysis: free in your browser, on iPhone and iPad</title>
+<meta name="description" content="Drop a .fit, .gpx or .tcx file and see how much of the session you spent on the foil, how long each flight lasted, your speed records, and whether you flew through each jibe, touched down or fell in. Free, no account, nothing uploaded. Plus a Garmin watch app and an iPhone and iPad app.">
 <meta name="theme-color" content="#101010">
 <meta name="color-scheme" content="dark">
 
@@ -109,7 +109,7 @@
            fit at 1280, and left to itself it broke inside "OPEN SOURCE" — a list that
            breaks mid-item reads as a mistake, one that breaks between items reads as a
            list. -->
-      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Free&nbsp;browser&nbsp;analyzer · Garmin&nbsp;watch&nbsp;app · iPhone&nbsp;app · open&nbsp;source</p>
+      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Free&nbsp;browser&nbsp;analyzer · Garmin&nbsp;watch&nbsp;app · iPhone&nbsp;and&nbsp;iPad&nbsp;app · open&nbsp;source</p>
     </div>
     <h1>Did you fly through that jibe?</h1>
     <p class="lede">
@@ -118,20 +118,43 @@
       and — for every turn — whether you flew through it, touched down, or fell in.
     </p>
     <p class="lede">
-      Start with the browser analyzer. Drop in a <code>.fit</code> file from any Garmin
-      watch — the CleanJibe app, or Garmin's own Windsurf profile — and you get the whole
-      session back in a few seconds. There is also a watch app that shows the same numbers
-      live on your wrist, and an iPhone app that keeps every session. Each one works on its own.
+      Two ways in, and neither costs anything. The browser analyzer takes a
+      <code>.fit</code>, <code>.gpx</code> or <code>.tcx</code> file and hands you the whole
+      session back in a few seconds, with nothing to install. The beta is the pair of apps: a
+      watch app that shows the same numbers live on your wrist, and an iPhone and iPad app
+      that keeps every session you have ever ridden. Each one works on its own.
     </p>
 
+    <!-- TWO EQUAL DOORS, because the page now has two products to hand over and the old
+         hero only had one. A stranger arrives either wanting to try something in ten seconds
+         or wanting the app on his phone, and the page used to answer only the first — the
+         beta was four screens down in a card. Both are `.btn primary`: neither is the
+         consolation prize. The example moved into the note under them, where it belongs —
+         it is a way of using the analyzer, not a third door. -->
     <p class="cta">
       <!-- `#example` is a real route, not an anchor: js/app.js runs the bundled session on
            arrival, so this link delivers the example rather than a drop target. -->
-      <!-- The two hero CTAs are the only counted doors into the analyzer: umami's
-           declarative form, so a blocked script leaves an ordinary link behind. -->
-      <a class="btn primary" href="app/" data-umami-event="analyze-cta">Analyze a .fit file</a>
-      <a class="btn ghost" href="app/#example" data-umami-event="example-cta">See an example session</a>
-      <span class="cta-note">Free. No account. Runs in your browser — the file is never uploaded.</span>
+      <!-- The hero CTAs are the counted doors: umami's declarative form, so a blocked script
+           leaves an ordinary link behind. -->
+      <a class="btn primary" href="invite/" data-umami-event="beta-cta-hero">Get the beta</a>
+      <a class="btn primary" href="app/" data-umami-event="analyze-cta">Try the analyzer</a>
+      <!-- The note is longer than the one line it used to be, and `.cta` is a wrapping flex
+           row: without a full-width basis it would set itself as a narrow ragged column
+           beside the two buttons at desktop widths. One declaration, stated where it is
+           needed, rather than a class in home.css for a single span. -->
+      <span class="cta-note" style="flex-basis: 100%">
+        Free. No account. The analyzer runs in your browser — the file is never uploaded, and
+        there is <a href="app/#example" data-umami-event="example-cta">an example session</a>
+        inside if you have no file to hand.
+      </span>
+    </p>
+    <!-- The line that closes the gap /invite/ used to leave open: "installed" is not "this
+         works for me", and the watch route runs through three apps before a session shows
+         up. /start/ is the walkthrough, and the person who needs it has not scrolled yet. -->
+    <p class="lede">
+      <strong>Installed?</strong>
+      <a href="start/" data-umami-event="home-start">Start here: the 20-minute test</a> — one
+      short workout on the watch, into the phone, and what you should see. No water needed.
     </p>
     </div>
 
@@ -198,30 +221,36 @@
           <h3>CleanJibe for Garmin</h3>
           <span class="status">open beta · Connect IQ</span>
         </div>
-        <p class="what">Connect IQ watch app — fenix 8 and fenix 7 families</p>
+        <p class="what">Connect IQ watch app — 39 watches, fenix 8 down to vívoactive</p>
         <figure class="shot">
           <img src="img/watch-main.png" width="454" height="454" loading="lazy" decoding="async"
                alt="The watch's riding page: best 10 s speed 24.5 km/h, a turn tally of 35 flew,
                     8 touched down, 8 fell in, and a dry streak of 7 of 11.">
-          <figcaption>On the water: speed, turn tally, no-fall streak.</figcaption>
+          <figcaption>On the water: speed, turn tally, dry streak.</figcaption>
         </figure>
         <ul>
           <li>Knows when the board is up on the foil, and counts every flight and touchdown as you ride.</li>
-          <li>Scores each jibe as flew through, touched down or fell in — and keeps your no-fall streak running.</li>
-          <li>Speed records live on the wrist: best 2 s and best 10 s.</li>
+          <li>Scores each jibe as flew through, touched down or fell in — and keeps your dry streak running.</li>
+          <li>Clean jibes and CPH on the wrist, with their own buzz, beside the tally.</li>
+          <li>Speed records live: best 2 s and best 10 s, with a PB alert.</li>
           <li>Works out the wind direction by itself after a few minutes of riding.</li>
           <li>Counts pump strokes and takeoff attempts from the wrist accelerometer.</li>
+          <li>0.9.10 draws the shore of your spot under the breadcrumb — a small map the
+              iPhone app renders and pushes over Bluetooth.</li>
           <li>Records as a Windsurf activity, so it no longer lands in Garmin Connect as a walk.</li>
         </ul>
-        <p class="piece-foot"><a class="btn ghost" href="invite/" data-umami-event="beta-garmin">Get the beta</a></p>
+        <p class="piece-foot">
+          <a class="btn ghost" href="invite/" data-umami-event="beta-garmin">Get the beta</a>
+          <a class="btn ghost" href="watches/" data-umami-event="watches-piece">Which watch</a>
+        </p>
       </article>
 
       <article class="panel piece">
         <div class="piece-head">
-          <h3>CleanJibe for iPhone</h3>
+          <h3>CleanJibe for iPhone and iPad</h3>
           <span class="status">open beta · TestFlight</span>
         </div>
-        <p class="what">Your library, the replay and the season</p>
+        <p class="what">Your library, the replay and the season — and the same build on an Apple silicon Mac</p>
         <figure class="shot">
           <img src="img/phone-session.png" width="560" height="560" loading="lazy" decoding="async"
                alt="A session on the phone: duration, distance, average and best 2 s speed, the
@@ -229,12 +258,20 @@
           <figcaption>Every session, re-analysed on the phone.</figcaption>
         </figure>
         <ul>
-          <li>Every session in one library, each one re-analyzed on the phone.</li>
-          <li>Replay the track with commentary — and record the replay as a video, with a soundtrack, to post.</li>
+          <li>Every session in one library, each one re-analyzed on the phone — grouped by
+              month, year or spot, and narrowed by a filter when there are a hundred of them.</li>
+          <li>One build for iPhone, iPad and an Apple silicon Mac, where it installs as
+              &ldquo;Designed for iPad&rdquo;.</li>
+          <li>Export the session as a short video: the map draws itself along your track, the
+              numbers land, and it shares like any other clip.</li>
           <li>A share card for any session: the numbers, the track, and a link back here.</li>
-          <li>Records and trends across everything you have ridden.</li>
-          <li>The gear you were on, session by session.</li>
-          <li>Garmin activities arrive on their own, through intervals.icu sync.</li>
+          <li>Imports take FIT, GPX and TCX — from intervals.icu, from Apple Health, from
+              Strava, or straight out of any vendor app through the iOS share sheet.</li>
+          <li>Sends your spot's shoreline to a Garmin running CleanJibe, so the watch's live
+              map has ground under the trail.</li>
+          <li>Records, trends and the gear you were on, across everything you have ridden.</li>
+          <li>Something off? Menu &rarr; Support writes the report for you — build, phone,
+              watch, library — and you press Send.</li>
         </ul>
         <p class="piece-foot"><a class="btn ghost" href="invite/#testflight" data-umami-event="beta-testflight">Get the beta</a></p>
       </article>
@@ -252,8 +289,9 @@
           <figcaption>The same analysis, free, in any browser.</figcaption>
         </figure>
         <ul>
-          <li>Drop in a <code>.fit</code> file. Garmin's own Windsurf recordings work, and so do
-              files from other wingfoil Connect IQ apps.</li>
+          <li>Drop in a <code>.fit</code>, <code>.gpx</code> or <code>.tcx</code> file.
+              Garmin's own Windsurf recordings work, and so do files from other wingfoil
+              Connect IQ apps.</li>
           <li>Keep a library of your sessions, with records and trends across all of them.</li>
           <li>Make a share card, or hand a friend the analysis of the file they sent you —
               their sessions stay out of your records.</li>
@@ -279,43 +317,86 @@
     </p>
   </section>
 
-  <!-- ---------------------------------------------------------- what you need -->
-  <!-- The honesty block. Every question below was one a stranger had to guess the answer
-       to, and the guess ("I need the watch app", "there is nothing here for Android") sent
-       them away from a free thing that would have worked for them. -->
-  <section class="home-section">
-    <h2>What you need</h2>
-    <div class="claims">
-      <article class="panel claim">
-        <h3>No watch app? Still works</h3>
-        <p>
-          The analyzer reads any <code>.fit</code> file. A session recorded with Garmin's own
-          Windsurf profile, or with another wingfoil Connect IQ app, gives you the track, the
-          flights, the jibe outcomes, the speed records and the wind axis. Only pump strokes
-          and takeoff effort need the CleanJibe watch app, because only it records the wrist
-          accelerometer.
-        </p>
-      </article>
-      <article class="panel claim">
-        <h3>Android</h3>
-        <p>
-          There is no Android app, and the analyzer does not need one — open
+  <!-- ------------------------------------------------------------------ faq -->
+  <!-- This was "What you need": three honesty cards answering the three questions a stranger
+       had to guess at ("I need the watch app", "there is nothing here for Android"). It is
+       six questions now and worded as questions, because that is how they arrive — in mails,
+       in issues, and on the beach. Every answer is three or four sentences and ends
+       somewhere a reader can go: /watches/, /privacy/, /invite/, the analyzer.
+
+       `.terms` rather than `.claims`: a question and its answer are a definition list, and
+       the two-column term grid is the shape this page already uses for eight of them. -->
+  <section class="home-section" id="faq">
+    <h2>Questions people actually ask</h2>
+    <dl class="terms">
+      <div class="term">
+        <dt>Which watches?</dt>
+        <dd>
+          The CleanJibe watch app runs on 39 Garmin products — the fenix 8 and fenix 7
+          families, epix 2, Forerunner 255/265/955/965/570/970, MARQ 2, Enduro 3, D2, Descent
+          Mk3, and, new in 0.9.10 and untested on real watches so far, Venu, vívoactive and
+          Instinct 3 AMOLED. <a href="watches/">Which watch</a> lists all of them, family by
+          family, and says which ones nobody has ridden yet. An Apple Watch has its own
+          CleanJibe app that records straight to the phone.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>Android?</dt>
+        <dd>
+          There is no Android app and the analyzer does not need one: open
           <a href="app/">cleanjibe.org/app</a> in your phone browser and it works the same,
-          library and trends included. They are stored in that browser, on that phone.
-        </p>
-      </article>
-      <article class="panel claim">
-        <h3>Another watch brand</h3>
-        <p>
-          The engine reads standard <code>.fit</code> files, but every file it has been tested
-          against came off a Garmin. If your watch exports <code>.fit</code>, try it — it costs
-          one drag and nothing is uploaded. <code>.gpx</code> works too, from any watch or
-          phone app: the track, the flights and the turn verdicts all come out, but its speed
-          records are estimated from positions rather than measured, so they are marked
-          uncertified, and there is no pump data.
-        </p>
-      </article>
-    </div>
+          library, records and trends included. Everything is stored in that browser, on that
+          phone. What Android does not get is the iPhone app's side of things — the video
+          export, and the map pushed to a Garmin.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>Polar, Suunto, COROS — or an Apple Watch?</dt>
+        <dd>
+          All of them work. Polar, Suunto and COROS sessions come in either through
+          intervals.icu or straight out of the vendor's own app with <em>Open in
+          CleanJibe</em> in the iOS share sheet; take the <code>.fit</code> where the app
+          offers one, because a FIT carries the speed your watch measured and a GPX does not.
+          An Apple Watch works two ways: Apple's own Workout app, read through Apple Health,
+          or CleanJibe's watch app recording straight to the phone. The table on
+          <a href="watches/">Which watch</a> has the whole of it.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>Strava?</dt>
+        <dd>
+          Yes, on the iPhone app: Import &rarr; Strava, sign in on Strava's own consent page,
+          and pick the sessions you want. CleanJibe only ever <strong>reads</strong> — it
+          writes nothing back to your account — and Strava hands over positions rather than the
+          speed your watch measured, so speed records from a Strava import are marked
+          uncertified. Until Strava reviews the app it allows one connected rider at a time;
+          the details are on the <a href="privacy/#app-network">privacy page</a>.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>What is a clean jibe?</dt>
+        <dd>
+          A jibe you flew all the way through — no touchdown, no swim — and came out of still
+          carrying your speed, with the ten seconds after it quiet too. It is the strictest of
+          the verdicts and the one this thing is named after: <em>flew through</em> is keeping
+          the foil, <em>dry</em> is staying out of the water, <em>clean</em> is both plus the
+          speed. CPH, clean jibes per hour, sits beside JPH and WPH on every screen, and the
+          exact thresholds are written down in the
+          <a href="https://github.com/JanLahmann/WingFoil/blob/main/docs/algorithms.md" rel="noopener">public
+          repository</a> rather than hidden in a product.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>Where does my data go?</dt>
+        <dd>
+          Nowhere. There is no CleanJibe account, no CleanJibe login and no CleanJibe server —
+          the analysis runs on the device you are holding, in the browser tab or on the phone,
+          and your library lives there too. The exceptions are the ones you switch on yourself
+          (intervals.icu, Strava, a map drawn by Apple Maps) and they are all named, one by
+          one, on the <a href="privacy/">privacy page</a>.
+        </dd>
+      </div>
+    </dl>
   </section>
 
   <!-- ----------------------------------------------------------- vocabulary -->
@@ -445,12 +526,16 @@
         </dd>
       </div>
       <div class="term">
-        <dt>Dry streaks</dt>
+        <dt>Dry streak</dt>
         <dd>How many jibes in a row you stayed out of the water — and the best run of the day.</dd>
       </div>
       <div class="term">
         <dt>JPH</dt>
         <dd>Dry jibes per hour. Falling in more often cannot raise it.</dd>
+      </div>
+      <div class="term">
+        <dt>CPH</dt>
+        <dd>Clean jibes per hour. The strict one, beside JPH rather than instead of it.</dd>
       </div>
       <div class="term">
         <dt>WPH</dt>
@@ -509,6 +594,9 @@
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">github.com/JanLahmann/WingFoil</a>
     (Apache-2.0; the CleanJibe name and mark are not part of the license)
     · <a href="invite/">Get the beta</a>
+    · <a href="start/">Getting started</a>
+    · <a href="watches/">Which watch</a>
+    · <a href="whats-new/">What&rsquo;s new</a>
   </p>
   <!-- Issue first, mail second, the same order /invite/ puts them in: an issue is a report
        the next rider can read, a mail is one only the developer ever sees. -->

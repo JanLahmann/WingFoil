@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Which watch — CleanJibe</title>
+<meta name="description" content="Every Garmin the CleanJibe watch app runs on, family by family, and which of them has been ridden on real water. Plus what happens with a Polar, a Suunto, a COROS, an Apple Watch or a phone in a pocket.">
+<meta name="theme-color" content="#101010">
+<meta name="color-scheme" content="dark">
+
+<!-- No manifest and no service-worker registration, for the same reason /invite/ and /start/
+     have neither: the analyzer at /app/ is the installable PWA, and "add to home screen" from
+     a reference page must not install a front door. Not in the sw.js precache either — this
+     is a page you read once, at a desk, before deciding whether to install anything. -->
+<link rel="icon" type="image/svg+xml" href="../icons/icon.svg">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+
+<!-- The same three-layer stack as every other document on the site, in the same order:
+     generated presentation tokens, the app's aesthetic, this page family's layout. Nothing
+     here has a design of its own, and this page adds no class that did not already exist. -->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/home.css">
+
+<meta property="og:site_name" content="CleanJibe">
+<meta property="og:title" content="Which watch — CleanJibe">
+<meta property="og:description" content="39 Garmin products, family by family, and which have been ridden on real water. And what CleanJibe does with a Polar, a Suunto, a COROS or an Apple Watch.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://cleanjibe.org/watches/">
+<!-- Absolute, like every other document here: scrapers fetch the tag's value as-is and never
+     resolve it against the page. -->
+<meta property="og:image" content="https://cleanjibe.org/social-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Which watch — CleanJibe">
+<meta name="twitter:description" content="39 Garmin products, family by family, and which have been ridden on real water. And what CleanJibe does with a Polar, a Suunto, a COROS or an Apple Watch.">
+<meta name="twitter:image" content="https://cleanjibe.org/social-card.png">
+<meta name="twitter:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
+
+<!-- Usage analytics: umami, cloud-hosted and cookieless, exactly as on the other documents —
+     it sees that a page was opened, never who opened it. `data-domains` pins it to the
+     production hostname so local servers stay silent. Full note in web/index.html. -->
+<script defer src="https://cloud.umami.is/script.js" data-website-id="97f347ac-e7ba-4be3-b26f-ab4b328bdbf2" data-domains="cleanjibe.org"></script>
+</head>
+<body class="home">
+
+<header class="topbar">
+  <a class="brand" href="../">
+    <span class="mark" aria-hidden="true"></span>
+    <div>
+      <h1>CleanJibe</h1>
+      <p class="sub">Wing foiling, measured.</p>
+    </div>
+  </a>
+  <div class="topbar-right">
+    <a class="btn primary" href="../invite/">Get the beta</a>
+    <a class="btn ghost wide-only" href="../">About CleanJibe</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- ------------------------------------------------------------------ hero -->
+  <!-- "Will my watch work" arrived once a week, and the answer used to be a third of a
+       sentence on /invite/, a third in the store listing and a third in the app's help. One
+       page, one list, and the honest column beside it: what a simulator layout check proves
+       is not what a session on the water proves, and a page that printed one list would be
+       implying the two are the same. -->
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Watch app 0.9.10 · 39 Garmin products</p>
+      <h1>Which watch</h1>
+      <p class="lede">
+        The CleanJibe watch app is a Connect IQ app, so it runs on the Garmins Garmin lets it
+        run on — 39 products as of 0.9.10, listed in full below. If yours is not on the list,
+        the store will simply not offer the install.
+      </p>
+      <p class="lede">
+        <strong>Not a Garmin?</strong> That is fine, and it is the
+        <a href="#other">second half of this page</a>: the analysis does not care which watch
+        recorded the file, only what the file carries.
+      </p>
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------------------- garmin -->
+  <section class="home-section" id="garmin">
+    <h2>Garmin — the CleanJibe watch app</h2>
+    <p class="section-lede">
+      Grouped the way Garmin groups them. The third column is the one worth reading: a watch
+      can pass every layout check in the Connect IQ simulator and still have nobody who has
+      ridden a session on it.
+    </p>
+
+    <!-- `.table-scroll` + `table.stack-sm` is the site's one table pattern: tabular above
+         760 px, one card per row below it, with each cell labelled from its `data-th`. The
+         model column is the long one and is the reason the box scrolls rather than the page.
+         Product ids are from garmin/manifest.xml; the families are Garmin's own names. -->
+    <div class="table-scroll">
+      <table class="stack-sm">
+        <thead>
+          <tr>
+            <th class="l">Family</th>
+            <th class="l">Models</th>
+            <th class="l">Ridden on a real watch</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="l stack-lead">fenix 8</td>
+            <td class="l" data-th="Models">43&nbsp;mm · 47&nbsp;mm · Solar 47&nbsp;mm · Solar 51&nbsp;mm · Pro 47&nbsp;mm</td>
+            <td class="l" data-th="Ridden on a real watch">Yes — every release is tested on one</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">fenix 7</td>
+            <td class="l" data-th="Models">7 · 7S · 7X · 7 Pro · 7 Pro (no WiFi) · 7S Pro · 7X Pro · 7X Pro (no WiFi). The same product ids cover Enduro 2, tactix 7 and quatix 7X Solar</td>
+            <td class="l" data-th="Ridden on a real watch">Not by us — in the open beta since 0.9.4</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">epix 2</td>
+            <td class="l" data-th="Models">epix 2 · epix 2 Pro 42 / 47 / 51&nbsp;mm. The 51&nbsp;mm id also covers tactix 7 AMOLED and D2 Mach 1 Pro; epix 2 covers quatix 7 Sapphire</td>
+            <td class="l" data-th="Ridden on a real watch">Not by us — in the open beta since 0.9.4</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">Forerunner</td>
+            <td class="l" data-th="Models">255 · 265 · 570 (42 / 47&nbsp;mm) · 955 · 965 · 970</td>
+            <td class="l" data-th="Ridden on a real watch">Not by us — in the open beta since 0.9.4</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">MARQ 2</td>
+            <td class="l" data-th="Models">MARQ 2 · MARQ 2 Aviator</td>
+            <td class="l" data-th="Ridden on a real watch">Not by us — in the open beta since 0.9.4</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">Enduro</td>
+            <td class="l" data-th="Models">Enduro 3. Enduro 2 comes in under the fenix 7X id</td>
+            <td class="l" data-th="Ridden on a real watch">Not by us — in the open beta since 0.9.4</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">D2</td>
+            <td class="l" data-th="Models">D2 Mach 1 · D2 Mach 2</td>
+            <td class="l" data-th="Ridden on a real watch">Not by us — in the open beta since 0.9.4</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">Descent</td>
+            <td class="l" data-th="Models">Descent Mk3 43&nbsp;mm</td>
+            <td class="l" data-th="Ridden on a real watch">Not by us — in the open beta since 0.9.4</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">Venu</td>
+            <td class="l" data-th="Models">Venu 2 · 2S · 2 Plus · 3 · 3S</td>
+            <td class="l" data-th="Ridden on a real watch"><strong>No</strong> — new in 0.9.10, simulator only</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">vívoactive</td>
+            <td class="l" data-th="Models">vívoactive 5 · vívoactive 6</td>
+            <td class="l" data-th="Ridden on a real watch"><strong>No</strong> — new in 0.9.10, simulator only</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">Instinct</td>
+            <td class="l" data-th="Models">Instinct 3 AMOLED 45&nbsp;mm · 50&nbsp;mm</td>
+            <td class="l" data-th="Ridden on a real watch"><strong>No</strong> — new in 0.9.10, simulator only</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note">
+      <strong>The three new families are untested on real watches.</strong> Venu, vívoactive
+      and Instinct 3 AMOLED arrived in 0.9.10 and have passed the layout checks in the Connect
+      IQ simulator at every one of their screen sizes — which proves the pages fit, and proves
+      nothing about a session on the water. If you ride with one, that is the single most
+      useful report this beta can get: how the pages look, and whether the touch controls
+      behave. <a href="../invite/#feedback">Where to send it</a>.
+    </p>
+
+    <p class="note">
+      <strong>Not on the list, and why.</strong> The Instinct 2 family and Instinct 3 Solar
+      have 96–128&nbsp;KB of app memory and cannot run the app at all; nor can the fenix 5 and
+      fenix 6 bases. The rectangular Venu X1 is waiting for a rectangular layout rather than
+      for a decision. There is also a CleanJibe <em>data field</em> on the Connect IQ store:
+      it is parked and gets no new work — if your watch can run the full app, use the full app.
+    </p>
+  </section>
+
+  <!-- ------------------------------------------------------------------ other -->
+  <section class="home-section" id="other">
+    <h2>Every other watch</h2>
+    <p class="section-lede">
+      The analysis reads a file, not a brand. Drop a <code>.fit</code>, <code>.gpx</code> or
+      <code>.tcx</code> from anything into <a href="../app/">the browser analyzer</a> or share
+      it into the iPhone app, and you get the track, every flight, the verdict on every turn,
+      the wind axis and your speed records. Two things depend on the file rather than on us.
+    </p>
+
+    <dl class="terms">
+      <div class="term">
+        <dt>Certified speed needs a speed channel</dt>
+        <dd>
+          A <code>.fit</code> carries the speed your watch's receiver measured, and so does a
+          <code>.tcx</code> when the app that wrote it put one in. A <code>.gpx</code> carries
+          positions only, so the speed has to be derived from them — which works, and is
+          marked <em>uncertified</em> everywhere it appears, because an estimate and a
+          measurement should not sit in the same column pretending to be the same thing. So:
+          <strong>take the FIT</strong> wherever the vendor's app offers one.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>Pump strokes need a wrist accelerometer</dt>
+        <dd>
+          How many times you pumped, and which takeoff attempts got you flying, are read off
+          the wrist accelerometer — and the only apps that record it are the CleanJibe watch
+          apps. Everything else in the analysis is identical without it; the pump numbers are
+          simply absent rather than shown as zero.
+        </dd>
+      </div>
+    </dl>
+
+    <!-- The same two axes the app's own help topic uses (docs/presentation.md, "Which
+         watches work with CleanJibe"), so the page and the app answer the question the same
+         way. One table, not a paragraph per brand. -->
+    <div class="table-scroll">
+      <table class="stack-sm">
+        <thead>
+          <tr>
+            <th class="l">What you ride with</th>
+            <th class="l">How it gets in</th>
+            <th class="l">Speed records</th>
+            <th class="l">Pump &amp; takeoff effort</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="l stack-lead">Garmin + the CleanJibe watch app</td>
+            <td class="l" data-th="How it gets in">intervals.icu, or the Bluetooth summary card</td>
+            <td class="l" data-th="Speed records">Certified</td>
+            <td class="l" data-th="Pump &amp; takeoff effort">Yes</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">Garmin, any other profile or app</td>
+            <td class="l" data-th="How it gets in">intervals.icu, or the FIT exported from a computer</td>
+            <td class="l" data-th="Speed records">Certified</td>
+            <td class="l" data-th="Pump &amp; takeoff effort">No</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">Apple Watch (Apple's Workout app)</td>
+            <td class="l" data-th="How it gets in">Import &rarr; Apple Health</td>
+            <td class="l" data-th="Speed records">Certified</td>
+            <td class="l" data-th="Pump &amp; takeoff effort">No</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">Apple Watch + the CleanJibe watch app</td>
+            <td class="l" data-th="How it gets in">Straight to the phone</td>
+            <td class="l" data-th="Speed records">Certified</td>
+            <td class="l" data-th="Pump &amp; takeoff effort">Yes</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">Polar · Suunto · COROS</td>
+            <td class="l" data-th="How it gets in">intervals.icu, or the iOS share sheet from the vendor's app</td>
+            <td class="l" data-th="Speed records">FIT certifies; GPX does not, TCX only with a speed channel</td>
+            <td class="l" data-th="Pump &amp; takeoff effort">No</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">Anything that reaches Strava</td>
+            <td class="l" data-th="How it gets in">Import &rarr; Strava</td>
+            <td class="l" data-th="Speed records">Uncertified</td>
+            <td class="l" data-th="Pump &amp; takeoff effort">No</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">A phone in a pocket, any GPX</td>
+            <td class="l" data-th="How it gets in">The iOS share sheet, or the browser analyzer</td>
+            <td class="l" data-th="Speed records">Uncertified</td>
+            <td class="l" data-th="Pump &amp; takeoff effort">No</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------- apple watch -->
+  <section class="home-section" id="apple">
+    <h2>Apple Watch</h2>
+    <p class="section-lede">
+      Two routes, and the second one is ours. Both need the iPhone app; neither needs a Garmin
+      anywhere.
+    </p>
+    <div class="claims">
+      <article class="panel claim">
+        <h3>Apple's own Workout app</h3>
+        <p>
+          Record a <strong>Surfing</strong> or <em>Water Sports</em> workout the way you
+          already do, then in CleanJibe on the phone use Import &rarr; <strong>Apple
+          Health</strong>. It reads the workout's route and heart rate and nothing else, and
+          the speed is the watch's own, so records from it are certified. Switch on the
+          automatic pickup and later workouts arrive by themselves.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>The CleanJibe watch app</h3>
+        <p>
+          CleanJibe has its own Apple Watch app, and it came along with the TestFlight install
+          — there is nothing else to download. It records straight to the phone, with no
+          Health round trip and no file to move, and because it reads the wrist accelerometer
+          it is the one Apple Watch route that gives you pump strokes and takeoff effort.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>Which to use</h3>
+        <p>
+          Try Apple's Workout app first: it is what most Apple Watch riders will keep using,
+          and it needs nothing installed on the wrist. Then try ours on a second session and
+          tell us which one you would rather ride with — that comparison is
+          <a href="../start/">exactly what the 20-minute test asks for</a>.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <!-- --------------------------------------------------------------- no watch -->
+  <section class="home-section" id="none">
+    <h2>No watch at all</h2>
+    <p class="section-lede">
+      A phone in a pocket records a <code>.gpx</code>, and a <code>.gpx</code> is enough for
+      most of what this thing says: the track, the flights, the jibes and their verdicts, the
+      wind axis. The speed records will be marked uncertified and there will be no pump data.
+      Open <a href="../app/">the analyzer</a>, drop the file in, and see — it costs one drag,
+      nothing is uploaded, and there is an example session inside if you have nothing to hand.
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  <p>CleanJibe — open wingfoil tracking. Watch app, iPhone and iPad app, browser analyzer.</p>
+  <p>
+    <a href="../">About CleanJibe</a> ·
+    <a href="../invite/">Get the beta</a> ·
+    <a href="../start/">Getting started</a> ·
+    <a href="../whats-new/">What&rsquo;s new</a> ·
+    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">github.com/JanLahmann/WingFoil</a>
+  </p>
+  <p class="fineprint">
+    Anonymous, cookie-free usage stats and feature counts by umami.
+    · <a href="../privacy/">Privacy</a>
+    · <a href="../impressum/">Impressum</a>
+  </p>
+</footer>
+
+</body>
+</html>

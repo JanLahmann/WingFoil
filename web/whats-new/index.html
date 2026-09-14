@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>What&rsquo;s new — CleanJibe</title>
+<meta name="description" content="Every public CleanJibe release, newest first: what changed in each TestFlight build of the iPhone and iPad app, and in each version of the Garmin watch app.">
+<meta name="theme-color" content="#101010">
+<meta name="color-scheme" content="dark">
+
+<!-- No manifest and no service-worker registration, for the same reason /invite/, /start/ and
+     /watches/ have neither: the analyzer at /app/ is the installable PWA, and "add to home
+     screen" from a changelog must not install a front door. Not in the sw.js precache either:
+     this page is only worth reading online, and it changes every few days. -->
+<link rel="icon" type="image/svg+xml" href="../icons/icon.svg">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+
+<!-- The same three-layer stack as every other document on the site, in the same order. This
+     page adds no class that did not already exist: each release is the `.panel .piece` card
+     /start/ uses for its three routes. -->
+<link rel="stylesheet" href="../css/tokens.css">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/home.css">
+
+<meta property="og:site_name" content="CleanJibe">
+<meta property="og:title" content="What&rsquo;s new — CleanJibe">
+<meta property="og:description" content="Every public release, newest first: the TestFlight builds of the iPhone and iPad app, and the Garmin watch app versions.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://cleanjibe.org/whats-new/">
+<!-- Absolute, like every other document here: scrapers fetch the tag's value as-is and never
+     resolve it against the page. -->
+<meta property="og:image" content="https://cleanjibe.org/social-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="What&rsquo;s new — CleanJibe">
+<meta name="twitter:description" content="Every public release, newest first: the TestFlight builds of the iPhone and iPad app, and the Garmin watch app versions.">
+<meta name="twitter:image" content="https://cleanjibe.org/social-card.png">
+<meta name="twitter:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
+
+<!-- Usage analytics: umami, cloud-hosted and cookieless, exactly as on the other documents.
+     `data-domains` pins it to the production hostname so local servers stay silent. Full note
+     in web/index.html. -->
+<script defer src="https://cloud.umami.is/script.js" data-website-id="97f347ac-e7ba-4be3-b26f-ab4b328bdbf2" data-domains="cleanjibe.org"></script>
+</head>
+<body class="home">
+
+<header class="topbar">
+  <a class="brand" href="../">
+    <span class="mark" aria-hidden="true"></span>
+    <div>
+      <h1>CleanJibe</h1>
+      <p class="sub">Wing foiling, measured.</p>
+    </div>
+  </a>
+  <div class="topbar-right">
+    <a class="btn primary" href="../invite/">Get the beta</a>
+    <a class="btn ghost wide-only" href="../">About CleanJibe</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- ------------------------------------------------------------------ hero -->
+  <!-- The release notes exist twice already — in TestFlight's "What to Test" and in the
+       Connect IQ listing's "What's New" — and both are readable only by somebody who has
+       already installed the thing. This page is the same text where anyone can read it,
+       which is also what makes "is this still being worked on" answerable at a glance. -->
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Both apps are open betas</p>
+      <h1>What&rsquo;s new</h1>
+      <p class="lede">
+        Newest first. The iPhone and iPad app ships as TestFlight builds and the watch app as
+        Connect IQ versions, so the two number differently and land on different days.
+      </p>
+      <p class="lede">
+        Not installed yet? <a href="../invite/">Both installs are here</a>, and the
+        <a href="../start/">20-minute test</a> is what to do with them once they are on.
+      </p>
+    </div>
+  </section>
+
+  <!-- --------------------------------------------------------------- releases -->
+  <section class="home-section" id="releases">
+    <h2>Releases</h2>
+    <p class="section-lede">
+      TestFlight offers the newest build automatically; the Connect IQ store updates the watch
+      app through Garmin Connect. A build number is what a bug report should name — it is at
+      the foot of the app&rsquo;s menu, and under Settings &rarr; About.
+    </p>
+
+    <article class="panel piece">
+      <div class="piece-head">
+        <h3>iPhone and iPad · build 49</h3>
+        <span class="status live">13 September 2026 · 0.15.0</span>
+      </div>
+      <p class="what">A crash fix for the watch link.</p>
+      <ul>
+        <li>The app no longer crashes when the Garmin sends it something — a summary card, or
+            an answer to a map push. Builds 43 to 47 fell over the moment a message arrived
+            from a watch running a CleanJibe beta build.</li>
+        <li>Worth checking: send a map to the watch, finish a short recording on the watch, and
+            see whether the phone stays up and the session appears.</li>
+      </ul>
+    </article>
+
+    <article class="panel piece">
+      <div class="piece-head">
+        <h3>iPhone and iPad · build 47</h3>
+        <span class="status">13 September 2026 · 0.15.0</span>
+      </div>
+      <p class="what">You choose which maps the watch gets.</p>
+      <ul>
+        <li><strong>Map for the watch</strong> is a page now: the two most-ridden spots by
+            default, or up to two picks among your own spots and <em>Where I am now</em>.
+            Settings &rarr; Garmin watch &rarr; Map for the watch.</li>
+        <li>The phone reads its own position <strong>once per send</strong>, only when you
+            picked it, and never in the background. The tick asks for the permission where you
+            can see it; the automatic send at launch never prompts.</li>
+      </ul>
+    </article>
+
+    <article class="panel piece">
+      <div class="piece-head">
+        <h3>iPhone and iPad · build 45</h3>
+        <span class="status">13 September 2026 · 0.15.0</span>
+      </div>
+      <p class="what">The session list learns to group and to narrow — and every page gets a way to complain.</p>
+      <ul>
+        <li><strong>Group by</strong> None, Month, Year or Spot at the top of Sessions, newest
+            group first. A library of twenty or more opens grouped by month until you say
+            otherwise.</li>
+        <li>A <strong>filter</strong> beside Import: one spot, one source (intervals.icu,
+            Strava, Apple Health, the Garmin watch, a file), a date window. What is active
+            shows as chips you can tap away, and the count line reads
+            <em>3 of 41 sessions</em>. Records and Trends keep reading the whole library on
+            purpose.</li>
+        <li>The menu at the top left of Sessions, in the order a new rider needs it: Getting
+            started, Settings, Support, then What CleanJibe does and What the numbers mean,
+            with the build number at the foot. The welcome screen has a close button now.</li>
+        <li><strong>&ldquo;Something off? Send feedback&rdquo;</strong> at the foot of every
+            page — and on a session page the mail names the session by itself.</li>
+        <li>Connect Strava from Settings &rarr; Strava as well as from Import.</li>
+        <li>The full-screen map&rsquo;s legend no longer floats to the middle of the screen
+            after a keyboard was used somewhere else.</li>
+      </ul>
+    </article>
+
+    <article class="panel piece">
+      <div class="piece-head">
+        <h3>iPhone and iPad · build 43</h3>
+        <span class="status">13 September 2026 · 0.15.0</span>
+      </div>
+      <p class="what">Two fixes from the first day of build 41.</p>
+      <ul>
+        <li><strong>Send map to watch</strong> now finds whichever CleanJibe build you have on
+            the watch — release, public beta or dev — instead of assuming the release one.
+            &ldquo;Failure_AppNotFound&rdquo; is gone.</li>
+        <li>The turn page scrolls from anywhere again: a vertical finger on a strip scrolls the
+            page, a sideways one scrubs the playhead, a tap places it. The small window words
+            no longer overprint each other.</li>
+      </ul>
+    </article>
+
+    <article class="panel piece">
+      <div class="piece-head">
+        <h3>iPhone and iPad · build 41</h3>
+        <span class="status">13 September 2026 · 0.15.0</span>
+      </div>
+      <p class="what">The session video, the iPad, and a much wider way in.</p>
+      <ul>
+        <li><strong>Export video:</strong> a session becomes a short film — the map draws
+            itself along your track, the numbers land, and it shares like any other clip. Open
+            a session &rarr; share &rarr; Export video.</li>
+        <li><strong>CleanJibe is an iPad app</strong>, and the same build runs on an Apple
+            silicon Mac as &ldquo;Designed for iPad&rdquo;.</li>
+        <li><strong>Send map to watch:</strong> the phone draws the shore of your spot and
+            pushes it to a Garmin running CleanJibe 0.9.10, so the live map has ground under
+            the breadcrumb. Settings &rarr; Garmin watch.</li>
+        <li><strong>Imports take GPX and TCX</strong> as well as FIT — so a Polar, Suunto or
+            COROS session comes in through intervals.icu or straight from the vendor&rsquo;s
+            app through the share sheet. Without a speed channel the speed records are
+            estimated and marked uncertified.</li>
+        <li><strong>Import from Strava:</strong> connect your account under Import and pick the
+            sessions. Positions only, so speed records are uncertified — and single-rider until
+            Strava approves the app.</li>
+        <li>Analysis engine 0.18.0: the pump rung now asks the minimum foil speed, and every
+            touchdown and fall says <em>why</em> it ended that way on the turn page.</li>
+      </ul>
+    </article>
+
+    <article class="panel piece">
+      <div class="piece-head">
+        <h3>Garmin watch app · 0.9.10</h3>
+        <span class="status">13 September 2026</span>
+      </div>
+      <p class="what">Nine more watches, and the shore under the trail.</p>
+      <ul>
+        <li>Nine more watches: <strong>Venu 2 / 2S / 2 Plus / 3 / 3S, vívoactive 5 / 6 and
+            Instinct 3 AMOLED 45 / 50&nbsp;mm</strong> — 39 products in all. They pass the
+            layout checks in the simulator and have <strong>not been ridden on a real
+            watch</strong>; if you have one, <a href="../invite/#feedback">tell us</a> how the
+            pages look and whether the touch controls behave.</li>
+        <li>The live map page and the post-save Track page can draw the shore of your spot
+            under the trail, sent over Bluetooth from the CleanJibe iPhone app (Settings &rarr;
+            Garmin watch &rarr; Send map to watch). No firmware map view is involved, which is
+            the whole point — the firmware&rsquo;s own map kills the app on a fenix 8.</li>
+        <li>A splash page with the mark on the first launch after an install or update, and a
+            larger mark on the start page.</li>
+      </ul>
+      <p class="note">
+        0.9.10 is uploaded and the public store listing still shows <strong>0.9.9</strong>
+        while it goes through Garmin&rsquo;s review. <a href="../watches/">Which watch</a> has
+        the full product list.
+      </p>
+    </article>
+
+    <article class="panel piece">
+      <div class="piece-head">
+        <h3>Garmin watch app · 0.9.9</h3>
+        <span class="status">9 September 2026</span>
+      </div>
+      <p class="what">A clean jibe now needs a quiet ten seconds after the turn.</p>
+      <ul>
+        <li>No touchdown, no swim and no dunked wrist in the ten seconds after the sweep — so
+            the star, the clean count and CPH on the wrist mean what the phone and
+            cleanjibe.org mean by them.</li>
+        <li>The clean-jibe buzz therefore arrives up to ten seconds after the turn. The flew
+            through, touched down and fell in verdicts are unchanged and still buzz at once.</li>
+      </ul>
+    </article>
+
+    <p class="note">
+      Older watch-app versions — 0.9.8 back to 0.9.0 — are in the
+      <a href="https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806" rel="noopener"
+         data-umami-event="whatsnew-garmin-store">Connect IQ listing&rsquo;s own What&rsquo;s
+      New</a>, and the whole history of both apps, commit by commit, is in the
+      <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">public repository</a>.
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  <p>CleanJibe — open wingfoil tracking. Watch app, iPhone and iPad app, browser analyzer.</p>
+  <p>
+    <a href="../">About CleanJibe</a> ·
+    <a href="../invite/">Get the beta</a> ·
+    <a href="../start/">Getting started</a> ·
+    <a href="../watches/">Which watch</a> ·
+    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">github.com/JanLahmann/WingFoil</a>
+  </p>
+  <p class="fineprint">
+    Anonymous, cookie-free usage stats and feature counts by umami.
+    · <a href="../privacy/">Privacy</a>
+    · <a href="../impressum/">Impressum</a>
+  </p>
+</footer>
+
+</body>
+</html>
