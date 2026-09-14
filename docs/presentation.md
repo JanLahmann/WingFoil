@@ -2254,6 +2254,28 @@ so the tap that asks "what was this stretch?" answers on both figures at once. T
 transient like every other zoom, and the reset affordance the zoom already has is the way
 out of it.
 
+## Channels — which screen a rider sees at all
+
+Every rule in this file is written for the app; **docs/channels.md** says which of the three
+channels a given screen is in, and it is the single source for that — the website's "what is
+coming" list, the app's own Beta section and the store texts are written from it. Release is
+the App Store build (no compile flags, iPhone, no watch app or widgets); beta adds `BETA`
+(GPX/TCX, the Garmin export ZIP, Apple Health, the Apple Watch app and widgets, the session
+video, the library's grouping and filter controls, the Beta section); dev adds `DEV` and
+`TUNING` on top (the Garmin link and its Settings section, windsurf and the per-discipline
+sets, the Tuning section below, iPad).
+
+Two rules follow for everything written here. **One wording per metric across every channel:**
+a label does not change because a build is a beta, and nothing in this file is allowed to have
+a channel-specific spelling. **A gated door is gone, not greyed out:** a channel that lacks a
+feature has no row for it, no document type, no usage string and no entitlement — the one
+exception being "Curious about what is coming", which is the app naming the doors it does not
+have, on purpose, in one place.
+
+Settings → About and the library menu's last line carry the channel after the version —
+nothing for the release, " · beta", " · dev" — because "which build is this" is the first
+question of every report that comes back from TestFlight.
+
 ## Tuning — the thresholds on sliders, in the dev build, on one phone
 
 **What it is.** Settings → Tuning puts 27 of the docs/algorithms.md parameters on controls so
@@ -2785,8 +2807,14 @@ print, in this order and for this reason:
    screens because a rider who has a question after reading them is one tap from asking it.
 4. **What CleanJibe does** — the welcome screen again (`SessionStore.replayWelcome`).
 5. **What the numbers mean** — the Help index.
-6. The build line, not tappable: *CleanJibe 0.15.0 (45)* with " · dev" on the dev variant —
-   the same string as Settings → About, and the first question of every support mail.
+6. The build line, not tappable: *CleanJibe 0.15.0 (45)* with " · beta" or " · dev" after it
+   on those channels — the same string as Settings → About, and the first question of every
+   support mail.
+
+In the release channel a seventh row sits straight under **What CleanJibe does**: *Curious
+about what is coming*, which opens the list of beta and dev doors and the TestFlight link
+(docs/channels.md). The beta has the same list in Settings and no row here — the reader is
+already through the door it offers.
 
 **The welcome screen closes.** Replayed from the menu it has a circular ✕ at the top right,
 because its three buttons are *ways in* and a rider who came back to read it is not choosing

@@ -1084,72 +1084,114 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
 6. **Watch-vs-phone divergence banner** — standing field-regression alarm on every class-(a)
    import (thresholds in `algorithms.md`).
 
-## Two TestFlight variants — the public build and the dev one
+## Three channels — release, beta and dev
 
-One App Store Connect app, one bundle id, one `MARKETING_VERSION`, **two builds from the same
-commit**. They differ by one compilation condition:
+`docs/channels.md` is the contract: which feature ships in which channel, and the four rules a
+feature meets before it moves up one. This section is how the three are **built**, and the one
+check that proves a channel is what it claims to be.
 
-| | scheme | configuration | `TUNING` | group | build |
-|---|---|---|---|---|---|
-| **public** | `WingFoil` | `Release` | not defined | external (beta review) | N |
-| **dev** | `WingFoil Dev` | `Dev Release` | defined | internal (no beta review) | N+1 |
+| | scheme | configuration | flags | bundle id | device | group |
+|---|---|---|---|---|---|---|
+| **release** | `WingFoil Release` | `Release` | none | `de.lahmann.wingfoil` | iPhone | external (beta review) |
+| **beta** | `WingFoil Beta` | `Beta Release` | `BETA` | `de.lahmann.wingfoil` | iPhone | external (beta review) |
+| **dev** | `WingFoil Dev` | `Dev Release` | `BETA DEV TUNING` | `de.lahmann.wingfoil.dev` | iPhone + iPad | internal (no review) |
 
-**The public build takes the lower number**, and that is the point of the order. A build
-number is what a reviewer and an external tester see beside the version, and the canonical
-build of a release is the one that ships — so it is the one that should read N. The dev
-build is not deprived of anything by coming second: our internal group has automatic
-distribution on, so every processed build reaches Jan's phone by itself whichever number it
-carries. (It was the other way round through build 40, when the dev build was archived
-first out of habit; nothing but the archiving order changes here.)
+Release and beta are two targets over **one set of sources**: `WingFoilRelease` and `WingFoil`
+both compile `ios/WingFoil/`, and everything that separates them is a compile flag, an
+Info.plist and an entitlements file. The release target embeds no watch app and no widget
+extension, links no ConnectIQ, has no HealthKit entitlement, and declares FIT and zip and
+nothing else on its share sheet. The dev channel is a **second app**: its own bundle id,
+display name "CleanJibe Dev", its own BGTask identifier (`$(CJ_BUNDLE_ID).refresh`, read back
+in Swift from `Bundle.main.bundleIdentifier`) and its own Garmin callback scheme
+(`wingfoil-ciq-dev`, read back from the Info.plist key `CJUrlSchemeCIQ`), so it installs
+beside the release one instead of over it.
 
-`TUNING` compiles in Settings → Tuning, the "tuned thresholds" chip and banner, the turn
-footnote's "Measured at:" line, and " · dev" after the version in Settings → About
-(docs/presentation.md "Tuning"). It is set on the **phone app target only**, in
-`ios/project.yml`, as `SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) TUNING` under the
-`Dev Debug` / `Dev Release` configurations. Nothing else in the project reads it, and the
-watch, the widgets and the complication are built identically in both variants — they only
-need their own `Dev Release` signing block, which they have.
+**Gates in code.** `#if BETA` is true in beta and dev; `#if DEV` only in dev; `#if TUNING`
+stays what it always was and is defined wherever `DEV` is. The kit (`WingFoilKit`) compiles
+everything in every channel — the gating is in the app, its Info.plist and its entitlements,
+so a door a channel lacks has no UI, no document type, no usage string and no entitlement.
+`#if !BETA` marks the one thing only the App Store build has: the "Curious about what is
+coming" section with the TestFlight link.
 
-**The check that the public build is clean** (run it before archiving; it must print nothing
-containing `TUNING`):
+**The flag check** (run it before archiving). Release must print nothing but the inherited
+defaults; beta `BETA`; dev `BETA DEV TUNING`:
 
 ```sh
 cd ios
-xcodebuild -project WingFoil.xcodeproj -scheme WingFoil -configuration Release \
-  -showBuildSettings | grep SWIFT_ACTIVE_COMPILATION_CONDITIONS
+xcodebuild -project WingFoil.xcodeproj -scheme "WingFoil Release" -configuration Release \
+  -showBuildSettings | grep SWIFT_ACTIVE_COMPILATION_CONDITIONS      # (nothing)
+xcodebuild -project WingFoil.xcodeproj -scheme "WingFoil Beta" -configuration "Beta Release" \
+  -showBuildSettings | grep SWIFT_ACTIVE_COMPILATION_CONDITIONS      # BETA
+xcodebuild -project WingFoil.xcodeproj -scheme "WingFoil Dev" -configuration "Dev Release" \
+  -showBuildSettings | grep SWIFT_ACTIVE_COMPILATION_CONDITIONS      # BETA DEV TUNING
 ```
 
-**The two archive commands.** Same commit, same `MARKETING_VERSION`; bump
+**And the plist check**, which is the other half and catches what a flag cannot — a usage
+string or a document type left in the release channel's Info.plist. After `xcodegen generate`
+it must print `0`:
+
+```sh
+cd ios && xcodegen generate
+grep -c "NSHealth\|NSLocation\|NSBluetooth\|gpx\|tcx" WingFoil/Info-Release.plist   # 0
+```
+
+**The three archive commands.** Same commit, same `MARKETING_VERSION`; bump
 `CURRENT_PROJECT_VERSION` in `ios/project.yml` (all four targets) and re-run `xcodegen
-generate` between them, so the public build is N and the dev one N+1.
+generate` between them. **The App Store build takes the lowest number**, and that is the point
+of the order: a build number is what a reviewer and an external tester see beside the version,
+and the canonical build of a release is the one that ships. The internal group has automatic
+distribution on, so every processed build of the release record reaches Jan's phone by itself
+whichever number it carries.
 
 ```sh
 cd ios
 
-# 1. public build (no TUNING) — build N
+# 1. release channel — build N, App Store
 xcodegen generate
-xcodebuild -project WingFoil.xcodeproj -scheme WingFoil \
+xcodebuild -project WingFoil.xcodeproj -scheme "WingFoil Release" \
   -configuration Release -destination 'generic/platform=iOS' \
-  -archivePath build/WingFoil.xcarchive archive
-xcodebuild -exportArchive -archivePath build/WingFoil.xcarchive \
-  -exportOptionsPlist ExportOptions.plist -exportPath build/export
+  -archivePath build/WingFoilRelease.xcarchive archive
+xcodebuild -exportArchive -archivePath build/WingFoilRelease.xcarchive \
+  -exportOptionsPlist ExportOptions.plist -exportPath build/exportRelease
 
-# 2. bump CURRENT_PROJECT_VERSION to N+1 in project.yml, then the dev build
+# 2. bump CURRENT_PROJECT_VERSION to N+1, then the beta channel
+xcodegen generate
+xcodebuild -project WingFoil.xcodeproj -scheme "WingFoil Beta" \
+  -configuration "Beta Release" -destination 'generic/platform=iOS' \
+  -archivePath build/WingFoilBeta.xcarchive archive
+xcodebuild -exportArchive -archivePath build/WingFoilBeta.xcarchive \
+  -exportOptionsPlist ExportOptions.plist -exportPath build/exportBeta
+
+# 3. bump to N+2, then the dev channel — a different app record
 xcodegen generate
 xcodebuild -project WingFoil.xcodeproj -scheme "WingFoil Dev" \
   -configuration "Dev Release" -destination 'generic/platform=iOS' \
-  -archivePath build/WingFoilDev.xcarchive archive
+  -archivePath build/WingFoilDev.xcarchive archive \
+  -allowProvisioningUpdates \
+  -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_HZT9694JZ4.p8 \
+  -authenticationKeyID HZT9694JZ4 \
+  -authenticationKeyIssuerID b9e6ccaa-e24a-4d37-bc1d-87f5be210572
 xcodebuild -exportArchive -archivePath build/WingFoilDev.xcarchive \
   -exportOptionsPlist ExportOptions.plist -exportPath build/exportDev
 ```
 
-Upload both (Transporter or `xcrun altool`), then attach each to its group:
+`ios/ExportOptions.plist` carries all eight bundle ids — four release/beta, four dev — in one
+`provisioningProfiles` map. An entry for a bundle id an archive does not contain is ignored,
+so the release export reads the first line and nothing else.
+
+Upload each (Transporter or `xcrun altool`), then attach it to its group. `--app` names the
+App Store Connect record: `release` (the default) is the App Store app, which holds both the
+release and the beta channel's builds; `dev` is the separate "CleanJibe Dev" record
+(`de.lahmann.wingfoil.dev`, app id 6811840646). `CJ_DEV_APP_ID` in the environment overrides
+that id if the record is ever recreated.
 
 ```sh
 uv run --with pyjwt --with cryptography --with requests \
   python ios/tools/testflight_publish.py N   --group external --wait
 uv run --with pyjwt --with cryptography --with requests \
-  python ios/tools/testflight_publish.py N+1 --group internal --wait
+  python ios/tools/testflight_publish.py N+1 --group external --wait
+uv run --with pyjwt --with cryptography --with requests \
+  python ios/tools/testflight_publish.py N+2 --group internal --app dev --wait
 ```
 
 Our internal group has automatic distribution on (`hasAccessToAllBuilds`), so **every**
@@ -1162,11 +1204,13 @@ in front of Apple's reviewers ahead of the one we do. `--group external` is the 
 is unchanged: attach, set What to Test, submit for beta review (the lesson of builds 6–15,
 which sat unreviewed for weeks because attaching is not submitting).
 
-Both variants read and write the *same* library on a phone that has had both installed. That
-is deliberate — the point of the dev build is to try thresholds against real sessions — but it
-means a phone that ran the dev build has a library stamped `0.15.0+tuned.…` until the public
-build's own `reanalyzeStale()` sweep re-derives it on the published defaults, which it does at
-the first launch because the stamped version does not match.
+**Release and beta share a bundle id**, so a phone holds one of them and TestFlight swaps
+them in place with the library kept. **Dev is a second app** beside either, with a library of
+its own — which is the one behavioural difference from the old two-variant arrangement, where
+the dev build read and wrote the public build's library. A phone that ran the *old* dev build
+still has a library stamped `0.15.0+tuned.…`; the release build's own `reanalyzeStale()` sweep
+re-derives it on the published defaults at the first launch, because the stamped version does
+not match.
 
 ### Ground-truth labels — the CSV the dev build exports
 
