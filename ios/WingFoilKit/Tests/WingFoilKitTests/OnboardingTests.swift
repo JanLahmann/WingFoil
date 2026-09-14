@@ -123,15 +123,25 @@ import Testing
     /// **costs** before the rider imports, not after he finds the pump card empty and his
     /// speed records marked. Both ceilings Strava puts on the application are named here too,
     /// because "it will not connect" is otherwise a mystery nobody can solve.
+    ///
+    /// The rider ceiling is named **neutrally** since 14 September 2026: "a limited number of
+    /// riders", not "Strava has not reviewed CleanJibe yet", which tells an App Store rider
+    /// that the app in his hand is waiting for permission to exist. The rate limit is the
+    /// real number — two hundred — in the same words here and on the Import screen, which
+    /// used to say a hundred.
     @Test func theStravaTopicSaysWhatItCostsBeforeTheRiderImports() {
         let topic = HelpCatalog.topic(.stravaImport)
         #expect(topic.section == .setup)
         let prose = (topic.body + topic.items.flatMap { [$0.term, $0.detail] })
             .joined(separator: " ").lowercased()
         for phrase in ["uncertified", "pump strokes", "intervals.icu", "never writes",
-                       "ten connected riders", "fifteen minutes", "disconnect"] {
+                       "limited number of riders", "two hundred requests",
+                       "fifteen minutes", "support & ideas", "disconnect"] {
             #expect(prose.contains(phrase), "the Strava topic never mentions \(phrase)")
         }
+        // Never the sentence that says the app is waiting to be allowed to exist.
+        #expect(!prose.contains("not reviewed"))
+        #expect(!prose.contains("not approved"))
         // The one recommendation that saves a rider from importing the worse copy.
         #expect(prose.contains("import it from there instead"))
         #expect(HelpCatalog.search("Strava").contains { $0.id == .stravaImport })

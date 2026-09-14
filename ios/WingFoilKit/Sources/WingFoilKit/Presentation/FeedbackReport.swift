@@ -118,13 +118,19 @@ public struct FeedbackFacts: Sendable, Equatable {
         /// Nil when no card has ever arrived: the link knows the watch, not what is
         /// installed on it.
         public let garminAppVersion: String?
-        /// nil when the question could not be asked at all (`WCSession` unsupported).
+        /// nil when the question could not be asked at all (`WCSession` unsupported), and
+        /// in a channel that has no door for the answer — see `healthImport`.
         public let appleWatchPaired: Bool?
         /// Settings → Apple Health → "Import new Health workouts automatically".
-        public let healthImport: Bool
+        ///
+        /// **nil where the door does not exist.** Health and the Apple Watch app are beta
+        /// doors (docs/channels.md), so an App Store report that printed "Health import
+        /// off" and "No Apple Watch paired" would be answering two questions the app it
+        /// came from never asks. A nil fact is left out of the report entirely.
+        public let healthImport: Bool?
 
         public init(garminModel: String?, garminAppVersion: String?,
-                    appleWatchPaired: Bool?, healthImport: Bool) {
+                    appleWatchPaired: Bool?, healthImport: Bool?) {
             self.garminModel = garminModel
             self.garminAppVersion = garminAppVersion
             self.appleWatchPaired = appleWatchPaired
@@ -263,14 +269,14 @@ public enum FeedbackInvitation {
         "Ideas and wishes are as welcome as bugs · Menu → Support & ideas"
 }
 
-/// The beta feedback mail, as text.
+/// The feedback mail, as text.
 ///
 /// Pure: a subject, a body and a `mailto:` URL out of a `FeedbackFacts`, with no framework
 /// and no side effect. The app hands the first two to `MFMailComposeViewController` and
 /// falls back to the third when the phone has no mail account set up.
 public enum FeedbackReport {
 
-    /// Where beta feedback goes. One address, not a GitHub issue: the repository is public
+    /// Where feedback goes. One address, not a GitHub issue: the repository is public
     /// and a bug report carries a build number, a phone model and sometimes a session's
     /// spot, which is a map pin to where the reporter rides.
     public static let recipient = "info@cleanjibe.org"
@@ -281,10 +287,10 @@ public enum FeedbackReport {
     /// variants of a release share a marketing version and differ only here; the watch
     /// because a mailbox sorted by subject then groups the reports that are about one.
     ///
-    /// It said *beta feedback* until the release channel was cut. The same composer is the
-    /// App Store build's Support & ideas mail, and a subject line that calls that build a
-    /// beta is the app telling a rider he is holding a test version (docs/channels.md).
-    /// The build number already tells the channels apart, which is what the word was doing.
+    /// **It does not say "beta".** The same kit builds the App Store app, and a rider who
+    /// bought nothing and joined nothing must not find his own mail calling the app he is
+    /// holding a test (docs/channels.md). The build number says which channel it is to
+    /// anybody who needs to know, and the facts block under the rule says it in words.
     public static func subject(_ facts: FeedbackFacts) -> String {
         let build = facts.app.build + (facts.app.isDev ? " dev" : "")
         return "\(Branding.appName) feedback · build \(build) · \(facts.watch.subjectName)"
@@ -439,7 +445,11 @@ public enum FeedbackReport {
         case false: lines.append("No Apple Watch paired")
         case nil: break
         }
-        lines.append("Health import " + (watch.healthImport ? "on" : "off"))
+        // nil is a fact the channel has no door for, so it is left out rather than
+        // answered — see `FeedbackFacts.Watch.healthImport`.
+        if let health = watch.healthImport {
+            lines.append("Health import " + (health ? "on" : "off"))
+        }
         return lines
     }
 

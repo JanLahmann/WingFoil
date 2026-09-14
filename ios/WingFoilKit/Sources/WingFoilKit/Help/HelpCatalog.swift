@@ -391,12 +391,12 @@ public enum HelpCatalog {
                 + "own speed in it, and those records certify. Importing both is harmless — "
                 + "the same session is recognised whichever door it came in by, and it is "
                 + "never added twice.",
-                "Strava has not reviewed CleanJibe yet. Until it does, Strava allows ten "
-                + "connected riders and two hundred requests every fifteen minutes, so a "
-                + "first import of a long history takes its time and may ask you to come "
-                + "back in a few minutes. If connecting is refused because the app is full, "
-                + "that ceiling is why and it is nothing to do with your account — Menu → "
-                + "Support is the way to report it.",
+                "Strava lets a new app connect a limited number of riders, and it answers "
+                + "two hundred requests every fifteen minutes, so a first import of a long "
+                + "history takes its time and may ask you to come back in a few minutes. If "
+                + "connecting is refused because CleanJibe is full, it is nothing to do "
+                + "with your account — Menu → Support & ideas is the way to say so, and "
+                + "Strava is asked for more.",
             ],
             items: [
                 .init(term: "Connect",
@@ -427,17 +427,18 @@ public enum HelpCatalog {
             summary: "Polar, Suunto and COROS can hand a session to CleanJibe as a file. "
                 + "Garmin's phone app cannot.",
             body: [
-                "Every watch app can export a recording as a file, and a FIT is the one to "
-                + "take: CleanJibe reads it in full. On an iPhone that means the share "
-                + "sheet — export the session, choose CleanJibe from the row of apps, and it "
-                + "is imported. If CleanJibe is not in the row, tap Save to Files instead, "
-                + "then open Files, tap the file, and share it from there.",
+                "Every watch app can export a recording as a file, and CleanJibe reads .fit "
+                + "files. On an iPhone that means the share sheet: export the session as a "
+                + "FIT, choose CleanJibe from the row of apps, and it is imported. If "
+                + "CleanJibe is not in the row, tap Save to Files instead, then open Files, "
+                + "tap the file, and share it from there.",
                 "Which format to pick, if you are asked: FIT, every time. A FIT carries the "
-                + "receiver's own speed, so its speed records certify; a GPX or a TCX "
-                + "carries positions only, so speed has to be worked out from them and those "
-                + "records are marked uncertified. Everything else — foil time, flights, "
-                + "turns, the map, the wind axis — is the same either way. GPX and TCX files "
-                + "are read by the CleanJibe beta; a FIT is read by every build.",
+                + "receiver's own speed, so its speed records certify. A .gpx or a .tcx "
+                + "carries positions only — speed is worked out from them and those records "
+                + "are marked uncertified — and those two formats open in the public "
+                + "TestFlight beta; the route that needs no file at all is Strava, or "
+                + "intervals.icu if your watch syncs there. Everything else — foil time, "
+                + "flights, turns, the map, the wind axis — is the same either way.",
                 "There is one watch this does not work for, and it is the popular one. "
                 + "Garmin Connect's phone app has no export at all: every path Garmin "
                 + "documents starts with signing in to connect.garmin.com in a browser. So "
@@ -472,10 +473,11 @@ public enum HelpCatalog {
                           + "original FIT. (The menu used to say \"Export Original\".) "
                           + "intervals.icu is the path that needs no computer."),
                 .init(term: "Anything else",
-                      detail: "If an app can produce a FIT, CleanJibe can read it, and it "
-                          + "makes no difference whether it arrives by AirDrop, by Mail or "
-                          + "out of Files. A ZIP full of recordings works too. GPX and TCX "
-                          + "files are the CleanJibe beta's door."),
+                      detail: "If an app can produce a FIT, CleanJibe can read it — from "
+                          + "AirDrop, from Mail and from Files. A ZIP full of recordings "
+                          + "works too: Import → FIT or ZIP…. A .gpx or a .tcx opens in the "
+                          + "public beta; otherwise those sessions come in through Strava "
+                          + "or intervals.icu."),
             ],
             links: [
                 HelpLink(title: "Suunto: exporting a FIT from the phone app",
@@ -495,12 +497,13 @@ public enum HelpCatalog {
         // rather than under "Where the numbers come from", for the same reason that one does:
         // for this reader it is not a footnote about data quality, it is the whole way in.
         //
-        // **Both channels are answered, in one topic.** The GPX door is a beta door
-        // (docs/channels.md), so the release build cannot open the file these apps produce —
-        // and a help topic that sent a release rider off to install a tracker and then had
-        // nothing to do with the result would be worse than no topic. So the order is
-        // deliberate: Strava first, because it works in every channel and needs no file at
-        // all, and the file route second, labelled as the beta's.
+        // **Every channel is answered, in one topic, and no other app is named.** A help
+        // topic may not send a reader off to install a named third-party app on another
+        // platform — App Store guideline 2.3.10 — and it may not send a release rider off
+        // to record a .gpx it cannot open either (the GPX door is a beta door,
+        // docs/channels.md). So the order is deliberate: Strava first, because it works in
+        // every channel and needs no file at all, and the file route second, in terms of
+        // what the file *is* rather than which app wrote it.
         HelpTopic(
             id: .phoneOnly, section: .setup, title: "Recording with a phone only",
             summary: "No watch at all: a tracker app in a pouch, and the session comes in "
@@ -516,10 +519,12 @@ public enum HelpCatalog {
                 + "Strava and pick the session. Strava's own phone app cannot export a "
                 + "recording as a file, so this is the route for it: connecting is the "
                 + "export.",
-                "The other way is a file, which the CleanJibe beta reads (GPX and TCX). "
-                + "Record with a tracker that can export one, then share the file into "
+                "The other way is a file. Any GPS-logging app on your phone that writes a "
+                + ".fit or a .gpx will do: record the session, then share the file into "
                 + "CleanJibe from the iOS share sheet, or save it to Files and open it from "
-                + "there.",
+                + "there. CleanJibe reads .fit files; .gpx and .tcx files open in the public "
+                + "TestFlight beta, and until they arrive here the session comes in through "
+                + "Strava, or through intervals.icu if the app you record with syncs there.",
                 "Where to put the phone: somewhere it is dry, still and pointing at the sky. "
                 + "A waterproof pouch on the upper arm or high on the chest is the one that "
                 + "works; a pocket at hip height spends half the session underwater at the "
@@ -528,26 +533,22 @@ public enum HelpCatalog {
                 + "the pouch is sealed, and stop it when you come back in.",
             ],
             items: [
-                .init(term: "iPhone · Open GPX Tracker",
-                      detail: "Free, records a GPX and nothing else, and shares it straight "
-                          + "out of the app. Save the track, tap Share, pick CleanJibe."),
-                .init(term: "iPhone · Komoot",
-                      detail: "Records a tour and exports it as a GPX from the tour's own "
-                          + "page. Made for touring rather than for watersport, so expect to "
-                          + "name the session yourself afterwards."),
-                .init(term: "Android · GPSLogger",
-                      detail: "Free and small: it writes a GPX or a TCX to the phone's "
-                          + "storage and does nothing else at all. Mail the file to yourself "
-                          + "or put it in a cloud folder the iPhone can reach."),
-                .init(term: "Android · OsmAnd",
-                      detail: "Its trip recording writes a GPX you can export and send on. "
-                          + "Heavier than GPSLogger, and the map is the point of it."),
-                .init(term: "Android · Komoot",
-                      detail: "The same tour export as the iPhone version."),
-                .init(term: "Any phone · Strava",
-                      detail: "Record in the Strava app and connect Strava here. The app "
-                          + "cannot hand you a file, so there is nothing to share in: the "
-                          + "import reads the activity out of your account instead."),
+                .init(term: "Strava, the route that needs no file",
+                      detail: "Record in the Strava app and connect Strava here. It cannot "
+                          + "hand you a file, so there is nothing to share in: the import "
+                          + "reads the activity out of your account instead. Positions "
+                          + "only, so the speed records are uncertified."),
+                .init(term: "Any GPS-logging app that writes a file",
+                      detail: "Anything on your phone that records a track and writes a "
+                          + ".fit or a .gpx works — a tracker, a touring app, whatever you "
+                          + "already have. Save the track, tap Share, pick CleanJibe; or "
+                          + "put it in Files, or in a cloud folder the phone can reach, and "
+                          + "open it from there."),
+                .init(term: "Which format, if you are offered a choice",
+                      detail: "FIT. CleanJibe reads a .fit in every build, and a file that "
+                          + "carries the receiver's own speed certifies its records. A .gpx "
+                          + "or a .tcx opens in the public TestFlight beta; its speed is "
+                          + "worked out from the positions either way."),
             ],
             related: [.stravaImport, .shareFromWatchApp, .whichWatch, .sourceClass,
                       .uncertified]),
@@ -576,35 +577,36 @@ public enum HelpCatalog {
                       detail: "Everything: flights, turns, certified speed records, the wind "
                           + "axis, pump strokes, failed takeoff attempts and "
                           + "accelerometer-confirmed touchdowns. Sessions arrive through "
-                          + "intervals.icu, or over Bluetooth as a summary the moment you "
-                          + "stop."),
+                          + "intervals.icu."),
                 .init(term: "Garmin, with Garmin's own profile or another app",
                       detail: "Everything except pump strokes and takeoff effort. Speed "
                           + "records certify. Get the sessions in through intervals.icu, or "
                           + "export the FIT from connect.garmin.com on a computer."),
                 .init(term: "Apple Watch",
-                      detail: "Two doors, and both are in the CleanJibe beta today: read "
-                          + "what Apple's own Workout app recorded out of Health, or record "
-                          + "with the CleanJibe watch app, which adds the wrist "
-                          + "accelerometer and hands the session straight to the phone. "
-                          + "Speed records certify either way. Without the beta, record the "
-                          + "session in the Strava app and import it from Strava."),
+                      detail: "Record with Apple's Workout app — Surfing, Water Sports or "
+                          + "Sailing — and the session comes in through Strava, or through "
+                          + "intervals.icu if your workouts sync there. The public beta "
+                          + "adds two more doors: Apple Health, and the CleanJibe watch "
+                          + "app, which records the wrist accelerometer as well. Speed "
+                          + "records certify wherever the watch's own speed came with the "
+                          + "recording; from Strava they do not."),
                 .init(term: "Polar, Suunto, COROS and the rest",
                       detail: "Two ways in: connect the watch to intervals.icu once and let "
-                          + "CleanJibe sync, or export one session from the phone app and "
-                          + "share it in. A FIT certifies its speed records; a GPX or a TCX "
-                          + "does not. No accelerometer either way."),
+                          + "CleanJibe sync, or export one session from the phone app as a "
+                          + "FIT and share it in. A FIT certifies its speed records; a .gpx "
+                          + "or a .tcx does not, and those two open in the public beta. No "
+                          + "accelerometer any way round."),
                 .init(term: "Anything that ends up on Strava",
                       detail: "Connect Strava and pick the sessions. Strava hands over "
                           + "positions, altitude and heart rate but no speed channel, so "
                           + "those records are uncertified — worth knowing before you choose "
                           + "this door over intervals.icu for the same session."),
                 .init(term: "A phone in a pocket, or no watch at all",
-                      detail: "Record in the Strava app and import from Strava — no file, no "
-                          + "cable, nothing to connect but the account. Any tracker app that "
-                          + "writes a GPX works too, through the CleanJibe beta. Positions "
-                          + "only either way, so uncertified speed records — but the "
-                          + "flights, the turns and the map are all there."),
+                      detail: "Any GPS-logging app on the phone works: record, then bring "
+                          + "the session in through Strava, or share the file in — a .fit "
+                          + "anywhere, a .gpx or a .tcx in the public beta. Positions only, "
+                          + "so uncertified speed records — but the flights, the turns and "
+                          + "the map are all there."),
             ],
             related: [.shareFromWatchApp, .icuSetup, .appleWorkoutApp, .stravaImport,
                       .phoneOnly, .sourceClass, .uncertified]),
@@ -715,13 +717,13 @@ public enum HelpCatalog {
                 + "phone has no mail account, the app hands the same text to whatever you do "
                 + "use, or lets you copy it.",
                 "There are two other routes, and they are better for different things. If "
-                + "you are on the TestFlight beta, a screenshot taken inside the app offers "
-                + "Share → Send Beta Feedback, which attaches the screenshot and the device "
-                + "logs — that is the one for a crash or for something that has to be seen. "
-                + "Anything about the Garmin watch app itself can go through its Connect IQ "
-                + "store listing. For a number that looks wrong, the mail here is the one "
-                + "worth sending: it is the only one that says which engine and which "
-                + "thresholds produced it.",
+                + "you are on the public TestFlight beta, a screenshot taken inside the app "
+                + "offers Share → Send Beta Feedback, which attaches the screenshot and the "
+                + "device logs — that is "
+                + "the one for a crash or for something that has to be seen. Anything about "
+                + "the watch app itself can go through its Connect IQ store listing. For a "
+                + "number that looks wrong, the mail here is the one worth sending: it is the "
+                + "only one that says which engine and which thresholds produced it.",
             ],
             related: [.sourceClass, .engineVersion, .divergence]),
 
@@ -1297,8 +1299,9 @@ public enum HelpCatalog {
                 .init(term: "A GPX or TCX, or any file with no speed channel",
                       detail: "These imports work: the track, the flights, every turn with "
                           + "its verdict, the wind axis. Polar, Suunto and Coros sessions "
-                          + "usually arrive as one of the two, through intervals.icu — their "
-                          + "own files are the CleanJibe beta's door. A GPX never carries a "
+                          + "come in through intervals.icu, or as a FIT through the share "
+                          + "sheet; a .gpx or a .tcx opens in the public beta, and Strava "
+                          + "brings those sessions in either way. A GPX never carries a "
                           + "speed channel and a TCX "
                           + "sometimes does; without one, speed is estimated from positions "
                           + "and the speed records are marked uncertified. A session imported "

@@ -92,7 +92,7 @@ struct HealthImportView: View {
             Text("Nothing to import")
         } footer: {
             // Both halves are named because Health genuinely does not tell us which one it is.
-            Text("Either there are no \(typeList) workouts in Health from the last two years, "
+            Text(markdown: "Either there are no \(typeList) workouts in Health from the last two years, "
                  + "or CleanJibe was not given permission to read them. Permission lives in "
                  + "the Health app: **Health → Sharing → Apps → CleanJibe**, or "
                  + "**Settings → Health → Data Access & Devices → CleanJibe**. Turn on "

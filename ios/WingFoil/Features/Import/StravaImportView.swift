@@ -98,12 +98,12 @@ struct StravaImportView: View {
         } header: {
             Text("Already on Strava?")
         } footer: {
-            Text("Strava opens, you say yes, and CleanJibe can then list your activities and "
+            Text(markdown: "Strava opens, you say yes, and CleanJibe can then list your activities and "
                  + "download the GPS track of the ones you pick. It reads; it never writes, "
                  + "renames or posts anything to your Strava account.\n\n"
-                 + "Strava has not reviewed CleanJibe yet, and until it does Strava allows "
-                 + "**ten connected riders**. If connecting is refused because the app is "
-                 + "full, that is why — Menu → Support & ideas is the way to report it.")
+                 + "Strava lets a new app connect a **limited number of riders**. If "
+                 + "connecting is refused because CleanJibe is full, that is why — Menu → "
+                 + "Support & ideas is the way to say so, and Strava is asked for more.")
         }
     }
 
@@ -173,9 +173,9 @@ struct StravaImportView: View {
         } footer: {
             Text("Tap to pick, or use Import all new. \(importable.count) of "
                  + "\(store.stravaCandidates.count) can be imported — the rest are already in "
-                 + "your library. Strava allows a hundred requests every fifteen minutes and "
-                 + "each activity costs one, so a first big import takes its time and may ask "
-                 + "you to come back.")
+                 + "your library. Strava answers two hundred requests every fifteen minutes "
+                 + "and each activity costs one, so a first big import takes its time and "
+                 + "may ask you to come back.")
         }
     }
 
@@ -207,7 +207,7 @@ struct StravaImportView: View {
         } header: {
             Text("Which activities to offer")
         } footer: {
-            Text("Strava has no wingfoil activity, so pick whichever one you record under. "
+            Text(markdown: "Strava has no wingfoil activity, so pick whichever one you record under. "
                  + "Sail and Stand-up paddling are off by default because for most people "
                  + "those buckets hold boats and flat water. Whatever you choose, an activity "
                  + "whose **name** says wing, foil, kite, surf or SUP is offered too.")
@@ -222,7 +222,7 @@ struct StravaImportView: View {
         } header: {
             Text("What a Strava session can show")
         } footer: {
-            Text("Everything that comes from the track: foil time, flights, every turn with "
+            Text(markdown: "Everything that comes from the track: foil time, flights, every turn with "
                  + "its verdict, the wind axis, the map.\n\n"
                  + "What is missing is what Strava does not hand over. There is no speed "
                  + "channel — Strava works speed out from the positions, the same way "

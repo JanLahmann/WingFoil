@@ -63,8 +63,9 @@ public struct StravaClient: Sendable {
             case .notConnected: "no Strava account is connected"
             case .unauthorized: "Strava rejected the connection — connect it again"
             case .athleteLimit:
-                "Strava has not approved CleanJibe for more riders yet — it is full. "
-                    + "Menu → Support is the way to report it"
+                "Strava lets a new app connect a limited number of riders, and CleanJibe is "
+                    + "full — Menu → Support & ideas is the way to say so, and Strava is "
+                    + "asked for more"
             case .rateLimited(let after):
                 if let after {
                     "Strava asked us to wait about \(max(1, after / 60)) more minute"
@@ -72,7 +73,10 @@ public struct StravaClient: Sendable {
                 } else {
                     "Strava asked us to wait — try again in a few minutes"
                 }
-            case .http(let s, let b): "Strava HTTP \(s): \(b.prefix(200))"
+            // The status, never the body. A response body can echo the request — including
+            // a token — straight back, and this string is what the alert shows the rider;
+            // the body stays in the payload for whoever is reading a log.
+            case .http(let s, _): "Strava answered with an error (HTTP \(s))"
             case .transport(let m): "network error: \(m)"
             case .decoding(let m): "unexpected response: \(m)"
             case .noStreams: "Strava has no GPS recording for that activity"

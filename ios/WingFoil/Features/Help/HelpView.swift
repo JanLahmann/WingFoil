@@ -106,7 +106,7 @@ private struct HelpIndexList: View {
     private func row(_ topic: HelpTopic) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(topic.title).font(.subheadline.weight(.semibold))
-            Text(topic.summary)
+            Text(markdown: topic.summary)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.leading)
@@ -143,7 +143,12 @@ struct HelpTopicSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text(topic.summary)
+                    // Every string that comes out of the catalogue is drawn through
+                    // `Text(markdown:)`: the topics are written with `**bold**` and
+                    // `*italic*` in them, and a `Text(String)` would print the asterisks.
+                    // `HelpCatalogTests.everyParagraphParsesAsMarkdown` holds the other end
+                    // of this bargain.
+                    Text(markdown: topic.summary)
                         .font(.headline)
                         .foregroundStyle(.secondary)
 
@@ -175,7 +180,7 @@ struct HelpTopicSheet: View {
                     }
 
                     ForEach(Array(topic.body.enumerated()), id: \.offset) { _, paragraph in
-                        Text(paragraph)
+                        Text(markdown: paragraph)
                             .font(.callout)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -184,8 +189,9 @@ struct HelpTopicSheet: View {
                         VStack(alignment: .leading, spacing: 12) {
                             ForEach(Array(topic.items.enumerated()), id: \.offset) { _, item in
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text(item.term).font(.subheadline.weight(.semibold))
-                                    Text(item.detail)
+                                    Text(markdown: item.term)
+                                        .font(.subheadline.weight(.semibold))
+                                    Text(markdown: item.detail)
                                         .font(.callout)
                                         .foregroundStyle(.secondary)
                                         .fixedSize(horizontal: false, vertical: true)
