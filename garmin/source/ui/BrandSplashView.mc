@@ -29,12 +29,27 @@ module BrandSplash {
 
     // Ink centre of the hero and of the wordmark under it, for a glass of half-height `cy`:
     // the lockup — hero, a gap of a third of the word's height, the word — sits centred.
-    function heroY(cy as Number, heroH as Number, wordH as Number) as Number {
-        return cy - (heroH + wordH / 3 + wordH) / 2 + heroH / 2;
+    // The third line of the lockup: where to find us, not only who we are (Jan, 14 Sep
+    // 2026). Small and grey, so the wordmark stays the word.
+    const DOMAIN = "cleanjibe.org";
+    const DOMAIN_FONT = Graphics.FONT_XTINY;
+
+    // hero · gap of a third of the wordmark · wordmark · gap of a quarter of the domain line ·
+    // domain line, the whole stack centred on cy.
+    function lockupH(heroH as Number, wordH as Number, domH as Number) as Number {
+        return heroH + wordH / 3 + wordH + domH / 4 + domH;
     }
 
-    function wordY(cy as Number, heroH as Number, wordH as Number) as Number {
-        return heroY(cy, heroH, wordH) + heroH / 2 + wordH / 3 + wordH / 2;
+    function heroY(cy as Number, heroH as Number, wordH as Number, domH as Number) as Number {
+        return cy - lockupH(heroH, wordH, domH) / 2 + heroH / 2;
+    }
+
+    function wordY(cy as Number, heroH as Number, wordH as Number, domH as Number) as Number {
+        return heroY(cy, heroH, wordH, domH) + heroH / 2 + wordH / 3 + wordH / 2;
+    }
+
+    function domainY(cy as Number, heroH as Number, wordH as Number, domH as Number) as Number {
+        return wordY(cy, heroH, wordH, domH) + wordH / 2 + domH / 4 + domH / 2;
     }
 }
 
@@ -72,10 +87,14 @@ class BrandSplashView extends WatchUi.View {
         var cy = dc.getHeight() / 2;
         var heroH = Brand.heroH();
         var wordH = dc.getFontHeight(Graphics.FONT_LARGE);
-        Brand.drawHero(dc, cx, BrandSplash.heroY(cy, heroH, wordH));
+        var domH = dc.getFontHeight(BrandSplash.DOMAIN_FONT);
+        Brand.drawHero(dc, cx, BrandSplash.heroY(cy, heroH, wordH, domH));
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, BrandSplash.wordY(cy, heroH, wordH), Graphics.FONT_LARGE, START_TITLE,
-            CV);
+        dc.drawText(cx, BrandSplash.wordY(cy, heroH, wordH, domH), Graphics.FONT_LARGE,
+            START_TITLE, CV);
+        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, BrandSplash.domainY(cy, heroH, wordH, domH), BrandSplash.DOMAIN_FONT,
+            BrandSplash.DOMAIN, CV);
     }
 }
 
