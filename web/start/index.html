@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Get started with the CleanJibe beta — the 20-minute test</title>
-<meta name="description" content="About twenty minutes, no water needed: record one short outdoor workout on your Apple Watch or Garmin, get it into CleanJibe on the iPhone, and tell us what you saw. Three routes, what a good result looks like, and where to send the report.">
+<title>Get started with the CleanJibe beta — your first session on the water</title>
+<meta name="description" content="The real test is one session on the water: charge, record, save, and read the verdicts on the phone against what you remember. Plus the routes for every watch, a 20-minute dry run if you cannot wait, and where to send what you find.">
 <meta name="theme-color" content="#101010">
 <meta name="color-scheme" content="dark">
 
@@ -26,7 +26,7 @@
 
 <meta property="og:site_name" content="CleanJibe">
 <meta property="og:title" content="Get started with the CleanJibe beta">
-<meta property="og:description" content="A 20-minute test, no water needed: one short workout on the watch, into CleanJibe on the iPhone, and what to tell us about it.">
+<meta property="og:description" content="One session on the water, start to finish: record, save, sync, and check the turn verdicts against what you remember. A dry run too, if you cannot wait.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cleanjibe.org/start/">
 <!-- Absolute, like every other document on the site: scrapers fetch the tag's value as-is
@@ -37,7 +37,7 @@
 <meta property="og:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Get started with the CleanJibe beta">
-<meta name="twitter:description" content="A 20-minute test, no water needed: one short workout on the watch, into CleanJibe on the iPhone, and what to tell us about it.">
+<meta name="twitter:description" content="One session on the water, start to finish: record, save, sync, and check the turn verdicts against what you remember. A dry run too, if you cannot wait.">
 <meta name="twitter:image" content="https://cleanjibe.org/social-card.png">
 <meta name="twitter:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
 
@@ -56,11 +56,43 @@
       <p class="sub">Wing foiling, measured.</p>
     </div>
   </a>
+  <!-- The same two doors as every other page: the free thing that needs no install, and the
+       beta beside it. -->
   <div class="topbar-right">
-    <a class="btn primary" href="../invite/">Get the beta</a>
+    <a class="btn primary" href="../app/" data-umami-event="analyze-cta-topbar">Open the analyzer</a>
+    <a class="btn ghost" href="../invite/" data-umami-event="beta-cta-topbar">Try the beta</a>
     <a class="btn ghost wide-only" href="../">About CleanJibe</a>
   </div>
 </header>
+
+<!-- The page's own contents row, sticky under the topbar; the labels are the headings. Below
+     720 px it collapses to one select. See css/home.css and the script at the foot. -->
+<nav class="sectionnav" aria-label="On this page">
+  <div class="sectionnav-inner">
+    <ul>
+      <li><a href="#before">Before you start</a></li>
+      <li><a href="#water">On the water</a></li>
+      <li><a href="#routes">The minimal check</a></li>
+      <li><a href="#seen">What you should see</a></li>
+      <li><a href="#history">Your old sessions</a></li>
+      <li><a href="#stuck">If something breaks</a></li>
+      <li><a href="#tell">Tell us</a></li>
+    </ul>
+    <label class="jump">
+      <span class="sr-only">Jump to a section</span>
+      <select>
+        <option value="">Jump to&hellip;</option>
+        <option value="#before">Before you start</option>
+        <option value="#water">On the water</option>
+        <option value="#routes">The minimal check</option>
+        <option value="#seen">What you should see</option>
+        <option value="#history">Your old sessions</option>
+        <option value="#stuck">If something breaks</option>
+        <option value="#tell">Tell us</option>
+      </select>
+    </label>
+  </div>
+</nav>
 
 <main>
 
@@ -69,23 +101,33 @@
        because the gap between "installed" and "this works for me" is where a beta tester is
        lost: the watch route is three apps deep (a watch, Health or Garmin Connect, the
        phone), and a rider who gets no session out of it has no way to tell whether he did
-       something wrong or found a bug. So: a short test with a known answer, on land, with
-       "what you should see" written down — and one place to put the answer either way. -->
+       something wrong or found a bug.
+
+       THE REAL TEST IS A SESSION ON THE WATER, and the page now says so first. What this
+       thing claims is a verdict on every jibe, and the only person who can check a verdict is
+       the rider who remembers the jibe: a bike ride around the block proves the file moved
+       and nothing else. The 20-minute dry run is kept, because "I cannot wait for wind" is a
+       real state to be in and a file that never arrives is worth finding out about at a desk
+       — but it is a check, not the test, and it now sits after the walkthrough. -->
   <section class="hero">
     <div class="hero-copy">
-      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Beta test · about 20 minutes · no water needed</p>
+      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Beta test · one session on the water</p>
       <h1>Get started with the CleanJibe beta</h1>
       <p class="lede">
-        You record one very short outdoor workout on your watch, get it onto the iPhone, and
-        tell us what you saw. No wing, no board, no wind: a walk or a bike ride around the
-        block is the whole of it.
+        The test is <strong>one ordinary session</strong>. Ride the way you always do, then
+        open it on the phone and read the verdicts against what you remember — that jibe you
+        touched down in, the one you flew through and knew it. Nobody but you can check that,
+        which is the whole reason this beta exists.
       </p>
       <p class="lede">
-        <strong>Apple Watch:</strong> do route A first, then B.
-        <strong>Garmin:</strong> route C. <strong>Polar, Suunto, COROS or anything
-        else:</strong> route D. Then read
-        <a href="#seen">what you should see</a> and send us
-        <a href="#tell">the five lines</a> at the bottom.
+        <a href="#water">The walkthrough is below</a>: charge, record, save, sync, read, share
+        a card, tell us. Then <a href="#seen">what you should see</a>, and
+        <a href="#tell">where to put it</a>.
+      </p>
+      <p class="lede">
+        <strong>No wind this week?</strong> There is
+        <a href="#routes">a 20-minute check on land</a> further down — it proves the recording
+        reaches the phone, which is the half of the route that goes wrong.
       </p>
     </div>
   </section>
@@ -106,9 +148,8 @@
              data-umami-event="start-testflight">testflight.apple.com/join/nygqGGcn</a>.
           Install Apple's <strong>TestFlight</strong> app from the App Store if it asks, then
           install <strong>CleanJibe</strong> through it. Open CleanJibe once so it can ask for
-          its permissions, and allow <strong>Health</strong>, and <strong>Location</strong> if
-          it asks. (It asks for location in one place only — the map it draws for a Garmin
-          watch — so on most first runs it never comes up.)
+          its permissions, and allow <strong>Health</strong> — that is the only one the beta
+          asks for, and the app never asks for your position at all.
         </p>
         <p class="note">
           If TestFlight offers an update for CleanJibe, take it before you start. It is worth
@@ -145,19 +186,125 @@
     </ol>
   </section>
 
+  <!-- ------------------------------------------------------------- on the water -->
+  <!-- The actual test. Written for the Garmin route because that is the one with three apps
+       in it and the one most testers ride; the other watches join at step 4, and route D
+       below is the file half for them. Nothing in here is dev-only: the summary card and the
+       map pushed to the watch are in a build a handful of people have, so they are on the
+       homepage's "what is coming" list and not in a walkthrough. -->
+  <section class="home-section" id="water">
+    <h2>On the water — the real test</h2>
+    <p class="section-lede">
+      One normal session. The only extra work is the last two steps, and they are the ones
+      this beta cannot do without.
+    </p>
+
+    <ol class="steps-flow">
+      <li>
+        <h3>Charge the watch, and the phone</h3>
+        <p>
+          A GPS activity with the screen on is the most expensive thing a watch does, and a
+          session that stops at 70&nbsp;% battery is a session nobody can read a verdict out
+          of. Top both up the evening before.
+        </p>
+      </li>
+      <li>
+        <h3>Start CleanJibe on the watch, on the beach</h3>
+        <p>
+          Press START, pick <strong>CleanJibe</strong> from the activity list, and wait until
+          it says <em>GPS good</em> before you press <code>START</code> again. Do it while you
+          are rigging: a fix takes longer than you think and the first minutes of a session are
+          the ones you are least willing to spend standing still.
+        </p>
+      </li>
+      <li>
+        <h3>Ride, and glance at the wrist once</h3>
+        <p>
+          Ride the session you came for. Somewhere in the middle, look at the tally — flew,
+          touched down, fell in — and the dry streak, and see whether they match the last ten
+          minutes. That one glance is worth more than a paragraph written afterwards.
+        </p>
+      </li>
+      <li>
+        <h3>Stop and save</h3>
+        <p>
+          <code>STOP</code>, then <strong>Save</strong>. Flick through the summary pages once
+          (UP/DOWN) before you put the watch away and note anything that looks wrong.
+        </p>
+      </li>
+      <li>
+        <h3>Let Garmin Connect sync</h3>
+        <p>
+          The watch uploads to Garmin Connect by itself next to the phone — open Garmin Connect
+          once if it is taking its time. From there
+          <a href="#route-c">intervals.icu brings it to CleanJibe</a>; that bridge is set up
+          once and never again.
+        </p>
+        <p class="note">
+          Apple Watch, Polar, Suunto, COROS or a phone: your recording gets in a different way,
+          and the routes are the next section down. Everything after this step is the same.
+        </p>
+      </li>
+      <li>
+        <h3>Pull down on Sessions</h3>
+        <p>
+          Open CleanJibe on the iPhone and <strong>pull down</strong> on the Sessions list.
+          That is the refresh: it checks intervals.icu, imports what is new, and analyses it as
+          it lands. Your session appears at the top with the day&rsquo;s numbers on it.
+        </p>
+      </li>
+      <li>
+        <h3>Open it, and check the verdicts against your memory</h3>
+        <p>
+          This is the test. Open the session, go to <strong>Turns</strong>, and read down the
+          list: every turn has a verdict — <em>flew through</em>, <em>touched down</em>,
+          <em>fell in</em> — and the clean jibes are marked among them. Tap one and the page
+          says why it was scored that way.
+        </p>
+        <p>
+          Where does it disagree with you? A jibe you know you flew through that is marked as a
+          touchdown, a swim it never noticed, a wind direction that is not the one you sailed
+          in. Those three sentences are the most useful report this project can get.
+        </p>
+      </li>
+      <li>
+        <h3>Share a card</h3>
+        <p>
+          Share button, top right &rarr; <strong>share card</strong>: your track, your numbers,
+          one picture. Send it to whoever you were on the water with. It is also how anyone
+          else finds out this exists, so tell us if anything on it reads wrong or looks cheap.
+        </p>
+      </li>
+      <li>
+        <h3>Send the report: Menu &rarr; Support</h3>
+        <p>
+          Top left on the Sessions tab: <strong>Menu &rarr; Support</strong>. The build, your
+          phone, your iOS version, your watch and the size of your library are already typed
+          in; you add what the session got right and what it got wrong, and press Send.
+          <a href="#tell">The other doors are at the bottom of this page</a>.
+        </p>
+      </li>
+    </ol>
+  </section>
+
   <!-- --------------------------------------------------------------- the routes -->
   <!-- Three panels rather than three tabs: a tester reads the one that matches his watch and
        ignores the rest, and a page that hides two of them behind a control is a page whose
        Garmin section nobody can link to. -->
   <section class="home-section" id="routes">
-    <h2>Record a short session</h2>
+    <h2>The minimal check, if you cannot wait</h2>
+    <p class="section-lede">
+      Twenty minutes, no water, and it answers exactly one question: does a recording made on
+      your watch reach CleanJibe on your phone? That is the half of the route with three apps
+      in it and the half that goes wrong. It proves nothing about the analysis — a bike ride
+      has no jibes to judge — so it is a check before the session, not a substitute for it.
+    </p>
     <p class="section-lede">
       Three to five minutes of movement is plenty. A bike ride gives the nicest result —
       CleanJibe calls anything above about 12&nbsp;km/h &ldquo;flying&rdquo;, so a ride draws
-      a track with real flights in it. Walking works too.
-    </p>
-    <p class="section-lede">
-      Four routes, and you only need the one that matches what is on your wrist.
+      a track with real flights in it. Walking works too. Four routes, and you only need the
+      one that matches what is on your wrist — they are also how a recording gets in from each
+      kind of watch on a real session.
     </p>
 
     <article class="panel piece" id="route-a">
@@ -294,18 +441,6 @@
             export on the phone at all, which is why intervals.icu is the route above.
           </p>
         </li>
-        <li>
-          <h3>Extra, if you like: the watch link</h3>
-          <p>
-            In CleanJibe on the iPhone, Settings → <em>Garmin watch</em>. After a save the
-            watch sends a small summary card over Bluetooth; tell us whether it arrived.
-          </p>
-          <p>
-            On the same screen, <strong>Send map to watch</strong> draws the shore around your
-            spot on the phone and pushes it to a watch running CleanJibe 0.9.10, which then has
-            ground under its breadcrumb. Worth a look, and worth a line in your report.
-          </p>
-        </li>
       </ol>
     </article>
 
@@ -395,7 +530,9 @@
   <section class="home-section" id="seen">
     <h2>What you should see</h2>
     <p class="section-lede">
-      Open the session in CleanJibe on the iPhone. Three things say the route worked.
+      Open the session in CleanJibe on the iPhone. Three things say the route worked — after a
+      session on the water you get the turn verdicts as well, which is the part only you can
+      check.
     </p>
     <dl class="terms">
       <div class="term">
@@ -470,7 +607,8 @@
           Strava hands over positions rather than the speed your watch measured, so those
           sessions&rsquo; speed records are marked <em>uncertified</em>. If the same afternoon
           is on intervals.icu, take it from there instead. And until Strava has reviewed the
-          app it allows one connected rider at a time, which the app says plainly.
+          app it allows ten connected riders, which the app says plainly; if you are told the
+          app is full, tell us.
         </p>
       </article>
       <article class="panel claim">
@@ -645,6 +783,17 @@
       was read wrong: with the file the detection can be re-run and fixed, without it there is
       only guesswork.
     </p>
+
+    <!-- The shared block, in the same words as the homepage, /invite/, /watches/ and
+         /whats-new/. -->
+    <p class="note" id="tell-us">
+      <strong>Tell us.</strong> Bugs, verdicts you disagree with, and — just as much —
+      <strong>ideas and wishes</strong>: what you would want this to do next. In the app,
+      <strong>Menu &rarr; Support</strong> is the best door, because it prefills the facts;
+      otherwise mail <a href="mailto:info@cleanjibe.org">info@cleanjibe.org</a> or open a
+      <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">GitHub issue</a>.
+      Need something that is only in the beta? Tell us.
+    </p>
   </section>
 
 </main>
@@ -665,6 +814,22 @@
     · <a href="../impressum/">Impressum</a>
   </p>
 </footer>
+
+<!-- The section nav's two moving parts — the measured topbar height the nav sticks below,
+     and the select that replaces the link row on a phone. Same script as the homepage. -->
+<script>
+  (function () {
+    var root = document.documentElement, bar = document.querySelector(".topbar");
+    root.classList.add("js");
+    function fit() { root.style.setProperty("--topbar-h", bar.offsetHeight + "px"); }
+    fit();
+    addEventListener("resize", fit);
+    var jump = document.querySelector(".sectionnav select");
+    if (jump) jump.addEventListener("change", function () {
+      if (this.value) { location.hash = this.value; this.selectedIndex = 0; }
+    });
+  })();
+</script>
 
 </body>
 </html>
