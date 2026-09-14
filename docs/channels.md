@@ -31,6 +31,28 @@ Gates in code: `#if BETA` for beta rows (also true in dev), `#if DEV` for dev ro
 happens in the app, its Info.plist and its entitlements, so a gated door has no UI, no
 document type, no usage string and no entitlement in the channels that lack it.
 
+**Help topics are channel-bound too, and the kit does not gate them — it is told.** The
+catalogue is pure data in `WingFoilKit/Help/HelpCatalog.swift` and compiles whole in every
+build, so a topic about a door a channel lacks would otherwise sit on that channel's Help
+index describing a screen the rider cannot reach. Every `HelpTopic` therefore carries a
+`channel: HelpChannel` — the *lowest* channel that has the door it explains, `.release` by
+default and for almost every topic — and the app hands its own channel in
+(`ChannelFeatures.channel`, the one `#if DEV` / `#elseif BETA` / `#else` in the app that the
+kit reads). `HelpCatalog.indexTopics(channel:windsurfEnabled:)` is what the index lists and
+what its search may match, and `HelpCatalog.relatedTopics(of:channel:)` is what a topic's
+"see also" may render, so a visible page can never offer a button onto a hidden one. What is
+*not* filtered is `HelpCatalog.topic(_:)`: it stays total, so a `?` on a card the build does
+draw always opens and a deep link written down in a mail keeps working. Bound today:
+*Recording with the Apple Workout app* (beta, the Health door) and *Windsurf (experimental)*
+(dev, and also behind its own switch). Two kit tests hold the line — no beta or dev topic on
+the release index, and no visible topic linking at a hidden one.
+
+Where one sentence has to serve two channels, the release wording names the beta as the place
+a door is rather than pretending the door is here: *"GPX and TCX files are read by the
+CleanJibe beta; a FIT is read by every build."* That is the same rule the import footer
+follows, and the only place the release is allowed to mention a channel at all — beside
+"Curious about what is coming", which is the app naming its missing doors on purpose.
+
 ## Four rules for "proven"
 
 1. On the water in ten or more sessions by two or more riders without an open report. Jan's
