@@ -96,15 +96,25 @@ enum FeedbackMail {
         return identifier.isEmpty ? "unknown" : identifier
     }
 
+    /// The Garmin half is nil outside the dev channel, which is the only one with a link to
+    /// report on (docs/channels.md) — and `nil` is already what this type means by "no
+    /// Garmin watch", so the report reads the same as it does on a phone that has none.
     @MainActor
     private static func watchFacts(store: SessionStore) -> FeedbackFacts.Watch {
-        FeedbackFacts.Watch(garminModel: store.companionState.deviceName,
-                            garminAppVersion: store.lastCardWatchAppVersion
-                                .flatMap(watchAppVersion),
-                            appleWatchPaired: appleWatchPaired(),
-                            healthImport: store.healthAutoImport)
+        #if DEV
+        let garminModel = store.companionState.deviceName
+        let garminAppVersion = store.lastCardWatchAppVersion.flatMap(watchAppVersion)
+        #else
+        let garminModel: String? = nil
+        let garminAppVersion: String? = nil
+        #endif
+        return FeedbackFacts.Watch(garminModel: garminModel,
+                                   garminAppVersion: garminAppVersion,
+                                   appleWatchPaired: appleWatchPaired(),
+                                   healthImport: store.healthAutoImport)
     }
 
+    #if DEV
     /// The watch's build tag, spelled out: the card carries `APP_MINOR * 256 + SCHEMA`
     /// (`garmin/source/fit/FitFields.mc`), and the two halves are what a divergence report
     /// needs — the minor says which watch release, the schema which FIT field set.
@@ -112,6 +122,7 @@ enum FeedbackMail {
         guard tag > 0 else { return nil }
         return "0.\(tag >> 8) (FIT schema \(tag & 0xFF))"
     }
+    #endif
 
     /// nil rather than false when the question cannot be asked yet: `isPaired` means nothing
     /// until the session has activated, and "no Apple Watch" is a claim, not a default.
@@ -216,6 +227,10 @@ struct MailComposeView: UIViewControllerRepresentable {
 struct FeedbackMailRow: View {
     let title: String
     var systemImage = "envelope"
+    /// A subject of the caller's own. Nil means the report's — "CleanJibe 0.15.0 (52): …" —
+    /// which is right for everything that is a *report*. The Beta section's "Request a
+    /// feature" is not one, and a mail named like a bug is a mail filed like a bug.
+    var subjectOverride: String?
     /// The session the report is about; nil from Settings.
     var session: SessionRow?
     /// The session's share card, when the caller has one rendered. Called at the moment of
@@ -233,7 +248,7 @@ struct FeedbackMailRow: View {
             Label(title, systemImage: systemImage)
         }
         .feedbackMail(on: $request, session: session, card: card,
-                      stagesFallbackHook: stagesFallbackHook)
+                      subject: subjectOverride, stagesFallbackHook: stagesFallbackHook)
     }
 }
 
@@ -247,8 +262,10 @@ extension View {
     /// the item only has to bump the number.
     func feedbackMail(on request: Binding<Int>, session: SessionRow? = nil,
                       card: @escaping () -> Data? = { nil },
+                      subject: String? = nil,
                       stagesFallbackHook: Bool = false) -> some View {
         modifier(FeedbackMailPresenter(request: request, session: session, card: card,
+                                       subject: subject,
                                        stagesFallbackHook: stagesFallbackHook))
     }
 }
@@ -297,6 +314,9 @@ private struct FeedbackMailPresenter: ViewModifier {
     @Binding var request: Int
     let session: SessionRow?
     let card: () -> Data?
+    /// See `FeedbackMailRow.subjectOverride`. The *body* is the same either way: every fact
+    /// the phone knows is worth having on a feature request too.
+    let subject: String?
     /// Exactly one presenter answers `UI_FEEDBACK=fallback` — the Settings row's. With a
     /// footer on every page there are five on screen at launch, and five would raise five
     /// sheets on top of each other.
@@ -313,8 +333,9 @@ private struct FeedbackMailPresenter: ViewModifier {
         let id = UUID()
         let facts: FeedbackFacts
         let attachment: FeedbackMail.Attachment?
+        let subjectOverride: String?
 
-        var subject: String { FeedbackReport.subject(facts) }
+        var subject: String { subjectOverride ?? FeedbackReport.subject(facts) }
         var body: String { FeedbackReport.body(facts) }
     }
 
@@ -336,7 +357,8 @@ private struct FeedbackMailPresenter: ViewModifier {
                 guard stagesFallbackHook,
                       ProcessInfo.processInfo.environment["UI_FEEDBACK"] == "fallback"
                 else { return }
-                fallback = Draft(facts: FeedbackMail.facts(store: store), attachment: nil)
+                fallback = Draft(facts: FeedbackMail.facts(store: store), attachment: nil,
+                                 subjectOverride: subject)
             }
             #endif
     }
@@ -347,7 +369,7 @@ private struct FeedbackMailPresenter: ViewModifier {
             session.map { FeedbackMail.Attachment.card(png: data, sessionID: $0.id) }
         }
         let composed = Draft(facts: FeedbackMail.facts(store: store, session: session),
-                             attachment: attachment)
+                             attachment: attachment, subjectOverride: subject)
         guard MFMailComposeViewController.canSendMail() else {
             guard let url = FeedbackReport.mailtoURL(composed.facts) else {
                 fallback = composed

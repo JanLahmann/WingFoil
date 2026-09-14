@@ -61,8 +61,10 @@ struct ShareComposerView: View {
     /// than a `SwiftUI.Image`: the feedback mail's attachment.
     @State private var renderedImage: UIImage?
     /// The session video's own sheet — the picker, the progress bar and the finished file
-    /// (`ReelExportSheet`).
+    /// (`ReelExportSheet`). BETA, with the door that raises it.
+    #if BETA
     @State private var showReel = false
+    #endif
     /// Width the sheet has for the preview; 0 until the first layout pass.
     @State private var availableWidth: CGFloat = 0
     /// Off by default — see the type comment. Flipping it re-runs the scrub.
@@ -407,6 +409,11 @@ struct ShareComposerView: View {
         // same afternoon in motion — and because the card is what most riders want, and a
         // segmented control that made them choose first would put a decision in front of
         // the thing they came for.
+        //
+        // BETA (docs/channels.md). The replay clip with the rider's own music — the other
+        // film this app makes, and the older one — is in every channel; it is this one, the
+        // rendered session video, that is still proving itself.
+        #if BETA
         if let detail, detail.timeRange != nil {
             Button { showReel = true } label: {
                 Label("Export video", systemImage: "film")
@@ -418,6 +425,7 @@ struct ShareComposerView: View {
                 ReelExportSheet(detail: detail, title: displayTitle)
             }
         }
+        #endif
     }
 
     // MARK: - The recording

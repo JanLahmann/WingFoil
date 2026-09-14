@@ -2,9 +2,9 @@
 # The .xcodeproj itself is generated and gitignored; regenerate it with:
 #
 #     brew install xcodegen        # once
-#     cd ios && xcodegen generate  # writes WingFoil.xcodeproj + WingFoil/Info.plist
+#     cd ios && xcodegen generate  # writes WingFoil.xcodeproj + the generated plists
 #
-# Then open ios/WingFoil.xcodeproj in Xcode and run the "WingFoil" scheme.
+# Then open ios/WingFoil.xcodeproj in Xcode and run one of the three schemes below.
 
 name: WingFoil
 
@@ -31,33 +31,43 @@ packages:
   # Garmin's companion SDK: a binary xcframework (ObjC, device+simulator) that talks to
   # Garmin Connect Mobile, which is the only process allowed near the watch's BLE link.
   #
-  # It is a dependency of the APP TARGET ONLY, never of WingFoilKit — see
-  # WingFoilKit/Sources/WingFoilKit/Companion/CompanionLink.swift. The kit stays buildable
-  # and testable on a machine with no framework and no watch; only the thin adapter that
-  # actually calls `ConnectIQ.sharedInstance()` lives behind the app's import.
+  # It is a dependency of the `WingFoil` TARGET ONLY — never of WingFoilKit (see
+  # WingFoilKit/Sources/WingFoilKit/Companion/CompanionLink.swift) and never of
+  # `WingFoilRelease`, which ships no Garmin link at all (docs/channels.md). The kit stays
+  # buildable and testable on a machine with no framework and no watch; only the thin adapter
+  # that actually calls `ConnectIQ.sharedInstance()` lives behind the app's `#if DEV` import.
   ConnectIQ:
     url: https://github.com/garmin/connectiq-companion-app-sdk-ios
     from: 1.8.0
 
-# FOUR CONFIGURATIONS, TWO VARIANTS OF ONE APP (7 Sep 2026).
+# SIX CONFIGURATIONS, THREE CHANNELS (14 Sep 2026, docs/channels.md).
 #
-# `Debug`/`Release` build the app every external TestFlight tester gets: the published
-# analysis thresholds, and no way to move them. `Dev Debug`/`Dev Release` build the same app
-# with `TUNING` defined, which is what compiles in Settings → Tuning, the "tuned thresholds"
-# chip and banner, and the turn-footnote line naming the values in force (see
-# WingFoil/Features/Settings/TuningView.swift).
+# | channel | target          | configurations            | flags            | device |
+# |---------|-----------------|---------------------------|------------------|--------|
+# | release | WingFoilRelease | `Debug` / `Release`       | none             | iPhone |
+# | beta    | WingFoil        | `Beta Debug` / `Beta Release` | `BETA`       | iPhone |
+# | dev     | WingFoil        | `Dev Debug` / `Dev Release`   | `BETA DEV TUNING` | iPhone + iPad |
 #
-# Same bundle id, same MARKETING_VERSION, consecutive build numbers: one App Store Connect
-# app, two builds, and `CFBundleVersion` is what tells them apart — plus " · dev" after the
-# version in Settings → About, so a screenshot says which variant it came from.
+# `docs/channels.md` is the single source for which feature sits in which channel. The kit
+# compiles everything; the gating is in the app, its Info.plist and its entitlements, so a
+# door the channel lacks has no UI, no document type, no usage string and no entitlement.
 #
-# The `Dev Release` block is repeated on every embedded target (widgets, watch app, watch
-# complication) because manual signing is per configuration: a configuration those targets
-# have no Release-equivalent block for archives with automatic signing and fails the export.
-# Only the *phone app* gets the TUNING flag — nothing in the watch or the widgets reads it.
+# Release and beta share the bundle id `de.lahmann.wingfoil`, so a phone holds one of them.
+# Dev is a second app beside either: `de.lahmann.wingfoil.dev`, display name "CleanJibe Dev",
+# its own URL scheme and its own BGTask identifier — all derived from `CJ_BUNDLE_ID` and
+# `CJ_DISPLAY_NAME`, which are the only two settings that move between the channels.
+#
+# Manual signing is per configuration: a configuration an embedded target has no
+# Release-equivalent block for archives with automatic signing and fails the export. That is
+# why `Beta Release` and `Dev Release` are both repeated on the widgets, the watch app and
+# the complication. The four dev bundle ids have their own App Store profiles ("CleanJibe Dev
+# …"), created through the ASC API on 14 Sep 2026; `Dev Debug` stays automatic, because that
+# is the one that runs on a desk.
 configs:
   Debug: debug
   Release: release
+  Beta Debug: debug
+  Beta Release: release
   Dev Debug: debug
   Dev Release: release
 
@@ -69,16 +79,261 @@ settings:
     ENABLE_MODULE_VERIFIER: NO
     SWIFT_EMIT_LOC_STRINGS: YES
 
+# ---------------------------------------------------------------------------------------
+# Shared blocks. `anchors:` is not an XcodeGen key — it is a parking place for YAML anchors,
+# which the parser resolves before XcodeGen ever sees the document, so the two app targets can
+# share two hundred lines of Info.plist and build settings instead of holding two copies that
+# drift. `<<: *name` merges a map; a key written beside the merge wins over the merged one.
+# ---------------------------------------------------------------------------------------
+anchors:
+
+  # Both app targets compile the same directory. The four generated files are excluded from
+  # the compile sources group: two Info.plists and two entitlements, one pair per channel.
+  appSources: &appSources
+    - path: WingFoil
+      excludes:
+        - "Info.plist"
+        - "Info-Release.plist"
+        - "WingFoil.entitlements"
+        - "WingFoilRelease.entitlements"
+
+  appSettings: &appSettings
+    PRODUCT_NAME: WingFoil
+    MARKETING_VERSION: "0.15.0"
+    CURRENT_PROJECT_VERSION: "52"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: 685X8YLYSB         # Jan-Rainer Lahmann (personal + program team)
+    GENERATE_INFOPLIST_FILE: NO
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    ENABLE_PREVIEWS: YES
+    SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
+
+  # What `archive` needs: every embedded binary carries the same certificate as its parent,
+  # and the export re-signs with these same profiles (ios/ExportOptions.plist).
+  appStoreSigning: &appStoreSigning
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "Apple Distribution"
+    PROVISIONING_PROFILE_SPECIFIER: "WingFoil App Store"
+
+  # `Dev Debug` is what runs on the simulator and on Jan's own phone, and automatic signing
+  # is what keeps that a one-machine affair.
+  devSigning: &devSigning
+    CODE_SIGN_STYLE: Automatic
+
+  # `Dev Release` is an archive, and an archive signs manually with the profile the export
+  # re-signs with (ios/ExportOptions.plist). The four dev bundle ids were registered and
+  # their App Store profiles created through the ASC API on 14 Sep 2026.
+  devAppStoreSigning: &devAppStoreSigning
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "Apple Distribution"
+    PROVISIONING_PROFILE_SPECIFIER: "CleanJibe Dev App Store"
+
+  devWidgetsSigning: &devWidgetsSigning
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "Apple Distribution"
+    PROVISIONING_PROFILE_SPECIFIER: "CleanJibe Dev Widgets App Store"
+
+  devWatchSigning: &devWatchSigning
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "Apple Distribution"
+    PROVISIONING_PROFILE_SPECIFIER: "CleanJibe Dev Watch App Store"
+
+  devWatchWidgetsSigning: &devWatchWidgetsSigning
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "Apple Distribution"
+    PROVISIONING_PROFILE_SPECIFIER: "CleanJibe Dev Watch Widgets App Store"
+
+  # The Strava client id and secret, as build settings the Info.plist substitutes into
+  # `STRAVA_CLIENT_ID` / `STRAVA_CLIENT_SECRET`. Untracked and gitignored; see
+  # `ios/Strava.example.xcconfig` and the `preGenCommand` above. Every configuration reads the
+  # same file — there is one Strava application, not one per channel.
+  stravaConfigFiles: &stravaConfigFiles
+    Debug: Strava.xcconfig
+    Release: Strava.xcconfig
+    Beta Debug: Strava.xcconfig
+    Beta Release: Strava.xcconfig
+    Dev Debug: Strava.xcconfig
+    Dev Release: Strava.xcconfig
+
+  # FIT has no system UTI; importing it makes .fit files pickable in the Files importer and
+  # lets the share sheet hand recordings to the app. Every channel declares this one.
+  utFit: &utFit
+    UTTypeIdentifier: de.lahmann.wingfoil.fit
+    UTTypeDescription: FIT activity file
+    UTTypeConformsTo:
+      - public.data
+      - public.content
+    UTTypeTagSpecification:
+      public.filename-extension:
+        - fit
+      public.mime-type:
+        - application/vnd.ant.fit
+
+  # Everything both channels' Info.plists say. What is NOT here is what release must not
+  # carry: the Health strings, the location string, the Bluetooth strings, the Garmin query
+  # scheme and URL type, the GPX/TCX types, and the iPad orientation list.
+  infoCommon: &infoCommon
+    # THE HOME-SCREEN NAME, and the one the rider reads everywhere the system names us:
+    # the springboard, Settings → Notifications, the share sheet, the Health source list.
+    # The brand is CleanJibe; the target, the module and every bundle id underneath stay
+    # `WingFoil`/`de.lahmann.wingfoil.*`, which are identifiers nobody reads — renaming
+    # them would orphan the TestFlight build, the BGTask registration and the keychain.
+    #
+    # `$(CJ_DISPLAY_NAME)` rather than a literal so the dev channel, which is a second app
+    # beside the release one, says "CleanJibe Dev" on the home screen (docs/channels.md).
+    CFBundleDisplayName: $(CJ_DISPLAY_NAME)
+    CFBundleShortVersionString: $(MARKETING_VERSION)
+    CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+    LSRequiresIPhoneOS: true
+    # The end-of-recording sheet's "Save to Photos" (App/PhotoLibrarySaver.swift). ADD
+    # ONLY: the app asks for `.addOnly` authorization and can never read an asset back,
+    # which is why there is no `NSPhotoLibraryUsageDescription` beside it. The photos a
+    # rider splices into a clip come from `PhotosPicker`, which runs out of process and
+    # needs no permission at all — so this is the only photo-library prompt the app has.
+    NSPhotoLibraryAddUsageDescription: >-
+      Saves the replay clip you just recorded to your photo library. CleanJibe only adds
+      videos you ask it to save; it never reads your photos.
+    # --- Strava API application (ADR-023) ---
+    # Substituted from `ios/Strava.xcconfig`, which is untracked. A build without it
+    # gets empty strings, `StravaConfig.isConfigured` is false, and the Import screen's
+    # Strava row says what is missing rather than failing halfway through OAuth. The
+    # client id is public by construction (it travels in every authorize URL); the
+    # secret is not, and is why the file is gitignored.
+    STRAVA_CLIENT_ID: $(STRAVA_CLIENT_ID)
+    STRAVA_CLIENT_SECRET: $(STRAVA_CLIENT_SECRET)
+    STRAVA_REDIRECT_URI: $(STRAVA_REDIRECT_URI)
+    ITSAppUsesNonExemptEncryption: false
+    # --- new-session notifications (App/ActivityNotifier.swift) ---
+    # The phone polls intervals.icu on a BGAppRefreshTask and posts a local
+    # notification for an activity it has not seen. Both keys are load-bearing:
+    # without `fetch` the scheduler refuses to submit the request, and an identifier
+    # missing from the permitted list is a launch-time exception the moment
+    # `BGTaskScheduler.register` is called.
+    #
+    # Derived from `$(CJ_BUNDLE_ID)` because the dev channel is a different app: two apps
+    # registering the same task identifier is a collision iOS resolves by refusing one of
+    # them. `ActivityNotifier.taskIdentifier` reads `Bundle.main.bundleIdentifier` for the
+    # same reason, so the code and this list can never disagree.
+    UIBackgroundModes:
+      - fetch
+    BGTaskSchedulerPermittedIdentifiers:
+      - $(CJ_BUNDLE_ID).refresh
+    # Storyboard-free launch screen: the tile mark centred on the brand navy, so the
+    # cold-start frame is the app's own colour instead of a white flash.
+    #
+    # `SplashMark` rather than `LaunchMark`, and the difference is the point of the whole
+    # asset. iOS draws this image at its NATURAL POINT SIZE (measured on the simulator:
+    # a 512 px 1× asset came out 512 pt wide, cropped by both edges of a 402 pt phone),
+    # centred in the safe area. `SplashMark` is 140 / 280 / 420 px at 1×/2×/3×, so it is
+    # 140 pt on every device — which is exactly where and how big `SplashView` draws it
+    # the moment our own code takes over, so the handover from this frame to that one
+    # moves nothing. `LaunchMark` stays what it always was, the artwork at full
+    # resolution for the share card, the QR's centre and the welcome screen.
+    UILaunchScreen:
+      UIColorName: LaunchBackground
+      UIImageName: SplashMark
+      UIImageRespectsSafeAreaInsets: true
+    # The clock and the battery, read against that navy. This key is the *initial* status
+    # bar style and it is what the launch screen shows; `SplashView` asks for the same
+    # with `preferredColorScheme(.dark)`, so the handover does not flip the clock from
+    # black to white. It changes nothing afterwards — `UIViewControllerBasedStatusBarAppearance`
+    # defaults to YES, so every screen in the app still decides for itself and the library
+    # keeps its black clock on white.
+    UIStatusBarStyle: UIStatusBarStyleLightContent
+    UIApplicationSupportsIndirectInputEvents: true
+    UISupportedInterfaceOrientations:
+      - UIInterfaceOrientationPortrait
+      - UIInterfaceOrientationLandscapeLeft
+      - UIInterfaceOrientationLandscapeRight
+    LSSupportsOpeningDocumentsInPlace: true
+
 targets:
+
+  # =======================================================================================
+  # RELEASE CHANNEL (docs/channels.md) — the App Store build, 1.0.x.
+  #
+  # iPhone only, no watch app, no widget extension, no compile flags. It is the `WingFoil`
+  # target's sources compiled with neither `BETA` nor `DEV` defined, which is what removes the
+  # GPX/TCX door, the Garmin export ZIP, Apple Health in both directions, the session video
+  # export, the library grouping and filter controls, the Garmin link and the windsurf
+  # discipline. The Info.plist and the entitlements below are the other half of that: no
+  # Health entitlement, no Health/location/Bluetooth usage strings, no Garmin query scheme or
+  # URL type, and a share sheet that declares FIT and zip and nothing else.
+  # =======================================================================================
+  WingFoilRelease:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources: *appSources
+    dependencies:
+      # WingFoilKit only. No ConnectIQ (so no `-ObjC` either), no widgets, no watch app.
+      - package: WingFoilKit
+        product: WingFoilKit
+    configFiles: *stravaConfigFiles
+    settings:
+      base:
+        <<: *appSettings
+        CJ_DISPLAY_NAME: CleanJibe
+        CJ_BUNDLE_ID: de.lahmann.wingfoil
+        PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil
+        TARGETED_DEVICE_FAMILY: "1"          # iPhone only — iPad is a dev feature
+      configs:
+        Release: *appStoreSigning
+    # NO HealthKit, and no app group. The release channel writes no widget snapshot and reads
+    # no Apple Workout, so an entitlement for either would be a capability the binary cannot
+    # use and a privacy label we would have to justify. Deliberately its own file rather than
+    # a shared one: the beta's group membership is still being settled with the profiles, and
+    # a change there must not be able to reach this one.
+    entitlements:
+      path: WingFoil/WingFoilRelease.entitlements
+      properties: {}
+    info:
+      path: WingFoil/Info-Release.plist
+      properties:
+        <<: *infoCommon
+        # The way back from Strava's consent screen (ADR-023), and the only URL type the
+        # release channel declares. Strava itself will not redirect to a custom scheme — it
+        # validates the redirect against the API application's single Authorization Callback
+        # Domain, which is `cleanjibe.org` — so it redirects to
+        # https://cleanjibe.org/strava/callback, and that page bounces the `code` and `state`
+        # here. `ASWebAuthenticationSession` is what is waiting, so the sheet closes on it and
+        # nothing in the app has to answer this scheme at all: it is registered so that iOS
+        # knows it belongs to us, and for no other reason.
+        CFBundleURLTypes:
+          - CFBundleURLName: de.lahmann.wingfoil.strava
+            CFBundleTypeRole: Editor
+            CFBundleURLSchemes:
+              - cleanjibe
+        UTImportedTypeDeclarations:
+          - *utFit
+        # FIT and zip. GPX and TCX are a beta door (docs/channels.md), and a channel that
+        # cannot read them must not offer itself in another app's "Open in" for one.
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Activity recording
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - de.lahmann.wingfoil.fit
+              - public.zip-archive
+
+  # =======================================================================================
+  # BETA AND DEV CHANNELS (docs/channels.md) — TestFlight, 1.1.0.
+  #
+  # `Beta Debug`/`Beta Release` define `BETA`: the GPX/TCX door, the Garmin export ZIP, Apple
+  # Health both ways, the Apple Watch app and the widgets, the session video export, the
+  # library grouping and filter controls and the Beta section in Settings.
+  #
+  # `Dev Debug`/`Dev Release` define `BETA DEV TUNING` on top: the Garmin link, the windsurf
+  # discipline, the tuning page, and iPad. They also move the app sideways — its own bundle
+  # id, its own display name, its own URL scheme and its own BGTask identifier — so the dev
+  # build installs beside the release one rather than over it.
+  # =======================================================================================
   WingFoil:
     type: application
     platform: iOS
     deploymentTarget: "18.0"
-    sources:
-      - path: WingFoil
-        excludes:
-          - "Info.plist"          # generated below; not part of the compile sources group
-          - "WingFoil.entitlements"
+    sources: *appSources
     dependencies:
       - package: WingFoilKit
         product: WingFoilKit
@@ -90,58 +345,54 @@ targets:
       # there; without it the target builds and installs nothing.
       - target: WingFoilWatch
         embed: true
-    # The Strava client id and secret, as build settings the Info.plist below substitutes
-    # into `STRAVA_CLIENT_ID` / `STRAVA_CLIENT_SECRET`. Untracked and gitignored; see
-    # `ios/Strava.example.xcconfig` and the `preGenCommand` above. All four configurations
-    # read the same file — there is one Strava application, not a dev one and a public one.
-    configFiles:
-      Debug: Strava.xcconfig
-      Release: Strava.xcconfig
-      Dev Debug: Strava.xcconfig
-      Dev Release: Strava.xcconfig
+    configFiles: *stravaConfigFiles
     settings:
       base:
-        PRODUCT_NAME: WingFoil
+        <<: *appSettings
         # Required by the ConnectIQ xcframework: it is Objective-C and its categories are
         # invisible to the linker without it, which shows up as a runtime selector crash
         # rather than a build error.
         OTHER_LDFLAGS: "-ObjC"
-        PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil
-        MARKETING_VERSION: "0.15.0"
-        CURRENT_PROJECT_VERSION: "52"
-        TARGETED_DEVICE_FAMILY: "1,2"        # iPhone and iPad (and therefore the Mac,
-                                             # which runs it as "Designed for iPad")
-        CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: 685X8YLYSB         # Jan-Rainer Lahmann (personal + program team)
-        GENERATE_INFOPLIST_FILE: NO
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
-        ENABLE_PREVIEWS: YES
-        SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
+        # The three settings that make a channel a channel. Everything downstream — the
+        # bundle id, the display name, the BGTask identifier, the Garmin callback scheme —
+        # is written in terms of these, here and in the Info.plist above.
+        CJ_DISPLAY_NAME: CleanJibe
+        CJ_BUNDLE_ID: de.lahmann.wingfoil
+        CJ_URL_SCHEME_CIQ: wingfoil-ciq
+        PRODUCT_BUNDLE_IDENTIFIER: $(CJ_BUNDLE_ID)
+        TARGETED_DEVICE_FAMILY: "1"          # iPhone; the Dev configurations add iPad
       configs:
-        # Release (what `archive` builds) signs manually with the App Store profile, like the
-        # watch widgets: every embedded binary must carry the same certificate as its parent,
-        # and the export re-signs with these same profiles (ios/ExportOptions.plist).
-        Release:
-          CODE_SIGN_STYLE: Manual
-          CODE_SIGN_IDENTITY: "Apple Distribution"
-          PROVISIONING_PROFILE_SPECIFIER: "WingFoil App Store"
-        # The dev variant: the ONLY place `TUNING` is ever defined, and only on this target.
+        # `Debug`/`Release` exist because every target carries every configuration, but no
+        # scheme builds this target under them — the release channel is `WingFoilRelease`.
+        # Left flagless so that a stray build of them is a plain app, never a silent beta.
+        Beta Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BETA"
+        Beta Release:
+          <<: *appStoreSigning
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BETA"
         # `$(inherited)` already carries DEBUG here — XcodeGen sets it at project level for
         # every configuration typed `debug`, `Dev Debug` included — so naming it again would
-        # only make the flag list read "DEBUG DEBUG TUNING".
+        # only make the flag list read "DEBUG DEBUG BETA DEV TUNING".
         Dev Debug:
-          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) TUNING"
+          <<: *devSigning
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BETA DEV TUNING"
+          TARGETED_DEVICE_FAMILY: "1,2"      # iPhone and iPad (and therefore the Mac,
+                                             # which runs it as "Designed for iPad")
+          CJ_DISPLAY_NAME: CleanJibe Dev
+          CJ_BUNDLE_ID: de.lahmann.wingfoil.dev
+          CJ_URL_SCHEME_CIQ: wingfoil-ciq-dev
         Dev Release:
-          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) TUNING"
-          CODE_SIGN_STYLE: Manual
-          CODE_SIGN_IDENTITY: "Apple Distribution"
-          PROVISIONING_PROFILE_SPECIFIER: "WingFoil App Store"
+          <<: *devAppStoreSigning
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) BETA DEV TUNING"
+          TARGETED_DEVICE_FAMILY: "1,2"
+          CJ_DISPLAY_NAME: CleanJibe Dev
+          CJ_BUNDLE_ID: de.lahmann.wingfoil.dev
+          CJ_URL_SCHEME_CIQ: wingfoil-ciq-dev
     # Apple Health is opt-in in both directions — writing our sessions out (Settings → Apple
-    # Health) and reading Apple Workout-app recordings in (Import → Apple Health, ADR-017).
-    # The entitlement has to exist at build time even though nothing happens until the rider
-    # asks. `healthkit.access` stays empty: that array is for *clinical records*, which this
-    # app neither reads nor wants.
+    # Health) and reading Apple Workout-app recordings in (Import → Apple Health, ADR-017) —
+    # and both are beta doors (docs/channels.md). The entitlement has to exist at build time
+    # even though nothing happens until the rider asks. `healthkit.access` stays empty: that
+    # array is for *clinical records*, which this app neither reads nor wants.
     #
     # NOT here, deliberately: `com.apple.developer.healthkit.background-delivery`. It is what
     # `HKHealthStore.enableBackgroundDelivery` needs to actually wake the app, and the manual
@@ -152,14 +403,24 @@ targets:
     # actually gets a session in. Turning the wake on for real is configuration, not code: add
     # HealthKit → Background Delivery to the app id, regenerate the profile, and add the key
     # below.
+    #
+    # THE APP GROUP is what the widgets and the complication read their snapshot out of, and
+    # it is the same id in every channel that has it — `WidgetSnapshotStore.appGroupID` and
+    # `WatchLastSession.appGroupID` both spell `group.de.lahmann.wingfoil`, so a dev-only
+    # group would simply leave the dev build's widget blank. Whether the profiles carry it is
+    # being settled separately; if the beta archive fails signing on it, this is the one line
+    # to remove here and on the three targets below.
     entitlements:
       path: WingFoil/WingFoil.entitlements
       properties:
         com.apple.developer.healthkit: true
         com.apple.developer.healthkit.access: []
+        com.apple.security.application-groups:
+          - group.de.lahmann.wingfoil
     info:
       path: WingFoil/Info.plist
       properties:
+        <<: *infoCommon
         NSHealthUpdateUsageDescription: >-
           Adds your wingfoil sessions to the Health app as workouts. CleanJibe only writes
           workouts you already imported; it never reads your health data.
@@ -180,70 +441,18 @@ targets:
         # fixes (4 Sep 2026, ADR-019). Keep it in step with the watch target's string below.
         # The phone's own half is one fix on a tap — Settings → Garmin watch → Map for the
         # watch → "Where I am now" (App/PhoneLocation.swift) — and nothing else on this
-        # device ever asks.
+        # device ever asks. The release channel has neither the watch app nor the Garmin
+        # link, which is why this key is not in `infoCommon`.
         NSLocationWhenInUseUsageDescription: >-
           Records your track and speed on your Apple Watch while you ride. CleanJibe uses the
           watch's GPS only during a session you started, and the recording is sent straight
           to this phone. The phone reads its own position only when you choose "Where I am
           now" for the watch map, once per send, and never in the background.
-        # The end-of-recording sheet's "Save to Photos" (App/PhotoLibrarySaver.swift). ADD
-        # ONLY: the app asks for `.addOnly` authorization and can never read an asset back,
-        # which is why there is no `NSPhotoLibraryUsageDescription` beside it. The photos a
-        # rider splices into a clip come from `PhotosPicker`, which runs out of process and
-        # needs no permission at all — so this is the only photo-library prompt the app has.
-        NSPhotoLibraryAddUsageDescription: >-
-          Saves the replay clip you just recorded to your photo library. CleanJibe only adds
-          videos you ask it to save; it never reads your photos.
-        # THE HOME-SCREEN NAME, and the one the rider reads everywhere the system names us:
-        # the springboard, Settings → Notifications, the share sheet, the Health source list.
-        # The brand is CleanJibe; the target, the module and every bundle id underneath stay
-        # `WingFoil`/`de.lahmann.wingfoil.*`, which are identifiers nobody reads — renaming
-        # them would orphan the TestFlight build, the BGTask registration and the keychain.
-        #
-        # Also read by the ConnectIQ SDK itself when it hands control to Garmin Connect
-        # Mobile — GCM shows this name to the rider. It must exist, or device selection
-        # comes back empty with no error anywhere.
-        CFBundleDisplayName: CleanJibe
-        CFBundleShortVersionString: $(MARKETING_VERSION)
-        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        LSRequiresIPhoneOS: true
-        # --- phase 5, companion link (docs/decisions.md ADR-013) ---
-        # Without this entry `canOpenURL` returns false for Garmin Connect Mobile even
-        # when it is installed, and the SDK concludes there is no path to the watch.
-        LSApplicationQueriesSchemes:
-          - gcm-ciq
-        # The way back from GCM: the rider picks a watch there, GCM reopens us on this
-        # scheme, and `ConnectIQ.parseDeviceSelectionResponse` reads the devices out of
-        # the URL. Nothing else in the app answers on it.
-        CFBundleURLTypes:
-          - CFBundleURLName: de.lahmann.wingfoil.ciq
-            CFBundleTypeRole: Editor
-            CFBundleURLSchemes:
-              - wingfoil-ciq
-          # The way back from Strava's consent screen (ADR-023). Strava itself will not
-          # redirect to a custom scheme — it validates the redirect against the API
-          # application's single Authorization Callback Domain, which is `cleanjibe.org` —
-          # so it redirects to https://cleanjibe.org/strava/callback, and that page bounces
-          # the `code` and `state` here. `ASWebAuthenticationSession` is what is waiting,
-          # so the sheet closes on it and nothing in the app has to answer this scheme at
-          # all: it is registered so that iOS knows it belongs to us, and for no other
-          # reason.
-          - CFBundleURLName: de.lahmann.wingfoil.strava
-            CFBundleTypeRole: Editor
-            CFBundleURLSchemes:
-              - cleanjibe
-        # --- Strava API application (ADR-023) ---
-        # Substituted from `ios/Strava.xcconfig`, which is untracked. A build without it
-        # gets empty strings, `StravaConfig.isConfigured` is false, and the Import screen's
-        # Strava row says what is missing rather than failing halfway through OAuth. The
-        # client id is public by construction (it travels in every authorize URL); the
-        # secret is not, and is why the file is gitignored.
-        STRAVA_CLIENT_ID: $(STRAVA_CLIENT_ID)
-        STRAVA_CLIENT_SECRET: $(STRAVA_CLIENT_SECRET)
-        STRAVA_REDIRECT_URI: $(STRAVA_REDIRECT_URI)
         # iOS demands both strings from any app whose process touches Bluetooth, and the
-        # SDK does on our behalf. Real sentences, not placeholders: TestFlight review
-        # rejects the build otherwise, and the rider deserves to know why we are asking.
+        # ConnectIQ SDK does on our behalf. Real sentences, not placeholders: TestFlight
+        # review rejects the build otherwise, and the rider deserves to know why we are
+        # asking. The Garmin link is a dev door, but the plist is per target rather than per
+        # configuration, so the beta carries the strings and never asks.
         NSBluetoothAlwaysUsageDescription: >-
           CleanJibe uses Bluetooth to receive a session summary from your Garmin watch the
           moment you stop recording, and to send the wind direction back to it. All of it
@@ -251,67 +460,41 @@ targets:
         NSBluetoothPeripheralUsageDescription: >-
           CleanJibe uses Bluetooth to exchange session summaries and wind direction with
           your Garmin watch through the Garmin Connect app.
-        ITSAppUsesNonExemptEncryption: false
-        # --- new-session notifications (App/ActivityNotifier.swift) ---
-        # The phone polls intervals.icu on a BGAppRefreshTask and posts a local
-        # notification for an activity it has not seen. Both keys are load-bearing:
-        # without `fetch` the scheduler refuses to submit the request, and an identifier
-        # missing from the permitted list is a launch-time exception the moment
-        # `BGTaskScheduler.register` is called.
-        UIBackgroundModes:
-          - fetch
-        BGTaskSchedulerPermittedIdentifiers:
-          - de.lahmann.wingfoil.refresh
-        # Storyboard-free launch screen: the tile mark centred on the brand navy, so the
-        # cold-start frame is the app's own colour instead of a white flash.
-        #
-        # `SplashMark` rather than `LaunchMark`, and the difference is the point of the whole
-        # asset. iOS draws this image at its NATURAL POINT SIZE (measured on the simulator:
-        # a 512 px 1× asset came out 512 pt wide, cropped by both edges of a 402 pt phone),
-        # centred in the safe area. `SplashMark` is 140 / 280 / 420 px at 1×/2×/3×, so it is
-        # 140 pt on every device — which is exactly where and how big `SplashView` draws it
-        # the moment our own code takes over, so the handover from this frame to that one
-        # moves nothing. `LaunchMark` stays what it always was, the artwork at full
-        # resolution for the share card, the QR's centre and the welcome screen.
-        UILaunchScreen:
-          UIColorName: LaunchBackground
-          UIImageName: SplashMark
-          UIImageRespectsSafeAreaInsets: true
-        # The clock and the battery, read against that navy. This key is the *initial* status
-        # bar style and it is what the launch screen shows; `SplashView` asks for the same
-        # with `preferredColorScheme(.dark)`, so the handover does not flip the clock from
-        # black to white. It changes nothing afterwards — `UIViewControllerBasedStatusBarAppearance`
-        # defaults to YES, so every screen in the app still decides for itself and the library
-        # keeps its black clock on white.
-        UIStatusBarStyle: UIStatusBarStyleLightContent
-        UIApplicationSupportsIndirectInputEvents: true
-        UISupportedInterfaceOrientations:
-          - UIInterfaceOrientationPortrait
-          - UIInterfaceOrientationLandscapeLeft
-          - UIInterfaceOrientationLandscapeRight
+        # --- phase 5, companion link (docs/decisions.md ADR-013) ---
+        # Without this entry `canOpenURL` returns false for Garmin Connect Mobile even
+        # when it is installed, and the SDK concludes there is no path to the watch.
+        LSApplicationQueriesSchemes:
+          - gcm-ciq
+        # The scheme GCM reopens us on, read back by `ConnectIQCompanionLink.urlScheme` out
+        # of this very key rather than spelled a second time in Swift. Two apps cannot share
+        # one custom scheme and stay predictable, so the dev channel gets its own.
+        CJUrlSchemeCIQ: $(CJ_URL_SCHEME_CIQ)
+        CFBundleURLTypes:
+          # The way back from GCM: the rider picks a watch there, GCM reopens us on this
+          # scheme, and `ConnectIQ.parseDeviceSelectionResponse` reads the devices out of
+          # the URL. Nothing else in the app answers on it.
+          - CFBundleURLName: de.lahmann.wingfoil.ciq
+            CFBundleTypeRole: Editor
+            CFBundleURLSchemes:
+              - $(CJ_URL_SCHEME_CIQ)
+          # The way back from Strava's consent screen (ADR-023) — see the release target
+          # above for why a https page rather than a scheme does the redirecting.
+          - CFBundleURLName: de.lahmann.wingfoil.strava
+            CFBundleTypeRole: Editor
+            CFBundleURLSchemes:
+              - cleanjibe
         # An iPad has no "wrong way up": it is held in all four, and an app that refuses one
         # of them shows a rotated home screen behind a letterboxed window. Upside-down is
         # left out of the phone list on purpose — a phone flipped over hides the earpiece —
         # and the `~ipad` key is a separate list rather than an addition to the one above.
+        # Only this target has it: iPad is a dev channel feature (docs/channels.md).
         UISupportedInterfaceOrientations~ipad:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        LSSupportsOpeningDocumentsInPlace: true
-        # FIT has no system UTI; importing it makes .fit files pickable in the Files
-        # importer and lets the share sheet hand recordings to the app.
         UTImportedTypeDeclarations:
-          - UTTypeIdentifier: de.lahmann.wingfoil.fit
-            UTTypeDescription: FIT activity file
-            UTTypeConformsTo:
-              - public.data
-              - public.content
-            UTTypeTagSpecification:
-              public.filename-extension:
-                - fit
-              public.mime-type:
-                - application/vnd.ant.fit
+          - *utFit
           # GPX has no system-declared type on iOS either (engine 0.9.0). Imported, not
           # exported: the format is topografix.com's, not ours, and claiming to own it
           # would be wrong even though we are the only app on the phone that declares it.
@@ -352,36 +535,27 @@ targets:
               - de.lahmann.wingfoil.gpx
               - de.lahmann.wingfoil.tcx
               - public.zip-archive
-    scheme:
-      environmentVariables:
-        # Flip "enabled" on in Xcode (Edit Scheme → Run → Arguments) to sync without
-        # typing the key into the app. DEBUG builds only.
-        - variable: ICU_API_KEY
-          value: ""
-          isEnabled: false
 
-  # Home-screen widgets: last session + this week's foil time.
+  # Home-screen widgets: last session + this week's foil time. A BETA door
+  # (docs/channels.md) — the release channel embeds no widget extension at all, which is why
+  # `WingFoilRelease` has no dependency on this target.
   #
-  # NO APP GROUP ENTITLEMENT. The manual "WingFoil App Store" provisioning profile does
-  # not carry `group.de.lahmann.wingfoil`, and requesting an entitlement a profile does
-  # not grant fails the archive — which would break the TestFlight path for a widget.
-  # `WidgetSnapshotStore` therefore probes the shared container at runtime and falls back
-  # to the app's own container, where the widget cannot see it: with today's profile the
-  # widget installs and renders its "finish setting up" state.
-  #
-  # To turn the widget on for real (docs/decisions.md):
-  #   1. Add the App Groups capability with `group.de.lahmann.wingfoil` to BOTH app ids
-  #      in the developer portal, and regenerate "WingFoil App Store" plus a new profile
-  #      for `de.lahmann.wingfoil.widgets`.
-  #   2. Add `com.apple.security.application-groups` to both `entitlements` blocks here.
-  #   3. Add the widget's bundle id to ios/ExportOptions.plist.
-  # No code change is needed — the store starts finding the shared suite on its own.
+  # THE APP GROUP is on the entitlements below, and it is what turns the widget from its
+  # "finish setting up" state into a widget with numbers on it: `WidgetSnapshotStore` probes
+  # the shared container at runtime and falls back to the app's own container, where the
+  # widget cannot see it. For the entitlement to survive the archive, the App Groups
+  # capability with `group.de.lahmann.wingfoil` has to be on both app ids in the developer
+  # portal and the profiles regenerated, and the widget's bundle id has to be in
+  # ios/ExportOptions.plist (docs/decisions.md ADR-011). No code change is needed.
   WingFoilWidgets:
     type: app-extension
     platform: iOS
     deploymentTarget: "18.0"
     sources:
       - path: WingFoilWidgets
+        excludes:
+          - "Info.plist"
+          - "WingFoilWidgets.entitlements"
       # The snapshot *format* is shared source rather than a linked library: the widget
       # would otherwise pull GRDB, the FIT parser and ZIPFoundation into a 30 MB-limited
       # extension in order to decode a few hundred bytes of JSON.
@@ -393,25 +567,38 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.widgets
         MARKETING_VERSION: "0.15.0"
         CURRENT_PROJECT_VERSION: "52"
-        TARGETED_DEVICE_FAMILY: "1,2"        # same families as its host app
+        TARGETED_DEVICE_FAMILY: "1"          # same families as its host app
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 685X8YLYSB
         GENERATE_INFOPLIST_FILE: NO
         SKIP_INSTALL: YES
         SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
       configs:
-        # Release (what `archive` builds) signs manually with the App Store profile, like the
-        # watch widgets: every embedded binary must carry the same certificate as its parent,
-        # and the export re-signs with these same profiles (ios/ExportOptions.plist).
         Release:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "WingFoil Widgets App Store"
-        # Same signing for the dev variant's archive. No TUNING: nothing here reads it.
-        Dev Release:
+        # The beta archive's block, the Release one copied: manual signing is per
+        # configuration, and a configuration with no block of its own archives with
+        # automatic signing and fails the export.
+        Beta Release:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "WingFoil Widgets App Store"
+        # The dev channel is a different app, so the extension is a different extension.
+        Dev Debug:
+          <<: *devSigning
+          PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.dev.widgets
+          TARGETED_DEVICE_FAMILY: "1,2"
+        Dev Release:
+          <<: *devWidgetsSigning
+          PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.dev.widgets
+          TARGETED_DEVICE_FAMILY: "1,2"
+    entitlements:
+      path: WingFoilWidgets/WingFoilWidgets.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.de.lahmann.wingfoil
     info:
       path: WingFoilWidgets/Info.plist
       properties:
@@ -423,7 +610,9 @@ targets:
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
 
-  # The Apple Watch recorder (ios/WingFoilWatch/).
+  # The Apple Watch recorder (ios/WingFoilWatch/). A BETA door (docs/channels.md): the
+  # release channel embeds no watch app, and `WingFoilRelease` therefore does not depend on
+  # this target.
   #
   # RECORDER ONLY, BY DESIGN. It captures GPS + heart rate + a 50 Hz wrist accelerometer and
   # hands the phone a `.cjw` container over `WCSession.transferFile`; every number the rider
@@ -457,6 +646,7 @@ targets:
       - path: WingFoilWatch
         excludes:
           - "Info.plist"
+          - "WingFoilWatch.entitlements"
       # Two constants both sides of the complication have to agree on: the `cleanjibe://start`
       # URL, and the shape of the last-session snapshot. They live in `ios/WatchShared/` rather
       # than in either target's own directory for the mechanical reason `Views/WatchBrand.swift`
@@ -486,6 +676,10 @@ targets:
       base:
         PRODUCT_NAME: WingFoilWatch
         PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.watchkitapp
+        # The PHONE app this watch app belongs to, substituted into
+        # `WKCompanionAppBundleIdentifier` below. Not the same thing as this target's own
+        # bundle id, which is why it is a setting of its own.
+        CJ_BUNDLE_ID: de.lahmann.wingfoil
         MARKETING_VERSION: "0.15.0"
         CURRENT_PROJECT_VERSION: "52"
         TARGETED_DEVICE_FAMILY: "4"          # Apple Watch
@@ -496,28 +690,37 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
       configs:
-        # Release (what `archive` builds) signs manually with the App Store profile, like the
-        # watch widgets: every embedded binary must carry the same certificate as its parent,
-        # and the export re-signs with these same profiles (ios/ExportOptions.plist).
         Release:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "WingFoil Watch App Store"
-        # Same signing for the dev variant's archive. The watch is NOT tuned and never will
-        # be: it computes live, on the wrist, with no way to be told what the phone is set to.
-        Dev Release:
+        Beta Release:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "WingFoil Watch App Store"
+        # The watch is NOT tuned and never will be: it computes live, on the wrist, with no
+        # way to be told what the phone is set to. All the dev channel changes here is which
+        # app this watch app is the companion to.
+        Dev Debug:
+          <<: *devSigning
+          PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.dev.watchkitapp
+          CJ_BUNDLE_ID: de.lahmann.wingfoil.dev
+        Dev Release:
+          <<: *devWatchSigning
+          PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.dev.watchkitapp
+          CJ_BUNDLE_ID: de.lahmann.wingfoil.dev
     # Same entitlement as the phone, for the same framework. The watch app writes the workout
     # (rings credit) and reads heart rate off the live builder — the only place in this
     # project that reads anything from Health at all, and unavoidable: a live workout builder
-    # is the only route to heart rate on the wrist.
+    # is the only route to heart rate on the wrist. The app group is what the complication's
+    # last-session line reads (`WatchLastSession.appGroupID`).
     entitlements:
       path: WingFoilWatch/WingFoilWatch.entitlements
       properties:
         com.apple.developer.healthkit: true
         com.apple.developer.healthkit.access: []
+        com.apple.security.application-groups:
+          - group.de.lahmann.wingfoil
     info:
       path: WingFoilWatch/Info.plist
       properties:
@@ -525,8 +728,9 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         # Names the phone app this watch app belongs to. Wrong or missing, the watch app
-        # installs as a standalone and `WCSession` never finds a counterpart.
-        WKCompanionAppBundleIdentifier: de.lahmann.wingfoil
+        # installs as a standalone and `WCSession` never finds a counterpart — which is
+        # exactly what a dev build pointing at the release bundle id would be.
+        WKCompanionAppBundleIdentifier: $(CJ_BUNDLE_ID)
         WKApplication: true
         WKRunsIndependentlyOfCompanionApp: false
         # `workout-processing` is what keeps the app running for two hours on a wet wrist in
@@ -573,7 +777,8 @@ targets:
               - cleanjibe
         ITSAppUsesNonExemptEncryption: false
 
-  # The watch-face complication (ios/WingFoilWatchWidgets/), embedded in the watch app above.
+  # The watch-face complication (ios/WingFoilWatchWidgets/), embedded in the watch app above,
+  # and beta with it (docs/channels.md).
   #
   # A SEPARATE TARGET BECAUSE WIDGETKIT DEMANDS ONE. A complication is a WidgetKit extension —
   # its own process, its own bundle id, its own `@main` — and there is no way to render one from
@@ -581,20 +786,18 @@ targets:
   # file in `WingFoilWatch`; the Siri intents, which are under no such constraint, deliberately
   # did not get an extension and live in the app (docs/decisions.md ADR-018).
   #
-  # NO APP GROUP ENTITLEMENT, for the same reason `WingFoilWidgets` has none: the manual App
-  # Store profiles do not carry `group.de.lahmann.wingfoil`, and requesting an entitlement a
-  # profile does not grant fails the archive. `WatchLastSessionStore` probes for the container
-  # at runtime, so today the complication renders its "Start session" state — which is a fully
-  # working launcher, because the launching does not need the group at all. Only the last
-  # session's line does. To turn that on: add App Groups to the watch app id and to
-  # `de.lahmann.wingfoil.watchkitapp.widgets` in the portal, regenerate both profiles, and add
-  # `com.apple.security.application-groups` to both `entitlements` blocks. No code change.
+  # THE APP GROUP below is what `WatchLastSessionStore` reads the last session's line out of;
+  # without it in the profile the complication still renders its "Start session" state, which
+  # is a fully working launcher, because the launching does not need the group at all.
   WingFoilWatchWidgets:
     type: app-extension
     platform: watchOS
     deploymentTarget: "11.0"
     sources:
       - path: WingFoilWatchWidgets
+        excludes:
+          - "Info.plist"
+          - "WingFoilWatchWidgets.entitlements"
       - path: WatchShared
         group: Shared
     settings:
@@ -610,19 +813,29 @@ targets:
         SKIP_INSTALL: YES
         SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
       configs:
-        # Release (what `archive` builds) signs with the App Store profile the orchestrator
-        # created via the ASC API. Automatic signing cannot mint a development profile for this
-        # bundle id on a Mac with no Xcode account, and the distribution profile is the one the
-        # export needs anyway (ios/ExportOptions.plist). Debug stays automatic for the simulator.
+        # Release signs with the App Store profile the orchestrator created via the ASC API.
+        # Automatic signing cannot mint a development profile for this bundle id on a Mac with
+        # no Xcode account, and the distribution profile is the one the export needs anyway
+        # (ios/ExportOptions.plist). Debug stays automatic for the simulator.
         Release:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "WingFoil Watch Widgets App Store"
-        # Same signing for the dev variant's archive.
-        Dev Release:
+        Beta Release:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "WingFoil Watch Widgets App Store"
+        Dev Debug:
+          <<: *devSigning
+          PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.dev.watchkitapp.widgets
+        Dev Release:
+          <<: *devWatchWidgetsSigning
+          PRODUCT_BUNDLE_IDENTIFIER: de.lahmann.wingfoil.dev.watchkitapp.widgets
+    entitlements:
+      path: WingFoilWatchWidgets/WingFoilWatchWidgets.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.de.lahmann.wingfoil
     info:
       path: WingFoilWatchWidgets/Info.plist
       properties:
@@ -634,16 +847,58 @@ targets:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
         ITSAppUsesNonExemptEncryption: false
 
-# The second scheme. "WingFoil" (generated from the target's own `scheme:` block above) builds
-# Debug/Release and has NO `TUNING` — that is the app external testers get, and the check that
-# it stays that way is one command:
+# THREE SCHEMES, ONE PER CHANNEL (docs/channels.md). There is deliberately no plain "WingFoil"
+# scheme any more: the name meant "the public build" through build 52 and now means the beta,
+# and a scheme that silently changed what it produces is how a beta reaches the App Store.
 #
-#     xcodebuild -project WingFoil.xcodeproj -scheme WingFoil -showBuildSettings \
-#       | grep SWIFT_ACTIVE_COMPILATION_CONDITIONS
+# The check that a channel carries the flags it should, and only those:
 #
-# "WingFoil Dev" builds `Dev Debug`/`Dev Release` and is the only way to get TUNING. Archive
-# lines for both are in docs/testing.md, "Two TestFlight variants".
+#     xcodebuild -project WingFoil.xcodeproj -scheme "WingFoil Release" \
+#       -configuration Release -showBuildSettings | grep SWIFT_ACTIVE_COMPILATION_CONDITIONS
+#
+# Release prints nothing but the inherited defaults, beta prints BETA, dev prints
+# BETA DEV TUNING. Archive lines for all three are in docs/testing.md, "Three channels".
 schemes:
+  WingFoil Release:
+    build:
+      targets:
+        WingFoilRelease: all
+    run:
+      config: Debug
+      environmentVariables:
+        # Flip "enabled" on in Xcode (Edit Scheme → Run → Arguments) to sync without
+        # typing the key into the app. DEBUG builds only.
+        - variable: ICU_API_KEY
+          value: ""
+          isEnabled: false
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+
+  WingFoil Beta:
+    build:
+      targets:
+        WingFoil: all
+    run:
+      config: Beta Debug
+      environmentVariables:
+        - variable: ICU_API_KEY
+          value: ""
+          isEnabled: false
+    test:
+      config: Beta Debug
+    profile:
+      config: Beta Release
+    analyze:
+      config: Beta Debug
+    archive:
+      config: Beta Release
+
   WingFoil Dev:
     build:
       targets:

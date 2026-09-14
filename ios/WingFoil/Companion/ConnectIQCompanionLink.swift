@@ -1,3 +1,9 @@
+// The Garmin link is a DEV channel door (docs/channels.md): the release and beta binaries
+// carry no ConnectIQ framework, no Bluetooth code and no companion object at all. Gating the
+// whole file — the `import ConnectIQ` included — is what makes that true of the binary and
+// not merely of the UI. The kit's `CompanionLink` protocol stays compiled in every channel;
+// it is this adapter that is dev-only.
+#if DEV
 import ConnectIQ
 import Foundation
 import UIKit
@@ -40,9 +46,15 @@ final class ConnectIQCompanionLink: NSObject, CompanionLink {
         UUID(uuidString: "953f7547-c152-42c2-8d33-69fb59ad0bf6")!,   // manifest-beta.xml
     ]
 
-    /// Must match `CFBundleURLSchemes` in project.yml. GCM reopens us on this scheme with
-    /// the rider's device choice in the URL.
-    static let urlScheme = "wingfoil-ciq"
+    /// The scheme GCM reopens us on with the rider's device choice in the URL.
+    ///
+    /// Read out of the Info.plist rather than typed, because the dev channel is a second app
+    /// beside the beta one (docs/channels.md) and two apps cannot share one custom scheme and
+    /// stay predictable: whichever iOS feels like is the one that answers. `CJUrlSchemeCIQ`
+    /// is `$(CJ_URL_SCHEME_CIQ)` in project.yml and sits in the very same plist as the
+    /// `CFBundleURLTypes` entry that declares it, so the two can never drift apart.
+    static let urlScheme = Bundle.main.object(forInfoDictionaryKey: "CJUrlSchemeCIQ")
+        as? String ?? "wingfoil-ciq"
 
     /// Garmin Connect Mobile's own scheme, declared in `LSApplicationQueriesSchemes` —
     /// `canOpenURL` lies (returns false) for any scheme that is not declared there.
@@ -346,3 +358,5 @@ private struct StoredDevice {
 
     static func clear() { UserDefaults.standard.removeObject(forKey: key) }
 }
+
+#endif

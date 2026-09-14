@@ -101,8 +101,8 @@ struct StravaImportView: View {
                  + "download the GPS track of the ones you pick. It reads; it never writes, "
                  + "renames or posts anything to your Strava account.\n\n"
                  + "Strava has not reviewed CleanJibe yet, and until it does Strava allows "
-                 + "**one connected rider** — if you are not the first, connecting will be "
-                 + "refused and there is nothing you can do about it from here.")
+                 + "**ten connected riders**. If connecting is refused because the app is "
+                 + "full, that is why — Menu → Support is the way to report it.")
         }
     }
 

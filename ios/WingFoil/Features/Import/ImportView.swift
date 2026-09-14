@@ -10,10 +10,14 @@ struct ImportView: View {
     @Environment(SessionStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 
-    @State private var showBulkImporter = false
     @State private var showFileImporter = false
-    @State private var showHealthImporter = false
     @State private var showStravaImporter = false
+    #if BETA
+    /// The Garmin export ZIP and the Apple Health picker are both beta doors
+    /// (docs/channels.md), and so is the state that raises them.
+    @State private var showBulkImporter = false
+    @State private var showHealthImporter = false
+    #endif
     @State private var log: [ImportLogRow] = []
 
     var body: some View {
@@ -23,6 +27,10 @@ struct ImportView: View {
                     Section("Importing") { ProgressCard(progress: progress) }
                 }
 
+                // The full-history backfill is a BETA door (docs/channels.md): nobody has
+                // asked for it yet, and a rider's whole Garmin archive is a long first
+                // import to put in front of somebody on his first afternoon.
+                #if BETA
                 Section {
                     Button {
                         showBulkImporter = true
@@ -38,12 +46,13 @@ struct ImportView: View {
                          + "here: non-watersport activities are skipped and anything already in "
                          + "the library is recognised as a duplicate, so re-running is safe.")
                 }
+                #endif
 
                 Section {
                     Button {
                         showFileImporter = true
                     } label: {
-                        Label("FIT, GPX, TCX or ZIP…", systemImage: "doc.badge.plus")
+                        Label(Self.filePickerLabel, systemImage: "doc.badge.plus")
                     }
                     .disabled(store.isBusy)
                     Button {
@@ -55,26 +64,14 @@ struct ImportView: View {
                 } header: {
                     Text("Single sessions")
                 } footer: {
-                    // The picker offers GPX (engine 0.9.0) and TCX, so the next question is
-                    // what they cost — answered here, before the rider imports one and
-                    // wonders why the pump section is missing, rather than after. The
-                    // intervals.icu sentence names the other watch brands because the sync
-                    // button above is the only way most of their riders get in at all: their
-                    // apps sync to intervals.icu, and CleanJibe syncs from there.
-                    Text("Garmin Connect → activity → \"Export File\" gives one FIT; "
-                         + "AirDrop and the share sheet land here too. Polar, Suunto and "
-                         + "Coros are supported through intervals.icu — their apps sync "
-                         + "there, and CleanJibe syncs from there. A FIT gives the full "
-                         + "analysis; a GPX, or a TCX without a speed channel, gives a "
-                         + "positions-only analysis with speed records estimated from "
-                         + "positions and marked uncertified. None of the three carries an "
-                         + "accelerometer, so there is no pump or takeoff effort.")
+                    Text(Self.filePickerFooter)
                 }
 
                 // The third door, and the only one that needs no account, no cable and no
                 // file: a workout the rider already recorded with Apple's own Workout app
                 // (ADR-017). It sits under "Single sessions" rather than beside the GDPR ZIP
                 // because that is what it is — one afternoon at a time, picked by hand.
+                #if BETA
                 if store.isHealthAvailable {
                     Section {
                         Button {
@@ -96,6 +93,7 @@ struct ImportView: View {
                              + "recording has.")
                     }
                 }
+                #endif
 
                 // The second cloud source (ADR-023), under intervals.icu rather than beside
                 // it — deliberately in that order, because for the same afternoon
@@ -142,17 +140,22 @@ struct ImportView: View {
             .task(id: store.libraryGeneration) {
                 log = (try? await store.library.importLog()) ?? []
             }
-            .sheet(isPresented: $showHealthImporter) { HealthImportView() }
             .sheet(isPresented: $showStravaImporter) { StravaImportView() }
+            #if BETA
+            .sheet(isPresented: $showHealthImporter) { HealthImportView() }
             .fileImporter(isPresented: $showBulkImporter,
                           allowedContentTypes: [.zip], allowsMultipleSelection: false) { result in
                 if case .success(let urls) = result {
                     Task { await store.importBulk(urls: urls) }
                 }
             }
+            #endif
+            // The types the picker offers, which is also what this channel's Info.plist
+            // declares it can open: FIT and zip, with GPX and TCX added by the beta
+            // (docs/channels.md). A picker offering a type the binary has no parser path
+            // for would be a door onto an error message.
             .fileImporter(isPresented: $showFileImporter,
-                          allowedContentTypes: [.fitActivity, .gpxTrack, .tcxTrack,
-                                                .zip, .gzip],
+                          allowedContentTypes: Self.importableTypes,
                           allowsMultipleSelection: true) { result in
                 if case .success(let urls) = result {
                     Task { await store.importPicked(urls: urls) }
@@ -160,6 +163,43 @@ struct ImportView: View {
             }
         }
     }
+
+    // MARK: - What this channel can read
+
+    /// FIT and zip everywhere; GPX and TCX in the beta (docs/channels.md). The label, the
+    /// footer and the type list sit together so a channel can never offer a door in its
+    /// button and close it in its picker.
+    #if BETA
+    private static let filePickerLabel = "FIT, GPX, TCX or ZIP…"
+    private static let importableTypes: [UTType] =
+        [.fitActivity, .gpxTrack, .tcxTrack, .zip, .gzip]
+    /// The picker offers GPX (engine 0.9.0) and TCX, so the next question is what they cost
+    /// — answered here, before the rider imports one and wonders why the pump section is
+    /// missing, rather than after. The intervals.icu sentence names the other watch brands
+    /// because the sync button above is the only way most of their riders get in at all:
+    /// their apps sync to intervals.icu, and CleanJibe syncs from there.
+    private static let filePickerFooter =
+        "Garmin Connect → activity → \"Export File\" gives one FIT; "
+        + "AirDrop and the share sheet land here too. Polar, Suunto and "
+        + "Coros are supported through intervals.icu — their apps sync "
+        + "there, and CleanJibe syncs from there. A FIT gives the full "
+        + "analysis; a GPX, or a TCX without a speed channel, gives a "
+        + "positions-only analysis with speed records estimated from "
+        + "positions and marked uncertified. None of the three carries an "
+        + "accelerometer, so there is no pump or takeoff effort."
+    #else
+    private static let filePickerLabel = "FIT or ZIP…"
+    private static let importableTypes: [UTType] = [.fitActivity, .zip, .gzip]
+    /// No GPX or TCX sentence, because there is no GPX or TCX door — and the last line says
+    /// where one is, because a Polar rider reading this screen deserves an answer rather
+    /// than a silence (docs/channels.md: "the release text says the beta reads their files").
+    private static let filePickerFooter =
+        "Garmin Connect → activity → \"Export File\" gives one FIT; "
+        + "AirDrop and the share sheet land here too. Polar, Suunto and "
+        + "Coros are supported through intervals.icu — their apps sync "
+        + "there, and CleanJibe syncs from there. Their own GPX and TCX "
+        + "files are read by the CleanJibe beta."
+    #endif
 }
 
 /// Live counters while a container is being unpacked: found / imported / duplicates /

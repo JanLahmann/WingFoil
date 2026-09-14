@@ -3,13 +3,19 @@ submit it for beta review.
 
 usage:
   uv run --with pyjwt --with cryptography --with requests \
-      python ios/tools/testflight_publish.py <build-number> [--wait] [--group internal|external]
+      python ios/tools/testflight_publish.py <build-number> [--wait] \
+          [--group internal|external] [--app release|dev]
 
 `--group external` (the default, and everything this script did before) attaches the build to
 every external group and SUBMITS IT FOR BETA REVIEW. `--group internal` attaches it to the
 internal group only and skips the submission — internal testers need no review, which is the
-whole point of sending the dev build (the `TUNING` variant, docs/testing.md "Two TestFlight
-variants") that way.
+whole point of sending the dev build that way.
+
+`--app` names which App Store Connect record to work on (docs/channels.md, "Three channels").
+`release` is the default and is `de.lahmann.wingfoil` — the App Store app, which carries both
+the release channel's builds and the beta channel's. `dev` is the separate "CleanJibe Dev"
+record (`de.lahmann.wingfoil.dev`). `CJ_DEV_APP_ID` in the environment overrides the id below,
+which is the one escape hatch if the record is ever recreated.
 
 Edit WHATS_NEW below before running. The API key file is read from ~/.appstoreconnect and is
 not in the repo. The one lesson this file exists to keep: attaching a build to an external
@@ -17,13 +23,25 @@ group through the API does not submit it for beta review, and external testers n
 build that was not reviewed — builds 6-15 sat unreviewed for weeks while testers stayed on
 build 5. This script submits.
 """
-import sys, time, json, requests, jwt
+import os, sys, time, json, requests, jwt
 
 KEY_ID = "HZT9694JZ4"
 ISSUER = "b9e6ccaa-e24a-4d37-bc1d-87f5be210572"
 KEY_PATH = "/Users/majl/.appstoreconnect/private_keys/AuthKey_HZT9694JZ4.p8"
-APP = "6800401377"
+# The App Store record: release and beta share it, because they share a bundle id.
+APP_RELEASE = "6800401377"
+# "CleanJibe Dev" (de.lahmann.wingfoil.dev), created 14 Sep 2026.
+APP_DEV = "6811840646"
+# Overrides APP_DEV when set; the escape hatch if the record is ever recreated.
+DEV_APP_ID_ENV = "CJ_DEV_APP_ID"
 BASE = "https://api.appstoreconnect.apple.com/v1"
+
+
+def app_id(app):
+    """The ASC app id for the channel named on the command line."""
+    if app == "release":
+        return APP_RELEASE
+    return os.environ.get(DEV_APP_ID_ENV, "").strip() or APP_DEV
 
 WHATS_NEW = """New here? cleanjibe.org/start — a 20-minute test of the watch routes, and where to send feedback.
 
@@ -66,13 +84,13 @@ def req(path, method="GET", body=None):
     return r.json() if r.text else {}
 
 
-def find_build(number):
-    d = req(f"/builds?filter[app]={APP}&filter[version]={number}&sort=-uploadedDate&limit=5")
+def find_build(app, number):
+    d = req(f"/builds?filter[app]={app}&filter[version]={number}&sort=-uploadedDate&limit=5")
     return d["data"][0] if d["data"] else None
 
 
 def parse_args(argv):
-    number, wait, group = None, False, "external"
+    number, wait, group, app = None, False, "external", "release"
     i = 0
     while i < len(argv):
         a = argv[i]
@@ -83,6 +101,11 @@ def parse_args(argv):
             group = argv[i] if i < len(argv) else ""
         elif a.startswith("--group="):
             group = a.split("=", 1)[1]
+        elif a == "--app":
+            i += 1
+            app = argv[i] if i < len(argv) else ""
+        elif a.startswith("--app="):
+            app = a.split("=", 1)[1]
         elif a.startswith("--"):
             raise SystemExit(f"unknown option {a}")
         else:
@@ -92,15 +115,19 @@ def parse_args(argv):
         raise SystemExit(__doc__)
     if group not in ("internal", "external"):
         raise SystemExit("--group takes 'internal' or 'external'")
-    return number, wait, group
+    if app not in ("release", "dev"):
+        raise SystemExit("--app takes 'release' or 'dev'")
+    return number, wait, group, app
 
 
 def main():
-    number, wait, group = parse_args(sys.argv[1:])
+    number, wait, group, app = parse_args(sys.argv[1:])
+    APP = app_id(app)
     internal = group == "internal"
+    print("target app:", app, APP)
     print("target group:", group)
     while True:
-        b = find_build(number)
+        b = find_build(APP, number)
         state = b["attributes"]["processingState"] if b else None
         print("build", number, "->", b["id"] if b else None, state)
         if b and state == "VALID":
@@ -161,7 +188,7 @@ def main():
         else:
             print("beta review already:", sub["attributes"]["betaReviewState"])
     # export compliance: ITSAppUsesNonExemptEncryption=false is in the Info.plist, so no prompt expected
-    b = find_build(number)
+    b = find_build(APP, number)
     print("usesNonExemptEncryption:", b["attributes"].get("usesNonExemptEncryption"))
 
 

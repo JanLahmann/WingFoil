@@ -1,3 +1,5 @@
+// The Import screen's Apple Health door — BETA (docs/channels.md).
+#if BETA
 import SwiftUI
 import WingFoilKit
 
@@ -223,3 +225,5 @@ private struct HealthWorkoutRow: View {
         return isSelected ? "circle.inset.filled" : "circle"
     }
 }
+
+#endif
