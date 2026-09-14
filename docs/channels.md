@@ -36,9 +36,12 @@ document type, no usage string and no entitlement in the channels that lack it.
 1. On the water in ten or more sessions by two or more riders without an open report. Jan's
    own fenix and iPhone count as one rider.
 2. Third parties are prerequisites, not features: Strava allows ten connected riders since the
-   14 September self-service upgrade; its Developer Program review lifts that cap and is
-   requested before the release ships; Garmin Connect Mobile owns the Bluetooth link and
-   stays in dev until the link has real sessions behind it.
+   14 September self-service upgrade. Its Developer Program review lifts that cap, but Strava
+   only reviews apps that have *reached* the ten (the form says applications below the
+   threshold are denied; checked 14 September, one rider connected), so the release ships at
+   the cap and the form goes in the day the tenth rider connects — see "The Strava review"
+   below. Garmin Connect Mobile owns the Bluetooth link and stays in dev until the link has
+   real sessions behind it.
 3. Older than a fortnight. Strava is the one exception, by Jan's call.
 4. Reviewable without a watch: every release feature shows itself from the example session
    or a shared file.
@@ -167,6 +170,29 @@ under `#if DEV` / `#if BETA`; the watch app has the same flags for its start pag
 Garmin, `monkey-invite.jungle` (the beta) and `monkey-beta.jungle` (the dev-beta listing —
 the file names predate the channels, garmin/store/listing.md) append the channel's
 directory after each size class so its resource ids win.
+
+## The Strava review
+
+The form is the HubSpot one linked from developers.strava.com/docs/getting-started ("please
+submit your app for review"): share.hsforms.com/1VXSwPUYqSH6IxK0y51FjHwcnkd8. Jan fills and
+submits it himself (his name, jan@lahmann-online.de, company "Jan-Rainer Lahmann", app
+"CleanJibe", client id 279015, no additional apps, the current authenticated count, intended
+users "a few hundred", support URL cleanjibe.org/start, the three compliance boxes). Prepared
+answers:
+
+*Application description.* CleanJibe is a free, open-source wingfoil analysis app (iPhone,
+and the same engine in the browser at cleanjibe.org). A rider connects their own Strava
+account and picks one of their own activities; the app downloads that activity's position
+stream and analyses it on the phone — foil time, flights, turn verdicts, speed records — and
+shows the result to that rider only. Nothing is uploaded to Strava, no other athlete's data
+is read, nothing is stored outside the rider's phone, and the imported session links back
+with "View on Strava". Read scope only (activity:read_all for private activities).
+
+*Images.* Every place Strava data or branding appears: the Import screen with the official
+"Connect with Strava" button and the "Compatible with Strava" mark; Settings → Strava; the
+session page of a Strava import with its "View on Strava" link; the session list row with
+the Strava source tag. Rendered from the simulator into the scratchpad's store-shots
+folder alongside the App Store screenshots.
 
 ## Before the release is submitted
 
