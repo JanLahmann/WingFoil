@@ -276,6 +276,27 @@ struct StravaImportTests {
                 == "14123456789_session_strava.gpx")
     }
 
+    /// The round trip the "View on Strava" link rides on: Strava's brand guidelines require
+    /// a link back to the activity, and the id it needs is the first field of the name the
+    /// import wrote. Read back rather than stored in a column of its own — see
+    /// `StravaImport.activityId`.
+    @Test func theActivityIdReadsBackOutOfTheFilename() {
+        for activity in [Self.activity(), Self.activity(name: nil)] {
+            #expect(StravaImport.activityId(
+                originalFilename: StravaImport.filename(for: activity)) == "14123456789")
+        }
+    }
+
+    /// Every other door's filename gets no link, rather than a link to somebody else's ride.
+    @Test func onlyStravasOwnFilenamesYieldAnId() {
+        for other in [nil, "", "2026-08-30_nago_torbole.fit", "14123456789_ride.gpx",
+                      "_strava.gpx", "notanid_wingfoil_strava.gpx",
+                      "1412_3456_wing_strava.fit"] {
+            #expect(StravaImport.activityId(originalFilename: other) == nil,
+                    "\(other ?? "nil") should not yield a Strava id")
+        }
+    }
+
     // MARK: - The type filter
 
     /// Strava has no wingfoil type, so the rider picks the set — and the name rescues the

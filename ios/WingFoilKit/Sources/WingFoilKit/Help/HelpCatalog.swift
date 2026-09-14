@@ -150,7 +150,7 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
 public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
     case icuSetup, exampleSession, sendingFeedback, appleWorkoutApp, icuTroubleshooting
     case icuPrivacy, libraryBackup
-    case stravaImport, shareFromWatchApp, whichWatch
+    case stravaImport, shareFromWatchApp, whichWatch, phoneOnly
     case foilPct, flights, longestFlight, distance, mapLegend
     case recordSet, best2s, best10s, best5x10s, best500m, bestNm, alpha500, uncertified
     case turnTypes, turnOutcomes, turnSuccess, portStarboard, falls, touchdowns, glideOuts
@@ -283,7 +283,7 @@ public enum HelpCatalog {
                 + "speed records are uncertified.",
             body: [
                 "If your sessions are already on Strava, CleanJibe can list them and import "
-                + "the ones you pick. Import → Strava → Connect Strava opens Strava, you say "
+                + "the ones you pick. Import → Strava → Connect with Strava opens Strava, you say "
                 + "yes, and the list appears. CleanJibe only ever reads: it never writes, "
                 + "renames or posts anything to your Strava account.",
                 "Strava has no wingfoil activity, so it offers Windsurf, Kitesurf, Surf and "
@@ -312,7 +312,7 @@ public enum HelpCatalog {
             ],
             items: [
                 .init(term: "Connect",
-                      detail: "Import → Strava → Connect Strava. Strava's own consent screen "
+                      detail: "Import → Strava → Connect with Strava. Strava's own consent screen "
                           + "opens; leave the private-activities box ticked or the sessions "
                           + "you marked \"Only you\" will be missing from the list."),
                 .init(term: "Pick, or take everything new",
@@ -397,7 +397,70 @@ public enum HelpCatalog {
                 HelpLink(title: "Garmin: exporting data out of Garmin Connect",
                          url: URL(string: "https://support.garmin.com/en-US/?faq=W1TvTPW8JZ6LfJSfK512Q8")!),
             ],
-            related: [.whichWatch, .icuSetup, .stravaImport, .sourceClass, .uncertified]),
+            related: [.whichWatch, .icuSetup, .stravaImport, .sourceClass, .phoneOnly,
+                      .uncertified]),
+
+        // The topic for the rider who owns no watch at all — which, on a beach, is most of
+        // the people who ask what the app on your wrist is. It sits beside the vendor topic
+        // rather than under "Where the numbers come from", for the same reason that one does:
+        // for this reader it is not a footnote about data quality, it is the whole way in.
+        //
+        // **Both channels are answered, in one topic.** The GPX door is a beta door
+        // (docs/channels.md), so the release build cannot open the file these apps produce —
+        // and a help topic that sent a release rider off to install a tracker and then had
+        // nothing to do with the result would be worse than no topic. So the order is
+        // deliberate: Strava first, because it works in every channel and needs no file at
+        // all, and the file route second, labelled as the beta's.
+        HelpTopic(
+            id: .phoneOnly, section: .setup, title: "Recording with a phone only",
+            summary: "No watch at all: a tracker app in a pouch, and the session comes in "
+                + "through Strava or as a file.",
+            body: [
+                "A phone records a GPS track as well as most watches do, and CleanJibe reads "
+                + "it the same way it reads anything else: foil time, flights, every turn "
+                + "with its verdict, clean jibes, the wind axis and the map. It is "
+                + "\(RecordingClass.c.name), so what it costs is the speed records: "
+                + "\(RecordingClass.c.line)",
+                "There are two ways to get the session across, and the first one needs no "
+                + "file. Record with the Strava app, then Import → Strava → Connect with "
+                + "Strava and pick the session. Strava's own phone app cannot export a "
+                + "recording as a file, so this is the route for it: connecting is the "
+                + "export.",
+                "The other way is a file, which the CleanJibe beta reads (GPX and TCX). "
+                + "Record with a tracker that can export one, then share the file into "
+                + "CleanJibe from the iOS share sheet, or save it to Files and open it from "
+                + "there.",
+                "Where to put the phone: somewhere it is dry, still and pointing at the sky. "
+                + "A waterproof pouch on the upper arm or high on the chest is the one that "
+                + "works; a pocket at hip height spends half the session underwater at the "
+                + "bottom of a jibe, and a track that drops out every time you turn is a "
+                + "track with turns missing from it. Start the recording on the beach, before "
+                + "the pouch is sealed, and stop it when you come back in.",
+            ],
+            items: [
+                .init(term: "iPhone · Open GPX Tracker",
+                      detail: "Free, records a GPX and nothing else, and shares it straight "
+                          + "out of the app. Save the track, tap Share, pick CleanJibe."),
+                .init(term: "iPhone · Komoot",
+                      detail: "Records a tour and exports it as a GPX from the tour's own "
+                          + "page. Made for touring rather than for watersport, so expect to "
+                          + "name the session yourself afterwards."),
+                .init(term: "Android · GPSLogger",
+                      detail: "Free and small: it writes a GPX or a TCX to the phone's "
+                          + "storage and does nothing else at all. Mail the file to yourself "
+                          + "or put it in a cloud folder the iPhone can reach."),
+                .init(term: "Android · OsmAnd",
+                      detail: "Its trip recording writes a GPX you can export and send on. "
+                          + "Heavier than GPSLogger, and the map is the point of it."),
+                .init(term: "Android · Komoot",
+                      detail: "The same tour export as the iPhone version."),
+                .init(term: "Any phone · Strava",
+                      detail: "Record in the Strava app and connect Strava here. The app "
+                          + "cannot hand you a file, so there is nothing to share in: the "
+                          + "import reads the activity out of your account instead."),
+            ],
+            related: [.stravaImport, .shareFromWatchApp, .whichWatch, .sourceClass,
+                      .uncertified]),
 
         // One table, so the question "will my watch work" has one place to be answered
         // instead of being spread across five topics that each answer a third of it.
@@ -451,7 +514,7 @@ public enum HelpCatalog {
                           + "map are all there."),
             ],
             related: [.shareFromWatchApp, .icuSetup, .appleWorkoutApp, .stravaImport,
-                      .sourceClass, .uncertified]),
+                      .phoneOnly, .sourceClass, .uncertified]),
 
         HelpTopic(
             id: .icuTroubleshooting, section: .setup, title: "When the sync does not work",
@@ -534,10 +597,18 @@ public enum HelpCatalog {
         HelpTopic(
             id: .sendingFeedback, section: .setup, title: "Sending feedback",
             summary: "The app writes down which build, which phone and which session. "
-                + "You write the sentence.",
+                + "You write the sentence. \(FeedbackInvitation.sentence)",
             body: [
-                "Settings → Send feedback, and the share sheet's \"Report a problem with this "
-                + "session…\", both open a mail that is already filled in: the app version and "
+                "\(FeedbackInvitation.sentence) A missing column, a word that reads wrong, "
+                + "something you would rather the app did differently: the same mail carries "
+                + "all of it, and the three lines at the top of it are blank for exactly that "
+                + "reason.",
+                "Menu → Support & ideas, Settings → Send feedback, and the share sheet's "
+                + "\"Report a problem with this session…\" all open the same mail. It opens "
+                + "with three questions and a blank line under each: what happened or what "
+                + "you would like, what you expected instead, and which session it is about. "
+                + "Under a line of dashes is everything the app already knows, which you can "
+                + "read and delete before you send it: the app version and "
                 + "build, whether it is the dev or the public one, the analysis engine "
                 + "version and any tuned thresholds, your phone model, iOS version and "
                 + "locale, the watch this phone is paired with and its CleanJibe version, and "
@@ -1095,7 +1166,22 @@ public enum HelpCatalog {
             body: [
                 "CleanJibe reads whatever your watch put in the file, and every metric "
                 + "degrades gracefully rather than failing or guessing. In practice there "
-                + "are three cases:",
+                + "are four cases, and they have names: the same four classes printed on "
+                + "cleanjibe.org and on the Import screen, so the row you read before you "
+                + "bought anything is the row you can find afterwards.",
+                "\(RecordingClass.a.name). \(RecordingClass.a.line)",
+                "\(RecordingClass.b.name). \(RecordingClass.b.line) Garmin's own Windsurf "
+                + "profile, another Connect IQ app, and Apple's Workout app imported from "
+                + "Health are all this class.",
+                "\(RecordingClass.bPlus.name). \(RecordingClass.bPlus.line) It is not a "
+                + "different recording from class B, it is a class B recording with the "
+                + "wrist beside it, which is why it is a plus rather than a letter of its "
+                + "own.",
+                "\(RecordingClass.c.name). \(RecordingClass.c.line) A GPX never carries a "
+                + "speed channel and a TCX sometimes does; Strava hands over positions and "
+                + "no speed channel either, so a session imported from Strava belongs here "
+                + "too.",
+                "What each one costs, in the words of the screens that show it:",
             ],
             items: [
                 .init(term: "Recorded with the CleanJibe watch app",
@@ -1124,7 +1210,8 @@ public enum HelpCatalog {
                           + "and no speed channel. Neither format carries an accelerometer, "
                           + "so pump strokes and takeoff effort are missing either way."),
             ],
-            related: [.uncertified, .divergence, .engineVersion, .whichWatch, .stravaImport]),
+            related: [.uncertified, .divergence, .engineVersion, .whichWatch,
+                      .stravaImport, .phoneOnly]),
 
         HelpTopic(
             id: .divergence, section: .quality,
