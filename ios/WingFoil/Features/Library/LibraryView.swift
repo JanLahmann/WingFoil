@@ -29,6 +29,13 @@ struct LibraryView: View {
     @State private var editingRange = false
     /// Bumped by the menu's Support item; `feedbackMail(on:)` on the list does the rest.
     @State private var supportRequest = 0
+    #if BETA
+    /// The ask (docs/channels.md): the card at the top of the list, and the counter the
+    /// composer hangs off. Both live here rather than on the card, which is gone the
+    /// instant it is answered — see `UsageAskCard`.
+    @State private var showUsageAsk = false
+    @State private var usageRequest = 0
+    #endif
 
     var body: some View {
         @Bindable var store = store
@@ -37,6 +44,15 @@ struct LibraryView: View {
         NavigationStack(path: $path) {
             ScrollViewReader { proxy in
             List {
+                // Above everything, including the setup card: it is the one row that is
+                // about the beta rather than about the library, and it is answered and
+                // gone in one tap either way (docs/channels.md).
+                #if BETA
+                if showUsageAsk {
+                    UsageAskCard(request: $usageRequest, isShowing: $showUsageAsk)
+                        .listRowInsets(.init(top: 10, leading: 16, bottom: 10, trailing: 16))
+                }
+                #endif
                 if store.sessions.isEmpty {
                     emptyState
                         .id("setup")
@@ -106,7 +122,10 @@ struct LibraryView: View {
                         Button { showSettings = true } label: {
                             Label("Settings", systemImage: "gearshape")
                         }
-                        Button { supportRequest += 1 } label: {
+                        Button {
+                            Usage.record(.feedbackMail)
+                            supportRequest += 1
+                        } label: {
                             Label("Support", systemImage: "envelope")
                         }
                         Divider()
@@ -154,6 +173,18 @@ struct LibraryView: View {
             }
             #endif
             .feedbackMail(on: $supportRequest)
+            #if BETA
+            // On the list, not on the card: the card is removed the moment either button
+            // is tapped, and a sheet hung on it would never present.
+            .usageReportMail(on: $usageRequest)
+            // Asked when the list settles rather than at every redraw — the card must not
+            // appear underneath a rider's finger mid-scroll — and re-asked after an import,
+            // which is the event that moves the count along.
+            .task { showUsageAsk = Usage.askIsDue }
+            .onChange(of: store.libraryGeneration) { _, _ in
+                if !showUsageAsk { showUsageAsk = Usage.askIsDue }
+            }
+            #endif
             .sheet(isPresented: $showSettings) { SettingsView() }
             #if DEBUG && targetEnvironment(simulator) && TUNING
             // `UI_SHEET=tuning` — a sheet of its own rather than "Settings, then push",

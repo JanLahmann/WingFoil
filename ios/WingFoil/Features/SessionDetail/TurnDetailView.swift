@@ -54,6 +54,9 @@ struct TurnDetailSheet: View {
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            // One per visit to the turn page, not one per swipe: the question the beta has
+            // is whether the page is reached at all.
+            .task { Usage.record(.turnPage) }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

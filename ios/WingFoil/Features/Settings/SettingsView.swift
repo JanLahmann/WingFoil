@@ -59,7 +59,10 @@ struct SettingsView: View {
                     Button("Done") { dismiss() }
                 }
             }
-            .task { await store.refreshStorage() }
+            .task {
+                Usage.record(.settingsOpened)
+                await store.refreshStorage()
+            }
             .sheet(item: $setupTopic) { HelpTopicSheet(id: $0) }
             .confirmationDialog("Re-run analysis for all sessions?",
                                 isPresented: $confirmReanalyze, titleVisibility: .visible) {
