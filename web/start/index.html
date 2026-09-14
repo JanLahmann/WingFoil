@@ -82,7 +82,8 @@
       </p>
       <p class="lede">
         <strong>Apple Watch:</strong> do route A first, then B.
-        <strong>Garmin:</strong> route C. Then read
+        <strong>Garmin:</strong> route C. <strong>Polar, Suunto, COROS or anything
+        else:</strong> route D. Then read
         <a href="#seen">what you should see</a> and send us
         <a href="#tell">the five lines</a> at the bottom.
       </p>
@@ -105,7 +106,9 @@
              data-umami-event="start-testflight">testflight.apple.com/join/nygqGGcn</a>.
           Install Apple's <strong>TestFlight</strong> app from the App Store if it asks, then
           install <strong>CleanJibe</strong> through it. Open CleanJibe once so it can ask for
-          its permissions, and allow <strong>Health</strong> and <strong>Location</strong>.
+          its permissions, and allow <strong>Health</strong>, and <strong>Location</strong> if
+          it asks. (It asks for location in one place only — the map it draws for a Garmin
+          watch — so on most first runs it never comes up.)
         </p>
         <p class="note">
           If TestFlight offers an update for CleanJibe, take it before you start. It is worth
@@ -152,6 +155,9 @@
       Three to five minutes of movement is plenty. A bike ride gives the nicest result —
       CleanJibe calls anything above about 12&nbsp;km/h &ldquo;flying&rdquo;, so a ride draws
       a track with real flights in it. Walking works too.
+    </p>
+    <p class="section-lede">
+      Four routes, and you only need the one that matches what is on your wrist.
     </p>
 
     <article class="panel piece" id="route-a">
@@ -282,8 +288,10 @@
           <h3>No intervals.icu? The long way, with a computer</h3>
           <p>
             <a href="https://connect.garmin.com" rel="noopener">connect.garmin.com</a> → the
-            activity → the gear icon → <strong>Export Original</strong>. AirDrop the ZIP to the
-            iPhone, then <code>+</code> → <strong>FIT, GPX or ZIP</strong> in CleanJibe.
+            activity → the gear icon → <strong>Export File</strong> (it read <em>Export
+            Original</em> until Garmin renamed it). AirDrop the file to the iPhone, then
+            <code>+</code> → <strong>FIT, GPX or ZIP</strong> in CleanJibe. Garmin has no
+            export on the phone at all, which is why intervals.icu is the route above.
           </p>
         </li>
         <li>
@@ -292,8 +300,64 @@
             In CleanJibe on the iPhone, Settings → <em>Garmin watch</em>. After a save the
             watch sends a small summary card over Bluetooth; tell us whether it arrived.
           </p>
+          <p>
+            On the same screen, <strong>Send map to watch</strong> draws the shore around your
+            spot on the phone and pushes it to a watch running CleanJibe 0.9.10, which then has
+            ground under its breadcrumb. Worth a look, and worth a line in your report.
+          </p>
         </li>
       </ol>
+    </article>
+
+    <!-- The fourth route, added when the imports learned GPX and TCX and the share sheet
+         became a door: a rider on a Polar, a Suunto or a COROS used to read three routes,
+         find none of them his, and leave. Nothing to install on his wrist, so it is a route
+         about moving one file. -->
+    <article class="panel piece" id="route-d">
+      <div class="piece-head">
+        <h3>Route D · Polar, Suunto, COROS — or anything else</h3>
+        <span class="status">no CleanJibe app on the wrist</span>
+      </div>
+      <p class="what">
+        Record the way you already do, then hand the file to CleanJibe. Nothing to install on
+        the watch, because there is nothing for us to install there.
+      </p>
+      <ol class="steps-flow">
+        <li>
+          <h3>Record and save on your own watch</h3>
+          <p>
+            Any outdoor activity with GPS. Three to five minutes, the same as the other routes.
+          </p>
+        </li>
+        <li>
+          <h3>Share the file into CleanJibe</h3>
+          <p>
+            In the vendor&rsquo;s phone app, export the workout and pick <strong>Open in
+            CleanJibe</strong> from the iOS share sheet. Suunto: Calendar → the workout → ⋯ →
+            FIT. COROS: Activities → the activity → ⋯ → Export → FIT. Polar has no export on
+            the phone at all — use flow.polar.com on a computer and AirDrop the file over.
+          </p>
+          <p>
+            <strong>Take the FIT</strong> where the app offers one: a FIT carries the speed
+            your watch measured, a <code>.gpx</code> does not, and a <code>.tcx</code> only
+            does when the app wrote one in. Everything else — foil time, flights, turns, the
+            map, the wind axis — is identical either way.
+          </p>
+        </li>
+        <li>
+          <h3>Or let intervals.icu do it</h3>
+          <p>
+            Most of these watches sync to
+            <a href="https://intervals.icu" rel="noopener">intervals.icu</a> too, and from
+            there CleanJibe picks them up by itself — Settings →
+            <strong>intervals.icu</strong>, then <code>+</code> → <strong>Sync
+            intervals.icu</strong>, exactly as in route C.
+          </p>
+        </li>
+      </ol>
+      <p class="note">
+        Which brand gets which numbers is one table, on <a href="../watches/">Which watch</a>.
+      </p>
     </article>
   </section>
 
@@ -393,6 +457,32 @@
           and windsurf session inside at once. A few hundred sessions take a few minutes.
         </p>
       </article>
+      <article class="panel claim">
+        <h3>Strava</h3>
+        <p>
+          <code>+</code> → <strong>Strava</strong> signs you in on Strava&rsquo;s own consent
+          page — read-only; CleanJibe writes nothing back — and lists your matching activities
+          of the last two years, with the ones already in your library marked. Tap the ones you
+          want, or <strong>Import all new</strong>. The one door that needs no Garmin account
+          and no intervals.icu.
+        </p>
+        <p>
+          Strava hands over positions rather than the speed your watch measured, so those
+          sessions&rsquo; speed records are marked <em>uncertified</em>. If the same afternoon
+          is on intervals.icu, take it from there instead. And until Strava has reviewed the
+          app it allows one connected rider at a time, which the app says plainly.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>Anything else</h3>
+        <p>
+          <code>+</code> → <strong>FIT, GPX or ZIP</strong>, or <strong>Open in
+          CleanJibe</strong> from the iOS share sheet in any app that can export a workout —
+          <code>.fit</code>, <code>.gpx</code> and <code>.tcx</code> all come in. That is the
+          route for a Polar, a Suunto or a COROS, and the table on
+          <a href="../watches/">Which watch</a> says what each format gives you.
+        </p>
+      </article>
     </div>
   </section>
 
@@ -452,11 +542,15 @@
   </section>
 
   <!-- ------------------------------------------------------------------- feedback -->
-  <!-- Three doors, in the order of how much they cost the tester. The mail link carries the
-       report template in its body so the fields arrive filled in rather than remembered;
-       TestFlight's own form is second because it attaches the build and the device without
-       anyone typing them; the store buttons are third and named because they really do reach
-       the same developer and a page that listed only its own doors would imply otherwise. -->
+  <!-- Four doors, in the order of how much they cost the tester. THE APP'S OWN IS FIRST since
+       build 45: Menu -> Support writes the build, the phone, the iOS version, the watch and
+       the library's shape into the mail itself, which is the half of a report nobody types
+       correctly from memory and the half that decides whether it can be acted on. The mail
+       link here still carries the route template in its body, for a tester who is writing
+       from a desk rather than from the app; TestFlight's own form attaches the build and the
+       device without anyone typing them; the store buttons are named last because they really
+       do reach the same developer and a page that listed only its own doors would imply
+       otherwise. -->
   <section class="home-section" id="tell">
     <h2>Tell us what you saw</h2>
     <p class="section-lede">
@@ -465,6 +559,19 @@
     </p>
 
     <div class="claims">
+      <article class="panel claim">
+        <h3>From inside the app — Menu &rarr; Support</h3>
+        <p>
+          The easiest door, and the one that arrives complete. Top left on the Sessions tab:
+          <strong>Menu &rarr; Support</strong>. The same mail is under Settings &rarr;
+          <em>Send feedback</em>, behind <em>Something off? Send feedback</em> at the foot of
+          every page, and behind <em>Report a problem with this session</em> on a
+          session&rsquo;s share sheet — that last one names the session and attaches its card.
+          Your build, your phone, your iOS version, your watch and the size of your library are
+          already typed in; you add what happened and press Send. Nothing leaves the phone
+          until you do.
+        </p>
+      </article>
       <article class="panel claim">
         <h3>Mail — the template is prefilled</h3>
         <p>
@@ -547,6 +654,8 @@
   <p>
     <a href="../">About CleanJibe</a> ·
     <a href="../invite/">Get the beta</a> ·
+    <a href="../watches/">Which watch</a> ·
+    <a href="../whats-new/">What&rsquo;s new</a> ·
     <a href="../app/">Open the analyzer</a> ·
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">github.com/JanLahmann/WingFoil</a>
   </p>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Privacy — CleanJibe</title>
-<meta name="description" content="What the CleanJibe iPhone app and cleanjibe.org do with your data. Short version: the analysis runs on your own device, there is no CleanJibe account and no CleanJibe server, and your sessions are never uploaded.">
+<meta name="description" content="What the CleanJibe iPhone and iPad app and cleanjibe.org do with your data. Short version: the analysis runs on your own device, there is no CleanJibe account and no CleanJibe server, and your sessions are never uploaded. Every exception is named: Strava, Apple Maps, the map drawn for the watch, the feedback mail.">
 <meta name="theme-color" content="#101010">
 <meta name="color-scheme" content="dark">
 
@@ -62,7 +62,7 @@
        will read, and because it is short enough to be true without a footnote. Everything
        below it exists to name the exceptions rather than to qualify the promise. -->
   <section class="hero">
-    <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Effective 2 September 2026</p>
+    <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Effective 14 September 2026</p>
     <h1>Privacy</h1>
     <p class="lede">
       CleanJibe analyses your wingfoil sessions on the device you are holding. There is no
@@ -111,15 +111,21 @@
   </section>
 
   <!-- -------------------------------------------------------- app: what leaves -->
-  <!-- Three entries, and the honest thing about them is that two are Apple's own services
-       reached through the system frameworks — a map is a network request whether or not the
-       app that draws it thinks of itself as making one. Naming them costs nothing and
-       leaving them out would make the "nothing leaves your phone" line quietly false. -->
+  <!-- The honest thing about this list is that most of it is somebody else's service
+       reached through a system framework — a map is a network request whether or not the app
+       that draws it thinks of itself as making one, and a mail composer is one the moment the
+       rider presses Send. Naming them costs nothing and leaving them out would make the
+       "nothing leaves your phone" line quietly false.
+
+       Three entries went in on 14 September 2026 for what shipped in builds 41-49: Strava and
+       its callback hop, the map this phone renders for a Garmin watch (which wakes MapKit
+       with no map anywhere on screen), and the feedback mail. -->
   <section class="home-section" id="app-network">
     <h2>The iPhone app — what leaves your phone</h2>
     <p class="section-lede">
-      Three things, all of them either something you switched on or something a map needs.
-      There is no fourth.
+      Eight entries, and not one of them is a surprise: an account you connected, something a
+      map needs, a mail you wrote and sent yourself, and — while this is a beta — Apple&rsquo;s
+      own crash reports. There is no ninth.
     </p>
 
     <dl class="terms">
@@ -137,6 +143,46 @@
         </dd>
       </div>
       <div class="term">
+        <dt>Strava — only if you connect it</dt>
+        <dd>
+          Import &rarr; Strava, or Settings &rarr; Strava, opens <strong>Strava's own consent
+          page</strong>: you sign in to Strava there and not to us, and Strava itself tells you
+          what is being asked for. What is asked for is <strong>read access</strong>
+          (<code>activity:read_all</code>) and nothing else. CleanJibe lists your activities,
+          and for the ones you pick it downloads their positions, their clock, their elevation
+          and their heart rate. It <strong>never writes</strong> — no activity, no description,
+          no comment — and nothing in the app is a quiet step towards it. The access token it
+          gets back lives in the <strong>iOS Keychain</strong> on your phone, is never copied
+          into iCloud, and is sent only to Strava. <strong>Disconnect</strong>, on either of
+          those two screens, deletes it from the phone; to withdraw the permission at Strava's
+          end as well, use
+          <a href="https://www.strava.com/settings/apps" rel="noopener">strava.com/settings/apps</a>,
+          which is where any app's access is really revoked. Until Strava has reviewed
+          CleanJibe it allows <strong>one connected rider</strong> at a time, which the app
+          says out loud rather than reporting as a failure. Sessions that arrive this way carry
+          positions and no measured speed, so their speed records are marked uncertified — an
+          accuracy note rather than a privacy one, and the Import screen makes it before you
+          tap rather than after.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>The Strava sign-in comes back through cleanjibe.org</dt>
+        <dd>
+          Strava returns a rider only to an address on the one web domain it has on file for an
+          app, and refuses custom app links outright. Ours is <code>cleanjibe.org</code>, so
+          the last hop of the sign-in loads
+          <a href="../strava/callback/">cleanjibe.org/strava/callback</a> for about a frame and
+          that page hands the result straight back to the app. It is a single static file with
+          no stylesheet, no counter and nothing third-party on it — an authorization code is a
+          credential for the next few seconds and must not be handed to anybody's script.
+          GitHub Pages, which serves this site, sees that request the way it sees every other
+          page load on it: a URL, which in this one case has that single-use code in it, a time
+          and an IP address. There is no code of ours on that server and nothing is stored. The
+          code is then exchanged for the token between your phone and Strava directly, and is
+          worthless afterwards.
+        </dd>
+      </div>
+      <div class="term">
         <dt>Apple Maps — when a map is on screen</dt>
         <dd>
           The session map, the full-screen map, the replay and the share card's optional map
@@ -148,6 +194,22 @@
         </dd>
       </div>
       <div class="term">
+        <dt>Apple Maps again — the map this phone draws for a Garmin watch</dt>
+        <dd>
+          A Garmin cannot be given a real map, so CleanJibe draws it one: a coarse
+          land/water/road picture of a 3&nbsp;km box around a spot, one or two kilobytes, which
+          the watch blits under its breadcrumb. That picture is rendered by the same MapKit,
+          which means <strong>Apple sees the area of that spot even with no map anywhere on
+          your screen</strong> — the part worth saying plainly. It happens when you press
+          <em>Send map to watch</em>, and by itself at app launch and after an import. Which
+          spots: the two you have ridden most, unless you tick your own under Settings &rarr;
+          Garmin watch &rarr; <em>Map for the watch</em>, which replaces that automatic pair
+          with your picks. When nothing about the pair has changed since last time, nothing is
+          rendered and nothing is asked of Apple. The finished picture goes over Bluetooth to
+          the watch and to nobody else.
+        </dd>
+      </div>
+      <div class="term">
         <dt>Apple's place-name lookup — once per new spot</dt>
         <dd>
           When the app meets a sailing spot it has not seen before, it asks Apple's geocoding
@@ -156,13 +218,44 @@
           nothing else, and never again for a spot that already has a name.
         </dd>
       </div>
+      <div class="term">
+        <dt>A feedback mail — written by the app, sent by you</dt>
+        <dd>
+          <em>Menu &rarr; Support</em>, <em>Settings &rarr; Send feedback</em>, the quiet
+          <em>Something off? Send feedback</em> at the foot of every page, and <em>Report a
+          problem with this session</em> on a session's share sheet all open one thing: a mail
+          to <a href="mailto:info@cleanjibe.org">info@cleanjibe.org</a> in your own Mail app,
+          with the facts already typed in. Those facts are the build number, your iPhone model,
+          iOS version and locale, the paired watch and which version of the CleanJibe watch app
+          it runs, and the shape of your library — how many sessions, and how many came in by
+          each door. Sent from a session page it also names that session's date, spot, duration
+          and source, and attaches that session's share card. There is no track, no file and no
+          coordinate in it. Every line is editable, and <strong>nothing is sent until you tap
+          Send</strong>: it is an ordinary mail, through your own mail account, to a mailbox.
+          There is no CleanJibe server anywhere in that path either.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>TestFlight — crash reports, for as long as this is a beta</dt>
+        <dd>
+          The iPhone and iPad app is installed through Apple's <strong>TestFlight</strong>, and
+          TestFlight collects crash reports, plus the feedback you send from inside it, and
+          passes them to us: the device model, the OS version, and the stack trace of what fell
+          over. No session, no track, no file, nothing out of your library. That collection is
+          <strong>Apple's</strong>, under Apple's TestFlight terms and the sharing choice you
+          made when you accepted them — we neither add to it nor can switch it off — and it
+          ends when the app leaves TestFlight for the App Store.
+        </dd>
+      </div>
     </dl>
 
     <p class="note">
       <strong>And nothing else.</strong> The app contains no analytics, no crash reporter, no
-      advertising, and no third-party tracking code of any kind. It never asks for the App
-      Tracking Transparency permission because it has nothing to ask for. Your data is not
-      sold, rented or shared with anyone, and there is no one to share it with.
+      advertising, and no third-party tracking code of any kind — the crash reports above are
+      Apple's, collected by TestFlight around the app rather than by anything we put inside it.
+      It never asks for the App Tracking Transparency permission because it has nothing to ask
+      for. Your data is not sold, rented or shared with anyone, and there is no one to share it
+      with.
     </p>
   </section>
 
@@ -170,7 +263,7 @@
   <section class="home-section" id="permissions">
     <h2>What the app asks permission for</h2>
     <p class="section-lede">
-      Four prompts exist, all of them optional, and none of them appears until you use the
+      Five prompts exist, all of them optional, and none of them appears until you use the
       feature behind it.
     </p>
 
@@ -199,11 +292,32 @@
         </dd>
       </div>
       <div class="term">
+        <dt>Location — one tick, one fix per map you send</dt>
+        <dd>
+          There is exactly one reason CleanJibe ever asks where you are, and you have to ask
+          for it first. Under Settings &rarr; Garmin watch &rarr; <em>Map for the watch</em>
+          there is a tick called <strong>&ldquo;Where I am now&rdquo;</strong> — for the
+          afternoon at a lake your library has never seen and could therefore never name.
+          Ticking it brings up the standard iOS prompt, and what is asked for is
+          <strong>while&nbsp;using&nbsp;the&nbsp;app</strong>. After that the phone reads its
+          position <strong>once per map send</strong>: one fix, never a running update, never
+          in the background. The coordinate is used for one thing — the corners of the
+          3&nbsp;km box rendered on this phone and pushed to the watch. It is not stored with
+          your sessions, not attached to anything, and not sent anywhere. Leave the tick alone
+          and the prompt never appears at all; the automatic send at launch <strong>never
+          prompts</strong>, and includes &ldquo;Where I am now&rdquo; only if you had already
+          allowed it. Every other coordinate the app shows was already inside a file you
+          imported.
+        </dd>
+      </div>
+      <div class="term">
         <dt>Bluetooth — for the Garmin handoff</dt>
         <dd>
-          Used to receive a session summary from a CleanJibe watch app when you stop
-          recording, and to send the wind direction back. It goes through the Garmin Connect
-          app; CleanJibe pairs with nothing itself.
+          Used to talk to a Garmin running the CleanJibe watch app: to receive the session
+          summary it sends when you stop recording, to send the wind direction back, and to
+          push the kilobyte or two of coastline the watch draws under its breadcrumb. All of it
+          rides on the Garmin Connect app's own link; CleanJibe pairs with nothing itself, and
+          none of it goes over a network.
         </dd>
       </div>
       <div class="term">
@@ -216,9 +330,11 @@
     </dl>
 
     <p class="note">
-      <strong>The app never asks for your location.</strong> It has no location permission
-      and never turns on your phone's GPS. Every coordinate it shows was already inside a
-      file you imported.
+      <strong>The app never follows you around.</strong> There is one location prompt, the one
+      above, and it exists so a map can be drawn for your watch: one fix at the moment you send
+      a map, with the app in front of you, never in the background, and never at launch unless
+      you had already allowed it. No background location, no geofence, no visit history, and
+      nowhere that a position of yours is kept.
     </p>
   </section>
 
@@ -254,6 +370,16 @@
           On the web that key is kept in ordinary browser storage on your device — not in a
           keychain, and not as securely as on the phone. It is sent only to intervals.icu.
           "Forget key" removes it.
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>One page here is not for reading</h3>
+        <p>
+          <a href="../strava/callback/">cleanjibe.org/strava/callback</a> exists for the iPhone
+          app rather than for a visitor: it is where Strava returns a rider after the consent
+          screen, and all it does is hand the result back to the app. No stylesheet, no
+          counter, nothing third-party, nothing stored. What it is and what the server sees is
+          under <a href="#app-network">what leaves your phone</a>.
         </p>
       </article>
     </div>
@@ -411,6 +537,8 @@
   <p>CleanJibe — open wingfoil tracking. Watch app, iPhone app, browser analyzer.</p>
   <p>
     <a href="../">About CleanJibe</a> ·
+    <a href="../watches/">Which watch</a> ·
+    <a href="../whats-new/">What&rsquo;s new</a> ·
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">github.com/JanLahmann/WingFoil</a>
     · Questions: <a href="mailto:info@cleanjibe.org">info@cleanjibe.org</a>
   </p>

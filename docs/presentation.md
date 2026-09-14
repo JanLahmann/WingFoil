@@ -2762,6 +2762,13 @@ takeoff effort** (was a wrist accelerometer recorded, which only the CleanJibe w
 | Anything that reaches Strava | Import → Strava | uncertified | no |
 | A phone in a pocket, any GPX | the share sheet | uncertified | no |
 
+The **same table is public**, at cleanjibe.org/watches, beside the watch app’s Connect IQ
+product list grouped into families (`web/watches/index.html`, kept in step with
+`garmin/manifest.xml` by hand) — so “will my watch work” has one answer for a rider who has
+installed nothing yet and the same answer inside the app. The public release notes live beside
+it at cleanjibe.org/whats-new, from `ios/tools/testflight_publish.py` and
+`garmin/store/listing.md`.
+
 ## The library menu — one menu, in the order a new rider needs it
 
 The Sessions tab's top-left button (`line.3.horizontal`, "Menu") is the app's one menu. It

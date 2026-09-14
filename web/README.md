@@ -32,12 +32,31 @@ web/
 │                               ADR-023). Self-contained on purpose — no stylesheet, no
 │                               analytics, nothing third-party anywhere near an
 │                               authorization code — noindex, and not in the sw.js precache.
+├── watches/index.html          "WHICH WATCH" (cleanjibe.org/watches/): the one place the
+│                               question "will my watch work" is answered. The watch app's
+│                               Connect IQ product list grouped into families, with the
+│                               honest third column — ridden on a real watch, or only
+│                               through the simulator's layout checks — and the second table
+│                               for every other brand (FIT certifies, GPX does not, pump
+│                               strokes need a CleanJibe watch app). Generated from nothing:
+│                               keep it in step with `garmin/manifest.xml` by hand. No JS,
+│                               not precached.
+├── whats-new/index.html        "WHAT'S NEW" (cleanjibe.org/whats-new/): one card per public
+│                               release, newest first — the iPhone/iPad TestFlight builds
+│                               and the Connect IQ versions, which number differently and
+│                               land on different days. The same text TestFlight's "What to
+│                               Test" and the store's "What's New" carry, where somebody who
+│                               has NOT installed anything can read it. Sources:
+│                               `ios/tools/testflight_publish.py` (its git history is the
+│                               only archive of the older builds' notes) and
+│                               `garmin/store/listing.md`. No JS, not precached.
 ├── start/index.html            the GETTING-STARTED PAGE (cleanjibe.org/start/): what
 │                               happens after the install — a 20-minute test on land, the
-│                               three watch routes (Apple Workout app, CleanJibe watch app,
-│                               Garmin via intervals.icu), what a working result looks
-│                               like, and the three feedback doors with the report template
-│                               prefilled into the mail link. Same no-JS, no-precache rules
+│                               four watch routes (Apple Workout app, CleanJibe watch app,
+│                               Garmin via intervals.icu, and anything else through the
+│                               share sheet), what a working result looks like, and the
+│                               feedback doors — the app's own Menu -> Support first, then
+│                               the mail link with the report template prefilled. Same no-JS, no-precache rules
 │                               as /invite/; linked from it and printed in TestFlight's
 │                               "What to Test" and on the Connect IQ listing.
 ├── app/index.html              the ANALYZER (cleanjibe.org/app/): page shell, three views
@@ -100,6 +119,9 @@ web/
 │   ├── wingfoil_lab/           GENERATED copy of lab/src/wingfoil_lab — do not edit
 │   ├── FILES.json              load list for the worker (HTTP has no directory listing)
 │   └── MANIFEST.json           source hashes, for the staleness check
+├── tools/verify_links.py       every internal link on the site resolves and every document
+│                               nests its tags: no browser, no server, no dependency. Run it
+│                               after touching any .html here
 ├── tools/bundle_lab.py         regenerates lab_bundle/wingfoil_lab
 ├── tools/verify_web_entry.py   headless checks: golden parity + no-GPS regression
 ├── tools/verify_library.py     headless checks: dedupe, digests, records, trends, zip
@@ -208,15 +230,20 @@ up anywhere — use *Download all (.zip)* if you want a copy you own.
 ```bash
 cd web
 python3 -m http.server 8765
-# open http://127.0.0.1:8765/         the project homepage
-# open http://127.0.0.1:8765/invite/  the beta page (both installs + feedback)
-# open http://127.0.0.1:8765/start/   getting started (the 20-minute watch test)
-# open http://127.0.0.1:8765/app/     the analyzer
+# open http://127.0.0.1:8765/           the project homepage
+# open http://127.0.0.1:8765/invite/    the beta page (both installs + feedback)
+# open http://127.0.0.1:8765/start/     getting started (the 20-minute watch test)
+# open http://127.0.0.1:8765/watches/   which watch, and what every other brand gets
+# open http://127.0.0.1:8765/whats-new/ one card per public release, newest first
+# open http://127.0.0.1:8765/privacy/   the policy, with every exception named
+# open http://127.0.0.1:8765/app/       the analyzer
 ```
 
-> The site has four documents. `/` is the project homepage, `/invite/` the beta page and
-> `/start/` the getting-started walkthrough (all three static HTML, one extra stylesheet,
-> no JavaScript at all); `/app/` is this analyzer. Everything the analyzer
+> The site has one app and a family of documents around it. `/` is the project homepage;
+> `/invite/`, `/start/`, `/watches/`, `/whats-new/`, `/privacy/` and `/impressum/` are static
+> HTML with one extra stylesheet and no JavaScript at all; `/app/` is this analyzer.
+> (`/strava/callback/` is the exception to everything: self-contained, noindex, and for the
+> iPhone app rather than for a reader.) Everything the analyzer
 > loads — `css/`, `js/`, `icons/`, `example/`, `lab_bundle/` — stays at the site root and is
 > reached with `../`, so the two pages share one copy of the aesthetic and one service
 > worker. `js/app.js` resolves the example FIT and `sw.js` against `import.meta.url` rather
@@ -537,20 +564,25 @@ back out and reaches it online. Its box is still reserved by `aspect-ratio`.
 `/invite/` is not precached at all — it is a page you read once, at a desk, with a watch in
 your hand. `/start/` is out for the same reason and more so: it is read *while* doing the
 thing it describes, with a phone, a watch and a store app all wanting the network anyway.
-Neither is the umami script; see **Privacy** above.
+`/watches/`, `/whats-new/`, `/privacy/` and `/impressum/` are out on the same argument, and
+`/whats-new/` additionally because it changes every few days. Nor is the umami script; see
+**Privacy** above.
 
 Icons live in `web/icons/`, copied from `brand/` (`icon-tile-*` for the normal icon,
 `icon-square-*` full-bleed for the maskable one). Nothing outside `web/` is referenced.
 
 ## Verification
 
-Six checks, none of which needs a browser:
+Seven checks, none of which needs a browser:
 
 ```bash
 cd /path/to/WingFoil
 
 # 0. the bundle is not stale (exit 1 if lab/ moved on without it)
 python3 web/tools/bundle_lab.py --check
+
+# 0b. every internal link resolves and every document closes its tags (stdlib only, <1 s)
+python3 web/tools/verify_links.py
 
 # 1. web_entry: the bundle reproduces the goldens exactly, and a track with no GPS fixes
 #    still produces a serializable document (analyze_json uses allow_nan=False)
@@ -594,27 +626,32 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
 
 0. **The homepage.** `cd web && python3 -m http.server 8765`, open
    <http://127.0.0.1:8765/>. Static HTML: the hero — the brand mark at 64–84 px beside the
-   eyebrow, the headline, and `img/share-card.png` as the hero image, beside the copy from
-   761 px up and under it below — then the three cards each with a real screenshot above its
-   bullets, the *What you need* honesty block (no watch app / Android / another brand), the
-   vocabulary list with **the track motif and its colour key above it**, and the two build
-   claims. The card is never drawn wider than its 440 native pixels; hold a phone camera to
-   the QR at 1280 and it must open cleanjibe.org. Everything is named **CleanJibe** — the
-   wordmark, both app cards. The *Open the analyzer* buttons land on `/app/`; *See an example
-   session* lands on `/app/#example` and must **run the bundled session on arrival**, not just
-   show the drop zone; *Get the beta* lands on `/invite/`; the "all three make the card at the
-   top of this page" line under the row jumps to `#card`; and the analyzer's own wordmark
-   comes back here. The footer carries the issue link before the mail address, and one line
-   naming umami.
+   eyebrow, the headline, **two equal `.btn primary` doors** (*Get the beta* → `/invite/`,
+   *Try the analyzer* → `/app/`) with the example link in the note under them and the
+   *Installed?* line to `/start/` below that, and `img/share-card.png` as the hero image,
+   beside the copy from 761 px up and under it below — then the three cards each with a real
+   screenshot above its bullets, the **FAQ** (six questions: watches, Android, another brand,
+   Strava, clean jibe, data), the vocabulary list with **the track motif and its colour key
+   above it**, and the two build claims. The card is never drawn wider than its 440 native
+   pixels; hold a phone camera to the QR at 1280 and it must open cleanjibe.org. Everything is
+   named **CleanJibe** — the wordmark, both app cards. The *Open the analyzer* buttons land on
+   `/app/`; *an example session* lands on `/app/#example` and must **run the bundled session on
+   arrival**, not just show the drop zone; the "all three make the card at the top of this
+   page" line under the row jumps to `#card`; and the analyzer's own wordmark comes back here.
+   The footer carries the issue link before the mail address, the two new pages beside *Get the
+   beta*, and one line naming umami.
 0a. **The beta page.** <http://127.0.0.1:8765/invite/>. Both installs read in order at both
    widths: the Connect IQ store link opens apps.garmin.com and the TestFlight link opens
    testflight.apple.com. Nothing on the page asks anyone to request an invite — the one
    surviving mention of the request code is the transitional note under the Garmin steps,
-   which comes out the day 0.9.4 clears review. The feedback section carries both doors **in
-   this order** — github.com/JanLahmann/WingFoil/issues first, `info@cleanjibe.org` second —
-   plus one line naming the stores' own channels (TestFlight's screenshot form, Connect IQ's
-   *Contact Developer*), because both really do reach the same developer and a page that
-   listed only its own two doors would be implying otherwise. Every mail address on the site
+   which comes out the day 0.9.4 clears review. The feedback section carries three doors **in
+   this order** — the app's own *Menu → Support* first (it prefills the build, the phone, the
+   watch and the library's shape), github.com/JanLahmann/WingFoil/issues second,
+   `info@cleanjibe.org` third — plus one line naming the stores' own channels (TestFlight's
+   screenshot form, Connect IQ's *Contact Developer*), because both really do reach the same
+   developer and a page that listed only its own doors would be implying otherwise. The
+   watches note names **0.9.10** and says out loud that Venu, vívoactive and Instinct are
+   untested on real watches. Every mail address on the site
    is `info@cleanjibe.org`; grepping the `.html` files for the old personal address must come
    back empty.
 0a2. **The getting-started page.** <http://127.0.0.1:8765/start/>. The three routes read in
@@ -626,6 +663,18 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    *Send Beta Feedback* and *Share Beta Feedback*, and the Garmin door names *Contact
    Developer* and *Report a Problem*. The page must load no JavaScript of its own and
    register no service worker.
+0a3. **Which watch.** <http://127.0.0.1:8765/watches/>. Both tables are tabular above 760 px
+   and one card per row below it (`table.stack-sm` reads its labels from each `<td>`'s
+   `data-th`, so a missing one shows as an unlabelled row). The family list must sum to the
+   product count in `garmin/manifest.xml` — **39** at 0.9.10 — and the three families added in
+   0.9.10 must say they are untested. Every internal link resolves: `../`, `../invite/`,
+   `../invite/#feedback`, `../start/`, `../app/`, `../whats-new/`, `../privacy/`,
+   `../impressum/`.
+0a4. **What's new.** <http://127.0.0.1:8765/whats-new/>. One `.panel .piece` card per release,
+   newest first, each with its date in the `.status` chip. The iOS entries come from
+   `ios/tools/testflight_publish.py`'s git history and the Garmin ones from
+   `garmin/store/listing.md`; when a build ships, the card goes in here in the same commit that
+   edits `WHATS_NEW`.
 0b. **The social card** (the link preview — not the rider's share card below). View source
    on both documents: `og:image` must be the absolute
    `https://cleanjibe.org/social-card.png`, with `og:image:width`/`:height` and
