@@ -736,13 +736,22 @@ list, `keyMetrics` in `web/js/render.js` renders its HTML from it, and `cardStat
 filter it. `web/tools/verify_presentation.py` §5 asserts, per fixture, that the card's stat
 list *is* the rendered block.
 
-**The picture travels with one sentence** (`shareCaption`, 14 September 2026): the card's own
-title, its date line, the foil share and the clean-jibe count, then “— analysed with CleanJibe,
-free at cleanjibe.org”. It is passed as `text` and `url` beside the file, so a forwarded card
-carries what it is and where it came from in quotable words rather than only in 9.5 pt type in
-its footer. Built from what the card is already holding, so it can never describe a different
-session than the picture; the clean count is gated exactly as the tally's caption is (no named
-jibes, no clean clause). Where the browser will not carry text beside a file
+**The picture travels with one sentence** (`shareCaption` in web/js/sharecard.js and its twin
+`ShareCaption.line` in the kit, 14 September 2026 — **both platforms**): the card's own title,
+its date line, the foil share and the clean-jibe count, then “— analysed with CleanJibe, free
+at cleanjibe.org”. That is the one em dash either platform is allowed in a shared string; it
+separates the report from the offer, and everything inside the report is separated by “·”. It
+is passed as `text` and `url` beside the file on the web and as `ShareLink`'s `message:` on
+iOS, so a forwarded card carries what it is and where it came from in quotable words rather
+than only in 9.5 pt type in its footer — and so a notification, a reply quote or a screen
+reader, none of which has the picture yet, still says the afternoon. Built from what the card
+is already holding, so it can never describe a different session than the picture; the two
+numbers are read off the session row rather than off the card's cells, so a `lean` card and a
+`complete` one of the same afternoon carry the same sentence. The clean count is gated exactly
+as the tally's caption is (no named jibes, no clean clause), and an absent number drops its
+clause rather than printing a zero. `ShareLink`'s `subject:` is the same sentence **without**
+the offer — a subject line is a name for the thing, and an invitation in one reads as an
+advertisement. Where the browser will not carry text beside a file
 (`navigator.canShare({files, text})` false), the file still goes and the sentence goes on the
 clipboard instead, with *Caption copied* under the dialog's buttons.
 
@@ -871,8 +880,11 @@ than damage tolerance. The web draws the same symbol from a committed 33 × 33 P
 `imageSmoothingEnabled = false`: the URL is fixed, so a QR library in the bundle would be a
 dependency to draw a constant.
 
-**It grew from 99 px to 144 px** (`QR_SIZE`, 33 → 48 layout points; web changed 14 September
-2026, iOS to follow in `ShareCardView`). 99 px was three whole pixels a module and read
+**It grew from 99 px to 144 px** (`QR_SIZE` on the web, `ShareCardView.qrSide` on iOS —
+33 → 48 layout points on the web, 32 → 48 on iOS; both changed 14 September 2026). 96 px was
+iOS's old export and the floor `BrandQRTests` was calibrated against; it stays in that suite's
+`exportSizes` even though nothing exports at it any more, because every card already sitting in
+somebody's chat thread was drawn at it. 99 px was three whole pixels a module and read
 perfectly at 1:1 — and too small where a card is actually met, as a thumbnail on somebody
 else's phone at arm's length. Angular size beats crisp module edges for a camera, so the whole
 upscale is no longer an integer: 144 over 33 modules is 4.36 px a module, most of them four
@@ -2720,6 +2732,32 @@ Garmin GDPR ZIP), **Single sessions** (a picked FIT/GPX/ZIP, and the intervals.i
 rider taps rather than after — *what does this door bring in*, and *what does it cost* — because
 a rider who discovers only afterwards that his speed records are marked has been told too late.
 
+### The recording class opens every footer
+
+Every section footer now **begins with the class the door brings in**, in the names
+docs/channels.md settled on and cleanjibe.org prints (`RecordingClass` in the kit, one source
+for the app, the help catalogue and the website):
+
+| name | the door that brings it | one line on what you get |
+|---|---|---|
+| **Class A · Garmin watch app** | Full history, Single sessions | everything, the wrist included |
+| **Class B · any speed-certified file** | Full history, Single sessions, Apple Health | everything except pump strokes and takeoff attempts; speed records certify |
+| **Class B+ · Apple Watch app** | *no import at all* — named in the Apple Health footer, because that is where an Apple Watch owner is standing | everything class B gets, plus the wrist at 50 Hz |
+| **Class C · positions only** | Strava; the picker's GPX and TCX in the beta | the analysis, with speed records estimated from positions and marked uncertified |
+
+The letters were kept out of the copy for months, deliberately — "class b" names a bucket in
+somebody else's taxonomy and answers nothing a rider asked. What changed on 14 September 2026
+is that the question moved *in front of* the import: cleanjibe.org and /watches print the table
+as "what you need, what you get", so a rider arrives at this screen looking for the row he has
+already read. The rule that replaced the old one is that **the letter is never alone** — it is
+always the letter and the thing, "Class A · Garmin watch app", which reads as a label to
+somebody who has seen the table and as a plain description to somebody who has not. A bare
+lower-case "class b" is still forbidden, and `PresentationTests` still asserts it.
+
+The **Single sessions** footer names the classes its picker can actually open: A, B and C in
+the beta, A and B in the release, which has no GPX or TCX door (docs/channels.md). The help
+topic *What your recording can and cannot show* carries the same four, in the same words.
+
 ### Import from Strava
 
 Strava is the second cloud source (docs/decisions.md ADR-023), and the one that reaches a rider
@@ -2728,10 +2766,10 @@ intervals.icu, deliberately: for the same afternoon intervals.icu hands over the
 off the watch and Strava hands over positions, and the footer says so in one sentence — *if the
 same session is on intervals.icu, take it from there instead.*
 
-* **Connect / Disconnect** (`StravaImportView`, and the same two buttons under Settings →
-  Strava, so a rider who goes to Settings to "set up Strava" is not sent to another screen
-  first; importing stays on Import). Connecting opens Strava's own consent screen; CleanJibe only ever **reads**, and the words
-  say so on both screens. A build with no API keys behind it shows *"No Strava application
+* **Connect with Strava / Disconnect** (`StravaImportView`, and the same two buttons under
+  Settings → Strava, so a rider who goes to Settings to "set up Strava" is not sent to another
+  screen first; importing stays on Import). Connecting opens Strava's own consent screen;
+  CleanJibe only ever **reads**, and the words say so on both screens. A build with no API keys behind it shows *"No Strava application
   configured"* and where the keys go — a Connect button that always fails would be worse than
   no button.
 * **The list**: the matching activities of the last two years, newest first, each one marked
@@ -2748,6 +2786,22 @@ same session is on intervals.icu, take it from there instead.*
   the quota. And until Strava reviews the application it allows **one connected rider**: that
   refusal is its own sentence — *"Strava has not approved CleanJibe for more riders yet"* — and
   never a generic error, because it is the one failure a rider can do nothing about.
+* **Strava's brand, used Strava's way** (developers.strava.com/guidelines, read 14 September
+  2026; `ios/WingFoil/Features/Import/StravaBrand.swift`). Three rules, and breaking one can
+  cost the application and with it a whole import door: (1) the connect action is **Strava's
+  own button artwork**, unaltered and unrecoloured — the orange PNGs at 1× and 2× out of
+  `1.1-Connect-with-Strava-Buttons.zip`, in the asset catalogue under `Strava/`, 48 pt tall,
+  wearing Strava's wording *"Connect with Strava"* and not ours; (2) **attribution wherever
+  Strava data is shown** — the *Compatible with Strava* logo sits in the Import screen's Strava
+  section header, **beside** the section's own name and never above the CleanJibe mark, because
+  the guideline is that Strava's logo may not be given more prominence than the app's own;
+  (3) **a link back** — *View on Strava* on a Strava-imported session's Log tab, under the
+  Recording card, in Strava orange `#FC5200`. The activity id it needs is read back out of the
+  recording's own filename (`StravaImport.activityId`, the first field of
+  `<id>_<slug>_strava.gpx`) rather than stored in a column of its own: the fact is already on
+  the row, and a migration to duplicate it would backfill from this same string. A build whose
+  asset catalogue has lost the artwork falls back to the same spec drawn by hand — `#FC5200`,
+  white text, 48 pt — and never to a label of our own spelling.
 * **Class (c), and the mark that follows from it.** A Strava session is positions-only, so
   every speed record it produces wears the `uncertified` chip and the session badge names both
   absences. Nothing about that is special-cased: the mapper writes a GPX, and the rest of the
@@ -2785,6 +2839,20 @@ without a computer — intervals.icu, or the CleanJibe watch app — and names t
 for completeness, with the current menu wording (**Export File**; the label read *Export
 Original* until Garmin renamed it, and the Import screen's own footer still says the old words
 where it describes that page).
+
+### No watch at all — recording with a phone
+
+The topic beside the vendor one (`HelpCatalog.phoneOnly`, *Recording with a phone only*), for
+the rider who owns none of the three things this app has a door for. It answers the question
+the vendor topic cannot: which app records the track in the first place. **Open GPX Tracker**
+and **Komoot** on an iPhone; **GPSLogger**, **OsmAnd** and **Komoot** on Android; and
+**Strava**, which is its own route — Strava's phone app cannot export a recording as a file,
+so connecting *is* the export, and it is the one path that works in every channel. The file
+route is labelled as the beta's, because the release has no GPX or TCX door (docs/channels.md)
+and a topic that sent a release rider off to install a tracker and then had nothing to do with
+the result would be worse than no topic. It says where the phone goes — a waterproof pouch on
+the upper arm or high on the chest, not a hip pocket that spends the bottom of every jibe
+underwater — and it says what it costs: Class C · positions only.
 
 ### Which watches work with CleanJibe
 
@@ -2832,9 +2900,12 @@ print, in this order and for this reason:
    run is kept as "the minimal check, if you cannot wait" after it. The help topic still leads
    with the dry run; bringing the two back into step is an iOS change.
 2. **Settings** — the switches, the watch, the accounts.
-3. **Support** — the feedback mail (`feedbackMail(on:)`, the same composer as Settings →
-   Send feedback and the share sheet's "Report a problem"). Above the two "what is this"
-   screens because a rider who has a question after reading them is one tap from asking it.
+3. **Support & ideas** — the feedback mail (`feedbackMail(on:)`, the same composer as
+   Settings → Send feedback and the share sheet's "Report a problem"). Above the two "what is
+   this" screens because a rider who has a question after reading them is one tap from asking
+   it. It said **Support** until 14 September 2026, which a rider reads as *the place you go
+   when something is broken*: Jan's point is that a wish is as welcome as a fault and nothing
+   in the app had ever said so, and the name of the door is the cheapest place to say it.
 4. **What CleanJibe does** — the welcome screen again (`SessionStore.replayWelcome`).
 5. **What the numbers mean** — the Help index.
 6. The build line, not tappable: *CleanJibe 0.15.0 (45)* with " · beta" or " · dev" after it
@@ -2854,20 +2925,62 @@ gate (Jan, 13 Sep 2026). ✕ does what "Later" does: nothing is armed or loaded.
 ## Feedback mail — the report the app writes and the rider signs
 
 One mail to `info@cleanjibe.org`, reachable from wherever the rider is when something looks
-wrong: **Menu → Support** on the Sessions tab, **Settings → Send feedback** under the two help
-rows, **Report a problem with this session…** at the foot of a session's share sheet, and a
-quiet line at the **foot of every page** — *Something off? Send feedback* under the last row
+wrong **or when he wants something**: **Menu → Support & ideas** on the Sessions tab,
+**Settings → Send feedback** under the two help rows, **Report a problem with this session…**
+at the foot of a session's share sheet, and a quiet line at the **foot of every page** —
+*Something off, or an idea? Send feedback* under the last row
 of Sessions, Records, Trends and Gear, and under the last card of a session (`FeedbackFooter`).
+
+**A wish is as welcome as a fault, and five surfaces say so in one sentence** (Jan, 14 Sep
+2026). Every door to this mail was named and worded for something being *wrong*, and a beta
+whose only invitation is to report faults gets faults reported and nothing else. The sentence
+is written once — `FeedbackInvitation.sentence`, *"Ideas and wishes are as welcome as bugs."* —
+and carried by the menu row's name, the footer line above, the welcome screen (with the way in
+appended: `welcomeSentence`, *"· Menu → Support & ideas"*), Settings → Help's footer, and the
+mail's own template. The release notes close on it too
+(`ios/tools/testflight_publish.py`, both `WHATS_NEW` and `WHATS_NEW_INTERNAL`).
 The session page's line carries the session, so the mail names the afternoon by itself; the
 card is attached only from the share sheet, where it is already drawn. Every door climbs the
 same ladder (`feedbackMail(on:)`): Mail, then the `mailto:` handler, then the copy sheet.
 The subject is `CleanJibe beta feedback · build <N>[ dev] · <watch>` — the build number, not
 the marketing version, because the two TestFlight variants of a release share the latter.
 
-The body opens with **What happened** and an empty line, and everything the phone knows is
-*below* it: a mail that opens with twenty lines of diagnostics makes the reporter scroll past
-them to write his report. Prefilled, in this order (`FeedbackReport`, composed in the kit and
-asserted line by line in `FeedbackReportTests`):
+**The body opens with three labelled blanks, and the facts are under a rule.** The template
+was one word — *What happened* — and one empty line, which is a prompt for a paragraph rather
+than for a report; what arrived was a paragraph, and the three follow-up mails it always cost
+are now asked in advance (Jan, 14 Sep 2026). Each label owns two lines, one for the answer and
+one of air:
+
+```
+What happened, or what you would like:
+
+
+What you expected instead:
+
+
+Which session (date, spot), if it is about one:
+
+
+Ideas and wishes are as welcome as bugs.
+
+----------------------------------------
+Below is what the app knows about this phone and build. It helps analysis; delete any line you would rather not send.
+
+App
+  …
+```
+
+The first label asks two questions on one line on purpose: a rider with a feature wish must
+not have to decide whether the form is for him. The third is **answered for him** where the app
+knows — from the share sheet's "Report a problem with this session…" the date and the spot are
+written onto the first of its two lines, and nothing else about the session is, because the
+rest is diagnostics and diagnostics live under the rule. The rule's own sentence is what makes
+the facts below it *deletable* rather than merely present: they include a phone model, a
+locale, a library shape and sometimes a spot, which is a map pin to where somebody rides.
+
+Everything the phone knows is *below* that rule: a mail that opens with twenty lines of
+diagnostics makes the reporter scroll past them to write his report. Prefilled, in this order
+(`FeedbackReport`, composed in the kit and asserted line by line in `FeedbackReportTests`):
 
 | section | what it carries |
 |---|---|
@@ -2905,13 +3018,33 @@ Under the mark, and the only thing that moves — they fade up over 0.35 s — t
 **CleanJibe** and the share card's call to action *without its address*: "analyze your
 wingfoil sessions free". Same line, one source (`Branding.callToAction`), minus the
 `cleanjibe.org` that exists for a receiver who does not have the app yet. **The address then
-follows on a line of its own**, smaller and quieter than everything above it (`Branding.site`,
-caption, the splash's paper at 55 %), so the screen reads mark · CleanJibe · what the app is
-for · cleanjibe.org — the start screen should say where to find us and not only who we are
-(Jan, 14 Sep 2026), and a rider showing the app to someone on the beach is the reader it is
-written for. It survives landscape where the call to action does not, being one short line
+follows on a line of its own** (`Branding.site`), so the screen reads mark · CleanJibe · what
+the app is for · cleanjibe.org — the start screen should say where to find us and not only who
+we are (Jan, 14 Sep 2026), and a rider showing the app to someone on the beach is the reader it
+is written for. It survives landscape where the call to action does not, being one short line
 rather than a wrapping sentence; the words hang off the mark as an overlay and grow
 downwards, so neither line can move the mark off the centre the launch screen put it on.
+
+**The three lines are set in points, and they were made bigger** (Jan, 14 Sep 2026: too small
+on a phone). The first cut was `.largeTitle.bold`, `.footnote` and `.caption2` at 55 % of the
+paper — 13 pt and 11 pt of small print on a screen whose entire job for two seconds is to be
+read at arm's length, often over somebody's shoulder. Now, and named in `Splash` so the
+lockup's proportions are one decision:
+
+| line | portrait | landscape | ink |
+|---|---|---|---|
+| wordmark `CleanJibe` | **34 pt semibold** (`Splash.wordmarkPoint`) | 28 pt (`wordmarkPointShort`) | paper |
+| tagline | **17 pt** (`taglinePoint`) | dropped | paper at 80 % |
+| `cleanjibe.org` | **15 pt** (`sitePoint`) | 14 pt (`sitePointShort`) | paper at 80 % |
+
+Semibold rather than bold: at 34 pt bold reads as a shout, and the mark above it is already
+the loud half. Fixed points rather than text styles, and this is the one screen that earns
+them — the lockup hangs under a mark the launch screen has pinned to the pixel, so it may not
+reflow with Dynamic Type; at the largest accessibility size it would push the address off the
+bottom of a phone in landscape, and the mark cannot move to make room. Every other screen in
+the app follows Dynamic Type. The landscape column is the same lockup with the tagline gone and
+the two survivors stepped down, which keeps the block inside the ~195 pt a compact height
+leaves below the centred mark (140/2 + 16 + 28 + 6 + 14 ≈ 134 pt).
 
 **It stays for max(2 s, the library).** Jan set the floor — *"Don't make it too short; can be
 2 seconds or so"* — and the second half of the rule is what makes it honest: a cold start
