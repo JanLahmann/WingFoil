@@ -45,9 +45,9 @@ def app_id(app):
 
 WHATS_NEW = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-1.0.0 (build 56) — the App Store candidate.
+1.0.0 (build 58) — the App Store candidate, after a reviewer's pass.
 
-This is the build we intend to submit to the App Store: the plain app, without the beta doors. Installing it replaces the beta on your phone (same app, library kept); the beta channel continues with its next build, and TestFlight will offer it again then.
+This is the build we intend to submit to the App Store: the plain app, without the beta doors. Since 56: the help catalogue shows only what this build has, the getting-started topic is one session on the water, no text calls the app a beta, Strava's wording is calm, and the bold and italic in help render instead of showing asterisks. Installing it replaces the beta on your phone (same app, library kept); the beta channel continues with its next build, and TestFlight will offer it again then.
 
 What is in: intervals.icu sync, .fit files from Files, Mail, AirDrop and the share sheet, Strava import, the full analysis (foil time, flights, every turn's verdict, speed records, the map, the replay and its clips), share cards, records and trends, gear and spots, backup and restore, the example session, the help catalogue, feedback from every page.
 
