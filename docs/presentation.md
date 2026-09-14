@@ -2595,19 +2595,23 @@ Flat and newest-first, the list answered those by scrolling. Two controls answer
 instead — **group by** at the top of the list, and one **filter** menu in the toolbar — and
 both live only on the Sessions tab.
 
-**Group by: None · Month · Year · Spot.** A segmented control at the top of the list,
+**Group by: All · Month · Year · Spot.** A segmented control at the top of the list,
 because there are four fixed answers and the one in force is worth seeing without opening
-anything. Groups are list sections, **newest group first**, sessions inside a group newest
-first like the flat list they came from, and the header carries the count: `August 2026 ·
-9 sessions`, `2025 · 41 sessions`, `Nago-Torbole · 31 sessions`. Month names are written out
-in full and in en-GB, the same table the period headings use ("Formatter rules"), so one
-month reads the same on both screens.
+anything. The first segment is **All** and not "None" (Jan, 14 Sep 2026): beside Month and
+Year it names the whole library in one piece, where "None" read as nothing being shown. The
+value behind it is still `none` — that is what `library.groupBy.v1` holds on every phone
+already, and what `UI_GROUP_BY` takes. Groups are list sections, **newest group first**,
+sessions inside a group newest first like the flat list they came from, and the header
+carries the count: `August 2026 · 9 sessions`, `2025 · 41 sessions`,
+`Nago-Torbole · 31 sessions`. Month names are written out in full and in en-GB, the same
+table the period headings use ("Formatter rules"), so one month reads the same on both
+screens.
 
 Under **Spot**, sessions with no spot — and sessions whose spot the table can no longer name,
 which is the same thing as far as a heading goes — fall into a last group called **No spot**.
 Last whatever its dates say: it is not a place, so it has no place in the sequence.
 
-The default is **Month from twenty sessions up, None below**, counted over the *unfiltered*
+The default is **Month from twenty sessions up, All below**, counted over the *unfiltered*
 library. A library of nine is a screen and headings on it are furniture; a library of two
 hundred is already being scrolled by month. The count is the whole library on purpose: the
 default is a fact about how much the rider has, not about what a chip is showing him this
@@ -2835,7 +2839,14 @@ for, so the status bar is white over that navy on both frames. It changes nothin
 Under the mark, and the only thing that moves — they fade up over 0.35 s — the wordmark
 **CleanJibe** and the share card's call to action *without its address*: "analyze your
 wingfoil sessions free". Same line, one source (`Branding.callToAction`), minus the
-`cleanjibe.org` that exists for a receiver who does not have the app yet.
+`cleanjibe.org` that exists for a receiver who does not have the app yet. **The address then
+follows on a line of its own**, smaller and quieter than everything above it (`Branding.site`,
+caption, the splash's paper at 55 %), so the screen reads mark · CleanJibe · what the app is
+for · cleanjibe.org — the start screen should say where to find us and not only who we are
+(Jan, 14 Sep 2026), and a rider showing the app to someone on the beach is the reader it is
+written for. It survives landscape where the call to action does not, being one short line
+rather than a wrapping sentence; the words hang off the mark as an overlay and grow
+downwards, so neither line can move the mark off the centre the launch screen put it on.
 
 **It stays for max(2 s, the library).** Jan set the floor — *"Don't make it too short; can be
 2 seconds or so"* — and the second half of the rule is what makes it honest: a cold start
