@@ -170,7 +170,7 @@ struct DevTurnWorkbenchView: View {
             Text(step.atRt.map { String(format: "%+.0f s", $0) } ?? "—")
                 .font(.caption2.monospacedDigit())
                 .foregroundStyle(.tertiary)
-                .frame(width: 44, alignment: .trailing)
+                .scaledColumn(44, alignment: .trailing, relativeTo: .caption2)
             VStack(alignment: .leading, spacing: 1) {
                 Text(step.title).font(.caption.weight(.medium))
                 Text(step.detail)
@@ -354,7 +354,10 @@ struct DevTurnWorkbenchView: View {
     }
 
     private func cell(_ text: String, width: CGFloat) -> some View {
-        Text(text).frame(width: width, alignment: .trailing).lineLimit(1)
+        Text(text)
+            .scaledColumn(width, alignment: .trailing, relativeTo: .caption2)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
     }
 
     /// One tint per window, all of them faint: this is a table, not a chart, and the colour is

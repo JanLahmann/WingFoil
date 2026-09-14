@@ -26,7 +26,13 @@ struct HrCostCardView: View {
         detail.row.analysisDiscipline.pumping ? HrCostCard.make(detail.analysis.hr) : nil
     }
 
-    private let columns = [GridItem(.adaptive(minimum: 150), spacing: 12)]
+    /// Scaled, for the reason `SummaryGrid`'s `CardGrid` is: the minimum is the width of a
+    /// card whose three lines of text all grow with the rider's setting.
+    @ScaledMetric(relativeTo: .title3) private var cardMinimum: CGFloat = 150
+
+    private var columns: [GridItem] {
+        [GridItem(.adaptive(minimum: cardMinimum), spacing: 12)]
+    }
 
     var body: some View {
         if let card {
@@ -56,6 +62,7 @@ struct HrCostCardView: View {
                 Text(card.footnote)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .id("hr")

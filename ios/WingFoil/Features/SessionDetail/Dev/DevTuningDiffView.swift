@@ -85,7 +85,7 @@ struct DevTuningDiffView: View {
                 Text(Fmt.clock(change.ts))
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.tertiary)
-                    .frame(width: 46, alignment: .leading)
+                    .scaledColumn(46, relativeTo: .caption2)
                 Text(change.kind.label)
                     .font(.caption2.weight(.medium))
                     .padding(.horizontal, 6)
@@ -95,6 +95,7 @@ struct DevTuningDiffView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 Spacer(minLength: 0)
                 if change.tunedIndex == nil {
                     Text("default only").font(.caption2).foregroundStyle(.tertiary)

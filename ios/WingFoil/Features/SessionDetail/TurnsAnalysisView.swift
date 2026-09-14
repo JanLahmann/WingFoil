@@ -325,7 +325,7 @@ private struct TurnRowView: View {
             Text(Fmt.clock(item.ts))
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
-                .frame(width: 46, alignment: .leading)
+                .scaledColumn(46, relativeTo: .caption)
             VStack(alignment: .leading, spacing: 1) {
                 Text("\(item.typeLabel) · \(item.sideLabel)")
                     .font(.subheadline)
@@ -333,6 +333,7 @@ private struct TurnRowView: View {
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             Spacer(minLength: 0)
             Text(item.scoreText)
@@ -341,10 +342,13 @@ private struct TurnRowView: View {
             Image(systemName: item.outcome.symbolName)
                 .font(.footnote)
                 .foregroundStyle(TurnOutcomeStyle.color(item.outcome))
-                .frame(width: 18)
+                .scaledColumn(18, alignment: .center, relativeTo: .footnote)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+        // Four columns in one row — clock, name, score, outcome pin. They scale, and stop
+        // where a phone stops holding all four.
+        .denseRowTypeSizeCap()
         .background(focused ? Color.accentColor.opacity(0.12) : Color.clear)
         .contentShape(.rect)
         .accessibilityElement(children: .combine)

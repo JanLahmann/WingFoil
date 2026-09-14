@@ -21,6 +21,10 @@ struct LibraryFilterBar: View {
     @State private var managingSpots = false
 
     var body: some View {
+        // A scroller rather than a row: "All spots" and "All gear" are two chips at the
+        // default text size and wider than a phone at an accessibility one, and a filter
+        // whose name is truncated to "All s\u2026" tells the rider nothing.
+        ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 8) {
             menu(title: spotTitle, symbol: "mappin.and.ellipse", active: filter.spotId != nil) {
                 Button("All spots") { filter.spotId = nil }
@@ -56,12 +60,15 @@ struct LibraryFilterBar: View {
                     }
                 }
             }
-            Spacer(minLength: 0)
             if !filter.isEmpty {
                 Button("Clear") { filter = LibraryFilter(since: filter.since) }
                     .font(.footnote)
             }
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .scrollBounceBehavior(.basedOnSize)
         .font(.footnote)
         .sheet(isPresented: $managingSpots) {
             NavigationStack {
@@ -90,7 +97,7 @@ struct LibraryFilterBar: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: symbol).imageScale(.small)
-                Text(title).lineLimit(1)
+                Text(title).lineLimit(1).minimumScaleFactor(0.8)
                 Image(systemName: "chevron.down").imageScale(.small)
             }
             .padding(.horizontal, 10)

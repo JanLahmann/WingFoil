@@ -185,14 +185,27 @@ struct PeriodsView: View {
 struct PeriodBlockView: View {
     let period: Period
 
-    private let columns = [GridItem(.adaptive(minimum: 130), spacing: 12)]
+    /// Scaled: 130 pt holds a value and its label at the default text size and neither of
+    /// them two sizes up, so the tile width grows with the type and the grid falls to one
+    /// column when two stop fitting.
+    @ScaledMetric(relativeTo: .headline) private var tileMinimum: CGFloat = 130
+
+    private var columns: [GridItem] {
+        [GridItem(.adaptive(minimum: tileMinimum), spacing: 12)]
+    }
 
     var body: some View {
         LazyVGrid(columns: columns, alignment: .leading, spacing: 10) {
             ForEach(period.block) { entry in
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(entry.value).font(.headline.monospacedDigit())
-                    Text(entry.label).font(.caption2).foregroundStyle(.secondary)
+                    Text(entry.value)
+                        .font(.headline.monospacedDigit())
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    Text(entry.label)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }

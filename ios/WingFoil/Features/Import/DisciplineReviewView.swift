@@ -99,6 +99,7 @@ struct DisciplineReviewView: View {
             Text(SessionDisplay.title(row))
                 .font(.subheadline.weight(.semibold))
                 .lineLimit(1)
+                .minimumScaleFactor(0.8)
             Text(subtitle(row))
                 .font(.caption)
                 .foregroundStyle(.secondary)

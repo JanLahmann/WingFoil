@@ -59,13 +59,13 @@ struct TurnWindowControl: View {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .frame(width: 56, alignment: .leading)
+                .scaledColumn(56, relativeTo: .caption)
             // Whole seconds: the window is a framing choice, and a tenth of a second of
             // lead-in is not a choice anybody is making.
             Slider(value: value, in: range, step: 1)
             Text("\(Int(value.wrappedValue)) s")
                 .font(.caption.monospacedDigit())
-                .frame(width: 34, alignment: .trailing)
+                .scaledColumn(34, alignment: .trailing, relativeTo: .caption)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(label) seconds")

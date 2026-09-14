@@ -68,6 +68,7 @@ struct ReplayScrubber: View {
                             .font(.caption.weight(.medium))
                             .foregroundStyle(color(of: beat.kind))
                             .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
                     Spacer()
                     if playhead != nil {
@@ -242,7 +243,10 @@ struct ReplayScrubber: View {
                     ForEach(ReplayRate.allCases) { Text($0.label).tag($0) }
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 150)
+                // A floor rather than a width: three speed labels set at the rider's text
+                // size need more than 150 pt, and a segmented control that is too narrow
+                // truncates its own segments.
+                .frame(minWidth: 150)
             }
         }
     }
