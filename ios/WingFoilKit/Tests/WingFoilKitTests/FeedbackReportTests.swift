@@ -28,19 +28,19 @@ import Testing
     /// the latter and differ only in the former (docs/channels.md).
     @Test func theSubjectNamesTheBuildAndTheWatch() {
         #expect(FeedbackReport.subject(facts())
-                == "CleanJibe beta feedback · build 17 · fenix 8")
+                == "CleanJibe feedback · build 17 · fenix 8")
     }
 
     @Test func theDevBuildSaysSoInTheSubject() {
         #expect(FeedbackReport.subject(facts(dev: true))
-                == "CleanJibe beta feedback · build 17 dev · fenix 8")
+                == "CleanJibe feedback · build 17 dev · fenix 8")
     }
 
     @Test func aRiderWithNoWatchStillGetsASubject() {
         let none = FeedbackFacts.Watch(garminModel: nil, garminAppVersion: nil,
                                        appleWatchPaired: nil, healthImport: true)
         #expect(FeedbackReport.subject(facts(watch: none))
-                == "CleanJibe beta feedback · build 17 · no watch")
+                == "CleanJibe feedback · build 17 · no watch")
     }
 
     // MARK: The body

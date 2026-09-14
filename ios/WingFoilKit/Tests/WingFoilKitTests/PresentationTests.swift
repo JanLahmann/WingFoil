@@ -67,6 +67,84 @@ import Testing
         #expect(HelpCatalog.topic(id: "not-a-topic") == nil)
     }
 
+    // MARK: - Help, by channel (docs/channels.md)
+
+    /// **The App Store build must never offer a page about a door it does not have.**
+    ///
+    /// The kit compiles every topic in every channel — it has to, there are no flags in
+    /// here — so the only thing standing between a release rider and a walkthrough of the
+    /// Apple Health import is this filter. Asserted per channel rather than only for the
+    /// release, because the failure mode of a nested rule is the middle case.
+    @Test func releaseHelpIndexListsNoBetaOrDevTopic() {
+        let release = HelpCatalog.indexTopics(channel: .release)
+        #expect(!release.isEmpty)
+        for topic in release {
+            #expect(topic.channel == .release,
+                    "\(topic.id.rawValue) is a \(topic.channel) topic on the release index")
+        }
+        // The beta sees its own and the release's; the dev sees everything.
+        let beta = Set(HelpCatalog.indexTopics(channel: .beta).map(\.id))
+        let dev = Set(HelpCatalog.indexTopics(channel: .dev).map(\.id))
+        #expect(Set(release.map(\.id)).isSubset(of: beta))
+        #expect(beta.isSubset(of: dev))
+        #expect(dev == Set(HelpTopicID.allCases))
+        // The two that are actually bound, so a topic cannot lose its gate unnoticed.
+        #expect(!beta.contains(.windsurf))
+        #expect(!Set(release.map(\.id)).contains(.appleWorkoutApp))
+        #expect(beta.contains(.appleWorkoutApp))
+        // …and the catalogue itself stays total: every id still resolves in every channel.
+        for id in HelpTopicID.allCases { #expect(HelpCatalog.topic(id).id == id) }
+    }
+
+    /// A "see also" is a button. A button onto a topic this build hides would be a dead end
+    /// wearing a chevron, so every visible topic's rendered related list must itself be
+    /// visible — in each channel, and with the windsurf switch either way.
+    @Test func noVisibleHelpTopicLinksToAHiddenOne() {
+        for channel in HelpChannel.allCases {
+            for windsurf in [true, false] {
+                let listed = HelpCatalog.indexTopics(channel: channel,
+                                                     windsurfEnabled: windsurf)
+                let visible = Set(listed.map(\.id))
+                for topic in listed {
+                    let related = HelpCatalog.relatedTopics(of: topic, channel: channel,
+                                                            windsurfEnabled: windsurf)
+                    for link in related {
+                        #expect(visible.contains(link.id),
+                                "\(topic.id.rawValue) offers \(link.id.rawValue) on \(channel), but the index hides it")
+                    }
+                    // The filter has to actually drop something where the raw list has a
+                    // hidden id on it, rather than quietly passing everything through.
+                    let dropped = topic.related.filter { !visible.contains($0) }
+                    #expect(related.count == topic.related.count - dropped.count)
+                }
+            }
+        }
+    }
+
+    /// The release channel's own words: nothing on its Help index may call the app a beta
+    /// or name a door it does not have. Named surfaces only — this is a spell-check on the
+    /// catalogue, not a grep over the app.
+    @Test func releaseHelpTextNamesNoDoorTheReleaseLacks() {
+        // Phrases that would be false in the App Store build. "beta" on its own is allowed:
+        // the release is permitted to say where a door *is* (docs/channels.md).
+        let forbidden = [
+            "cleanjibe is a beta",
+            "a beta, and",
+            "as a beta tester",
+            "import → apple health",
+            "the beta test",
+        ]
+        for topic in HelpCatalog.indexTopics(channel: .release) {
+            let text = ([topic.title, topic.summary] + topic.body
+                        + topic.items.flatMap { [$0.term, $0.detail] })
+                .joined(separator: " ").lowercased()
+            for phrase in forbidden {
+                #expect(!text.contains(phrase),
+                        "\(topic.id.rawValue) says \"\(phrase)\" on the release index")
+            }
+        }
+    }
+
     // MARK: - Help pictures
 
     /// The app's asset catalogue, found from this file rather than from a bundle.
