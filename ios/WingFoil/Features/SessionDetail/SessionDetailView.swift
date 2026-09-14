@@ -83,7 +83,13 @@ struct SessionDetailView: View {
             // back up to find the control that changes subject.
             LazyVStack(alignment: .leading, spacing: 20, pinnedViews: [.sectionHeaders]) {
                 header
-                if let detail {
+                if let row, row.isProvisional {
+                    // A card from the watch, with no recording behind it yet. Not an error:
+                    // the numbers the watch sent are real, and the page says what happens
+                    // next instead of "damaged, import again" (Jan, 14 Sep 2026, the first
+                    // card that ever reached his phone).
+                    provisionalState(row)
+                } else if let detail {
                     // Permanent, above the switcher, on every tab: the four rows that
                     // answer "was that a good session" (docs/app-ui-review.md §1.1 / §4).
                     KeyMetricsView(metrics: KeyMetrics.make(summary: detail.analysis.summary,
@@ -216,7 +222,8 @@ struct SessionDetailView: View {
                 Button { showShare = true } label: {
                     Label("Share", systemImage: "square.and.arrow.up")
                 }
-                .disabled(row == nil)
+                // Nothing to draw a card from until the recording is in.
+                .disabled(row == nil || row?.isProvisional == true)
             }
         }
         .sheet(isPresented: $showShare) {
@@ -231,7 +238,10 @@ struct SessionDetailView: View {
     private var discipline: Discipline { row?.analysisDiscipline ?? .wingfoil }
 
     private func load() async {
-        guard detail == nil, let row else { return }
+        // A provisional row has nothing to load: the card is the whole of it until the
+        // recording arrives, and asking the archive for a file it cannot have would only
+        // manufacture the failure state.
+        guard detail == nil, let row, !row.isProvisional else { return }
         do {
             let loaded = try await store.detail(for: row)
             detail = loaded
@@ -245,6 +255,55 @@ struct SessionDetailView: View {
                                                timeZone: row.displayZone)
         } catch {
             failure = "\(error)"
+        }
+    }
+
+    // MARK: - The card, before the recording
+
+    /// **What the watch sent, while the recording is still on its way.**
+    ///
+    /// The card's numbers first, because they are the session as the rider remembers it
+    /// from the wrist; then the one sentence about how the rest arrives. Every number is
+    /// read off the row the card filled (`SessionRow.apply(_ card:)`); a column the card
+    /// does not carry is simply not shown, never printed as zero.
+    private func provisionalState(_ row: SessionRow) -> some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 16) {
+                provisionalCell("Time", KeyMetrics.duration(row.rateSeconds))
+                provisionalCell("Foil", Fmt.pct(row.foilPct))
+                if let flights = row.flightCount {
+                    provisionalCell("Flights", "\(flights)")
+                }
+                provisionalCell("Best 2 s", Fmt.kn(row.best2sKn))
+            }
+            HStack(spacing: 10) {
+                OutcomeTally(flewThrough: row.turnsFlewThrough ?? 0,
+                             touchdown: row.turnsTouchdown ?? 0,
+                             fellIn: row.turnsFellIn ?? 0)
+                Text(Fmt.km(row.distanceKm))
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            ContentUnavailableView {
+                Label("From your watch", systemImage: "antenna.radiowaves.left.and.right")
+            } description: {
+                Text("The watch sent its summary the moment you stopped. The full recording "
+                     + "follows once Garmin Connect has synced it: pull down on Sessions "
+                     + "after intervals.icu has the activity, or share the .fit file into "
+                     + "CleanJibe. Then this page fills with the map, every turn and the "
+                     + "records, and these numbers are re-derived from the recording.")
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private func provisionalCell(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value)
+                .font(.title3.weight(.semibold).monospacedDigit())
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
