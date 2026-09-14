@@ -152,18 +152,60 @@ import Testing
         #expect(rider.lowercased().contains("trends"))
     }
 
-    /// The de-jargoned source topic. The engine's letters are allowed to survive in the
-    /// code; they are not allowed to survive in the copy, because "class b" names a bucket
-    /// in somebody else's taxonomy and answers nothing a rider asked.
+    /// The source topic, and the one line the de-jargoning rule was actually about.
+    ///
+    /// A bare letter — "class b", on its own, with nothing beside it — still answers nothing
+    /// a rider asked, and is still forbidden. What changed on 14 Sep 2026 is that the classes
+    /// acquired **names**, printed on cleanjibe.org and on the Import screen before a rider
+    /// has anything to import, so the topic now has to spell them exactly as the website does
+    /// or the reader cannot match the row he read to the screen he is on.
     @Test func theSourceTopicAnswersDoINeedTheWatchApp() {
         let topic = HelpCatalog.topic(.sourceClass)
         let all = ([topic.title, topic.summary] + topic.body
                    + topic.items.flatMap { [$0.term, $0.detail] }).joined(separator: " ")
-        for jargon in ["class a", "class b", "class c", "Class a", "Class b", "Class c"] {
+        // Every name the class is given, in the web's spelling.
+        for recording in RecordingClass.allCases {
+            #expect(all.contains(recording.name),
+                    "the source topic does not name \(recording.name)")
+        }
+        // The bare lower-case letter, unaccompanied, is still jargon.
+        for jargon in ["class a", "class b", "class c"] {
             #expect(!all.contains(jargon), "the source topic still says \"\(jargon)\"")
         }
         #expect(topic.summary.contains("CleanJibe watch app"))
         #expect(topic.items.count == 3)
+    }
+
+    /// The class names are a contract with the website and with docs/channels.md: the same
+    /// four strings, in the same spelling, or a rider cannot match the table he read before
+    /// the import to the footer he reads during it.
+    @Test func theRecordingClassesAreNamedTheWayTheWebsiteNamesThem() {
+        #expect(RecordingClass.a.name == "Class A · Garmin watch app")
+        #expect(RecordingClass.b.name == "Class B · any speed-certified file")
+        #expect(RecordingClass.bPlus.name == "Class B+ · Apple Watch app")
+        #expect(RecordingClass.c.name == "Class C · positions only")
+        for recording in RecordingClass.allCases {
+            #expect(!recording.footerLine.contains("—"), "\(recording.name) uses an em dash")
+            #expect(recording.footerLine.hasPrefix(recording.name))
+        }
+    }
+
+    /// The rider with no watch at all gets a topic of his own, and it answers the one
+    /// question the vendor topic cannot: which app records the track in the first place.
+    @Test func thePhoneOnlyTopicNamesAppsAndTheClassItCosts() {
+        let topic = HelpCatalog.topic(.phoneOnly)
+        let all = ([topic.title, topic.summary] + topic.body
+                   + topic.items.flatMap { [$0.term, $0.detail] }).joined(separator: " ")
+        for app in ["Open GPX Tracker", "Komoot", "GPSLogger", "OsmAnd", "Strava"] {
+            #expect(all.contains(app), "the phone-only topic does not name \(app)")
+        }
+        // The class it costs, and the pouch that keeps the track from dropping out.
+        #expect(all.contains(RecordingClass.c.name))
+        #expect(all.lowercased().contains("pouch"))
+        // Strava's phone app has no export, so the topic must not send anyone looking for
+        // one — and the release channel has no GPX door, so the file route says whose it is.
+        #expect(all.contains("cannot export"))
+        #expect(all.contains("beta"))
     }
 
     /// The app says *you* and *CleanJibe*, never *we*. A help catalogue is the one place

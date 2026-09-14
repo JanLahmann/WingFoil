@@ -21,10 +21,16 @@ import UniformTypeIdentifiers
 @Suite("Brand QR")
 struct BrandQRTests {
 
-    /// The sizes the app actually exports the plate at, in pixels: 96 is the share card's
-    /// 32 pt at `ShareCardView.renderScale` 3, and the rest bracket the replay outro's
+    /// The sizes the app actually exports the plate at, in pixels: **144** is the share
+    /// card's 48 pt at `ShareCardView.renderScale` 3 (the card grew from 32 pt on
+    /// 14 Sep 2026, matching the web's `QR_SIZE`), and the rest bracket the replay outro's
     /// 38 pt × the 0.55…1.1 fit scale the clip renderer picks from the frame it is given.
-    static let exportSizes = [70, 84, 96, 114, 126]
+    ///
+    /// 96 stays in the list even though no surface exports at it any more. It is the old
+    /// card's size and the *floor* the whole suite was calibrated against, and a mark that
+    /// stopped decoding at 96 would have stopped decoding for every card shared before the
+    /// change — the ones already sitting in other people's chat threads.
+    static let exportSizes = [70, 84, 96, 114, 126, 144]
 
     /// A stand-in for the app icon that is far harsher than the icon: solid black, edge to
     /// edge of the plate's inner box. The real artwork is navy with light strokes in it, so

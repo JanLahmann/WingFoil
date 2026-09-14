@@ -284,7 +284,11 @@ struct FeedbackFooter: View {
 
     var body: some View {
         Button { request += 1 } label: {
-            Label("Something off? Send feedback", systemImage: "envelope")
+            // "…or an idea?" — the line used to invite bug reports only, which is half the
+            // mail Jan actually wants (14 Sep 2026). A rider at the foot of Records thinking
+            // "there should be a column for X" is exactly the reader this line has, and it
+            // was telling him it was not for him.
+            Label("Something off, or an idea? Send feedback", systemImage: "envelope")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -364,6 +368,8 @@ private struct FeedbackMailPresenter: ViewModifier {
     }
 
     private func compose() {
+        // Every feedback door ends here, so this is the one place the beta counts them.
+        Usage.record(.feedbackMail)
         let png = card()
         let attachment = png.flatMap { data in
             session.map { FeedbackMail.Attachment.card(png: data, sessionID: $0.id) }
