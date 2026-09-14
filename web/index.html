@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>CleanJibe — wingfoil session analysis: free in your browser, on iPhone and iPad</title>
-<meta name="description" content="Drop a .fit, .gpx or .tcx file and see how much of the session you spent on the foil, how long each flight lasted, your speed records, and whether you flew through each jibe, touched down or fell in. Free, no account, nothing uploaded. Plus a Garmin watch app and an iPhone and iPad app.">
+<title>CleanJibe — wingfoil session analysis: free in your browser, on iPhone</title>
+<meta name="description" content="Drop a .fit, .gpx or .tcx file and see how much of the session you spent on the foil, how long each flight lasted, your speed records, and whether you flew through each jibe, touched down or fell in. Free, no account, nothing uploaded. Plus a Garmin watch app and an iPhone app.">
 <meta name="theme-color" content="#101010">
 <meta name="color-scheme" content="dark">
 
@@ -70,11 +70,54 @@
       <p class="sub">Wing foiling, measured.</p>
     </div>
   </div>
+  <!-- Two doors in the topbar, on every page of the site: the free thing that needs no
+       install, and the beta. "Try the beta" is a ghost button rather than a second primary —
+       one button may be the loud one — and it is counted like the other CTAs, declaratively,
+       so a blocked script leaves an ordinary link behind. -->
   <div class="topbar-right">
     <a class="btn primary" href="app/" data-umami-event="analyze-cta-topbar">Open the analyzer</a>
+    <a class="btn ghost" href="invite/" data-umami-event="beta-cta-topbar">Try the beta</a>
     <a class="btn ghost wide-only" href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">GitHub</a>
   </div>
 </header>
+
+<!-- ------------------------------------------------------------ section nav -->
+<!-- The page is six screens long and a stranger arrives with one of six questions. The row
+     is the page's own table of contents, sticky under the topbar, in the same mono the
+     eyebrow uses so it reads as furniture rather than as another set of buttons. The labels
+     are the headings, word for word — a contents list that paraphrases its own sections is
+     a second vocabulary.
+
+     Below 720 px the row would take three lines of a phone screen, so it collapses to one
+     `Jump to` select. The links stay in the markup and are what a reader without JavaScript
+     gets: the `js` class at the foot of this page is what hides them in favour of the
+     select, so the nav can never be a control that does nothing. -->
+<nav class="sectionnav" aria-label="On this page">
+  <div class="sectionnav-inner">
+    <ul>
+      <li><a href="#card">What comes out</a></li>
+      <li><a href="#pieces">The three pieces</a></li>
+      <li><a href="#need">What you need</a></li>
+      <li><a href="#faq">Questions</a></li>
+      <li><a href="#counts">What it counts</a></li>
+      <li><a href="#built">How it is built</a></li>
+      <li><a href="#coming">What is coming</a></li>
+    </ul>
+    <label class="jump">
+      <span class="sr-only">Jump to a section</span>
+      <select>
+        <option value="">Jump to&hellip;</option>
+        <option value="#card">What comes out</option>
+        <option value="#pieces">The three pieces</option>
+        <option value="#need">What you need</option>
+        <option value="#faq">Questions</option>
+        <option value="#counts">What it counts</option>
+        <option value="#built">How it is built</option>
+        <option value="#coming">What is coming</option>
+      </select>
+    </label>
+  </div>
+</nav>
 
 <main>
 
@@ -109,7 +152,7 @@
            fit at 1280, and left to itself it broke inside "OPEN SOURCE" — a list that
            breaks mid-item reads as a mistake, one that breaks between items reads as a
            list. -->
-      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Free&nbsp;browser&nbsp;analyzer · Garmin&nbsp;watch&nbsp;app · iPhone&nbsp;and&nbsp;iPad&nbsp;app · open&nbsp;source</p>
+      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Free&nbsp;browser&nbsp;analyzer · Garmin&nbsp;watch&nbsp;app · iPhone&nbsp;app · open&nbsp;source</p>
     </div>
     <h1>Did you fly through that jibe?</h1>
     <p class="lede">
@@ -121,8 +164,8 @@
       Two ways in, and neither costs anything. The browser analyzer takes a
       <code>.fit</code>, <code>.gpx</code> or <code>.tcx</code> file and hands you the whole
       session back in a few seconds, with nothing to install. The beta is the pair of apps: a
-      watch app that shows the same numbers live on your wrist, and an iPhone and iPad app
-      that keeps every session you have ever ridden. Each one works on its own.
+      watch app that shows the same numbers live on your wrist, and an iPhone app that keeps
+      every session you have ever ridden. Each one works on its own.
     </p>
 
     <!-- TWO EQUAL DOORS, because the page now has two products to hand over and the old
@@ -153,8 +196,9 @@
          up. /start/ is the walkthrough, and the person who needs it has not scrolled yet. -->
     <p class="lede">
       <strong>Installed?</strong>
-      <a href="start/" data-umami-event="home-start">Start here: the 20-minute test</a> — one
-      short workout on the watch, into the phone, and what you should see. No water needed.
+      <a href="start/" data-umami-event="home-start">Start here: your first session on the
+      water</a> — charge, record, save, and what you should see on the phone afterwards.
+      There is a short dry run at the end of it if you cannot wait for wind.
     </p>
     </div>
 
@@ -197,7 +241,7 @@
   </section>
 
   <!-- --------------------------------------------------------------- pieces -->
-  <section class="home-section">
+  <section class="home-section" id="pieces">
     <h2>The three pieces</h2>
     <p class="section-lede">
       The watch records and shows the live numbers; the phone and the browser do the full
@@ -235,8 +279,6 @@
           <li>Speed records live: best 2 s and best 10 s, with a PB alert.</li>
           <li>Works out the wind direction by itself after a few minutes of riding.</li>
           <li>Counts pump strokes and takeoff attempts from the wrist accelerometer.</li>
-          <li>0.9.10 draws the shore of your spot under the breadcrumb — a small map the
-              iPhone app renders and pushes over Bluetooth.</li>
           <li>Records as a Windsurf activity, so it no longer lands in Garmin Connect as a walk.</li>
         </ul>
         <p class="piece-foot">
@@ -247,10 +289,10 @@
 
       <article class="panel piece">
         <div class="piece-head">
-          <h3>CleanJibe for iPhone and iPad</h3>
+          <h3>CleanJibe for iPhone</h3>
           <span class="status">open beta · TestFlight</span>
         </div>
-        <p class="what">Your library, the replay and the season — and the same build on an Apple silicon Mac</p>
+        <p class="what">Your library, the replay and the season, on the phone in your pocket</p>
         <figure class="shot">
           <img src="img/phone-session.png" width="560" height="560" loading="lazy" decoding="async"
                alt="A session on the phone: duration, distance, average and best 2 s speed, the
@@ -260,15 +302,11 @@
         <ul>
           <li>Every session in one library, each one re-analyzed on the phone — grouped by
               month, year or spot, and narrowed by a filter when there are a hundred of them.</li>
-          <li>One build for iPhone, iPad and an Apple silicon Mac, where it installs as
-              &ldquo;Designed for iPad&rdquo;.</li>
           <li>Export the session as a short video: the map draws itself along your track, the
               numbers land, and it shares like any other clip.</li>
           <li>A share card for any session: the numbers, the track, and a link back here.</li>
           <li>Imports take FIT, GPX and TCX — from intervals.icu, from Apple Health, from
               Strava, or straight out of any vendor app through the iOS share sheet.</li>
-          <li>Sends your spot's shoreline to a Garmin running CleanJibe, so the watch's live
-              map has ground under the trail.</li>
           <li>Records, trends and the gear you were on, across everything you have ridden.</li>
           <li>Something off? Menu &rarr; Support writes the report for you — build, phone,
               watch, library — and you press Send.</li>
@@ -317,6 +355,79 @@
     </p>
   </section>
 
+  <!-- ------------------------------------------------------------ the classes -->
+  <!-- What a rider gets depends on what the recording carries, not on what he owns, and the
+       question arrives before the import rather than after it: "will this work with my
+       watch" is really "will this work with my file". Three classes, a, b and c, the same
+       three rows and the same three words the apps use (docs/channels.md; the analysis's own
+       `sourceClass` column is what decides it per session). Repeated in full on
+       /watches/#classes, because that is the other page the question is asked on. -->
+  <section class="home-section" id="need">
+    <h2>What you need, what you get</h2>
+    <p class="section-lede">
+      Everything reads a file, so what you get back depends on what the recording carries.
+      Three classes, and every session lands in one of them.
+    </p>
+
+    <div class="table-scroll">
+      <table class="stack-sm">
+        <thead>
+          <tr>
+            <th class="l">Class</th>
+            <th class="l">You record with</th>
+            <th class="l">You get</th>
+            <th class="l">You do not get</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="l stack-lead">a</td>
+            <td class="l" data-th="You record with">The CleanJibe watch app on a Garmin</td>
+            <td class="l" data-th="You get">Everything: foil time, flights, every turn verdict
+                and clean jibe, certified speed records, the wind axis, pump strokes and
+                takeoff attempts</td>
+            <td class="l" data-th="You do not get">Nothing missing</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">b</td>
+            <td class="l" data-th="You record with">Any other FIT with a measured speed channel
+                — Garmin&rsquo;s own Windsurf profile, another Connect IQ app</td>
+            <td class="l" data-th="You get">Foil time, flights, turn verdicts and clean jibes,
+                <strong>certified</strong> speed records, the wind axis</td>
+            <td class="l" data-th="You do not get">Pump strokes and takeoff attempts — shown as
+                absent, never as zero</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">b + wrist</td>
+            <td class="l" data-th="You record with">The CleanJibe Apple Watch app: class b
+                speed, plus the 50&nbsp;Hz wrist accelerometer</td>
+            <td class="l" data-th="You get">Everything class b gets, and pump strokes and
+                takeoff attempts, analysed on the phone</td>
+            <td class="l" data-th="You do not get">Nothing missing; the watch itself detects
+                nothing live</td>
+          </tr>
+          <tr>
+            <td class="l stack-lead">c</td>
+            <td class="l" data-th="You record with">Positions only: Strava, a <code>.gpx</code>,
+                a <code>.tcx</code> without speed, a phone in a pocket</td>
+            <td class="l" data-th="You get">Foil time, flights, turn verdicts and clean jibes,
+                the wind axis, and speed records <strong>estimated from positions</strong> and
+                marked uncertified</td>
+            <td class="l" data-th="You do not get">Certified records, pump strokes, takeoff
+                attempts</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note">
+      Which class a watch lands in, brand by brand, is on
+      <a href="watches/#classes">Which watch</a> — including the phone-only route, which is
+      class c and works. <strong>Take the FIT</strong> wherever an app offers you one: it
+      carries the speed your watch measured, which is the whole difference between b and c.
+    </p>
+  </section>
+
   <!-- ------------------------------------------------------------------ faq -->
   <!-- This was "What you need": three honesty cards answering the three questions a stranger
        had to guess at ("I need the watch app", "there is nothing here for Android"). It is
@@ -337,7 +448,8 @@
           Mk3, and, new in 0.9.10 and untested on real watches so far, Venu, vívoactive and
           Instinct 3 AMOLED. <a href="watches/">Which watch</a> lists all of them, family by
           family, and says which ones nobody has ridden yet. An Apple Watch has its own
-          CleanJibe app that records straight to the phone.
+          CleanJibe app that records straight to the phone. Any other watch works too —
+          <a href="#need">what you get depends on the file</a>, not on the brand.
         </dd>
       </div>
       <div class="term">
@@ -356,10 +468,30 @@
           All of them work. Polar, Suunto and COROS sessions come in either through
           intervals.icu or straight out of the vendor's own app with <em>Open in
           CleanJibe</em> in the iOS share sheet; take the <code>.fit</code> where the app
-          offers one, because a FIT carries the speed your watch measured and a GPX does not.
-          An Apple Watch works two ways: Apple's own Workout app, read through Apple Health,
-          or CleanJibe's watch app recording straight to the phone. The table on
+          offers one, because a FIT carries the speed your watch measured and a GPX does not —
+          that is <a href="#need">class b rather than class c</a>. An Apple Watch works two
+          ways: Apple's own Workout app, read through Apple Health, or CleanJibe's watch app
+          recording straight to the phone — and only the second one reads the wrist, so it is
+          the Apple Watch route that gives you pump strokes and takeoff attempts. The table on
           <a href="watches/">Which watch</a> has the whole of it.
+        </dd>
+      </div>
+      <!-- The phone-only route, asked every time somebody without a watch reads this page.
+           It is a real route and it is class c, so the answer is instructions rather than a
+           shrug — the full version, with the Android half, is on /watches/#none. -->
+      <div class="term">
+        <dt>No watch at all?</dt>
+        <dd>
+          A phone in a waterproof pouch on your body records a perfectly good track. On an
+          iPhone the simplest route is the <strong>Strava</strong> app — record there, then
+          Import &rarr; Strava in CleanJibe, and no file has to move; if you would rather keep
+          a file, <strong>Open GPX Tracker</strong> is free and shares its <code>.gpx</code>
+          straight into CleanJibe or into <a href="app/">the analyzer</a>. On Android, record
+          with Strava, <strong>OsmAnd</strong> or <strong>GPSLogger</strong> and drop the GPX
+          into the analyzer in your phone browser. Start it before you launch, stop it ashore.
+          This is <a href="#need">class c</a>: speed records estimated from positions and
+          marked uncertified, and no pump strokes. Step by step on
+          <a href="watches/#none">Which watch</a>.
         </dd>
       </div>
       <div class="term">
@@ -369,8 +501,9 @@
           and pick the sessions you want. CleanJibe only ever <strong>reads</strong> — it
           writes nothing back to your account — and Strava hands over positions rather than the
           speed your watch measured, so speed records from a Strava import are marked
-          uncertified. Until Strava reviews the app it allows one connected rider at a time;
-          the details are on the <a href="privacy/#app-network">privacy page</a>.
+          uncertified. Until Strava reviews the app it allows ten connected riders; if you are
+          told the app is full, tell us. The details are on the
+          <a href="privacy/#app-network">privacy page</a>.
         </dd>
       </div>
       <div class="term">
@@ -400,7 +533,7 @@
   </section>
 
   <!-- ----------------------------------------------------------- vocabulary -->
-  <section class="home-section">
+  <section class="home-section" id="counts">
     <h2>What it counts</h2>
     <p class="section-lede">
       The same handful of numbers on the wrist, on the phone and on this site — so a session
@@ -553,7 +686,7 @@
   </section>
 
   <!-- --------------------------------------------------------------- claims -->
-  <section class="home-section">
+  <section class="home-section" id="built">
     <h2>How it is built</h2>
     <!-- Two cards, not three. "One engine, everywhere" is now the first thing the pieces
          section says, and a claim made twice on one page reads as a claim being sold. -->
@@ -580,6 +713,75 @@
         </p>
       </article>
     </div>
+  </section>
+
+  <!-- ------------------------------------------------------------- what is coming -->
+  <!-- Written from docs/channels.md and from nowhere else: that file decides which feature
+       is in which channel, and this list, the app's Beta section and the store texts are all
+       copies of it. Two lists, because there are two honest answers — the beta list is a
+       thing a reader can have today by installing the beta, and the dev list is a thing
+       nobody outside a handful of testers can have at all. Saying so plainly is cheaper than
+       a roadmap nobody can hold us to. -->
+  <section class="home-section" id="coming">
+    <h2>Curious about what is coming</h2>
+    <p class="section-lede">
+      The App Store release is the steady half of the app. Everything below is real and runs
+      today — the difference is who can get at it.
+    </p>
+    <div class="claims">
+      <article class="panel claim">
+        <h3>In the beta today</h3>
+        <p>
+          Install the beta and you have all of it, this afternoon — there is no waiting list
+          and no second install:
+        </p>
+        <ul>
+          <li>GPX and TCX imports, so a Polar, a Suunto or a COROS comes straight in.</li>
+          <li>The Garmin export ZIP: your whole history in one import.</li>
+          <li>Apple Health both ways — read your Workout recordings, write your sessions back
+              as workouts.</li>
+          <li>The CleanJibe Apple Watch recorder, recording straight to the phone.</li>
+          <li>Home-screen widgets: the last session, and this week.</li>
+          <li>Session video export — the map draws itself along your track.</li>
+          <li>Grouping and filters in the library, for when there are a hundred sessions.</li>
+        </ul>
+        <p class="piece-foot">
+          <a class="btn primary" href="invite/" data-umami-event="beta-cta-coming">Try the beta</a>
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>In dev, and not public</h3>
+        <p>
+          These run in a build a handful of hand-picked testers have, and they are
+          <strong>not</strong> in the beta. They are listed so nobody installs the beta
+          expecting them:
+        </p>
+        <ul>
+          <li>The Garmin watch link: the summary card over Bluetooth, and the shore of your
+              spot drawn on the watch.</li>
+          <li>iPad.</li>
+          <li>Windsurf as a discipline of its own, with its own thresholds.</li>
+          <li>The tuning page, where the thresholds become sliders.</li>
+        </ul>
+        <p>
+          Each one moves up a channel when it has been ridden by two riders over ten sessions
+          with nothing open against it. <strong>Need something that is only in the beta, or
+          only in dev? Tell us</strong> — the order below.
+        </p>
+      </article>
+    </div>
+
+    <!-- The one paragraph this whole site is asking for, in the same words on five pages:
+         a beta with no feedback is a private build with extra steps. Ideas are named first
+         among equals because bug reports arrive by themselves and wishes do not. -->
+    <p class="note" id="tell-us">
+      <strong>Tell us.</strong> Bugs, verdicts you disagree with, and — just as much —
+      <strong>ideas and wishes</strong>: what you would want this to do next. In the app,
+      <strong>Menu &rarr; Support</strong> is the best door, because it prefills the facts;
+      otherwise mail <a href="mailto:info@cleanjibe.org">info@cleanjibe.org</a> or open a
+      <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">GitHub issue</a>.
+      Need something that is only in the beta? Tell us.
+    </p>
   </section>
 
 </main>
@@ -626,6 +828,27 @@
     · <a href="impressum/">Impressum</a>
   </p>
 </footer>
+
+<!-- The section nav's two moving parts, and nothing else on this page runs.
+     `--topbar-h` is measured rather than guessed: the topbar is sticky and its height
+     changes with the breakpoint (the tagline goes away, the padding shrinks), and the nav
+     under it has to stick exactly below it at every width. The stylesheet carries a
+     fallback, so a page whose script never ran is merely a few pixels off.
+     The `js` class is what lets the stylesheet hide the link row in favour of the select on
+     a phone: without JavaScript the select cannot navigate, so the links stay instead. -->
+<script>
+  (function () {
+    var root = document.documentElement, bar = document.querySelector(".topbar");
+    root.classList.add("js");
+    function fit() { root.style.setProperty("--topbar-h", bar.offsetHeight + "px"); }
+    fit();
+    addEventListener("resize", fit);
+    var jump = document.querySelector(".sectionnav select");
+    if (jump) jump.addEventListener("change", function () {
+      if (this.value) { location.hash = this.value; this.selectedIndex = 0; }
+    });
+  })();
+</script>
 
 </body>
 </html>

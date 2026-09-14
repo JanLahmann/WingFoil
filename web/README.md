@@ -42,7 +42,7 @@ web/
 │                               keep it in step with `garmin/manifest.xml` by hand. No JS,
 │                               not precached.
 ├── whats-new/index.html        "WHAT'S NEW" (cleanjibe.org/whats-new/): one card per public
-│                               release, newest first — the iPhone/iPad TestFlight builds
+│                               release, newest first — the iPhone TestFlight builds
 │                               and the Connect IQ versions, which number differently and
 │                               land on different days. The same text TestFlight's "What to
 │                               Test" and the store's "What's New" carry, where somebody who

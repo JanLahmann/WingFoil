@@ -768,10 +768,18 @@ function drawValue(ctx, stat, x, y, maxWidth, size, family) {
 
 /** Height of the footer block, and the QR's side.
  *
- * 33 pt is 99 exported px, which is 3 whole pixels per module of a 33-module symbol — the
- * only size in the 90–110 px band the contract asks for that upscales without a fraction.
- * Everything else in the footer lines up beside it. */
-const QR_SIZE = 33;                                  // layout points → 99 exported px
+ * 48 pt is 144 exported px. The code used to be 33 pt / 99 px, which was three whole pixels
+ * per module and lovely in a viewer at 1:1 — and too small in the one place a card is
+ * actually read, a thumbnail on somebody else's phone held at arm's length. A camera needs
+ * angular size before it needs crisp module edges, so the trade is taken deliberately: 144
+ * over 33 modules is 4.36 px a module rather than a whole number, and the nearest-neighbour
+ * upscale below therefore lands some module edges one pixel out of true. Level M's parity
+ * absorbs that; a code nobody can frame at arm's length is not recovered by anything.
+ *
+ * The footer's height derives from this, so growing it takes 15 pt from the track on the tall
+ * shapes and 15 pt of width from the wordmark on the wide one. Both checked at all three
+ * shapes. iOS carries the same 48 pt in `ShareCardView`, changed separately. */
+const QR_SIZE = 48;                                  // layout points → 144 exported px
 const footerHeight = (disclaimer) => QR_SIZE + (disclaimer ? 8 : 0);
 
 /** The asset's module count: a 25-module version-2 symbol plus the four modules of quiet
@@ -845,8 +853,9 @@ function drawFooter(ctx, { disclaimer }, box, art, family) {
 
   if (art.qr) {
     // The asset is 33 × 33: **one pixel per module**, including the four-module quiet zone,
-    // exactly as it came out of the generator. Drawn at 33 pt — 99 exported px — which is a
-    // whole 3× **nearest-neighbour** upscale, so every module is three hard pixels wide.
+    // exactly as it came out of the generator. Drawn at 48 pt — 144 exported px — which is a
+    // **nearest-neighbour** upscale of 4.36 px a module: most modules land four pixels wide
+    // and every twelfth one five, with hard edges throughout (see `QR_SIZE`).
     // Smoothing here would turn each module edge into a grey ramp for a decoder to guess at
     // after a chat app has recompressed the picture, which is the whole ballgame for a code
     // that has to survive a photo of a phone screen (docs/presentation.md).
@@ -1305,12 +1314,95 @@ function canShareFiles() {
   } catch { return false; }
 }
 
+/**
+ * The sentence the card travels with.
+ *
+ * A PNG dropped into a chat thread says everything except two things: which afternoon it is,
+ * and what made it. The picture's own footer answers the second for anyone who looks closely
+ * at a thumbnail; a line of text answers both for everyone else, and it is the line that gets
+ * quoted when the card is forwarded on.
+ *
+ * Built from what the card itself is holding — the title it is headlined with, its own date
+ * line, and the two numbers a rider actually quotes — so it can never describe a different
+ * session than the picture beside it. Nothing here is computed: `foilPct` and the clean count
+ * come off the analysis the card was drawn from, and a period card falls back to the
+ * aggregate block's own `cleanJibes` cell.
+ *
+ * Deliberately not the whole stat block. This is a caption in a chat window, and a caption
+ * that lists eight numbers is one nobody reads and nobody forwards.
+ */
+function shareCaption(c) {
+  const parts = [c.title, c.dateLine].filter(Boolean);
+  const s = state.result?.golden?.summary;
+  if (s) {
+    if (s.foilPct !== null && s.foilPct !== undefined) {
+      parts.push(`${Math.round(s.foilPct)} % on the foil`);
+    }
+    // The same gate the tally uses: a session whose wind axis named no jibes has no clean
+    // jibes to report, and "0 clean jibes" would be a verdict nobody measured.
+    const t = s.turns;
+    if (t && t.jibes > 0) parts.push(cleanPhrase(t.jibesSuccessful));
+  } else {
+    const clean = c.stats?.find((e) => e.key === "cleanJibes");
+    if (clean) parts.push(cleanPhrase(clean.value));
+  }
+  return `${parts.join(" · ")} — analysed with ${BRANDING.name}, free at ${BRANDING.site}`;
+}
+
+/** "30 clean jibes", and "1 clean jibe" — the one place the count is worded. */
+const cleanPhrase = (n) =>
+  `${n} clean ${Number(n) === 1 ? "jibe" : "jibes"}`;
+
+/** Whether this browser will carry the sentence into the sheet BESIDE the file. Several
+ *  accept a file and silently drop everything else, which is why it is asked with the exact
+ *  payload rather than assumed from `canShareFiles`. */
+function canShareCaption(payload) {
+  try { return Boolean(navigator.canShare && navigator.canShare(payload)); }
+  catch { return false; }
+}
+
+/** The line under the buttons, made the first time it is needed and never before: the dialog
+ *  lives in app/index.html and a message that only one kind of browser ever sees does not
+ *  belong in everybody's markup. */
+function captionNote() {
+  let note = el("card-caption-note");
+  if (!note) {
+    const actions = el("card-download").closest(".ask-actions");
+    if (!actions) return null;
+    note = document.createElement("p");
+    note.id = "card-caption-note";
+    note.className = "muted small card-caption-note";
+    note.hidden = true;
+    actions.insertAdjacentElement("beforebegin", note);
+  }
+  return note;
+}
+
+/** The sentence to the clipboard, and a line saying so. Both are best-effort: a clipboard
+ *  write can be refused outright (an insecure origin, a browser that wants a permission), and
+ *  a card that shared without its caption is still a card that shared. */
+async function copyCaption(text) {
+  try { await navigator.clipboard.writeText(text); } catch { return; }
+  const note = captionNote();
+  if (!note) return;
+  note.textContent = "Caption copied — paste it with the picture.";
+  note.hidden = false;
+  clearTimeout(copyCaption.timer);
+  copyCaption.timer = setTimeout(() => { note.hidden = true; }, 8000);
+}
+
 async function share() {
   const blob = await toBlob();
   if (!blob) return;
   const file = new File([blob], fileName(), { type: "image/png" });
+  const text = shareCaption(content());
+  const full = { files: [file], text, url: BRANDING.url };
+  const carries = canShareCaption(full);
+  // Copied BEFORE the sheet opens, while the rider's tap is still the gesture in hand: a
+  // clipboard write after a share sheet has come and gone is the one a browser refuses.
+  if (!carries) await copyCaption(text);
   try {
-    await navigator.share({ files: [file] });
+    await navigator.share(carries ? full : { files: [file] });
     // Inside the `try`, after the sheet resolves: a dismissal rejects and lands in the
     // catch, and a card the rider backed out of sharing is not a card that went anywhere.
     window.umami?.track?.("card-created");

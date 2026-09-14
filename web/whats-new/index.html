@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>What&rsquo;s new — CleanJibe</title>
-<meta name="description" content="Every public CleanJibe release, newest first: what changed in each TestFlight build of the iPhone and iPad app, and in each version of the Garmin watch app.">
+<meta name="description" content="Every public CleanJibe release, newest first: what changed in each TestFlight build of the iPhone app, and in each version of the Garmin watch app.">
 <meta name="theme-color" content="#101010">
 <meta name="color-scheme" content="dark">
 
@@ -24,7 +24,7 @@
 
 <meta property="og:site_name" content="CleanJibe">
 <meta property="og:title" content="What&rsquo;s new — CleanJibe">
-<meta property="og:description" content="Every public release, newest first: the TestFlight builds of the iPhone and iPad app, and the Garmin watch app versions.">
+<meta property="og:description" content="Every public release, newest first: the TestFlight builds of the iPhone app, and the Garmin watch app versions.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cleanjibe.org/whats-new/">
 <!-- Absolute, like every other document here: scrapers fetch the tag's value as-is and never
@@ -35,7 +35,7 @@
 <meta property="og:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="What&rsquo;s new — CleanJibe">
-<meta name="twitter:description" content="Every public release, newest first: the TestFlight builds of the iPhone and iPad app, and the Garmin watch app versions.">
+<meta name="twitter:description" content="Every public release, newest first: the TestFlight builds of the iPhone app, and the Garmin watch app versions.">
 <meta name="twitter:image" content="https://cleanjibe.org/social-card.png">
 <meta name="twitter:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
 
@@ -54,8 +54,11 @@
       <p class="sub">Wing foiling, measured.</p>
     </div>
   </a>
+  <!-- The same two doors as every other page: the free thing that needs no install, and the
+       beta beside it. -->
   <div class="topbar-right">
-    <a class="btn primary" href="../invite/">Get the beta</a>
+    <a class="btn primary" href="../app/" data-umami-event="analyze-cta-topbar">Open the analyzer</a>
+    <a class="btn ghost" href="../invite/" data-umami-event="beta-cta-topbar">Try the beta</a>
     <a class="btn ghost wide-only" href="../">About CleanJibe</a>
   </div>
 </header>
@@ -72,12 +75,13 @@
       <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Both apps are open betas</p>
       <h1>What&rsquo;s new</h1>
       <p class="lede">
-        Newest first. The iPhone and iPad app ships as TestFlight builds and the watch app as
-        Connect IQ versions, so the two number differently and land on different days.
+        Newest first. The iPhone app ships as TestFlight builds and the watch app as Connect
+        IQ versions, so the two number differently and land on different days.
       </p>
       <p class="lede">
         Not installed yet? <a href="../invite/">Both installs are here</a>, and the
-        <a href="../start/">20-minute test</a> is what to do with them once they are on.
+        <a href="../start/">start guide</a> is what to do with them once they are on — one
+        session on the water, read against what you remember.
       </p>
     </div>
   </section>
@@ -93,7 +97,7 @@
 
     <article class="panel piece">
       <div class="piece-head">
-        <h3>iPhone and iPad · build 49</h3>
+        <h3>iPhone · build 49</h3>
         <span class="status live">13 September 2026 · 0.15.0</span>
       </div>
       <p class="what">A crash fix for the watch link.</p>
@@ -108,7 +112,7 @@
 
     <article class="panel piece">
       <div class="piece-head">
-        <h3>iPhone and iPad · build 47</h3>
+        <h3>iPhone · build 47</h3>
         <span class="status">13 September 2026 · 0.15.0</span>
       </div>
       <p class="what">You choose which maps the watch gets.</p>
@@ -124,7 +128,7 @@
 
     <article class="panel piece">
       <div class="piece-head">
-        <h3>iPhone and iPad · build 45</h3>
+        <h3>iPhone · build 45</h3>
         <span class="status">13 September 2026 · 0.15.0</span>
       </div>
       <p class="what">The session list learns to group and to narrow — and every page gets a way to complain.</p>
@@ -150,7 +154,7 @@
 
     <article class="panel piece">
       <div class="piece-head">
-        <h3>iPhone and iPad · build 43</h3>
+        <h3>iPhone · build 43</h3>
         <span class="status">13 September 2026 · 0.15.0</span>
       </div>
       <p class="what">Two fixes from the first day of build 41.</p>
@@ -166,16 +170,14 @@
 
     <article class="panel piece">
       <div class="piece-head">
-        <h3>iPhone and iPad · build 41</h3>
+        <h3>iPhone · build 41</h3>
         <span class="status">13 September 2026 · 0.15.0</span>
       </div>
-      <p class="what">The session video, the iPad, and a much wider way in.</p>
+      <p class="what">The session video, and a much wider way in.</p>
       <ul>
         <li><strong>Export video:</strong> a session becomes a short film — the map draws
             itself along your track, the numbers land, and it shares like any other clip. Open
             a session &rarr; share &rarr; Export video.</li>
-        <li><strong>CleanJibe is an iPad app</strong>, and the same build runs on an Apple
-            silicon Mac as &ldquo;Designed for iPad&rdquo;.</li>
         <li><strong>Send map to watch:</strong> the phone draws the shore of your spot and
             pushes it to a Garmin running CleanJibe 0.9.10, so the live map has ground under
             the breadcrumb. Settings &rarr; Garmin watch.</li>
@@ -239,12 +241,24 @@
       New</a>, and the whole history of both apps, commit by commit, is in the
       <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">public repository</a>.
     </p>
+
+    <!-- The shared block, in the same words as the homepage, /invite/, /start/ and
+         /watches/. It belongs on a changelog more than anywhere: what is in the next build is
+         decided by what arrives through these three doors. -->
+    <p class="note" id="tell-us">
+      <strong>Tell us.</strong> Bugs, verdicts you disagree with, and — just as much —
+      <strong>ideas and wishes</strong>: what you would want in the next build. In the app,
+      <strong>Menu &rarr; Support</strong> is the best door, because it prefills the facts;
+      otherwise mail <a href="mailto:info@cleanjibe.org">info@cleanjibe.org</a> or open a
+      <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">GitHub issue</a>.
+      Need something that is only in the beta? Tell us.
+    </p>
   </section>
 
 </main>
 
 <footer>
-  <p>CleanJibe — open wingfoil tracking. Watch app, iPhone and iPad app, browser analyzer.</p>
+  <p>CleanJibe — open wingfoil tracking. Watch app, iPhone app, browser analyzer.</p>
   <p>
     <a href="../">About CleanJibe</a> ·
     <a href="../invite/">Get the beta</a> ·
