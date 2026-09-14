@@ -20,7 +20,11 @@ web/
 │                               background), the headline and the two doors, the three
 │                               pieces at one line each, the recording-class table, what is
 │                               coming, and the tell-us line. Nothing else. No JS but the
-│                               section nav's ten lines.
+│                               section nav's ten lines. Since the App Store release the
+│                               iPhone door is Apple's own badge
+│                               (img/download-on-the-app-store.svg, Apple's file byte for
+│                               byte — home.css may only set its height) and the beta is the
+│                               line under it.
 ├── learn/index.html            "MORE ABOUT HOW IT WORKS" (cleanjibe.org/learn/) — the LONG
 │                               half, split off the homepage the day Jan said the front door
 │                               was too long: the three pieces in full with their
@@ -28,10 +32,11 @@ web/
 │                               motif, and the two build claims. Nothing here was rewritten
 │                               in the move. Precached (it is the front page's one outbound
 │                               link); same no-manifest, no-JS rules as /watches/.
-├── invite/index.html           the BETA PAGE (cleanjibe.org/invite/): both open-beta
-│                               installs — the Connect IQ store link and the public
-│                               TestFlight link — and where a tester sends what they find.
-│                               No JS, and deliberately NOT in the sw.js precache.
+├── invite/index.html           the BETA PAGE (cleanjibe.org/invite/): the App Store app
+│                               first, then the two beta installs — the Connect IQ store
+│                               link and the public TestFlight link — and where a tester
+│                               sends what they find. No JS, and deliberately NOT in the
+│                               sw.js precache.
 ├── strava/callback/index.html  the STRAVA OAUTH BOUNCE (cleanjibe.org/strava/callback):
 │                               the one page on this site that exists for the iPhone app
 │                               rather than for a reader. Strava validates its redirect
@@ -52,11 +57,12 @@ web/
 │                               keep it in step with `garmin/manifest.xml` by hand. No JS,
 │                               not precached.
 ├── whats-new/index.html        "WHAT'S NEW" (cleanjibe.org/whats-new/): one card per public
-│                               release, newest first — the iPhone TestFlight builds
-│                               and the Connect IQ versions, which number differently and
-│                               land on different days. The same text TestFlight's "What to
-│                               Test" and the store's "What's New" carry, where somebody who
-│                               has NOT installed anything can read it. Sources:
+│                               release, newest first — the iPhone App Store versions, the
+│                               iPhone TestFlight beta builds and the Connect IQ versions,
+│                               which number differently and land on different days. The
+│                               same text the App Store's "What's New", TestFlight's "What
+│                               to Test" and the Connect IQ listing carry, where somebody
+│                               who has NOT installed anything can read it. Sources:
 │                               `ios/tools/testflight_publish.py` (its git history is the
 │                               only archive of the older builds' notes) and
 │                               `garmin/store/listing.md`. No JS, not precached.
@@ -88,6 +94,17 @@ web/
 │                               the top breakpoint) so the 33-module QR stays decodable.
 │                               Rendered headlessly through js/sharecard.js, not
 │                               screenshotted - the recipe is in tools/hero_card.html
+│   ├── download-on-the-app-store.svg
+│                               APPLE'S OWN BADGE, fetched from
+│                               developer.apple.com/assets/elements/badges and committed
+│                               unchanged — Apple's marketing guidelines require the artwork
+│                               unmodified, so nothing recolours, crops or re-letters it and
+│                               css/home.css (`.appstore`) is only allowed to set its height,
+│                               with `width: auto` so the intrinsic 119.66x40 ratio is what
+│                               the browser draws. It is the homepage's primary iPhone door
+│                               and appears again on /learn/, /invite/ and /start/. In the
+│                               sw.js precache, unlike the screenshots: it is a control
+│                               rather than a picture.
 │   └── peek-{track,speed,turns}.png
 │                               the dropzone's "what you get" strip — the only images in
 │                               the precache, because they are on the app's first screen

@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v54";     // v54: whats-new gets builds 51 and 53 (v53: light theme, the card takes the fold, /learn/, Android share target)
+const VERSION = "v55";     // v55: RELEASE DAY — the App Store badge is the homepage's iPhone door, the beta moves to second place on every page, /whats-new gets the 1.0.0 release card (v54: whats-new gets builds 51 and 53)
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
@@ -128,6 +128,14 @@ const APP_SHELL = [
   "img/peek-track.png",
   "img/peek-speed.png",
   "img/peek-turns.png",
+  // Apple's App Store badge, 10 KB of SVG and the only picture on this list that is on the
+  // HOMEPAGE rather than in the analyzer. It is in because it is a DOOR, not a decoration:
+  // since the release it is the primary iPhone call to action in the hero and again in the
+  // pieces row, and on /learn/ — both precached documents — so an offline visitor who found
+  // a broken image frame there would be looking at the one control the page most wants
+  // pressed. img/share-card.png stays out for the argument above; a picture and a button are
+  // not the same kind of missing.
+  "img/download-on-the-app-store.svg",
   // The bundled example (942 KB). Precached with the shell rather than fetched on demand,
   // because the whole point of it is the visitor who has nothing else to open — including
   // the one who opened the installed app on a train. It is the same file the iOS app

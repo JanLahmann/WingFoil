@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>What&rsquo;s new — CleanJibe</title>
-<meta name="description" content="Every public CleanJibe release, newest first: what changed in each TestFlight build of the iPhone app, and in each version of the Garmin watch app.">
+<meta name="description" content="Every public CleanJibe release, newest first: the App Store releases of the iPhone app, the TestFlight builds of its beta, and each version of the Garmin watch app.">
 <meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#f5f6f3" media="(prefers-color-scheme: light)">
 <meta name="color-scheme" content="light dark">
@@ -25,7 +25,7 @@
 
 <meta property="og:site_name" content="CleanJibe">
 <meta property="og:title" content="What&rsquo;s new — CleanJibe">
-<meta property="og:description" content="Every public release, newest first: the TestFlight builds of the iPhone app, and the Garmin watch app versions.">
+<meta property="og:description" content="Every public release, newest first: the iPhone app on the App Store, its TestFlight beta builds, and the Garmin watch app versions.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cleanjibe.org/whats-new/">
 <!-- Absolute, like every other document here: scrapers fetch the tag's value as-is and never
@@ -36,7 +36,7 @@
 <meta property="og:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="What&rsquo;s new — CleanJibe">
-<meta name="twitter:description" content="Every public release, newest first: the TestFlight builds of the iPhone app, and the Garmin watch app versions.">
+<meta name="twitter:description" content="Every public release, newest first: the iPhone app on the App Store, its TestFlight beta builds, and the Garmin watch app versions.">
 <meta name="twitter:image" content="https://cleanjibe.org/social-card.png">
 <meta name="twitter:image:alt" content="CleanJibe — a wingfoil track with two flights drawn on the foil, a jibe flown through, a touchdown and a fall.">
 
@@ -67,20 +67,26 @@
 <main>
 
   <!-- ------------------------------------------------------------------ hero -->
-  <!-- The release notes exist twice already — in TestFlight's "What to Test" and in the
-       Connect IQ listing's "What's New" — and both are readable only by somebody who has
-       already installed the thing. This page is the same text where anyone can read it,
-       which is also what makes "is this still being worked on" answerable at a glance. -->
+  <!-- The release notes exist three times already — in the App Store listing's "What's New",
+       in TestFlight's "What to Test" and in the Connect IQ listing's "What's New" — and the
+       last two are readable only by somebody who has already installed the thing. This page is
+       the same text where anyone can read it, which is also what makes "is this still being
+       worked on" answerable at a glance. -->
   <section class="hero">
     <div class="hero-copy">
-      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Both apps are open betas</p>
+      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>iPhone on the App Store · watch app in beta</p>
       <h1>What&rsquo;s new</h1>
       <p class="lede">
-        Newest first. The iPhone app ships as TestFlight builds and the watch app as Connect
-        IQ versions, so the two number differently and land on different days.
+        Newest first. <strong>The App Store app updates through the App Store</strong>, like
+        any other app on the phone; <strong>TestFlight updates the beta</strong>, which runs
+        ahead of it. The Garmin watch app ships as Connect IQ versions, so all three number
+        differently and land on different days.
       </p>
       <p class="lede">
-        Not installed yet? <a href="../invite/">Both installs are here</a>, and the
+        Not installed yet? The iPhone app is
+        <a href="https://apps.apple.com/app/id6800401377" rel="noopener"
+           data-umami-event="whatsnew-appstore">free on the App Store</a>, the watch app and
+        the iPhone beta are on <a href="../invite/">the beta page</a>, and the
         <a href="../start/">start guide</a> is what to do with them once they are on — one
         session on the water, read against what you remember.
       </p>
@@ -91,15 +97,67 @@
   <section class="home-section" id="releases">
     <h2>Releases</h2>
     <p class="section-lede">
-      TestFlight offers the newest build automatically; the Connect IQ store updates the watch
-      app through Garmin Connect. A build number is what a bug report should name — it is at
-      the foot of the app&rsquo;s menu, and under Settings &rarr; About.
+      The App Store offers the newest version the way it offers any other app&rsquo;s;
+      TestFlight offers the newest beta build automatically; the Connect IQ store updates the
+      watch app through Garmin Connect. A version or build number is what a bug report should
+      name — it is at the foot of the app&rsquo;s menu, and under Settings &rarr; About.
     </p>
+
+    <!-- THE RELEASE. The first card that is not a beta build, and the only one on this page
+         with a version rather than a build number on it: the App Store shows 1.0.0 and says
+         nothing about builds, so a rider looking up "which one am I on" finds the same string
+         here that Settings -> About prints. What is in it and what is not is read from
+         docs/channels.md and from nowhere else.
+
+         RELEASE-DATE is a placeholder and is replaced by hand on the day the release goes
+         live, together with the `status live` class, which moves here off build 53. -->
+    <article class="panel piece">
+      <div class="piece-head">
+        <h3>iPhone · 1.0.0 on the App Store</h3>
+        <span class="status live">RELEASE-DATE · App Store</span>
+      </div>
+      <p class="what">The first public release. Free, on the iPhone, no account anywhere.</p>
+      <ul>
+        <li><strong>CleanJibe Wingfoil Analyzer</strong> is on the App Store:
+            <a href="https://apps.apple.com/app/id6800401377" rel="noopener"
+               data-umami-event="whatsnew-appstore-release">apps.apple.com/app/id6800401377</a>.
+            It updates itself from now on — nothing expires, and there is nothing to join.</li>
+        <li><strong>Sessions come in</strong> from <strong>intervals.icu</strong> (pull down on
+            Sessions, or let the background check tell you a new one arrived), from a
+            <code>.fit</code> file out of Files, Mail, AirDrop or any app&rsquo;s share sheet,
+            and from <strong>Strava</strong>, which signs you in on Strava&rsquo;s own page and
+            reads only.</li>
+        <li><strong>The whole analysis</strong>, engine 0.18.0: foil time, every flight and
+            touchdown, the wind axis, a verdict on every turn — flew through, touched down,
+            fell in — clean jibes, dry streaks, and JPH, CPH and WPH beside each other. Every
+            touchdown and fall says in one line why it was scored that way.</li>
+        <li><strong>Speed records</strong> on the GP3S set, marked uncertified when the file
+            carries only positions. <strong>Pump strokes and takeoff attempts</strong> when the
+            recording carries the wrist — absence is shown as absence, never as zero.</li>
+        <li><strong>The library</strong>: every session with its map, replay, turn page and
+            flight-end page; spots, gear and periods; records, trends and the all-time tables;
+            backup and restore. A bundled <strong>example session</strong> so all of it can be
+            read before you import anything.</li>
+        <li><strong>Share cards</strong> for a session or a period, replay clips with your own
+            music, and sending a session to a friend as the scrubbed original file.</li>
+        <li>Nothing is uploaded to us, there is no account, and there is no CleanJibe server —
+            <a href="../privacy/">the privacy page</a> is the whole list of what leaves the
+            phone.</li>
+      </ul>
+      <p class="note">
+        <strong>What stays in the beta</strong> for now, because it is still proving itself:
+        GPX and TCX imports, the Garmin export ZIP, Apple Health both ways, the session video
+        export, grouping and filters in the library, the CleanJibe Apple Watch app, and the
+        home-screen widgets with the watch-face complication.
+        <a href="../invite/#testflight">TestFlight has all of it</a>; the builds below are that
+        beta&rsquo;s history.
+      </p>
+    </article>
 
     <article class="panel piece">
       <div class="piece-head">
         <h3>iPhone · build 53 <span class="tag beta">beta</span></h3>
-        <span class="status live">14 September 2026 · 0.15.0</span>
+        <span class="status">14 September 2026 · 0.15.0</span>
       </div>
       <p class="what">The beta channel, with its own icon.</p>
       <ul>
@@ -277,6 +335,14 @@
             through, touched down and fell in verdicts are unchanged and still buzz at once.</li>
       </ul>
     </article>
+
+    <!-- The legend, once per page that carries a pill, as on the homepage, /learn/, /watches/,
+         /start/ and /invite/. It arrived here with the release card: until then every iPhone
+         card on this page was a beta build and the word explained itself. -->
+    <p class="beta-legend">
+      <span class="tag beta">beta</span> a TestFlight build of the beta channel, ahead of the
+      App Store release.
+    </p>
 
     <p class="note">
       Older watch-app versions — 0.9.8 back to 0.9.0 — are in the

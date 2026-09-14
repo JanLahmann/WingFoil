@@ -200,13 +200,27 @@
 
     <!-- TWO EQUAL DOORS, because the page has two products to hand over. A stranger arrives
          either wanting to try something in ten seconds or wanting the app on his phone, and
-         both are `.btn primary`: neither is the consolation prize. The example lives in the
-         note under them, where it belongs — it is a way of using the analyzer, not a third
-         door. -->
+         neither is the consolation prize. Since the App Store release the iPhone door is
+         Apple's own badge rather than a `.btn primary`: the badge is the thing a phone
+         owner's eye is trained to find, and Apple's marketing guidelines require the
+         artwork unmodified, which is why img/download-on-the-app-store.svg is Apple's file
+         byte for byte and home.css is only allowed to set its height.
+
+         THE BETA IS NO LONGER A DOOR HERE. It is the line under the buttons and the panel
+         at the foot of the page: a stranger who has never heard of CleanJibe should install
+         the finished thing, and the rider who wants the half that is still proving itself
+         will read one more sentence for it. The example lives in the note too — it is a way
+         of using the analyzer, not a third door. -->
     <p class="cta">
       <!-- The hero CTAs are the counted doors: umami's declarative form, so a blocked script
-           leaves an ordinary link behind. -->
-      <a class="btn primary" href="invite/" data-umami-event="beta-cta-hero">Get the beta</a>
+           leaves an ordinary link behind. The badge's `width`/`height` reserve the box at
+           the ratio the artwork actually has; home.css draws it at 48 px with `width:auto`
+           so rounding those two integers can never squash it. -->
+      <a class="appstore" href="https://apps.apple.com/app/id6800401377" rel="noopener"
+         data-umami-event="appstore-cta-hero">
+        <img src="img/download-on-the-app-store.svg" width="144" height="48"
+             alt="Download CleanJibe Wingfoil Analyzer on the App Store">
+      </a>
       <!-- `#example` is a real route, not an anchor: js/app.js runs the bundled session on
            arrival, so that link delivers the example rather than a drop target. -->
       <a class="btn primary" href="app/" data-umami-event="analyze-cta">Try the analyzer</a>
@@ -218,6 +232,13 @@
         Free. No account. The analyzer runs in your browser — the file is never uploaded, and
         there is <a href="app/#example" data-umami-event="example-cta">an example session</a>
         inside if you have no file to hand.
+      </span>
+      <!-- The beta's secondary place, said in one sentence and repeated word for word in
+           the panel at #coming. -->
+      <span class="cta-note" style="flex-basis: 100%">
+        Or <a href="invite/" data-umami-event="beta-cta-hero">try the beta</a> on TestFlight:
+        it carries the doors still proving themselves — <a href="#coming">the list is
+        below</a>.
       </span>
     </p>
     <!-- The line that closes the gap /invite/ used to leave open: "installed" is not "this
@@ -266,7 +287,7 @@
       <article class="panel piece">
         <div class="piece-head">
           <h3>CleanJibe for iPhone</h3>
-          <span class="status">open beta · TestFlight</span>
+          <span class="status live">on the App Store</span>
         </div>
         <p class="what">Your library, the replay and the season, on the phone in your pocket</p>
         <!-- The `beta` pill is written from docs/channels.md and from nowhere else. A feature
@@ -274,10 +295,18 @@
              this line that is not. -->
         <ul>
           <li>Every session you have ever ridden, re-analyzed on the phone, with its records,
-              its trends and a share card — plus GPX and TCX imports, the Apple Watch
-              recorder and the session video.<span class="tag beta">beta</span></li>
+              its trends and a share card — free, from the App Store. GPX and TCX imports, the
+              Apple Watch app, the widgets and the session video are in the
+              beta.<span class="tag beta">beta</span></li>
         </ul>
-        <p class="piece-foot"><a class="btn ghost" href="invite/#testflight" data-umami-event="beta-testflight">Get the beta</a></p>
+        <p class="piece-foot">
+          <a class="appstore" href="https://apps.apple.com/app/id6800401377" rel="noopener"
+             data-umami-event="appstore-piece">
+            <img src="img/download-on-the-app-store.svg" width="120" height="40"
+                 alt="Download CleanJibe Wingfoil Analyzer on the App Store">
+          </a>
+          <a class="btn ghost" href="invite/#testflight" data-umami-event="beta-testflight">Try the beta</a>
+        </p>
       </article>
 
       <article class="panel piece">
@@ -398,28 +427,30 @@
   <section class="home-section" id="coming">
     <h2>Curious about what is coming</h2>
     <p class="section-lede">
-      The App Store release is the steady half of the app. Everything below is real and runs
-      today — the difference is who can get at it.
+      The App Store app is the steady half of CleanJibe, and it is the one to install.
+      Everything below is real and runs today — the difference is who can get at it.
     </p>
     <div class="claims">
       <article class="panel claim">
         <h3>In the beta today<span class="tag beta">beta</span></h3>
         <p>
-          Install the beta and you have all of it, this afternoon — there is no waiting list
-          and no second install:
+          The beta on TestFlight carries the doors still proving themselves: the same app,
+          plus everything below. It takes the App Store app&rsquo;s place on the phone and
+          keeps your library — one install, no waiting list, all of it this afternoon.
         </p>
         <ul>
           <li>GPX and TCX imports, so a Polar, a Suunto or a COROS comes straight in.</li>
           <li>The Garmin export ZIP: your whole history in one import.</li>
           <li>Apple Health both ways — read your Workout recordings, write your sessions back
               as workouts.</li>
-          <li>The CleanJibe Apple Watch recorder, recording straight to the phone.</li>
-          <li>Home-screen widgets: the last session, and this week.</li>
+          <li>The CleanJibe Apple Watch app, recording straight to the phone.</li>
+          <li>Home-screen widgets — the last session, this week, your personal bests — and the
+              complication on the watch face.</li>
           <li>Session video export — the map draws itself along your track.</li>
           <li>Grouping and filters in the library, for when there are a hundred sessions.</li>
         </ul>
         <p class="piece-foot">
-          <a class="btn primary" href="invite/" data-umami-event="beta-cta-coming">Try the beta</a>
+          <a class="btn ghost" href="invite/" data-umami-event="beta-cta-coming">Try the beta</a>
         </p>
       </article>
       <article class="panel claim">
@@ -432,7 +463,6 @@
         <ul>
           <li>The Garmin watch link: a summary card over Bluetooth the moment you stop, and the
               shore of your spot drawn on the watch under your track.</li>
-          <li>iPad and Mac.</li>
           <li>Windsurf as a discipline of its own, with its own thresholds.</li>
           <li>Tune the thresholds yourself: every detection rule on a slider, applied to your
               own sessions.</li>
@@ -462,10 +492,10 @@
 
 <footer>
   <p>CleanJibe — open wingfoil tracking. Watch app, iPhone app, browser analyzer.</p>
-  <!-- Both betas are open now — the watch app from the Connect IQ store, the phone app
-       from a public TestFlight link — so the footer's job is the doors a stranger needs:
-       the long half of this page (/learn/), where the installs are (/invite/), and where a
-       report goes. -->
+  <!-- The phone app is on the App Store and the hero's badge is where a stranger takes it;
+       the watch app is still an open beta from the Connect IQ store, and so is the phone
+       app's TestFlight half. The footer's job is the rest of the doors: the long half of this
+       page (/learn/), the two betas (/invite/), and where a report goes. -->
   <p>
     Source, issues and the detection thresholds:
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">github.com/JanLahmann/WingFoil</a>

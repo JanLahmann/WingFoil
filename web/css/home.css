@@ -165,6 +165,25 @@
 .cta .btn { text-decoration: none; }
 .cta .cta-note { color: var(--ink-3); font-size: 13px; }
 
+/* ------------------------------------------------------- the App Store badge
+ *
+ * Apple's badge artwork, `web/img/download-on-the-app-store.svg`, exactly as Apple ships
+ * it — the marketing guidelines require it unmodified, so nothing here recolours, crops or
+ * re-letters it. The only thing this rule is allowed to do is set its SIZE, and it does
+ * that with `width: auto` against a fixed height, so the intrinsic 119.66 x 40 ratio is
+ * what the browser draws and the badge can never be squashed by a height attribute that
+ * rounded.
+ *
+ * 48 px tall: above Apple's 40 px web minimum and a hair taller than the site's own
+ * buttons, because on release day it is the loudest door on the page. It sits in `.cta`
+ * and `.piece-foot` beside ordinary `.btn`s, so the link wrapping it has to be a
+ * line-box-free inline-flex or the SVG's baseline leaves a few stray pixels under it.
+ */
+.appstore { display: inline-flex; line-height: 0; border-radius: 8px; }
+.appstore img { height: 48px; width: auto; display: block; }
+.piece-foot .appstore img, .claim .piece-foot .appstore img { height: 40px; }
+.appstore:focus-visible { outline: 2px solid var(--series-1); outline-offset: 3px; }
+
 /* ---------------------------------------------------------------- the motif */
 
 /* The track breadcrumb: an off-foil line with two flying segments on it and the three
@@ -441,6 +460,9 @@ h3 .tag.beta, td .tag.beta, dt .tag.beta, li .tag.beta { vertical-align: 2px; }
   .cta { display: grid; grid-template-columns: minmax(0, 1fr); }
   .cta .btn { width: 100%; }
   .cta .cta-note { text-align: center; }
+  /* The badge may not stretch — Apple's artwork keeps its own ratio — so it centres in the
+     full-width cell the grid gives it instead. */
+  .cta .appstore { justify-self: center; }
 }
 
 @media (max-width: 560px) {
