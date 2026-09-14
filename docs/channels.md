@@ -136,6 +136,38 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 |---|---|---|
 | iPad and "Designed for iPad" on the Mac | dev | release and beta build for iPhone only |
 
+## Telling the channels apart — the mark
+
+Three builds can sit on one phone (the App Store app, the beta, the dev app) and two on one
+watch, so each channel wears its own cut of the brand mark, decided with Jan on 14 September
+2026:
+
+| channel | the mark | where |
+|---|---|---|
+| release | as drawn in `brand/icon-square.svg` | App Store icon, launch screen, splash, welcome page, watch icon and start page, Garmin launcher and splash |
+| beta | the same mark with a red **BETA** label in the upper right | the same places, from `AppIcon-Beta` / `SplashMark-Beta` / `LaunchMark-Beta` / `BrandMark-Beta` and `garmin/resources-beta/` |
+| dev | the mark mirrored left-to-right, wing upper **right** | the same places, from the `-Dev` sets and `garmin/resources-dev/` |
+
+The label is red because nothing else in the mark is; the mirror keeps every colour and
+proportion, so the dev app still reads as CleanJibe. Below 14 px of label height the word
+becomes a plain red block (the 40 px Garmin launcher, the 19 px badge); on the Apple Watch
+icon the label moves inward so the circular mask does not cut it.
+
+What does **not** change with the channel: the share card, its QR centre and the replay
+clip cards. Everything that leaves the phone carries the release mark, because a card
+promotes CleanJibe, not the build that rendered it.
+
+How it is wired: the cuts are generated from the two release renders by
+`brand/tools/make_channel_marks.py` (iOS asset sets, Garmin launcher icons, the reference
+PNGs and SVGs in `brand/`) and `garmin/tools/make_brand_mark.py` (the watch's ink-only
+cuts), both reading the treatments from `brand/tools/channelmark.py`. On iOS the
+configuration picks the icon (`ASSETCATALOG_COMPILER_APPICON_NAME`) and the launch image
+(`CJ_SPLASH_MARK` → `UILaunchScreen`), and `ChannelArt` picks the splash and welcome marks
+under `#if DEV` / `#if BETA`; the watch app has the same flags for its start page. On the
+Garmin, `monkey-invite.jungle` (the beta) and `monkey-beta.jungle` (the dev-beta listing —
+the file names predate the channels, garmin/store/listing.md) append the channel's
+directory after each size class so its resource ids win.
+
 ## Before the release is submitted
 
 1. Strava's application review, requested with the release description and the privacy page.

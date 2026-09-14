@@ -3057,6 +3057,13 @@ shadow and no corner clip for exactly that reason, because a launch screen can d
 (`LaunchMark` is unchanged and still the full-resolution artwork the share card, the QR's
 centre mark and the welcome screen use.)
 
+**The channel wears its own mark.** The beta's launch screen, splash, welcome page, icon and
+watch start page show the mark with a red BETA label upper right; the dev app's show it
+mirrored, wing upper right; the App Store app's is the mark as drawn. `CJ_SPLASH_MARK`
+picks the launch image per configuration and `ChannelArt` the two the code names, so the
+handover above stays invisible in every channel. The share card and the QR keep the
+release mark (docs/channels.md, "Telling the channels apart").
+
 The clock moves as little as the mark does: `UIStatusBarStyle: UIStatusBarStyleLightContent`
 is what the *launch* screen reads and `preferredColorScheme(.dark)` is what the splash asks
 for, so the status bar is white over that navy on both frames. It changes nothing afterwards —

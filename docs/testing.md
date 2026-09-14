@@ -1135,6 +1135,15 @@ cd ios && xcodegen generate
 grep -c "NSHealth\|NSLocation\|NSBluetooth\|gpx\|tcx" WingFoil/Info-Release.plist   # 0
 ```
 
+**And the mark check.** Each channel wears its own cut of the brand mark (docs/channels.md,
+"Telling the channels apart"), picked per configuration; the same `-showBuildSettings` lines
+with `grep "APPICON_NAME\|CJ_SPLASH_MARK"` must print `AppIcon` / `SplashMark` for the release,
+`AppIcon-Beta` / `SplashMark-Beta` for the beta and `AppIcon-Dev` / `SplashMark-Dev` for dev,
+and a built app's Info.plist says the same under `CFBundleIconName`. The watch app follows
+its phone (`-target WingFoilWatch`). After touching `brand/`, rerun
+`brand/tools/make_channel_marks.py` and `garmin/tools/make_brand_mark.py` and commit what
+they write.
+
 **The three archive commands.** Same commit, same `MARKETING_VERSION`; bump
 `CURRENT_PROJECT_VERSION` in `ios/project.yml` (all four targets) and re-run `xcodegen
 generate` between them. **The App Store build takes the lowest number**, and that is the point
