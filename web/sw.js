@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v53";     // v53: light theme, the card takes the fold, /learn/ splits off, Android share target
+const VERSION = "v54";     // v54: whats-new gets builds 51 and 53 (v53: light theme, the card takes the fold, /learn/, Android share target)
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
