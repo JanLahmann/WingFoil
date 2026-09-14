@@ -27,6 +27,9 @@ struct RecordsView: View {
     /// is a burst nobody believes.
     @State private var freshCleanJibes: [NewCleanJibeBest] = []
 
+    /// Whether the speed table is still a table — see `RecordRowView`.
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     var body: some View {
         NavigationStack {
             List {
@@ -63,9 +66,16 @@ struct RecordsView: View {
                 }
                 if !records.isEmpty {
                     Section {
-                        recordsHeader
-                            .listRowInsets(EdgeInsets(top: 4, leading: 16,
-                                                      bottom: 4, trailing: 16))
+                        // Absent, not empty, at an accessibility text size: the rows are no
+                        // longer columns there, so an empty list row with a separator would
+                        // be the only thing left of the header.
+                        if !typeSize.isAccessibilitySize {
+                            recordsHeader
+                                .listRowInsets(EdgeInsets(top: 4, leading: 16,
+                                                          bottom: 4, trailing: 16))
+                                // Header and rows share one ceiling — see `RecordRowView`.
+                                .denseRowTypeSizeCap()
+                        }
                         ForEach(records) { best in
                             NavigationLink(value: best.sessionId) {
                                 RecordRowView(best: best, title: title(of: best.sessionId),
@@ -73,6 +83,12 @@ struct RecordsView: View {
                             }
                             .listRowInsets(EdgeInsets(top: 6, leading: 16,
                                                       bottom: 6, trailing: 16))
+                            // Four columns — name, knots, +Δ, when · where — and the fourth
+                            // is a sentence. They scale to `.accessibility2`, which is the
+                            // last size at which four columns are still four columns on a
+                            // phone. The Session records table below has no fixed columns
+                            // and is left to scale the whole way.
+                            .denseRowTypeSizeCap()
                         }
                     } header: {
                         Text("Speed records")
@@ -227,6 +243,7 @@ private struct SessionRecordRowView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+                .minimumScaleFactor(0.8)
             if let note = best.kind.caption {
                 Text(note).font(.caption2).foregroundStyle(.tertiary)
             }
@@ -294,18 +311,26 @@ private struct RecordColumns {
 private struct RecordTableHeader: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    /// **No header at an accessibility text size.** `RecordRowView` stops being four columns
+    /// there (see its note), so there are no columns left to name, and a row of names that
+    /// line up with nothing reads as a fourth kind of number.
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         let columns = RecordColumns(horizontal: horizontalSizeClass, vertical: verticalSizeClass)
-        HStack(spacing: 10) {
-            Text("record").frame(width: columns.name, alignment: .leading)
-            Text("kn").frame(width: columns.value, alignment: .trailing)
-            Text("+Δ PB").frame(width: columns.delta, alignment: .trailing)
-            Text("when · where").frame(maxWidth: .infinity, alignment: .leading)
+        if !typeSize.isAccessibilitySize {
+            HStack(spacing: 10) {
+                Text("record").scaledColumn(columns.name, relativeTo: .subheadline)
+                Text("kn")
+                    .scaledColumn(columns.value, alignment: .trailing, relativeTo: .subheadline)
+                Text("+Δ PB")
+                    .scaledColumn(columns.delta, alignment: .trailing, relativeTo: .caption)
+                Text("when · where").frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .font(.caption2)
+            .foregroundStyle(.tertiary)
+            .accessibilityHidden(true)
         }
-        .font(.caption2)
-        .foregroundStyle(.tertiary)
-        .accessibilityHidden(true)
     }
 }
 
@@ -334,6 +359,17 @@ private struct RecordRowView: View {
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    /// **Four columns is a table until the type gets big, and then it is not one.** Three
+    /// fixed columns and a sentence take more than a phone's width at an accessibility text
+    /// size however well the columns scale, and the row came out clipped at both edges with
+    /// "when · where" squeezed to two characters. Past the threshold the row gives the table
+    /// up honestly: the name takes the width it needs, the two numbers keep the right edge —
+    /// which is what made a column of values scannable in the first place — and the
+    /// provenance moves to a line of its own. It is the shape `SessionRecordRowView` below
+    /// already uses, for the same reason its own note gives.
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    private var stacked: Bool { typeSize.isAccessibilitySize }
 
     var body: some View {
         let columns = RecordColumns(horizontal: horizontalSizeClass, vertical: verticalSizeClass)
@@ -343,40 +379,42 @@ private struct RecordRowView: View {
                     FreshnessDot(age: Medal.of(best.achievedAt))
                     Text(best.kind.label)
                         .font(.subheadline)
-                        .lineLimit(1)
+                        .lineLimit(stacked ? 2 : 1)
                         .minimumScaleFactor(0.8)
                 }
-                .frame(width: columns.name, alignment: .leading)
+                .scaledColumn(stacked ? nil : columns.name, relativeTo: .subheadline)
+
+                if stacked { Spacer(minLength: 6) }
 
                 Text(Fmt.kn(best.valueKn))
                     .font(.subheadline.weight(.semibold).monospacedDigit())
-                    .frame(width: columns.value, alignment: .trailing)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .layoutPriority(1)
+                    .scaledColumn(stacked ? nil : columns.value, alignment: .trailing,
+                                  relativeTo: .subheadline)
 
                 // The delta was the smallest text in the old row and it is the reason a
                 // rider opens this screen: it is a column of its own now.
-                Group {
-                    if let previous = best.previousBest {
-                        Text(String(format: "+%.2f", best.valueKn - previous))
-                            .foregroundStyle(DesignTokens.Outcome.flew)
-                    } else {
-                        Text("—").foregroundStyle(.tertiary)
-                    }
-                }
-                .font(.caption.monospacedDigit())
-                .frame(width: columns.delta, alignment: .trailing)
+                if !stacked { delta }
 
-                Text("\(Fmt.shortDate(best.achievedAt, zone: best.displayZone)) · \(title)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                if !stacked { provenance }
+            }
+            // Stacked, the delta leads the second line: the name and the value fill the
+            // first one at these sizes, and "+1.27" in front of the date reads as what it
+            // is — how much this record beat the last one by, and when.
+            if stacked {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    delta
+                    provenance
+                }
             }
             // The two badges are exceptions rather than columns — a column that is empty on
             // seven rows out of eight is a column that should not exist — so they wrap onto
             // a second line only on the rows that have one.
             if isNew || !best.certified || best.history.count == 1 {
                 HStack(spacing: 6) {
-                    Spacer().frame(width: columns.name)
+                    if !stacked { Spacer().scaledColumn(columns.name, relativeTo: .subheadline) }
                     if isNew { badge("NEW", Color.accentColor) }
                     if !best.certified { badge("uncertified", .orange) }
                     if best.previousBest == nil, best.history.count == 1 {
@@ -391,6 +429,34 @@ private struct RecordRowView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(best.kind.label) record, \(Fmt.kn(best.valueKn))")
         .accessibilityValue(Medal.of(best.achievedAt).label)
+    }
+
+    /// How much this record beat the previous one by — the third column, or, stacked, the
+    /// head of the second line.
+    private var delta: some View {
+        Group {
+            if let previous = best.previousBest {
+                Text(String(format: "+%.2f", best.valueKn - previous))
+                    .foregroundStyle(DesignTokens.Outcome.flew)
+            } else {
+                Text("—").foregroundStyle(.tertiary)
+            }
+        }
+        .font(.caption.monospacedDigit())
+        .lineLimit(1)
+        .scaledColumn(stacked ? nil : RecordColumns(horizontal: horizontalSizeClass,
+                                                    vertical: verticalSizeClass).delta,
+                      alignment: .trailing, relativeTo: .caption)
+    }
+
+    /// When and where the record was set — the fourth column, or the second line.
+    private var provenance: some View {
+        Text("\(Fmt.shortDate(best.achievedAt, zone: best.displayZone)) · \(title)")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .lineLimit(stacked ? 3 : 1)
+            .minimumScaleFactor(0.8)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func badge(_ text: String, _ tint: Color) -> some View {

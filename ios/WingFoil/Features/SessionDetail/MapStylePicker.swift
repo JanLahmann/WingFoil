@@ -121,9 +121,10 @@ struct MapStyleChip: View {
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: store.mapStyle.symbolName)
-                    .font(.system(size: 10))
+                    .font(.caption2)
                 Text(store.mapStyle.label.lowercased())
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)

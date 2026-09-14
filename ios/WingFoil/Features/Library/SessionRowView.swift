@@ -13,6 +13,11 @@ struct SessionRowView: View {
 
     private var thumbnail: TrackThumbnail? { thumbnails.thumbnail(for: row.id) }
 
+    /// How much of the row a rider's name may take before the title starts giving way.
+    /// Scaled, because at a larger text size 130 pt stops being a name and starts being
+    /// three letters and an ellipsis.
+    @ScaledMetric(relativeTo: .headline) private var riderBadgeWidth: CGFloat = 130
+
     /// The discipline capsule, and whether it says anything this reader needs
     /// (`DisciplineReview.showsBadge`): with the windsurf switch off, a library of one rig
     /// spelling "Wingfoil" on every row is a column of noise, while the rows that disagree —
@@ -37,6 +42,7 @@ struct SessionRowView: View {
                     Text(SessionDisplay.title(row))
                         .font(.headline)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                     Spacer(minLength: 8)
                     if let example = SessionDisplay.exampleBadge(row) {
                         ExampleBadge(text: example, font: .caption2)
@@ -48,7 +54,7 @@ struct SessionRowView: View {
                         // name still leaves the title readable.
                         RiderBadge(name: rider)
                             .layoutPriority(1)
-                            .frame(maxWidth: 130, alignment: .trailing)
+                            .frame(maxWidth: riderBadgeWidth, alignment: .trailing)
                     }
                     if row.isProvisional { ProvisionalBadge() }
                     if let chip = row.analysisDiscipline.lexicon.chip {
@@ -98,6 +104,10 @@ struct SessionRowView: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                // Three figures side by side under the date. They scale, and stop where
+                // three of them stop fitting a phone's width — the row above them and the
+                // title above that scale the whole way.
+                .denseRowTypeSizeCap()
 
                 HStack(spacing: 10) {
                     OutcomeTally(flewThrough: row.turnsFlewThrough ?? 0,
@@ -108,6 +118,8 @@ struct SessionRowView: View {
                         .foregroundStyle(.tertiary)
                     Spacer(minLength: 0)
                 }
+                // The outcome tally is four numbers in a line; same ceiling, same reason.
+                .denseRowTypeSizeCap()
             }
         }
         .padding(.vertical, 4)

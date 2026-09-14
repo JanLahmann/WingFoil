@@ -313,7 +313,10 @@ private struct ImportLogRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack {
-                Text(entry.container ?? entry.source).font(.subheadline).lineLimit(1)
+                Text(entry.container ?? entry.source)
+                    .font(.subheadline)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 Spacer()
                 // `.current` deliberately: an import is something that happened to this phone.
                 Text(Fmt.shortDate(entry.startedAt, zone: .current))
