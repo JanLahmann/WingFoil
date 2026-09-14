@@ -8,7 +8,10 @@ before changing anything:
   Swift kit, the web bundle and the watch must match this file to the digit.
 - `docs/presentation.md` — what the rider sees and why: labels, tabs, maps, the turn page,
   tuning, the dev workbench. One wording per metric across iOS and web.
-- `docs/testing.md` — goldens, verifiers, simulator hooks, the two TestFlight variants.
+- `docs/testing.md` — goldens, verifiers, simulator hooks, the three channels' archives.
+- `docs/channels.md` — **which feature is in which channel** (release / beta / dev), and the
+  four rules a feature meets before it moves up one. The website's "what is coming" list, the
+  app's Beta section and the store texts are written from it, never the other way round.
 - `docs/decisions.md` — ADRs. `docs/fit-schema.md` — the watch's FIT developer fields.
 
 ## Layout
@@ -30,17 +33,26 @@ divergences are written down in algorithms.md.
 
 ```sh
 cd ios && xcodegen generate
-xcodebuild -project WingFoil.xcodeproj -scheme WingFoil -configuration Debug \
-  -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build      # public
+xcodebuild -project WingFoil.xcodeproj -scheme "WingFoil Release" -configuration Debug \
+  -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build      # release, no flags
+xcodebuild -project WingFoil.xcodeproj -scheme "WingFoil Beta" -configuration "Beta Debug" \
+  -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build      # beta (BETA)
 xcodebuild -project WingFoil.xcodeproj -scheme "WingFoil Dev" -configuration "Dev Debug" \
-  -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build      # dev (TUNING)
+  -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build      # dev (BETA DEV TUNING)
 ```
 
-Two TestFlight builds per release from one commit: public build N (`WingFoil`, external
-group, beta review) and dev build N+1 (`WingFoil Dev`, internal group, receives every build
-automatically — including the public one, so the lower number is the canonical one reviewers
-and testers see). `ios/tools/testflight_publish.py <build> --group internal|external --wait`.
-Everything dev-only lives behind `#if TUNING`; the public binary must not contain it.
+**Three channels from one commit** — `docs/channels.md` says which feature is in which, and is
+the single source the website, the store texts and the app's own lists are written from.
+Release (`de.lahmann.wingfoil`, App Store, no flags, iPhone, no watch app or widgets) and beta
+(same bundle id, `BETA`) go to the App Store record as builds N and N+1; dev
+(`de.lahmann.wingfoil.dev`, `BETA DEV TUNING`, iPhone + iPad) is a second app and goes to its
+own record (`--app dev`, `CJ_DEV_APP_ID`). The App Store build takes the lowest number.
+`ios/tools/testflight_publish.py <build> --group internal|external [--app release|dev] --wait`.
+
+Gating is in the app target only — the kit compiles everything. `#if BETA` (true in dev too),
+`#if DEV`, `#if TUNING` (with DEV), `#if !BETA` for the release-only "what is coming" section.
+A door a channel lacks has no UI, no document type, no usage string and no entitlement; the
+two checks that prove it are in docs/testing.md, "Three channels".
 
 ## Rules
 

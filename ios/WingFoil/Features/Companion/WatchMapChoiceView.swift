@@ -1,3 +1,5 @@
+// The watch map picker, and the app's only location prompt — DEV (docs/channels.md).
+#if DEV
 import SwiftUI
 import WingFoilKit
 
@@ -141,3 +143,5 @@ struct WatchMapChoiceView: View {
         }
     }
 }
+
+#endif

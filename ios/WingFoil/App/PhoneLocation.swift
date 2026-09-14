@@ -1,3 +1,8 @@
+// The one place the app asks Core Location anything, and it exists only for the watch
+// map's "Where I am now" — a DEV door (docs/channels.md). The release and beta
+// Info.plists have no NSLocation* string for the phone's own half, so this file must not
+// be in those binaries.
+#if DEV
 import CoreLocation
 import Foundation
 
@@ -134,3 +139,5 @@ final class PhoneLocation: NSObject, CLLocationManagerDelegate {
         Task { @MainActor in self.finish(nil) }
     }
 }
+
+#endif

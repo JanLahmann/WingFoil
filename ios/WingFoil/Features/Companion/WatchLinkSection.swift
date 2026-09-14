@@ -1,3 +1,5 @@
+// Settings → Garmin watch — a DEV door (docs/channels.md).
+#if DEV
 import SwiftUI
 import WingFoilKit
 
@@ -119,3 +121,5 @@ struct WatchLinkSection: View {
         ("S", 180), ("SW", 225), ("W", 270), ("NW", 315),
     ]
 }
+
+#endif

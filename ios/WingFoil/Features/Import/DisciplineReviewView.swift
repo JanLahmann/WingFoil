@@ -1,3 +1,6 @@
+// "Which rig?" after an import is part of windsurf, which is a DEV door
+// (docs/channels.md): release and beta analyse every session as wingfoil and never ask.
+#if DEV
 import SwiftUI
 import WingFoilKit
 
@@ -131,3 +134,5 @@ struct DisciplineReviewView: View {
         return parts.joined(separator: " · ")
     }
 }
+
+#endif

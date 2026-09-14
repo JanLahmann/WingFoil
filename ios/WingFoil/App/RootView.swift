@@ -124,10 +124,17 @@ struct RootView: View {
         // itself, from a sync or a file tapped in another app. It goes through the store's
         // same "is anything else up?" predicate, so it can never stack on the other three —
         // and an automatic pickup never raises it at all, it only leaves the library's banner.
+        //
+        // DEV only (docs/channels.md): "Which rig?" belongs to windsurf, and a channel with
+        // no windsurf switch analyses every session as wingfoil and has nothing to ask. The
+        // store agrees from the other side — `disciplineToReview` is empty without the
+        // switch — so this is the sheet, not the question, that the flag removes.
+        #if DEV
         .sheet(item: Binding(get: { store.disciplineReview },
                              set: { if $0 == nil { store.dismissDisciplineReview() } })) {
             DisciplineReviewView(request: $0)
         }
+        #endif
         // The first thing a first launch shows, in front of the setup card the library
         // would otherwise open on. A cover rather than a sheet: it is one screen with three
         // answers on it and nothing behind it worth peeking at, and a half-swipe that

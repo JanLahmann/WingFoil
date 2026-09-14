@@ -8,8 +8,11 @@ import WidgetKit
 /// asking it to reload timelines when nothing is on a home screen is a no-op.
 enum WidgetRefresher {
 
+    /// A no-op in the release channel, which embeds no widget extension (docs/channels.md).
+    /// The call sites stay unconditional — nudging a widget that is not there was always
+    /// free — but the binary should not carry the call either.
     static func reloadTimelines() {
-        #if !targetEnvironment(macCatalyst)
+        #if BETA && !targetEnvironment(macCatalyst)
         WidgetCenter.shared.reloadAllTimelines()
         #endif
     }
