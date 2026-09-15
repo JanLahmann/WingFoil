@@ -189,7 +189,7 @@
            duration is the part that says how much session is in there. -->
       <p class="drop-alt">
         …or <button class="linkish" id="try-example" type="button">open the example
-        session</button> <span class="dim">— Lago di Garda, 30 Aug · 10 m 45 s</span>
+        session</button> <span class="dim">— Lago di Garda, 30 Aug · 10:45 min</span>
       </p>
 
       <!-- What you get, before you have given anything. A first visitor used to see an
@@ -223,9 +223,14 @@
            breath, because a rider who drops one should learn that here and not from an
            absent section. -->
       <p class="drop-what">
+        <!-- "A .zip of several is fine too." was a promise the engine refuses:
+             lab_bundle/web_entry.py `_unzip` raises "zip contains N recordings; expected
+             exactly one" (ux-audit A3.5, change #5). The drop title eight lines above has
+             always had it right — "(or a .zip containing one)" — so the page contradicted
+             itself within one screen. The correct sentence is the one that stayed. -->
         Garmin <code>.fit</code> files work: from the CleanJibe watch app, from Garmin's own
-        Windsurf profile, or from another wingfoil Connect IQ app. A <code>.zip</code> of
-        several is fine too. <code>.gpx</code> and <code>.tcx</code> work as well — that is
+        Windsurf profile, or from another wingfoil Connect IQ app.
+        <code>.gpx</code> and <code>.tcx</code> work as well — that is
         what a Polar, Suunto or Coros export usually is. There's no pump data in either, and
         unless the file carries its own speed channel the speed records are estimates. Pump
         strokes and takeoff effort need the CleanJibe watch app; everything else works from
@@ -287,7 +292,9 @@
          cannot read, and "Download original file" is the one instruction that helps. -->
     <p class="muted small">Most often the file is not a FIT recording, or it is a converted
       export rather than the original file from the watch. On intervals.icu or Garmin
-      Connect, choose <em>Download original file</em>.</p>
+      Connect, choose <em>Download original file</em>. If the message below counts
+      recordings, the <code>.zip</code> holds more than one — unzip it and drop the single
+      session you want.</p>
     <pre id="error-text"></pre>
   </section>
 
@@ -322,6 +329,14 @@
           <button class="primary" id="save-session" type="button" hidden>Save to library</button>
         </div>
       </div>
+      <!-- The share card is the growth channel, it is two clicks away, and until now
+           nothing on this page said so before the rider happened to read a ghost button
+           (ux-audit A3.3, change #10). One line, on the result head, naming the control
+           by the label it wears. Same words as the line under the homepage's hero card. -->
+      <p class="note" id="card-offer">
+        <strong>Make a card of this.</strong> <em>Share card</em>, above — your track, your
+        numbers, one picture, drawn here and saved here.
+      </p>
       <p class="note highlight-note" id="highlight-note" hidden></p>
       <!-- The four rows that answer "was that a good session" — duration/distance/speed,
            the best 2 s window, the outcome ladder with the two streaks, and the per-hour
@@ -333,6 +348,24 @@
            decided, and a rider whose real session was mis-read has to be able to read it
            against them and disagree rather than be told a verdict. -->
       <p class="note" id="not-a-session-note" hidden></p>
+      <!-- THE ANALYZER'S GLOSSARY (ux-audit A3.2). This page prints `On foil`, `JPH`,
+           `CPH`, `WPH` and the outcome ladder and had no definition link anywhere in it —
+           the only route out was a footer link to /learn/ that does not name a glossary.
+           A `?` beside the block the words are IN, closed by default, costing nothing to
+           a reader who already knows them.
+
+           The lines are not typed here: js/render.js fills the <dl> from GLOSSARY in
+           js/copy.js, which make_copy_js.py generates from docs/copy/glossary.json — the
+           same eight entries the welcome screen and /learn/'s definition list carry, from
+           the one source the kit authors. A <details> rather than a dialog: no library, no
+           focus trap, no script needed to open it, and it is the idiom the periods list
+           on the trends view already uses. -->
+      <details class="glossary" id="metric-glossary">
+        <summary><span class="q" aria-hidden="true">?</span>What these numbers mean</summary>
+        <dl class="glossary-list" id="glossary-list"></dl>
+        <p class="muted small">The thresholds and the full outcome ladder are on
+          <a href="../learn/#counts">How it works</a>.</p>
+      </details>
       <div class="tiles" id="tiles"></div>
     </section>
 
@@ -585,9 +618,22 @@
     <a href="../whats-new/">What&rsquo;s new</a> ·
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">Source and thresholds</a>
   </p>
+  <!-- THE FEEDBACK DOOR (ux-audit A3.5). This was the only reader-facing page on the site
+       without one — the page where the product is actually judged had nowhere to say so.
+       The invitation sentence is docs/copy/feedback.json's, marked so verify_copy.py pins
+       it here the way it pins the six other "Tell us" blocks, and the mailto carries the
+       same three prompts every other body on the site carries. One line, in the footer,
+       because this page's own body belongs to the rider's session. -->
+  <p data-copy="feedback-invitation">
+    A verdict you disagree with, or something you want this to do next?
+    <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
+       data-umami-event="app-feedback-mail">info@cleanjibe.org</a>, or
+    <strong>Menu &rarr; Support &amp; ideas</strong> in the iPhone app, which fills the facts
+    in for you. Ideas and wishes are as welcome as bugs.
+  </p>
   <!-- "and feature counts": the analyzer now counts four things it finishes — an analysis,
        the example, a share card, a save to the library — as a bare event name each. The
-       promise one line up is untouched by that: the counter is told THAT a session was
+       promise in the footer's first line is untouched by that: the counter is told THAT a session was
        analyzed, never a filename, a number out of it, or anything else off the file. -->
   <!-- Same footer line, same place, as the homepage and /invite/. It matters most here:
        this is the page a rider drops a file into, and "your file never leaves this tab"

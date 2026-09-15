@@ -36,3 +36,54 @@ export const PHRASES = {
   "callToAction": "analyze your wingfoil sessions free — cleanjibe.org",
   "captionOffer": "analysed with CleanJibe, free at cleanjibe.org"
 };
+
+/**
+ * The words the product is made of, one line each — the kit's `MetricGlossary`
+ * (docs/copy/glossary.json), which /learn/'s definition list carries and the
+ * analyzer's `?` beside the key-metrics block opens.
+ *
+ * `id` is a slug that outlives a rewording, so it is what a caller keys on.
+ * Entries carry other fields in the JSON; only these three are copied here.
+ */
+export const GLOSSARY = [
+  {
+    "id": "foilShare",
+    "term": "Foil %",
+    "line": "How much of the session was spent flying rather than merely moving."
+  },
+  {
+    "id": "flights",
+    "term": "Flights & touchdowns",
+    "line": "One takeoff starts a flight; a touchdown or a swim ends it. Both are counted."
+  },
+  {
+    "id": "turnVerdicts",
+    "term": "Turn verdicts",
+    "line": "Every turn gets one: flew through, touched down, or fell in."
+  },
+  {
+    "id": "dryStreak",
+    "term": "Dry streak",
+    "line": "How many jibes in a row you stayed out of the water — and the best run of the day."
+  },
+  {
+    "id": "jph",
+    "term": "JPH",
+    "line": "Dry jibes per hour. Falling in more often cannot raise it."
+  },
+  {
+    "id": "cph",
+    "term": "CPH",
+    "line": "Clean jibes per hour: you flew through it, you held your speed, and the ten seconds after it stayed quiet."
+  },
+  {
+    "id": "wph",
+    "term": "WPH",
+    "line": "Swims per hour. The number nobody wants, kept honest anyway."
+  },
+  {
+    "id": "speedRecords",
+    "term": "Speed records",
+    "line": "Your fastest 2 seconds, 10 seconds, 500 m and nautical mile — the same windows the speedsurfing world uses."
+  }
+];

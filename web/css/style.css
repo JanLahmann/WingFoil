@@ -420,6 +420,41 @@ input:focus-visible, button:focus-visible, .btn:focus-visible, .dropzone:focus-v
    a headline with a whole cell to itself. */
 .lib-table .tally i { margin: 0 3px; }
 
+/* ------------------------------------------------------- the metric glossary
+ *
+ * The `?` under the key-metrics block. Closed, one line tall, in the recessive ink: a
+ * reader who knows what CPH is must not be made to scroll past its definition on every
+ * session, and a reader who does not had nowhere at all to look (ux-audit A3.2).
+ *
+ * Same disclosure furniture as `details.period` on the trends view — drawn triangle, no
+ * native marker, so it points the same way in every browser — with the mark itself a
+ * small round `?` rather than a word, because it is a question a rider already has.
+ */
+details.glossary { margin: 0 0 14px; }
+details.glossary > summary {
+  cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px; color: var(--ink-3);
+}
+details.glossary > summary::-webkit-details-marker { display: none; }
+details.glossary > summary .q {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 17px; height: 17px; border-radius: 50%;
+  border: 1px solid var(--line); font: 600 11px/1 var(--sans); color: var(--ink-2);
+}
+details.glossary > summary:hover { color: var(--ink-2); }
+details.glossary > summary:hover .q { border-color: var(--ink-3); color: var(--ink); }
+details.glossary > .glossary-list {
+  margin: 10px 0 0; padding: 10px 0 0; border-top: 1px solid var(--line-soft);
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px 24px;
+}
+/* One cell per entry: the term over its line, rather than a two-column dl that would set
+   a 100-character sentence in a third of the panel's width. */
+.glossary-list .g-entry { min-width: 0; }
+.glossary-list dt { font: 600 13px/1.3 var(--sans); color: var(--ink); }
+.glossary-list dd { margin: 2px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--ink-3); }
+details.glossary > .muted { margin: 10px 0 0; }
+
 .tiles {
   display: grid; gap: 1px; background: var(--line-soft);
   border: 1px solid var(--line-soft); border-radius: 8px; overflow: hidden;

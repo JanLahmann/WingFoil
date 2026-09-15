@@ -197,9 +197,14 @@
                 fell in of 10 jibes with 5 clean, best streaks 8 flew and 8 dry, 45.4 dry
                 jibes per hour, 28.3 clean jibes per hour, 11.3 swims per hour - and a footer
                 carrying the CleanJibe mark, the offer, and a QR code to cleanjibe.org.">
+      <!-- The card is the growth channel and the page showed a picture of one without ever
+           saying you can make one (ux-audit A3.3). One clause, under the picture it is
+           about, naming the control that draws it — "Share card", beside "Save to library"
+           on the analyzer's result head. -->
       <figcaption>
         <b>This is what comes out.</b> One real session, read in a browser — and nothing left
-        the device to make it.
+        the device to make it. <a href="app/#example" data-umami-event="example-card-note">Make
+        a card of this</a>: <strong>Share card</strong>, two clicks.
       </figcaption>
     </figure>
 
@@ -237,24 +242,29 @@
 
     <!-- TWO EQUAL DOORS, because the page has two products to hand over. A stranger arrives
          either wanting to try something in ten seconds or wanting the app on his phone, and
-         both are `.btn primary`: neither is the consolation prize. The example lives in the
-         note under them, where it belongs — it is a way of using the analyzer, not a third
-         door. -->
+         both are `.btn primary`: neither is the consolation prize.
+
+         The example is the THIRD control, and it is a control now rather than the third
+         clause of a note (ux-audit A3.1, change #1): it is the fastest wow in the product —
+         landing page to an analysed session in one click — and it was prose under two
+         buttons, which is where a stranger does not look. Ghost rather than primary,
+         because the two doors stay equal and one page may have only one loud row: a rider
+         who has a file wants the analyzer, and a rider who has none wants this. The note
+         above it lost the clause the button replaced, so the hero says less than it did. -->
     <p class="cta">
       <!-- The hero CTAs are the counted doors: umami's declarative form, so a blocked script
            leaves an ordinary link behind. -->
       <a class="btn primary" href="invite/" data-umami-event="beta-cta-hero">Get the beta</a>
-      <!-- `#example` is a real route, not an anchor: js/app.js runs the bundled session on
-           arrival, so that link delivers the example rather than a drop target. -->
       <a class="btn primary" href="app/" data-umami-event="analyze-cta">Try the analyzer</a>
+      <!-- `#example` is a real route, not an anchor: js/app.js runs the bundled session on
+           arrival, so this button delivers the example rather than a drop target. -->
+      <a class="btn ghost" href="app/#example" data-umami-event="example-cta">See a real session</a>
       <!-- `.cta` is a wrapping flex row: without a full-width basis the note would set
-           itself as a narrow ragged column beside the two buttons at desktop widths. One
+           itself as a narrow ragged column beside the buttons at desktop widths. One
            declaration, stated where it is needed, rather than a class in home.css for a
            single span. -->
       <span class="cta-note" style="flex-basis: 100%">
-        Free. No account. The analyzer runs in your browser — the file is never uploaded, and
-        there is <a href="app/#example" data-umami-event="example-cta">an example session</a>
-        inside if you have no file to hand.
+        Free. No account. The analyzer runs in your browser — the file is never uploaded.
       </span>
     </p>
     <!-- The line that closes the gap /invite/ used to leave open: "installed" is not "this
@@ -485,7 +495,8 @@
     <p class="note" id="tell-us" data-copy="feedback-invitation">
       <strong>Tell us.</strong> Bugs, verdicts you disagree with, and — just as much — what
       you would want this to do next. <strong>Ideas and wishes are as welcome as bugs.</strong> In the app,
-      <strong>Menu &rarr; Support</strong> is the best door, because it prefills the facts;
+      <strong>Menu &rarr; Support &amp; ideas</strong> is the best door, because it prefills the
+      facts;
       otherwise mail <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A">info@cleanjibe.org</a> or open a
       <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">GitHub issue</a>.
       Need something that is only in the beta? Tell us.

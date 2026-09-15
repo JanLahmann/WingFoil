@@ -79,9 +79,9 @@ public enum GettingStartedGuide {
             steps: [
                 .init(number: 1,
                       title: "Install the watch app",
-                      detail: "**CleanJibe Wingfoil Watch App** on the Connect IQ store, from "
-                          + "the web or from Connect IQ inside the Garmin Connect app. No "
-                          + "key, no account."),
+                      detail: "**CleanJibe Wingfoil Tracker (Beta)** on the Connect IQ store, "
+                          + "from the web or from Connect IQ inside the Garmin Connect app. "
+                          + "No key, no account."),
                 .init(number: 2,
                       title: "Record and save",
                       detail: "Press START, pick **CleanJibe** from the activity list, wait "
