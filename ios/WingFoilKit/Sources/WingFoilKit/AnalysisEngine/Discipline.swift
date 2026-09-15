@@ -151,7 +151,7 @@ public enum Discipline: String, Sendable, Codable, CaseIterable, Equatable {
 
 // MARK: - The stamp in `engineVersion`
 
-/// How a run under a non-default preset marks itself: `"0.18.0+disc.windsurfFin"`.
+/// How a run under a non-default preset marks itself: `"0.19.0+disc.windsurfFin"`.
 ///
 /// Same trick, and for the same reason, as `TuningStamp` — `SessionAnalysis.engineVersion` is
 /// *already* the staleness key (`SessionIngestor.reanalyzeStale()` sweeps on it,
@@ -160,7 +160,7 @@ public enum Discipline: String, Sendable, Codable, CaseIterable, Equatable {
 /// discipline re-derives it lazily through the one mechanism that already exists, and a
 /// number on the screen can always be traced back to the preset that produced it.
 ///
-/// It composes **inside** the tuning stamp — `0.18.0+disc.windsurfFin+tuned.2.a1b2c3d4` — so
+/// It composes **inside** the tuning stamp — `0.19.0+disc.windsurfFin+tuned.2.a1b2c3d4` — so
 /// `TuningStamp.parse` keeps working unchanged on the tail it owns.
 public enum DisciplineStamp: Sendable {
 

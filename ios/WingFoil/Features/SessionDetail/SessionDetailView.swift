@@ -95,6 +95,19 @@ struct SessionDetailView: View {
                     KeyMetricsView(metrics: KeyMetrics.make(summary: detail.analysis.summary,
                                                             records: detail.analysis.records))
                         .id("key")
+                    // **Why this page's numbers are in nothing else.** One line, directly
+                    // under the block it is about, so a rider who wonders where his session
+                    // went in the totals reads the answer beside the evidence for it
+                    // (docs/presentation.md, "Not a session").
+                    if !detail.analysis.summary.isSession {
+                        Text(NotASessionNote.line(
+                            reason: detail.analysis.summary.notASessionReason,
+                            durationS: detail.analysis.summary.durationS,
+                            distanceKm: detail.analysis.summary.distanceKm))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     // Below the verdict now, not above it. It is a provenance footnote
                     // about one metric, and it was the most prominent element on the screen
                     // after the title (§1.3). One line: the numbers behind it are on Log,

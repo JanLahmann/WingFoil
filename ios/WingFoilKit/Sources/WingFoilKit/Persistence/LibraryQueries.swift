@@ -211,10 +211,18 @@ public struct LibraryStore: Sendable {
     /// `.fit` files, a friend's recording is one tap on a chat attachment away from the
     /// library, and a personal best is a claim about a person — the third condition here
     /// is what keeps it one.
+    ///
+    /// A recording that is **not a session** (`isSession = 0`, engine 0.19.0,
+    /// docs/algorithms.md "Not a session") is the fourth, and the newest: the thirty seconds
+    /// a rider records on the beach and stops again. Thirteen of them turned up in Jan's
+    /// library on 13–14 September 2026 — 0:00–0:24 min, 0.0 km, no foil time — and every one
+    /// of them counted in the totals and pulled the Trends "on foil" line to zero on its way
+    /// past. Like the other three this is an exclusion from *numbers* only: the row stays in
+    /// the list, quietly tagged, and its page still opens.
     static func clause(_ filter: LibraryFilter, alias: String) -> (join: String, where: String,
                                                                    args: StatementArguments) {
         var conditions: [String] = ["\(alias).isExample = 0", "\(alias).isProvisional = 0",
-                                    "\(alias).rider IS NULL"]
+                                    "\(alias).isSession = 1", "\(alias).rider IS NULL"]
         var args = StatementArguments()
         var join = ""
         if let gearId = filter.gearId {
@@ -457,7 +465,7 @@ public struct LibraryStore: Sendable {
                 let rows = try SessionRow.fetchAll(db, sql: """
                     SELECT s.* FROM session s JOIN session_gear sg ON sg.sessionId = s.id
                     WHERE sg.gearId = ? AND s.isExample = 0 AND s.isProvisional = 0
-                      AND s.rider IS NULL
+                      AND s.isSession = 1 AND s.rider IS NULL
                     ORDER BY s.startDate
                     """, arguments: [item.id])
                 return Self.aggregate(item, rows: rows)
@@ -490,6 +498,10 @@ public struct LibraryStore: Sendable {
     }
 
     /// The combo the rider used most recently — the default for a freshly imported session.
+    ///
+    /// "Most recently" over the sessions he actually rode: the example, a friend's afternoon
+    /// and a thirty-second beach recording are none of them evidence of what is rigged on the
+    /// van roof today, and the last of the three is exactly the kind of row that lands newest.
     public func lastUsedGear() async throws -> [GearKind: GearRow] {
         try await database.writer.read { db in
             var out: [GearKind: GearRow] = [:]
@@ -498,6 +510,7 @@ public struct LibraryStore: Sendable {
                     SELECT g.* FROM gear g JOIN session_gear sg ON sg.gearId = g.id
                     JOIN session s ON s.id = sg.sessionId
                     WHERE sg.kind = ? AND g.active = 1
+                      AND s.isExample = 0 AND s.isSession = 1 AND s.rider IS NULL
                     ORDER BY s.startDate DESC LIMIT 1
                     """, arguments: [kind.rawValue])
             }
@@ -564,13 +577,21 @@ public struct LibraryStore: Sendable {
     /// sessions rather than a full `SessionRow` fetch per spot — only the two aggregates
     /// are ever read. `startDate` is stored as a sortable datetime, so `MAX` is the
     /// chronological last visit; a spot with no sessions still appears, with 0 / nil.
+    ///
+    /// Counted over the sessions the rider actually rode — the same four exclusions
+    /// `clause` applies, spelled here because this query is a `GROUP BY` over the raw table
+    /// rather than a filtered fetch. "Torbole · 3" must mean three afternoons, not two
+    /// afternoons and the thirty seconds he recorded in the car park.
     public func spots() async throws -> [SpotAggregate] {
         try await database.writer.read { db in
             var counts: [String: Int] = [:]
             var lastVisits: [String: Date] = [:]
             let rows = try Row.fetchAll(db, sql: """
                 SELECT spotId, COUNT(*) AS sessions, MAX(startDate) AS lastVisit
-                FROM session WHERE spotId IS NOT NULL GROUP BY spotId
+                FROM session WHERE spotId IS NOT NULL
+                  AND isExample = 0 AND isProvisional = 0 AND isSession = 1
+                  AND rider IS NULL
+                GROUP BY spotId
                 """)
             for row in rows {
                 guard let id: String = row["spotId"] else { continue }
@@ -591,26 +612,60 @@ public struct LibraryStore: Sendable {
         }
     }
 
-    /// Names auto-named spots from a reverse-geocoding closure. Anything the closure
-    /// cannot resolve (offline, no result) keeps its "Spot N" placeholder.
-    public func nameAutoSpots(
-        using locality: @Sendable (Double, Double) async -> String?) async throws {
-        let pending = try await database.writer.read { db in
-            try SpotRow.filter(Column("autoNamed") == true).fetchAll(db)
+    /// How many spots are still wearing a `"Spot N"` placeholder — the work a naming pass
+    /// has left to do, and the only thing that makes "Look up names again" worth offering.
+    public func unnamedSpotCount() async throws -> Int {
+        try await database.writer.read { db in
+            try SpotRow.fetchAll(db)
+                .filter { $0.autoNamed && SpotClusterer.isPlaceholderName($0.name) }
+                .count
         }
+    }
+
+    /// Names every spot still wearing a placeholder, from a reverse-geocoding closure.
+    /// Returns how many are **still** unnamed afterwards, so the caller can decide whether
+    /// a retry is worth scheduling. Anything the closure cannot resolve (offline, no
+    /// result) keeps its `"Spot N"` and is asked again on the next pass.
+    ///
+    /// The candidate set is `autoNamed && isPlaceholderName`, not `autoNamed` alone. A
+    /// looked-up name stays `autoNamed` — the flag distinguishes "the rider renamed this"
+    /// from "we did", and it has to, or a rename could not survive the next pass — so
+    /// asking on `autoNamed` alone re-geocoded every spot in the library at every launch:
+    /// a network round trip, and one coordinate leaving the phone, for an answer already on
+    /// the screen (docs/presentation.md, "What leaves the phone").
+    @discardableResult
+    public func nameAutoSpots(
+        using locality: @Sendable (Double, Double) async -> String?) async throws -> Int {
+        let pending = try await database.writer.read { db in
+            try SpotRow.fetchAll(db)
+                .filter { $0.autoNamed && SpotClusterer.isPlaceholderName($0.name) }
+        }
+        var unresolved = 0
         for spot in pending {
-            guard let name = await locality(spot.lat, spot.lon), !name.isEmpty else { continue }
+            guard let name = await locality(spot.lat, spot.lon), !name.isEmpty else {
+                unresolved += 1
+                continue
+            }
             try await database.writer.write { db in
-                // Still auto-named: a later re-cluster may replace it, a rename won't.
+                // Still auto-named: a later rename wins over this, a re-cluster carries it.
                 try db.execute(sql: "UPDATE spot SET name = ? WHERE id = ? AND autoNamed = 1",
                                arguments: [name, spot.id])
             }
         }
+        return unresolved
     }
 
     public func recluster(radiusM: Double = SpotClusterer.defaultRadiusM) async throws {
         try await database.writer.write { db in
             try SpotClusterer.recluster(db: db, radiusM: radiusM)
+        }
+    }
+
+    /// Deletes every spot no session points at — see `SpotClusterer.pruneEmptySpots`.
+    @discardableResult
+    public func pruneEmptySpots() async throws -> Int {
+        try await database.writer.write { db in
+            try SpotClusterer.pruneEmptySpots(db: db)
         }
     }
 

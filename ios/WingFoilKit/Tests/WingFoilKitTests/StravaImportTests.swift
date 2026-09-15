@@ -271,7 +271,7 @@ struct StravaImportTests {
 
     @Test func theArchivedFilenameCarriesTheActivityName() {
         #expect(StravaImport.filename(for: Self.activity())
-                == "14123456789_wingfoil-torbole_strava.gpx")
+                == "14123456789_Wingfoil-Torbole_strava.gpx")
         #expect(StravaImport.filename(for: Self.activity(name: nil))
                 == "14123456789_session_strava.gpx")
     }

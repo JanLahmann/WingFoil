@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.18.0",
+  "engineVersion": "0.19.0",
   "config": {
     "discipline": "windsurfFin",
     "foilEntrySpeed": 20.0,
@@ -719,6 +719,8 @@
     }
   },
   "summary": {
+    "isSession": true,
+    "notASessionReason": null,
     "foilTimeS": 414.0,
     "foilPct": 65.2,
     "flightCount": 2,

@@ -266,6 +266,43 @@ not committed, so the test is `skipif`-guarded and skips in CI; the repo-only ha
 argument is `test_raising_the_marginal_speed_revives_the_rung`, on a synthetic jibe, which runs
 everywhere.
 
+Engine 0.19.0 **says whether a recording is a session at all** — `summary.isSession` and
+`summary.notASessionReason` (docs/algorithms.md, "Not a session"). **No number in any golden
+moves**: the diff on all 21 is the version stamp and the two new keys, and every one of them
+reads `true` / `null`, which is the point — the rule is not allowed to reach a recording the
+project already calls a session. The presentation goldens move in their version stamp alone.
+
+It is checked from four sides, because a rule that only ever *fails* to fire has not been
+shown to be about anything.
+
+1. **The rule itself**, on the boundary and on both sides of it, in all three implementations:
+   `test_the_not_a_session_rule` (lab), `SessionVerdictTests` (kit),
+   `test_the_not_a_session_rule_is_the_engines_and_this_module_repeats_it` (`library.py`, run
+   from `lab/tests/test_library.py`). Each pins **120 s and 200 m** explicitly, so the three
+   cannot drift apart in silence. Each also asserts the case the conjunction exists for: a
+   *skunked* afternoon — 0 s on the foil, 80 minutes, 2.1 km — is a session.
+2. **The corpus is untouched**: `test_every_corpus_golden_is_a_session` and
+   `SessionVerdictTests.everyCorpusGoldenIsASession` sweep `fixtures/goldens/*.expected.json`
+   and require `isSession` true and the reason null on every one.
+3. **The one fixture that would fail it.** `smoke-60s` is 59.0 s long — *inside* the 120 s
+   floor — and is a session only because 30 of those 59 seconds were spent flying.
+   `test_the_smoke_fixture_would_fail_the_duration_floor_without_its_foil_time` asserts both
+   halves: that the fixture is a session, and that the same numbers with the foil time taken
+   away come back `(False, "too_short")`. That is the corpus proving the first conjunct is
+   what protects a real session, rather than the thresholds happening to miss it.
+4. **The exclusion actually excludes.** `verify_library.py` §1c and
+   `test_a_recording_that_is_not_a_session_counts_in_nothing` put one junk row beside one real
+   one and check the aggregate, the totals, the trend stamps, a month and a typed range all
+   report one; the kit's `LibraryTests` do the same through `LibraryStore.clause`.
+
+Storage moves with it: GRDB **v16** (`isSession`, `notASessionReason`) and digest **schema
+10**. Both *seed* rather than wait — the migration re-derives the rule from
+`foilTimeS`/`rateDurationS`/`distanceKm`, and `library.entry_is_session` does the same for a
+stored row written before schema 10 — so a library's junk leaves the totals immediately
+rather than whenever re-analysis reaches that row. A row or document carrying **none** of
+those three numbers is not judged at all and reads as a session: an absence is not a verdict,
+the same rule the four session rates keep.
+
 ### Fixture provenance — the converted recordings, and why
 
 Every fixture in `fixtures/sessions/**` is one of Jan's own recordings kept as it came off

@@ -291,7 +291,7 @@ struct HealthImportTests {
                                          utcOffsetS: 7200)
         // 01:46 UTC, which is 03:46 on the clock the session was ridden on — the name is the
         // rider's afternoon, not the reader's.
-        #expect(name == "2025-08-24-0346-health.cjw")
+        #expect(name == "2025-08-24-0346_wingfoil_health.cjw")
     }
 
     // MARK: - Analysis
