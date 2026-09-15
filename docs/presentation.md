@@ -2373,7 +2373,8 @@ the App Store build (no compile flags, iPhone, no watch app or widgets); beta ad
 (GPX/TCX, the dedicated **Garmin export ZIP…** door with its Export-Your-Data walkthrough —
 the ZIP itself is read in every channel through *FIT or ZIP…*, docs/channels.md — Apple
 Health, the Apple Watch app and widgets, the session
-video, the library's grouping and filter controls, the Beta section); dev adds `DEV` and
+video, the library's grouping and filter controls, the Beta section and its update
+reminder); dev adds `DEV` and
 `TUNING` on top (the Garmin link and its Settings section, windsurf and the per-discipline
 sets, the Tuning section below, iPad).
 
@@ -3187,6 +3188,55 @@ the rider is already looking, and "Not now" buys a fortnight of quiet rather tha
 conversation. Either button answers it and the card is gone. **Settings → Beta → Send usage
 report** is the permanent door, for the rider who did not wait to be asked and the one who
 said Not now and changed his mind.
+
+### The beta's update reminder
+
+**Beta and dev only** (`#if BETA`, docs/channels.md). TestFlight *offers* a build; it does not
+insist on one, and a tester with notifications off goes on riding — and reporting — with a
+build we have already read the reports of and fixed. The cost is reports against the wrong
+build and a rider who believes a mended thing is still broken, so the app says so itself.
+
+**One static file is the whole mechanism.** `web/app/version.json` on cleanjibe.org carries,
+per channel, four things: `minBuild` — *the oldest build still worth a report*, not the newest
+that exists — one sentence in Jan's words, a level, and where *Update* goes. Jan edits it by
+hand and commits it with any other web change; there is no server, no account and no push, and
+deleting a channel's entry is how a reminder is taken back off every phone
+(web/app/version.README.md says who edits it and what the two levels mean).
+
+**What the app does with it.** At launch and on every return to the foreground, at most once
+every 24 hours, it fetches the file, looks up its own channel (`ChannelFeatures.channel`) and
+compares `minBuild` with its own `CFBundleVersion`. The comparison is `UpdateVerdict.decide`
+in the kit, where the suite holds it; the fetching, the remembering and the drawing are
+`UpdateReminder` / `UpdateReminderViews` in the app. A build *at or above* `minBuild` sees
+nothing, and so does a build *ahead* of it — a dev build cut this morning is never told to go
+back. The last answer is kept in `UserDefaults`, so the line is on the first frame of the next
+launch rather than only on the one launch in twelve that falls after the 24 hours.
+
+**Two levels, and only two.** `remind` is one dismissable line at the top of the library, above
+the setup card and beside the usage ask, with the message, an *Update* link and a ✕. The ✕ is
+remembered against that `minBuild` and not as a flag, so the next raise of the number asks
+again by itself; Settings still says a newer build is out. `insist` is one full screen with the
+message and an *Update* button, in front of the whole app and not dismissable — the third
+screen in the app argued for that way (`LibraryNewerThanAppView`, `StartOverRelaunchView`),
+because behind a banner the four tabs would go on inviting the rider to record, import and
+report with the build the screen exists about. It says plainly that nothing has been changed
+and nothing is lost. A word in the file that is neither reminds rather than insists: a typo
+must not be able to put a screen in front of every tester.
+
+**Failure is silence, everywhere.** Offline, a 404, a half-written file, a build number the
+plist does not carry: the rider is told nothing, the last answer is kept, and the app tries
+again later. He did not ask a question, so he gets no error. The one place he *did* ask is
+**Settings → Beta → Check for a newer build now**, which ignores both clocks and prints the
+running build, the verdict in one sentence and when the file was last read — the only surface
+that names all four verdicts, and the way back for the tester who closed the line and changed
+his mind.
+
+**What it costs him.** One GET of about three hundred bytes a day, to the site he installed
+the app from, with no query string, no header of ours, no cookie store and no identifier — it
+does not even say which build is asking, because the comparison happens on the phone. The
+privacy page carries it as the ninth entry under "what leaves your phone". The release build
+does none of this: the whole feature is behind `#if BETA`, and `strings` on the App Store
+binary finds no `version.json` (docs/testing.md, "Three channels").
 
 ### Start over
 

@@ -1265,6 +1265,68 @@ successful open stamps for itself, so any value at or below it simply opens. Res
 moves the too-new file aside to `wingfoil.sqlite.v99.newer` and builds a fresh one from the
 backup; the aside file is never deleted, so the recipe is reversible by hand.
 
+### The beta's update reminder — pointing a build at a file of your own
+
+The switch is one static file on the website (`web/app/version.json`, docs/presentation.md
+"The beta's update reminder"), so testing it means serving a file of your own and telling the
+build to read that one instead. `UI_VERSION_URL` does exactly that, in **DEBUG only** — the
+shipped build reads one URL and cannot be told otherwise.
+
+```sh
+mkdir -p /tmp/cjver && cd /tmp/cjver
+cat > version.json <<'JSON'
+{"channels": {
+  "beta": {"minBuild": 999, "message": "Build 999 fixes the thing you just reported.",
+           "level": "remind", "url": "https://testflight.apple.com/join/nygqGGcn"},
+  "dev":  {"minBuild": 999, "message": "Build 999 fixes the thing you just reported.",
+           "level": "remind", "url": "itms-beta://"}
+}}
+JSON
+python3 -m http.server 8765        # leave it running
+```
+
+Then run the beta or dev scheme with `UI_VERSION_URL=http://localhost:8765/version.json` in
+the scheme's environment (Product → Scheme → Edit Scheme → Run → Arguments), or from the
+command line against a booted simulator:
+
+```sh
+SIMCTL_CHILD_UI_VERSION_URL=http://localhost:8765/version.json \
+  xcrun simctl launch booted de.lahmann.wingfoil.dev
+```
+
+(`SIMCTL_CHILD_…` is the environment of `simctl` itself rather than an argument to it — the
+same spelling every other hook in this file uses.) A `file://` URL works too and needs no
+server at all — `UI_VERSION_URL=file:///tmp/cjver/version.json` — because the reader only
+insists on a 200 when the answer came over HTTP.
+
+`minBuild: 999` is above anything we build, so the reminder fires at once. What to look for:
+
+* **`remind`** — one line at the top of the library with the message, *Update* and a ✕. The ✕
+  takes it away and keeps it away; **raise `minBuild` to 1000 in the file** (the server serves
+  the new bytes immediately) and it comes back on the next foregrounding, which is the whole
+  of the dismissal rule (`UpdateVerdict`, `UpdateVerdictTests`).
+* **`insist`** — change `level` and foreground the app: one full screen with the message and
+  *Update*, in front of the tabs, with no way past it. Set `minBuild` back to `1` to get out.
+* **Silence** — stop the server, or delete the channel's entry: nothing appears, nothing is
+  said, and the last answer is kept. Settings → Beta → *Check for a newer build now* is the
+  one place that shows what happened; it prints the running build, the verdict and the clock.
+* **The 24-hour rule** — the second launch says nothing new because the file is not read
+  again; the Settings row ignores that and reads it now. To start from nothing, *Start over*
+  (Settings → Beta) clears the three keys with everything else, or
+  `xcrun simctl spawn booted defaults delete de.lahmann.wingfoil.dev update.lastCheck.v1`.
+
+**`UI_VERSION_URL` is the one `UI_` hook that switches the feature *on*.** Every other one
+switches it off: a banner at the top of the library would change every screenshot, so the
+reminder stays silent whenever any `UI_…` variable is set and this one is not — the same rule,
+and the same reason, as `Usage.askIsDue`.
+
+**And the release check.** The whole feature is `#if BETA`, so the App Store binary must not
+contain the URL at all:
+
+```sh
+strings ios/build/.../WingFoil.app/WingFoil | grep -c version.json    # 0
+```
+
 ### Ground-truth labels — the CSV the dev build exports
 
 The dev build lets Jan label a counted turn with what actually happened — *I flew · I touched ·
