@@ -278,46 +278,37 @@
           <tr>
             <th class="l">Class</th>
             <th class="l">You record with</th>
-            <th class="l">You get</th>
-            <th class="l">You do not get</th>
+            <th class="l">What you get</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="l stack-lead">Class A · Garmin watch app</td>
+            <td class="l stack-lead" data-copy="class-name">Class A · Garmin watch app</td>
             <td class="l" data-th="You record with">The CleanJibe watch app on a Garmin</td>
-            <td class="l" data-th="You get">Everything: foil time, flights, every turn verdict
-                and clean jibe, certified speed records, the wind axis, pump strokes and
-                takeoff attempts</td>
-            <td class="l" data-th="You do not get">Nothing missing</td>
+            <td class="l" data-th="What you get" data-copy="class-line">Everything: foil time, flights, every turn verdict and clean jibe, certified speed records,
+                the wind axis, pump strokes and takeoff attempts.</td>
           </tr>
           <tr>
-            <td class="l stack-lead">Class B · any speed-certified file</td>
+            <td class="l stack-lead" data-copy="class-name">Class B · any speed-certified file</td>
             <td class="l" data-th="You record with">Any other FIT with a measured speed channel
                 — Garmin&rsquo;s own Windsurf profile, another Connect IQ app</td>
-            <td class="l" data-th="You get">Foil time, flights, turn verdicts and clean jibes,
-                <strong>certified</strong> speed records, the wind axis</td>
-            <td class="l" data-th="You do not get">Pump strokes and takeoff attempts — shown as
-                absent, never as zero</td>
+            <td class="l" data-th="What you get" data-copy="class-line">Everything except pump strokes and takeoff attempts, which need a wrist accelerometer nothing
+                else records. Speed records certify.</td>
           </tr>
           <tr>
-            <td class="l stack-lead">Class B+ · Apple Watch app<span class="tag beta">beta</span></td>
-            <td class="l" data-th="You record with">The CleanJibe Apple Watch app: class b
-                speed, plus the 50&nbsp;Hz wrist accelerometer</td>
-            <td class="l" data-th="You get">Everything class b gets, and pump strokes and
-                takeoff attempts, analysed on the phone</td>
-            <td class="l" data-th="You do not get">Nothing missing; the watch itself detects
-                nothing live</td>
+            <td class="l stack-lead" data-copy="class-name beta-door">Class B+ · Apple Watch app<span class="tag beta" data-copy="aside">beta</span></td>
+            <td class="l" data-th="You record with"><span data-copy="beta-door">The CleanJibe Apple Watch app: class&nbsp;B speed,
+                plus the 50&nbsp;Hz wrist accelerometer</span></td>
+            <td class="l" data-th="What you get" data-copy="class-line">Everything class B gets, and pump strokes and takeoff attempts too: the watch app records the
+                wrist at 50 Hz and the phone analyses it.</td>
           </tr>
           <tr>
-            <td class="l stack-lead">Class C · positions only</td>
+            <td class="l stack-lead" data-copy="class-name">Class C · positions only</td>
             <td class="l" data-th="You record with">Positions only: Strava, a <code>.gpx</code>,
                 a <code>.tcx</code> without speed, a phone in a pocket</td>
-            <td class="l" data-th="You get">Foil time, flights, turn verdicts and clean jibes,
-                the wind axis, and speed records <strong>estimated from positions</strong> and
-                marked uncertified</td>
-            <td class="l" data-th="You do not get">Certified records, pump strokes, takeoff
-                attempts</td>
+            <td class="l" data-th="What you get" data-copy="class-line">Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are
+                estimated from positions and marked uncertified, and there are no pump strokes or takeoff
+                attempts.</td>
           </tr>
         </tbody>
       </table>
@@ -412,7 +403,7 @@
           </tr>
           <tr>
             <td class="l stack-lead">Polar · Suunto · COROS</td>
-            <td class="l" data-th="Class">b with a FIT, c with a GPX</td>
+            <td class="l" data-th="Class">Class B with a FIT, Class C with a GPX</td>
             <td class="l" data-th="How it gets in">intervals.icu, or the iOS share sheet from the vendor's app</td>
             <td class="l" data-th="Speed records">FIT certifies; GPX does not, TCX only with a
                 speed channel — and GPX and TCX are read by the beta<span class="tag beta">beta</span></td>
@@ -571,9 +562,9 @@
 
     <!-- The shared block, in the same words as the homepage, /invite/, /start/ and
          /whats-new/. -->
-    <p class="note" id="tell-us">
-      <strong>Tell us.</strong> Bugs, verdicts you disagree with, and — just as much —
-      <strong>ideas and wishes</strong>: what you would want this to do next. In the app,
+    <p class="note" id="tell-us" data-copy="feedback-invitation">
+      <strong>Tell us.</strong> Bugs, verdicts you disagree with, and — just as much — what
+      you would want this to do next. <strong>Ideas and wishes are as welcome as bugs.</strong> In the app,
       <strong>Menu &rarr; Support</strong> is the best door, because it prefills the facts;
       otherwise mail <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A">info@cleanjibe.org</a> or open a
       <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">GitHub issue</a>.

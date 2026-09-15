@@ -24,9 +24,14 @@ Run it:
 Nothing but the standard library, and one line of PASS/FAIL per target.
 
 **Adding a target** is one entry in `TARGETS` below — a path, which blocks of it to read,
-and which of the three rule sets apply. `.md` targets can name fenced code blocks by the
-heading above them; `.html` targets are read as visible text. The web verifier
-(`web/tools/verify_links.py`) runs this file over `web/**.html` the same way.
+which of the three rule sets apply, and (for a page) which marked elements to cut out
+first. `.md` targets can name fenced code blocks by the heading above them; `.html` targets
+are read as visible text, minus every element whose `data-copy` carries one of the target's
+`strip` tokens. The website's two release-facing pages are targets here for exactly that
+reason: the beta lists say what is *not* in the release, and reading them would be reading
+the exception as the rule. `web/tools/verify_copy.py` is the other half of the web's pin —
+it holds the pages to the JSON's words and reads this file's `allow` map so an exemption is
+written down once.
 
 **Exemptions** are per (word, path prefix), written down in `phrases.json` →
 `lexicon.exemptions` for the vocabulary, and in a target's own `allow` map for the other two.
@@ -63,6 +68,11 @@ class Target:
     rules: tuple[str, ...] = (FORBIDDEN_DOORS, STRAVA, LEXICON)
     #: term → why it is allowed here. Printed whenever it fires.
     allow: dict[str, str] = field(default_factory=dict)
+    #: `data-copy` tokens whose elements are cut out of an `.html` target before it is
+    #: read. The channel lists say what is NOT in the release on purpose, and so does
+    #: anything marked `beta-door`; scanning them would be reading the exception as the
+    #: rule. The same tokens are what `web/tools/verify_copy.py` pins the lists by.
+    strip: tuple[str, ...] = ()
 
 
 # ---------------------------------------------------------------------------- the targets
@@ -112,6 +122,41 @@ TARGETS: list[Target] = [
             "carried": "named as a word the copy does not use",
         },
     ),
+    # The website is copy a stranger reads before he has anything installed, so the same
+    # three rules apply to it — with one scope. /invite/, /watches/ and /start/ EXIST to
+    # describe the beta and to walk a tester into it; running the door rule over them would
+    # be running it over the exception. The two pages below are the ones that speak for the
+    # product rather than for the beta: the front door and the analyzer.
+    Target(
+        label="the front door · what the site promises",
+        path="web/index.html",
+        strip=("channels-beta", "channels-dev", "beta-door"),
+        allow={
+            "gpx": (
+                "the BROWSER ANALYZER reads .gpx and .tcx itself — it is not the App Store "
+                "app and has no channels — and the class C row names the two formats as a "
+                "kind of recording, not as a door. The iPhone's GPX door is in the beta "
+                "list, which is stripped above"
+            ),
+            "tcx": "the same two places as \"gpx\", for the same reason",
+            "windsurf": (
+                "Garmin's own Windsurf activity profile, named in the class B row as a "
+                "recording source — not the dev windsurf discipline, which is in the dev "
+                "list and stripped above"
+            ),
+        },
+    ),
+    Target(
+        label="the browser analyzer",
+        path="web/app/index.html",
+        # The door rule does not apply here and is not exempted away: /app/ is a DIFFERENT
+        # PRODUCT. It is the zero-server analyzer, it ships from this repository to a static
+        # host with no channels at all, and it reads .fit, .gpx and .tcx today. A promise it
+        # makes about file formats is one it keeps in the tab the reader already has open.
+        # The Strava sentence and the vocabulary are the site's everywhere, this page too.
+        rules=(STRAVA, LEXICON),
+        strip=("channels-beta", "channels-dev", "beta-door"),
+    ),
     Target(
         label="TestFlight metadata",
         path="ios/store/testflight.md",
@@ -135,23 +180,43 @@ KIT_SOURCE_DIRS = [
 
 
 class _Text(HTMLParser):
-    """Visible text of an HTML page: no tags, no script, no style."""
+    """Visible text of an HTML page: no tags, no script, no style.
 
-    def __init__(self) -> None:
-        super().__init__()
+    `strip` is a set of `data-copy` tokens; an element carrying one of them contributes no
+    text at all, nor do its children. `data-copy` is a space-separated token list like
+    `class`, so one cell can be both a `class-name` and a `beta-door`.
+    """
+
+    #: Elements that never have an end tag, so the stack below must not wait for one.
+    VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta",
+            "param", "source", "track", "wbr", "path", "circle", "rect", "line",
+            "polyline", "polygon", "use", "stop", "ellipse"}
+
+    def __init__(self, strip: tuple[str, ...] = ()) -> None:
+        super().__init__(convert_charrefs=True)
         self.parts: list[str] = []
-        self._skip = 0
+        self._strip = set(strip)
+        #: The open elements, and whether each one silences the text inside it.
+        self._stack: list[tuple[str, bool]] = []
+
+    def _silent(self) -> bool:
+        return any(quiet for _, quiet in self._stack)
 
     def handle_starttag(self, tag, attrs):
-        if tag in ("script", "style"):
-            self._skip += 1
+        tokens = set((dict(attrs).get("data-copy") or "").split())
+        quiet = tag in ("script", "style") or bool(tokens & self._strip)
+        if tag in self.VOID or (self.get_starttag_text() or "").rstrip().endswith("/>"):
+            return
+        self._stack.append((tag, quiet))
 
     def handle_endtag(self, tag):
-        if tag in ("script", "style") and self._skip:
-            self._skip -= 1
+        for index in range(len(self._stack) - 1, -1, -1):
+            if self._stack[index][0] == tag:
+                del self._stack[index:]
+                return
 
     def handle_data(self, data):
-        if not self._skip:
+        if not self._silent():
             self.parts.append(data)
 
 
@@ -175,8 +240,9 @@ def copy_of(target: Target) -> tuple[str | None, list[str]]:
         return None, [f"missing file: {target.path}"]
     raw = path.read_text(encoding="utf-8")
     if path.suffix == ".html":
-        parser = _Text()
+        parser = _Text(target.strip)
         parser.feed(raw)
+        parser.close()
         return "\n".join(parser.parts), []
     if target.blocks is None:
         return raw, []
