@@ -82,23 +82,24 @@ import Testing
         let privacy = HelpCatalog.topic(.icuPrivacy)
         #expect(privacy.body.contains(IcuSetupGuide.privacyNote))
 
-        // The setup section is reachable from the index and holds exactly these eleven, in
+        // The setup section is reachable from the index and holds exactly these twelve, in
         // this order — the example session sits second, right after the path it is an
-        // alternative to; the Apple Workout app sits third because for a rider with no
-        // Garmin it is not a footnote about data quality but the whole way in (ADR-017);
-        // Strava and the share sheet follow it for exactly the same reason (ADR-023), with
-        // "Recording with a phone only" beside the share-sheet topic because it is the same
-        // reader one step further down — no Garmin, no Apple Watch, and now no watch at all
-        // — and the watch table under them answering "will mine work" once instead of a
-        // third of an answer in each; the two intervals.icu troubleshooting topics stay
-        // together; and the backup topic sits under them because it is the one a rider reads
-        // before he leaves a phone rather than when he arrives on one — with "Sending
-        // feedback" last of all, which is the section's way back out: every topic above it
-        // is how a session gets in, and that one is what to do when it did not.
+        // alternative to; the two Apple doors sit third and fourth because for a rider with
+        // no Garmin they are not a footnote about data quality but the whole way in
+        // (ADR-017); Strava and the share sheet follow them for exactly the same reason
+        // (ADR-023), with "Recording with a phone only" beside the share-sheet topic
+        // because it is the same reader one step further down — no Garmin, no Apple Watch,
+        // and now no watch at all — and the watch table under them answering "will mine
+        // work" once instead of a third of an answer in each; the two intervals.icu
+        // troubleshooting topics stay together; and the backup topic sits under them
+        // because it is the one a rider reads before he leaves a phone rather than when he
+        // arrives on one — with "Sending feedback" last of all, which is the section's way
+        // back out: every topic above it is how a session gets in, and that one is what to
+        // do when it did not.
         #expect(HelpCatalog.topics(in: .setup).map(\.id)
-                == [.icuSetup, .exampleSession, .appleWorkoutApp, .stravaImport,
-                    .shareFromWatchApp, .phoneOnly, .whichWatch, .icuTroubleshooting,
-                    .icuPrivacy, .libraryBackup, .sendingFeedback])
+                == [.icuSetup, .exampleSession, .appleWatchApp, .appleWorkoutApp,
+                    .stravaImport, .shareFromWatchApp, .phoneOnly, .whichWatch,
+                    .icuTroubleshooting, .icuPrivacy, .libraryBackup, .sendingFeedback])
     }
 
     /// The topic for the rider who owns no Garmin (ADR-017). It has one job — get him from
@@ -197,7 +198,8 @@ import Testing
     @Test func theBackupTopicSaysWhatIsCoveredAlreadyAndWhatIsNot() {
         let topic = HelpCatalog.topic(.libraryBackup)
         #expect(topic.section == .setup)
-        let prose = topic.body.joined(separator: " ").lowercased()
+        let prose = (topic.body + topic.items.map(\.detail))
+            .joined(separator: " ").lowercased()
         for phrase in ["new iphone", "icloud", "deleted", "gear", "accelerometer",
                        "additive", "refused"] {
             #expect(prose.contains(phrase), "the backup topic never mentions \(phrase)")
@@ -205,6 +207,11 @@ import Testing
         // The recordings inside are the rider's own, unscrubbed — the opposite promise
         // from `shareFit`, and the one a reader could otherwise get wrong.
         #expect(prose.contains(".fit"))
+        #expect(prose.contains("nothing is removed"))
+        // The two facts the Settings footer does not carry: the file is temporary, and
+        // saving it is the rider's own job.
+        #expect(prose.contains("temporary"))
+        #expect(prose.contains("files, icloud drive or on a mac"))
         #expect(HelpCatalog.search("backup").contains { $0.id == .libraryBackup })
     }
 

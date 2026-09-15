@@ -40,12 +40,10 @@ public enum IcuSetupGuide {
     /// want a third-party account read that sentence as a wall. The alternatives are named
     /// here rather than left to a troubleshooting item at the bottom of a different topic.
     public static let rationale =
-        "The easiest way to get your sessions into CleanJibe is intervals.icu. Garmin has no "
-        + "open API for a personal app, so intervals.icu is the bridge: it receives every "
-        + "activity from Garmin Connect automatically and hands CleanJibe the original "
-        + "recording. It is free, it takes about five minutes to set up, and you only do it "
-        + "once. You can also skip it entirely and open a .fit file by hand — from Files, "
-        + "Mail, a message, or a Garmin export ZIP."
+        "The easiest way in is intervals.icu: Garmin has no open API for a personal app, so "
+        + "intervals.icu receives your activities and hands CleanJibe the original "
+        + "recording. You can also open a .fit by hand instead, from Files, Mail or a "
+        + "Garmin export ZIP."
 
     /// The same point in one breath, for the setup card — where the four steps below it
     /// are what the reader is actually there for.
@@ -57,34 +55,32 @@ public enum IcuSetupGuide {
         IcuSetupStep(
             number: 1,
             title: "Create a free intervals.icu account",
-            detail: "Open intervals.icu and sign up — it is free, and you can use the "
-                + "Google, Strava or e-mail account you already have.",
+            detail: "Open intervals.icu and sign up. It is free, and the Google, Strava or "
+                + "e-mail account you already have will do.",
             link: HelpLink(title: "Open intervals.icu", url: intervalsURL)),
 
         IcuSetupStep(
             number: 2,
             title: "Connect Garmin in intervals.icu",
-            detail: "In intervals.icu go to Settings and connect your Garmin account under "
-                + "the device connections. Your existing Garmin activities are back-filled "
-                + "once the connection is made — with a long history that can take a few "
-                + "minutes — and every session you record from then on arrives on its own "
-                + "as soon as your watch syncs.",
+            detail: "In intervals.icu, Settings → device connections: connect your Garmin "
+                + "account. Your history back-fills in a few minutes, and every new session "
+                + "arrives on its own.",
             link: HelpLink(title: "Open intervals.icu settings", url: intervalsURL)),
 
         IcuSetupStep(
             number: 3,
             title: "Generate your personal API key",
             detail: "Still in intervals.icu: Settings → Developer Settings → API Key. "
-                + "Copy the key. Developer settings are free for every intervals.icu user — "
-                + "no subscription is needed.",
+                + "Copy it. Developer settings are free for every user; no subscription is "
+                + "needed.",
             link: HelpLink(title: "Open intervals.icu settings", url: intervalsURL)),
 
         IcuSetupStep(
             number: 4,
             title: "Paste the key into CleanJibe",
-            detail: "Paste it into the field below (in the app it also lives under "
-                + "Settings → intervals.icu) and tap Save & check. CleanJibe verifies the "
-                + "key straight away and says how many activities it can see.",
+            detail: "Paste it into the field below (in the app: Settings → intervals.icu) "
+                + "and tap Save & check. CleanJibe verifies it and says how many activities "
+                + "it can see.",
             action: .openIcuSettings),
     ]
 
@@ -93,29 +89,23 @@ public enum IcuSetupGuide {
     public static let privacyNote =
         "Your API key is stored in this iPhone's Keychain. It is never copied to iCloud, "
         + "never sent to any CleanJibe server — there isn't one — and never written to a "
-        + "log. The only place it is ever sent is intervals.icu itself, over HTTPS, to ask "
-        + "for your own activities. Clear the field in Settings to remove it, or regenerate "
-        + "it in intervals.icu, which makes the old one useless."
+        + "log. The only place it goes is intervals.icu itself, over HTTPS."
 
     /// What goes wrong, and what to do about it. Also the body of the troubleshooting topic.
     public static let troubleshooting: [HelpTopic.Item] = [
         .init(term: "\"intervals.icu rejected the API key\"",
-              detail: "A 401 means the key is wrong or was regenerated after you pasted it. "
-                  + "Copy it again from intervals.icu → Settings → Developer Settings and "
-                  + "paste it fresh — a stray space at either end is enough to break it."),
+              detail: "A 401: the key is wrong or was regenerated after you pasted it. Copy "
+                  + "it again from Settings → Developer Settings — a stray space at either "
+                  + "end breaks it."),
         .init(term: "The sync succeeds but the list stays empty",
-              detail: "Either Garmin is not connected in intervals.icu yet (Settings → "
-                  + "device connections — the back-fill takes a few minutes), or none of "
-                  + "your activities is a watersport yet. CleanJibe only pulls Windsurf, "
-                  + "Kitesurf, Sail, Surfing and SUP activities, plus anything whose name "
-                  + "mentions wing, foil, surf, kite or SUP."),
+              detail: "Either Garmin is not connected in intervals.icu yet, or none of your "
+                  + "activities is a watersport. CleanJibe pulls Windsurf, Kitesurf, Sail, "
+                  + "Surfing, SUP and anything named wing or foil."),
         .init(term: "\"Could not reach intervals.icu\"",
               detail: "A network problem rather than a key problem: nothing was lost and "
                   + "nothing was half-imported. Check your connection and sync again."),
         .init(term: "Older sessions are missing",
-              detail: "The sync looks two years back and skips anything already in the "
-                  + "library. For a longer history use Import → FIT or ZIP… with the "
-                  + "Garmin export ZIP, which holds the original FIT of every activity you "
-                  + "ever uploaded."),
+              detail: "The sync looks two years back and skips what the library already "
+                  + "holds. For more, use Import → FIT or ZIP… with the Garmin export ZIP."),
     ]
 }

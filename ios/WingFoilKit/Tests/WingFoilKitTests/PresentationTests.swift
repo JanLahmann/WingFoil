@@ -251,7 +251,11 @@ import Testing
             #expect(!all.contains(jargon), "the source topic still says \"\(jargon)\"")
         }
         #expect(topic.summary.contains("CleanJibe watch app"))
-        #expect(topic.items.count == 3)
+        // One item per class since the copy pass of 15 September 2026: the body used to
+        // repeat all four rows in prose and then again as three items, which is the
+        // duplication the budget was written to end.
+        #expect(topic.items.count == RecordingClass.allCases.count)
+        #expect(topic.items.map(\.term) == RecordingClass.allCases.map(\.name))
     }
 
     /// The class names are a contract with the website and with docs/channels.md: the same

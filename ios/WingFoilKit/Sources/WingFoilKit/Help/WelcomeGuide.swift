@@ -33,11 +33,10 @@ public enum WelcomeGuide {
     /// detection first (nothing else is possible without it), then the counts, then the
     /// verdicts, then the records, then the replay.
     public static let lede =
-        "CleanJibe takes a session recording apart. It works out when the board was really "
-        + "up on the foil, counts every flight and every touchdown, gives each jibe a "
-        + "verdict — flew through, touched down, fell in — keeps the dry streak running, "
-        + "and finds your fastest seconds. Then it plays the whole thing back to you, with "
-        + "the track, the numbers and a commentary on what just happened."
+        "CleanJibe takes a session recording apart: when you were really up on the foil, "
+        + "every flight and touchdown, a verdict on each jibe — flew through, touched down, "
+        + "fell in — the dry streak, your fastest seconds. Then it plays it back, with a "
+        + "commentary."
 
     /// The vocabulary, four lines of it. Enough that the words on the session page are
     /// already familiar; short enough that nobody skips the screen to escape it.
