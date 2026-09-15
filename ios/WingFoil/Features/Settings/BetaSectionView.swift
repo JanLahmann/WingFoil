@@ -106,6 +106,9 @@ struct BetaSectionView: View {
             // because the library's own card (`UsageAskCard`) is occasional and because
             // "not now" has to leave a way back.
             UsageReportRow()
+            // "Check for a newer build now", with the last check and the verdict — the
+            // manual door to the once-a-day check (`UpdateReminder`).
+            UpdateReminderSettingsRow()
             // Last row of the section, and the only destructive one in the app. See
             // `SessionStore.startOver`: the thing deleting the app *should* do, and does
             // not, because iOS keeps keychain items across a delete.
