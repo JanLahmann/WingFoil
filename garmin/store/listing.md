@@ -17,11 +17,13 @@ open beta, English only.
 ## Watch app — `CleanJibe Wingfoil Tracker (Beta)`
 
 * Store page: <https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806>
-* Type: device app · Version **0.9.4** (Internal 12) · first submitted 2026-08-12, 0.9.4 released 2026-09-01
+* Type: device app · Version **0.9.10** on the store (uploaded 14 Sep 2026; 0.9.11 waits for Jan's water test) · first submitted 2026-08-12, 0.9.4 released 2026-09-01
 * Permissions: Fit, SensorLogging, Communications, Positioning, FitContributor, Sensor
-* Devices (`garmin/manifest-invite.xml`): the full Tier A list — fenix 8 family, fenix 7
-  family, epix 2 / 2 Pro, Forerunner 255 / 265 / 955 / 965 / 970 / 570, MARQ 2, Enduro 2 / 3,
-  D2 Mach 1 / 2, Descent Mk3 43 mm (and the tactix / quatix twins those product ids cover)
+* Devices (`garmin/manifest-beta.xml`, identical to the release and dev manifests; the count and
+  the family grouping are generated into `docs/copy/garmin-devices.json`): 42 products at 0.9.11 —
+  fenix 8 / 7 / 5 Plus families, epix 2 / 2 Pro, Forerunner 255 / 265 / 570 / 955 / 965 / 970,
+  MARQ 2, Enduro 2 / 3, D2 Mach 1 / 2, Descent Mk3, Venu 2 / 3, vívoactive 5 / 6, Instinct 3
+  AMOLED (and the tactix / quatix twins those product ids cover)
 * Open beta since 0.9.4: no unlock key. The invite lock (ADR-012) is compiled out of every
   channel now; the invite UUID `28942317…` is simply the public listing's UUID.
 
