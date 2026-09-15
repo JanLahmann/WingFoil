@@ -14,7 +14,7 @@ struct HelpView: View {
     var body: some View {
         NavigationStack {
             HelpIndexList(initialTopic: initialTopic)
-                .navigationTitle("What the numbers mean")
+                .navigationTitle("Help")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
@@ -32,7 +32,7 @@ struct HelpView: View {
 struct HelpIndexPage: View {
     var body: some View {
         HelpIndexList()
-            .navigationTitle("What the numbers mean")
+            .navigationTitle("Help")
             .navigationBarTitleDisplayMode(.inline)
     }
 }

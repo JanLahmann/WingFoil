@@ -14,8 +14,9 @@ struct SettingsView: View {
             Form {
                 // **Settings keeps switches and accounts, and nothing else** (Jan, build
                 // 58). A block of three rows used to open this screen — "What CleanJibe
-                // does", "What the numbers mean" and "Send feedback", with two paragraphs
-                // of footer under them — and every one of the three is a row of the library
+                // does", "Help" (then called "What the numbers mean") and "Send feedback"
+                // — with two paragraphs of footer under them — and every one of the three
+                // is a row of the library
                 // menu one tap away (docs/presentation.md, "The library menu"). Two homes
                 // for the same door is two places to keep in step and one more screen for a
                 // rider to search; the menu is the one that greets him, so the menu keeps
@@ -109,15 +110,11 @@ struct SettingsView: View {
             // the first-run setup card embeds — one storage path, one verdict wording.
             IcuKeyEntry()
                 .padding(.vertical, 4)
-            Button {
-                Task { await store.syncFromIntervals() }
-            } label: {
-                HStack {
-                    Text("Sync now")
-                    if store.isBusy { Spacer(); ProgressView().controlSize(.small) }
-                }
-            }
-            .disabled(store.isBusy || store.apiKey.isEmpty)
+            // **"Sync now" is not here any more** (Jan, build 63: *Import does, Settings
+            // configures*). Fetching sessions is an import, and the Import sheet's
+            // "Sync intervals.icu" is the same call — as is a pull on the Sessions list.
+            // What stays is what this section is for: the key, proving it, when it last
+            // ran, and the two help topics.
             if let last = store.lastSyncDate {
                 // `.current` deliberately: this is when *you* last synced, on your own clock —
                 // the one date on this screen that is not about any session.
@@ -138,12 +135,12 @@ struct SettingsView: View {
         }
     }
 
-    /// The second cloud source's connection state (ADR-023). It is a *state*, not a control:
-    /// connecting means a browser sheet and a list to pick from, and both of those live on
-    /// the Import screen where the sessions do. All this page owns is "am I connected, as
-    /// whom, and how do I stop" — plus the sentence about the ceiling Strava has put on the
-    /// application until it reviews it, which belongs where a rider wondering why it will not
-    /// connect would go looking.
+    /// The second cloud source's account (ADR-023), and **the only place it is connected,
+    /// named and disconnected** (Jan, build 63: *Import does, Settings configures*). All
+    /// this page owns is "am I connected, as whom, and how do I stop" — plus the sentence
+    /// about the ceiling Strava has put on the application until it reviews it, which
+    /// belongs where a rider wondering why it will not connect would go looking. Picking the
+    /// sessions stays on Import, which until a connection exists shows one line back to here.
     ///
     /// It opens on the same kind of caption the intervals.icu section does, and for the same
     /// reason: the section used to start with a button, and a button is not an answer to
@@ -169,11 +166,11 @@ struct SettingsView: View {
                 }
                 .disabled(store.isBusy)
             } else {
-                // The same connect as the Import screen's, here as well (Jan, 13 Sep 2026):
-                // a rider who opens Settings to "set up Strava" should not be told to go
-                // and find another screen first. Importing stays on Import.
-                // Strava's own artwork here too, for the same reason it is on Import: the
-                // guidelines are about the *action*, not about the screen it is on.
+                // The connect (Jan, 13 Sep 2026: a rider who opens Settings to "set up
+                // Strava" should not be told to find another screen first) — and since
+                // build 63 the *only* one: Import lists what a connected account holds and
+                // otherwise points back here. Strava's own artwork, because the guidelines
+                // are about the action and not about the screen it is on.
                 StravaConnectButton {
                     Task { await store.connectStrava(anchor: StravaConsent.anchor()) }
                 }

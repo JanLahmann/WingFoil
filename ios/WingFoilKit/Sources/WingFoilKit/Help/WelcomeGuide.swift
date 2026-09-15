@@ -152,9 +152,22 @@ public enum WelcomePrompt {
     ///     is, an error, Settings. A *deferral*, not a refusal: the caller writes the flag
     ///     when the screen actually goes up, so the next clear moment asks again. Same
     ///     etiquette as `NewActivityPrompt`, and for the same reason.
+    ///   - requested: **somebody asked for this screen and has not had it yet.** Today the
+    ///     one asker is Settings → Beta → *Start over* (`SessionStore.startOver`), which
+    ///     writes the request down *after* the wipe: everything else about the first run is
+    ///     decided by the **absence** of evidence — no flag, no sessions — and absence is
+    ///     exactly what a wipe cannot guarantee to the next launch (a session that arrives
+    ///     from a sync, a watch or a re-import before the screen goes up is history again,
+    ///     and the upgrade path below would then mark the screen seen on sight). A request
+    ///     is a positive fact, so it survives all of that and outranks all of it — it is
+    ///     honoured over `hasSeen` and over a library of any size, and only `isPresenting`
+    ///     may defer it. The caller clears it when the screen actually goes up.
     public static func shouldShow(hasSeen: Bool, sessionCount: Int,
-                                  isPresenting: Bool = false) -> Bool {
-        !hasSeen && !isAlreadyWelcomed(sessionCount: sessionCount) && !isPresenting
+                                  isPresenting: Bool = false,
+                                  requested: Bool = false) -> Bool {
+        guard !isPresenting else { return false }
+        if requested { return true }
+        return !hasSeen && !isAlreadyWelcomed(sessionCount: sessionCount)
     }
 
     /// Whether an install that has never seen the screen should have the flag written
@@ -167,7 +180,14 @@ public enum WelcomePrompt {
     /// the current contents of the library.
     ///
     /// **A key alone never spends it** — see `isAlreadyWelcomed`.
-    public static func shouldMarkSeenSilently(hasSeen: Bool, sessionCount: Int) -> Bool {
-        !hasSeen && isAlreadyWelcomed(sessionCount: sessionCount)
+    ///
+    /// **A pending request spends nothing at all.** The upgrade path is a guess about an
+    /// install nobody has said anything about; "show me the welcome" is not a guess, and a
+    /// heuristic that marked the screen seen before the request could be honoured is the
+    /// bug Jan found after Start over (build 63): the library had rows again, so the flag
+    /// went down silently and the next launch opened on Sessions.
+    public static func shouldMarkSeenSilently(hasSeen: Bool, sessionCount: Int,
+                                              requested: Bool = false) -> Bool {
+        !requested && !hasSeen && isAlreadyWelcomed(sessionCount: sessionCount)
     }
 }

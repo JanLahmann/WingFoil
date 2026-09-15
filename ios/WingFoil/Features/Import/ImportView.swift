@@ -6,9 +6,23 @@ import WingFoilKit
 /// (Garmin's GDPR "Export Your Data" ZIP) as the headline. The same dedupe key that
 /// protects the intervals.icu sync protects the backfill, so a re-run is a no-op — the
 /// phase-4 acceptance criterion, visible on screen as "n duplicates".
+///
+/// **Import does, Settings configures** (Jan, build 63). Every row on this screen is an
+/// action — pick a file, sync, list what a connected account holds — and nothing on it
+/// asks for a key, connects an account or reports who you are connected as. A source that
+/// is not set up yet does not get a disabled button with no explanation, which is what
+/// "Sync intervals.icu" was without a key: it gets **one line that goes to the place that
+/// sets it up**, and the account state it was reporting (*Connected as …*) stays in
+/// Settings, where it is the answer to a question the rider actually asked there.
 struct ImportView: View {
     @Environment(SessionStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    /// Handed down by the library, which owns the one sheet both screens are (`LibrarySheet`),
+    /// so "set it up" replaces Import with Settings rather than stacking a second sheet on it.
+    /// Nil where nobody can honour it, and the row then says where to go instead of offering
+    /// a button that does nothing — the same rule the Help topics' *Open CleanJibe Settings*
+    /// keeps.
+    @Environment(\.openIcuSettings) private var openSettings
 
     @State private var showFileImporter = false
     @State private var showStravaImporter = false
@@ -52,12 +66,20 @@ struct ImportView: View {
                         Label(Self.filePickerLabel, systemImage: "doc.badge.plus")
                     }
                     .disabled(store.isBusy)
-                    Button {
-                        Task { await store.syncFromIntervals() }
-                    } label: {
-                        Label("Sync intervals.icu", systemImage: "arrow.triangle.2.circlepath")
+                    // The action, or the way to earn it. A "Sync intervals.icu" button
+                    // greyed out with no word about why was the whole of what this screen
+                    // told a rider who had no key yet (Jan, build 63).
+                    if store.apiKey.isEmpty {
+                        SetUpInSettingsRow(source: "intervals.icu", open: openSettings)
+                    } else {
+                        Button {
+                            Task { await store.syncFromIntervals() }
+                        } label: {
+                            Label("Sync intervals.icu",
+                                  systemImage: "arrow.triangle.2.circlepath")
+                        }
+                        .disabled(store.isBusy)
                     }
-                    .disabled(store.isBusy || store.apiKey.isEmpty)
                 } header: {
                     Text("Single sessions")
                 } footer: {
@@ -91,17 +113,28 @@ struct ImportView: View {
                 // over positions. The footer says so, so a rider with both accounts does not
                 // have to find out by importing the worse copy.
                 Section {
-                    Button {
-                        showStravaImporter = true
-                    } label: {
-                        // "Import from Strava…" under a "Strava" header, exactly as the
-                        // Health row reads under "Apple Health": the header names the
-                        // service, the row names the action, and neither repeats the other.
-                        Label("Import from Strava…", systemImage: "figure.wave")
-                    }
-                    .disabled(store.isBusy)
-                    if store.isStravaConnected, let athlete = store.stravaAthlete {
-                        LabeledContent("Connected as", value: athlete)
+                    if !store.isStravaConfigured {
+                        // Nothing to set up and nothing to import: this binary carries no
+                        // Strava keys. The same sentence Settings gives, so the two screens
+                        // do not send the rider back and forth over it.
+                        Text("Not available in this build")
+                            .foregroundStyle(.secondary)
+                    } else if store.isStravaConnected {
+                        Button {
+                            showStravaImporter = true
+                        } label: {
+                            // "Import from Strava…" under a "Strava" header, exactly as the
+                            // Health row reads under "Apple Health": the header names the
+                            // service, the row names the action, and neither repeats the
+                            // other.
+                            Label("Import from Strava…", systemImage: "figure.wave")
+                        }
+                        .disabled(store.isBusy)
+                    } else {
+                        // Connecting is Strava's own consent screen and a decision about an
+                        // account — Settings' business, and the one place *Connect with
+                        // Strava* now lives. "Connected as …" went with it.
+                        SetUpInSettingsRow(source: "Strava", open: openSettings)
                     }
                 } header: {
                     // Rule 2 of Strava's brand guidelines: attribution wherever Strava data
@@ -217,6 +250,33 @@ struct ImportView: View {
     #endif
 }
 
+/// **One line where an action would be, for a source that is not set up yet.**
+///
+/// It replaces the row rather than sitting under it: a disabled button *and* an
+/// explanation is two rows saying one thing, and the thing they say is "not here". The
+/// arrow is the app's own path notation (`Settings → intervals.icu`), the same way the
+/// help topics and the getting-started guide write a route, so a rider who has read either
+/// recognises where he is being sent — and the tap takes him there, so he does not have to
+/// walk it.
+private struct SetUpInSettingsRow: View {
+    /// As the rider names it: *intervals.icu*, *Strava*. It is also the Settings section's
+    /// own header, which is what makes the line a path rather than a description.
+    let source: String
+    let open: (@MainActor () -> Void)?
+
+    var body: some View {
+        if let open {
+            Button { open() } label: { label }
+        } else {
+            label.foregroundStyle(.secondary)
+        }
+    }
+
+    private var label: some View {
+        Label("Set up in Settings → \(source)", systemImage: "gearshape")
+    }
+}
+
 /// The class line each **section** of the Import screen opens with (docs/channels.md, "the
 /// three recording classes"; item 12 of the 14 Sep 2026 review).
 ///
@@ -266,8 +326,12 @@ private enum ImportClass {
         + "own GPS, so the speed records are certified. There is no accelerometer in a "
         + "Health workout, so pump strokes and takeoff effort are missing."
 
+    // Only the opening clause changed (15 September 2026): the footer began "Connect your
+    // Strava account and…", and connecting is Settings' job now. What the
+    // door *brings in* — the class line, the four activity types, the two costs, the
+    // intervals.icu preference — is untouched.
     static let stravaDoor =
-        "Connect your Strava account and import the sessions you pick — Windsurf, Kitesurf, "
+        "Imports the sessions you pick from your Strava account — Windsurf, Kitesurf, "
         + "Surf and Workout by default, and anything whose name says wing or foil. Strava "
         + "hands over positions, a clock, elevation and heart rate, so the analysis is "
         + "complete except for two things: speed is worked out from the positions, so those "

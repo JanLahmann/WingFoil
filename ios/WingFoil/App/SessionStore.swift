@@ -1850,8 +1850,9 @@ final class SessionStore {
         status = "Contacting intervals.icu…"
         // Read *before* this sync overwrites it: "when did he last pull?" is the whole of the
         // re-add gate, and `lastSyncDate` is already exactly that fact — this method is the
-        // only thing that writes it, and only pull-to-refresh, "Sync now" and the empty
-        // library's own button reach this method. The background poller never does.
+        // only thing that writes it, and only pull-to-refresh, Import → "Sync
+        // intervals.icu", the setup card's "Sync now" and the empty library's own button
+        // reach this method. The background poller never does.
         let previousSync = lastSyncDate
         let startedAt = Date()
         defer { isBusy = false }
@@ -2123,6 +2124,19 @@ final class SessionStore {
     /// mid-screen has still been welcomed.
     static let welcomeShownKey = "welcomeShown.v1"
 
+    /// **"The welcome is owed, whatever the rest of this phone looks like."**
+    ///
+    /// Written by `startOver()` *after* the wipe and read by `showWelcomeIfNeeded()` before
+    /// anything else, then cleared the moment the screen goes up. It exists because every
+    /// other part of the first-run rule is an argument from absence — no `welcomeShown.v1`,
+    /// no sessions — and Start over cannot hand an absence to the next launch: the screen it
+    /// raises in-process writes the flag again, a session arriving from anywhere makes the
+    /// library look like a history, and `shouldMarkSeenSilently` then marks the screen seen
+    /// on sight. That is what Jan saw in build 63: Start over, relaunch, and the app opened
+    /// on Sessions. A request is a *positive* fact the wipe itself leaves behind, so nothing
+    /// that happens afterwards can talk it out of the screen.
+    static let welcomeRequestedKey = "welcomeRequested.v1"
+
     /// True while `WelcomeView` is up. `RootView` presents it; whether it is owed at all is
     /// `WelcomePrompt`, in the kit.
     private(set) var isShowingWelcome = false
@@ -2160,6 +2174,11 @@ final class SessionStore {
         }
         #endif
         let hasSeen = UserDefaults.standard.bool(forKey: Self.welcomeShownKey)
+        // **The request comes first, before any heuristic can spend the screen.** Start
+        // over writes it down (`welcomeRequestedKey`), and it outranks both the flag and
+        // the library: a phone whose sessions are back — synced, transferred or
+        // re-imported — is exactly the phone the silent mark below would write off.
+        let requested = UserDefaults.standard.bool(forKey: Self.welcomeRequestedKey)
         // The upgrade path: an install that already had sessions when this screen shipped
         // is marked as welcomed on sight, so emptying the library years later cannot make
         // the app introduce itself to its oldest user.
@@ -2167,15 +2186,20 @@ final class SessionStore {
         // app delete in the iOS keychain, so a key on a fresh install says the keychain
         // remembered, not that the rider has ever been here (Jan, build 58).
         if WelcomePrompt.shouldMarkSeenSilently(hasSeen: hasSeen,
-                                                sessionCount: sessions.count) {
+                                                sessionCount: sessions.count,
+                                                requested: requested) {
             UserDefaults.standard.set(true, forKey: Self.welcomeShownKey)
             return
         }
         guard WelcomePrompt.shouldShow(hasSeen: hasSeen,
                                        sessionCount: sessions.count,
-                                       isPresenting: isPresentingSomething)
+                                       isPresenting: isPresentingSomething,
+                                       requested: requested)
         else { return }
         UserDefaults.standard.set(true, forKey: Self.welcomeShownKey)
+        // Spent when the screen goes up, and only then — a deferral leaves the request
+        // standing, so a Start over the rider walked away from still greets him next launch.
+        UserDefaults.standard.removeObject(forKey: Self.welcomeRequestedKey)
         isShowingWelcome = true
     }
 
@@ -2884,6 +2908,19 @@ final class SessionStore {
 
         // 2. The wipe itself: keychain, defaults, container.
         StartOver.wipe()
+
+        // 2b. …and the one thing written *back* immediately: "this phone is owed the
+        //     welcome screen". After the wipe, necessarily — the wipe takes the whole
+        //     defaults domain with it. Everything else about a first run is an absence the
+        //     wipe creates, and an absence is not something Start over can promise the next
+        //     launch: the in-process screen spends `welcomeShown.v1` again the moment it
+        //     goes up, and one session arriving from a sync, a watch or a re-import makes
+        //     the library look like a history, at which point the upgrade heuristic marks
+        //     the screen seen on sight and the relaunch opens on Sessions (Jan, build 63).
+        //     `showWelcomeIfNeeded` honours this before either rule and clears it when the
+        //     screen is actually raised, so the welcome happens exactly once — now if
+        //     nothing is in the way, on the next launch otherwise.
+        UserDefaults.standard.set(true, forKey: Self.welcomeRequestedKey)
 
         // 3. A new library on the same path. The migrator writes an empty schema into it,
         //    which is exactly what a first launch opens.
