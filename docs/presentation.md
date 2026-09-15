@@ -3033,15 +3033,14 @@ first thing a new rider needs is not a switch. Five items, two dividers, one lin
 print, in this order and for this reason:
 
 1. **Getting started** — the first-session guide as a help topic (`HelpTopicID.gettingStarted`,
-   the same text as cleanjibe.org/start, in every channel). First, because it is what "I just
-   installed this" is looking for. Both were reframed on 14 September 2026: the test is **one
-   session on the water** — charge, record, save, sync, pull down on Sessions, read the turn
-   verdicts against what you remember, share a card, Menu → Support & ideas — then the three
-   routes in the order that gives the most (Garmin watch app, any speed FIT, positions only),
-   and the 20-minute dry run kept as "the minimal check, if you cannot wait" after them. The
-   topic names the beta once, as a place feedback can go; it sits in its own first help
-   section "Getting started" (the section was "The beta" until the same day), and it is
-   channel-neutral: nothing in it says which build the reader is holding.
+   its own first help section, every channel). First, because it is what "I just installed
+   this" is looking for. Since 15 September 2026 the instructions live IN the app (Jan: never
+   send a rider to the website for them): one sentence on the real test — one session on the
+   water, read the turn verdicts against what you remember — then the routes as items with
+   their steps, Garmin with the CleanJibe watch app first, any .fit second, Strava third, the
+   three-to-five-minute walk as "if you cannot wait for wind", where to send what you find,
+   and the web page named last as the same guide. The two Apple routes are beta topics it
+   links to, so the release never names them. Word budgets are enforced by `HelpBudgetTests`.
 2. **Settings** — the switches, the watch, the accounts.
 3. **Support & ideas** — the feedback mail (`feedbackMail(on:)`, the same composer as
    Settings → Send feedback and the share sheet's "Report a problem"). Above the two "what is
