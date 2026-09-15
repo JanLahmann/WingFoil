@@ -186,7 +186,7 @@ public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
     case gettingStarted
     case icuSetup, exampleSession, sendingFeedback, appleWatchApp, appleWorkoutApp
     case icuTroubleshooting
-    case icuPrivacy, libraryBackup
+    case icuPrivacy, privacy, libraryBackup
     case stravaImport, shareFromWatchApp, whichWatch, phoneOnly
     case foilPct, flights, longestFlight, distance, mapLegend
     case recordSet, best2s, best10s, best5x10s, best500m, bestNm, alpha500, uncertified
@@ -501,7 +501,7 @@ public enum HelpCatalog {
                 "CleanJibe analyses a recording, not a brand. Anything that can produce a GPS "
                 + "track can be read, and a source that cannot answer a question leaves that "
                 + "number blank and says why.",
-                "Two things separate the rows. **Certified speed** means the file carried the "
+                "Two things separate the rows. **Certified speed** means the file holds the "
                 + "receiver's own speed; without it, speed is worked out from positions and "
                 + "every record is marked uncertified.",
                 "**Pump strokes and takeoff effort** need a wrist accelerometer recorded "
@@ -560,7 +560,36 @@ public enum HelpCatalog {
                 + "regenerate it in Developer Settings — the old key stops working the "
                 + "moment you do.",
             ],
-            related: [.icuSetup, .icuTroubleshooting]),
+            related: [.icuSetup, .icuTroubleshooting, .privacy]),
+
+        // **The app's own link to the privacy policy** (15 September 2026). There was none:
+        // docs/channels.md makes "covered by the privacy page" one of the four rules a
+        // feature meets before it moves up a channel, and the App Store record carries the
+        // URL — but a rider inside the app had no way to reach it, and the page describes
+        // *the app's* behaviour.
+        //
+        // It is a summary and a link, deliberately not a mirror: a GDPR document is a legal
+        // text with its own shape and its own update cycle, and a second copy of it in a
+        // help catalogue is a second copy to keep true. Three sentences that answer the
+        // question, then the page. Settings → About carries the same link for the rider who
+        // never opens Help.
+        HelpTopic(
+            id: .privacy, section: .setup, title: "What leaves your phone",
+            summary: "No account, no server, nothing uploaded — and the whole policy on the "
+                + "web.",
+            body: [
+                "There is no CleanJibe account and no CleanJibe server, so a session you "
+                + "import is analysed on this phone and stays on it. No advertising, no "
+                + "analytics, no tracking of any kind.",
+                "Four places can be reached, each only if you choose it: intervals.icu and "
+                + "Strava with your own credential, Apple Maps while a map is on screen, and "
+                + "one rounded coordinate per new spot to look up its name.",
+                "CleanJibe never asks for your location. Every coordinate it draws was "
+                + "already inside a file you imported.",
+            ],
+            links: [HelpLink(title: "Open \(Branding.site)/privacy",
+                             url: URL(string: Branding.siteURL + "/privacy/")!)],
+            related: [.icuPrivacy, .shareFit, .libraryBackup]),
 
         // The topic that exists because of the one thing this app cannot get back for you.
         // The recordings are recoverable — intervals.icu still has them — but what you
@@ -895,29 +924,36 @@ public enum HelpCatalog {
                                  + "it."),
             related: [.turnSuccess, .falls, .glideOuts]),
 
+        // **Three requirements, not two** (engine 0.17.0). This topic was a version behind
+        // its own engine until 15 September 2026: it still framed clean as 0.12.0's "flew
+        // through + 70 %" while the web, the watch listing and /whats-new all described the
+        // quiet tail. docs/algorithms.md ("The quiet tail") is the contract and the three
+        // tests below are its three, in its order.
         HelpTopic(
             id: .turnSuccess, section: .turns, title: "Clean jibes",
-            summary: "A jibe you fly all the way through without losing much speed.",
+            summary: "A jibe you fly all the way through without losing much speed — and the "
+                + "ten seconds after it are quiet too.",
             body: [
-                "**Flew through** is how a turn ended: you never lost the foil, from the turn "
-                + "start until you were flying again. **Clean** is a jibe that flew through "
-                + "*and* held its speed.",
-                "Holding the speed means two things: your minimum speed through the turn "
-                + "stays at or above 70 % of your entry speed, and you never drop below the "
-                + "foil exit speed.",
-                "So clean is a strict subset of flew through: a jibe that held its speed "
-                + "round the turn and then lost the foil coming out is not clean. (Before "
-                + "engine 0.12.0 it counted.)",
-                "Clean is a jibe word: a tack has no clean reading to carry, so the Tacks "
-                + "card reports only how its tacks ended.",
+                "**Flew through** is how a turn ended: you never lost the foil, from its "
+                + "start until you were flying again. **Clean** is a jibe that flew through, "
+                + "held its speed, and stayed quiet after.",
+                "Holding the speed: your minimum speed through the turn stays at or above "
+                + "70 % of your entry speed, and you never drop below the foil exit speed.",
+                "Staying quiet means the ten seconds after the turn: no touchdown or fall, "
+                + "no second or more off the foil, and no wrist under water.",
+                "So clean is a strict subset of flew through: a jibe that held its speed and "
+                + "then lost the foil coming out is not clean.",
             ],
             items: [
                 .init(term: "Flew through",
                       detail: "The outcome: you kept the foil through the turn and through "
                           + "the recovery out of it. No touchdown, no swim."),
                 .init(term: "Clean",
-                      detail: "A jibe that flew through and held at least 70 % of its "
-                          + "entry speed. The strict one, and the one CPH counts."),
+                      detail: "A jibe that flew through, held at least 70 % of its entry "
+                          + "speed, and stayed quiet for ten seconds. The one CPH counts."),
+                .init(term: "Jibes only",
+                      detail: "A tack has no clean reading to carry, so the Tacks card "
+                          + "reports only how its tacks ended."),
                 .init(term: "Dry",
                       detail: "You did not fall in. A touchdown still counts as dry, which "
                           + "is why JPH (dry jibes per hour) is never below CPH."),
@@ -1035,7 +1071,7 @@ public enum HelpCatalog {
             ],
             items: [
                 .init(term: "Coverage",
-                      detail: "The share of a window carried by plausible (30–220 bpm), "
+                      detail: "The share of a window covered by plausible (30–220 bpm), "
                           + "unstuck samples no more than 10 seconds apart. Below 60 % "
                           + "coverage no number is produced."),
                 .init(term: "Why it drops out",

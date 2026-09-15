@@ -38,7 +38,8 @@ struct IcuKeyEntry: View {
                 } label: {
                     HStack(spacing: 6) {
                         if store.isCheckingKey { ProgressView().controlSize(.small) }
-                        Text(isUnchanged && !draft.isEmpty ? "Check connection" : "Save & check")
+                        Text(isUnchanged && !draft.isEmpty ? "Check connection"
+                                  : IcuSetupGuide.saveButton)
                     }
                 }
                 .buttonStyle(.borderedProminent)

@@ -56,7 +56,7 @@ private struct HelpIndexList: View {
     /// The page itself stays reachable: a `?` on a session that *is* read as windsurf still
     /// opens it, which is why the filter is here and not in the catalogue.
     private var visible: [HelpTopic] {
-        HelpCatalog.indexTopics(channel: ChannelFeatures.channel,
+        HelpCatalog.indexTopics(channel: AppChannel.channel,
                                 windsurfEnabled: store.windsurfEnabled)
     }
 
@@ -135,7 +135,7 @@ struct HelpTopicSheet: View {
     /// and a button onto a topic the index hides would be a dead end wearing a chevron —
     /// so it is filtered by the same rule the index uses (`HelpCatalog.relatedTopics`).
     private var related: [HelpTopic] {
-        HelpCatalog.relatedTopics(of: topic, channel: ChannelFeatures.channel,
+        HelpCatalog.relatedTopics(of: topic, channel: AppChannel.channel,
                                   windsurfEnabled: store?.windsurfEnabled ?? true)
     }
 

@@ -1,61 +1,31 @@
 import SwiftUI
 import WingFoilKit
 
-/// **What is in this build, and what is in the next one** — the app's half of
+/// **Which build this is, and how to get the next one** — the app's half of
 /// docs/channels.md.
 ///
-/// That file is the single source for which feature sits in which channel; this is the same
-/// list in the rider's words, and it is written *from* it and never the other way round. Two
-/// surfaces read it:
+/// The *lists* are not here: the beta rows, the dev rows and the section title live in the
+/// kit as `ChannelFeatures`, pinned to `docs/copy/channels.json` by `CopyContractTests`, so
+/// that one wording reaches the app, the website and the store texts. What stays here is
+/// the part the kit cannot have — a compile flag and two URLs.
 ///
-/// * `BetaSectionView` — beta and dev only. What the tester has that the App Store build does
-///   not, so a report can say "the video export" rather than "the thing that makes a film",
-///   plus the one row that asks him what is missing.
-/// * `ComingSoonSection` — every channel. What is being tried before it arrives here. In the
-///   release it carries the TestFlight link, because there the answer to "can I have it" is
-///   one tap; in the beta it is the same list with no link, because the reader is already
-///   there, plus the dev doors under it.
-enum ChannelFeatures {
-
-    /// The beta doors, one sentence each, in the order docs/channels.md lists them: getting
-    /// a session in, the library, sharing, the watches.
-    ///
-    /// **This list is docs/channels.md's beta rows and nothing else.** A row that is not in
-    /// that table is a promise nobody made; the Garmin export ZIP left this list on
-    /// 14 September 2026 when it became a release feature, and the release's own Import
-    /// screen has offered it all along ("FIT or ZIP…").
-    static let beta: [String] = [
-        ".gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS "
-            + "opens straight from Files.",
-        "Apple Health, both ways: what Apple's Workout app recorded is read in, and your "
-            + "sessions are written back as workouts.",
-        "The CleanJibe Apple Watch app, which records on your wrist with live numbers and "
-            + "hands the session to the phone.",
-        "Home-screen widgets and the watch complication.",
-        "The session video: your afternoon as a film rather than a card.",
-        "Grouping the library by month, year or spot, and filtering it.",
-    ]
-
-    /// The dev doors. Unproven by construction — a handful of hand-picked testers — and
-    /// listed so a rider can ask for one rather than discover it does not exist.
-    ///
-    /// **Beta and dev only.** None of these is promised to anybody on the App Store: the
-    /// release build lists what is being tested one channel up, and nothing beyond it.
-    static let dev: [String] = [
-        "The Garmin link: a summary card from your watch the moment you stop, the map of "
-            + "your spot and the wind direction sent back to it",
-        "Windsurf, foil and fin, with thresholds of its own",
-        "The tuning page: every analysis threshold on a slider, tried against your own "
-            + "sessions",
-        "iPad",
-    ]
+/// Two surfaces render the kit's lists:
+///
+/// * `BetaSectionView` — beta and dev only. What the tester has that the App Store build
+///   does not, so a report can say "the video export" rather than "the thing that makes a
+///   film", plus the one row that asks him what is missing.
+/// * `ComingSoonSection` — every channel. What is being tried before it arrives here. In
+///   the release it carries the TestFlight link, because there the answer to "can I have
+///   it" is one tap; in the beta it is the same list with no link, because the reader is
+///   already there, plus the dev doors under it.
+enum AppChannel {
 
     /// **Which build this is** — the one place the app answers that for the kit.
     ///
     /// The kit compiles every screen and every help topic in every channel and cannot see a
     /// compile flag, so anything in it that has to know — today, `HelpCatalog`, which must
     /// not offer a rider a page about a door his build does not have — is handed this.
-    /// Gated here and nowhere else, beside the two feature lists it belongs with.
+    /// Gated here and nowhere else.
     #if DEV
     static let channel: HelpChannel = .dev
     #elseif BETA
@@ -194,8 +164,10 @@ struct BetaSectionView: View {
 /// what this build does not have is none of those.
 struct ComingSoonSection: View {
 
-    /// One name, used by the row, the page title and docs/presentation.md.
-    static let title = "Coming in a future release"
+    /// One name, used by the row, the page title, docs/presentation.md and the website's
+    /// own heading — which is why it is the kit's and not a literal here
+    /// (`docs/copy/channels.json`, `sectionTitle`).
+    static let title = ChannelFeatures.sectionTitle
 
     var body: some View {
         Section {
@@ -289,14 +261,14 @@ struct ComingSoonPage: View {
             Text("One tap. Your library is kept.")
                 .font(.subheadline.weight(.semibold))
                 .fixedSize(horizontal: false, vertical: true)
-            Link(destination: ChannelFeatures.testFlight) {
+            Link(destination: AppChannel.testFlight) {
                 Label("Open TestFlight", systemImage: "arrow.up.forward.app")
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             // The other way in, and the one that survives a full TestFlight group.
-            Link(destination: ChannelFeatures.invite) {
+            Link(destination: AppChannel.invite) {
                 Label("cleanjibe.org/invite", systemImage: "link")
                     .font(.footnote.weight(.semibold))
             }

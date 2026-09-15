@@ -127,14 +127,14 @@ struct LibraryNewerThanAppView: View {
 
     /// `itms-beta:` goes straight to TestFlight when it is installed, which on a phone in
     /// this state it always is; the https link is the fallback that installs it and is the
-    /// same public join link the release channel offers (`ChannelFeatures.testFlight`).
+    /// same public join link the release channel offers (`AppChannel.testFlight`).
     private func openTestFlight() {
         guard let scheme = URL(string: "itms-beta://testflight.apple.com/join/nygqGGcn") else {
-            openURL(ChannelFeatures.testFlight)
+            openURL(AppChannel.testFlight)
             return
         }
         openURL(scheme) { opened in
-            if !opened { openURL(ChannelFeatures.testFlight) }
+            if !opened { openURL(AppChannel.testFlight) }
         }
     }
 }
