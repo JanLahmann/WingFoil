@@ -140,10 +140,10 @@ a.brand:focus-visible { outline: 2px solid var(--series-1); outline-offset: 3px;
  * everything else; the current page is marked twice over, in the accessibility tree with
  * `aria-current` and on screen with a 2 px rule in the link ink.
  *
- * Below 720 px the five items would take two lines of a phone screen on top of a topbar
- * that is already two rows, so the row becomes one select — the same swap, gated on the
- * same `js` class, as the section nav's. The links stay in the markup and are what a reader
- * without JavaScript gets.
+ * On a phone the row stays a row: four short items fit one line of a 390 px screen in this
+ * mono, and if a reader's font makes them not, the row scrolls sideways rather than wrapping
+ * onto a topbar that is already two rows. No select: Jan's phone (15 Sep) showed a "Go to…"
+ * above the section nav's "On this page…" and read them as two of the same thing.
  */
 .sitenav { flex: 1 1 100%; min-width: 0; order: 9; }
 .sitenav ul {
@@ -160,16 +160,14 @@ a.brand:focus-visible { outline: 2px solid var(--series-1); outline-offset: 3px;
   outline: 2px solid var(--series-1); outline-offset: 3px; border-radius: 3px;
 }
 .sitenav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--series-1); }
-.sitenav .jump { display: none; }
-.sitenav select {
-  width: 100%; min-height: var(--tap);
-  background: var(--surface-2); color: var(--ink-2);
-  border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px;
-  font: 600 12.5px/1 var(--mono);
-}
 @media (max-width: 720px) {
-  .js .sitenav ul { display: none; }
-  .js .sitenav .jump { display: block; }
+  .sitenav ul {
+    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch; margin: 0 calc(-1 * var(--pad-x, 16px));
+    padding: 0 var(--pad-x, 16px);
+  }
+  .sitenav ul::-webkit-scrollbar { display: none; }
+  .sitenav li { flex: 0 0 auto; }
 }
 
 .chip {
