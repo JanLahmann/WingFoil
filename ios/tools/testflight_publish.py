@@ -45,15 +45,20 @@ def app_id(app):
 
 WHATS_NEW = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-1.0.0 (build 58) — the App Store candidate, after a reviewer's pass.
+1.0.0 (build 60) — the App Store candidate, after your round of feedback.
 
-This is the build we intend to submit to the App Store: the plain app, without the beta doors. Since 56: the help catalogue shows only what this build has, the getting-started topic is one session on the water, no text calls the app a beta, Strava's wording is calm, and the bold and italic in help render instead of showing asterisks. Installing it replaces the beta on your phone (same app, library kept); the beta channel continues with its next build, and TestFlight will offer it again then.
+Since 58:
+- A fresh install opens on "What CleanJibe does" — the welcome, the routes and the example session — even when an intervals.icu key survived a reinstall in the keychain.
+- Menu → Getting started always opens, and is now the routes as steps in the app: Garmin with the CleanJibe watch app, any .fit, Strava, the walk if you cannot wait for wind, and where to send what you find. The web page is the same guide, named last.
+- Help answers in the first sentence: every topic was cut to a budget, the backup topic says the file is temporary and yours to save.
+- Settings no longer repeats the menu; the intervals.icu key field reads in the dark; the notification switch says intervals.icu and asks for permission once your key has been checked.
+- "Coming in a future release" (Settings) replaces "What is being tested", with How to join the beta first; the row is gone from the menu.
+- Dates carry the year when it is not this year. The status line at the foot of Sessions clears itself.
+- Gear & spots is one page: spots above the gear, named from the map by themselves, empty spots gone.
+- Recordings that were never a session — no foil time and under two minutes or 200 m — stay in the list with a "no riding detected" tag and out of trends, records and the counts.
+- Strava imports carry their sport and keep their own title capitalisation.
 
-What is in: intervals.icu sync, .fit files from Files, Mail, AirDrop and the share sheet, Strava import, the full analysis (foil time, flights, every turn's verdict, speed records, the map, the replay and its clips), share cards, records and trends, gear and spots, backup and restore, the example session, the help catalogue, feedback from every page.
-
-What is deliberately NOT in this build: GPX and TCX files, the Garmin export ZIP, Apple Health, the video export, grouping and filters in Sessions, the Apple Watch app, widgets. They stay in the beta until proven.
-
-Please check: does everything you use day to day still work without those doors? Does the app open your existing library as before? Anything that reads wrong in Settings → "Coming in a future release"?
+Please check: a fresh install (Settings → intervals.icu → Clear and Strava → Disconnect, delete, reinstall) opens on the welcome; Menu → Getting started reads well; your dry recordings from 13–14 September are tagged and out of Trends; your spots have names.
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
@@ -61,13 +66,13 @@ Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or
 # App Store one, so saying which one this is matters more than the release notes do.
 WHATS_NEW_INTERNAL = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-CleanJibe Dev, build 59 — Start over, and the reviewer's pass.
+CleanJibe Dev, build 61 — the feedback round, plus the update reminder.
 
-- Settings → Beta → Start over: one red row, behind a confirm, that takes the whole library and its backups, the intervals.icu key and the Strava connection (the keychain keeps those across an app delete, which is why a reinstall was not a clean start), every setting, the usage counters and the widget snapshot — and lands on the welcome screen without a relaunch.
-- Everything from release candidate 58's reviewer pass: help shows only what a build has, the getting-started topic is one session on the water, bold and italic in help render, Strava's wording is calm.
-- The three widgets from build 57.
+Everything in release candidate 60 (welcome first, one sheet, help cut to a budget, Getting started as steps in the app, Settings without the menu, dark-mode key field, notification wording and prompt, Coming in a future release, years on dates, the status line clears, Gear & spots on one page, not-a-session recordings tagged and excluded, spots named by themselves, Strava sport and titles).
 
-Please check: Start over on a phone that had a key and a Strava connection — after it, does Settings show both empty? Does the welcome screen appear straight away?
+New in the beta and dev channels: the update reminder. Once a day the app reads one small file from cleanjibe.org saying which build is current; below it, a line appears at the top of Sessions (dismissable) or, if we set it so, a screen. Settings → Beta → "Check for a newer build now" shows the last check and the verdict. Nothing else leaves the phone.
+
+Please check: Start over (Settings → Beta) empties the key and the Strava connection; the Sessions list shows no reminder line while your build is current; Settings → Beta → Check for a newer build now says "current".
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
