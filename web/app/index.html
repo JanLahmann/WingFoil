@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>CleanJibe — session analyzer</title>
+<title>CleanJibe · session analyzer</title>
 <meta name="description" content="Drop a wingfoil .fit file and get the session back: foil time, flights, jibe outcomes, speed records, wind axis. Free, no account, nothing uploaded.">
 <!-- Two theme colours and `light dark`, like every other document here: the analyzer follows
      the reader's system setting since 14 Sep 2026 (css/style.css, "LIGHT THEME"). The two
@@ -88,7 +88,7 @@
       <button type="button" data-view="trends" aria-label="Records and trends">Records<span
         class="wide-only">&nbsp;&amp; trends</span></button>
     </nav>
-    <span class="chip" id="engine-chip" hidden>engine —</span>
+    <span class="chip" id="engine-chip" hidden>engine</span>
     <button class="ghost" id="icu-toggle" type="button" aria-expanded="false">intervals.icu</button>
   </div>
 <!-- sitenav:begin — COPIED VERBATIM ON ALL NINE PAGES. The only thing that differs is
@@ -146,9 +146,9 @@
      localStorage behind try/catch — a preference that cannot be read must never be the
      reason a page misbehaves — so a rider who has said no once is not asked on every visit. -->
 <div id="install-banner" class="update-banner" role="status" hidden>
-  <span><strong>Install CleanJibe</strong> — it gets an icon, opens without browser chrome,
-        works with no signal, and joins your share sheet, so <em>Share &rarr; CleanJibe</em>
-        on a <code>.fit</code> or <code>.gpx</code> opens the analysis.</span>
+  <span><strong>Install CleanJibe</strong>. It gets an icon, opens without browser chrome
+        and works with no signal. It joins your share sheet too, so <em>Share &rarr;
+        CleanJibe</em> on a <code>.fit</code> or <code>.gpx</code> opens the analysis.</span>
   <span class="update-actions">
     <button class="primary" id="install-go" type="button">Install</button>
     <button class="ghost" id="install-dismiss" type="button">Later</button>
@@ -168,7 +168,7 @@
         <path d="M8 30v6a2 2 0 0 0 2 2h28a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor"
               stroke-width="2.5" stroke-linecap="round"/>
       </svg>
-      <p class="drop-title">Drop a <strong>.fit</strong>, <strong>.gpx</strong> or <strong>.tcx</strong> file (or a .zip containing one)</p>
+      <p class="drop-title">Drop a <strong>.fit</strong>, <strong>.gpx</strong> or <strong>.tcx</strong> file, or a .zip containing one</p>
       <p class="drop-hint">
         <!-- A real <label for> — not a button calling input.click() — so the picker opens
              even where scripted activation is restricted. iPhone Safari has no drag & drop,
@@ -189,7 +189,7 @@
            duration is the part that says how much session is in there. -->
       <p class="drop-alt">
         …or <button class="linkish" id="try-example" type="button">open the example
-        session</button> <span class="dim">— Lago di Garda, 30 Aug · 10:45 min</span>
+        session</button> <span class="dim">· Lago di Garda, 30 Aug · 10:45 min</span>
       </p>
 
       <!-- What you get, before you have given anything. A first visitor used to see an
@@ -228,15 +228,15 @@
              exactly one" (ux-audit A3.5, change #5). The drop title eight lines above has
              always had it right — "(or a .zip containing one)" — so the page contradicted
              itself within one screen. The correct sentence is the one that stayed. -->
-        Garmin <code>.fit</code> files work: from the CleanJibe watch app, from Garmin's own
-        Windsurf profile, or from another wingfoil Connect IQ app.
-        <code>.gpx</code> and <code>.tcx</code> work as well — that is
-        what a Polar, Suunto or Coros export usually is. There's no pump data in either, and
-        unless the file carries its own speed channel the speed records are estimates. Pump
-        strokes and takeoff effort need the CleanJibe watch app; everything else works from
+        Garmin <code>.fit</code> files work. That means the CleanJibe watch app, Garmin's own
+        Windsurf profile, or another wingfoil Connect IQ app.
+        <code>.gpx</code> and <code>.tcx</code> work as well. That is
+        what a Polar, Suunto or Coros export usually is. There's no pump data in either.
+        Unless the file carries its own speed channel, the speed records are estimates. Pump
+        strokes and takeoff effort need the CleanJibe watch app. Everything else works from
         any of them.
       </p>
-      <p class="privacy">Free, no account. Your file never leaves this browser tab — the analysis runs on your own device.</p>
+      <p class="privacy">Free, no account. Your file never leaves this browser tab. The analysis runs on your own device.</p>
     </div>
   </section>
 
@@ -246,8 +246,8 @@
     <p class="muted">
       If your Garmin activities already sync to intervals.icu, pull a session straight from
       there instead of exporting it by hand. Your API key is stored <strong>only in this
-      browser</strong> and is sent <strong>only to <code>api.intervals.icu</code></strong>
-      — never to this site's host, never anywhere else.
+      browser</strong> and is sent <strong>only to <code>api.intervals.icu</code></strong>.
+      Never to this site's host, never anywhere else.
     </p>
     <div class="icu-form">
       <label>Athlete ID <input id="icu-athlete" type="text" value="0" placeholder="0 = the key's own athlete" autocomplete="off" spellcheck="false"></label>
@@ -278,7 +278,7 @@
     </ol>
     <div class="progress-foot">
       <div>
-        <p class="muted small" id="progress-note">The engine (~12 MB) downloads once, then stays cached — the next file starts straight away.</p>
+        <p class="muted small" id="progress-note">The engine downloads once, about 12 MB, then stays cached. The next file starts straight away.</p>
         <p class="muted small" id="progress-expect">A long session recorded with the accelerometer can take several minutes. The tab is working, not stuck.</p>
       </div>
       <button class="ghost" id="cancel-analysis" type="button" hidden>Cancel</button>
@@ -290,10 +290,10 @@
     <!-- The commonest cause by a distance, and the fix, stated before the technical text:
          a rider who exported from a tool that re-wrote the file gets a FIT the engine
          cannot read, and "Download original file" is the one instruction that helps. -->
-    <p class="muted small">Most often the file is not a FIT recording, or it is a converted
+    <p class="muted small">Most often the file is not a FIT recording. Or it is a converted
       export rather than the original file from the watch. On intervals.icu or Garmin
       Connect, choose <em>Download original file</em>. If the message below counts
-      recordings, the <code>.zip</code> holds more than one — unzip it and drop the single
+      recordings, the <code>.zip</code> holds more than one. Unzip it and drop the single
       session you want.</p>
     <pre id="error-text"></pre>
   </section>
@@ -334,7 +334,7 @@
            (ux-audit A3.3, change #10). One line, on the result head, naming the control
            by the label it wears. Same words as the line under the homepage's hero card. -->
       <p class="note" id="card-offer">
-        <strong>Make a card of this.</strong> <em>Share card</em>, above — your track, your
+        <strong>Make a card of this.</strong> <em>Share card</em> is above. Your track, your
         numbers, one picture, drawn here and saved here.
       </p>
       <p class="note highlight-note" id="highlight-note" hidden></p>
@@ -386,9 +386,9 @@
     <section class="panel" data-section="mapSpeed">
       <div class="panel-head">
         <h2>Track</h2>
-        <p class="muted small">Local-metre projection, north up. Shape carries the outcome; colour
-          reinforces it. Tap the track to move the playhead; tap a marker for its facts.
-          Pinch, scroll or double-tap to zoom in; zoomed, a drag pans.</p>
+        <p class="muted small">Local-metre projection, north up. Shape carries the outcome.
+          Colour reinforces it. Tap the track to move the playhead. Tap a marker for its facts.
+          Pinch, scroll or double-tap to zoom in. Zoomed, a drag pans.</p>
       </div>
       <div class="figure" id="map-figure"></div>
       <div class="legend" id="map-legend"></div>
@@ -397,9 +397,9 @@
     <section class="panel" data-section="mapSpeed">
       <div class="panel-head">
         <h2>Speed</h2>
-        <p class="muted small">Doppler drives the flight state; the positional channel scores the
-          turns. Numbers match the map. Drag to scrub; wheel, pinch or double-tap to zoom the
-          time axis.</p>
+        <p class="muted small">Doppler drives the flight state. The positional channel scores
+          the turns. Numbers match the map. Drag to scrub. Wheel, pinch or double-tap to zoom
+          the time axis.</p>
       </div>
       <div class="figure" id="strip-figure"></div>
       <!-- The playhead readout: filled in by js/session.js while a playhead is set, and
@@ -447,8 +447,8 @@
            fixtures directory, which is true, useful to exactly one reader, and a strange
            thing to meet at the bottom of your own session report. -->
       <p class="muted small">
-        Every number on this page, plus the ones that did not fit, as one JSON file — the
-        same document the iPhone app and the tests read.
+        Every number on this page, plus the ones that did not fit, as one JSON file. It is
+        the same document the iPhone app and the tests read.
       </p>
       <p><button class="ghost" id="download-json" type="button">Download analysis JSON</button></p>
     </section>
@@ -473,8 +473,8 @@
   <section class="panel">
     <div class="panel-head"><h2>Where this lives</h2></div>
     <p class="muted small">
-      Saved sessions are written to this browser's <strong>private per-origin storage</strong>
-      (OPFS, or IndexedDB where OPFS is unavailable). They are not synced, not backed up and
+      Saved sessions are written to this browser's <strong>private per-origin storage</strong>.
+      That is OPFS, or IndexedDB where OPFS is unavailable. They are not synced, not backed up and
       not visible to any other site. <strong>Clearing this site's data, or using a private
       window, deletes them.</strong> Use <em>Download all</em>, or the per-row
       <code>.fit</code> / <code>.json</code> buttons, to keep a copy you own.
@@ -523,8 +523,8 @@
       <!-- The names already in the library, so a second file from the same friend lands on
            the same spelling as the first. Filled by js/rider.js. -->
       <div class="rider-known" id="rider-known" hidden></div>
-      <p class="note">A friend's session is saved and shown in full — map, charts,
-        everything — but stays out of your records and trends.</p>
+      <p class="note">A friend's session is saved and shown in full, map and charts and
+        everything. It stays out of your records and trends.</p>
     </div>
     <div class="ask-actions">
       <button type="button" class="ghost" id="rider-cancel">Cancel</button>
@@ -579,8 +579,8 @@
         <input type="checkbox" id="card-map">
         <span>Map background</span>
       </label>
-      <p class="muted small">Draws the track over OpenStreetMap. This is the one thing on
-        this page that fetches anything: map tiles for the area you sailed, nothing about
+      <p class="muted small">Draws the track over OpenStreetMap. Nothing else on this page
+        fetches anything. It takes map tiles for the area you sailed, nothing about
         your session. Offline it is skipped and you still get the card.</p>
     </div>
     <p class="muted small">PNG · <span id="card-size"></span> · nothing leaves this device
@@ -605,7 +605,7 @@
        account — the file itself never leaves this tab. The page count is named on its own
        line below, where a reader can weigh it. -->
   <p>
-    Free and open source. No server, no upload, no account — your file never leaves this tab.
+    Free and open source. No server, no upload, no account. Your file never leaves this tab.
   </p>
 <!-- sitefoot:begin — COPIED VERBATIM ON ALL NINE PAGES, and compared byte for byte by
      web/tools/verify_links.py exactly the way the site nav in the topbar is. Until
