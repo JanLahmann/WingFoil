@@ -480,6 +480,37 @@ background, and the system controls and the status bar drawn on top of that navy
 told what is underneath them. They are the launch screen continued; everything behind them
 is the phone's own appearance.
 
+**A text field the app draws is drawn by the app, not borrowed.** `.textFieldStyle(.roundedBorder)`
+fills itself with `systemBackground` — pure black in dark mode — and the intervals.icu key
+field sits on the setup card's `secondarySystemBackground`, a near-black grey. Two
+almost-identical blacks with a hairline between them is a solid bar, not a field: nothing
+tells the rider where to tap, and an empty `SecureField` has no dots to give the game away
+either (Jan, build 58, dark mode only — in light mode the same two tokens are white on light
+grey, which is why half the phones never showed it). So any field the app draws on a surface
+of its own wears `appTextFieldChrome()`: a `tertiarySystemGroupedBackground` fill, a step
+*lighter* than the card in dark (#2C2C2E on #1C1C1E) and a step *darker* than it in light
+(#F2F2F7 on white); a hairline `separator` border, so it is still a field where the fill
+matches its background; and explicit `.primary` text with an accent caret rather than
+whatever the enclosing card set. Two fields wear it — the **intervals.icu key** and the
+**period card's title and caption**, which sit in a plain `ScrollView` and had the identical
+problem.
+
+**The same mistake one level out: a semantic colour is only semantic against the background
+it was named for.** `IcuSetupCard` painted itself `secondarySystemBackground`, which in light
+mode is the same #F2F2F7 as the *grouped* list it is a row of — a card with no edges, on the
+one screen a rider meets first. It and its problem banner use the **grouped** pair now
+(`secondarySystemGroupedBackground` / `tertiarySystemGroupedBackground`), white on #F2F2F7 in
+light and #1C1C1E on black in dark, and so does the "What CleanJibe does" row above it. The
+plain `secondarySystemBackground` cards elsewhere — the key-metrics block, the summary grid,
+the HR card, the turn and takeoff tables, the scrubber, the help topic's glossary block, the
+share composer — all sit on `systemBackground` in a `ScrollView`, where that token is the
+right one and reads in both themes. Fields **inside a `Form` or
+`List` row are left alone**: there the row is the field's background and the system already
+gets the contrast right in both themes (gear's name and notes, the rename alerts, the rider
+prompt). The **session share composer's** two fields are deliberately unchromed — the title
+is edited at `.headline` as the session's own name, and it is `.primary` on the sheet's own
+background, which reads in both themes.
+
 **Point sizes are for figures, not for text.** A literal `font(.system(size:))` survives in
 exactly four places, and each is a picture rather than a paragraph: the **share card** and
 the **reel's clip cards**, which are rendered at a fixed pixel size into a PNG and an MP4 and
@@ -2284,6 +2315,19 @@ with, and a banner offering to review two years of afternoons is a chore, not a 
   printed operands, which makes the arithmetic on the card exact rather than usually right.
 - Speeds in the rider's unit (kn/km/h per settings); missing HR renders as the unit's
   missing form ("-- bpm"), not as zero.
+- **A date outside the current year prints its year.** `Sun 30 Aug, 14:07` for this season's
+  afternoon; `Sat 11 Oct 2025, 15:23` for the one two seasons back. A weekday and a day-month
+  are a complete answer for last week and a trap for 2025 — a library is full of both, and
+  the row that lies about it is the one a rider scrolls past fastest (Jan, build 58). One
+  rule, decided in one place (`Fmt.date`), so every surface that prints a session's clock
+  obeys it without knowing: the **library row**, the **session page's date line**, the
+  **feedback mail's facts**, the Health and Strava import lists, the discipline review, the
+  re-add sheet, *Last sync* in Settings and *Last summary* on the watch page. The comparison
+  is made in the *session's* own zone on both sides, so a session recorded at 00:40 on
+  1 January in Auckland is a New Year's session on a phone in Munich. `Fmt.shortDate`
+  (`30 Aug 2026` — records' "when · where", gear's *last used*, a spot's *last*) has always
+  carried the year and is unchanged, and the widgets' `WidgetChrome.shortDate` has followed
+  the same conditional-year rule all along.
 - **A time axis is labelled with round times, not with equal fractions of its domain.**
   Both platforms pick the finest step from one ladder — 5/10/15/30 s, 1/2/5/10/15/30 min,
   1/2/3/6 h — that fits the label budget, and write its multiples. Dividing the domain into
@@ -2381,8 +2425,8 @@ Two rules follow for everything written here. **One wording per metric across ev
 a label does not change because a build is a beta, and nothing in this file is allowed to have
 a channel-specific spelling. **A gated door is gone, not greyed out:** a channel that lacks a
 feature has no row for it, no document type, no usage string and no entitlement — the one
-exception being "What is being tested", which is the app naming the doors one channel up,
-on purpose, in one place.
+exception being Settings → "Coming in a future release", which is the app naming the doors one
+channel up, on purpose, in one place.
 
 A third rule, from the release walkthrough of 14 September 2026: **the release never calls
 itself a beta and never names a door it lacks.** Not in a help topic, not in a footer, not in
@@ -2740,6 +2784,67 @@ GPS fix) opened on *Could not open this session … the stored file is damaged*,
 archive being asked for a file it could not have. Share is disabled on that page; there is
 no analysis to draw a card from yet.
 
+## The first screen of a fresh install is "What CleanJibe does"
+
+The welcome screen is the app's answer to the question a new rider actually has, and it is
+owed to **every** install that has never had a session in it. Release candidate 58 opened on
+the Sessions tab with the intervals.icu setup card instead — four steps and a key field in
+front of somebody who had not been told what the app does — and the cause was the keychain:
+iOS keeps keychain items across an app delete, so a reinstall gets the intervals.icu key
+handed back before the first screen is drawn, and the rule counted a stored key as evidence
+that this install had been welcomed already.
+
+**Only a session is evidence** (`WelcomePrompt`, and its tests). A key says something
+survived a delete; a session says the rider has been through the front door. So
+`isAlreadyWelcomed(sessionCount:)` takes the library and nothing else, and both the silent
+mark — the upgrade path, which stops a rider mid-season being greeted as a stranger — and the
+decision to show the screen turn on it. `hasKey` is gone from all three functions. Everything
+else about the screen is unchanged: it is shown at most once per install, the flag is written
+the moment it goes up rather than when it is answered, another modal defers it rather than
+cancelling it, and Menu → *What CleanJibe does* replays it without re-arming anything.
+
+**And the empty library leads with the same two ways in.** When the library is empty and the
+welcome has been dismissed, the Sessions tab still shows the intervals.icu setup card — but
+not as the first thing on the page. Above it sits one short row: the welcome's own headline,
+*Every flight, every jibe, every swim.*, and two buttons, **What CleanJibe does** (the welcome
+screen again) and **Try the example session** (the same call the welcome's first offer makes,
+so both doors land on the same session). Deliberately a row and not a second card: the setup
+card under it is the thing to *do*, and this is the thing to read first. On a genuine first
+launch the welcome cover is in front of it, so on that run it is simply what is underneath.
+
+## Gear & spots — one page of named things
+
+A spot is the same kind of object as a wing: a named thing sessions reference, and a
+top-level filter chip on both Records and Trends. The tab that owns the rider's named things
+therefore owns both, **on one page** (Jan, build 58). Spots arrived here from four levels
+down the Settings sheet as a row that pushed a sub-page of their own, which is one tap to
+find out there is nothing to find out; they are now the first section of the same list, in
+the three gear groups' own shape:
+
+- **header** — an icon and a name, like *Wing* / *Board* / *Foil*;
+- **one row per spot** — the name, a ✨ where the map named it rather than the rider, a
+  chevron, and underneath the same caption figures a gear row carries: `12 sessions`,
+  `last 30 Aug 2025`. Tapping a row renames it, in an alert with a field in it, because a
+  rename is one short string and not a screen. The coordinates that the old sub-page printed
+  are gone: a centroid to four decimal places is a fact about the clusterer, not about the
+  place;
+- **the section's own actions at its foot**, where every gear group keeps *Add wing*:
+  **Re-cluster spots** and **Look up names again**;
+- **the footer** — tap to rename, a typed name survives a re-cluster, sessions within the
+  cluster radius are one spot, names come from the map when the network allows.
+
+**A spot with no sessions is not listed.** Clustering can leave one behind — a session
+deleted, a re-cluster that moved its afternoons into a neighbour — and an empty spot is a
+name with nothing under it that still turns up in every spot filter. The count is the whole
+of the evidence, so the count is the whole of the filter, on this page and in the *Manage
+spots…* sheet the Records and Trends spot chip still opens (`SpotsView`, which is now reached
+from there and nowhere else).
+
+**The tab is called "Gear & spots".** It said *Gear*, because four labels share a 390 pt bar
+— but spots are half of what is behind it, and a rider looking for the place his spots are
+named has no reason to open a tab called Gear. The bar scales the label; the name tells the
+truth, and it is the screen's own title as well.
+
 ## Session list — group by, and the filters that narrow it
 
 A library is a list of afternoons until it is about forty of them, at which point the
@@ -3055,21 +3160,87 @@ print, in this order and for this reason:
    on those channels — the same string as Settings → About, and the first question of every
    support mail.
 
-In the release channel a seventh row sits straight under **What CleanJibe does**: *What is
-being tested*, which opens the beta list and the TestFlight link (docs/channels.md). It said
-*Curious about what is coming* until 14 September 2026 — an App Store app that opens by being
-curious about itself reads as an apology, and what the row actually points at is the room
-where a feature is ridden with before it arrives here. The page says so in its first
-paragraph: CleanJibe grows in the open, and the features that are still proving themselves
-are tried in a public TestFlight beta first. The **dev** doors are not on it in that channel
-(`#if BETA`): tuning, iPad, the Garmin link and windsurf are on a handful of hand-picked
-phones and are promised to nobody. The beta has the same list in Settings, with the dev rows
-under it and no TestFlight link — the reader is already through the door it offers.
+**Six rows, and no seventh.** The release channel carried *What is being tested* straight
+under **What CleanJibe does** until 15 September 2026, and it is gone from here (Jan, build
+58): the menu answers what a rider needs *now* — how to start, where the switches are, who to
+write to, what the app is, what its numbers mean — and a list of what this build does not
+have is none of those. It has one home, Settings → **Coming in a future release**, described
+under "Settings" below.
 
 **The welcome screen closes.** Replayed from the menu it has a circular ✕ at the top right,
 because its three buttons are *ways in* and a rider who came back to read it is not choosing
 one; a page whose only exits are labelled "Try the example", "Connect" and "Later" reads as a
 gate (Jan, 13 Sep 2026). ✕ does what "Later" does: nothing is armed or loaded.
+
+**Every door on this screen is one sheet.** The Sessions tab used to hang seven
+`.sheet(isPresented:)` modifiers off one view — Settings, Import, Help, a named help topic,
+the release channel's page of what is coming, the beta's date-range editor, the dev build's
+tuning hook. SwiftUI resolves sibling presentations on one view in order and drops the ones
+that arrive while another is still settling, so the tap that set the *last* flag in the
+chain — the help topic, which is what **Getting started** sets — landed on the floor whenever
+the menu's own dismissal was still animating, and the row simply did nothing (Jan, build 58).
+There is now one `@State` of one enum (`LibrarySheet`) and one `.sheet(item:)` over it: two
+writes to one property cannot race, the second replaces the first, and every entry point —
+the menu, the toolbar's Import, the empty-library card, the actions Help hands back
+(`openIcuSettings`, `loadExampleSession`) and every `UI_SHEET` screenshot hook — writes that
+one property. The `UI_SHEET=help|settings|import|tuning|discipline` and `UI_HELP_TOPIC` hooks
+are unchanged from the outside.
+
+## Settings — switches and accounts, and nothing that is already in the menu
+
+Settings opened with three rows — *What CleanJibe does*, *What the numbers mean* and *Send
+feedback* — under two paragraphs of footer, and all three are rows of the library menu one
+tap away. Two homes for one door is two wordings to keep in step and one more screen for a
+rider to search, so the block is gone (Jan, build 58) and the menu keeps them. What is left
+is what only Settings has: **intervals.icu**, **Strava**, deleted sessions, notifications,
+analysis, storage, backup, about — switches and accounts.
+
+**Notifications say intervals.icu, because that is what is asked.** The switch read *Notify
+on new Garmin activities* and the check behind it has never been a Garmin one: it is a call
+to the rider's intervals.icu account, and every watch that syncs there — a Garmin, a Polar, a
+Suunto, a COROS, an Apple Watch through Health — is announced by it. It is **Notify on new
+sessions from intervals.icu** now, and the footer says the same in full. The app also makes
+the offer **once by itself, the moment a key has been proved** — not the moment it is typed:
+"Save & check" stores the key and *then* asks intervals.icu, and the alert used to fire on
+the store, over the spinner and sometimes over a key the answer rejected a second later. The
+alert's title is the switch's own label and its message is the switch's own explanation, word
+for word (`SettingsCopy`), because it is the same feature; "Notify me" runs the same code
+path the switch does, which is what puts the iOS permission sheet under the finger that asked
+for it. `NewActivityPrompt.shouldAsk(… keyIsProven:)` holds the rule.
+
+**"Coming in a future release"** — the channel list (docs/channels.md), read the way a rider
+asks it. It was *Curious about what is coming* until 14 September 2026 (an App Store app that
+opens by being curious about itself reads as an apology) and *What is being tested* until the
+15th, which names the room rather than answering the question. What he is asking is when he
+gets these things, so the row says it: **these functions come in a future release, and can be
+previewed now in the public beta**. On the page, **How to join the beta is the first section
+and a step, not a footnote** — *One tap. Your library is kept.*, a prominent **Open
+TestFlight** button and `cleanjibe.org/invite` under it, with the footer explaining that
+TestFlight is Apple's own app, that the beta reads and writes the same library, and that
+going back is allowed. The **dev** doors are not on it in the release channel (`#if BETA`):
+tuning, iPad, the Garmin link and windsurf are on a handful of hand-picked phones and are
+promised to nobody. The beta shows the same list with the dev rows under it and no join
+section — the reader is already through the door it offers — and keeps its own **Beta**
+section unchanged.
+
+## The status line — a toast, and toasts go away
+
+One line at the foot of the Sessions list says what the app is doing or has just done:
+*Importing 3 files…*, *Re-clustered into 4 spots*, *Backup ready — 65,9 MB*. Forty-odd places
+write it and nothing used to clear it, so the last sentence any job happened to leave behind
+sat there until another job replaced it — Jan found *Backup ready — 65,9 MB* still on the
+list a quarter of an hour later, which turns a report of something finishing into a claim
+about the present.
+
+`SessionStore.status` now arms its own dismissal: **six seconds** (`statusLinger`), then the
+line fades out. Two rules the timer keeps. **A message about work in progress outlives the
+work** — `isBusy` holds the line and the clear is re-armed rather than fired, so *Packing your
+library…* is up for as long as the packing is and the six seconds start when it stops. And
+**only the message that armed the timer may be cleared by it**: every write bumps a
+generation and a stale timer returns without touching anything, so a slow job's old toast can
+never wipe out the one that replaced it. A tap on the line takes it down early, which is
+allowed only while nothing is busy. Nothing else about the line changed — same place, same
+`.bar` background, same spinner while work is running.
 
 ## Feedback mail — the report the app writes and the rider signs
 
