@@ -6,9 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from wingfoil_lab.goldens import (RateConfig, _hr_json, analyze, build_golden, dry_jibe_times,
-                                  golden_path, load_golden, session_rates, window_rates,
-                                  write_golden)
+from wingfoil_lab.goldens import (NOT_A_SESSION_MAX_DISTANCE_M, NOT_A_SESSION_MAX_DURATION_S,
+                                  RateConfig, _hr_json, analyze, build_golden, dry_jibe_times,
+                                  golden_path, load_golden, session_rates, session_verdict,
+                                  window_rates, write_golden)
 from wingfoil_lab.hrcost import HrAnalysis
 from wingfoil_lab.turns import TurnConfig
 
@@ -30,7 +31,8 @@ EPISODE_KEYS = {"startTs", "endTs", "strokes", "outcome", "bursts", "flightIndex
 CAP_KEYS = {"hasDoppler", "hasDevFields", "hasWatchLaps", "hasAccel", "hasHR", "sampleRateHz"}
 RECORD_KEYS = {"best2sKn", "best10sKn", "best5x10sKn", "best100mKn", "best250mKn",
                "best500mKn", "bestNmKn", "bestHourKn", "alpha500Kn", "windows"}
-SUMMARY_KEYS = {"foilTimeS", "foilPct", "flightCount", "longestFlightS",
+SUMMARY_KEYS = {"isSession", "notASessionReason",
+                "foilTimeS", "foilPct", "flightCount", "longestFlightS",
                 "maxFlightM", "distanceKm", "durationS", "timerTimeS", "avgSpeedKmh",
                 "turnsPerHour", "jibesPerHour", "cleanJibesPerHour", "wetPerHour",
                 "windowRates",
@@ -77,7 +79,7 @@ def smoke_golden():
 def test_schema_shape(smoke_golden):
     g = smoke_golden
     assert list(g.keys()) == TOP_KEYS
-    assert g["engineVersion"] == "0.18.0"
+    assert g["engineVersion"] == "0.19.0"
     assert set(g["capabilities"].keys()) == CAP_KEYS
     assert set(g["records"].keys()) == RECORD_KEYS
     assert set(g["summary"].keys()) == SUMMARY_KEYS
@@ -471,3 +473,57 @@ def test_roundtrip(tmp_path, smoke_golden):
     assert out.name == "smoke-60s.expected.json"
     write_golden(smoke_golden, out)
     assert load_golden(out) == json.loads(json.dumps(smoke_golden))
+
+
+# --------------------------------------------------------------- "not a session" (0.19.0)
+
+
+@pytest.mark.parametrize("foil_s,duration_s,distance_m,expected", [
+    # The shape Jan's library filled up with on 13-14 Sep 2026: started on the beach,
+    # stopped again. No foil time, no minutes, no metres.
+    (0.0, 24.0, 0.0, (False, "too_short")),
+    (0.0, 0.0, 0.0, (False, "too_short")),
+    # No foil time and long enough, but the recorder never went anywhere: a watch left
+    # running in the van. The distance branch is what catches it.
+    (0.0, 1800.0, 12.0, (False, "no_distance")),
+    # Exactly on the two thresholds: `<` on both, so the boundary value is a session.
+    (0.0, 120.0, 200.0, (True, None)),
+    (0.0, 119.9, 200.0, (False, "too_short")),
+    (0.0, 120.0, 199.9, (False, "no_distance")),
+    # The skunked afternoon: never once up, and unarguably a session. This is the case the
+    # conjunction exists to protect, and the reason the rule is not "no foil time" alone.
+    (0.0, 4800.0, 2100.0, (True, None)),
+    # Any foil time at all settles it before either threshold is consulted.
+    (0.1, 1.0, 0.0, (True, None)),
+])
+def test_the_not_a_session_rule(foil_s, duration_s, distance_m, expected):
+    assert session_verdict(foil_s, duration_s, distance_m) == expected
+
+
+def test_every_corpus_golden_is_a_session():
+    """The rule may not reach a single recording the project already calls a session.
+
+    Including the 60 s smoke fixture, which is *inside* the duration floor (59.0 s against
+    120) and is a session on its 30 s of foil time alone — the check that the conjunction,
+    and not the two numbers, is what decides.
+    """
+    goldens = sorted((FIXTURES / "goldens").glob("*.expected.json"))
+    assert goldens, "no goldens committed"
+    for path in goldens:
+        summary = load_golden(path)["summary"]
+        assert summary["isSession"] is True, path.name
+        assert summary["notASessionReason"] is None, path.name
+
+
+def test_the_smoke_fixture_would_fail_the_duration_floor_without_its_foil_time(smoke_golden):
+    """The corpus's own proof that the first conjunct is what protects a real session.
+
+    59.0 s is inside the 120 s floor, so `too_short` would catch this fixture outright —
+    and does, the moment its foil time is taken away.
+    """
+    s = smoke_golden["summary"]
+    assert s["durationS"] < NOT_A_SESSION_MAX_DURATION_S
+    assert s["distanceKm"] * 1000.0 > NOT_A_SESSION_MAX_DISTANCE_M   # 226 m, over the floor
+    assert s["foilTimeS"] > 0 and s["isSession"] is True
+    assert session_verdict(0.0, s["durationS"], s["distanceKm"] * 1000.0) \
+        == (False, "too_short")

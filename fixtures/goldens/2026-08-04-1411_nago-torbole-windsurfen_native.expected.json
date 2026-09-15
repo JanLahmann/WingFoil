@@ -1,5 +1,5 @@
 {
-  "engineVersion": "0.18.0",
+  "engineVersion": "0.19.0",
   "config": {
     "foilEntrySpeed": 12.0,
     "entryHold": 2.0,
@@ -9346,6 +9346,8 @@
     }
   },
   "summary": {
+    "isSession": true,
+    "notASessionReason": null,
     "foilTimeS": 4026.0,
     "foilPct": 61.96,
     "flightCount": 130,
