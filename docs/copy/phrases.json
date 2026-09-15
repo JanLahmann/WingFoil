@@ -37,7 +37,7 @@
       },
       {
         "path" : "ios/WingFoilKit/Sources/WingFoilKit/Presentation/TurnAnalytics.swift",
-        "why" : "\"not clean · carried 18° past the axis\" is the ordinary verb — the arc carried past the axis — and it is a pinned cross-platform string: web/js/viz.js writes the same sentence and verify_presentation.py holds the two together (docs/presentation.md).",
+        "why" : "\"not clean · carried 18° past the axis\" is the ordinary verb — the arc carried past the axis — an engine reason on the turn page, not a rider metric. The web's turn table prints the score as a number and does not write this sentence today (checked 15 Sep 2026).",
         "word" : "carried"
       },
       {
