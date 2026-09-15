@@ -156,7 +156,7 @@ of confusion once, so they are written down here.
 * `CleanJibe - private` (until 2026-09-02 `WingFoil (private dev)`) —
   <https://apps.garmin.com/apps/8f4efc35-ad13-46b9-ae9d-f01f444fe05f>,
   bound to the **developer-beta** UUID `953f7547-c152-42c2-8d33-69fb59ad0bf6`
-  (`garmin/manifest-beta.xml`, built with `monkey-beta.jungle`). Version **0.9.4** since
+  (`garmin/manifest-dev.xml`, built with `monkey-dev.jungle`; named manifest-beta until 0.9.11). Version **0.9.4** since
   2026-09-02; before that 0.9.2 (2026-08-07 … 08-31).
 * `CleanJibe Field - private` (until 2026-09-02 `WingFoil Field (private dev)`) —
   <https://apps.garmin.com/apps/da0c6cb5-502b-4623-81ed-54ae40a3bf84>,
@@ -173,8 +173,8 @@ What these listings are, and what the dashboard will not tell you:
 2. **They take the dev-beta UUIDs only.** "The app ID within the manifest file deviates" is
    an accurate error: a RELEASE package (`b1ef484c…`) or an INVITE package (`28942317…`)
    uploaded here is refused because the listing was created from a `manifest-beta.xml`
-   build. Export with `monkeyc -e -r -f monkey-beta.jungle …` (and the field's
-   `garmin/field/monkey-beta.jungle`) — those are the only packages that fit.
+   build. Export with `garmin/tools/package.sh` (the `-dev` package, from `monkey-dev.jungle`; and
+   the dormant field's `garmin/field/monkey-beta.jungle`) — those are the only packages that fit.
 3. **Their job** is an over-the-air channel to Jan's own watch for the unlocked,
    full-device-list build, nothing more. The public CleanJibe listings above carry the
    invite UUIDs; the release UUID `b1ef484c…` is reserved for the eventual non-beta public
@@ -186,21 +186,25 @@ support e-mail there is `info@cleanjibe.org` since 2026-09-02, like the public o
 ribbon, regenerated 2026-09-02 (the old file still had the pre-September mark).
 
 On the wrist the developer-only builds are called **Dev CleanJibe** / **Dev CleanJibe Field**
-(`AppNameBeta` in the two strings.xml, since 2026-09-03) so they can be told from the public
+(`AppNameDev` in strings.xml since 0.9.11, `AppNameBeta` before) so they can be told from the public
 "CleanJibe Beta" in a truncated watch list; their store version strings carry a `-dev` suffix
 (`0.9.8-dev` app, Internal 20, uploaded 2026-09-07; `0.9.6-dev` field, dormant) so the two
 channels never share a version string.
 
-Naming trap in `garmin/bin/`: files called `*-beta-*.iq` from 0.9.4 on (`CleanJibe-beta-0.9.4.iq`,
-`CleanJibeField-beta-0.9.x.iq`) carry the **invite** UUID, not the dev-beta one — "beta" there
-meant the "Invite Beta" listing. The dev-beta exports are the `*-devbeta-*.iq` files.
+Naming, since 0.9.11 (docs/channels.md, "The watch"): `garmin/tools/package.sh` writes
+`CleanJibe-release-<v>.iq` (b1ef484c), `CleanJibe-beta-<v>.iq` (28942317, the open beta) and
+`CleanJibe-dev-<v>-devN.iq` (953f7547, the private listing). Older files in `garmin/bin/`: the
+`*-beta-*.iq` up to 0.9.10 are the invite/beta UUID, the `*-devbeta-*.iq` the private one.
+Listing titles to set in the store: **CleanJibe Wingfoil Watch App** (release, when opened) and
+**CleanJibe Wingfoil Watch App Beta** (the existing public listing, renamed from "CleanJibe
+Wingfoil Tracker (Beta)"); the names on the watch are CleanJibe / CleanJibe Beta / CleanJibe Dev.
 
 The two listings are told apart on the wrist by their mark since 14 September 2026
 (docs/channels.md, "Telling the channels apart"): the invite build's launcher icon and
 splash wear a red BETA label, the dev-beta build's are mirrored (wing upper right), the
-public build's are the mark as drawn. `monkey-invite.jungle` appends `resources-beta/`,
-`monkey-beta.jungle` appends `resources-dev/` — the directory names follow the channel,
-not the jungle.
+public build's are the mark as drawn. `monkey-beta.jungle` appends `resources-beta/`,
+`monkey-dev.jungle` appends `resources-dev/` — since 0.9.11 the jungles are named after the
+streams too.
 
 ---
 

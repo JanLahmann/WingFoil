@@ -87,7 +87,7 @@ module AppSettings {
         alertFlight = _bool("alertFlight", true);
         alertTurn = _bool("alertTurn", true);
         alertCleanJibe = _bool("alertCleanJibe", true);
-        mapAfterSave = _bool("mapAfterSave", false);
+        mapAfterSave = readMapAfterSave();
         alertTakeoff = _bool("alertTakeoff", true);
         visualAlerts = _bool("visualAlerts", true);
         alertIntervalMin = _num("alertIntervalMin", 0.0).toNumber();
@@ -175,5 +175,19 @@ module AppSettings {
 
     function speedToDisplay(mps as Float) as Float {
         return cfg.speedToDisplay(mps);
+    }
+
+    // ---- the dev stream's experiments (docs/channels.md, "The watch") ----
+    // Monkey C has no #if; the jungles exclude annotations instead. The dev jungle excludes
+    // `notdev`, every other jungle excludes `dev`, so exactly one of each pair compiles and
+    // a release or beta build carries neither the switch nor the code behind it.
+    (:dev)
+    function readMapAfterSave() as Boolean {
+        return _bool("mapAfterSave", false);       // the property lives in resources-dev/base
+    }
+
+    (:notdev)
+    function readMapAfterSave() as Boolean {
+        return false;                              // no map experiment outside the dev stream
     }
 }

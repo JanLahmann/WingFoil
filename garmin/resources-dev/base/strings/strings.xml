@@ -1,0 +1,5 @@
+<strings>
+    <!-- Dev stream only (monkey-dev.jungle); merged on top of resources/strings/strings.xml. -->
+    <string id="SetMapAfterSave">Map after save (experimental)</string>
+    <string id="SetMapAfterSaveNote">After you save a session, START on the summary's track page opens the watch's own map under your track. Experimental: the map view has crashed the app during recording on the fenix 8, so it is only offered once the session is saved — if it crashes, the session is already safe.</string>
+</strings>

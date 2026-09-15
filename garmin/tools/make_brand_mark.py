@@ -57,7 +57,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(GARMIN), "brand", "tools"))
 from channelmark import draw_label, mirror  # noqa: E402
 
 # Where a channel's cuts go: the same four size classes, under resources-<channel>/, which
-# monkey-invite.jungle (beta) and monkey-beta.jungle (dev) append to every product's
+# monkey-beta.jungle (the open beta) and monkey-dev.jungle (dev) append to every product's
 # resourcePath so the ids override the release cuts (docs/channels.md).
 CHANNELS = ("beta", "dev")
 CHANNEL_DIR = {"resources": "icon65", "resources-icon60": "icon60",
