@@ -218,3 +218,15 @@ authored eighteen minutes earlier in a different worktree. The root cause is tha
 is edited in a separate pass from the app, and the app's pass is the one that keeps running.
 So the check has to run **where the kit's tests run** — otherwise the next 14 September
 19:37 produces the next fourteen bugs.
+
+## The watch is inside the contract too (15 Sep 2026)
+
+`check_release_copy.py` scans the watch as it scans the kit: every `"…"` literal in
+`garmin/source/ui` and `garmin/source/alerts` and every line of `garmin/resources/strings`
+for the lexicon, the two live blocks of `garmin/store/listing.md` (Description, What's New)
+for the Strava rule and the lexicon, and the listing's title line against
+`phrases.json → ciqListingTitle`. Exemptions live in the target's `allow` map as everywhere
+else and are printed on every run. The watch's *labels* are held by `glossary.json → short`
+(seven characters or fewer for every entry whose `surfaces` name the watch, asserted by
+`CopyContractTests`); wiring `PageModel`'s captions to those shorts is the next step.
+
