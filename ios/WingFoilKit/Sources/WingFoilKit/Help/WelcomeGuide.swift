@@ -90,11 +90,20 @@ public enum WelcomeGuide {
     /// The real path. `IcuSetupCard` takes it from here, so this says only where it goes —
     /// but it names intervals.icu *and* says why a third party is in the story at all. A
     /// stranger's name on a first-run screen, with no reason beside it, reads as a catch.
-    public static let connectTitle = "Connect your Garmin"
+    ///
+    /// **The title is the thing that happens** (15 Sep 2026). It said *"Connect your
+    /// Garmin"*, and the button connects nothing: it closes the welcome screen, and the
+    /// four-step setup card is what was underneath all along (`RootView`, `IcuSetupCard`).
+    /// A first-run button whose only visible effect is that the screen disappears reads as
+    /// a tap that failed — so the label names the card it uncovers, in the same words
+    /// Settings and `GettingStartedGuide.settingsIcu` use for it, and the detail says both
+    /// what it is for and what pressing it does.
+    public static let connectTitle = "Set up intervals.icu"
     public static let connectDetail =
         "Garmin has no open API for a personal app, so CleanJibe collects your sessions "
-        + "through intervals.icu — free, four steps, about five minutes, once. Every session "
-        + "after that arrives on its own."
+        + "through intervals.icu — free, four steps, about five minutes, once. This closes "
+        + "the welcome screen and leaves you on those four steps. Every session after that "
+        + "arrives on its own."
 
     /// The quiet way out. Not a hidden one: a rider who wants to import a file by hand has
     /// nothing to gain from either button above — but "Later" on its own does not tell him

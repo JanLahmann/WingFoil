@@ -89,8 +89,12 @@ struct BetaSectionView: View {
             Text("You are on the beta. These are the doors it opens that the App Store "
                  + "build does not have yet — every one of them is here to be ridden with "
                  + "and reported on.\n\n"
-                 + "\"Request a feature\" opens the same mail as Send feedback, with this "
-                 + "build and your library's shape already written in. Nothing is sent "
+                 // **Named for a door that is on screen.** It said "the same mail as Send
+                 // feedback", and "Send feedback" is not a label a rider can see anywhere
+                 // in this build — it is the composer's own navigation title, which only
+                 // appears once the mail is already open (15 Sep 2026).
+                 + "\"Request a feature\" opens the same mail as \(FeedbackDoors.app), with "
+                 + "this build and your library's shape already written in. Nothing is sent "
                  + "until you tap Send.\n\n"
                  + "\"Send usage report\" adds what this phone has counted — which parts of "
                  + "CleanJibe you have used, how often, and anything that has gone wrong. "

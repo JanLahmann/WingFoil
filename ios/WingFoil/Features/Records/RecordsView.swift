@@ -186,14 +186,30 @@ struct RecordsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// Three empty screens, not one.
+    ///
+    /// **The middle one was the bug** (15 Sep 2026): a rider who took the one-tap path —
+    /// install, *Try the example session* — landed here and was told there was "no
+    /// qualifying speed window under this filter" with no filter set. The example is kept
+    /// out of personal records on purpose (`LibraryStore.clause`), and nothing on this
+    /// screen said so or could be changed to fix it. `ExampleOnlyNote` is that fact in the
+    /// rider's words with the step that changes it; the filter sentence stays for the case
+    /// it was written for, which is a filter that really is set.
     private var emptyState: some View {
         ContentUnavailableView {
-            Label(loaded ? "No records yet" : "Loading…", systemImage: "trophy")
+            Label(emptyTitle, systemImage: "trophy")
         } description: {
             Text(store.sessions.isEmpty
                  ? "Import or sync a session and its speed records appear here."
-                 : "No qualifying speed window under this filter.")
+                 : store.hasOnlyExampleSessions
+                   ? ExampleOnlyNote.records
+                   : "No qualifying speed window under this filter.")
         }
+    }
+
+    private var emptyTitle: String {
+        guard loaded else { return "Loading…" }
+        return store.hasOnlyExampleSessions ? ExampleOnlyNote.recordsTitle : "No records yet"
     }
 
     private var recordsHeader: some View { RecordTableHeader() }

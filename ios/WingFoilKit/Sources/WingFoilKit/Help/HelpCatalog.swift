@@ -645,9 +645,14 @@ public enum HelpCatalog {
                 "\(FeedbackInvitation.sentence) A missing column, a word that reads wrong, "
                 + "something you would rather the app did differently: the same mail carries "
                 + "all of it.",
-                "Menu → Support & ideas, Settings → Send feedback and the share sheet's "
-                + "\"Report a problem with this session…\" all open the same mail, with "
-                + "three questions and a blank line under each.",
+                // **Three doors that exist** (15 Sep 2026). This sentence used to name
+                // "Settings → Send feedback", a row deleted in build 58 — the app's own
+                // Help sending the rider to a screen that no longer has it. The names come
+                // from `FeedbackDoors` now, so a renamed door renames its instructions.
+                "\(FeedbackDoors.app), the offer at the foot of every page "
+                + "(\"\(FeedbackDoors.footer)\") and the share sheet's "
+                + "\"\(FeedbackDoors.share)\" all open the same mail, with three questions "
+                + "and a blank line under each.",
                 "Nothing leaves the phone until you tap Send. It is Apple's own composer, "
                 + "the address is \(FeedbackReport.recipient), and no part of CleanJibe "
                 + "sends anything by itself — there is no CleanJibe server to send it to.",
@@ -666,9 +671,9 @@ public enum HelpCatalog {
                           + "mail account, the app hands the same text to whatever you do "
                           + "use."),
                 .init(term: "If you are on the beta",
-                      detail: "A screenshot taken inside the app offers Send Beta Feedback, "
-                          + "which attaches the screenshot and the device logs — the route "
-                          + "for a crash."),
+                      detail: "A screenshot taken inside the app offers "
+                          + "\(FeedbackDoors.testflight), which attaches the screenshot and "
+                          + "the device logs — the route for a crash."),
                 .init(term: "About the watch app itself",
                       detail: "Anything about the watch app can go through its Connect IQ "
                           + "store listing. For a number that looks wrong, the mail here is "

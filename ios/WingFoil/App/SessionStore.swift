@@ -860,6 +860,21 @@ final class SessionStore {
     /// so neither offers to load something that is already there.
     var hasExampleSession: Bool { sessions.contains { $0.isExample } }
 
+    /// **True on the one-tap first run**: the example is in the library and nothing that
+    /// counts is.
+    ///
+    /// Records and Trends both read it, because both of them are otherwise obliged to
+    /// explain an empty screen by naming a filter the rider never set — the example is
+    /// excluded from both on purpose (`LibraryStore.clause`, `ExampleOnlyNote`) and no
+    /// control on either screen can change that. The predicate is that same clause
+    /// restated on the in-memory list, for the third time in this file and for the same
+    /// reason: the views read the list, not the SQL.
+    var hasOnlyExampleSessions: Bool {
+        hasExampleSession && !sessions.contains {
+            !$0.isExample && !$0.isProvisional && $0.isSession && $0.rider == nil
+        }
+    }
+
     /// Imports the FIT bundled with the app (`ExampleSession`) through the ordinary path.
     ///
     /// Deliberately *not* `runImport`: an example must not celebrate a personal best and

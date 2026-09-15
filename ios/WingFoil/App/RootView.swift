@@ -197,8 +197,11 @@ struct RootView: View {
                     Task { await store.loadExampleSessionAndOpen() }
                 },
                 // Straight into the ordinary first run: the library is empty and no key is
-                // stored, so `IcuSetupCard` is already the thing underneath. Nothing to do
-                // but get out of its way.
+                // stored, so `IcuSetupCard` — the four steps and the key field — is already
+                // the thing underneath. Nothing to do but get out of its way, which is why
+                // `WelcomeGuide.connectTitle` says "Set up intervals.icu" and its detail
+                // says the screen closes onto those steps: the button used to be labelled
+                // "Connect your Garmin" and connected nothing (15 Sep 2026).
                 onConnect: { store.dismissWelcome() },
                 onLater: { store.dismissWelcome() })
         }

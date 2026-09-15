@@ -389,7 +389,11 @@ struct SettingsView: View {
                 }
             }
         } header: {
-            Text("Tuning · beta")
+            // **`dev`, not `beta`** — the header said one channel and the first two words
+            // of its own footer said the other, eight points apart. Tuning is a dev door
+            // (docs/channels.md: "Tuning page, sliders, turn workbench, tuned chips | dev"),
+            // and this whole section is behind `#if TUNING`.
+            Text("Tuning · dev")
         } footer: {
             Text("Dev build only. Puts the analysis thresholds on sliders so a parameter can "
                  + "be tried against your own sessions in a minute instead of a rebuild. They "
