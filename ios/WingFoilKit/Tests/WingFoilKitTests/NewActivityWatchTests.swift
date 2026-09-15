@@ -257,6 +257,19 @@ import Testing
         }
     }
 
+    /// Stored is not working: "Save & check" writes the key and *then* asks intervals.icu,
+    /// and the offer belongs after the answer, not over the spinner (Jan, build 58).
+    @Test func aKeyThatHasNotBeenProvedYetDoesNotEarnTheOffer() {
+        #expect(!NewActivityPrompt.shouldAsk(hasKey: true, isEnabled: false, hasAsked: false,
+                                             keyIsProven: false))
+        #expect(NewActivityPrompt.shouldAsk(hasKey: true, isEnabled: false, hasAsked: false,
+                                            keyIsProven: true))
+        // …and it is a deferral like every other "not yet": nothing is spent, so the call
+        // that follows a successful check says yes.
+        #expect(!NewActivityPrompt.shouldAsk(hasKey: true, isEnabled: false, hasAsked: true,
+                                             keyIsProven: true))
+    }
+
     @Test func aBusyScreenDefersTheOfferRatherThanSpendingIt() {
         // The only "no" that is not final: nothing is written down, and the same call on
         // the next clear screen says yes.
