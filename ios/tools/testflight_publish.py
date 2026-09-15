@@ -45,15 +45,13 @@ def app_id(app):
 
 WHATS_NEW = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-Beta build 69 — Jan's second round on the help and the menu.
+Beta build 71 — the voice.
 
-- The library menu reads in the order you need it: What CleanJibe does, Getting started, Settings, Help, Support & ideas.
-- Getting started now shows the two Apple Watch routes in the beta (the CleanJibe watch app, and Apple's Workout app with Health import).
-- Help → Sending feedback offers "Send feedback…" right there.
-- Help → Speed records is one page: the GP3S windows as entries, with "Uncertified" explained last.
-- The Apple Watch topics no longer tell you to keep the wrist above water — a wrist under water is how a fall is recognised.
+Every sentence the app says was rewritten to one rule: short, clear, one thought per sentence. Help, Settings, Import, the welcome, the empty states, the glossary. The website says the same things the same way.
 
-Everything in 66 otherwise. Please check: Menu → Getting started lists five routes; Help → Sending feedback sends; Help → Speed records.
+Also: the Beta section in Settings keeps only its actions. The list of what the beta has lives once, on Coming in a future release.
+
+Everything in 69 otherwise. Please check: read any help page and tell us where it still sounds written rather than spoken.
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
@@ -61,15 +59,11 @@ Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or
 # App Store one, so saying which one this is matters more than the release notes do.
 WHATS_NEW_INTERNAL = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-CleanJibe Dev, build 68 — your second round on 65.
+CleanJibe Dev, build 70 — the voice, and the beta list once.
 
-- Menu order: What CleanJibe does, Getting started, Settings, Help, Support & ideas.
-- Getting started lists the two Apple Watch routes on beta and dev (it built the release's list before).
-- Help → Sending feedback has a "Send feedback…" button and says the invitation once.
-- Help → Speed records is one page with the windows as entries.
-- The Apple Watch topics say the wrist may go under — that is how a fall is recognised.
+Every rider sentence in the app follows docs/voice.md now: short, verb first, no dashes, one thought per sentence. The Beta section in Settings is actions only; the list is on Coming in a future release.
 
-Please check: Menu → Getting started (five routes); Help → Sending feedback → Send feedback…; Help → Speed records; the menu order.
+Please check: Help pages, Settings footers, Import, the welcome after Start over. Say where a sentence still sounds written rather than spoken.
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
