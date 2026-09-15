@@ -229,11 +229,12 @@ SWIFT_FOOTER = '''
     /// The routes and notes a build on `channel` may name, as the help topic's items —
     /// title as the term, summary as the detail — with the web page named last.
     ///
-    /// `HelpCatalog` asks for `.release`, which is the whole of docs/presentation.md's
-    /// rule for this topic: the two Apple routes are beta doors, and a release build that
-    /// listed them would be naming a door it does not have. They are on the topic's
-    /// `related`, which `relatedTopics(of:channel:)` filters, so a beta reader still gets
-    /// to them in one tap.
+    /// **The channel comes from the app** (`HelpCatalog.topic(_:channel:)`, dev 65). The
+    /// catalogue declares the topic with `.release`, because a static array cannot ask
+    /// which build is reading it, and the lookup rebuilds the items for the channel the
+    /// app hands in. So the two Apple routes are named by no release build, and are items
+    /// on the two channels that have them; either way they are also topics on `related`,
+    /// which `relatedTopics(of:channel:)` filters the same way.
     public static func items(for channel: HelpChannel) -> [HelpTopic.Item] {
         let ways = (routes + notes)
             .filter { channel.has($0.channel) }

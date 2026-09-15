@@ -67,7 +67,8 @@ private struct HelpIndexList: View {
         // in the App Store build must not advertise a door that build does not have.
         let matched = query.trimmingCharacters(in: .whitespaces).isEmpty
             ? visible
-            : HelpCatalog.search(query).filter { listed.contains($0.id) }
+            : HelpCatalog.search(query, channel: AppChannel.channel)
+                .filter { listed.contains($0.id) }
         return HelpCatalog.sections.compactMap { section in
             let topics = matched.filter { $0.section == section }
             return topics.isEmpty ? nil : (section, topics)
@@ -123,13 +124,21 @@ struct HelpTopicSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openIcuSettings) private var openSettings
     @Environment(\.loadExampleSession) private var loadExample
+    @Environment(\.sendFeedback) private var sendFeedback
     /// Optional on purpose: a `?` is drawn on cards all over the app, and this sheet must
     /// not be the one view that insists on a store being in the environment. Without one the
     /// "see also" list is filtered by the channel alone, which is the filter that matters.
     @Environment(SessionStore.self) private var store: SessionStore?
     @State private var next: HelpTopicID?
 
-    private var topic: HelpTopic { HelpCatalog.topic(id) }
+    /// **The page this build reads.** The catalogue is the same data in every channel, but
+    /// one topic's *items* are the ways in (Getting started) and two of those are beta
+    /// doors — so the channel is handed in here rather than left to the kit's default,
+    /// which is the release's list (docs/channels.md). Every entry point to a topic goes
+    /// through this sheet: the menu's Getting started, the index, a card's `?`, a "see
+    /// also" chevron and the Settings deep links, so there is one channel-aware path and
+    /// not five.
+    private var topic: HelpTopic { HelpCatalog.topic(id, channel: AppChannel.channel) }
 
     /// The topics this build may actually offer as a next step. A "see also" is a button,
     /// and a button onto a topic the index hides would be a dead end wearing a chevron —
@@ -234,6 +243,23 @@ struct HelpTopicSheet: View {
                                         .font(.callout.weight(.semibold))
                                 }
                             }
+                            // Same rule again, and the reason the page has a button at all
+                            // (Jan, dev 65): a topic that explains how to send feedback and
+                            // then asks the reader to go and find one of the three doors is
+                            // a page he has to leave to use. `FeedbackDoors.menuRow` names
+                            // the door this opens, so the button and the paragraph above it
+                            // cannot drift apart.
+                            if topic.action == .sendFeedback, let send = sendFeedback {
+                                Button {
+                                    send()
+                                    dismiss()
+                                } label: {
+                                    Label("Send feedback…", systemImage: "envelope")
+                                        .font(.callout.weight(.semibold))
+                                }
+                                .accessibilityHint("Opens the same mail as Menu → "
+                                                   + "\(FeedbackDoors.menuRow)")
+                            }
                         }
                         .padding(.top, 2)
                     }
@@ -294,6 +320,14 @@ private struct LoadExampleSessionKey: EnvironmentKey {
     static let defaultValue: (@MainActor () -> Void)? = nil
 }
 
+/// "Write to me about this", handed down by the screen that owns the feedback composer —
+/// the Sessions list, whose `feedbackMail(on:)` is the same ladder Menu → Support & ideas
+/// climbs. Nil anywhere else, so the *Sending feedback* topic reads as prose rather than
+/// offering a button that does nothing.
+private struct SendFeedbackKey: EnvironmentKey {
+    static let defaultValue: (@MainActor () -> Void)? = nil
+}
+
 extension EnvironmentValues {
     var openIcuSettings: (@MainActor () -> Void)? {
         get { self[OpenIcuSettingsKey.self] }
@@ -303,6 +337,11 @@ extension EnvironmentValues {
     var loadExampleSession: (@MainActor () -> Void)? {
         get { self[LoadExampleSessionKey.self] }
         set { self[LoadExampleSessionKey.self] = newValue }
+    }
+
+    var sendFeedback: (@MainActor () -> Void)? {
+        get { self[SendFeedbackKey.self] }
+        set { self[SendFeedbackKey.self] = newValue }
     }
 }
 

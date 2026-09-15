@@ -7,7 +7,7 @@ import Testing
 /// Jan, on release candidate 58: *"the FAQ is nice, but many of the answers are way too
 /// verbose; it looks AI generated in a negative way."* Every topic was cut back to answer
 /// its own title in the first sentence and then the facts — and the only thing that keeps
-/// a catalogue of forty-six topics that way is a number a new paragraph has to fit inside.
+/// a catalogue of forty topics that way is a number a new paragraph has to fit inside.
 ///
 /// The budgets, agreed 15 September 2026:
 ///

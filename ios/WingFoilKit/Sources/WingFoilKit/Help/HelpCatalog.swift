@@ -52,6 +52,20 @@ public struct HelpTopic: Sendable, Identifiable, Equatable {
     /// Topics worth reading next; every id here must resolve (asserted in the tests).
     public let related: [HelpTopicID]
 
+    /// The same topic with another set of items.
+    ///
+    /// **The one seam a channel-dependent topic needs.** A body cannot branch by channel
+    /// and neither can a `let` in a static array, so the topic whose *items are the routes*
+    /// — Getting started — is declared once with the release's routes and rebuilt through
+    /// here by `HelpCatalog.topic(_:channel:)` when a beta or dev build asks. Nothing else
+    /// about the topic moves, which is the point: the title, the summary, the body and the
+    /// `related` list are the same sentences in every build.
+    public func withItems(_ items: [Item]) -> HelpTopic {
+        HelpTopic(id: id, section: section, channel: channel, title: title, summary: summary,
+                  body: body, items: items, image: image, links: links, action: action,
+                  related: related)
+    }
+
     public init(id: HelpTopicID, section: HelpSection, channel: HelpChannel = .release,
                 title: String, summary: String,
                 body: [String], items: [Item] = [], image: HelpImage? = nil,
@@ -115,6 +129,13 @@ public enum HelpAction: String, Sendable, Equatable {
     /// Imports the bundled example session (`ExampleSession`) — the same button the
     /// empty-library setup card offers, so Help is not a dead end for a first-time reader.
     case loadExampleSession
+    /// Opens the feedback mail — the same composer as Menu → Support & ideas
+    /// (`FeedbackDoors.app`), from the page that explains it.
+    ///
+    /// Jan, dev 65: a page about sending feedback that only *describes* three doors is a
+    /// page the reader has to leave to use. The topic names the doors because they are what
+    /// he will use next time; the button is the door he is standing in front of now.
+    case sendFeedback
 }
 
 /// **Which build is reading the catalogue** — the kit's half of docs/channels.md.
@@ -189,7 +210,13 @@ public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
     case icuPrivacy, privacy, libraryBackup
     case stravaImport, shareFromWatchApp, whichWatch, phoneOnly
     case foilPct, flights, longestFlight, distance, mapLegend
-    case recordSet, best2s, best10s, best5x10s, best500m, bestNm, alpha500, uncertified
+    // **One page for the whole set** (Jan, dev 65: *"do we really need separate pages to
+    // describe each distance?"*). It was eight ids — the set, six windows and the
+    // uncertified mark — each a topic of two sentences, which is a table of contents
+    // wearing chevrons. The windows are items on one topic now; the ids are gone rather
+    // than kept as aliases, because a `?` that still compiles against `.best2s` is a `?`
+    // nobody notices is pointing at a page that no longer exists.
+    case speedRecords
     case turnTypes, turnOutcomes, turnSuccess, portStarboard, falls, touchdowns, glideOuts
     case takeoffAttempts, pumpsToTakeoff, pumpStrokes
     case heartRate
@@ -227,8 +254,17 @@ public enum HelpCatalog {
         // promises. `GettingStartedGuideTests` fails if this topic stops matching it.
         //
         // One route per item, because a body cannot branch by channel and the routes do: the
-        // two Apple doors are beta doors (docs/channels.md), so `items(for: .release)` leaves
-        // them out here and they are topics of their own on `related`, which
+        // two Apple doors are beta doors (docs/channels.md).
+        //
+        // **The items below are the release's list, and every other channel's is built from
+        // it** (`HelpCatalog.topic(_:channel:)` → `resolved(_:channel:)`). A `let` in a
+        // static array cannot ask which build is reading it, so the declaration takes the
+        // strictest reader's list and the lookup rebuilds it for the channel the app hands
+        // in. Until dev 65 the lookup did not exist and this list *was* the answer in every
+        // build, so the beta's own two routes — its watch app, and Apple's Workout app —
+        // were named nowhere a rider would look for them.
+        //
+        // The two Apple doors are topics of their own on `related` as well, which
         // `relatedTopics(of:channel:)` drops in the release. Nothing here says which build
         // the reader is holding.
         HelpTopic(
@@ -289,7 +325,7 @@ public enum HelpCatalog {
                              caption: "The four rows at the top answer \"was that a good "
                                  + "session\"."),
             action: .loadExampleSession,
-            related: [.icuSetup, .sourceClass, .uncertified, .riderAttribution]),
+            related: [.icuSetup, .sourceClass, .speedRecords, .riderAttribution]),
 
         // The two Apple doors, in the channel that has them (docs/channels.md). They sit
         // here rather than under "Where the numbers come from" because for a rider with no
@@ -355,7 +391,7 @@ public enum HelpCatalog {
                           + "rate — and analyses them on your phone. It never reads anything "
                           + "else in Health."),
             ],
-            related: [.appleWatchApp, .sourceClass, .uncertified, .icuSetup]),
+            related: [.appleWatchApp, .sourceClass, .speedRecords, .icuSetup]),
 
         // The second cloud source (ADR-023). What it costs is said early, because a rider
         // who finds out afterwards that his speed records are uncertified has been told
@@ -408,7 +444,7 @@ public enum HelpCatalog {
                           + "already imported stay in your library — they are yours now, "
                           + "analysed on this phone."),
             ],
-            related: [.sourceClass, .uncertified, .icuSetup, .shareFromWatchApp, .whichWatch]),
+            related: [.sourceClass, .speedRecords, .icuSetup, .shareFromWatchApp, .whichWatch]),
 
         // The rider whose watch is neither a Garmin nor an Apple Watch. Every vendor path
         // carries the date it was checked against that vendor's own help page, and the one
@@ -462,7 +498,7 @@ public enum HelpCatalog {
                          url: URL(string: "https://support.garmin.com/en-US/?faq=W1TvTPW8JZ6LfJSfK512Q8")!),
             ],
             related: [.whichWatch, .icuSetup, .stravaImport, .sourceClass, .phoneOnly,
-                      .uncertified]),
+                      .speedRecords]),
 
         // The rider who owns no watch at all. **It names no app and no other platform** —
         // App Store guideline 2.3.10 — so the answer is the *kind* of app and the file it
@@ -496,7 +532,7 @@ public enum HelpCatalog {
                           + ".tcx opens in the CleanJibe beta."),
             ],
             related: [.stravaImport, .shareFromWatchApp, .whichWatch, .sourceClass,
-                      .uncertified]),
+                      .speedRecords]),
 
         // One table, so "will my watch work" has one place to be answered instead of being
         // spread across five topics that each answer a third of it.
@@ -542,7 +578,7 @@ public enum HelpCatalog {
                           + "the flights, turns and map are all there."),
             ],
             related: [.shareFromWatchApp, .icuSetup, .appleWatchApp, .appleWorkoutApp,
-                      .stravaImport, .phoneOnly, .sourceClass, .uncertified]),
+                      .stravaImport, .phoneOnly, .sourceClass, .speedRecords]),
 
         HelpTopic(
             id: .icuTroubleshooting, section: .setup, title: "When the sync does not work",
@@ -649,9 +685,12 @@ public enum HelpCatalog {
             summary: "The app writes down which build, which phone and which session. "
                 + "You write the sentence. \(FeedbackInvitation.sentence)",
             body: [
-                "\(FeedbackInvitation.sentence) A missing column, a word that reads wrong, "
-                + "something you would rather the app did differently: the same mail carries "
-                + "all of it.",
+                // **The invitation is said once, and the summary is where it is said**
+                // (Jan, dev 65). It opened the summary *and* this paragraph, one line
+                // under the other, which reads as a slogan rather than as an answer. The
+                // summary keeps it because that is the line the index shows.
+                "A missing column, a word that reads wrong, something you would rather the "
+                + "app did differently: the same mail carries all of it.",
                 // **Three doors that exist** (15 Sep 2026). This sentence used to name
                 // "Settings → Send feedback", a row deleted in build 58 — the app's own
                 // Help sending the rider to a screen that no longer has it. The names come
@@ -686,6 +725,11 @@ public enum HelpCatalog {
                           + "store listing. For a number that looks wrong, the mail here is "
                           + "the one worth sending."),
             ],
+            // **The page offers the mail it describes** (Jan, dev 65). The three doors are
+            // named because they are where the rider will start next time; the button is the
+            // one he is standing in front of now, and it opens the same composer
+            // (`FeedbackDoors.app`) rather than being a fourth door.
+            action: .sendFeedback,
             related: [.sourceClass, .engineVersion, .divergence]),
 
         // MARK: On the foil
@@ -788,97 +832,62 @@ public enum HelpCatalog {
             related: [.foilPct, .turnOutcomes, .takeoffAttempts]),
 
         // MARK: Speed records
-
+        //
+        // **One topic, and its items are the windows** (Jan, dev 65: *"do we really need
+        // separate pages to describe each distance?"*). There were eight: the set, six
+        // windows and the uncertified mark, each two sentences long, each a row on an index
+        // and a sheet to open. A rider asking "what is alpha 500" wants one line, in the
+        // list of the others, so he can see what he did not ask about too.
+        //
+        // Three of the lines are not written here: `MetricGlossary` already owns the
+        // session page's own wording for the set, for 5×10 s and for alpha 500, and a
+        // second spelling in the help would be the drift the glossary exists to stop.
         HelpTopic(
-            id: .recordSet, section: .records, title: "The GP3S record set",
-            summary: "The standard speedsurfing windows, computed the standard way.",
+            id: .speedRecords, section: .records, title: "Speed records",
+            summary: MetricGlossary.entry("speedRecords").line,
             body: [
-                "These are the windows the GPS speedsurfing world uses, so your numbers are "
-                + "comparable with the ones people post.",
-                "2 s and 10 s peaks, the mean of the best five separate 10 s runs, 100 m / "
-                + "250 m / 500 m / 1 nautical mile, one hour, and alpha 500.",
+                "The set is fixed, so a number here means the same thing as the same number "
+                + "posted anywhere else: the six windows below, plus 100 m, 250 m and your "
+                + "best hour.",
                 "All are computed on the device's Doppler speed, with fractional samples "
-                + "interpolated at the window edges, so the result does not depend on whether "
-                + "your watch recorded at 1 Hz or 4 Hz. No minimum-speed filter is applied.",
+                + "interpolated at the window edges, so the result does not depend on "
+                + "whether your watch recorded at 1 Hz or 4 Hz. No minimum-speed filter is "
+                + "applied.",
                 "A window never spans a recording gap. Tap a record card to see where on the "
-                + "track and on the speed trace it happened.",
+                + "track and on the speed trace it happened. A record certifies only when "
+                + "the recording holds the receiver's own speed channel; the rest are marked "
+                + "uncertified.",
             ],
-            related: [.best2s, .best5x10s, .alpha500, .uncertified]),
-
-        HelpTopic(
-            id: .best2s, section: .records, title: "Best 2 s",
-            summary: "Your peak speed, averaged over 2 seconds.",
-            body: [
-                "The fastest 2-second stretch of the session. A single-sample maximum is "
-                + "noise; two seconds is a real burst.",
-                "This is the number most riders compare, and the one the Records screen "
-                + "tracks as a personal best over time.",
+            items: [
+                .init(term: "Best 2 s",
+                      detail: "Your peak speed, averaged over 2 seconds. A single-sample "
+                          + "maximum is noise; two seconds is a real burst, and it is the "
+                          + "number most riders compare."),
+                .init(term: "Best 10 s",
+                      detail: "The fastest 10-second run — a burst you had to hold. Luck and "
+                          + "a single gust cannot carry it, so it usually sits 1–3 knots "
+                          + "below your 2 s."),
+                .init(term: MetricGlossary.entry("best5x10s").term,
+                      detail: MetricGlossary.entry("best5x10s").line),
+                .init(term: "Best 500 m",
+                      detail: "Your fastest half-kilometre, measured on integrated Doppler "
+                          + "distance rather than straight-line distance — so a curved run "
+                          + "still counts and cutting the corner flatters nothing."),
+                .init(term: "Best 1 NM",
+                      detail: "Your fastest nautical mile (1852 m). On most spots it needs "
+                          + "more than one leg, so it measures how well you keep speed "
+                          + "through your turns."),
+                .init(term: MetricGlossary.entry("alpha500").term,
+                      detail: MetricGlossary.entry("alpha500").line),
+                // Last, because it is the one line that is about the recording rather than
+                // about a window — and the one a rider needs before he posts a number.
+                .init(term: "\"Uncertified\"",
+                      detail: "A recording that carries positions but no speed channel — "
+                          + "every GPX, some converted exports — has its speed "
+                          + "differentiated from them, which reads high. Shown, never a "
+                          + "personal best."),
             ],
-            related: [.recordSet, .best10s, .uncertified]),
-
-        HelpTopic(
-            id: .best10s, section: .records, title: "Best 10 s",
-            summary: "The fastest 10-second run — a burst you had to hold.",
-            body: [
-                "Ten seconds is long enough that luck and a single gust cannot carry it: you "
-                + "have to be lit up and stay lit up. It is usually 1–3 knots below your 2 s.",
-            ],
-            related: [.recordSet, .best2s, .best5x10s]),
-
-        HelpTopic(
-            id: .best5x10s, section: .records, title: "5 × 10 s",
-            summary: "The mean of your best five separate 10-second runs.",
-            body: [
-                "The five 10-second windows must not overlap, so this cannot be one long run "
-                + "counted five times. It rewards consistency across the session rather than "
-                + "a single lucky reach, which is why the speedsurfing world uses it as a "
-                + "session's headline number.",
-            ],
-            related: [.recordSet, .best10s]),
-
-        HelpTopic(
-            id: .best500m, section: .records, title: "Best 500 m",
-            summary: "Your fastest half-kilometre.",
-            body: [
-                "The fastest continuous 500 metres of track, measured on integrated Doppler "
-                + "distance rather than straight-line distance — so a slightly curved run "
-                + "still counts, and the number is not flattered by cutting the corner.",
-            ],
-            related: [.recordSet, .bestNm, .alpha500]),
-
-        HelpTopic(
-            id: .bestNm, section: .records, title: "Best 1 NM",
-            summary: "Your fastest nautical mile (1852 m).",
-            body: [
-                "A long-distance window: on most spots it needs more than one leg, so it "
-                + "measures how well you keep speed through your turns as much as your top end.",
-            ],
-            related: [.recordSet, .best500m, .turnSuccess]),
-
-        HelpTopic(
-            id: .alpha500, section: .records, title: "Alpha 500",
-            summary: "500 m that comes back to where it started — speed plus a turn.",
-            body: [
-                "An alpha run is a 500-metre stretch whose end point is within 50 m of its "
-                + "start point. You cannot do it in a straight line: it has to contain a "
-                + "gybe, and you have to carry speed through it.",
-                "It is the one record that measures your turns as well as your speed.",
-            ],
-            related: [.recordSet, .best500m, .turnOutcomes]),
-
-        HelpTopic(
-            id: .uncertified, section: .records, title: "\"Uncertified\"",
-            summary: "The recording could not prove the speed was Doppler.",
-            body: [
-                "Speed records are only trustworthy when they come from the receiver's "
-                + "Doppler speed channel. A recording that carries positions but no speed "
-                + "channel — every GPX, and the occasional converted export — gets its speed "
-                + "differentiated from positions, which is noisier and can read high.",
-                "Those records are still shown — they are still your session — but labelled "
-                + "uncertified so you never post one as a personal best by accident. Nothing "
-                + "recorded by your watch directly is affected.",
-            ],
-            related: [.sourceClass, .recordSet]),
+            related: [.sourceClass, .turnOutcomes, .divergence]),
 
         // MARK: Turns & losses
 
@@ -974,7 +983,7 @@ public enum HelpCatalog {
                           + "0–100. The evidence behind \"clean\", printed beside every "
                           + "turn."),
             ],
-            related: [.turnOutcomes, .alpha500]),
+            related: [.turnOutcomes, .speedRecords]),
 
         HelpTopic(
             id: .portStarboard, section: .turns, title: "Port / starboard",
@@ -1216,7 +1225,7 @@ public enum HelpCatalog {
                 .init(term: RecordingClass.bPlus.name, detail: RecordingClass.bPlus.line),
                 .init(term: RecordingClass.c.name, detail: RecordingClass.c.line),
             ],
-            related: [.uncertified, .divergence, .engineVersion, .whichWatch,
+            related: [.speedRecords, .divergence, .engineVersion, .whichWatch,
                       .stravaImport, .phoneOnly]),
 
         HelpTopic(
@@ -1295,17 +1304,50 @@ public enum HelpCatalog {
     private static let byID: [HelpTopicID: HelpTopic] =
         Dictionary(uniqueKeysWithValues: topics.map { ($0.id, $0) })
 
+    /// **A topic whose items depend on the channel, resolved.**
+    ///
+    /// The catalogue is declared once, for the strictest reader, and every topic but one is
+    /// the same sentences in every build. The exception is *Getting started*, whose items
+    /// are the ways in: two of the five routes are beta doors (docs/channels.md), and a
+    /// release build that listed them would be naming a door it does not have — while a
+    /// beta build that left them out would be hiding the two doors its rider most needs
+    /// (Jan, dev 65: the Apple routes never appeared, in any channel, because the kit was
+    /// asked for the release's list and the kit cannot see `#if BETA`).
+    ///
+    /// So the *items* are rebuilt for the asking channel here, in one place, and every
+    /// reading path below goes through it. The channel still comes from the app.
+    private static func resolved(_ topic: HelpTopic, channel: HelpChannel) -> HelpTopic {
+        switch topic.id {
+        case .gettingStarted: topic.withItems(GettingStartedGuide.items(for: channel))
+        default: topic
+        }
+    }
+
     /// The topic for a metric. Non-optional: the tests assert every `HelpTopicID` case is
     /// present, so a `?` button on a card can link without unwrapping.
-    public static func topic(_ id: HelpTopicID) -> HelpTopic {
+    ///
+    /// **Total in every channel** (docs/channels.md): `channel` decides what a topic's items
+    /// *say*, never whether it resolves — a `?` on a card the build actually draws always
+    /// opens, and so does a deep link written down in docs or in a mail. What a channel may
+    /// browse to and search for is `indexTopics(channel:)`, which is a different question.
+    ///
+    /// `.release` is the default because it is the strictest reader: a caller that has not
+    /// been told which build it is in gets the list that names no door. The app passes
+    /// `ChannelFeatures.channel` (`AppChannel.channel`) in.
+    public static func topic(_ id: HelpTopicID, channel: HelpChannel = .release) -> HelpTopic {
         guard let topic = byID[id] else {
             preconditionFailure("no help topic for \(id.rawValue) — HelpCatalog is incomplete")
         }
-        return topic
+        return resolved(topic, channel: channel)
     }
 
-    public static func topic(id: String) -> HelpTopic? {
-        HelpTopicID(rawValue: id).map(topic)
+    public static func topic(id: String, channel: HelpChannel = .release) -> HelpTopic? {
+        HelpTopicID(rawValue: id).map { topic($0, channel: channel) }
+    }
+
+    /// Every topic, resolved for one channel — the catalogue as that build reads it.
+    public static func topics(channel: HelpChannel) -> [HelpTopic] {
+        topics.map { resolved($0, channel: channel) }
     }
 
     /// Topics of one section, in catalogue order.
@@ -1351,6 +1393,7 @@ public enum HelpCatalog {
     public static func indexTopics(channel: HelpChannel = .dev,
                                    windsurfEnabled: Bool = true) -> [HelpTopic] {
         topics.filter { isListed($0, channel: channel, windsurfEnabled: windsurfEnabled) }
+            .map { resolved($0, channel: channel) }
     }
 
     /// **The "see also" list a topic may actually render.**
@@ -1361,7 +1404,7 @@ public enum HelpCatalog {
     public static func relatedTopics(of topic: HelpTopic, channel: HelpChannel,
                                      windsurfEnabled: Bool = true) -> [HelpTopic] {
         topic.related
-            .map(Self.topic)
+            .map { Self.topic($0, channel: channel) }
             .filter { isListed($0, channel: channel, windsurfEnabled: windsurfEnabled) }
     }
 
@@ -1371,10 +1414,20 @@ public enum HelpCatalog {
     }
 
     /// Case-insensitive search over title, summary, body and items.
-    public static func search(_ query: String) -> [HelpTopic] {
+    ///
+    /// Item **terms** are matched as well as details, which is what keeps "2 s", "500 m",
+    /// "alpha" and "uncertified" finding the one *Speed records* page now that the windows
+    /// are its items rather than seven topics of their own.
+    ///
+    /// `channel` resolves the topics the same way the index does, so a channel's search
+    /// reads exactly the words that channel's pages say. It defaults to `.dev` —
+    /// everything — because the kit's own tests read the whole catalogue; the app passes
+    /// its own channel in and filters the result by `indexTopics` as before.
+    public static func search(_ query: String, channel: HelpChannel = .dev) -> [HelpTopic] {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !needle.isEmpty else { return topics }
-        return topics.filter { topic in
+        let catalogue = topics(channel: channel)
+        guard !needle.isEmpty else { return catalogue }
+        return catalogue.filter { topic in
             if topic.title.lowercased().contains(needle) { return true }
             if topic.summary.lowercased().contains(needle) { return true }
             if topic.body.contains(where: { $0.lowercased().contains(needle) }) { return true }

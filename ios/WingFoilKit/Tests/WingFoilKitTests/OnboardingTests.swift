@@ -103,6 +103,31 @@ import Testing
                     .sendingFeedback])
     }
 
+    /// **The page about sending feedback offers to send it** (Jan, dev 65), and says the
+    /// invitation once.
+    ///
+    /// The topic named three doors and offered none, which is a page the reader has to
+    /// leave to use — so it carries `HelpAction.sendFeedback`, the same composer Menu →
+    /// Support & ideas opens, and the app draws the button wherever it can honour it. The
+    /// invitation used to open the summary *and* the first paragraph, one line under the
+    /// other; it stays in the summary, which is the line the index shows.
+    @Test func theSendingFeedbackTopicOffersTheMailAndSaysTheInvitationOnce() {
+        let topic = HelpCatalog.topic(.sendingFeedback)
+        #expect(topic.action == .sendFeedback)
+
+        #expect(topic.summary.contains(FeedbackInvitation.sentence))
+        for paragraph in topic.body {
+            #expect(!paragraph.contains(FeedbackInvitation.sentence),
+                    "the body repeats the summary's invitation")
+        }
+        // The three doors are still named — the sentence that sent riders to a deleted
+        // Settings row for a week is pinned from the copy side too (`CopyContractTests`).
+        let prose = topic.body.joined(separator: " ")
+        for door in [FeedbackDoors.app, FeedbackDoors.footer, FeedbackDoors.share] {
+            #expect(prose.contains(door), "the topic never names \"\(door)\"")
+        }
+    }
+
     /// The topic for the rider who owns no Garmin (ADR-017). It has one job — get him from
     /// "I have an Apple Watch" to a session in the library — so it has to name the three
     /// steps *and* the two things he would otherwise learn by being disappointed: a wrist
