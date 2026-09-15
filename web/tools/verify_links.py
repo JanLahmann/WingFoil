@@ -15,6 +15,10 @@ WHAT IT CHECKS, per document:
      an id on the page it lands on.
   3. Tags nest and close. html.parser is not a validator, but an unclosed <section> or a
      </div> too many is exactly the mistake a hand-edited page makes, and it finds those.
+  4. The site nav between <!-- sitenav:begin --> and <!-- sitenav:end --> is byte-identical
+     on all nine reader-facing documents, once `aria-current="page"` is taken out. It is
+     copied markup rather than a template — this site has no build step — so the only thing
+     keeping nine copies in step is this check.
 
 WHAT IT DOES NOT: http(s), mailto and the cleanjibe:// scheme are somebody else's to answer
 for. And "#example" on /app/ is a ROUTE rather than an anchor (js/app.js runs the bundled
@@ -150,6 +154,44 @@ for page in PAGES:
 
 print("pages: %d   internal references checked: %d" % (len(PAGES), checked))
 
+# ---------------------------------------------------------------- the site nav
+# One navigation row, copied into nine documents by hand because a static site has nowhere
+# to put a partial. The block between the two markers must be the same bytes everywhere;
+# the only licensed difference is which link says it is the page you are on.
+NAV_PAGES = [p for p in PAGES if p != "strava/callback/index.html"]
+NAV_BEGIN = "<!-- sitenav:begin"
+NAV_END = "<!-- sitenav:end -->"
+CURRENT_ATTR = ' aria-current="page"'
+
+navs = {}
+for page in NAV_PAGES:
+    path = os.path.join(ROOT, page)
+    if not os.path.exists(path):
+        continue
+    src = io.open(path, encoding="utf-8").read()
+    start = src.find(NAV_BEGIN)
+    end = src.find(NAV_END)
+    if start < 0 or end < 0:
+        errors.append("%s: no site nav (<!-- sitenav:begin --> … <!-- sitenav:end -->)" % page)
+        continue
+    if src.count(NAV_BEGIN) != 1 or src.count(NAV_END) != 1:
+        errors.append("%s: the site nav markers appear more than once" % page)
+        continue
+    block = src[start:end + len(NAV_END)]
+    if block.count(CURRENT_ATTR) > 1:
+        errors.append('%s: more than one aria-current="page" in the site nav' % page)
+    navs[page] = block.replace(CURRENT_ATTR, "")
+
+if navs:
+    reference_page = NAV_PAGES[0]
+    reference = navs.get(reference_page)
+    for page, block in navs.items():
+        if reference is not None and block != reference:
+            errors.append("%s: the site nav differs from %s — it is copied markup and must "
+                          "be byte-identical apart from aria-current" % (page, reference_page))
+    print("site nav: identical on %d of %d pages" % (
+        sum(1 for b in navs.values() if b == reference), len(NAV_PAGES)))
+
 # The generated half of /start/ is a link problem of its own kind: a guide block that no
 # longer matches docs/guide/getting-started.json is a page saying something the app does
 # not. `make_start.py --check` is stdlib-only and takes milliseconds, so it runs here,
@@ -160,6 +202,15 @@ import make_start                                                        # noqa:
 if make_start.main(["--check"]) != 0:
     errors.append("web/start/index.html or GettingStartedGuide.swift is stale — "
                   "run `python3 web/tools/make_start.py`")
+
+# Same argument for the Garmin product count and the watch app's version: five pages print
+# them, garmin/manifest.xml decides them, and a page that says 39 products at 0.9.10 when
+# the tree ships 42 at 0.9.11 is a link to a watch that will not install.
+import make_devices                                                      # noqa: E402
+
+if make_devices.main(["--check"]) != 0:
+    errors.append("a garmin-count/garmin-version span is stale — "
+                  "run `python3 web/tools/make_devices.py`")
 
 if errors:
     print("\n%d PROBLEM(S):" % len(errors))

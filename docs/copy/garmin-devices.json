@@ -1,0 +1,122 @@
+{
+  "version": "0.9.11",
+  "count": 42,
+  "minApiLevel": "3.3.3",
+  "store": {
+    "version": "0.9.10",
+    "count": 39
+  },
+  "products": [
+    "d2mach1",
+    "d2mach2",
+    "descentmk343mm",
+    "enduro3",
+    "epix2",
+    "epix2pro42mm",
+    "epix2pro47mm",
+    "epix2pro51mm",
+    "fenix5plus",
+    "fenix5splus",
+    "fenix5xplus",
+    "fenix7",
+    "fenix7pro",
+    "fenix7pronowifi",
+    "fenix7s",
+    "fenix7spro",
+    "fenix7x",
+    "fenix7xpro",
+    "fenix7xpronowifi",
+    "fenix843mm",
+    "fenix847mm",
+    "fenix8pro47mm",
+    "fenix8solar47mm",
+    "fenix8solar51mm",
+    "fr255",
+    "fr265",
+    "fr57042mm",
+    "fr57047mm",
+    "fr955",
+    "fr965",
+    "fr970",
+    "instinct3amoled45mm",
+    "instinct3amoled50mm",
+    "marq2",
+    "marq2aviator",
+    "venu2",
+    "venu2plus",
+    "venu2s",
+    "venu3",
+    "venu3s",
+    "vivoactive5",
+    "vivoactive6"
+  ],
+  "families": {
+    "fenix 8": [
+      "fenix843mm",
+      "fenix847mm",
+      "fenix8pro47mm",
+      "fenix8solar47mm",
+      "fenix8solar51mm"
+    ],
+    "fenix 7": [
+      "fenix7",
+      "fenix7pro",
+      "fenix7pronowifi",
+      "fenix7s",
+      "fenix7spro",
+      "fenix7x",
+      "fenix7xpro",
+      "fenix7xpronowifi"
+    ],
+    "fenix 5 Plus": [
+      "fenix5plus",
+      "fenix5splus",
+      "fenix5xplus"
+    ],
+    "epix 2": [
+      "epix2",
+      "epix2pro42mm",
+      "epix2pro47mm",
+      "epix2pro51mm"
+    ],
+    "Forerunner": [
+      "fr255",
+      "fr265",
+      "fr57042mm",
+      "fr57047mm",
+      "fr955",
+      "fr965",
+      "fr970"
+    ],
+    "MARQ 2": [
+      "marq2",
+      "marq2aviator"
+    ],
+    "Enduro": [
+      "enduro3"
+    ],
+    "D2": [
+      "d2mach1",
+      "d2mach2"
+    ],
+    "Descent": [
+      "descentmk343mm"
+    ],
+    "Venu": [
+      "venu2",
+      "venu2plus",
+      "venu2s",
+      "venu3",
+      "venu3s"
+    ],
+    "vívoactive": [
+      "vivoactive5",
+      "vivoactive6"
+    ],
+    "Instinct 3 AMOLED": [
+      "instinct3amoled45mm",
+      "instinct3amoled50mm"
+    ],
+    "tactix / quatix": []
+  }
+}

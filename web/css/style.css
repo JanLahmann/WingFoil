@@ -95,9 +95,14 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--ink-2); }
 
 /* ------------------------------------------------------------------ topbar */
 
+/* `flex-wrap` since 15 September 2026: the topbar carries the site nav as a full-width
+   third child, so brand + buttons keep row one and the nav takes row two at every width
+   (`.sitenav` below sets the 100 % basis and the order). Nothing else in the bar wraps —
+   both of the other children shrink-wrap. */
 .topbar {
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  padding: calc(14px + env(safe-area-inset-top)) var(--pad-x-r) 14px var(--pad-x-l);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 10px 16px;
+  padding: calc(14px + env(safe-area-inset-top)) var(--pad-x-r) 12px var(--pad-x-l);
   border-bottom: 1px solid var(--line-soft);
   background: var(--surface-1); position: sticky; top: 0; z-index: 20;
 }
@@ -121,6 +126,52 @@ a.brand:focus-visible { outline: 2px solid var(--series-1); outline-offset: 3px;
   box-shadow: inset 0 0 0 1px #ffffff22;
 }
 .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+/* --------------------------------------------------------------- site nav
+ *
+ * The one row that says this is a site and not a page (Jan, 15 Sep 2026). It lives in the
+ * topbar of all nine documents, in markup copied verbatim — see the `sitenav:begin` comment
+ * in any of them, and the check in web/tools/verify_links.py.
+ *
+ * It is deliberately NOT a second button row: it wears the section nav's furniture — the
+ * eyebrow's mono, uppercase, --ink-3 — because it is navigation furniture one level up from
+ * the section nav, and the two CTAs above it must stay the only buttons in the bar. Every
+ * colour here is a token, so the light theme at the foot of this file turns it with
+ * everything else; the current page is marked twice over, in the accessibility tree with
+ * `aria-current` and on screen with a 2 px rule in the link ink.
+ *
+ * Below 720 px the five items would take two lines of a phone screen on top of a topbar
+ * that is already two rows, so the row becomes one select — the same swap, gated on the
+ * same `js` class, as the section nav's. The links stay in the markup and are what a reader
+ * without JavaScript gets.
+ */
+.sitenav { flex: 1 1 100%; min-width: 0; order: 9; }
+.sitenav ul {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 0 18px;
+}
+.sitenav a {
+  display: inline-block; padding: 2px 0; text-decoration: none;
+  font: 600 11px/1.5 var(--mono); letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--ink-3); border-bottom: 2px solid transparent;
+}
+.sitenav a:hover { color: var(--ink); }
+.sitenav a:focus-visible {
+  outline: 2px solid var(--series-1); outline-offset: 3px; border-radius: 3px;
+}
+.sitenav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--series-1); }
+.sitenav .jump { display: none; }
+.sitenav select {
+  width: 100%; min-height: var(--tap);
+  background: var(--surface-2); color: var(--ink-2);
+  border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px;
+  font: 600 12.5px/1 var(--mono);
+}
+@media (max-width: 720px) {
+  .js .sitenav ul { display: none; }
+  .js .sitenav .jump { display: block; }
+}
+
 .chip {
   font: 600 11.5px/1 var(--mono); color: var(--ink-3);
   padding: 6px 9px; border: 1px solid var(--line); border-radius: 999px;

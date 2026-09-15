@@ -42,6 +42,49 @@
     <a class="btn primary" href="../app/">Open the analyzer</a>
     <a class="btn ghost wide-only" href="../">About CleanJibe</a>
   </div>
+<!-- sitenav:begin — COPIED VERBATIM ON ALL NINE PAGES. The only thing that differs is
+     which link carries `aria-current="page"`; web/tools/verify_links.py compares this block
+     byte for byte across /, /learn/, /start/, /watches/, /invite/, /whats-new/, /app/,
+     /privacy/ and /impressum/ with that one attribute stripped, so an edit here is an edit
+     everywhere or it is a failed check.
+
+     Jan, 15 September 2026: *"es gibt nur Links auf den Seiten, aber keine richtige
+     Navigation"* — the pages did link each other, in prose and in the footer, which is
+     exactly nowhere a reader looks for navigation. Five destinations in the order a stranger
+     needs them: install, does my watch work, what does it measure, what changed, get the
+     beta. Privacy and Impressum are NOT here — they are read once and reached from the
+     footer of every page, which is where a reader goes looking for them.
+
+     The hrefs are ROOT-RELATIVE so one block can serve a page at the site root and a page a
+     directory down. The site is the root of cleanjibe.org, and of `python3 -m http.server`
+     run in web/, which is the same thing; verify_links.py resolves them.
+
+     It wears the section nav's furniture — the eyebrow's mono, the same ink, the same
+     hairline — because it is the same kind of thing one level up, and below 720 px it
+     collapses the same way: the `js` class set by the script at the foot of the page hides
+     the link row in favour of the select, so a reader whose script never ran keeps five
+     working links rather than a control that cannot act. -->
+<nav class="sitenav" aria-label="Site">
+  <ul>
+    <li><a href="/start/">Get started</a></li>
+    <li><a href="/watches/">Which watch</a></li>
+    <li><a href="/learn/">How it works</a></li>
+    <li><a href="/whats-new/">What&rsquo;s new</a></li>
+    <li><a href="/invite/">Get the beta</a></li>
+  </ul>
+  <label class="jump">
+    <span class="sr-only">Go to a page</span>
+    <select>
+      <option value="">Go to&hellip;</option>
+      <option value="/start/">Get started</option>
+      <option value="/watches/">Which watch</option>
+      <option value="/learn/">How it works</option>
+      <option value="/whats-new/">What&rsquo;s new</option>
+      <option value="/invite/">Get the beta</option>
+    </select>
+  </label>
+</nav>
+<!-- sitenav:end -->
 </header>
 
 <main>
@@ -79,6 +122,30 @@
   </p>
   <p class="fineprint">Anonymous, cookie-free usage stats and feature counts by umami. · <a href="../privacy/">Privacy</a></p>
 </footer>
+
+<!-- The three moving parts of the page chrome, identical on every document here.
+     `--topbar-h` is MEASURED rather than guessed: the topbar is sticky, carries the site nav
+     and changes height at every breakpoint, and the section nav under it has to stick
+     exactly below it. The `js` class is what lets the stylesheets swap both link rows for
+     their selects on a phone — without JavaScript a select cannot navigate, so the links
+     stay instead and the nav is never a control that does nothing. -->
+<script>
+  (function () {
+    var root = document.documentElement, bar = document.querySelector(".topbar");
+    root.classList.add("js");
+    function fit() { root.style.setProperty("--topbar-h", bar.offsetHeight + "px"); }
+    fit();
+    addEventListener("resize", fit);
+    var jump = document.querySelector(".sectionnav select");
+    if (jump) jump.addEventListener("change", function () {
+      if (this.value) { location.hash = this.value; this.selectedIndex = 0; }
+    });
+    var go = document.querySelector(".sitenav select");
+    if (go) go.addEventListener("change", function () {
+      if (this.value) location.href = this.value;
+    });
+  })();
+</script>
 
 </body>
 </html>

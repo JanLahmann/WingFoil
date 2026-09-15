@@ -64,6 +64,49 @@
     <a class="btn ghost" href="../invite/" data-umami-event="beta-cta-topbar">Try the beta</a>
     <a class="btn ghost wide-only" href="../">About CleanJibe</a>
   </div>
+<!-- sitenav:begin — COPIED VERBATIM ON ALL NINE PAGES. The only thing that differs is
+     which link carries `aria-current="page"`; web/tools/verify_links.py compares this block
+     byte for byte across /, /learn/, /start/, /watches/, /invite/, /whats-new/, /app/,
+     /privacy/ and /impressum/ with that one attribute stripped, so an edit here is an edit
+     everywhere or it is a failed check.
+
+     Jan, 15 September 2026: *"es gibt nur Links auf den Seiten, aber keine richtige
+     Navigation"* — the pages did link each other, in prose and in the footer, which is
+     exactly nowhere a reader looks for navigation. Five destinations in the order a stranger
+     needs them: install, does my watch work, what does it measure, what changed, get the
+     beta. Privacy and Impressum are NOT here — they are read once and reached from the
+     footer of every page, which is where a reader goes looking for them.
+
+     The hrefs are ROOT-RELATIVE so one block can serve a page at the site root and a page a
+     directory down. The site is the root of cleanjibe.org, and of `python3 -m http.server`
+     run in web/, which is the same thing; verify_links.py resolves them.
+
+     It wears the section nav's furniture — the eyebrow's mono, the same ink, the same
+     hairline — because it is the same kind of thing one level up, and below 720 px it
+     collapses the same way: the `js` class set by the script at the foot of the page hides
+     the link row in favour of the select, so a reader whose script never ran keeps five
+     working links rather than a control that cannot act. -->
+<nav class="sitenav" aria-label="Site">
+  <ul>
+    <li><a href="/start/" aria-current="page">Get started</a></li>
+    <li><a href="/watches/">Which watch</a></li>
+    <li><a href="/learn/">How it works</a></li>
+    <li><a href="/whats-new/">What&rsquo;s new</a></li>
+    <li><a href="/invite/">Get the beta</a></li>
+  </ul>
+  <label class="jump">
+    <span class="sr-only">Go to a page</span>
+    <select>
+      <option value="">Go to&hellip;</option>
+      <option value="/start/">Get started</option>
+      <option value="/watches/">Which watch</option>
+      <option value="/learn/">How it works</option>
+      <option value="/whats-new/">What&rsquo;s new</option>
+      <option value="/invite/">Get the beta</option>
+    </select>
+  </label>
+</nav>
+<!-- sitenav:end -->
 </header>
 
 <!-- The page's own contents row, sticky under the topbar; the labels are the headings. Below
@@ -167,9 +210,14 @@
 
       <li>
         <h3>Garmin riders: install the watch app</h3>
+        <!-- `data-copy="ciq-title"` is the LIVE Connect IQ listing's name, which is what a
+             rider sees in the store today. docs/channels.md has already decided the rename
+             to "CleanJibe Wingfoil Watch App Beta"; the span is so the two places that print
+             it can be flipped together on the day the listing actually changes, rather than
+             the site promising a name the store does not have. -->
         <p>
           <a href="https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806" rel="noopener"
-             data-umami-event="start-garmin-store">CleanJibe Wingfoil Tracker&nbsp;(Beta)</a>
+             data-umami-event="start-garmin-store"><span data-copy="ciq-title">CleanJibe Wingfoil Tracker&nbsp;(Beta)</span></a>
           on the Connect IQ store — from the web store, or from Connect IQ inside the Garmin
           Connect app on your phone. It is an open beta: no key, no account, nothing to
           request.
@@ -196,8 +244,10 @@
 
   <!-- ------------------------------------------------------------- on the water -->
   <!-- The actual test. Written for the Garmin route because that is the one with three apps
-       in it and the one most testers ride; the other watches join at step 4, and route D
-       below is the file half for them. Nothing in here is dev-only: the summary card and the
+       in it and the one most testers ride; the other watches join at step 4, and route B
+       below (any watch that writes a .fit) is the file half for them. The route letters are
+       generated with the cards — see docs/guide/getting-started.json — so a reference to one
+       outside the guide block has to be checked against them by hand. Nothing in here is dev-only: the summary card and the
        map pushed to the watch are in a build a handful of people have, so they are on the
        homepage's "what is coming" list and not in a walkthrough. -->
   <section class="home-section" id="water">
@@ -689,15 +739,15 @@
         <p>
           Strava hands over positions rather than the speed your watch measured, so those
           sessions&rsquo; speed records are marked <em>uncertified</em>. If the same afternoon
-          is on intervals.icu, take it from there instead. And until Strava has reviewed the
-          app it allows ten connected riders, which the app says plainly; if you are told the
-          app is full, tell us.
+          is on intervals.icu, take it from there instead. And Strava lets a new app connect a
+          limited number of riders, which the app says plainly; if you are told the app is
+          full, tell us.
         </p>
       </article>
       <article class="panel claim">
         <h3>Anything else</h3>
         <p>
-          <code>+</code> → <strong>FIT, GPX or ZIP</strong>, or <strong>Open in
+          <code>+</code> → <strong>FIT, GPX, TCX or ZIP</strong>, or <strong>Open in
           CleanJibe</strong> from the iOS share sheet in any app that can export a workout —
           <code>.fit</code>, <code>.gpx</code> and <code>.tcx</code> all come in. That is the
           route for a Polar, a Suunto or a COROS, and the table on
@@ -741,7 +791,7 @@
       <article class="panel claim">
         <h3>Mail — the template is prefilled</h3>
         <p>
-          <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%20%28or%20what%20you%20would%20like%20to%20see%29%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
+          <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
              data-umami-event="start-feedback-mail">info@cleanjibe.org</a>
           — the link opens a mail with the fields already in it. Attach the screenshot and
           send.
@@ -793,7 +843,7 @@
       <strong>Tell us.</strong> Bugs, verdicts you disagree with, and — just as much —
       <strong>ideas and wishes</strong>: what you would want this to do next. In the app,
       <strong>Menu &rarr; Support</strong> is the best door, because it prefills the facts;
-      otherwise mail <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%20%28or%20what%20you%20would%20like%20to%20see%29%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A">info@cleanjibe.org</a> or open a
+      otherwise mail <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A">info@cleanjibe.org</a> or open a
       <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">GitHub issue</a>.
       Need something that is only in the beta? Tell us.
     </p>
@@ -818,8 +868,12 @@
   </p>
 </footer>
 
-<!-- The section nav's two moving parts — the measured topbar height the nav sticks below,
-     and the select that replaces the link row on a phone. Same script as the homepage. -->
+<!-- The three moving parts of the page chrome, identical on every document here.
+     `--topbar-h` is MEASURED rather than guessed: the topbar is sticky, carries the site nav
+     and changes height at every breakpoint, and the section nav under it has to stick
+     exactly below it. The `js` class is what lets the stylesheets swap both link rows for
+     their selects on a phone — without JavaScript a select cannot navigate, so the links
+     stay instead and the nav is never a control that does nothing. -->
 <script>
   (function () {
     var root = document.documentElement, bar = document.querySelector(".topbar");
@@ -830,6 +884,10 @@
     var jump = document.querySelector(".sectionnav select");
     if (jump) jump.addEventListener("change", function () {
       if (this.value) { location.hash = this.value; this.selectedIndex = 0; }
+    });
+    var go = document.querySelector(".sitenav select");
+    if (go) go.addEventListener("change", function () {
+      if (this.value) location.href = this.value;
     });
   })();
 </script>

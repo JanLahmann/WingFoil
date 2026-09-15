@@ -59,6 +59,49 @@
     <a class="btn primary" href="../app/">Open the analyzer</a>
     <a class="btn ghost wide-only" href="../">About CleanJibe</a>
   </div>
+<!-- sitenav:begin — COPIED VERBATIM ON ALL NINE PAGES. The only thing that differs is
+     which link carries `aria-current="page"`; web/tools/verify_links.py compares this block
+     byte for byte across /, /learn/, /start/, /watches/, /invite/, /whats-new/, /app/,
+     /privacy/ and /impressum/ with that one attribute stripped, so an edit here is an edit
+     everywhere or it is a failed check.
+
+     Jan, 15 September 2026: *"es gibt nur Links auf den Seiten, aber keine richtige
+     Navigation"* — the pages did link each other, in prose and in the footer, which is
+     exactly nowhere a reader looks for navigation. Five destinations in the order a stranger
+     needs them: install, does my watch work, what does it measure, what changed, get the
+     beta. Privacy and Impressum are NOT here — they are read once and reached from the
+     footer of every page, which is where a reader goes looking for them.
+
+     The hrefs are ROOT-RELATIVE so one block can serve a page at the site root and a page a
+     directory down. The site is the root of cleanjibe.org, and of `python3 -m http.server`
+     run in web/, which is the same thing; verify_links.py resolves them.
+
+     It wears the section nav's furniture — the eyebrow's mono, the same ink, the same
+     hairline — because it is the same kind of thing one level up, and below 720 px it
+     collapses the same way: the `js` class set by the script at the foot of the page hides
+     the link row in favour of the select, so a reader whose script never ran keeps five
+     working links rather than a control that cannot act. -->
+<nav class="sitenav" aria-label="Site">
+  <ul>
+    <li><a href="/start/">Get started</a></li>
+    <li><a href="/watches/">Which watch</a></li>
+    <li><a href="/learn/">How it works</a></li>
+    <li><a href="/whats-new/">What&rsquo;s new</a></li>
+    <li><a href="/invite/" aria-current="page">Get the beta</a></li>
+  </ul>
+  <label class="jump">
+    <span class="sr-only">Go to a page</span>
+    <select>
+      <option value="">Go to&hellip;</option>
+      <option value="/start/">Get started</option>
+      <option value="/watches/">Which watch</option>
+      <option value="/learn/">How it works</option>
+      <option value="/whats-new/">What&rsquo;s new</option>
+      <option value="/invite/">Get the beta</option>
+    </select>
+  </label>
+</nav>
+<!-- sitenav:end -->
 </header>
 
 <main>
@@ -119,19 +162,26 @@
 
       <li>
         <h3>Install it from the Connect IQ store</h3>
+        <!-- `data-copy="ciq-title"` is the LIVE listing's name, not the decided one:
+             docs/channels.md renames it to "CleanJibe Wingfoil Watch App Beta", and the span
+             is what lets both places that print it flip on the day the store does. -->
         <p>
           <a href="https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806" rel="noopener"
-             data-umami-event="invite-garmin-store">CleanJibe
-          Wingfoil Tracker&nbsp;(Beta)</a> on apps.garmin.com — install it from the web
+             data-umami-event="invite-garmin-store"><span data-copy="ciq-title">CleanJibe
+          Wingfoil Tracker&nbsp;(Beta)</span></a> on apps.garmin.com — install it from the web
           store or from Connect IQ on your phone, the same way as any other watch app.
         </p>
+        <!-- The version and the count are written by web/tools/make_devices.py out of
+             garmin/manifest.xml; never type them. -->
         <p class="note">
-          Watches, as of <strong>0.9.10</strong> — 39 Connect IQ products: the fenix 8 family
+          Watches, as of <strong><span data-copy="garmin-version">0.9.10</span></strong> —
+          <span data-copy="garmin-count">39</span> Connect IQ products: the fenix 8 family
           (43&nbsp;mm, 47&nbsp;mm, Solar 47/51&nbsp;mm, Pro 47&nbsp;mm), the fenix 7 family
           (7 / 7S / 7X and every Pro variant), epix 2 and epix 2 Pro, Forerunner
           255 / 265 / 955 / 965 / 570 / 970, MARQ 2, Enduro 3, D2 Mach 1 and 2, Descent Mk3
-          43&nbsp;mm — and, new in 0.9.10, Venu 2 / 2S / 2 Plus / 3 / 3S, vívoactive 5 / 6 and
-          Instinct 3 AMOLED 45 / 50&nbsp;mm. <strong>Those last three families have passed the
+          43&nbsp;mm — Venu 2 / 2S / 2 Plus / 3 / 3S, vívoactive 5 / 6 and Instinct 3 AMOLED
+          45 / 50&nbsp;mm since 0.9.10 — and, new in 0.9.11, the fenix 5 Plus family
+          (5 Plus / 5S Plus / 5X Plus). <strong>Those last four families have passed the
           layout checks in the simulator and have never been ridden on a real watch</strong>;
           if yours is one of them, tell us how the pages look and whether the touch controls
           behave. Full list, family by family, on <a href="../watches/">Which watch</a>. If the
@@ -249,7 +299,7 @@
       <article class="panel claim">
         <h3>Or plain mail</h3>
         <p>
-          <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%20%28or%20what%20you%20would%20like%20to%20see%29%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
+          <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
              data-umami-event="invite-feedback-mail">info@cleanjibe.org</a>
           — no account, no app needed, and the right door when the app is the thing that will
           not start. What you rode, what it said, and what you expected it to say. If a session
@@ -264,7 +314,7 @@
       <strong>Tell us.</strong> Bugs, verdicts you disagree with, and — just as much —
       <strong>ideas and wishes</strong>: what you would want this to do next. In the app,
       <strong>Menu &rarr; Support</strong> is the best door, because it prefills the facts;
-      otherwise mail <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%20%28or%20what%20you%20would%20like%20to%20see%29%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A">info@cleanjibe.org</a> or open a
+      otherwise mail <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A">info@cleanjibe.org</a> or open a
       <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">GitHub issue</a>.
       Need something that is only in the beta? Tell us.
     </p>
@@ -293,7 +343,9 @@
        today; the dev list is what it deliberately does not, so that nobody installs expecting
        a Garmin link or an iPad. -->
   <section class="home-section" id="coming">
-    <h2>Curious about what is coming</h2>
+    <!-- The heading is the app's own, word for word: Settings → "Coming in a future
+         release" (docs/channels.md, "Feedback and channel furniture"). -->
+    <h2>Coming in a future release</h2>
     <p class="section-lede">
       The App Store release, when it comes, will be the steady half of this app. The beta is
       ahead of it — and a third build, dev, is ahead of the beta and is not public.
@@ -307,14 +359,20 @@
         </p>
         <ul>
           <li>GPX and TCX imports, so a Polar, a Suunto or a COROS comes straight in.</li>
-          <li>The Garmin export ZIP: your whole history in one import.</li>
           <li>Apple Health both ways — read your Workout recordings, write your sessions back
               as workouts.</li>
           <li>The CleanJibe Apple Watch recorder, recording straight to the phone.</li>
-          <li>Home-screen widgets: the last session, and this week.</li>
+          <li>Home-screen widgets and the watch complication: the last session, and this week.</li>
           <li>Session video export — the map draws itself along your track.</li>
           <li>Grouping and filters in the library, for when there are a hundred sessions.</li>
         </ul>
+        <!-- The Garmin export ZIP is NOT on this list: it became a release door on
+             14 Sep 2026 (docs/channels.md, "Getting a session in"), so nobody has to join
+             anything for it. -->
+        <p class="note">
+          The <strong>Garmin export ZIP</strong> — your whole history in one import — is in
+          every build, beta or not.
+        </p>
       </article>
       <article class="panel claim">
         <h3>Ideas on the bench</h3>
@@ -326,7 +384,7 @@
         <ul>
           <li>The Garmin watch link: a summary card over Bluetooth the moment you stop, and the
               shore of your spot drawn on the watch under your track.</li>
-          <li>iPad and Mac.</li>
+          <li>iPad — and the same build on a Mac, as &ldquo;Designed for iPad&rdquo;.</li>
           <li>Windsurf as a discipline of its own, with its own thresholds.</li>
           <li>Tune the thresholds yourself: every detection rule on a slider, applied to your
               own sessions.</li>
@@ -367,7 +425,7 @@
           Ask in an
           <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener"
              data-umami-event="invite-feedback-github">issue</a>
-          — or mail <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%20%28or%20what%20you%20would%20like%20to%20see%29%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
+          — or mail <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
              data-umami-event="invite-feedback-mail">info@cleanjibe.org</a> if you would
           rather not. The code and the detection thresholds are readable first, either way:
           <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">github.com/JanLahmann/WingFoil</a>.
@@ -387,7 +445,7 @@
     <a href="../whats-new/">What&rsquo;s new</a> ·
     <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">github.com/JanLahmann/WingFoil</a>
     · Beta feedback: <a href="#feedback">open an issue</a>, or mail
-    <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%20%28or%20what%20you%20would%20like%20to%20see%29%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A" data-umami-event="invite-feedback-mail">info@cleanjibe.org</a>
+    <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A" data-umami-event="invite-feedback-mail">info@cleanjibe.org</a>
   </p>
   <!-- The same line the homepage and the analyzer carry, and it was missing here: this page
        has loaded umami since it was written, and now it counts which of the two install
@@ -399,6 +457,30 @@
     · <a href="../impressum/">Impressum</a>
   </p>
 </footer>
+
+<!-- The three moving parts of the page chrome, identical on every document here.
+     `--topbar-h` is MEASURED rather than guessed: the topbar is sticky, carries the site nav
+     and changes height at every breakpoint, and the section nav under it has to stick
+     exactly below it. The `js` class is what lets the stylesheets swap both link rows for
+     their selects on a phone — without JavaScript a select cannot navigate, so the links
+     stay instead and the nav is never a control that does nothing. -->
+<script>
+  (function () {
+    var root = document.documentElement, bar = document.querySelector(".topbar");
+    root.classList.add("js");
+    function fit() { root.style.setProperty("--topbar-h", bar.offsetHeight + "px"); }
+    fit();
+    addEventListener("resize", fit);
+    var jump = document.querySelector(".sectionnav select");
+    if (jump) jump.addEventListener("change", function () {
+      if (this.value) { location.hash = this.value; this.selectedIndex = 0; }
+    });
+    var go = document.querySelector(".sitenav select");
+    if (go) go.addEventListener("change", function () {
+      if (this.value) location.href = this.value;
+    });
+  })();
+</script>
 
 </body>
 </html>
