@@ -3341,6 +3341,49 @@ the site — the homepage pieces, /learn, /watches and /start — written from
 `docs/channels.md` and from nowhere else, with one line of legend per page: *"beta: in the
 public beta today, not yet in the App Store release."* Release features are unlabelled.
 
+## One copy, many surfaces — `docs/copy/`
+
+**The same wording, wherever it is said, pinned from both sides** (15 September 2026).
+
+The website, the App Store description and the app said the same things in different words,
+and they had already drifted apart in fourteen places: the web's beta list still promised a
+feature that had shipped seven hours earlier, the phone's own clean-jibe definition was a
+version behind the engine it shipped with, and the dry streak had four spellings across five
+surfaces. Nothing was wrong with any single sentence. What was missing was a mechanism.
+
+`docs/copy/` is seven small JSON files — `channels`, `recording-classes`, `glossary`,
+`feedback`, `icu-setup`, `phrases`, `verdicts`, plus the generated `garmin-devices` — each
+holding one piece of wording that more than one surface says. Its README carries the schemas
+and who authors each key; the rule is short:
+
+* **The kit is the author** for anything the app says, `docs/channels.md` for the channels,
+  the manifests for the devices. The JSON is the artefact, never a second draft.
+* **Both sides are pinned.** `CopyContractTests` asserts every kit constant equals its JSON,
+  so a kit edit that moves a fact **fails the kit tests** until `docs/copy` moves with it.
+  The web verifier asserts the pages carry the same strings, so the website has to catch up
+  before the check goes green. `docs/copy/check_release_copy.py` asserts the release copy
+  names no door the release lacks, keeps the Strava rule and uses none of the banned
+  vocabulary (*carried*, *no-fall streak*, *clean-jibe percentage*, *swim rate*,
+  *success rate* — CLAUDE.md).
+* **Regenerating** after a deliberate rewording, from `ios/WingFoilKit`:
+
+  ```sh
+  COPY_WRITE=1 swift test --filter CopyContractTests
+  ```
+
+  which rewrites the kit-owned keys in place and leaves the hand-authored ones — the
+  forbidden lists, the lexicon, the two store names — exactly as they were.
+
+**What it deliberately does not pin.** The `HelpCatalog` bodies against `/learn`: the app's
+help is reference material behind a `?` and the web's glossary is eight one-liners for a
+stranger — same terms, different depth, so the terms and the one-liners are pinned and the
+bodies are left alone. The privacy page against the app: a GDPR document does not belong in a
+Settings footer, so the app *links* it (Settings → About → Privacy, and the help topic *What
+leaves your phone*) rather than mirroring it. The feedback `mailto:`'s two extra questions:
+a browser cannot fill in the watch and the build, and the app can. And the store texts' voice
+and length, which are marketing prose — what they must not do is name a door the release
+lacks, and that is a check rather than a single source.
+
 ## The library menu — one menu, in the order a new rider needs it
 
 The Sessions tab's top-left button (`line.3.horizontal`, "Menu") is the app's one menu. It

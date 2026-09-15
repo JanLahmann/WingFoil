@@ -1,0 +1,40 @@
+{
+  "_readme" : [
+    "THE INTERVALS.ICU SETUP, WRITTEN ONCE.",
+    "",
+    "Authored by the kit: Help/IcuSetupGuide.swift. Two app screens render it — the help",
+    "topic and the empty-library setup card — and web/start's Garmin route is pinned to the",
+    "same four step titles and the same button label.",
+    "",
+    "`saveButton` is the label on the button itself (IcuKeyEntry) as well as the one step 4",
+    "names. web/start said 'use the check button' until 15 September 2026, and told iPhone",
+    "riders to copy an Athlete ID the app has never had a field for: the phone asks for one",
+    "thing, the personal API key.",
+    "",
+    "The two Settings captions are NOT here: they live in docs/guide/getting-started.json",
+    "(`settings.intervalsIcu`, `settings.strava`) and reach the app through the generated",
+    "GettingStartedGuide. One guide, one home.",
+    "",
+    "Wholly kit-owned: COPY_WRITE=1 swift test --filter CopyContractTests."
+  ],
+  "privacyNote" : "Your API key is stored in this iPhone's Keychain. It is never copied to iCloud, never sent to any CleanJibe server — there isn't one — and never written to a log. The only place it goes is intervals.icu itself, over HTTPS.",
+  "saveButton" : "Save & check",
+  "steps" : [
+    {
+      "detail" : "Open intervals.icu and sign up. It is free, and the Google, Strava or e-mail account you already have will do.",
+      "title" : "Create a free intervals.icu account"
+    },
+    {
+      "detail" : "In intervals.icu, Settings → device connections: connect your Garmin account. Your history back-fills in a few minutes, and every new session arrives on its own.",
+      "title" : "Connect Garmin in intervals.icu"
+    },
+    {
+      "detail" : "Still in intervals.icu: Settings → Developer Settings → API Key. Copy it. Developer settings are free for every user; no subscription is needed.",
+      "title" : "Generate your personal API key"
+    },
+    {
+      "detail" : "Paste it into the field below (in the app: Settings → intervals.icu) and tap Save & check. CleanJibe verifies it and says how many activities it can see.",
+      "title" : "Paste the key into CleanJibe"
+    }
+  ]
+}

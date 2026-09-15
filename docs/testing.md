@@ -404,6 +404,44 @@ The presentation *values* — colours and glyph names — are enforced separatel
 `design/tokens.json` plus `design/check_tokens.py --check` (CI: `.github/workflows/tokens.yml`
 and the Pages deploy).
 
+## The copy contract — `docs/copy/`
+
+Two commands, and both have to be green before a wording change is finished:
+
+```sh
+cd ios/WingFoilKit && swift test --filter CopyContractTests   # the kit against docs/copy
+python3 docs/copy/check_release_copy.py                        # the release copy's three rules
+```
+
+The first asserts every kit constant that more than one surface says equals its JSON in
+`docs/copy/`: `ChannelFeatures` (the beta and dev rows, and the section title),
+`RecordingClass`, `MetricGlossary`, `FeedbackReport.Prompt` and `FeedbackInvitation.sentence`,
+`IcuSetupGuide`'s steps and its Save & check label, `Branding.callToAction`,
+`ShareCaption.offer`, `WelcomeGuide.headline` and `.promise`, and `NotASessionNote`'s tag and
+two page lines. It also greps the kit's `Presentation/` and `Help/` **string literals** for
+the banned vocabulary and fails naming the file, the line and the word. So a kit edit that
+moves a fact fails here until `docs/copy` moves with it; the web verifier is the other half
+of the pin, and the website then has to catch up before the check goes green.
+
+Regenerate the kit-owned keys after a deliberate rewording, from `ios/WingFoilKit`:
+
+```sh
+COPY_WRITE=1 swift test --filter CopyContractTests
+```
+
+The hand-authored keys — the forbidden lists, the lexicon, the two store names — are left
+exactly as they were, and the output is deterministic, so a regeneration that changes nothing
+produces no diff.
+
+The second runs three rules over the store copy and the kit's rider-facing literals: no
+release text may contain a door the release lacks (`channels.json` → `forbiddenInRelease`),
+no rider-facing text may say what Strava has or has not reviewed (`phrases.json` →
+`stravaForbidden`, docs/channels.md), and nothing may use the banned vocabulary
+(`phrases.json` → `lexicon.banned`). One line of PASS/FAIL per target, and every exemption it
+honours is printed with the reason it exists. It is the same check `docs/testing.md`'s "Three
+channels" section runs over the *binary* (`strings` on the archive), run over the copy —
+adding a target is one entry in its `TARGETS` list, which is how `web/**.html` joins it.
+
 ## Tolerances (Swift & Python vs goldens)
 
 | quantity | tolerance |
