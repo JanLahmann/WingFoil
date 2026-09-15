@@ -11,7 +11,7 @@
       lab/src/wingfoil_lab/{flight,turns}.py and the barrel unit tests in step.
     -->
     <iq:barrel id="1c534d23-0c02-4aa0-a7fb-7f852e647461" module="WingFoilCore"
-        version="1.0.0" minApiLevel="5.0.0">
+        version="1.0.0" minApiLevel="3.3.3">
         <iq:products>
             <iq:product id="fenix843mm"/>
             <iq:product id="fenix847mm"/>
@@ -21,6 +21,15 @@
             <!-- fenix 7 family: the barrel product list has to be a SUPERSET of every
                  consumer's, or monkeyc refuses the link ("barrel does not support device").
                  Pure computation, so nothing here is device-specific. -->
+            <!-- fenix 5 Plus family (0.9.11, minApiLevel 3.3.3): Connect IQ 3.3.3 since firmware
+                 19.10, 1.3 MB app memory, 240 px 8 bpp MIP with a 40 px launcher — the fenix 7S's
+                 glass and icon cut, its own font set (layout suite run on fenix5plus). The plain
+                 fenix 5/5S (128 KB) and the 5X (Connect IQ 3.x without System 5) cannot run it.
+                 Every newer API the app uses is behind a `has` check; the 25 Hz accelerometer
+                 feeds the pump detector's own 25 Hz grid. -->
+            <iq:product id="fenix5plus"/>
+            <iq:product id="fenix5splus"/>
+            <iq:product id="fenix5xplus"/>
             <iq:product id="fenix7"/>
             <iq:product id="fenix7s"/>
             <iq:product id="fenix7x"/>

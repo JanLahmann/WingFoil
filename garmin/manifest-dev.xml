@@ -14,7 +14,7 @@
     -->
     <iq:application id="953f7547-c152-42c2-8d33-69fb59ad0bf6" type="watch-app"
         name="@Strings.AppNameDev" entry="WingfoilApp" version="0.9.11" launcherIcon="@Drawables.LauncherIcon"
-        minApiLevel="5.0.0">
+        minApiLevel="3.3.3">
         <iq:products>
             <iq:product id="fenix843mm"/>
             <iq:product id="fenix847mm"/>
@@ -25,6 +25,15 @@
                  so fenix 7 testers can join; same 786 KB app memory and 100 Hz accel as
                  fenix 8. Base fenix7/7s/7x have no multiband GNSS, which SessionController's
                  `has`-guarded GPS fallback already handles. -->
+            <!-- fenix 5 Plus family (0.9.11, minApiLevel 3.3.3): Connect IQ 3.3.3 since firmware
+                 19.10, 1.3 MB app memory, 240 px 8 bpp MIP with a 40 px launcher — the fenix 7S's
+                 glass and icon cut, its own font set (layout suite run on fenix5plus). The plain
+                 fenix 5/5S (128 KB) and the 5X (Connect IQ 3.x without System 5) cannot run it.
+                 Every newer API the app uses is behind a `has` check; the 25 Hz accelerometer
+                 feeds the pump detector's own 25 Hz grid. -->
+            <iq:product id="fenix5plus"/>
+            <iq:product id="fenix5splus"/>
+            <iq:product id="fenix5xplus"/>
             <iq:product id="fenix7"/>
             <iq:product id="fenix7s"/>
             <iq:product id="fenix7x"/>

@@ -126,8 +126,25 @@ module TrackDraw {
         var midLon = (lonLo + lonHi) / 2.0;
         var squeeze = Math.cos(midLat * 0.017453292);
         var s = scale(box, (lonHi - lonLo) * squeeze, latHi - latLo);
-        drawRuns(dc, lat, lon, fly, n, cx, cy, midLat, midLon, squeeze, s, marker);
+        setProjection(midLat, midLon, squeeze, s);
+        drawRuns(dc, lat, lon, fly, n, cx, cy, marker);
         return true;
+    }
+
+    // The projection drawRuns reads: `(lon - midLon) * squeeze * s` across, `(lat - midLat)
+    // * s` up. Module state rather than four more parameters, because the Connect IQ 3.x
+    // runtime (fenix 5 Plus) allows nine parameters per method and drawRuns had twelve —
+    // and a scratch record beats an array allocated on every frame.
+    var _midLat as Float = 0.0;
+    var _midLon as Float = 0.0;
+    var _squeeze as Float = 1.0;
+    var _s as Float = 1.0;
+
+    function setProjection(midLat as Float, midLon as Float, squeeze as Float, s as Float) as Void {
+        _midLat = midLat;
+        _midLon = midLon;
+        _squeeze = squeeze;
+        _s = s;
     }
 
     // The same trail inside a FRAME the caller chose (device app 0.9.10): the phone-rendered
@@ -138,10 +155,15 @@ module TrackDraw {
     // bitmap arrives a frame later. Returns false only when there is no trail to draw — the
     // ground is drawn regardless, because a rider standing on the beach with the app open
     // deserves to see the beach.
+    // `square` is [cx, cy, box] — one array instead of three parameters, for the same
+    // nine-parameter limit that shaped drawRuns.
     function drawFramed(dc as Dc, lat as Array<Float>?, lon as Array<Float>?,
-            fly as Array<Boolean>?, n as Number, cx as Number, cy as Number, box as Number,
+            fly as Array<Boolean>?, n as Number, square as Array<Number>,
             marker as Boolean, frame as Array<Float>,
             ground as Graphics.BufferedBitmapReference?) as Boolean {
+        var cx = square[0];
+        var cy = square[1];
+        var box = square[2];
         var x0 = cx - box / 2;
         var y0 = cy - box / 2;
         dc.setClip(x0, y0, box, box);
@@ -153,9 +175,9 @@ module TrackDraw {
         }
         var drawn = false;
         if (n >= 2 && lat != null && lon != null && fly != null) {
-            var midLat = (frame[0] + frame[2]) / 2.0;
-            var midLon = (frame[1] + frame[3]) / 2.0;
-            drawRuns(dc, lat, lon, fly, n, cx, cy, midLat, midLon, frame[4], frame[5], marker);
+            setProjection((frame[0] + frame[2]) / 2.0, (frame[1] + frame[3]) / 2.0,
+                frame[4], frame[5]);
+            drawRuns(dc, lat, lon, fly, n, cx, cy, marker);
             drawn = true;
         }
         dc.clearClip();
@@ -166,8 +188,11 @@ module TrackDraw {
     // `(lat - midLat) * s` up. Shared by the auto-fit and the framed drawing so the two can
     // never disagree about a run's colour or the marker.
     function drawRuns(dc as Dc, lat as Array<Float>, lon as Array<Float>, fly as Array<Boolean>,
-            n as Number, cx as Number, cy as Number, midLat as Float, midLon as Float,
-            squeeze as Float, s as Float, marker as Boolean) as Void {
+            n as Number, cx as Number, cy as Number, marker as Boolean) as Void {
+        var midLat = _midLat;
+        var midLon = _midLon;
+        var squeeze = _squeeze;
+        var s = _s;
         // One setColor per RUN, not per segment: see TrackTint. The first point of the next run
         // belongs to this one too, or the trail shows a hole at every state change.
         dc.setPenWidth(3);
