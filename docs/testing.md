@@ -449,8 +449,10 @@ promise nobody made, and it fails with the links. It reads the JSON at run time 
 retypes a sentence — the hero's promise, the card CTA and the caption offer composed out of
 `js/cardstats.js`'s own parts, the Strava sentence and the five phrases that may not
 accompany it, the Connect IQ listing name, the beta and dev lists and the section title on
-`/` and `/invite/`, the four recording-class names and lines in both tables, the eight
-glossary entries on `/learn/`, the three feedback prompts in every `mailto:` body and the
+`/invite/` — the one page that prints them since 15 September 2026 — the four
+recording-class names and lines in `/watches/#classes`, likewise the one table that carries
+them, the glossary entries on `/learn/`, the three feedback prompts in every `mailto:` body
+and the
 invitation in every *Tell us* block, and the four intervals.icu step titles and the
 **Save & check** label on `/start/` outside the generated guide block. Pages carry
 `data-copy` marks so the check is exact rather than a guess at the surrounding prose;
@@ -461,6 +463,26 @@ nearest snippet on a miss. `web/tools/make_copy_js.py --check` runs beside it, f
 sentences the analyzer renders at run time (`web/js/copy.js`). The exemptions for the
 forbidden-door rule are not written twice: `verify_copy.py` reads
 `check_release_copy.py`'s own `allow` map for the same page.
+
+**And the sentences nobody owns.** `python3 web/tools/verify_unique.py`, added 15 September
+2026 and run by `verify_links.py` as a fourth sub-check, is the half no pin could reach: the
+site's own prose, written once and then written again on another page — the Android install
+steps twice at 110 and 95 words, the recording classes in two tables, the feedback doors on
+two pages. It reads `<main>` of `/`, `/learn/`, `/start/`, `/watches/`, `/invite/` and
+`/whats-new/`, normalises whitespace with `verify_copy.py`'s own helpers, skips everything
+between the guide markers and every string `docs/copy` owns, and **fails on any remaining
+sentence of eight words or more that is on two pages**. Threshold zero, with an `ALLOW` list
+of `{prefix, pages, why}` printed on every run — the same culture as `check_release_copy.py`'s
+exemptions, because an exemption that is not read becomes the rule. Its second half is a
+**word budget per page** (`/` 550, `/start/` 1200, `/learn/` 1100, `/watches/` 1200,
+`/invite/` 850, `/whats-new/` 700, each with ten per cent of slack), counted the way a reader
+meets the page: everything inside a `<details>` but its `<summary>` is left out. That is what
+stops `/start/` walking back to 3500 words one honest paragraph at a time, which is exactly
+how it got there the first time.
+
+`verify_links.py` also compares the **footer** block between `<!-- sitefoot:begin -->` and
+`<!-- sitefoot:end -->` byte for byte across all nine documents, the way it has always
+compared the site nav: one link set, every page, no `aria-current`.
 
 ## Tolerances (Swift & Python vs goldens)
 

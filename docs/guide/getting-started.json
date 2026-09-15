@@ -36,7 +36,7 @@
   "sections": {
     "routes": {
       "title": "The routes — one per watch",
-      "lede": "Take the one that matches what is on your wrist. Every route ends the same way: the session lands in CleanJibe, analysed as it arrives.",
+      "lede": "Take the one that matches what is on your wrist. Go outside: every route needs GPS, and a watch indoors records no positions at all. Every route ends the same way — the session lands in CleanJibe, analysed as it arrives.",
       "betaLegend": "in the public beta today, not yet in the App Store release."
     },
     "troubleshooting": {
@@ -63,7 +63,7 @@
         },
         {
           "title": "Record and save",
-          "detail": "Press START, pick **CleanJibe** from the activity list, wait until it says GPS good, press START again. Ride, then STOP and **Save**."
+          "detail": "Charged watch and phone. Press START, pick **CleanJibe**, wait until it says GPS good, press START again. Ride — glance at the tally once — then STOP and **Save**."
         },
         {
           "title": "Let Garmin Connect sync",
@@ -245,6 +245,10 @@
         {
           "title": "Attach the file if a session read wrong",
           "detail": "With the .fit the detection can be re-run and fixed; without it there is only guesswork. Ideas and wishes are as welcome as faults."
+        },
+        {
+          "title": "Send a card, and say how it reads",
+          "detail": "The share button on the session page draws a **share card** — your track, your numbers. Send it to a friend, and say if anything on it reads wrong."
         }
       ]
     }

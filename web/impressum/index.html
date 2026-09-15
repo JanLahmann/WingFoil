@@ -40,7 +40,7 @@
   </a>
   <div class="topbar-right">
     <a class="btn primary" href="../app/">Open the analyzer</a>
-    <a class="btn ghost wide-only" href="../">About CleanJibe</a>
+    <a class="btn ghost wide-only" href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">GitHub</a>
   </div>
 <!-- sitenav:begin — COPIED VERBATIM ON ALL NINE PAGES. The only thing that differs is
      which link carries `aria-current="page"`; web/tools/verify_links.py compares this block
@@ -70,7 +70,7 @@
   <ul>
     <li><a href="/start/">Get started</a></li>
     <li><a href="/watches/">Which watch</a></li>
-    <li><a href="/learn/">How it works</a></li>
+    <li><a href="/learn/">What it measures</a></li>
     <li><a href="/whats-new/">What&rsquo;s new</a></li>
   </ul>
 </nav>
@@ -105,12 +105,52 @@
 
 <footer>
   <p>CleanJibe — open wingfoil tracking. Watch app, iPhone app, browser analyzer.</p>
+<!-- sitefoot:begin — COPIED VERBATIM ON ALL NINE PAGES, and compared byte for byte by
+     web/tools/verify_links.py exactly the way the site nav in the topbar is. Until
+     15 September 2026 every footer carried a different subset of the site — /privacy/ named
+     three pages, /impressum/ one, and the two doors a reader is actually looking for were
+     wherever the last edit left them. The footer is where a reader goes when the sticky bar
+     has scrolled past and when JavaScript never ran, so it names EVERY page, in the order
+     the site nav uses, with the two buttons as text links at the end of the row and Privacy
+     and Impressum last.
+
+     The hrefs are ROOT-RELATIVE for the same reason the site nav's are: one block has to
+     serve a page at the site root and a page a directory down.
+
+     The Tell us line is here rather than in <main>. It used to be a 55-word paragraph inside
+     the body of six pages, saying the same thing six times; the sentence itself is
+     docs/copy/feedback.json's `invitation` and is pinned by web/tools/verify_copy.py, so it
+     may move but it may not be reworded. The two real asks — /invite/#feedback and
+     /start/#tell — are where a tester with something to say is standing. -->
   <p>
-    <a href="../">About CleanJibe</a> ·
-    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">github.com/JanLahmann/WingFoil</a>
-    · Questions: <a href="mailto:info@cleanjibe.org">info@cleanjibe.org</a>
+    <a href="/">About CleanJibe</a> ·
+    <a href="/invite/">Get the beta</a> ·
+    <a href="/start/">Getting started</a> ·
+    <a href="/watches/">Which watch</a> ·
+    <a href="/learn/">What it measures</a> ·
+    <a href="/whats-new/">What&rsquo;s new</a> ·
+    <a href="/app/">Open the analyzer</a> ·
+    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">GitHub</a> ·
+    <a href="/privacy/">Privacy</a> ·
+    <a href="/impressum/">Impressum</a>
   </p>
-  <p class="fineprint">Anonymous, cookie-free usage stats and feature counts by umami. · <a href="../privacy/">Privacy</a></p>
+  <p data-copy="feedback-invitation">
+    A verdict you disagree with, or something you want this to do next?
+    <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
+       data-umami-event="footer-feedback-mail">info@cleanjibe.org</a>, or
+    <strong>Menu &rarr; Support &amp; ideas</strong> in the iPhone app, which fills the facts
+    in for you. Ideas and wishes are as welcome as bugs. An
+    <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">issue</a> works too,
+    and the next rider can read it.
+  </p>
+  <!-- The one measurement this site takes, said out loud rather than behind a banner: umami
+       is cookieless and stores no identifier that survives the visit, so there is nothing to
+       consent to. It does not weaken the analyzer's promise — a .fit file is read in the tab
+       and never leaves the device; what umami sees is that a page was opened. -->
+  <p class="fineprint">
+    Anonymous, cookie-free usage stats and feature counts by umami.
+  </p>
+<!-- sitefoot:end -->
 </footer>
 
 <!-- The three moving parts of the page chrome, identical on every document here.

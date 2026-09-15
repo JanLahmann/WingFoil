@@ -16,14 +16,17 @@ WHAT IT CHECKS, per document:
   3. Tags nest and close. html.parser is not a validator, but an unclosed <section> or a
      </div> too many is exactly the mistake a hand-edited page makes, and it finds those.
   4. The site nav between <!-- sitenav:begin --> and <!-- sitenav:end --> is byte-identical
-     on all nine reader-facing documents, once `aria-current="page"` is taken out. It is
+     on all nine reader-facing documents, once `aria-current="page"` is taken out, and so is
+     the footer block between <!-- sitefoot:begin --> and <!-- sitefoot:end -->. Both are
      copied markup rather than a template — this site has no build step — so the only thing
      keeping nine copies in step is this check.
 
-  5. The words. `verify_copy.py --brief` holds every page to `docs/copy/*.json`, and
-     `make_copy_js.py --check` to the generated `js/copy.js`, the same way `make_start.py`
-     and `make_devices.py` run below: a page that has drifted from the copy contract is a
-     link to a promise nobody made.
+  5. The words. `verify_copy.py --brief` holds every page to `docs/copy/*.json`,
+     `make_copy_js.py --check` to the generated `js/copy.js`, and `verify_unique.py --brief`
+     to the sentences nobody owns — no prose sentence on two pages, and no page over its
+     word budget — the same way `make_start.py` and `make_devices.py` run below: a page that
+     has drifted from the copy contract is a link to a promise nobody made, and a page that
+     says something twice is a page one of whose copies is already out of date.
 
 WHAT IT DOES NOT: http(s), mailto and the cleanjibe:// scheme are somebody else's to answer
 for. And "#example" on /app/ is a ROUTE rather than an anchor (js/app.js runs the bundled
@@ -197,6 +200,42 @@ if navs:
     print("site nav: identical on %d of %d pages" % (
         sum(1 for b in navs.values() if b == reference), len(NAV_PAGES)))
 
+# ---------------------------------------------------------------- the footer
+# The same argument one screen down. Until 15 September 2026 every footer named a different
+# subset of the site — /privacy/ three pages, /impressum/ one — and the footer is where a
+# reader goes when the sticky bar has scrolled away and when JavaScript never ran. One block,
+# copied nine times because a static site has nowhere to put a partial, compared here exactly
+# the way the site nav above is. No aria-current: a footer marks no current page.
+FOOT_BEGIN = "<!-- sitefoot:begin"
+FOOT_END = "<!-- sitefoot:end -->"
+
+feet = {}
+for page in NAV_PAGES:
+    path = os.path.join(ROOT, page)
+    if not os.path.exists(path):
+        continue
+    src = io.open(path, encoding="utf-8").read()
+    start = src.find(FOOT_BEGIN)
+    end = src.find(FOOT_END)
+    if start < 0 or end < 0:
+        errors.append("%s: no footer block (<!-- sitefoot:begin --> … <!-- sitefoot:end -->)"
+                      % page)
+        continue
+    if src.count(FOOT_BEGIN) != 1 or src.count(FOOT_END) != 1:
+        errors.append("%s: the footer markers appear more than once" % page)
+        continue
+    feet[page] = src[start:end + len(FOOT_END)]
+
+if feet:
+    reference_page = NAV_PAGES[0]
+    reference = feet.get(reference_page)
+    for page, block in feet.items():
+        if reference is not None and block != reference:
+            errors.append("%s: the footer block differs from %s — it is copied markup and "
+                          "must be byte-identical" % (page, reference_page))
+    print("footer: identical on %d of %d pages" % (
+        sum(1 for b in feet.values() if b == reference), len(NAV_PAGES)))
+
 # The generated half of /start/ is a link problem of its own kind: a guide block that no
 # longer matches docs/guide/getting-started.json is a page saying something the app does
 # not. `make_start.py --check` is stdlib-only and takes milliseconds, so it runs here,
@@ -233,6 +272,16 @@ import make_copy_js                                                      # noqa:
 
 if make_copy_js.main(["--check"]) != 0:
     errors.append("web/js/copy.js is stale — run `python3 web/tools/make_copy_js.py`")
+
+# And the sentences nobody owns. verify_copy holds the pages to docs/copy; what it cannot
+# see is the site's own prose written twice and then corrected once. verify_unique.py is
+# that check, plus the per-page word budget that stops /start/ walking back to 3500 words
+# one honest paragraph at a time.
+import verify_unique                                                     # noqa: E402
+
+if verify_unique.main(["--brief"]) != 0:
+    errors.append("a sentence has two homes, or a page is over its word budget — "
+                  "run `python3 web/tools/verify_unique.py` for the list")
 
 if errors:
     print("\n%d PROBLEM(S):" % len(errors))

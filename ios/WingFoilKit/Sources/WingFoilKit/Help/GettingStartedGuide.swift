@@ -84,9 +84,9 @@ public enum GettingStartedGuide {
                           + "No key, no account."),
                 .init(number: 2,
                       title: "Record and save",
-                      detail: "Press START, pick **CleanJibe** from the activity list, wait "
-                          + "until it says GPS good, press START again. Ride, then STOP and "
-                          + "**Save**."),
+                      detail: "Charged watch and phone. Press START, pick **CleanJibe**, wait "
+                          + "until it says GPS good, press START again. Ride — glance at the "
+                          + "tally once — then STOP and **Save**."),
                 .init(number: 3,
                       title: "Let Garmin Connect sync",
                       detail: "The watch uploads to Garmin Connect by itself next to the "
@@ -283,6 +283,11 @@ public enum GettingStartedGuide {
                       detail: "With the .fit the detection can be re-run and fixed; without it "
                           + "there is only guesswork. Ideas and wishes are as welcome as "
                           + "faults."),
+                .init(number: 5,
+                      title: "Send a card, and say how it reads",
+                      detail: "The share button on the session page draws a **share card** — "
+                          + "your track, your numbers. Send it to a friend, and say if "
+                          + "anything on it reads wrong."),
             ]),
     ]
 

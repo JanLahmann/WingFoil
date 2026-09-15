@@ -304,6 +304,16 @@ def html_text(text: str) -> str:
 
 
 def html_card(entry: dict, letter: str | None) -> list[str]:
+    """One card: the title, the status, and the summary as the handle on a disclosure.
+
+    THE STEPS ARE BEHIND A FOLD, since 15 September 2026. A rider takes exactly one route;
+    the other four are somebody else's instructions, and flat on the page they made /start/
+    a 3500-word document whose own ask — read the verdicts against your memory — sat at the
+    bottom of it. The summary is what a reader scans to find their own route, so the summary
+    is what stays visible: `<summary>` carries it, and the `.what` class it always wore.
+    Nothing in docs/guide/getting-started.json changes for this, and the app's Help topic,
+    which shows title and summary and no steps at all, is untouched.
+    """
     beta = "release" not in entry["channels"]
     head = html_text(entry["title"])
     if letter:
@@ -316,17 +326,18 @@ def html_card(entry: dict, letter: str | None) -> list[str]:
         f"        <h3>{head}</h3>",
         f'        <span class="status">{html_text(entry["status"])}</span>',
         "      </div>",
-        f'      <p class="what">{html_text(entry["summary"])}</p>',
-        '      <ol class="steps-flow">',
+        "      <details>",
+        f'        <summary class="what">{html_text(entry["summary"])}</summary>',
+        '        <ol class="steps-flow">',
     ]
     for step in entry["steps"]:
         lines += [
-            "        <li>",
-            f"          <h3>{html_text(step['title'])}</h3>",
-            f"          <p>{html_text(step['detail'])}</p>",
-            "        </li>",
+            "          <li>",
+            f"            <h3>{html_text(step['title'])}</h3>",
+            f"            <p>{html_text(step['detail'])}</p>",
+            "          </li>",
         ]
-    lines += ["      </ol>", "    </article>", ""]
+    lines += ["        </ol>", "      </details>", "    </article>", ""]
     return lines
 
 
@@ -370,13 +381,19 @@ def render_html(doc: dict) -> str:
         lines += html_card(extra, None)
     lines += ["  </section>", ""]
 
+    # Seven answers to seven things that go wrong, behind one fold. A reader who is stuck
+    # opens it; a reader who is not was reading past 200 words of somebody else's problem to
+    # reach the page's own ask. The section's own lede is the handle, so the words are still
+    # the JSON's and still say what the list is for.
     lines += [
         '  <section class="home-section" id="stuck">',
         f'    <h2>{html_text(sections["troubleshooting"]["title"])}</h2>',
-        f'    <p class="section-lede">{html_text(sections["troubleshooting"]["lede"])}</p>',
+        "    <details>",
+        f'      <summary class="section-lede">'
+        f'{html_text(sections["troubleshooting"]["lede"])}</summary>',
     ]
-    lines += html_terms(doc["troubleshooting"]["entries"])
-    lines += ["  </section>", ""]
+    lines += ["  " + line for line in html_terms(doc["troubleshooting"]["entries"])]
+    lines += ["    </details>", "  </section>", ""]
 
     lines += [
         '  <section class="home-section" id="report">',

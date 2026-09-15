@@ -57,7 +57,7 @@
   </a>
   <div class="topbar-right">
     <a class="btn primary" href="../app/">Open the analyzer</a>
-    <a class="btn ghost wide-only" href="../">About CleanJibe</a>
+    <a class="btn ghost wide-only" href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">GitHub</a>
   </div>
 <!-- sitenav:begin — COPIED VERBATIM ON ALL NINE PAGES. The only thing that differs is
      which link carries `aria-current="page"`; web/tools/verify_links.py compares this block
@@ -87,7 +87,7 @@
   <ul>
     <li><a href="/start/">Get started</a></li>
     <li><a href="/watches/">Which watch</a></li>
-    <li><a href="/learn/">How it works</a></li>
+    <li><a href="/learn/">What it measures</a></li>
     <li><a href="/whats-new/">What&rsquo;s new</a></li>
   </ul>
 </nav>
@@ -129,15 +129,11 @@
       <p class="lede">
         <strong>Installed, and now what?</strong>
         <a href="../start/" data-umami-event="invite-start">Get started: your first session on
-        the water</a> — charge, record, save, and read the verdicts against what you remember.
-        There is a 20-minute dry run in it too, for a week with no wind.
+        the water</a> — record, save, and read the verdicts against what you remember.
       </p>
-      <p class="lede">
-        <strong>Not sure you want either yet?</strong> The
-        <a href="../app/">browser analyzer</a> is not a beta at all — it reads a
-        <code>.fit</code> file from any Garmin watch and gives you the whole session back.
-        There is an example inside if you have no file to hand.
-      </p>
+      <!-- "Not sure you want either yet?" came out on 15 Sep 2026: *Open the analyzer* is the
+           loud button at the top of this very page, and the front door's hero hands over the
+           same thing with a picture of what comes out of it. -->
     </div>
   </section>
 
@@ -163,19 +159,14 @@
         </p>
         <!-- The version and the count are written by web/tools/make_devices.py out of
              garmin/manifest.xml; never type them. -->
+        <!-- The 135-word product recital that stood here was /watches/#garmin's table typed
+             out as a sentence, with no honesty column. Both data-copy spans stay, so
+             make_devices.py --check still bites on this page. -->
         <p class="note">
-          Watches, as of <strong><span data-copy="garmin-version">0.9.10</span></strong> —
-          <span data-copy="garmin-count">39</span> Connect IQ products: the fenix 8 family
-          (43&nbsp;mm, 47&nbsp;mm, Solar 47/51&nbsp;mm, Pro 47&nbsp;mm), the fenix 7 family
-          (7 / 7S / 7X and every Pro variant), epix 2 and epix 2 Pro, Forerunner
-          255 / 265 / 955 / 965 / 570 / 970, MARQ 2, Enduro 3, D2 Mach 1 and 2, Descent Mk3
-          43&nbsp;mm — Venu 2 / 2S / 2 Plus / 3 / 3S, vívoactive 5 / 6 and Instinct 3 AMOLED
-          45 / 50&nbsp;mm since 0.9.10 — and, new in 0.9.11, the fenix 5 Plus family
-          (5 Plus / 5S Plus / 5X Plus). <strong>Those last four families have passed the
-          layout checks in the simulator and have never been ridden on a real watch</strong>;
-          if yours is one of them, tell us how the pages look and whether the touch controls
-          behave. Full list, family by family, on <a href="../watches/">Which watch</a>. If the
-          store does not offer your watch, the install button will say so.
+          <span data-copy="garmin-count">39</span> watches at
+          <strong><span data-copy="garmin-version">0.9.10</span></strong> — the list, family
+          by family, is on <a href="../watches/">Which watch</a>, with the four nobody has
+          ridden yet marked. If the store does not offer yours, the install button says so.
         </p>
       </li>
 
@@ -183,8 +174,8 @@
         <h3>Ride</h3>
         <p>
           Open CleanJibe on the watch and start. It records as a <strong>Windsurf</strong>
-          activity — so it lands in Garmin Connect as what it is rather than as a walk —
-          and it works out the wind direction for itself after a few minutes of riding.
+          activity, so it lands in Garmin Connect as what it is rather than as a walk, and it
+          works out the wind direction for itself after a few minutes.
         </p>
       </li>
 
@@ -211,9 +202,9 @@
       <li>
         <h3>Install and open</h3>
         <p>
-          You need Apple's <strong>TestFlight</strong> app from the App Store if you do not
-          have it; the link installs CleanJibe through it. TestFlight builds expire, so it
-          will ask you to update every so often.
+          You need Apple's <strong>TestFlight</strong> app if you do not have it; the link
+          installs CleanJibe through it. TestFlight builds expire, so it will ask you to
+          update now and then.
         </p>
       </li>
       <li>
@@ -222,24 +213,18 @@
           The app ships with a real session already in it, so you can see the whole thing —
           map, turn list, replay, records — before importing anything of your own.
         </p>
+        <!-- The 110-word import paragraph came out on 15 Sep 2026: /start/'s five generated
+             routes are the same instructions, in the order a rider takes them, and they are
+             written once in docs/guide/getting-started.json for the app and the page both. -->
         <p>
-          Then bring in your own. <strong>Import</strong> has four doors: the Garmin history
-          ZIP, single files, Apple Health, and <strong>Strava</strong> — which signs you in on
-          Strava's own consent page, reads only, and needs no Garmin account at all. Files can
-          be <code>.fit</code>, <code>.gpx</code> or <code>.tcx</code>, and they do not have to
-          be picked: <strong>Open in CleanJibe</strong> appears in the iOS share sheet wherever
-          one of the three is offered, which is how a Polar, Suunto or COROS session gets in
-          straight from the vendor's own app. Take the FIT where an app offers one — it carries
-          the speed the watch measured; a GPX does not, and a TCX does only when it has a speed
-          channel.
+          Then bring in your own: <a href="../start/">Getting started</a> has the route for
+          your watch, step by step.
         </p>
       </li>
     </ol>
 
     <p class="note">
-      The iPhone app does not need the watch app. It reads Garmin's own Windsurf recordings
-      too; only pump strokes and takeoff effort need CleanJibe on the wrist, because only it
-      records the wrist accelerometer. Which brands get what is one table, on
+      The iPhone app does not need the watch app. Which brands get what is one table, on
       <a href="../watches/">Which watch</a>; what has changed in each build is on
       <a href="../whats-new/">What&rsquo;s new</a>.
     </p>
@@ -260,19 +245,19 @@
     <h2>It&rsquo;s a beta — tell us what&rsquo;s wrong and what&rsquo;s missing</h2>
     <p class="section-lede">
       Every report lands with the one developer. A rough sentence beats a polished bug report
-      you never send, and &ldquo;this number looks wrong&rdquo; is a perfectly good one.
+      you never send, and &ldquo;this number looks wrong&rdquo; is a perfectly good one. Most
+      useful of all: a turn scored wrong, or anything that stopped, froze or drained the
+      battery.
     </p>
     <div class="claims">
       <article class="panel claim">
         <h3>From inside the app: Menu &rarr; Support &amp; ideas</h3>
         <p>
-          The best door, because it fills in the facts for you. Top left on the Sessions tab:
-          <strong>Menu &rarr; Support &amp; ideas</strong>. The same mail is behind
-          <em>Something off, or an idea? Send feedback</em> at the foot of every page, and
-          behind <em>Report a problem with this session&hellip;</em> on a session's
-          share sheet — that last one names the session and attaches its card. The build, your
-          phone, your iOS version, the paired watch and how big your library is are already in
-          it; you write what happened and press Send. Nothing leaves the phone until you do.
+          The best door, because it fills the facts in for you: the build, your phone, the
+          paired watch and how big your library is are already in the mail. You write what
+          happened and press Send, and nothing leaves the phone until you do. Top left on the
+          Sessions tab, and again on a session&rsquo;s share sheet as <em>Report a problem
+          with this session&hellip;</em>, which attaches that session&rsquo;s card.
         </p>
       </article>
       <article class="panel claim">
@@ -280,10 +265,8 @@
         <p>
           <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener"
              data-umami-event="invite-feedback-github">github.com/JanLahmann/WingFoil/issues</a>
-          takes a screenshot or a <code>.fit</code> file, holds a thread, and stays visible to
-          the next rider who hits the same thing instead of disappearing into one inbox. Use it
-          for a feature, a number you disagree with, or a question whose answer other people
-          want too.
+          takes a screenshot or a <code>.fit</code> file, holds a thread, and stays readable
+          by the next rider who hits the same thing.
         </p>
       </article>
       <article class="panel claim">
@@ -291,39 +274,22 @@
         <p>
           <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
              data-umami-event="invite-feedback-mail">info@cleanjibe.org</a>
-          — no account, no app needed, and the right door when the app is the thing that will
-          not start. What you rode, what it said, and what you expected it to say. If a session
-          was read wrong, attach the <code>.fit</code> file: with the file the detection can be
-          re-run and fixed, without it there is only guesswork.
+          — no account, no app needed, and the right door when the app is the thing that
+          will not start. If a session was read wrong, attach the <code>.fit</code> file:
+          with it the detection can be re-run and fixed, without it there is only guesswork.
         </p>
       </article>
     </div>
-    <!-- The shared block, in the same words as the homepage, /start/, /watches/ and
-         /whats-new/. -->
-    <p class="note" id="tell-us" data-copy="feedback-invitation">
-      <strong>Tell us.</strong> Bugs, verdicts you disagree with, and — just as much — what
-      you would want this to do next. <strong>Ideas and wishes are as welcome as bugs.</strong> In the app,
-      <strong>Menu &rarr; Support &amp; ideas</strong> is the best door, because it prefills the
-      facts;
-      otherwise mail <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A">info@cleanjibe.org</a> or open a
-      <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">GitHub issue</a>.
-      Need something that is only in the beta? Tell us.
-    </p>
-    <p class="note">
-      <strong>What is most useful:</strong> turns scored wrong, flights the watch missed or
-      invented, a wind direction that disagrees with the day, and anything that stopped, froze
-      or drained the battery. Which watch and which app version, if you have them to hand — and
-      if you came in through Menu &rarr; Support &amp; ideas, you already have.
-    </p>
+
     <!-- Both stores have a report button, both of them reach the same developer, and a
          page that only listed its own two doors would be quietly telling testers those
          buttons go nowhere. They do not. -->
     <p class="note">
-      The stores&rsquo; own channels reach us too: in <strong>TestFlight</strong>, take a
-      screenshot inside the app and send it — the built-in feedback form arrives here with
-      the build and the device attached; on the Connect IQ store, <strong>Contact
-      Developer</strong> on either listing does the same. Handy on the beach; an issue is
-      still easier to answer.
+      The stores&rsquo; own channels reach us too, and this page is where they are named:
+      in <strong>TestFlight</strong>, <em>Send Beta Feedback</em> — or a screenshot taken
+      inside CleanJibe and <em>Share Beta Feedback</em> — arrives here with the build and the
+      device attached; on the Connect IQ listing, <em>Contact Developer</em> and <em>Report a
+      Problem</em> do the same. Handy on the beach; an issue is still easier to answer.
     </p>
   </section>
 
@@ -338,15 +304,15 @@
          release" (docs/channels.md, "Feedback and channel furniture"). -->
     <h2 data-copy="channels-title">Coming in a future release</h2>
     <p class="section-lede">
-      The App Store release, when it comes, will be the steady half of this app. The beta is
-      ahead of it — and a third build, dev, is ahead of the beta and is not public.
+      The App Store release, when it comes, will be the steady half. The beta is ahead of
+      it; a third build, dev, is ahead of the beta and is not public.
     </p>
     <div class="claims">
       <article class="panel claim">
         <h3>In the beta today</h3>
         <p>
-          The TestFlight link at the top of this page hands over all of it this afternoon.
-          Nothing here is a promise; it is what installs:
+          The TestFlight link above hands over all of it this afternoon. Nothing here is a
+          promise; it is what installs:
         </p>
         <ul data-copy="channels-beta">
           <li>.gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS opens straight
@@ -370,9 +336,8 @@
       <article class="panel claim">
         <h3>Ideas on the bench</h3>
         <p>
-          Beyond the beta, these are what we could build next. None of them is in a public
-          build today. If one would matter to you, say so, and add your own ideas: what riders
-          ask for is what gets built first.
+          Beyond the beta: what we could build next. None of it is in a public build today.
+          If one would matter to you, say so — and add your own.
         </p>
         <ul data-copy="channels-dev">
           <li>The Garmin link: a summary card from your watch the moment you stop, the map of your spot
@@ -383,71 +348,63 @@
           <li data-copy="extra">Your idea here.</li>
         </ul>
         <p>
-          <strong>Tell us what you would want</strong>, the order below. Every wish counts, and
-          the ones asked for most move first.
+          <strong>Tell us what you would want.</strong> The ones asked for most move first.
         </p>
       </article>
     </div>
   </section>
 
-  <!-- ---------------------------------------------------------------- no beta -->
-  <section class="home-section">
-    <h2>If neither is for you</h2>
-    <div class="claims">
-      <article class="panel claim">
-        <h3>The analyzer needs nothing</h3>
-        <p>
-          <a href="../app/">cleanjibe.org/app</a> is free, has no account and is not a beta.
-          Drop in a <code>.fit</code> file from any Garmin watch and you get the session
-          back: foil time, every flight, the verdict on every turn, and your speed records.
-          The file never leaves the browser tab.
-        </p>
-      </article>
-      <article class="panel claim">
-        <h3>Android is fine</h3>
-        <p>
-          The analyzer is a web page, so it runs in a phone browser as well as on a desktop —
-          library and trends included. There is no Android app because there is nothing for
-          one to do that the page does not.
-        </p>
-      </article>
-      <article class="panel claim">
-        <h3>Questions before you install</h3>
-        <p>
-          Ask in an
-          <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener"
-             data-umami-event="invite-feedback-github">issue</a>
-          — or mail <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
-             data-umami-event="invite-feedback-mail">info@cleanjibe.org</a> if you would
-          rather not. The code and the detection thresholds are readable first, either way:
-          <a href="https://github.com/JanLahmann/WingFoil" rel="noopener">github.com/JanLahmann/WingFoil</a>.
-        </p>
-      </article>
-    </div>
-  </section>
 
 </main>
 
 <footer>
   <p>CleanJibe — open wingfoil tracking. Watch app, iPhone app, browser analyzer.</p>
+<!-- sitefoot:begin — COPIED VERBATIM ON ALL NINE PAGES, and compared byte for byte by
+     web/tools/verify_links.py exactly the way the site nav in the topbar is. Until
+     15 September 2026 every footer carried a different subset of the site — /privacy/ named
+     three pages, /impressum/ one, and the two doors a reader is actually looking for were
+     wherever the last edit left them. The footer is where a reader goes when the sticky bar
+     has scrolled past and when JavaScript never ran, so it names EVERY page, in the order
+     the site nav uses, with the two buttons as text links at the end of the row and Privacy
+     and Impressum last.
+
+     The hrefs are ROOT-RELATIVE for the same reason the site nav's are: one block has to
+     serve a page at the site root and a page a directory down.
+
+     The Tell us line is here rather than in <main>. It used to be a 55-word paragraph inside
+     the body of six pages, saying the same thing six times; the sentence itself is
+     docs/copy/feedback.json's `invitation` and is pinned by web/tools/verify_copy.py, so it
+     may move but it may not be reworded. The two real asks — /invite/#feedback and
+     /start/#tell — are where a tester with something to say is standing. -->
   <p>
-    <a href="../">About CleanJibe</a> ·
-    <a href="../start/">Getting started</a> ·
-    <a href="../watches/">Which watch</a> ·
-    <a href="../whats-new/">What&rsquo;s new</a> ·
-    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">github.com/JanLahmann/WingFoil</a>
-    · Beta feedback: <a href="#feedback">open an issue</a>, or mail
-    <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A" data-umami-event="invite-feedback-mail">info@cleanjibe.org</a>
+    <a href="/">About CleanJibe</a> ·
+    <a href="/invite/">Get the beta</a> ·
+    <a href="/start/">Getting started</a> ·
+    <a href="/watches/">Which watch</a> ·
+    <a href="/learn/">What it measures</a> ·
+    <a href="/whats-new/">What&rsquo;s new</a> ·
+    <a href="/app/">Open the analyzer</a> ·
+    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">GitHub</a> ·
+    <a href="/privacy/">Privacy</a> ·
+    <a href="/impressum/">Impressum</a>
   </p>
-  <!-- The same line the homepage and the analyzer carry, and it was missing here: this page
-       has loaded umami since it was written, and now it counts which of the two install
-       doors a tester walks through. A page that measures something and says so nowhere is
-       the one page of the three that would have to be argued for. -->
+  <p data-copy="feedback-invitation">
+    A verdict you disagree with, or something you want this to do next?
+    <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
+       data-umami-event="footer-feedback-mail">info@cleanjibe.org</a>, or
+    <strong>Menu &rarr; Support &amp; ideas</strong> in the iPhone app, which fills the facts
+    in for you. Ideas and wishes are as welcome as bugs. An
+    <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">issue</a> works too,
+    and the next rider can read it.
+  </p>
+  <!-- The one measurement this site takes, said out loud rather than behind a banner: umami
+       is cookieless and stores no identifier that survives the visit, so there is nothing to
+       consent to. It does not weaken the analyzer's promise — a .fit file is read in the tab
+       and never leaves the device; what umami sees is that a page was opened. -->
   <p class="fineprint">
     Anonymous, cookie-free usage stats and feature counts by umami.
-    · <a href="../privacy/">Privacy</a>
-    · <a href="../impressum/">Impressum</a>
   </p>
+<!-- sitefoot:end -->
 </footer>
 
 <!-- The three moving parts of the page chrome, identical on every document here.
