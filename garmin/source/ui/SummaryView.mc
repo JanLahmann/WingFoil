@@ -89,6 +89,7 @@ module SummaryNav {
 // with the layout test, so they live at file scope beside the constants they use.
 const SUM_DOT_GAP = 4;
 const SUM_SAVED = "SAVED";
+const SUM_NOT_SAVED = "NOT SAVED";
 // The track page draws into the square inscribed in the circle, inset by this margin.
 //
 // It grew from 10 to 34 when the distance caption stopped being FONT_XTINY. That caption is a
@@ -326,11 +327,14 @@ class SummaryView extends WatchUi.View {
         var cx = dc.getWidth() / 2;
         var y = savedY(dc);
         var bw = Brand.badgeW();
-        var textW = dc.getTextWidthInPixels(SUM_SAVED, Graphics.FONT_XTINY);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        // A save that failed says so, in red, without the badge: nothing to sign.
+        var ok = getApp().controller.lastSaveOk;
+        var word = ok ? SUM_SAVED : SUM_NOT_SAVED;
+        var textW = dc.getTextWidthInPixels(word, Graphics.FONT_XTINY);
+        dc.setColor(ok ? Graphics.COLOR_WHITE : Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
         // No room for the pair: the word alone, where it has always been.
-        if (!lockupFits(dc, bw, Brand.badgeH(), textW)) {
-            dc.drawText(cx, y, Graphics.FONT_XTINY, SUM_SAVED, CV);
+        if (!ok || !lockupFits(dc, bw, Brand.badgeH(), textW)) {
+            dc.drawText(cx, y, Graphics.FONT_XTINY, word, CV);
             return;
         }
         var left = cx - lockupW(dc, bw, textW) / 2;

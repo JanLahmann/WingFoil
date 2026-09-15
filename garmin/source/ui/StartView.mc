@@ -8,6 +8,12 @@ import Toybox.WatchUi;
 // class consts are instance-scoped in Monkey C.
 const START_TITLE = "CleanJibe";
 const START_HINT = "START to record";
+// The long form, drawn where the hint row has room for it at its own font: a rider who has
+// never used the app presses START to stop and gets PAUSED (START toggles pause, BACK opens
+// the session menu with Save), and no recording page can spare a row to say so. The one
+// screen he reads BEFORE riding is this one, so it says the whole binding here (audit, 15 Sep
+// 2026: "a stranger cannot finish a recording"). The paused banner says it again.
+const START_HINT_LONG = "START records · BACK saves";
 // Nominal fonts as TEXT_FONTS indices: FONT_MEDIUM for the title and — since 0.9.2 — for the
 // GPS STATE row, FONT_SMALL for the wind and hint rows. fitFont() shrinks any of them when the
 // chord at that depth is narrower, which is what still fits the long wind reminder on a 240 px
@@ -123,6 +129,15 @@ class StartView extends WatchUi.View {
         return q >= Position.QUALITY_POOR ? Graphics.COLOR_YELLOW : Graphics.COLOR_WHITE;
     }
 
+    // The hint row: both keys when they fit at the body font at this depth, START alone
+    // when they do not (the 240 px glasses). Public for the layout test.
+    static function hintText(dc as Dc, radius as Number, dy as Number) as String {
+        var f = TEXT_FONTS[START_BODY_FONT];
+        var budget = RecordingView.rowBudget(radius, dy, RecordingView.inkH(dc, f));
+        return dc.getTextWidthInPixels(START_HINT_LONG, f) <= budget
+            ? START_HINT_LONG : START_HINT;
+    }
+
     // The wind row: the axis when there is one, and how to set one when there is not.
     //
     // An axis the WATCH estimated reads "wind ~200° SSW" — the tilde is the whole difference
@@ -176,7 +191,7 @@ class StartView extends WatchUi.View {
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         drawRow(dc, cx, cy, radius, rowY(cy, hTitle, hState, hBody, 3), START_BODY_FONT,
-            START_HINT);
+            hintText(dc, radius, rowY(cy, hTitle, hState, hBody, 3) - cy));
     }
 
     // One centred row, at the largest font from `from` that the chord at its depth holds.

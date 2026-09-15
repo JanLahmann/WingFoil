@@ -21,6 +21,16 @@ const TALLY_FLOOR = 2;
 const TALLY_SEP_NARROW = " ";
 const TALLY_OK = 1;
 const TALLY_SEPARATORS = 2;
+// The tally's captions — "flew", "touch", "fell" in FONT_XTINY after each count — shown where
+// the row can afford them on top of everything else. Until 0.9.11 the three counts were three
+// colours and nothing more, and colour was the only key (audit, 15 Sep 2026); the words are
+// the first thing dropped when a session gets wide, so a 30-turn tally still reads as digits.
+const TALLY_CAPTIONS = 4;
+const TALLY_CAPTION_GAP = 3;
+const TALLY_CAP_FLEW = "flew";
+const TALLY_CAP_TOUCH = "touch";
+const TALLY_CAP_FELL = "fell";
+const TURNS_HEADER = "flew · touch · fell";
 
 // Main-page streak row: "dry 7 / 12" — the live no-fall run and the session's best.
 const STREAK_CAPTION = "dry";
@@ -92,6 +102,11 @@ const CLEAN_GLYPH_GAP = 7;
 // TINY are label sizes) — and a narrower banner is what lets it sit high enough on the glass
 // to clear the rings entirely instead of punching a hole in them.
 const PAUSED_TEXT = "PAUSED";
+// The banner's long form, used where the chord at the banner's depth has room for it: the
+// rider who pressed START expecting to finish is looking at exactly this word, and it is the
+// one moment the key he actually needs can be named (audit, 15 Sep 2026). MAIN's own top row
+// keeps the short word — that row is the clock's width.
+const PAUSED_TEXT_LONG = "PAUSED · BACK saves";
 const PAUSED_FONT_IDX = 3;
 
 // Cell geometry. The column offset is NOT a constant: the round display narrows fast below
@@ -375,9 +390,21 @@ class RecordingView extends WatchUi.View {
     // the page underneath it.
     hidden function drawPausedBanner(dc as Dc, radius as Number) as Void {
         var font = TEXT_FONTS[PAUSED_FONT_IDX];
-        var w = dc.getTextWidthInPixels(PAUSED_TEXT, font);
+        var text = pausedText(dc, font, radius);
+        var w = dc.getTextWidthInPixels(text, font);
         dc.setColor(Graphics.COLOR_YELLOW, Graphics.COLOR_BLACK);
-        dc.drawText(dc.getWidth() / 2, pausedBannerY(dc, w, radius), font, PAUSED_TEXT, CV);
+        dc.drawText(dc.getWidth() / 2, pausedBannerY(dc, w, radius), font, text, CV);
+    }
+
+    // The long banner where the glass at the banner's own depth can take it, the word alone
+    // where it cannot. Public for the layout test.
+    static function pausedText(dc as Dc, font as Graphics.FontType, radius as Number) as String {
+        // pausedBannerY drops a wider box until its corners clear the glass; the long form
+        // is used only while that still leaves it in the top third, a banner and not a
+        // headline over the page.
+        var w = dc.getTextWidthInPixels(PAUSED_TEXT_LONG, font);
+        var y = pausedBannerY(dc, w, radius);
+        return y <= dc.getHeight() / 2 - radius / 3 ? PAUSED_TEXT_LONG : PAUSED_TEXT;
     }
 
     // Ink centre of that banner. Shared with the layout test, which asserts the box corner
@@ -1559,13 +1586,15 @@ class RecordingView extends WatchUi.View {
         var hC = dc.getFontHeight(TEXT_FONTS[CLEAN_FROM]);
         var windSet = AppSettings.cfg.windDirection >= 0;
 
-        // row 0 — the header, unchanged: which two maneuvers the counts below are, and the
-        // axis that split them. `windLabel` marks an axis the WATCH estimated with a leading
-        // "~" ("tack / jibe  ~SSW"), so the header never claims the rider named it.
+        // row 0 — the header: the NAMES of the three counts under it, in their order, and the
+        // wind axis after them where the chord has room. It said "tack / jibe" until 0.9.11 —
+        // a leftover from a giant that once counted tacks and jibes; over the outcome ladder
+        // it read as 35 tacks and 12 jibes (audit, 15 Sep 2026). `windLabel` marks an axis
+        // the WATCH estimated with a leading "~", so the header never claims the rider named it.
         var y = turnsRowY(cy, hT, hG, hC, hK, hD, hS, 0);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, y, Graphics.FONT_XTINY,
-            windSet ? "tack / jibe  " + AppSettings.windLabel() : "turns", CV);
+            turnsHeader(dc, windSet ? AppSettings.windLabel() : "", radius, y - cy), CV);
 
         // row 1 — the giant: flew · touched · swam, in the ladder's own colours, with the
         // separators drawn as dim dots because the number fonts have no punctuation.
@@ -1924,6 +1953,14 @@ class RecordingView extends WatchUi.View {
         return w;
     }
 
+    // What the three captions add to a tally row: three words at FONT_XTINY and a gap each.
+    static function captionsWidth(dc as Dc) as Number {
+        return dc.getTextWidthInPixels(TALLY_CAP_FLEW, Graphics.FONT_XTINY)
+            + dc.getTextWidthInPixels(TALLY_CAP_TOUCH, Graphics.FONT_XTINY)
+            + dc.getTextWidthInPixels(TALLY_CAP_FELL, Graphics.FONT_XTINY)
+            + 3 * TALLY_CAPTION_GAP;
+    }
+
     // What the row can afford to SHOW at font `f`, as a bitmask: TALLY_SEPARATORS for the
     // " · " between the counts, TALLY_OK for the session verdict. -1 = not even three bare
     // counts fit at this size.
@@ -1936,6 +1973,9 @@ class RecordingView extends WatchUi.View {
     // even the bare counts overflow.
     static function tallyContent(dc as Dc, a as String, b as String, c as String,
             ok as String, budget as Number, f as Graphics.FontType) as Number {
+        if (tallyWidth(dc, a, b, c, ok, TURNS_TALLY_SEP, f) + captionsWidth(dc) <= budget) {
+            return TALLY_SEPARATORS | TALLY_OK | TALLY_CAPTIONS;
+        }
         if (tallyWidth(dc, a, b, c, ok, TURNS_TALLY_SEP, f) <= budget) {
             return TALLY_SEPARATORS | TALLY_OK;
         }
@@ -1979,6 +2019,18 @@ class RecordingView extends WatchUi.View {
         return (flew * 100 / turns).toString() + TURNS_FLEW_SUFFIX;
     }
 
+    // The Turns page's header: the ladder's three names, then the axis when there is one and
+    // the row can carry it at FONT_XTINY. Public for the layout test.
+    static function turnsHeader(dc as Dc, axis as String, radius as Number, dy as Number)
+            as String {
+        if (axis.equals("")) {
+            return TURNS_HEADER;
+        }
+        var full = TURNS_HEADER + "  " + axis;
+        var budget = rowBudget(radius, dy, inkH(dc, Graphics.FONT_XTINY));
+        return dc.getTextWidthInPixels(full, Graphics.FONT_XTINY) <= budget ? full : TURNS_HEADER;
+    }
+
     // "flew · touch · swim" counts in the ladder's own colours, centred as one block. `from`
     // is the TEXT_FONTS index the row's band was reserved at — 0 (FONT_LARGE) on the main
     // screen, TALLY_FLOOR (FONT_SMALL) on the Turns page — and `ok` is the session verdict,
@@ -1999,27 +2051,40 @@ class RecordingView extends WatchUi.View {
         }
         var sep = (mask & TALLY_SEPARATORS) != 0 ? TURNS_TALLY_SEP : TALLY_SEP_NARROW;
         var verdict = (mask & TALLY_OK) != 0 ? ok : "";
+        var caps = (mask & TALLY_CAPTIONS) != 0;
         var wSep = dc.getTextWidthInPixels(sep, f);
-        var wa = dc.getTextWidthInPixels(a, f);
-        var wb = dc.getTextWidthInPixels(b, f);
-        var ws = dc.getTextWidthInPixels(s, f);
-        var x = cx - tallyWidth(dc, a, b, s, verdict, sep, f) / 2;
-        dc.setColor(Ink.ladderFlew(), Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, y, f, a, LV);
+        var w = tallyWidth(dc, a, b, s, verdict, sep, f) + (caps ? captionsWidth(dc) : 0);
+        var x = cx - w / 2;
+        // Each count in its ink, its caption after it in the same ink where the row carries
+        // captions, the separator in white; the verdict last, in neutral white, so the three
+        // coloured counts stay the thing the eye lands on.
+        x = tallyCell(dc, x, y, f, a, TALLY_CAP_FLEW, caps, Ink.ladderFlew());
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x + wa, y, f, sep, LV);
-        dc.setColor(Ink.ladderTouchdown(), Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x + wa + wSep, y, f, b, LV);
+        dc.drawText(x, y, f, sep, LV);
+        x = tallyCell(dc, x + wSep, y, f, b, TALLY_CAP_TOUCH, caps, Ink.ladderTouchdown());
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x + wa + wSep + wb, y, f, sep, LV);
-        dc.setColor(Ink.ladderFellIn(), Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x + wa + wb + 2 * wSep, y, f, s, LV);
-        // ... and the session's own verdict at the end of the same row, in neutral grey so
-        // the three coloured tallies stay the thing the eye lands on.
+        dc.drawText(x, y, f, sep, LV);
+        x = tallyCell(dc, x + wSep, y, f, s, TALLY_CAP_FELL, caps, Ink.ladderFellIn());
         if (!verdict.equals("")) {
             dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(x + wa + wb + ws + 2 * wSep + TURNS_OK_GAP, y, f, verdict, LV);
+            dc.drawText(x + TURNS_OK_GAP, y, f, verdict, LV);
         }
+    }
+
+    // One count and, where the row carries them, its caption: the word in FONT_XTINY on the
+    // same centre line, in the count's own ink. Returns the x after the cell.
+    hidden function tallyCell(dc as Dc, x as Number, y as Number, f as Graphics.FontType,
+            count as String, cap as String, caps as Boolean, ink as Number) as Number {
+        var LV = Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER;
+        dc.setColor(ink, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, y, f, count, LV);
+        x += dc.getTextWidthInPixels(count, f);
+        if (caps) {
+            x += TALLY_CAPTION_GAP;
+            dc.drawText(x, y, Graphics.FONT_XTINY, cap, LV);
+            x += dc.getTextWidthInPixels(cap, Graphics.FONT_XTINY);
+        }
+        return x;
     }
 
     // ---- TIMELINE: the session as a story ----

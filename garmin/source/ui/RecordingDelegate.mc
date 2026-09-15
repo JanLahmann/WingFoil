@@ -93,10 +93,11 @@ class StopMenuDelegate extends WatchUi.Menu2InputDelegate {
             WatchUi.switchToView(new SummaryView(), new SummaryDelegate(),
                 WatchUi.SLIDE_IMMEDIATE);
         } else if (id == :discard) {
-            c.finishDiscard();
-            WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
-            WatchUi.switchToView(new StartView(), new StartDelegate(),
-                WatchUi.SLIDE_IMMEDIATE);
+            // An hour of water time is one mis-scroll from gone (audit, 15 Sep 2026): the
+            // firmware's own yes/no dialog, and the session menu stays under it until the
+            // answer is yes.
+            WatchUi.pushView(new WatchUi.Confirmation("Discard session?"),
+                new DiscardConfirmDelegate(), WatchUi.SLIDE_UP);
         } else if (id == :wind) {
             // two pops on the way out: the wind menu, then this session menu, so a wind pick
             // puts the rider straight back on the water rather than one menu up from it
@@ -152,5 +153,25 @@ class WindMenuDelegate extends WatchUi.Menu2InputDelegate {
 
     function onBack() as Void {
         WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+    }
+}
+
+// The Discard confirmation: yes ends the session and returns to the start page (the firmware
+// pops the dialog itself; the session menu is popped here); anything else leaves the rider in
+// the session menu, exactly where he was.
+class DiscardConfirmDelegate extends WatchUi.ConfirmationDelegate {
+
+    function initialize() {
+        ConfirmationDelegate.initialize();
+    }
+
+    function onResponse(response as WatchUi.Confirm) as Boolean {
+        if (response == WatchUi.CONFIRM_YES) {
+            getApp().controller.finishDiscard();
+            WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+            WatchUi.switchToView(new StartView(), new StartDelegate(),
+                WatchUi.SLIDE_IMMEDIATE);
+        }
+        return true;
     }
 }

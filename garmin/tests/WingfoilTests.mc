@@ -204,7 +204,8 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     // row 0: header, widest with a wind axis set
     // The widest form the header can take: 0.9.0 marks an axis the watch estimated with a
     // leading "~", so the worst case gained a character.
-    var header = "tack / jibe  ~NNE";
+    var header = RecordingView.turnsHeader(dc, "~NNE", radius.toNumber(),
+        RecordingView.turnsRowY(cy, hT, hG, hC, hK, hD, hS, 0) - cy);
     var r = cornerRadius(dc.getTextWidthInPixels(header, Graphics.FONT_XTINY), hT,
         RecordingView.turnsRowY(cy, hT, hG, hC, hK, hD, hS, 0), cy);
     Test.assertMessage(r <= radius, "header corner " + r.format("%.0f") + " > " + radius);
@@ -4172,6 +4173,50 @@ function brandSplashLockupFitsRoundDisplay(logger as Test.Logger) as Boolean {
     Toybox.Application.Storage.deleteValue(BrandSplash.STORE_SEEN);
     logger.debug("splash lockup: hero " + heroW.toString() + "x" + heroH.toString()
         + " on " + screenPx().toString() + " px");
+    return true;
+}
+
+// 0.9.11: the words a stranger needs. The Turns header names the three counts under it and
+// never the two maneuvers it used to; the tally's captions are the first thing dropped, so a
+// wide tally is still bare digits and never clips; the start page and the paused banner name
+// BACK wherever the glass has room, and fall back to the old words where it has not.
+(:test)
+function strangersWordsFitOrFallBack(logger as Logger) as Boolean {
+    var dc = testBitmap(screenPx(), screenPx()).getDc();
+    var cx = dc.getWidth() / 2;
+    var radius = (screenPx() / 2.0 - BEZEL).toNumber();
+    var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+    // the header never says tack or jibe again, with or without an axis
+    var h = RecordingView.turnsHeader(dc, "~NNE", radius, -radius / 2);
+    Test.assertMessage(h.find("tack") == null && h.find("jibe") == null, "header: " + h);
+    Test.assertEqual(RecordingView.turnsHeader(dc, "", radius, 0), TURNS_HEADER);
+    // a header with the axis is only returned where it fits at XTINY
+    if (h.length() > TURNS_HEADER.length()) {
+        Test.assertMessage(dc.getTextWidthInPixels(h, Graphics.FONT_XTINY)
+            <= RecordingView.rowBudget(radius, -radius / 2, RecordingView.inkH(dc, Graphics.FONT_XTINY)),
+            "the axis was kept on a header that does not fit");
+    }
+    // captions: whenever the mask carries them, the row with them fits the budget; and the
+    // worst-case tally at a tight budget drops them before it drops anything else
+    var f = TEXT_FONTS[0];
+    var wide = RecordingView.tallyWidth(dc, "99", "99", "99", "100% flew", TURNS_TALLY_SEP, f)
+        + RecordingView.captionsWidth(dc);
+    var m = RecordingView.tallyContent(dc, "99", "99", "99", "100% flew", wide, f);
+    Test.assertMessage((m & TALLY_CAPTIONS) != 0, "captions missing at a budget that has room");
+    m = RecordingView.tallyContent(dc, "99", "99", "99", "100% flew", wide - 1, f);
+    Test.assertMessage((m & TALLY_CAPTIONS) == 0, "captions kept one pixel short");
+    Test.assertMessage((m & TALLY_OK) != 0, "the verdict went before the captions");
+    // the start hint and the paused banner: whichever form comes back fits where it goes
+    var hint = StartView.hintText(dc, radius, radius / 3);
+    Test.assertMessage(hint.equals(START_HINT) || hint.equals(START_HINT_LONG), hint);
+    var font = TEXT_FONTS[PAUSED_FONT_IDX];
+    var banner = RecordingView.pausedText(dc, font, radius);
+    var w = dc.getTextWidthInPixels(banner, font);
+    Test.assertMessage(RecordingView.pausedBannerY(dc, w, radius) <= cx - radius / 3,
+        "the banner sits below the top third: " + banner);
+    logger.debug("header " + h + " | hint " + hint + " | banner " + banner + " | caps "
+        + ((RecordingView.tallyContent(dc, "8", "2", "1", "", RecordingView.rowBudget(radius, -radius / 4,
+            RecordingView.inkH(dc, f)), f) & TALLY_CAPTIONS) != 0).toString());
     return true;
 }
 
