@@ -2751,6 +2751,37 @@ maneuver inherited the index. The whole block is absent when nothing is tuned: w
 the two runs are the same run, and "nothing changed" on every session would be noise on the one
 page that is about maneuvers.
 
+## The watch's event flash — every buzz also paints
+
+Since Garmin app 0.9.11 (Jan, 15 September 2026: a buzz through a hood is easy to miss and
+impossible to re-read) every on-water alert that vibrates also shows itself, in two parts:
+
+- **The flash, 1.5 s.** The whole glass takes the event's ink with one glyph and one word in
+  black on it, pulsing on frame parity like the PB flash: a resolved turn as *FLEW*, *TOUCH*
+  or *FELL* with the outcome symbol the Turns page already draws, a clean jibe as *CLEAN* with
+  the star, a dry-streak mark as the number and *DRY* (5, then every ten), a new longest
+  flight as its duration and *LONGEST*. A pumped takeoff is a **ring** only — a thick circle
+  inside the bezel for 0.7 s, the page left readable — because it is frequent. The speed PB
+  keeps its own orange flash with the value.
+- **The afterglow, 20 s.** A line at the top of whatever page is up keeps the last event:
+  *JIBE · flew*, *TACK · touch*, *TURN · fell*, *CLEAN JIBE*, *10 DRY*, *LONGEST 2:14*. On the
+  main page it is the top row itself, in the event's ink, where the clock and PAUSED live; on
+  every other page it sits where the pause banner sits, black on the ink. A running flash and
+  PAUSED both take precedence over it.
+
+Colour and shape carry every event together, so it reads on the MIP palette and to a rider
+who cannot tell the ladder's green from its red. The inks are the ladder's for the three
+verdicts (the one place outside the Turns page allowed to borrow it: these *are* turn
+outcomes), the clean-jibe ink for a clean jibe, the phase teal for a takeoff and a longest
+flight (phase, not verdict), the ladder's green for a dry streak (a run of verdicts). Not
+flashed on purpose: straight-line flight ends (the Timeline page shows them), interval
+alerts and the wind lock.
+
+One switch, *Show alerts on screen*, on by default; the per-alert switches gate the picture
+exactly as they gate the buzz. The visual half is never debounced — a new event replaces the
+one on screen, which is what one screen means — and save or discard clears the strip with
+the session. `EventFlash.mc` is the module, `AlertManager` fires it beside each buzz.
+
 ## The watch link — Settings → Garmin watch
 
 One section, and every row in it is a fact the rider can act on: which watch, whether it is
