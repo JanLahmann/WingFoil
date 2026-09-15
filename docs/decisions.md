@@ -453,8 +453,8 @@ FIT before the key can be trusted.
 ## ADR-012 · Invite testers get a **public** listing with an obfuscation-grade lock
 A Connect IQ "beta app" listing is visible only to the developer account, so the one thing it
 cannot do is reach a tester. The only channel to a friend's watch is a **public** store
-listing — which anyone can install. Decision: a third build channel, `manifest-invite.xml` +
-`monkey-invite.jungle` (own UUID, "WingFoil - Invite Beta"), identical code to the public app
+listing — which anyone can install. Decision: a third build channel, then `manifest-invite.xml` +
+`monkey-invite.jungle`, since 0.9.11 `manifest-beta.xml` + `monkey-beta.jungle` with the lock retired (own UUID, "WingFoil - Invite Beta"), identical code to the public app
 except that it starts locked. `LockGate` derives an 8-character **request code** from
 `System.getDeviceSettings().uniqueIdentifier` (present on fenix847mm per the SDK 9.2
 `api.debug.xml`; per-app, per-device, stable across uninstall, and null-guarded by a

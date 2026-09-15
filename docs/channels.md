@@ -163,6 +163,42 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 |---|---|---|
 | iPad and "Designed for iPad" on the Mac | dev | release and beta build for iPhone only |
 
+## The watch — the same three streams
+
+Decided with Jan on 15 September 2026: the Garmin app ships in the same three streams as the
+phone, from one commit and one version number, each under its own Connect IQ app id, which on
+a watch means its own app.
+
+| stream | jungle · manifest | app id | listing | name on the watch |
+|---|---|---|---|---|
+| **release** | `monkey.jungle` · `manifest.xml` | `b1ef484c` | **CleanJibe Wingfoil Watch App** — opened when the iPhone app is on the App Store, so the two listings can name each other | CleanJibe |
+| **beta** | `monkey-beta.jungle` · `manifest-beta.xml` | `28942317` | **CleanJibe Wingfoil Watch App Beta** — the existing public listing, open to anyone, no key; it runs ahead of the release and says so | CleanJibe Beta |
+| **dev** | `monkey-dev.jungle` · `manifest-dev.xml` | `953f7547` | "CleanJibe – private", installable by Jan's account only, Pending by design | CleanJibe Dev |
+
+The listing's first sentence names the family: *the watch app of CleanJibe Wingfoil Analyzer
+for iPhone and browser.* The watch records and judges live; the deep analysis is the phone's,
+which is why the watch listing is not called an analyzer.
+
+**Rules.** A version reaches the beta first, always; it moves to the release listing when it
+meets the four rules above (ten sessions, two riders, a fortnight, no open report). Dev gets
+every build, with a `-devN` suffix on the version string, and is where the experiments live.
+
+**Gates in code.** Monkey C has no `#if`; the jungles exclude annotations instead. `(:dev)`
+marks an experiment and its switch (today: the map after save, GitHub #4, whose property and
+setting live in `resources-dev/base/`); a `(:notdev)` twin with the same name stands in for it
+everywhere else. `monkey.jungle` and `monkey-beta.jungle` exclude `dev`, `monkey-dev.jungle`
+excludes `notdev`, so a release or beta build carries neither the switch nor the code behind
+it. `resources-beta/base/` turns raw accelerometer logging off for beta riders (the developer's
+validation vehicle, not the rider's). The invite lock of ADR-012 is retired: every stream
+compiles the all-zero pepper.
+
+**What is different from the phone.** A different app id is a different app on the watch: a
+rider moving from the beta to the release installs the second beside the first, deletes the
+first and enters settings once more — said once, in the release notes. Every public listing
+goes through Garmin's review on every upload, so a release costs two reviews. The three
+packages come from one script, `garmin/tools/package.sh [N]`, which refuses to run when the
+three manifests disagree on the version.
+
 ## Telling the channels apart — the mark
 
 Three builds can sit on one phone (the App Store app, the beta, the dev app) and two on one
@@ -191,9 +227,8 @@ cuts), both reading the treatments from `brand/tools/channelmark.py`. On iOS the
 configuration picks the icon (`ASSETCATALOG_COMPILER_APPICON_NAME`) and the launch image
 (`CJ_SPLASH_MARK` → `UILaunchScreen`), and `ChannelArt` picks the splash and welcome marks
 under `#if DEV` / `#if BETA`; the watch app has the same flags for its start page. On the
-Garmin, `monkey-invite.jungle` (the beta) and `monkey-beta.jungle` (the dev-beta listing —
-the file names predate the channels, garmin/store/listing.md) append the channel's
-directory after each size class so its resource ids win.
+Garmin, `monkey-beta.jungle` (the open beta) and `monkey-dev.jungle` (the private dev
+listing) append the channel's directory after each size class so its resource ids win.
 
 ## The Strava review
 

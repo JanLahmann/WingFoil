@@ -101,7 +101,7 @@ coarser 60 × 60 grid instead — the watch reads `mw`/`mh` and does not assume 
   point of pressing it is to watch it happen.
 - The phone addresses **whichever build of the watch app is installed**. The store keeps
   three builds of us apart — release (`manifest.xml`), public-beta invite
-  (`manifest-invite.xml`) and private dev (`manifest-beta.xml`) — each under its own app id,
+  (`manifest-beta.xml`) and private dev (`manifest-dev.xml`) — each under its own app id,
   and Garmin's `sendMessage` is routed by that id: aimed at the release id on a watch that
   runs the dev build it comes back as `Failure_AppNotFound`, which is exactly the error
   build 41 showed on Jan's Fenix. `ConnectIQCompanionLink` now holds all three ids, registers
