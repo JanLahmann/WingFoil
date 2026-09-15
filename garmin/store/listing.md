@@ -17,7 +17,7 @@ open beta, English only.
 ## Watch app — `CleanJibe Wingfoil Tracker (Beta)`
 
 * Store page: <https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806>
-* Type: device app · Version **0.9.10** on the store (uploaded 14 Sep 2026; 0.9.11 waits for Jan's water test) · first submitted 2026-08-12, 0.9.4 released 2026-09-01
+* Type: device app · Version **0.9.10** on the store, **39** products (uploaded 14 Sep 2026; 0.9.11 with 42 waits for Jan's water test; web/tools/make_devices.py reads this line, keep its shape) · first submitted 2026-08-12, 0.9.4 released 2026-09-01
 * Permissions: Fit, SensorLogging, Communications, Positioning, FitContributor, Sensor
 * Devices (`garmin/manifest-beta.xml`, identical to the release and dev manifests; the count and
   the family grouping are generated into `docs/copy/garmin-devices.json`): 42 products at 0.9.11 —
