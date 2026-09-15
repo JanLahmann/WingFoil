@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v56";     // v56: the site nav in every topbar, and the generated Garmin device count (v55: app/version.json is never cached)
+const VERSION = "v57";     // v56: the site nav in every topbar, and the generated Garmin device count (v55: app/version.json is never cached)
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.

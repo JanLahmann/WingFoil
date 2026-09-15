@@ -50,39 +50,29 @@
 
      Jan, 15 September 2026: *"es gibt nur Links auf den Seiten, aber keine richtige
      Navigation"* — the pages did link each other, in prose and in the footer, which is
-     exactly nowhere a reader looks for navigation. Five destinations in the order a stranger
-     needs them: install, does my watch work, what does it measure, what changed, get the
-     beta. Privacy and Impressum are NOT here — they are read once and reached from the
-     footer of every page, which is where a reader goes looking for them.
+     exactly nowhere a reader looks for navigation. Four destinations in the order a stranger
+     needs them: install, does my watch work, what does it measure, what changed. The beta is
+     NOT here: "Try the beta" is the button right above this row on every page, and Jan's
+     phone showed the two side by side ("'Try the beta' ist nochmal als Button direkt
+     darüber"). Privacy and Impressum are not here either — they are read once and reached
+     from the footer of every page, which is where a reader goes looking for them.
 
      The hrefs are ROOT-RELATIVE so one block can serve a page at the site root and a page a
      directory down. The site is the root of cleanjibe.org, and of `python3 -m http.server`
      run in web/, which is the same thing; verify_links.py resolves them.
 
      It wears the section nav's furniture — the eyebrow's mono, the same ink, the same
-     hairline — because it is the same kind of thing one level up, and below 720 px it
-     collapses the same way: the `js` class set by the script at the foot of the page hides
-     the link row in favour of the select, so a reader whose script never ran keeps five
-     working links rather than a control that cannot act. -->
+     hairline — because it is the same kind of thing one level up. On a phone it stays a
+     row: four short items fit one line, and the row scrolls sideways if a font makes them
+     not. There is no select here on purpose — a "Go to…" above the section nav's
+     "On this page…" read as two of the same thing (Jan, same photo). -->
 <nav class="sitenav" aria-label="Site">
   <ul>
     <li><a href="/start/">Get started</a></li>
     <li><a href="/watches/">Which watch</a></li>
     <li><a href="/learn/">How it works</a></li>
     <li><a href="/whats-new/">What&rsquo;s new</a></li>
-    <li><a href="/invite/">Get the beta</a></li>
   </ul>
-  <label class="jump">
-    <span class="sr-only">Go to a page</span>
-    <select>
-      <option value="">Go to&hellip;</option>
-      <option value="/start/">Get started</option>
-      <option value="/watches/">Which watch</option>
-      <option value="/learn/">How it works</option>
-      <option value="/whats-new/">What&rsquo;s new</option>
-      <option value="/invite/">Get the beta</option>
-    </select>
-  </label>
 </nav>
 <!-- sitenav:end -->
 </header>
@@ -139,10 +129,6 @@
     var jump = document.querySelector(".sectionnav select");
     if (jump) jump.addEventListener("change", function () {
       if (this.value) { location.hash = this.value; this.selectedIndex = 0; }
-    });
-    var go = document.querySelector(".sitenav select");
-    if (go) go.addEventListener("change", function () {
-      if (this.value) location.href = this.value;
     });
   })();
 </script>
