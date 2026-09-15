@@ -3701,9 +3701,17 @@ TestFlight** button and `cleanjibe.org/invite` under it, with the footer explain
 TestFlight is Apple's own app, that the beta reads and writes the same library, and that
 going back is allowed. The **dev** doors are not on it in the release channel (`#if BETA`):
 tuning, iPad, the Garmin link and windsurf are on a handful of hand-picked phones and are
-promised to nobody. The beta shows the same list with the dev rows under it and no join
-section — the reader is already through the door it offers — and keeps its own **Beta**
-section unchanged.
+promised to nobody. The beta shows the same list with the dev rows under it, as *Further
+out*, and no join section — the reader is already through the door it offers.
+
+**The list has one home, and this page is it** (Jan, dev 68). The beta and dev channels
+printed the beta rows twice on one screen: checked off at the top of the **Beta** section,
+and again one row below under *In the public beta*. The Beta section is **actions only**
+now — *Request a feature*, *Send usage report*, *Check for a newer build* with its status
+line, *Start over* — under one short footer: what the page below lists, what the two mails
+do and that neither sends anything until Send is tapped, and what Start over takes, in two
+sentences. The four paragraphs it carried are gone; what they said lives on that page, on the
+usage report's own card, and in the Start over alert, which names every item.
 
 ## The status line — a toast, and toasts go away
 

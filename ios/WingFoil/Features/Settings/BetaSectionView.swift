@@ -9,15 +9,15 @@ import WingFoilKit
 /// that one wording reaches the app, the website and the store texts. What stays here is
 /// the part the kit cannot have — a compile flag and two URLs.
 ///
-/// Two surfaces render the kit's lists:
+/// One surface renders the kit's lists, and it is not the Beta section:
 ///
-/// * `BetaSectionView` — beta and dev only. What the tester has that the App Store build
-///   does not, so a report can say "the video export" rather than "the thing that makes a
-///   film", plus the one row that asks him what is missing.
 /// * `ComingSoonSection` — every channel. What is being tried before it arrives here. In
 ///   the release it carries the TestFlight link, because there the answer to "can I have
-///   it" is one tap; in the beta it is the same list with no link, because the reader is
-///   already there, plus the dev doors under it.
+///   it" is one tap; in the beta the same rows are headed "In the public beta", because
+///   the reader is already there, with the dev doors under them as "Further out".
+/// * `BetaSectionView` — beta and dev only, and actions only. It checked the beta rows off
+///   as a list of its own until dev 68, one row above the page that lists them again, so a
+///   tester read the same six sentences twice on one screen (Jan, dev 68).
 enum AppChannel {
 
     /// **Which build this is** — the one place the app answers that for the kit.
@@ -45,12 +45,11 @@ enum AppChannel {
 // MARK: - The beta's own section
 
 #if BETA
-/// **Settings → Beta.** What this build has that the App Store one does not, and one row to
-/// ask for what neither has.
+/// **Settings → Beta.** The four things a tester does: ask for a feature, send what this
+/// phone has counted, check for a newer build, start again from nothing.
 ///
-/// A placeholder in the honest sense: the list is real and the mail is real, and what is
-/// still to come is the usage and feature statistics docs/channels.md promises beside it —
-/// counters kept on the phone and sent only in a mail the rider edits.
+/// No list here. What this build has and the App Store one does not is one row below, on
+/// "Coming in a future release" under the heading "In the public beta" (Jan, dev 68).
 struct BetaSectionView: View {
     @Environment(SessionStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -59,19 +58,11 @@ struct BetaSectionView: View {
 
     var body: some View {
         Section {
-            ForEach(ChannelFeatures.beta, id: \.self) { feature in
-                Label {
-                    Text(feature).font(.footnote)
-                } icon: {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.teal)
-                }
-            }
             // The existing composer, with a subject of its own: a feature request filed as
             // "CleanJibe 0.15.0 (52): …" reads like a bug report and gets answered like one.
             FeedbackMailRow(title: "Request a feature", systemImage: "lightbulb",
                             subjectOverride: "CleanJibe feature request")
-            // The usage and feature statistics docs/channels.md promises beside the list:
+            // The usage and feature statistics docs/channels.md promises the beta:
             // counters kept on the phone, sent only in a mail the rider edits. Permanent,
             // because the library's own card (`UsageAskCard`) is occasional and because
             // "not now" has to leave a way back.
@@ -90,31 +81,21 @@ struct BetaSectionView: View {
         }
     }
 
-    /// The three rows of the section, each named the way it is labelled on screen.
-    ///
-    /// **Named for a door that is on screen.** It said "the same mail as Send feedback",
-    /// and "Send feedback" is not a label a rider can see anywhere in this build — it is
-    /// the composer's own navigation title, which only appears once the mail is already
-    /// open (15 Sep 2026). `FeedbackDoors.app` is concatenated rather than interpolated so
-    /// the door's name stays one piece of data ("Menu → Support & ideas").
-    ///
-    /// The fact the "Start over" paragraph no longer carries: with the key handed back by
-    /// the keychain, the first run a tester wanted to test never happens.
+    /// **One footer, and no history in it.** It was four paragraphs: which channel this
+    /// build is, what "Request a feature" opens, what "Send usage report" counts, why
+    /// "Start over" exists. Each is one sentence now, and every fact they carried has a
+    /// home a rider can reach — the usage report's own card and docs/presentation.md, the
+    /// Start over alert, which names every item it takes, and the page one row below.
     private static var sectionFooter: String {
-        let opening = "You are on the beta. These doors are open here and not in the App "
-            + "Store build yet. Every one is here to be ridden with and reported on.\n\n"
-        let request = "\"Request a feature\" opens the same mail as "
-            + FeedbackDoors.app
-            + ", with this build and your library's shape already written in. "
-            + "Nothing is sent until you tap Send.\n\n"
-        let usage = "\"Send usage report\" adds what this phone has counted. It counts "
-            + "which parts of CleanJibe you have used, how often, and anything that has "
-            + "gone wrong. The counters never leave this phone except in that mail, and "
-            + "you can delete any line of it before you send it.\n\n"
-        let startOver = "\"Start over\" is here because deleting the app is not enough. "
-            + "iOS keeps your intervals.icu key and your Strava connection in its "
-            + "keychain, and hands them back to the reinstall. This removes them too."
-        return opening + request + usage + startOver
+        let coming = "Coming in a future release lists what this build has and the App "
+            + "Store one does not.\n\n"
+        let mails = "Request a feature opens a mail with this build already filled in. "
+            + "Send usage report adds what this phone has counted. "
+            + "Neither sends anything until you tap Send.\n\n"
+        let startOver = "Start over removes your library, your settings, your "
+            + "intervals.icu key and your Strava connection. "
+            + "Deleting the app leaves the last two behind in the iOS keychain."
+        return coming + mails + startOver
     }
 
     /// **Start over.** Red, last, and behind an alert that names everything it takes —
