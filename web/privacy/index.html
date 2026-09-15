@@ -127,10 +127,10 @@
   <section class="home-section" id="app-network">
     <h2>The iPhone app — what leaves your phone</h2>
     <p class="section-lede">
-      Nine entries, and not one of them is a surprise: an account you connected, something a
-      map needs, a mail you wrote and sent yourself, and — while this is a beta — Apple&rsquo;s
-      own crash reports and one small file the app reads to see whether your build is still the
-      current one. There is no tenth.
+      Ten entries, and not one of them is a surprise: an account you connected, something a
+      map needs, the name of a place you sail, a mail you wrote and sent yourself, and — while
+      this is a beta — Apple&rsquo;s own crash reports and one small file the app reads to see
+      whether your build is still the current one. There is no eleventh.
     </p>
 
     <dl class="terms">
@@ -250,6 +250,18 @@
           <strong>Apple's</strong>, under Apple's TestFlight terms and the sharing choice you
           made when you accepted them — we neither add to it nor can switch it off — and it
           ends when the app leaves TestFlight for the App Store.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>The name of a sailing spot &mdash; one rounded coordinate to Apple</dt>
+        <dd>
+          When CleanJibe finds a new place in your sessions it asks Apple&rsquo;s reverse-geocoding
+          service what that place is called, so a spot reads &ldquo;Nago-Torbole&rdquo; instead of
+          &ldquo;Spot 3&rdquo;. What is sent is <strong>a single coordinate</strong> &mdash; the
+          centre of that spot, rounded to about 110 m &mdash; and nothing else: no session, no
+          track, no name, no identifier, no account. Once per new spot, never for a spot that has
+          a name, and never at all if you name your spots yourself. Apple sees roughly where you
+          sail, under Apple&rsquo;s own privacy policy.
         </dd>
       </div>
       <div class="term">
