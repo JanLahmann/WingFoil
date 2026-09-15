@@ -73,9 +73,9 @@ GARMIN_DRAWABLES_XML = """<drawables>
 </drawables>
 """
 
-# Which jungle carries which channel — the Garmin naming predates the channels and is the
-# other way round from what the file names suggest (garmin/store/listing.md, "Naming trap").
-GARMIN_JUNGLE = {"beta": "invite", "dev": "beta"}
+# Which jungle carries which channel: since 0.9.11 the jungles are named after the streams
+# (monkey-beta.jungle is the open beta, monkey-dev.jungle the private dev listing).
+GARMIN_JUNGLE = {"beta": "beta", "dev": "dev"}
 
 
 def treat(img, channel, shape="square"):
