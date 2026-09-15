@@ -165,6 +165,31 @@ module PageModel {
         _order = order;
     }
 
+    // Write the seven default screens back into the property store and rebuild — the
+    // "Reset pages to defaults" switch in Garmin Connect (0.9.11). A stored property beats
+    // properties.xml on an installed watch, so the defaults have to be WRITTEN, not merely
+    // read: DEF_LAYOUT and DEF_SLOTS are the one table they come from, the same one build()
+    // falls back on when a key is missing. Every key is written, off pages included, so the
+    // rider gets exactly the fresh-install set and not a mixture.
+    function restoreDefaults() as Void {
+        for (var p = 0; p < MAX_PAGES; p++) {
+            var key = "pg" + (p + 1).toString();
+            _put(key + "Layout", DEF_LAYOUT[p]);
+            var defRow = DEF_SLOTS[p];
+            for (var s = 0; s < SLOTS; s++) {
+                _put(key + "s" + (s + 1).toString(), defRow[s]);
+            }
+        }
+        build(null);
+    }
+
+    function _put(key as String, v as Number) as Void {
+        try {
+            Properties.setValue(key, v);
+        } catch (e) {
+        }
+    }
+
     function count() as Number {
         return _order.size();
     }

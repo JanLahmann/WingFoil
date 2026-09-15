@@ -24,6 +24,11 @@ class WingfoilApp extends Application.AppBase {
     }
 
     function onSettingsChanged() as Void {
+        // The reset switch first: it rewrites the page properties, and the rebuild inside
+        // _applySettings has to read the restored ones, not the ones the rider just left.
+        if (AppSettings.consumeResetPages()) {
+            PageModel.restoreDefaults();
+        }
         _applySettings();     // thresholds hot-reload; detectors read them each tick
         // The unlock key arrives through exactly this callback: the tester types it in
         // Garmin Connect while staring at the lock screen, so re-validating here is what

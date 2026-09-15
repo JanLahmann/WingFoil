@@ -177,6 +177,21 @@ module AppSettings {
         return cfg.speedToDisplay(mps);
     }
 
+    // "Reset pages to defaults" is a switch that behaves like a button: the rider turns it on
+    // in Garmin Connect, the watch consumes it in onSettingsChanged — restores the pages and
+    // turns the switch back off — and the next settings sync shows it off again. The same
+    // write-back pattern as storeWindDirection above. Returns true exactly once per press.
+    function consumeResetPages() as Boolean {
+        if (!_bool("resetPages", false)) {
+            return false;
+        }
+        try {
+            Properties.setValue("resetPages", false);
+        } catch (e) {
+        }
+        return true;
+    }
+
     // ---- the dev stream's experiments (docs/channels.md, "The watch") ----
     // Monkey C has no #if; the jungles exclude annotations instead. The dev jungle excludes
     // `notdev`, every other jungle excludes `dev`, so exactly one of each pair compiles and
