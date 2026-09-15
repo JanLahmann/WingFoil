@@ -2476,6 +2476,15 @@ one sentence serves two channels the release wording names the beta as the place
 "GPX and TCX files are read by the CleanJibe beta; a FIT is read by every build" — rather than
 describing a door this build does not have. docs/channels.md is the source for which is which.
 
+**One topic is generated rather than written here: *Getting started*.** Its framing, its
+routes and their steps, and the two Settings captions live in `docs/guide/getting-started.json`,
+and `web/tools/make_start.py` writes both the kit's `Help/GettingStartedGuide.swift` and the
+guide block of `web/start/index.html` from it — the app showing each route's title and
+summary, the web adding the numbered steps. Each route in the source carries its own
+`channels` list, which is the same rule one level down: `GettingStartedGuide.items(for:)`
+filters on it, the catalogue asks for `.release`, and the two Apple routes are `.beta` and
+stay `related` topics in the release. See "The library menu", item 1.
+
 Settings → About and the library menu's last line carry the channel after the version —
 nothing for the release, " · beta", " · dev" — because "which build is this" is the first
 question of every report that comes back from TestFlight.
@@ -3343,11 +3352,28 @@ print, in this order and for this reason:
    its own first help section, every channel). First, because it is what "I just installed
    this" is looking for. Since 15 September 2026 the instructions live IN the app (Jan: never
    send a rider to the website for them): one sentence on the real test — one session on the
-   water, read the turn verdicts against what you remember — then the routes as items with
-   their steps, Garmin with the CleanJibe watch app first, any .fit second, Strava third, the
+   water, read the turn verdicts against what you remember — then the routes as items,
+   Garmin with the CleanJibe watch app first, any .fit second, Strava third, the
    three-to-five-minute walk as "if you cannot wait for wind", where to send what you find,
    and the web page named last as the same guide. The two Apple routes are beta topics it
    links to, so the release never names them. Word budgets are enforced by `HelpBudgetTests`.
+
+   **The guide has one source, and it is `docs/guide/getting-started.json`** (Jan, 15 Sep
+   2026). The topic and cleanjibe.org/start had been written separately, so the app's last
+   item — *"the same guide, on the web"* — named a page that said different things. That file
+   now holds the framing, the routes in order with their channel and their steps, the two
+   closing notes, the two Settings captions, and the web-only troubleshooting and report
+   lists; `web/tools/make_start.py` writes both copies from it — the kit's
+   `Help/GettingStartedGuide.swift`, which this topic's `summary`, `body` and `items:` are,
+   and the block of `web/start/index.html` between its `<!-- guide:begin -->` and
+   `<!-- guide:end -->` markers. The app shows a route's **title and summary**; the web shows
+   **title, summary and the numbered steps**, which is why the last item reads *"The same
+   guide, with every step, on the web"*. `make_start.py --check` fails while either copy is
+   stale and `web/tools/verify_links.py` runs it; `GettingStartedGuideTests` fails if the
+   topic stops being the guide, so a route typed straight into `HelpCatalog` is caught too.
+   Channel filtering is the source's `channels` list through `items(for:)`: the two Apple
+   routes are `.beta`, so the release build never names them as items and reaches them
+   through `related` as before.
 2. **Settings** — the switches, the watch, the accounts.
 3. **Support & ideas** — the feedback mail (`feedbackMail(on:)`, the same composer as
    Settings → Send feedback and the share sheet's "Report a problem"). Above the two "what is
@@ -3395,6 +3421,19 @@ tap away. Two homes for one door is two wordings to keep in step and one more sc
 rider to search, so the block is gone (Jan, build 58) and the menu keeps them. What is left
 is what only Settings has: **intervals.icu**, **Strava**, deleted sessions, notifications,
 analysis, storage, backup, about — switches and accounts.
+
+**The two account sections open by saying why the account is there** (Jan, 15 Sep 2026). The
+intervals.icu section opened on an empty field asking for something called an API key, and
+the Strava section on a button; neither told a rider what the account was *for*, or whether
+he could skip it. Each now has one footnote-sized line as its first row —
+`GettingStartedGuide.settingsIcu`, *"Garmin has no open API for a personal app, so
+intervals.icu is the free bridge: connect your Garmin there once and every session arrives
+here by itself."*, and `GettingStartedGuide.settingsStrava`, *"The route that needs no file:
+any watch that syncs to Strava. Positions only, so speed records are uncertified."* Both come
+from `docs/guide/getting-started.json`, so the switches and the Getting started guide say one
+thing; the longer intervals.icu version, for the setup card and the help topic, is still
+`IcuSetupGuide.rationale`. The footers under each section are unchanged and carry the detail —
+what is downloaded, what is never written, the connection cap.
 
 **Notifications say intervals.icu, because that is what is asked.** The switch read *Notify
 on new Garmin activities* and the check behind it has never been a Garmin one: it is a call
