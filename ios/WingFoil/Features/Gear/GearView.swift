@@ -4,37 +4,31 @@ import WingFoilKit
 /// Manage the quiver and see what each item actually did (plan §3.3 "Gear"). A session
 /// carries at most one wing, one board and one foil; new sessions inherit the last combo
 /// and every session stays editable from its detail screen.
+///
+/// **Spots and gear are one page** (Jan, build 58). Spots are the same kind of object as a
+/// wing — a named thing sessions reference and that you filter the aggregate screens by
+/// (`app-ui-review.md` §6.1) — and this tab is the one that owns the rider's named things.
+/// They arrived here from four levels down the Settings sheet as a *row* that pushed a
+/// sub-page of their own, which is a menu entry for a list of four places: one tap to find
+/// out there is nothing to find out. Now they are the first section of this list, drawn the
+/// way the three gear groups are drawn — a header with an icon, a row per named thing with
+/// its session count, the actions at the foot of the section — so the page has one shape
+/// all the way down and the tab's name is literally true.
 struct GearView: View {
     @Environment(SessionStore.self) private var store
 
     @State private var editing: GearRow?
     @State private var adding: GearKind?
     @State private var showRetired = false
+    /// The spot being renamed, and the name being typed. A rename is one short string, so
+    /// it is an alert with a field in it rather than a screen.
+    @State private var renaming: SpotRow?
+    @State private var spotName = ""
 
     var body: some View {
         NavigationStack {
             List {
-                // Spots live here because a spot is the same kind of object as a wing: a
-                // named thing sessions reference and that you filter the aggregate screens
-                // by (`app-ui-review.md` §6.1). They used to be four levels deep in the
-                // Settings sheet — behind the gear icon, past the help rows, the API key,
-                // the sync section and the watch section — while "All spots" was a
-                // top-level filter chip on both Records and Trends. This tab is the one
-                // that owns the rider's named things, so it owns these too.
-                Section {
-                    NavigationLink { SpotsView() } label: {
-                        Label {
-                            LabeledContent("Spots", value: "\(store.spots.count)")
-                        } icon: {
-                            Image(systemName: "mappin.and.ellipse")
-                        }
-                    }
-                } footer: {
-                    Text("Sessions starting within "
-                         + "\(Int(SpotClusterer.defaultRadiusM)) m of each other are one "
-                         + "spot. Names come from the map when the network allows; rename "
-                         + "any of them and it sticks.")
-                }
+                spotsSection
 
                 ForEach(GearKind.allCases) { kind in
                     Section {
@@ -90,12 +84,120 @@ struct GearView: View {
                     Task { await store.saveGear(saved) }
                 }
             }
+            .alert("Rename spot", isPresented: Binding(get: { renaming != nil },
+                                                       set: { if !$0 { renaming = nil } })) {
+                TextField("Name", text: $spotName)
+                Button("Save") {
+                    if let spot = renaming {
+                        Task { await store.renameSpot(spot, to: spotName) }
+                    }
+                    renaming = nil
+                }
+                Button("Cancel", role: .cancel) { renaming = nil }
+            }
         }
+    }
+
+    // MARK: - Spots
+
+    /// The first section of the page, in the gear groups' own shape: an icon and a name in
+    /// the header, one row per spot with its session count, and the section's two actions
+    /// at its foot where every gear group keeps "Add wing".
+    private var spotsSection: some View {
+        Section {
+            if visibleSpots.isEmpty {
+                Text("No spots yet")
+                    .foregroundStyle(.secondary)
+                    .font(.footnote)
+            } else {
+                ForEach(visibleSpots) { entry in
+                    Button {
+                        spotName = entry.spot.name
+                        renaming = entry.spot
+                    } label: {
+                        SpotRowView(entry: entry)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            Button {
+                Task { await store.reclusterSpots() }
+            } label: {
+                Label("Re-cluster spots", systemImage: "arrow.triangle.merge")
+                    .font(.footnote)
+            }
+            .disabled(store.sessions.isEmpty)
+            Button {
+                Task { await store.nameSpots() }
+            } label: {
+                Label("Look up names again", systemImage: "text.magnifyingglass")
+                    .font(.footnote)
+            }
+            .disabled(!visibleSpots.contains { $0.spot.autoNamed })
+        } header: {
+            Label { Text("Spots") } icon: { Image(systemName: "mappin.and.ellipse") }
+        } footer: {
+            Text("Tap a spot to rename it — a name you type sticks through a re-cluster. "
+                 + "Sessions starting within \(Int(SpotClusterer.defaultRadiusM)) m of each "
+                 + "other are one spot, and names come from the map when the network "
+                 + "allows.")
+        }
+    }
+
+    /// **A spot with no sessions is not a place you have been.** Clustering can leave one
+    /// behind — a session deleted, a re-cluster that moved its afternoons into a neighbour
+    /// — and an empty spot on this page is a name with nothing under it that still shows up
+    /// in every spot filter. The count is the whole of the evidence, so the count is the
+    /// whole of the filter; the row that produced the empty spot is somebody else's fix.
+    private var visibleSpots: [SpotAggregate] {
+        store.spots.filter { $0.sessions > 0 }
     }
 
     private func aggregates(for kind: GearKind) -> [GearAggregate] {
         store.gearAggregates.filter {
             $0.gear.gearKind == kind && (showRetired || $0.gear.active)
+        }
+    }
+}
+
+/// One spot, drawn the way `GearRowView` draws one wing: the name on top, the figures
+/// underneath in the caption size, the chevron that says the row opens something.
+private struct SpotRowView: View {
+    let entry: SpotAggregate
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack {
+                Text(entry.spot.name).font(.headline)
+                if entry.spot.autoNamed {
+                    // Named by the map rather than by the rider — which is the one thing
+                    // worth knowing before you decide whether to rename it.
+                    Image(systemName: "wand.and.stars")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+            }
+            HStack(spacing: 14) {
+                stat("\(entry.sessions)", "sessions")
+                if let last = entry.lastVisit {
+                    // `.current`: a spot spans sessions and has no one zone of its own. The
+                    // date is "how long since I was there", asked from where you are now.
+                    stat(Fmt.shortDate(last, zone: .current), "last")
+                }
+            }
+            .font(.caption)
+            .denseRowTypeSizeCap()
+        }
+        .padding(.vertical, 3)
+    }
+
+    private func stat(_ value: String, _ label: String) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(value).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
+            Text(label).font(.caption2).foregroundStyle(.secondary)
+                .lineLimit(1).minimumScaleFactor(0.7)
         }
     }
 }

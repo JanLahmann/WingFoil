@@ -4,18 +4,23 @@ import WingFoilKit
 
 struct LibraryView: View {
     @Environment(SessionStore.self) private var store
-    @State private var showImporter = false
-    @State private var showSettings = false
-    @State private var showHelp = false
-    #if !BETA
-    /// The release channel's "what is coming" page, from the menu (docs/channels.md).
-    @State private var showComingSoon = false
-    #endif
-    #if DEBUG && targetEnvironment(simulator) && TUNING
-    /// Screenshot hook only (`UI_SHEET=tuning`), dev build only.
-    @State private var showTuning = false
-    #endif
-    @State private var helpTopic: HelpTopicID?
+    /// **One sheet at a time, and one modifier that knows it** (Jan, build 58: "Menu →
+    /// Getting started sometimes does nothing").
+    ///
+    /// This screen used to hang seven independent `.sheet(isPresented:)` modifiers off the
+    /// same view — Settings, Import, Help, a help topic, the release channel's page of what
+    /// is coming, the beta's date-range editor and the dev build's tuning hook. SwiftUI
+    /// resolves sibling presentations on one view in order and drops the ones that arrive
+    /// while another is still settling, so a tap that set the *last* flag in the chain —
+    /// `helpTopic`, which is what **Getting started** sets — landed on the floor whenever
+    /// the menu's own dismissal was still animating. Nothing was broken; the sheet was
+    /// simply never asked for again.
+    ///
+    /// One `Binding` over one enum cannot race with itself: setting it replaces whatever
+    /// was there, `nil` is the only closed state, and every entry point — the menu, the
+    /// toolbar, the empty-library card, the environment actions Help hands back, and every
+    /// `UI_SHEET` screenshot hook — writes this one property.
+    @State private var sheet: LibrarySheet?
     @State private var path: [String] = []
     /// **The two controls at the top of the list** (docs/presentation.md, "Session list").
     /// The filter is per-visit — a narrowing is a question, not a setting — while the
@@ -26,7 +31,6 @@ struct LibraryView: View {
     @AppStorage("library.groupBy.v1") private var groupByRaw = ""
     #endif
     @State private var filter = LibraryListFilter()
-    @State private var editingRange = false
     /// Bumped by the menu's Support item; `feedbackMail(on:)` on the list does the rest.
     @State private var supportRequest = 0
     #if BETA
@@ -116,10 +120,10 @@ struct LibraryView: View {
                 // support mail asks and the last thing a rider can find in Settings.
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
-                        Button { helpTopic = .gettingStarted } label: {
+                        Button { sheet = .helpTopic(.gettingStarted) } label: {
                             Label("Getting started", systemImage: "book")
                         }
-                        Button { showSettings = true } label: {
+                        Button { sheet = .settings } label: {
                             Label("Settings", systemImage: "gearshape")
                         }
                         // "& ideas" is not decoration: the row said "Support", which a rider
@@ -136,15 +140,14 @@ struct LibraryView: View {
                         Button { store.replayWelcome() } label: {
                             Label("What CleanJibe does", systemImage: "hand.wave")
                         }
-                        // Straight under it, because it is the same question one build
-                        // further on. Release only: a beta tester reading this menu is
-                        // already past the door it opens (docs/channels.md).
-                        #if !BETA
-                        Button { showComingSoon = true } label: {
-                            Label("What is being tested", systemImage: "binoculars")
-                        }
-                        #endif
-                        Button { showHelp = true } label: {
+                        // **"What is being tested" is not a menu row** (Jan, build 58). It
+                        // sat here, in the release channel only, straight under "What
+                        // CleanJibe does" — and the app's one menu is for what a rider
+                        // needs *now*: how to start, where the switches are, who to write
+                        // to, what the app is, what its numbers mean. A list of things this
+                        // build does not have is none of those. It keeps its one home,
+                        // Settings → Coming in a future release (docs/channels.md).
+                        Button { sheet = .help } label: {
                             Label("What the numbers mean", systemImage: "questionmark.circle")
                         }
                         Divider()
@@ -157,24 +160,24 @@ struct LibraryView: View {
                 // control that narrows a list is not one of the list's rows.
                 #if BETA
                 ToolbarItem(placement: .topBarTrailing) {
-                    LibraryFilterMenu(filter: $filter, editingRange: $editingRange,
+                    LibraryFilterMenu(filter: $filter, editingRange: editingRange,
                                       library: store.sessions)
                         .disabled(store.sessions.isEmpty)
                 }
                 #endif
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { showImporter = true } label: {
+                    Button { sheet = .importer } label: {
                         Label("Import", systemImage: "square.and.arrow.down")
                     }
                     .disabled(store.isBusy)
                 }
             }
-            #if BETA
-            .sheet(isPresented: $editingRange) {
-                LibraryDateRangeSheet(filter: $filter, seed: rangeSeed)
-            }
-            #endif
-            .feedbackMail(on: $supportRequest)
+            .sheet(item: $sheet) { librarySheet($0) }
+            // `stagesFallbackHook` moved here from Settings → Send feedback when that row
+            // went back to being only a menu row (docs/presentation.md, "Settings"):
+            // `UI_FEEDBACK=fallback` now answers on the Sessions screen, which is where the
+            // menu's Support & ideas composer lives. One door answers the hook, as before.
+            .feedbackMail(on: $supportRequest, stagesFallbackHook: true)
             #if BETA
             // On the list, not on the card: the card is removed the moment either button
             // is tapped, and a sheet hung on it would never present.
@@ -187,52 +190,31 @@ struct LibraryView: View {
                 if !showUsageAsk { showUsageAsk = Usage.askIsDue }
             }
             #endif
-            .sheet(isPresented: $showSettings) { SettingsView() }
-            #if DEBUG && targetEnvironment(simulator) && TUNING
-            // `UI_SHEET=tuning` — a sheet of its own rather than "Settings, then push",
-            // because `simctl` cannot tap the row. Same hook family, same reason as
-            // `UI_SHEET=help` above; dev build only, like the page.
-            .sheet(isPresented: $showTuning) {
-                NavigationStack { TuningView(initial: store.tuning) }
-                    .presentationSizing(.page)
-            }
-            #endif
-            .sheet(isPresented: $showImporter) { ImportView() }
-            .sheet(isPresented: $showHelp) { HelpView() }
-            #if !BETA
-            .sheet(isPresented: $showComingSoon) {
-                NavigationStack { ComingSoonPage() }
-                    .presentationSizing(.page)
-            }
-            #endif
-            // A named topic opens as itself rather than as "the index, then the topic":
-            // one sheet, one animation, and it is what the deep link actually meant.
-            .sheet(item: $helpTopic) { HelpTopicSheet(id: $0) }
             // The setup topic offers "Open CleanJibe Settings"; only this screen knows how
             // to get there, so it hands the action down rather than Help guessing.
             // Help's example topic offers "Load the example session"; only a screen with
             // the store can honour it, so it is handed down the same way Settings is.
             .environment(\.loadExampleSession) {
-                showHelp = false
+                sheet = nil
                 Task { await store.loadExampleSession() }
             }
             .environment(\.openIcuSettings) {
                 // One sheet at a time: let Help finish dismissing before Settings arrives,
-                // or iOS drops the second presentation on the floor.
-                showHelp = false
-                showImporter = false
+                // or iOS drops the second presentation on the floor. The wait stays even
+                // though both are now the same property — a sheet's dismissal animation is
+                // still running when its binding clears.
+                sheet = nil
                 Task {
                     try? await Task.sleep(for: .milliseconds(400))
-                    showSettings = true
+                    sheet = .settings
                 }
             }
             // The root's one-time notification offer must not land on top of a sheet this
             // screen opened — most of all Settings, which is where the key that *arms* the
-            // offer is usually typed. The sheets are this view's state and the alert is two
+            // offer is usually typed. The sheet is this view's state and the alert is two
             // levels up, so the state is reported rather than guessed at.
-            .onChange(of: showSettings || showImporter || showHelp || editingRange
-                      || helpTopic != nil) {
-                _, presenting in store.isPresentingSheet = presenting
+            .onChange(of: sheet != nil) { _, presenting in
+                store.isPresentingSheet = presenting
             }
             // Where a tapped "new session" notification lands. Two hooks rather than one:
             // on a cold start from the notification the id is already waiting when this
@@ -296,17 +278,17 @@ struct LibraryView: View {
                 // `UI_HELP_TOPIC=icuSetup` opens one topic straight away.
                 if let raw = ProcessInfo.processInfo.environment["UI_HELP_TOPIC"],
                    let topic = HelpTopicID(rawValue: raw) {
-                    helpTopic = topic
+                    sheet = .helpTopic(topic)
                 }
                 switch ProcessInfo.processInfo.environment["UI_SHEET"] {
-                case "help": showHelp = true
-                case "settings": showSettings = true
+                case "help": sheet = .help
+                case "settings": sheet = .settings
                 // `import` is the way to reach the Apple Health source (ADR-017), which is
                 // otherwise two taps behind a toolbar button `simctl` cannot press. It stages
                 // only the sheet: the Health screen behind it fills itself from the machine's
                 // real Health database, because the app is a reader there and staging a
                 // workout would mean shipping code that writes fake ones into it.
-                case "import": showImporter = true
+                case "import": sheet = .importer
                 // `UI_SHEET=discipline` raises the post-import review over whatever the
                 // fixtures just imported — simctl cannot tap the banner, and the sheet the
                 // import itself raises has usually been and gone by the time a screenshot
@@ -319,7 +301,7 @@ struct LibraryView: View {
                     }
                     store.raiseDisciplineReview()
                 #if TUNING
-                case "tuning": showTuning = true
+                case "tuning": sheet = .tuning
                 #endif
                 default: break
                 }
@@ -345,6 +327,8 @@ struct LibraryView: View {
             .onChange(of: store.sessions.count) { openRequestedSession() }
             #endif
             .safeAreaInset(edge: .bottom) { statusBar }
+            .animation(.easeInOut(duration: 0.25), value: store.status)
+            .animation(.easeInOut(duration: 0.25), value: store.isBusy)
             .alert("Something went wrong",
                    isPresented: Binding(get: { store.errorMessage != nil },
                                         set: { if !$0 { store.errorMessage = nil } })) {
@@ -355,6 +339,40 @@ struct LibraryView: View {
             }
         }
     }
+
+    // MARK: - The one sheet
+
+    /// What each case draws. The `presentationSizing(.page)` calls are the ones the
+    /// separate modifiers carried; nothing else about any of these screens changed.
+    @ViewBuilder
+    private func librarySheet(_ which: LibrarySheet) -> some View {
+        switch which {
+        case .settings: SettingsView()
+        case .importer: ImportView()
+        case .help: HelpView()
+        case .helpTopic(let topic): HelpTopicSheet(id: topic)
+        #if BETA
+        case .dateRange: LibraryDateRangeSheet(filter: $filter, seed: rangeSeed)
+        #endif
+        #if DEBUG && targetEnvironment(simulator) && TUNING
+        // `UI_SHEET=tuning` — a sheet of its own rather than "Settings, then push",
+        // because `simctl` cannot tap the row. Same hook family, same reason as
+        // `UI_SHEET=help`; dev build only, like the page.
+        case .tuning:
+            NavigationStack { TuningView(initial: store.tuning) }
+                .presentationSizing(.page)
+        #endif
+        }
+    }
+
+    #if BETA
+    /// The filter menu still asks for "Custom range…" as a `Bool`, because from a menu's
+    /// side that is what it is. One case of the enum, seen through a binding.
+    private var editingRange: Binding<Bool> {
+        Binding(get: { sheet == .dateRange },
+                set: { sheet = $0 ? .dateRange : nil })
+    }
+    #endif
 
     /// "CleanJibe 0.15.0 (45)", with " · beta" or " · dev" after it — the same string as
     /// Settings → About, and from the same place, so the two never disagree about which
@@ -433,23 +451,71 @@ struct LibraryView: View {
 
     /// An empty library is either a first run (walk the intervals.icu setup inline) or a
     /// configured one that has nothing yet (say why, if we know why).
+    ///
+    /// **The setup card is never the first thing on the page** (Jan, build 58). A rider who
+    /// dismissed the welcome — or came back to an empty library later — was left facing
+    /// four intervals.icu steps and a key field with no answer to *what does this thing
+    /// do*. `whatCleanJibeDoesRow` puts the two ways back above it: the welcome screen
+    /// again, and the one tap that fills every screen with a real session. The welcome
+    /// cover sits in front of this on a genuine first launch, so on that run the row is
+    /// simply what is underneath it.
     @ViewBuilder
     private var emptyState: some View {
         switch store.onboardingState {
         case .setup, .problem:
-            IcuSetupCard(state: store.onboardingState) { showImporter = true }
-                .padding(.top, 8)
+            VStack(alignment: .leading, spacing: 12) {
+                whatCleanJibeDoesRow
+                IcuSetupCard(state: store.onboardingState) { sheet = .importer }
+            }
+            .padding(.top, 8)
         case .waiting, .ready:
             ContentUnavailableView {
                 Label("No sessions yet", systemImage: "water.waves")
             } description: {
                 Text(Self.emptyLibraryHint)
             } actions: {
-                Button("Import…") { showImporter = true }
+                Button("Import…") { sheet = .importer }
                     .buttonStyle(.borderedProminent)
                 Button("Sync intervals.icu") { Task { await store.syncFromIntervals() } }
             }
         }
+    }
+
+    /// **"What CleanJibe does · Try the example session"** — one short row above the setup
+    /// card, in the welcome screen's own words and leading to the welcome screen itself.
+    ///
+    /// Deliberately two lines and two buttons rather than a second card: the setup card
+    /// under it is the thing to do, and this is the thing to read *first*. The example
+    /// button is the same call the welcome's own first offer makes
+    /// (`loadExampleSessionAndOpen`), so whichever door the rider takes he lands on the
+    /// same session.
+    private var whatCleanJibeDoesRow: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(WelcomeGuide.headline)
+                .font(.subheadline.weight(.semibold))
+                .fixedSize(horizontal: false, vertical: true)
+            // Stacked rather than side by side: "What CleanJibe does" alone is most of a
+            // phone's width at the default text size, and two of these on one line wrap
+            // into four ragged lines before a rider has raised his text size at all.
+            Button { store.replayWelcome() } label: {
+                Label("What CleanJibe does", systemImage: "hand.wave")
+                    .font(.footnote.weight(.semibold))
+            }
+            Button {
+                Task { await store.loadExampleSessionAndOpen() }
+            } label: {
+                Label(WelcomeGuide.tryExampleTitle, systemImage: "sparkles")
+                    .font(.footnote.weight(.semibold))
+            }
+            .disabled(store.isBusy)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        // `secondarySystemGrouped`, not `secondary`: this row sits on the *grouped* list
+        // background, and `secondarySystemBackground` is the same #F2F2F7 as that in light
+        // mode — a card you cannot see. This token is the one that means "a card on a
+        // grouped list" and reads in both themes.
+        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 14))
     }
 
     /// The Garmin export ZIP is a beta door (docs/channels.md), so only the beta's empty
@@ -497,6 +563,10 @@ struct LibraryView: View {
         .listRowBackground(Color.clear)
     }
 
+    /// **The toast at the foot of the list** — what the app is doing, or what it has just
+    /// done. It fades in and, once the work behind it is over, fades out by itself
+    /// (`SessionStore.status`); a tap takes it down early, because a line that reports a
+    /// finished job is the one thing on this screen a rider may want out of his way.
     @ViewBuilder
     private var statusBar: some View {
         if store.isBusy || store.status != nil {
@@ -511,6 +581,10 @@ struct LibraryView: View {
             .padding(.horizontal)
             .padding(.vertical, 8)
             .background(.bar)
+            .contentShape(.rect)
+            .onTapGesture { if !store.isBusy { store.clearStatus() } }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .accessibilityAddTraits(.isStaticText)
         }
     }
 
@@ -558,6 +632,50 @@ struct LibraryView: View {
     private func delete(_ offsets: IndexSet, in rows: [SessionRow]) {
         let doomed = offsets.map { rows[$0] }
         Task { for row in doomed { await store.delete(row) } }
+    }
+}
+
+/// **Every sheet the Sessions tab owns, as one value.**
+///
+/// The point is not tidiness: it is that `sheet = .settings` and `sheet = .helpTopic(...)`
+/// are writes to the *same* property, so the second cannot arrive while the first is
+/// mid-presentation and be discarded — it replaces it. See `LibraryView.sheet`.
+///
+/// Channel-gated cases rather than one universal list, so the release build compiles no
+/// `ComingSoonPage` presentation it will never reach and the dev-only tuning hook stays
+/// behind `TUNING` exactly as it was.
+enum LibrarySheet: Identifiable, Hashable {
+    case settings
+    case importer
+    /// The Help index ("What the numbers mean").
+    case help
+    /// One named topic, opened as itself rather than as "the index, then the topic": one
+    /// sheet, one animation, and it is what the deep link actually meant.
+    case helpTopic(HelpTopicID)
+    // There is no `comingSoon` case: "Coming in a future release" left this menu on
+    // 15 September 2026 and has one home, Settings (docs/channels.md).
+    #if BETA
+    /// The filter menu's "Custom range…" editor.
+    case dateRange
+    #endif
+    #if DEBUG && targetEnvironment(simulator) && TUNING
+    /// Screenshot hook only (`UI_SHEET=tuning`), dev build only.
+    case tuning
+    #endif
+
+    var id: String {
+        switch self {
+        case .settings: "settings"
+        case .importer: "importer"
+        case .help: "help"
+        case .helpTopic(let topic): "help.\(topic.rawValue)"
+        #if BETA
+        case .dateRange: "dateRange"
+        #endif
+        #if DEBUG && targetEnvironment(simulator) && TUNING
+        case .tuning: "tuning"
+        #endif
+        }
     }
 }
 
