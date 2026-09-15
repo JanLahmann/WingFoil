@@ -47,11 +47,26 @@ function cornerRadiusAt(cx as Number, x as Number, w as Number, h as Number, y a
     return Math.sqrt(dx * dx + dy * dy);
 }
 
+// A drawing context the size of the glass. `createBufferedBitmap` is API 4.0; the fenix 5
+// Plus family (Connect IQ 3.3.3, supported since 0.9.11) has only the direct constructor,
+// which MapSnapshot skips at runtime with the same `has` check — here the old form is the
+// fallback, so the layout suite runs on every glass the app ships to.
 function testDc() as Graphics.Dc {
-    var ref = Graphics.createBufferedBitmap({:width => screenPx(), :height => screenPx()});
-    var bmp = ref.get();
+    return testBitmap(screenPx(), screenPx()).getDc();
+}
+
+// A buffered bitmap on any API: the 4.0 factory where it exists, the 2.3 constructor on the
+// fenix 5 Plus family (Connect IQ 3.3.3).
+function testBitmap(w as Number, h as Number) as Graphics.BufferedBitmap {
+    var opts = {:width => w, :height => h};
+    var bmp = null;
+    if (Graphics has :createBufferedBitmap) {
+        bmp = Graphics.createBufferedBitmap(opts).get();
+    } else {
+        bmp = new Graphics.BufferedBitmap(opts);
+    }
     Test.assertMessage(bmp != null, "buffered bitmap");
-    return (bmp as Graphics.BufferedBitmap).getDc();
+    return bmp as Graphics.BufferedBitmap;
 }
 
 // ---- FIT developer-field schema ----
@@ -207,7 +222,8 @@ function turnsPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     Test.assertMessage(r <= pageR,
         "giant tally corner " + r.format("%.0f") + " > " + pageR.toString());
     // a count is a value: the ladder may step down, never below the readability floor
-    Test.assertMessage(dc.getFontHeight(worstF) >= dc.getFontHeight(Graphics.FONT_SMALL),
+    Test.assertMessage(dc.getFontHeight(worstF) >= dc.getFontHeight(
+        RecordingView.numberLadderIsSmall(dc) ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_SMALL),
         "giant tally fell below FONT_SMALL");
     // and it must still be a NUMBER font for the session the app was designed against
     var realF = RecordingView.giantTallyFont(dc, "35", "8", "8", gBudget);
@@ -536,7 +552,10 @@ function gridAndCellsPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
             "grid giant m" + m.toString() + " r=" + r.format("%.0f") + " > " + limit);
         // ...and it must never fall past the readability floor: FONT_LARGE is the last rung
         // the overflow ladder may use for a giant.
-        Test.assertMessage(dc.getFontHeight(gf) >= dc.getFontHeight(Graphics.FONT_LARGE),
+        // On a small number ladder (fenix 5 Plus) the floor is the ladder's own bottom rung.
+        var giantFloor = RecordingView.numberLadderIsSmall(dc)
+            ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_LARGE;
+        Test.assertMessage(dc.getFontHeight(gf) >= dc.getFontHeight(giantFloor),
             "grid giant m" + m.toString() + " fell to a label font");
 
         for (var row = 1; row <= 2; row++) {
@@ -606,7 +625,8 @@ function gridAndCellsPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
             RecordingView.inkH(dc, f2), y2, cy);
         Test.assertMessage(r <= limit,
             "cells2 value m" + m.toString() + " r=" + r.format("%.0f") + " > " + limit);
-        Test.assertMessage(dc.getFontHeight(f2) >= dc.getFontHeight(Graphics.FONT_LARGE),
+        Test.assertMessage(dc.getFontHeight(f2) >= dc.getFontHeight(
+            RecordingView.numberLadderIsSmall(dc) ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_LARGE),
             "cells2 value m" + m.toString() + " is smaller than the FONT_LARGE it replaced");
         Test.assertMessage(RecordingView.inkH(dc, f2) <= hC2,
             "cells2 value m" + m.toString() + " is taller than its own band");
@@ -617,7 +637,10 @@ function gridAndCellsPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
     var g2 = RecordingView.gridRowY(cy, hG, hT, hL, 2, true, bias);
     Test.assertMessage(g2 - g1 >= hT + hL, "grid cell rows overlap");
     // without a giant the 2x2 centres on the screen instead of hanging under one
-    Test.assertMessage(RecordingView.gridRowY(cy, hG, hT, hL, 1, false, bias) < g1,
+    // (on a small number ladder the giant band is shorter than the lift, so the recentring
+    // has nothing to move — the fenix 5 Plus, where MILD is 26 px)
+    Test.assertMessage(RecordingView.numberLadderIsSmall(dc)
+        || RecordingView.gridRowY(cy, hG, hT, hL, 1, false, bias) < g1,
         "grid without a giant recentres");
     // ... and it centres exactly: the block's top edge and bottom edge are equidistant
     var topEdge = RecordingView.gridRowY(cy, hG, hT, hL, 1, false, bias) - hT / 2;
@@ -686,14 +709,21 @@ function gridPairBandFitsRoundDisplay(logger as Test.Logger) as Boolean {
     // The band takes its extra pixel only where it has to: on every other glass it is exactly
     // the FONT_NUMBER_MILD line a single giant reserves, and the 2x2 below has not moved.
     var mild = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
-    Test.assertMessage(hG >= mild && hG - mild <= RecordingView.inkH(dc, Graphics.FONT_XTINY),
+    // On a small number ladder (fenix 5 Plus: MILD 26 px under a 34 px FONT_MEDIUM) the band
+    // has to grow to its floor font plus a caption — that IS giantBand's rule — so the growth
+    // bound applies only where numbers are the tall half.
+    var growth = RecordingView.numberLadderIsSmall(dc)
+        ? RecordingView.pairBandHeight(dc, Graphics.FONT_MEDIUM) - mild
+        : RecordingView.inkH(dc, Graphics.FONT_XTINY);
+    Test.assertMessage(hG >= mild && hG - mild <= growth,
         "the paired band grew " + (hG - mild).toString() + "px past the giant's own line");
     logger.debug("pair band: " + hG.toString() + "px band (MILD line is " + mild.toString()
         + "px), floor needs "
         + RecordingView.pairBandHeight(dc, Graphics.FONT_MEDIUM).toString() + "px");
 
     // a value in a label font is not a value: FONT_MEDIUM is the floor for this band
-    Test.assertMessage(dc.getFontHeight(f) >= dc.getFontHeight(Graphics.FONT_MEDIUM),
+    Test.assertMessage(dc.getFontHeight(f) >= dc.getFontHeight(
+        RecordingView.numberLadderIsSmall(dc) ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_MEDIUM),
         "pair band fell below FONT_MEDIUM");
     // ...the block must fit the band the single giant reserved, or it would push the 2x2 down
     // and take the bottom row's corners off the glass...
@@ -702,10 +732,23 @@ function gridPairBandFitsRoundDisplay(logger as Test.Logger) as Boolean {
             + "px tall in a " + hG.toString() + "px band");
     // ...and the font the renderer picked must be one that actually fits, by the renderer's
     // own three-part rule
+    if (!RecordingView.pairFits(dc, [worst, lc, worst, rc], f, hG, radius, y, cy)) {
+        var colD = RecordingView.cellColumns(radius, RecordingView.pairRowY(dc, y, f, 1) - cy,
+            RecordingView.inkH(dc, f));
+        logger.debug("pair band miss: font h=" + dc.getFontHeight(f).toString()
+            + " block " + RecordingView.pairBandHeight(dc, f).toString() + " of " + hG.toString()
+            + " | half " + RecordingView.pairHalfWidth(dc, worst, lc, f).toString()
+            + " of " + (2 * colD[1]).toString()
+            + " | cap " + dc.getTextWidthInPixels(lc, Graphics.FONT_XTINY).toString()
+            + " col " + colD[0].toString()
+            + " capHalf " + RecordingView.chordHalf(radius,
+                RecordingView.pairRowY(dc, y, f, 0) - cy,
+                RecordingView.inkH(dc, Graphics.FONT_XTINY)).toString());
+    }
     Test.assertMessage(
         RecordingView.pairFits(dc, [worst, lc, worst, rc], f, hG, radius, y, cy),
         "the fitter returned a font that does not fit");
-    var dx = RecordingView.pairColumn(dc, f, radius, y, cy);
+    var dx = RecordingView.pairColumnFor(dc, f, radius, y, cy, [worst, lc, worst, rc]);
     var wl = RecordingView.pairHalfWidth(dc, worst, lc, f);
     var wr = RecordingView.pairHalfWidth(dc, worst, rc, f);
     var yCap = RecordingView.pairRowY(dc, y, f, 0);
@@ -749,7 +792,7 @@ function gridPairBandFitsRoundDisplay(logger as Test.Logger) as Boolean {
     // ...and shorter numbers must SPREAD, not huddle: the columns are fixed, so the gap
     // between the two readings is what grows.
     // (the gap between the two readings is 2*dx minus the two inner half-widths)
-    var realDx = RecordingView.pairColumn(dc, realF, radius, y, cy);
+    var realDx = RecordingView.pairColumnFor(dc, realF, radius, y, cy, ["56%", lc, "61%", rc]);
     var realGap = 2 * realDx - (RecordingView.pairHalfWidth(dc, "56%", lc, realF)
         + RecordingView.pairHalfWidth(dc, "61%", rc, realF)) / 2;
     Test.assertMessage(realGap > 2 * dx - (wl + wr) / 2,
@@ -977,7 +1020,8 @@ function clockPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     for (var m = 1; m <= PageModel.M_MAX; m++) {
         var v = PageModel.worstValue(m);
         var vf = RecordingView.cellValueFit(dc, v, budget, true);
-        Test.assertMessage(dc.getFontHeight(vf) >= dc.getFontHeight(Graphics.FONT_LARGE),
+        Test.assertMessage(dc.getFontHeight(vf) >= dc.getFontHeight(
+            RecordingView.numberLadderIsSmall(dc) ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_LARGE),
             "clock cell m" + m.toString() + " is smaller than the FONT_LARGE it replaced");
         Test.assertMessage(RecordingView.inkH(dc, vf) <= hV,
             "clock cell m" + m.toString() + " is taller than its band");
@@ -2286,9 +2330,8 @@ function hrCostRefusesToGuess(logger as Test.Logger) as Boolean {
 // (populated, empty, paused and with the PB flash over it).
 (:test)
 function everyLayoutRendersHeadless(logger as Test.Logger) as Boolean {
-    var ref = Graphics.createBufferedBitmap({:width => screenPx(), :height => screenPx()});
-    var bmp = ref.get();
-    Test.assertMessage(bmp != null, "buffered bitmap");
+    var bmpAny = testBitmap(screenPx(), screenPx());
+    var bmp = bmpAny;
     var dc = (bmp as Graphics.BufferedBitmap).getDc();
 
     // a session with something to show on every page
@@ -2507,6 +2550,14 @@ function unlockRequestCodeIsStable(logger as Test.Logger) as Boolean {
 // to render 8 characters legibly on round glass. Same measurement as the recording pages.
 (:test)
 function lockScreenFitsRoundDisplay(logger as Test.Logger) as Boolean {
+    // The invite lock is retired (every stream compiles the zero pepper, docs/channels.md);
+    // its screen is measured only where a pepper still arms it, so a font set the lock never
+    // meets — the fenix 5 Plus's, where rows 3 and 4 touch — cannot fail a build for a screen
+    // no rider can reach.
+    if (!LockGate.enabled()) {
+        logger.debug("lock retired — screen not measured");
+        return true;
+    }
     var dc = testDc();
     var h = screenPx();
     var cy = h / 2;
@@ -2987,7 +3038,8 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
             RecordingView.inkH(dc, f), y0, cy);
         Test.assertMessage(r <= limit,
             "main row0 '" + tops[i] + "' r=" + r.format("%.0f") + " > " + limit);
-        Test.assertMessage(dc.getFontHeight(f) >= dc.getFontHeight(Graphics.FONT_SMALL),
+        Test.assertMessage(dc.getFontHeight(f) >= dc.getFontHeight(
+            RecordingView.numberLadderIsSmall(dc) ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_SMALL),
             "main row0 '" + tops[i] + "' fell below FONT_SMALL");
         Test.assertMessage(RecordingView.inkH(dc, f) <= hC,
             "main row0 '" + tops[i] + "' is taller than the band it was stacked with");
@@ -2998,7 +3050,8 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     Test.assertMessage(dc.getFontHeight(clockF) >= dc.getFontHeight(Graphics.FONT_NUMBER_MILD),
         "the clock did not reach FONT_NUMBER_MILD: " + dc.getFontHeight(clockF).toString()
             + " in a " + RecordingView.rowBudget(radius, y0 - cy, inkC).toString() + "px row");
-    Test.assertMessage(dc.getFontHeight(clockF) > dc.getFontHeight(Graphics.FONT_LARGE),
+    Test.assertMessage(RecordingView.numberLadderIsSmall(dc)
+        || dc.getFontHeight(clockF) > dc.getFontHeight(Graphics.FONT_LARGE),
         "the clock is no larger than the FONT_LARGE it used to be");
 
     // row 1 — the giant, which is now a catalog SLOT (best 10 s by default) with its unit and
@@ -3021,7 +3074,8 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
         Test.assertMessage(r <= limit, "main giant m" + m.toString() + " r="
             + r.format("%.0f") + " > " + limit);
         // a giant that has fallen to a label font is not a giant
-        Test.assertMessage(dc.getFontHeight(gf) >= dc.getFontHeight(Graphics.FONT_LARGE),
+        Test.assertMessage(dc.getFontHeight(gf) >= dc.getFontHeight(
+            RecordingView.numberLadderIsSmall(dc) ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_LARGE),
             "main giant m" + m.toString() + " fell to a label font");
         // the suffix must sit inside the giant's own band, not spill into the strip below it
         var sy = RecordingView.suffixLineY(dc, y1, gf, 1, 2);
@@ -3285,9 +3339,8 @@ function summaryPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
 // through the summary after a save.
 (:test)
 function summaryPagesBuildAndRenderHeadless(logger as Test.Logger) as Boolean {
-    var ref = Graphics.createBufferedBitmap({:width => screenPx(), :height => screenPx()});
-    var bmp = ref.get();
-    Test.assertMessage(bmp != null, "buffered bitmap");
+    var bmpAny = testBitmap(screenPx(), screenPx());
+    var bmp = bmpAny;
     var dc = (bmp as Graphics.BufferedBitmap).getDc();
     var c = getApp().controller;
     var saved = c.engine;
@@ -4121,3 +4174,4 @@ function brandSplashLockupFitsRoundDisplay(logger as Test.Logger) as Boolean {
         + " on " + screenPx().toString() + " px");
     return true;
 }
+

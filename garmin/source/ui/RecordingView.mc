@@ -487,6 +487,16 @@ class RecordingView extends WatchUi.View {
 
     // Largest font in `ladder` at or after `from` that renders `text` within `maxW`.
     // Falls back to the last (smallest) entry rather than returning nothing.
+    // A font set where the NUMBER ladder is shorter than the text ladder: the fenix 5 Plus
+    // family draws FONT_NUMBER_MILD at 26 px under a 29 px FONT_SMALL (the fenix 7S, same
+    // 240 px glass, has 55 under 29). Every "a value must not fall below a label font" floor
+    // in this file and in the layout suite was written for sets where numbers are the tall
+    // half; on this one the floor is the number ladder's own bottom rung, and the pair band
+    // grows to hold its value font the way it does on the Forerunners (giantBand).
+    static function numberLadderIsSmall(dc as Dc) as Boolean {
+        return dc.getFontHeight(Graphics.FONT_NUMBER_MILD) < dc.getFontHeight(Graphics.FONT_SMALL);
+    }
+
     static function fitFont(dc as Dc, ladder as Array<Graphics.FontType>, from as Number,
             text as String, maxW as Number) as Graphics.FontType {
         for (var i = from; i < ladder.size() - 1; i++) {
@@ -1184,7 +1194,7 @@ class RecordingView extends WatchUi.View {
         var lc = PageModel.bandCaption(left);
         var rc = PageModel.bandCaption(right);
         var f = pairFont(dc, lv, lc, rv, rc, band, radius, y, cy);
-        var dx = pairColumn(dc, f, radius, y, cy);
+        var dx = pairColumnFor(dc, f, radius, y, cy, [lv, lc, rv, rc]);
         drawPairHalf(dc, cx - dx, y, lv, lc, f, PageModel.color(left, c));
         drawPairHalf(dc, cx + dx, y, rv, rc, f, PageModel.color(right, c));
     }
@@ -1279,12 +1289,33 @@ class RecordingView extends WatchUi.View {
                 || pairHalfWidth(dc, texts[PAIR_RV], texts[PAIR_RC], f) > wMax) {
             return false;
         }
+        // The halves sit at ±dx: the grid's own column where the captions allow it, pulled
+        // inward where they do not (pairColumnFor). What is left to check is that the two
+        // halves neither cross the centre line nor leave the glass at the digits' depth.
+        var dx = pairColumnFor(dc, f, radius, y, cy, texts);
+        var halfL = pairHalfWidth(dc, texts[PAIR_LV], texts[PAIR_LC], f);
+        var halfR = pairHalfWidth(dc, texts[PAIR_RV], texts[PAIR_RC], f);
+        var halfMax = halfL > halfR ? halfL : halfR;
+        var valHalf = chordHalf(radius, pairRowY(dc, y, f, 1) - cy, inkH(dc, f));
+        return dx >= halfMax / 2 + 1 && dx + halfMax / 2 <= valHalf;
+    }
+
+    // Where the two halves sit, given what is in them: the 2x2's own column (pairColumn) —
+    // UNLESS a caption would run off the glass there. The caption row is the higher, narrower
+    // one, and on a font set whose FONT_XTINY is as tall as TINY (the fenix 5 Plus: 26 px, where
+    // every other watch draws 19) "foil time" at the grid's column reaches 5 px past the chord.
+    // Then the halves move inward to the widest column the captions allow; on every other glass
+    // the caption limit is looser than the grid's column and nothing moves.
+    static function pairColumnFor(dc as Dc, f as Graphics.FontType, radius as Number,
+            y as Number, cy as Number, texts as Array<String>) as Number {
+        var dx = pairColumn(dc, f, radius, y, cy);
+        var wl = dc.getTextWidthInPixels(texts[PAIR_LC], Graphics.FONT_XTINY);
+        var wr = dc.getTextWidthInPixels(texts[PAIR_RC], Graphics.FONT_XTINY);
+        var capW = wl > wr ? wl : wr;
         var capHalf = chordHalf(radius, pairRowY(dc, y, f, 0) - cy,
             inkH(dc, Graphics.FONT_XTINY));
-        return col[0] + dc.getTextWidthInPixels(texts[PAIR_LC], Graphics.FONT_XTINY) / 2
-                <= capHalf
-            && col[0] + dc.getTextWidthInPixels(texts[PAIR_RC], Graphics.FONT_XTINY) / 2
-                <= capHalf;
+        var need = capHalf - capW / 2;
+        return need < dx ? need : dx;
     }
 
     // The band's own ladder: the single giant's font, then the two TEXT rungs a value may use.
@@ -1296,6 +1327,17 @@ class RecordingView extends WatchUi.View {
         for (var i = 0; i < PAIR_FLOOR; i++) {
             if (pairFits(dc, texts, PAIR_FONTS[i], band, radius, y, cy)) {
                 return PAIR_FONTS[i];
+            }
+        }
+        // On a small number ladder (fenix 5 Plus) FONT_MEDIUM is WIDER than the number fonts,
+        // and the floor rung can miss the column by the renderer's own rule. Two number rungs
+        // below it are still values on that glass — its whole number ladder is that size.
+        if (numberLadderIsSmall(dc)) {
+            if (pairFits(dc, texts, Graphics.FONT_NUMBER_MEDIUM, band, radius, y, cy)) {
+                return Graphics.FONT_NUMBER_MEDIUM;
+            }
+            if (pairFits(dc, texts, Graphics.FONT_NUMBER_MILD, band, radius, y, cy)) {
+                return Graphics.FONT_NUMBER_MILD;
             }
         }
         return PAIR_FONTS[PAIR_FLOOR];
@@ -2184,7 +2226,7 @@ class RecordingView extends WatchUi.View {
         if (slot != null) {
             var frame = MapSnapshot.frame(slot, box);
             drawn = frame != null && TrackDraw.drawFramed(dc, e.trackLat, e.trackLon,
-                e.trackFly, e.trackN, cx, cy, box, true, frame,
+                e.trackFly, e.trackN, [cx, cy, box] as Array<Number>, true, frame,
                 MapSnapshot.bitmap(slot, box));
         } else {
             drawn = TrackDraw.draw(dc, e.trackLat, e.trackLon, e.trackFly, e.trackN, cx, cy,

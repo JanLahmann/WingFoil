@@ -22,6 +22,10 @@ fenix8solar51mm.resourcePath = $(fenix8solar51mm.resourcePath);resources-icon40;
 # the Solar cut. Without this monkeyc rescales the 65x65 in resources/ and warns per build.
 fenix7.resourcePath = $(fenix7.resourcePath);resources-icon40;resources-dev/icon40
 fenix7s.resourcePath = $(fenix7s.resourcePath);resources-icon40;resources-dev/icon40
+# fenix 5 Plus family (0.9.11): 40x40 launcher, the Solar/fenix 7 cut.
+fenix5plus.resourcePath = $(fenix5plus.resourcePath);resources-icon40;resources-dev/icon40
+fenix5splus.resourcePath = $(fenix5splus.resourcePath);resources-icon40;resources-dev/icon40
+fenix5xplus.resourcePath = $(fenix5xplus.resourcePath);resources-icon40;resources-dev/icon40
 fenix7x.resourcePath = $(fenix7x.resourcePath);resources-icon40;resources-dev/icon40
 fenix7pro.resourcePath = $(fenix7pro.resourcePath);resources-icon40;resources-dev/icon40
 fenix7pronowifi.resourcePath = $(fenix7pronowifi.resourcePath);resources-icon40;resources-dev/icon40

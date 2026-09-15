@@ -274,7 +274,7 @@ class SummaryView extends WatchUi.View {
         if (slot != null) {
             var frame = MapSnapshot.frame(slot, box);
             drawn = frame != null && TrackDraw.drawFramed(dc, e.trackLat, e.trackLon,
-                e.trackFly, e.trackN, cx, cy, box, false, frame,
+                e.trackFly, e.trackN, [cx, cy, box] as Array<Number>, false, frame,
                 MapSnapshot.bitmap(slot, box));
         } else {
             drawn = TrackDraw.draw(dc, e.trackLat, e.trackLon, e.trackFly, e.trackN, cx, cy,
