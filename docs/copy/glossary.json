@@ -1,0 +1,56 @@
+{
+  "_readme" : [
+    "THE EIGHT WORDS THE PRODUCT IS MADE OF, ONE LINE EACH.",
+    "",
+    "Authored by the kit: Presentation/MetricGlossary.swift. The welcome screen selects four",
+    "of them (WelcomeGuide.highlights) and web/learn's definition list carries all eight.",
+    "",
+    "These are index lines, not the reference page: the thresholds, the outcome ladder and",
+    "the 70 % score stay in HelpCatalog, which has no equivalent on the site.",
+    "",
+    "`id` is a slug that outlives a rewording. Wholly kit-owned: regenerate with",
+    "COPY_WRITE=1 swift test --filter CopyContractTests."
+  ],
+  "entries" : [
+    {
+      "id" : "foilShare",
+      "line" : "How much of the session was spent flying rather than merely moving.",
+      "term" : "Foil %"
+    },
+    {
+      "id" : "flights",
+      "line" : "One takeoff starts a flight; a touchdown or a swim ends it. Both are counted.",
+      "term" : "Flights & touchdowns"
+    },
+    {
+      "id" : "turnVerdicts",
+      "line" : "Every turn gets one: flew through, touched down, or fell in.",
+      "term" : "Turn verdicts"
+    },
+    {
+      "id" : "dryStreak",
+      "line" : "How many jibes in a row you stayed out of the water — and the best run of the day.",
+      "term" : "Dry streak"
+    },
+    {
+      "id" : "jph",
+      "line" : "Dry jibes per hour. Falling in more often cannot raise it.",
+      "term" : "JPH"
+    },
+    {
+      "id" : "cph",
+      "line" : "Clean jibes per hour: you flew through it, you held your speed, and the ten seconds after it stayed quiet.",
+      "term" : "CPH"
+    },
+    {
+      "id" : "wph",
+      "line" : "Swims per hour. The number nobody wants, kept honest anyway.",
+      "term" : "WPH"
+    },
+    {
+      "id" : "speedRecords",
+      "line" : "Your fastest 2 seconds, 10 seconds, 500 m and nautical mile — the same windows the speedsurfing world uses.",
+      "term" : "Speed records"
+    }
+  ]
+}

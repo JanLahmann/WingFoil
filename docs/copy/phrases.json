@@ -1,0 +1,64 @@
+{
+  "_readme" : [
+    "THE SHORT STRINGS EVERY SURFACE SHARES.",
+    "",
+    "Four of them are the kit's and are asserted equal to it by CopyContractTests:",
+    "`promise` (WelcomeGuide.promise), `headline` (WelcomeGuide.headline), `callToAction`",
+    "(Branding.callToAction) and `captionOffer` (ShareCaption.offer).",
+    "",
+    "The rest are hand-authored facts about Strava, the two stores and the vocabulary. They",
+    "have no kit constant to be equal to, so the test asserts only that they are present and",
+    "self-consistent; docs/copy/check_release_copy.py is what enforces them over the copy.",
+    "",
+    "`ciqListingTitle` is the LIVE Connect IQ listing name today. docs/channels.md has",
+    "decided the rename to \"CleanJibe Wingfoil Watch App Beta\"; this value flips on the day",
+    "Garmin's store shows it, and not before — every page that prints the link text is",
+    "checked against what a rider actually sees."
+  ],
+  "appStoreName" : "CleanJibe Wingfoil Analyzer",
+  "appStoreSubtitle" : "Flights, turns, speed records",
+  "callToAction" : "analyze your wingfoil sessions free — cleanjibe.org",
+  "captionOffer" : "analysed with CleanJibe, free at cleanjibe.org",
+  "ciqListingTitle" : "CleanJibe Wingfoil Tracker (Beta)",
+  "headline" : "Every flight, every jibe, every swim.",
+  "lexicon" : {
+    "banned" : [
+      "carried",
+      "no-fall streak",
+      "clean-jibe percentage",
+      "swim rate",
+      "success rate"
+    ],
+    "exemptions" : [
+      {
+        "path" : "ios/WingFoilKit/Sources/WingFoilKit/Presentation/Dev/",
+        "why" : "the dev workbench is Jan's engine surface, not a rider's (docs/presentation.md, 'The dev workbench'): it prints the engine's own vocabulary on purpose.",
+        "word" : "carried"
+      },
+      {
+        "path" : "ios/WingFoilKit/Sources/WingFoilKit/Presentation/TurnAnalytics.swift",
+        "why" : "\"not clean · carried 18° past the axis\" is the ordinary verb — the arc carried past the axis — and it is a pinned cross-platform string: web/js/viz.js writes the same sentence and verify_presentation.py holds the two together (docs/presentation.md).",
+        "word" : "carried"
+      },
+      {
+        "path" : "ios/WingFoilKit/Sources/WingFoilKit/Help/HelpCatalog.swift",
+        "why" : "the takeoff metric, and the app's own Summary-grid card: attempts that produced a flight, out of attempts. It is not the clean-jibe rate — that is CPH — and TurnAnalytics says so at length.",
+        "word" : "success rate"
+      }
+    ],
+    "preferred" : {
+      "clean" : "flew through it, held its speed, and the ten seconds after it stayed quiet",
+      "dry streak" : "the run of turns without falling in",
+      "flew through" : "kept the foil the whole way through the turn — no touchdown, no swim"
+    }
+  },
+  "promise" : "CleanJibe reads a wingfoil session off your watch and tells you what actually happened: how much of it you spent on the foil, how long each flight lasted, your speed records, and — for every turn — whether you flew through it, touched down, or fell in.",
+  "strava" : "Strava lets a new app connect a limited number of riders",
+  "stravaForbidden" : [
+    "reviewed the app",
+    "reviews the app",
+    "approves the app",
+    "single-rider",
+    "not reviewed"
+  ]
+}

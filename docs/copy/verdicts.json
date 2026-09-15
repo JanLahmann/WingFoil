@@ -1,0 +1,26 @@
+{
+  "_readme" : [
+    "WHAT THE RIDER IS TOLD ABOUT A RECORDING THAT IS NOT A SESSION.",
+    "",
+    "Authored by the kit: Presentation/NotASessionNote.swift (engine 0.19.0; the rule itself",
+    "is in docs/algorithms.md). The browser analyzer computes the same verdict and says",
+    "nothing about it — these are the words it should say.",
+    "",
+    "`{duration}` is the session clock: m:ss under an hour, h:mm:ss over it. `{distance}` is",
+    "metres under a kilometre, otherwise one decimal of km. Both are the row's own displayed",
+    "numbers, so the line reads against the key metrics directly above it.",
+    "",
+    "lines[0] is the no-recording case: the watch says the afternoon happened and its file",
+    "has not arrived. lines[1] is the short / went-nowhere case, and is the one with the two",
+    "placeholders in it.",
+    "",
+    "Wholly kit-owned: COPY_WRITE=1 swift test --filter CopyContractTests."
+  ],
+  "notASession" : {
+    "lines" : [
+      "Your watch says this afternoon happened, but its recording has not arrived yet — so it is not counted in totals, trends or records until it does.",
+      "No time on the foil, {duration} long and {distance} covered — so this looks like a recording rather than a session. It is kept, and left out of totals, trends and records."
+    ],
+    "tag" : "No riding detected"
+  }
+}

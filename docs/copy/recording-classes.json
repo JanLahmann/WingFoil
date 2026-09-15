@@ -1,0 +1,40 @@
+{
+  "_readme" : [
+    "THE FOUR RECORDING CLASSES, NAMED.",
+    "",
+    "Authored by the kit: Presentation/RecordingClass.swift. The iOS Import footers and the",
+    "help topic 'What your recording can and cannot show' already read them from there; this",
+    "file carries the same strings to web/index.html and web/watches, which retyped them.",
+    "",
+    "`footerLine` is `name + '. ' + line` — the shape a section footer wants. The web's",
+    "three-column table stays the web's own; only the cell contents are pinned.",
+    "",
+    "Wholly kit-owned: COPY_WRITE=1 swift test --filter CopyContractTests rewrites it."
+  ],
+  "classes" : [
+    {
+      "footerLine" : "Class A · Garmin watch app. Everything: foil time, flights, every turn verdict and clean jibe, certified speed records, the wind axis, pump strokes and takeoff attempts.",
+      "id" : "a",
+      "line" : "Everything: foil time, flights, every turn verdict and clean jibe, certified speed records, the wind axis, pump strokes and takeoff attempts.",
+      "name" : "Class A · Garmin watch app"
+    },
+    {
+      "footerLine" : "Class B · any speed-certified file. Everything except pump strokes and takeoff attempts, which need a wrist accelerometer nothing else records. Speed records certify.",
+      "id" : "b",
+      "line" : "Everything except pump strokes and takeoff attempts, which need a wrist accelerometer nothing else records. Speed records certify.",
+      "name" : "Class B · any speed-certified file"
+    },
+    {
+      "footerLine" : "Class B+ · Apple Watch app. Everything class B gets, and pump strokes and takeoff attempts too: the watch app records the wrist at 50 Hz and the phone analyses it.",
+      "id" : "bPlus",
+      "line" : "Everything class B gets, and pump strokes and takeoff attempts too: the watch app records the wrist at 50 Hz and the phone analyses it.",
+      "name" : "Class B+ · Apple Watch app"
+    },
+    {
+      "footerLine" : "Class C · positions only. Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are estimated from positions and marked uncertified, and there are no pump strokes or takeoff attempts.",
+      "id" : "c",
+      "line" : "Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are estimated from positions and marked uncertified, and there are no pump strokes or takeoff attempts.",
+      "name" : "Class C · positions only"
+    }
+  ]
+}

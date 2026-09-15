@@ -1,0 +1,79 @@
+{
+  "_readme" : [
+    "WHICH FEATURE IS IN WHICH CHANNEL, IN THE RIDER'S WORDS.",
+    "",
+    "docs/channels.md is the author. This is its machine-readable twin: the same beta and",
+    "dev rows, the same section title, in a form a Python verifier can read.",
+    "",
+    "Pinned from both sides. The kit's ChannelFeatures (Help/ChannelFeatures.swift) is",
+    "asserted equal to `sectionTitle`, `beta[].text` and `dev[].text` by CopyContractTests;",
+    "the web's two lists are asserted equal to the same rows by the web verifier. Edit",
+    "docs/channels.md first, then this file and the kit together.",
+    "",
+    "`id` is a slug that outlives a rewording, so the web can pin one row while its sentence",
+    "changes. COPY_WRITE=1 replaces the texts by position and leaves the ids alone.",
+    "",
+    "`forbiddenInRelease` is the guard on the release copy, not a list of rows: no release",
+    "text may contain any of these, case-insensitively, as a substring. See README.md."
+  ],
+  "beta" : [
+    {
+      "id" : "gpxTcx",
+      "text" : ".gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS opens straight from Files."
+    },
+    {
+      "id" : "appleHealth",
+      "text" : "Apple Health, both ways: what Apple's Workout app recorded is read in, and your sessions are written back as workouts."
+    },
+    {
+      "id" : "appleWatchApp",
+      "text" : "The CleanJibe Apple Watch app, which records on your wrist with live numbers and hands the session to the phone."
+    },
+    {
+      "id" : "widgets",
+      "text" : "Home-screen widgets and the watch complication."
+    },
+    {
+      "id" : "sessionVideo",
+      "text" : "The session video: your afternoon as a film rather than a card."
+    },
+    {
+      "id" : "grouping",
+      "text" : "Grouping the library by month, year or spot, and filtering it."
+    }
+  ],
+  "dev" : [
+    {
+      "id" : "garminLink",
+      "text" : "The Garmin link: a summary card from your watch the moment you stop, the map of your spot and the wind direction sent back to it"
+    },
+    {
+      "id" : "windsurf",
+      "text" : "Windsurf, foil and fin, with thresholds of its own"
+    },
+    {
+      "id" : "tuning",
+      "text" : "The tuning page: every analysis threshold on a slider, tried against your own sessions"
+    },
+    {
+      "id" : "ipad",
+      "text" : "iPad"
+    }
+  ],
+  "forbiddenInRelease" : [
+    "gpx",
+    "tcx",
+    "Apple Health",
+    "HealthKit",
+    "Apple Watch app",
+    "home-screen widget",
+    "complication",
+    "video export",
+    "grouping",
+    "iPad",
+    "Garmin link",
+    "windsurf",
+    "tuning"
+  ],
+  "sectionTitle" : "Coming in a future release"
+}

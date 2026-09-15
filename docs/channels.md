@@ -5,6 +5,12 @@ is the single source for which feature ships in which channel; the website's "wh
 coming" list, the app's Beta section and the store texts are written from it, never the
 other way round.
 
+**Its machine-readable twin is `docs/copy/channels.json`** — the same beta and dev rows, the
+same section title, in a form a test and a Python verifier can read. `ChannelFeatures` in the
+kit is asserted equal to it by `CopyContractTests`, the website's two lists by the web
+verifier, and `docs/copy/check_release_copy.py` asserts that no release copy names a door the
+release lacks. Edit this file first, then the JSON and the kit together.
+
 ## The three channels
 
 | channel | how it is built | who gets it | version |
@@ -273,5 +279,6 @@ folder alongside the App Store screenshots.
    screenshots for three iPhone sizes, review notes (example session, an attached FIT, no
    account).
 6. The website's release state: the download button to the App Store, the TestFlight link
-   under "Curious about what is coming", iPad off the product copy, a Release column on
-   /whats-new.
+   under "Coming in a future release" (the section's name since 15 September 2026, and the
+   pinned one — `docs/copy/channels.json` → `sectionTitle`), iPad off the product copy, a
+   Release column on /whats-new.
