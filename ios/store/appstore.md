@@ -130,7 +130,8 @@ the Connect IQ listing and the library's empty state say — `docs/copy/phrases.
 `promise`, pinned to `WelcomeGuide.promise` by `CopyContractTests`. The store's voice puts
 its own paragraph around it; the sentence itself does not get a second wording.
 
-The turn-verdict bullet said "your no-fall streak" until 15 September 2026, 15:00; the live
+The turn-verdict bullet called the streak by a name the product does not use until 15 September
+2026, 15:00; the live
 description now says **dry streak**, the product's word (CLAUDE.md, `docs/copy/phrases.json` →
 `lexicon`), and `check_release_copy.py` no longer carries an exemption for it.
 
