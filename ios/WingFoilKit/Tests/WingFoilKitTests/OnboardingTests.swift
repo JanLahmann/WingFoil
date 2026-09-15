@@ -473,38 +473,48 @@ import Testing
     // MARK: - When it is allowed to say it
 
     @Test func aFreshInstallIsWelcomed() {
-        #expect(WelcomePrompt.shouldShow(hasSeen: false, sessionCount: 0, hasKey: false))
+        #expect(WelcomePrompt.shouldShow(hasSeen: false, sessionCount: 0))
+    }
+
+    /// **The keychain is not evidence** (Jan, release candidate 58, 15 Sep 2026).
+    ///
+    /// iOS keeps keychain items across an app delete, so a reinstall gets the
+    /// intervals.icu key handed back before the first screen is drawn. That used to mark
+    /// the welcome as seen on sight, and the first thing a fresh install showed was the
+    /// setup card — four steps and a key field — instead of "What CleanJibe does".
+    @Test func aSurvivingKeyIsNotAHistory() {
+        #expect(WelcomePrompt.shouldShow(hasSeen: false, sessionCount: 0))
+        #expect(!WelcomePrompt.isAlreadyWelcomed(sessionCount: 0))
+        #expect(!WelcomePrompt.shouldMarkSeenSilently(hasSeen: false, sessionCount: 0))
     }
 
     @Test func onceIsTheWholeContract() {
-        #expect(!WelcomePrompt.shouldShow(hasSeen: true, sessionCount: 0, hasKey: false))
-        #expect(!WelcomePrompt.shouldMarkSeenSilently(hasSeen: true, sessionCount: 0,
-                                                      hasKey: false))
+        #expect(!WelcomePrompt.shouldShow(hasSeen: true, sessionCount: 0))
+        #expect(!WelcomePrompt.shouldMarkSeenSilently(hasSeen: true, sessionCount: 0))
     }
 
-    /// The upgrade case: a rider mid-season must not be greeted as a stranger.
+    /// The upgrade case: a rider mid-season must not be greeted as a stranger. One session
+    /// in the library is the whole of the evidence.
     @Test func anInstallWithAHistoryIsTreatedAsAlreadyWelcomed() {
-        #expect(WelcomePrompt.isAlreadyWelcomed(sessionCount: 12, hasKey: false))
-        #expect(WelcomePrompt.isAlreadyWelcomed(sessionCount: 0, hasKey: true))
-        #expect(!WelcomePrompt.isAlreadyWelcomed(sessionCount: 0, hasKey: false))
-        for (count, key) in [(12, false), (0, true), (12, true)] {
-            #expect(!WelcomePrompt.shouldShow(hasSeen: false, sessionCount: count,
-                                              hasKey: key))
+        #expect(WelcomePrompt.isAlreadyWelcomed(sessionCount: 12))
+        #expect(WelcomePrompt.isAlreadyWelcomed(sessionCount: 1))
+        #expect(!WelcomePrompt.isAlreadyWelcomed(sessionCount: 0))
+        for count in [1, 12] {
+            #expect(!WelcomePrompt.shouldShow(hasSeen: false, sessionCount: count))
             // …and the flag is spent anyway, so emptying the library later cannot
             // resurrect the screen.
             #expect(WelcomePrompt.shouldMarkSeenSilently(hasSeen: false,
-                                                         sessionCount: count, hasKey: key))
+                                                         sessionCount: count))
         }
     }
 
     /// Deferral, not refusal — the same etiquette the notification offer keeps.
     @Test func aBusyScreenDefersRatherThanCancels() {
-        #expect(!WelcomePrompt.shouldShow(hasSeen: false, sessionCount: 0, hasKey: false,
+        #expect(!WelcomePrompt.shouldShow(hasSeen: false, sessionCount: 0,
                                           isPresenting: true))
-        #expect(WelcomePrompt.shouldShow(hasSeen: false, sessionCount: 0, hasKey: false,
+        #expect(WelcomePrompt.shouldShow(hasSeen: false, sessionCount: 0,
                                          isPresenting: false))
         // A deferral must not be mistaken for evidence that the rider has been welcomed.
-        #expect(!WelcomePrompt.shouldMarkSeenSilently(hasSeen: false, sessionCount: 0,
-                                                      hasKey: false))
+        #expect(!WelcomePrompt.shouldMarkSeenSilently(hasSeen: false, sessionCount: 0))
     }
 }

@@ -82,12 +82,14 @@ struct RootView: View {
             TrendsView()
                 .tag(Tab.trends)
                 .tabItem { Label("Trends", systemImage: "chart.xyaxis.line") }
-            // "Gear" rather than "Gear & spots" on the tab item: four tab labels share a
-            // 390 pt bar, and the screen's own title carries the longer name. Spots moved
-            // in here from the fourth level of the Settings sheet (app-ui-review.md §6.1).
+            // **"Gear & spots" on the tab item too** (Jan, build 58). It said "Gear",
+            // because four labels share a 390 pt bar — but spots are half of what is behind
+            // it, they are now a section of that page rather than a sub-page of it, and a
+            // rider looking for the place his spots are named has no reason to open a tab
+            // called Gear. The bar scales the label; the name tells the truth.
             GearView()
                 .tag(Tab.gear)
-                .tabItem { Label("Gear", systemImage: "bag") }
+                .tabItem { Label("Gear & spots", systemImage: "bag") }
         }
     }
 
@@ -116,14 +118,24 @@ struct RootView: View {
         // Every hook below is the *same* question asked again after a "not now yet": the
         // predicate says no while another modal is up and the store only spends the offer
         // when the alert actually appears, so the deferrals cost nothing.
-        .alert("Get notified of new sessions",
+        //
+        // **Asked the moment the key is proved, not the moment it is typed** (Jan, build
+        // 58). "Save & check" writes the key first and asks intervals.icu afterwards, and
+        // this alert fired on the write — over the spinner, sometimes over a key that came
+        // back rejected a second later. `SessionStore` now waits for the verdict, so the
+        // offer arrives on the heels of "Connected", which is the one moment a rider has
+        // just said out loud that he wants his sessions to turn up by themselves.
+        //
+        // The message is the Settings switch's own explanation, word for word
+        // (`SettingsCopy`): it is the same feature, and it is not a Garmin feature — any
+        // watch that syncs to intervals.icu is announced by it.
+        .alert(SettingsCopy.notifyToggle,
                isPresented: Binding(get: { store.isAskingAboutNewActivities },
                                     set: { if !$0 { store.declineNewActivityNotifications() } })) {
-            Button("Enable") { store.acceptNewActivityNotifications() }
+            Button("Notify me") { store.acceptNewActivityNotifications() }
             Button("Not now", role: .cancel) { store.declineNewActivityNotifications() }
         } message: {
-            Text("When a new Garmin activity syncs, CleanJibe can let you know — "
-                 + "even in the background.")
+            Text(SettingsCopy.notifyExplanation)
         }
         // "You have pulled twice in ten seconds and the sessions you deleted are still not
         // here — did you mean to get any of them back?". The third question the app owns,
@@ -225,8 +237,12 @@ struct RootView: View {
             store.showWelcomeIfNeeded()
             store.raiseRequestedWelcome()
         }
-        // The moment setup finishes: a key typed into the first-run card or into Settings,
-        // proved against intervals.icu, and the screen behind it now worth notifying about.
+        // The moment setup finishes: a key typed into the first-run card or into Settings
+        // and **proved** against intervals.icu. `keyCheckSucceeded` is the hook that
+        // matters — the other two only catch the moments around it — because the offer is
+        // owed to a rider who has just seen "Connected", not to one whose key is still in
+        // the air (Jan, build 58).
+        .onChange(of: store.keyCheckSucceeded) { _, _ in store.askAboutNewActivitiesIfNeeded() }
         .onChange(of: store.apiKey) { _, _ in store.askAboutNewActivitiesIfNeeded() }
         .onChange(of: store.isCheckingKey) { _, _ in store.askAboutNewActivitiesIfNeeded() }
         // …and the moment whatever was in the way goes away: the Settings sheet the key was

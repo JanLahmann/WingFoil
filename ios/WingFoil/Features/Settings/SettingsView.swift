@@ -12,7 +12,15 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                helpSection
+                // **Settings keeps switches and accounts, and nothing else** (Jan, build
+                // 58). A block of three rows used to open this screen — "What CleanJibe
+                // does", "What the numbers mean" and "Send feedback", with two paragraphs
+                // of footer under them — and every one of the three is a row of the library
+                // menu one tap away (docs/presentation.md, "The library menu"). Two homes
+                // for the same door is two places to keep in step and one more screen for a
+                // rider to search; the menu is the one that greets him, so the menu keeps
+                // them. Nothing was lost: the menu's rows open the same screens, and
+                // `UI_SHEET=help` still parks on the Help index from the library.
                 icuSection
                 stravaSection
                 deletedSessionsSection
@@ -84,49 +92,6 @@ struct SettingsView: View {
     }
 
     // MARK: - Sections
-
-    /// The two "what is this?" answers, in the order a reader needs them: what the app is
-    /// for, then what its numbers mean.
-    ///
-    /// The welcome screen lives here rather than in the Help catalogue because the
-    /// catalogue is a *glossary* — one topic per metric, deep-linked from the `?` on the
-    /// card that shows it — and "what does this app do" is not a metric. It is also the
-    /// only row in Help or Settings that is a whole screen rather than a page of prose.
-    private var helpSection: some View {
-        Section {
-            Button {
-                // Asked for, not re-armed: `replayWelcome` deliberately leaves the
-                // first-run flag alone. Settings has to get out of the way first, so the
-                // screen is *requested* here and raised by `RootView` once this sheet is
-                // gone — the same etiquette every other app-owned presentation keeps.
-                dismiss()
-                store.replayWelcome()
-            } label: {
-                Label("What CleanJibe does", systemImage: "hand.wave")
-            }
-            NavigationLink {
-                HelpIndexPage()
-            } label: {
-                Label("What the numbers mean", systemImage: "questionmark.circle")
-            }
-            // The third row is the other direction: the two above answer the rider, this one
-            // asks him. It sits here rather than in About because a rider who cannot find an
-            // answer in Help is one tap from telling us what he was looking for.
-            FeedbackMailRow(title: "Send feedback", stagesFallbackHook: true)
-        } footer: {
-            Text("The welcome screen again — what the app measures, and the example "
-                 + "session. Then plain-language explanations of every metric: foil %, the "
-                 + "GP3S record set, turn outcomes, takeoff attempts, the wind axis and "
-                 + "what an uncertified record means.\n\n"
-                 + "Feedback opens a mail to \(FeedbackReport.recipient) with this build, "
-                 + "this phone and your library's shape already written in. Nothing is sent "
-                 + "until you tap Send, and you can edit every line of it first. "
-                 // The invitation, in the one place a rider is already reading about the
-                 // mail. It is the same sentence on the welcome screen and in the mail
-                 // itself, so wherever he meets the door first it says the same thing.
-                 + FeedbackInvitation.sentence)
-        }
-    }
 
     private var icuSection: some View {
         Section {
@@ -248,7 +213,16 @@ struct SettingsView: View {
 
     /// Off by default, and the toggle itself is what asks iOS for permission — a launch
     /// that opens with a notification prompt before the rider has seen a single session is
-    /// a prompt he says no to.
+    /// a prompt he says no to. The app makes the offer once by itself as well, right after
+    /// a key has been *proved* against intervals.icu (`SessionStore.askAbout…`), which is
+    /// the one moment a rider has just told us he wants sessions to arrive by themselves.
+    ///
+    /// **It says intervals.icu, not Garmin** (Jan, build 58). The switch read "Notify on new
+    /// Garmin activities" and the check behind it has never been a Garmin one: it is a call
+    /// to the rider's intervals.icu account, and every watch that syncs there — a Garmin, a
+    /// Polar, a Suunto, a COROS, an Apple Watch through Health — is announced by it. Naming
+    /// Garmin both under-promised the feature and pointed a rider with a problem at the
+    /// wrong account.
     ///
     /// The footer is honest about the one thing that decides whether this works at all:
     /// background refresh is granted by iOS, not requested by us. A wake half an hour after
@@ -256,7 +230,7 @@ struct SettingsView: View {
     /// on the Sessions list is still the way to get a session *now*.
     private var notificationsSection: some View {
         Section {
-            Toggle("Notify on new Garmin activities", isOn: Binding(
+            Toggle(SettingsCopy.notifyToggle, isOn: Binding(
                 get: { store.notifyOnNewActivities },
                 set: { store.notifyOnNewActivities = $0 }))
                 .disabled(store.apiKey.isEmpty)
@@ -266,11 +240,7 @@ struct SettingsView: View {
             Text(store.apiKey.isEmpty
                  ? "Add your intervals.icu API key above first — the check is a call to "
                    + "your account."
-                 : "While the phone is idle, CleanJibe asks intervals.icu whether a new "
-                   + "windsurf, wing, kite, surf or SUP activity has arrived, and tells you "
-                   + "about the ones that are not in your library yet. The session is "
-                   + "downloaded and analysed in the background where there is time for it, "
-                   + "so tapping the notification usually opens a finished analysis.\n\n"
+                 : SettingsCopy.notifyExplanation + "\n\n"
                    + "iOS decides when a background app may run: it learns your habits and "
                    + "may hold a check back for hours, and it never runs at all while "
                    + "Background App Refresh is off (Settings → General → Background App "
@@ -458,8 +428,9 @@ struct SettingsView: View {
     private var betaSection: some View { BetaSectionView() }
     #endif
 
-    /// **"What is being tested"** — the same list read the other way round. Present
-    /// in every channel; the release one carries the TestFlight link.
+    /// **"Coming in a future release"** — the channel list, read the way a rider asks it.
+    /// Present in every channel; the release one carries the way into the beta, as a step
+    /// on the page rather than a footnote under it.
     private var comingSoonSection: some View { ComingSoonSection() }
 
     private var storageSection: some View {
@@ -504,6 +475,7 @@ struct SettingsView: View {
     }
 
     /// Which channel this screenshot came from, and the first question of every report that
+
     /// comes back from TestFlight. The release channel says nothing, because there is nothing
     /// to distinguish it from — it is the app (docs/channels.md).
     static var variantSuffix: String {
@@ -515,4 +487,26 @@ struct SettingsView: View {
         ""
         #endif
     }
+}
+
+/// **One wording per switch, wherever the switch is offered.**
+///
+/// The new-sessions notification is offered twice — as a switch in Settings, and once per
+/// install as an alert the app raises by itself the moment an intervals.icu key has been
+/// proved (`SessionStore.askAboutNewActivitiesIfNeeded`). The alert used to have a sentence
+/// of its own ("When a new Garmin activity syncs…"), which named the wrong account and
+/// described less than the switch does. It is the same feature, so it is the same sentence.
+enum SettingsCopy {
+
+    /// The switch, and the alert's title in the affirmative.
+    static let notifyToggle = "Notify on new sessions from intervals.icu"
+
+    /// What the switch does, in one paragraph. Used verbatim as the one-time offer's
+    /// message, which is what "with the switch's own explanation" means.
+    static let notifyExplanation =
+        "While the phone is idle, CleanJibe asks intervals.icu whether a new windsurf, "
+        + "wing, kite, surf or SUP activity has arrived — from any watch that syncs there "
+        + "— and tells you about the ones that are not in your library yet. The session is "
+        + "downloaded and analysed in the background where there is time for it, so tapping "
+        + "the notification usually opens a finished analysis."
 }

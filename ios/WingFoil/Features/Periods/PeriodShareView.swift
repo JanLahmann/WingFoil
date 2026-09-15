@@ -110,13 +110,16 @@ struct PeriodShareView: View {
     @ViewBuilder
     private var naming: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // The same two fields the session composer draws, and the same chrome: these
+            // sit in a plain `ScrollView`, where `.roundedBorder` is black on black in dark
+            // mode for exactly the reason the key field was (`AppTextFieldChrome`).
             TextField("Title", text: $titleDraft)
-                .textFieldStyle(.roundedBorder)
+                .appTextFieldChrome()
                 .onChange(of: titleDraft) {
                     titleDraft = String(titleDraft.prefix(SessionNaming.titleLimit))
                 }
             TextField("A line of your own (optional)", text: $noteDraft)
-                .textFieldStyle(.roundedBorder)
+                .appTextFieldChrome()
                 .onChange(of: noteDraft) {
                     noteDraft = String(noteDraft.prefix(SessionNaming.noteLimit))
                 }

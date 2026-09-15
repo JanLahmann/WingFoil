@@ -20,7 +20,62 @@ final class SessionStore {
 
     private(set) var sessions: [SessionRow] = []
     private(set) var isBusy = false
-    private(set) var status: String?
+
+    /// **The status line under the session list — a toast, and toasts go away.**
+    ///
+    /// One line at the foot of the library that says what the app is doing or has just
+    /// done: "Importing 3 files…", "Re-clustered into 4 spots", "Backup ready — 65,9 MB".
+    /// Forty-odd places write it and, until build 58, **nothing cleared it**: the last
+    /// sentence any job happened to leave behind sat on the bottom of the Sessions list
+    /// until another job replaced it. Jan found "Backup ready — 65,9 MB" still there a
+    /// quarter of an hour later, which turns a report of something finishing into a claim
+    /// about the present.
+    ///
+    /// So the property arms its own dismissal. Writing a new message resets it; `nil` is
+    /// still the immediate way to take one down by hand.
+    ///
+    /// Two rules the timer keeps:
+    ///
+    /// * **A message about work in progress outlives the work.** `isBusy` holds the line —
+    ///   the clear is re-armed rather than fired — so "Packing your library…" is on screen
+    ///   for as long as the packing is, and the lingering starts when it stops.
+    /// * **Only the message that armed the timer may be cleared by it.** Every write bumps
+    ///   a generation, and a timer whose generation is stale returns without touching
+    ///   anything, so a slow job's old toast can never wipe the new one out from under it.
+    private(set) var status: String? {
+        didSet {
+            guard status != oldValue else { return }
+            statusGeneration &+= 1
+            guard status != nil else { return }
+            armStatusClear(generation: statusGeneration)
+        }
+    }
+
+    /// How long a finished message stays on the screen. Long enough to read a sentence with
+    /// a number in it, short enough that it is plainly a report of a moment rather than a
+    /// standing statement about the library.
+    static let statusLinger: Duration = .seconds(6)
+
+    private var statusGeneration = 0
+
+    private func armStatusClear(generation: Int) {
+        Task { @MainActor [weak self] in
+            while true {
+                try? await Task.sleep(for: Self.statusLinger)
+                guard let self, self.statusGeneration == generation,
+                      self.status != nil else { return }
+                // Still working: this is a progress line, not a leftover. Wait it out.
+                guard !self.isBusy else { continue }
+                self.status = nil
+                return
+            }
+        }
+    }
+
+    /// Takes the status line down now — what a screen calls when the thing the line was
+    /// about is no longer what the rider is looking at.
+    func clearStatus() { status = nil }
+
     private(set) var storage = StorageStats()
     /// Set when a background job failed; the UI shows it as a dismissible banner.
     /// Every rider-facing failure in the app is shown through this one property, which is
@@ -1958,14 +2013,28 @@ final class SessionStore {
             || isShowingWelcome || pendingReAdd != nil
     }
 
+    /// **"Has this key ever actually fetched anything?"**
+    ///
+    /// A key in the keychain is not a working key: `saveAndCheckApiKey` stores it and then
+    /// asks intervals.icu, and the one-time offer used to fire on the store. Three answers
+    /// count as proof, in the order they become available — the check that just came back
+    /// green, a sync that has completed before, and a library that plainly arrived from
+    /// somewhere. The last two are what keeps an existing install's offer reachable at
+    /// launch, where `keyCheck` is nil because nothing has been asked yet.
+    private var keyIsProven: Bool {
+        if case .success = keyCheck { return true }
+        return lastSyncDate != nil || !sessions.isEmpty
+    }
+
     /// Asked at every plausible moment — launch, foreground, a key that was just proved, a
     /// sheet that just closed — and answered by the pure predicate, which says yes at most
-    /// once per install and only once the key exists.
+    /// once per install and only once the key exists and has been proved.
     func askAboutNewActivitiesIfNeeded() {
         guard NewActivityPrompt.shouldAsk(
             hasKey: !apiKey.isEmpty,
             isEnabled: notifyOnNewActivities,
             hasAsked: UserDefaults.standard.bool(forKey: ActivityNotifier.promptedKey),
+            keyIsProven: keyIsProven,
             isPresenting: isPresentingSomething)
         else { return }
         // Written down as the alert goes up rather than as it is answered: a question the
@@ -2076,18 +2145,19 @@ final class SessionStore {
         }
         #endif
         let hasSeen = UserDefaults.standard.bool(forKey: Self.welcomeShownKey)
-        // The upgrade path: an install that was already in use when this screen shipped is
-        // marked as welcomed on sight, so emptying the library years later cannot make the
-        // app introduce itself to its oldest user.
+        // The upgrade path: an install that already had sessions when this screen shipped
+        // is marked as welcomed on sight, so emptying the library years later cannot make
+        // the app introduce itself to its oldest user.
+        // A *session* is the evidence, and nothing else: an intervals.icu key survives an
+        // app delete in the iOS keychain, so a key on a fresh install says the keychain
+        // remembered, not that the rider has ever been here (Jan, build 58).
         if WelcomePrompt.shouldMarkSeenSilently(hasSeen: hasSeen,
-                                                sessionCount: sessions.count,
-                                                hasKey: !apiKey.isEmpty) {
+                                                sessionCount: sessions.count) {
             UserDefaults.standard.set(true, forKey: Self.welcomeShownKey)
             return
         }
         guard WelcomePrompt.shouldShow(hasSeen: hasSeen,
                                        sessionCount: sessions.count,
-                                       hasKey: !apiKey.isEmpty,
                                        isPresenting: isPresentingSomething)
         else { return }
         UserDefaults.standard.set(true, forKey: Self.welcomeShownKey)
@@ -2146,6 +2216,13 @@ final class SessionStore {
 
     /// Result of the last "save & check" — the inline line under the key field.
     private(set) var keyCheck: IcuKeyCheck?
+
+    /// The one bit of `keyCheck` `RootView` watches, so the notification offer is re-asked
+    /// the instant a key comes back green rather than one unrelated redraw later.
+    var keyCheckSucceeded: Bool {
+        if case .success = keyCheck { return true }
+        return false
+    }
     private(set) var isCheckingKey = false
 
     private static let problemKey = "lastIcuProblem.v1"

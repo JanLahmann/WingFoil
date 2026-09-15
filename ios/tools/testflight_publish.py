@@ -53,7 +53,7 @@ What is in: intervals.icu sync, .fit files from Files, Mail, AirDrop and the sha
 
 What is deliberately NOT in this build: GPX and TCX files, the Garmin export ZIP, Apple Health, the video export, grouping and filters in Sessions, the Apple Watch app, widgets. They stay in the beta until proven.
 
-Please check: does everything you use day to day still work without those doors? Does the app open your existing library as before? Anything that reads wrong in the "Curious about what is coming" section?
+Please check: does everything you use day to day still work without those doors? Does the app open your existing library as before? Anything that reads wrong in Settings → "Coming in a future release"?
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
