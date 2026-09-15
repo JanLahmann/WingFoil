@@ -190,8 +190,13 @@ public struct LibraryGroup: Sendable, Equatable, Identifiable {
 
     /// **"August 2026 · 9 sessions"** — what the section header prints. `·` separates, as
     /// everywhere else in the app.
+    ///
+    /// The count is of *sessions*, which is not `rows.count`: the group may also hold a
+    /// recording that is not one (engine 0.19.0, `LibraryListing.riddenCount`). Such a row
+    /// is listed — it is the rider's recording and he has to be able to find it — and it is
+    /// not counted, the same rule the totals, the trends and the records keep.
     public var title: String {
-        heading.isEmpty ? "" : "\(heading) · \(LibraryListing.sessionCount(rows.count))"
+        heading.isEmpty ? "" : "\(heading) · \(LibraryListing.sessionCount(rows))"
     }
 }
 
@@ -339,6 +344,27 @@ public enum LibraryListing {
     /// **"9 sessions"**, "1 session".
     public static func sessionCount(_ n: Int) -> String {
         "\(n) session\(n == 1 ? "" : "s")"
+    }
+
+    /// **"9 sessions"** over a list of rows — counting the ones that *are* sessions.
+    ///
+    /// The list and the count answer two different questions, and since engine 0.19.0 they
+    /// can disagree: the list shows every recording the rider has, the count says how many
+    /// afternoons he rode. Jan's library read "44 sessions" on 14 September 2026 with
+    /// thirteen 0:00–0:24 min test recordings inside the number.
+    public static func sessionCount(_ rows: [SessionRow]) -> String {
+        sessionCount(riddenCount(rows))
+    }
+
+    /// How many of these rows are sessions — the count every "N sessions" line should show.
+    ///
+    /// A provisional row is one too: the watch says the afternoon happened, and the rider
+    /// counting his week does not care that its recording is still in the air. What is not
+    /// counted is a recording the engine says was never a session (`SessionRow.isSession`,
+    /// docs/algorithms.md "Not a session"); a provisional row's own `no_recording` verdict is
+    /// therefore read past here, and only here.
+    public static func riddenCount(_ rows: [SessionRow]) -> Int {
+        rows.filter { $0.isSession || $0.isProvisional }.count
     }
 
     /// The calendar day a session belongs to, on **its own** clock where it recorded one

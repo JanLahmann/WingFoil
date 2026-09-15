@@ -87,7 +87,15 @@ extension SessionRow {
     /// "the FIT has not arrived".
     ///
     /// `engineVersion` stays nil for the same reason: no engine produced these numbers.
+    ///
+    /// And for the same reason the row is **not a session yet** (`no_recording`, engine
+    /// 0.19.0): a card is the watch's word that an afternoon happened, and until its
+    /// recording lands there is nothing for a total, a trend or a record to be measured on.
+    /// The moment the FIT arrives, `apply(_ analysis:)` writes the engine's own verdict over
+    /// this one — and on every session actually ridden that verdict is "a session".
     mutating func apply(_ card: CompanionSummary) {
+        isSession = false
+        notASessionReason = SessionVerdict.Reason.noRecording.rawValue
         distanceKm = card.distanceM / 1000
         foilPct = card.foilPct
         foilTimeS = card.foilTimeS

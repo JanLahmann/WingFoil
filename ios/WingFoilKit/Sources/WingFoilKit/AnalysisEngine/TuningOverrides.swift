@@ -337,7 +337,7 @@ extension TuningOverrides: Codable {
 ///
 /// **And each set is its own staleness key.** The fingerprint that rides in `engineVersion` is
 /// the fingerprint of *that discipline's* set, composed inside the discipline stamp
-/// (`0.18.0+disc.windsurfFin+tuned.2.a1b2c3d4`), so a fin slider marks fin sessions stale and
+/// (`0.19.0+disc.windsurfFin+tuned.2.a1b2c3d4`), so a fin slider marks fin sessions stale and
 /// leaves every wingfoil session on the number it was already analysed with. That is the whole
 /// point of the split, and `TuningOverrideSetsTests` asserts it.
 public struct TuningOverrideSets: Sendable, Equatable {

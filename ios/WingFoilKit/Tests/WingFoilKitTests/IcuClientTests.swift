@@ -202,7 +202,7 @@ import ZIPFoundation
     @Test func buildsReadableArchiveFilenames() {
         let activity = IcuActivity(id: "i86544321", name: "Nago-Torbole Windsurfen")
         #expect(IcuSyncService.filename(for: activity)
-                == "i86544321_nago-torbole-windsurfen_icu.fit")
+                == "i86544321_Nago-Torbole-Windsurfen_icu.fit")
         #expect(IcuSyncService.filename(for: IcuActivity(id: "i1", name: "  "))
                 == "i1_session_icu.fit")
     }

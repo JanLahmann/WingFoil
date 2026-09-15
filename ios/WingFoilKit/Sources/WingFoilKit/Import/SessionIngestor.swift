@@ -110,8 +110,12 @@ public struct SessionIngestor: Sendable {
 
     /// Sports we accept during bulk (ZIP) import. Everything else needs our developer
     /// fields to qualify — Jan's CIQ recordings land as `walking`.
+    /// Compared lower-cased, which is why Strava's `sport_type` spellings sit here beside
+    /// the FIT's: since engine 0.19.0 a GPX's `<trk><type>` reaches `caps.sport`, and
+    /// Strava calls the same afternoon `Windsurf` where a Garmin calls it `windsurfing`.
     public static let watersportSports: Set<String> = [
         "windsurfing", "kitesurfing", "sailing", "surfing", "stand_up_paddleboarding",
+        "windsurf", "kitesurf", "sail", "standuppaddling", "wingfoil",
         "43", "44",
     ]
 
@@ -591,6 +595,11 @@ public struct SessionIngestor: Sendable {
         _ = try await database.writer.write { db -> Void in
             try SessionRow.deleteOne(db, key: id)
             try stone?.insert(db)
+            // `session.spotId` carries no foreign key, so the last session leaving a place
+            // would otherwise leave the place behind: "Spot 2 · 0 · Never sailed", a phantom
+            // of a session the rider deleted on purpose. Same write, so the two facts are
+            // never apart (docs/presentation.md, "Spots").
+            try SpotClusterer.pruneEmptySpots(db: db)
         }
         archive.delete(id: id)
     }

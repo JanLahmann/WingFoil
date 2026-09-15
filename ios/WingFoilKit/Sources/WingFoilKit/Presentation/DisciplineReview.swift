@@ -55,8 +55,11 @@ public enum DisciplineReview {
                                dismissed: Set<String> = [],
                                windsurfEnabled: Bool = true) -> [SessionRow] {
         guard windsurfEnabled else { return [] }
+        // A recording that is not a session (engine 0.19.0) is out for the provisional row's
+        // reason one step along: asking which rig a thirty-second beach recording was made
+        // on is a question about nothing, and its answer would change no number.
         return rows.filter {
-            $0.disciplineGuessed && !$0.isExample && !$0.isProvisional
+            $0.disciplineGuessed && !$0.isExample && !$0.isProvisional && $0.isSession
                 && !dismissed.contains($0.id)
         }
         .sorted { $0.startDate > $1.startDate }

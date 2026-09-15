@@ -95,6 +95,10 @@ public enum GpxSessionParser {
         caps.hasSpeed = false
         caps.hasPosition = true
         caps.hasHR = points.contains { $0.hr != nil }
+        // What the exporter called the activity (`<trk><type>`). Strava's `sport_type`
+        // arrives here; a GPX that says nothing keeps `nil`, which the Recording card reads
+        // as "Unknown" — the honest answer for a file that did not say.
+        caps.sport = c.type
 
         // The projection every derived speed is measured in — the centroid of the whole
         // track, exactly as `TrackCleaner` picks its origin.
@@ -194,6 +198,14 @@ public enum GpxSessionParser {
         /// Every UTC offset a timestamp *stated* (a `Z` states none). The first wins:
         /// the clock a session is read on is the one it started on.
         var statedOffsets: [Int] = []
+        /// `<trk><type>` — GPX 1.1's activity type, the first track's only.
+        ///
+        /// Strava's `sport_type` travels in it (`StravaImport.gpx` writes it), and until
+        /// engine 0.19.0 nothing read it back: every Strava import stored `sport = nil` and
+        /// the Recording card printed "sport Unknown" for an afternoon Strava had called
+        /// "Windsurf". It is provenance and nothing else — `Discipline.resolve` does not take
+        /// a sport code, and must not (ADR-004).
+        var type: String?
 
         private var current: [Point] = []
         private var lat: Double?
@@ -238,6 +250,10 @@ public enum GpxSessionParser {
             text = ""
             guard trackCount == 1 else { return }
             switch name.lowercased() {
+            case "type" where !inPoint:
+                // `<trk><type>`, not a `<trkpt>` child and not `<metadata>`'s: the guards
+                // are `trackCount == 1` above and `!inPoint` here.
+                if type == nil, !trimmed.isEmpty { type = trimmed }
             case "ele" where inPoint:
                 ele = Double(trimmed)
             case "hr", "heartrate":
