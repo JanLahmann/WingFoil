@@ -95,6 +95,18 @@ struct SessionRowView: View {
                         .foregroundStyle(Color.blue)
                 }
 
+                // A recording that is not a session says so, quietly, and stays in the list
+                // (docs/presentation.md, "Not a session"). Nothing is deleted and nothing is
+                // hidden — it is simply out of the totals, and this is where the rider finds
+                // out why the row he can see is not in the number he is reading. A
+                // provisional row already carries its own blue note above, and one row does
+                // not need two ways of saying "not yet".
+                if !row.isSession, !row.isProvisional {
+                    Text(NotASessionNote.tag)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
                 HStack(spacing: 12) {
                     metric("figure.wave", Fmt.pct(row.foilPct), "foil")
                     metric("arrow.triangle.turn.up.right.diamond",

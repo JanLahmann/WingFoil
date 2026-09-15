@@ -187,7 +187,61 @@ public enum AnalysisEngine {
     /// it every turn gains `outcomeReason` — `stop` | `off_foil` | `submerged` |
     /// `pumped_marginal`, nil on a fly-through — so the page can say *why* in one line
     /// (`TurnAnalytics.outcomeText`) instead of leaving the rider to read `stoppedS`.
-    public static let version = "0.18.0"
+    ///
+    /// 0.19.0 says **whether a recording is a session at all** — `summary.isSession` and
+    /// `summary.notASessionReason` (docs/algorithms.md "Not a session", `SessionVerdict`).
+    /// A recording with no foil time in it that is either shorter than 120 s or covers less
+    /// than 200 m is the one a rider starts on the beach and stops again; Jan's library held
+    /// thirteen of them on 13–14 September 2026, 0:00–0:24 min and 0.0 km each, and every one
+    /// of them counted in the totals, pulled the Trends "on foil" line to zero and added
+    /// itself to "44 sessions". Nothing pre-existing moves and no fixture in the corpus is
+    /// one — the shortest is 59 s and spent 30 of them flying — but the two keys are a schema
+    /// change, and a 0.18.0 document cannot answer the question at all.
+    public static let version = "0.19.0"
+}
+
+/// **Is this recording a session?** — docs/algorithms.md "Not a session" (engine 0.19.0).
+///
+/// One rule, three implementations: `wingfoil_lab.goldens.session_verdict`,
+/// `web/lab_bundle/library.py`'s `session_verdict`, and this. A recording is **not** a
+/// session when it holds no foil time at all **and** it is either shorter than
+/// ``maxDurationS`` or covers less than ``maxDistanceM``.
+///
+/// The first conjunct does nearly all the work, and the two floors only ever qualify it.
+/// That is the point: a *skunked* afternoon — an hour of pumping in no wind, two kilometres
+/// of it, never once up on the foil — is a session, and the rider's own memory of it says
+/// so. What is not a session is the thirty seconds he recorded on the beach and stopped
+/// again. The verdict is a **label and never a deletion**: the row, the page and the map
+/// stay; the recording is only kept out of the counts, trends, records, period and gear
+/// totals that describe riding (docs/presentation.md "Not a session").
+public enum SessionVerdict: Sendable {
+    /// The duration floor, seconds. Generous on purpose — it is unreachable for any
+    /// recording in which the rider flew, so it never has to protect one.
+    public static let maxDurationS: Double = 120
+    /// The distance floor, metres. Same conjunction, same reasoning.
+    public static let maxDistanceM: Double = 200
+
+    /// Why a recording is not a session — a code, never a sentence. The words live in
+    /// presentation (`NotASessionNote`).
+    public enum Reason: String, Sendable, Codable, CaseIterable {
+        /// No foil time, and shorter than ``maxDurationS``.
+        case tooShort = "too_short"
+        /// No foil time, and less than ``maxDistanceM`` covered.
+        case noDistance = "no_distance"
+        /// A provisional card-only row: the watch said an afternoon happened and its
+        /// recording has not arrived yet. Never produced by the engine — it belongs to a
+        /// library row that has no analysis behind it at all.
+        case noRecording = "no_recording"
+    }
+
+    /// The verdict for one analyzed recording.
+    public static func of(foilTimeS: Double, durationS: Double,
+                          distanceM: Double) -> (isSession: Bool, reason: Reason?) {
+        if foilTimeS > 0 { return (true, nil) }
+        if durationS < maxDurationS { return (false, .tooShort) }
+        if distanceM < maxDistanceM { return (false, .noDistance) }
+        return (true, nil)
+    }
 }
 
 /// Session-rate parameters (docs/algorithms.md "Session rates"). Mirrors the lab's
@@ -1163,6 +1217,13 @@ public struct SessionWindowRates: Sendable, Codable, Equatable {
 }
 
 public struct SessionSummary: Sendable, Codable, Equatable {
+    /// Is this recording a session at all (engine 0.19.0, `SessionVerdict`)? True for every
+    /// recording in which the rider flew, and for every skunked afternoon long enough or far
+    /// enough to have been one. A stored 0.18.0 document decodes as `true` — such a row is
+    /// stale by `engineVersion` and `reanalyzeStale()` re-derives it.
+    public var isSession: Bool = true
+    /// Why not, when not — a code, never a sentence; nil exactly when `isSession`.
+    public var notASessionReason: SessionVerdict.Reason?
     public var foilTimeS: Double
     public var foilPct: Double
     public var flightCount: Int
@@ -1206,6 +1267,7 @@ public struct SessionSummary: Sendable, Codable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
+        case isSession, notASessionReason
         case foilTimeS, foilPct, flightCount, longestFlightS, maxFlightM, distanceKm
         case durationS, timerTimeS, avgSpeedKmh, turnsPerHour, jibesPerHour
         case cleanJibesPerHour, wetPerHour, windowRates, turns, flightEnds
@@ -1216,6 +1278,12 @@ public struct SessionSummary: Sendable, Codable, Equatable {
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        // 0.19.0. Absent on every older document, which reads as "a session" — the honest
+        // default for a reader that was never asked the question, and one such a row carries
+        // only until `reanalyzeStale()` reaches it.
+        isSession = try c.decodeIfPresent(Bool.self, forKey: .isSession) ?? true
+        notASessionReason = try c.decodeIfPresent(SessionVerdict.Reason.self,
+                                                  forKey: .notASessionReason)
         foilTimeS = try c.decode(Double.self, forKey: .foilTimeS)
         foilPct = try c.decode(Double.self, forKey: .foilPct)
         flightCount = try c.decode(Int.self, forKey: .flightCount)
@@ -1246,6 +1314,8 @@ public struct SessionSummary: Sendable, Codable, Equatable {
 
     public func encode(to encoder: any Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(isSession, forKey: .isSession)
+        try c.encode(notASessionReason, forKey: .notASessionReason)   // explicit null
         try c.encode(foilTimeS, forKey: .foilTimeS)
         try c.encode(foilPct, forKey: .foilPct)
         try c.encode(flightCount, forKey: .flightCount)
@@ -1481,6 +1551,13 @@ public enum SessionSummarizer {
                                                  startT: clean.samples.first?.t ?? 0,
                                                  durationS: clean.spanS,
                                                  config: ratesConfig)
+        // Is this a session at all (engine 0.19.0, docs/algorithms.md "Not a session")?
+        // Read off the summary's own three numbers, after the rates have filled `durationS`.
+        let verdict = SessionVerdict.of(foilTimeS: summary.foilTimeS,
+                                        durationS: summary.durationS,
+                                        distanceM: records.totalDistanceM)
+        summary.isSession = verdict.isSession
+        summary.notASessionReason = verdict.reason
 
         var pumpsByFlight = [Int?](repeating: nil, count: segmentation.flights.count)
         for t in takeoffs.takeoffs where segmentation.flights.indices.contains(t.flightIndex) {

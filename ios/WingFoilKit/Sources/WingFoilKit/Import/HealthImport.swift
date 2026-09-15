@@ -215,12 +215,20 @@ public enum HealthImport {
     }
 
     /// The filename the archive and the import log show for one imported workout.
+    ///
+    /// The `_` matters: `SessionNaming.derivedTitle(fromFilename:)` reads the middle
+    /// `_`-part as the name, and a stem with no separator in it was read whole —
+    /// `2026-08-30-1407-health` came out as **"08 30 Health"**, because the four-digit filter
+    /// drops the year and the clock and leaves the month and the day looking like words. A
+    /// health workout carries no name from anywhere (the store has none to give), so the
+    /// honest derived title is the sport word this app is about.
     public static func filename(start: Date, utcOffsetS: Int?) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd-HHmm"
         formatter.timeZone = utcOffsetS.flatMap { TimeZone(secondsFromGMT: $0) } ?? .current
-        return "\(formatter.string(from: start))-health.\(WatchSessionContainer.fileExtension)"
+        return "\(formatter.string(from: start))_\(SessionNaming.sport.lowercased())"
+            + "_health.\(WatchSessionContainer.fileExtension)"
     }
 
     // MARK: - Internals

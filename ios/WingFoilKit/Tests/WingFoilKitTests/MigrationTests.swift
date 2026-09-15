@@ -172,8 +172,8 @@ import Testing
         }
         #expect(columns.isSuperset(of: ["longestDryStreak", "longestFlewStreak"]))
         #expect(stale == harness.v1Ids.count)
-        #expect(AppDatabase.migrationNames.last == "v15")
-        #expect(AppDatabase.schemaVersion == 15)
+        #expect(AppDatabase.migrationNames.last == "v16")
+        #expect(AppDatabase.schemaVersion == 16)
 
         _ = try await harness.ingestor.reanalyzeStale()
         for session in try await harness.ingestor.allSessions() {
@@ -357,7 +357,7 @@ import Testing
         let queue = try DatabaseQueue()
         _ = try AppDatabase(queue)
         try queue.write { db in
-            try db.execute(sql: "INSERT INTO grdb_migrations (identifier) VALUES ('v16')")
+            try db.execute(sql: "INSERT INTO grdb_migrations (identifier) VALUES ('v17')")
             // …and the pragma deliberately left where this build wrote it, so the applied
             // list is the only thing that can raise the alarm.
             try db.execute(sql: "PRAGMA user_version = \(AppDatabase.schemaVersion)")

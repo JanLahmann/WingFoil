@@ -526,3 +526,70 @@ def test_a_friends_afternoon_is_in_nobodys_holiday():
     ps = library.periods([mine, theirs, demo])
     assert ps["trips"] == []
     assert ps["months"][0]["sessionIds"] == ["mine"]
+
+
+# ------------------------------------------------- "not a session" (engine 0.19.0, schema 10)
+
+
+def test_the_not_a_session_rule_is_the_engines_and_this_module_repeats_it():
+    """The web twin of `wingfoil_lab.goldens.session_verdict` and the kit's `SessionVerdict`.
+
+    It exists here as well because a library holds rows written by older engines, and a
+    stored digest is all `library.py` ever gets to see of them.
+    """
+    assert library.NOT_A_SESSION_MAX_DURATION_S == 120.0
+    assert library.NOT_A_SESSION_MAX_DISTANCE_M == 200.0
+    # The shape Jan's library filled up with: started on the beach, stopped again.
+    assert library.session_verdict(0.0, 24.0, 0.0) == (False, "too_short")
+    # Long enough, and the recorder never went anywhere.
+    assert library.session_verdict(0.0, 1800.0, 12.0) == (False, "no_distance")
+    # `<` on both floors, so the boundary value itself is a session.
+    assert library.session_verdict(0.0, 120.0, 200.0) == (True, None)
+    # The skunked afternoon the conjunction exists to protect.
+    assert library.session_verdict(0.0, 4800.0, 2100.0) == (True, None)
+    # Any foil time at all settles it first.
+    assert library.session_verdict(0.1, 1.0, 0.0) == (True, None)
+
+
+def test_a_stored_row_is_read_when_it_can_answer_and_re_derived_when_it_cannot():
+    stamped = entry("a", "2026-08-01", 1.0, isSession=False, notASessionReason="too_short")
+    assert library.entry_is_session(stamped) == (False, "too_short")
+    # Schema 9 and older: no key, so the same rule is re-derived from the numbers the row
+    # already carries. This is the one metric in `library.py` that is recomputed rather than
+    # read, and deliberately -- else a library's oldest junk never leaves its totals.
+    old = entry("b", "2026-08-02", 2.0, foilTimeS=0.0, rateDurationS=24.0, distanceKm=0.0)
+    assert library.entry_is_session(old) == (False, "too_short")
+    old_skunked = entry("c", "2026-08-03", 3.0, foilTimeS=0.0, rateDurationS=4800.0,
+                        distanceKm=2.1)
+    assert library.entry_is_session(old_skunked) == (True, None)
+    # An absence is not a verdict: a row carrying none of the three numbers is not judged.
+    assert library.entry_is_session({"id": "x"}) == (True, None)
+
+
+def test_a_recording_that_is_not_a_session_counts_in_nothing():
+    mine = entry("mine", "2026-08-01", 1.0)
+    junk = entry("junk", "2026-08-02", 2.0, foilTimeS=0.0, rateDurationS=24.0,
+                 distanceKm=0.0, isSession=False, notASessionReason="too_short")
+    agg = library.aggregate([mine, junk])
+    assert agg["count"] == 1
+    assert agg["totals"]["sessions"] == 1
+    assert [s["id"] for s in agg["trends"]["sessions"]] == ["mine"]
+    # Periods and a typed range read the same rule, at their own entry points.
+    assert library.periods([mine, junk])["months"][0]["sessionIds"] == ["mine"]
+    assert library.custom_period([mine, junk], None, None)["sessionIds"] == ["mine"]
+
+
+def test_the_digest_carries_the_engines_verdict():
+    doc = {"golden": {"summary": {"isSession": False, "notASessionReason": "no_distance",
+                                  "foilTimeS": 0.0, "durationS": 1800.0,
+                                  "distanceKm": 0.012}},
+           "meta": {"startUtc": "2026-09-14T08:00:00Z"}}
+    d = library.digest(doc, "junk.fit")
+    assert d["schema"] == library.SCHEMA == 10
+    assert (d["isSession"], d["notASessionReason"]) == (False, "no_distance")
+    # A document from an older engine carries no keys, so the digest derives them.
+    older = {"golden": {"summary": {"foilTimeS": 0.0, "durationS": 24.0, "distanceKm": 0.0}},
+             "meta": {"startUtc": "2026-09-14T08:00:00Z"}}
+    older_digest = library.digest(older, "junk2.fit")
+    assert (older_digest["isSession"], older_digest["notASessionReason"]) \
+        == (False, "too_short")

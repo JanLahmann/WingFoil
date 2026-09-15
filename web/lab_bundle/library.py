@@ -75,7 +75,21 @@ from datetime import datetime, timedelta, timezone
 # displayed duration is T1, every rate denominator is timer time.** Null on a row written
 # before it, where `_timer_s` falls back to `rateDurationS` — elapsed, the closest stored
 # clock, and the number those rows were already divided by.
-SCHEMA = 9
+# v10 (15 Sep 2026, engine 0.19.0) carries the engine's own answer to "is this a session at
+# all" — `isSession` and `notASessionReason` (docs/algorithms.md "Not a session"). A recording
+# with no foil time in it that is either under 120 s or under 200 m is the one a rider starts
+# on the beach and stops again, and until now it counted in every total, dragged the "on foil"
+# trend to zero and added itself to the library's session count. Absent on a row written
+# before it, where `is_session` falls back to re-deriving the same rule from the numbers the
+# digest already carried (`foilTimeS`, `rateDurationS`, `distanceKm`) — the one metric in this
+# module that *is* recomputed for an old row, because the alternative is a stored library
+# whose oldest junk never leaves the totals.
+SCHEMA = 10
+
+# "Not a session" — the two floors (docs/algorithms.md "Not a session"). Only ever consulted
+# for a recording with no foil time at all, which is why they can be set generously.
+NOT_A_SESSION_MAX_DURATION_S = 120.0
+NOT_A_SESSION_MAX_DISTANCE_M = 200.0
 
 # The project-wide "same session" rule, in one place: a session start within +/-60 s AND a
 # duration within +/-60 s of an existing entry is the same session recorded twice (watch
@@ -317,6 +331,65 @@ def _geo(doc) -> dict | None:
     return {"lat": round(lat, 6), "lon": round(lon, 6)}
 
 
+def session_verdict(foil_time_s, duration_s, distance_m) -> tuple:
+    """`(is_session, reason)` — docs/algorithms.md "Not a session", engine 0.19.0.
+
+    The Python twin of `wingfoil_lab.goldens.session_verdict` and of the kit's
+    `SessionVerdict.of`. A recording is **not** a session when it holds no foil time at all
+    AND is either shorter than `NOT_A_SESSION_MAX_DURATION_S` or covers less than
+    `NOT_A_SESSION_MAX_DISTANCE_M`. The first conjunct does nearly all the work: a skunked
+    afternoon — an hour of pumping in no wind, never once up — is a session and stays one.
+
+    It lives here as well as in the engine because a library holds rows written by older
+    engines, and a stored digest is all this module ever gets to see of them.
+    """
+    foil = _num(foil_time_s) or 0.0
+    if foil > 0:
+        return True, None
+    if (_num(duration_s) or 0.0) < NOT_A_SESSION_MAX_DURATION_S:
+        return False, "too_short"
+    if (_num(distance_m) or 0.0) < NOT_A_SESSION_MAX_DISTANCE_M:
+        return False, "no_distance"
+    return True, None
+
+
+#: The keys `session_verdict` is derived from, when the document or row does not carry the
+#: engine's own answer. **An entry carrying none of them is not judged**: an absence is not a
+#: verdict, and a zero read off a missing key would call an unmeasured row junk. Same rule as
+#: the Swift decode's `?? true`.
+_VERDICT_INPUTS = ("foilTimeS", "rateDurationS", "durationS", "distanceKm")
+
+
+def _doc_is_session(summ: dict) -> tuple:
+    """The verdict for one analysis document's `summary` block, engine-stamped or derived."""
+    if summ.get("isSession") is not None:
+        return bool(summ["isSession"]), summ.get("notASessionReason")
+    if not any(summ.get(k) is not None for k in _VERDICT_INPUTS):
+        return True, None
+    return session_verdict(summ.get("foilTimeS"), summ.get("durationS"),
+                           (_num(summ.get("distanceKm")) or 0.0) * 1000.0)
+
+
+def entry_is_session(entry: dict) -> tuple:
+    """The verdict for a **stored** entry, whatever schema wrote it.
+
+    Schema 10 carries the engine's own answer. An older row is re-derived from the three
+    numbers it already holds — `foilTimeS`, `rateDurationS` (T1, falling back to the stored
+    `durationS`) and `distanceKm`. This is the one metric in this module that is recomputed
+    rather than read, and deliberately: the alternative is a library whose oldest junk never
+    leaves its totals.
+    """
+    if entry.get("isSession") is not None:
+        return bool(entry["isSession"]), entry.get("notASessionReason")
+    if not any(entry.get(k) is not None for k in _VERDICT_INPUTS):
+        return True, None
+    duration = entry.get("rateDurationS")
+    if duration is None:
+        duration = entry.get("durationS")
+    return session_verdict(entry.get("foilTimeS"), duration,
+                           (_num(entry.get("distanceKm")) or 0.0) * 1000.0)
+
+
 def digest(doc, file_name: str | None = None) -> dict:
     """Analysis document (dict or JSON text) -> the compact entry the library stores."""
     doc = _as_doc(doc)
@@ -359,6 +432,12 @@ def digest(doc, file_name: str | None = None) -> dict:
         # 21:30 UTC session on the *previous* day two months of the year, and a trend
         # bucketed on `dateUtc` would file that evening under the day before it happened.
         "dateLocal": _local_date(start_epoch, meta.get("utcOffsetS")),
+        # Is this a session at all (engine 0.19.0, schema 10)? Copied from the engine when
+        # the document carries it — same rule as `cleanJibesPerHour` — and derived from the
+        # summary's own numbers when it does not, so a document analyzed by an older engine
+        # still gets the right answer without being re-run.
+        "isSession": _doc_is_session(summ)[0],
+        "notASessionReason": _doc_is_session(summ)[1],
         "distanceKm": _num(summ.get("distanceKm")),
         "foilPct": _num(summ.get("foilPct")),
         "foilTimeS": _num(summ.get("foilTimeS")),
@@ -494,17 +573,22 @@ def dedupe_match_json(new_json: str, existing_json: str) -> str:
 def counts_towards_records(entry) -> bool:
     """Is this stored entry one of the reader's *own* sessions?
 
-    Two things in the library are shown in full and counted in nothing:
+    Three things in the library are shown in full and counted in nothing:
 
       * the bundled example (`example: true`) — a demonstration nobody in front of this
         browser rode, loaded by the "try the example session" button;
       * a session someone else rode (`rider: "<name>"`) — a FIT a friend sent, scrubbed
-        and identity-free by design, so attribution is the receiver's to state.
+        and identity-free by design, so attribution is the receiver's to state;
+      * a recording that is **not a session** (`isSession: false`, engine 0.19.0,
+        docs/algorithms.md "Not a session") — the thirty seconds a rider records on the
+        beach and stops again. Never deleted, never hidden: it keeps its row and its page,
+        and it is kept out of every number that describes riding.
 
-    Both are stated at save time by `js/store.js` and stored beside the digest, because
-    nothing in a FIT could say either. Neither field exists on an entry written before
-    schema 2: **missing reads as the reader's own, not example**, so nobody's saved
-    library changes meaning under them.
+    The first two are stated at save time by `js/store.js` and stored beside the digest,
+    because nothing in a FIT could say either. Neither field exists on an entry written
+    before schema 2: **missing reads as the reader's own, not example**, so nobody's saved
+    library changes meaning under them. The third is the engine's (`entry_is_session`), and
+    is re-derived for a row written before schema 10.
 
     This is the one condition, and it is applied in exactly one place — `aggregate`,
     below — so the records table, the totals block and every trend chart honour it
@@ -513,6 +597,8 @@ def counts_towards_records(entry) -> bool:
     if not isinstance(entry, dict):
         return False
     if entry.get("example"):
+        return False
+    if not entry_is_session(entry)[0]:
         return False
     rider = entry.get("rider")
     return rider is None or not str(rider).strip()

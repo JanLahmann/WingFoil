@@ -301,7 +301,7 @@ import Testing
         }
         #expect(row.icuActivityId == "i86544321")
         #expect(row.importSource == "icu")
-        #expect(row.originalFilename == "i86544321_nago-torbole-windsurfen_icu.fit")
+        #expect(row.originalFilename == "i86544321_Nago-Torbole-Windsurfen_icu.fit")
 
         // The notification path and the manual sync must not be able to import twice.
         guard case .duplicate = try await service.fetchOne(activity) else {

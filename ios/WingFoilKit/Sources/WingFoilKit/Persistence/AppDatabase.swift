@@ -116,7 +116,7 @@ public struct AppDatabase: Sendable {
     /// Every migration this build knows, oldest first — the migration test asserts a v1
     /// database moves through all of them.
     public static let migrationNames = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
-                                        "v10", "v11", "v12", "v13", "v14", "v15"]
+                                        "v10", "v11", "v12", "v13", "v14", "v15", "v16"]
 
     /// The schema version this build writes — the `N` of the last `vN` migration.
     ///
@@ -440,6 +440,46 @@ public struct AppDatabase: Sendable {
             try db.alter(table: "session") { t in
                 t.add(column: "disciplineGuessed", .boolean).notNull().defaults(to: false)
             }
+        }
+
+        // v16: **is this recording a session at all?** (docs/algorithms.md "Not a session",
+        // engine 0.19.0, `SessionVerdict`).
+        //
+        // A column rather than a predicate over three others, because the question is asked
+        // in SQL — `LibraryStore.clause` is the one place trends, records, periods and the
+        // gear totals are filtered, and it can only ask what a column says. The engine is
+        // still the author: `SessionRow.apply(_:)` writes `summary.isSession` over whatever
+        // this migration seeded.
+        //
+        // The seed re-derives the rule from the three columns the row already carries, so a
+        // library's junk leaves the totals at the migration rather than when re-analysis
+        // finally reaches that row. `foilTimeS` is nullable (schema v2) and a NULL reads as
+        // "no foil time", which for a row that predates the column is the same statement the
+        // percentage makes. The `engineVersion = NULL` sweep behind it is the usual one: the
+        // engine bumped to 0.19.0, so every row is stale anyway and will be re-derived.
+        migrator.registerMigration("v16") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "isSession", .boolean).notNull().defaults(to: true)
+                t.add(column: "notASessionReason", .text)
+            }
+            try db.execute(sql: """
+                UPDATE session
+                   SET isSession = 0,
+                       notASessionReason = CASE
+                           WHEN COALESCE(rateDurationS, durationS, 0) < :maxDurationS
+                               THEN 'too_short' ELSE 'no_distance' END
+                 WHERE COALESCE(foilTimeS, 0) <= 0
+                   AND (COALESCE(rateDurationS, durationS, 0) < :maxDurationS
+                        OR COALESCE(distanceKm, 0) * 1000.0 < :maxDistanceM)
+                """, arguments: ["maxDurationS": SessionVerdict.maxDurationS,
+                                 "maxDistanceM": SessionVerdict.maxDistanceM])
+            try db.execute(sql: "UPDATE session SET engineVersion = NULL")
+            // And the same housekeeping one migration late: a spot exists because sessions
+            // were recorded there, and until this build deleting the last of them left the
+            // place behind ("Spot 1 · 0 · Never sailed"). New orphans cannot be created any
+            // more (`SpotClusterer.pruneEmptySpots` runs with the delete and the re-cluster);
+            // the ones a library already carries go here, once.
+            try SpotClusterer.pruneEmptySpots(db: db)
         }
         return migrator
     }
@@ -904,6 +944,28 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     /// clears it too, because both are him having looked.
     public var disciplineGuessed = false
 
+    // MARK: schema v16
+    /// **Is this recording a session at all?** (docs/algorithms.md "Not a session",
+    /// `SessionVerdict`.) The engine's own verdict, copied by `apply(_:)`; true on every row
+    /// a rider ever rode, and on every skunked afternoon.
+    ///
+    /// It is a column because `LibraryStore.clause` is the one place trends, records,
+    /// periods and the gear totals are filtered, and a `WHERE` can only ask what a column
+    /// says. **Never a reason to hide or delete the row**: the list still shows it, the page
+    /// still opens, the map still draws. It is kept out of the numbers that describe riding
+    /// and nothing else.
+    public var isSession = true
+    /// Why not, when not — `SessionVerdict.Reason.rawValue`, nil exactly when `isSession`.
+    /// A provisional card-only row carries `no_recording`, which no engine ever writes: the
+    /// watch said an afternoon happened and its recording has not arrived (`ingestProvisional`).
+    public var notASessionReason: String?
+
+    /// The reason as the enum, for a caller that wants to switch on it rather than match a
+    /// string. Nil when the row is a session, and nil for a code this build does not know.
+    public var sessionVerdictReason: SessionVerdict.Reason? {
+        notASessionReason.flatMap(SessionVerdict.Reason.init(rawValue:))
+    }
+
     /// `startUtcOffsetSource` as the closed vocabulary, or nil for "unrecorded" — which
     /// includes a stored string this version has never heard of.
     public var utcOffsetSource: UtcOffsetSource? {
@@ -1009,6 +1071,11 @@ public struct SessionRow: Codable, FetchableRecord, PersistableRecord, Sendable,
     public mutating func apply(_ analysis: SessionAnalysis) {
         engineVersion = analysis.engineVersion
         let s = analysis.summary
+        // The engine's verdict, never re-derived here (engine 0.19.0). A provisional row is
+        // not analysed at all, so its `no_recording` is written where it is decided and is
+        // overwritten the moment a recording arrives and this runs.
+        isSession = s.isSession
+        notASessionReason = s.notASessionReason?.rawValue
         distanceKm = s.distanceKm
         foilPct = s.foilPct
         foilTimeS = s.foilTimeS

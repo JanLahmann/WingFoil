@@ -115,6 +115,111 @@ public enum SessionNaming {
             .joined(separator: " ")
     }
 
+    /// **An external activity name, as the middle part of an archived filename.**
+    /// `"Wingfoil am Nachmittag"` → `"Wingfoil-am-Nachmittag"`.
+    ///
+    /// Non-alphanumerics collapse to a single `-`, the result is capped at 40 characters and
+    /// never ends in a dash. **Case is kept.** The filename is the only place the source's
+    /// own name survives — no importer writes `customTitle`, which belongs to the rider —
+    /// and `derivedTitle(fromFilename:)` reads it straight back out, so lower-casing here
+    /// destroyed the one thing that told the title rule whose capitalisation it was looking
+    /// at. That is how Strava's "Wingfoil am Nachmittag" reached the library as "Wingfoil Am
+    /// Nachmittag".
+    public static func activityNameSlug(_ name: String?) -> String {
+        var slug = ""
+        var lastWasDash = true
+        for character in name ?? "" where true {
+            if character.isLetter || character.isNumber {
+                slug.append(character)
+                lastWasDash = false
+            } else if !lastWasDash {
+                slug.append("-")
+                lastWasDash = true
+            }
+        }
+        slug = String(slug.prefix(40))
+        while slug.hasSuffix("-") { slug.removeLast() }
+        return slug.isEmpty ? "session" : slug
+    }
+
+    /// **The name a session gets from the filename its recording arrived under.**
+    /// `"2026-08-03-1440_nago-torbole-windsurfen_native.fit"` → `"Nago Torbole Wingfoil"`;
+    /// `"14123456789_Wingfoil-am-Nachmittag_strava.gpx"` → `"Wingfoil am Nachmittag"`.
+    ///
+    /// A guess made out of a filename, and never a statement — `title(custom:derived:)`
+    /// prefers anything the rider typed.
+    ///
+    /// **It title-cases only a name the app itself built.** The importers write the source's
+    /// own activity name into the middle `_`-part, and an imported name is somebody else's
+    /// text: Strava's "Wingfoil am Nachmittag" and "Hallbergmoos Surfen" came back out of
+    /// this function as "Wingfoil Am Nachmittag" and "Hallbergmoos Surfen" with a capital on
+    /// every word, which is a rewrite of a name a person chose. So the rule is: **if the stem
+    /// carries any capital at all, its capitalisation is the source's and is left alone.** A
+    /// stem that is entirely lower-case carries no information to preserve — that is the
+    /// watch's `nago-torbole-windsurfen` and the app's own slug of a bare spot name — and is
+    /// the one case that gets a capital per word.
+    ///
+    /// Four-digit-or-longer all-number words are dropped, because the importers prefix the
+    /// stem with a date or an activity id and neither is part of anybody's name.
+    ///
+    /// The last step is the guess's one correction, `sportCorrected(_:)`.
+    public static func derivedTitle(fromFilename file: String?) -> String {
+        guard let file else { return "Session" }
+        var stem = (file as NSString).deletingPathExtension
+        let parts = stem.split(separator: "_")
+        if parts.count >= 2 { stem = String(parts[1]) }
+        let words = stem.replacingOccurrences(of: "-", with: " ")
+            .split(separator: " ")
+            .filter { !($0.allSatisfy(\.isNumber) && $0.count >= 4) }
+        guard !words.isEmpty else { return "Session" }
+        let sourceCased = words.contains { $0.contains(where: \.isUppercase) }
+        let title = words
+            .map { sourceCased ? String($0) : String($0.prefix(1)).uppercased() + String($0.dropFirst()) }
+            .joined(separator: " ")
+        return sportCorrected(title)
+    }
+
+    /// **What the Recording card calls the sport a session was recorded under.**
+    ///
+    /// The value is whatever the source said — a FIT sport name or number, a HealthKit type
+    /// string, or Strava's `sport_type` — and a source that said nothing at all reads as
+    /// `nil`, which is "Unknown". The five hard-coded rows are the ones whose raw spelling is
+    /// not a word a rider would recognise; everything else is **unbent**: underscores become
+    /// spaces, a run-together `CamelCase` name is split at its capitals, and the source's own
+    /// capitalisation is otherwise kept. `.capitalized` used to be applied here and turned
+    /// HealthKit's `surfingSports` into `Surfingsports`.
+    ///
+    /// This is not the discipline and must never be read as one: ADR-004 records FIT sport 43
+    /// (windsurfing) for a wingfoil afternoon. It is a line of provenance on the Recording
+    /// card, and `Discipline.resolve` does not take it as an argument.
+    public static func sportLabel(_ sport: String?) -> String {
+        let raw = (sport ?? "").trimmingCharacters(in: .whitespaces)
+        switch raw.lowercased() {
+        case "windsurfing", "windsurf", "43": return "Windsurf"
+        case "kitesurfing", "kitesurf", "44": return "Kitesurf"
+        case "sailing", "sail", "32": return "Sailing"
+        case "stand_up_paddleboarding", "standuppaddling", "sup": return "SUP"
+        case "walking", "walk", "11": return "CIQ app"
+        case "": return "Unknown"
+        default: return splitWords(raw)
+        }
+    }
+
+    /// `"surfingSports"` → `"surfing Sports"`, `"stand_up"` → `"stand up"`, `"Windsurf"` →
+    /// `"Windsurf"`. Separators only — no letter's case is changed.
+    static func splitWords(_ raw: String) -> String {
+        var out = ""
+        var previous: Character?
+        for character in raw.replacingOccurrences(of: "_", with: " ") {
+            if character.isUppercase, let previous, previous != " ", !previous.isUppercase {
+                out.append(" ")
+            }
+            out.append(character)
+            previous = character
+        }
+        return out
+    }
+
     /// A typed title as it should be stored: trimmed, capped, and nil rather than blank.
     ///
     /// Interior whitespace is left exactly as typed. A rider who writes "First  20 kn" has
