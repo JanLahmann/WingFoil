@@ -105,15 +105,16 @@ import Testing
 
     /// The topic for the rider who owns no Garmin (ADR-017). It has one job — get him from
     /// "I have an Apple Watch" to a session in the library — so it has to name the three
-    /// steps *and* the two things he would otherwise learn by being disappointed: salt water
-    /// kills GPS, and nothing in a Health workout records his wrist.
+    /// steps *and* the two things he would otherwise learn by being disappointed: a wrist
+    /// under water is the swim evidence, not a mistake (Jan, 15 Sep 2026), and nothing in a
+    /// Health workout records his wrist.
     @Test func theAppleWorkoutTopicSaysHowToRecordAndWhatIsMissing() {
         let topic = HelpCatalog.topic(.appleWorkoutApp)
         #expect(topic.section == .setup)
         let prose = (topic.body + topic.items.flatMap { [$0.term, $0.detail] })
             .joined(separator: " ").lowercased()
         for phrase in ["surfing", "water sports", "sailing", "import", "health",
-                       "above water", "certified", "accelerometer", "automatically"] {
+                       "under water", "certified", "accelerometer", "automatically"] {
             #expect(prose.contains(phrase), "the Apple Workout topic never mentions \(phrase)")
         }
         // The promise the permission prompt is about to make, made here first.
