@@ -41,8 +41,8 @@ struct LibraryBackupSection: View {
                  + "by itself, and so does an iCloud backup. This is for the case neither "
                  + "covers: a phone set up as new, or the app deleted and installed again.\n\n"
                  + "The file holds every recording you have imported **and** what nothing "
-                 + "else can bring back — session names, captions, riders, gear, spot names, "
-                 + "and the sessions you deleted on purpose.")
+                 + "else can bring back. That is session names, captions, riders, gear, "
+                 + "spot names, and the sessions you deleted on purpose.")
         }
         .task { await store.refreshBackupEstimate() }
         .sheet(item: Binding(get: { store.restoreOffer },
@@ -84,8 +84,9 @@ struct LibraryBackupSection: View {
                 HStack {
                     ProgressView().controlSize(.small)
                     Text(progress.total > 0
-                         ? "Packing session \(min(progress.packed + 1, progress.total)) "
-                           + "of \(progress.total)…"
+                         ? "Packing session "
+                           + String(min(progress.packed + 1, progress.total))
+                           + " of " + String(progress.total) + "…"
                          : "Packing your library…")
                         .font(.footnote)
                 }
@@ -100,17 +101,20 @@ struct LibraryBackupSection: View {
             // A *file*, handed to the share sheet: this app never picks the destination.
             // iCloud Drive is the natural one and it is the rider's storage, not ours.
             ShareLink(item: file.url) {
-                Label("Save \(file.filename) · \(Fmt.bytes(file.bytes))",
+                Label("Save " + file.filename + " · " + Fmt.bytes(file.bytes),
                       systemImage: "square.and.arrow.up")
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
-            Text("\(file.manifest.sessionCount) session"
-                 + "\(file.manifest.sessionCount == 1 ? "" : "s"), "
-                 + "\(file.manifest.gearCount) gear item"
-                 + "\(file.manifest.gearCount == 1 ? "" : "s"), "
-                 + "\(file.manifest.tombstoneCount) deleted. "
-                 + "The file is temporary — save it somewhere before you leave Settings.")
+            // Built with `+` rather than interpolated: one sentence, no brackets in it.
+            let sessionCount = file.manifest.sessionCount
+            let gearCount = file.manifest.gearCount
+            let sessionNoun = sessionCount == 1 ? " session, " : " sessions, "
+            let gearNoun = gearCount == 1 ? " gear item, " : " gear items, "
+            let counts = String(sessionCount) + sessionNoun + String(gearCount) + gearNoun
+                + String(file.manifest.tombstoneCount) + " deleted."
+            Text(counts
+                 + " The file is temporary. Save it somewhere before you leave Settings.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -132,8 +136,9 @@ struct LibraryBackupSection: View {
                 HStack {
                     ProgressView().controlSize(.small)
                     Text(progress.total > 0
-                         ? "Restoring session \(min(progress.done + 1, progress.total)) "
-                           + "of \(progress.total)…"
+                         ? "Restoring session "
+                           + String(min(progress.done + 1, progress.total))
+                           + " of " + String(progress.total) + "…"
                          : "Restoring…")
                         .font(.footnote)
                 }
@@ -200,10 +205,10 @@ struct RestoreConfirmation: View {
                         .lineLimit(2)
                         .truncationMode(.middle)
                 } footer: {
-                    Text("Nothing is deleted or overwritten. Sessions you already have keep "
-                         + "their own analysis; only details you never filled in are taken "
-                         + "from the backup. Sessions you deleted after this backup stay "
-                         + "deleted.")
+                    Text("Nothing is deleted or overwritten. Sessions you already have "
+                         + "keep their own analysis. Only details you never filled in "
+                         + "are taken from the backup. Sessions you deleted after this "
+                         + "backup stay deleted.")
                 }
 
                 Section {

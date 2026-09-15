@@ -204,7 +204,7 @@ import Testing
         // The two halves come from the two existing helpers and must still agree with them.
         #expect(ReplayCommentary.startLine(place: "Torbole", startedAt: startedAt,
                                            timeZone: cest)
-                == "Torbole, 14:07 — session start")
+                == "Torbole, 14:07 · session start")
         #expect(ShareCardStats.dateLine(startedAt, timeZone: cest) == "30 August 2026")
     }
 
@@ -229,12 +229,12 @@ import Testing
         let highlights = ReplayCommentary.highlights(milestones)
 
         #expect(highlights.map(\.text) == [
-            "Top speed — 13.47 kn over 2 s",
+            "Top speed · 13.47 kn over 2 s",
             // Eight, not the three/four/five/six/seven it passed on the way there.
-            "New streak — 8 dry jibes",
+            "New streak · 8 dry jibes",
             // Collapsed with the first takeoff at the same instant, exactly as the caption
             // read when the clip played it.
-            "Flying! · Longest flight — 6:32",
+            "Flying! · Longest flight · 6:32",
         ])
         #expect(highlights.allSatisfy { milestones.contains($0) })
         // The first two are the max-2 s and streaks cells said in a sentence; the third is
@@ -247,7 +247,7 @@ import Testing
     @Test func theHighlightLimitTakesFromTheTop() throws {
         let milestones = try script()
         #expect(ReplayCommentary.highlights(milestones, limit: 2).map(\.text)
-                == ["Top speed — 13.47 kn over 2 s", "New streak — 8 dry jibes"])
+                == ["Top speed · 13.47 kn over 2 s", "New streak · 8 dry jibes"])
         #expect(ReplayCommentary.highlights(milestones, limit: 0).isEmpty)
     }
 }

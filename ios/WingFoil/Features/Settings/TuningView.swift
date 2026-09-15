@@ -107,8 +107,8 @@ struct TuningView: View {
             guard !store.sessions.isEmpty else { return }
             Task { await store.reanalyzeTuned(for: selected) }
         }
-        .confirmationDialog("Reset every \(selected.title.lowercased()) threshold to its "
-                            + "default?",
+        .confirmationDialog("Reset every " + selected.title.lowercased()
+                            + " threshold to its default?",
                             isPresented: $confirmResetAll, titleVisibility: .visible) {
             Button("Reset \(overrides.changedCount) threshold"
                    + "\(overrides.changedCount == 1 ? "" : "s")", role: .destructive) {
@@ -144,17 +144,18 @@ struct TuningView: View {
     /// counts where there are any — so a rider tuning the fin can see at a glance that the
     /// wing is carrying overrides of its own.
     private var selectedFooter: String {
+        let name = selected.title.lowercased()
         var line = selected.isWindsurf
-            ? "Each discipline has its own set of overrides, over its own preset — "
-                + "\(selected.title.lowercased()) starts above "
-                + "\(preset(.foilEntrySpeed)) and ends below \(preset(.foilExitSpeed)). "
+            ? "Each discipline has its own set of overrides, over its own preset. "
+                + name + " starts above " + preset(.foilEntrySpeed)
+                + " and ends below " + preset(.foilExitSpeed) + ". "
                 + DisciplineLexicon.experimentalNote
             : "Each discipline has its own set of overrides, over its own preset. These rows "
-                + "are the published wingfoil contract — the only validated one."
+                + "are the published wingfoil contract. It is the only validated one."
         let others = sets.tuned.filter { $0 != selected }
         if !others.isEmpty {
             line += "\n\nAlso tuned: "
-                + others.map { "\($0.title.lowercased()) · \(sets.changedCount($0))" }
+                + others.map { $0.title.lowercased() + " · " + String(sets.changedCount($0)) }
                     .joined(separator: " · ")
                 + ". Those sets are untouched by anything on this screen."
         }
@@ -164,7 +165,8 @@ struct TuningView: View {
     private var statusSection: some View {
         Section {
             if overrides.isEmpty {
-                Label("Every \(selected.title.lowercased()) threshold is at its preset default",
+                Label("Every " + selected.title.lowercased()
+                      + " threshold is at its preset default",
                       systemImage: "checkmark.seal")
                     .foregroundStyle(.secondary)
             } else {
@@ -183,12 +185,16 @@ struct TuningView: View {
             }
             .disabled(store.isBusy || store.sessions.isEmpty)
         } footer: {
-            Text("Sessions re-derive themselves whenever a threshold moves — the tuning is "
-                 + "part of the analysis' version, so a stale session rebuilds the next time "
-                 + "it is opened, and the rest at the next launch. The button is the same "
-                 + "trip, taken now: it sweeps every session whose stored version is no "
-                 + "longer the one its own discipline produces, which after a move on this "
-                 + "screen is the \(selected.title.lowercased()) sessions and no others.")
+            let name = selected.title.lowercased()
+            // Built in locals: one `+` chain long enough to carry the whole footer is what
+            // the type checker gives up on inside a ViewBuilder.
+            let rule = "Sessions re-derive whenever a threshold moves. The tuning is part "
+                + "of the analysis' version. A stale session rebuilds the next time you "
+                + "open it, and the rest at the next launch. "
+            let sweep = "The button takes that trip now. It sweeps every session whose "
+                + "stored version is no longer the one its own discipline produces. "
+            Text(rule + sweep + "After a move on this screen that is the "
+                 + name + " sessions and no others.")
         }
     }
 
@@ -209,9 +215,9 @@ struct TuningView: View {
                 }
             }
         } footer: {
-            Text(markdown: "Your own verdict on a turn — *I flew · I touched · I fell* — left on the "
-                 + "turn's page and scored against the engine here. Labels live on this phone, "
-                 + "outside the analysis, and survive every re-derivation.")
+            Text(markdown: "Your own verdict on a turn: *I flew · I touched · I fell*. Leave it "
+                 + "on the turn's page. It is scored against the engine here. Labels live "
+                 + "on this phone, outside the analysis, and survive every re-derivation.")
         }
     }
 
@@ -227,17 +233,17 @@ struct TuningView: View {
             Text("Beta · testing tool")
         } footer: {
             Text(markdown: "These sliders override the published defaults **on this phone only**. They "
-                 + "change every number the app shows — foil time, flights, turn counts, "
-                 + "scores, outcomes, records and trends — so a session analysed with them is "
+                 + "change every number the app shows: foil time, flights, turn counts, "
+                 + "scores, outcomes, records and trends. A session analysed with them is "
                  + "not comparable with one analysed anywhere else.\n\n"
-                 + "The watch and the web are not touched: the watch computes live with no "
+                 + "The watch and the web are not touched. The watch computes live with no "
                  + "way to be told, and the web reads what the phone wrote. While anything "
                  + "here is moved, the session header, Records and Trends carry a *tuned "
-                 + "thresholds* chip, and a session's own page says how many thresholds "
-                 + "were moved — so a tuned number can never be mistaken for a published one."
+                 + "thresholds* chip. A session's own page says how many thresholds were "
+                 + "moved. A tuned number can never be mistaken for a published one."
                  + "\n\nThe fingerprint above is this discipline's set alone. It rides inside "
-                 + "that discipline's stamp in the analysis' version, which is why moving a "
-                 + "windsurf threshold re-derives windsurf sessions and leaves every wingfoil "
+                 + "that discipline's stamp in the analysis' version. Moving a windsurf "
+                 + "threshold therefore re-derives windsurf sessions and leaves every wingfoil "
                  + "session on the numbers it was already analysed with.")
         }
     }
@@ -285,8 +291,9 @@ struct TuningView: View {
             control(spec, parameter: parameter)
                 .disabled(!available)
             Text(available
-                 ? "default \(spec.formatted(spec.presetDefault(for: selected))) · \(spec.note)"
-                 : "off for windsurf — there is no pump channel to corroborate against, so "
+                 ? "default " + spec.formatted(spec.presetDefault(for: selected))
+                    + " · " + spec.note
+                 : "off for windsurf. There is no pump channel to corroborate against, so "
                     + "the rung is refused rather than merely unreachable")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
@@ -379,17 +386,17 @@ struct TunedChip: View {
     var compact = false
 
     var body: some View {
-        HStack(spacing: 4) {
+        let noun = count == 1 ? " tuned threshold" : " tuned thresholds"
+        return HStack(spacing: 4) {
             Image(systemName: "slider.horizontal.3").font(.caption2)
-            Text(compact ? "tuned · \(count)" : "tuned thresholds · \(count)")
+            Text(compact ? "tuned · " + String(count) : "tuned thresholds · " + String(count))
                 .font(.caption.weight(.medium))
         }
         .padding(.horizontal, 8).padding(.vertical, 3)
         .background(Color.secondary.opacity(0.16), in: .capsule)
         .foregroundStyle(.secondary)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Analysed with \(count) tuned threshold"
-                            + "\(count == 1 ? "" : "s")")
+        .accessibilityLabel("Analysed with " + String(count) + noun)
     }
 }
 

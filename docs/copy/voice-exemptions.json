@@ -23,5 +23,30 @@
     "path": "garmin/resources/strings/strings.xml",
     "text": "(deg from, -1 = unset)",
     "why": "a unit or a range in a Garmin Connect setting title; the bracket is the convention every other Connect IQ app uses there"
+  },
+  {
+    "path": "ios/WingFoilKit/Sources/WingFoilKit/Help",
+    "text": "CleanJibe Wingfoil Tracker (Beta)",
+    "why": "GettingStartedGuide, the Garmin route's first step: the Connect IQ store's own listing title, pinned in docs/copy/phrases.json as ciqListingTitle. A rider searches the store for the name letter by letter, so the brackets are part of it and not an aside."
+  },
+  {
+    "path": "ios/WingFoil/Features",
+    "text": "M215 69Q162 89",
+    "why": "Onboarding/WelcomeView: SVG path data for the drawn wordmark. It is geometry in a string literal, not a sentence, so its length says nothing about the voice."
+  },
+  {
+    "path": "ios/WingFoilKit/Sources/WingFoilKit/Presentation",
+    "text": "analyze your wingfoil sessions free",
+    "why": "Branding.callToAction, the lockup under the wordmark on every card that leaves the phone. web/js/cardstats.js composes the same line from the same two parts and web/tools/verify_copy.py holds the two character for character, so the dash is part of a cross-platform mark rather than punctuation in a sentence."
+  },
+  {
+    "path": "ios/WingFoilKit/Sources/WingFoilKit/Presentation",
+    "text": "Speeds from a degraded source",
+    "why": "ShareCard's uncertified disclaimer. web/js/cardstats.js prints the same string and web/tools/card_parity.mjs compares the two card stat blocks string by string, so the dash cannot move on one platform alone."
+  },
+  {
+    "path": "ios/WingFoilKit/Sources/WingFoilKit/Presentation",
+    "text": "iPhone SE (3rd generation)",
+    "why": "FeedbackReport's device table: Apple's own marketing name for that phone, printed in a diagnostic mail so a report names the device the way Apple does. It is data, not a sentence."
   }
 ]

@@ -40,16 +40,15 @@ public enum IcuSetupGuide {
     /// want a third-party account read that sentence as a wall. The alternatives are named
     /// here rather than left to a troubleshooting item at the bottom of a different topic.
     public static let rationale =
-        "The easiest way in is intervals.icu: Garmin has no open API for a personal app, so "
-        + "intervals.icu receives your activities and hands CleanJibe the original "
-        + "recording. You can also open a .fit by hand instead, from Files, Mail or a "
-        + "Garmin export ZIP."
+        "The easiest way in is intervals.icu. Garmin has no open API, so intervals.icu "
+        + "receives your activities and hands CleanJibe the original recording. You can "
+        + "also open a .fit by hand, from Files, Mail or a Garmin export ZIP."
 
     /// The same point in one breath, for the setup card — where the four steps below it
     /// are what the reader is actually there for.
     public static let rationaleShort =
-        "Garmin has no open API for a personal app, so intervals.icu is the bridge: free, "
-        + "automatic once connected, and set up only once."
+        "Garmin has no open API, so intervals.icu is the bridge. It is free, set up once, "
+        + "and automatic from then on."
 
     /// The label on the button the last step tells the reader to tap, and the label the
     /// button itself carries (`IcuKeyEntry`). Two literals is how a walkthrough ends up
@@ -78,31 +77,31 @@ public enum IcuSetupGuide {
             number: 3,
             title: "Generate your personal API key",
             detail: "Still in intervals.icu: Settings → Developer Settings → API Key. "
-                + "Copy it. Developer settings are free for every user; no subscription is "
+                + "Copy it. Developer settings are free for every user. No subscription is "
                 + "needed.",
             link: HelpLink(title: "Open intervals.icu settings", url: intervalsURL)),
 
         IcuSetupStep(
             number: 4,
             title: "Paste the key into CleanJibe",
-            detail: "Paste it into the field below (in the app: Settings → intervals.icu) "
-                + "and tap \(saveButton). CleanJibe verifies it and says how many "
-                + "activities it can see.",
+            detail: "Paste it into the field below. In the app that field is "
+                + "Settings → intervals.icu. Tap " + saveButton
+                + ". CleanJibe verifies it and says how many activities it can see.",
             action: .openIcuSettings),
     ]
 
     /// Where the key lives and where it goes. Shown under the field as well as in Help —
     /// a secret you are asked to paste deserves an answer before you have to ask.
     public static let privacyNote =
-        "Your API key is stored in this iPhone's Keychain. It is never copied to iCloud, "
-        + "never sent to any CleanJibe server — there isn't one — and never written to a "
-        + "log. The only place it goes is intervals.icu itself, over HTTPS."
+        "Your API key is stored in this iPhone's Keychain. It is never copied to iCloud and "
+        + "never written to a log. There is no CleanJibe server to send it to. It goes to "
+        + "intervals.icu itself, over HTTPS, and nowhere else."
 
     /// What goes wrong, and what to do about it. Also the body of the troubleshooting topic.
     public static let troubleshooting: [HelpTopic.Item] = [
         .init(term: "\"intervals.icu rejected the API key\"",
               detail: "A 401: the key is wrong or was regenerated after you pasted it. Copy "
-                  + "it again from Settings → Developer Settings — a stray space at either "
+                  + "it again from Settings → Developer Settings. A stray space at either "
                   + "end breaks it."),
         .init(term: "The sync succeeds but the list stays empty",
               detail: "Either Garmin is not connected in intervals.icu yet, or none of your "

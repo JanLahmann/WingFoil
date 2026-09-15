@@ -163,8 +163,8 @@ import Testing
         let prose = (topic.body + topic.items.flatMap { [$0.term, $0.detail] })
             .joined(separator: " ").lowercased()
         for phrase in ["uncertified", "pump strokes", "intervals.icu", "never writes",
-                       "limited number of riders", "two hundred requests",
-                       "fifteen minutes", "support & ideas", "disconnect"] {
+                       "limited number of riders", "200 requests",
+                       "15 minutes", "support & ideas", "disconnect"] {
             #expect(prose.contains(phrase), "the Strava topic never mentions \(phrase)")
         }
         // Never the sentence that says the app is waiting to be allowed to exist.

@@ -72,9 +72,9 @@ struct HealthImportView: View {
         } header: {
             Text("Recorded with Apple's Workout app?")
         } footer: {
-            Text("If you record on an Apple Watch with Apple's own Workout app — Surfing, "
-                 + "Water Sports or Sailing — the GPS track and heart rate are in the Health "
-                 + "app, and CleanJibe can analyse them like any other recording. It reads "
+            Text("Record on an Apple Watch with Apple's own Workout app, under Surfing, "
+                 + "Water Sports or Sailing. The GPS track and heart rate are then in the "
+                 + "Health app. CleanJibe analyses them like any other recording. It reads "
                  + "the workouts you pick and nothing else: no steps, no sleep, no weight. "
                  + "Everything stays on this phone.")
         }
@@ -91,12 +91,7 @@ struct HealthImportView: View {
         } header: {
             Text("Nothing to import")
         } footer: {
-            // Both halves are named because Health genuinely does not tell us which one it is.
-            Text(markdown: "Either there are no \(typeList) workouts in Health from the last two years, "
-                 + "or CleanJibe was not given permission to read them. Permission lives in "
-                 + "the Health app: **Health → Sharing → Apps → CleanJibe**, or "
-                 + "**Settings → Health → Data Access & Devices → CleanJibe**. Turn on "
-                 + "Workouts, Workout Routes and Heart Rate.")
+            Text(markdown: emptyFooter)
         }
     }
 
@@ -116,10 +111,9 @@ struct HealthImportView: View {
         } header: {
             Text("Workouts in Health")
         } footer: {
-            Text("Tap to pick, or use Import all. \(importable.count) of "
-                 + "\(store.healthCandidates.count) can be imported — the rest are already in "
-                 + "your library. A workout with no GPS route is skipped and counted, because "
-                 + "there is nothing to analyse without one.")
+            Text("Tap to pick, or use Import all. " + importableLine
+                 + " The rest are already in your library. A workout with no GPS route "
+                 + "is skipped and counted. There is nothing to analyse without one.")
         }
     }
 
@@ -129,10 +123,10 @@ struct HealthImportView: View {
                 get: { store.healthAutoImport },
                 set: { store.healthAutoImport = $0 }))
         } footer: {
-            Text("CleanJibe checks Health when you open the app and imports anything new of "
-                 + "the types below. iOS also wakes apps for new workouts, but it decides "
-                 + "when — so opening CleanJibe is what reliably picks up the session you "
-                 + "just finished.")
+            Text("CleanJibe checks Health when you open the app and imports anything new "
+                 + "of the types below. iOS also wakes apps for new workouts, but it "
+                 + "decides when. Open CleanJibe to pick up the session you just "
+                 + "finished.")
         }
     }
 
@@ -153,8 +147,8 @@ struct HealthImportView: View {
             Text("Which workouts to offer")
         } footer: {
             Text("Apple Health has no wingfoil activity, so pick whichever one you record "
-                 + "under. Surfing and Water Sports are on by default because those are what "
-                 + "the Workout app puts in front of you; Sailing is off, because for most "
+                 + "under. Surfing and Water Sports are on by default. The Workout app "
+                 + "puts those two in front of you. Sailing is off, because for most "
                  + "people that bucket holds boats.")
         }
     }
@@ -163,6 +157,25 @@ struct HealthImportView: View {
 
     private var importable: [HealthWorkoutCandidate] {
         store.healthCandidates.filter { !$0.isAlreadyImported }
+    }
+
+    /// "3 of 11 can be imported." Built with `+` and held in one place, so the sentence
+    /// in the footer carries no brackets and the footer stays a short chain to type-check.
+    private var importableLine: String {
+        String(importable.count) + " of " + String(store.healthCandidates.count)
+            + " can be imported."
+    }
+
+    /// Both halves are named because Health genuinely does not tell us which one it is.
+    private var emptyFooter: String {
+        let opening = "Either there are no " + typeList
+            + " workouts in Health from the last two years, or CleanJibe was not given "
+            + "permission to read them."
+        let route = " Permission lives in the Health app: "
+            + "**Health → Sharing → Apps → CleanJibe**, or "
+            + "**Settings → Health → Data Access & Devices → CleanJibe**. "
+            + "Turn on Workouts, Workout Routes and Heart Rate."
+        return opening + route
     }
 
     private var typeList: String {
@@ -203,8 +216,8 @@ private struct HealthWorkoutRow: View {
                     // once it is imported and the offset ladder has answered.
                     Text(Fmt.date(candidate.start, zone: .current))
                         .font(.subheadline)
-                    Text("\(candidate.type.label) · \(Fmt.duration(candidate.durationS)) · "
-                         + candidate.sourceName)
+                    Text(candidate.type.label + " · " + Fmt.duration(candidate.durationS)
+                         + " · " + candidate.sourceName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

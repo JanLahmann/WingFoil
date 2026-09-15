@@ -118,7 +118,8 @@ struct PeriodShareView: View {
                 .onChange(of: titleDraft) {
                     titleDraft = String(titleDraft.prefix(SessionNaming.titleLimit))
                 }
-            TextField("A line of your own (optional)", text: $noteDraft)
+            // Optional, like the title above it: an empty field simply leaves the line off.
+            TextField("A line of your own", text: $noteDraft)
                 .appTextFieldChrome()
                 .onChange(of: noteDraft) {
                     noteDraft = String(noteDraft.prefix(SessionNaming.noteLimit))
@@ -126,8 +127,8 @@ struct PeriodShareView: View {
             // Transient, unlike a session's: a period is not a row in the library, so there
             // is nothing to rename and nothing to store the caption on. The two fields feed
             // this render and are gone when the sheet closes.
-            Text("The title and the caption are for this card only — a period has no record "
-                 + "in the library to rename.")
+            Text("The title and the caption are for this card only. A period has no "
+                 + "record in the library to rename.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -168,7 +169,7 @@ struct PeriodShareView: View {
                     Text("Map background")
                 }
                 Text("Draws every outline over the map, on the ground you picked for the "
-                     + "session map. Needs a connection; without one the card comes out "
+                     + "session map. Needs a connection. Without one the card comes out "
                      + "plain.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -190,8 +191,9 @@ struct PeriodShareView: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
         }
-        Text("Rendered at \(Int(shape.size.width)) × \(Int(shape.size.height)) px. Nothing "
-             + "is uploaded — the image is handed straight to the share sheet.")
+        Text("Rendered at " + String(Int(shape.size.width)) + " × "
+             + String(Int(shape.size.height))
+             + " px. Nothing is uploaded. The image goes straight to the share sheet.")
             .font(.caption2)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)

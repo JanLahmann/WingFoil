@@ -75,7 +75,7 @@ struct SessionRowView: View {
                         .foregroundStyle(SessionDisplay.badgeColor(row))
                         .accessibilityLabel(
                             isGuess
-                            ? "Analysed as \(SessionDisplay.badge(row)), not confirmed"
+                            ? "Analysed as " + SessionDisplay.badge(row) + ", not confirmed"
                             : SessionDisplay.badge(row))
                 }
                 }
@@ -84,7 +84,7 @@ struct SessionRowView: View {
                 // the same string the session page opens with (docs/presentation.md, "One
                 // clock"). It was `Fmt.duration(row.durationS)`: a different clock in a
                 // different format, one tap away from the page that disagreed with it.
-                Text("\(Fmt.date(row.startDate, zone: row.displayZone)) · "
+                Text(Fmt.date(row.startDate, zone: row.displayZone) + " · "
                      + KeyMetrics.duration(row.rateSeconds))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

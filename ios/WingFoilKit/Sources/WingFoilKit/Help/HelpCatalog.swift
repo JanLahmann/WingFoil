@@ -310,16 +310,16 @@ public enum HelpCatalog {
 
         HelpTopic(
             id: .exampleSession, section: .setup, title: "Look around with the example session",
-            summary: "One real session ships with the app — load it before you connect anything.",
+            summary: "One real session ships with the app. Load it before you connect anything.",
             body: [
                 ExampleSession.blurb,
                 "It is not your data, and CleanJibe treats it that way: badged EXAMPLE in the "
                 + "list and on its own page, and left out of Records, Trends and the gear "
-                + "rollups. Delete it with a swipe — this screen offers it again.",
-                "It was recorded at \(ExampleSession.place) with the CleanJibe watch app, "
-                + "every identifier removed. The accelerometer stream was left out (larger "
-                + "than the rest of the app), so pump strokes and takeoff effort show as "
-                + "unavailable.",
+                + "rollups. Delete it with a swipe. This screen offers it again.",
+                "It was recorded at " + ExampleSession.place + " with the CleanJibe watch "
+                + "app, every identifier removed. The accelerometer stream was left out "
+                + "because it is larger than the rest of the app. Pump strokes and takeoff "
+                + "effort show as unavailable.",
             ],
             image: HelpImage(asset: "help-session-detail",
                              caption: "The four rows at the top answer \"was that a good "
@@ -333,10 +333,10 @@ public enum HelpCatalog {
         HelpTopic(
             id: .appleWatchApp, section: .setup, channel: .beta,
             title: "Recording with the CleanJibe Apple Watch app",
-            summary: "Record on your Apple Watch; the session comes to the phone by itself.",
+            summary: "Record on your Apple Watch. The session comes to the phone by itself.",
             body: [
                 "The watch app records the GPS track, your heart rate and the wrist "
-                + "accelerometer at 50 Hz. Start it on the watch, ride, end the workout; the "
+                + "accelerometer at 50 Hz. Start it on the watch, ride, end the workout. The "
                 + "session transfers to the phone while both are in range.",
                 "Because the wrist is recorded, pump strokes and failed takeoff attempts are "
                 + "analysed on the phone. Speed comes off the watch's own receiver, so the "
@@ -346,9 +346,8 @@ public enum HelpCatalog {
                 // Jan, 15 Sep 2026: it said "keep the wrist above water" — wrong, a wrist
                 // under water IS the swim evidence (docs/algorithms.md, `turnBaroDrop`).
                 .init(term: "The wrist may go under",
-                      detail: "A wrist under water is how a fall is recognised: the pressure "
-                          + "sensor sees it and the swim is scored. The GPS gap is marked, "
-                          + "not sailed through."),
+                      detail: "A wrist under water counts as a fall. The pressure sensor "
+                          + "sees it. The GPS gap is marked, not filled."),
                 .init(term: "Let the workout finish",
                       detail: "The session is handed over once you end the workout. If it is "
                           + "not in the list yet, look again in a minute."),
@@ -361,7 +360,7 @@ public enum HelpCatalog {
             summary: "No Garmin, no extra app: record on your Apple Watch and import from "
                 + "Health.",
             body: [
-                "Record a session with Apple's own Workout app and analyse it here — no "
+                "Record a session with Apple's own Workout app and analyse it here. No "
                 + "Garmin, no account, no cable, not even CleanJibe's own watch app.",
                 "Apple Health has no wingfoil activity, so pick the closest one. CleanJibe "
                 + "reads the workout as a wingfoil session because you asked it to.",
@@ -375,21 +374,20 @@ public enum HelpCatalog {
             items: [
                 .init(term: "Pick Surfing or Water Sports",
                       detail: "Both are on by default, and Surfing is what CleanJibe's own "
-                          + "watch app writes. Sailing works too — switch it on in Import → "
-                          + "Apple Health."),
+                          + "watch app writes. Sailing works too. Switch it on in "
+                          + "Import → Apple Health."),
                 // Jan, 15 Sep 2026: it said "keep the wrist above water" — wrong, a wrist
                 // under water IS the swim evidence (docs/algorithms.md, `turnBaroDrop`).
                 .init(term: "The wrist may go under",
-                      detail: "A wrist under water is how a fall is recognised: the pressure "
-                          + "sensor sees it and the swim is scored. The GPS gap is marked, "
-                          + "not sailed through."),
+                      detail: "A wrist under water counts as a fall. The pressure sensor "
+                          + "sees it. The GPS gap is marked, not filled."),
                 .init(term: "Let the workout finish saving",
                       detail: "The route is written to Health when you end the workout, and "
                           + "the watch may take a minute to hand it over."),
                 .init(term: "Nothing is uploaded",
-                      detail: "CleanJibe reads the workouts you pick — their route and heart "
-                          + "rate — and analyses them on your phone. It never reads anything "
-                          + "else in Health."),
+                      detail: "CleanJibe reads the route and the heart rate of the "
+                          + "workouts you pick, and analyses them on your phone. It never "
+                          + "reads anything else in Health."),
             ],
             related: [.appleWatchApp, .sourceClass, .speedRecords, .icuSetup]),
 
@@ -410,8 +408,8 @@ public enum HelpCatalog {
                 + "recorded your wrist, so there are no pump strokes.",
                 "If the same afternoon is also on intervals.icu, import it from there "
                 + "instead: that is the original file off your watch, and those records "
-                + "certify. Importing both is harmless — the same session is never added "
-                + "twice.",
+                + "certify. Importing both is harmless, because the same session is never "
+                + "added twice.",
             ],
             items: [
                 // **One connect, and it is in Settings** (Jan, build 63: Import does,
@@ -425,23 +423,22 @@ public enum HelpCatalog {
                       detail: "Tap the sessions you want, or use Import all new. Anything "
                           + "already in your library is marked and cannot be picked twice."),
                 .init(term: "Which activities are offered",
-                      detail: "Windsurf, Kitesurf, Surf and Workout by default; Sail and "
+                      detail: "Windsurf, Kitesurf, Surf and Workout by default. Sail and "
                           + "Stand-up paddling can be switched on. Anything named wing, "
                           + "foil, kite, surf or SUP is offered too."),
                 .init(term: "Keep it automatic",
                       detail: "Once one session has come in this way, a toggle appears: "
                           + "CleanJibe then checks Strava whenever you open the app."),
                 .init(term: "A long history takes its time",
-                      detail: "Strava answers two hundred requests every fifteen minutes, so "
-                          + "a first import of many seasons may ask you to come back "
-                          + "shortly."),
+                      detail: "Strava answers 200 requests every 15 minutes. A first "
+                          + "import of many seasons may ask you to come back shortly."),
                 .init(term: "If connecting is refused",
-                      detail: "Strava lets a new app connect a limited number of riders; "
-                          + "that is nothing to do with your account. Menu → Support & ideas "
-                          + "is the way to say so."),
+                      detail: "Strava lets a new app connect a limited number of riders. "
+                          + "That is nothing to do with your account. "
+                          + "Menu → Support & ideas is the way to say so."),
                 .init(term: "Disconnecting",
                       detail: "Settings → Strava → Disconnect Strava. The sessions you "
-                          + "already imported stay in your library — they are yours now, "
+                          + "already imported stay in your library. They are yours now, "
                           + "analysed on this phone."),
             ],
             related: [.sourceClass, .speedRecords, .icuSetup, .shareFromWatchApp, .whichWatch]),
@@ -459,33 +456,33 @@ public enum HelpCatalog {
                 + "files. Export the session as a FIT and pick CleanJibe from the share "
                 + "sheet. If it is not in the row, Save to Files and open it from there.",
                 "Which format, if you are asked: FIT, every time. A FIT carries the "
-                + "receiver's own speed, so its records certify; a .gpx or a .tcx carries "
-                + "positions only and its records are marked uncertified. Those two formats "
+                + "receiver's own speed, so its records certify. A .gpx or a .tcx carries "
+                + "positions only, so its records are marked uncertified. Those two formats "
                 + "open in the CleanJibe beta.",
                 "Garmin Connect's phone app has no export at all, so Garmin owners have two "
                 + "better routes: intervals.icu, or connect.garmin.com on a computer.",
             ],
             items: [
-                .init(term: "Suunto — verified 13 Sep 2026",
+                .init(term: "Suunto, verified 13 Sep 2026",
                       detail: "Calendar → tap the workout → ⋯ top right → FIT. Then Save to "
                           + "Files, or pick CleanJibe from the share sheet. GPX is offered "
-                          + "too; take FIT."),
-                .init(term: "COROS — verified 13 Sep 2026",
-                      detail: "Activities → tap the activity → ⋯ top right → Export (older "
-                          + "versions: Export Data) → FIT. Then choose how to send it, which "
-                          + "is the share sheet."),
-                .init(term: "Polar — verified 13 Sep 2026, but not on the phone",
+                          + "too. Take FIT."),
+                .init(term: "COROS, verified 13 Sep 2026",
+                      detail: "Activities → tap the activity → ⋯ top right → Export → "
+                          + "FIT. Older versions call it Export Data. Then choose how to "
+                          + "send it, which is the share sheet."),
+                .init(term: "Polar, verified 13 Sep 2026, but not on the phone",
                       detail: "The Polar Flow app cannot export a file. flow.polar.com can: "
                           + "Diary → click the session → Export → FIT. A computer is the "
                           + "reliable way."),
-                .init(term: "Garmin — verified 13 Sep 2026: no phone export",
+                .init(term: "Garmin, verified 13 Sep 2026: no phone export",
                       detail: "Garmin Connect on the phone cannot export an activity file. "
                           + "On a computer: connect.garmin.com → Activities → the activity → "
                           + "gear icon → Export File."),
                 .init(term: "Anything else",
-                      detail: "If an app can produce a FIT, CleanJibe reads it — from "
-                          + "AirDrop, Mail or Files. A ZIP of recordings works too: Import → "
-                          + "FIT or ZIP…."),
+                      detail: "If an app can produce a FIT, CleanJibe reads it. Take it "
+                          + "from AirDrop, Mail or Files. A ZIP of recordings works too: "
+                          + "Import → FIT or ZIP…."),
             ],
             links: [
                 HelpLink(title: "Suunto: exporting a FIT from the phone app",
@@ -512,9 +509,9 @@ public enum HelpCatalog {
                 "A phone records a GPS track as well as most watches do, and CleanJibe reads "
                 + "it the same way: foil time, flights, every turn verdict, clean jibes, the "
                 + "wind axis and the map.",
-                "It is \(RecordingClass.c.name): \(RecordingClass.c.line)",
+                "It is " + RecordingClass.c.name + ". " + RecordingClass.c.line,
                 "Where to put the phone: dry, still and pointing at the sky. A waterproof "
-                + "pouch on the upper arm or high on the chest works; a pocket at hip height "
+                + "pouch on the upper arm or high on the chest works. A pocket at hip height "
                 + "spends half the session underwater. Start the recording on the beach.",
             ],
             items: [
@@ -524,8 +521,8 @@ public enum HelpCatalog {
                           + "activity out of your account instead."),
                 .init(term: "Any GPS-logging app that writes a file",
                       detail: "Anything on your phone that records a track and writes a "
-                          + ".fit or a .gpx works. Save the track, tap Share, pick CleanJibe "
-                          + "— or open it from Files."),
+                          + ".fit or a .gpx works. Save the track, tap Share, pick "
+                          + "CleanJibe. Or open it from Files."),
                 .init(term: "Which format, if you are offered a choice",
                       detail: "FIT. CleanJibe reads a .fit in every build, and a file with "
                           + "the receiver's own speed certifies its records. A .gpx or a "
@@ -538,15 +535,15 @@ public enum HelpCatalog {
         // spread across five topics that each answer a third of it.
         HelpTopic(
             id: .whichWatch, section: .setup, title: "Which watches work with CleanJibe",
-            summary: "All of them, one way or another — and here is exactly what each one "
+            summary: "All of them, one way or another. Each row says what that one "
                 + "costs you.",
             body: [
                 "CleanJibe analyses a recording, not a brand. Anything that can produce a GPS "
                 + "track can be read, and a source that cannot answer a question leaves that "
                 + "number blank and says why.",
                 "Two things separate the rows. **Certified speed** means the file holds the "
-                + "receiver's own speed; without it, speed is worked out from positions and "
-                + "every record is marked uncertified.",
+                + "receiver's own speed. Without it, speed is worked out from positions "
+                + "and every record is marked uncertified.",
                 "**Pump strokes and takeoff effort** need a wrist accelerometer recorded "
                 + "during the session, which only the CleanJibe watch apps do.",
             ],
@@ -567,15 +564,15 @@ public enum HelpCatalog {
                 .init(term: "Polar, Suunto, COROS and the rest",
                       detail: "Connect the watch to intervals.icu, or export one session "
                           + "from the phone app as a FIT and share it in. A FIT certifies "
-                          + "its records; a .gpx does not."),
+                          + "its records. A .gpx does not."),
                 .init(term: "Anything that ends up on Strava",
                       detail: "Connect Strava and pick the sessions. Strava hands over "
                           + "positions, altitude and heart rate but no speed channel, so "
                           + "those records are uncertified."),
                 .init(term: "A phone in a pocket, or no watch at all",
                       detail: "Any GPS-logging app works: record, then import through Strava "
-                          + "or share the file in. Positions only, so uncertified records — "
-                          + "the flights, turns and map are all there."),
+                          + "or share the file in. Positions only, so the records are "
+                          + "uncertified. The flights, turns and map are all there."),
             ],
             related: [.shareFromWatchApp, .icuSetup, .appleWatchApp, .appleWorkoutApp,
                       .stravaImport, .phoneOnly, .sourceClass, .speedRecords]),
@@ -600,7 +597,7 @@ public enum HelpCatalog {
                 IcuSetupGuide.privacyNote,
                 "The key is a personal read/write token for your intervals.icu account, so "
                 + "treat it like a password. Clear the field in Settings to remove it, or "
-                + "regenerate it in Developer Settings — the old key stops working the "
+                + "regenerate it in Developer Settings. The old key stops working the "
                 + "moment you do.",
             ],
             related: [.icuSetup, .icuTroubleshooting, .privacy]),
@@ -618,8 +615,8 @@ public enum HelpCatalog {
         // never opens Help.
         HelpTopic(
             id: .privacy, section: .setup, title: "What leaves your phone",
-            summary: "No account, no server, nothing uploaded — and the whole policy on the "
-                + "web.",
+            summary: "No account, no server, nothing uploaded. The whole policy is on "
+                + "the web.",
             body: [
                 "There is no CleanJibe account and no CleanJibe server, so a session you "
                 + "import is analysed on this phone and stays on it. No advertising, no "
@@ -661,12 +658,11 @@ public enum HelpCatalog {
             items: [
                 .init(term: "Save the file yourself",
                       detail: "Back up library writes a temporary file. Save… puts it in "
-                          + "Files, iCloud Drive or on a Mac; CleanJibe does not keep a "
-                          + "copy."),
+                          + "Files, iCloud Drive or on a Mac. CleanJibe keeps no copy."),
                 .init(term: "Your own recordings, nothing stripped",
-                      detail: "The .fit and .gpx files inside are exactly as they arrived. "
-                          + "Unlike a session you send a friend, nothing is removed: this "
-                          + "file is for you, not for sharing."),
+                      detail: "The .fit and .gpx files inside are the originals. Nothing "
+                          + "is removed. A session you send a friend is stripped first. "
+                          + "This file is for you, not for sharing."),
                 .init(term: "How big it will be",
                       detail: "A session recorded with the CleanJibe watch app carries a "
                           + "100 Hz accelerometer stream, about 95 % of its size. The app "
@@ -683,7 +679,7 @@ public enum HelpCatalog {
         HelpTopic(
             id: .sendingFeedback, section: .setup, title: "Sending feedback",
             summary: "The app writes down which build, which phone and which session. "
-                + "You write the sentence. \(FeedbackInvitation.sentence)",
+                + "You write the sentence. " + FeedbackInvitation.sentence,
             body: [
                 // **The invitation is said once, and the summary is where it is said**
                 // (Jan, dev 65). It opened the summary *and* this paragraph, one line
@@ -695,13 +691,13 @@ public enum HelpCatalog {
                 // "Settings → Send feedback", a row deleted in build 58 — the app's own
                 // Help sending the rider to a screen that no longer has it. The names come
                 // from `FeedbackDoors` now, so a renamed door renames its instructions.
-                "\(FeedbackDoors.app), the offer at the foot of every page "
-                + "(\"\(FeedbackDoors.footer)\") and the share sheet's "
-                + "\"\(FeedbackDoors.share)\" all open the same mail, with three questions "
-                + "and a blank line under each.",
+                FeedbackDoors.app + " opens the mail. So do \"" + FeedbackDoors.footer
+                + "\" at the foot of every page and \"" + FeedbackDoors.share
+                + "\" in the share sheet. The mail asks three questions, with a blank line "
+                + "under each.",
                 "Nothing leaves the phone until you tap Send. It is Apple's own composer, "
-                + "the address is \(FeedbackReport.recipient), and no part of CleanJibe "
-                + "sends anything by itself — there is no CleanJibe server to send it to.",
+                + "and the address is " + FeedbackReport.recipient + ". No part of CleanJibe "
+                + "sends anything by itself. There is no CleanJibe server to send it to.",
             ],
             items: [
                 .init(term: "What is already in the mail",
@@ -718,8 +714,8 @@ public enum HelpCatalog {
                           + "use."),
                 .init(term: "If you are on the beta",
                       detail: "A screenshot taken inside the app offers "
-                          + "\(FeedbackDoors.testflight), which attaches the screenshot and "
-                          + "the device logs — the route for a crash."),
+                          + FeedbackDoors.testflight + ". That attaches the screenshot and "
+                          + "the device logs. Take it for a crash."),
                 .init(term: "About the watch app itself",
                       detail: "Anything about the watch app can go through its Connect IQ "
                           + "store listing. For a number that looks wrong, the mail here is "
@@ -738,16 +734,16 @@ public enum HelpCatalog {
             id: .foilPct, section: .foil, title: "Foil time / foil %",
             summary: "How much of the session you spent actually flying.",
             body: [
-                "A flight starts when your speed stays above the entry threshold "
-                + "(12 km/h by default) for 2 seconds, and ends when it stays below the exit "
-                + "threshold (8 km/h) for 3 seconds. Start and end are backdated to the "
+                "A flight starts when your speed holds above the entry threshold, "
+                + "12 km/h by default, for 2 seconds. It ends when the speed drops below the "
+                + "exit threshold, 8 km/h, for 3 seconds. Start and end are backdated to the "
                 + "first qualifying sample.",
-                "\"On foil\" is that flying time divided by timer time — the total minus any "
-                + "stretch where the recording stopped or the GPS dropped out. Taxiing, "
-                + "swimming and the drift back upwind count against it; a gap in the "
-                + "recording does not.",
+                "\"On foil\" is that flying time divided by timer time. Timer time is the "
+                + "total, minus any stretch where the recording stopped or the GPS dropped "
+                + "out. Taxiing, swimming and the drift upwind count against it. A gap in "
+                + "the recording does not.",
                 "Anything under 5 seconds is not counted as a flight. \"Foil time\" is the "
-                + "number of minutes; \"on foil\" is the share of the session they are.",
+                + "number of minutes. \"On foil\" is the share of the session they are.",
             ],
             related: [.flights, .longestFlight, .sourceClass]),
 
@@ -759,8 +755,8 @@ public enum HelpCatalog {
                 + "least 5 seconds. A brief touchdown does not split a flight: the exit needs "
                 + "3 seconds below the exit speed, so a one- or two-second tap of the water "
                 + "stays inside it.",
-                "The flight count answers \"how many times did I have to get up again\"; the "
-                + "touchdown count answers \"how clean was it\".",
+                "The flight count answers \"how many times did I have to get up again\". "
+                + "The touchdown count answers \"how clean was it\".",
             ],
             related: [.foilPct, .touchdowns, .takeoffAttempts]),
 
@@ -782,7 +778,7 @@ public enum HelpCatalog {
                 "Distance is integrated from the device's Doppler speed rather than summed "
                 + "from GPS positions: position noise inflates a distance total badly at low "
                 + "speed, and Doppler does not.",
-                "It covers the whole session — flying, taxiing and drifting.",
+                "It covers the whole session: flying, taxiing and drifting.",
             ],
             related: [.sourceClass]),
 
@@ -794,13 +790,13 @@ public enum HelpCatalog {
             summary: "What the chips, the colours, the arrows and the dots mean.",
             body: [
                 "Every chip under the map is a switch. Tapping one hides that category on "
-                + "the map and in the speed chart at the same time — the two are one reading "
-                + "of the same session.",
+                + "the map and in the speed chart at once. The two are one reading of the "
+                + "same session.",
                 "A hidden chip stays in place, struck through, and \"show all\" brings "
                 + "everything back. A category this session has none of is not a switch. The "
                 + "three rows are the track, the events on it, and the map's own controls.",
-                "Tap the track to move the replay playhead; tap a mark, or a flown stretch, "
-                + "for its own facts.",
+                "Tap the track to move the replay playhead. Tap a mark, or a flown "
+                + "stretch, for its own facts.",
             ],
             items: [
                 .init(term: "The track",
@@ -823,12 +819,12 @@ public enum HelpCatalog {
                       detail: "Takeoffs: an up-arrow got you up, a red u-turn is an attempt "
                           + "that did not. One chip hides both halves."),
                 .init(term: "Bands and drops",
-                      detail: "The indigo bands are pump bursts; the cyan drop is the "
+                      detail: "The indigo bands are pump bursts. The cyan drop is the "
                           + "barometer seeing your wrist go under."),
             ],
             image: HelpImage(asset: "help-map-layers",
-                             caption: "The chips above the map turn each layer on and off — "
-                                 + "here with the fell-in marks hidden."),
+                             caption: "The chips above the map turn each layer on and "
+                                 + "off. Here the fell-in marks are hidden."),
             related: [.foilPct, .turnOutcomes, .takeoffAttempts]),
 
         // MARK: Speed records
@@ -855,26 +851,26 @@ public enum HelpCatalog {
                 + "applied.",
                 "A window never spans a recording gap. Tap a record card to see where on the "
                 + "track and on the speed trace it happened. A record certifies only when "
-                + "the recording holds the receiver's own speed channel; the rest are marked "
+                + "the recording holds the receiver's own speed channel. The rest are marked "
                 + "uncertified.",
             ],
             items: [
                 .init(term: "Best 2 s",
                       detail: "Your peak speed, averaged over 2 seconds. A single-sample "
-                          + "maximum is noise; two seconds is a real burst, and it is the "
-                          + "number most riders compare."),
+                          + "maximum is noise. 2 seconds is a real burst, and the number "
+                          + "most riders compare."),
                 .init(term: "Best 10 s",
-                      detail: "The fastest 10-second run — a burst you had to hold. Luck and "
-                          + "a single gust cannot carry it, so it usually sits 1–3 knots "
-                          + "below your 2 s."),
+                      detail: "The fastest 10-second run, a burst you had to hold. Luck "
+                          + "and a single gust cannot carry it, so it usually sits 1 to 3 "
+                          + "knots below your 2 s."),
                 .init(term: MetricGlossary.entry("best5x10s").term,
                       detail: MetricGlossary.entry("best5x10s").line),
                 .init(term: "Best 500 m",
                       detail: "Your fastest half-kilometre, measured on integrated Doppler "
-                          + "distance rather than straight-line distance — so a curved run "
-                          + "still counts and cutting the corner flatters nothing."),
+                          + "distance rather than straight-line distance. A curved run still "
+                          + "counts, and cutting the corner flatters nothing."),
                 .init(term: "Best 1 NM",
-                      detail: "Your fastest nautical mile (1852 m). On most spots it needs "
+                      detail: "Your fastest nautical mile, 1852 m. On most spots it needs "
                           + "more than one leg, so it measures how well you keep speed "
                           + "through your turns."),
                 .init(term: MetricGlossary.entry("alpha500").term,
@@ -882,10 +878,10 @@ public enum HelpCatalog {
                 // Last, because it is the one line that is about the recording rather than
                 // about a window — and the one a rider needs before he posts a number.
                 .init(term: "\"Uncertified\"",
-                      detail: "A recording that carries positions but no speed channel — "
-                          + "every GPX, some converted exports — has its speed "
-                          + "differentiated from them, which reads high. Shown, never a "
-                          + "personal best."),
+                      detail: "A recording with positions but no speed channel has its "
+                          + "speed differentiated from them, which reads high. Every GPX is "
+                          + "one, and some converted exports. Shown, never a personal "
+                          + "best."),
             ],
             related: [.sourceClass, .turnOutcomes, .divergence]),
 
@@ -898,9 +894,9 @@ public enum HelpCatalog {
                 "A turn is detected from your course: at least 60° of net heading change "
                 + "within 8 seconds, containing a peak rate of 25°/s, while you are on the "
                 + "foil or within 3 s of it.",
-                "It must also have carved a real arc — at least 12 m of path at an effective "
-                + "radius of at least 6 m — which separates a maneuver from a rider spinning "
-                + "around beside the board.",
+                "It must also carve a real arc. That means at least 12 m of path, at an "
+                + "effective radius of at least 6 m. A rider spinning around beside the "
+                + "board carves no arc.",
                 "What kind of turn it was depends on the wind axis:",
             ],
             items: [
@@ -908,8 +904,8 @@ public enum HelpCatalog {
                 .init(term: "Tack", detail: "Your course crosses the wind axis through upwind."),
                 .init(term: "Bear-away / round-up",
                       detail: "A real course change that never crosses the axis. Counted "
-                          + "separately and excluded from the tack/jibe tallies — it is not a "
-                          + "maneuver you either made or blew."),
+                          + "separately and left out of the tack and jibe tallies. It is not "
+                          + "a maneuver you either made or blew."),
                 .init(term: "Turn",
                       detail: "A detected maneuver on a session where the wind axis was too "
                           + "uncertain to name it. Still counted, just unnamed."),
@@ -917,18 +913,19 @@ public enum HelpCatalog {
             related: [.windAxis, .turnOutcomes, .portStarboard]),
 
         HelpTopic(
-            id: .turnOutcomes, section: .turns, title: "Turn outcomes — flew / touchdown / fell",
+            id: .turnOutcomes, section: .turns,
+            title: "Turn outcomes: flew through, touchdown, fell in",
             summary: "What actually happened to the foil in the turn.",
             body: [
                 "Every turn gets one of three outcomes. The judgement runs from the turn "
-                + "start until you are demonstrably flying again — speed back above 70 % of "
-                + "your entry speed for 2 seconds — capped at 12 seconds.",
-                "That matters: a jibe exited at marginal speed can bleed off for 6–12 seconds "
-                + "before the foil stalls, and that mush-out is the jibe's fault. A jibe you "
-                + "power out of closes its window in a second or two.",
-                "Three channels are read inside it: speed always, the barometer (a wrist "
-                + "under water reads as a huge altitude drop), and, on a CleanJibe watch "
-                + "recording, the accelerometer.",
+                + "start until you are flying again. That means speed back above 70 % of "
+                + "your entry speed for 2 seconds. The window is capped at 12 seconds.",
+                "A jibe exited at marginal speed can bleed off for 6 to 12 seconds before "
+                + "the foil stalls. That mush-out is the jibe's fault. A jibe you power out "
+                + "of closes its window in a second or two.",
+                "Three channels are read inside it. Speed always. The barometer, where a "
+                + "wrist under water reads as a huge altitude drop. The accelerometer, on a "
+                + "CleanJibe watch recording.",
             ],
             items: [
                 .init(term: "Flew through",
@@ -952,15 +949,15 @@ public enum HelpCatalog {
         // tests below are its three, in its order.
         HelpTopic(
             id: .turnSuccess, section: .turns, title: "Clean jibes",
-            summary: "A jibe you fly all the way through without losing much speed — and the "
-                + "ten seconds after it are quiet too.",
+            summary: "A jibe you fly all the way through without losing much speed. The "
+                + "10 seconds after it stay quiet too.",
             body: [
                 "**Flew through** is how a turn ended: you never lost the foil, from its "
                 + "start until you were flying again. **Clean** is a jibe that flew through, "
                 + "held its speed, and stayed quiet after.",
                 "Holding the speed: your minimum speed through the turn stays at or above "
                 + "70 % of your entry speed, and you never drop below the foil exit speed.",
-                "Staying quiet means the ten seconds after the turn: no touchdown or fall, "
+                "Staying quiet means the 10 seconds after the turn: no touchdown or fall, "
                 + "no second or more off the foil, and no wrist under water.",
                 "So clean is a strict subset of flew through: a jibe that held its speed and "
                 + "then lost the foil coming out is not clean.",
@@ -971,27 +968,27 @@ public enum HelpCatalog {
                           + "the recovery out of it. No touchdown, no swim."),
                 .init(term: "Clean",
                       detail: "A jibe that flew through, held at least 70 % of its entry "
-                          + "speed, and stayed quiet for ten seconds. The one CPH counts."),
+                          + "speed, and stayed quiet for 10 seconds. The jibe CPH counts."),
                 .init(term: "Jibes only",
                       detail: "A tack has no clean reading to carry, so the Tacks card "
                           + "reports only how its tacks ended."),
                 .init(term: "Dry",
-                      detail: "You did not fall in. A touchdown still counts as dry, which "
-                          + "is why JPH (dry jibes per hour) is never below CPH."),
+                      detail: "You did not fall in. A touchdown still counts as dry. JPH "
+                          + "counts dry jibes per hour, so it never sits below CPH."),
                 .init(term: "Score",
                       detail: "The share of your entry speed you held through the turn, "
-                          + "0–100. The evidence behind \"clean\", printed beside every "
+                          + "0 to 100. The evidence behind \"clean\", printed beside every "
                           + "turn."),
             ],
             related: [.turnOutcomes, .speedRecords]),
 
         HelpTopic(
             id: .portStarboard, section: .turns, title: "Port / starboard",
-            summary: "Which tack you were on going in — and which side you avoid.",
+            summary: "Which tack you were on going in, and which side you avoid.",
             body: [
-                "The side is read from your wind angle before the turn. A 50/50 split means "
-                + "you work both sides equally; a lopsided split is the tack you quietly stop "
-                + "choosing, which is usually the one worth practising.",
+                "The side is read from your wind angle before the turn. A 50/50 split "
+                + "means you work both sides equally. A lopsided split is the tack you "
+                + "quietly stop choosing, and usually the one worth practising.",
                 "The Trends screen plots this over time as \"% port\", with 50 % marked.",
             ],
             related: [.turnTypes, .windAxis]),
@@ -1004,7 +1001,7 @@ public enum HelpCatalog {
                 + "your wrist going under.",
                 "The split matters: falls in turns are a maneuver problem, falls in a "
                 + "straight line are a gust, a ventilation or a tip catching. Each fall is "
-                + "counted once — a fall inside a turn's window belongs to that turn.",
+                + "counted once. A fall inside a turn's window belongs to that turn.",
             ],
             related: [.turnOutcomes, .touchdowns, .glideOuts]),
 
@@ -1022,9 +1019,9 @@ public enum HelpCatalog {
             id: .glideOuts, section: .turns, title: "Glide-outs",
             summary: "Flights that ended without ever stopping.",
             body: [
-                "The flight ended and you kept moving — you settled onto the board and taxied "
-                + "on, or you chose to stop riding. No stop was ever measured, so this is not "
-                + "counted as a loss.",
+                "The flight ended and you kept moving. You settled onto the board and "
+                + "taxied on, or you chose to stop riding. No stop was ever measured, so "
+                + "this is not counted as a loss.",
                 "Flight ends where the recording itself stopped are reported as unknown and "
                 + "excluded from every tally: there is no evidence there.",
             ],
@@ -1034,14 +1031,13 @@ public enum HelpCatalog {
 
         HelpTopic(
             id: .takeoffAttempts, section: .takeoff, title: "Attempts & success rate",
-            summary: "How often you pumped — including the times you did not get up.",
+            summary: "How often you pumped, including the times you did not get up.",
             body: [
                 "Attempts = flights + failed attempts. A pumping burst counts as a failed "
-                + "attempt when no flight starts within 10 seconds of your last stroke; "
-                + "bursts closer together than that are chained into one attempt.",
-                "No summary built from flights alone can contain this: a session where you "
-                + "got up 20 times out of 22 and one where you got up 20 out of 40 look "
-                + "identical otherwise.",
+                + "attempt when no flight starts within 10 seconds of your last stroke. "
+                + "Bursts closer together than that are chained into one attempt.",
+                "Flights alone cannot show this. Getting up 20 times out of 22 looks like "
+                + "getting up 20 out of 40.",
                 "It needs the wrist accelerometer, which only the CleanJibe watch app "
                 + "records. Without it your failures are invisible, so the success rate is "
                 + "shown as unknown rather than a flattering 100 %.",
@@ -1052,14 +1048,15 @@ public enum HelpCatalog {
             id: .pumpsToTakeoff, section: .takeoff, title: "Pumps to takeoff",
             summary: "How many strokes each flight cost you.",
             body: [
-                "The takeoff run is the stretch of rising speed before the flight plus the "
-                + "pump burst that led into it, whichever started earlier — so the count is "
-                + "the strokes of the effort that actually produced the flight.",
+                "The takeoff run starts at the rising speed before the flight. It starts "
+                + "at the pump burst that led into it, if that came first. So the count is "
+                + "the strokes of the effort that produced the flight.",
                 "Takeoffs under 3 strokes are counted as free: you got up on the wind alone. "
                 + "That is a fact about the conditions, so free takeoffs are kept out of the "
                 + "averages and reported separately.",
-                "Runs the recording cut short are excluded from the averages but still count "
-                + "as successes — the flight happened, only its cost is unknown.",
+                "Runs the recording cut short are left out of the averages. They still "
+                + "count as takeoffs that worked: the flight happened, only its cost is "
+                + "unknown.",
             ],
             related: [.takeoffAttempts, .pumpStrokes, .heartRate]),
 
@@ -1069,22 +1066,22 @@ public enum HelpCatalog {
             body: [
                 "Strokes are detected from the wrist accelerometer, using the magnitude only, "
                 + "so it does not matter how your wrist was rotated.",
-                "In-flight strokes are pumping to hold or extend a glide rather than to get up "
-                + "— a different kind of work, so they are counted separately.",
+                "In-flight strokes hold or extend a glide rather than get you up. That is "
+                + "different work, so they are counted separately.",
             ],
             related: [.pumpsToTakeoff, .sourceClass]),
 
         // MARK: Effort
 
         HelpTopic(
-            id: .heartRate, section: .effort, title: "Heart rate — cost and coverage",
+            id: .heartRate, section: .effort, title: "Heart rate: cost and coverage",
             summary: "What an attempt costs in heartbeats, and when that can be trusted.",
             body: [
                 "HR cost is the rise from your baseline just before an effort to the peak "
                 + "that follows. The baseline is the median of the 10 seconds ending at the "
                 + "start of the takeoff run.",
                 "The peak is searched 30 seconds forward, because an optical wrist sensor "
-                + "trails effort by 10–20 seconds. Negative values are reported rather than "
+                + "trails effort by 10 to 20 seconds. Negative values are reported rather than "
                 + "hidden: \"still recovering when you started\" is a different fact from "
                 + "\"this cost nothing\".",
                 "The card does not appear on a session whose recording has no usable heart "
@@ -1092,14 +1089,14 @@ public enum HelpCatalog {
             ],
             items: [
                 .init(term: "Coverage",
-                      detail: "The share of a window covered by plausible (30–220 bpm), "
-                          + "unstuck samples no more than 10 seconds apart. Below 60 % "
+                      detail: "The share of a window covered by unstuck samples between "
+                          + "30 and 220 bpm, no more than 10 seconds apart. Below 60 % "
                           + "coverage no number is produced."),
                 .init(term: "Why it drops out",
                       detail: "A wrist sensor under a wetsuit sleeve in cold water drops out "
                           + "and sticks, and a made-up average is worse than a missing one."),
                 .init(term: "The fatigue chart",
-                      detail: "Twenty-minute bins, each showing what its takeoffs cost, with "
+                      detail: "20-minute bins, each showing what its takeoffs cost, with "
                           + "the share of attempts that got up underneath. Bins with nothing "
                           + "usable are shaded, not drawn as zero."),
                 .init(term: "Read the cost bars with the baseline note",
@@ -1144,7 +1141,8 @@ public enum HelpCatalog {
                 + "landscape, and Complete or Lean. A photo from your library can go behind "
                 + "it.",
                 "Or turn on the map background and the track is drawn over the water you "
-                + "sailed. That one needs a connection; without one the card comes out plain.",
+                + "sailed. That one needs a connection. Without one the card comes out "
+                + "plain.",
                 "The card is made on your phone and goes nowhere until you send it.",
             ],
             image: HelpImage(asset: "help-share-composer",
@@ -1175,12 +1173,12 @@ public enum HelpCatalog {
             id: .shareFit, section: .sharing, title: "Sending a session to a friend",
             summary: "Share the original recording, stripped of anything identifying.",
             body: [
-                "You can share the original .fit file of any session. Everything identifying "
-                + "— the watch serial, your rider profile, your lifetime totals — is removed "
-                + "first; the ride itself is untouched, so the analysis your friend gets is "
-                + "identical to yours.",
+                "You can share the original .fit file of any session. The watch serial, "
+                + "your rider profile and your lifetime totals are removed first. The ride "
+                + "itself is untouched, so the analysis your friend gets is identical to "
+                + "yours.",
                 "They can open it in CleanJibe, or drop it into the free browser analyzer at "
-                + "\(Branding.site) without installing anything.",
+                + Branding.site + " without installing anything.",
             ],
             links: [HelpLink(title: "Open the browser analyzer",
                              url: URL(string: Branding.siteURL)!)],
@@ -1191,8 +1189,8 @@ public enum HelpCatalog {
             summary: "A friend's session is shown in full but kept out of your records.",
             body: [
                 "When you import a file, CleanJibe asks whose session it is. A friend's "
-                + "session is saved and shown in full — map, replay, every turn — but stays "
-                + "out of your records, trends and gear totals.",
+                + "session is saved and shown in full: map, replay, every turn. It stays out "
+                + "of your records, trends and gear totals.",
                 "Their fast run never becomes your personal best. The name you give is stored "
                 + "on your phone only.",
             ],
@@ -1213,8 +1211,8 @@ public enum HelpCatalog {
                 "CleanJibe reads whatever your watch put in the file, and every metric "
                 + "degrades gracefully rather than failing or guessing. There are four cases, "
                 + "with the names cleanjibe.org and the Import screen print.",
-                "A GPX never carries a speed channel and a TCX sometimes does; Strava hands "
-                + "over positions and no speed channel either, so a Strava import belongs in "
+                "A GPX never carries a speed channel, and a TCX sometimes does. Strava "
+                + "hands over positions and no speed channel, so a Strava import belongs in "
                 + "the last row.",
             ],
             items: [
@@ -1251,19 +1249,19 @@ public enum HelpCatalog {
                 + "its numbers. When the engine changes in a way that alters results, sessions "
                 + "computed with an older version are recomputed from their archived original "
                 + "file the next time they are opened.",
-                "The original recording is never modified — only the derived analysis is, and "
-                + "it can be dropped and rebuilt at any time from Settings.",
+                "The original recording is never modified. Only the derived analysis is, "
+                + "and you can drop and rebuild it at any time from Settings.",
             ],
             related: [.sourceClass, .divergence]),
 
         HelpTopic(
             id: .windsurf, section: .quality, channel: .dev,
             title: "Windsurf (experimental)",
-            summary: "The same engine, minus the wing — and the planing speeds are a guess.",
+            summary: "The same engine without the wing. The planing speeds are a guess.",
             body: [
                 "A session can be analysed as **Wingfoil**, **Windsurf foil** or **Windsurf "
-                + "fin**. The row is on the session's Log tab, under \"Analyse as\"; changing "
-                + "it re-derives that session and nothing else.",
+                + "fin**. The row is on the session's Log tab, under \"Analyse as\". "
+                + "Changing it re-derives that session and nothing else.",
                 "Wingfoil is not a sport in Garmin, Strava, intervals.icu or Apple Health, so "
                 + "most riders record under the windsurf profile and a new session cannot say "
                 + "which rig it was ridden on.",
@@ -1289,13 +1287,13 @@ public enum HelpCatalog {
                           + "20 km/h to start planing, 15 km/h to stop, against 12 and 8 on "
                           + "a foil."),
                 .init(term: "Those two speeds are provisional",
-                      detail: "A first guess, not a reading off real fin sessions — there "
+                      detail: "A first guess, not a reading off real fin sessions. There "
                           + "are none in the corpus yet. If your planing time looks wrong, "
                           + "report that number."),
                 .init(term: "In the library",
                       detail: "\"Foil time\" reads as planing time and \"lost the foil\" as "
-                          + "stopped planing. Windsurf sessions count towards your trends; "
-                          + "there is no separate record set."),
+                          + "stopped planing. Windsurf sessions count towards your "
+                          + "trends. There is no separate record set."),
             ],
             related: [.foilPct, .turnOutcomes, .pumpsToTakeoff, .engineVersion]),
     ]
@@ -1336,7 +1334,8 @@ public enum HelpCatalog {
     /// `ChannelFeatures.channel` (`AppChannel.channel`) in.
     public static func topic(_ id: HelpTopicID, channel: HelpChannel = .release) -> HelpTopic {
         guard let topic = byID[id] else {
-            preconditionFailure("no help topic for \(id.rawValue) — HelpCatalog is incomplete")
+            preconditionFailure("no help topic for " + id.rawValue
+                                + ". HelpCatalog is incomplete")
         }
         return resolved(topic, channel: channel)
     }

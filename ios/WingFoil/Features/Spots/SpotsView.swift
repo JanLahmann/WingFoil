@@ -49,8 +49,9 @@ struct SpotsView: View {
                 Button("Look up names again") { Task { await store.nameSpots() } }
                     .disabled(!spots.contains { $0.spot.autoNamed })
             } footer: {
-                Text("Re-clustering rebuilds every spot from the session coordinates at a "
-                     + "\(Int(SpotClusterer.defaultRadiusM)) m radius; names you typed are kept.")
+                Text("Re-clustering rebuilds every spot from the session coordinates. "
+                     + "The radius is " + String(Int(SpotClusterer.defaultRadiusM))
+                     + " m. Names you typed are kept.")
             }
         }
         .navigationTitle("Spots")
@@ -85,7 +86,7 @@ struct SpotsView: View {
                 if let last = entry.lastVisit {
                     // `.current`: a spot spans sessions and has no one zone of its own. The
                     // date is "how long since I was there", asked from where you are now.
-                    Text("· last \(Fmt.shortDate(last, zone: .current))")
+                    Text("· last " + Fmt.shortDate(last, zone: .current))
                 }
             }
             .font(.caption)

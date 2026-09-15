@@ -227,11 +227,11 @@ struct ReplaySetupSheet: View {
     }
 
     private var lengthNote: String {
-        var sentence = "About \(Fmt.duration(storyboard.runWallS)) of video — "
-            + "\(Fmt.duration(storyboard.replayWallS)) of replay at about "
-            + "\(Int(pacing.rate.rounded()))×, plus the title and the closing card"
+        var sentence = "About " + Fmt.duration(storyboard.runWallS) + " of video. "
+            + Fmt.duration(storyboard.replayWallS) + " of replay at about "
+            + String(Int(pacing.rate.rounded())) + "×, plus the title and the closing card"
         if storyboard.photoWallS > 0 {
-            sentence += " and \(Fmt.duration(storyboard.photoWallS)) of photos"
+            sentence += " and " + Fmt.duration(storyboard.photoWallS) + " of photos"
         }
         sentence += "."
         return sentence
@@ -263,12 +263,13 @@ struct ReplaySetupSheet: View {
     private var framingNote: String {
         switch framing {
         case .fullScreen:
-            "The whole screen, exactly as the phone records it — no cropping, nothing to go "
-                + "wrong."
+            "The whole screen, just as the phone records it. "
+                + "No cropping, nothing to go wrong."
         default:
-            "\(framing.name) — the replay plays inside a \(framing.label) frame and the rest "
-                + "of the screen is painted out, so you can see what the clip will be while "
-                + "you record it. The video is cropped to that frame afterwards."
+            framing.name + ". The replay plays inside a " + framing.label
+                + " frame. The rest of the screen is painted out. "
+                + "You see what the clip will be while you record it. "
+                + "The video is cropped to that frame afterwards."
         }
     }
 
@@ -320,8 +321,9 @@ struct ReplaySetupSheet: View {
                     .font(.subheadline)
                 }
 
-                Text("None — the clip plays silent. Anything the phone can open: a file from "
-                     + "Files, iCloud Drive, or one you saved out of another app.")
+                Text("None leaves the clip silent. "
+                     + "Music can be any file the phone can open. "
+                     + "Take one from Files, from iCloud Drive, or from another app.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -372,11 +374,11 @@ struct ReplaySetupSheet: View {
     private func musicNote(_ track: ReplayMusicTrack) -> String {
         let clipS = storyboard.runWallS
         if track.durationS >= clipS {
-            return "\(Fmt.duration(track.durationS)) — the first "
-                + "\(Fmt.duration(clipS)) plays, fading out at the end."
+            return Fmt.duration(track.durationS) + ". The first "
+                + Fmt.duration(clipS) + " plays, fading out at the end."
         }
-        return "\(Fmt.duration(track.durationS)) — repeats to fill the "
-            + "\(Fmt.duration(clipS)) clip, fading out at the end."
+        return Fmt.duration(track.durationS) + ". Repeats to fill the "
+            + Fmt.duration(clipS) + " clip, fading out at the end."
     }
 
     /// Copies what the picker handed back into the app's own container, because the URL it
@@ -427,15 +429,17 @@ struct ReplaySetupSheet: View {
             } else {
                 Text("A photo taken during the session drops into the replay at the moment "
                      + "it was shot. One that cannot say when it was taken plays at the end, "
-                     + "before the closing card. Up to \(ReplayPhotoLoader.maxCount).")
+                     + "before the closing card. Up to "
+                     + String(ReplayPhotoLoader.maxCount) + ".")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             if unreadable > 0 {
-                Label("\(unreadable) picture\(unreadable == 1 ? "" : "s") could not be read "
-                      + "and will not be in the clip.", systemImage: "exclamationmark.triangle")
+                Label(String(unreadable) + (unreadable == 1 ? " picture" : " pictures")
+                      + " could not be read and will not be in the clip.",
+                      systemImage: "exclamationmark.triangle")
                     .font(.caption)
                     .foregroundStyle(.orange)
             }
@@ -500,8 +504,8 @@ struct ReplaySetupSheet: View {
         var parts: [String] = []
         let spliced = storyboard.splices.count
         let slides = storyboard.slideshow.count
-        if spliced > 0 { parts.append("\(spliced) in the replay") }
-        if slides > 0 { parts.append("\(slides) at the end") }
+        if spliced > 0 { parts.append(String(spliced) + " in the replay") }
+        if slides > 0 { parts.append(String(slides) + " at the end") }
         return parts.joined(separator: " · ")
     }
 
@@ -535,12 +539,13 @@ struct ReplaySetupSheet: View {
 
     private var availabilityNote: some View {
         Text(ReplayRecorder.isAvailable
-             ? "The replay plays itself full screen and the screen is recorded. The countdown "
-               + "is not in the clip — recording starts on the title card. Pinch and drag the "
-               + "map while it plays; a tap brings up the stop button."
-             : "Screen recording is not available right now — Low Power Mode, AirPlay and "
-               + "screen mirroring all switch it off. The replay will play full screen "
-               + "without being recorded.")
+             ? "The replay plays itself full screen and the screen is recorded. "
+               + "The countdown is not in the clip. Recording starts on the title card. "
+               + "Pinch and drag the map while it plays. "
+               + "A tap brings up the stop button."
+             : "Screen recording is not available right now. "
+               + "Low Power Mode, AirPlay and screen mirroring all switch it off. "
+               + "The replay plays full screen without being recorded.")
             .font(.caption)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
@@ -562,8 +567,8 @@ struct ReplaySetupSheet: View {
             start(plan, framing, chosen, track)
         } label: {
             Label(ReplayRecorder.isAvailable
-                  ? "Record · about \(Fmt.duration(storyboard.runWallS))"
-                  : "Play · about \(Fmt.duration(storyboard.runWallS))",
+                  ? "Record · about " + Fmt.duration(storyboard.runWallS)
+                  : "Play · about " + Fmt.duration(storyboard.runWallS),
                   systemImage: ReplayRecorder.isAvailable ? "record.circle" : "play.fill")
                 .frame(maxWidth: .infinity)
         }

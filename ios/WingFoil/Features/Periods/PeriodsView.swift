@@ -44,9 +44,9 @@ struct PeriodsView: View {
             }
 
             group("Trips", periods.trips,
-                  note: "Spells at one spot — a holiday the library noticed. No gap wider "
-                      + "than \(PeriodRules.tripGapDays) days, at least "
-                      + "\(PeriodRules.tripMinSessions) sessions.")
+                  note: "Spells at one spot. A holiday the library noticed. No gap wider "
+                      + "than " + String(PeriodRules.tripGapDays) + " days, at least "
+                      + String(PeriodRules.tripMinSessions) + " sessions.")
             group("Months", periods.months,
                   note: "Calendar months, on the day the rider had.")
             group("Seasons", periods.seasons,
@@ -116,8 +116,8 @@ struct PeriodsView: View {
         } header: {
             Text("A range of your own")
         } footer: {
-            Text("Both dates count. Rates over a period divide the period's own totals — "
-                 + "they are not the average of the sessions' own.")
+            Text("Both dates count. Rates over a period divide the period's own totals. "
+                 + "They are not the average of the sessions' own.")
         }
         .onChange(of: from) { Task { await reloadCustom() } }
         .onChange(of: to) { Task { await reloadCustom() } }
@@ -227,8 +227,8 @@ struct PeriodDetailView: View {
             } header: {
                 Text(period.dateLine)
             } footer: {
-                Text("Rates over a period divide the period's own totals — clean jibes over "
-                     + "the hours those afternoons actually cost, never the average of the "
+                Text("Rates over a period divide the period's own totals. Clean jibes go "
+                     + "over the hours those afternoons cost. Never the average of the "
                      + "sessions' own rates.")
             }
             Section {

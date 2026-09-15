@@ -152,8 +152,10 @@ struct SpeedChartView: View {
             }
         }
         .frame(height: 3)
-        .accessibilityLabel("Showing \(Fmt.clock(window.visible.lowerBound - fullRange.lowerBound))"
-                            + " to \(Fmt.clock(window.visible.upperBound - fullRange.lowerBound))")
+        .accessibilityLabel("Showing "
+                            + Fmt.clock(window.visible.lowerBound - fullRange.lowerBound)
+                            + " to "
+                            + Fmt.clock(window.visible.upperBound - fullRange.lowerBound))
     }
 
     private var chart: some View {

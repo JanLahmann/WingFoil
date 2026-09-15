@@ -42,7 +42,7 @@ import Testing
     /// The on-water framing opens both surfaces, and it is one paragraph rather than a
     /// walkthrough: the steps are the web's job.
     @Test func theOnWaterFramingComesFirst() {
-        #expect(GettingStartedGuide.framing.hasPrefix("The real test is one session on the water"))
+        #expect(GettingStartedGuide.framing.hasPrefix("Ride one session as you always do"))
         #expect(Self.topic.body.first == GettingStartedGuide.framing)
     }
 

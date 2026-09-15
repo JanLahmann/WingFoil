@@ -83,7 +83,7 @@ public enum UpdateVerdict: String, Sendable, Equatable, CaseIterable {
         switch self {
         case .current: "This is the current build."
         case .remind: "A newer build is out."
-        case .dismissed: "A newer build is out — you closed the reminder."
+        case .dismissed: "A newer build is out. You closed the reminder."
         case .insist: "A newer build is needed."
         }
     }

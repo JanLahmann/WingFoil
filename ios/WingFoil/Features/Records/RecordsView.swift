@@ -178,8 +178,8 @@ struct RecordsView: View {
                 Text(best.headline)
                     .font(.subheadline.weight(.medium))
             }
-            Text("Your best afternoon of clean jibes — the jibes you flew all the way "
-                 + "through carrying your speed.")
+            Text("Your best afternoon of clean jibes. Clean: you flew all the way "
+                 + "through and held your speed.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -216,11 +216,16 @@ struct RecordsView: View {
 
     private var footnote: String {
         let certified = records.filter(\.certified).count
-        return "Doppler speed, GP3S windows. \(certified) of \(records.count) from certified "
-            + "sources (a recording device's own speed channel); class (c) sources are "
-            + "marked. The dot on the record's "
-            + "name says how fresh it is — filled within a month, hollow within the season, "
-            + "faint when it is older than six months."
+        // "Uncertified" is the rider's word for a class-(c) GP3S source: a recording with
+        // no Doppler speed channel of its own. It is the badge the row already wears.
+        let head = "Doppler speed, GP3S windows. " + String(certified) + " of "
+            + String(records.count) + " come from certified sources. "
+        let tail = "A certified source is the recording device's own speed channel. "
+            + "Uncertified sources are marked. "
+            + "The dot on a record's name says how fresh it is. "
+            + "Filled within a month. Hollow within the season. "
+            + "Faint when it is older than 6 months."
+        return head + tail
     }
 
     private func title(of sessionID: String) -> String {
@@ -273,9 +278,9 @@ private struct SessionRecordRowView: View {
     /// flight actually went. Six minutes downwind and six minutes of pumping in a lull are
     /// not the same flight.
     private var provenance: String {
-        let stamp = "\(Fmt.shortDate(best.achievedAt, zone: best.displayZone)) · \(title)"
+        let stamp = Fmt.shortDate(best.achievedAt, zone: best.displayZone) + " · " + title
         guard let metres = best.distanceM else { return stamp }
-        return "\(Int(metres.rounded())) m · \(stamp)"
+        return String(Int(metres.rounded())) + " m · " + stamp
     }
 
     private var value: String {
@@ -467,7 +472,7 @@ private struct RecordRowView: View {
 
     /// When and where the record was set — the fourth column, or the second line.
     private var provenance: some View {
-        Text("\(Fmt.shortDate(best.achievedAt, zone: best.displayZone)) · \(title)")
+        Text(Fmt.shortDate(best.achievedAt, zone: best.displayZone) + " · " + title)
             .font(.caption)
             .foregroundStyle(.secondary)
             .lineLimit(stacked ? 3 : 1)

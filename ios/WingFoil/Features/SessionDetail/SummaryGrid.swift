@@ -78,7 +78,7 @@ struct SessionFoilGrid: View {
             // "N m" under "Longest flight" and so claimed a fact the number does not carry.
             StatCard(title: "Longest flight",
                      value: Fmt.duration(summary.longestFlightS),
-                     caption: "max \(Fmt.meters(summary.maxFlightM)) in one flight",
+                     caption: "max " + Fmt.meters(summary.maxFlightM) + " in one flight",
                      help: .longestFlight)
             // The caption is the **engine's** cleaned span (`summary.durationS`), the same
             // number and the same spelling the key-metrics block prints two cards up. It
@@ -214,7 +214,7 @@ struct SessionRecordsTable: View {
 
     private func caption(for window: RecordWindow?) -> String {
         guard let window else { return " " }
-        return "at \(Fmt.clock(window.startTs)) · \(Fmt.duration(window.durS))"
+        return "at " + Fmt.clock(window.startTs) + " · " + Fmt.duration(window.durS)
     }
 }
 
@@ -265,23 +265,26 @@ struct SessionTurnsSection: View {
                     StatCard(title: "Port / starboard",
                              value: "\(t.port) / \(t.starboard)",
                              caption: t.rejected > 0
-                                 ? "\(t.rejected) course change\(t.rejected == 1 ? "" : "s") excluded"
+                                 ? String(t.rejected)
+                                     + (t.rejected == 1 ? " course change" : " course changes")
+                                     + " excluded"
                                  : "entered on each tack",
                              help: .portStarboard)
                     StatCard(title: "Falls",
                              value: "\(split.falls)",
-                             caption: "\(split.turnFalls) in turns · "
-                                 + "\(split.straightFalls) straight-line",
+                             caption: String(split.turnFalls) + " in turns · "
+                                 + String(split.straightFalls) + " straight-line",
                              help: .falls)
                     StatCard(title: "Touchdowns",
                              value: "\(split.touchdowns)",
-                             caption: "\(split.turnTouchdowns) in turns · "
-                                 + "\(split.straightTouchdowns) straight-line",
+                             caption: String(split.turnTouchdowns) + " in turns · "
+                                 + String(split.straightTouchdowns) + " straight-line",
                              help: .touchdowns)
                     StatCard(title: "Glide-outs", value: "\(split.glideOuts)",
                              caption: split.unknownEnds > 0
-                                 ? "\(split.unknownEnds) flight end\(split.unknownEnds == 1 ? "" : "s") "
-                                     + "unknown (recording cut)"
+                                 ? String(split.unknownEnds)
+                                     + (split.unknownEnds == 1 ? " flight end" : " flight ends")
+                                     + " unknown, recording cut"
                                  : "came off and kept moving",
                              help: .glideOuts)
                 }
@@ -307,10 +310,10 @@ struct SessionTurnsSection: View {
     /// three outcomes are the whole of what a tack has to report.
     private func outcomeCaption(_ counts: OutcomeCounts, clean: Int? = nil) -> String {
         guard counts.total > 0 else { return "none detected" }
-        let ladder = "\(counts.flewThrough) flew · \(counts.touchdown) touch · "
-            + "\(counts.fellIn) fell"
+        let ladder = String(counts.flewThrough) + " flew · " + String(counts.touchdown)
+            + " touch · " + String(counts.fellIn) + " fell"
         guard let clean else { return ladder }
-        return ladder + " · \(clean) clean"
+        return ladder + " · " + String(clean) + " clean"
     }
 
     /// The share of the session's **jibes** that never lost the foil, or of every counted
@@ -328,11 +331,11 @@ struct SessionTurnsSection: View {
     /// with no named jibes has no clean jibes to report.
     private func flewThroughCaption(_ t: TurnSummary) -> String {
         if t.jibes > 0 {
-            return "\(t.jibeOutcomes.flewThrough) of \(t.jibes) jibes "
-                + "· \(t.jibesSuccessful) clean"
+            return String(t.jibeOutcomes.flewThrough) + " of " + String(t.jibes)
+                + " jibes · " + String(t.jibesSuccessful) + " clean"
         }
         guard t.turnsCounted > 0 else { return "no counted turns" }
-        return "\(t.outcomes.flewThrough) of \(t.turnsCounted) turns"
+        return String(t.outcomes.flewThrough) + " of " + String(t.turnsCounted) + " turns"
     }
 }
 
@@ -367,8 +370,9 @@ struct SessionTakeoffSection: View {
                         StatCard(title: "Run to planing",
                                  value: k.avgTakeoffS.map { String(format: "%.1f s", $0) } ?? "—",
                                  caption: k.runsTruncated > 0
-                                     ? "\(k.runsJudged) judged · \(k.runsTruncated) not in the record"
-                                     : "average over \(k.runsJudged) runs",
+                                     ? String(k.runsJudged) + " judged · "
+                                         + String(k.runsTruncated) + " not in the record"
+                                     : "average over " + String(k.runsJudged) + " runs",
                                  dimmed: k.avgTakeoffS == nil)
                     } else {
                     StatCard(title: "Pumps to takeoff",
@@ -392,8 +396,9 @@ struct SessionTakeoffSection: View {
                     StatCard(title: "Takeoff run",
                              value: k.avgTakeoffS.map { String(format: "%.1f s", $0) } ?? "—",
                              caption: k.runsTruncated > 0
-                                 ? "\(k.runsJudged) judged · \(k.runsTruncated) not in the record"
-                                 : "average over \(k.runsJudged) runs",
+                                 ? String(k.runsJudged) + " judged · "
+                                     + String(k.runsTruncated) + " not in the record"
+                                 : "average over " + String(k.runsJudged) + " runs",
                              dimmed: k.avgTakeoffS == nil)
                     if let strokes = k.totalPumpStrokes {
                         StatCard(title: "Pump strokes", value: "\(strokes)",
@@ -434,7 +439,8 @@ struct SessionTakeoffSection: View {
                     .monospacedDigit()
                 Text(k.failedAttempts == 0
                      ? "every attempt got up"
-                     : "of \(k.takeoffAttempts) attempts · red u-turns on the map")
+                     : "of " + String(k.takeoffAttempts)
+                        + " attempts · red u-turns on the map")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)

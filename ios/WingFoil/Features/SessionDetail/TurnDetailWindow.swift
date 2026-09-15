@@ -44,8 +44,8 @@ struct TurnWindowControl: View {
             if let quietS, quietS > 0 {
                 Text(afterS >= quietS
                      ? "The run-out now reaches the quiet tail, so the \"quiet\" rule is drawn."
-                     : "The quiet tail closes \(Int(quietS)) s after the sweep — widen the "
-                       + "run-out past that to see its rule.")
+                     : "The quiet tail closes " + String(Int(quietS))
+                       + " s after the sweep. Widen the run-out past that to see its rule.")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)

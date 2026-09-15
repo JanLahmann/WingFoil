@@ -285,7 +285,7 @@ struct ShareComposerView: View {
                     .onChange(of: titleDraft) { _, new in
                         titleDraft = String(new.prefix(SessionNaming.titleLimit))
                     }
-                Text("Names the session — the list, the card, the clip and the shared file "
+                Text("Names the session. The list, the card, the clip and the shared file "
                      + "all follow.")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -399,9 +399,9 @@ struct ShareComposerView: View {
             ProgressView().frame(maxWidth: .infinity, minHeight: 44)
         }
 
-        Text("The card is rendered at \(Int(shape.size.width)) × "
-             + "\(Int(shape.size.height)) px. Nothing is uploaded — the image is "
-             + "handed straight to the share sheet.")
+        Text("The card is rendered at " + String(Int(shape.size.width)) + " × "
+             + String(Int(shape.size.height))
+             + " px. Nothing is uploaded. The image goes straight to the share sheet.")
             .font(.caption2)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
@@ -437,10 +437,11 @@ struct ShareComposerView: View {
         VStack(alignment: .leading, spacing: 10) {
             Label("Scrubbed before it leaves", systemImage: "person.crop.circle.badge.xmark")
                 .font(.subheadline.weight(.semibold))
-            Text("The copy you send carries the track, the speeds, the heart rate and every "
-                 + "lap — but no watch serial number, no rider profile (name, weight, "
-                 + "height) and no paired-accessory name. The original in your library is "
-                 + "never touched.")
+            Text("The copy you send carries the track, the speeds, the heart rate and "
+                 + "every lap. It leaves out the watch serial number and the "
+                 + "paired-accessory name. It leaves out your rider profile too, so no "
+                 + "name, no weight, no height. The original in your library is never "
+                 + "touched.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -533,10 +534,13 @@ struct ShareComposerView: View {
     }
 
     private var renderKey: String {
-        "\(shape.rawValue)|\(preset.rawValue)|\(photo == nil ? "plain" : "photo")"
-            + "|\(thumbnail == nil ? 0 : 1)|\(metrics == nil ? 0 : 1)"
-            + "|\(map == nil ? 0 : 1)"
-            + "|\(displayTitle)|\(noteDraft)"
+        let background = photo == nil ? "plain" : "photo"
+        let parts = [thumbnail == nil ? "0" : "1",
+                     metrics == nil ? "0" : "1",
+                     map == nil ? "0" : "1"].joined(separator: "|")
+        return shape.rawValue + "|" + preset.rawValue + "|" + background
+            + "|" + parts
+            + "|" + displayTitle + "|" + noteDraft
     }
 
     /// Everything one snapshot depends on: whether it is wanted, the aspect it has to fill,
@@ -547,8 +551,10 @@ struct ShareComposerView: View {
     /// so a sub-point wobble as the sheet resizes would otherwise re-run the snapshotter for a
     /// framing no eye could tell from the last one.
     private var mapKey: String {
-        "\(wantsMap && photo == nil)|\(shape.rawValue)|\(store.mapStyle.rawValue)"
-            + "|\(mapSource == nil ? 0 : 1)|\(trackBox.integral)"
+        let wanted = String(wantsMap && photo == nil)
+        let source = mapSource == nil ? "0" : "1"
+        return wanted + "|" + shape.rawValue + "|" + store.mapStyle.rawValue
+            + "|" + source + "|" + String(describing: trackBox.integral)
     }
 
     /// Which tab is showing (so the scrub is never paid for on the card), whether the
@@ -618,7 +624,7 @@ struct ShareComposerView: View {
 
                 Text(photo == nil
                      ? "Draws the track over the map, on the ground you picked for the "
-                       + "session map. Needs a connection; without one the card comes out "
+                       + "session map. Needs a connection. Without one the card comes out "
                        + "plain."
                      : "The photo you picked is the background. Remove it to use the map.")
                     .font(.caption)
@@ -679,7 +685,7 @@ struct ShareComposerView: View {
             fitFile = try await store.shareableFIT(for: row, title: displayTitle,
                                                    includeAccelerometer: includeAccelerometer)
         } catch {
-            fitFailure = "This recording cannot be shared: \(error)"
+            fitFailure = "This recording cannot be shared: " + String(describing: error)
         }
     }
 

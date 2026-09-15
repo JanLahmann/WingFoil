@@ -39,19 +39,18 @@ public enum WelcomeGuide {
     /// it from the other side. The store voice may put its own paragraph around it; the
     /// sentence itself is one sentence everywhere.
     public static let promise =
-        "CleanJibe reads a wingfoil session off your watch and tells you what actually "
-        + "happened: how much of it you spent on the foil, how long each flight lasted, your "
-        + "speed records, and — for every turn — whether you flew through it, touched down, "
-        + "or fell in."
+        "Did you fly through that jibe? CleanJibe reads your session off the watch and tells "
+        + "you: time on the foil, every flight, your speed records, and a verdict on every "
+        + "turn. Flew through, touchdown, or fell in."
 
     /// One tight paragraph of what the app actually does, in the order the rider meets it:
     /// detection first (nothing else is possible without it), then the counts, then the
     /// verdicts, then the records, then the replay.
     public static let lede =
-        "CleanJibe takes a session recording apart: when you were really up on the foil, "
-        + "every flight and touchdown, a verdict on each jibe — flew through, touched down, "
-        + "fell in — the dry streak, your fastest seconds. Then it plays it back, with a "
-        + "commentary."
+        "CleanJibe takes your recording apart. It shows your time on the foil, every "
+        + "flight, every touchdown. Each jibe gets a verdict: flew through, touched down, "
+        + "or fell in. It counts your dry streak and your fastest seconds. Then it plays "
+        + "it back with a commentary."
 
     /// The vocabulary, four lines of it. Enough that the words on the session page are
     /// already familiar; short enough that nobody skips the screen to escape it.
@@ -84,8 +83,8 @@ public enum WelcomeGuide {
     /// you know whether the app is worth it, and one tap fills every screen instead.
     public static let tryExampleTitle = "Try the example session"
     public static let tryExampleDetail =
-        "Ten real minutes on Lake Garda, already analysed — the track, the replay, the "
-        + "turn outcomes and the share card, with nothing to connect first."
+        "10 real minutes on Lake Garda, already analysed. You get the track, the replay, "
+        + "the turn outcomes and the share card. Nothing to connect first."
 
     /// The real path. `IcuSetupCard` takes it from here, so this says only where it goes —
     /// but it names intervals.icu *and* says why a third party is in the story at all. A
@@ -100,10 +99,9 @@ public enum WelcomeGuide {
     /// what it is for and what pressing it does.
     public static let connectTitle = "Set up intervals.icu"
     public static let connectDetail =
-        "Garmin has no open API for a personal app, so CleanJibe collects your sessions "
-        + "through intervals.icu — free, four steps, about five minutes, once. This closes "
-        + "the welcome screen and leaves you on those four steps. Every session after that "
-        + "arrives on its own."
+        "Garmin has no open API, so CleanJibe collects your sessions through intervals.icu. "
+        + "It is free: 4 steps, about 5 minutes, once. This closes the welcome screen and "
+        + "leaves you on those 4 steps. Every session then arrives on its own."
 
     /// The quiet way out. Not a hidden one: a rider who wants to import a file by hand has
     /// nothing to gain from either button above — but "Later" on its own does not tell him
@@ -111,8 +109,8 @@ public enum WelcomeGuide {
     /// two rather than a bare verb.
     public static let laterTitle = "Later"
     public static let laterDetail =
-        "You can also open a .fit file straight from Files, Mail or a message — yours or one "
-        + "a friend sent you."
+        "You can also open a .fit file straight from Files, Mail or a message. Yours, or "
+        + "one a friend sent you."
 }
 
 /// Whether to say hello, and whether this install has already been said hello to.

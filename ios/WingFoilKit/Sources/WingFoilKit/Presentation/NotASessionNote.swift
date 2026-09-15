@@ -29,11 +29,12 @@ public enum NotASessionNote {
         switch reason {
         case .noRecording:
             return "Your watch says this afternoon happened, but its recording has not "
-                + "arrived yet — so it is not counted in totals, trends or records until it "
+                + "arrived yet. It is not counted in totals, trends or records until it "
                 + "does."
         case .tooShort, .noDistance, nil:
-            return "No time on the foil, \(clock(durationS)) long and \(distance(distanceKm))"
-                + " covered — so this looks like a recording rather than a session. It is "
+            return "No time on the foil, " + clock(durationS) + " long and "
+                + distance(distanceKm)
+                + " covered. This looks like a recording rather than a session. It is "
                 + "kept, and left out of totals, trends and records."
         }
     }
@@ -49,7 +50,7 @@ public enum NotASessionNote {
     /// saying it back is no answer at all.
     static func distance(_ km: Double?) -> String {
         let value = km ?? 0
-        return value < 1 ? "\(Int((value * 1000).rounded())) m"
+        return value < 1 ? String(Int((value * 1000).rounded())) + " m"
                          : String(format: "%.1f km", value)
     }
 }

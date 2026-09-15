@@ -38,9 +38,9 @@ struct ReelExportSheet: View {
                 } header: {
                     Text("Length")
                 } footer: {
-                    Text("The whole session draws over the cut, slowing down at every jibe, "
-                         + "record and the longest flight's takeoff, and speeding up between "
-                         + "them. The last three seconds are the key-metrics card.")
+                    Text("The whole session draws over the cut. It slows at every jibe, "
+                         + "record and the longest flight's takeoff. Between them it speeds "
+                         + "up. The last 3 s are the key-metrics card.")
                 }
 
                 switch stage {
@@ -49,7 +49,7 @@ struct ReelExportSheet: View {
                         Button {
                             start()
                         } label: {
-                            Label("Export video · \(length.label)", systemImage: "film")
+                            Label("Export video · " + length.label, systemImage: "film")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
@@ -64,7 +64,7 @@ struct ReelExportSheet: View {
                                 .progressViewStyle(.linear)
                             Text(stage == .staging
                                  ? "Taking the map…"
-                                 : "Drawing \(Int(progress * 100)) %")
+                                 : "Drawing " + String(Int(progress * 100)) + " %")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                                 .monospacedDigit()
@@ -90,8 +90,8 @@ struct ReelExportSheet: View {
                             Label("Make another", systemImage: "arrow.counterclockwise")
                         }
                     } footer: {
-                        Text("\(length.label) · \(Fmt.bytes(ReelRenderer.size(of: url))) · "
-                             + url.lastPathComponent)
+                        Text(length.label + " · " + Fmt.bytes(ReelRenderer.size(of: url))
+                             + " · " + url.lastPathComponent)
                     }
                 case .failed(let reason):
                     Section {

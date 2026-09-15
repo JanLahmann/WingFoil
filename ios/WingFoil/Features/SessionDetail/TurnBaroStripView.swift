@@ -36,8 +36,8 @@ struct TurnBaroStripView: View {
             } else {
                 // One line, and it says which of the two absences this is: nobody was
                 // looking. A flat trace at zero would read as "the wrist stayed up".
-                Text("No barometer in this recording — nothing here could say whether the "
-                     + "wrist went under.")
+                Text("No barometer in this recording. "
+                     + "Nothing here can say whether the wrist went under.")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)

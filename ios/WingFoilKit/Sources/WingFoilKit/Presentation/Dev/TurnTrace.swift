@@ -89,10 +89,10 @@ public enum TurnTraceBuilder {
         public var phrase: String {
             switch self {
             case .recovered(let thrKn):
-                return String(format: "flying again — Doppler back to %.1f kn and held", thrKn)
-            case .lookahead: return "the lookahead cap ran out"
-            case .gap: return "a recording gap ended it"
-            case .trackEnd: return "the recording ended"
+                return String(format: "Flying again. Doppler back to %.1f kn and held", thrKn)
+            case .lookahead: return "The lookahead cap ran out"
+            case .gap: return "A recording gap ended it"
+            case .trackEnd: return "The recording ended"
             }
         }
 
@@ -115,8 +115,8 @@ public enum TurnTraceBuilder {
         let record = analysis.turns[turnIndex]
         guard let ev = context.evidence, ev.count > 0 else {
             return TurnTrace(steps: [Step(id: 0, title: "No evidence",
-                                          detail: "This recording has no usable samples, so "
-                                            + "the ladder had nothing to read and every turn "
+                                          detail: "This recording has no usable samples. "
+                                            + "The ladder had nothing to read. Every turn "
                                             + "kept the flew-through default.")],
                              assumedDefaults: context.assumedDefaults)
         }
@@ -166,14 +166,14 @@ public enum TurnTraceBuilder {
         var sweepDetail = String(format: "the sweep ran %.0f s and turned %.0f°",
                                  max(record.endTs - record.ts, 0), abs(record.netDeg))
         if let intoRate {
-            sweepDetail += String(format: "; trimmed to the part turning faster than %.0f °/s "
-                                  + "— the step into its last sample ran at %.1f °/s",
+            sweepDetail += String(format: ". Trimmed to the part turning faster than %.0f °/s. "
+                                  + "The step into its last sample ran at %.1f °/s",
                                   config.continueRateDegS, abs(intoRate))
             if let outRate {
                 sweepDetail += String(format: ", the step out at %.1f °/s", abs(outRate))
             }
         } else {
-            sweepDetail += "; no heading series here — the run carried no COG above "
+            sweepDetail += ". No heading series here. The run held no COG above "
                 + "turnCogSpeedFloor"
         }
         add("Sweep end", sweepDetail, atRt: rt(record.endTs), rule: "turnContinueRate",
@@ -181,8 +181,8 @@ public enum TurnTraceBuilder {
 
         // 2. The low point.
         add("Low point",
-            String(format: "%.1f kn, searched to %.0f s past the sweep so it may sit after "
-                   + "“out” (%.1f kn) — score %.0f %% of entry",
+            String(format: "%.1f kn, searched to %.0f s past the sweep. It may sit after "
+                   + "“out”, which read %.1f kn. Score %.0f %% of entry",
                    record.minKn, config.minSpeedLagS, record.exitKn, record.score * 100),
             atRt: rt(record.minTs), rule: "minSpeedLag · turnSuccessPct",
             note: noteFor("minSpeedLag"))
@@ -192,7 +192,7 @@ public enum TurnTraceBuilder {
         let (windowHi, reason) = windowEnd(engineTurn, ev: ev, config: config)
         let derivedWindowS = max(ev.t[windowHi] - record.endTs, 0)
         add("Outcome window",
-            String(format: "closed %.0f s after the sweep — %@", derivedWindowS, reason.phrase),
+            String(format: "closed %.0f s after the sweep. %@", derivedWindowS, reason.phrase),
             atRt: rt(ev.t[windowHi]), rule: reason.rule,
             note: noteFor("turnRecoverHold",
                           else: disagreement(derived: derivedWindowS,
@@ -209,14 +209,14 @@ public enum TurnTraceBuilder {
             let stoppedS = Evidence.longestStop(t: ev.t, gap: ev.gap, v: ev.speed, a: a, b: b,
                                                 floor: config.stopSpeedFloorMps)
             add("First off-foil sample",
-                String(format: "%.1f kn on min(Doppler, positional) — off the foil for %.0f s",
+                String(format: "%.1f kn on min(Doppler, positional). Off the foil for %.0f s",
                        ev.speed[a] * Units.mpsToKn, offFoilS),
                 atRt: rt(ev.t[a]), rule: "foilExitSpeed",
                 note: disagreement(derived: offFoilS, record: record.offFoilS,
                                    tolerance: 0.5, unit: "s"))
             add("Longest stop",
-                String(format: "%.0f s below the %.1f m/s floor (touchdown up to %.1f s, "
-                       + "a fall past %.1f s)", stoppedS, config.stopSpeedFloorMps,
+                String(format: "%.0f s below the %.1f m/s floor. A touchdown allows up to "
+                       + "%.1f s. A fall starts past %.1f s", stoppedS, config.stopSpeedFloorMps,
                        config.touchdownMaxStopS, config.fallStopS),
                 rule: "turnStopSpeedFloor · turnTouchdownMaxStop · turnFallStop",
                 note: disagreement(derived: stoppedS, record: record.stoppedS,
@@ -224,10 +224,10 @@ public enum TurnTraceBuilder {
         } else {
             let marginal = win.contains { ev.speed[$0] < config.foilEntrySpeedKmh / Units.mpsToKmh }
             add("First off-foil sample",
-                "none — every sample in the window was flying"
+                "none. Every sample in the window was flying"
                     + (marginal
-                       ? String(format: ", though the speed did go marginal (under %.1f km/h), "
-                                + "which is what lets a pump burst demote it",
+                       ? String(format: ". The speed did go marginal, under %.1f km/h. "
+                                + "A pump burst can demote it from there",
                                 config.foilEntrySpeedKmh)
                        : ""),
                 rule: "foilExitSpeed")
@@ -237,12 +237,14 @@ public enum TurnTraceBuilder {
         if let pump = context.pump {
             let burst = pump.longestBurst(from: record.ts, to: ev.t[windowHi])
             let derivedPumped = burst >= pump.config.minStrokes
+            let strokes = String(burst)
+            let needed = String(pump.config.minStrokes)
             add("Pump burst",
                 derivedPumped
-                    ? "\(burst) strokes in a row inside the window — enough to corroborate a "
-                        + "touchdown where the speed also went marginal"
+                    ? strokes + " strokes in a row inside the window. "
+                        + "Enough to corroborate a touchdown where the speed also went marginal"
                     : (burst > 0
-                       ? "\(burst) strokes, short of the \(pump.config.minStrokes) a burst needs"
+                       ? strokes + " strokes, short of the " + needed + " a burst needs"
                        : "no strokes inside the window"),
                 rule: "pumpMinStrokes",
                 note: derivedPumped == record.pumped
@@ -250,15 +252,15 @@ public enum TurnTraceBuilder {
                     : .disagrees(derived: derivedPumped ? "pumped" : "not pumped",
                                  record: record.pumped ? "pumped" : "not pumped"))
         } else {
-            add("Pump burst", "no accelerometer in this recording — the channel is absent, "
-                + "which is not evidence that he did not pump", rule: "pumpMinStrokes")
+            add("Pump burst", "no accelerometer in this recording. The channel is absent. "
+                + "That is no evidence that you did not pump", rule: "pumpMinStrokes")
         }
 
         // 6. The wrist under.
         if let under = win.first(where: { ev.submerged[$0] }) {
             add("Wrist under",
-                String(format: "the barometer reads more than %.0f m below the session median "
-                       + "— proof of water, and a fall outright", config.baroDropM),
+                String(format: "the barometer reads more than %.0f m below the session median. "
+                       + "That is proof of water, and a fall outright", config.baroDropM),
                 atRt: rt(ev.t[under]), rule: "turnBaroDrop",
                 note: record.submerged ? .none : .disagrees(derived: "submerged",
                                                             record: "not submerged"))
@@ -275,12 +277,12 @@ public enum TurnTraceBuilder {
                 String(format: "through the axis · %.0f° before, %.0f° after",
                        before, after)
                     + (config.axisAfterDeg > 0
-                       ? String(format: " (clean needs %.0f°)", config.axisAfterDeg) : ""),
+                       ? String(format: " · clean needs %.0f°", config.axisAfterDeg) : ""),
                 atRt: rt(axisTs), rule: "turnAxisBeforeDeg · turnAxisAfterDeg",
                 note: noteFor("turnAxisAfterDeg", else: noteFor("turnAxisBeforeDeg")))
         } else {
             add("Wind axis", record.counted
-                ? "no crossing recorded — this session has no wind axis the engine trusts"
+                ? "no crossing recorded. This session has no wind axis the engine trusts"
                 : "a course change crosses neither line, so there is no axis to measure",
                 rule: "turnAxisBeforeDeg")
         }
@@ -296,13 +298,14 @@ public enum TurnTraceBuilder {
                 note: noteFor("turnCleanQuietS",
                               else: quietDisagreement(quiet.block, record: record)))
         } else {
-            add("Quiet tail", "off — turnCleanQuietS is 0, so nothing after the sweep is asked",
+            add("Quiet tail", "off. turnCleanQuietS is 0, so nothing after the sweep is asked",
                 rule: "turnCleanQuietS", note: noteFor("turnCleanQuietS"))
         }
 
         // 9. The two verdicts, and the rule that fixed each.
         let outcome = TurnOutcomeKind(record.outcome)
-        add("Outcome", "\(outcome.label)\(record.borderline ? " (borderline)" : "") — "
+        let borderline = record.borderline ? ", borderline" : ""
+        add("Outcome", outcome.label + borderline + ". "
             + outcomeReasonPhrase(record, config: config),
             rule: "turnFallStop · turnTouchdownMaxStop")
         add("Clean", cleanPhrase(record, config: config),
@@ -378,9 +381,10 @@ public enum TurnTraceBuilder {
             !$0.truncated && ($0.outcome == .touchdown || $0.outcome == .fellIn)
                 && $0.t >= record.endTs && $0.t <= stopT
         }) {
+            let ordinal = String(end.flightIndex + 1)
+            let kind = end.outcome == .fellIn ? "fall" : "touchdown"
             return QuietTail(block: .quietFlightEnd,
-                             finding: "flight \(end.flightIndex + 1) ended in a "
-                                + "\(end.outcome == .fellIn ? "fall" : "touchdown")",
+                             finding: "flight " + ordinal + " ended in a " + kind,
                              atRt: end.t, truncatedByGap: truncated)
         }
         i = lo
@@ -411,18 +415,18 @@ public enum TurnTraceBuilder {
         switch TurnOutcomeKind(record.outcome) {
         case .fellIn:
             return record.submerged
-                ? "the wrist went under, which is a fall whatever the stop measured"
-                : String(format: "the stop ran %.0f s, past the %.1f s a fall starts at",
+                ? "The wrist went under. That is a fall whatever the stop measured"
+                : String(format: "The stop ran %.0f s, past the %.1f s a fall starts at",
                          record.stoppedS, config.fallStopS)
         case .touchdown:
             if record.offFoilS == 0, record.pumped {
-                return "he never left the foil, but the speed went marginal and he pumped a "
+                return "You never left the foil. The speed went marginal and you pumped a "
                     + "burst out of it"
             }
-            return String(format: "off the foil, and the stop ran %.0f s — inside the %.1f s "
+            return String(format: "Off the foil. The stop ran %.0f s, inside the %.1f s "
                           + "a fall starts at", record.stoppedS, config.fallStopS)
         case .flewThrough:
-            return "no sample in the window was off the foil"
+            return "No sample in the window was off the foil"
         }
     }
 
@@ -432,22 +436,22 @@ public enum TurnTraceBuilder {
         }
         if record.clean { return "clean" }
         if TurnOutcomeKind(record.outcome) != .flewThrough {
-            return "not clean — it did not fly through"
+            return "not clean. It did not fly through"
         }
         if !record.success {
             if record.cleanBlockedBy == CleanBlock.axisAfter.rawValue {
-                return String(format: "not clean — it carried less than %.0f° past the axis",
+                return String(format: "not clean. It turned less than %.0f° past the axis",
                               config.axisAfterDeg)
             }
-            return String(format: "not clean — it held %.0f %% of entry, under the %.0f %% "
+            return String(format: "not clean. It held %.0f %% of entry, under the %.0f %% "
                           + "the score asks", record.score * 100, config.successPct)
         }
         switch record.cleanBlockedBy.flatMap(CleanBlock.init(rawValue:)) {
-        case .quietFlightEnd: return "not clean — a flight end inside the quiet tail"
-        case .quietOffFoil: return "not clean — off the foil inside the quiet tail"
-        case .quietSubmerged: return "not clean — the wrist went under inside the quiet tail"
-        case .axisAfter: return "not clean — too little carry past the axis"
-        case nil: return "not clean, and the record gives no reason — which should not happen"
+        case .quietFlightEnd: return "not clean. A flight end inside the quiet tail"
+        case .quietOffFoil: return "not clean. Off the foil inside the quiet tail"
+        case .quietSubmerged: return "not clean. The wrist went under inside the quiet tail"
+        case .axisAfter: return "not clean. Too little turn past the axis"
+        case nil: return "not clean, and the record gives no reason. That should not happen"
         }
     }
 

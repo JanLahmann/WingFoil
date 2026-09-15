@@ -66,9 +66,9 @@ struct GearView: View {
                 Section {
                     Toggle("Show retired gear", isOn: $showRetired)
                 } footer: {
-                    Text("Retiring keeps a wing's history — its sessions still reference it, "
-                         + "it just drops out of the pickers. Swipe to delete removes the link "
-                         + "for good.")
+                    Text("Retiring keeps a wing's history. Its sessions still reference it. "
+                         + "It only drops out of the pickers. Swipe to delete removes the "
+                         + "link for good.")
                 }
                 FeedbackFooter.section
             }
@@ -137,10 +137,10 @@ struct GearView: View {
         } header: {
             Label { Text("Spots") } icon: { Image(systemName: "mappin.and.ellipse") }
         } footer: {
-            Text("Tap a spot to rename it — a name you type sticks through a re-cluster. "
-                 + "Sessions starting within \(Int(SpotClusterer.defaultRadiusM)) m of each "
-                 + "other are one spot, and names come from the map when the network "
-                 + "allows.")
+            Text("Tap a spot to rename it. A name you type sticks through a re-cluster. "
+                 + "Sessions starting within " + String(Int(SpotClusterer.defaultRadiusM))
+                 + " m of each other are one spot. Names come from the map when the "
+                 + "network allows.")
         }
     }
 
@@ -236,7 +236,7 @@ private struct GearRowView: View {
             if let last = entry.lastUsed {
                 // `.current`: an aggregate over many sessions, which have no single zone
                 // between them. "How long since I rode this" is asked from here and now.
-                Text("Last used \(Fmt.shortDate(last, zone: .current))")
+                Text("Last used " + Fmt.shortDate(last, zone: .current))
                     .font(.caption2).foregroundStyle(.secondary)
             }
         }

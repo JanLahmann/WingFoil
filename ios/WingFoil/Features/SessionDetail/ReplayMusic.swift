@@ -64,16 +64,16 @@ enum ReplayMusicStore {
         /// The shortest track the exporter will accept, whole seconds, for the sentence
         /// below.
         private var seconds: Int { Int(ReplayClipSoundtrack.shortestTrackS) }
+        /// Its noun, so the sentence survives the constant changing — a hard-coded
+        /// "second" becomes "2 second" the day somebody raises it.
+        private var secondsNoun: String { seconds == 1 ? "second" : "seconds" }
 
         var errorDescription: String? {
             switch self {
             case .unreadable: "That file could not be read."
             case .silent:
-                // The threshold is a constant in another file, not a literal here, so the
-                // sentence has to survive it changing — a hard-coded "second" becomes
-                // "under 2 second" the day somebody raises it.
-                "That file has no music in it, or is too short to use (under "
-                    + "\(seconds) second\(seconds == 1 ? "" : "s"))."
+                "That file has no music in it, or it is too short to use. "
+                    + "A track needs at least " + String(seconds) + " " + secondsNoun + "."
             }
         }
     }

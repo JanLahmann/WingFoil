@@ -42,8 +42,8 @@ struct TurnHeadingStripView: View {
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(.secondary)
             if angles.isEmpty {
-                Text("No usable bearings through this window — the steps were shorter than "
-                     + "the receiver's own scatter.")
+                Text("No usable bearings through this window. "
+                     + "The steps were shorter than the receiver's own scatter.")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)

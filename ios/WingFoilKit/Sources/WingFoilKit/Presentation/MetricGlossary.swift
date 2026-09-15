@@ -96,7 +96,7 @@ public enum MetricGlossary {
     /// them from there. A glossary that spelled one of them itself would be a ninth copy.
     static func windowLabel(_ id: String) -> String {
         guard let found = DesignTokens.RecordWindows.catalogue.first(where: { $0.id == id })
-        else { preconditionFailure("no record window \"\(id)\"") }
+        else { preconditionFailure("no record window \"" + id + "\"") }
         return found.label
     }
 
@@ -119,7 +119,7 @@ public enum MetricGlossary {
             id: "flights",
             term: "Flights & touchdowns",
             short: "flights",
-            line: "One takeoff starts a flight; a touchdown or a swim ends it. "
+            line: "One takeoff starts a flight. A touchdown or a swim ends it. "
                 + "Both are counted.",
             sentence: "how long each flight lasted",
             surfaces: [.ios, .watch, .web, .appstore, .ciq]),
@@ -140,8 +140,8 @@ public enum MetricGlossary {
             id: "dryStreak",
             term: "Dry streak",
             short: "dry",
-            line: "How many jibes in a row you stayed out of the water — and the best run "
-                + "of the day.",
+            line: "How many jibes in a row you stayed out of the water, and the best "
+                + "run of the day.",
             sentence: "your longest run of jibes without falling in",
             surfaces: [.ios, .watch, .web, .appstore]),
 
@@ -162,8 +162,8 @@ public enum MetricGlossary {
             term: "CPH",
             short: "CPH",
             expansion: "clean jibes per hour",
-            line: "Clean jibes per hour: you flew through it, you held your speed, and the "
-                + "ten seconds after it stayed quiet.",
+            line: "Clean jibes per hour. Clean: flew through, held your speed, and "
+                + "10 quiet seconds after.",
             sentence: "your clean jibes per hour",
             surfaces: [.ios, .watch, .web, .appstore, .ciq]),
 
@@ -176,8 +176,8 @@ public enum MetricGlossary {
             term: "TPH",
             short: "TPH",
             expansion: "turns per hour",
-            line: "Turns per hour — every counted turn, not only the jibes. It stands in "
-                + "for JPH on a session whose wind axis named no jibes.",
+            line: "Turns per hour, every counted turn and not only the jibes. It stands "
+                + "in for JPH on a session whose wind axis named no jibes.",
             sentence: "your turns per hour",
             surfaces: [.ios, .web]),
 
@@ -194,8 +194,8 @@ public enum MetricGlossary {
             id: "speedRecords",
             term: "Speed records",
             short: "best",
-            line: "Your fastest 2 seconds, 10 seconds, 500 m and nautical mile — the same "
-                + "windows the speedsurfing world uses.",
+            line: "Your fastest 2 seconds, 10 seconds, 500 m and nautical mile. The "
+                + "speedsurfing world uses the same windows.",
             sentence: "your speed records",
             surfaces: [.ios, .watch, .web, .appstore, .ciq]),
 
@@ -216,8 +216,8 @@ public enum MetricGlossary {
             id: "alpha500",
             term: windowLabel("alpha500"),
             short: "alpha",
-            line: "Your fastest 500 m that ends within 50 m of where it started — so it "
-                + "contains a jibe, and measures the turn as well as the speed.",
+            line: "Your fastest 500 m that ends within 50 m of where it started. It "
+                + "contains a jibe, so it measures the turn as well as the speed.",
             sentence: "your fastest 500 m that comes back to where it started",
             surfaces: [.ios, .web]),
     ]
@@ -227,7 +227,7 @@ public enum MetricGlossary {
     /// from a screen is exactly the bug this type exists to stop.
     public static func entry(_ id: String) -> MetricGlossaryEntry {
         guard let found = entries.first(where: { $0.id == id }) else {
-            preconditionFailure("no glossary entry \"\(id)\"")
+            preconditionFailure("no glossary entry \"" + id + "\"")
         }
         return found
     }

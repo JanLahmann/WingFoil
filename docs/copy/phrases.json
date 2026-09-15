@@ -52,7 +52,7 @@
       "flew through" : "kept the foil the whole way through the turn — no touchdown, no swim"
     }
   },
-  "promise" : "CleanJibe reads a wingfoil session off your watch and tells you what actually happened: how much of it you spent on the foil, how long each flight lasted, your speed records, and — for every turn — whether you flew through it, touched down, or fell in.",
+  "promise" : "Did you fly through that jibe? CleanJibe reads your session off the watch and tells you: time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.",
   "strava" : "Strava lets a new app connect a limited number of riders",
   "stravaForbidden" : [
     "reviewed the app",

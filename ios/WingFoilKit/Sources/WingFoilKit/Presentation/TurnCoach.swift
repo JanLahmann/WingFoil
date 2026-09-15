@@ -113,62 +113,69 @@ public enum TurnCoach {
         let mid = midPointWord(turn.type)
         switch rule(turn: turn, slice: slice) {
         case .fellInFast:
-            return "The speed was there right round — \(pct(turn.score)) of your entry held "
-                + "— and it still ended in the water."
+            // The score and the outcome say opposite things, so the sentence says both.
+            return "You held " + pct(turn.score) + " of your entry speed right round. "
+                + "It still ended in the water."
         case .fellIn:
-            return "This one ended in the water — \(kn(turn.entryKn)) coming in, "
-                + "\(kn(turn.minKn)) at the low point."
+            return "This one ended in the water. " + kn(turn.entryKn) + " coming in, "
+                + kn(turn.minKn) + " at the low point."
         case .wristUnder:
-            return "The barometer saw your wrist go under here, so the foil was gone for a "
-                + "moment — \(kn(turn.entryKn)) in, \(kn(turn.minKn)) at the low point."
+            return "The barometer saw your wrist go under here. "
+                + "The foil was gone for a moment. "
+                + kn(turn.entryKn) + " in, " + kn(turn.minKn) + " at the low point."
         case .pumpedOut:
-            let strokes = pumpStrokes.map { "\(TurnAnalytics.strokesText($0))" }
+            let strokes = pumpStrokes.map { TurnAnalytics.strokesText($0) }
             switch (strokes, turn.offFoilS > 0) {
             case (let strokes?, true):
-                return "You pumped this one back out — \(strokes), and "
-                    + "\(seconds(turn.offFoilS)) off the foil before it flew again."
+                return "You pumped this one back out in " + strokes + ". "
+                    + seconds(turn.offFoilS) + " off the foil before it flew again."
             case (let strokes?, false):
-                return "You pumped this one back out in \(strokes), and it was flying "
-                    + "again straight away."
+                return "You pumped this one back out in " + strokes + ". "
+                    + "It was flying again straight away."
             case (nil, true):
-                return "You pumped this one back out — \(seconds(turn.offFoilS)) off the "
-                    + "foil before it flew again."
+                return "You pumped this one back out. " + seconds(turn.offFoilS)
+                    + " off the foil before it flew again."
             case (nil, false):
-                return "You pumped this one back out, and it was flying again straight away."
+                return "You pumped this one back out. It was flying again straight away."
             }
         case .touchdownOnExit:
-            return "The foil touched down on the way out — you held \(kn(turn.entryKn)) into "
-                + "the \(mid) and lost it after."
+            return "The foil touched down on the way out. You held " + kn(turn.entryKn)
+                + " into the " + mid + " and lost it after."
         case .touchdownComingIn:
-            return "The foil touched down before the \(mid) — the speed was already at "
-                + "\(kn(turn.minKn)) going in."
+            return "The foil touched down before the " + mid + ". The speed was already at "
+                + kn(turn.minKn) + " going in."
         case .quietFlightEnd:
-            return "You rode the turn itself — \(pct(turn.score)) of your entry held — and "
-                + "the foil went a few seconds later, so it is not a clean one."
+            // The turn itself was clean. The ten seconds after it were not (engine 0.17.0).
+            return "You rode the turn itself and held " + pct(turn.score)
+                + " of your entry speed. "
+                + "The foil went a few seconds later, so this one is not clean."
         case .quietOffFoil:
-            return "The turn was there and the seconds after it were not: the foil dropped "
-                + "again on the way out, so this one does not count as clean."
+            // The foil was lost for a second or more in the tail: too short to end a flight,
+            // long enough that the jibe is not one he rode away from.
+            return "You rode the turn, then the foil dropped again on the way out. "
+                + "This one does not count as clean."
         case .quietSubmerged:
-            return "You came through carrying \(pct(turn.score)) of your entry speed, and "
-                + "the barometer saw your wrist go under just after — not a clean one."
+            return "You held " + pct(turn.score) + " of your entry speed through the turn. "
+                + "The barometer then saw your wrist go under. This one is not clean."
         case .axisAfter:
-            return "You held \(pct(turn.score)) of your entry speed, and the board did not "
-                + "come far enough past the wind axis for this to count as clean."
+            return "You held " + pct(turn.score) + " of your entry speed. "
+                + "The board did not come far enough past the wind axis. "
+                + "This one is not clean."
         case .cleanAndFast:
-            return "Clean, and you barely slowed — \(pct(turn.score)) of your entry speed "
-                + "held all the way round."
+            return "Clean, and you barely slowed. You held " + pct(turn.score)
+                + " of your entry speed all the way round."
         case .cleanButSlow:
-            return "You flew all the way through, and it cost you — \(kn(turn.entryKn)) in, "
-                + "\(kn(turn.minKn)) at the low point."
+            return "You flew all the way through, and it cost you speed. " + kn(turn.entryKn)
+                + " in, " + kn(turn.minKn) + " at the low point."
         case .slowedEarly:
-            return "The speed went before the \(mid) — \(kn(slice.speed.minKn)) with the turn "
-                + "still to come."
+            return "The speed went before the " + mid + ". You were down to "
+                + kn(slice.speed.minKn) + " with the turn still to come."
         case .slowedLate:
-            return "You held it into the \(mid) and the speed went on the way out — "
-                + "down to \(kn(slice.speed.minKn))."
+            return "You held it into the " + mid + ". The speed went on the way out, down to "
+                + kn(slice.speed.minKn) + "."
         case .plain:
-            return "\(kn(turn.entryKn)) in, \(kn(turn.minKn)) at the low point, "
-                + "\(pct(turn.score)) of your entry speed held."
+            return kn(turn.entryKn) + " in, " + kn(turn.minKn) + " at the low point. You held "
+                + pct(turn.score) + " of your entry speed."
         }
     }
 

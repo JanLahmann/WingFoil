@@ -69,7 +69,7 @@ struct IcuKeyEntry: View {
                 }
             }
             if store.apiKeyIsInjected {
-                Text("Using the ICU_API_KEY scheme environment variable (DEBUG build).")
+                Text("Using the ICU_API_KEY scheme environment variable. DEBUG build only.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

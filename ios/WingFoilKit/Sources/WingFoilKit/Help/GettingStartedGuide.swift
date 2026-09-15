@@ -60,9 +60,8 @@ public enum GettingStartedGuide {
     /// The one sentence that opens both the topic and the page: what the
     /// test actually is. First on purpose, on both surfaces.
     public static let framing =
-        "The real test is one session on the water: record it the way you always do, bring it "
-            + "in, and read the turn verdicts against what you remember — which jibes you "
-            + "flew through, where you touched down, where you fell in."
+        "Ride one session as you always do. Open it in CleanJibe. Check each turn: flew "
+            + "through, touchdown, fell in. Only you know which it really was."
 
     /// The topic's own index line.
     public static let topicSummary =
@@ -75,7 +74,7 @@ public enum GettingStartedGuide {
             title: "Garmin with the CleanJibe watch app",
             channel: .release,
             summary: "Install it from Connect IQ, ride, save. Sessions sync through "
-                + "intervals.icu: Settings → intervals.icu, four steps, once.",
+                + "intervals.icu: Settings → intervals.icu, 4 steps, once.",
             steps: [
                 .init(number: 1,
                       title: "Install the watch app",
@@ -84,9 +83,9 @@ public enum GettingStartedGuide {
                           + "No key, no account."),
                 .init(number: 2,
                       title: "Record and save",
-                      detail: "Charged watch and phone. Press START, pick **CleanJibe**, wait "
-                          + "until it says GPS good, press START again. Ride — glance at the "
-                          + "tally once — then STOP and **Save**."),
+                      detail: "Charge the watch and the phone. Press START, pick "
+                          + "**CleanJibe**, wait for GPS good, press START again. Ride. "
+                          + "Glance at the tally once. Then STOP and **Save**."),
                 .init(number: 3,
                       title: "Let Garmin Connect sync",
                       detail: "The watch uploads to Garmin Connect by itself next to the "
@@ -94,8 +93,8 @@ public enum GettingStartedGuide {
                 .init(number: 4,
                       title: "Bridge it with intervals.icu",
                       detail: "Free account at intervals.icu, connect Garmin there, copy your "
-                          + "personal API key, paste it into Settings → **intervals.icu**. "
-                          + "Four steps, about five minutes, once."),
+                          + "personal API key, paste it into Settings → **intervals.icu**. 4 "
+                          + "steps, about 5 minutes, once."),
                 .init(number: 5,
                       title: "Pull down on Sessions",
                       detail: "That is the refresh: CleanJibe checks intervals.icu, imports "
@@ -133,8 +132,8 @@ public enum GettingStartedGuide {
                           + "identical either way."),
                 .init(number: 5,
                       title: "Or let intervals.icu do it",
-                      detail: "Most of these watches sync to intervals.icu too, and CleanJibe "
-                          + "picks them up from there — the same four steps as the Garmin "
+                      detail: "Most of these watches sync to intervals.icu too. CleanJibe "
+                          + "picks them up from there, through the same 4 steps as the Garmin "
                           + "route."),
             ]),
         GettingStartedRoute(
@@ -147,7 +146,7 @@ public enum GettingStartedGuide {
                 .init(number: 1,
                       title: "Connect once",
                       detail: "Settings → **Strava** → Connect with Strava. Strava's own "
-                          + "consent page opens; leave the private-activities box ticked or "
+                          + "consent page opens. Leave the private-activities box ticked, or "
                           + "your \"Only you\" sessions stay hidden."),
                 .init(number: 2,
                       title: "Pick your sessions",
@@ -165,7 +164,7 @@ public enum GettingStartedGuide {
                           + "there are no pump strokes."),
                 .init(number: 5,
                       title: "If connecting is refused",
-                      detail: "Strava lets a new app connect a limited number of riders; that "
+                      detail: "Strava lets a new app connect a limited number of riders. That "
                           + "is nothing to do with your account. Menu → Support & ideas says "
                           + "so."),
             ]),
@@ -173,8 +172,8 @@ public enum GettingStartedGuide {
             id: "appleWatchApp",
             title: "The CleanJibe Apple Watch app",
             channel: .beta,
-            summary: "Record on your Apple Watch and the session comes to the phone by itself "
-                + "— pump strokes and takeoff attempts included.",
+            summary: "Record on your Apple Watch. The session comes to the phone by itself, "
+                + "with pump strokes and takeoff attempts included.",
             steps: [
                 .init(number: 1,
                       title: "Put it on the watch",
@@ -189,7 +188,7 @@ public enum GettingStartedGuide {
                 .init(number: 3,
                       title: "Let it arrive",
                       detail: "Open CleanJibe on the iPhone. The session comes across on its "
-                          + "own while phone and watch are together; give it a minute."),
+                          + "own while phone and watch are together. Give it a minute."),
                 .init(number: 4,
                       title: "What you get",
                       detail: "Speed off the watch's own receiver, so the records certify, and "
@@ -205,7 +204,7 @@ public enum GettingStartedGuide {
             steps: [
                 .init(number: 1,
                       title: "Start a Surfing workout",
-                      detail: "On the watch open **Workout** and pick **Surfing**; *Water "
+                      detail: "On the watch open **Workout** and pick **Surfing**. *Water "
                           + "Sports* works too. Apple Health has no wingfoil activity, so "
                           + "pick the closest one."),
                 .init(number: 2,
@@ -214,8 +213,8 @@ public enum GettingStartedGuide {
                           + "Health when the workout finishes, which can take a minute."),
                 .init(number: 3,
                       title: "Import it on the iPhone",
-                      detail: "Import → **Apple Health**, allow CleanJibe to read workouts and "
-                          + "routes — every switch on, or there is nothing to read — then "
+                      detail: "Import → **Apple Health**. Allow CleanJibe to read workouts and "
+                          + "routes. Switch every one on, or there is nothing to read. Then "
                           + "pick yours."),
                 .init(number: 4,
                       title: "Keep it automatic",
@@ -235,12 +234,12 @@ public enum GettingStartedGuide {
             id: "dryRun",
             title: "If you cannot wait for wind",
             channel: .release,
-            summary: "Record a three to five minute walk on the watch. It proves the route "
-                + "from the watch to the phone and nothing else.",
+            summary: "Record a 3 to 5 minute walk on the watch. It proves the route from the "
+                + "watch to the phone, nothing else.",
             steps: [
                 .init(number: 1,
-                      title: "Three to five minutes of movement",
-                      detail: "A bike ride draws the nicest track — anything above about 12 "
+                      title: "3 to 5 minutes of movement",
+                      detail: "A bike ride draws the nicest track. Anything above about 12 "
                           + "km/h counts as flying. Walking works too. Go outside: indoors "
                           + "there are no positions."),
                 .init(number: 2,
@@ -280,13 +279,13 @@ public enum GettingStartedGuide {
                           + "Send."),
                 .init(number: 4,
                       title: "Attach the file if a session read wrong",
-                      detail: "With the .fit the detection can be re-run and fixed; without it "
+                      detail: "With the .fit the detection can be re-run and fixed. Without it "
                           + "there is only guesswork. Ideas and wishes are as welcome as "
                           + "faults."),
                 .init(number: 5,
                       title: "Send a card, and say how it reads",
-                      detail: "The share button on the session page draws a **share card** — "
-                          + "your track, your numbers. Send it to a friend, and say if "
+                      detail: "The share button on the session page draws a **share card** "
+                          + "with your track and your numbers. Send it to a friend. Say if "
                           + "anything on it reads wrong."),
             ]),
     ]
@@ -301,8 +300,8 @@ public enum GettingStartedGuide {
     /// detour exists at all, in one breath. The longer version, for the setup
     /// card and the help topic, is `IcuSetupGuide.rationale`.
     public static let settingsIcu =
-        "Garmin has no open API for a personal app, so intervals.icu is the free bridge: "
-            + "connect your Garmin there once and every session arrives here by itself."
+        "Garmin has no open API, so intervals.icu is the bridge. Connect Garmin there once. "
+            + "Every session then arrives here by itself. Free."
 
     /// **Settings → Strava**, the caption above the connect button: what this
     /// account is for, and what it costs. The footer under the button says the

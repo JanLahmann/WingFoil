@@ -109,14 +109,15 @@ public enum FlightPairing {
 
     /// `starts flight 12 · 1:23 · ended: touchdown`
     public static func takeoffLine(_ flight: Flight) -> String {
-        "starts flight \(flight.number) · \(clock(flight.durationS)) "
-            + "· ended: \(flight.outcome.rawValue)"
+        let head = "starts flight " + String(flight.number) + " · " + clock(flight.durationS)
+        return head + " · ended: " + flight.outcome.rawValue
     }
 
     /// `no flight · 3 strokes` — the one mark in the takeoff layer that starts no flight,
     /// so it names no flight either.
     public static func failedLine(strokes: Int) -> String {
-        "no flight · \(strokes) stroke\(strokes == 1 ? "" : "s")"
+        let noun = strokes == 1 ? " stroke" : " strokes"
+        return "no flight · " + String(strokes) + noun
     }
 
     /// `ends flight 12 · started 41:07 · 7 pumps`
@@ -124,16 +125,21 @@ public enum FlightPairing {
     /// The stroke count is *absent* without an accelerometer stream, never `0 pumps`: "the
     /// wind did it" and "nobody measured" are different facts and only one of them is true.
     public static func flightEndLine(_ flight: Flight) -> String {
-        var line = "ends flight \(flight.number) · started \(clock(flight.startTs))"
-        if let pumps = flight.pumps { line += " · \(pumps) pump\(pumps == 1 ? "" : "s")" }
+        var line = "ends flight " + String(flight.number)
+        line += " · started " + clock(flight.startTs)
+        if let pumps = flight.pumps {
+            let noun = pumps == 1 ? " pump" : " pumps"
+            line += " · " + String(pumps) + noun
+        }
         return line
     }
 
     /// `flight 12 of 55 · 1:23 · 272 m · ended: touchdown`
     public static func flightLine(_ flight: Flight) -> String {
-        var line = "flight \(flight.number) of \(flight.count) · \(clock(flight.durationS))"
-        if let distM = flight.distM { line += " · \(metres(distM))" }
-        return line + " · ended: \(flight.outcome.rawValue)"
+        var line = "flight " + String(flight.number) + " of " + String(flight.count)
+        line += " · " + clock(flight.durationS)
+        if let distM = flight.distM { line += " · " + metres(distM) }
+        return line + " · ended: " + flight.outcome.rawValue
     }
 
     // MARK: - Formatting

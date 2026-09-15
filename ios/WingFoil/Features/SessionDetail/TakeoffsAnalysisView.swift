@@ -64,8 +64,8 @@ struct TakeoffsAnalysisView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(words.pumping
-                 ? "All \(detail.takeoffMarks.count) attempts"
-                 : "All \(detail.takeoffMarks.count) planing starts")
+                 ? "All " + String(detail.takeoffMarks.count) + " attempts"
+                 : "All " + String(detail.takeoffMarks.count) + " planing starts")
                 .font(.headline)
             if words.pumping { chips }
             if !detail.segments.isEmpty { map }
@@ -97,8 +97,11 @@ struct TakeoffsAnalysisView: View {
             }
             .pickerStyle(.segmented)
             .accessibilityLabel("Attempt outcome")
-            Text("A free takeoff got up on the wind alone — it is one of the successes, "
-                 + "not a third outcome beside them.")
+            // "Free" is a *how*, not a fourth bucket: a free takeoff sits inside the
+            // attempts that got up, beside the pumped ones, never beside them as a third
+            // outcome of its own.
+            Text("A free takeoff got up on the wind alone. "
+                 + "It is a takeoff too, counted with the rest.")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -158,9 +161,10 @@ struct TakeoffsAnalysisView: View {
     }
 
     private var caption: String {
-        if attempts.isEmpty { return "Nothing to mark — widen the filter." }
+        if attempts.isEmpty { return "Nothing to mark. Widen the filter." }
         let noun = words.pumping ? filter.description : "planing starts"
-        return "\(attempts.count) \(noun) marked · tap a pin or a row to point at one."
+        return String(attempts.count) + " " + noun
+            + " marked · tap a pin or a row to point at one."
     }
 
     // MARK: - List
@@ -215,18 +219,22 @@ struct TakeoffsAnalysisView: View {
     private var footnote: some View {
         let k = detail.analysis.summary.takeoff
         return VStack(alignment: .leading, spacing: 3) {
+            // Without an accelerometer the engine sees no pumping at all, so the failed
+            // episodes are missing rather than zero, and the list is the takeoffs only.
             Text(words.pumping
-                 ? "An attempt is a pumping burst and what came of it. The ones that got up "
-                    + "are the engine's takeoffs; the ones that did not are the pumping "
-                    + "episodes it judged failed, which is why a recording with no "
-                    + "accelerometer shows successes only."
-                 : "A planing start is the speed rise that ended in a planing run. Windsurf "
-                    + "analysis reads no pump channel, so a start that never happened leaves "
-                    + "no trace to count — every start listed here is one that worked.")
+                 ? "An attempt is a pumping burst and what came of it. "
+                    + "The ones that got up are takeoffs. "
+                    + "The ones that did not are failed pumping episodes. "
+                    + "A recording with no accelerometer shows the takeoffs only."
+                 : "A planing start is the speed rise that ended in a planing run. "
+                    + "Windsurf analysis reads no pump channel. "
+                    + "A start that never happened leaves no trace to count. "
+                    + "Every start listed here is one that worked.")
             if k.runsTruncated > 0 {
-                Text("\(k.runsTruncated) run\(k.runsTruncated == 1 ? "" : "s") "
-                     + "not in the record — the recording started or stopped inside them, "
-                     + "so they carry no time to foil.")
+                Text(String(k.runsTruncated) + (k.runsTruncated == 1 ? " run" : " runs")
+                     + " not in the record. "
+                     + "The recording started or stopped inside them, so they have no "
+                     + "time to foil.")
             }
         }
         .font(.caption2)

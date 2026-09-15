@@ -86,25 +86,35 @@ struct BetaSectionView: View {
         } header: {
             Text("Beta")
         } footer: {
-            Text("You are on the beta. These are the doors it opens that the App Store "
-                 + "build does not have yet — every one of them is here to be ridden with "
-                 + "and reported on.\n\n"
-                 // **Named for a door that is on screen.** It said "the same mail as Send
-                 // feedback", and "Send feedback" is not a label a rider can see anywhere
-                 // in this build — it is the composer's own navigation title, which only
-                 // appears once the mail is already open (15 Sep 2026).
-                 + "\"Request a feature\" opens the same mail as \(FeedbackDoors.app), with "
-                 + "this build and your library's shape already written in. Nothing is sent "
-                 + "until you tap Send.\n\n"
-                 + "\"Send usage report\" adds what this phone has counted — which parts of "
-                 + "CleanJibe you have used, how often, and anything that has gone wrong. "
-                 + "The counters never leave this phone except in that mail, and you can "
-                 + "delete any line of it before you send it.\n\n"
-                 + "\"Start over\" is here because deleting the app is not enough: iOS "
-                 + "keeps your intervals.icu key and your Strava connection in its keychain "
-                 + "and hands them back to the reinstall, so the first run you wanted to "
-                 + "test never happens. This removes those too.")
+            Text(Self.sectionFooter)
         }
+    }
+
+    /// The three rows of the section, each named the way it is labelled on screen.
+    ///
+    /// **Named for a door that is on screen.** It said "the same mail as Send feedback",
+    /// and "Send feedback" is not a label a rider can see anywhere in this build — it is
+    /// the composer's own navigation title, which only appears once the mail is already
+    /// open (15 Sep 2026). `FeedbackDoors.app` is concatenated rather than interpolated so
+    /// the door's name stays one piece of data ("Menu → Support & ideas").
+    ///
+    /// The fact the "Start over" paragraph no longer carries: with the key handed back by
+    /// the keychain, the first run a tester wanted to test never happens.
+    private static var sectionFooter: String {
+        let opening = "You are on the beta. These doors are open here and not in the App "
+            + "Store build yet. Every one is here to be ridden with and reported on.\n\n"
+        let request = "\"Request a feature\" opens the same mail as "
+            + FeedbackDoors.app
+            + ", with this build and your library's shape already written in. "
+            + "Nothing is sent until you tap Send.\n\n"
+        let usage = "\"Send usage report\" adds what this phone has counted. It counts "
+            + "which parts of CleanJibe you have used, how often, and anything that has "
+            + "gone wrong. The counters never leave this phone except in that mail, and "
+            + "you can delete any line of it before you send it.\n\n"
+        let startOver = "\"Start over\" is here because deleting the app is not enough. "
+            + "iOS keeps your intervals.icu key and your Strava connection in its "
+            + "keychain, and hands them back to the reinstall. This removes them too."
+        return opening + request + usage + startOver
     }
 
     /// **Start over.** Red, last, and behind an alert that names everything it takes —
@@ -134,20 +144,19 @@ struct BetaSectionView: View {
     /// is a confirmation the rider cannot check, and the two items he would never guess at
     /// — the keychain pair — are the whole reason this row exists, so they are named.
     private static let warning =
-        "CleanJibe will be exactly as it was the day you installed it. This cannot be "
-        + "undone.\n\n"
+        "CleanJibe goes back to the day you installed it. This cannot be undone.\n\n"
         + "• Your whole library: every session, its analysis and its archived recording, "
         + "the deleted-session memory, and any backup file still waiting on this phone.\n"
         + "• Your intervals.icu key and your Strava connection. Both live in the iOS "
-        + "keychain, which is why deleting the app leaves them behind — this does not.\n"
+        + "keychain. Deleting the app leaves them behind. This does not.\n"
         + "• Every setting: the welcome screen's flag, map style and layers, replay "
         + "length, framing and music, the notification choices, the map picks for the "
         + "watch, and the tuning sliders.\n"
         + "• The beta's usage counters and the widgets' snapshot.\n"
         + "• Cached thumbnails, imported files and anything half-exported.\n\n"
-        + "Nothing leaves this phone and nothing elsewhere is touched: your sessions on "
-        + "intervals.icu, your activities on Strava and the recordings on your watch are "
-        + "all still there. Make a backup first if you want one."
+        + "Nothing leaves this phone, and nothing elsewhere is touched. Your sessions on "
+        + "intervals.icu, your activities on Strava and the recordings on your watch all "
+        + "stay. Make a backup first if you want one."
 }
 #endif
 
@@ -191,8 +200,8 @@ struct ComingSoonSection: View {
         + "have behind it."
     #else
     private static let footer =
-        "These functions are not in this app yet. Every one of them can be ridden today in "
-        + "the public beta — joining takes one tap, and your library comes with you."
+        "These functions are not in this app yet. Ride every one of them today in the "
+        + "public beta. Joining takes one tap, and your library comes with you."
     #endif
 }
 
@@ -220,9 +229,9 @@ struct ComingSoonPage: View {
                 Text("How to join the beta")
             } footer: {
                 Text("TestFlight is Apple's own app for trying a build before it ships. "
-                     + "CleanJibe's beta reads and writes the same library as this app, so "
-                     + "every session, spot and piece of gear you have comes with you — and "
-                     + "you can go back to the App Store version whenever you like.")
+                     + "CleanJibe's beta reads and writes the same library as this app. "
+                     + "Every session, spot and piece of gear comes with you. Go back to "
+                     + "the App Store version whenever you like.")
             }
             #endif
 
@@ -245,8 +254,8 @@ struct ComingSoonPage: View {
             } header: {
                 Text("Further out")
             } footer: {
-                Text("Experimental, and on a handful of phones. Ask for one and it will be "
-                     + "worked on sooner — that is what the list is for.")
+                Text("Experimental, and on a handful of phones. Ask for one here and it "
+                     + "gets worked on sooner.")
             }
             #endif
 
@@ -286,15 +295,15 @@ struct ComingSoonPage: View {
     /// ridden with until it has earned its way into this app.
     #if BETA
     private static let intro =
-        "CleanJibe grows in the open. You are holding the public beta, so everything below "
-        + "is in your hands already — it is here to be ridden with and reported on, and it "
-        + "moves into the App Store app once it has held up."
+        "CleanJibe grows in the open. You are holding the public beta, so everything "
+        + "below is in your hands already. Ride it and report on it. Each one moves into "
+        + "the App Store app once it has held up."
     #else
     private static let intro =
-        "These functions come in a future release, and can be previewed now in the public "
-        + "beta. CleanJibe grows in the open: everything in this app is finished and ridden "
-        + "with, and the features that are still proving themselves are tried in the beta "
-        + "first, then arrive here once they have held up."
+        "These functions come in a future release. Preview them now in the public beta. "
+        + "CleanJibe grows in the open. Everything in this app is finished and ridden "
+        + "with. A feature that is still proving itself is ridden in the beta first, "
+        + "then arrives here."
     #endif
 
     private func row(_ feature: String) -> some View {

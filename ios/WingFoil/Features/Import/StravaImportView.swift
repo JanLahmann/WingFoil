@@ -78,11 +78,12 @@ struct StravaImportView: View {
         } header: {
             Text("Strava")
         } footer: {
-            Text("This build of CleanJibe carries no Strava API keys, so it cannot ask Strava "
-                 + "for anything. If you built it yourself: create an application at "
-                 + "strava.com/settings/api and put its client id and secret into "
-                 + "`ios/Strava.xcconfig` — `ios/Strava.example.xcconfig` shows the two "
-                 + "lines. Everything else on this screen works the moment they are there.")
+            Text("This build of CleanJibe carries no Strava API keys, so it cannot ask "
+                 + "Strava for anything. If you built it yourself: create an application "
+                 + "at strava.com/settings/api and put its client id and secret into "
+                 + "`ios/Strava.xcconfig`. The two lines are shown in "
+                 + "`ios/Strava.example.xcconfig`. Everything else on this screen works "
+                 + "the moment they are there.")
         }
     }
 
@@ -98,12 +99,13 @@ struct StravaImportView: View {
         } header: {
             Text("Already on Strava?")
         } footer: {
-            Text(markdown: "Strava opens, you say yes, and CleanJibe can then list your activities and "
-                 + "download the GPS track of the ones you pick. It reads; it never writes, "
-                 + "renames or posts anything to your Strava account.\n\n"
-                 + "Strava lets a new app connect a **limited number of riders**. If "
-                 + "connecting is refused because CleanJibe is full, that is why — Menu → "
-                 + "Support & ideas is the way to say so, and Strava is asked for more.")
+            Text(markdown: "Strava opens, you say yes, and CleanJibe can then list your "
+                 + "activities and download the GPS track of the ones you pick. It only "
+                 + "reads. It never writes, renames or posts anything to your Strava "
+                 + "account.\n\n"
+                 + "Strava lets a new app connect a **limited number of riders**. "
+                 + "Connecting is refused while CleanJibe is full. Tell us under "
+                 + "Menu → Support & ideas, and CleanJibe asks Strava for more.")
         }
     }
 
@@ -147,11 +149,7 @@ struct StravaImportView: View {
         } header: {
             Text("Nothing to import")
         } footer: {
-            Text("No \(typeList) activity from the last two years that is not already in your "
-                 + "library. Strava has no wingfoil type, so if your sessions are filed under "
-                 + "something else, switch that type on below — or just put \"wing\" or "
-                 + "\"foil\" in the activity's name on Strava and CleanJibe will find it "
-                 + "whatever type it is.")
+            Text(emptyFooter)
         }
     }
 
@@ -171,11 +169,10 @@ struct StravaImportView: View {
         } header: {
             Text("Activities on Strava")
         } footer: {
-            Text("Tap to pick, or use Import all new. \(importable.count) of "
-                 + "\(store.stravaCandidates.count) can be imported — the rest are already in "
-                 + "your library. Strava answers two hundred requests every fifteen minutes "
-                 + "and each activity costs one, so a first big import takes its time and "
-                 + "may ask you to come back.")
+            Text("Tap to pick, or use Import all new. " + importableLine
+                 + " The rest are already in your library. Strava answers 200 requests "
+                 + "every 15 minutes, and each activity costs one. A first big import "
+                 + "takes its time and may ask you to come back.")
         }
     }
 
@@ -225,12 +222,12 @@ struct StravaImportView: View {
             Text(markdown: "Everything that comes from the track: foil time, flights, every turn with "
                  + "its verdict, the wind axis, the map.\n\n"
                  + "What is missing is what Strava does not hand over. There is no speed "
-                 + "channel — Strava works speed out from the positions, the same way "
-                 + "CleanJibe would — so speed records from these sessions are marked "
-                 + "**uncertified**. And nothing records your wrist, so there are no pump "
-                 + "strokes and no failed takeoff attempts. If the same session is also on "
-                 + "intervals.icu, import it there instead: that is the original file from "
-                 + "your watch, and it certifies.")
+                 + "channel. Strava works speed out from the positions, the same way "
+                 + "CleanJibe would, so speed records from these sessions are marked "
+                 + "**uncertified**. Nothing records your wrist, so there are no pump "
+                 + "strokes and no failed takeoff attempts. If the same session is also "
+                 + "on intervals.icu, import it there instead. That is the original file "
+                 + "from your watch, and it certifies.")
         }
     }
 
@@ -238,6 +235,24 @@ struct StravaImportView: View {
 
     private var importable: [StravaCandidate] {
         store.stravaCandidates.filter { !$0.isAlreadyImported }
+    }
+
+    /// "4 of 30 can be imported." Built with `+` and held in one place, so the sentence
+    /// in the footer carries no brackets and the footer stays a short chain to type-check.
+    private var importableLine: String {
+        String(importable.count) + " of " + String(store.stravaCandidates.count)
+            + " can be imported."
+    }
+
+    /// Nothing on the list, and the two ways out of it: the type switches below, or a
+    /// name on Strava that says wing or foil.
+    private var emptyFooter: String {
+        let opening = "No " + typeList + " activity from the last two years that is not "
+            + "already in your library."
+        let ways = " Strava has no wingfoil type. If your sessions are filed under "
+            + "something else, switch that type on below. Or put \"wing\" or \"foil\" in "
+            + "the activity's name on Strava, and CleanJibe finds it whatever type it is."
+        return opening + ways
     }
 
     private var typeList: String {

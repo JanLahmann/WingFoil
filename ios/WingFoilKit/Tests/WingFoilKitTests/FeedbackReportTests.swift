@@ -61,7 +61,7 @@ import Testing
         #expect(lines[3] == "What you expected instead:")
         #expect(lines[4] == "")
         #expect(lines[5] == "")
-        #expect(lines[6] == "Which session (date, spot), if it is about one:")
+        #expect(lines[6] == "Which session, its date and spot, if it is about one:")
         #expect(lines[7] == "")
         #expect(lines[8] == "")
     }
@@ -83,7 +83,7 @@ import Testing
                                                        omittingEmptySubsequences: false)
         let rule = try! #require(lines.firstIndex(of: Substring(FeedbackReport.Separator.rule)))
         #expect(lines[rule + 1] == Substring(FeedbackReport.Separator.note))
-        #expect(lines[rule + 1].contains("delete any line you would rather not send"))
+        #expect(lines[rule + 1].contains("Delete any line you would rather not send"))
         #expect(lines[rule + 2] == "")
         #expect(lines[rule + 3] == "App")
         // Everything the rider writes is above it; every diagnostic is below it.
@@ -99,7 +99,7 @@ import Testing
             engineStamp: nil)
         let lines = FeedbackReport.body(facts(session: session))
             .split(separator: "\n", omittingEmptySubsequences: false)
-        #expect(lines[6] == "Which session (date, spot), if it is about one:")
+        #expect(lines[6] == "Which session, its date and spot, if it is about one:")
         #expect(lines[7] == "30 August 2026 · Torbole")
         #expect(lines[8] == "")
     }
@@ -119,7 +119,7 @@ import Testing
         #expect(body.contains("  CleanJibe 1.0 (17) · public build"))
         #expect(body.contains("  Analysis engine 0.19.0"))
         #expect(FeedbackReport.body(facts(dev: true))
-            .contains("  CleanJibe 1.0 (17) · dev build (TUNING)"))
+            .contains("  CleanJibe 1.0 (17) · dev build, TUNING on"))
     }
 
     /// Absent when nothing is tuned, present the moment something is: an absent line reads
@@ -147,8 +147,8 @@ import Testing
         let unknown = FeedbackFacts.Watch(garminModel: "fenix 8", garminAppVersion: nil,
                                           appleWatchPaired: true, healthImport: true)
         let other = FeedbackReport.body(facts(watch: unknown))
-        #expect(other.contains("  Garmin fenix 8 · watch app version unknown "
-                               + "(no summary card has arrived yet)"))
+        #expect(other.contains("  Garmin fenix 8 · watch app version unknown, "
+                               + "no summary card has arrived yet"))
         #expect(other.contains("  Apple Watch paired"))
         #expect(other.contains("  Health import on"))
     }

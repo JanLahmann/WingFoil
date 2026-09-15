@@ -122,7 +122,7 @@ import Testing
         // the topic that owns them — which is on `related`, so the chevron is really there.
         #expect(prose.contains("Settings → intervals.icu"))
         #expect(IcuSetupGuide.steps.count == 4, "the item says \"four steps\"")
-        #expect(prose.contains("four steps"))
+        #expect(prose.contains("4 steps"))
         #expect(topic.related.contains(.icuSetup))
         // The FIT route says what the import topics say: intervals.icu, or the file itself.
         #expect(prose.contains("Files, Mail, AirDrop"))

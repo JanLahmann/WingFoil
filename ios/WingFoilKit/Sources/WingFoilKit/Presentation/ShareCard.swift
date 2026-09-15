@@ -54,7 +54,8 @@ public struct ShareCardStats: Sendable, Equatable {
         /// mistaken for a tally of some other set of turns.
         public init(_ tally: KeyMetrics.Tally) {
             self.init(key: Key.tally, label: "flew · touchdown · fell",
-                      value: "\(tally.flewThrough) · \(tally.touchdown) · \(tally.fellIn)",
+                      value: String(tally.flewThrough) + " · " + String(tally.touchdown)
+                          + " · " + String(tally.fellIn),
                       caption: tally.caption, tally: tally)
         }
     }

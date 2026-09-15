@@ -55,7 +55,7 @@ final class ReplayRecorder {
             case .empty:
                 "The recording came back empty, so there is no clip. Try again."
             case .recorder(let message):
-                "The recording could not be made: \(message)"
+                "The recording could not be made: " + message
             }
         }
     }

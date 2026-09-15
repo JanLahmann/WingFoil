@@ -145,8 +145,8 @@ struct SessionDetailView: View {
                     } description: {
                         VStack(spacing: 8) {
                             Text("The recording could not be read. It may still be "
-                                 + "downloading, or the stored file is damaged — try "
-                                 + "importing the session again.")
+                                 + "downloading, or the stored file is damaged. "
+                                 + "Import the session again.")
                             Text(failure)
                                 .font(.caption2)
                                 .foregroundStyle(.tertiary)
@@ -501,7 +501,8 @@ struct SessionDetailView: View {
         HStack(spacing: 8) {
             Image(systemName: "slider.horizontal.3")
                 .foregroundStyle(.secondary)
-            Text("Analysed with tuned thresholds (\(count) changed) — Settings → Tuning")
+            let noun = count == 1 ? " tuned threshold · " : " tuned thresholds · "
+            Text("Analysed with " + String(count) + noun + "Settings → Tuning")
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
@@ -531,8 +532,8 @@ struct SessionDetailView: View {
         HStack(spacing: 6) {
             Image(systemName: "clock.badge.questionmark")
                 .foregroundStyle(.secondary)
-            Text("Times estimated from the track's position — this recording carries no "
-                 + "time zone.")
+            Text("Times estimated from the track's position. "
+                 + "This recording has no time zone.")
                 .fixedSize(horizontal: false, vertical: true)
         }
         .font(.caption)
@@ -545,8 +546,8 @@ struct SessionDetailView: View {
     private var exampleNote: some View {
         HStack(spacing: 8) {
             ExampleBadge(font: .caption)
-            Text("Bundled demo session — \(ExampleSession.place). Not counted in your "
-                 + "records or trends.")
+            Text("Bundled demo session. " + ExampleSession.place
+                 + ". Not counted in your records or trends.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -572,7 +573,7 @@ struct SessionDetailView: View {
     }
 
     private var noTrackNote: some View {
-        Label("This recording has no GPS positions — chart and records only.",
+        Label("This recording has no GPS positions. Chart and records only.",
               systemImage: "location.slash")
             .font(.footnote)
             .foregroundStyle(.secondary)
@@ -610,13 +611,14 @@ private struct WindRow: View {
         var parts: [String] = []
         if let wind = detail.analysis.wind {
             let confidence = Int((wind.confidence * 100).rounded())
-            let qualifier = wind.usable ? "" : " (too weak to name turns)"
-            parts.append("Wind from \(Fmt.compass(wind.dirDeg)) "
-                         + "\(Int(wind.dirDeg.rounded()))° · \(confidence) % confident"
-                         + qualifier)
+            let qualifier = wind.usable ? "" : " · too weak to name turns"
+            let bearing = Fmt.compass(wind.dirDeg) + " "
+                + String(Int(wind.dirDeg.rounded())) + "°"
+            parts.append("Wind from " + bearing + " · " + String(confidence)
+                         + " % confident" + qualifier)
         }
         if let user = detail.windDirUserDeg {
-            parts.append("set on watch \(Int(user.rounded()))°")
+            parts.append("set on watch " + String(Int(user.rounded())) + "°")
         }
         return parts.joined(separator: " · ")
     }
@@ -665,7 +667,7 @@ private struct DivergenceBanner: View {
         Button(action: open) {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                Text("Watch and phone disagree on \(list)")
+                Text("Watch and phone disagree on " + list)
                     .font(.footnote.weight(.medium))
                     .multilineTextAlignment(.leading)
                 Spacer()
@@ -709,6 +711,6 @@ private struct DivergenceBanner: View {
         let names = divergences.map(\.metric)
         if names.count <= 2 { return names.joined(separator: " and ").lowercased() }
         return names.prefix(2).joined(separator: ", ").lowercased()
-            + " and \(names.count - 2) more"
+            + " and " + String(names.count - 2) + " more"
     }
 }

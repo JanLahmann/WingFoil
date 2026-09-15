@@ -190,8 +190,9 @@ struct OutcomeTally: View {
             }
             .font(font.weight(.semibold).monospacedDigit())
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(flewThrough) flew through, \(touchdown) touchdowns, "
-                                + "\(fellIn) falls")
+            .accessibilityLabel(String(flewThrough) + " flew through, "
+                                + String(touchdown) + " touchdowns, "
+                                + String(fellIn) + " falls")
         }
     }
 

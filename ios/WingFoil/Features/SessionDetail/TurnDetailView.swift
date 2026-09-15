@@ -64,7 +64,8 @@ struct TurnDetailSheet: View {
                     VStack(spacing: 0) {
                         Text(title).font(.headline)
                         if let position {
-                            Text("\(position) of \(indices.count) · swipe for the next")
+                            Text(String(position) + " of " + String(indices.count)
+                                 + " · swipe for the next")
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
@@ -318,8 +319,8 @@ private struct TurnDetailPage: View {
                 Toggle("Compare with best clean jibe", isOn: $ghostEnabled)
                     .font(.subheadline)
             } else {
-                Text("Nothing to compare with — this session has no other jibe that flew "
-                     + "through the same way round.")
+                Text("Nothing to compare with. "
+                     + "This session has no other jibe that flew through the same way round.")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -328,7 +329,7 @@ private struct TurnDetailPage: View {
     }
 
     private var noGeometryNote: some View {
-        Label("No GPS fixes through this turn — numbers only.", systemImage: "location.slash")
+        Label("No GPS fixes through this turn. Numbers only.", systemImage: "location.slash")
             .font(.caption)
             .foregroundStyle(.secondary)
     }
@@ -351,7 +352,7 @@ private struct TurnDetailPage: View {
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
             }
-            Text("held \(TurnAnalytics.scoreText(turn.score)) % of entry speed")
+            Text("held " + TurnAnalytics.scoreText(turn.score) + " % of entry speed")
                 .font(.subheadline.weight(.medium))
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .leading),
@@ -396,7 +397,7 @@ private struct TurnDetailPage: View {
                     // the engine's own (`PumpEpisodeRecord.strokes` on the episodes this turn
                     // owns), and where there are none the chip says exactly what it said
                     // before rather than "0 strokes", which would be a claim.
-                    chip(pumpStrokes.map { "pumped out · \(TurnAnalytics.strokesText($0))" }
+                    chip(pumpStrokes.map { "pumped out · " + TurnAnalytics.strokesText($0) }
                             ?? "pumped out",
                          symbol: DesignTokens.Glyph.takeoffPumped,
                          tint: DesignTokens.Effort.pumping)
@@ -528,36 +529,47 @@ private struct TurnDetailPage: View {
         VStack(alignment: .leading, spacing: 3) {
             let lead = Int(pads.beforeS)
             let run = Int(pads.afterS)
-            Text("The drawing is \(lead) s before the sweep and \(run) s after it. "
-                 + "Ticks are one second apart and the numbers along the path are every "
-                 + "five; the line is coloured by speed on the ramp at "
-                 + "the foot of the picture — cold at a standstill, teal at the speed you "
-                 + "came in at, hot above it. North and the wind are marked top right.")
-            Text("Tap the drawing for the reading at that sample; the strips follow it.")
-            Text("Score is how much of your entry speed you held through the turn. Speed here is "
-                 + "the manoeuvre channel the verdict was scored on, derived from position — "
-                 + "the GPS Doppler speed the records use is smoothed through a turn and "
-                 + "would read lower at the low point.")
+            // Built in two locals: one `+` chain long enough to carry the whole paragraph
+            // is what the type checker gives up on inside a ViewBuilder.
+            let drawn = "The drawing is " + String(lead) + " s before the sweep and "
+                + String(run) + " s after it. "
+            let ticks = "Ticks are one second apart. "
+                + "The numbers along the path are every five. "
+                + "The line is coloured by speed on the ramp at the foot of the picture. "
+                + "Cold is a standstill, teal is the speed you came in at, hot is above it. "
+                + "North and the wind are marked top right."
+            Text(drawn + ticks)
+            Text("Tap the drawing for the reading at that sample. The strips follow it.")
+            Text("Score is how much of your entry speed you held through the turn. "
+                 + "Speed here is the manoeuvre channel the verdict was scored on, "
+                 + "derived from position. "
+                 + "The GPS Doppler speed the records use is smoothed through a turn. "
+                 + "It would read lower at the low point.")
             // The windows are read off this analysis' own config echo, not `TurnConfig()`:
             // on a dev build with tuning on, the defaults are exactly what these are not.
             let windows = TurnDetailStripView.Windows(config: detail.analysis.config)
-            Text("The bands under the strip are the engine's windows: \"entry\" is the "
-                 + "\(Int(windows.entryS)) s before the sweep, where the entry speed is the "
-                 + "maximum; \"sweep\" is where the heading turned; the low point is searched "
-                 + "to \(Int(windows.minLagS)) s past the sweep, so it can sit after \"out\"; "
-                 + "\"outcome\" is the \(Int(windows.outcomeS)) s the verdict is read from, and "
-                 + "the lighter band inside it ends where you were flying again.")
+            let entryBand = "The bands under the strip are the engine's windows. "
+                + "\"Entry\" is the " + String(Int(windows.entryS))
+                + " s before the sweep, where the entry speed is the maximum. "
+            let sweepBand = "\"Sweep\" is where the heading turned. "
+                + "The low point is searched to " + String(Int(windows.minLagS))
+                + " s past the sweep, so it can sit after \"out\". "
+            let outcomeBand = "\"Outcome\" is the " + String(Int(windows.outcomeS))
+                + " s the verdict is read from. "
+                + "The lighter band inside it ends where you were flying again."
+            Text(entryBand + sweepBand + outcomeBand)
             // The quiet tail (engine 0.17.0). Said in the footnote whether or not the strip
             // could fit its rule mark in — at the default 10 s the mark lands past the
             // drawing's own run-out, and this sentence is then the only place the number is.
             if let quiet = detail.analysis.config.turnCleanQuietS, quiet > 0 {
-                Text("A clean jibe also needs \(Int(quiet)) s after the sweep with no "
-                     + "touchdown, fall or wrist under.")
+                Text("A clean jibe also needs " + String(Int(quiet))
+                     + " s after the sweep with no touchdown, fall or wrist under.")
             }
             if turn.axisTs != nil {
-                Text("The tick marked \"axis\" is the moment the board went through the wind "
-                     + "axis — dead downwind on a jibe, head to wind on a tack — which is the "
-                     + "crossing the turn is named after.")
+                Text("The tick marked \"axis\" is the moment the board went through the "
+                     + "wind axis. "
+                     + "That is dead downwind on a jibe, head to wind on a tack. "
+                     + "The turn is named after that crossing.")
             }
             #if TUNING
             Text(thresholdLine)

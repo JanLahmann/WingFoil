@@ -279,7 +279,9 @@ struct LibraryView: View {
                     if let first = store.watchMapSpots.first {
                         let drawn = await WatchMapSender.gridOrReason(
                             centreLat: first.spot.lat, centreLon: first.spot.lon)
-                        lines.append(drawn.grid.map { "grid \($0.width)×\($0.height), \($0.encoded.count) bytes" }
+                        lines.append(drawn.grid.map { "grid " + String($0.width) + "×"
+                                                      + String($0.height) + ", "
+                                                      + String($0.encoded.count) + " bytes" }
                                      ?? "failed: \(drawn.reason ?? "?")")
                     }
                     let url = URL.documentsDirectory.appending(path: "watchmap-probe.txt")

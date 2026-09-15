@@ -173,7 +173,8 @@ public struct HrCostCard: Sendable, Equatable {
         // which measures the off-foil → on-foil delta rather than the whole effort. Same
         // number, weaker claim, so it is said on the headline rather than buried in help.
         if s.approximateTakeoffs > 0 {
-            captionParts.append("\(s.approximateTakeoffs) anchored on the flight start")
+            captionParts.append(String(s.approximateTakeoffs)
+                                + " anchored on the flight start")
         }
 
         return HrCostCard(
@@ -201,12 +202,13 @@ public struct HrCostCard: Sendable, Equatable {
         }
         let coverage = s.takeoffCostCoverage
         if coverage.total > 0, let pct = coverage.pct, pct < thinCoveragePct {
-            reasons.append("only \(coverage.valid) of \(coverage.total) takeoffs could be "
-                           + "measured")
+            reasons.append("only " + String(coverage.valid) + " of " + String(coverage.total)
+                           + " takeoffs could be measured")
         }
         guard !reasons.isEmpty else { return nil }
-        return "Heart rate is patchy here — " + reasons.joined(separator: ", ")
-            + ". Read these as the parts that were recorded, not as the session."
+        // The reasons read on from the colon, so they stay lowercase and comma-joined.
+        return "Heart rate is patchy here: " + reasons.joined(separator: ", ")
+            + ". These numbers cover the recorded parts only."
     }
 
     /// Where the numbers come from, in the tertiary voice the page's other footers use.
@@ -312,11 +314,10 @@ public struct HrCostCard: Sendable, Equatable {
             // The denominator is the events that rose by at least `hrMinRise`. Zero of them
             // and there was nothing to recover from; some of them and the decay never landed
             // inside the 2-minute window, or ran into a recording hole.
-            return Stat(key: key, label: label, value: "—",
-                        caption: coverage.total == 0
-                            ? "no \(event) raised HR enough to recover from"
-                            : "HR never fell halfway back within 2 min",
-                        missing: true)
+            let why: String = coverage.total == 0
+                ? "no " + event + " raised HR enough to recover from"
+                : "HR never fell halfway back within 2 min"
+            return Stat(key: key, label: label, value: "—", caption: why, missing: true)
         }
         var caption = "halfway back"
         if let text = coverageText(coverage, noun: noun) { caption += " · " + text }
@@ -337,14 +338,15 @@ public struct HrCostCard: Sendable, Equatable {
         let drift = last.1 - first.1
         let span = String(format: "%.0f → %.0f bpm", first.1, last.1)
         if drift >= 5 {
-            return "Attempts started at \(span) as the session went on — a smaller late rise "
-                + "is missing headroom, not a cheaper takeoff."
+            return "Attempts started at " + span + " as the session went on. "
+                + "A smaller late rise is missing headroom. The takeoff did not get cheaper."
         }
         if drift <= -5 {
-            return "Attempts started at \(span) — later takeoffs began from a lower heart "
-                + "rate, so their rises are the larger ones."
+            return "Attempts started at " + span + ". "
+                + "Later takeoffs began from a lower heart rate, so their rises are larger."
         }
-        return "Attempts started from a steady \(span), so the bins compare like with like."
+        return "Attempts started from a steady " + span
+            + ", so the bins compare like with like."
     }
 
     // MARK: - Formatting
@@ -366,9 +368,10 @@ public struct HrCostCard: Sendable, Equatable {
     /// "23 of 23 takeoffs", or nil when there is no denominator to state.
     public static func coverageText(_ coverage: HrCoverage, noun: String?) -> String? {
         guard coverage.total > 0 else { return nil }
-        let core = "\(coverage.valid) of \(coverage.total)"
+        let core = String(coverage.valid) + " of " + String(coverage.total)
         guard let noun else { return core }
-        return core + " \(noun)\(coverage.total == 1 ? "" : "s")"
+        let plural = coverage.total == 1 ? "" : "s"
+        return core + " " + noun + plural
     }
 
     /// "20–40 min", from session-clock seconds.

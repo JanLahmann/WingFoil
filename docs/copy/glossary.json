@@ -46,7 +46,7 @@
     {
       "expansion" : "",
       "id" : "flights",
-      "line" : "One takeoff starts a flight; a touchdown or a swim ends it. Both are counted.",
+      "line" : "One takeoff starts a flight. A touchdown or a swim ends it. Both are counted.",
       "sentence" : "how long each flight lasted",
       "short" : "flights",
       "surfaces" : [
@@ -76,7 +76,7 @@
     {
       "expansion" : "",
       "id" : "dryStreak",
-      "line" : "How many jibes in a row you stayed out of the water — and the best run of the day.",
+      "line" : "How many jibes in a row you stayed out of the water, and the best run of the day.",
       "sentence" : "your longest run of jibes without falling in",
       "short" : "dry",
       "surfaces" : [
@@ -102,7 +102,7 @@
     {
       "expansion" : "clean jibes per hour",
       "id" : "cph",
-      "line" : "Clean jibes per hour: you flew through it, you held your speed, and the ten seconds after it stayed quiet.",
+      "line" : "Clean jibes per hour. Clean: flew through, held your speed, and 10 quiet seconds after.",
       "sentence" : "your clean jibes per hour",
       "short" : "CPH",
       "surfaces" : [
@@ -117,7 +117,7 @@
     {
       "expansion" : "turns per hour",
       "id" : "tph",
-      "line" : "Turns per hour — every counted turn, not only the jibes. It stands in for JPH on a session whose wind axis named no jibes.",
+      "line" : "Turns per hour, every counted turn and not only the jibes. It stands in for JPH on a session whose wind axis named no jibes.",
       "sentence" : "your turns per hour",
       "short" : "TPH",
       "surfaces" : [
@@ -141,7 +141,7 @@
     {
       "expansion" : "",
       "id" : "speedRecords",
-      "line" : "Your fastest 2 seconds, 10 seconds, 500 m and nautical mile — the same windows the speedsurfing world uses.",
+      "line" : "Your fastest 2 seconds, 10 seconds, 500 m and nautical mile. The speedsurfing world uses the same windows.",
       "sentence" : "your speed records",
       "short" : "best",
       "surfaces" : [
@@ -168,7 +168,7 @@
     {
       "expansion" : "",
       "id" : "alpha500",
-      "line" : "Your fastest 500 m that ends within 50 m of where it started — so it contains a jibe, and measures the turn as well as the speed.",
+      "line" : "Your fastest 500 m that ends within 50 m of where it started. It contains a jibe, so it measures the turn as well as the speed.",
       "sentence" : "your fastest 500 m that comes back to where it started",
       "short" : "alpha",
       "surfaces" : [

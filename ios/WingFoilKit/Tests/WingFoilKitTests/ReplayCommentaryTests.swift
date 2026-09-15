@@ -44,30 +44,30 @@ import Testing
         #expect(script.map(\.t)
                 == [0, 85, 151, 222, 255, 278, 292, 320, 362, 399, 441, 477, 645])
         #expect(script.map(\.text) == [
-            "Torbole, 14:07 — session start",
+            "Torbole, 14:07 · session start",
             // The first takeoff *is* the start of the longest flight here, so the two share
             // an instant and the plainer fact leads.
-            "Flying! · Longest flight — 6:32",
-            "First jibe — flew through",
+            "Flying! · Longest flight · 6:32",
+            "First jibe · flew through",
             // The strict verdict, on its own instant: 5 of this session's 10 jibes were
             // clean, and the first of them is a line the dry count cannot say.
             "First clean jibe!",
             // The 3rd and 5th dry jibes are also streak records, and a line that said "3 dry
-            // jibes · New streak — 3 dry jibes" would print the number twice.
-            "New streak — 3 dry jibes",
-            "New streak — 4 dry jibes",
-            "Top speed — 13.47 kn over 2 s",
+            // jibes · New streak · 3 dry jibes" would print the number twice.
+            "New streak · 3 dry jibes",
+            "New streak · 4 dry jibes",
+            "Top speed · 13.47 kn over 2 s",
             // Where a clean ordinal lands on a streak record they share the frame, strict
             // first: the run is over dry maneuvers, the count beside it is over ridden ones.
-            "3 clean jibes · New streak — 5 dry jibes",
-            "New streak — 6 dry jibes",
-            "5 clean jibes · New streak — 7 dry jibes",
-            "New streak — 8 dry jibes",
+            "3 clean jibes · New streak · 5 dry jibes",
+            "New streak · 6 dry jibes",
+            "5 clean jibes · New streak · 7 dry jibes",
+            "New streak · 8 dry jibes",
             // The swim at 467 is the jibe; the splash is its flight end ten seconds later.
             // It is also why nothing is said at 571: that tenth attempt was swum too, so the
             // dry count stops at eight and the session never reaches a tenth dry jibe.
             "First splash",
-            "Session end — 10:45 · 2.6 km · 8 dry jibes",
+            "Session end · 10:45 · 2.6 km · 8 dry jibes",
         ])
 
         #expect(script.map(\.t) == script.map(\.t).sorted(), "must be in time order")
@@ -119,7 +119,7 @@ import Testing
         let script = ReplayCommentary.make(try torbole(), timeZone: fixtureZone)
         #expect(script.first?.text == "Session start")
         #expect(ReplayCommentary.startLine(place: "Torbole", startedAt: nil,
-                                           timeZone: .current) == "Torbole — session start")
+                                           timeZone: .current) == "Torbole · session start")
         #expect(ReplayCommentary.startLine(place: "  ", startedAt: nil,
                                            timeZone: .current) == "Session start")
     }
@@ -197,7 +197,7 @@ import Testing
         analysis.summary.turns = TurnSummary()
         let script = ReplayCommentary.make(analysis, timeZone: fixtureZone)
         #expect(script.map(\.kind) == [.sessionStart, .sessionEnd])
-        #expect(script.last?.text == "Session end — 10:45 · 2.6 km")
+        #expect(script.last?.text == "Session end · 10:45 · 2.6 km")
     }
 
     /// No span, no session: a zero-length recording has no frame to put a caption in, and

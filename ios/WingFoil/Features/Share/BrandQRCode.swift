@@ -70,7 +70,7 @@ struct BrandQRCode: View {
         }
         .frame(width: size, height: size)
         .background(Color.white, in: .rect(cornerRadius: corner))
-        .accessibilityLabel("QR code to \(Branding.site)")
+        .accessibilityLabel("QR code to " + Branding.site)
     }
 
     // MARK: - The bitmap
