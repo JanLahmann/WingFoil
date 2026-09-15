@@ -12,6 +12,8 @@ before changing anything:
 - `docs/channels.md` — **which feature is in which channel** (release / beta / dev), and the
   four rules a feature meets before it moves up one. The website's "what is coming" list, the
   app's Beta section and the store texts are written from it, never the other way round.
+- `docs/voice.md` — **how every rider-facing sentence sounds**: three registers, ten rules,
+  before/after pairs. Read it before writing or editing any text a rider sees.
 - `docs/decisions.md` — ADRs. `docs/fit-schema.md` — the watch's FIT developer fields.
 
 ## Layout
