@@ -52,6 +52,9 @@ struct LibraryView: View {
                 // about the beta rather than about the library, and it is answered and
                 // gone in one tap either way (docs/channels.md).
                 #if BETA
+                // Above the usage ask on purpose: "your build is old" changes what a usage
+                // report is worth. Draws nothing while the build is current.
+                UpdateReminderBanner()
                 if showUsageAsk {
                     UsageAskCard(request: $usageRequest, isShowing: $showUsageAsk)
                         .listRowInsets(.init(top: 10, leading: 16, bottom: 10, trailing: 16))
@@ -97,7 +100,11 @@ struct LibraryView: View {
                             // One count line for the whole list, under the last section —
                             // a footer per month would say the same thing over and over.
                             if group.id == groups.last?.id {
-                                Text(countLine(showing: visible.count, of: store.sessions.count))
+                                // Ridden sessions only: a recording the engine says was
+                                // never a session stays in the list but not in the count
+                                // (docs/presentation.md, "Not a session").
+                                Text(countLine(showing: visible.count,
+                                               of: LibraryListing.riddenCount(store.sessions)))
                             }
                         }
                     }
