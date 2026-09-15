@@ -94,7 +94,7 @@ TARGETS: list[Target] = [
                 "is the explanation, not a promise"
             )
             for term in ("gpx", "tcx", "Apple Health", "Apple Watch app",
-                         "home-screen widget", "video export")
+                         "home-screen widget", "video export", "grouping")
         },
     ),
     Target(
