@@ -40,6 +40,10 @@
     <setting propertyKey="@Properties.alertTakeoff" title="@Strings.SetAlertTakeoff">
         <settingConfig type="boolean"/>
     </setting>
+    <setting propertyKey="@Properties.visualAlerts" title="@Strings.SetVisualAlerts"
+             prompt="@Strings.SetVisualAlertsNote">
+        <settingConfig type="boolean"/>
+    </setting>
     <setting propertyKey="@Properties.alertPb" title="@Strings.SetAlertPb">
         <settingConfig type="boolean"/>
     </setting>

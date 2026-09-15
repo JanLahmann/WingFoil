@@ -36,6 +36,8 @@
 
     <string id="SetAutoPause">Auto-pause when stopped</string>
     <string id="SetAutoPauseDelay">Auto-pause delay (s)</string>
+    <string id="SetVisualAlerts">Show alerts on screen</string>
+    <string id="SetVisualAlertsNote">Every buzz also paints: the glass flashes with the verdict for 1.5 s, and a line at the top keeps the last one for 20 s.</string>
     <string id="SetAlertIntervalMin">Interval alert (min, 0 = off)</string>
     <string id="SetAlertIntervalKm">Interval alert (km, 0 = off)</string>
 

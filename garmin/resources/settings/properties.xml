@@ -17,6 +17,8 @@
          (AlertManager.turnResolved). Off = the 0.9.4 turn-outcome buzz, not silence. -->
     <property id="alertCleanJibe" type="boolean">true</property>
     <property id="alertTakeoff" type="boolean">true</property>
+    <!-- 0.9.11: the flash and the afterglow strip beside every buzz (EventFlash). -->
+    <property id="visualAlerts" type="boolean">true</property>
     <!-- 0.9.9, GitHub #4: START on the summary's Track page opens the firmware's map over the
          saved track. Experimental — the native map view killed the app during recording on the
          fenix 8 three releases running; this trial runs it only after the session is saved. -->

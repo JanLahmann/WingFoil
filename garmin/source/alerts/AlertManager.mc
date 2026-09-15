@@ -77,8 +77,9 @@ module AlertManager {
     }
 
     // New longest flight: one long buzz
-    function longestFlight() as Void {
+    function longestFlight(seconds as Number) as Void {
         if (AppSettings.alertFlight) {
+            EventFlash.fireLongest(seconds);
             _fire(CH_FLIGHT, [new Attention.VibeProfile(100, 600)]);
         }
     }
@@ -95,6 +96,7 @@ module AlertManager {
     // the channel noise.
     function takeoff() as Void {
         if (AppSettings.alertTakeoff) {
+            EventFlash.fireTakeoff();
             _fire(CH_TAKEOFF, [
                 new Attention.VibeProfile(50, 150),
                 new Attention.VibeProfile(0, 80),
@@ -129,12 +131,29 @@ module AlertManager {
     // joining it — and only when the rider left its toggle on. With `alertCleanJibe` off the
     // turn falls through to the ordinary ladder rhythm, which is what "off" should mean: the
     // old behaviour, not silence.
-    function turnResolved(outcome as Number, cleanJibe as Boolean) as Void {
+    //
+    // The visual half rides on the same decision (EventFlash, 0.9.11): a clean jibe paints the
+    // clean flash, anything else its rung of the ladder, and the flash is NOT debounced — a
+    // flash replaces the previous one, which is what "one screen" means. `kind` is the turn's
+    // kind (jibe / tack / turn) for the afterglow strip.
+    function turnResolved(outcome as Number, cleanJibe as Boolean, kind as Number) as Void {
         if (cleanJibe && AppSettings.alertCleanJibe) {
+            EventFlash.fireTurn(outcome, true, kind);
             cleanJibeBuzz();
             return;
         }
+        if (AppSettings.alertTurn) {
+            EventFlash.fireTurn(outcome, false, kind);
+        }
         turnOutcome(outcome);
+    }
+
+    // A dry streak reached a mark worth a word (5, then every ten): visual only — the turn
+    // that got him there has just buzzed, and a second buzz inside the floor would be eaten.
+    function dryStreak(dry as Number) as Void {
+        if (AppSettings.alertTurn && EventFlash.dryMilestone(dry)) {
+            EventFlash.fireStreak(dry);
+        }
     }
 
     // The clean jibe: three quick ticks RISING in strength (50 / 75 / 100), the "that one

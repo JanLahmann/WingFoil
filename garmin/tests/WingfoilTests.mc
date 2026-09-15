@@ -1395,6 +1395,91 @@ function foilBezelArcSweepsClockwiseFromTwelve(logger as Test.Logger) as Boolean
     return true;
 }
 
+// The event flash (0.9.11): every verdict paints, in its own ink, and clears itself; the
+// afterglow strip outlives the flash and names the turn.
+(:test)
+function eventFlashPaintsEveryVerdict(logger as Test.Logger) as Boolean {
+    AppSettings.visualAlerts = true;
+    EventFlash.clearAll();
+    Test.assertMessage(!EventFlash.active(), "idle at rest");
+    Test.assertMessage(!EventFlash.stripActive(System.getTimer()), "no strip at rest");
+
+    // a fly-through on a jibe: the ladder's green, the word, and the strip naming the jibe
+    EventFlash.fireTurn(TurnDetector.OUTCOME_FLEW, false, TurnDetector.KIND_JIBE);
+    Test.assertMessage(EventFlash.active(), "a verdict starts the flash");
+    Test.assertEqual(EventFlash.kind, EventFlash.EV_FLEW);
+    Test.assertEqual(EventFlash.color(), Ink.ladderFlew());
+    Test.assertEqual(EventFlash.word(EventFlash.kind, 0), "FLEW");
+    Test.assertEqual(EventFlash.stripText(EventFlash.lastKind, EventFlash.lastTurnKind,
+        EventFlash.lastValue), "JIBE · flew");
+    Test.assertMessage(EventFlash.stripActive(System.getTimer()), "the strip is up");
+    Test.assertMessage(!EventFlash.isRing(), "a verdict is a full flash");
+    Test.assertEqual(EventFlash.frames(), EventFlash.FRAMES_FULL);
+
+    // the pulse alternates on the same token, like the PB flash
+    EventFlash.tick();
+    Test.assertEqual(EventFlash.color(), (Ink.ladderFlew() >> 1) & 0x7F7F7F);
+    EventFlash.tick();
+    Test.assertEqual(EventFlash.color(), Ink.ladderFlew());
+
+    // it runs out by itself, and the strip stays
+    for (var i = 0; i < EventFlash.FRAMES_FULL; i++) {
+        EventFlash.tick();
+    }
+    Test.assertMessage(!EventFlash.active(), "the flash must clear itself");
+    Test.assertMessage(EventFlash.stripActive(System.getTimer()), "the strip outlives it");
+    Test.assertMessage(!EventFlash.stripActive(System.getTimer() + EventFlash.AFTERGLOW_MS),
+        "and goes after the afterglow");
+
+    // a clean jibe replaces the plain fly-through, in the clean ink, and a tack that touched
+    // down names the tack
+    EventFlash.fireTurn(TurnDetector.OUTCOME_FLEW, true, TurnDetector.KIND_JIBE);
+    Test.assertEqual(EventFlash.kind, EventFlash.EV_CLEAN);
+    Test.assertEqual(EventFlash.baseColor(EventFlash.kind), Ink.cleanJibe());
+    Test.assertEqual(EventFlash.stripText(EventFlash.EV_CLEAN, TurnDetector.KIND_JIBE, 0),
+        "CLEAN JIBE");
+    EventFlash.fireTurn(TurnDetector.OUTCOME_TOUCHDOWN, false, TurnDetector.KIND_TACK);
+    Test.assertEqual(EventFlash.baseColor(EventFlash.kind), Ink.ladderTouchdown());
+    Test.assertEqual(EventFlash.stripText(EventFlash.lastKind, EventFlash.lastTurnKind, 0),
+        "TACK · touch");
+    EventFlash.fireTurn(TurnDetector.OUTCOME_FELL, false, TurnDetector.KIND_TURN);
+    Test.assertEqual(EventFlash.baseColor(EventFlash.kind), Ink.ladderFellIn());
+    Test.assertEqual(EventFlash.stripText(EventFlash.lastKind, EventFlash.lastTurnKind, 0),
+        "TURN · fell");
+
+    // the takeoff is a ring, shorter, and leaves no afterglow of its own
+    EventFlash.fireTakeoff();
+    Test.assertMessage(EventFlash.isRing(), "a takeoff is a ring");
+    Test.assertEqual(EventFlash.frames(), EventFlash.FRAMES_RING);
+    Test.assertEqual(EventFlash.lastKind, EventFlash.EV_FELL);
+    Test.assertEqual(EventFlash.baseColor(EventFlash.EV_TAKEOFF), Ink.phaseFlying());
+
+    // a streak mark carries its number; the marks are 5, then every ten
+    EventFlash.fireStreak(10);
+    Test.assertEqual(EventFlash.word(EventFlash.kind, EventFlash.value), "10 DRY");
+    Test.assertMessage(EventFlash.dryMilestone(5) && EventFlash.dryMilestone(10)
+        && EventFlash.dryMilestone(20) && EventFlash.dryMilestone(30), "5, 10, 20, 30 flash");
+    Test.assertMessage(!EventFlash.dryMilestone(4) && !EventFlash.dryMilestone(6)
+        && !EventFlash.dryMilestone(15), "4, 6, 15 do not");
+
+    // the longest flight carries its duration
+    EventFlash.fireLongest(134);
+    Test.assertEqual(EventFlash.stripText(EventFlash.EV_LONGEST, TurnDetector.KIND_NONE, 134),
+        "LONGEST 2:14");
+
+    // save and discard end the story
+    EventFlash.clearAll();
+    Test.assertMessage(!EventFlash.active() && !EventFlash.stripActive(System.getTimer()),
+        "clearAll takes the strip with it");
+
+    // and the switch is a switch
+    AppSettings.visualAlerts = false;
+    EventFlash.fireTurn(TurnDetector.OUTCOME_FLEW, false, TurnDetector.KIND_JIBE);
+    Test.assertMessage(!EventFlash.active(), "off means no flash");
+    AppSettings.visualAlerts = true;
+    return true;
+}
+
 // The PB celebration walks a fixed number of frames and clears itself.
 (:test)
 function pbFlashPulsesThenClears(logger as Test.Logger) as Boolean {
@@ -3323,7 +3408,7 @@ function alertDebounceIsPerChannelNotGlobal(logger as Test.Logger) as Boolean {
     AppSettings.alertTurn = true;
     AlertManager.speedPb();
     AlertManager.turnOutcome(TurnDetector.OUTCOME_TOUCHDOWN);
-    AlertManager.longestFlight();
+    AlertManager.longestFlight(120);
     AlertManager.takeoff();
     AlertManager.interval();
     AlertManager.autoWindLocked();
@@ -3350,7 +3435,7 @@ function cleanJibeBuzzReplacesTheFlyThroughTick(logger as Test.Logger) as Boolea
     AlertManager.reset();
     AppSettings.alertTurn = true;
     AppSettings.alertCleanJibe = true;
-    AlertManager.turnResolved(TurnDetector.OUTCOME_FLEW, true);
+    AlertManager.turnResolved(TurnDetector.OUTCOME_FLEW, true, TurnDetector.KIND_JIBE);
     Test.assertMessage(AlertManager._lastMs[AlertManager.CH_CLEAN] > 0,
         "a clean jibe did not reach its own channel");
     Test.assertMessage(AlertManager._lastMs[AlertManager.CH_TURN] == 0,
@@ -3360,7 +3445,7 @@ function cleanJibeBuzzReplacesTheFlyThroughTick(logger as Test.Logger) as Boolea
     // silence — a rider who dislikes the new rhythm is not asking to lose his verdicts.
     AlertManager.reset();
     AppSettings.alertCleanJibe = false;
-    AlertManager.turnResolved(TurnDetector.OUTCOME_FLEW, true);
+    AlertManager.turnResolved(TurnDetector.OUTCOME_FLEW, true, TurnDetector.KIND_JIBE);
     Test.assertMessage(AlertManager._lastMs[AlertManager.CH_TURN] > 0,
         "with the clean-jibe toggle off a clean jibe must still buzz as a fly-through");
     Test.assertMessage(AlertManager._lastMs[AlertManager.CH_CLEAN] == 0,
@@ -3369,7 +3454,7 @@ function cleanJibeBuzzReplacesTheFlyThroughTick(logger as Test.Logger) as Boolea
     // an ordinary fly-through never reaches the clean channel, toggle or no toggle
     AlertManager.reset();
     AppSettings.alertCleanJibe = true;
-    AlertManager.turnResolved(TurnDetector.OUTCOME_FLEW, false);
+    AlertManager.turnResolved(TurnDetector.OUTCOME_FLEW, false, TurnDetector.KIND_JIBE);
     Test.assertMessage(AlertManager._lastMs[AlertManager.CH_CLEAN] == 0,
         "a turn that was not a clean jibe reached the clean channel");
     Test.assertMessage(AlertManager._lastMs[AlertManager.CH_TURN] > 0,

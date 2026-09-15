@@ -287,6 +287,11 @@ class RecordingView extends WatchUi.View {
         if (PbFlash.active()) {
             drawPbFlash(dc);
         }
+        // The event flash paints over the PB flash if the two ever coincide: a verdict is
+        // the newer fact. The takeoff variant is a ring and leaves the page readable.
+        if (EventFlash.active()) {
+            drawEventFlash(dc, fitRadius(dc, ring, foilArc));
+        }
         // MAIN says PAUSED in its own top row — it is the only layout whose first row sits
         // where the banner wants to be, and a state word beats the time of day. Every other
         // page gets the banner, the map page included: that it could NOT was the whole reason
@@ -294,7 +299,68 @@ class RecordingView extends WatchUi.View {
         // gave the banner back.
         if (c.state == SessionController.STATE_PAUSED && layout != PageModel.LAYOUT_MAIN) {
             drawPausedBanner(dc, fitRadius(dc, ring, foilArc));
+        } else if (layout != PageModel.LAYOUT_MAIN && !EventFlash.active()
+                && EventFlash.stripActive(System.getTimer())) {
+            // The afterglow: the last verdict, where the banner would be. MAIN carries it in
+            // its own top row, as it carries PAUSED. Never under a running flash, and never
+            // instead of PAUSED — a paused session is the more urgent fact.
+            drawEventStrip(dc, fitRadius(dc, ring, foilArc));
         }
+    }
+
+    // ---- the event flash and its afterglow (EventFlash, 0.9.11) ----
+    // Full: the glass takes the event's ink, one glyph and one word in black on it. Colour
+    // and shape both carry the event, so it reads on a MIP palette and to a rider who cannot
+    // tell the ladder's green from its red. Ring: the takeoff's, a thick circle inside the
+    // bezel, the page left as it is.
+    hidden function drawEventFlash(dc as Dc, radius as Number) as Void {
+        var cx = dc.getWidth() / 2;
+        var cy = dc.getHeight() / 2;
+        var col = EventFlash.color();
+        if (EventFlash.isRing()) {
+            var pen = bezelPen(dc) * 3;
+            dc.setPenWidth(pen);
+            dc.setColor(col, Graphics.COLOR_TRANSPARENT);
+            dc.drawCircle(cx, cy, cx - bezelInset(dc) - pen / 2);
+            dc.setPenWidth(1);
+            return;
+        }
+        dc.setColor(col, col);
+        dc.clear();
+        var k = EventFlash.kind;
+        var hL = dc.getFontHeight(Graphics.FONT_LARGE);
+        var s = radius * 5 / 6;                    // the glyph box, ~40 % of the glass
+        var gy = cy - hL / 2;                      // glyph centre, above the word
+        var wy = gy + s / 2 + hL / 2;              // the word, under the glyph
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+        if (k == EventFlash.EV_FLEW || k == EventFlash.EV_TOUCH || k == EventFlash.EV_FELL) {
+            var o = k == EventFlash.EV_FLEW ? TurnDetector.OUTCOME_FLEW
+                : (k == EventFlash.EV_TOUCH ? TurnDetector.OUTCOME_TOUCHDOWN
+                    : TurnDetector.OUTCOME_FELL);
+            Glyphs.drawOutcome(dc, o, cx, gy, s, Graphics.COLOR_BLACK);
+        } else if (k == EventFlash.EV_CLEAN) {
+            Glyphs.drawStar(dc, cx, gy, s);
+        } else {
+            // a streak count or a duration: digits are the glyph
+            var v = k == EventFlash.EV_STREAK ? EventFlash.value.toString()
+                : EventFlash.mmss(EventFlash.value);
+            dc.drawText(cx, gy, fitFont(dc, NUMBER_FONTS, 0, v,
+                rowBudget(radius, gy - cy, inkH(dc, Graphics.FONT_NUMBER_HOT))), v, CV);
+        }
+        var word = EventFlash.word(k, EventFlash.value);
+        dc.drawText(cx, wy, fitFont(dc, TEXT_FONTS, 0, word,
+            rowBudget(radius, wy - cy, inkH(dc, Graphics.FONT_LARGE))), word, CV);
+    }
+
+    // The strip: the last event's line, black on its ink, sitting where the pause banner
+    // sits — the one derived position on a page that is not part of a row stack.
+    hidden function drawEventStrip(dc as Dc, radius as Number) as Void {
+        var font = TEXT_FONTS[PAUSED_FONT_IDX];
+        var text = EventFlash.stripText(EventFlash.lastKind, EventFlash.lastTurnKind,
+            EventFlash.lastValue);
+        var w = dc.getTextWidthInPixels(text, font);
+        dc.setColor(Graphics.COLOR_BLACK, EventFlash.baseColor(EventFlash.lastKind));
+        dc.drawText(dc.getWidth() / 2, pausedBannerY(dc, w, radius), font, text, CV);
     }
 
     // The banner is the only thing on a recording page that is not part of a row stack, so
@@ -574,12 +640,24 @@ class RecordingView extends WatchUi.View {
         // where the pause banner wants to be, so it carries the state itself: a paused
         // session is more urgent than the time, and the swap costs no pixels.
         var paused = c.state == SessionController.STATE_PAUSED;
-        var top = paused ? PAUSED_TEXT : PageModel.clockString();
+        // ... or the last verdict (EventFlash's afterglow), for 20 s after it landed: on
+        // MAIN the strip IS this row, in the event's ink, so the clock gives way to it the
+        // way it gives way to PAUSED. Letters need the text ladder, not the number one.
+        var glow = !paused && EventFlash.stripActive(System.getTimer());
         var y = mainRowY(cy, hC, hN, hD, hO, hK, 0);
-        dc.setColor(paused ? Graphics.COLOR_YELLOW : Graphics.COLOR_WHITE,
-            Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, y, fitGiant(dc, top, 3,
-            rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_NUMBER_MILD))), top, CV);
+        if (glow) {
+            var line = EventFlash.stripText(EventFlash.lastKind, EventFlash.lastTurnKind,
+                EventFlash.lastValue);
+            dc.setColor(EventFlash.baseColor(EventFlash.lastKind), Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, y, fitFont(dc, TEXT_FONTS, PAUSED_FONT_IDX, line,
+                rowBudget(radius, y - cy, inkH(dc, TEXT_FONTS[PAUSED_FONT_IDX]))), line, CV);
+        } else {
+            var top = paused ? PAUSED_TEXT : PageModel.clockString();
+            dc.setColor(paused ? Graphics.COLOR_YELLOW : Graphics.COLOR_WHITE,
+                Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, y, fitGiant(dc, top, 3,
+                rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_NUMBER_MILD))), top, CV);
+        }
 
         // row 1 — the giant, with its unit and caption inline behind the digits
         drawMainGiant(dc, c, page, cx, cy, radius, mainRowY(cy, hC, hN, hD, hO, hK, 1));

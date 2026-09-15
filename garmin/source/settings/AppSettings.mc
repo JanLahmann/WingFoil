@@ -25,6 +25,9 @@ module AppSettings {
     var alertCleanJibe as Boolean = true;
     var mapAfterSave as Boolean = false;     // 0.9.9 experiment, GitHub #4
     var alertTakeoff as Boolean = true;
+    // 0.9.11: the visual half of every alert above (EventFlash). One switch, on by default;
+    // the per-alert switches gate the picture exactly as they gate the buzz.
+    var visualAlerts as Boolean = true;
     var alertIntervalMin as Number = 0;     // 0 = off
     var alertIntervalKm as Float = 0.0;     // 0 = off
     var autoPause as Boolean = false;
@@ -86,6 +89,7 @@ module AppSettings {
         alertCleanJibe = _bool("alertCleanJibe", true);
         mapAfterSave = _bool("mapAfterSave", false);
         alertTakeoff = _bool("alertTakeoff", true);
+        visualAlerts = _bool("visualAlerts", true);
         alertIntervalMin = _num("alertIntervalMin", 0.0).toNumber();
         alertIntervalKm = _num("alertIntervalKm", 0.0);
         autoPause = _bool("autoPause", false);
