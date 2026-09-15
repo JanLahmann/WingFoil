@@ -82,6 +82,27 @@ import Testing
                        WelcomeGuide.laterDetail] {
             #expect(Self.words(detail) <= Self.paragraphBudget)
         }
+
+        // The getting-started guide, generated from docs/guide/getting-started.json. Its
+        // route summaries are the Getting started topic's item details and its steps are
+        // the web page's, and both are written to the item budget — `make_start.py`
+        // asserts the same numbers on the source, so a long sentence fails at the
+        // generator rather than here. The two Settings captions are budgeted too: they are
+        // one row of a Form, not a footer.
+        #expect(Self.words(GettingStartedGuide.framing) <= Self.paragraphBudget)
+        #expect(Self.words(GettingStartedGuide.topicSummary) <= Self.summaryBudget)
+        for route in GettingStartedGuide.routes + GettingStartedGuide.notes {
+            #expect(Self.words(route.summary) <= Self.itemBudget,
+                    "route \(route.id) is \(Self.words(route.summary)) words")
+            for step in route.steps {
+                #expect(Self.words(step.detail) <= Self.itemBudget,
+                        "\(route.id) step \(step.number) is \(Self.words(step.detail)) words")
+            }
+        }
+        for caption in [GettingStartedGuide.settingsIcu, GettingStartedGuide.settingsStrava] {
+            #expect(Self.words(caption) <= Self.itemBudget,
+                    "a Settings caption is \(Self.words(caption)) words")
+        }
     }
 
     /// **One wording, referenced, not copied.** The Getting started topic names the route

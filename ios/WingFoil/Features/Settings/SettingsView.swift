@@ -93,8 +93,18 @@ struct SettingsView: View {
 
     // MARK: - Sections
 
+    /// **Why this account is here, before the field that asks for a key** (Jan, 15 Sep
+    /// 2026). The section opened on an empty text field asking for something called an API
+    /// key, and a rider who has never heard of intervals.icu has no way to tell whether he
+    /// is being asked to sign up for a service or to skip the section. One caption answers
+    /// it, and it is `GettingStartedGuide.settingsIcu` rather than a fourth wording of the
+    /// same sentence: the guide, the help topic and this screen say one thing.
     private var icuSection: some View {
         Section {
+            Text(GettingStartedGuide.settingsIcu)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             // Typing the key and proving it works is one action, and it is the same view
             // the first-run setup card embeds — one storage path, one verdict wording.
             IcuKeyEntry()
@@ -134,9 +144,18 @@ struct SettingsView: View {
     /// whom, and how do I stop" — plus the sentence about the ceiling Strava has put on the
     /// application until it reviews it, which belongs where a rider wondering why it will not
     /// connect would go looking.
+    ///
+    /// It opens on the same kind of caption the intervals.icu section does, and for the same
+    /// reason: the section used to start with a button, and a button is not an answer to
+    /// "why is Strava in a wingfoil app". `GettingStartedGuide.settingsStrava` is that
+    /// answer, in the guide's own words — the route that needs no file, and what it costs.
     @ViewBuilder
     private var stravaSection: some View {
         Section {
+            Text(GettingStartedGuide.settingsStrava)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             if !store.isStravaConfigured {
                 Text("Not available in this build")
                     .foregroundStyle(.secondary)

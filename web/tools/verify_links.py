@@ -149,6 +149,18 @@ for page in PAGES:
                     errors.append("%s: %s=\"%s\" -> no id #%s in %s" % (page, attr, ref, frag, rel))
 
 print("pages: %d   internal references checked: %d" % (len(PAGES), checked))
+
+# The generated half of /start/ is a link problem of its own kind: a guide block that no
+# longer matches docs/guide/getting-started.json is a page saying something the app does
+# not. `make_start.py --check` is stdlib-only and takes milliseconds, so it runs here,
+# with the cheapest check the site has.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import make_start                                                        # noqa: E402
+
+if make_start.main(["--check"]) != 0:
+    errors.append("web/start/index.html or GettingStartedGuide.swift is stale — "
+                  "run `python3 web/tools/make_start.py`")
+
 if errors:
     print("\n%d PROBLEM(S):" % len(errors))
     for e in errors:

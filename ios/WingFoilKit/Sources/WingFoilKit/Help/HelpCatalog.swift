@@ -218,38 +218,25 @@ public enum HelpCatalog {
         // named on the last line so the same guide can be sent to somebody who has installed
         // nothing yet.
         //
+        // **And it really is the same guide, since 15 September 2026.** The topic and the web
+        // page were written separately, so "the same guide, on the web" was a claim rather
+        // than a fact. Both are now cut from `docs/guide/getting-started.json` by
+        // `web/tools/make_start.py`, through the generated `GettingStartedGuide`: the framing
+        // below is its `framing`, the items are its routes and notes, and the web page adds
+        // the numbered steps the app has no room for — which is what the last item now
+        // promises. `GettingStartedGuideTests` fails if this topic stops matching it.
+        //
         // One route per item, because a body cannot branch by channel and the routes do: the
-        // two Apple doors are beta doors (docs/channels.md), so they are topics of their own
-        // on `related`, which `relatedTopics(of:channel:)` drops in the release. Nothing here
-        // says which build the reader is holding.
+        // two Apple doors are beta doors (docs/channels.md), so `items(for: .release)` leaves
+        // them out here and they are topics of their own on `related`, which
+        // `relatedTopics(of:channel:)` drops in the release. Nothing here says which build
+        // the reader is holding.
         HelpTopic(
             id: .gettingStarted, section: .gettingStarted,
             title: "Getting started",
-            summary: "Your first session on the water, and where to send what you find.",
-            body: [
-                "The real test is one session on the water: record it the way you always do, "
-                + "bring it in, and read the turn verdicts against what you remember — which "
-                + "jibes you flew through, where you touched down, where you fell in.",
-            ],
-            items: [
-                .init(term: "Garmin with the CleanJibe watch app",
-                      detail: "Install it from Connect IQ, ride, save. Sessions sync through "
-                          + "intervals.icu: Settings → intervals.icu, four steps, once."),
-                .init(term: "Any watch that writes a .fit",
-                      detail: "Sync it through intervals.icu, or share the file into "
-                          + "CleanJibe from Files, Mail, AirDrop or any share sheet."),
-                .init(term: "Strava",
-                      detail: "Settings → Strava → Connect with Strava, then Import → Import "
-                          + "from Strava…. Positions only, so speed records are uncertified."),
-                .init(term: "If you cannot wait for wind",
-                      detail: "Record a three to five minute walk on the watch. It proves the "
-                          + "route from the watch to the phone and nothing else."),
-                .init(term: "Then say how it read",
-                      detail: "Menu → Support & ideas opens a mail with the facts filled in. "
-                          + "TestFlight's own feedback works too if you are on the beta."),
-                .init(term: "The same guide, on the web",
-                      detail: "\(Branding.site)/start"),
-            ],
+            summary: GettingStartedGuide.topicSummary,
+            body: [GettingStartedGuide.framing],
+            items: GettingStartedGuide.items(for: .release),
             // Built from `Branding.site` rather than typed out: the hostname is one constant
             // on this platform and a second copy of it is a second thing to forget.
             links: [HelpLink(title: "Open \(Branding.site)/start",
