@@ -239,7 +239,30 @@ def check_attribution() -> None:
         e.pop("schema")
     check("  a schema-1 library is unchanged", library.aggregate(old)["count"], 2)
     check("  digest stamps the current schema",
-          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 9)
+          library.digest({"golden": {}, "meta": {}}, "x.fit")["schema"], 10)
+
+    # Schema 10 (engine 0.19.0): the fourth exclusion — a recording that is not a session
+    # (docs/algorithms.md "Not a session"). The stored answer when the row carries one, the
+    # same rule re-derived when it does not, and **no verdict at all** for a row that carries
+    # none of the three numbers: an absence is not a verdict.
+    junk = counted_entry("junk", 12.0, foilTimeS=0.0, rateDurationS=24.0, distanceKm=0.0)
+    skunked = counted_entry("skunked", 12.0, foilTimeS=0.0, rateDurationS=4800.0,
+                            distanceKm=2.1)
+    check("  a beach recording is not a session", library.entry_is_session(junk),
+          (False, "too_short"))
+    check("  a skunked afternoon is", library.entry_is_session(skunked), (True, None))
+    check("  and it is out of the aggregate",
+          library.aggregate([counted_entry("mine", 12.0), junk])["count"], 1)
+    check("  the engine's own answer wins over the derivation",
+          library.entry_is_session({**junk, "isSession": True, "notASessionReason": None}),
+          (True, None))
+    check("  a row with none of the three numbers is not judged",
+          library.entry_is_session({"id": "x"}), (True, None))
+    check("  the two keys reach the digest",
+          [library.digest({"golden": {"summary": {"isSession": False,
+                                                  "notASessionReason": "too_short"}}},
+                          "x.fit")[k] for k in ("isSession", "notASessionReason")],
+          [False, "too_short"])
 
     # Schema 3 (engine 0.8.2): the session's own UTC offset, and the local calendar date it
     # implies. `dateUtc` stays what it always was — the UTC day — so an entry written before
