@@ -192,6 +192,8 @@ it. `resources-beta/base/` turns raw accelerometer logging off for beta riders (
 validation vehicle, not the rider's). The invite lock of ADR-012 is retired: every stream
 compiles the all-zero pepper.
 
+**Devices.** The app needs Connect IQ 3.3.3 and about 770 KB of app memory: the fenix 7 and 8 families, the fenix 5 Plus family (since 0.9.11), epix 2, the Forerunners 255/265/570/955/965/970, MARQ 2, D2, Descent Mk3, Enduro 3, Venu 2/3, vívoactive 5/6 and Instinct 3 AMOLED. The plain fenix 5/5S (128 KB), the 5X (no System 5) and the Instinct 2 family and Instinct 3 Solar (96–128 KB) cannot run it; their riders record with Garmin's own Windsurf or SUP profile and come in as class B through intervals.icu.
+
 **What is different from the phone.** A different app id is a different app on the watch: a
 rider moving from the beta to the release installs the second beside the first, deletes the
 first and enters settings once more — said once, in the release notes. Every public listing
