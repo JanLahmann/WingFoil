@@ -35,19 +35,19 @@ import Testing
     private func longAfternoon() -> [ReplayMilestone] {
         var out: [ReplayMilestone] = [
             ReplayMilestone(id: "start", t: 0, kind: .sessionStart,
-                            text: "Torbole, 10:00 — session start"),
+                            text: "Torbole, 10:00 · session start"),
             ReplayMilestone(id: "flying", t: 240, kind: .firstTakeoff, text: "Flying!"),
             ReplayMilestone(id: "longest-flight", t: 3000, kind: .longestFlight,
-                            text: "Longest flight — 11:20"),
+                            text: "Longest flight · 11:20"),
             ReplayMilestone(id: "top-speed", t: 4680, kind: .topSpeed,
-                            text: "Top speed — 21.4 kn over 2 s"),
+                            text: "Top speed · 21.4 kn over 2 s"),
             ReplayMilestone(id: "end", t: 7200, kind: .sessionEnd,
-                            text: "Session end — 2:00:00 · 41.8 km · 40 dry jibes"),
+                            text: "Session end · 2:00:00 · 41.8 km · 40 dry jibes"),
         ]
         for (index, n) in [1, 3, 5, 10, 20, 30, 40].enumerated() {
             out.append(ReplayMilestone(
                 id: "jibe-\(n)", t: 300 + Double(index) * 940, kind: .jibe(n),
-                text: n == 1 ? "First jibe — flew through" : "\(n) dry jibes"))
+                text: n == 1 ? "First jibe · flew through" : "\(n) dry jibes"))
         }
         for (index, n) in [1, 5, 10].enumerated() {
             out.append(ReplayMilestone(
@@ -57,7 +57,7 @@ import Testing
         for (index, n) in (3...17).enumerated() {
             out.append(ReplayMilestone(id: "streak-\(n)", t: 360 + Double(index) * 430,
                                        kind: .streak(n),
-                                       text: "New streak — \(n) dry jibes"))
+                                       text: "New streak · \(n) dry jibes"))
         }
         return out.sorted { $0.t < $1.t }
     }
@@ -159,9 +159,9 @@ import Testing
                 // `ReplayCommentaryTests`. On the phone it reads "Torbole, 14:07 — session
                 // start"; what matters here is that it is the *opening* line.
                 "Session start",
-                "Flying! · Longest flight — 6:32",
-                "Top speed — 13.47 kn over 2 s",
-                "Session end — 10:45 · 2.6 km · 8 dry jibes",
+                "Flying! · Longest flight · 6:32",
+                "Top speed · 13.47 kn over 2 s",
+                "Session end · 10:45 · 2.6 km · 8 dry jibes",
             ])
 
         #expect(ReplayPacing.plan(span: span, targetWallS: 25, milestones: milestones)

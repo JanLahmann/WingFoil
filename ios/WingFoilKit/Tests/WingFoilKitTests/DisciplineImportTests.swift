@@ -201,7 +201,7 @@ import Testing
         // A mixed batch cannot name one preset without naming it wrongly for half the list.
         #expect(DisciplineReview.banner([guessed("a", 1),
                                          guessed("b", 2, preset: .windsurfFoil)])
-                == "2 new sessions analysed — check the discipline")
+                == "2 new sessions analysed. Check the discipline.")
     }
 
     // MARK: - Behind the switch
@@ -281,7 +281,7 @@ import Testing
         #expect(DisciplineReview.sportHint("") == nil)
         #expect(DisciplineReview.sportHint("running") == nil)
         #expect(DisciplineReview.sportHint("43")
-                == "Filed as windsurfing — which is also how a Garmin files a wingfoil session")
+                == "Filed as windsurfing. A Garmin files a wingfoil session the same way.")
         #expect(DisciplineReview.sportHint("windsurfing")
                 == DisciplineReview.sportHint("43"))
         #expect(DisciplineReview.sportHint("kitesurfing") == "Filed as kitesurfing")

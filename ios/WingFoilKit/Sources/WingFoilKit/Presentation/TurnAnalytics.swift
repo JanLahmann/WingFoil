@@ -287,7 +287,8 @@ public struct TurnOutcomeTally: Sendable, Equatable {
     /// "9 flew · 9 touch · 12 fell", or the honest empty line.
     public var caption: String {
         guard total > 0 else { return "nothing matches this filter" }
-        return "\(flewThrough) flew · \(touchdown) touch · \(fellIn) fell"
+        return String(flewThrough) + " flew · " + String(touchdown) + " touch · "
+            + String(fellIn) + " fell"
     }
 
     /// "7 of 10 clean" — the strict verdict, in the words the rest of the app uses for it,
@@ -296,7 +297,7 @@ public struct TurnOutcomeTally: Sendable, Equatable {
     /// this" is not "you fail at it", and a tack has no clean reading to report.
     public var cleanCaption: String {
         guard jibes > 0 else { return "" }
-        return "\(clean) of \(jibes) clean"
+        return String(clean) + " of " + String(jibes) + " clean"
     }
 }
 
@@ -434,7 +435,7 @@ public enum TurnAnalytics {
 
     /// "7 strokes", and "1 stroke" — the chip and the coach line print the same words.
     public static func strokesText(_ strokes: Int) -> String {
-        "\(strokes) stroke\(strokes == 1 ? "" : "s")"
+        String(strokes) + (strokes == 1 ? " stroke" : " strokes")
     }
 
     /// **Why this jibe has no star** — the chip beside the outcome (engine 0.17.0).
@@ -459,7 +460,7 @@ public enum TurnAnalytics {
             guard let seconds = secondsToLoss(turn, ends: ends, quietS: quietS) else {
                 return "not clean · touched down after"
             }
-            return "not clean · touched down \(seconds) s after"
+            return "not clean · touched down " + String(seconds) + " s after"
         case .quietOffFoil: return "not clean · off the foil after"
         case .quietSubmerged: return "not clean · wrist under after"
         case .axisAfter:
@@ -497,9 +498,9 @@ public enum TurnAnalytics {
         }
         switch reason {
         case .stop:
-            let stopped = "stopped \(seconds(turn.stoppedS)) s"
-            if TurnOutcomeKind(turn.outcome) == .fellIn { return "fell in · \(stopped)" }
-            return "touchdown · \(stopped)" + (turn.borderline ? ", borderline" : "")
+            let stopped = "stopped " + seconds(turn.stoppedS) + " s"
+            if TurnOutcomeKind(turn.outcome) == .fellIn { return "fell in · " + stopped }
+            return "touchdown · " + stopped + (turn.borderline ? ", borderline" : "")
         case .offFoil:
             // "no stop" rather than "stopped 0 s": the rider did not stop, and a rounded zero
             // reads as a measurement of one.

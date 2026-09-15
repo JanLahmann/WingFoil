@@ -121,7 +121,7 @@ struct SettingsView: View {
                 LabeledContent("Last sync", value: Fmt.date(last, zone: .current))
             }
             Button { setupTopic = .icuSetup } label: {
-                Label("How to get a key (4 steps)", systemImage: "list.number")
+                Label("Get a key in 4 steps", systemImage: "list.number")
             }
             Button { setupTopic = .icuTroubleshooting } label: {
                 Label("Sync not working?", systemImage: "wrench.and.screwdriver")
@@ -180,15 +180,15 @@ struct SettingsView: View {
             Text("Strava")
         } footer: {
             if store.isStravaConfigured {
-                Text(markdown: "Strava opens, you say yes, and CleanJibe can list your activities on "
-                     + "the Import screen. CleanJibe only ever **reads** "
-                     + "your Strava account — it never writes, renames or posts anything. "
-                     + "Sessions imported this way are analysed from positions alone, so "
-                     + "their speed records are marked uncertified.\n\n"
-                     + "Strava lets a new app connect a limited number of riders. If "
-                     + "connecting is refused because CleanJibe is full, it is nothing "
-                     + "about your account — Menu → Support & ideas is the way to say so, "
-                     + "and Strava is asked for more.")
+                Text(markdown: "Strava opens, you say yes, and CleanJibe can list your "
+                     + "activities on the Import screen. CleanJibe only **reads** your "
+                     + "Strava account. It never writes, renames or posts anything. "
+                     + "Sessions imported this way are analysed from positions alone. "
+                     + "Their speed records are marked uncertified.\n\n"
+                     + "Strava lets a new app connect a limited number of riders. "
+                     + "Connecting is refused while CleanJibe is full. That says nothing "
+                     + "about your account. Tell us under Menu → Support & ideas, and "
+                     + "CleanJibe asks Strava for more.")
             } else {
                 Text("This build carries no Strava API keys, so the Strava source is not "
                      + "offered. Everything else works as usual.")
@@ -219,10 +219,10 @@ struct SettingsView: View {
             } header: {
                 Text("Deleted sessions")
             } footer: {
-                Text("Sessions you deleted stay deleted: syncing intervals.icu — by hand or "
-                     + "in the background — leaves them alone rather than downloading them "
-                     + "again. Restoring forgets that, and the next sync brings back every "
-                     + "one of them that is still on intervals.icu.")
+                Text("Sessions you deleted stay deleted. Syncing intervals.icu leaves "
+                     + "them alone, by hand and in the background. Restoring forgets "
+                     + "that. The next sync brings back every one of them that is "
+                     + "still on intervals.icu.")
             }
         }
     }
@@ -253,15 +253,23 @@ struct SettingsView: View {
         } header: {
             Text("Notifications")
         } footer: {
-            Text(store.apiKey.isEmpty
-                 ? "Add your intervals.icu API key above first — the check is a call to "
-                   + "your account."
-                 : SettingsCopy.notifyExplanation + "\n\n"
-                   + "iOS decides when a background app may run: it learns your habits and "
-                   + "may hold a check back for hours, and it never runs at all while "
-                   + "Background App Refresh is off (Settings → General → Background App "
-                   + "Refresh) or in Low Power Mode. Pull down on Sessions to sync now.")
+            Text(notificationsFooter)
         }
+    }
+
+    /// What the switch does, and the one thing that decides whether it works at all:
+    /// background refresh is granted by iOS, not requested by the app.
+    private var notificationsFooter: String {
+        guard !store.apiKey.isEmpty else {
+            return "Add your intervals.icu API key above first. The check is a call to "
+                + "your account."
+        }
+        let ios = "iOS decides when a background app may run. It learns your habits and "
+            + "may hold a check back for hours. It never runs in Low Power Mode, or "
+            + "while Background App Refresh is off under "
+            + "Settings → General → Background App Refresh. "
+            + "Pull down on Sessions to sync now."
+        return SettingsCopy.notifyExplanation + "\n\n" + ios
     }
 
     // The "Places → Spots" section used to sit here, and that was the whole problem
@@ -321,16 +329,17 @@ struct SettingsView: View {
     /// off nothing above it asks which rig this was, and a footer that answers an unasked
     /// question is the app talking to itself.
     private var analysisFooter: String {
-        let rig = "Wingfoil is not a sport in Garmin, Strava, intervals.icu or Apple Health, "
-            + "so a new session cannot say which rig you were on — what you mostly ride "
-            + "answers for it, and CleanJibe asks you to confirm after each import. "
+        let rig = "Wingfoil is not a sport in Garmin, Strava, intervals.icu or Apple Health. "
+            + "A new session cannot say which rig you were on. What you mostly ride "
+            + "answers for it. CleanJibe asks you to confirm after each import. "
             + "Sessions already in your library are not changed.\n\n"
-        let wind = "The wind axis comes out of your track as a *line* — which end of it the "
-            + "wind blew from is the hard half. Usually the no-go zone settles it: you "
-            + "can sail any downwind course but none straight into the wind. When a "
-            + "session cannot settle it that way, your habit does, because flipping "
-            + "the wind end for end turns every jibe into a tack. Sessions already in "
-            + "the library only change if you re-run the analysis."
+        // The *why* behind the habit clause, kept out of the footer: flipping the wind
+        // end for end turns every jibe into a tack, so the wrong end is not a small error.
+        let wind = "Your track gives the wind axis as a *line*. Which end the wind blew "
+            + "from is the hard half. The no-go zone usually settles it. You can sail "
+            + "any downwind course, but none straight into the wind. When a session "
+            + "cannot settle it, your habit does. Sessions already in the library "
+            + "change only when you re-run the analysis."
         return store.windsurfEnabled ? rig + wind : wind
     }
 
@@ -416,10 +425,10 @@ struct SettingsView: View {
         } header: {
             Text("Apple Health")
         } footer: {
-            Text(markdown: "Off by default. Each session is written as a **Surfing** workout — the "
-                 + "closest type Apple Health offers, since it has no wingfoil or windsurf "
-                 + "activity — carrying the discipline, foil share, flights and best 2 s in "
-                 + "its metadata. Sessions you imported *from* Health are left alone, so a "
+            Text(markdown: "Off by default. Each session is written as a **Surfing** workout. "
+                 + "Apple Health has no wingfoil or windsurf activity, and Surfing is the "
+                 + "closest. The discipline, foil share, flights and best 2 s ride in its "
+                 + "metadata. Sessions you imported *from* Health are left alone, so a "
                  + "workout never appears twice.")
         }
 
@@ -433,9 +442,9 @@ struct SettingsView: View {
                      + "workout of the types you chose on the Import screen. Anything already "
                      + "in your library is recognised, and a workout you imported and then "
                      + "deleted is not brought back.\n\n"
-                     + "iOS can also wake the app when a workout is saved, but it decides "
-                     + "when — that may be hours later, and it never happens with Background "
-                     + "App Refresh off. Opening CleanJibe is the reliable way to pick up the "
+                     + "iOS can also wake the app when a workout is saved. iOS decides "
+                     + "when, and that may be hours later. It never happens with "
+                     + "Background App Refresh off. Open CleanJibe to pick up the "
                      + "session you just finished.")
             }
         }
@@ -473,7 +482,8 @@ struct SettingsView: View {
             } header: {
                 Text("Debug")
             } footer: {
-                Text("Simulator only: ingests every .fit under \(SessionStore.fixturesPath).")
+                Text("Simulator only. Ingests every .fit under "
+                     + SessionStore.fixturesPath + ".")
             }
         }
     }
@@ -533,9 +543,9 @@ enum SettingsCopy {
     /// What the switch does, in one paragraph. Used verbatim as the one-time offer's
     /// message, which is what "with the switch's own explanation" means.
     static let notifyExplanation =
-        "While the phone is idle, CleanJibe asks intervals.icu whether a new windsurf, "
-        + "wing, kite, surf or SUP activity has arrived — from any watch that syncs there "
-        + "— and tells you about the ones that are not in your library yet. The session is "
-        + "downloaded and analysed in the background where there is time for it, so tapping "
-        + "the notification usually opens a finished analysis."
+        "While the phone is idle, CleanJibe asks intervals.icu for new activity. It "
+        + "looks for windsurf, wing, kite, surf and SUP, from any watch that syncs "
+        + "there. You hear about the ones that are not in your library yet. The "
+        + "session is downloaded and analysed in the background, so tapping the "
+        + "notification usually opens a finished analysis."
 }

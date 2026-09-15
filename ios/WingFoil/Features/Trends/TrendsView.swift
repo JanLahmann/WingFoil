@@ -188,7 +188,7 @@ struct TrendsView: View {
         TrendChart(title: "Flew-through rate", unit: "%", points: points,
                    tone: DesignTokens.Outcome.flew,
                    value: \.flewThroughPct, domain: 0...100,
-                   note: "Turns that never lost the foil — every counted turn, not "
+                   note: "Turns that never lost the foil. Every counted turn, not "
                        + "jibes alone.")
         // Clean jibes and CPH are **counts of maneuvers**, not ladder verdicts, so they
         // deliberately do not wear `Outcome.flew`: on a page where the green line already
@@ -200,7 +200,7 @@ struct TrendsView: View {
                    tone: Color.accentColor,
                    value: { $0.cleanJibes.map(Double.init) },
                    note: "Jibes that flew all the way through and held at least 70 % of "
-                       + "their entry speed — a strict subset of the rate above.")
+                       + "their entry speed. A strict subset of the rate above.")
         TrendChart(title: "CPH", unit: "clean jibes / h", points: points,
                    tone: Color.accentColor,
                    value: \.cleanJibesPerHour,
@@ -208,12 +208,12 @@ struct TrendsView: View {
         TrendChart(title: "Pumps to takeoff", unit: "strokes", points: points,
                    tone: DesignTokens.Effort.window,
                    value: \.avgPumpsToTakeoff,
-                   note: "Needs the wrist accelerometer — only CleanJibe watch "
+                   note: "Needs the wrist accelerometer. Only CleanJibe watch "
                        + "recordings carry it.")
         TrendChart(title: "Port / starboard", unit: "% port", points: points,
                    tone: DesignTokens.Side.port,
                    value: \.portSharePct, domain: 0...100, reference: 50,
-                   note: "50 % is symmetric; the gap is the side you avoid.")
+                   note: "50 % is symmetric. The gap is the side you avoid.")
         sideSuccessChart
         weeklyChart
     }
@@ -256,8 +256,8 @@ struct TrendsView: View {
                 Text("% flew through").font(.caption).foregroundStyle(.secondary)
             }
             if total == 0 {
-                Text("No session in this range has turns with a usable entry tack — that "
-                     + "needs a wind axis the engine trusts.")
+                Text("No session in this range has turns with a usable entry tack. "
+                     + "That needs a wind axis the engine trusts.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
@@ -316,8 +316,9 @@ struct TrendsView: View {
             .environment(\.calendar, LibraryStore.isoCalendar)
             .chartYAxis { AxisMarks(position: .leading) }
             .frame(height: 140)
-            Text("\(weeks.filter { $0.count > 0 }.count) of \(weeks.count) weeks on the "
-                 + "water. Weeks start on Monday (ISO-8601), on your own clock.")
+            Text(String(weeks.filter { $0.count > 0 }.count) + " of "
+                 + String(weeks.count)
+                 + " weeks on the water. Weeks start on Monday, ISO-8601, on your own clock.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -366,15 +367,18 @@ private struct TrendChart: View {
                 }
             }
             if series.isEmpty {
-                Text(note ?? "No session in this range reports \(title.lowercased()).")
+                Text(note ?? ("No session in this range reports "
+                              + title.lowercased() + "."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
             } else {
                 chart
                 if series.count < points.count {
-                    Text("\(points.count - series.count) of \(points.count) sessions cannot "
-                         + "report this" + (note.map { " · \($0)" } ?? ""))
+                    let missing = String(points.count - series.count) + " of "
+                        + String(points.count) + " sessions cannot report this"
+                    let tail = note.map { " · " + $0 } ?? ""
+                    Text(missing + tail)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 } else if let note {

@@ -39,7 +39,7 @@
   "prompts" : [
     "What happened, or what you would like:",
     "What you expected instead:",
-    "Which session (date, spot), if it is about one:"
+    "Which session, its date and spot, if it is about one:"
   ],
   "subjectPrefix" : "CleanJibe feedback"
 }

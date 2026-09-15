@@ -472,8 +472,8 @@ import Testing
     /// the old highlight lines said that the grid did not already carry.
     ///
     /// The outro used to print the eight-cell grid and then, underneath it, two or three
-    /// sentences off the commentary — "Top speed — 13.47 kn over 2 s" over a max-2 s cell
-    /// saying 13.47, "New streak — 8 dry jibes" over a streaks cell saying 8. The lines are
+    /// sentences off the commentary — "Top speed · 13.47 kn over 2 s" over a max-2 s cell
+    /// saying 13.47, "New streak · 8 dry jibes" over a streaks cell saying 8. The lines are
     /// gone; the longest flight, which really was missing, is a ninth cell, and nine cells is
     /// a clean 3 × 3.
     @Test func theOutroGridIsTheBlockPlusTheLongestFlight() {
@@ -1160,10 +1160,10 @@ import Testing
             current: [CleanJibeBest(kind: .cleanJibes, value: 11, sessionId: "s2"),
                       CleanJibeBest(kind: .cleanJibesPerHour, value: 12.5, sessionId: "s2")])
         #expect(found.map(\.kind) == [.cleanJibes, .cleanJibesPerHour])
-        #expect(found[0].headline == "Clean jibes — 11 (was 8)")
+        #expect(found[0].headline == "Clean jibes: 11, was 8")
         // A kind the library never held has nothing to have beaten, and says so.
         #expect(found[1].previous == nil)
-        #expect(found[1].headline == "Best CPH — 12.5")
+        #expect(found[1].headline == "Best CPH: 12.5")
     }
 
     /// Equalling a record is not beating it, and a count has to move by a whole jibe.

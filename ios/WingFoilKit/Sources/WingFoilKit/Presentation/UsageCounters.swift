@@ -273,16 +273,17 @@ public struct UsageCounters: Codable, Equatable, Sendable {
     /// this block that actually decides what ships (docs/channels.md's rule 1).
     public func report(appVersion: String, now: Date = Date(),
                        timeZone: TimeZone = .current) -> String {
-        var lines: [String] = ["\(Branding.appName) \(appVersion)"]
-        lines.append("First launch \(Self.day(firstLaunch, timeZone: timeZone)) · "
-                     + "\(activeDays) day\(activeDays == 1 ? "" : "s") active · "
-                     + "written \(Self.day(now, timeZone: timeZone))")
+        var lines: [String] = [Branding.appName + " " + appVersion]
+        let dayNoun = activeDays == 1 ? " day" : " days"
+        lines.append("First launch " + Self.day(firstLaunch, timeZone: timeZone) + " · "
+                     + String(activeDays) + dayNoun + " active · "
+                     + "written " + Self.day(now, timeZone: timeZone))
 
         let used = Feature.allCases.filter { count($0) > 0 }
         for feature in used {
             guard let use = uses[feature.rawValue] else { continue }
-            lines.append("\(feature.label) · \(use.count) · "
-                         + "last \(Self.day(use.last, timeZone: timeZone))")
+            lines.append(feature.label + " · " + String(use.count) + " · "
+                         + "last " + Self.day(use.last, timeZone: timeZone))
         }
 
         let unused = Feature.allCases.filter { count($0) == 0 }
@@ -292,9 +293,10 @@ public struct UsageCounters: Codable, Equatable, Sendable {
 
         var out = ["Usage and features"] + lines.map { "  " + $0 }
         if !failures.isEmpty {
-            out.append("  Failures this phone showed (newest first)")
+            out.append("  Failures this phone showed, newest first")
             out += failures.map {
-                "    \($0.message) · \($0.count) · last \(Self.day($0.last, timeZone: timeZone))"
+                "    " + $0.message + " · " + String($0.count)
+                    + " · last " + Self.day($0.last, timeZone: timeZone)
             }
         }
         return out.joined(separator: "\n")

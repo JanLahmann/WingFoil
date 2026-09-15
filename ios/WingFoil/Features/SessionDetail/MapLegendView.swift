@@ -271,7 +271,7 @@ private struct LegendChip: View {
         } else {
             content
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("\(layer.accessibilityNoun), none in this session")
+                .accessibilityLabel(layer.accessibilityNoun + ", none in this session")
         }
     }
 

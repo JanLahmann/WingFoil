@@ -84,8 +84,8 @@ struct TuningLabelsView: View {
             if loading {
                 ProgressView("Reading the labelled sessions…").font(.subheadline)
             } else if entries.isEmpty {
-                Text("Nothing labelled yet. Open a turn and tap I flew, I touched or I fell — "
-                     + "the label is kept on this phone and is never read by the analysis.")
+                Text("Nothing labelled yet. Open a turn and tap I flew, I touched or I fell. "
+                     + "The label stays on this phone. The analysis never reads it.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {
@@ -99,9 +99,10 @@ struct TuningLabelsView: View {
                     Spacer(minLength: 0)
                 }
                 if labels.totalLabels != entries.count {
-                    Text("\(labels.totalLabels - entries.count) label"
-                         + "\(labels.totalLabels - entries.count == 1 ? "" : "s") could not be "
-                         + "paired — the turn they were left on is not in the current analysis "
+                    let unpaired = labels.totalLabels - entries.count
+                    let noun = unpaired == 1 ? " label" : " labels"
+                    Text(String(unpaired) + noun + " could not be paired. "
+                         + "The turn they were left on is not in the current analysis "
                          + "any more.")
                         .font(.caption2)
                         .foregroundStyle(Color.orange)
@@ -175,8 +176,9 @@ struct TuningLabelsView: View {
                                  + (discipline(entry).map { " · \($0.title.lowercased())" }
                                     ?? ""))
                                 .font(.caption)
-                            Text("\(TurnAnalytics.typeLabel(entry.type).lowercased()) — you "
-                                 + "said \(entry.label.label.lowercased()), the engine said "
+                            let type = TurnAnalytics.typeLabel(entry.type).lowercased()
+                            let said = entry.label.label.lowercased()
+                            Text(type + ". You said " + said + ", the engine said "
                                  + entry.verdict.label)
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
@@ -206,9 +208,9 @@ struct TuningLabelsView: View {
             Button("Delete every label", role: .destructive) { confirmClearAll = true }
                 .disabled(labels.totalLabels == 0)
         } footer: {
-            Text("The CSV is one row per labelled turn — session, turn index, your label, the "
-                 + "engine's verdict — the format docs/testing.md documents, so the lab can "
-                 + "read it beside the goldens.")
+            Text("The CSV is one row per labelled turn: session, turn index, your label, "
+                 + "the engine's verdict. docs/testing.md documents the format, so the lab "
+                 + "can read it beside the goldens.")
         }
     }
 

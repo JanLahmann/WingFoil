@@ -79,9 +79,10 @@ private struct FlightEndsCard: View {
                 }
                 // The two exclusions, said once, because a rider who counts the rings on the
                 // map and the rows here has to be told why the session's own tally is larger.
-                Text("Straight-line ends only. One inside a turn's window is that turn's, and "
-                     + "is on the Turns tab; one the recording cut short has no evidence to "
-                     + "judge.")
+                Text("Straight-line ends only. "
+                     + "An end inside a turn's window belongs to that turn. "
+                     + "Find it on the Turns tab. "
+                     + "An end the recording cut short has no evidence to judge.")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -116,7 +117,7 @@ private struct FlightEndsCard: View {
                     .foregroundStyle(TurnOutcomeStyle.color(TurnOutcomeKind(end.outcome)))
                     .scaledColumn(16, alignment: .center, relativeTo: .caption)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("Flight \(end.flightIndex + 1)")
+                    Text("Flight " + String(end.flightIndex + 1))
                         .font(.subheadline)
                         .foregroundStyle(.primary)
                     Text(FlightEndAnalytics.outcomeText(end))
@@ -167,10 +168,11 @@ private struct WindDetailCard: View {
                             note: "your own value, from the session's wind field")
                     }
                     if let wind = detail.analysis.wind {
+                        let confidence = String(Int((wind.confidence * 100).rounded()))
+                        let weak = wind.usable ? "" : ". Too weak to name turns"
                         row("Estimated from the track",
                             "\(Fmt.compass(wind.dirDeg)) · \(Int(wind.dirDeg.rounded()))°",
-                            note: "\(Int((wind.confidence * 100).rounded())) % confident"
-                                + (wind.usable ? "" : " — too weak to name turns"))
+                            note: confidence + " % confident" + weak)
                     }
                 }
                 Text(consequence)
@@ -282,9 +284,9 @@ private struct RecordingCard: View {
 
     private var provenance: String {
         let rate = String(format: "%.1f", detail.analysis.capabilities.sampleRateHz)
-        return "Engine \(detail.analysis.engineVersion) · \(rate) Hz · "
-            + "sport \(SessionDisplay.sportLabel(detail.row.sport))"
-            + (detail.row.importSource.map { " · via \($0)" } ?? "")
+        let head = "Engine " + detail.analysis.engineVersion + " · " + rate + " Hz"
+        let sport = " · sport " + SessionDisplay.sportLabel(detail.row.sport)
+        return head + sport + (detail.row.importSource.map { " · via \($0)" } ?? "")
     }
 }
 
@@ -422,11 +424,11 @@ private struct DivergenceDetailCard: View {
     }
 
     private var advice: String {
-        let base = "The phone's numbers are the ones to trust: it reads the whole session "
-            + "back afterwards, while the watch has to work these out live on your wrist, "
-            + "as you ride. Nothing is wrong with your session."
+        let base = "Trust the phone's numbers. It reads the whole session back afterwards. "
+            + "The watch has to work these out live on your wrist, as you ride. "
+            + "Nothing is wrong with your session."
         guard takeoffOnly else { return base }
-        return base + " Takeoff and pump counting is where the two differ most; keeping the "
-            + "watch app up to date narrows the gap."
+        return base + " Takeoff and pump counting is where the two differ most. "
+            + "Keep the watch app up to date to narrow the gap."
     }
 }

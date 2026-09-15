@@ -126,7 +126,8 @@ public struct KeyMetrics: Sendable, Equatable {
             tally: tally(t),
             streaks: t.turnsCounted > 0
                 ? Metric(key: "streaks", label: "best streaks",
-                         value: "\(t.longestFlewStreak) flew · \(t.longestDryStreak) dry")
+                         value: String(t.longestFlewStreak) + " flew · "
+                             + String(t.longestDryStreak) + " dry")
                 : nil,
             rates: rates(summary))
     }
@@ -150,7 +151,8 @@ public struct KeyMetrics: Sendable, Equatable {
             let o = t.jibeOutcomes
             return Tally(flewThrough: o.flewThrough, touchdown: o.touchdown,
                          fellIn: o.fellIn,
-                         caption: "of \(t.jibes) jibes · \(t.jibesSuccessful) clean")
+                         caption: "of " + String(t.jibes) + " jibes · "
+                             + String(t.jibesSuccessful) + " clean")
         }
         guard t.turnsCounted > 0 else { return nil }
         // **No clean clause on the fallback.** It used to read

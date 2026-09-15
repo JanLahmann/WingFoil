@@ -937,8 +937,8 @@ private struct ReplayClipSheet: View {
                     .background(Color.black, in: .rect(cornerRadius: 14))
                     .clipShape(.rect(cornerRadius: 14))
 
-                Text("\(Fmt.duration(wallS)) · \(Fmt.bytes(ReplayRecorder.size(of: url))) · "
-                     + url.lastPathComponent)
+                Text(Fmt.duration(wallS) + " · " + Fmt.bytes(ReplayRecorder.size(of: url))
+                     + " · " + url.lastPathComponent)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

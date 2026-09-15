@@ -59,7 +59,8 @@ struct FlightEndDetailSheet: View {
                     VStack(spacing: 0) {
                         Text(title).font(.headline)
                         if let position {
-                            Text("\(position) of \(indices.count) · swipe for the next")
+                            Text(String(position) + " of " + String(indices.count)
+                                 + " · swipe for the next")
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
@@ -83,7 +84,7 @@ struct FlightEndDetailSheet: View {
     private var title: String {
         guard detail.analysis.flightEnds.indices.contains(selection) else { return "Flight end" }
         let end = detail.analysis.flightEnds[selection]
-        return "Flight \(end.flightIndex + 1) · "
+        return "Flight " + String(end.flightIndex + 1) + " · "
             + FlightEndAnalytics.outcomeLabel(end.outcome)
     }
 }
@@ -192,7 +193,7 @@ private struct FlightEndDetailPage: View {
     }
 
     private var noGeometryNote: some View {
-        Label("No GPS fixes through this flight end — numbers only.",
+        Label("No GPS fixes through this flight end. Numbers only.",
               systemImage: "location.slash")
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -258,7 +259,8 @@ private struct FlightEndDetailPage: View {
             // turn all three numbers are the engine's, and here only the middle one is.
             Text(slice.speed.outKn == nil
                  ? "Never back up to flying speed inside the window."
-                 : "Back to flying speed \(secondsText(slice.speed.recoverRt)) after the end.")
+                 : "Back to flying speed " + secondsText(slice.speed.recoverRt)
+                    + " after the end.")
                 .font(.subheadline.weight(.medium))
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .leading),
@@ -337,7 +339,8 @@ private struct FlightEndDetailPage: View {
 
     private func spoken(_ end: FlightEndRecord, slice: FlightEndSlice) -> String {
         var parts = [
-            "Flight \(end.flightIndex + 1) ending, drawn \(windUp ? "wind up" : "north up")",
+            "Flight " + String(end.flightIndex + 1) + " ending, drawn "
+                + (windUp ? "wind up" : "north up"),
             FlightEndAnalytics.outcomeText(end),
         ]
         if let low = slice.speed.lowKn {
@@ -350,24 +353,35 @@ private struct FlightEndDetailPage: View {
 
     private func footnote(_ end: FlightEndRecord, slice: FlightEndSlice) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text("The drawing is \(Int(slice.padBeforeS)) s before the end and "
-                 + "\(Int(slice.padAfterS)) s after it. The thick, coloured part is the "
-                 + "flight; everything past the dot is already off the foil. Ticks are one "
-                 + "second apart and the numbers along the path are every five. North and "
-                 + "the wind are marked top right.")
-            Text("The bands are the engine's windows: \"entry\" is the "
-                 + "\(Int(slice.windows.entryS)) s the flight was ending at, \"outcome\" is "
-                 + "the \(Int(slice.windows.outcomeS)) s the verdict is read from, and "
-                 + "\"evidence\" is how much gap-free recording there actually was.")
+            // Built in locals: one `+` chain long enough to carry a whole paragraph is what
+            // the type checker gives up on inside a ViewBuilder.
+            let drawn = "The drawing is " + String(Int(slice.padBeforeS))
+                + " s before the end and " + String(Int(slice.padAfterS)) + " s after it. "
+            let marks = "The thick, coloured part is the flight. "
+                + "Everything past the dot is already off the foil. "
+                + "Ticks are one second apart. "
+                + "The numbers along the path are every five. "
+                + "North and the wind are marked top right."
+            Text(drawn + marks)
+            let entryBand = "The bands are the engine's windows. \"Entry\" is the "
+                + String(Int(slice.windows.entryS)) + " s the flight was ending at. "
+            let outcomeBand = "\"Outcome\" is the " + String(Int(slice.windows.outcomeS))
+                + " s the verdict is read from. "
+                + "\"Evidence\" is how much gap-free recording there actually was."
+            Text(entryBand + outcomeBand)
             // The honest sentence about the three numbers, which is the one thing this page
             // has to say that the turn page does not.
-            Text("Only \"low\" is the engine's — it is the slowest sample of the off-foil "
-                 + "run, placed where this window comes nearest it. \"In\" is the fastest "
-                 + "sample of the entry window and \"out\" is where the speed came back to "
-                 + "the engine's flying-again threshold, both read off the drawn line: a "
-                 + "flight end record carries no entry or exit speed of its own.")
-            Text("Speed here is the manoeuvre channel, derived from position — the GPS "
-                 + "Doppler speed the records use is smoothed and would read differently.")
+            Text("Only \"low\" is the engine's. "
+                 + "It is the slowest sample of the off-foil run, placed where this window "
+                 + "comes nearest it. "
+                 + "\"In\" is the fastest sample of the entry window. "
+                 + "\"Out\" is where the speed came back to the engine's flying-again "
+                 + "threshold. "
+                 + "Both are read off the drawn line. "
+                 + "A flight end record holds no entry or exit speed of its own.")
+            Text("Speed here is the manoeuvre channel, derived from position. "
+                 + "The GPS Doppler speed the records use is smoothed. "
+                 + "It would read differently.")
             if end.borderline {
                 Text("\"Borderline\" means the stop ran past the touchdown limit without "
                      + "reaching the fall one.")

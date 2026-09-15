@@ -44,7 +44,7 @@ public struct ReplayMilestone: Sendable, Equatable, Identifiable {
     public let t: Double
     /// The highest-ranked kind at this instant — what the caption's icon and ink read.
     public let kind: Kind
-    /// The whole line, ready to draw: "New streak — 5 dry jibes".
+    /// The whole line, ready to draw: "New streak · 5 dry jibes".
     public let text: String
 
     public init(id: String, t: Double, kind: Kind, text: String) {
@@ -164,7 +164,8 @@ public enum ReplayCommentary {
                 id: "jibe-\(n)", t: entry.element.ts, kind: .jibe(n),
                 // The first needs no unit: the first dry jibe is by definition the first
                 // one he came out of sailing, and the outcome is right there in the line.
-                text: n == 1 ? "First jibe — \(outcome.label)" : "\(n) dry jibes"))
+                text: n == 1 ? "First jibe · " + outcome.label
+                             : String(n) + " dry jibes"))
         }
         // MARK: the clean ones
         //
@@ -217,7 +218,8 @@ public enum ReplayCommentary {
                 // Not "Top speed — 13.47 kn" full stop: the number is a two-second window,
                 // and `KeyMetrics` refuses to call it a top speed for exactly that reason.
                 // Naming the window keeps the rider's word without making his claim bigger.
-                text: "Top speed — \(KeyMetrics.knots(best)) over \(RecordKind.best2s.windowLabel)"))
+                text: "Top speed · " + KeyMetrics.knots(best) + " over "
+                    + RecordKind.best2s.windowLabel))
         }
         if let longest = analysis.flights.enumerated().max(by: {
             let (a, b) = ($0.element, $1.element)
@@ -227,7 +229,7 @@ public enum ReplayCommentary {
             let seconds = longest.element.endTs - longest.element.startTs
             out.append(ReplayMilestone(
                 id: "longest-flight", t: longest.element.startTs, kind: .longestFlight,
-                text: "Longest flight — \(FlightPairing.clock(seconds))"))
+                text: "Longest flight · " + FlightPairing.clock(seconds)))
         }
 
         // Anything outside the replay's own clock is a caption the playhead can never reach.
@@ -296,7 +298,8 @@ public enum ReplayCommentary {
                 best = running
                 out.append(ReplayMilestone(
                     id: "streak-\(running)", t: event.mark, kind: .streak(running),
-                    text: "New streak — \(running) dry jibe\(running == 1 ? "" : "s")"))
+                    text: "New streak · " + String(running)
+                        + (running == 1 ? " dry jibe" : " dry jibes")))
             } else if event.fellIn {
                 running = 0
             }
@@ -491,17 +494,17 @@ public enum ReplayCommentary {
 
     // MARK: - The two bookends
 
-    /// "Torbole, 14:07 — session start", degrading a piece at a time.
+    /// "Torbole, 14:07 · session start", degrading a piece at a time.
     ///
     /// POSIX and 24-hour, like `ShareCardStats.dateLine`: this is a caption composed into a
     /// sentence, and a locale that turned it into "2:07 PM" would leave the line reading
-    /// "Torbole, 2:07 PM — session start" in a half-German app.
+    /// "Torbole, 2:07 PM · session start" in a half-German app.
     static func startLine(place: String?, startedAt: Date?, timeZone: TimeZone) -> String {
         var lead: [String] = []
         if let place, !place.trimmingCharacters(in: .whitespaces).isEmpty { lead.append(place) }
         if let startedAt { lead.append(hourMinute(startedAt, timeZone: timeZone)) }
         guard !lead.isEmpty else { return "Session start" }
-        return lead.joined(separator: ", ") + " — session start"
+        return lead.joined(separator: ", ") + " · session start"
     }
 
     /// "14:07". Factored out of `startLine` for `ReplayTitleCard`, which is the same sentence
@@ -514,7 +517,7 @@ public enum ReplayCommentary {
         return formatter.string(from: date)
     }
 
-    /// "Session end — 10:45 · 2.6 km · 8 dry jibes".
+    /// "Session end · 10:45 · 2.6 km · 8 dry jibes".
     ///
     /// **Dry**, and it says so — the same count the ordinals ran on and the same one JPH
     /// divides by. A closing line that totalled every attempt would disagree with the
@@ -531,11 +534,12 @@ public enum ReplayCommentary {
         let turns = summary.turns
         if turns.jibes > 0 {
             let dry = turns.jibeOutcomes.flewThrough + turns.jibeOutcomes.touchdown
-            parts.append("\(dry) dry jibe\(dry == 1 ? "" : "s")")
+            parts.append(String(dry) + (dry == 1 ? " dry jibe" : " dry jibes"))
         } else if turns.turnsCounted > 0 {
-            parts.append("\(turns.turnsCounted) turn\(turns.turnsCounted == 1 ? "" : "s")")
+            parts.append(String(turns.turnsCounted)
+                         + (turns.turnsCounted == 1 ? " turn" : " turns"))
         }
-        return "Session end — " + parts.joined(separator: " · ")
+        return "Session end · " + parts.joined(separator: " · ")
     }
 
     // MARK: - Lookup

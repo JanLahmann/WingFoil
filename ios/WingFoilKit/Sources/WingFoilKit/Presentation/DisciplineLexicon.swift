@@ -80,8 +80,9 @@ public struct DisciplineLexicon: Sendable, Equatable {
     /// The whole disclaimer in one breath: what works, what is off, what is a guess, and the
     /// ask.
     public static let experimentalNote =
-        "Experimental — windsurf analysis is untested; jibes and tacks work, pumping is off, "
-        + "planing thresholds are provisional. Tell us what you see."
+        "Experimental. Windsurf analysis is untested. Jibes and tacks work. "
+        + "Pumping is off and planing thresholds are provisional. "
+        + "Send feedback on what you see."
 }
 
 public extension Discipline {

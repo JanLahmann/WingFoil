@@ -29,9 +29,10 @@ enum ReelRenderer {
         var errorDescription: String? {
             switch self {
             case .noTrack:
-                "This session has no track to draw — a video needs positions."
+                "This session has no track to draw. A video needs positions."
             case .writer(let reason):
-                "The video could not be written (\(reason))."
+                // The writer's own words carry the fact the parenthesis used to hold.
+                "The video could not be written. " + reason
             case .cancelled:
                 "Export cancelled."
             }

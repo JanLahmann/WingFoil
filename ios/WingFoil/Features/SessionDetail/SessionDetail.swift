@@ -679,7 +679,8 @@ struct SessionDetail: Sendable {
         for takeoff in analysis.takeoffs {
             var detail = String(format: "up at %.1f kn", takeoff.entryKn)
             if let pumps = takeoff.pumps {
-                detail += " · \(pumps) stroke\(pumps == 1 ? "" : "s")"
+                let noun = pumps == 1 ? "stroke" : "strokes"
+                detail += " · " + String(pumps) + " " + noun
             }
             if !takeoff.truncated {
                 detail += String(format: " · %.0f s run", takeoff.timeToFoilS)
@@ -698,7 +699,8 @@ struct SessionDetail: Sendable {
         // The episode's *first* stroke, not its last: the marker should sit where he
         // started trying, which is where the pumping run he can recognise begins.
         for episode in PresentationRules.failedAttempts(analysis) {
-            var detail = "\(episode.strokes) stroke\(episode.strokes == 1 ? "" : "s")"
+            let strokeNoun = episode.strokes == 1 ? "stroke" : "strokes"
+            var detail = String(episode.strokes) + " " + strokeNoun
             let duration = episode.endTs - episode.startTs
             if duration >= 1 { detail += String(format: " · %.0f s", duration) }
             if episode.bursts > 1 { detail += " · \(episode.bursts) bursts" }
@@ -763,7 +765,7 @@ struct SessionDetail: Sendable {
         }
         if let index = sub.flightEndIndex, analysis.flightEnds.indices.contains(index) {
             let end = analysis.flightEnds[index]
-            var line = "after flight \(end.flightIndex + 1) ended"
+            var line = "after flight " + String(end.flightIndex + 1) + " ended"
             if end.stoppedS >= 1 { line += String(format: ", stopped %.0f s", end.stoppedS) }
             return line
         }

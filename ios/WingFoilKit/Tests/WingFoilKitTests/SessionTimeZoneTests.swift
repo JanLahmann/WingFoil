@@ -108,7 +108,7 @@ import Testing
                     == "14:07")
             #expect(ReplayCommentary.startLine(place: "Torbole", startedAt: row.startDate,
                                                timeZone: row.displayZone)
-                    == "Torbole, 14:07 — session start")
+                    == "Torbole, 14:07 · session start")
 
             // 3. The clip's title card, which is that line laid out rather than spoken.
             let card = ReplayTitleCard.make(place: "Torbole", startedAt: row.startDate,
@@ -120,7 +120,7 @@ import Testing
                     == "30 August 2026")
             #expect(ShareText.cardMessage(place: "Torbole", startedAt: row.startDate,
                                           timeZone: row.displayZone)
-                    .hasPrefix("Torbole, 30 August 2026 — "))
+                    .hasPrefix("Torbole, 30 August 2026 · "))
 
             // 5. The filename a shared FIT arrives under.
             #expect(FitShareFilter.filename(date: row.startDate, title: "Torbole",

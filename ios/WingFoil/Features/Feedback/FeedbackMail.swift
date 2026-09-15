@@ -131,7 +131,7 @@ enum FeedbackMail {
     /// needs — the minor says which watch release, the schema which FIT field set.
     private static func watchAppVersion(_ tag: Int) -> String? {
         guard tag > 0 else { return nil }
-        return "0.\(tag >> 8) (FIT schema \(tag & 0xFF))"
+        return "0." + String(tag >> 8) + " (FIT schema " + String(tag & 0xFF) + ")"
     }
     #endif
 
@@ -306,7 +306,8 @@ struct FeedbackFooter: View {
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
-        .accessibilityHint("Opens a mail to \(FeedbackReport.recipient) with this build already written in")
+        .accessibilityHint("Opens a mail to " + FeedbackReport.recipient
+                           + " with this build already written in")
         .feedbackMail(on: $request, session: session)
     }
 
@@ -418,9 +419,9 @@ private struct FeedbackFallbackSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("No mail account is set up on this phone, so CleanJibe cannot open "
-                         + "a mail for you. Copy the report and send it from wherever you "
-                         + "write to us — \(FeedbackReport.recipient).")
+                    Text("No mail account is set up on this phone, so CleanJibe cannot "
+                         + "open a mail for you. Copy the report and send it from any "
+                         + "mail app to " + FeedbackReport.recipient + ".")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

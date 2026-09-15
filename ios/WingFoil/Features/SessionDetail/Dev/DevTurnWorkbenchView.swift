@@ -64,7 +64,8 @@ struct DevTurnWorkbenchView: View {
     /// page is left on the spinner for ever. Keyed on whether the entry exists, the page simply
     /// asks again the moment it does — and the second pass finds it cached and returns at once.
     private var taskID: String {
-        "\(detail.row.id)#\(index)#\(workbench.entry(for: detail) != nil)"
+        let loaded = workbench.entry(for: detail) != nil
+        return detail.row.id + "#" + String(index) + "#" + String(loaded)
     }
 
     /// Loads the session's channels (once, cached) and cuts this turn's trace and table out of
@@ -118,12 +119,12 @@ struct DevTurnWorkbenchView: View {
                 let agrees = current.verdict == TurnOutcomeKind(turn.outcome)
                 Text(agrees
                      ? "agrees with the engine"
-                     : "disagrees — the engine said "
+                     : "disagrees. The engine said "
                         + TurnOutcomeKind(turn.outcome).label)
                     .font(.caption2)
                     .foregroundStyle(agrees ? .secondary : Color.orange)
             } else {
-                Text("What actually happened, in your words — scored against the engine in "
+                Text("What actually happened, in your words. Scored against the engine in "
                      + "Settings → Tuning → Labels. Never read by the analysis.")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
@@ -156,7 +157,7 @@ struct DevTurnWorkbenchView: View {
                     .foregroundStyle(Color.orange)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Text("Seconds are from the sweep's start — the same clock as the strip above.")
+            Text("Seconds count from the sweep's start. The strip above uses the same clock.")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
@@ -179,11 +180,11 @@ struct DevTurnWorkbenchView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 switch step.note {
                 case .disagrees(let derived, let record):
-                    Text("re-derived \(derived), the record says \(record)")
+                    Text("re-derived " + derived + ", the record says " + record)
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(Color.orange)
                 case .assumed(let parameter):
-                    Text("\(parameter) was not echoed — published default assumed")
+                    Text(parameter + " was not echoed. Published default assumed")
                         .font(.caption2)
                         .foregroundStyle(Color.orange)
                 case .none:
@@ -206,9 +207,9 @@ struct DevTurnWorkbenchView: View {
         // its own preset, so it is the *fin* set that decides whether a fin session has
         // anything to compare with.
         if store.tuning[detail.row.analysisDiscipline].isEmpty {
-            Text(markdown: "Nothing is tuned for "
-                 + "\(detail.row.analysisDiscipline.title.lowercased()), so the preset "
-                 + "defaults *are* what you are looking at.")
+            let discipline = detail.row.analysisDiscipline.title.lowercased()
+            Text(markdown: "Nothing is tuned for " + discipline
+                 + ", so the preset defaults *are* what you are looking at.")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         } else if let card = TurnWhatIf.make(turnIndex: index, tuned: detail.analysis,
@@ -235,13 +236,13 @@ struct DevTurnWorkbenchView: View {
                                   String(format: "%.0f s", base.outcomeWindowS))
                     }
                     if card.identical {
-                        Text("Identical — the thresholds you moved did not touch this turn.")
+                        Text("Identical. The thresholds you moved did not touch this turn.")
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                     }
                 } else if workbench.entry(for: detail)?.complete == true {
-                    Text("The published defaults find no turn here at all — this maneuver is "
-                         + "one your tuning discovered.")
+                    Text("The published defaults find no turn here at all. Your tuning "
+                         + "discovered this maneuver.")
                         .font(.caption2)
                         .foregroundStyle(Color.orange)
                         .fixedSize(horizontal: false, vertical: true)
@@ -278,7 +279,7 @@ struct DevTurnWorkbenchView: View {
                 Button {
                     showEvidence.toggle()
                 } label: {
-                    Label("Evidence · \(rows.count) samples",
+                    Label("Evidence · " + String(rows.count) + " samples",
                           systemImage: showEvidence ? "chevron.down" : "chevron.right")
                         .font(.subheadline.weight(.semibold))
                 }
@@ -303,10 +304,15 @@ struct DevTurnWorkbenchView: View {
                         }
                     }
                 }
-                Text("−\(Int(TurnEvidenceTable.leadS)) s to +\(Int(TurnEvidenceTable.trailS)) s "
-                     + "around the sweep, tinted by the window each sample falls in. "
-                     + "A row marked ⌁ is the far side of a recording gap, where every window "
-                     + "in the engine stops.")
+                let lead = String(Int(TurnEvidenceTable.leadS))
+                let trail = String(Int(TurnEvidenceTable.trailS))
+                // Built in a local: one `+` chain long enough to carry the whole caption is
+                // what the type checker gives up on inside a ViewBuilder.
+                let span = "−" + lead + " s to +" + trail + " s "
+                    + "around the sweep, tinted by the window each sample falls in. "
+                let gap = "A row marked ⌁ is the far side of a recording gap, where every "
+                    + "window in the engine stops."
+                Text(span + gap)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)

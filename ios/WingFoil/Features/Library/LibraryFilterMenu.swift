@@ -166,7 +166,7 @@ struct LibraryDateRangeSheet: View {
                     DatePicker("From", selection: $from, displayedComponents: .date)
                     DatePicker("To", selection: $to, displayedComponents: .date)
                 } footer: {
-                    Text("Both dates count. The filter narrows this list only — your "
+                    Text("Both dates count. The filter narrows this list only. Your "
                          + "records and trends stay all-time.")
                 }
             }

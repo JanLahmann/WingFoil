@@ -277,7 +277,7 @@ public enum LibraryGrouping: String, Sendable, CaseIterable, Identifiable {
             let c = LibraryListing.components(row, calendar: calendar)
             let month = LibraryStore.monthsLong[max(1, min(12, c.month ?? 1)) - 1]
             return (String(format: "%04d-%02d", c.year ?? 0, c.month ?? 0),
-                    "\(month) \(c.year ?? 0)")
+                    month + " " + String(c.year ?? 0))
         case .year:
             let c = LibraryListing.components(row, calendar: calendar)
             return (String(format: "%04d", c.year ?? 0), "\(c.year ?? 0)")
@@ -343,7 +343,8 @@ public enum LibraryListing {
 
     /// **"9 sessions"**, "1 session".
     public static func sessionCount(_ n: Int) -> String {
-        "\(n) session\(n == 1 ? "" : "s")"
+        let noun = n == 1 ? " session" : " sessions"
+        return String(n) + noun
     }
 
     /// **"9 sessions"** over a list of rows — counting the ones that *are* sessions.

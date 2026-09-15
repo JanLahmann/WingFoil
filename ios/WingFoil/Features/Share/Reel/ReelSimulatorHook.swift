@@ -37,7 +37,7 @@ enum ReelHook {
                                                style: store.mapStyle,
                                                visibility: store.mapLayers(for: .ride),
                                                length: length) else {
-            print("[reel] no scene — this session has no track")
+            print("[reel] no scene. This session has no track")
             return
         }
         let staged = Date()

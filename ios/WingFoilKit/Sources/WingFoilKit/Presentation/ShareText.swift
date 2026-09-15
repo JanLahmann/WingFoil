@@ -34,7 +34,7 @@ public enum ShareText {
         let date = ShareCardStats.dateLine(startedAt, timeZone: timeZone)
         let trimmed = place?.trimmingCharacters(in: .whitespaces) ?? ""
         guard !trimmed.isEmpty, trimmed != unnamedPlace else { return date }
-        return "\(trimmed), \(date)"
+        return trimmed + ", " + date
     }
 
     /// The message that goes with a shared **recording**.
@@ -44,9 +44,9 @@ public enum ShareText {
     /// same engine, in a browser, without an account.
     public static func fitMessage(place: String?, startedAt: Date,
                                   timeZone: TimeZone) -> String {
-        "\(lead(place: place, startedAt: startedAt, timeZone: timeZone)) — "
-            + "\(Branding.appName) session. Analyze it free in the browser at "
-            + "\(Branding.siteURL) (no account needed)."
+        lead(place: place, startedAt: startedAt, timeZone: timeZone) + " · "
+            + Branding.appName + " session. Analyze it free in the browser at "
+            + Branding.siteURL + ". No account needed."
     }
 
     /// The message that goes with a shared **clip**.
@@ -58,8 +58,8 @@ public enum ShareText {
     /// but as a credit rather than as an offer.
     public static func clipMessage(place: String?, startedAt: Date,
                                    timeZone: TimeZone) -> String {
-        "\(lead(place: place, startedAt: startedAt, timeZone: timeZone)) — "
-            + "\(Branding.appName) session clip · \(Branding.site)"
+        lead(place: place, startedAt: startedAt, timeZone: timeZone) + " · "
+            + Branding.appName + " session clip · " + Branding.site
     }
 
     /// The message that goes with a shared **card**. Same shape as the clip's, for the same
@@ -72,8 +72,8 @@ public enum ShareText {
     /// because nothing else should have to think about which of the two it wants.
     public static func cardMessage(place: String?, startedAt: Date,
                                    timeZone: TimeZone) -> String {
-        "\(lead(place: place, startedAt: startedAt, timeZone: timeZone)) — "
-            + "\(Branding.appName) session · \(Branding.site)"
+        lead(place: place, startedAt: startedAt, timeZone: timeZone) + " · "
+            + Branding.appName + " session · " + Branding.site
     }
 }
 
@@ -105,12 +105,12 @@ public enum ShareCaption {
     /// "analysed with CleanJibe, free at cleanjibe.org" — the offer, and the only half of the
     /// line addressed to somebody who does not have the app.
     public static let offer =
-        "analysed with \(Branding.appName), free at \(Branding.site)"
+        "analysed with " + Branding.appName + ", free at " + Branding.site
 
     /// "30 clean jibes", and "1 clean jibe" — the one place the count is worded, the twin of
     /// the web's `cleanPhrase`.
     public static func cleanPhrase(_ count: Int) -> String {
-        "\(count) clean \(count == 1 ? "jibe" : "jibes")"
+        String(count) + (count == 1 ? " clean jibe" : " clean jibes")
     }
 
     /// The facts, in the order the web joins them: where, when, how much of it was flown, and
@@ -126,7 +126,7 @@ public enum ShareCaption {
         let trimmed = title?.trimmingCharacters(in: .whitespaces) ?? ""
         if !trimmed.isEmpty, trimmed != ShareText.unnamedPlace { out.append(trimmed) }
         if !dateLine.isEmpty { out.append(dateLine) }
-        if let foilPct { out.append("\(Int(foilPct.rounded())) % on the foil") }
+        if let foilPct { out.append(String(Int(foilPct.rounded())) + " % on the foil") }
         if let cleanJibes { out.append(cleanPhrase(cleanJibes)) }
         return out
     }
@@ -145,6 +145,7 @@ public enum ShareCaption {
     /// an invitation in it reads as an advertisement rather than as a message from a friend.
     public static func subject(title: String?, dateLine: String) -> String {
         let facts = parts(title: title, dateLine: dateLine, foilPct: nil, cleanJibes: nil)
-        return facts.isEmpty ? "\(Branding.appName) session" : facts.joined(separator: " · ")
+        return facts.isEmpty ? Branding.appName + " session"
+                             : facts.joined(separator: " · ")
     }
 }

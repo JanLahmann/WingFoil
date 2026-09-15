@@ -50,7 +50,7 @@ struct DisciplineReviewView: View {
                                 Task { await store.applyDisciplineToAllInReview(choice) }
                             } label: {
                                 HStack {
-                                    Text("All \(rows.count) as \(choice.title)")
+                                    Text("All " + String(rows.count) + " as " + choice.title)
                                     Spacer()
                                     if allOne == choice {
                                         Image(systemName: "checkmark")

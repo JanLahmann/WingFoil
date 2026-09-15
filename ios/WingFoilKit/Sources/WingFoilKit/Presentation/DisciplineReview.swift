@@ -74,12 +74,13 @@ public enum DisciplineReview {
     /// something that is very probably right.
     public static func banner(_ pending: [SessionRow]) -> String? {
         guard !pending.isEmpty else { return nil }
-        let noun = "\(pending.count) new session\(pending.count == 1 ? "" : "s")"
+        let word = pending.count == 1 ? " new session" : " new sessions"
+        let noun = String(pending.count) + word
         let presets = Set(pending.map(\.analysisDiscipline))
         guard presets.count == 1, let only = presets.first else {
-            return "\(noun) analysed — check the discipline"
+            return noun + " analysed. Check the discipline."
         }
-        return "\(noun) analysed as \(only.title)"
+        return noun + " analysed as " + only.title
     }
 
     /// **Does the library row wear a discipline badge at all?**
@@ -121,9 +122,9 @@ public enum DisciplineReview {
     public static func sportHint(_ sport: String?) -> String? {
         guard let name = sportName(sport) else { return nil }
         if name == "windsurfing" {
-            return "Filed as windsurfing — which is also how a Garmin files a wingfoil session"
+            return "Filed as windsurfing. A Garmin files a wingfoil session the same way."
         }
-        return "Filed as \(name)"
+        return "Filed as " + name
     }
 
     /// The FIT sport code (or its name) in the rider's words, lowercase, or nil for one this

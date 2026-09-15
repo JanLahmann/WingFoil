@@ -43,7 +43,8 @@ struct WatchMapChoiceView: View {
                 Section("Spots") {
                     ForEach(spots) { spot in
                         row(title: spot.spot.name,
-                            caption: "\(spot.sessions) session\(spot.sessions == 1 ? "" : "s")",
+                            caption: String(spot.sessions)
+                                     + (spot.sessions == 1 ? " session" : " sessions"),
                             isPicked: choice.contains(.spot(id: spot.spot.id))) {
                             toggle(.spot(id: spot.spot.id))
                         }
@@ -67,7 +68,7 @@ struct WatchMapChoiceView: View {
             } header: {
                 Text("Now")
             } footer: {
-                Text("The watch holds two maps. Pick up to two; a third replaces the "
+                Text("The watch holds two maps. Pick up to two. A third replaces the "
                      + "oldest pick.")
             }
         }

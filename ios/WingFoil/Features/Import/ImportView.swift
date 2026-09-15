@@ -224,17 +224,17 @@ struct ImportView: View {
     /// because the sync button above is the only way most of their riders get in at all:
     /// their apps sync to intervals.icu, and CleanJibe syncs from there.
     private static let filePickerFooter =
-        "Garmin Connect → activity → \"Export File\" gives one FIT; "
+        "Garmin Connect → activity → \"Export File\" gives one FIT. "
         // **COROS, in capitals**, the way docs/channels.md and the release branch of this
         // same footer already spell it. One brand, two spellings, in two branches of one
         // file (15 Sep 2026).
         + "AirDrop and the share sheet land here too. Polar, Suunto and "
-        + "COROS are supported through intervals.icu — their apps sync "
+        + "COROS are supported through intervals.icu. Their apps sync "
         + "there, and CleanJibe syncs from there. A FIT gives the full "
-        + "analysis; a GPX, or a TCX without a speed channel, gives a "
-        + "positions-only analysis with speed records estimated from "
+        + "analysis. A GPX, or a TCX without a speed channel, gives a "
+        + "positions-only analysis. Its speed records are estimated from "
         + "positions and marked uncertified. None of the three carries an "
-        + "accelerometer, so there is no pump or takeoff effort."
+        + "accelerometer. Pump strokes and takeoff effort are missing."
     #else
     private static let filePickerLabel = "FIT or ZIP…"
     private static let importableTypes: [UTType] = [.fitActivity, .zip, .gzip]
@@ -243,10 +243,10 @@ struct ImportView: View {
     /// reader does not have is not an answer. So the last line says which doors *this* app
     /// has for a Polar, a Suunto or a COROS, and both of them work today.
     private static let filePickerFooter =
-        "Garmin Connect → activity → \"Export File\" gives one FIT; "
+        "Garmin Connect → activity → \"Export File\" gives one FIT. "
         + "AirDrop and the share sheet land here too. Polar, Suunto and "
-        + "COROS sessions come in through Strava, or through intervals.icu "
-        + "— their apps sync there, and CleanJibe syncs from there."
+        + "COROS sessions come in through Strava, or through intervals.icu. "
+        + "Their apps sync there, and CleanJibe syncs from there."
     #endif
 }
 
@@ -290,18 +290,19 @@ private enum ImportClass {
     /// The Garmin GDPR ZIP holds whatever the watch originally wrote, so it is both of the
     /// Garmin classes at once and the honest footer says so rather than picking one.
     static let fullHistory =
-        "\(RecordingClass.a.name), or \(RecordingClass.b.name): whichever each recording "
-        + "originally was. The ZIP holds the untouched files, so a session is worth exactly "
-        + "what it was worth on the day it was ridden."
+        RecordingClass.a.name + ", or " + RecordingClass.b.name
+        + ": whichever each recording originally was. The ZIP holds the untouched files. "
+        + "A session is worth what it was worth on the day it was ridden."
 
     /// Apple's own Workout app is class B: its speed came off the watch's GPS receiver and
     /// certifies, and nothing recorded the wrist. The B+ sentence is here because this is the
     /// screen where an Apple Watch owner is thinking about Apple Watches, and the door that
     /// gets him the missing half is the one door on this screen that is not on this screen.
     static let appleHealth =
-        "\(RecordingClass.b.footerLine)\n"
-        + "\(RecordingClass.bPlus.name) is the other way: record with the CleanJibe watch app "
-        + "instead and the session arrives on its own, with the wrist in it. No import needed."
+        RecordingClass.b.footerLine + "\n"
+        + RecordingClass.bPlus.name
+        + " is the other way. Record with the CleanJibe watch app instead. The session "
+        + "arrives on its own, with the wrist in it. No import needed."
 
     static let strava = RecordingClass.c.footerLine
 
@@ -320,23 +321,24 @@ private enum ImportClass {
         + "duplicate, so re-running is safe."
 
     static let healthDoor =
-        "Record with Apple's Workout app on an Apple Watch — Surfing, Water Sports or "
-        + "Sailing — and the GPS track and heart rate land in Health. CleanJibe reads the "
-        + "workouts you pick and analyses them on this phone: speed comes off the watch's "
-        + "own GPS, so the speed records are certified. There is no accelerometer in a "
-        + "Health workout, so pump strokes and takeoff effort are missing."
+        "Record with Apple's Workout app on an Apple Watch. Pick Surfing, Water Sports "
+        + "or Sailing. The GPS track and heart rate land in Health. CleanJibe reads the "
+        + "workouts you pick and analyses them on this phone. Speed comes off the "
+        + "watch's own GPS, so the speed records are certified. A Health workout has no "
+        + "accelerometer, so pump strokes and takeoff effort are missing."
 
     // Only the opening clause changed (15 September 2026): the footer began "Connect your
     // Strava account and…", and connecting is Settings' job now. What the
     // door *brings in* — the class line, the four activity types, the two costs, the
     // intervals.icu preference — is untouched.
     static let stravaDoor =
-        "Imports the sessions you pick from your Strava account — Windsurf, Kitesurf, "
-        + "Surf and Workout by default, and anything whose name says wing or foil. Strava "
-        + "hands over positions, a clock, elevation and heart rate, so the analysis is "
-        + "complete except for two things: speed is worked out from the positions, so those "
-        + "records are marked uncertified, and nothing records your wrist, so there are no "
-        + "pump strokes. If the same session is on intervals.icu, take it from there instead."
+        "Imports the sessions you pick from your Strava account. Windsurf, Kitesurf, "
+        + "Surf and Workout come by default, and anything whose name says wing or foil. "
+        + "Strava hands over positions, a clock, elevation and heart rate. Two things "
+        + "are missing from the analysis. Speed is worked out from the positions, so "
+        + "those records are marked uncertified. Nothing records your wrist, so there "
+        + "are no pump strokes. If the same session is on intervals.icu, take it from "
+        + "there instead."
 }
 
 /// Live counters while a container is being unpacked: found / imported / duplicates /
@@ -402,12 +404,13 @@ private struct ImportLogRowView: View {
     }
 
     private var summary: String {
-        var parts = ["\(entry.found) found", "\(entry.imported) imported"]
+        var parts = [String(entry.found) + " found", String(entry.imported) + " imported"]
         if entry.duplicates > 0 {
-            parts.append("\(entry.duplicates) duplicate\(entry.duplicates == 1 ? "" : "s")")
+            let noun = entry.duplicates == 1 ? " duplicate" : " duplicates"
+            parts.append(String(entry.duplicates) + noun)
         }
-        if entry.skipped > 0 { parts.append("\(entry.skipped) skipped") }
-        if entry.failed > 0 { parts.append("\(entry.failed) failed") }
+        if entry.skipped > 0 { parts.append(String(entry.skipped) + " skipped") }
+        if entry.failed > 0 { parts.append(String(entry.failed) + " failed") }
         return parts.joined(separator: " · ")
     }
 }

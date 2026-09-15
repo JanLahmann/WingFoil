@@ -99,11 +99,18 @@ struct KeyMetricsView: View {
     /// The outcome ladder's own three counts, in the ladder's own inks — the same
     /// `OutcomeTally` the library row draws, one type size up because here it is a
     /// headline rather than a row detail.
+    ///
+    /// The " — " is the share card's `CAPTION_SEP`, the separator glyph between a pinned
+    /// label and its caption, not a dash inside a rider sentence. `ShareCard.swift` and
+    /// `web/js/cardstats.js` print the identical string and a verifier holds them to each
+    /// other, so the rendered text here must not move.
+    private static let captionSep = " — "
+
     private func tallyCell(_ tally: KeyMetrics.Tally) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             OutcomeTally(flewThrough: tally.flewThrough, touchdown: tally.touchdown,
                          fellIn: tally.fellIn, font: .title2)
-            Text("flew · touchdown · fell — \(tally.caption)")
+            Text("flew · touchdown · fell" + Self.captionSep + tally.caption)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

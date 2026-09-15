@@ -24,15 +24,15 @@
  */
 export const NOT_A_SESSION = {
   "lines": [
-    "Your watch says this afternoon happened, but its recording has not arrived yet — so it is not counted in totals, trends or records until it does.",
-    "No time on the foil, {duration} long and {distance} covered — so this looks like a recording rather than a session. It is kept, and left out of totals, trends and records."
+    "Your watch says this afternoon happened, but its recording has not arrived yet. It is not counted in totals, trends or records until it does.",
+    "No time on the foil, {duration} long and {distance} covered. This looks like a recording rather than a session. It is kept, and left out of totals, trends and records."
   ],
   "tag": "No riding detected"
 };
 
 /** The three sentences the product says about itself (docs/copy/phrases.json). */
 export const PHRASES = {
-  "promise": "CleanJibe reads a wingfoil session off your watch and tells you what actually happened: how much of it you spent on the foil, how long each flight lasted, your speed records, and — for every turn — whether you flew through it, touched down, or fell in.",
+  "promise": "Did you fly through that jibe? CleanJibe reads your session off the watch and tells you: time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.",
   "callToAction": "analyze your wingfoil sessions free — cleanjibe.org",
   "captionOffer": "analysed with CleanJibe, free at cleanjibe.org"
 };
@@ -54,7 +54,7 @@ export const GLOSSARY = [
   {
     "id": "flights",
     "term": "Flights & touchdowns",
-    "line": "One takeoff starts a flight; a touchdown or a swim ends it. Both are counted."
+    "line": "One takeoff starts a flight. A touchdown or a swim ends it. Both are counted."
   },
   {
     "id": "turnVerdicts",
@@ -64,7 +64,7 @@ export const GLOSSARY = [
   {
     "id": "dryStreak",
     "term": "Dry streak",
-    "line": "How many jibes in a row you stayed out of the water — and the best run of the day."
+    "line": "How many jibes in a row you stayed out of the water, and the best run of the day."
   },
   {
     "id": "jph",
@@ -74,12 +74,12 @@ export const GLOSSARY = [
   {
     "id": "cph",
     "term": "CPH",
-    "line": "Clean jibes per hour: you flew through it, you held your speed, and the ten seconds after it stayed quiet."
+    "line": "Clean jibes per hour. Clean: flew through, held your speed, and 10 quiet seconds after."
   },
   {
     "id": "tph",
     "term": "TPH",
-    "line": "Turns per hour — every counted turn, not only the jibes. It stands in for JPH on a session whose wind axis named no jibes."
+    "line": "Turns per hour, every counted turn and not only the jibes. It stands in for JPH on a session whose wind axis named no jibes."
   },
   {
     "id": "wph",
@@ -89,7 +89,7 @@ export const GLOSSARY = [
   {
     "id": "speedRecords",
     "term": "Speed records",
-    "line": "Your fastest 2 seconds, 10 seconds, 500 m and nautical mile — the same windows the speedsurfing world uses."
+    "line": "Your fastest 2 seconds, 10 seconds, 500 m and nautical mile. The speedsurfing world uses the same windows."
   },
   {
     "id": "best5x10s",
@@ -99,6 +99,6 @@ export const GLOSSARY = [
   {
     "id": "alpha500",
     "term": "Alpha 500",
-    "line": "Your fastest 500 m that ends within 50 m of where it started — so it contains a jibe, and measures the turn as well as the speed."
+    "line": "Your fastest 500 m that ends within 50 m of where it started. It contains a jibe, so it measures the turn as well as the speed."
   }
 ];

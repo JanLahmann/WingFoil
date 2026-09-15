@@ -154,12 +154,13 @@ public struct NewCleanJibeBest: Sendable, Equatable, Identifiable {
 
     public var id: String { kind.rawValue }
 
-    /// "Clean jibes — 11 (was 8)": the whole celebration in one line, and the reason the
-    /// burst is not unexplained.
+    /// "Clean jibes: 11, was 8" — the whole celebration in one line, and the reason the
+    /// burst is not unexplained. The old best is the half that explains the new one, so it
+    /// rides in the same sentence rather than in an aside.
     public var headline: String {
         let now = kind.format(value)
-        guard let previous else { return "\(kind.label) — \(now)" }
-        return "\(kind.label) — \(now) (was \(kind.format(previous)))"
+        guard let previous else { return kind.label + ": " + now }
+        return kind.label + ": " + now + ", was " + kind.format(previous)
     }
 
     public init(kind: CleanJibeRecordKind, value: Double, previous: Double?,

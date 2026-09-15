@@ -563,7 +563,7 @@ struct TurnDetailMapView: View {
     static func turnSpoken(_ slice: TurnSlice, windUp: Bool, hasGhost: Bool) -> String {
         let turn = slice.turn
         var parts = [
-            "\(TurnAnalytics.typeLabel(turn.type)) drawn \(windUp ? "wind up" : "north up")",
+            TurnAnalytics.typeLabel(turn.type) + " drawn " + (windUp ? "wind up" : "north up"),
             String(format: "%.1f knots in, %.1f at the low point after %.0f seconds, "
                    + "%.1f out", slice.speed.entryKn, slice.speed.minKn,
                    slice.speed.minRt, slice.speed.exitKn),

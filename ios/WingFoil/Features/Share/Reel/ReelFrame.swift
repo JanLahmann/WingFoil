@@ -327,8 +327,8 @@ enum ReelFrame {
         // The counters. "flew" and "dry" are the two the key-metrics block's streak pair
         // names, and "clean" wears the star it wears everywhere else.
         let tally = scene.plan.tally(throughSessionTime: t)
-        var line = "\(tally.flew) flew · \(tally.dry) dry"
-        if tally.clean > 0 { line += " · \(tally.clean) ★ clean" }
+        var line = String(tally.flew) + " flew · " + String(tally.dry) + " dry"
+        if tally.clean > 0 { line += " · " + String(tally.clean) + " ★ clean" }
         text(context, line, size: 34, weight: .semibold, rounded: true, color: quiet,
              at: CGPoint(x: ReelScene.size.width / 2, y: stripTop + 122), align: .center)
 

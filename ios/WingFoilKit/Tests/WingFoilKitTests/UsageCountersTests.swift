@@ -178,7 +178,7 @@ import Testing
     @Test func theFailuresAreListedUnderTheirOwnHeading() {
         let report = filledIn().report(appVersion: "1.1.0 (23)", now: date(14),
                                        timeZone: zone)
-        #expect(report.contains("  Failures this phone showed (newest first)"))
+        #expect(report.contains("  Failures this phone showed, newest first"))
         #expect(report.contains("\n    Could not reach intervals.icu · 2 · last 13 Sep"))
     }
 

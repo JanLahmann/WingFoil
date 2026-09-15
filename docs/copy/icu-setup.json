@@ -17,7 +17,7 @@
     "",
     "Wholly kit-owned: COPY_WRITE=1 swift test --filter CopyContractTests."
   ],
-  "privacyNote" : "Your API key is stored in this iPhone's Keychain. It is never copied to iCloud, never sent to any CleanJibe server — there isn't one — and never written to a log. The only place it goes is intervals.icu itself, over HTTPS.",
+  "privacyNote" : "Your API key is stored in this iPhone's Keychain. It is never copied to iCloud and never written to a log. There is no CleanJibe server to send it to. It goes to intervals.icu itself, over HTTPS, and nowhere else.",
   "saveButton" : "Save & check",
   "steps" : [
     {
@@ -29,11 +29,11 @@
       "title" : "Connect Garmin in intervals.icu"
     },
     {
-      "detail" : "Still in intervals.icu: Settings → Developer Settings → API Key. Copy it. Developer settings are free for every user; no subscription is needed.",
+      "detail" : "Still in intervals.icu: Settings → Developer Settings → API Key. Copy it. Developer settings are free for every user. No subscription is needed.",
       "title" : "Generate your personal API key"
     },
     {
-      "detail" : "Paste it into the field below (in the app: Settings → intervals.icu) and tap Save & check. CleanJibe verifies it and says how many activities it can see.",
+      "detail" : "Paste it into the field below. In the app that field is Settings → intervals.icu. Tap Save & check. CleanJibe verifies it and says how many activities it can see.",
       "title" : "Paste the key into CleanJibe"
     }
   ]

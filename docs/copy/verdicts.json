@@ -18,8 +18,8 @@
   ],
   "notASession" : {
     "lines" : [
-      "Your watch says this afternoon happened, but its recording has not arrived yet — so it is not counted in totals, trends or records until it does.",
-      "No time on the foil, {duration} long and {distance} covered — so this looks like a recording rather than a session. It is kept, and left out of totals, trends and records."
+      "Your watch says this afternoon happened, but its recording has not arrived yet. It is not counted in totals, trends or records until it does.",
+      "No time on the foil, {duration} long and {distance} covered. This looks like a recording rather than a session. It is kept, and left out of totals, trends and records."
     ],
     "tag" : "No riding detected"
   }

@@ -362,7 +362,7 @@ struct HelpButton: View {
                 .foregroundStyle(.tertiary)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("What does \(HelpCatalog.topic(topic).title) mean?")
+        .accessibilityLabel("What does " + HelpCatalog.topic(topic).title + " mean?")
         .sheet(isPresented: $showing) { HelpTopicSheet(id: topic) }
     }
 }

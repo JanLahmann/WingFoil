@@ -343,7 +343,8 @@ public enum FeedbackReport {
     /// anybody who needs to know, and the facts block under the rule says it in words.
     public static func subject(_ facts: FeedbackFacts) -> String {
         let build = facts.app.build + (facts.app.isDev ? " dev" : "")
-        return "\(Branding.appName) feedback · build \(build) · \(facts.watch.subjectName)"
+        return Branding.appName + " feedback · build " + build + " · "
+            + facts.watch.subjectName
     }
 
     /// The three questions a report has to answer, in the order a reporter thinks them.
@@ -359,7 +360,8 @@ public enum FeedbackReport {
     public enum Prompt {
         public static let what = "What happened, or what you would like:"
         public static let expected = "What you expected instead:"
-        public static let session = "Which session (date, spot), if it is about one:"
+        public static let session = "Which session, its date and spot, if it is "
+            + "about one:"
     }
 
     /// The rule for the line between the rider's half of the mail and the phone's.
@@ -375,7 +377,7 @@ public enum FeedbackReport {
         public static let rule = String(repeating: "-", count: 40)
         public static let note =
             "Below is what the app knows about this phone and build. "
-            + "It helps analysis; delete any line you would rather not send."
+            + "It helps analysis. Delete any line you would rather not send."
     }
 
     /// The prefilled body: three labelled blanks for the rider, then everything the phone
@@ -464,7 +466,7 @@ public enum FeedbackReport {
     private static func appLines(_ app: FeedbackFacts.App) -> [String] {
         var lines = [
             "\(Branding.appName) \(app.version) (\(app.build))"
-                + (app.isDev ? " · dev build (TUNING)" : " · public build"),
+                + (app.isDev ? " · dev build, TUNING on" : " · public build"),
             "Analysis engine \(app.engineVersion)",
         ]
         if app.tunedThresholds > 0 {
@@ -482,10 +484,11 @@ public enum FeedbackReport {
         var lines: [String] = []
         if let model = watch.garminModel {
             if let version = watch.garminAppVersion {
-                lines.append("Garmin \(model) · \(Branding.appName) watch app \(version)")
+                lines.append("Garmin " + model + " · " + Branding.appName
+                             + " watch app " + version)
             } else {
-                lines.append("Garmin \(model) · watch app version unknown "
-                             + "(no summary card has arrived yet)")
+                lines.append("Garmin " + model + " · watch app version unknown, "
+                             + "no summary card has arrived yet")
             }
         } else {
             lines.append("No Garmin watch chosen")
@@ -525,7 +528,7 @@ public enum FeedbackReport {
         second += " · " + session.duration
         lines.append(second)
         if let stamp = session.engineStamp {
-            lines.append("Analysed by engine \(stamp)")
+            lines.append("Analysed by engine " + stamp)
         }
         lines.append("Session id \(session.id)")
         return lines

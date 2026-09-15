@@ -854,7 +854,7 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    `ReplayPacing` solves the rate, the ease and *which milestones the clip has room for* from
    it, so a hook that named a raw rate would no longer stage the control that exists. At
    `UI_REPLAY_LENGTH=10` the Torbole example runs at 99× and says four things — session start,
-   "Flying! · Longest flight — 6:32", "Top speed — 13.47 kn over 2 s", session end — each with
+   "Flying! · Longest flight · 6:32", "Top speed · 13.47 kn over 2 s", session end — each with
    a dwell long enough to read. `UI_REPLAY_CINEMA=<rate>` still takes a bare multiplier for
    checking the pacing itself, and deliberately does **not** budget the script: at
    `UI_REPLAY_CINEMA=700` on the same 645 s example the map still draws correctly (the track is

@@ -72,17 +72,21 @@ public struct TuningDiff: Sendable, Equatable {
             guard value != 0 else { return }
             // A real minus sign, not a hyphen: this string is read at a glance beside "+3".
             let sign = value > 0 ? "+" : "−"
-            parts.append("\(sign)\(abs(value)) \(abs(value) == 1 ? singular : plural)")
+            let magnitude = abs(value)
+            let noun = magnitude == 1 ? singular : plural
+            parts.append(sign + String(magnitude) + " " + noun)
         }
         signed(jibeDelta, "jibe", "jibes")
         signed(tackDelta, "tack", "tacks")
         signed(cleanDelta, "clean", "clean")
         if verdictChanged > 0 {
-            parts.append("\(verdictChanged) verdict\(verdictChanged == 1 ? "" : "s") changed")
+            let verdicts = verdictChanged == 1 ? " verdict changed" : " verdicts changed"
+            parts.append(String(verdictChanged) + verdicts)
         }
         if cleanChanged > 0 && cleanDelta == 0 {
             // Two jibes swapping places leaves the count alone and is still a change.
-            parts.append("\(cleanChanged) clean flag\(cleanChanged == 1 ? "" : "s") moved")
+            let flags = cleanChanged == 1 ? " clean flag moved" : " clean flags moved"
+            parts.append(String(cleanChanged) + flags)
         }
         guard !parts.isEmpty else { return "Tuned vs default: nothing changed" }
         return "Tuned vs default: " + parts.joined(separator: ", ")

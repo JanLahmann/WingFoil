@@ -2285,8 +2285,8 @@ the question is asked at import time.
 **Session → Log → "Analyse as"** — with the switch above on — a three-way segmented control
 (Wingfoil / Windsurf foil / Windsurf fin) under the Recording card, with the footnote:
 
-> Experimental — windsurf analysis is untested; jibes and tacks work, pumping is off, planing
-> thresholds are provisional. Tell us what you see.
+> Experimental. Windsurf analysis is untested. Jibes and tacks work. Pumping is off and
+> planing thresholds are provisional. Send feedback on what you see.
 
 Log rather than Ride, and a row rather than a prominent control, because Jan's brief was to
 *hide it a bit*: the rider looking for it will find it, and the rider who is not will never be
@@ -2323,8 +2323,8 @@ Settings row would be the app answering a question nobody asked.
 
 **The review step**, and only with the switch on. After an import the rider asked for — files, a ZIP, Apple Health, a
 pull-to-refresh sync, a Strava import — a sheet lists what just landed with an unconfirmed
-preset: date · spot · source, the sport-code hint where there is one ("Filed as windsurfing —
-which is also how a Garmin files a wingfoil session"), and a three-way picker per row. Above
+preset: date · spot · source, the sport-code hint where there is one ("Filed as windsurfing.
+A Garmin files a wingfoil session the same way."), and a three-way picker per row. Above
 two rows it also offers **"All N as …"**, which is what makes a two-hundred-file ZIP one
 decision. **Confirm** clears the question and re-derives nothing; **Not now** keeps every guess
 — nothing is lost, and the session page can change any of them for ever.
@@ -2652,7 +2652,7 @@ same trip taken immediately, and leaving the page takes it automatically.
 | surface | mark | read from |
 |---|---|---|
 | session header, beside the discipline badge | `tuned · N` chip | that session's stored `engineVersion` |
-| session page, in the divergence banner's slot | "Analysed with tuned thresholds (N changed) — Settings → Tuning" | that session's analysis |
+| session page, in the divergence banner's slot | "Analysed with N tuned thresholds · Settings → Tuning" | that session's analysis |
 | Records header, Trends header | `tuned thresholds · N` chip | the *current* setting, summed over every discipline's set — these are aggregates over a library that may hold more than one rig |
 | Settings → About | `0.19.0 · dev` | the build variant itself |
 | turn detail footnote | "Measured at: turnSuccessPct 70 % · minSpeedLag 2 s · turnOutcomeLookahead 12 s" | the analysis' own `config` echo |
@@ -2929,7 +2929,7 @@ once, each time a map is sent* — and ticking it asks straight away, so the per
 lands under the finger that asked for it rather than surprising him mid-send; if location is
 off, one footnote under the row says so (`Location is off for CleanJibe in iPhone Settings`)
 and nothing else changes. The footer is the rule in the rider's words: *The watch holds two
-maps. Pick up to two; a third replaces the oldest pick.* A third tick is never refused — a
+maps. Pick up to two. A third replaces the oldest pick.* A third tick is never refused — a
 picker that goes dead on the third row reads as broken — it drops the oldest pick, because
 the one he just made is the one he is thinking about. The phone never tracks him: one fix on
 a tap, one per send, never in the background, and the automatic launch pass never prompts
@@ -3777,13 +3777,13 @@ What happened, or what you would like:
 What you expected instead:
 
 
-Which session (date, spot), if it is about one:
+Which session, its date and spot, if it is about one:
 
 
 Ideas and wishes are as welcome as bugs.
 
 ----------------------------------------
-Below is what the app knows about this phone and build. It helps analysis; delete any line you would rather not send.
+Below is what the app knows about this phone and build. It helps analysis. Delete any line you would rather not send.
 
 App
   …
@@ -3831,7 +3831,7 @@ under the other, and it now stays in the summary, which is the line the index sh
 
 **Beta only** (`#if BETA`, docs/channels.md). The same mail with one more block at the foot of
 it, under one sentence that says what the block is: *"The block below is what the beta counts
-on this phone. It helps development and is a key part of being in the beta; delete any line
+on this phone. It helps development and is a key part of being in the beta. Delete any line
 you would rather not send."* The subject is its own — **`CleanJibe beta usage report`** — so a
 mailbox sorted by subject does not file it as a bug report and answer it as one.
 

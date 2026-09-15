@@ -109,8 +109,8 @@ struct TurnsAnalysisView: View {
             // Said once, here, rather than trusted to the word "port": the rider's other
             // mental model of a jibe is which way the board spun, and that is a different
             // field of the same turn.
-            Text("Entry tack is the tack you came into the turn on — not which way the "
-                 + "board rotated.")
+            Text("Entry tack is the tack you came into the turn on. "
+                 + "It is not which way the board rotated.")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -129,8 +129,9 @@ struct TurnsAnalysisView: View {
                     Text("flew through")
                         .font(.subheadline.weight(.medium))
                     Text(tally.total > 0
-                         ? "\(tally.flewThrough) of \(tally.total) \(filter.description)"
-                         : "no \(filter.description) in this session")
+                         ? String(tally.flewThrough) + " of " + String(tally.total)
+                            + " " + filter.description
+                         : "no " + filter.description + " in this session")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                     // The stricter verdict, under the looser one and never on the ladder's
@@ -250,9 +251,9 @@ struct TurnsAnalysisView: View {
 
     private var caption: String {
         pins.isEmpty
-            ? "Nothing to mark — widen the filters."
-            : "\(pins.count) turn\(pins.count == 1 ? "" : "s") marked · "
-                + "tap a row below to open it."
+            ? "Nothing to mark. Widen the filters."
+            : String(pins.count) + (pins.count == 1 ? " turn" : " turns")
+                + " marked · tap a row below to open it."
     }
 
     private var visibility: MapLayerVisibility { store.mapLayers(for: .turns) }
@@ -272,9 +273,9 @@ struct TurnsAnalysisView: View {
         if items.isEmpty {
             ContentUnavailableView("No \(filter.description)",
                                    systemImage: "arrow.trianglehead.2.clockwise.rotate.90",
-                                   description: Text("This session has none. Course changes "
-                                                     + "— bear-aways and round-ups — are "
-                                                     + "never counted as maneuvers."))
+                                   description: Text("This session has none. "
+                                                     + "Bear-aways and round-ups are course "
+                                                     + "changes, never maneuvers."))
                 .frame(maxWidth: .infinity, minHeight: 160)
         } else {
             LazyVStack(alignment: .leading, spacing: 0) {
@@ -300,13 +301,15 @@ struct TurnsAnalysisView: View {
     private var footnote: some View {
         let rejected = detail.analysis.summary.turns.rejected
         return VStack(alignment: .leading, spacing: 3) {
-            Text("Flew through / touchdown / fell in is the outcome — how the turn ended. "
-                 + "Score is how much of your entry speed you held through it, 0–100. "
-                 + "A clean jibe is one that did both: flew all the way through, and held "
-                 + "at least 70 % of the speed it came in with.")
+            Text("Flew through / touchdown / fell in is the outcome. "
+                 + "It says how the turn ended. "
+                 + "Score is how much of your entry speed you held through it, 0 to 100. "
+                 + "A clean jibe does both. "
+                 + "It flies all the way through and holds at least 70 % of its entry speed.")
             if rejected > 0 {
-                Text("\(rejected) course change\(rejected == 1 ? "" : "s") "
-                     + "(bear-away / round-up) excluded, as everywhere else in the app.")
+                Text(String(rejected) + (rejected == 1 ? " course change" : " course changes")
+                     + " excluded, as everywhere else in the app. "
+                     + "Bear-aways and round-ups are course changes.")
             }
         }
         .font(.caption2)

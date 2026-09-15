@@ -37,9 +37,9 @@ import Testing
     @Test func theFitMessageLeadsWithThePlaceAndKeepsTheInvitation() {
         let message = ShareText.fitMessage(place: "Torbole", startedAt: startedAt,
                                            timeZone: cest)
-        #expect(message.hasPrefix("Torbole, 30 August 2026 — "))
+        #expect(message.hasPrefix("Torbole, 30 August 2026 · "))
         #expect(message.contains(Branding.siteURL))
-        #expect(message.contains("no account needed"))
+        #expect(message.contains("No account needed"))
     }
 
     /// The clip does not. A paragraph of small print under a forty-second video is what makes
@@ -47,7 +47,7 @@ import Testing
     @Test func theClipMessageIsShortAndCarriesNoPitch() {
         let message = ShareText.clipMessage(place: "Torbole", startedAt: startedAt,
                                             timeZone: cest)
-        #expect(message == "Torbole, 30 August 2026 — CleanJibe session clip · cleanjibe.org")
+        #expect(message == "Torbole, 30 August 2026 · CleanJibe session clip · cleanjibe.org")
         #expect(!message.contains("no account needed"))
         #expect(!message.contains("https://"))
     }
@@ -56,7 +56,7 @@ import Testing
     /// carries the site in its footer pixels.
     @Test func theCardMessageMatchesTheClipsShape() {
         #expect(ShareText.cardMessage(place: "Torbole", startedAt: startedAt, timeZone: cest)
-                == "Torbole, 30 August 2026 — CleanJibe session · cleanjibe.org")
+                == "Torbole, 30 August 2026 · CleanJibe session · cleanjibe.org")
     }
 
     /// All three start with the same words, which is the point of there being one helper:
@@ -70,7 +70,7 @@ import Testing
                                               startedAt: startedAt, timeZone: cest),
                         ShareText.cardMessage(place: "Nago Torbole Windsurfen",
                                               startedAt: startedAt, timeZone: cest)] {
-            #expect(message.hasPrefix(lead + " — "))
+            #expect(message.hasPrefix(lead + " · "))
         }
     }
 

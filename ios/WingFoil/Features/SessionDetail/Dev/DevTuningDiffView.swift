@@ -48,7 +48,8 @@ struct DevTuningDiffView: View {
     private func card(_ diff: TuningDiff) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(diff.headline).font(.subheadline.weight(.semibold))
-            Text("\(moved) threshold\(moved == 1 ? "" : "s") moved · this session only, "
+            let thresholds = moved == 1 ? " threshold moved" : " thresholds moved"
+            Text(String(moved) + thresholds + " · this session only, "
                  + "computed in memory, nothing stored.")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
