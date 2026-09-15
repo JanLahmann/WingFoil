@@ -45,17 +45,15 @@ def app_id(app):
 
 WHATS_NEW = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-Beta build 62 — the audit round: the words a stranger needs, and one source for what the app and the site say.
+Beta build 66 — three fixes on 62.
 
-Since 60:
-- Getting started in the app and cleanjibe.org/start are one text: five routes, the steps behind each, and "then say how it read". The intervals.icu and Strava sections in Settings open with one line saying why the account is there.
-- Records and Trends say why they are empty after the example session, and what to do next. The welcome's second button says what it does: Set up intervals.icu.
-- One name for the feedback door everywhere: Menu → Support & ideas.
-- Help: "What leaves your phone" links the privacy page; the clean-jibe topic states the quiet ten seconds after the turn.
-- The glossary teaches the product's own labels (On foil, touchdown) and gains TPH, Best 5×10 s and Alpha 500; the welcome highlights come from it.
-- The website is half the length it was and says exactly what the app says: the numbers, the recording classes, the beta list, the feedback questions are one source now.
+- Start over (Settings → Beta) brings the welcome back on the next launch, whatever the library holds.
+- The help sheet is called Help: ten sections, three of them about the numbers.
+- Import does, Settings configures: Import shows the actions only and says "Set up in Settings → intervals.icu" where a source is not set up.
 
-Please check: Menu → Getting started reads as your own route; Records after the example session; the welcome on a fresh install; anything on cleanjibe.org that disagrees with the app.
+Everything in 62 otherwise: one getting-started text in app and site, Records and Trends that explain themselves after the example session, Set up intervals.icu on the welcome, one feedback door (Menu → Support & ideas), the privacy help topic, the glossary with TPH, Best 5×10 s and Alpha 500.
+
+Please check: Menu → Getting started reads as your own route; Import with and without a key; Records after the example session.
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
