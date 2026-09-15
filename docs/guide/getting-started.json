@@ -1,0 +1,326 @@
+{
+  "_readme": [
+    "THE GETTING-STARTED GUIDE, WRITTEN ONCE.",
+    "",
+    "Two surfaces render this file and nothing else may: the in-app help topic",
+    "(HelpTopicID.gettingStarted, through the generated Swift twin",
+    "ios/WingFoilKit/Sources/WingFoilKit/Help/GettingStartedGuide.swift) and the web page",
+    "web/start/index.html, between its <!-- guide:begin --> and <!-- guide:end --> markers.",
+    "Both are written by web/tools/make_start.py; --check fails when either is stale.",
+    "",
+    "The app shows a route's title and summary. The web shows title, summary and steps.",
+    "Budgets, the same ones HelpBudgetTests enforces: a summary, a step detail, a",
+    "troubleshooting detail and a report detail are 30 words each; the framing is 45.",
+    "",
+    "`channels` lists the channels that HAVE the door a route describes (docs/channels.md).",
+    "The two Apple routes are beta-only, so the App Store build never names them: it reaches",
+    "them through the help topic's `related` topics instead.",
+    "",
+    "`surfaces` says where an entry is rendered. Everything is on both unless it says",
+    "otherwise: the troubleshooting list and the report checklist are web-only (the app has",
+    "its own troubleshooting topics), and the line naming the web page is app-only.",
+    "",
+    "`{site}` becomes Branding.site in Swift and cleanjibe.org on the web.",
+    "`**bold**` is markdown in the app and <strong> on the web; *italic* likewise."
+  ],
+
+  "schema": "cleanjibe.getting-started/1",
+
+  "framing": "The real test is one session on the water: record it the way you always do, bring it in, and read the turn verdicts against what you remember — which jibes you flew through, where you touched down, where you fell in.",
+
+  "app": {
+    "topicTitle": "Getting started",
+    "topicSummary": "Your first session on the water, and where to send what you find."
+  },
+
+  "sections": {
+    "routes": {
+      "title": "The routes — one per watch",
+      "lede": "Take the one that matches what is on your wrist. Every route ends the same way: the session lands in CleanJibe, analysed as it arrives.",
+      "betaLegend": "in the public beta today, not yet in the App Store release."
+    },
+    "troubleshooting": {
+      "title": "If something does not work",
+      "lede": "Try the line that matches, then say so either way — a fix that took you three attempts is still worth hearing about."
+    },
+    "report": {
+      "title": "What a good report says",
+      "lede": "One short message. A screenshot of the session page is worth more than a paragraph, and \"this number looks wrong\" is a perfectly good report."
+    }
+  },
+
+  "routes": [
+    {
+      "id": "garmin",
+      "title": "Garmin with the CleanJibe watch app",
+      "status": "fenix, epix, Forerunner and the rest",
+      "channels": ["release", "beta", "dev"],
+      "summary": "Install it from Connect IQ, ride, save. Sessions sync through intervals.icu: Settings → intervals.icu, four steps, once.",
+      "steps": [
+        {
+          "title": "Install the watch app",
+          "detail": "**CleanJibe Wingfoil Watch App** on the Connect IQ store, from the web or from Connect IQ inside the Garmin Connect app. No key, no account."
+        },
+        {
+          "title": "Record and save",
+          "detail": "Press START, pick **CleanJibe** from the activity list, wait until it says GPS good, press START again. Ride, then STOP and **Save**."
+        },
+        {
+          "title": "Let Garmin Connect sync",
+          "detail": "The watch uploads to Garmin Connect by itself next to the phone. Open Garmin Connect once if it is taking its time."
+        },
+        {
+          "title": "Bridge it with intervals.icu",
+          "detail": "Free account at intervals.icu, connect Garmin there, copy your personal API key, paste it into Settings → **intervals.icu**. Four steps, about five minutes, once."
+        },
+        {
+          "title": "Pull down on Sessions",
+          "detail": "That is the refresh: CleanJibe checks intervals.icu, imports what is new and analyses it as it lands. Your session appears at the top."
+        },
+        {
+          "title": "No intervals.icu? The long way",
+          "detail": "connect.garmin.com → the activity → the gear icon → **Export File**. AirDrop it to the iPhone, then Import → **FIT or ZIP…**."
+        }
+      ]
+    },
+    {
+      "id": "fit",
+      "title": "Any watch that writes a .fit",
+      "status": "Polar, Suunto, COROS and everything else",
+      "channels": ["release", "beta", "dev"],
+      "summary": "Sync it through intervals.icu, or share the file into CleanJibe from Files, Mail, AirDrop or any share sheet.",
+      "steps": [
+        {
+          "title": "Record on your own watch",
+          "detail": "Any outdoor activity with GPS, recorded the way you always do. There is nothing of ours to install on these watches."
+        },
+        {
+          "title": "Export the workout as a file",
+          "detail": "Suunto: Calendar → the workout → ⋯ → FIT. COROS: Activities → the activity → ⋯ → Export → FIT. Polar exports from flow.polar.com only."
+        },
+        {
+          "title": "Take the FIT where you are offered one",
+          "detail": "A FIT carries the speed your watch measured, a .gpx does not, and a .tcx only when the app wrote it in."
+        },
+        {
+          "title": "Hand it to CleanJibe",
+          "detail": "**Open in CleanJibe** from the iOS share sheet, or Import → **FIT or ZIP…**. Foil time, flights, turns and the map are identical either way."
+        },
+        {
+          "title": "Or let intervals.icu do it",
+          "detail": "Most of these watches sync to intervals.icu too, and CleanJibe picks them up from there — the same four steps as the Garmin route."
+        }
+      ]
+    },
+    {
+      "id": "strava",
+      "title": "Strava",
+      "status": "any watch that syncs to Strava",
+      "channels": ["release", "beta", "dev"],
+      "summary": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Positions only, so speed records are uncertified.",
+      "steps": [
+        {
+          "title": "Connect once",
+          "detail": "Settings → **Strava** → Connect with Strava. Strava's own consent page opens; leave the private-activities box ticked or your \"Only you\" sessions stay hidden."
+        },
+        {
+          "title": "Pick your sessions",
+          "detail": "Import → **Import from Strava…** lists your matching activities of the last two years. Tap the ones you want, or **Import all new**."
+        },
+        {
+          "title": "Keep it automatic",
+          "detail": "Once one session has come in this way a toggle appears, and CleanJibe checks Strava whenever you open the app."
+        },
+        {
+          "title": "What it costs",
+          "detail": "Strava hands over positions rather than the speed your watch measured, so these speed records are marked **uncertified**, and there are no pump strokes."
+        },
+        {
+          "title": "If connecting is refused",
+          "detail": "Strava lets a new app connect a limited number of riders; that is nothing to do with your account. Menu → Support & ideas says so."
+        }
+      ]
+    },
+    {
+      "id": "appleWatchApp",
+      "title": "The CleanJibe Apple Watch app",
+      "status": "Apple Watch · everything a Garmin gets",
+      "channels": ["beta", "dev"],
+      "summary": "Record on your Apple Watch and the session comes to the phone by itself — pump strokes and takeoff attempts included.",
+      "steps": [
+        {
+          "title": "Put it on the watch",
+          "detail": "It comes with the CleanJibe beta. On the iPhone open Apple's **Watch** app, scroll to *Available apps*, and install **CleanJibe** if it is missing."
+        },
+        {
+          "title": "Record",
+          "detail": "Open CleanJibe on the watch, allow Health and Location if it asks, wait until NO GPS clears, press START. Then Stop, and Done."
+        },
+        {
+          "title": "Let it arrive",
+          "detail": "Open CleanJibe on the iPhone. The session comes across on its own while phone and watch are together; give it a minute."
+        },
+        {
+          "title": "What you get",
+          "detail": "Speed off the watch's own receiver, so the records certify, and the 50 Hz wrist, so pump strokes and takeoff attempts are analysed."
+        }
+      ]
+    },
+    {
+      "id": "appleWorkoutApp",
+      "title": "Apple's own Workout app",
+      "status": "Apple Watch · nothing to install",
+      "channels": ["beta", "dev"],
+      "summary": "No extra app on the watch: record a Surfing workout and import it from Apple Health.",
+      "steps": [
+        {
+          "title": "Start a Surfing workout",
+          "detail": "On the watch open **Workout** and pick **Surfing**; *Water Sports* works too. Apple Health has no wingfoil activity, so pick the closest one."
+        },
+        {
+          "title": "Ride, then end the workout",
+          "detail": "End it on the watch and let it save. The route is written to Health when the workout finishes, which can take a minute."
+        },
+        {
+          "title": "Import it on the iPhone",
+          "detail": "Import → **Apple Health**, allow CleanJibe to read workouts and routes — every switch on, or there is nothing to read — then pick yours."
+        },
+        {
+          "title": "Keep it automatic",
+          "detail": "Switch on *Import new Health workouts automatically* and the next session is waiting when you open the app."
+        },
+        {
+          "title": "What you get",
+          "detail": "Speed comes off the watch's own receiver, so the records certify. Nothing records your wrist, so there are no pump strokes or takeoff attempts."
+        }
+      ]
+    }
+  ],
+
+  "extras": [
+    {
+      "id": "dryRun",
+      "title": "If you cannot wait for wind",
+      "status": "twenty minutes, no water",
+      "channels": ["release", "beta", "dev"],
+      "summary": "Record a three to five minute walk on the watch. It proves the route from the watch to the phone and nothing else.",
+      "steps": [
+        {
+          "title": "Three to five minutes of movement",
+          "detail": "A bike ride draws the nicest track — anything above about 12 km/h counts as flying. Walking works too. Go outside: indoors there are no positions."
+        },
+        {
+          "title": "Bring it in by your own route",
+          "detail": "Whichever route above matches your watch. It answers one question: does a recording made on your watch reach CleanJibe on your phone?"
+        },
+        {
+          "title": "What you should see",
+          "detail": "A map with your track on it, duration and speeds at the top, a speed chart that moves when you drag along it."
+        },
+        {
+          "title": "Turns and jibes reading zero",
+          "detail": "Expected on a bike or on foot: there is nothing to jibe. This checks the route from the watch, never the analysis."
+        }
+      ]
+    },
+    {
+      "id": "sayHowItRead",
+      "title": "Then say how it read",
+      "status": "the half only you can do",
+      "channels": ["release", "beta", "dev"],
+      "summary": "Menu → Support & ideas opens a mail with the facts filled in. TestFlight's own feedback works too if you are on the beta.",
+      "steps": [
+        {
+          "title": "Read the verdicts against your memory",
+          "detail": "Open the session, go to **Turns**: every turn says *flew through*, *touched down* or *fell in*, and the clean jibes are marked among them."
+        },
+        {
+          "title": "Say where it disagrees with you",
+          "detail": "A jibe you know you flew through marked as a touchdown, a swim it never noticed, a wind direction you did not sail in."
+        },
+        {
+          "title": "Send it from the app",
+          "detail": "Menu → **Support & ideas** fills in your build, phone, iOS version, watch and library size. You add what happened and press Send."
+        },
+        {
+          "title": "Attach the file if a session read wrong",
+          "detail": "With the .fit the detection can be re-run and fixed; without it there is only guesswork. Ideas and wishes are as welcome as faults."
+        }
+      ]
+    }
+  ],
+
+  "webLine": {
+    "id": "onTheWeb",
+    "title": "The same guide, with every step, on the web",
+    "channels": ["release", "beta", "dev"],
+    "surfaces": ["app"],
+    "summary": "{site}/start"
+  },
+
+  "settings": {
+    "_note": "One sentence each, at the top of the matching Settings section. The app reads them from GettingStartedGuide, so the help and the switches say the same thing.",
+    "intervalsIcu": "Garmin has no open API for a personal app, so intervals.icu is the free bridge: connect your Garmin there once and every session arrives here by itself.",
+    "strava": "The route that needs no file: any watch that syncs to Strava. Positions only, so speed records are uncertified."
+  },
+
+  "troubleshooting": {
+    "surfaces": ["web"],
+    "entries": [
+      {
+        "term": "\"Nothing to import\" from Apple Health",
+        "detail": "The workout is not in Health yet, or CleanJibe may not read it: iPhone Settings → Health → Data Access & Devices → CleanJibe, everything on."
+      },
+      {
+        "term": "The watch says NO GPS for more than a minute",
+        "detail": "Open sky, wrist still, wait. A balcony under a roof is not open sky."
+      },
+      {
+        "term": "The session never reaches the iPhone",
+        "detail": "Open CleanJibe on the iPhone and leave it in front of you for a minute, Bluetooth on, the watch next to it."
+      },
+      {
+        "term": "CleanJibe is not offered in Apple's Watch app",
+        "detail": "Reinstall CleanJibe on the iPhone, then look again under *Available apps*."
+      },
+      {
+        "term": "Garmin: CleanJibe is not in the activity list",
+        "detail": "Open Garmin Connect on the phone, let it sync, look again. The install can take a minute to reach the watch."
+      },
+      {
+        "term": "Garmin: nothing arrives from intervals.icu",
+        "detail": "Check the activity is visible on intervals.icu first — the Garmin link can take a few minutes — then sync again."
+      },
+      {
+        "term": "Garmin: the ZIP will not open in CleanJibe",
+        "detail": "Unzip it on the computer and AirDrop the .fit file inside instead."
+      }
+    ]
+  },
+
+  "report": {
+    "surfaces": ["web"],
+    "entries": [
+      {
+        "term": "Which route",
+        "detail": "Garmin, any .fit, Strava, the CleanJibe watch app, or Apple's Workout app."
+      },
+      {
+        "term": "Your watch",
+        "detail": "Apple: model and watchOS version (Settings → General → About). Garmin: model and software version (Settings → System → About)."
+      },
+      {
+        "term": "Did it arrive",
+        "detail": "Yes or no, and how long it took."
+      },
+      {
+        "term": "A screenshot",
+        "detail": "The session page. Was the track drawn? Were parts of it teal?"
+      },
+      {
+        "term": "Anything odd",
+        "detail": "A permission you were never asked for, a \"Nothing to import\" screen, a NO GPS that never cleared, a crash, wording you did not understand."
+      }
+    ]
+  }
+}

@@ -149,7 +149,17 @@ web/
 │   └── MANIFEST.json           source hashes, for the staleness check
 ├── tools/verify_links.py       every internal link on the site resolves and every document
 │                               nests its tags: no browser, no server, no dependency. Run it
-│                               after touching any .html here
+│                               after touching any .html here. It also runs make_start.py
+│                               --check, so a stale /start/ fails with the links
+├── tools/make_start.py         writes BOTH copies of the getting-started guide from
+│                               ../docs/guide/getting-started.json: the kit's
+│                               Help/GettingStartedGuide.swift and the block of
+│                               start/index.html between <!-- guide:begin --> and
+│                               <!-- guide:end -->. `--check` exits 1 if either is stale.
+│                               Stdlib only. The source is the one place the routes, their
+│                               steps, the troubleshooting list, the report checklist and
+│                               the two Settings captions are written; edit it, never the
+│                               outputs
 ├── tools/bundle_lab.py         regenerates lab_bundle/wingfoil_lab
 ├── tools/verify_web_entry.py   headless checks: golden parity + no-GPS regression
 ├── tools/verify_library.py     headless checks: dedupe, digests, records, trends, zip
@@ -664,7 +674,7 @@ Icons live in `web/icons/`, copied from `brand/` (`icon-tile-*` for the normal i
 
 ## Verification
 
-Seven checks, none of which needs a browser:
+Eight checks, none of which needs a browser:
 
 ```bash
 cd /path/to/WingFoil
@@ -672,8 +682,13 @@ cd /path/to/WingFoil
 # 0. the bundle is not stale (exit 1 if lab/ moved on without it)
 python3 web/tools/bundle_lab.py --check
 
-# 0b. every internal link resolves and every document closes its tags (stdlib only, <1 s)
+# 0b. every internal link resolves and every document closes its tags (stdlib only, <1 s).
+#     It also runs check 0c, so running this alone covers both.
 python3 web/tools/verify_links.py
+
+# 0c. /start/ and the app's Getting started topic still match their one source,
+#     docs/guide/getting-started.json (stdlib only, instant)
+python3 web/tools/make_start.py --check
 
 # 1. web_entry: the bundle reproduces the goldens exactly, and a track with no GPS fixes
 #    still produces a serializable document (analyze_json uses allow_nan=False)
