@@ -484,6 +484,15 @@ how it got there the first time.
 `<!-- sitefoot:end -->` byte for byte across all nine documents, the way it has always
 compared the site nav: one link set, every page, no `aria-current`.
 
+**The voice** (docs/voice.md, 15 Sep 2026): `python3 docs/copy/check_voice.py` measures every
+rider sentence on every surface — the kit's Help and Presentation literals, the app's Features,
+the watch's pages, alerts and strings.xml, the seven prose pages of the site, and (advisory,
+while a version is in review) the two store descriptions — against the rules a machine can
+hold: no dash, semicolon or parenthesis inside a rider sentence, no sentence over 20 words,
+mean under 14, none of the banned shapes. `--report` prints the numbers without failing.
+Exemptions live in `docs/copy/voice-exemptions.json` as `{path, text, why}` and are printed
+on every run.
+
 ## Tolerances (Swift & Python vs goldens)
 
 | quantity | tolerance |
