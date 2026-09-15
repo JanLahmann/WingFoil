@@ -138,21 +138,8 @@ public struct IcuSyncService: Sendable {
 
     /// `<id>_<name-slug>_icu.fit` — same shape as `fixtures/README.md`, so the library
     /// shows the activity name instead of a bare intervals.icu id.
+    /// The slug keeps the activity's **own capitalisation** (`SessionNaming.activityNameSlug`).
     static func filename(for activity: IcuActivity) -> String {
-        let lowered = (activity.name ?? "session").lowercased()
-        var slug = ""
-        var lastWasDash = true
-        for character in lowered {
-            if character.isLetter || character.isNumber {
-                slug.append(character)
-                lastWasDash = false
-            } else if !lastWasDash {
-                slug.append("-")
-                lastWasDash = true
-            }
-        }
-        slug = String(slug.prefix(40))
-        while slug.hasSuffix("-") { slug.removeLast() }
-        return "\(activity.id)_\(slug.isEmpty ? "session" : slug)_icu.fit"
+        "\(activity.id)_\(SessionNaming.activityNameSlug(activity.name))_icu.fit"
     }
 }

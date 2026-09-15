@@ -180,14 +180,53 @@ import Testing
     @Test func theIcuFilenameCarriesGarminsWordIntoTheDerivedPart() {
         let activity = IcuActivity(id: "i123", name: "Nago-Torbole Windsurfen")
         let name = IcuSyncService.filename(for: activity)
-        #expect(name == "i123_nago-torbole-windsurfen_icu.fit")
-        // What the app then makes of it, in the app's own two steps: the middle
-        // underscore-part, hyphens to spaces, capitalised — and corrected.
-        let stem = name.split(separator: "_")[1]
-        let words = stem.replacingOccurrences(of: "-", with: " ").split(separator: " ")
-            .map { String($0.prefix(1)).uppercased() + String($0.dropFirst()) }
-        #expect(SessionNaming.sportCorrected(words.joined(separator: " "))
+        // The slug keeps intervals.icu's own capitalisation — it is the only place that
+        // name survives, and the derivation reads it straight back out.
+        #expect(name == "i123_Nago-Torbole-Windsurfen_icu.fit")
+        // The slug cannot tell a hyphen from a space (both are `-` in a filename), so the
+        // derivation reads every `-` as a space. "Nago Torbole", not "Nago-Torbole" — the
+        // same reading it has always had, and one a rename fixes for a rider who minds.
+        #expect(SessionNaming.derivedTitle(fromFilename: name) == "Nago Torbole Wingfoil")
+    }
+
+    /// **An imported name is not re-title-cased.** Strava's "Wingfoil am Nachmittag" came
+    /// back out of the library as "Wingfoil Am Nachmittag" — a rewrite of a name a person
+    /// chose. A stem that carries any capital carries the source's own casing and is left
+    /// alone; a stem that is entirely lower-case is one the app built and is the only one
+    /// that gets a capital per word.
+    @Test func anImportedNameKeepsItsOwnCapitalisation() {
+        #expect(SessionNaming.activityNameSlug("Wingfoil am Nachmittag")
+                == "Wingfoil-am-Nachmittag")
+        #expect(SessionNaming.derivedTitle(
+            fromFilename: "14123456789_Wingfoil-am-Nachmittag_strava.gpx")
+                == "Wingfoil am Nachmittag")
+        #expect(SessionNaming.derivedTitle(
+            fromFilename: "14123456789_Hallbergmoos-Surfen_strava.gpx")
+                == "Hallbergmoos Surfen")
+        // The app's own lower-case slug — the watch's filename — still gets its capitals.
+        #expect(SessionNaming.derivedTitle(
+            fromFilename: "2026-08-03-1440_nago-torbole-windsurfen_native.fit")
                 == "Nago Torbole Wingfoil")
+        // A health workout has no name from anywhere; the stem says what it is.
+        #expect(SessionNaming.derivedTitle(fromFilename: "2025-08-24-0346_wingfoil_health.cjw")
+                == "Wingfoil")
+        // The date prefix and the source suffix are never the name.
+        #expect(SessionNaming.derivedTitle(fromFilename: nil) == "Session")
+        #expect(SessionNaming.activityNameSlug("   ") == "session")
+    }
+
+    /// The Recording card's sport line: five translated spellings, everything else unbent.
+    @Test func theSportLabelKeepsTheSourcesOwnWord() {
+        #expect(SessionNaming.sportLabel(nil) == "Unknown")
+        #expect(SessionNaming.sportLabel("") == "Unknown")
+        #expect(SessionNaming.sportLabel("43") == "Windsurf")
+        #expect(SessionNaming.sportLabel("windsurfing") == "Windsurf")
+        // Strava's `sport_type`, which reaches `caps.sport` through the GPX's `<trk><type>`.
+        #expect(SessionNaming.sportLabel("Windsurf") == "Windsurf")
+        #expect(SessionNaming.sportLabel("Kitesurf") == "Kitesurf")
+        // Apple Health's type string — `.capitalized` made this "Surfingsports".
+        #expect(SessionNaming.sportLabel("surfingSports") == "surfing Sports")
+        #expect(SessionNaming.sportLabel("stand_up_paddleboarding") == "SUP")
     }
 
     // MARK: - The caption

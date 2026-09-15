@@ -235,22 +235,10 @@ public enum StravaImport {
 
     /// `<id>_<name-slug>_strava.gpx` — the same shape `IcuSyncService.filename` produces,
     /// so the library shows the activity's name rather than a bare Strava id.
+    /// The slug keeps the activity's **own capitalisation** (`SessionNaming.activityNameSlug`):
+    /// the filename is where a Strava name survives, and the title is derived back out of it.
     public static func filename(for activity: StravaActivity) -> String {
-        let lowered = (activity.name ?? "session").lowercased()
-        var slug = ""
-        var lastWasDash = true
-        for character in lowered {
-            if character.isLetter || character.isNumber {
-                slug.append(character)
-                lastWasDash = false
-            } else if !lastWasDash {
-                slug.append("-")
-                lastWasDash = true
-            }
-        }
-        slug = String(slug.prefix(40))
-        while slug.hasSuffix("-") { slug.removeLast() }
-        return "\(activity.id)_\(slug.isEmpty ? "session" : slug)_strava.gpx"
+        "\(activity.id)_\(SessionNaming.activityNameSlug(activity.name))_strava.gpx"
     }
 
     /// The activity id back out of a stored row's `originalFilename`, or nil when that row

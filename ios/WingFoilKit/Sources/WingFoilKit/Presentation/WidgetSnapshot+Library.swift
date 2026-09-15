@@ -27,8 +27,16 @@ extension WidgetSnapshot {
     /// watch left running in the van — which is exactly what put "FOIL 0 % · FLIGHTS 0" on
     /// Jan's home screen on 14 September 2026 while the afternoon before it sat one row
     /// down.
+    /// Since engine 0.19.0 this is the **strict** end of a rule the engine now owns
+    /// (`SessionVerdict`, docs/algorithms.md "Not a session"), and the two are deliberately
+    /// not the same test. *Not a session* is "no foil time **and** it went nowhere" — the
+    /// beach recording; *ridden* is "there is foil time on it", which a skunked afternoon
+    /// fails while remaining a session anybody would count. Ridden therefore implies a
+    /// session, and the `isSession` conjunct below is redundant by construction — it is
+    /// written out so the relation between the two is visible where both are read, and so
+    /// that a provisional row's `no_recording` verdict is covered by the same clause.
     public static func isRidden(_ row: SessionRow) -> Bool {
-        !row.isProvisional && foilSeconds(row) > 0
+        !row.isProvisional && row.isSession && foilSeconds(row) > 0
     }
 
     /// Seconds on the foil. `foilTimeS` is a schema-v2 column; an older row falls back to

@@ -127,9 +127,11 @@ import ZIPFoundation
         #expect(manifest.sessionCount == 2)
         #expect(manifest.recordingCount == 2)
         #expect(manifest.gearCount == 2)
-        // Two: Torbole, and the place the deleted synthetic session put itself. A spot
-        // outlives the sessions in it, which is why the count is about spots and not rides.
-        #expect(manifest.spotCount == 2)
+        // One: Torbole. The place the deleted synthetic session put itself went with it —
+        // a spot exists because sessions were recorded there, and deleting the last of them
+        // prunes it in the same write (docs/presentation.md, "Spots"). It used to outlive
+        // them, which is what left "Spot 2 · 0 · Never sailed" rows in Jan's library.
+        #expect(manifest.spotCount == 1)
         #expect(manifest.tombstoneCount == 1)
         #expect(manifest.archiveBytes > 0)
         #expect(FileManager.default.fileExists(atPath: zipURL.path))

@@ -102,6 +102,13 @@ import ZIPFoundation
 
     // MARK: - Spots
 
+    /// How many times a naming pass reached the (injected) geocoder. An actor because the
+    /// resolver is `@Sendable` and runs off this test's isolation.
+    actor AskCounter {
+        private(set) var count = 0
+        func next() -> Int { count += 1; return count }
+    }
+
     @Test func clustererSeparatesPlacesAndMergesOneBeach() {
         // Two rig-up spots 40 m apart on the same beach, and a lake 300 km away.
         let fixes = [
@@ -164,6 +171,110 @@ import ZIPFoundation
         let named = try #require(try await harness.store.spots().first)
         #expect(named.spot.name == "Nago-Torbole")
         #expect(named.spot.autoNamed, "still machine-made: a rename is what clears the flag")
+    }
+
+    /// **A looked-up name is not asked about again, and survives a re-cluster.**
+    ///
+    /// Both used to be wrong for one reason: the candidate set and the inheritance rule were
+    /// written against `autoNamed`, which stays true after a successful lookup. So every
+    /// launch re-geocoded every spot in the library, and every re-cluster threw the answers
+    /// away and put "Spot 1 … Spot 7" back on the screen.
+    @Test func aLookedUpNameIsKeptAndNotAskedAboutAgain() async throws {
+        let harness = try makeHarness()
+        defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
+        for needle in ["2026-06-13-1558", "2026-08-05-0827"] {
+            let (data, name) = try fixture(needle)
+            _ = try await harness.ingestor.ingest(fitData: data, filename: name, source: .file)
+        }
+        #expect(try await harness.store.unnamedSpotCount() == 2)
+
+        let asked = AskCounter()
+        let unresolved = try await harness.store.nameAutoSpots { _, _ in
+            "Place \(await asked.next())"
+        }
+        #expect(await asked.count == 2)
+        #expect(unresolved == 0)
+        #expect(try await harness.store.unnamedSpotCount() == 0)
+
+        // A second pass asks nobody: there is no placeholder left to resolve.
+        let again = AskCounter()
+        _ = try await harness.store.nameAutoSpots { _, _ in "again \(await again.next())" }
+        #expect(await again.count == 0)
+
+        // And the re-cluster carries both looked-up names across, still auto-named.
+        try await harness.store.recluster()
+        let after = try await harness.store.spots()
+        #expect(Set(after.map(\.spot.name)) == ["Place 1", "Place 2"])
+        #expect(after.allSatisfy { $0.spot.autoNamed })
+        #expect(after.allSatisfy { $0.sessions > 0 }, "a re-cluster leaves no empty spot")
+    }
+
+    /// An offline pass says how much is left, so the caller can schedule a retry rather than
+    /// leaving the placeholders there until the next cold launch.
+    @Test func anOfflinePassReportsWhatIsStillUnnamed() async throws {
+        let harness = try makeHarness()
+        defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
+        let (data, name) = try fixture("2026-08-05-0827")
+        _ = try await harness.ingestor.ingest(fitData: data, filename: name, source: .file)
+
+        #expect(try await harness.store.nameAutoSpots { _, _ in nil } == 1)
+        #expect(try await harness.store.nameAutoSpots { _, _ in "" } == 1, "blank is not a name")
+        #expect(try await harness.store.nameAutoSpots { _, _ in "Nago-Torbole" } == 0)
+    }
+
+    /// **A spot exists because sessions were recorded there.** Delete the last of them and
+    /// the place goes with it, in the same write — otherwise the library keeps a
+    /// "Spot 2 · 0 · Never sailed" phantom of a session the rider removed on purpose.
+    @Test func deletingTheLastSessionAtAPlaceRemovesThePlace() async throws {
+        let harness = try makeHarness()
+        defer { try? FileManager.default.removeItem(at: harness.root.deletingLastPathComponent()) }
+        for needle in ["2026-06-13-1558", "2026-08-05-0827", "2026-08-01-0804"] {
+            let (data, name) = try fixture(needle)
+            _ = try await harness.ingestor.ingest(fitData: data, filename: name, source: .file)
+        }
+        #expect(try await harness.store.spots().count == 2)
+
+        // Rheinstetten is the one-session spot.
+        let lonely = try #require(try await harness.store.spots().first { $0.sessions == 1 })
+        let row = try #require(try await harness.ingestor.allSessions()
+            .first { $0.spotId == lonely.id })
+        try await harness.ingestor.delete(row)
+
+        let after = try await harness.store.spots()
+        #expect(after.count == 1)
+        #expect(after.allSatisfy { $0.sessions > 0 })
+    }
+
+    /// Placeholder numbers are one past the highest in the table, not `COUNT(*) + 1` —
+    /// which minted a second "Spot 2" in any library where one spot had been renamed and
+    /// another removed.
+    @Test func placeholderNumbersNeverRepeat() {
+        #expect(SpotClusterer.placeholderName(3) == "Spot 3")
+        #expect(SpotClusterer.isPlaceholderName("Spot 7"))
+        #expect(!SpotClusterer.isPlaceholderName("Nago-Torbole"))
+        #expect(!SpotClusterer.isPlaceholderName("Spot Torbole"))
+
+        let spots = [SpotRow(id: "a", name: "Torbole", lat: 0, lon: 0),
+                     SpotRow(id: "b", name: "Spot 4", lat: 0, lon: 0)]
+        #expect(SpotClusterer.nextPlaceholderNumber(spots) == 5)
+        #expect(SpotClusterer.nextPlaceholderNumber([]) == 1)
+    }
+
+    /// The count line counts sessions; the list shows recordings. A recording that is not a
+    /// session (engine 0.19.0) is in the second and not the first; a provisional row, whose
+    /// recording is merely late, is in both.
+    @Test func theCountLineCountsSessionsAndTheListShowsRecordings() {
+        func row(_ id: String, isSession: Bool, provisional: Bool = false) -> SessionRow {
+            var r = SessionRow(id: id, startDate: Date(), durationS: 60, sourceClass: "test")
+            r.isSession = isSession
+            r.isProvisional = provisional
+            return r
+        }
+        let rows = [row("a", isSession: true), row("b", isSession: false),
+                    row("c", isSession: false, provisional: true)]
+        #expect(LibraryListing.riddenCount(rows) == 2)
+        #expect(LibraryListing.sessionCount(rows) == "2 sessions")
+        #expect(LibraryListing.sessionCount([rows[0]]) == "1 session")
     }
 
     /// `spots()` is one `GROUP BY` pass instead of a `SessionRow` fetch per spot. It must
