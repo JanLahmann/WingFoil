@@ -166,10 +166,6 @@ TARGETS: list[Target] = [
         # and this exemption goes the day the file's transcription follows.
         rules=(STRAVA, LEXICON),
         allow={
-            "no-fall streak": (
-                "the live Connect IQ description still says it (0.9.10); the product's word "
-                "is dry streak, and the store text is edited at the next listing update"
-            ),
             "carried": (
                 "the 0.9.6 What's New row, dated store history: \"carried its speed\" is the "
                 "ordinary verb, and a shipped note is not reworded"
