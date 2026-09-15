@@ -55,16 +55,6 @@
     "why": "The website prints what the kit owns. web/tools/verify_copy.py holds this element to docs/copy/phrases.json `promise` (the kit's WelcomeGuide.promise) character for character, so the sentence can only move on the kit's side. Reported on 15 September 2026 as a pinned sentence that is off the voice. It is the pinned register 2 hero promise, quoted verbatim in docs/voice.md, and it runs to 25 words in its second sentence."
   },
   {
-    "path": "web/watches/index.html",
-    "text": "Everything: foil time, flights, every turn verdict and clean jibe",
-    "why": "The website prints what the kit owns. web/tools/verify_copy.py holds this element to docs/copy/recording-classes.json, class A `line` (the kit's RecordingClass.swift) character for character, so the sentence can only move on the kit's side. Reported on 15 September 2026 as a pinned sentence that is off the voice. It is a class table cell in register 3, and it runs to 21 words."
-  },
-  {
-    "path": "web/watches/index.html",
-    "text": "Everything class B gets, and pump strokes and takeoff attempts too",
-    "why": "The website prints what the kit owns. web/tools/verify_copy.py holds this element to docs/copy/recording-classes.json, class B+ `line` (the kit's RecordingClass.swift) character for character, so the sentence can only move on the kit's side. Reported on 15 September 2026 as a pinned sentence that is off the voice. It is a class table cell in register 3, and it runs to 25 words."
-  },
-  {
     "path": "web/invite/index.html",
     "text": "CleanJibe Wingfoil Tracker (Beta) on apps.garmin.com",
     "why": "The Connect IQ store's own listing title, pinned in docs/copy/phrases.json as ciqListingTitle and held to this page by web/tools/verify_copy.py. A rider searches the store for the name letter by letter, so the brackets are part of it and not an aside. Same exemption as the kit's GettingStartedGuide."

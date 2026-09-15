@@ -52,14 +52,14 @@ public enum RecordingClass: String, Sendable, CaseIterable, Identifiable {
     public var line: String {
         switch self {
         case .a:
-            "Everything: foil time, flights, every turn verdict and clean jibe, certified "
-            + "speed records, the wind axis, pump strokes and takeoff attempts."
+            "Everything. Foil time, flights, every turn verdict and clean jibe, certified "
+            + "speed records, the wind axis. Pump strokes and takeoff attempts too."
         case .b:
             "Everything except pump strokes and takeoff attempts, which need a wrist "
             + "accelerometer nothing else records. Speed records certify."
         case .bPlus:
-            "Everything class B gets, and pump strokes and takeoff attempts too: the watch "
-            + "app records the wrist at 50 Hz and the phone analyses it."
+            "Everything class B gets, plus pump strokes and takeoff attempts. The watch app "
+            + "records the wrist at 50 Hz. The phone analyses it."
         case .c:
             "Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed "
             + "records are estimated from positions and marked uncertified, and there are "

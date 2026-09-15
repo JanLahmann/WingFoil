@@ -13,9 +13,9 @@
   ],
   "classes" : [
     {
-      "footerLine" : "Class A · Garmin watch app. Everything: foil time, flights, every turn verdict and clean jibe, certified speed records, the wind axis, pump strokes and takeoff attempts.",
+      "footerLine" : "Class A · Garmin watch app. Everything. Foil time, flights, every turn verdict and clean jibe, certified speed records, the wind axis. Pump strokes and takeoff attempts too.",
       "id" : "a",
-      "line" : "Everything: foil time, flights, every turn verdict and clean jibe, certified speed records, the wind axis, pump strokes and takeoff attempts.",
+      "line" : "Everything. Foil time, flights, every turn verdict and clean jibe, certified speed records, the wind axis. Pump strokes and takeoff attempts too.",
       "name" : "Class A · Garmin watch app"
     },
     {
@@ -25,9 +25,9 @@
       "name" : "Class B · any speed-certified file"
     },
     {
-      "footerLine" : "Class B+ · Apple Watch app. Everything class B gets, and pump strokes and takeoff attempts too: the watch app records the wrist at 50 Hz and the phone analyses it.",
+      "footerLine" : "Class B+ · Apple Watch app. Everything class B gets, plus pump strokes and takeoff attempts. The watch app records the wrist at 50 Hz. The phone analyses it.",
       "id" : "bPlus",
-      "line" : "Everything class B gets, and pump strokes and takeoff attempts too: the watch app records the wrist at 50 Hz and the phone analyses it.",
+      "line" : "Everything class B gets, plus pump strokes and takeoff attempts. The watch app records the wrist at 50 Hz. The phone analyses it.",
       "name" : "Class B+ · Apple Watch app"
     },
     {

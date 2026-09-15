@@ -59,9 +59,9 @@ retired for rider text. It lives on in code comments and in `docs/`, where it be
 > happened: how much of it you spent on the foil, how long each flight lasted, your speed
 > records, and — for every turn — whether you flew through it, touched down, or fell in.*
 >
-> After: *Did you fly through that jibe? CleanJibe reads your session off the watch and tells
-> you: time on the foil, every flight, your speed records, and a verdict on every turn. Flew
-> through, touchdown, or fell in.*
+> After: *Did you fly through that jibe? CleanJibe reads your session off the watch. It tells
+> you your time on the foil, every flight, your speed records, and a verdict on every turn.
+> Flew through, touchdown, or fell in.*
 
 **Settings → intervals.icu caption (register 3)**
 > Before: *Garmin has no open API for a personal app, so intervals.icu is the free bridge:
@@ -93,7 +93,7 @@ retired for rider text. It lives on in code comments and in `docs/`, where it be
 - `docs/copy/check_release_copy.py` — the lexicon, on the kit, the watch, the site and the
   stores.
 - `web/tools/verify_unique.py` — a page's word budget and no sentence twice.
-- **Voice lint (to add):** over the kit's `Help/` and `Presentation/` string literals, the
+- **`docs/copy/check_voice.py`:** over the kit's `Help/` and `Presentation/` string literals, the
   watch strings, the ten web pages and the two store texts: no em-dash, no semicolon, no
   parenthesis in a rider string; mean sentence length under 14 words, no sentence over 20;
   the banned shapes of rule 5 as a phrase list. Exemptions written down, printed on every run,
