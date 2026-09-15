@@ -9,15 +9,15 @@ import Foundation
 /// the two agree — which is what keeps the website's "what is coming" list, the App Store
 /// copy and these rows from drifting apart the way they did on 14 September 2026.
 ///
-/// Two app surfaces read it (`BetaSectionView.swift`):
+/// One app surface reads it (`ComingSoonSection` in `BetaSectionView.swift`):
 ///
-/// * **Settings → Beta** — beta and dev only. What the tester has that the App Store build
-///   does not, so a report can say "the video export" rather than "the thing that makes a
-///   film".
 /// * **"Coming in a future release"** — every channel. What is being tried before it
 ///   arrives here. In the release it carries the TestFlight link, because there the answer
-///   to "can I have it" is one tap; in the beta it is the same list with no link, plus the
-///   dev doors under it.
+///   to "can I have it" is one tap; in the beta the same rows are headed "In the public
+///   beta", with the dev rows under them as "Further out".
+///
+/// Settings → Beta checked the beta rows off a second time, one row above that page, until
+/// dev 68. It keeps its actions and no list (Jan, dev 68).
 ///
 /// It lives in the kit rather than in the app for the ordinary reason: it is copy, the test
 /// suite reads it, and the app target cannot be seen from a kit test.
