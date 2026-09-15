@@ -8,7 +8,7 @@
 import { mountIcu } from "./icu.js";
 import { mountLibrary, openStoredSession, refresh as refreshLibrary, saveSession }
   from "./library.js";
-import { closePopover, render, renderFigures, resetSession } from "./render.js";
+import { closePopover, render, renderFigures, renderGlossary, resetSession } from "./render.js";
 import { CANCELLED, analyze as runAnalysis, cancel as cancelWorker, on, warmUp } from "./rpc.js";
 import { mountSections, resetSections } from "./sections.js";
 import { mountShareCard, openPeriodCard, openShareCard } from "./sharecard.js";
@@ -610,6 +610,9 @@ function wireSections() {
 
 wireDropzone();
 wireExample();
+// The `?` beside the key-metrics block: eight fixed lines out of docs/copy, so they are
+// written once at boot rather than rebuilt with every document (js/render.js).
+renderGlossary();
 wireCancel();
 wireDownload();
 wireSave();

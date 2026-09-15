@@ -391,6 +391,43 @@ def pin_ciq_title(site: Site, phrases: dict, report: Report):
     else:
         report.ok("phrases.ciqListingTitle → %d spans (%s)" % (found, want))
 
+    pin_ciq_title_in_guide(want, report)
+
+
+# The ONE string the generated guide block is held to. Everything else between
+# <!-- guide:begin --> and <!-- guide:end --> is make_start.py's and
+# docs/guide/getting-started.json's business (`outside_guide`, and docs/copy/README.md's
+# ownership rule) — but the Connect IQ listing's NAME is not a wording, it is a fact about
+# a store page, and phrases.json already owns it for the two pinned spans. Until this pin
+# existed, web/start/index.html printed two different names for one listing 150 lines
+# apart, one of which the store does not show (ux-audit B2, change #6).
+GUIDE_INSTALL_STEP = re.compile(
+    r"<h[1-6][^>]*>\s*Install the watch app\s*</h[1-6]>\s*<p>\s*<strong>(.*?)</strong>", re.S)
+
+
+def pin_ciq_title_in_guide(want: str, report: Report):
+    source = (WEB / "start" / "index.html").read_text(encoding="utf-8")
+    block = GUIDE_BLOCK.search(source)
+    if not block:
+        report.fail("web/start/index.html", "phrases.ciqListingTitle",
+                    "no <!-- guide:begin --> … <!-- guide:end --> block on the page")
+        return
+    step = GUIDE_INSTALL_STEP.search(block.group(0))
+    if not step:
+        report.fail("web/start/index.html", "phrases.ciqListingTitle",
+                    'the generated guide has no "Install the watch app" step opening with a '
+                    "bolded listing name — re-scope this pin, do not delete it")
+        return
+    got = flat(html_module.unescape(re.sub(r"<[^>]+>", "", step.group(1))))
+    if got != want:
+        line = source[:block.start() + step.start(1)].count("\n") + 1
+        report.fail("web/start/index.html:%d" % line, "phrases.ciqListingTitle",
+                    "the generated guide names a listing the store does not show — fix "
+                    "docs/guide/getting-started.json and run web/tools/make_start.py", got)
+    else:
+        report.ok("phrases.ciqListingTitle → the generated guide block's install step "
+                  "(the one string in it that is pinned)")
+
 
 def pin_appstore_name(site: Site, phrases: dict, report: Report):
     """Nothing to pin until a page names the store app — and then it pins itself."""

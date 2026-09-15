@@ -32,9 +32,11 @@
 import { closePopover } from "./render.js";
 
 /** The one place a section id becomes a chip. Iteration order is chip order, and it is the
- *  iOS switcher's order (`Map · Speed | Turns | Takeoffs | …`) rather than the document
- *  order the panels happen to sit in, because the two platforms are meant to read the
- *  same. An id with no panel in the DOM simply gets no chip. */
+ *  document's own reading order rather than the iPhone's switcher, which the app re-cut to
+ *  `Ride · Turns · Takeoffs · Log`. That difference is a WRITTEN-DOWN divergence
+ *  (docs/presentation.md, "The web still carries the pre-re-cut ids"): the analyzer has no
+ *  HR card and no gear, so `Log` and the Takeoffs merge do not transfer unchanged, and the
+ *  re-cut is an iOS commit. An id with no panel in the DOM simply gets no chip. */
 const SECTIONS = {
   mapSpeed: "Map · Speed",
   turns: "Turns",

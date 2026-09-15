@@ -15,7 +15,7 @@
  */
 
 import { hm, keyMetricEntries } from "./cardstats.js";
-import { NOT_A_SESSION } from "./copy.js";
+import { GLOSSARY, NOT_A_SESSION } from "./copy.js";
 import { EXPERIMENTAL_NOTE, lexicon } from "./lexicon.js";
 import { renderFigures } from "./session.js";
 import { C, OUTCOME_COLOR, OUTCOME_LABEL, SVGNS, clockAt, esc, hms, int, marker, nf,
@@ -234,6 +234,33 @@ function renderSummary(result, isExample = false) {
       <div class="k">${esc(t.k)}</div>
       <div class="v">${esc(t.v)}${t.unit ? `<small>${esc(t.unit)}</small>` : ""}</div>
       <div class="n">${esc(t.n || "")}</div>
+    </div>`).join("");
+}
+
+/* ------------------------------------------------------------------ glossary */
+
+/**
+ * Fill the `?` beside the key-metrics block — **once**, at boot, not per session.
+ *
+ * The analyzer had no definition of anything anywhere in it (ux-audit A3.2): it prints
+ * `On foil`, `JPH`, `CPH`, `WPH` and the three turn verdicts, and the only route out was a
+ * footer link to /learn/ that does not say the word "glossary". These are the same eight
+ * lines the welcome screen selects from and /learn/'s definition list carries, out of
+ * `docs/copy/glossary.json` through js/copy.js — nothing is retyped here, so a wording the
+ * kit changes arrives on this page with the next `make_copy_js.py`.
+ *
+ * The block is a closed `<details>` inside `#results`, so it costs a reader who already
+ * knows the words one line and a reader who does not one tap. Called from js/app.js.
+ */
+export function renderGlossary() {
+  const list = el("glossary-list");
+  if (!list) return;
+  // A wrapper per entry, so the <dl> can be a wrapping grid: a bare dt/dd pair would land
+  // in two separate cells of it, with the term in one column and its sentence in the next.
+  list.innerHTML = GLOSSARY.map((entry) => `
+    <div class="g-entry">
+      <dt>${esc(entry.term)}</dt>
+      <dd>${esc(entry.line)}</dd>
     </div>`).join("");
 }
 
