@@ -217,6 +217,19 @@ that decided, as a code whose words live in presentation. Over the 17 committed 
 go 289 -> 295 flew through, 212 -> 206 touched down, 37 fell in unchanged, and clean 150 -> 151;
 over the 21 sessions of the corpus 493 -> 506, 270 -> 257, 55 unchanged, clean 263 -> 266. See
 docs/algorithms.md "Turn outcome" and ADR-022.
+
+Engine 0.19.0 **says whether a recording is a session at all**. `summary.isSession` and
+`summary.notASessionReason` (docs/algorithms.md "Not a session"): a recording with no foil
+time in it that is either shorter than 120 s or covers less than 200 m is a *recording*, not
+a session -- the one a rider starts on the beach and stops again, which Jan's library held
+thirteen of on 13-14 Sep 2026 at 0:00-0:24 min and 0.0 km each, quietly dragging the Trends
+"on foil" line to zero and adding themselves to "44 sessions". Nothing pre-existing moves and
+no fixture in the corpus is one -- the shortest is 59 s and spent 30 of them flying, which is
+the conjunction doing its job -- but the two keys are a schema change and a 0.18.0 document
+cannot answer the question at all, so `ENGINE_VERSION` bumps and every stored analysis
+re-derives. The verdict is a label and never a deletion: presentation keeps the row, the page
+and the map, and leaves the recording out of the counts, trends, records and totals that
+describe riding.
 """
 
 from __future__ import annotations
@@ -488,6 +501,50 @@ def session_start_t(ct: CleanTrack) -> float:
     return 0.0 if len(t) == 0 else float(t.iloc[0])
 
 
+#: "Not a session" -- the duration floor, seconds (docs/algorithms.md "Not a session").
+#: Only ever consulted for a recording whose `foilTimeS` is 0, which is why it can be set
+#: generously: the corpus's shortest recording is 59 s long -- *inside* this floor -- and is
+#: a session on its 30 s of foil time, which the conjunction asks about first.
+NOT_A_SESSION_MAX_DURATION_S = 120.0
+
+#: "Not a session" -- the distance floor, metres. The junk this catches covered 0.0 km; the
+#: shortest recording in the corpus covers 226 m in its 59 seconds.
+NOT_A_SESSION_MAX_DISTANCE_M = 200.0
+
+#: The reason codes `summary.notASessionReason` may carry. Codes, never sentences -- the
+#: words live in presentation (docs/presentation.md "Not a session"). `no_recording` is
+#: never produced here: it belongs to a library row that has a card and no recording yet,
+#: and this module only ever sees a recording that was analyzed.
+NOT_A_SESSION_REASONS = ("too_short", "no_distance", "no_recording")
+
+
+def session_verdict(foil_time_s: float, duration_s: float,
+                    distance_m: float) -> tuple[bool, str | None]:
+    """Is this recording a session? (docs/algorithms.md "Not a session", engine 0.19.0)
+
+    Returns `(is_session, reason)`; `reason` is None exactly when `is_session` is True.
+
+    **A recording is not a session when it holds no foil time at all AND it is either
+    shorter than `NOT_A_SESSION_MAX_DURATION_S` or covers less than
+    `NOT_A_SESSION_MAX_DISTANCE_M`.** The first conjunct does nearly all the work and the
+    two thresholds only ever qualify it, which is the point: a skunked afternoon -- an hour
+    of pumping in no wind, two kilometres of it, never once up on the foil -- is a session,
+    and the rider's own memory of it says so. What is not a session is the recording he
+    started on the beach and stopped again: 24 s, 0.0 km, no flight.
+
+    The verdict is a *label*, never a deletion. A recording that fails it keeps its page,
+    its map and its row; it is only kept out of the counts, trends, records, period and gear
+    totals that describe riding (docs/presentation.md "Not a session").
+    """
+    if foil_time_s > 0:
+        return True, None
+    if duration_s < NOT_A_SESSION_MAX_DURATION_S:
+        return False, "too_short"
+    if distance_m < NOT_A_SESSION_MAX_DISTANCE_M:
+        return False, "no_distance"
+    return True, None
+
+
 def session_rates(duration_s: float, timer_time_s: float, distance_m: float,
                   dry_turns: int, dry_jibes: int, fell_in: int,
                   clean_jibes: int = 0) -> SessionRates:
@@ -642,6 +699,8 @@ def build_golden(a: Analysis) -> dict:
     windows = window_rates(dry_ts, wet_ts, session_start_t(a.clean), duration_s,
                            a.rate_config)
     pumps = {k.flight_index: k.pumps_to_takeoff for k in a.takeoffs.takeoffs}
+    is_session, not_a_session_reason = session_verdict(
+        fr.foil_time_s, rates.duration_s, rec.distance_m)
     return {
         "engineVersion": ENGINE_VERSION,
         "config": _config_dict(a),
@@ -679,6 +738,12 @@ def build_golden(a: Analysis) -> dict:
         "pumpEpisodes": [_episode_json(e) for e in a.takeoffs.episodes],
         "hr": _hr_json(a.hr),
         "summary": {
+            # Is this recording a session at all (engine 0.19.0, docs/algorithms.md "Not a
+            # session")? `isSession` is true for every recording in which the rider flew,
+            # and for every skunked afternoon long enough or far enough to have been one.
+            # `notASessionReason` is a code and never a sentence; null when `isSession`.
+            "isSession": is_session,
+            "notASessionReason": not_a_session_reason,
             "foilTimeS": round(fr.foil_time_s, 1),
             "foilPct": round(fr.foil_pct, 2),
             "flightCount": fr.flight_count,
