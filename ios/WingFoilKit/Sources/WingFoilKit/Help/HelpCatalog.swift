@@ -311,8 +311,8 @@ public enum HelpCatalog {
                 // under water IS the swim evidence (docs/algorithms.md, `turnBaroDrop`).
                 .init(term: "The wrist may go under",
                       detail: "A wrist under water is how a fall is recognised: the pressure "
-                          + "sensor sees it and the swim is scored. GPS drops out for those "
-                          + "seconds; the gap is marked, not sailed through."),
+                          + "sensor sees it and the swim is scored. The GPS gap is marked, "
+                          + "not sailed through."),
                 .init(term: "Let the workout finish",
                       detail: "The session is handed over once you end the workout. If it is "
                           + "not in the list yet, look again in a minute."),
@@ -345,8 +345,8 @@ public enum HelpCatalog {
                 // under water IS the swim evidence (docs/algorithms.md, `turnBaroDrop`).
                 .init(term: "The wrist may go under",
                       detail: "A wrist under water is how a fall is recognised: the pressure "
-                          + "sensor sees it and the swim is scored. GPS drops out for those "
-                          + "seconds; the gap is marked, not sailed through."),
+                          + "sensor sees it and the swim is scored. The GPS gap is marked, "
+                          + "not sailed through."),
                 .init(term: "Let the workout finish saving",
                       detail: "The route is written to Health when you end the workout, and "
                           + "the watch may take a minute to hand it over."),
