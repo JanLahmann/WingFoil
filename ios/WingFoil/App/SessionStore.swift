@@ -310,6 +310,12 @@ final class SessionStore {
             // Seed the baseline once, so the first import after installing does not
             // "beat" an empty library nine times over.
             if storedPersonalBests == nil { await refreshPersonalBests(celebrate: false) }
+            // **Every** path that can mint a spot ends here — an import, a sync, a restore,
+            // a delete, a re-cluster — so this is the one place naming has to be hooked to
+            // be automatic. Detached from the reload rather than awaited: the geocoder is a
+            // network round trip with a 1.2 s spacing between spots, and the library list
+            // must not wait for it. It costs one small query when there is nothing to name.
+            Task { await self.nameSpots() }
         } catch {
             errorMessage = "Could not read the library: \(error)"
         }
@@ -338,8 +344,12 @@ final class SessionStore {
         guard let records = try? await library.records() else { return }
         let previous = storedPersonalBests
         // Both axes off the same load: the speed records out of the library's own query,
-        // the clean-jibe pair out of the rows `load()` has just refreshed.
-        let cleanJibes = PersonalBestDetector.cleanJibeBests(sessions)
+        // the clean-jibe pair out of the rows `load()` has just refreshed — filtered the
+        // way that query filters, because a personal best is a claim about the rider and
+        // the in-memory list is the raw table (`LibraryStore.clause`).
+        let cleanJibes = PersonalBestDetector.cleanJibeBests(
+            sessions.filter { !$0.isExample && !$0.isProvisional && $0.isSession
+                              && $0.rider == nil })
         if celebrate, let previous {
             let found = PersonalBestDetector.improvements(previous: previous, current: records)
             if !found.isEmpty { celebration = found }
@@ -366,7 +376,12 @@ final class SessionStore {
         // at all: neither may become "your last session" on the home screen, nor count
         // towards this week's foil time. Same rule as `LibraryStore.clause`, restated here
         // because the widget reads the in-memory list rather than going through SQL.
-        let rows = sessions.filter { !$0.isExample && $0.rider == nil }
+        // A recording that is not a session (engine 0.19.0) is out for a third reason: it
+        // put "FOIL 0 % · FLIGHTS 0" on Jan's home screen on 14 September 2026 with the
+        // afternoon before it sitting one row down, and it added itself to this week's
+        // session count on the way past. `isRidden` already skipped it as "the last
+        // session"; this is the same rule applied to the totals beside it.
+        let rows = sessions.filter { !$0.isExample && $0.isSession && $0.rider == nil }
         // JPH per session is a query and not a column — the session index denormalizes CPH
         // only — and the widget must print the session page's number, not one of its own.
         let jibesPerHour = (try? await library.jibeRates()) ?? [:]
@@ -424,13 +439,44 @@ final class SessionStore {
         await nameSpots()
     }
 
-    /// Fills in `Spot N` placeholders from the reverse geocoder. Best effort by design:
-    /// offline or throttled, the placeholders simply stay (and stay renamable).
+    /// How long to wait before asking the geocoder again after a pass that resolved nothing.
+    /// Doubles per attempt, three attempts, then it waits for the next launch, an import or
+    /// the rider's own tap. A lookup that failed because the phone is in a van in the Alps
+    /// will fail again in one second and may well succeed in half a minute.
+    private static let spotNamingRetryDelays: [Duration] = [.seconds(20), .seconds(60),
+                                                            .seconds(180)]
+    private var spotNamingRetry: Task<Void, Never>?
+
+    /// Fills in `Spot N` placeholders from the reverse geocoder, and **retries when the
+    /// network was not there**.
+    ///
+    /// It runs on every occasion the set of spots can change — launch, the end of an import
+    /// or a sync, a re-cluster, lazy re-analysis, and the rider's own "Look up names again"
+    /// — because a spot the rider can see wearing a placeholder is a spot nothing was going
+    /// to name: before this, naming happened at launch only, so a library synced from
+    /// intervals.icu in one sitting showed "Spot 1 … Spot 7" until the app was killed and
+    /// reopened. (That is the answer to "why did it not apply on a fresh library".)
+    ///
+    /// Best effort still: offline or throttled, the placeholders stay, stay renamable, and
+    /// are asked again — after a delay, so a phone with no signal is not asked sixty times.
     func nameSpots() async {
-        guard spots.contains(where: { $0.spot.autoNamed }) else { return }
+        spotNamingRetry?.cancel()
+        spotNamingRetry = nil
+        await runSpotNaming(attempt: 0)
+    }
+
+    private func runSpotNaming(attempt: Int) async {
         let library = self.library
-        try? await library.nameAutoSpots(using: SpotNamer.shared.resolver)
+        guard let pending = try? await library.unnamedSpotCount(), pending > 0 else { return }
+        let unresolved = (try? await library.nameAutoSpots(using: SpotNamer.shared.resolver)) ?? 0
         spots = (try? await library.spots()) ?? spots
+        guard unresolved > 0, attempt < Self.spotNamingRetryDelays.count else { return }
+        let delay = Self.spotNamingRetryDelays[attempt]
+        spotNamingRetry = Task { [weak self] in
+            try? await Task.sleep(for: delay)
+            guard !Task.isCancelled else { return }
+            await self?.runSpotNaming(attempt: attempt + 1)
+        }
     }
 
     func renameSpot(_ spot: SpotRow, to name: String) async {
@@ -445,6 +491,10 @@ final class SessionStore {
             try await library.recluster()
             await load()
             status = "Re-clustered into \(spots.count) spot\(spots.count == 1 ? "" : "s")"
+            // A re-cluster can mint new places, and the ones it mints wear placeholders.
+            // Naming them here is what keeps "Re-cluster spots" from being a button that
+            // replaces names with numbers.
+            await nameSpots()
         } catch {
             errorMessage = "Could not re-cluster spots: \(error)"
         }
