@@ -23,16 +23,12 @@
     "`{site}` becomes Branding.site in Swift and cleanjibe.org on the web.",
     "`**bold**` is markdown in the app and <strong> on the web; *italic* likewise."
   ],
-
   "schema": "cleanjibe.getting-started/1",
-
   "framing": "The real test is one session on the water: record it the way you always do, bring it in, and read the turn verdicts against what you remember — which jibes you flew through, where you touched down, where you fell in.",
-
   "app": {
     "topicTitle": "Getting started",
     "topicSummary": "Your first session on the water, and where to send what you find."
   },
-
   "sections": {
     "routes": {
       "title": "The routes — one per watch",
@@ -48,13 +44,16 @@
       "lede": "One short message. A screenshot of the session page is worth more than a paragraph, and \"this number looks wrong\" is a perfectly good report."
     }
   },
-
   "routes": [
     {
       "id": "garmin",
       "title": "Garmin with the CleanJibe watch app",
       "status": "fenix, epix, Forerunner and the rest",
-      "channels": ["release", "beta", "dev"],
+      "channels": [
+        "release",
+        "beta",
+        "dev"
+      ],
       "summary": "Install it from Connect IQ, ride, save. Sessions sync through intervals.icu: Settings → intervals.icu, four steps, once.",
       "steps": [
         {
@@ -87,7 +86,11 @@
       "id": "fit",
       "title": "Any watch that writes a .fit",
       "status": "Polar, Suunto, COROS and everything else",
-      "channels": ["release", "beta", "dev"],
+      "channels": [
+        "release",
+        "beta",
+        "dev"
+      ],
       "summary": "Sync it through intervals.icu, or share the file into CleanJibe from Files, Mail, AirDrop or any share sheet.",
       "steps": [
         {
@@ -116,7 +119,11 @@
       "id": "strava",
       "title": "Strava",
       "status": "any watch that syncs to Strava",
-      "channels": ["release", "beta", "dev"],
+      "channels": [
+        "release",
+        "beta",
+        "dev"
+      ],
       "summary": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Positions only, so speed records are uncertified.",
       "steps": [
         {
@@ -145,7 +152,10 @@
       "id": "appleWatchApp",
       "title": "The CleanJibe Apple Watch app",
       "status": "Apple Watch · everything a Garmin gets",
-      "channels": ["beta", "dev"],
+      "channels": [
+        "beta",
+        "dev"
+      ],
       "summary": "Record on your Apple Watch and the session comes to the phone by itself — pump strokes and takeoff attempts included.",
       "steps": [
         {
@@ -170,7 +180,10 @@
       "id": "appleWorkoutApp",
       "title": "Apple's own Workout app",
       "status": "Apple Watch · nothing to install",
-      "channels": ["beta", "dev"],
+      "channels": [
+        "beta",
+        "dev"
+      ],
       "summary": "No extra app on the watch: record a Surfing workout and import it from Apple Health.",
       "steps": [
         {
@@ -196,13 +209,16 @@
       ]
     }
   ],
-
   "extras": [
     {
       "id": "dryRun",
       "title": "If you cannot wait for wind",
       "status": "twenty minutes, no water",
-      "channels": ["release", "beta", "dev"],
+      "channels": [
+        "release",
+        "beta",
+        "dev"
+      ],
       "summary": "Record a three to five minute walk on the watch. It proves the route from the watch to the phone and nothing else.",
       "steps": [
         {
@@ -227,7 +243,11 @@
       "id": "sayHowItRead",
       "title": "Then say how it read",
       "status": "the half only you can do",
-      "channels": ["release", "beta", "dev"],
+      "channels": [
+        "release",
+        "beta",
+        "dev"
+      ],
       "summary": "Menu → Support & ideas opens a mail with the facts filled in. TestFlight's own feedback works too if you are on the beta.",
       "steps": [
         {
@@ -253,24 +273,33 @@
       ]
     }
   ],
-
   "webLine": {
     "id": "onTheWeb",
     "title": "The same guide, with every step, on the web",
-    "channels": ["release", "beta", "dev"],
-    "surfaces": ["app"],
+    "channels": [
+      "release",
+      "beta",
+      "dev"
+    ],
+    "surfaces": [
+      "app"
+    ],
     "summary": "{site}/start"
   },
-
   "settings": {
     "_note": "One sentence each, at the top of the matching Settings section. The app reads them from GettingStartedGuide, so the help and the switches say the same thing.",
     "intervalsIcu": "Garmin has no open API for a personal app, so intervals.icu is the free bridge: connect your Garmin there once and every session arrives here by itself.",
     "strava": "The route that needs no file: any watch that syncs to Strava. Positions only, so speed records are uncertified."
   },
-
   "troubleshooting": {
-    "surfaces": ["web"],
+    "surfaces": [
+      "web"
+    ],
     "entries": [
+      {
+        "term": "The watch app does not start",
+        "detail": "Restart the watch once. If it still does not start, send us the message it shows."
+      },
       {
         "term": "\"Nothing to import\" from Apple Health",
         "detail": "The workout is not in Health yet, or CleanJibe may not read it: iPhone Settings → Health → Data Access & Devices → CleanJibe, everything on."
@@ -301,9 +330,10 @@
       }
     ]
   },
-
   "report": {
-    "surfaces": ["web"],
+    "surfaces": [
+      "web"
+    ],
     "entries": [
       {
         "term": "Which route",
