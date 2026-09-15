@@ -882,6 +882,33 @@ is not covered by it either — `SessionDisplay.sportLabel` still reports what t
 because a badge that renamed the sport code would be reporting something the recording does
 not contain.
 
+**An imported name keeps its own capitalisation.** A derived title is read back out of the
+middle `_`-part of the archived filename, which is where the importers put the source's own
+activity name — Strava's and intervals.icu's alike. That part used to be lower-cased on the
+way in and then given a capital per word on the way out, so Strava's "Wingfoil am Nachmittag"
+reached the library as "Wingfoil **A**m Nachmittag" and "Hallbergmoos Surfen" was a rewrite of
+a name a person chose. The slug now keeps the source's case
+(`SessionNaming.activityNameSlug`), and the title rule reads it: **if the stem carries any
+capital at all, that capitalisation is the source's and is left alone**; a stem that is
+entirely lower-case carries no information to preserve — the watch's `nago-torbole-windsurfen`,
+the app's own slug of a bare spot name — and is the one case that gets a capital per word.
+That is the whole of "title-case only a name the app built itself". A workout imported from
+Apple Health has no name from anywhere, so its filename carries `_wingfoil_` and it derives as
+"Wingfoil"; before that its stem had no `_` at all and the date was read as the name, which
+printed **"08 30 Health"**.
+
+**The Recording card's `sport` is the source's word, unbent** (`SessionNaming.sportLabel`).
+Five spellings are translated because their raw form is not a word a rider would recognise
+(`43` → Windsurf, `44` → Kitesurf, `32` → Sailing, `stand_up_paddleboarding` → SUP, `walking`
+→ CIQ app); everything else keeps the source's own capitalisation, with underscores and
+run-together `CamelCase` split into words — Apple Health's `surfingSports` reads
+"surfing Sports", where `.capitalized` used to make it "Surfingsports". A source that said
+nothing at all reads **Unknown**, which is the honest answer and was, until engine 0.19.0,
+also the answer for every Strava import: `StravaImport` wrote the activity's sport into the
+GPX's `<trk><type>` and the GPX parser never read it back. It does now (`caps.sport`), and it
+is still provenance and never a discipline — ADR-004 files a wingfoil afternoon under sport
+43, and `Discipline.resolve` does not take a sport code as an argument.
+
 The card's outline carries three semantics and no more (`TrackThumbnail.Mark`): the track
 tinted by foil state, a dot per **counted** turn on the verdict ladder's inks, and the
 barometer's submersion evidence as a cyan **diamond**, one per episode — shape as well as
@@ -2480,7 +2507,7 @@ fingerprint in the footer. A fin board planes at 20 km/h where a foil flies at 1
   top.** The other order would let a preset stomp a slider the rider has just moved. The two
   speeds still travel in all four configs together, tuned or not.
 - **Each set is its own staleness key.** The fingerprint rides *inside* that discipline's stamp
-  — `0.18.0+disc.windsurfFin+tuned.2.a1b2c3d4` — so moving a fin threshold re-derives fin
+  — `0.19.0+disc.windsurfFin+tuned.2.a1b2c3d4` — so moving a fin threshold re-derives fin
   sessions and leaves every wingfoil session on the numbers it was already analysed with. "Re-
   analyse stale sessions now" is that same per-row sweep taken immediately, which after a move
   on this screen is the selected discipline's sessions and no others. The session page's chip,
@@ -2505,7 +2532,7 @@ by a dev build installed over the same bundle id is not even read.
 outcomes, clean jibes, records, trends, periods and the share card are all derived from the
 same analysis. So a moved slider marks the whole library stale by the mechanism an engine
 bump already uses: the overrides' fingerprint rides in the analysis' `engineVersion` as
-`0.18.0+tuned.<n>.<hash8>` (`TuningStamp`), which is the string `reanalyzeStale()`,
+`0.19.0+tuned.<n>.<hash8>` (`TuningStamp`), which is the string `reanalyzeStale()`,
 `SessionArchive.analysis(for:)` and `SessionStore.detail(for:)` already compare on. Sessions
 re-derive lazily on open and in bulk at the next launch; "Re-analyse all sessions now" is the
 same trip taken immediately, and leaving the page takes it automatically.
@@ -2517,7 +2544,7 @@ same trip taken immediately, and leaving the page takes it automatically.
 | session header, beside the discipline badge | `tuned · N` chip | that session's stored `engineVersion` |
 | session page, in the divergence banner's slot | "Analysed with tuned thresholds (N changed) — Settings → Tuning" | that session's analysis |
 | Records header, Trends header | `tuned thresholds · N` chip | the *current* setting, summed over every discipline's set — these are aggregates over a library that may hold more than one rig |
-| Settings → About | `0.18.0 · dev` | the build variant itself |
+| Settings → About | `0.19.0 · dev` | the build variant itself |
 | turn detail footnote | "Measured at: turnSuccessPct 70 % · minSpeedLag 2 s · turnOutcomeLookahead 12 s" | the analysis' own `config` echo |
 
 ### Dev strips and window — the detectors, drawn
@@ -2739,6 +2766,134 @@ The first card ever to reach Jan's phone (14 Sep 2026, build 50, a 20-second tes
 GPS fix) opened on *Could not open this session … the stored file is damaged*, which was the
 archive being asked for a file it could not have. Share is disabled on that page; there is
 no analysis to draw a card from yet.
+
+## Not a session — the recording that was never an afternoon
+
+Some recordings are not sessions: the rider presses start on the beach, walks to the water,
+changes his mind, presses stop. Jan's library held thirteen of those on 14 September 2026 —
+0:00–0:24 min, 0.0 km, 0 % on foil — and every one of them was inside "44 sessions", inside
+the period and gear totals, and at the right-hand end of the Trends *on foil* line, which it
+pulled to zero. The engine now says which is which (docs/algorithms.md, "Not a session":
+no foil time **and** under 120 s or under 200 m). This is what the rider sees of that.
+
+**Nothing is deleted, refused or hidden.** Not on import, not later, not ever. A recording is
+the rider's; the app's job is to stop counting it, not to decide he should not have it. The
+row is in the list, its page opens, its map draws, its own numbers are on its own page.
+
+**The row carries four quiet words.** `No riding detected`, in the row's secondary colour, on
+the line under the date — no capsule, no colour, no icon. It is a footnote and not a badge:
+the badges on that row say what the session *is* (whose, which rig, from the watch), and this
+says what the library is *not doing* with it. A provisional row does not get it: that row
+already says "the recording has not synced yet" in blue, and one row does not need two ways
+of saying "not yet".
+
+**The page says why in one line**, directly under the key-metrics block, in the footnote size
+and the secondary colour:
+
+> No time on the foil, 0:24 long and 0 m covered — so this looks like a recording rather than
+> a session. It is kept, and left out of totals, trends and records.
+
+Three rules that line keeps. It **names the two numbers that decided**, so a rider whose real
+session was mis-read can see the evidence and disagree with it rather than being told a
+verdict. It says **kept**, because the first question a missing session raises is whether it
+was thrown away. And it uses no engine vocabulary — not `isSession`, not `foilTimeS`, not
+"success" or "carried". Distance under a kilometre is printed in metres: "0.0 km" is what put
+the row on the screen, and saying it back is no answer.
+
+A provisional row's version of the same line is about the recording, not the riding:
+
+> Your watch says this afternoon happened, but its recording has not arrived yet — so it is
+> not counted in totals, trends or records until it does.
+
+**What excludes it, in one place per platform.** `LibraryStore.clause` on the phone —
+alongside the example, the provisional row and a friend's session, the fourth of four — and
+`counts_towards_records` on the web. Everything downstream inherits it: Trends and its week
+histogram, the session and all-time records tables, every period and season block, the gear
+totals, the spot's visit count, the "last session" and the week on the home-screen widget,
+the clean-jibe personal bests, and the import screen's default gear.
+
+**The count and the list are two different questions.** The list shows every recording; every
+"N sessions" line counts the ones that are sessions (`LibraryListing.riddenCount`) — the
+library footer, and each group header. A **provisional** row *is* counted there: the rider
+counting his week does not care that the FIT is still in the air, and that row's
+`no_recording` verdict is read past in this one place and nowhere else.
+
+## Spots — how a place gets its name, and when it stops existing
+
+A spot is a cluster of session start coordinates (`SpotClusterer`, 500 m). It is born nameless
+— `Spot 1`, `Spot 7` — and gets a real one from a reverse geocoder.
+
+**Naming is automatic, and runs wherever the set of spots can change.** Every import, sync,
+restore, delete and re-cluster ends in the same library reload, and the naming pass hangs off
+that, so a new place is named within a second or two of arriving. It used to run at launch
+only, which is why a library synced from intervals.icu in one sitting showed "Spot 1 … Spot 7"
+beside sessions that all said "Nago Torbole Wingfoil": the sessions were named from their
+filenames, and nothing had asked the geocoder since before they existed.
+
+**It retries when the network was not there.** A pass that resolved nothing schedules another
+at 20 s, then 60 s, then 180 s, then stops and waits for the next launch, import, or the
+rider's own tap. Three attempts because the failure this covers is a phone in a van in the
+Alps, not an outage; stopping because a phone with no signal must not be asked sixty times.
+
+**Only a placeholder is looked up.** The candidate set is "auto-named **and** still called
+`Spot N`". `autoNamed` on its own means "the rider has not renamed this", which stays true
+after a successful lookup — so asking on that flag alone re-geocoded every spot in the library
+at every launch, which is a network round trip and one coordinate leaving the phone for an
+answer already on the screen. **Look up names again** is offered only while at least one
+placeholder is left.
+
+**Re-clustering keeps every name somebody chose or looked up.** It rebuilds the table from the
+sessions and re-matches each new centroid to the nearest old spot within the radius, carrying
+that spot's id, name, creation date and `autoNamed` flag across. The test is
+"is it still a placeholder", not "did the rider rename it" — the older rule discarded every
+*geocoded* name on every re-cluster and put the numbers back on the screen. A named spot can
+only be inherited once per rebuild; a second cluster that would claim it takes a placeholder
+and is looked up like any new place.
+
+**A spot with no sessions does not exist.** `session.spotId` carries no foreign key — on
+purpose, so spots can be rebuilt without touching sessions — so the cascade is written down:
+deleting a session and finishing a re-cluster each prune every spot no session points at, in
+the same write. (An import cannot orphan one: a session is attached to its spot in the same
+breath as the spot is created.) That is what "Spot 1 · 0 · Never sailed" was — a place left
+behind by sessions the rider deleted — and migration v16 clears the ones already in a library.
+After a re-cluster the count is exactly the number of places his sessions fall into, every
+time, in any order, which is what makes 7 → 5 a result rather than a surprise.
+
+**Placeholder numbers never repeat.** A new spot takes one past the highest `Spot N` in the
+table, not `COUNT(*) + 1` — which minted a second "Spot 2" in any library where one spot had
+been renamed and another removed.
+
+## What leaves the phone — the privacy notes
+
+The rule the app is built to and the privacy page states: the analysis runs on the device,
+there is no account and no server of ours, and sessions are never uploaded. Every exception is
+named, here and on the page, and the two say the same thing. Two of them are the rider's own
+connections — **intervals.icu** and **Strava**, each only after he connects it, each carrying
+his own credential to that one service. Two are Apple's **MapKit**: the map under a session,
+and the coarse picture this phone renders for a Garmin watch. And one more, which the app
+makes by itself:
+
+> **Naming a sailing spot uses Apple's geocoder.** When CleanJibe finds a new place in your
+> sessions it asks Apple's reverse-geocoding service what that place is called, so the spot
+> reads "Nago-Torbole" instead of "Spot 3". What is sent is a single coordinate — the centre
+> of that spot, rounded to about 110 m — and nothing else: no session, no track, no name, no
+> identifier, and no account. It happens once per new spot, never for a spot that already has
+> a name, and never at all if you name your spots yourself. Apple sees roughly where you sail,
+> under Apple's own privacy policy.
+
+The mechanics behind that sentence, so it stays true: it is `CLGeocoder.reverseGeocodeLocation`
+(`SpotNamer`, in the kit) — Apple's framework, Apple's service, no third-party geocoder and no
+HTTP client of ours anywhere in the project. The coordinate is rounded **before it is sent**
+(`SpotNamer.roundedForLookup`, three decimal places), not merely on the way into a cache key,
+because a privacy sentence that describes a rounding the code does not do is a false one. One
+request per unnamed spot, at least 1.2 s apart, results cached. It needs no location
+permission: the coordinate came out of a file the rider imported, not from the phone's own
+GPS.
+
+**This sentence is required wherever the network promise is made.** That is the privacy page
+(`web/privacy/`, "The iPhone app — what leaves your phone"), and the App Store description's
+privacy paragraph. Both currently name intervals.icu, Strava and Apple Maps; neither names the
+geocoder, and until they do, both are incomplete.
 
 ## Session list — group by, and the filters that narrow it
 
