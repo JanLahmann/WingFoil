@@ -74,10 +74,10 @@ final class UpdateReminder {
     private static let feed = URL(string: "https://cleanjibe.org/app/version.json")!
 
     /// Which entry of the file is ours. The kit cannot see a compile flag, so the app tells
-    /// it — `ChannelFeatures.channel` is the one `#if` in the app that answers this, and it
+    /// it — `AppChannel.channel` is the one `#if` in the app that answers this, and it
     /// answers it for the help catalogue too.
     private static var channelKey: String {
-        switch ChannelFeatures.channel {
+        switch AppChannel.channel {
         case .dev: "dev"
         case .beta: "beta"
         case .release: "release"
@@ -214,7 +214,7 @@ final class UpdateReminder {
                                        runningBuild: runningBuild,
                                        dismissedMinBuild: dismissedMinBuild)
         message = note.message
-        updateURL = note.url ?? ChannelFeatures.testFlight
+        updateURL = note.url ?? AppChannel.testFlight
     }
 
     // MARK: - The file

@@ -51,6 +51,13 @@ public enum IcuSetupGuide {
         "Garmin has no open API for a personal app, so intervals.icu is the bridge: free, "
         + "automatic once connected, and set up only once."
 
+    /// The label on the button the last step tells the reader to tap, and the label the
+    /// button itself carries (`IcuKeyEntry`). Two literals is how a walkthrough ends up
+    /// naming a button that was renamed — so it is written once, here, and
+    /// `docs/copy/icu-setup.json` carries it to cleanjibe.org/start, which told riders to
+    /// "use the check button" until 15 September 2026.
+    public static let saveButton = "Save & check"
+
     public static let steps: [IcuSetupStep] = [
         IcuSetupStep(
             number: 1,
@@ -79,8 +86,8 @@ public enum IcuSetupGuide {
             number: 4,
             title: "Paste the key into CleanJibe",
             detail: "Paste it into the field below (in the app: Settings → intervals.icu) "
-                + "and tap Save & check. CleanJibe verifies it and says how many activities "
-                + "it can see.",
+                + "and tap \(saveButton). CleanJibe verifies it and says how many "
+                + "activities it can see.",
             action: .openIcuSettings),
     ]
 

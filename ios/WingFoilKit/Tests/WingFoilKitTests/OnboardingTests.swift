@@ -99,7 +99,8 @@ import Testing
         #expect(HelpCatalog.topics(in: .setup).map(\.id)
                 == [.icuSetup, .exampleSession, .appleWatchApp, .appleWorkoutApp,
                     .stravaImport, .shareFromWatchApp, .phoneOnly, .whichWatch,
-                    .icuTroubleshooting, .icuPrivacy, .libraryBackup, .sendingFeedback])
+                    .icuTroubleshooting, .icuPrivacy, .privacy, .libraryBackup,
+                    .sendingFeedback])
     }
 
     /// The topic for the rider who owns no Garmin (ADR-017). It has one job — get him from

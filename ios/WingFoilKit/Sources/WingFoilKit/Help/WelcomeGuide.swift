@@ -29,6 +29,21 @@ public enum WelcomeGuide {
     /// The one line at the top. The promise, not a feature list.
     public static let headline = "Every flight, every jibe, every swim."
 
+    /// **The one sentence that says what CleanJibe is**, and the one this project has
+    /// hand-copied most often: the homepage's opening, the App Store description's first
+    /// line, the Connect IQ listing, and the library's empty state all say it.
+    ///
+    /// Four copies of one sentence, written once on 2 September 2026 and pasted onwards, is
+    /// exactly the shape of drift that `docs/copy/phrases.json` now pins: this is the
+    /// authored text and the JSON its twin (`CopyContractTests`), and the website is held to
+    /// it from the other side. The store voice may put its own paragraph around it; the
+    /// sentence itself is one sentence everywhere.
+    public static let promise =
+        "CleanJibe reads a wingfoil session off your watch and tells you what actually "
+        + "happened: how much of it you spent on the foil, how long each flight lasted, your "
+        + "speed records, and — for every turn — whether you flew through it, touched down, "
+        + "or fell in."
+
     /// One tight paragraph of what the app actually does, in the order the rider meets it:
     /// detection first (nothing else is possible without it), then the counts, then the
     /// verdicts, then the records, then the replay.
@@ -40,26 +55,28 @@ public enum WelcomeGuide {
 
     /// The vocabulary, four lines of it. Enough that the words on the session page are
     /// already familiar; short enough that nobody skips the screen to escape it.
+    ///
+    /// **Selected from `MetricGlossary`, never retyped.** The eight glossary lines are the
+    /// app's and the website's shared one-liners; the welcome screen shows the four a
+    /// first-time reader needs before he has seen a session, and the other four
+    /// (turn verdicts, JPH, CPH, WPH) are rates he meets later. The verdicts themselves are
+    /// in the `lede` above, which is why the streak line can be the short one.
+    ///
+    /// The dry streak used to read "how many you *carried* in a row", which is engine
+    /// vocabulary the rider is never shown (CLAUDE.md); the glossary's line is the web's,
+    /// and says the same thing in the words the product uses.
     public static let highlights: [WelcomeHighlight] = [
-        WelcomeHighlight(
-            term: "Foil %",
-            detail: "How much of the session was spent flying rather than merely moving."),
-        WelcomeHighlight(
-            term: "Flights & touchdowns",
-            detail: "One takeoff starts a flight; a touchdown or a swim ends it. "
-                + "Both are counted."),
-        WelcomeHighlight(
-            term: "Jibe outcomes & dry streaks",
-            detail: "Every turn gets a verdict, and the streak counts how many you carried "
-                + "in a row without going in."),
+        "foilShare",
+        "flights",
+        "dryStreak",
         // "GP3S" and "alpha 500" are GPS-speedsurfing terms, and this is the fourth line of
         // the first screen a wingfoiler ever sees. The windows are named instead; the
         // Records topic can teach the vocabulary later, to somebody who asked for it.
-        WelcomeHighlight(
-            term: "Speed records",
-            detail: "Your fastest 2 seconds, 10 seconds, 500 m and nautical mile — the same "
-                + "windows the speedsurfing world uses."),
-    ]
+        "speedRecords",
+    ].map {
+        let entry = MetricGlossary.entry($0)
+        return WelcomeHighlight(term: entry.term, detail: entry.line)
+    }
 
     // MARK: - The three ways on
 

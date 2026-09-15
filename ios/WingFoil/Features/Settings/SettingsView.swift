@@ -486,6 +486,15 @@ struct SettingsView: View {
             // report that comes back from TestFlight.
             LabeledContent("App", value: SessionStore.appVersion + Self.variantSuffix)
             LabeledContent("Analysis engine", value: AnalysisEngine.version)
+            // **The policy, reachable from inside the app** (15 September 2026). It was
+            // not: docs/channels.md makes privacy-page coverage one of the four rules a
+            // feature meets before it moves up a channel, and the App Store record carries
+            // the URL, but a rider holding the app had no way to open the page that
+            // describes what his phone is doing. The help topic answers in three sentences
+            // (`HelpTopicID.privacy`); this is the door for the rider who never opens Help.
+            Link(destination: URL(string: Branding.siteURL + "/privacy/")!) {
+                Label("Privacy", systemImage: "hand.raised")
+            }
         } header: {
             Text("About")
         } footer: {

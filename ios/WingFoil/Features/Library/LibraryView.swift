@@ -501,6 +501,13 @@ struct LibraryView: View {
             Text(WelcomeGuide.headline)
                 .font(.subheadline.weight(.semibold))
                 .fixedSize(horizontal: false, vertical: true)
+            // The one sentence the homepage, the App Store description and this row all
+            // say (`WelcomeGuide.promise`, pinned in docs/copy/phrases.json). The headline
+            // above it is a promise a stranger cannot check; this is what the app does.
+            Text(WelcomeGuide.promise)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             // Stacked rather than side by side: "What CleanJibe does" alone is most of a
             // phone's width at the default text size, and two of these on one line wrap
             // into four ragged lines before a rider has raised his text size at all.
