@@ -48,7 +48,7 @@ export const PHRASES = {
 export const GLOSSARY = [
   {
     "id": "foilShare",
-    "term": "Foil %",
+    "term": "On foil",
     "line": "How much of the session was spent flying rather than merely moving."
   },
   {
@@ -59,7 +59,7 @@ export const GLOSSARY = [
   {
     "id": "turnVerdicts",
     "term": "Turn verdicts",
-    "line": "Every turn gets one: flew through, touched down, or fell in."
+    "line": "Every turn gets one: flew through, touchdown, or fell in."
   },
   {
     "id": "dryStreak",
@@ -77,6 +77,11 @@ export const GLOSSARY = [
     "line": "Clean jibes per hour: you flew through it, you held your speed, and the ten seconds after it stayed quiet."
   },
   {
+    "id": "tph",
+    "term": "TPH",
+    "line": "Turns per hour — every counted turn, not only the jibes. It stands in for JPH on a session whose wind axis named no jibes."
+  },
+  {
     "id": "wph",
     "term": "WPH",
     "line": "Swims per hour. The number nobody wants, kept honest anyway."
@@ -85,5 +90,15 @@ export const GLOSSARY = [
     "id": "speedRecords",
     "term": "Speed records",
     "line": "Your fastest 2 seconds, 10 seconds, 500 m and nautical mile — the same windows the speedsurfing world uses."
+  },
+  {
+    "id": "best5x10s",
+    "term": "Best 5×10 s",
+    "line": "The mean of your best five separate 10-second runs. They may not overlap, so one lucky reach cannot carry it."
+  },
+  {
+    "id": "alpha500",
+    "term": "Alpha 500",
+    "line": "Your fastest 500 m that ends within 50 m of where it started — so it contains a jibe, and measures the turn as well as the speed."
   }
 ];

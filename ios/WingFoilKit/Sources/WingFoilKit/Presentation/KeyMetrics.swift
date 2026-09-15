@@ -198,16 +198,26 @@ public struct KeyMetrics: Sendable, Equatable {
         guard let wet = s.wetPerHour else { return [] }
         var out: [Metric] = []
         if s.turns.jibes > 0 || (s.turnsPerHour ?? 0) <= 0 {
-            out.append(Metric(key: "jph", label: "JPH · dry jibes per hour",
-                              value: rate(s.jibesPerHour ?? 0)))
-            out.append(Metric(key: "cph", label: "CPH · clean jibes per hour",
-                              value: rate(s.cleanJibesPerHour ?? 0)))
+            out.append(rateMetric("jph", s.jibesPerHour ?? 0))
+            out.append(rateMetric("cph", s.cleanJibesPerHour ?? 0))
         } else if let turns = s.turnsPerHour {
-            out.append(Metric(key: "tph", label: "TPH · turns per hour",
-                              value: rate(turns)))
+            out.append(rateMetric("tph", turns))
         }
-        out.append(Metric(key: "wph", label: "WPH · swims per hour", value: rate(wet)))
+        out.append(rateMetric("wph", wet))
         return out
+    }
+
+    /// One rate cell, **labelled from the glossary rather than from a literal.**
+    ///
+    /// `"CPH · clean jibes per hour"` used to be typed here and typed again in
+    /// `web/js/cardstats.js`, out of two halves that existed nowhere as data — so the
+    /// welcome screen could teach one expansion while the session page printed another,
+    /// and TPH could be printed by both surfaces and defined by neither. The key is the
+    /// glossary's own id, which is what the two halves now come from
+    /// (`MetricGlossaryEntry.labelled`).
+    static func rateMetric(_ id: String, _ value: Double) -> Metric {
+        let entry = MetricGlossary.entry(id)
+        return Metric(key: entry.id, label: entry.labelled, value: rate(value))
     }
 
     // MARK: - Formatting

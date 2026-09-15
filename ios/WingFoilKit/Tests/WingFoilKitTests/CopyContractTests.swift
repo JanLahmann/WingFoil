@@ -178,25 +178,104 @@ import Testing
 
     // MARK: - glossary.json
 
+    /// **The kit owns `id`, `term`, `expansion`, `line` and `surfaces`.**
+    ///
+    /// `short` and `sentence` are hand-authored beside them, exactly the way `lexicon` and
+    /// `ciqListingTitle` live in `phrases.json`: the watch's seven-character budget and the
+    /// store voice's clause are copy-editing decisions, and a `COPY_WRITE=1` rewrite
+    /// carries the file's own values forward rather than flattening them. The kit's values
+    /// are the seed a **new** entry is born with and nothing more.
     @Test func theGlossaryMatchesItsJSON() throws {
-        let rows: [[String: String]] = MetricGlossary.entries.map {
-            ["id": $0.id, "term": $0.term, "line": $0.line]
-        }
         if Self.isWriting {
+            let existing = ((try? Self.load("glossary.json"))?["entries"]
+                            as? [[String: Any]]) ?? []
+            func kept(_ id: String, _ key: String, _ seed: String) -> String {
+                (existing.first { $0["id"] as? String == id }?[key] as? String) ?? seed
+            }
+            let rows: [[String: Any]] = MetricGlossary.entries.map {
+                ["id": $0.id,
+                 "term": $0.term,
+                 "short": kept($0.id, "short", $0.short),
+                 "expansion": $0.expansion,
+                 "line": $0.line,
+                 "sentence": kept($0.id, "sentence", $0.sentence),
+                 "surfaces": $0.surfaces.map(\.rawValue)]
+            }
             try Self.write("glossary.json", ["entries": rows])
             return
         }
+
         let json = try Self.load("glossary.json")
         let listed = try #require(json["entries"] as? [[String: Any]],
                                   "glossary.json · entries is not a list of objects")
-        #expect(listed.count == 8, "the glossary is eight entries, found \(listed.count)")
-        #expect(listed.count == rows.count)
-        for (kit, file) in zip(rows, listed) {
-            for key in ["id", "term", "line"] {
-                Self.same(kit[key]!, file[key], "glossary.json", "\(kit["id"]!).\(key)")
+        #expect(listed.count == 11, "the glossary is eleven entries, found \(listed.count)")
+        #expect(listed.count == MetricGlossary.entries.count)
+        for (kit, file) in zip(MetricGlossary.entries, listed) {
+            Self.same(kit.id, file["id"], "glossary.json", "\(kit.id).id")
+            Self.same(kit.term, file["term"], "glossary.json", "\(kit.id).term")
+            Self.same(kit.expansion, file["expansion"], "glossary.json", "\(kit.id).expansion")
+            Self.same(kit.line, file["line"], "glossary.json", "\(kit.id).line")
+            Self.same(kit.surfaces.map(\.rawValue), file["surfaces"],
+                      "glossary.json", "\(kit.id).surfaces")
+        }
+    }
+
+    /// **The watch is not excused from the contract — it is held to it at its own width.**
+    ///
+    /// A MIP cell is about seven characters, and three watch labels shipped over that
+    /// budget (`best 10s`, `takeoffs`, `foil dist`). The answer is a per-term `short`
+    /// authored beside the term, so the budget fails a test rather than failing a rider.
+    /// `sentence` is the same trick one level down for the two store descriptions, which
+    /// are prose and print a clause where the app prints a label.
+    @Test func everyGlossaryEntryCarriesAShortAndASentence() throws {
+        let json = try Self.load("glossary.json")
+        let listed = try #require(json["entries"] as? [[String: Any]],
+                                  "glossary.json · entries is not a list of objects")
+        for file in listed {
+            let id = (file["id"] as? String) ?? "«no id»"
+            let short = (file["short"] as? String) ?? ""
+            let sentence = (file["sentence"] as? String) ?? ""
+            #expect(!short.isEmpty,
+                    """
+                    glossary.json · \(id).short is missing — hand-author the watch's word \
+                    for it, at most seven characters wherever surfaces names "watch"
+                    """)
+            #expect(!sentence.isEmpty,
+                    """
+                    glossary.json · \(id).sentence is missing — the clause the App Store \
+                    and Connect IQ descriptions use instead of the label
+                    """)
+            let surfaces = (file["surfaces"] as? [String]) ?? []
+            #expect(!surfaces.isEmpty, "glossary.json · \(id).surfaces is empty")
+            for surface in surfaces {
+                #expect(MetricSurface(rawValue: surface) != nil,
+                        """
+                        glossary.json · \(id).surfaces names "\(surface)", which is not \
+                        a surface
+                        """)
+            }
+            if surfaces.contains(MetricSurface.watch.rawValue) {
+                #expect(short.count <= Self.watchCellBudget,
+                        """
+                        glossary.json · \(id).short is \(short.count) characters \
+                        ("\(short)") and a MIP cell is \(Self.watchCellBudget). Shorten it, \
+                        or take "watch" out of surfaces if the watch does not show it.
+                        """)
+            }
+        }
+        // The kit's seeds are what a new entry is born with, so they keep the same budget.
+        for entry in MetricGlossary.entries {
+            #expect(!entry.short.isEmpty, "\(entry.id) has no short in the kit")
+            #expect(!entry.sentence.isEmpty, "\(entry.id) has no sentence in the kit")
+            if entry.surfaces.contains(.watch) {
+                #expect(entry.short.count <= Self.watchCellBudget,
+                        "\(entry.id): the kit's short is \(entry.short.count) characters")
             }
         }
     }
+
+    /// A MIP cell (`PageModel.label()`), measured against the watch's own drawn strings.
+    static let watchCellBudget = 7
 
     /// The welcome screen picks four of the eight rather than writing its own, which is the
     /// whole point of the type: a glossary line edited once reaches both surfaces.
@@ -219,6 +298,7 @@ import Testing
                 "prompts": prompts,
                 "invitation": FeedbackInvitation.sentence,
                 "subjectPrefix": subjectPrefix,
+                "doors": Self.doors,
             ])
             return
         }
@@ -227,6 +307,44 @@ import Testing
         Self.same(FeedbackInvitation.sentence, json["invitation"],
                   "feedback.json", "invitation")
         Self.same(subjectPrefix, json["subjectPrefix"], "feedback.json", "subjectPrefix")
+    }
+
+    /// Every door to that mail, named as the rider finds it.
+    static var doors: [String: String] {
+        Dictionary(uniqueKeysWithValues: FeedbackDoors.all.map { ($0.id, $0.name) })
+    }
+
+    /// **One name per door, on every surface** (15 September 2026).
+    ///
+    /// There were five spellings of one door, and one of them — `Settings → Send feedback`,
+    /// inside the app's own Help — named a row deleted in build 58. `feedback.json` pinned
+    /// the three prompts, the invitation and the subject prefix, and **no door name**, so
+    /// nothing on either side of the contract could notice. It does now.
+    @Test func theFeedbackDoorsMatchTheirJSON() throws {
+        let json = try Self.load("feedback.json")
+        let listed = try #require(json["doors"] as? [String: String],
+                                  """
+                                  docs/copy/feedback.json · doors is missing. It is the \
+                                  name of every door to the feedback mail; write it with \
+                                  COPY_WRITE=1 swift test --filter CopyContractTests
+                                  """)
+        #expect(listed.count == Self.doors.count,
+                """
+                feedback.json · doors has \(listed.count) doors, the kit names \
+                \(Self.doors.count)
+                """)
+        for (id, name) in Self.doors {
+            Self.same(name, listed[id], "feedback.json", "doors.\(id)")
+        }
+
+        // The app's Help quotes three of them by name rather than retyping them: that
+        // sentence is what sent riders to a deleted Settings row for a week.
+        let prose = HelpCatalog.topic(.sendingFeedback).body.joined(separator: " ")
+        for door in [FeedbackDoors.app, FeedbackDoors.footer, FeedbackDoors.share] {
+            #expect(prose.contains(door), "the Sending feedback topic never names \"\(door)\"")
+        }
+        #expect(!prose.contains("Settings → Send feedback"),
+                "the app's own Help still names the Settings row deleted in build 58")
     }
 
     // MARK: - icu-setup.json

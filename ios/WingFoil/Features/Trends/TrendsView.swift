@@ -65,10 +65,21 @@ struct TrendsView: View {
                     #endif
 
                     if points.isEmpty {
-                        ContentUnavailableView("Nothing in this range",
-                                               systemImage: "chart.xyaxis.line",
-                                               description: Text("Widen the range or clear the "
-                                                                 + "spot and gear filters."))
+                        // **Two empty screens, not one** (15 Sep 2026). "Widen the range or
+                        // clear the spot and gear filters" was advice that could not work
+                        // on the library the one-tap first run leaves behind: the example
+                        // is kept out of trends on purpose (`LibraryStore.clause`), and no
+                        // range and no filter reaches it. `ExampleOnlyNote` says that in
+                        // the rider's words; the filter sentence stays for the case where
+                        // a filter really is set.
+                        ContentUnavailableView(
+                            store.hasOnlyExampleSessions
+                                ? ExampleOnlyNote.trendsTitle : "Nothing in this range",
+                            systemImage: "chart.xyaxis.line",
+                            description: Text(store.hasOnlyExampleSessions
+                                              ? ExampleOnlyNote.trends
+                                              : "Widen the range or clear the spot and "
+                                                + "gear filters."))
                             .frame(maxWidth: .infinity, minHeight: 220)
                     } else {
                         summaryStrip

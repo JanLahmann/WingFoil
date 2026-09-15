@@ -90,10 +90,33 @@ order, wholly kit-owned. `footerLine` is `name + ". " + line`.
 
 ### `glossary.json`
 
-`entries`: `[{ "id", "term", "line" }]` — the eight words the product is made of (foil share,
-flights & touchdowns, turn verdicts, dry streak, JPH, CPH, WPH, speed records), wholly
-kit-owned from `MetricGlossary`. The welcome screen selects four of them; `web/learn`'s
-definition list carries all eight.
+`entries`: `[{ "id", "term", "short", "expansion", "line", "sentence", "surfaces" }]` — the
+**eleven** words the product is made of (foil share, flights & touchdowns, turn verdicts, dry
+streak, JPH, CPH, TPH, WPH, speed records, best 5×10 s, alpha 500), from `MetricGlossary`. The
+welcome screen selects four of them; `web/learn`'s definition list carries all eleven.
+
+| field | what it is | authored by |
+|---|---|---|
+| `id` | a slug that outlives a rewording | kit |
+| `term` | **the label** — the iPhone card, the web tile, `/learn`'s `<dt>` | kit |
+| `short` | the same word at the watch's width: **≤ 7 characters** wherever `surfaces` names `watch` | hand |
+| `expansion` | what the phone and the web append after `" · "` — `"clean jibes per hour"`. Empty where the term is the whole of it | kit |
+| `line` | the one sentence | kit |
+| `sentence` | the clause the two store descriptions print instead of the label | hand |
+| `surfaces` | who may demand this word: `ios` · `watch` · `web` · `appstore` · `ciq` | kit |
+
+Three entries were added on 15 September 2026 because the app printed them on every session
+and no surface defined them: `tph` (CLAUDE.md — *rates are additive: keep JPH and TPH beside
+CPH*; the number was additive, the glossary was not), `best5x10s` and `alpha500`. In the same
+pass `foilShare.term` became **`On foil`** — the spelling `docs/presentation.md`'s label table
+already decided and every screen already prints, against a glossary that still taught
+`Foil %` — and `turnVerdicts.line` became a list of nouns (`touchdown`, not *touched down*).
+
+**`short` and `sentence` are hand-authored**, exactly the way `lexicon` and `ciqListingTitle`
+are: a `COPY_WRITE=1` regeneration carries them forward and seeds only a brand-new entry from
+the kit. The watch is not excused from the contract, it is held to it **at its own width** —
+a MIP cell is about seven characters, three watch labels ship over that today, and
+`CopyContractTests` asserts the budget so it fails a test instead of failing a rider.
 
 The long explanations — the 12 / 8 km/h foil gates, the outcome ladder, the 70 % score — are
 **not** here. They stay in `HelpCatalog`, which is reference material behind a `?` and has no
@@ -103,7 +126,17 @@ the bodies alone.
 ### `feedback.json`
 
 `prompts` (the three `FeedbackReport.Prompt` strings), `invitation`
-(`FeedbackInvitation.sentence`), `subjectPrefix` (`"CleanJibe feedback"`). Wholly kit-owned.
+(`FeedbackInvitation.sentence`), `subjectPrefix` (`"CleanJibe feedback"`) and `doors`
+(`FeedbackDoors`). Wholly kit-owned.
+
+`doors` is **the name of each door to that mail, exactly as a rider finds it** —
+`app` (`Menu → Support & ideas`), `footer` (`Something off, or an idea? Send feedback`),
+`share` (`Report a problem with this session…`), `testflight` (Apple's own
+`Send Beta Feedback`) and `web` (the address). There were five spellings of one door on
+15 September 2026, and one of them — `Settings → Send feedback`, quoted inside the app's own
+Help — named a row **deleted in build 58**. The file pinned the prompts, the invitation and
+the subject prefix and no door name, so neither side of the contract could notice. A rider
+who follows a door name finds a screen or he does not; there is no third outcome.
 
 The web's `mailto:` templates legitimately ask two questions the app does not — the watch and
 phone, and the app version — because a browser cannot fill them in and the app can. Only these

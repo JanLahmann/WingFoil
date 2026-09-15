@@ -269,6 +269,56 @@ public enum FeedbackInvitation {
         "Ideas and wishes are as welcome as bugs · Menu → Support & ideas"
 }
 
+/// **The doors to that mail, each named exactly as the rider finds it.**
+///
+/// There were five spellings of one door on 15 September 2026 — *Support & ideas*,
+/// *Menu → Support*, *Settings → Send feedback*, *Something off? Send feedback*,
+/// *Send feedback* — across the app's own Help, four website pages and the two store
+/// texts. One of them, `Settings → Send feedback`, named a row **deleted in build 58**
+/// (`SettingsView`'s own comment records the deletion), and the app's Help told the rider
+/// to go there. A rider who follows a door name finds a screen or he does not; there is no
+/// third outcome, so the names are written once here and every surface quotes them.
+///
+/// `docs/copy/feedback.json → doors` is this list, and `CopyContractTests` pins it, so the
+/// website and the store texts are held to the same five names from the other side.
+///
+/// **These are names of doors that exist.** A door this build does not have is not in the
+/// list; `feature` and `testflight` are beta doors and the App Store description names
+/// neither (docs/channels.md).
+public enum FeedbackDoors {
+
+    /// The label on the library menu's row itself. "& ideas" is not decoration: the row
+    /// said "Support", which a rider reads as *the place you go when something is broken*.
+    public static let menuRow = "Support & ideas"
+
+    /// The way there, which is how every other surface has to name it — the app's Help,
+    /// the website's footers and the App Store description all say the route, not the row.
+    public static let app = "Menu → " + menuRow
+
+    /// The offer under every page (`FeedbackMailRow`). It says *or an idea* for the reason
+    /// the menu row says *& ideas*: a door named only for faults collects only faults.
+    public static let footer = "Something off, or an idea? Send feedback"
+
+    /// The share sheet's own row, which is the only one that already knows which afternoon
+    /// the report is about and attaches that session's card.
+    public static let share = "Report a problem with this session…"
+
+    /// Apple's label, not CleanJibe's: a screenshot taken inside a TestFlight build offers
+    /// it, and it carries the screenshot and the device logs — the route for a crash.
+    public static let testflight = "Send Beta Feedback"
+
+    /// The address itself, for a reader who has no app in front of him — the website's
+    /// footers and the two store listings.
+    public static let web = FeedbackReport.recipient
+
+    /// Every door, in the order a rider meets them. `id` is the key in
+    /// `docs/copy/feedback.json → doors`.
+    public static let all: [(id: String, name: String)] = [
+        ("app", app), ("footer", footer), ("share", share),
+        ("testflight", testflight), ("web", web),
+    ]
+}
+
 /// The feedback mail, as text.
 ///
 /// Pure: a subject, a body and a `mailto:` URL out of a `FeedbackFacts`, with no framework

@@ -192,8 +192,11 @@ struct ImportView: View {
     /// their apps sync to intervals.icu, and CleanJibe syncs from there.
     private static let filePickerFooter =
         "Garmin Connect → activity → \"Export File\" gives one FIT; "
+        // **COROS, in capitals**, the way docs/channels.md and the release branch of this
+        // same footer already spell it. One brand, two spellings, in two branches of one
+        // file (15 Sep 2026).
         + "AirDrop and the share sheet land here too. Polar, Suunto and "
-        + "Coros are supported through intervals.icu — their apps sync "
+        + "COROS are supported through intervals.icu — their apps sync "
         + "there, and CleanJibe syncs from there. A FIT gives the full "
         + "analysis; a GPX, or a TCX without a speed channel, gives a "
         + "positions-only analysis with speed records estimated from "

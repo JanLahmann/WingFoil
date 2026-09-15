@@ -1,56 +1,181 @@
 {
   "_readme" : [
-    "THE EIGHT WORDS THE PRODUCT IS MADE OF, ONE LINE EACH.",
+    "THE ELEVEN WORDS THE PRODUCT IS MADE OF, ONE LINE EACH.",
     "",
     "Authored by the kit: Presentation/MetricGlossary.swift. The welcome screen selects four",
-    "of them (WelcomeGuide.highlights) and web/learn's definition list carries all eight.",
+    "of them (WelcomeGuide.highlights) and web/learn's definition list carries all eleven.",
     "",
     "These are index lines, not the reference page: the thresholds, the outcome ladder and",
     "the 70 % score stay in HelpCatalog, which has no equivalent on the site.",
     "",
-    "`id` is a slug that outlives a rewording. Wholly kit-owned: regenerate with",
-    "COPY_WRITE=1 swift test --filter CopyContractTests."
+    "AN ENTRY IS SIX FIELDS AND A SCOPE, because four surfaces and two stores read it:",
+    "",
+    "  id         a slug that outlives a rewording",
+    "  term       THE LABEL — the iPhone card, the web tile, /learn's <dt>",
+    "  short      the same word at the watch's width: AT MOST SEVEN CHARACTERS wherever",
+    "             `surfaces` names \"watch\". A MIP cell is about seven, and three watch",
+    "             labels shipped over it. The budget is a field rather than an exemption,",
+    "             so it fails a test instead of failing a rider.",
+    "  expansion  what the phone and the web append after \" · \": \"clean jibes per hour\".",
+    "             Empty where the term is already the whole of it.",
+    "  line       the one sentence",
+    "  sentence   the clause the two store descriptions print instead of the label",
+    "  surfaces   who may demand this word: ios | watch | web | appstore | ciq",
+    "",
+    "`id`, `term`, `expansion`, `line` and `surfaces` are kit-owned: regenerate with",
+    "COPY_WRITE=1 swift test --filter CopyContractTests. `short` and `sentence` are",
+    "HAND-AUTHORED here, the way `lexicon` and `ciqListingTitle` are in phrases.json — a",
+    "regeneration carries them forward and seeds only a brand-new entry from the kit."
   ],
   "entries" : [
     {
+      "expansion" : "",
       "id" : "foilShare",
       "line" : "How much of the session was spent flying rather than merely moving.",
-      "term" : "Foil %"
+      "sentence" : "how much of it you spent on the foil",
+      "short" : "on foil",
+      "surfaces" : [
+        "ios",
+        "watch",
+        "web",
+        "appstore",
+        "ciq"
+      ],
+      "term" : "On foil"
     },
     {
+      "expansion" : "",
       "id" : "flights",
       "line" : "One takeoff starts a flight; a touchdown or a swim ends it. Both are counted.",
+      "sentence" : "how long each flight lasted",
+      "short" : "flights",
+      "surfaces" : [
+        "ios",
+        "watch",
+        "web",
+        "appstore",
+        "ciq"
+      ],
       "term" : "Flights & touchdowns"
     },
     {
+      "expansion" : "",
       "id" : "turnVerdicts",
-      "line" : "Every turn gets one: flew through, touched down, or fell in.",
+      "line" : "Every turn gets one: flew through, touchdown, or fell in.",
+      "sentence" : "whether you flew through it, touched down, or fell in",
+      "short" : "verdict",
+      "surfaces" : [
+        "ios",
+        "watch",
+        "web",
+        "appstore",
+        "ciq"
+      ],
       "term" : "Turn verdicts"
     },
     {
+      "expansion" : "",
       "id" : "dryStreak",
       "line" : "How many jibes in a row you stayed out of the water — and the best run of the day.",
+      "sentence" : "your longest run of jibes without falling in",
+      "short" : "dry",
+      "surfaces" : [
+        "ios",
+        "watch",
+        "web",
+        "appstore"
+      ],
       "term" : "Dry streak"
     },
     {
+      "expansion" : "dry jibes per hour",
       "id" : "jph",
       "line" : "Dry jibes per hour. Falling in more often cannot raise it.",
+      "sentence" : "your dry jibes per hour",
+      "short" : "JPH",
+      "surfaces" : [
+        "ios",
+        "web"
+      ],
       "term" : "JPH"
     },
     {
+      "expansion" : "clean jibes per hour",
       "id" : "cph",
       "line" : "Clean jibes per hour: you flew through it, you held your speed, and the ten seconds after it stayed quiet.",
+      "sentence" : "your clean jibes per hour",
+      "short" : "CPH",
+      "surfaces" : [
+        "ios",
+        "watch",
+        "web",
+        "appstore",
+        "ciq"
+      ],
       "term" : "CPH"
     },
     {
+      "expansion" : "turns per hour",
+      "id" : "tph",
+      "line" : "Turns per hour — every counted turn, not only the jibes. It stands in for JPH on a session whose wind axis named no jibes.",
+      "sentence" : "your turns per hour",
+      "short" : "TPH",
+      "surfaces" : [
+        "ios",
+        "web"
+      ],
+      "term" : "TPH"
+    },
+    {
+      "expansion" : "swims per hour",
       "id" : "wph",
       "line" : "Swims per hour. The number nobody wants, kept honest anyway.",
+      "sentence" : "your swims per hour",
+      "short" : "WPH",
+      "surfaces" : [
+        "ios",
+        "web"
+      ],
       "term" : "WPH"
     },
     {
+      "expansion" : "",
       "id" : "speedRecords",
       "line" : "Your fastest 2 seconds, 10 seconds, 500 m and nautical mile — the same windows the speedsurfing world uses.",
+      "sentence" : "your speed records",
+      "short" : "best",
+      "surfaces" : [
+        "ios",
+        "watch",
+        "web",
+        "appstore",
+        "ciq"
+      ],
       "term" : "Speed records"
+    },
+    {
+      "expansion" : "",
+      "id" : "best5x10s",
+      "line" : "The mean of your best five separate 10-second runs. They may not overlap, so one lucky reach cannot carry it.",
+      "sentence" : "your best five ten-second runs",
+      "short" : "5×10 s",
+      "surfaces" : [
+        "ios",
+        "web"
+      ],
+      "term" : "Best 5×10 s"
+    },
+    {
+      "expansion" : "",
+      "id" : "alpha500",
+      "line" : "Your fastest 500 m that ends within 50 m of where it started — so it contains a jibe, and measures the turn as well as the speed.",
+      "sentence" : "your fastest 500 m that comes back to where it started",
+      "short" : "alpha",
+      "surfaces" : [
+        "ios",
+        "web"
+      ],
+      "term" : "Alpha 500"
     }
   ]
 }

@@ -156,7 +156,7 @@ struct ShareComposerView: View {
                     // it is here because "this card says 3 jibes and there were 5" is a
                     // thought a rider has while looking at the card, and the mail leaves
                     // with that card attached and the session's own stamp in the text.
-                    FeedbackMailRow(title: "Report a problem with this session…",
+                    FeedbackMailRow(title: FeedbackDoors.share,
                                     systemImage: "exclamationmark.bubble",
                                     session: row, card: { renderedImage?.pngData() })
                         .font(.footnote)

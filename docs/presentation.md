@@ -1386,6 +1386,25 @@ flew streak` · `Longest session` · `Most distance`.
   a kind nobody has a positive value for is dropped from the table rather than shown as a
   dash or a flattering `0`.
 
+**The empty screen says why it is empty, and never blames a filter nobody set**
+(15 September 2026, `ExampleOnlyNote`). The one-tap first run — install, *Try the example
+session*, an analysed session two seconds later — used to end on Records reading *"No
+qualifying speed window under this filter"* with no filter applied, and on Trends reading
+*"Widen the range or clear the spot and gear filters"* on a library of one row whose range
+and filters could not have helped: the example is excluded from both on purpose (the bullet
+above; `LibraryStore.clause`), and no control on either screen reaches it. That exclusion was
+written down for Apple's reviewer (`ios/store/appstore.md`) and for nobody else.
+
+Both screens now branch three ways — **nothing at all** (import or sync a session), **only
+the example** (`SessionStore.hasOnlyExampleSessions`, the clause restated on the in-memory
+list), and **a filter that really is set**, which keeps the sentence it was written for. The
+middle branch says the fact in the rider's words and ends on the step that changes it: *the
+example session is on loan, not ridden, so it is kept out of your personal records on
+purpose. Import a .fit file, or connect intervals.icu in Settings, and your own bests appear
+here.* Its title is a promise rather than a fault — *Your records start with your first
+session* — because nothing is broken and nothing is missing; the records have not been earned
+yet. Trends says the same in its own terms, and neither title mentions a range.
+
 ## Trend charts — one set, one name each
 
 Both platforms draw the same per-session series under the same titles. They had drifted
@@ -2163,6 +2182,15 @@ CataloguesAsTheCode` on iOS, `verify_presentation.py` §1 for the analyzer).
 | the outcomes, as nouns | **`flew through`** · **`touchdown`** · **`fell in`** | `touched down` only inside a sentence; the compact tally keeps `flew · touchdown · fell` |
 | the strict jibe verdict | **`clean`** / **`Clean jibes`** | see the spelling contract above |
 | the score verdict | **never printed** | see "Clean jibe": `success` is internal, and "carried" is retired |
+
+**The glossary is held to this table too, since 15 September 2026.** `MetricGlossary` — and
+therefore `docs/copy/glossary.json`, the welcome screen's four highlights and `/learn`'s
+definition list — taught **`Foil %`** and a verdict list reading *"flew through, touched
+down, or fell in"*. Both rows above had already decided otherwise, and every *screen* already
+obeyed them: the shared source was the one surface still teaching the spelling the table
+rules out, on the one screen where a stranger learns the word. The entries now say `On foil`
+and `touchdown`; the participle stays where it belongs, inside a sentence
+(`WelcomeGuide.lede`, both store descriptions, and each entry's own `sentence` field).
 
 **Percentages: one rule.** A share prints **one decimal below 10 %, none at or above it,
 always with a space before the sign** — `47 %`, `4.5 %`. The magnitude switch is for the
@@ -3039,6 +3067,17 @@ else about the screen is unchanged: it is shown at most once per install, the fl
 the moment it goes up rather than when it is answered, another modal defers it rather than
 cancelling it, and Menu → *What CleanJibe does* replays it without re-arming anything.
 
+**The second offer is named for what it does** (15 September 2026). It read *"Connect your
+Garmin"* and connected nothing: `onConnect` calls `dismissWelcome()` and that is the whole of
+it, because on a genuine first run the four-step intervals.icu card is already the thing
+underneath. A first-run button whose only visible effect is that the screen disappears reads
+as a tap that failed. It is **`Set up intervals.icu`** now — the same name Settings and
+`GettingStartedGuide.settingsIcu` give the same thing — and its detail keeps the *why*
+(Garmin has no open API for a personal app) and adds the *what*: the screen closes and leaves
+you on those four steps. The flow is unchanged and deliberately so: the excursion into
+intervals.icu is intrinsic, honestly priced at *about five minutes, once*, and the
+chicken-and-egg it used to cause is already solved by the first offer.
+
 **And the empty library leads with the same two ways in.** When the library is empty and the
 welcome has been dismissed, the Sessions tab still shows the intervals.icu setup card — but
 not as the first thing on the page. Above it sits one short row: the welcome's own headline,
@@ -3357,7 +3396,7 @@ it at cleanjibe.org/whats-new, from `ios/tools/testflight_publish.py` and
 quite long."* The homepage (`web/index.html`) is now the short half — the share card as the
 hero, the three product names at one line each, the recording-class table, and the channel
 lists — and everything a reader goes *looking* for moved to **cleanjibe.org/learn**
-(`web/learn/index.html`): the three pieces in full, the FAQ, **"What it counts"** (the eight
+(`web/learn/index.html`): the three pieces in full, the FAQ, **"What it counts"** (the eleven
 glossary entries and the track motif that is their key — the same four path strings the iOS
 welcome screen and `web/tools/social_card.html` carry, character for character), and "How it
 is built". Nothing was reworded in the move, so every metric name on that page is still the
@@ -3397,10 +3436,41 @@ and who authors each key; the rule is short:
   ```
 
   which rewrites the kit-owned keys in place and leaves the hand-authored ones — the
-  forbidden lists, the lexicon, the two store names — exactly as they were.
+  forbidden lists, the lexicon, the two store names, and each glossary entry's `short` and
+  `sentence` — exactly as they were.
+
+**A glossary entry grew to six fields and a scope** (15 September 2026), because `{ id, term,
+line }` serves two surfaces and the product has four and two stores:
+`{ id, term, short, expansion, line, sentence, surfaces }`. `term` is the label the phone and
+the web print; **`short` is the same word at the watch's width** — at most seven characters
+wherever `surfaces` names `watch`, which is what a MIP cell holds and what three shipped
+watch labels already exceed. The watch is not given an exemption, it is held to the contract
+at its own width, and `CopyContractTests` asserts the budget, so it fails a test instead of
+failing a rider. `expansion` is the half the phone and the web append after `" · "` —
+`KeyMetrics` built `"CPH · clean jibes per hour"` out of two halves that existed nowhere as
+data, and now reads both from the entry. `sentence` is the clause the two store descriptions
+print instead of the label (*"how much of it you spent on the foil"*, hand-copied into four
+files until now). `surfaces` says who may demand the word, so a watch scan never asks for
+`alpha500`, which the watch does not compute. `short` and `sentence` are hand-authored beside
+the kit-owned keys, the way `lexicon` and `ciqListingTitle` already are.
+
+**Three entries were added in the same pass**, each a label the app prints on every session
+and no surface defined: `tph` (CLAUDE.md — *rates are additive: keep JPH and TPH beside CPH*;
+the number was additive, the glossary was not), `best5x10s` and `alpha500`. Eleven entries
+now, and `/learn`'s definition list carries all of them.
+
+**`feedback.json` gained `doors`.** One door had five names — `Support & ideas`,
+`Menu → Support`, `Settings → Send feedback`, `Something off? Send feedback`,
+`Send feedback` — across the app's Help, four website pages and the two store texts, and one
+of them named the Settings row **deleted in build 58**, inside the app's own instructions.
+`FeedbackDoors` is the list: `app` (`Menu → Support & ideas`), `footer`
+(`Something off, or an idea? Send feedback`), `share`
+(`Report a problem with this session…`), `testflight` (Apple's `Send Beta Feedback`) and
+`web` (the address). The app target's three labels and the Help topic's sentence are all
+built from it, so a renamed door renames its own instructions.
 
 **What it deliberately does not pin.** The `HelpCatalog` bodies against `/learn`: the app's
-help is reference material behind a `?` and the web's glossary is eight one-liners for a
+help is reference material behind a `?` and the web's glossary is eleven one-liners for a
 stranger — same terms, different depth, so the terms and the one-liners are pinned and the
 bodies are left alone. The privacy page against the app: a GDPR document does not belong in a
 Settings footer, so the app *links* it (Settings → About → Privacy, and the help topic *What
@@ -3443,8 +3513,9 @@ print, in this order and for this reason:
    routes are `.beta`, so the release build never names them as items and reaches them
    through `related` as before.
 2. **Settings** — the switches, the watch, the accounts.
-3. **Support & ideas** — the feedback mail (`feedbackMail(on:)`, the same composer as
-   Settings → Send feedback and the share sheet's "Report a problem"). Above the two "what is
+3. **Support & ideas** — the feedback mail (`feedbackMail(on:)`, the same composer as the
+   page footers' *Something off, or an idea? Send feedback* and the share sheet's "Report a
+   problem with this session…"; `FeedbackDoors.menuRow` is the label). Above the two "what is
    this" screens because a rider who has a question after reading them is one tap from asking
    it. It said **Support** until 14 September 2026, which a rider reads as *the place you go
    when something is broken*: Jan's point is that a wish is as welcome as a fault and nothing
@@ -3554,10 +3625,19 @@ allowed only while nothing is busy. Nothing else about the line changed — same
 
 One mail to `info@cleanjibe.org`, reachable from wherever the rider is when something looks
 wrong **or when he wants something**: **Menu → Support & ideas** on the Sessions tab,
-**Settings → Send feedback** under the two help rows, **Report a problem with this session…**
-at the foot of a session's share sheet, and a quiet line at the **foot of every page** —
-*Something off, or an idea? Send feedback* under the last row
-of Sessions, Records, Trends and Gear, and under the last card of a session (`FeedbackFooter`).
+**Report a problem with this session…** at the foot of a session's share sheet, and a quiet
+line at the **foot of every page** — *Something off, or an idea? Send feedback* under the last
+row of Sessions, Records, Trends and Gear, and under the last card of a session
+(`FeedbackFooter`). On the beta, a screenshot taken inside the app also offers Apple's
+**Send Beta Feedback**, which carries the screenshot and the device logs.
+
+**There is no Settings row, and no document may say there is.** The feedback block was
+deleted from Settings in build 58 — Settings keeps switches and accounts, and the menu one tap
+away already had the door — and the sentence *Settings → Send feedback* outlived it in the
+app's own Help, on four website pages and in this file. Every name is `FeedbackDoors` now
+(`docs/copy/feedback.json → doors`, pinned by `CopyContractTests`): the app target's three
+labels, the Help topic's sentence and the beta footer's are built from it, so a renamed door
+renames its own instructions.
 
 **A wish is as welcome as a fault, and five surfaces say so in one sentence** (Jan, 14 Sep
 2026). Every door to this mail was named and worded for something being *wrong*, and a beta

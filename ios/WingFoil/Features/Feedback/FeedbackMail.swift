@@ -299,7 +299,7 @@ struct FeedbackFooter: View {
             // mail Jan actually wants (14 Sep 2026). A rider at the foot of Records thinking
             // "there should be a column for X" is exactly the reader this line has, and it
             // was telling him it was not for him.
-            Label("Something off, or an idea? Send feedback", systemImage: "envelope")
+            Label(FeedbackDoors.footer, systemImage: "envelope")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }

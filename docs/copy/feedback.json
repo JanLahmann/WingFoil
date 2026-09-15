@@ -1,10 +1,10 @@
 {
   "_readme" : [
-    "THE FEEDBACK MAIL, WORD FOR WORD.",
+    "THE FEEDBACK MAIL, WORD FOR WORD — AND THE NAME OF EVERY DOOR TO IT.",
     "",
-    "Authored by the kit: Presentation/FeedbackReport.swift (Prompt, FeedbackInvitation).",
-    "Five app surfaces already share them; the web's three mailto: templates and six page",
-    "footers are pinned to the same strings.",
+    "Authored by the kit: Presentation/FeedbackReport.swift (Prompt, FeedbackInvitation,",
+    "FeedbackDoors). Five app surfaces already share them; the web's three mailto:",
+    "templates and six page footers are pinned to the same strings.",
     "",
     "The web mailto legitimately asks two questions the app does not — the watch and phone,",
     "and the app version — because a browser cannot fill them in and the app can. Only these",
@@ -13,8 +13,28 @@
     "`subjectPrefix` is the part of the subject both sides share; the app appends the build",
     "and the watch (FeedbackReport.subject), the web can know neither.",
     "",
+    "`doors` IS THE NAME OF EACH DOOR, EXACTLY AS A RIDER FINDS IT. There were five",
+    "spellings of one door on 15 September 2026 — Support & ideas, Menu → Support,",
+    "Settings → Send feedback, Something off? Send feedback, Send feedback — across the",
+    "app's own Help, four website pages and the two store texts, and one of them named a",
+    "row DELETED IN BUILD 58. A rider who follows a door name finds a screen or he does",
+    "not; there is no third outcome, so every surface quotes this block:",
+    "",
+    "  app         the library menu's row, named as the way there",
+    "  footer      the offer at the foot of every page (FeedbackMailRow)",
+    "  share       the share sheet's row, which attaches that session's card",
+    "  testflight  Apple's own label on a screenshot taken inside a beta build",
+    "  web         the address itself, for a reader with no app in front of him",
+    "",
     "Wholly kit-owned: COPY_WRITE=1 swift test --filter CopyContractTests."
   ],
+  "doors" : {
+    "app" : "Menu → Support & ideas",
+    "footer" : "Something off, or an idea? Send feedback",
+    "share" : "Report a problem with this session…",
+    "testflight" : "Send Beta Feedback",
+    "web" : "info@cleanjibe.org"
+  },
   "invitation" : "Ideas and wishes are as welcome as bugs.",
   "prompts" : [
     "What happened, or what you would like:",
