@@ -30,18 +30,12 @@ enum SessionDisplay {
     /// "…-windsurfen-…" for every afternoon the rider has ever flown. The stored filename is
     /// left exactly as it arrived — this is the *display* title, and the swap happens here so
     /// that all eleven surfaces get it at once.
+    /// The rule itself lives in the kit (`SessionNaming.derivedTitle(fromFilename:)`), where
+    /// it can be tested against the filenames the importers actually write — including the
+    /// one that matters here, which is that a name Strava or intervals.icu gave the activity
+    /// keeps its own capitalisation and is never re-title-cased into "Wingfoil Am Nachmittag".
     static func derivedTitle(_ row: SessionRow) -> String {
-        guard let file = row.originalFilename else { return "Session" }
-        var stem = (file as NSString).deletingPathExtension
-        let parts = stem.split(separator: "_")
-        if parts.count >= 2 { stem = String(parts[1]) }
-        let words = stem.replacingOccurrences(of: "-", with: " ")
-            .split(separator: " ")
-            .filter { !($0.allSatisfy(\.isNumber) && $0.count >= 4) }
-        guard !words.isEmpty else { return "Session" }
-        let title = words.map { String($0.prefix(1)).uppercased() + String($0.dropFirst()) }
-            .joined(separator: " ")
-        return SessionNaming.sportCorrected(title)
+        SessionNaming.derivedTitle(fromFilename: row.originalFilename)
     }
 
     /// **Discipline badge: what this session is being read as**, on every row.
@@ -79,17 +73,9 @@ enum SessionDisplay {
     /// round (docs/presentation.md, "Confirming the discipline on import").
     static func badgeIsGuess(_ row: SessionRow) -> Bool { row.disciplineGuessed }
 
-    static func sportLabel(_ sport: String?) -> String {
-        switch (sport ?? "").lowercased() {
-        case "windsurfing", "43": return "Windsurf"
-        case "kitesurfing", "44": return "Kitesurf"
-        case "sailing", "32": return "Sailing"
-        case "stand_up_paddleboarding": return "SUP"
-        case "walking", "11": return "CIQ app"
-        case "": return "Unknown"
-        default: return (sport ?? "Unknown").replacingOccurrences(of: "_", with: " ").capitalized
-        }
-    }
+    /// The sport on the Recording card — the kit's rule (`SessionNaming.sportLabel`), which
+    /// keeps the source's own spelling instead of `.capitalized`-ing somebody else's word.
+    static func sportLabel(_ sport: String?) -> String { SessionNaming.sportLabel(sport) }
 
     static func badgeColor(_ row: SessionRow) -> Color {
         row.discipline?.isEmpty == false ? .teal : .blue
