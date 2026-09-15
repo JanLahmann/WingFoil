@@ -95,7 +95,7 @@ It reads the .fit file your watch recorded and re-analyses the whole thing on yo
 WHAT YOU GET
 
 - Foil time and every flight: when the board was really flying, how long the longest one lasted, and how much of the session you spent off the water.
-- A verdict on every turn: flew through, touched down, or fell in - with your no-fall streak, your clean jibes per hour, and the port/starboard split that tells you which side you are quietly avoiding.
+- A verdict on every turn: flew through, touched down, or fell in - with your dry streak, your clean jibes per hour, and the port/starboard split that tells you which side you are quietly avoiding.
 - Speed records that mean something: best 2 s, best 10 s, 5 x 10 s, 100 m, 250 m, 500 m, 1 NM and Alpha 500, drawn on the track and on the speed chart so you can see where they happened. Records from a positions-only recording are estimated, and say so.
 - The full track on a map, with the flown stretches, the pumping, the takeoffs and every turn marked - tap any of them to see the numbers behind it.
 - A replay you can scrub through, with commentary as it plays, and short clips of it with your own soundtrack to post.
@@ -130,13 +130,9 @@ the Connect IQ listing and the library's empty state say — `docs/copy/phrases.
 `promise`, pinned to `WelcomeGuide.promise` by `CopyContractTests`. The store's voice puts
 its own paragraph around it; the sentence itself does not get a second wording.
 
-**One thing here needs Jan's hand, in App Store Connect.** The turn-verdict bullet says
-"your **no-fall streak**". The product's word is **dry streak** (CLAUDE.md, and
-`docs/copy/phrases.json` → `lexicon`), which is what the app, the website and the watch all
-print. Until the live description is edited, `check_release_copy.py` carries a named
-exemption for it and prints it on every run, so the debt is visible rather than forgotten.
-The same bullet's *"clean jibes per hour"* is already right: CPH is a rate, and the
-"clean-jibe percentage" of the 2 September draft was a metric this product has never had.
+The turn-verdict bullet said "your no-fall streak" until 15 September 2026, 15:00; the live
+description now says **dry streak**, the product's word (CLAUDE.md, `docs/copy/phrases.json` →
+`lexicon`), and `check_release_copy.py` no longer carries an exemption for it.
 
 ## Keywords
 
@@ -248,7 +244,7 @@ THIRD-PARTY SERVICES ARE OPTIONAL. Settings offers a field for an intervals.icu 
 
 PERMISSIONS. Photos, add-only, only when saving a recorded replay clip. Notifications, only if the user enables the optional background check for new intervals.icu activities. The app never requests location: all GPS shown comes from inside the imported files. No Health, no Bluetooth.
 
-THE "CURIOUS ABOUT WHAT IS COMING" SECTION in Settings lists features that are in our public TestFlight beta and not in this release (GPX/TCX files, Apple Health, an Apple Watch app, home-screen widgets, video export). It links to the TestFlight public link. This release is complete on its own; the section only tells the user where those features are being tested.
+THE "COMING IN A FUTURE RELEASE" SECTION in Settings lists features that are in our public TestFlight beta and not in this release (GPX/TCX files, Apple Health, an Apple Watch app, home-screen widgets, video export, grouping and filtering of the library). It links to the TestFlight public link. This release is complete on its own; the section only tells the user where those features are being tested.
 
 The bundled example is one of the developer's own sessions, stripped of all identifying data before shipping. The app is open source: github.com/JanLahmann/WingFoil.
 
@@ -261,15 +257,9 @@ reads as a bug until somebody says what it is for. `check_release_copy.py` allow
 names in this block only, by name, with the reason written down beside them — nowhere else
 in the listing.
 
-**Two things here need Jan's hand, in App Store Connect:**
-
-* The notes call the Settings section **"CURIOUS ABOUT WHAT IS COMING"**. It has not been
-  called that since 14 September 2026; it is **"Coming in a future release"**
-  (`docs/copy/channels.json` → `sectionTitle`). A reviewer looking for the section by the
-  name in the notes will not find it.
-* The beta list in the notes is missing **grouping and filtering the library**, which is a
-  beta door too. Not a defect — the notes say "features that are in our public TestFlight
-  beta", not "all of them" — but the list reads as exhaustive.
+Both were corrected in App Store Connect on 15 September 2026, 15:00: the notes name the
+section **"Coming in a future release"** (`docs/copy/channels.json` → `sectionTitle`) and the
+beta list includes grouping and filtering of the library.
 
 Neither is worth a new build. Both are one edit in the ASC text field.
 

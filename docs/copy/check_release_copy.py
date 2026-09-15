@@ -77,11 +77,6 @@ TARGETS: list[Target] = [
                 "Garmin's own Windsurf activity profile, named as a recording source, and "
                 "the keyword riders search with — not the dev windsurf discipline"
             ),
-            "no-fall streak": (
-                "THE LIVE App Store description still says it (build 60, 15 Sep 2026). The "
-                "product's word is \"dry streak\"; Jan has to edit the description in App "
-                "Store Connect, and this exemption goes the day he does."
-            ),
         },
     ),
     Target(
@@ -112,7 +107,6 @@ TARGETS: list[Target] = [
         # description comes to call it one.
         rules=(LEXICON,),
         allow={
-            "no-fall streak": "quoted from the live description, which still says it",
             "clean-jibe percentage": "named as the mistake it was, so it is not made again",
             "success rate": "named as the takeoff metric it is, beside the one it is not",
             "carried": "named as a word the copy does not use",
