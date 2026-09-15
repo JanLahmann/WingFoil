@@ -2497,8 +2497,35 @@ The catalogue is pure data and compiles whole in every build, so every `HelpTopi
 almost all of them — and the app hands its own channel in (`ChannelFeatures.channel`). The
 index lists and searches `HelpCatalog.indexTopics(channel:windsurfEnabled:)`; a topic page's
 "See also" renders `HelpCatalog.relatedTopics(of:channel:)`, so a visible page never offers a
-chevron onto a hidden one. `HelpCatalog.topic(_:)` is **not** filtered and stays total: a `?`
-on a card the build actually draws always opens. Bound today: *Recording with the Apple
+chevron onto a hidden one. `HelpCatalog.topic(_:channel:)` is **not** filtered and stays
+total: a `?` on a card the build actually draws always opens, and its `channel` — `.release`
+by default, the strictest reader — decides only what the page *says*.
+
+**A topic's items may depend on the channel, and one topic's do** (Jan, dev 65). The
+catalogue is a static array of `let`s and cannot ask which build is reading it, so a topic
+whose items are the *ways in* — Getting started, whose five routes include two beta doors —
+was declared with the release's list and served it to every channel: the beta's own Apple
+Watch app and Health import were named on no page a rider would look for them on.
+`HelpCatalog.topic(_:channel:)` now rebuilds the items for the asking channel
+(`resolved(_:channel:)`, `HelpTopic.withItems`), `HelpTopicSheet` passes `AppChannel.channel`,
+and `indexTopics`, `relatedTopics` and `search(_:channel:)` resolve through the same seam —
+so every entry point to a page (the menu row, the index, a card's `?`, a "see also" chevron,
+the Settings deep links) is the one channel-aware path. Nothing else about a topic branches:
+title, summary, body and `related` are the same sentences in every build.
+
+**A ladder is items on one page, not a page per rung** (Jan, dev 65: *"do we really need
+separate pages to describe each distance?"*). *Speed records* was eight topics — the set,
+`Best 2 s`, `Best 10 s`, `5 × 10 s`, `Best 500 m`, `Best 1 NM`, `Alpha 500` and
+*"Uncertified"* — of two sentences each, which is a table of contents wearing chevrons. It is
+one topic now (`HelpTopicID.speedRecords`, the whole of section `.records`): the body says
+what the set is and how it is computed, and the windows are its **items**, one line each,
+with *"Uncertified"* last because it is about the recording rather than about a window. Three
+of those lines are `MetricGlossary`'s — `speedRecords` is the summary, `best5x10s` and
+`alpha500` are their own items — so the help and the session page cannot spell the same
+metric two ways. The seven retired ids are **gone, not aliased**: the session page's two `?`
+buttons (the speed chart, the records card) point at `.speedRecords`, and `HelpCatalog.search`
+already indexed item *terms*, which is what keeps "2 s", "500 m", "alpha" and "uncertified"
+finding the page (`PresentationTests`). Bound today: *Recording with the Apple
 Workout app* (beta) and *Windsurf (experimental)* (dev, and also behind its own switch). Where
 one sentence serves two channels the release wording names the beta as the place a door is —
 "GPX and TCX files are read by the CleanJibe beta; a FIT is read by every build" — rather than
@@ -2510,8 +2537,9 @@ and `web/tools/make_start.py` writes both the kit's `Help/GettingStartedGuide.sw
 guide block of `web/start/index.html` from it — the app showing each route's title and
 summary, the web adding the numbered steps. Each route in the source carries its own
 `channels` list, which is the same rule one level down: `GettingStartedGuide.items(for:)`
-filters on it, the catalogue asks for `.release`, and the two Apple routes are `.beta` and
-stay `related` topics in the release. See "The library menu", item 1.
+filters on it, the catalogue is declared with `.release` and the lookup rebuilds it for the
+channel the app hands in, and the two Apple routes are `.beta` — items on the beta and the
+dev, `related` topics the release drops. See "The library menu", item 2.
 
 Settings → About and the library menu's last line carry the channel after the version —
 nothing for the release, " · beta", " · dev" — because "which build is this" is the first
@@ -3529,10 +3557,14 @@ used to be a gear with two rows; it is a menu now because a gear promises switch
 first thing a new rider needs is not a switch. Five items, two dividers, one line of small
 print, in this order and for this reason:
 
-1. **Getting started** — the first-session guide as a help topic (`HelpTopicID.gettingStarted`,
-   its own first help section, every channel). First, because it is what "I just installed
-   this" is looking for. Since 15 September 2026 the instructions live IN the app (Jan: never
-   send a rider to the website for them): one sentence on the real test — one session on the
+1. **What CleanJibe does** — the welcome screen again (`SessionStore.replayWelcome`). First
+   since dev 65 (Jan): *what is this* is the question that comes before *how do I start it*,
+   and the row that answers it had been sitting below the door to the feedback mail.
+2. **Getting started** — the first-session guide as a help topic (`HelpTopicID.gettingStarted`,
+   its own first help section, every channel). Second, under the screen that says what the
+   app is, because it is what "I just installed this" is looking for next. Since
+   15 September 2026 the instructions live IN the app (Jan: never send a rider to the
+   website for them): one sentence on the real test — one session on the
    water, read the turn verdicts against what you remember — then the routes as items,
    Garmin with the CleanJibe watch app first, any .fit second, Strava third, the
    three-to-five-minute walk as "if you cannot wait for wind", where to send what you find,
@@ -3552,33 +3584,47 @@ print, in this order and for this reason:
    guide, with every step, on the web"*. `make_start.py --check` fails while either copy is
    stale and `web/tools/verify_links.py` runs it; `GettingStartedGuideTests` fails if the
    topic stops being the guide, so a route typed straight into `HelpCatalog` is caught too.
-   Channel filtering is the source's `channels` list through `items(for:)`: the two Apple
-   routes are `.beta`, so the release build never names them as items and reaches them
-   through `related` as before.
-2. **Settings** — the switches, the watch, the accounts.
-3. **Support & ideas** — the feedback mail (`feedbackMail(on:)`, the same composer as the
-   page footers' *Something off, or an idea? Send feedback* and the share sheet's "Report a
-   problem with this session…"; `FeedbackDoors.menuRow` is the label). Above the two "what is
-   this" screens because a rider who has a question after reading them is one tap from asking
-   it. It said **Support** until 14 September 2026, which a rider reads as *the place you go
-   when something is broken*: Jan's point is that a wish is as welcome as a fault and nothing
-   in the app had ever said so, and the name of the door is the cheapest place to say it.
-4. **What CleanJibe does** — the welcome screen again (`SessionStore.replayWelcome`).
-5. **Help** — the Help index. It read *What the numbers mean* until 15 September 2026, and
+   **Channel filtering is the source's `channels` list through `items(for:)`, and since
+   dev 65 the app's own channel decides.** The two Apple routes are `.beta`. The catalogue
+   is a static array and cannot ask which build is reading it, so it is declared with the
+   *release's* list — and until dev 65 that was the answer in every channel, which meant the
+   beta's two Apple routes (its watch app, and Apple's Workout app) were named on no page a
+   rider would look for them on. `HelpCatalog.topic(_:channel:)` rebuilds a topic's **items**
+   for the asking channel (`resolved(_:channel:)`, the one topic that needs it), the sheet
+   passes `AppChannel.channel`, and `indexTopics`, `relatedTopics` and `search` resolve the
+   same way. The release still names three routes and reaches the two Apple topics through
+   nothing at all — `relatedTopics(of:channel:)` drops them — the beta and the dev name five.
+   `GettingStartedGuideTests` counts the items per channel.
+3. **Settings** — the switches, the watch, the accounts.
+4. **Help** — the Help index. It read *What the numbers mean* until 15 September 2026, and
    that was a name for one of its ten sections rather than for the screen: the index opens
    with *Getting started* and *Getting set up*, and closes on *Sharing* and *Quality* — a
    rider looking for how to connect Strava or what a share card carries had no reason to
    open a row that promised arithmetic (Jan, build 63: *"Help is good"*). The icon is
    unchanged (`questionmark.circle`), and so is everything behind the row; *the numbers*
    keep their own headings inside, where they are a section and not the whole screen.
+5. **Support & ideas** — the feedback mail (`feedbackMail(on:)`, the same composer as the
+   page footers' *Something off, or an idea? Send feedback*, the share sheet's "Report a
+   problem with this session…" and, since dev 65, the *Sending feedback* help topic's own
+   **Send feedback…** button; `FeedbackDoors.menuRow` is the label). Last of the five since
+   dev 65: the two screens above it answer a question on their own, and the rider still
+   asking after them is the one this row is for. It said **Support** until 14 September 2026,
+   which a rider reads as *the place you go when something is broken*: Jan's point is that a
+   wish is as welcome as a fault and nothing in the app had ever said so, and the name of the
+   door is the cheapest place to say it.
 6. The build line, not tappable: *CleanJibe 0.15.0 (45)* with " · beta" or " · dev" after it
    on those channels — the same string as Settings → About, and the first question of every
    support mail.
 
+**Two dividers, and they group the five.** The first separates the two an arriving rider
+reads once — *What CleanJibe does* and *Getting started* — from the three he comes back to:
+where the switches are, what the numbers mean, and who to write to. The second holds the
+build line under the menu proper, because it is small print and not a row.
+
 **Six rows, and no seventh.** The release channel carried *What is being tested* straight
 under **What CleanJibe does** until 15 September 2026, and it is gone from here (Jan, build
-58): the menu answers what a rider needs *now* — how to start, where the switches are, who to
-write to, what the app is, what its numbers mean — and a list of what this build does not
+58): the menu answers what a rider needs *now* — what the app is, how to start, where the
+switches are, what its numbers mean, who to write to — and a list of what this build does not
 have is none of those. It has one home, Settings → **Coming in a future release**, described
 under "Settings" below.
 
@@ -3769,6 +3815,17 @@ CleanJibe server for it to go to in any case. Where Mail is not configured
 (`canSendMail == false`) the same subject and body go to the system's `mailto:` handler; where
 that too goes nowhere, a sheet shows the report in full with one button that copies it. The
 help topic is "Sending feedback", last in *Getting set up* — the section's way back out.
+
+**And that topic offers the mail rather than only describing it** (Jan, dev 65). It named
+three doors and had none: a page about sending feedback that asks the reader to go and find
+one of them is a page he has to leave to use. It carries `HelpAction.sendFeedback`, and the
+sheet draws **Send feedback…** wherever somebody can honour it — the Sessions list hands the
+action down (`\.sendFeedback` in the environment, the same `feedbackMail(on:)` ladder Menu →
+Support & ideas climbs), exactly as it hands down *Open CleanJibe Settings* and *Load the
+example session*; anywhere else the button simply is not there. The topic keeps naming the
+three doors, because they are where the rider starts next time. Its **invitation is said
+once**: `FeedbackInvitation.sentence` opened the summary *and* the first paragraph, one line
+under the other, and it now stays in the summary, which is the line the index shows.
 
 ### The beta's usage report
 

@@ -45,15 +45,15 @@ def app_id(app):
 
 WHATS_NEW = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-Beta build 66 — three fixes on 62.
+Beta build 69 — Jan's second round on the help and the menu.
 
-- Start over (Settings → Beta) brings the welcome back on the next launch, whatever the library holds.
-- The help sheet is called Help: ten sections, three of them about the numbers.
-- Import does, Settings configures: Import shows the actions only and says "Set up in Settings → intervals.icu" where a source is not set up.
+- The library menu reads in the order you need it: What CleanJibe does, Getting started, Settings, Help, Support & ideas.
+- Getting started now shows the two Apple Watch routes in the beta (the CleanJibe watch app, and Apple's Workout app with Health import).
+- Help → Sending feedback offers "Send feedback…" right there.
+- Help → Speed records is one page: the GP3S windows as entries, with "Uncertified" explained last.
+- The Apple Watch topics no longer tell you to keep the wrist above water — a wrist under water is how a fall is recognised.
 
-Everything in 62 otherwise: one getting-started text in app and site, Records and Trends that explain themselves after the example session, Set up intervals.icu on the welcome, one feedback door (Menu → Support & ideas), the privacy help topic, the glossary with TPH, Best 5×10 s and Alpha 500.
-
-Please check: Menu → Getting started reads as your own route; Import with and without a key; Records after the example session.
+Everything in 66 otherwise. Please check: Menu → Getting started lists five routes; Help → Sending feedback sends; Help → Speed records.
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
@@ -61,13 +61,15 @@ Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or
 # App Store one, so saying which one this is matters more than the release notes do.
 WHATS_NEW_INTERNAL = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-CleanJibe Dev, build 65 — your three notes on 63.
+CleanJibe Dev, build 68 — your second round on 65.
 
-- Start over brings the welcome back on the next launch, whatever the library holds (it did not when sessions were still there).
-- The help sheet is called Help; it has ten sections and only three of them are numbers.
-- Import does, Settings configures: Import shows the actions only (file, Sync intervals.icu, Import from Strava, Import from Health) and says "Set up in Settings → intervals.icu" where a source is not set up; "Connected as" left Import, "Sync now" left Settings.
+- Menu order: What CleanJibe does, Getting started, Settings, Help, Support & ideas.
+- Getting started lists the two Apple Watch routes on beta and dev (it built the release's list before).
+- Help → Sending feedback has a "Send feedback…" button and says the invitation once.
+- Help → Speed records is one page with the windows as entries.
+- The Apple Watch topics say the wrist may go under — that is how a fall is recognised.
 
-Everything in 63 otherwise. Please check: Settings → Beta → Start over, relaunch, welcome first; Import with and without a key; Menu → Help.
+Please check: Menu → Getting started (five routes); Help → Sending feedback → Send feedback…; Help → Speed records; the menu order.
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 

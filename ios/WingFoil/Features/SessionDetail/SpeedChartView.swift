@@ -64,7 +64,7 @@ struct SpeedChartView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Text("Speed").font(.headline)
-                HelpButton(topic: .recordSet, size: .footnote)
+                HelpButton(topic: .speedRecords, size: .footnote)
                 Spacer()
                 if window.isZoomed {
                     resetChip

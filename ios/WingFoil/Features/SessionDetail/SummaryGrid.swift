@@ -125,7 +125,7 @@ struct SessionRecordsTable: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Text("Speed records").font(.headline)
-                HelpButton(topic: .recordSet, size: .footnote)
+                HelpButton(topic: .speedRecords, size: .footnote)
                 Spacer()
                 if !detail.efforts.isEmpty {
                     Text(selectedEffort == nil ? "tap to locate" : "tap again for 2 s")

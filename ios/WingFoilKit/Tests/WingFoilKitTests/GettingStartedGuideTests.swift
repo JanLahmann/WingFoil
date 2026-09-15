@@ -79,6 +79,52 @@ import Testing
         #expect(GettingStartedGuide.items(for: .dev).map(\.term) == beta)
     }
 
+    /// **The topic a beta rider opens names his two Apple routes** (Jan, dev 65).
+    ///
+    /// They never appeared, in any build: the catalogue asked `items(for: .release)` once,
+    /// at declaration time, and nothing downstream could tell it otherwise — so the beta's
+    /// own watch app and the Health import were missing from the one page that exists to
+    /// list the ways in. `HelpCatalog.topic(_:channel:)` rebuilds the items for the asking
+    /// channel; the release's list is unchanged, which is the other half of the rule.
+    @Test func theGettingStartedTopicListsTheRoutesOfTheChannelThatAsks() {
+        let apple = ["The CleanJibe Apple Watch app", "Apple's own Workout app"]
+        let closing = ["If you cannot wait for wind", "Then say how it read"]
+
+        // Three routes in the App Store build, five on the beta and the dev — both closing
+        // notes and the web line in every channel.
+        let release = HelpCatalog.topic(.gettingStarted, channel: .release).items
+        #expect(release.count == 3 + closing.count + 1)
+        for title in apple {
+            #expect(!release.contains { $0.term == title }, "the release names \(title)")
+        }
+
+        for channel in [HelpChannel.beta, .dev] {
+            let items = HelpCatalog.topic(.gettingStarted, channel: channel).items
+            #expect(items.count == 5 + closing.count + 1,
+                    "\(channel) lists \(items.count) items")
+            for title in apple + closing {
+                #expect(items.contains { $0.term == title },
+                        "\(channel) does not name \(title)")
+            }
+            #expect(items.last == GettingStartedGuide.onTheWeb)
+            // The routes stay in source order, and the release's are still all there.
+            #expect(release.map(\.term).allSatisfy(items.map(\.term).contains))
+        }
+
+        // The default is the strictest reader, so a caller that forgets to say which build
+        // it is names no door it may not have.
+        #expect(HelpCatalog.topic(.gettingStarted).items == release)
+        // …and the two Apple topics are still only reachable as "see also" on the channels
+        // that have them, which is the same rule one level up.
+        for channel in HelpChannel.allCases {
+            let related = HelpCatalog.relatedTopics(of: Self.topic, channel: channel)
+                .map(\.id)
+            let reachesApple = related.contains(.appleWatchApp)
+                && related.contains(.appleWorkoutApp)
+            #expect(reachesApple == (channel >= .beta), "\(channel) related: \(related)")
+        }
+    }
+
     /// Every route the app names has a `related` topic that owns its steps, so the item is
     /// a signpost rather than a second copy of an instruction.
     @Test func everyRouteHasATopicThatOwnsIt() {

@@ -121,18 +121,39 @@ struct LibraryView: View {
             .refreshable { await store.syncFromIntervals() }
             .toolbar {
                 // The app's one menu (docs/presentation.md, "The library menu"), in the
-                // order a new rider needs its answers: how to start, where the switches
-                // are, who to write to, and only then the two "what is this" screens.
-                // The line at the foot is the build, because it is the first thing every
-                // support mail asks and the last thing a rider can find in Settings.
+                // order a rider meets the app (Jan, dev 65): what it is, how to start with
+                // it, then the two screens he comes back to — the switches and the
+                // reference — and last the way to reach a human. The line at the foot is
+                // the build, because it is the first thing every support mail asks and the
+                // last thing a rider can find in Settings.
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
+                        // Asked for, not re-armed: the welcome screen again, raised by
+                        // RootView once the menu is gone (SessionStore.replayWelcome).
+                        // First, because *what is this* comes before *how do I start it*.
+                        Button { store.replayWelcome() } label: {
+                            Label("What CleanJibe does", systemImage: "hand.wave")
+                        }
                         Button { sheet = .helpTopic(.gettingStarted) } label: {
                             Label("Getting started", systemImage: "book")
                         }
+                        Divider()
                         Button { sheet = .settings } label: {
                             Label("Settings", systemImage: "gearshape")
                         }
+                        // **"What is being tested" is not a menu row** (Jan, build 58). It
+                        // sat here, in the release channel only, straight under "What
+                        // CleanJibe does" — and the app's one menu is for what a rider
+                        // needs *now*: what the app is, how to start, where the switches
+                        // are, what its numbers mean, who to write to. A list of things
+                        // this build does not have is none of those. It keeps its one home,
+                        // Settings → Coming in a future release (docs/channels.md).
+                        Button { sheet = .help } label: {
+                            Label("Help", systemImage: "questionmark.circle")
+                        }
+                        // Last of the five, under the two screens that answer a question on
+                        // their own: a rider still asking after them is the one who needs
+                        // this row, and it is the last thing his eye reaches.
                         // "& ideas" is not decoration: the row said "Support", which a rider
                         // reads as *the place you go when something is broken*, and Jan's
                         // point (14 Sep 2026) is that a wish is as welcome as a bug and
@@ -143,22 +164,6 @@ struct LibraryView: View {
                         // and one of those quotations named a deleted screen for a week.
                         Button { supportRequest += 1 } label: {
                             Label(FeedbackDoors.menuRow, systemImage: "envelope")
-                        }
-                        Divider()
-                        // Asked for, not re-armed: the welcome screen again, raised by
-                        // RootView once the menu is gone (SessionStore.replayWelcome).
-                        Button { store.replayWelcome() } label: {
-                            Label("What CleanJibe does", systemImage: "hand.wave")
-                        }
-                        // **"What is being tested" is not a menu row** (Jan, build 58). It
-                        // sat here, in the release channel only, straight under "What
-                        // CleanJibe does" — and the app's one menu is for what a rider
-                        // needs *now*: how to start, where the switches are, who to write
-                        // to, what the app is, what its numbers mean. A list of things this
-                        // build does not have is none of those. It keeps its one home,
-                        // Settings → Coming in a future release (docs/channels.md).
-                        Button { sheet = .help } label: {
-                            Label("Help", systemImage: "questionmark.circle")
                         }
                         Divider()
                         Text(Self.buildLine)
@@ -207,6 +212,18 @@ struct LibraryView: View {
             .environment(\.loadExampleSession) {
                 sheet = nil
                 Task { await store.loadExampleSession() }
+            }
+            // Help's "Sending feedback" topic offers "Send feedback…"; the composer is this
+            // screen's (`feedbackMail(on:)` above, the ladder Menu → Support & ideas
+            // climbs), so it is handed down rather than opened a second way. Same wait as
+            // Settings below: the mail must not arrive while the Help sheet is still
+            // dismissing, or iOS drops it on the floor.
+            .environment(\.sendFeedback) {
+                sheet = nil
+                Task {
+                    try? await Task.sleep(for: .milliseconds(400))
+                    supportRequest += 1
+                }
             }
             .environment(\.openIcuSettings) {
                 // One sheet at a time: let Help finish dismissing before Settings arrives,

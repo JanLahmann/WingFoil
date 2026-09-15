@@ -62,6 +62,35 @@ import Testing
         #expect(HelpCatalog.search("zzzznothing").isEmpty)
     }
 
+    /// **One page for the whole record set** (Jan, dev 65: *"do we really need separate
+    /// pages to describe each distance?"*).
+    ///
+    /// Eight topics of two sentences each became one topic whose *items* are the windows,
+    /// which is the shape the rest of the catalogue already uses for a ladder. The thing
+    /// that could quietly break is the search: a rider types "alpha" or "500 m", and those
+    /// words are now item terms rather than titles. They are indexed, and this says so.
+    @Test func theSpeedRecordsTopicIsTheWholeSetAndIsStillSearchable() {
+        #expect(HelpCatalog.topics(in: .records).map(\.id) == [.speedRecords])
+
+        let topic = HelpCatalog.topic(.speedRecords)
+        #expect(topic.title == "Speed records")
+        // The session page's own wording, not a second spelling of it.
+        #expect(topic.summary == MetricGlossary.entry("speedRecords").line)
+        let terms = topic.items.map(\.term)
+        #expect(terms.contains(MetricGlossary.entry("best5x10s").term))
+        #expect(terms.contains(MetricGlossary.entry("alpha500").term))
+        #expect(terms.last == "\"Uncertified\"", "the mark is the last item")
+        // The six windows and the mark.
+        #expect(terms.count == 7)
+
+        // What a rider actually types. Each has to reach this one page.
+        for needle in ["2 s", "10 s", "500 m", "alpha", "nautical", "uncertified",
+                       "doppler"] {
+            #expect(HelpCatalog.search(needle).contains { $0.id == .speedRecords },
+                    "searching \"\(needle)\" no longer finds Speed records")
+        }
+    }
+
     @Test func helpTopicLookupByRawStringRoundTrips() {
         #expect(HelpCatalog.topic(id: "foilPct")?.id == .foilPct)
         #expect(HelpCatalog.topic(id: "not-a-topic") == nil)
