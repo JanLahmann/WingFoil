@@ -102,6 +102,12 @@ web/
 ├── app/manifest.webmanifest    PWA metadata — beside the app so `scope`/`start_url` are
 │                               /app/ and an installed icon opens the analyzer. Carries the
 │                               `share_target` that puts CleanJibe in Android's share sheet
+├── app/version.json            the BETA APP'S UPDATE SWITCH, and the only file here that
+│                               an installed iPhone app reads: `minBuild`, a sentence, a
+│                               level and a link per channel. Jan edits it by hand; sw.js
+│                               never caches it; version.README.md next to it says what the
+│                               two levels do (docs/presentation.md, "The beta's update
+│                               reminder")
 ├── sw.js                       service worker: app-shell precache + Pyodide runtime cache,
 │                               and the one POST this site answers — Android's share sheet
 │                               (see "Android's share sheet" in the file). Stays at the ROOT:

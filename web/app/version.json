@@ -1,0 +1,16 @@
+{
+  "channels": {
+    "beta": {
+      "minBuild": 58,
+      "message": "Build 58 is the current beta, with the fixes from the last round of reports in it.",
+      "level": "remind",
+      "url": "https://testflight.apple.com/join/nygqGGcn"
+    },
+    "dev": {
+      "minBuild": 59,
+      "message": "Build 59 is the current dev build.",
+      "level": "remind",
+      "url": "itms-beta://"
+    }
+  }
+}
