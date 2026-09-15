@@ -75,6 +75,8 @@
     <string id="MetFoilDistPct">Foil distance %</string>
     <!-- data screens (Feature 1): 7 pages x (layout + 5 metric slots) -->
     <string id="SetPageGroup">Data screens</string>
+    <string id="SetResetPages">Reset pages to defaults</string>
+    <string id="SetResetPagesNote">Turn on and save: the watch puts the seven pages back the way they came (Main, Foil, Records, Turns, Clock, Timeline, Map) and switches this off again.</string>
     <string id="SetPg1Layout">Page 1 layout</string>
     <string id="SetPg1s1">Page 1 slot 1</string>
     <string id="SetPg1s2">Page 1 slot 2</string>

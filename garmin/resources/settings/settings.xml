@@ -82,6 +82,10 @@
     <setting propertyKey="@Properties.alertIntervalKm" title="@Strings.SetAlertIntervalKm">
         <settingConfig type="numeric" min="0" max="50"/>
     </setting>
+    <setting propertyKey="@Properties.resetPages" title="@Strings.SetResetPages"
+             prompt="@Strings.SetResetPagesNote">
+        <settingConfig type="boolean"/>
+    </setting>
     <setting propertyKey="@Properties.pg1Layout" title="@Strings.SetPg1Layout">
         <settingConfig type="list">
             <listEntry value="0">@Strings.LayOff</listEntry>

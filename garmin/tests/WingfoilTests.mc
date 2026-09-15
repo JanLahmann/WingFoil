@@ -1,3 +1,4 @@
+import Toybox.Application.Properties;
 import Toybox.Communications;
 import Toybox.Position;
 import Toybox.Graphics;
@@ -1392,6 +1393,26 @@ function foilBezelArcSweepsClockwiseFromTwelve(logger as Test.Logger) as Boolean
     Test.assertMessage(PageModel.pageDrawsFoilArc(0), "a slotless foil page still draws it");
     PageModel.build({});
     logger.debug("bezel arc r=" + r.toString() + "px, pen " + BEZEL_PEN.toString());
+    return true;
+}
+
+// The reset switch (0.9.11): writes the defaults back over whatever the rider set, and reads
+// as pressed exactly once.
+(:test)
+function resetPagesWritesTheDefaultsBack(logger as Test.Logger) as Boolean {
+    Properties.setValue("pg1Layout", PageModel.LAYOUT_HERO);
+    Properties.setValue("pg2s1", PageModel.M_HR);
+    Properties.setValue("pg7Layout", PageModel.LAYOUT_OFF);
+    Properties.setValue("resetPages", true);
+    Test.assertMessage(AppSettings.consumeResetPages(), "a switch left on reads as pressed");
+    Test.assertMessage(!AppSettings.consumeResetPages(), "and only once");
+    Test.assertEqual(Properties.getValue("resetPages"), false);
+    PageModel.restoreDefaults();
+    Test.assertEqual(Properties.getValue("pg1Layout"), PageModel.DEF_LAYOUT[0]);
+    Test.assertEqual(Properties.getValue("pg2s1"), PageModel.DEF_SLOTS[1][0]);
+    Test.assertEqual(Properties.getValue("pg7Layout"), PageModel.DEF_LAYOUT[6]);
+    Test.assertEqual(PageModel.layoutAt(0), PageModel.DEF_LAYOUT[0]);
+    PageModel.build({});
     return true;
 }
 
