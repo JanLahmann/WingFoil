@@ -442,6 +442,26 @@ honours is printed with the reason it exists. It is the same check `docs/testing
 channels" section runs over the *binary* (`strings` on the archive), run over the copy —
 adding a target is one entry in its `TARGETS` list, which is how `web/**.html` joins it.
 
+**The web's half of the same pin** is `python3 web/tools/verify_copy.py`, which
+`web/tools/verify_links.py` runs the way it runs `make_start.py --check` and
+`make_devices.py --check`: a page that has drifted from the copy contract is a link to a
+promise nobody made, and it fails with the links. It reads the JSON at run time and never
+retypes a sentence — the hero's promise, the card CTA and the caption offer composed out of
+`js/cardstats.js`'s own parts, the Strava sentence and the five phrases that may not
+accompany it, the Connect IQ listing name, the beta and dev lists and the section title on
+`/` and `/invite/`, the four recording-class names and lines in both tables, the eight
+glossary entries on `/learn/`, the three feedback prompts in every `mailto:` body and the
+invitation in every *Tell us* block, and the four intervals.icu step titles and the
+**Save & check** label on `/start/` outside the generated guide block. Pages carry
+`data-copy` marks so the check is exact rather than a guess at the surrounding prose;
+`data-copy="aside"` is what lets a row carry a trailing pill and still *be* the JSON's
+sentence, and `data-copy="beta-door"` is what lets a page name a door the release lacks
+without the release-copy rule firing. One line per pin on success, the page, the key and the
+nearest snippet on a miss. `web/tools/make_copy_js.py --check` runs beside it, for the four
+sentences the analyzer renders at run time (`web/js/copy.js`). The exemptions for the
+forbidden-door rule are not written twice: `verify_copy.py` reads
+`check_release_copy.py`'s own `allow` map for the same page.
+
 ## Tolerances (Swift & Python vs goldens)
 
 | quantity | tolerance |

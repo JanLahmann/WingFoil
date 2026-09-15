@@ -15,6 +15,7 @@
  */
 
 import { hm, keyMetricEntries } from "./cardstats.js";
+import { NOT_A_SESSION } from "./copy.js";
 import { EXPERIMENTAL_NOTE, lexicon } from "./lexicon.js";
 import { renderFigures } from "./session.js";
 import { C, OUTCOME_COLOR, OUTCOME_LABEL, SVGNS, clockAt, esc, hms, int, marker, nf,
@@ -139,7 +140,7 @@ function renderSummary(result, isExample = false) {
   // absent on a wingfoil run, which is the default this resolves to.
   const words = lexicon(g.config?.discipline);
 
-  el("session-title").textContent = sessionDate(meta);
+  el("session-date").textContent = sessionDate(meta);
   const clockNote = clockNoteFor(meta);
   // The file's name and what clock its times are on. The sample count and the sample rate
   // used to sit between them; neither changes anything a rider would do next, and "9 214
@@ -186,6 +187,7 @@ function renderSummary(result, isExample = false) {
          (title ? ` title="${esc(title)}"` : "") + `>${esc(t)}</span>`).join("");
 
   el("key-metrics").innerHTML = keyMetrics(g);
+  renderNotASession(g);
 
   const windTile = w
     ? { k: "Wind axis", v: `${nf(w.dirDeg, 0)}°`, unit: "from",
@@ -233,6 +235,61 @@ function renderSummary(result, isExample = false) {
       <div class="v">${esc(t.v)}${t.unit ? `<small>${esc(t.unit)}</small>` : ""}</div>
       <div class="n">${esc(t.n || "")}</div>
     </div>`).join("");
+}
+
+/* ------------------------------------------------------------- not a session */
+
+/**
+ * Metres under a kilometre, otherwise one decimal of km — `NotASessionNote.distance` in
+ * WingFoilKit, character for character, because this line prints beside the key-metrics
+ * block and a third spelling of the same distance is a third number.
+ *
+ * This is formatting, not analysis: `summary.distanceKm` is the engine's own field and
+ * nothing here recomputes it (web/README.md, "The one architectural rule").
+ */
+function distanceNote(km) {
+  const value = km ?? 0;
+  return value < 1 ? `${Math.round(value * 1000)} m` : `${value.toFixed(1)} km`;
+}
+
+/**
+ * **This recording is not a session** — the tag on the title and the one line under it.
+ *
+ * Engine 0.19.0 decides (docs/algorithms.md, "Not a session"): no foil time at all, AND
+ * either under two minutes or under two hundred metres. The analyzer has computed that
+ * verdict since the bundle went to 0.19.0 and said nothing about it, so a thirty-second
+ * beach recording was drawn here as a session and tagged on the phone. The engine's own
+ * `summary.isSession` / `summary.notASessionReason` are read straight out of the document
+ * — nothing is recomputed in JavaScript — and the words are the app's, from
+ * docs/copy/verdicts.json through the generated js/copy.js.
+ *
+ * Three rules the wording keeps, and the reason the strings are not written here: nothing
+ * is deleted, the line says what was looked at, and no engine vocabulary reaches the
+ * rider. `NotASessionNote.swift` states them at length.
+ *
+ * A document from an engine before 0.19.0 carries neither field and says nothing: the
+ * absence of a verdict is not a verdict.
+ */
+function renderNotASession(g) {
+  const tag = el("not-a-session-tag"), note = el("not-a-session-note");
+  const s = g.summary;
+  if (s.isSession !== false) {
+    tag.hidden = true;
+    note.hidden = true;
+    return;
+  }
+  tag.textContent = NOT_A_SESSION.tag;
+  tag.hidden = false;
+  // `no_recording` belongs to a library row with a card and no file yet, which this page
+  // cannot reach — it only ever sees a file somebody handed it. The branch is here anyway
+  // because the kit branches here, and a reason code the engine may send has to land
+  // somewhere other than in the wrong sentence.
+  note.textContent = s.notASessionReason === "no_recording"
+    ? NOT_A_SESSION.lines[0]
+    : NOT_A_SESSION.lines[1]
+        .replace("{duration}", hms(s.durationS))
+        .replace("{distance}", distanceNote(s.distanceKm));
+  note.hidden = false;
 }
 
 /* ------------------------------------------------------------------ takeoffs */

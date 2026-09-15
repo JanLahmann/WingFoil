@@ -297,7 +297,19 @@
     <section class="panel" id="summary-panel">
       <div class="panel-head">
         <div>
-          <h2 id="session-title">Session</h2>
+          <!-- The tag sits ON the title line, because it is what this recording IS
+               (docs/presentation.md, "Not a session"): the engine says `summary.isSession`
+               is false, and the page says so where the rider is already looking. Its words
+               are the app's, from docs/copy/verdicts.json through js/copy.js — nothing is
+               deleted, nothing is hidden, and the note under the key metrics says what was
+               looked at.
+
+               A plain `.badge`, not a capsule with an ink of its own: presentation.md's
+               "no capsule, no colour, no icon" is about the iOS LIBRARY ROW, which has a
+               second line to put a footnote on. This panel has none — its head is a title
+               and a badge row — so the badge is the idiom that is already here, in the
+               same recessive ink as "measured speed" beside it. -->
+          <h2 id="session-title"><span id="session-date">Session</span><span class="badge" id="not-a-session-tag" hidden></span></h2>
           <p class="muted small" id="session-sub"></p>
         </div>
         <div class="head-right">
@@ -316,6 +328,11 @@
            rates. First on the page, above the tiles and the figures, and the same block in
            the same order as the iOS app (docs/app-ui-review.md 1.1 / 4). -->
       <div class="keys" id="key-metrics"></div>
+      <!-- DIRECTLY UNDER the key-metrics block, which is the block it is about
+           (docs/presentation.md, "Not a session"): the line names the two numbers that
+           decided, and a rider whose real session was mis-read has to be able to read it
+           against them and disagree rather than be told a verdict. -->
+      <p class="note" id="not-a-session-note" hidden></p>
       <div class="tiles" id="tiles"></div>
     </section>
 

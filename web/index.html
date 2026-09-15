@@ -225,7 +225,11 @@
       <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Free&nbsp;browser&nbsp;analyzer · Garmin&nbsp;watch&nbsp;app · iPhone&nbsp;app · open&nbsp;source</p>
     </div>
     <h1>Did you fly through that jibe?</h1>
-    <p class="lede">
+    <!-- THE PROMISE, and it is not this page's sentence to edit: docs/copy/phrases.json
+         `promise`, the kit's WelcomeGuide.promise, also the first line of the welcome
+         screen and of the App Store description. web/tools/verify_copy.py holds the three
+         together. -->
+    <p class="lede" data-copy="promise">
       CleanJibe reads a wingfoil session off your watch and tells you what actually happened:
       how much of it you spent on the foil, how long each flight lasted, your speed records,
       and — for every turn — whether you flew through it, touched down, or fell in.
@@ -309,8 +313,8 @@
         <ul>
           <li>Every session you have ever ridden, re-analyzed on the phone, with its records,
               its trends and a share card — and your whole Garmin history in one export ZIP —
-              plus GPX and TCX imports, the Apple Watch
-              recorder and the session video.<span class="tag beta">beta</span></li>
+              plus <span data-copy="beta-door">GPX and TCX imports, the Apple Watch
+              recorder and the session video</span>.<span class="tag beta">beta</span></li>
         </ul>
         <p class="piece-foot"><a class="btn ghost" href="invite/#testflight" data-umami-event="beta-testflight">Get the beta</a></p>
       </article>
@@ -365,46 +369,37 @@
           <tr>
             <th class="l">Class</th>
             <th class="l">You record with</th>
-            <th class="l">You get</th>
-            <th class="l">You do not get</th>
+            <th class="l">What you get</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="l stack-lead">Class A · Garmin watch app</td>
+            <td class="l stack-lead" data-copy="class-name">Class A · Garmin watch app</td>
             <td class="l" data-th="You record with">The CleanJibe watch app on a Garmin</td>
-            <td class="l" data-th="You get">Everything: foil time, flights, every turn verdict
-                and clean jibe, certified speed records, the wind axis, pump strokes and
-                takeoff attempts</td>
-            <td class="l" data-th="You do not get">Nothing missing</td>
+            <td class="l" data-th="What you get" data-copy="class-line">Everything: foil time, flights, every turn verdict and clean jibe, certified speed records,
+                the wind axis, pump strokes and takeoff attempts.</td>
           </tr>
           <tr>
-            <td class="l stack-lead">Class B · any speed-certified file</td>
+            <td class="l stack-lead" data-copy="class-name">Class B · any speed-certified file</td>
             <td class="l" data-th="You record with">Any other FIT with a measured speed channel
                 — Garmin&rsquo;s own Windsurf profile, another Connect IQ app</td>
-            <td class="l" data-th="You get">Foil time, flights, turn verdicts and clean jibes,
-                <strong>certified</strong> speed records, the wind axis</td>
-            <td class="l" data-th="You do not get">Pump strokes and takeoff attempts — shown as
-                absent, never as zero</td>
+            <td class="l" data-th="What you get" data-copy="class-line">Everything except pump strokes and takeoff attempts, which need a wrist accelerometer nothing
+                else records. Speed records certify.</td>
           </tr>
           <tr>
-            <td class="l stack-lead">Class B+ · Apple Watch app<span class="tag beta">beta</span></td>
-            <td class="l" data-th="You record with">The CleanJibe Apple Watch app: class b
-                speed, plus the 50&nbsp;Hz wrist accelerometer</td>
-            <td class="l" data-th="You get">Everything class b gets, and pump strokes and
-                takeoff attempts, analysed on the phone</td>
-            <td class="l" data-th="You do not get">Nothing missing; the watch itself detects
-                nothing live</td>
+            <td class="l stack-lead" data-copy="class-name beta-door">Class B+ · Apple Watch app<span class="tag beta" data-copy="aside">beta</span></td>
+            <td class="l" data-th="You record with"><span data-copy="beta-door">The CleanJibe Apple Watch app: class&nbsp;B speed,
+                plus the 50&nbsp;Hz wrist accelerometer</span></td>
+            <td class="l" data-th="What you get" data-copy="class-line">Everything class B gets, and pump strokes and takeoff attempts too: the watch app records the
+                wrist at 50 Hz and the phone analyses it.</td>
           </tr>
           <tr>
-            <td class="l stack-lead">Class C · positions only</td>
+            <td class="l stack-lead" data-copy="class-name">Class C · positions only</td>
             <td class="l" data-th="You record with">Positions only: Strava, a <code>.gpx</code>,
                 a <code>.tcx</code> without speed, a phone in a pocket</td>
-            <td class="l" data-th="You get">Foil time, flights, turn verdicts and clean jibes,
-                the wind axis, and speed records <strong>estimated from positions</strong> and
-                marked uncertified</td>
-            <td class="l" data-th="You do not get">Certified records, pump strokes, takeoff
-                attempts</td>
+            <td class="l" data-th="What you get" data-copy="class-line">Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are
+                estimated from positions and marked uncertified, and there are no pump strokes or takeoff
+                attempts.</td>
           </tr>
         </tbody>
       </table>
@@ -435,7 +430,7 @@
          release" (docs/channels.md, "Feedback and channel furniture"). It was "Curious about
          what is coming" here until 15 Sep 2026, which was a question about a room rather
          than an answer to the rider's question — when do I get these. -->
-    <h2>Coming in a future release</h2>
+    <h2 data-copy="channels-title">Coming in a future release</h2>
     <p class="section-lede">
       The App Store release is the steady half of the app. Everything below is real and runs
       today — the difference is who can get at it.
@@ -447,14 +442,16 @@
           Install the beta and you have all of it, this afternoon — there is no waiting list
           and no second install:
         </p>
-        <ul>
-          <li>GPX and TCX imports, so a Polar, a Suunto or a COROS comes straight in.</li>
-          <li>Apple Health both ways — read your Workout recordings, write your sessions back
-              as workouts.</li>
-          <li>The CleanJibe Apple Watch recorder, recording straight to the phone.</li>
-          <li>Home-screen widgets and the watch complication: the last session, and this week.</li>
-          <li>Session video export — the map draws itself along your track.</li>
-          <li>Grouping and filters in the library, for when there are a hundred sessions.</li>
+        <ul data-copy="channels-beta">
+          <li>.gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS opens straight
+              from Files.</li>
+          <li>Apple Health, both ways: what Apple's Workout app recorded is read in, and your sessions are
+              written back as workouts.</li>
+          <li>The CleanJibe Apple Watch app, which records on your wrist with live numbers and hands the
+              session to the phone.</li>
+          <li>Home-screen widgets and the watch complication.</li>
+          <li>The session video: your afternoon as a film rather than a card.</li>
+          <li>Grouping the library by month, year or spot, and filtering it.</li>
         </ul>
         <p class="piece-foot">
           <a class="btn primary" href="invite/" data-umami-event="beta-cta-coming">Try the beta</a>
@@ -467,14 +464,13 @@
           build today. If one would matter to you, say so, and add your own ideas: what riders
           ask for is what gets built first.
         </p>
-        <ul>
-          <li>The Garmin watch link: a summary card over Bluetooth the moment you stop, and the
-              shore of your spot drawn on the watch under your track.</li>
-          <li>iPad — and the same build on a Mac, as &ldquo;Designed for iPad&rdquo;.</li>
-          <li>Windsurf as a discipline of its own, with its own thresholds.</li>
-          <li>Tune the thresholds yourself: every detection rule on a slider, applied to your
-              own sessions.</li>
-          <li>Your idea here.</li>
+        <ul data-copy="channels-dev">
+          <li>The Garmin link: a summary card from your watch the moment you stop, the map of your spot
+              and the wind direction sent back to it</li>
+          <li>Windsurf, foil and fin, with thresholds of its own</li>
+          <li>The tuning page: every analysis threshold on a slider, tried against your own sessions</li>
+          <li>iPad</li>
+          <li data-copy="extra">Your idea here.</li>
         </ul>
         <p>
           <strong>Tell us what you would want</strong>, the order below. Every wish counts, and
@@ -486,9 +482,9 @@
     <!-- The one paragraph this whole site is asking for, in the same words on six pages:
          a beta with no feedback is a private build with extra steps. Ideas are named first
          among equals because bug reports arrive by themselves and wishes do not. -->
-    <p class="note" id="tell-us">
-      <strong>Tell us.</strong> Bugs, verdicts you disagree with, and — just as much —
-      <strong>ideas and wishes</strong>: what you would want this to do next. In the app,
+    <p class="note" id="tell-us" data-copy="feedback-invitation">
+      <strong>Tell us.</strong> Bugs, verdicts you disagree with, and — just as much — what
+      you would want this to do next. <strong>Ideas and wishes are as welcome as bugs.</strong> In the app,
       <strong>Menu &rarr; Support</strong> is the best door, because it prefills the facts;
       otherwise mail <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A">info@cleanjibe.org</a> or open a
       <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">GitHub issue</a>.

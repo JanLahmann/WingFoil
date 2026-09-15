@@ -20,6 +20,11 @@ WHAT IT CHECKS, per document:
      copied markup rather than a template — this site has no build step — so the only thing
      keeping nine copies in step is this check.
 
+  5. The words. `verify_copy.py --brief` holds every page to `docs/copy/*.json`, and
+     `make_copy_js.py --check` to the generated `js/copy.js`, the same way `make_start.py`
+     and `make_devices.py` run below: a page that has drifted from the copy contract is a
+     link to a promise nobody made.
+
 WHAT IT DOES NOT: http(s), mailto and the cleanjibe:// scheme are somebody else's to answer
 for. And "#example" on /app/ is a ROUTE rather than an anchor (js/app.js runs the bundled
 session on arrival), so the analyzer's routes are listed rather than looked up.
@@ -211,6 +216,23 @@ import make_devices                                                      # noqa:
 if make_devices.main(["--check"]) != 0:
     errors.append("a garmin-count/garmin-version span is stale — "
                   "run `python3 web/tools/make_devices.py`")
+
+# And the same argument once more for the words themselves. docs/copy holds the sentences
+# the app and the site both say; a page that has drifted from one of them is a link to a
+# promise nobody made — the beta list that still offered the Garmin export ZIP seven hours
+# after it became a release door was exactly that, and it resolved perfectly.
+import verify_copy                                                       # noqa: E402
+
+if verify_copy.main(["--brief"]) != 0:
+    errors.append("a page has drifted from docs/copy — "
+                  "run `python3 web/tools/verify_copy.py` for the list")
+
+# web/js/copy.js is generated from docs/copy too, and a stale one is a session view saying
+# something the app does not.
+import make_copy_js                                                      # noqa: E402
+
+if make_copy_js.main(["--check"]) != 0:
+    errors.append("web/js/copy.js is stale — run `python3 web/tools/make_copy_js.py`")
 
 if errors:
     print("\n%d PROBLEM(S):" % len(errors))

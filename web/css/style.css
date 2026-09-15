@@ -343,6 +343,10 @@ input:focus-visible, button:focus-visible, .btn:focus-visible, .dropzone:focus-v
   padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-2);
 }
 .badge.accent { border-color: #2a5a91; background: #14293f; color: #9ec8f5; }
+/* The not-a-session tag rides ON the session title rather than in the badge row, so it
+   needs the gap that row's flex gives the others, and the baseline of a 11.5 px pill beside
+   a 22 px heading has to be nudged by hand. */
+#session-title .badge { margin-left: 10px; vertical-align: middle; }
 .tag {
   font: 600 10.5px/1 var(--sans); text-transform: uppercase; letter-spacing: .06em;
   color: var(--ink-3); border: 1px solid var(--line); border-radius: 999px; padding: 4px 7px;
