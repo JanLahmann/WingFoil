@@ -32,7 +32,7 @@ export const NOT_A_SESSION = {
 
 /** The three sentences the product says about itself (docs/copy/phrases.json). */
 export const PHRASES = {
-  "promise": "Did you fly through that jibe? CleanJibe reads your session off the watch and tells you: time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.",
+  "promise": "Did you fly through that jibe? CleanJibe reads your session off the watch. It tells you your time on the foil, every flight, your speed records, and a verdict on every turn. Flew through, touchdown, or fell in.",
   "callToAction": "analyze your wingfoil sessions free — cleanjibe.org",
   "captionOffer": "analysed with CleanJibe, free at cleanjibe.org"
 };

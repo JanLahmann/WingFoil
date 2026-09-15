@@ -39,9 +39,9 @@ public enum WelcomeGuide {
     /// it from the other side. The store voice may put its own paragraph around it; the
     /// sentence itself is one sentence everywhere.
     public static let promise =
-        "Did you fly through that jibe? CleanJibe reads your session off the watch and tells "
-        + "you: time on the foil, every flight, your speed records, and a verdict on every "
-        + "turn. Flew through, touchdown, or fell in."
+        "Did you fly through that jibe? CleanJibe reads your session off the watch. It tells "
+        + "you your time on the foil, every flight, your speed records, and a verdict on "
+        + "every turn. Flew through, touchdown, or fell in."
 
     /// One tight paragraph of what the app actually does, in the order the rider meets it:
     /// detection first (nothing else is possible without it), then the counts, then the
