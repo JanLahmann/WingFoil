@@ -127,9 +127,10 @@
   <section class="home-section" id="app-network">
     <h2>The iPhone app — what leaves your phone</h2>
     <p class="section-lede">
-      Eight entries, and not one of them is a surprise: an account you connected, something a
+      Nine entries, and not one of them is a surprise: an account you connected, something a
       map needs, a mail you wrote and sent yourself, and — while this is a beta — Apple&rsquo;s
-      own crash reports. There is no ninth.
+      own crash reports and one small file the app reads to see whether your build is still the
+      current one. There is no tenth.
     </p>
 
     <dl class="terms">
@@ -249,6 +250,21 @@
           <strong>Apple's</strong>, under Apple's TestFlight terms and the sharing choice you
           made when you accepted them — we neither add to it nor can switch it off — and it
           ends when the app leaves TestFlight for the App Store.
+        </dd>
+      </div>
+      <div class="term">
+        <dt>One small file on this website &mdash; is your beta build still the current one?</dt>
+        <dd>
+          While this is a beta, the app fetches a single file of about three hundred bytes from
+          <code>cleanjibe.org</code> &mdash; at most <strong>once a day</strong>, and nothing
+          else about it &mdash; which says which TestFlight build is current, so it can tell you
+          when the one you are holding is older than the one we are answering reports about.
+          The request <strong>carries nothing</strong>: no key, no identifier, no session, not
+          even which build is asking &mdash; it is the same static file for everyone, the
+          comparison happens on your phone, and nothing is ever sent back. If it fails, you are
+          told nothing and the app simply tries again tomorrow. GitHub Pages, which serves this
+          site, sees it the way it sees any page load here: a URL, a time and an IP address.
+          The App Store build does not do this at all.
         </dd>
       </div>
     </dl>

@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v54";     // v54: whats-new gets builds 51 and 53 (v53: light theme, the card takes the fold, /learn/, Android share target)
+const VERSION = "v55";     // v55: app/version.json is never cached (the beta's update switch) (v54: whats-new gets builds 51 and 53)
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.
@@ -137,6 +137,24 @@ const APP_SHELL = [
   "lab_bundle/MANIFEST.json",
 ];
 
+/* ------------------------------------------------- the one file that is never cached
+ *
+ * `app/version.json` is the beta's update switch (web/app/version.README.md): the iPhone
+ * beta reads it once a day to learn whether the build in the rider's hand is older than the
+ * one we want reports about. It is the only file on this site whose *whole purpose* is to
+ * have changed since last time, and stale-while-revalidate would hand back yesterday's
+ * answer — including, after Jan has withdrawn a reminder, a banner he has already deleted.
+ *
+ * So it is not cached at all, in either direction: the worker returns without calling
+ * respondWith, which leaves the request to the browser's ordinary network path. The app
+ * itself does not go through this worker (it is a URLSession on a phone, with its own
+ * no-cache policy); what this line protects is the installed web app on the same origin,
+ * which must not be holding a copy of a file it may one day read.
+ */
+const NEVER_CACHE = [
+  new URL(`${APP_DIR}version.json`, self.location).pathname,
+];
+
 /** Hosts whose responses are worth keeping: the Python runtime and the one wheel. */
 const RUNTIME_HOSTS = [
   "cdn.jsdelivr.net",
@@ -201,6 +219,8 @@ self.addEventListener("fetch", (event) => {
   // own HTTP cache handles perfectly well and which this worker has no business keeping a
   // second copy of. Offline the tiles simply fail and the card comes out plain.
   if (url.origin !== self.location.origin) return;
+  // The update switch, above: straight to the network, never stored, never served stale.
+  if (NEVER_CACHE.includes(url.pathname)) return;
   event.respondWith(staleWhileRevalidate(req, SHELL));
 });
 
