@@ -2,10 +2,16 @@ project.manifest = manifest.xml
 
 # tests/ holds (:test)-annotated code — stripped from normal builds, compiled with --unit-test
 #
+# The RELEASE stream (docs/channels.md, "The watch"): app id b1ef484c, the public listing
+# that carries only what the beta has proved. The (:dev) experiments are excluded; the
+# `notdev` stubs stand in for them. monkey-beta.jungle is the open beta, monkey-dev.jungle
+# the private dev listing — all three from one commit, one version number.
+#
 # source-nopepper/ carries the all-zero invite pepper, which is what makes LockGate.enabled()
-# false and the lock screen unreachable in the public app. Only monkey-invite.jungle swaps it
-# for the generated gen/UnlockPepper.mc (docs/decisions.md ADR-012).
+# false and the lock screen unreachable (docs/decisions.md ADR-012; the invite lock is
+# retired since 0.9.11 — every stream compiles the zero pepper).
 base.sourcePath = source;tests;source-nopepper
+base.excludeAnnotations = dev
 
 # WingFoilCore = the shared detection core (RingBuffer/SpeedRecords/FlightDetector/
 # TurnDetector/Config), linked as a Monkey Barrel PROJECT dependency (not a packaged

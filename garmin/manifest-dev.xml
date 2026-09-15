@@ -1,11 +1,9 @@
 <?xml version="1.0"?>
 <iq:manifest version="3" xmlns:iq="http://www.garmin.com/xml/connectiq">
     <!--
-      WingFoil — INVITE BETA channel (docs/decisions.md ADR-012). Identical code to
-      manifest.xml; separate UUID so it is its own store listing. This one is meant to be
-      PUBLIC because CIQ beta listings are developer-only, and it is locked on first launch
-      until the tester enters the unlock key minted by lab/tools/make_unlock.py. Build it
-      only through monkey-invite.jungle, which supplies the pepper that arms the lock.
+      WingFoil — CIQ device app (watch-app). Records wingfoil sessions as FIT sport 43
+      (windsurfing) with developer fields per docs/fit-schema.md.
+      minApiLevel 5.0.0 covers all shipped Fenix 8 firmware (see docs/plan.md §2 CIQ facts).
     -->
     <!--
       Release version. It is an ATTRIBUTE the SDK validates (an unknown one fails the build),
@@ -14,8 +12,8 @@
       writes a 1 there is a watch nobody can identify from its own files. The unit test
       `appVersionAgreesWithTheFitByte` holds the two together.
     -->
-    <iq:application id="28942317-5a50-4fed-8a9e-d62f6847a2db" type="watch-app"
-        name="@Strings.AppNameInvite" entry="WingfoilApp" version="0.9.11" launcherIcon="@Drawables.LauncherIcon"
+    <iq:application id="953f7547-c152-42c2-8d33-69fb59ad0bf6" type="watch-app"
+        name="@Strings.AppNameDev" entry="WingfoilApp" version="0.9.11" launcherIcon="@Drawables.LauncherIcon"
         minApiLevel="5.0.0">
         <iq:products>
             <iq:product id="fenix843mm"/>

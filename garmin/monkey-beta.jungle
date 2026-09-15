@@ -1,30 +1,37 @@
 project.manifest = manifest-beta.xml
-# source-nopepper/ = zero pepper = no invite lock; see monkey.jungle and ADR-012
+
+# The PUBLIC BETA stream (docs/channels.md, "The watch"): the open listing, app id 28942317,
+# anyone can install it, and it runs ahead of the release — every version goes here first
+# and moves to the release listing once it has proved itself. Same sources as the release;
+# the (:dev) experiments are excluded here as they are there. resources-beta/base turns raw
+# accelerometer logging OFF for beta riders (a 10 MB file per session is the developer's
+# tool, not the rider's). The invite lock of ADR-012 is retired: source-nopepper/ carries the
+# all-zero pepper in every stream.
 base.sourcePath = source;tests;source-nopepper
 base.barrelPath = barrel/WingFoilCore/barrel.jungle
-base.resourcePath = $(base.resourcePath);resources-dev/icon65
+base.excludeAnnotations = dev
+base.resourcePath = $(base.resourcePath);resources-beta/base;resources-beta/icon65
 
-# The DEV channel's brand cuts (docs/channels.md, "Telling the channels apart"): the
-# launcher icon and the three marks MIRRORED, wing upper right, generated into
-# resources-dev/ by brand/tools/make_channel_marks.py and garmin/tools/make_brand_mark.py.
-# Each size class is appended AFTER the release cut so its ids win; the base path gets
-# the 65 px cut the same way. (This jungle is the dev-beta listing, 953f7547 — "beta" in
-# its name predates the channels; see garmin/store/listing.md, "Naming trap".)
+# The BETA stream's brand cuts (docs/channels.md, "Telling the channels apart"): the
+# launcher icon and the three marks with a red BETA label, generated into resources-beta/
+# by brand/tools/make_channel_marks.py and garmin/tools/make_brand_mark.py. Each size
+# class is appended AFTER the release cut so its ids win; the base path's 65 px cut is
+# appended to base.resourcePath above for the same reason.
 # see monkey.jungle: per-product launcher icons at their native compiler.json sizes
-fenix843mm.resourcePath = $(fenix843mm.resourcePath);resources-icon60;resources-dev/icon60
-fenix8solar47mm.resourcePath = $(fenix8solar47mm.resourcePath);resources-icon40;resources-dev/icon40
-fenix8solar51mm.resourcePath = $(fenix8solar51mm.resourcePath);resources-icon40;resources-dev/icon40
+fenix843mm.resourcePath = $(fenix843mm.resourcePath);resources-icon60;resources-beta/icon60
+fenix8solar47mm.resourcePath = $(fenix8solar47mm.resourcePath);resources-icon40;resources-beta/icon40
+fenix8solar51mm.resourcePath = $(fenix8solar51mm.resourcePath);resources-icon40;resources-beta/icon40
 
 # fenix 7 family: compiler.json launcherIcon is 40x40 on all eight variants, so they reuse
 # the Solar cut. Without this monkeyc rescales the 65x65 in resources/ and warns per build.
-fenix7.resourcePath = $(fenix7.resourcePath);resources-icon40;resources-dev/icon40
-fenix7s.resourcePath = $(fenix7s.resourcePath);resources-icon40;resources-dev/icon40
-fenix7x.resourcePath = $(fenix7x.resourcePath);resources-icon40;resources-dev/icon40
-fenix7pro.resourcePath = $(fenix7pro.resourcePath);resources-icon40;resources-dev/icon40
-fenix7pronowifi.resourcePath = $(fenix7pronowifi.resourcePath);resources-icon40;resources-dev/icon40
-fenix7spro.resourcePath = $(fenix7spro.resourcePath);resources-icon40;resources-dev/icon40
-fenix7xpro.resourcePath = $(fenix7xpro.resourcePath);resources-icon40;resources-dev/icon40
-fenix7xpronowifi.resourcePath = $(fenix7xpronowifi.resourcePath);resources-icon40;resources-dev/icon40
+fenix7.resourcePath = $(fenix7.resourcePath);resources-icon40;resources-beta/icon40
+fenix7s.resourcePath = $(fenix7s.resourcePath);resources-icon40;resources-beta/icon40
+fenix7x.resourcePath = $(fenix7x.resourcePath);resources-icon40;resources-beta/icon40
+fenix7pro.resourcePath = $(fenix7pro.resourcePath);resources-icon40;resources-beta/icon40
+fenix7pronowifi.resourcePath = $(fenix7pronowifi.resourcePath);resources-icon40;resources-beta/icon40
+fenix7spro.resourcePath = $(fenix7spro.resourcePath);resources-icon40;resources-beta/icon40
+fenix7xpro.resourcePath = $(fenix7xpro.resourcePath);resources-icon40;resources-beta/icon40
+fenix7xpronowifi.resourcePath = $(fenix7xpronowifi.resourcePath);resources-icon40;resources-beta/icon40
 
 # Tier A launcher icons, again at each product's native compiler.json launcherIcon size.
 # 40x40: fr955, fr255, enduro3 (the MIP tier, same cut the fenix 7s use).
@@ -32,29 +39,29 @@ fenix7xpronowifi.resourcePath = $(fenix7xpronowifi.resourcePath);resources-icon4
 # 60x60: the epix 2 / epix 2 Pro family, fr265, both MARQ 2, D2 Mach 1, Descent Mk3 43mm.
 # 65x65: fr965, fr970, fr57047mm, d2mach2 — that is what resources/ already holds, so they
 #        take no line here.
-fr955.resourcePath = $(fr955.resourcePath);resources-icon40;resources-dev/icon40
-fr255.resourcePath = $(fr255.resourcePath);resources-icon40;resources-dev/icon40
-enduro3.resourcePath = $(enduro3.resourcePath);resources-icon40;resources-dev/icon40
-fr57042mm.resourcePath = $(fr57042mm.resourcePath);resources-icon54;resources-dev/icon54
-epix2.resourcePath = $(epix2.resourcePath);resources-icon60;resources-dev/icon60
-epix2pro42mm.resourcePath = $(epix2pro42mm.resourcePath);resources-icon60;resources-dev/icon60
-epix2pro47mm.resourcePath = $(epix2pro47mm.resourcePath);resources-icon60;resources-dev/icon60
-epix2pro51mm.resourcePath = $(epix2pro51mm.resourcePath);resources-icon60;resources-dev/icon60
-fr265.resourcePath = $(fr265.resourcePath);resources-icon60;resources-dev/icon60
-marq2.resourcePath = $(marq2.resourcePath);resources-icon60;resources-dev/icon60
-marq2aviator.resourcePath = $(marq2aviator.resourcePath);resources-icon60;resources-dev/icon60
-d2mach1.resourcePath = $(d2mach1.resourcePath);resources-icon60;resources-dev/icon60
-descentmk343mm.resourcePath = $(descentmk343mm.resourcePath);resources-icon60;resources-dev/icon60
+fr955.resourcePath = $(fr955.resourcePath);resources-icon40;resources-beta/icon40
+fr255.resourcePath = $(fr255.resourcePath);resources-icon40;resources-beta/icon40
+enduro3.resourcePath = $(enduro3.resourcePath);resources-icon40;resources-beta/icon40
+fr57042mm.resourcePath = $(fr57042mm.resourcePath);resources-icon54;resources-beta/icon54
+epix2.resourcePath = $(epix2.resourcePath);resources-icon60;resources-beta/icon60
+epix2pro42mm.resourcePath = $(epix2pro42mm.resourcePath);resources-icon60;resources-beta/icon60
+epix2pro47mm.resourcePath = $(epix2pro47mm.resourcePath);resources-icon60;resources-beta/icon60
+epix2pro51mm.resourcePath = $(epix2pro51mm.resourcePath);resources-icon60;resources-beta/icon60
+fr265.resourcePath = $(fr265.resourcePath);resources-icon60;resources-beta/icon60
+marq2.resourcePath = $(marq2.resourcePath);resources-icon60;resources-beta/icon60
+marq2aviator.resourcePath = $(marq2aviator.resourcePath);resources-icon60;resources-beta/icon60
+d2mach1.resourcePath = $(d2mach1.resourcePath);resources-icon60;resources-beta/icon60
+descentmk343mm.resourcePath = $(descentmk343mm.resourcePath);resources-icon60;resources-beta/icon60
 
 # 0.9.10: Venu, vivoactive and Instinct 3 AMOLED. Mark cut by glass size (icon60's 55x41 for
 # 390-416 px, icon54's for the vivoactives whose launcher is 54-56 px and for the 360 px Venu 2S);
 # venu3 (454) takes the base cut. Launcher icons on the Venus are 70x70, which no directory
 # holds, so monkeyc rescales the 65x65 and warns — accepted rather than a fifth directory.
-venu2.resourcePath = $(venu2.resourcePath);resources-icon60;resources-dev/icon60
-venu2plus.resourcePath = $(venu2plus.resourcePath);resources-icon60;resources-dev/icon60
-venu3s.resourcePath = $(venu3s.resourcePath);resources-icon60;resources-dev/icon60
-instinct3amoled45mm.resourcePath = $(instinct3amoled45mm.resourcePath);resources-icon60;resources-dev/icon60
-instinct3amoled50mm.resourcePath = $(instinct3amoled50mm.resourcePath);resources-icon60;resources-dev/icon60
-vivoactive5.resourcePath = $(vivoactive5.resourcePath);resources-icon54;resources-dev/icon54
-vivoactive6.resourcePath = $(vivoactive6.resourcePath);resources-icon54;resources-dev/icon54
-venu2s.resourcePath = $(venu2s.resourcePath);resources-icon54;resources-dev/icon54
+venu2.resourcePath = $(venu2.resourcePath);resources-icon60;resources-beta/icon60
+venu2plus.resourcePath = $(venu2plus.resourcePath);resources-icon60;resources-beta/icon60
+venu3s.resourcePath = $(venu3s.resourcePath);resources-icon60;resources-beta/icon60
+instinct3amoled45mm.resourcePath = $(instinct3amoled45mm.resourcePath);resources-icon60;resources-beta/icon60
+instinct3amoled50mm.resourcePath = $(instinct3amoled50mm.resourcePath);resources-icon60;resources-beta/icon60
+vivoactive5.resourcePath = $(vivoactive5.resourcePath);resources-icon54;resources-beta/icon54
+vivoactive6.resourcePath = $(vivoactive6.resourcePath);resources-icon54;resources-beta/icon54
+venu2s.resourcePath = $(venu2s.resourcePath);resources-icon54;resources-beta/icon54

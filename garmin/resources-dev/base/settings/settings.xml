@@ -1,0 +1,6 @@
+<settings>
+    <setting propertyKey="@Properties.mapAfterSave" title="@Strings.SetMapAfterSave"
+             prompt="@Strings.SetMapAfterSaveNote">
+        <settingConfig type="boolean"/>
+    </setting>
+</settings>

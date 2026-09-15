@@ -1,0 +1,8 @@
+<properties>
+    <!-- Dev stream only (monkey-dev.jungle): the (:dev) experiments' switches. A release or
+         beta build has neither the property nor the code that reads it. -->
+    <!-- 0.9.9, GitHub #4: START on the summary's Track page opens the firmware's map over the
+         saved track. Experimental — the native map view killed the app during recording on the
+         fenix 8 three releases running; this trial runs it only after the session is saved. -->
+    <property id="mapAfterSave" type="boolean">false</property>
+</properties>
