@@ -158,7 +158,7 @@ struct LibraryView: View {
                         // build does not have is none of those. It keeps its one home,
                         // Settings → Coming in a future release (docs/channels.md).
                         Button { sheet = .help } label: {
-                            Label("What the numbers mean", systemImage: "questionmark.circle")
+                            Label("Help", systemImage: "questionmark.circle")
                         }
                         Divider()
                         Text(Self.buildLine)
@@ -664,7 +664,7 @@ struct LibraryView: View {
 enum LibrarySheet: Identifiable, Hashable {
     case settings
     case importer
-    /// The Help index ("What the numbers mean").
+    /// The Help index (the menu row reads "Help").
     case help
     /// One named topic, opened as itself rather than as "the index, then the topic": one
     /// sheet, one animation, and it is what the deep link actually meant.

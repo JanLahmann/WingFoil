@@ -63,13 +63,13 @@ Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or
 # App Store one, so saying which one this is matters more than the release notes do.
 WHATS_NEW_INTERNAL = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-CleanJibe Dev, build 63 — the audit round.
+CleanJibe Dev, build 65 — your three notes on 63.
 
-Everything in beta 62: one getting-started text in app and site, Records and Trends that explain themselves after the example session, Set up intervals.icu on the welcome, one feedback door (Menu → Support & ideas), the privacy help topic, the ten quiet seconds in the clean-jibe topic, the eleven-entry glossary with the watch's short labels, and the website at half its length with every shared sentence pinned to docs/copy.
+- Start over brings the welcome back on the next launch, whatever the library holds (it did not when sessions were still there).
+- The help sheet is called Help; it has ten sections and only three of them are numbers.
+- Import does, Settings configures: Import shows the actions only (file, Sync intervals.icu, Import from Strava, Import from Health) and says "Set up in Settings → intervals.icu" where a source is not set up; "Connected as" left Import, "Sync now" left Settings.
 
-Dev only: Tuning is labelled dev, not beta. Nothing else differs from 62.
-
-Please check: Menu → Getting started on the family phones; Records and Trends after "Try the example session"; the welcome on a fresh install (Settings → Beta → Start over first).
+Everything in 63 otherwise. Please check: Settings → Beta → Start over, relaunch, welcome first; Import with and without a key; Menu → Help.
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 

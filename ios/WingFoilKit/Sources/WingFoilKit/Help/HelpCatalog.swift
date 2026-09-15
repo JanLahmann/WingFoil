@@ -374,10 +374,13 @@ public enum HelpCatalog {
                 + "twice.",
             ],
             items: [
+                // **One connect, and it is in Settings** (Jan, build 63: Import does,
+                // Settings configures). The item named both screens; Import now lists what
+                // a connected account holds and otherwise points here in one line.
                 .init(term: "Connect",
-                      detail: "Settings → Strava → Connect with Strava, or Import → Import "
-                          + "from Strava…. Leave the private-activities box ticked or your "
-                          + "\"Only you\" sessions will be missing."),
+                      detail: "Settings → Strava → Connect with Strava. Leave the "
+                          + "private-activities box ticked or your \"Only you\" sessions "
+                          + "will be missing."),
                 .init(term: "Pick, or take everything new",
                       detail: "Tap the sessions you want, or use Import all new. Anything "
                           + "already in your library is marked and cannot be picked twice."),

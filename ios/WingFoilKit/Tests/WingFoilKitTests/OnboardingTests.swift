@@ -509,6 +509,30 @@ import Testing
         }
     }
 
+    /// **Start over asks for the screen, and nothing may argue it away** (Jan, build 63).
+    ///
+    /// Settings → Beta → Start over wipes the phone and then relies on the *absence* of a
+    /// flag and of sessions to make the app introduce itself again. Absence is the one
+    /// thing a wipe cannot hand to the next launch — the screen it raises spends the flag
+    /// again, and a library that has rows once more (a sync, a watch, a re-import) reads as
+    /// a history — so the wipe writes a request down instead, and the request outranks both
+    /// rules: a flag already written, and a library of any size.
+    @Test func aRequestedWelcomeOutranksTheFlagAndTheLibrary() {
+        for count in [0, 1, 12, 300] {
+            #expect(WelcomePrompt.shouldShow(hasSeen: true, sessionCount: count,
+                                             requested: true),
+                    "a requested welcome was refused with \(count) sessions in the library")
+            // …and above all, the upgrade path must not mark it seen before it is honoured.
+            #expect(!WelcomePrompt.shouldMarkSeenSilently(hasSeen: false,
+                                                          sessionCount: count,
+                                                          requested: true))
+        }
+        // It is still only a request: a screen already up defers it, exactly as a first run
+        // is deferred, and the caller leaves the request standing until it is honoured.
+        #expect(!WelcomePrompt.shouldShow(hasSeen: true, sessionCount: 300,
+                                          isPresenting: true, requested: true))
+    }
+
     /// Deferral, not refusal — the same etiquette the notification offer keeps.
     @Test func aBusyScreenDefersRatherThanCancels() {
         #expect(!WelcomePrompt.shouldShow(hasSeen: false, sessionCount: 0,

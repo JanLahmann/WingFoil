@@ -3067,6 +3067,13 @@ else about the screen is unchanged: it is shown at most once per install, the fl
 the moment it goes up rather than when it is answered, another modal defers it rather than
 cancelling it, and Menu → *What CleanJibe does* replays it without re-arming anything.
 
+**One install can be owed it twice, and only one door does that**: Settings → Beta → *Start
+over*, which writes `welcomeRequested.v1` after its wipe. A request beats both rules above —
+see "Start over" — and the screen's own offers work from it exactly as on a first run, *Try
+the example session* included: the example imports, and a rider who already owns that
+recording lands on his own copy of it (`loadExampleSessionAndOpen`, which is unchanged and
+never depended on the library being empty).
+
 **The second offer is named for what it does** (15 September 2026). It read *"Connect your
 Garmin"* and connected nothing: `onConnect` calls `dismissWelcome()` and that is the whole of
 it, because on a genuine first run the four-step intervals.icu card is already the thing
@@ -3213,6 +3220,40 @@ Garmin GDPR ZIP), **Single sessions** (a picked FIT/GPX/ZIP, and the intervals.i
 rider taps rather than after — *what does this door bring in*, and *what does it cost* — because
 a rider who discovers only afterwards that his speed records are marked has been told too late.
 
+### Import does, Settings configures
+
+**Every row on this screen is an action** (Jan, build 63). It was not: *Sync intervals.icu*
+sat there greyed out on a phone with no key, saying nothing about why, and the Strava section
+carried a *Connected as …* line, which is an answer about an account and not a door. A screen
+that both imports and sets up is two screens sharing a scroll, and the rider who taps the
+disabled row learns nothing at all.
+
+So the split is by verb. Import holds the four doors and nothing else — the file picker
+(*FIT, GPX, TCX or ZIP…*, *FIT or ZIP…* in the release), **Sync intervals.icu**, **Import from
+Strava…**, **Import from Health…** (beta), with the Garmin ZIP above them (beta). Settings
+holds the two accounts: the intervals.icu key with *Save & check*, the last sync date and the
+two help rows; Strava's *Connect with Strava*, who you are connected as, and *Disconnect*.
+
+**A source that is not set up replaces its action with one line**, not with a disabled button
+and an explanation under it: **Set up in Settings → intervals.icu** and **Set up in
+Settings → Strava** (`SetUpInSettingsRow`), in the app's own path notation, and tapping one
+*goes* there — the library owns the single sheet both screens are (`LibrarySheet`), so
+Settings replaces Import rather than stacking on it, through the same `openIcuSettings`
+action the help topics' *Open CleanJibe Settings* uses. There is no anchor to scroll to: the
+sheet opens at the top and intervals.icu and Strava are its first two sections. A build with
+no Strava keys says *"Not available in this build"* in both places, in the same words.
+
+**And the footers stay on their own side of the split.** Import's say what the door brings in
+— the recording class, then the prose (`ImportClass`) — and Settings' say what the account is
+for (`GettingStartedGuide.settingsIcu` / `settingsStrava` as the section's first line, the
+detail underneath). One string moved with the buttons: the Strava footer opened on *"Connect
+your Strava account and import the sessions you pick…"* and now opens on *"Imports the
+sessions you pick from your Strava account…"*, because the connecting is no longer on the
+screen the sentence is printed on. Nothing else in it changed. **"Sync now" is gone from
+Settings** for the same reason: fetching sessions is an import, and Import's *Sync
+intervals.icu*, a pull on the Sessions list and the first-run setup card's own *Sync now* are
+the three doors onto that one call.
+
 ### The recording class opens every footer
 
 Every section footer now **begins with the class the door brings in**, in the names
@@ -3253,12 +3294,14 @@ intervals.icu, deliberately: for the same afternoon intervals.icu hands over the
 off the watch and Strava hands over positions, and the footer says so in one sentence — *if the
 same session is on intervals.icu, take it from there instead.*
 
-* **Connect with Strava / Disconnect** (`StravaImportView`, and the same two buttons under
-  Settings → Strava, so a rider who goes to Settings to "set up Strava" is not sent to another
-  screen first; importing stays on Import). Connecting opens Strava's own consent screen;
-  CleanJibe only ever **reads**, and the words say so on both screens. A build with no API keys behind it shows *"No Strava application
+* **Connect with Strava / Disconnect** — **Settings → Strava**, and only there since build
+  63 ("Import does, Settings configures", above): Import's Strava section shows *Import from
+  Strava…* once an account is connected and one line back to Settings while it is not.
+  Connecting opens Strava's own consent screen; CleanJibe only ever **reads**, and the words
+  say so on both screens. A build with no API keys behind it shows *"No Strava application
   configured"* and where the keys go — a Connect button that always fails would be worse than
-  no button.
+  no button. (`StravaImportView` still carries its own connect and unconfigured states, which
+  are now the fallbacks of a screen reached with a connection in hand.)
 * **The list**: the matching activities of the last two years, newest first, each one marked
   *In your library* where the ±60 s key or the remembered Strava id already knows it. Tap to
   pick, or **Import all new**. Once one session has arrived this way the automatic-pickup
@@ -3521,7 +3564,13 @@ print, in this order and for this reason:
    when something is broken*: Jan's point is that a wish is as welcome as a fault and nothing
    in the app had ever said so, and the name of the door is the cheapest place to say it.
 4. **What CleanJibe does** — the welcome screen again (`SessionStore.replayWelcome`).
-5. **What the numbers mean** — the Help index.
+5. **Help** — the Help index. It read *What the numbers mean* until 15 September 2026, and
+   that was a name for one of its ten sections rather than for the screen: the index opens
+   with *Getting started* and *Getting set up*, and closes on *Sharing* and *Quality* — a
+   rider looking for how to connect Strava or what a share card carries had no reason to
+   open a row that promised arithmetic (Jan, build 63: *"Help is good"*). The icon is
+   unchanged (`questionmark.circle`), and so is everything behind the row; *the numbers*
+   keep their own headings inside, where they are a section and not the whole screen.
 6. The build line, not tappable: *CleanJibe 0.15.0 (45)* with " · beta" or " · dev" after it
    on those channels — the same string as Settings → About, and the first question of every
    support mail.
@@ -3554,8 +3603,9 @@ are unchanged from the outside.
 
 ## Settings — switches and accounts, and nothing that is already in the menu
 
-Settings opened with three rows — *What CleanJibe does*, *What the numbers mean* and *Send
-feedback* — under two paragraphs of footer, and all three are rows of the library menu one
+Settings opened with three rows — *What CleanJibe does*, *Help* (then still called *What
+the numbers mean*) and *Send feedback* — under two paragraphs of footer, and all three are
+rows of the library menu one
 tap away. Two homes for one door is two wordings to keep in step and one more screen for a
 rider to search, so the block is gone (Jan, build 58) and the menu keeps them. What is left
 is what only Settings has: **intervals.icu**, **Strava**, deleted sessions, notifications,
@@ -3573,6 +3623,13 @@ from `docs/guide/getting-started.json`, so the switches and the Getting started 
 thing; the longer intervals.icu version, for the setup card and the help topic, is still
 `IcuSetupGuide.rationale`. The footers under each section are unchanged and carry the detail —
 what is downloaded, what is never written, the connection cap.
+
+**Accounts, not actions** (build 63, "Import does, Settings configures" under Import). The
+intervals.icu section is the caption, the key field with *Save & check*, the last sync date
+and the two help rows — *Sync now* left it, because fetching sessions is an import and Import
+has that button. The Strava section is the caption, *Connect with Strava* or the connected
+athlete with *Disconnect*, and the footer. Everything either section offers is about the
+account; everything either account is *for* happens one sheet away.
 
 **Notifications say intervals.icu, because that is what is asked.** The switch read *Notify
 on new Garmin activities* and the check behind it has never been a Garmin one: it is a call
@@ -3822,7 +3879,26 @@ memory, the container, the defaults domain and the two keychain items go, a new 
 opened on the same path where the migrator writes an empty schema, every property that
 mirrors a default is read back from the now-empty domain, and the empty library is read —
 which is the same event a first launch has, so `RootView` raises the welcome screen by the
-ordinary route. The one thing that can fail is reopening the file, and there the app says so
+ordinary route.
+
+**And the welcome is promised to the next launch as well, in writing** (Jan, build 63: *Start
+over, restart, and the app opened on Sessions — this is a mistake*). Everything above is an
+argument from **absence**: no `welcomeShown.v1`, no sessions. A wipe can create an absence but
+it cannot hand one to the next launch — the screen it raises in-process writes the flag again
+the moment it goes up, and a library that has rows once more before the screen is raised (a
+sync, a watch transfer, a re-import, or the relaunch the failed-reopen screen asks for) reads
+as a *history*, at which point the upgrade path marks the screen seen on sight and the rider
+never gets it. So `startOver()` writes one positive fact back immediately after the wipe —
+`welcomeRequested.v1` — and `showWelcomeIfNeeded` honours it **first**, before the silent mark
+and before the flag: a request outranks `hasSeen` and a library of any size, only a screen
+already up defers it, and it is cleared the moment the welcome actually appears. So the
+welcome happens exactly once after a Start over — now if nothing is in the way, on the next
+launch otherwise — and the screen it appears on is the full-screen cover in front of the tabs,
+not a sheet with Sessions in charge behind it. `WelcomePrompt.shouldShow(… requested:)` holds
+the rule and `OnboardingTests` pins it at 300 sessions with the flag already written. The
+`UI_RESET=1` screenshot hook deliberately does **not** write the request: it wipes before the
+store exists so a first run can be photographed, and a staged welcome over a staged library
+would be a screenshot of neither. The one thing that can fail is reopening the file, and there the app says so
 rather than running on a library that is not on disk: one full screen, *"Start over done —
 close the app and open it again"*, with no button, because iOS gives an app no supported way
 to quit itself and `exit(0)` reads as a crash in the feature the rider just used.
