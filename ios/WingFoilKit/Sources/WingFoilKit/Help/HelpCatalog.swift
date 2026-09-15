@@ -307,10 +307,12 @@ public enum HelpCatalog {
                 + "records certify.",
             ],
             items: [
-                .init(term: "Keep the wrist above water",
-                      detail: "Salt water stops GPS dead. A wrist held under during a "
-                          + "waterstart loses its fix, and CleanJibe marks the gap rather "
-                          + "than sailing through it."),
+                // Jan, 15 Sep 2026: it said "keep the wrist above water" — wrong, a wrist
+                // under water IS the swim evidence (docs/algorithms.md, `turnBaroDrop`).
+                .init(term: "The wrist may go under",
+                      detail: "A wrist under water is how a fall is recognised: the pressure "
+                          + "sensor sees it and the swim is scored. GPS drops out for those "
+                          + "seconds; the gap is marked, not sailed through."),
                 .init(term: "Let the workout finish",
                       detail: "The session is handed over once you end the workout. If it is "
                           + "not in the list yet, look again in a minute."),
@@ -339,10 +341,12 @@ public enum HelpCatalog {
                       detail: "Both are on by default, and Surfing is what CleanJibe's own "
                           + "watch app writes. Sailing works too — switch it on in Import → "
                           + "Apple Health."),
-                .init(term: "Keep the wrist above water",
-                      detail: "Salt water stops GPS dead. A wrist held under during a "
-                          + "waterstart loses its fix; CleanJibe marks the gap rather than "
-                          + "sailing through it."),
+                // Jan, 15 Sep 2026: it said "keep the wrist above water" — wrong, a wrist
+                // under water IS the swim evidence (docs/algorithms.md, `turnBaroDrop`).
+                .init(term: "The wrist may go under",
+                      detail: "A wrist under water is how a fall is recognised: the pressure "
+                          + "sensor sees it and the swim is scored. GPS drops out for those "
+                          + "seconds; the gap is marked, not sailed through."),
                 .init(term: "Let the workout finish saving",
                       detail: "The route is written to Health when you end the workout, and "
                           + "the watch may take a minute to hand it over."),
