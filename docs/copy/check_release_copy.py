@@ -158,6 +158,25 @@ TARGETS: list[Target] = [
         strip=("channels-beta", "channels-dev", "beta-door"),
     ),
     Target(
+        label="Connect IQ listing · what the rider reads",
+        path="garmin/store/listing.md",
+        blocks=["Description (live text)", "What's New (live text)"],
+        # The archival transcription of the live store text (docs/channels.md). The
+        # description still says "no-fall streak" on the store; it is edited there next,
+        # and this exemption goes the day the file's transcription follows.
+        rules=(STRAVA, LEXICON),
+        allow={
+            "no-fall streak": (
+                "the live Connect IQ description still says it (0.9.10); the product's word "
+                "is dry streak, and the store text is edited at the next listing update"
+            ),
+            "carried": (
+                "the 0.9.6 What's New row, dated store history: \"carried its speed\" is the "
+                "ordinary verb, and a shipped note is not reworded"
+            ),
+        },
+    ),
+    Target(
         label="TestFlight metadata",
         path="ios/store/testflight.md",
         blocks=None,
@@ -174,6 +193,23 @@ KIT_SOURCE_DIRS = [
     "ios/WingFoilKit/Sources/WingFoilKit/Presentation",
     "ios/WingFoilKit/Sources/WingFoilKit/Help",
 ]
+
+#: The watch (15 Sep 2026, the audit's B3.3: "the watch is outside every copy mechanism").
+#: Monkey C string literals in the pages, the alerts and the settings' strings.xml are the
+#: on-water and Garmin Connect words a rider reads; the same `"…"` scanner works on them.
+#: Scanned for the vocabulary only — the watch has no channel doors to promise.
+WATCH_SOURCE_DIRS = [
+    "garmin/source/ui",
+    "garmin/source/alerts",
+    "garmin/resources/strings",
+]
+WATCH_SOURCE_SUFFIXES = (".mc", ".xml")
+
+#: The Connect IQ listing's title line in garmin/store/listing.md must be the live store
+#: name `phrases.json` → `ciqListingTitle` pins on the website; the header is the one part
+#: of that archival file that tracks the tree.
+WATCH_LISTING = "garmin/store/listing.md"
+WATCH_TITLE_LINE = re.compile(r"^## Watch app — `([^`]+)`", re.M)
 
 
 # ---------------------------------------------------------------------------- reading copy
@@ -221,16 +257,28 @@ class _Text(HTMLParser):
 
 
 def fenced_block(markdown: str, heading: str) -> str | None:
-    """The first ``` block under `## <heading>`, or None when the heading is not there."""
-    pattern = re.compile(
-        r"^#{1,6}\s+" + re.escape(heading) + r"\s*$(.*?)^```",
-        re.MULTILINE | re.DOTALL)
-    match = pattern.search(markdown)
-    if not match:
+    """The first ``` fence after the heading that STARTS with `heading` (any level), or None."""
+    lines = markdown.splitlines()
+    start = None
+    for index, line in enumerate(lines):
+        stripped = line.lstrip("#").strip() if line.startswith("#") else None
+        if stripped is not None and stripped.startswith(heading):
+            start = index
+            break
+    if start is None:
         return None
-    rest = markdown[match.end():]
-    end = rest.find("```")
-    return rest if end < 0 else rest[:end]
+    inside, out = False, []
+    for line in lines[start + 1:]:
+        if line.startswith("```"):
+            if inside:
+                return "\n".join(out)
+            inside = True
+            continue
+        if line.startswith("#") and not inside:
+            return None
+        if inside:
+            out.append(line)
+    return None
 
 
 def copy_of(target: Target) -> tuple[str | None, list[str]]:
@@ -367,6 +415,46 @@ def main() -> int:
             print(f"    {hit}")
             failures.append(hit)
 
+    # The watch's own words, the same rule.
+    for folder in WATCH_SOURCE_DIRS:
+        hits = []
+        for source in sorted((REPO / folder).rglob("*")):
+            if source.suffix not in WATCH_SOURCE_SUFFIXES:
+                continue
+            relative = source.relative_to(REPO).as_posix()
+            allowed = {
+                exemption["word"].lower()
+                for exemption in exemptions
+                if relative.startswith(exemption["path"])
+            }
+            for number, line in enumerate(source.read_text(encoding="utf-8").splitlines(), 1):
+                if line.strip().startswith("//") or line.strip().startswith("<!--"):
+                    continue
+                literals = string_literals(line) if source.suffix == ".mc" else [line]
+                for literal in literals:
+                    for term in banned:
+                        if term.lower() in allowed:
+                            continue
+                        if whole_word(term, literal):
+                            hits.append(f"{relative}:{number} says \"{term}\" — {why}")
+        verdict = "FAIL" if hits else "PASS"
+        print(f"{verdict}  watch string literals  ({folder})")
+        for hit in hits:
+            print(f"    {hit}")
+            failures.append(hit)
+
+    # The listing's title line is the store's name, the one the website pins too.
+    listing = (REPO / WATCH_LISTING).read_text(encoding="utf-8")
+    found = WATCH_TITLE_LINE.search(listing)
+    want = phrases["ciqListingTitle"]
+    if found is None or found.group(1) != want:
+        got = found.group(1) if found else "(no '## Watch app — `…`' line)"
+        print(f"FAIL  Connect IQ listing title  ({WATCH_LISTING})")
+        print(f"    header says \"{got}\", phrases.json → ciqListingTitle says \"{want}\"")
+        failures.append(f"{WATCH_LISTING}: listing title")
+    else:
+        print(f"PASS  Connect IQ listing title  ({WATCH_LISTING})")
+
     if honoured:
         print("\nExemptions honoured (each one is a debt, written down):")
         for line in honoured:
@@ -377,7 +465,7 @@ def main() -> int:
         print(f"FAILED — {len(failures)} problem(s). "
               f"docs/copy/README.md says what each rule is for.")
         return 1
-    print(f"PASSED — {len(TARGETS) + len(KIT_SOURCE_DIRS)} targets clean.")
+    print(f"PASSED — {len(TARGETS) + len(KIT_SOURCE_DIRS) + len(WATCH_SOURCE_DIRS) + 1} targets clean.")
     return 0
 
 
