@@ -2782,6 +2782,21 @@ exactly as they gate the buzz. The visual half is never debounced — a new even
 one on screen, which is what one screen means — and save or discard clears the strip with
 the session. `EventFlash.mc` is the module, `AlertManager` fires it beside each buzz.
 
+## The watch's pages — and the switch that puts them back
+
+The seven data screens are configured in Garmin Connect (layout and five metric slots per
+page, `pg1Layout` … `pg7s5`), and a stored property beats `properties.xml` on an installed
+watch: the defaults are written once at install, and an update never touches them. So a
+rider who rearranged his pages and wants the shipped set back had two ways, both poor —
+setting every row by hand, or reinstalling. Since 0.9.11 there is a third: **Reset pages to
+defaults**, a switch in the app's settings that behaves like a button. Turned on and saved,
+the watch consumes it in the settings callback (`AppSettings.consumeResetPages`), writes the
+seven defaults back into its property store (`PageModel.restoreDefaults`, from the same
+`DEF_LAYOUT` / `DEF_SLOTS` table `build()` falls back on), rebuilds the pages and turns the
+switch off again, so the next sync shows it off. Every page key is written, off pages
+included: the rider gets exactly the fresh-install set — Main, Foil, Records, Turns, Clock,
+Timeline, Map — and never a mixture.
+
 ## The watch link — Settings → Garmin watch
 
 One section, and every row in it is a fact the rider can act on: which watch, whether it is
