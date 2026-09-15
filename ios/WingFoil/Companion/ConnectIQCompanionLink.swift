@@ -42,8 +42,8 @@ final class ConnectIQCompanionLink: NSObject, CompanionLink {
     /// one is installed.
     static let appUUIDs: [UUID] = [
         UUID(uuidString: "b1ef484c-77b9-4a69-b33d-18574f3bcbde")!,   // garmin/manifest.xml
-        UUID(uuidString: "28942317-5a50-4fed-8a9e-d62f6847a2db")!,   // manifest-invite.xml
-        UUID(uuidString: "953f7547-c152-42c2-8d33-69fb59ad0bf6")!,   // manifest-beta.xml
+        UUID(uuidString: "28942317-5a50-4fed-8a9e-d62f6847a2db")!,   // manifest-beta.xml (the open beta)
+        UUID(uuidString: "953f7547-c152-42c2-8d33-69fb59ad0bf6")!,   // manifest-dev.xml (private dev)
     ]
 
     /// The scheme GCM reopens us on with the rider's device choice in the URL.
