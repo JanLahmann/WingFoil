@@ -45,20 +45,17 @@ def app_id(app):
 
 WHATS_NEW = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-1.0.0 (build 60) — the App Store candidate, after your round of feedback.
+Beta build 62 — the audit round: the words a stranger needs, and one source for what the app and the site say.
 
-Since 58:
-- A fresh install opens on "What CleanJibe does" — the welcome, the routes and the example session — even when an intervals.icu key survived a reinstall in the keychain.
-- Menu → Getting started always opens, and is now the routes as steps in the app: Garmin with the CleanJibe watch app, any .fit, Strava, the walk if you cannot wait for wind, and where to send what you find. The web page is the same guide, named last.
-- Help answers in the first sentence: every topic was cut to a budget, the backup topic says the file is temporary and yours to save.
-- Settings no longer repeats the menu; the intervals.icu key field reads in the dark; the notification switch says intervals.icu and asks for permission once your key has been checked.
-- "Coming in a future release" (Settings) replaces "What is being tested", with How to join the beta first; the row is gone from the menu.
-- Dates carry the year when it is not this year. The status line at the foot of Sessions clears itself.
-- Gear & spots is one page: spots above the gear, named from the map by themselves, empty spots gone.
-- Recordings that were never a session — no foil time and under two minutes or 200 m — stay in the list with a "no riding detected" tag and out of trends, records and the counts.
-- Strava imports carry their sport and keep their own title capitalisation.
+Since 60:
+- Getting started in the app and cleanjibe.org/start are one text: five routes, the steps behind each, and "then say how it read". The intervals.icu and Strava sections in Settings open with one line saying why the account is there.
+- Records and Trends say why they are empty after the example session, and what to do next. The welcome's second button says what it does: Set up intervals.icu.
+- One name for the feedback door everywhere: Menu → Support & ideas.
+- Help: "What leaves your phone" links the privacy page; the clean-jibe topic states the quiet ten seconds after the turn.
+- The glossary teaches the product's own labels (On foil, touchdown) and gains TPH, Best 5×10 s and Alpha 500; the welcome highlights come from it.
+- The website is half the length it was and says exactly what the app says: the numbers, the recording classes, the beta list, the feedback questions are one source now.
 
-Please check: a fresh install (Settings → intervals.icu → Clear and Strava → Disconnect, delete, reinstall) opens on the welcome; Menu → Getting started reads well; your dry recordings from 13–14 September are tagged and out of Trends; your spots have names.
+Please check: Menu → Getting started reads as your own route; Records after the example session; the welcome on a fresh install; anything on cleanjibe.org that disagrees with the app.
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
@@ -66,13 +63,13 @@ Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or
 # App Store one, so saying which one this is matters more than the release notes do.
 WHATS_NEW_INTERNAL = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-CleanJibe Dev, build 61 — the feedback round, plus the update reminder.
+CleanJibe Dev, build 63 — the audit round.
 
-Everything in release candidate 60 (welcome first, one sheet, help cut to a budget, Getting started as steps in the app, Settings without the menu, dark-mode key field, notification wording and prompt, Coming in a future release, years on dates, the status line clears, Gear & spots on one page, not-a-session recordings tagged and excluded, spots named by themselves, Strava sport and titles).
+Everything in beta 62: one getting-started text in app and site, Records and Trends that explain themselves after the example session, Set up intervals.icu on the welcome, one feedback door (Menu → Support & ideas), the privacy help topic, the ten quiet seconds in the clean-jibe topic, the eleven-entry glossary with the watch's short labels, and the website at half its length with every shared sentence pinned to docs/copy.
 
-New in the beta and dev channels: the update reminder. Once a day the app reads one small file from cleanjibe.org saying which build is current; below it, a line appears at the top of Sessions (dismissable) or, if we set it so, a screen. Settings → Beta → "Check for a newer build now" shows the last check and the verdict. Nothing else leaves the phone.
+Dev only: Tuning is labelled dev, not beta. Nothing else differs from 62.
 
-Please check: Start over (Settings → Beta) empties the key and the Strava connection; the Sessions list shows no reminder line while your build is current; Settings → Beta → Check for a newer build now says "current".
+Please check: Menu → Getting started on the family phones; Records and Trends after "Try the example session"; the welcome on a fresh install (Settings → Beta → Start over first).
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 

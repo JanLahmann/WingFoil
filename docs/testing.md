@@ -1235,8 +1235,8 @@ beside the release one instead of over it.
 stays what it always was and is defined wherever `DEV` is. The kit (`WingFoilKit`) compiles
 everything in every channel — the gating is in the app, its Info.plist and its entitlements,
 so a door a channel lacks has no UI, no document type, no usage string and no entitlement.
-`#if !BETA` marks the one thing only the App Store build has: the "Curious about what is
-coming" section with the TestFlight link.
+`#if !BETA` marks the one thing only the App Store build has: the "Coming in a future
+release" section's How to join the beta step with the TestFlight link.
 
 **The flag check** (run it before archiving). Release must print nothing but the inherited
 defaults; beta `BETA`; dev `BETA DEV TUNING`:
