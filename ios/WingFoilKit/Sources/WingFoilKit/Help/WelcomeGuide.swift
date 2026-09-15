@@ -102,30 +102,33 @@ public enum WelcomePrompt {
     /// The flag (`welcomeShown.v1`) does not exist on an install that predates the welcome
     /// screen, and shipping an update that greets a rider mid-season with "here is what
     /// this app does" would be worse than never greeting anyone. So the library itself is
-    /// the evidence: a session in it, or a key that can fetch one, means the rider has
-    /// already been through the front door.
+    /// the evidence — and **only** the library.
     ///
-    /// - Parameters:
-    ///   - sessionCount: rows in the library, including the example — someone who loaded
-    ///     the example got the welcome's whole point already.
-    ///   - hasKey: an intervals.icu key is stored, so setup has at least been attempted.
-    public static func isAlreadyWelcomed(sessionCount: Int, hasKey: Bool) -> Bool {
-        sessionCount > 0 || hasKey
+    /// A stored intervals.icu key used to count as well, and that was the bug Jan found in
+    /// release candidate 58 (15 Sep 2026): iOS keeps keychain items across an app delete,
+    /// so a reinstall hands the key back, the welcome was marked seen on sight, and the
+    /// first screen of a genuinely fresh install was the intervals.icu setup card — the
+    /// four steps and a key field, in front of a rider who had not been told what the app
+    /// does. A key says something survived a delete; a session says the rider has been
+    /// through the front door. Only the second is evidence.
+    ///
+    /// - Parameter sessionCount: rows in the library, including the example — someone who
+    ///   loaded the example got the welcome's whole point already.
+    public static func isAlreadyWelcomed(sessionCount: Int) -> Bool {
+        sessionCount > 0
     }
 
     /// - Parameters:
     ///   - hasSeen: the flag is written. Once is the whole contract — a welcome screen that
     ///     comes back on the second launch is not a welcome, it is an obstacle.
     ///   - sessionCount: see `isAlreadyWelcomed`.
-    ///   - hasKey: see `isAlreadyWelcomed`.
     ///   - isPresenting: something else is on screen — an import asking whose session it
     ///     is, an error, Settings. A *deferral*, not a refusal: the caller writes the flag
     ///     when the screen actually goes up, so the next clear moment asks again. Same
     ///     etiquette as `NewActivityPrompt`, and for the same reason.
-    public static func shouldShow(hasSeen: Bool, sessionCount: Int, hasKey: Bool,
+    public static func shouldShow(hasSeen: Bool, sessionCount: Int,
                                   isPresenting: Bool = false) -> Bool {
-        !hasSeen && !isAlreadyWelcomed(sessionCount: sessionCount, hasKey: hasKey)
-            && !isPresenting
+        !hasSeen && !isAlreadyWelcomed(sessionCount: sessionCount) && !isPresenting
     }
 
     /// Whether an install that has never seen the screen should have the flag written
@@ -133,11 +136,12 @@ public enum WelcomePrompt {
     ///
     /// The case is the rider who was already using the app when this shipped: he is never
     /// shown the welcome, so nothing would ever spend the flag, and the day he deletes his
-    /// last session and clears his key the app would greet him like a stranger. Writing it
-    /// down the first time we notice makes "already welcomed" a fact about the install
-    /// rather than a fact about the current contents of the library.
-    public static func shouldMarkSeenSilently(hasSeen: Bool, sessionCount: Int,
-                                              hasKey: Bool) -> Bool {
-        !hasSeen && isAlreadyWelcomed(sessionCount: sessionCount, hasKey: hasKey)
+    /// last session the app would greet him like a stranger. Writing it down the first time
+    /// we notice makes "already welcomed" a fact about the install rather than a fact about
+    /// the current contents of the library.
+    ///
+    /// **A key alone never spends it** — see `isAlreadyWelcomed`.
+    public static func shouldMarkSeenSilently(hasSeen: Bool, sessionCount: Int) -> Bool {
+        !hasSeen && isAlreadyWelcomed(sessionCount: sessionCount)
     }
 }

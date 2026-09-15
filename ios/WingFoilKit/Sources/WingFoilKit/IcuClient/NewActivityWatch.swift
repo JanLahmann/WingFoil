@@ -230,12 +230,19 @@ public enum NewActivityPrompt {
     ///     to turn on what he turned on.
     ///   - hasAsked: the offer has been made before. Once is the whole contract: a "not
     ///     now" that comes back next launch is a "no" that was not listened to.
+    ///   - keyIsProven: the key has actually fetched something — a successful check, or a
+    ///     library and a sync behind it. Stored is not the same as working: "Save & check"
+    ///     writes the key to the keychain and *then* asks intervals.icu, so an offer made
+    ///     on `hasKey` alone lands over the spinner and sometimes over a key the answer
+    ///     rejects a second later (Jan, build 58). The whole point of the offer is that it
+    ///     arrives on the heels of "Connected".
     ///   - isPresenting: something else is on screen — the "whose session is this?" sheet,
     ///     Settings, Help, an error alert. That is a *deferral*, not a refusal: the caller
     ///     writes `hasAsked` down only when the alert actually goes up, so the next clear
     ///     screen asks again.
     public static func shouldAsk(hasKey: Bool, isEnabled: Bool, hasAsked: Bool,
+                                 keyIsProven: Bool = true,
                                  isPresenting: Bool = false) -> Bool {
-        hasKey && !isEnabled && !hasAsked && !isPresenting
+        hasKey && keyIsProven && !isEnabled && !hasAsked && !isPresenting
     }
 }

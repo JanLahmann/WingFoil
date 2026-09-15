@@ -51,7 +51,7 @@ Where one sentence has to serve two channels, the release wording names the beta
 a door is rather than pretending the door is here: *"GPX and TCX files are read by the
 CleanJibe beta; a FIT is read by every build."* That is the same rule the import footer
 follows, and the only place the release is allowed to mention a channel at all — beside
-"Curious about what is coming", which is the app naming its missing doors on purpose.
+Settings → "Coming in a future release", which is the app naming its missing doors on purpose.
 
 ## Four rules for "proven"
 
@@ -150,7 +150,7 @@ c through GPX and TCX as well. The app's `sourceClass` column is the source of t
 | feature | channel | note |
 |---|---|---|
 | Feedback mail with prefilled facts, footers on every page, menu Support | release | |
-| "What is being tested" section with the TestFlight link and the beta list | release | named *"Curious about what is coming"* until 14 Sep 2026; the App Store build is a finished app and the row points at where new things are tried, not at what it lacks. It lists the **beta** rows of this file and nothing else: the dev rows are `#if BETA`, because a handful of hand-picked phones is not a promise to anybody on the App Store. The beta shows the same list without the link, and the dev rows under it |
+| "Coming in a future release" section with the TestFlight link and the beta list | release | named *"Curious about what is coming"* until 14 Sep 2026 and *"What is being tested"* until 15 Sep; the row answers the rider's own question — when do I get these — rather than naming the room they are tried in. **Settings only**: it had a row in the library menu in the release channel and lost it on 15 Sep, because the menu is for what a rider needs now (Jan, build 58). It lists the **beta** rows of this file and nothing else: the dev rows are `#if BETA`, because a handful of hand-picked phones is not a promise to anybody on the App Store. On the page, *How to join the beta* is the **first section and a step** — one tap, library kept, a prominent TestFlight button — not a footnote under the lists. The beta shows the same list without the join section, and the dev rows under it |
 | Beta section: feature list, request a feature, extended feedback mail with usage and feature statistics | beta | counters kept on the phone, sent only in a mail the rider edits |
 | The usage report: seventeen counters, the failure list, and the card the library raises every fifth session or fortnight | beta | `UsageCounters` in the kit, `usage.counters.v1` on the phone; subject "CleanJibe beta usage report", Settings → Beta → Send usage report is the permanent door (docs/presentation.md, "The beta's usage report") |
 | Start over: the tester's uninstall, done properly | beta | last row of the Beta section, red, behind an alert that names every item. iOS keeps keychain items across an app delete, so a reinstall hands the intervals.icu key and the Strava connection back and the fresh first run never happens (Jan, 14 Sep 2026). `StartOver.wipe` is the one wipe — keychain pair, the whole defaults domain plus the app group's, and the container — and `SessionStore.startOver` closes and reopens the library around it, so the welcome screen comes back without a relaunch. The `UI_RESET=1` screenshot hook calls the same wipe (docs/presentation.md, "Start over") |
@@ -226,7 +226,7 @@ folder alongside the App Store screenshots.
    iPhone only; its share sheet declares FIT and ZIP and nothing else.
    The release also **never calls itself a beta and never names a door it lacks**: no other
    platform or third-party app in the help (guideline 2.3.10), no "the beta reads their
-   files" on Import, no dev list under "What is being tested", and a feedback mail whose
+   files" on Import, no dev list under "Coming in a future release", and a feedback mail whose
    subject is *CleanJibe feedback · build N · watch*. `strings` on the archived binary shows
    no "Android", no "beta feedback" and no "not reviewed CleanJibe".
 3. The dev bundle ids, their App Store Connect record and profiles, URL schemes and display name.

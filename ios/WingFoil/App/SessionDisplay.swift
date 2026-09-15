@@ -209,7 +209,8 @@ enum Fmt {
         return names[Int((wrapped / 22.5).rounded()) % 16]
     }
 
-    /// "Sun 30 Aug, 14:07" — **in the zone you name**.
+    /// "Sun 30 Aug, 14:07" — and "Sat 11 Oct 2025, 15:23" once the date is not in the year
+    /// it is being read in. **In the zone you name.**
     ///
     /// The zone is required and has no default, which is the whole point of it. It used to
     /// be the device's, implicitly, at every call site: a session's clock was formatted in
@@ -218,11 +219,36 @@ enum Fmt {
     /// parameter turns that into a question the compiler asks once per call site, and each
     /// one answers it out loud — `row.displayZone` for a session, `.current` (with a
     /// comment) for a surface that really is about the reader's own clock.
-    static func date(_ date: Date, zone: TimeZone) -> String {
+    ///
+    /// **The year is added exactly where it carries information** (Jan, build 58: a 2025
+    /// session listed as "Sat 11. Oct at 15:23"). A weekday and a day-month are a complete
+    /// answer for the afternoon you rode last week and a trap for the one you rode two
+    /// seasons ago — a library is full of both, and the row that lies about it is the one a
+    /// rider scrolls past fastest. So the format asks one question: is this year the year
+    /// the reader is in? If it is, the line is what it always was; if it is not, the year
+    /// goes in. Nothing is decided per screen, because every screen prints this through
+    /// here. Same rule and same reason as the widget's `WidgetChrome.shortDate`.
+    ///
+    /// - Parameter today: the reader's now, for the comparison — injectable so a test can
+    ///   stand in a different year without waiting for one.
+    static func date(_ date: Date, zone: TimeZone, relativeTo today: Date = Date()) -> String {
         var style = Date.FormatStyle.dateTime
             .weekday(.abbreviated).day().month(.abbreviated).hour().minute()
         style.timeZone = zone
+        if !isThisYear(date, zone: zone, today: today) { style = style.year() }
         return date.formatted(style)
+    }
+
+    /// Whether a date falls in the same calendar year as the reader's now.
+    ///
+    /// Both sides are read in the **session's** zone rather than the device's: a session
+    /// recorded at 00:40 on 1 January in Auckland is a New Year's session, and a phone in
+    /// Munich must not print last year's date on it because midnight had not reached
+    /// Europe yet.
+    private static func isThisYear(_ date: Date, zone: TimeZone, today: Date) -> Bool {
+        var calendar = Calendar.current
+        calendar.timeZone = zone
+        return calendar.component(.year, from: date) == calendar.component(.year, from: today)
     }
 
     /// "30 Aug 2026", in the zone you name — see `date(_:zone:)`.
