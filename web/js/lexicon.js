@@ -69,7 +69,9 @@ export function disciplineTitle(discipline) {
            windsurfFin: "Windsurf fin" }[discipline] || "Wingfoil";
 }
 
-/** The whole disclaimer in one breath — the same sentence the phone's footnote carries. */
+/** The whole disclaimer, in the voice, byte for byte what the phone's footnote carries.
+    The kit is the author: Presentation/DisciplineLexicon.swift, `experimentalNote`. */
 export const EXPERIMENTAL_NOTE =
-  "Experimental — windsurf analysis is untested; jibes and tacks work, pumping is off, "
-  + "planing thresholds are provisional. Tell us what you see.";
+  "Experimental. Windsurf analysis is untested. Jibes and tacks work. "
+  + "Pumping is off and planing thresholds are provisional. "
+  + "Send feedback on what you see.";

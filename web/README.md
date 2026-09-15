@@ -254,6 +254,42 @@ thing — one multiply and one offset on coordinates the document already carrie
 figure redrawn from them; it reports no distance and rounds no number. If an interaction
 needs a number the document does not carry, the number goes into `lab_bundle/`.
 
+## How the site talks
+
+`docs/voice.md` is the contract for every sentence a rider reads, here and on the phone and
+on the watch. Three registers, and the site uses all three:
+
+* **Register 1, plain** is the ground tone and covers nearly everything: page ledes, the
+  routes on `/start/`, the FAQ on `/learn/`, the analyzer's captions and errors. Short
+  imperatives, one thought per sentence, a verb in every sentence.
+* **Register 2, coach** is allowed in exactly two places on the site: the hero on `/`, which
+  is the pinned `promise`, and the line under the share card. One sentence of energy, then
+  back to plain.
+* **Register 3, spec** is the table cells on `/watches/`, the glossary on `/learn/`, the
+  footers and the fine print. Facts first, few verbs, no persuasion.
+
+Four mechanical rules the check holds: **no em-dash, no semicolon and no parenthesis inside
+a rider sentence**, no sentence over 20 words, a mean under 14, and none of the banned
+shapes of rule 5 (*the one thing…*, *which is the whole point*, *and that is why…*). The
+site was full of dashes until 15 September 2026; a dash is a second sentence hiding, so it
+became one. A parenthesis is either needed, and then it is a sentence, or it is not, and
+then it is gone. Nothing was deleted to pass: every fact kept its home, which is why the
+word budgets in `tools/verify_unique.py` did not move.
+
+Run it over the seven prose pages plus `/app/`:
+
+```bash
+python3 docs/copy/check_voice.py          # PASS/FAIL per target, exit 1 on any FAIL
+python3 docs/copy/check_voice.py --report # the numbers only, never fails
+```
+
+`/privacy/` and `/impressum/` are legal text and are not targets. Two kinds of sentence keep
+an exemption in `docs/copy/voice-exemptions.json`, each with its `why`, printed on every run:
+a sentence **the kit owns** and the page only prints (the hero `promise`, two
+`recording-classes` cells, the Connect IQ listing title with its brackets), and the **dated
+release notes** inside the `<details>` fold on `/whats-new/`, which say what was true on the
+day they shipped and are not rewritten later.
+
 ## Words the site does not own
 
 The site is edited in its own pass, and the app's pass is the one that keeps running. On
@@ -840,7 +876,7 @@ Icons live in `web/icons/`, copied from `brand/` (`icon-tile-*` for the normal i
 
 ## Verification
 
-Ten checks, none of which needs a browser:
+Eleven checks, none of which needs a browser:
 
 ```bash
 cd /path/to/WingFoil
@@ -876,6 +912,11 @@ python3 web/tools/verify_unique.py
 # 0g. no release copy names a door the release lacks, on the two pages that speak for the
 #     product rather than for the beta
 python3 docs/copy/check_release_copy.py
+
+# 0i. every rider sentence on the seven prose pages and in /app/ is inside docs/voice.md:
+#     no dash, no semicolon, no parenthesis in a sentence, none over 20 words, mean under
+#     14, none of the banned shapes (stdlib only, instant)
+python3 docs/copy/check_voice.py
 
 # 1. web_entry: the bundle reproduces the goldens exactly, and a track with no GPS fixes
 #    still produces a serializable document (analyze_json uses allow_nan=False)
