@@ -57,6 +57,49 @@
     <a class="btn ghost" href="../invite/" data-umami-event="beta-cta-topbar">Try the beta</a>
     <a class="btn ghost wide-only" href="../">About CleanJibe</a>
   </div>
+<!-- sitenav:begin — COPIED VERBATIM ON ALL NINE PAGES. The only thing that differs is
+     which link carries `aria-current="page"`; web/tools/verify_links.py compares this block
+     byte for byte across /, /learn/, /start/, /watches/, /invite/, /whats-new/, /app/,
+     /privacy/ and /impressum/ with that one attribute stripped, so an edit here is an edit
+     everywhere or it is a failed check.
+
+     Jan, 15 September 2026: *"es gibt nur Links auf den Seiten, aber keine richtige
+     Navigation"* — the pages did link each other, in prose and in the footer, which is
+     exactly nowhere a reader looks for navigation. Five destinations in the order a stranger
+     needs them: install, does my watch work, what does it measure, what changed, get the
+     beta. Privacy and Impressum are NOT here — they are read once and reached from the
+     footer of every page, which is where a reader goes looking for them.
+
+     The hrefs are ROOT-RELATIVE so one block can serve a page at the site root and a page a
+     directory down. The site is the root of cleanjibe.org, and of `python3 -m http.server`
+     run in web/, which is the same thing; verify_links.py resolves them.
+
+     It wears the section nav's furniture — the eyebrow's mono, the same ink, the same
+     hairline — because it is the same kind of thing one level up, and below 720 px it
+     collapses the same way: the `js` class set by the script at the foot of the page hides
+     the link row in favour of the select, so a reader whose script never ran keeps five
+     working links rather than a control that cannot act. -->
+<nav class="sitenav" aria-label="Site">
+  <ul>
+    <li><a href="/start/">Get started</a></li>
+    <li><a href="/watches/">Which watch</a></li>
+    <li><a href="/learn/">How it works</a></li>
+    <li><a href="/whats-new/">What&rsquo;s new</a></li>
+    <li><a href="/invite/">Get the beta</a></li>
+  </ul>
+  <label class="jump">
+    <span class="sr-only">Go to a page</span>
+    <select>
+      <option value="">Go to&hellip;</option>
+      <option value="/start/">Get started</option>
+      <option value="/watches/">Which watch</option>
+      <option value="/learn/">How it works</option>
+      <option value="/whats-new/">What&rsquo;s new</option>
+      <option value="/invite/">Get the beta</option>
+    </select>
+  </label>
+</nav>
+<!-- sitenav:end -->
 </header>
 
 <main>
@@ -127,10 +170,10 @@
   <section class="home-section" id="app-network">
     <h2>The iPhone app — what leaves your phone</h2>
     <p class="section-lede">
-      Ten entries, and not one of them is a surprise: an account you connected, something a
+      Nine entries, and not one of them is a surprise: an account you connected, something a
       map needs, the name of a place you sail, a mail you wrote and sent yourself, and — while
       this is a beta — Apple&rsquo;s own crash reports and one small file the app reads to see
-      whether your build is still the current one. There is no eleventh.
+      whether your build is still the current one. There is no tenth.
     </p>
 
     <dl class="terms">
@@ -162,8 +205,8 @@
           those two screens, deletes it from the phone; to withdraw the permission at Strava's
           end as well, use
           <a href="https://www.strava.com/settings/apps" rel="noopener">strava.com/settings/apps</a>,
-          which is where any app's access is really revoked. Until Strava has reviewed
-          CleanJibe it allows <strong>ten connected riders</strong>, which the app says out
+          which is where any app's access is really revoked. Strava lets a new app connect a
+          <strong>limited number of riders</strong>, which the app says out
           loud rather than reporting as a failure; if you are told the app is full, tell us. Sessions that arrive this way carry
           positions and no measured speed, so their speed records are marked uncertified — an
           accuracy note rather than a privacy one, and the Import screen makes it before you
@@ -214,13 +257,21 @@
           the watch and to nobody else.
         </dd>
       </div>
+      <!-- ONE entry for the geocoder, not two. It was documented twice — here and again
+           below under "The name of a sailing spot" — in two wordings, on 14 and 15 September
+           2026; the second was written without noticing the first, and the entry count only
+           added up because of the duplicate. The facts of both are merged here. -->
       <div class="term">
-        <dt>Apple's place-name lookup — once per new spot</dt>
+        <dt>Apple's place-name lookup — one rounded coordinate, once per new spot</dt>
         <dd>
-          When the app meets a sailing spot it has not seen before, it asks Apple's geocoding
-          service what that place is called, so your spots read "Nago-Torbole" instead of
-          "Spot 3". What is sent is one coordinate, rounded, for that spot's centre —
-          nothing else, and never again for a spot that already has a name.
+          When the app meets a sailing spot it has not seen before, it asks Apple&rsquo;s
+          reverse-geocoding service what that place is called, so your spots read
+          &ldquo;Nago-Torbole&rdquo; instead of &ldquo;Spot 3&rdquo;. What is sent is
+          <strong>a single coordinate</strong> — the centre of that spot, rounded to about
+          110&nbsp;m — and nothing else: no session, no track, no name, no identifier, no
+          account, and no CleanJibe server anywhere in the path. Once per new spot, never
+          again for a spot that already has a name, and never at all if you name your spots
+          yourself. Apple sees roughly where you sail, under Apple&rsquo;s own privacy policy.
         </dd>
       </div>
       <div class="term">
@@ -250,18 +301,6 @@
           <strong>Apple's</strong>, under Apple's TestFlight terms and the sharing choice you
           made when you accepted them — we neither add to it nor can switch it off — and it
           ends when the app leaves TestFlight for the App Store.
-        </dd>
-      </div>
-      <div class="term">
-        <dt>The name of a sailing spot &mdash; one rounded coordinate to Apple</dt>
-        <dd>
-          When CleanJibe finds a new place in your sessions it asks Apple&rsquo;s reverse-geocoding
-          service what that place is called, so a spot reads &ldquo;Nago-Torbole&rdquo; instead of
-          &ldquo;Spot 3&rdquo;. What is sent is <strong>a single coordinate</strong> &mdash; the
-          centre of that spot, rounded to about 110 m &mdash; and nothing else: no session, no
-          track, no name, no identifier, no account. Once per new spot, never for a spot that has
-          a name, and never at all if you name your spots yourself. Apple sees roughly where you
-          sail, under Apple&rsquo;s own privacy policy.
         </dd>
       </div>
       <div class="term">
@@ -576,6 +615,30 @@
   </p>
   <p class="fineprint">Anonymous, cookie-free usage stats and feature counts by umami. · <a href="../impressum/">Impressum</a></p>
 </footer>
+
+<!-- The three moving parts of the page chrome, identical on every document here.
+     `--topbar-h` is MEASURED rather than guessed: the topbar is sticky, carries the site nav
+     and changes height at every breakpoint, and the section nav under it has to stick
+     exactly below it. The `js` class is what lets the stylesheets swap both link rows for
+     their selects on a phone — without JavaScript a select cannot navigate, so the links
+     stay instead and the nav is never a control that does nothing. -->
+<script>
+  (function () {
+    var root = document.documentElement, bar = document.querySelector(".topbar");
+    root.classList.add("js");
+    function fit() { root.style.setProperty("--topbar-h", bar.offsetHeight + "px"); }
+    fit();
+    addEventListener("resize", fit);
+    var jump = document.querySelector(".sectionnav select");
+    if (jump) jump.addEventListener("change", function () {
+      if (this.value) { location.hash = this.value; this.selectedIndex = 0; }
+    });
+    var go = document.querySelector(".sitenav select");
+    if (go) go.addEventListener("change", function () {
+      if (this.value) location.href = this.value;
+    });
+  })();
+</script>
 
 </body>
 </html>

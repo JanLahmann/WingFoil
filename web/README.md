@@ -48,9 +48,12 @@ web/
 │                               honest third column — ridden on a real watch, or only
 │                               through the simulator's layout checks — and the second table
 │                               for every other brand (FIT certifies, GPX does not, pump
-│                               strokes need a CleanJibe watch app). Generated from nothing:
-│                               keep it in step with `garmin/manifest.xml` by hand. No JS,
-│                               not precached.
+│                               strokes need a CleanJibe watch app). The product COUNT and the
+│                               watch app's VERSION are no longer typed: they sit in
+│                               `<span data-copy="garmin-count">` / `garmin-version` and are
+│                               written by `tools/make_devices.py` out of the manifests. The
+│                               family table and its prose are still hand-kept. No JS, not
+│                               precached.
 ├── whats-new/index.html        "WHAT'S NEW" (cleanjibe.org/whats-new/): one card per public
 │                               release, newest first — the iPhone TestFlight builds
 │                               and the Connect IQ versions, which number differently and
@@ -147,10 +150,21 @@ web/
 │   ├── wingfoil_lab/           GENERATED copy of lab/src/wingfoil_lab — do not edit
 │   ├── FILES.json              load list for the worker (HTTP has no directory listing)
 │   └── MANIFEST.json           source hashes, for the staleness check
-├── tools/verify_links.py       every internal link on the site resolves and every document
-│                               nests its tags: no browser, no server, no dependency. Run it
-│                               after touching any .html here. It also runs make_start.py
-│                               --check, so a stale /start/ fails with the links
+├── tools/verify_links.py       every internal link on the site resolves, every document
+│                               nests its tags, and the SITE NAV is byte-identical on all
+│                               nine pages (see "Site navigation" below): no browser, no
+│                               server, no dependency. Run it after touching any .html here.
+│                               It also runs make_start.py --check and make_devices.py
+│                               --check, so a stale /start/ or a stale product count fails
+│                               with the links
+├── tools/make_devices.py       writes ../docs/copy/garmin-devices.json from
+│                               garmin/manifest.xml + -beta + -dev (asserting the three
+│                               product sets are identical), and rewrites the
+│                               `data-copy="garmin-count"` / `garmin-version` spans on the
+│                               five pages that print them: /, /learn/, /watches/, /invite/,
+│                               /whats-new/. `--check` exits 1 if the JSON or any span is
+│                               stale. Stdlib only. The manifests are the source; never type
+│                               a product count into a page
 ├── tools/make_start.py         writes BOTH copies of the getting-started guide from
 │                               ../docs/guide/getting-started.json: the kit's
 │                               Help/GettingStartedGuide.swift and the block of
@@ -176,7 +190,7 @@ web/
 │                               UTC-offset ladder, so verify_presentation asserts the
 │                               sentence the browser actually prints
 └── .nojekyll                   GitHub Pages: serve files verbatim
-```
+``` The spans print what the public listing installs today (the header line of garmin/store/listing.md, `Version **x** on the store, **n** products`), not the tree's manifest, because a version sits on the private listing for Jan's water test first; the JSON carries both.
 
 ## The one architectural rule
 
@@ -198,6 +212,27 @@ interpolation that slides the map dot between two fixes. The map's zoom is the s
 thing — one multiply and one offset on coordinates the document already carries, with the
 figure redrawn from them; it reports no distance and rounds no number. If an interaction
 needs a number the document does not carry, the number goes into `lab_bundle/`.
+
+## Words the site does not own
+
+The site is edited in its own pass, and the app's pass is the one that keeps running. On
+15 September 2026 that produced a website which was a faithful snapshot of 14 September at
+12:30 and wrong about six things the app had been right about since. The fix was not a
+framework; it was to stop retyping facts that live somewhere else.
+
+| what | who decides it | how the site stays honest |
+|---|---|---|
+| Garmin product count, watch app version | `garmin/manifest.xml` (+ `-beta`, `-dev`) | `docs/copy/garmin-devices.json`, written by `tools/make_devices.py`; the pages carry `<span data-copy="garmin-count">` / `garmin-version` and the script rewrites them. `--check` runs with `verify_links.py` |
+| which feature is in which channel | `docs/channels.md` | the two `#coming` lists on `/` and `/invite/` are readings of it and of nothing else. The **Garmin export ZIP is a release door** since 14 Sep 2026 and is not on either beta list; the section is headed **"Coming in a future release"**, the app's own title |
+| the three feedback prompts and the invitation sentence | `FeedbackReport.Prompt` and `FeedbackInvitation.sentence` in the kit | every `mailto:` body on the site uses the three prompts verbatim — *What happened, or what you would like:* / *What you expected instead:* / *Which session (date, spot), if it is about one:* — and closes with *Ideas and wishes are as welcome as bugs.* The two extra questions (watch and phone, app version) are web-only on purpose: the browser cannot fill them in and the app does not need to ask |
+| what a rider is told about Strava | `docs/channels.md` | one sentence, everywhere: **"Strava lets a new app connect a limited number of riders"**, plus *tell us if you are told the app is full*. No page may say the app has not been reviewed, or name a cap, or call it single-rider — a dated release note corrects itself in brackets rather than rewriting its own history |
+| the Connect IQ listing's name | the live store | `<span data-copy="ciq-title">` on `/start/` and `/invite/`. It still prints *CleanJibe Wingfoil Tracker (Beta)* because that is what the store says today; `docs/channels.md` has decided the rename, and the span is so both places flip on the day the store does |
+| the rider vocabulary | `CLAUDE.md` | *flew through*, *clean*, *dry*; the streak is the **dry streak**. "carried", "success", "no-fall streak", "clean-jibe percentage" and "swim rate" appear nowhere — `grep -ri` over `web/**/*.html` must come back empty |
+| the route letters on `/start/` | `docs/guide/getting-started.json` | A Garmin · B any watch that writes a .fit · C Strava · D the CleanJibe Apple Watch app · E Apple's own Workout app. The cards are **generated** into the block between `<!-- guide:begin -->` and `<!-- guide:end -->`; a reference to a letter written *outside* that block is hand-kept and is exactly how the page contradicted itself on 14 September |
+
+Two rules follow from the table. **Never hand-edit inside `<!-- guide:begin --> … <!-- guide:end -->`** — edit `docs/guide/getting-started.json` and re-run `tools/make_start.py`.
+And **never type a Garmin product count into a page**; put a `data-copy` span there and let
+`tools/make_devices.py` fill it.
 
 ## Privacy
 
@@ -279,7 +314,10 @@ python3 -m http.server 8765
 
 > The site has one app and a family of documents around it. `/` is the project homepage;
 > `/invite/`, `/start/`, `/watches/`, `/whats-new/`, `/privacy/` and `/impressum/` are static
-> HTML with one extra stylesheet and no JavaScript at all; `/app/` is this analyzer.
+> HTML with one extra stylesheet and **no JavaScript file of their own** — the only script on
+> them is the twelve inline lines that measure the topbar and drive the two nav selects (see
+> *Site navigation*), and every one of those pages renders and navigates whole without it;
+> `/app/` is this analyzer.
 > (`/strava/callback/` is the exception to everything: self-contained, noindex, and for the
 > iPhone app rather than for a reader.) Everything the analyzer
 > loads — `css/`, `js/`, `icons/`, `example/`, `lab_bundle/` — stays at the site root and is
@@ -579,8 +617,8 @@ choices above are made from the documented behaviour, not from a measured device
   *Reload to update*. Bump `VERSION` in `sw.js` whenever anything under `web/` changes; the
   old caches are deleted on activate. **This is not optional for a CSS or JS edit**: the
   shell is served cache-first, so without the bump every already-installed client keeps the
-  old stylesheet indefinitely. Current value: `v53` (the light theme, the card takes the
-  fold, `/learn/` splits off, and Android's share target).
+  old stylesheet indefinitely. Current value: `v56` (the site nav in every topbar, and the
+  generated Garmin device count).
 
 The worker precaches **three** documents — `/`, `/learn/` and `/app/` — and its offline
 navigation fallback picks between them by path, so an offline deep link to `/app/#/library`
@@ -621,6 +659,43 @@ node against a fake `ServiceWorkerGlobalScope` — a multipart POST with a file 
 parked under the right key, a POST with no file part produced a 303 to `app/`, and a GET to
 the same path was not hijacked. What only a phone can show is whether Android's sheet
 actually lists CleanJibe and what MIME type it attaches.
+
+### Site navigation
+
+Jan, 15 September 2026: *"es gibt nur Links auf den Seiten, aber keine richtige
+Navigation."* He was right. The topbar carried the brand and the two CTAs; every route from
+one page to another lived in prose or in the footer, and `/app/`'s footer named two
+destinations out of seven.
+
+There is now **one navigation row in the topbar of all nine documents** — `/`, `/learn/`,
+`/start/`, `/watches/`, `/invite/`, `/whats-new/`, `/app/`, `/privacy/`, `/impressum/`.
+(`/strava/callback/` is excluded from this as from everything: it is self-contained, holds
+an authorization code and is on screen for a frame.)
+
+- **Five destinations**, in the order a stranger needs them: *Get started* (`/start/`),
+  *Which watch* (`/watches/`), *How it works* (`/learn/`), *What's new* (`/whats-new/`),
+  *Get the beta* (`/invite/`). **Privacy and Impressum are deliberately not on it** — they
+  are read once, and the footer of every page is where a reader goes looking for them.
+- **The two CTAs did not move.** The nav is not a second button row: it wears the section
+  nav's furniture (the eyebrow's mono, uppercase, `--ink-3`), because it is the same kind of
+  thing one level up. One button may be the loud one, and it is still *Open the analyzer*.
+- **The current page is marked twice**, `aria-current="page"` for the accessibility tree and
+  a 2 px rule in the link ink for the eye. Every colour is a token, so the light theme at the
+  foot of `css/style.css` turns it with everything else.
+- **Below 720 px it collapses to one select**, the same swap the section nav makes and gated
+  on the same `js` class that the small script at the foot of every page sets. The links stay
+  in the markup: without JavaScript a select cannot navigate, so a reader whose script never
+  ran keeps five working links instead of a dead control.
+- **The hrefs are root-relative** (`/start/`, not `../start/`). That is what lets one block
+  serve a page at the site root and a page a directory down — and one block is the point.
+
+**It is copied markup, and the copy is checked.** A static site with no build step has
+nowhere to put a partial, so the block lives nine times, between
+`<!-- sitenav:begin -->` and `<!-- sitenav:end -->`. `tools/verify_links.py` compares all
+nine byte for byte with `aria-current="page"` stripped and fails on any difference, so an
+edit to one is an edit to all nine or it is a red check. The same script sets `--topbar-h`
+(the sticky section nav has to sit exactly below a topbar that is now two rows tall and
+changes height at every breakpoint) and drives both selects.
 
 ### Light theme
 
@@ -674,7 +749,7 @@ Icons live in `web/icons/`, copied from `brand/` (`icon-tile-*` for the normal i
 
 ## Verification
 
-Eight checks, none of which needs a browser:
+Nine checks, none of which needs a browser:
 
 ```bash
 cd /path/to/WingFoil
@@ -682,13 +757,18 @@ cd /path/to/WingFoil
 # 0. the bundle is not stale (exit 1 if lab/ moved on without it)
 python3 web/tools/bundle_lab.py --check
 
-# 0b. every internal link resolves and every document closes its tags (stdlib only, <1 s).
-#     It also runs check 0c, so running this alone covers both.
+# 0b. every internal link resolves, every document closes its tags, and the site nav is the
+#     same bytes on all nine pages (stdlib only, <1 s).
+#     It also runs checks 0c and 0d, so running this alone covers all three.
 python3 web/tools/verify_links.py
 
 # 0c. /start/ and the app's Getting started topic still match their one source,
 #     docs/guide/getting-started.json (stdlib only, instant)
 python3 web/tools/make_start.py --check
+
+# 0d. the Garmin product count and the watch app's version on the five pages that print
+#     them still match garmin/manifest*.xml (stdlib only, instant)
+python3 web/tools/make_devices.py --check
 
 # 1. web_entry: the bundle reproduces the goldens exactly, and a track with no GPS fixes
 #    still produces a serializable document (analyze_json uses allow_nan=False)
@@ -749,7 +829,8 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
 0-light. **Both themes.** Toggle the OS (or DevTools → Rendering → *Emulate CSS
    prefers-color-scheme*) on every page. Dark must be **byte-identical to what it always
    was**; light must keep the analyzer's two figures and the homepage motif on their own dark
-   plate while everything around them turns. Check the sticky topbar and section nav, the
+   plate while everything around them turns. Check the sticky topbar, the site nav in it
+   (its current-page rule must be visible in both themes) and the section nav, the
    panels, the pills in the turns table, the code spans, the tables' hairlines, the footer,
    and the share-card dialog. `/strava/callback/` stays dark by design.
 0learn. **More about how it works.** <http://127.0.0.1:8765/learn/>. Everything the homepage
@@ -770,11 +851,13 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    `info@cleanjibe.org` third — plus one line naming the stores' own channels (TestFlight's
    screenshot form, Connect IQ's *Contact Developer*), because both really do reach the same
    developer and a page that listed only its own doors would be implying otherwise. The
-   watches note names **0.9.10** and says out loud that Venu, vívoactive and Instinct are
-   untested on real watches. Every mail address on the site
+   watches note names the version and the product count out of `docs/copy/garmin-devices.json`
+   (the two `data-copy` spans; `make_devices.py --check` proves them) and says out loud that
+   Venu, vívoactive, Instinct 3 AMOLED and the fenix 5 Plus family are untested on real
+   watches. Every mail address on the site
    is `info@cleanjibe.org`; grepping the `.html` files for the old personal address must come
    back empty.
-0a2. **The getting-started page.** <http://127.0.0.1:8765/start/>. The three routes read in
+0a2. **The getting-started page.** <http://127.0.0.1:8765/start/>. The five routes read in
    order at both widths and every internal link resolves — `../`, `../invite/`, `../app/`,
    `../privacy/`, `../impressum/` — as do the two external ones (testflight.apple.com and
    the Connect IQ listing `e77867b5-…`). The mail link must open a composer with the
@@ -786,8 +869,10 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
 0a3. **Which watch.** <http://127.0.0.1:8765/watches/>. Both tables are tabular above 760 px
    and one card per row below it (`table.stack-sm` reads its labels from each `<td>`'s
    `data-th`, so a missing one shows as an unlabelled row). The family list must sum to the
-   product count in `garmin/manifest.xml` — **39** at 0.9.10 — and the three families added in
-   0.9.10 must say they are untested. Every internal link resolves: `../`, `../invite/`,
+   product count in `garmin/manifest.xml`, which is what `docs/copy/garmin-devices.json`
+   carries and what the two `data-copy` spans print — **42** at **0.9.11** — and the four
+   families nobody has ridden (Venu and vívoactive and Instinct 3 AMOLED from 0.9.10, the
+   fenix 5 Plus family from 0.9.11) must say so. Every internal link resolves: `../`, `../invite/`,
    `../invite/#feedback`, `../start/`, `../app/`, `../whats-new/`, `../privacy/`,
    `../impressum/`.
 0a4. **What's new.** <http://127.0.0.1:8765/whats-new/>. One `.panel .piece` card per release,
