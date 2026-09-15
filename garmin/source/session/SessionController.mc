@@ -101,7 +101,7 @@ class SessionController {
                 if (flightEvent == FlightDetector.EVENT_END
                     && engine.detector.longestS > _prevLongest) {
                     _prevLongest = engine.detector.longestS;
-                    AlertManager.longestFlight();
+                    AlertManager.longestFlight(engine.detector.longestS.toNumber());
                 }
             }
             if (pbEvents != 0 && engine.speedMps >= AppSettings.cfg.foilEntryMps) {
@@ -119,10 +119,13 @@ class SessionController {
                 // letting the global floor eat whichever lost the race. A clean *candidate*
                 // buzzes nothing yet — its quiet tail (0.9.9) answers within ten seconds.
                 AlertManager.turnResolved(engine.turns.lastOutcome,
-                    engine.turns.lastCleanJibe);
+                    engine.turns.lastCleanJibe, engine.turns.lastKind);
+                // The streak flash (EventFlash) rides after the verdict: a 5th or 10th dry
+                // turn in a row is the one number the rider is chasing between swims.
+                AlertManager.dryStreak(engine.turns.dryStreak);
             } else if (turnEvent == TurnDetector.EVENT_CLEAN_SETTLED) {
                 AlertManager.turnResolved(TurnDetector.OUTCOME_FLEW,
-                    engine.turns.lastCleanJibe);
+                    engine.turns.lastCleanJibe, engine.turns.lastKind);
             }
             if (pumpEvent == PumpDetector.EVENT_TAKEOFF) {
                 AlertManager.takeoff();
@@ -328,6 +331,7 @@ class SessionController {
             return false;
         }
         PbFlash.stop();
+        EventFlash.clearAll();
         if (state == STATE_RECORDING) {
             _session.stop();
         }
@@ -379,6 +383,7 @@ class SessionController {
 
     function finishDiscard() as Void {
         PbFlash.stop();
+        EventFlash.clearAll();
         _stopAccel();
         if (_session != null) {
             if (state == STATE_RECORDING) {
