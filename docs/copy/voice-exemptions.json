@@ -1,1 +1,27 @@
-[]
+[
+  {
+    "path": "garmin/resources/strings/strings.xml",
+    "text": "(km/h)",
+    "why": "a unit or a range in a Garmin Connect setting title; the bracket is the convention every other Connect IQ app uses there"
+  },
+  {
+    "path": "garmin/resources/strings/strings.xml",
+    "text": "(s)",
+    "why": "a unit or a range in a Garmin Connect setting title; the bracket is the convention every other Connect IQ app uses there"
+  },
+  {
+    "path": "garmin/resources/strings/strings.xml",
+    "text": "(min, 0 = off)",
+    "why": "a unit or a range in a Garmin Connect setting title; the bracket is the convention every other Connect IQ app uses there"
+  },
+  {
+    "path": "garmin/resources/strings/strings.xml",
+    "text": "(km, 0 = off)",
+    "why": "a unit or a range in a Garmin Connect setting title; the bracket is the convention every other Connect IQ app uses there"
+  },
+  {
+    "path": "garmin/resources/strings/strings.xml",
+    "text": "(deg from, -1 = unset)",
+    "why": "a unit or a range in a Garmin Connect setting title; the bracket is the convention every other Connect IQ app uses there"
+  }
+]
