@@ -88,7 +88,7 @@ No Garmin at all? The same analysis engine runs free in any browser at cleanjibe
 
 ABOUT PRIVACY, PLAINLY
 
-There is no account and no login. There is no CleanJibe server, so your sessions are not uploaded, not analysed remotely and not stored anywhere but your own phone. There is no advertising and no tracking of any kind - no analytics, no crash reporter, no third-party SDK collecting anything. The app never asks for your location; every coordinate it shows was already inside a file you imported. The only server it ever contacts is intervals.icu, with your own key, to download your own activities - and only if you set that up. Full policy: cleanjibe.org/privacy
+There is no account and no login. There is no CleanJibe server, so your sessions are not uploaded, not analysed remotely and not stored anywhere but your own phone. There is no advertising and no tracking of any kind - no analytics, no crash reporter, no third-party SDK collecting anything. The app never asks for your location; every coordinate it shows was already inside a file you imported. The servers it can contact are intervals.icu and Strava, each with your own credential and only if you connect them, plus Apple: for the map when a map is on screen, and one rounded coordinate per new sailing spot to look up its name. Full policy: cleanjibe.org/privacy
 
 OUT OF BETA
 
