@@ -2806,6 +2806,31 @@ switch off again, so the next sync shows it off. Every page key is written, off 
 included: the rider gets exactly the fresh-install set — Main, Foil, Records, Turns, Clock,
 Timeline, Map — and never a mixture.
 
+## The watch's words for a stranger (0.9.11)
+
+The audit of 15 September 2026 walked the watch as a first-time rider and found four places
+where the glass assumed knowledge it never gave. Fixed in 0.9.11-dev4, each as a string that
+fits where it can and falls back where it cannot:
+
+- **The Turns header says `flew · touch · fell`**, the names of the three counts under it, with
+  the wind axis after them where the row has room at FONT_XTINY. It said `tack / jibe` — a
+  leftover from a giant that once counted tacks and jibes — over the outcome ladder, so a
+  stranger read 35 tacks and 12 jibes. The watch never draws the tack and jibe counts; the
+  phone does.
+- **The Main tally carries its words**: `35 flew · 12 touch · 4 fell`, the caption in
+  FONT_XTINY after each count in the count's own ink, whenever the row can afford them on top
+  of the separators and the verdict. They are the first thing dropped as a session gets wide
+  (`tallyContent`), so a thirty-turn tally still reads as digits and never clips. Colour is a
+  reinforcement now, not the only key.
+- **BACK is named.** START toggles pause; BACK opens the session menu with Save. The start
+  page's hint says `START records · BACK saves` where the row fits it (240 px glasses keep
+  `START to record`), and the paused banner says `PAUSED · BACK saves` while that keeps the
+  banner in the top third of the glass — the moment a rider who pressed START to finish is
+  looking at exactly that word.
+- **The summary says `NOT SAVED`**, in red and without the badge, when `Session.save()` returned
+  false; it drew `SAVED` regardless until 0.9.11. **Discard asks once**, with the firmware's own
+  yes/no dialog, and the session menu stays under it until the answer is yes.
+
 ## The watch link — Settings → Garmin watch
 
 One section, and every row in it is a fact the rider can act on: which watch, whether it is
