@@ -20,7 +20,7 @@
  * swapping the worker under a running analysis.
  */
 
-const VERSION = "v59";     // v59: the example session is a button, the analyzer gains a glossary and a feedback door (v58: the copy contract on the pages, and the not-a-session note in the session view; v57: the site nav is four links)
+const VERSION = "v60";     // v60: the site is cut in half — the front door keeps the card and two links, /start/ folds its routes, "How it works" becomes "What it measures", one footer everywhere (v59: the example session is a button, the analyzer gains a glossary and a feedback door; v58: the copy contract on the pages)
 // The cache *names* keep the historical prefix on purpose: the activate handler below
 // deletes every cache starting with it, so renaming the prefix would strand every v1–v13
 // cache on every device that ever visited, forever. Nobody sees these strings.

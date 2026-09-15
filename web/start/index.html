@@ -62,7 +62,7 @@
   <div class="topbar-right">
     <a class="btn primary" href="../app/" data-umami-event="analyze-cta-topbar">Open the analyzer</a>
     <a class="btn ghost" href="../invite/" data-umami-event="beta-cta-topbar">Try the beta</a>
-    <a class="btn ghost wide-only" href="../">About CleanJibe</a>
+    <a class="btn ghost wide-only" href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">GitHub</a>
   </div>
 <!-- sitenav:begin — COPIED VERBATIM ON ALL NINE PAGES. The only thing that differs is
      which link carries `aria-current="page"`; web/tools/verify_links.py compares this block
@@ -92,7 +92,7 @@
   <ul>
     <li><a href="/start/" aria-current="page">Get started</a></li>
     <li><a href="/watches/">Which watch</a></li>
-    <li><a href="/learn/">How it works</a></li>
+    <li><a href="/learn/">What it measures</a></li>
     <li><a href="/whats-new/">What&rsquo;s new</a></li>
   </ul>
 </nav>
@@ -104,12 +104,9 @@
 <nav class="sectionnav" aria-label="On this page">
   <div class="sectionnav-inner">
     <ul>
-      <li><a href="#before">Before you start</a></li>
-      <li><a href="#water">On the water</a></li>
       <li><a href="#routes">The routes</a></li>
       <li><a href="#stuck">If something breaks</a></li>
       <li><a href="#report">What to say</a></li>
-      <li><a href="#seen">What you should see</a></li>
       <li><a href="#history">Your old sessions</a></li>
       <li><a href="#tell">Tell us</a></li>
     </ul>
@@ -117,12 +114,9 @@
       <span class="sr-only">On this page</span>
       <select>
         <option value="">On this page&hellip;</option>
-        <option value="#before">Before you start</option>
-        <option value="#water">On the water</option>
         <option value="#routes">The routes</option>
         <option value="#stuck">If something breaks</option>
         <option value="#report">What to say</option>
-        <option value="#seen">What you should see</option>
         <option value="#history">Your old sessions</option>
         <option value="#tell">Tell us</option>
       </select>
@@ -139,201 +133,31 @@
        phone), and a rider who gets no session out of it has no way to tell whether he did
        something wrong or found a bug.
 
-       THE REAL TEST IS A SESSION ON THE WATER, and the page now says so first. What this
-       thing claims is a verdict on every jibe, and the only person who can check a verdict is
-       the rider who remembers the jibe: a bike ride around the block proves the file moved
-       and nothing else. The 20-minute dry run is kept, because "I cannot wait for wind" is a
-       real state to be in and a file that never arrives is worth finding out about at a desk
-       — but it is a check, not the test, and it now sits after the walkthrough. -->
+       THE REAL TEST IS A SESSION ON THE WATER, and the hero says the stake rather than
+       listing the anchors the section nav already carries. What this thing claims is a
+       verdict on every turn, and the only person who can check a verdict is the rider who
+       remembers the turn. The 20-minute dry run is still here — "I cannot wait for wind" is
+       a real state to be in — as its own card among the routes, which is where a reader
+       looking for it will look. -->
   <section class="hero">
     <div class="hero-copy">
       <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Beta test · one session on the water</p>
       <h1>Get started with the CleanJibe beta</h1>
       <p class="lede">
         The test is <strong>one ordinary session</strong>. Ride the way you always do, then
-        open it on the phone and read the verdicts against what you remember — that jibe you
-        touched down in, the one you flew through and knew it. Nobody but you can check that,
-        which is the whole reason this beta exists.
+        open it on the phone and read the turns: <em>flew through</em>, <em>touched down</em>,
+        <em>fell in</em>, with the clean jibes marked among them. You are the only person who
+        knows which one it really was.
       </p>
       <p class="lede">
-        <a href="#water">The walkthrough is below</a>: charge, record, save, sync, read, share
-        a card, tell us. Then <a href="#routes">the route for your own watch</a>,
-        <a href="#report">what to say about it</a> and <a href="#tell">where to put it</a>.
-      </p>
-      <p class="lede">
-        <strong>No wind this week?</strong> There is
-        <a href="#guide-dryRun">a 20-minute check on land</a> further down — it proves the
-        recording reaches the phone, which is the half of the route that goes wrong.
+        Not installed yet? <a href="../invite/" data-umami-event="start-invite">Get the
+        beta</a> first.
       </p>
     </div>
   </section>
 
-  <!-- --------------------------------------------------------- before you start -->
-  <section class="home-section" id="before">
-    <h2>Before you start</h2>
-    <p class="section-lede">
-      Four things, and the last one is the one people skip.
-    </p>
 
-    <ol class="steps-flow">
-      <li>
-        <h3>Install the iPhone app</h3>
-        <p>
-          The Garmin, the file and the Strava routes work in every build of CleanJibe. The two
-          Apple&nbsp;Watch routes are <span class="tag beta">beta</span> doors, and the beta is
-          one tap away: on the iPhone open
-          <a href="https://testflight.apple.com/join/nygqGGcn" rel="noopener"
-             data-umami-event="start-testflight">testflight.apple.com/join/nygqGGcn</a>,
-          install Apple's <strong>TestFlight</strong> app if it asks, then install
-          <strong>CleanJibe</strong> through it. Your library comes with you either way.
-        </p>
-        <p>
-          Open CleanJibe once so it can ask for its permissions, and allow
-          <strong>Health</strong> — that is the only one the beta asks for, and the app never
-          asks for your position at all.
-        </p>
-        <p class="note">
-          If TestFlight offers an update for CleanJibe, take it before you start. It is worth
-          being on the newest build for a test whose whole point is telling us what broke.
-        </p>
-      </li>
 
-      <li>
-        <h3>Garmin riders: install the watch app</h3>
-        <!-- `data-copy="ciq-title"` is the LIVE Connect IQ listing's name, which is what a
-             rider sees in the store today. docs/channels.md has already decided the rename
-             to "CleanJibe Wingfoil Watch App Beta"; the span is so the two places that print
-             it can be flipped together on the day the listing actually changes, rather than
-             the site promising a name the store does not have. -->
-        <p>
-          <a href="https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806" rel="noopener"
-             data-umami-event="start-garmin-store"><span data-copy="ciq-title">CleanJibe Wingfoil Tracker&nbsp;(Beta)</span></a>
-          on the Connect IQ store — from the web store, or from Connect IQ inside the Garmin
-          Connect app on your phone. It is an open beta: no key, no account, nothing to
-          request.
-        </p>
-      </li>
-
-      <li>
-        <h3>Watch on the wrist, unlocked, paired</h3>
-        <p>
-          Both watch routes want the watch you actually wear, paired with the iPhone you
-          installed CleanJibe on.
-        </p>
-      </li>
-
-      <li>
-        <h3>Go outside</h3>
-        <p>
-          Every route needs GPS, and a watch indoors records no positions at all — which
-          produces exactly the empty session that looks like a bug and is not one.
-        </p>
-      </li>
-    </ol>
-  </section>
-
-  <!-- ------------------------------------------------------------- on the water -->
-  <!-- The actual test. Written for the Garmin route because that is the one with three apps
-       in it and the one most testers ride; the other watches join at step 4, and route B
-       below (any watch that writes a .fit) is the file half for them. The route letters are
-       generated with the cards — see docs/guide/getting-started.json — so a reference to one
-       outside the guide block has to be checked against them by hand. Nothing in here is dev-only: the summary card and the
-       map pushed to the watch are in a build a handful of people have, so they are on the
-       homepage's "what is coming" list and not in a walkthrough. -->
-  <section class="home-section" id="water">
-    <h2>On the water — the real test</h2>
-    <p class="section-lede">
-      One normal session. The only extra work is the last two steps, and they are the ones
-      this beta cannot do without.
-    </p>
-
-    <ol class="steps-flow">
-      <li>
-        <h3>Charge the watch, and the phone</h3>
-        <p>
-          A GPS activity with the screen on is the most expensive thing a watch does, and a
-          session that stops at 70&nbsp;% battery is a session nobody can read a verdict out
-          of. Top both up the evening before.
-        </p>
-      </li>
-      <li>
-        <h3>Start CleanJibe on the watch, on the beach</h3>
-        <p>
-          Press START, pick <strong>CleanJibe</strong> from the activity list, and wait until
-          it says <em>GPS good</em> before you press <code>START</code> again. Do it while you
-          are rigging: a fix takes longer than you think and the first minutes of a session are
-          the ones you are least willing to spend standing still.
-        </p>
-      </li>
-      <li>
-        <h3>Ride, and glance at the wrist once</h3>
-        <p>
-          Ride the session you came for. Somewhere in the middle, look at the tally — flew,
-          touched down, fell in — and the dry streak, and see whether they match the last ten
-          minutes. That one glance is worth more than a paragraph written afterwards.
-        </p>
-      </li>
-      <li>
-        <h3>Stop and save</h3>
-        <p>
-          <code>STOP</code>, then <strong>Save</strong>. Flick through the summary pages once
-          (UP/DOWN) before you put the watch away and note anything that looks wrong.
-        </p>
-      </li>
-      <li>
-        <h3>Let Garmin Connect sync</h3>
-        <p>
-          The watch uploads to Garmin Connect by itself next to the phone — open Garmin Connect
-          once if it is taking its time. From there
-          <a href="#guide-garmin">intervals.icu brings it to CleanJibe</a>; that bridge is set up
-          once and never again.
-        </p>
-        <p class="note">
-          Apple Watch, Polar, Suunto, COROS or a phone: your recording gets in a different way,
-          and the routes are the next section down. Everything after this step is the same.
-        </p>
-      </li>
-      <li>
-        <h3>Pull down on Sessions</h3>
-        <p>
-          Open CleanJibe on the iPhone and <strong>pull down</strong> on the Sessions list.
-          That is the refresh: it checks intervals.icu, imports what is new, and analyses it as
-          it lands. Your session appears at the top with the day&rsquo;s numbers on it.
-        </p>
-      </li>
-      <li>
-        <h3>Open it, and check the verdicts against your memory</h3>
-        <p>
-          This is the test. Open the session, go to <strong>Turns</strong>, and read down the
-          list: every turn has a verdict — <em>flew through</em>, <em>touched down</em>,
-          <em>fell in</em> — and the clean jibes are marked among them. Tap one and the page
-          says why it was scored that way.
-        </p>
-        <p>
-          Where does it disagree with you? A jibe you know you flew through that is marked as a
-          touchdown, a swim it never noticed, a wind direction that is not the one you sailed
-          in. Those three sentences are the most useful report this project can get.
-        </p>
-      </li>
-      <li>
-        <h3>Share a card</h3>
-        <p>
-          Share button, top right &rarr; <strong>share card</strong>: your track, your numbers,
-          one picture. Send it to whoever you were on the water with. It is also how anyone
-          else finds out this exists, so tell us if anything on it reads wrong or looks cheap.
-        </p>
-      </li>
-      <li>
-        <h3>Send the report: Menu &rarr; Support &amp; ideas</h3>
-        <p>
-          Top left on the Sessions tab: <strong>Menu &rarr; Support &amp; ideas</strong>. The build, your
-          phone, your iOS version, your watch and the size of your library are already typed
-          in; you add what the session got right and what it got wrong, and press Send.
-          <a href="#tell">The other doors are at the bottom of this page</a>.
-        </p>
-      </li>
-    </ol>
-  </section>
 
 <!-- guide:begin -->
   <!-- GENERATED by web/tools/make_start.py from docs/guide/getting-started.json —
@@ -346,7 +170,7 @@
   <section class="home-section" id="routes">
     <h2>The routes — one per watch</h2>
     <p class="section-lede">The real test is one session on the water: record it the way you always do, bring it in, and read the turn verdicts against what you remember — which jibes you flew through, where you touched down, where you fell in.</p>
-    <p class="section-lede">Take the one that matches what is on your wrist. Every route ends the same way: the session lands in CleanJibe, analysed as it arrives.</p>
+    <p class="section-lede">Take the one that matches what is on your wrist. Go outside: every route needs GPS, and a watch indoors records no positions at all. Every route ends the same way — the session lands in CleanJibe, analysed as it arrives.</p>
     <p class="beta-legend">
       <span class="tag beta">beta</span> in the public beta today, not yet in the App Store release.
     </p>
@@ -356,33 +180,35 @@
         <h3>Route A &middot; Garmin with the CleanJibe watch app</h3>
         <span class="status">fenix, epix, Forerunner and the rest</span>
       </div>
-      <p class="what">Install it from Connect IQ, ride, save. Sessions sync through intervals.icu: Settings → intervals.icu, four steps, once.</p>
-      <ol class="steps-flow">
-        <li>
-          <h3>Install the watch app</h3>
-          <p><strong>CleanJibe Wingfoil Tracker (Beta)</strong> on the Connect IQ store, from the web or from Connect IQ inside the Garmin Connect app. No key, no account.</p>
-        </li>
-        <li>
-          <h3>Record and save</h3>
-          <p>Press START, pick <strong>CleanJibe</strong> from the activity list, wait until it says GPS good, press START again. Ride, then STOP and <strong>Save</strong>.</p>
-        </li>
-        <li>
-          <h3>Let Garmin Connect sync</h3>
-          <p>The watch uploads to Garmin Connect by itself next to the phone. Open Garmin Connect once if it is taking its time.</p>
-        </li>
-        <li>
-          <h3>Bridge it with intervals.icu</h3>
-          <p>Free account at intervals.icu, connect Garmin there, copy your personal API key, paste it into Settings → <strong>intervals.icu</strong>. Four steps, about five minutes, once.</p>
-        </li>
-        <li>
-          <h3>Pull down on Sessions</h3>
-          <p>That is the refresh: CleanJibe checks intervals.icu, imports what is new and analyses it as it lands. Your session appears at the top.</p>
-        </li>
-        <li>
-          <h3>No intervals.icu? The long way</h3>
-          <p>connect.garmin.com → the activity → the gear icon → <strong>Export File</strong>. AirDrop it to the iPhone, then Import → <strong>FIT or ZIP…</strong>.</p>
-        </li>
-      </ol>
+      <details>
+        <summary class="what">Install it from Connect IQ, ride, save. Sessions sync through intervals.icu: Settings → intervals.icu, four steps, once.</summary>
+        <ol class="steps-flow">
+          <li>
+            <h3>Install the watch app</h3>
+            <p><strong>CleanJibe Wingfoil Tracker (Beta)</strong> on the Connect IQ store, from the web or from Connect IQ inside the Garmin Connect app. No key, no account.</p>
+          </li>
+          <li>
+            <h3>Record and save</h3>
+            <p>Charged watch and phone. Press START, pick <strong>CleanJibe</strong>, wait until it says GPS good, press START again. Ride — glance at the tally once — then STOP and <strong>Save</strong>.</p>
+          </li>
+          <li>
+            <h3>Let Garmin Connect sync</h3>
+            <p>The watch uploads to Garmin Connect by itself next to the phone. Open Garmin Connect once if it is taking its time.</p>
+          </li>
+          <li>
+            <h3>Bridge it with intervals.icu</h3>
+            <p>Free account at intervals.icu, connect Garmin there, copy your personal API key, paste it into Settings → <strong>intervals.icu</strong>. Four steps, about five minutes, once.</p>
+          </li>
+          <li>
+            <h3>Pull down on Sessions</h3>
+            <p>That is the refresh: CleanJibe checks intervals.icu, imports what is new and analyses it as it lands. Your session appears at the top.</p>
+          </li>
+          <li>
+            <h3>No intervals.icu? The long way</h3>
+            <p>connect.garmin.com → the activity → the gear icon → <strong>Export File</strong>. AirDrop it to the iPhone, then Import → <strong>FIT or ZIP…</strong>.</p>
+          </li>
+        </ol>
+      </details>
     </article>
 
     <article class="panel piece" id="guide-fit">
@@ -390,29 +216,31 @@
         <h3>Route B &middot; Any watch that writes a .fit</h3>
         <span class="status">Polar, Suunto, COROS and everything else</span>
       </div>
-      <p class="what">Sync it through intervals.icu, or share the file into CleanJibe from Files, Mail, AirDrop or any share sheet.</p>
-      <ol class="steps-flow">
-        <li>
-          <h3>Record on your own watch</h3>
-          <p>Any outdoor activity with GPS, recorded the way you always do. There is nothing of ours to install on these watches.</p>
-        </li>
-        <li>
-          <h3>Export the workout as a file</h3>
-          <p>Suunto: Calendar → the workout → ⋯ → FIT. COROS: Activities → the activity → ⋯ → Export → FIT. Polar exports from flow.polar.com only.</p>
-        </li>
-        <li>
-          <h3>Take the FIT where you are offered one</h3>
-          <p>A FIT carries the speed your watch measured, a .gpx does not, and a .tcx only when the app wrote it in.</p>
-        </li>
-        <li>
-          <h3>Hand it to CleanJibe</h3>
-          <p><strong>Open in CleanJibe</strong> from the iOS share sheet, or Import → <strong>FIT or ZIP…</strong>. Foil time, flights, turns and the map are identical either way.</p>
-        </li>
-        <li>
-          <h3>Or let intervals.icu do it</h3>
-          <p>Most of these watches sync to intervals.icu too, and CleanJibe picks them up from there — the same four steps as the Garmin route.</p>
-        </li>
-      </ol>
+      <details>
+        <summary class="what">Sync it through intervals.icu, or share the file into CleanJibe from Files, Mail, AirDrop or any share sheet.</summary>
+        <ol class="steps-flow">
+          <li>
+            <h3>Record on your own watch</h3>
+            <p>Any outdoor activity with GPS, recorded the way you always do. There is nothing of ours to install on these watches.</p>
+          </li>
+          <li>
+            <h3>Export the workout as a file</h3>
+            <p>Suunto: Calendar → the workout → ⋯ → FIT. COROS: Activities → the activity → ⋯ → Export → FIT. Polar exports from flow.polar.com only.</p>
+          </li>
+          <li>
+            <h3>Take the FIT where you are offered one</h3>
+            <p>A FIT carries the speed your watch measured, a .gpx does not, and a .tcx only when the app wrote it in.</p>
+          </li>
+          <li>
+            <h3>Hand it to CleanJibe</h3>
+            <p><strong>Open in CleanJibe</strong> from the iOS share sheet, or Import → <strong>FIT or ZIP…</strong>. Foil time, flights, turns and the map are identical either way.</p>
+          </li>
+          <li>
+            <h3>Or let intervals.icu do it</h3>
+            <p>Most of these watches sync to intervals.icu too, and CleanJibe picks them up from there — the same four steps as the Garmin route.</p>
+          </li>
+        </ol>
+      </details>
     </article>
 
     <article class="panel piece" id="guide-strava">
@@ -420,29 +248,31 @@
         <h3>Route C &middot; Strava</h3>
         <span class="status">any watch that syncs to Strava</span>
       </div>
-      <p class="what">Settings → Strava → Connect with Strava, then Import → Import from Strava…. Positions only, so speed records are uncertified.</p>
-      <ol class="steps-flow">
-        <li>
-          <h3>Connect once</h3>
-          <p>Settings → <strong>Strava</strong> → Connect with Strava. Strava&rsquo;s own consent page opens; leave the private-activities box ticked or your &ldquo;Only you&rdquo; sessions stay hidden.</p>
-        </li>
-        <li>
-          <h3>Pick your sessions</h3>
-          <p>Import → <strong>Import from Strava…</strong> lists your matching activities of the last two years. Tap the ones you want, or <strong>Import all new</strong>.</p>
-        </li>
-        <li>
-          <h3>Keep it automatic</h3>
-          <p>Once one session has come in this way a toggle appears, and CleanJibe checks Strava whenever you open the app.</p>
-        </li>
-        <li>
-          <h3>What it costs</h3>
-          <p>Strava hands over positions rather than the speed your watch measured, so these speed records are marked <strong>uncertified</strong>, and there are no pump strokes.</p>
-        </li>
-        <li>
-          <h3>If connecting is refused</h3>
-          <p>Strava lets a new app connect a limited number of riders; that is nothing to do with your account. Menu → Support &amp; ideas says so.</p>
-        </li>
-      </ol>
+      <details>
+        <summary class="what">Settings → Strava → Connect with Strava, then Import → Import from Strava…. Positions only, so speed records are uncertified.</summary>
+        <ol class="steps-flow">
+          <li>
+            <h3>Connect once</h3>
+            <p>Settings → <strong>Strava</strong> → Connect with Strava. Strava&rsquo;s own consent page opens; leave the private-activities box ticked or your &ldquo;Only you&rdquo; sessions stay hidden.</p>
+          </li>
+          <li>
+            <h3>Pick your sessions</h3>
+            <p>Import → <strong>Import from Strava…</strong> lists your matching activities of the last two years. Tap the ones you want, or <strong>Import all new</strong>.</p>
+          </li>
+          <li>
+            <h3>Keep it automatic</h3>
+            <p>Once one session has come in this way a toggle appears, and CleanJibe checks Strava whenever you open the app.</p>
+          </li>
+          <li>
+            <h3>What it costs</h3>
+            <p>Strava hands over positions rather than the speed your watch measured, so these speed records are marked <strong>uncertified</strong>, and there are no pump strokes.</p>
+          </li>
+          <li>
+            <h3>If connecting is refused</h3>
+            <p>Strava lets a new app connect a limited number of riders; that is nothing to do with your account. Menu → Support &amp; ideas says so.</p>
+          </li>
+        </ol>
+      </details>
     </article>
 
     <article class="panel piece" id="guide-appleWatchApp">
@@ -450,25 +280,27 @@
         <h3>Route D &middot; The CleanJibe Apple Watch app<span class="tag beta">beta</span></h3>
         <span class="status">Apple Watch · everything a Garmin gets</span>
       </div>
-      <p class="what">Record on your Apple Watch and the session comes to the phone by itself — pump strokes and takeoff attempts included.</p>
-      <ol class="steps-flow">
-        <li>
-          <h3>Put it on the watch</h3>
-          <p>It comes with the CleanJibe beta. On the iPhone open Apple&rsquo;s <strong>Watch</strong> app, scroll to <em>Available apps</em>, and install <strong>CleanJibe</strong> if it is missing.</p>
-        </li>
-        <li>
-          <h3>Record</h3>
-          <p>Open CleanJibe on the watch, allow Health and Location if it asks, wait until NO GPS clears, press START. Then Stop, and Done.</p>
-        </li>
-        <li>
-          <h3>Let it arrive</h3>
-          <p>Open CleanJibe on the iPhone. The session comes across on its own while phone and watch are together; give it a minute.</p>
-        </li>
-        <li>
-          <h3>What you get</h3>
-          <p>Speed off the watch&rsquo;s own receiver, so the records certify, and the 50 Hz wrist, so pump strokes and takeoff attempts are analysed.</p>
-        </li>
-      </ol>
+      <details>
+        <summary class="what">Record on your Apple Watch and the session comes to the phone by itself — pump strokes and takeoff attempts included.</summary>
+        <ol class="steps-flow">
+          <li>
+            <h3>Put it on the watch</h3>
+            <p>It comes with the CleanJibe beta. On the iPhone open Apple&rsquo;s <strong>Watch</strong> app, scroll to <em>Available apps</em>, and install <strong>CleanJibe</strong> if it is missing.</p>
+          </li>
+          <li>
+            <h3>Record</h3>
+            <p>Open CleanJibe on the watch, allow Health and Location if it asks, wait until NO GPS clears, press START. Then Stop, and Done.</p>
+          </li>
+          <li>
+            <h3>Let it arrive</h3>
+            <p>Open CleanJibe on the iPhone. The session comes across on its own while phone and watch are together; give it a minute.</p>
+          </li>
+          <li>
+            <h3>What you get</h3>
+            <p>Speed off the watch&rsquo;s own receiver, so the records certify, and the 50 Hz wrist, so pump strokes and takeoff attempts are analysed.</p>
+          </li>
+        </ol>
+      </details>
     </article>
 
     <article class="panel piece" id="guide-appleWorkoutApp">
@@ -476,29 +308,31 @@
         <h3>Route E &middot; Apple&rsquo;s own Workout app<span class="tag beta">beta</span></h3>
         <span class="status">Apple Watch · nothing to install</span>
       </div>
-      <p class="what">No extra app on the watch: record a Surfing workout and import it from Apple Health.</p>
-      <ol class="steps-flow">
-        <li>
-          <h3>Start a Surfing workout</h3>
-          <p>On the watch open <strong>Workout</strong> and pick <strong>Surfing</strong>; <em>Water Sports</em> works too. Apple Health has no wingfoil activity, so pick the closest one.</p>
-        </li>
-        <li>
-          <h3>Ride, then end the workout</h3>
-          <p>End it on the watch and let it save. The route is written to Health when the workout finishes, which can take a minute.</p>
-        </li>
-        <li>
-          <h3>Import it on the iPhone</h3>
-          <p>Import → <strong>Apple Health</strong>, allow CleanJibe to read workouts and routes — every switch on, or there is nothing to read — then pick yours.</p>
-        </li>
-        <li>
-          <h3>Keep it automatic</h3>
-          <p>Switch on <em>Import new Health workouts automatically</em> and the next session is waiting when you open the app.</p>
-        </li>
-        <li>
-          <h3>What you get</h3>
-          <p>Speed comes off the watch&rsquo;s own receiver, so the records certify. Nothing records your wrist, so there are no pump strokes or takeoff attempts.</p>
-        </li>
-      </ol>
+      <details>
+        <summary class="what">No extra app on the watch: record a Surfing workout and import it from Apple Health.</summary>
+        <ol class="steps-flow">
+          <li>
+            <h3>Start a Surfing workout</h3>
+            <p>On the watch open <strong>Workout</strong> and pick <strong>Surfing</strong>; <em>Water Sports</em> works too. Apple Health has no wingfoil activity, so pick the closest one.</p>
+          </li>
+          <li>
+            <h3>Ride, then end the workout</h3>
+            <p>End it on the watch and let it save. The route is written to Health when the workout finishes, which can take a minute.</p>
+          </li>
+          <li>
+            <h3>Import it on the iPhone</h3>
+            <p>Import → <strong>Apple Health</strong>, allow CleanJibe to read workouts and routes — every switch on, or there is nothing to read — then pick yours.</p>
+          </li>
+          <li>
+            <h3>Keep it automatic</h3>
+            <p>Switch on <em>Import new Health workouts automatically</em> and the next session is waiting when you open the app.</p>
+          </li>
+          <li>
+            <h3>What you get</h3>
+            <p>Speed comes off the watch&rsquo;s own receiver, so the records certify. Nothing records your wrist, so there are no pump strokes or takeoff attempts.</p>
+          </li>
+        </ol>
+      </details>
     </article>
 
     <article class="panel piece" id="guide-dryRun">
@@ -506,25 +340,27 @@
         <h3>If you cannot wait for wind</h3>
         <span class="status">twenty minutes, no water</span>
       </div>
-      <p class="what">Record a three to five minute walk on the watch. It proves the route from the watch to the phone and nothing else.</p>
-      <ol class="steps-flow">
-        <li>
-          <h3>Three to five minutes of movement</h3>
-          <p>A bike ride draws the nicest track — anything above about 12 km/h counts as flying. Walking works too. Go outside: indoors there are no positions.</p>
-        </li>
-        <li>
-          <h3>Bring it in by your own route</h3>
-          <p>Whichever route above matches your watch. It answers one question: does a recording made on your watch reach CleanJibe on your phone?</p>
-        </li>
-        <li>
-          <h3>What you should see</h3>
-          <p>A map with your track on it, duration and speeds at the top, a speed chart that moves when you drag along it.</p>
-        </li>
-        <li>
-          <h3>Turns and jibes reading zero</h3>
-          <p>Expected on a bike or on foot: there is nothing to jibe. This checks the route from the watch, never the analysis.</p>
-        </li>
-      </ol>
+      <details>
+        <summary class="what">Record a three to five minute walk on the watch. It proves the route from the watch to the phone and nothing else.</summary>
+        <ol class="steps-flow">
+          <li>
+            <h3>Three to five minutes of movement</h3>
+            <p>A bike ride draws the nicest track — anything above about 12 km/h counts as flying. Walking works too. Go outside: indoors there are no positions.</p>
+          </li>
+          <li>
+            <h3>Bring it in by your own route</h3>
+            <p>Whichever route above matches your watch. It answers one question: does a recording made on your watch reach CleanJibe on your phone?</p>
+          </li>
+          <li>
+            <h3>What you should see</h3>
+            <p>A map with your track on it, duration and speeds at the top, a speed chart that moves when you drag along it.</p>
+          </li>
+          <li>
+            <h3>Turns and jibes reading zero</h3>
+            <p>Expected on a bike or on foot: there is nothing to jibe. This checks the route from the watch, never the analysis.</p>
+          </li>
+        </ol>
+      </details>
     </article>
 
     <article class="panel piece" id="guide-sayHowItRead">
@@ -532,62 +368,70 @@
         <h3>Then say how it read</h3>
         <span class="status">the half only you can do</span>
       </div>
-      <p class="what">Menu → Support &amp; ideas opens a mail with the facts filled in. TestFlight&rsquo;s own feedback works too if you are on the beta.</p>
-      <ol class="steps-flow">
-        <li>
-          <h3>Read the verdicts against your memory</h3>
-          <p>Open the session, go to <strong>Turns</strong>: every turn says <em>flew through</em>, <em>touched down</em> or <em>fell in</em>, and the clean jibes are marked among them.</p>
-        </li>
-        <li>
-          <h3>Say where it disagrees with you</h3>
-          <p>A jibe you know you flew through marked as a touchdown, a swim it never noticed, a wind direction you did not sail in.</p>
-        </li>
-        <li>
-          <h3>Send it from the app</h3>
-          <p>Menu → <strong>Support &amp; ideas</strong> fills in your build, phone, iOS version, watch and library size. You add what happened and press Send.</p>
-        </li>
-        <li>
-          <h3>Attach the file if a session read wrong</h3>
-          <p>With the .fit the detection can be re-run and fixed; without it there is only guesswork. Ideas and wishes are as welcome as faults.</p>
-        </li>
-      </ol>
+      <details>
+        <summary class="what">Menu → Support &amp; ideas opens a mail with the facts filled in. TestFlight&rsquo;s own feedback works too if you are on the beta.</summary>
+        <ol class="steps-flow">
+          <li>
+            <h3>Read the verdicts against your memory</h3>
+            <p>Open the session, go to <strong>Turns</strong>: every turn says <em>flew through</em>, <em>touched down</em> or <em>fell in</em>, and the clean jibes are marked among them.</p>
+          </li>
+          <li>
+            <h3>Say where it disagrees with you</h3>
+            <p>A jibe you know you flew through marked as a touchdown, a swim it never noticed, a wind direction you did not sail in.</p>
+          </li>
+          <li>
+            <h3>Send it from the app</h3>
+            <p>Menu → <strong>Support &amp; ideas</strong> fills in your build, phone, iOS version, watch and library size. You add what happened and press Send.</p>
+          </li>
+          <li>
+            <h3>Attach the file if a session read wrong</h3>
+            <p>With the .fit the detection can be re-run and fixed; without it there is only guesswork. Ideas and wishes are as welcome as faults.</p>
+          </li>
+          <li>
+            <h3>Send a card, and say how it reads</h3>
+            <p>The share button on the session page draws a <strong>share card</strong> — your track, your numbers. Send it to a friend, and say if anything on it reads wrong.</p>
+          </li>
+        </ol>
+      </details>
     </article>
 
   </section>
 
   <section class="home-section" id="stuck">
     <h2>If something does not work</h2>
-    <p class="section-lede">Try the line that matches, then say so either way — a fix that took you three attempts is still worth hearing about.</p>
-    <dl class="terms">
-      <div class="term">
-        <dt>&ldquo;Nothing to import&rdquo; from Apple Health</dt>
-        <dd>The workout is not in Health yet, or CleanJibe may not read it: iPhone Settings → Health → Data Access &amp; Devices → CleanJibe, everything on.</dd>
-      </div>
-      <div class="term">
-        <dt>The watch says NO GPS for more than a minute</dt>
-        <dd>Open sky, wrist still, wait. A balcony under a roof is not open sky.</dd>
-      </div>
-      <div class="term">
-        <dt>The session never reaches the iPhone</dt>
-        <dd>Open CleanJibe on the iPhone and leave it in front of you for a minute, Bluetooth on, the watch next to it.</dd>
-      </div>
-      <div class="term">
-        <dt>CleanJibe is not offered in Apple&rsquo;s Watch app</dt>
-        <dd>Reinstall CleanJibe on the iPhone, then look again under <em>Available apps</em>.</dd>
-      </div>
-      <div class="term">
-        <dt>Garmin: CleanJibe is not in the activity list</dt>
-        <dd>Open Garmin Connect on the phone, let it sync, look again. The install can take a minute to reach the watch.</dd>
-      </div>
-      <div class="term">
-        <dt>Garmin: nothing arrives from intervals.icu</dt>
-        <dd>Check the activity is visible on intervals.icu first — the Garmin link can take a few minutes — then sync again.</dd>
-      </div>
-      <div class="term">
-        <dt>Garmin: the ZIP will not open in CleanJibe</dt>
-        <dd>Unzip it on the computer and AirDrop the .fit file inside instead.</dd>
-      </div>
-    </dl>
+    <details>
+      <summary class="section-lede">Try the line that matches, then say so either way — a fix that took you three attempts is still worth hearing about.</summary>
+      <dl class="terms">
+        <div class="term">
+          <dt>&ldquo;Nothing to import&rdquo; from Apple Health</dt>
+          <dd>The workout is not in Health yet, or CleanJibe may not read it: iPhone Settings → Health → Data Access &amp; Devices → CleanJibe, everything on.</dd>
+        </div>
+        <div class="term">
+          <dt>The watch says NO GPS for more than a minute</dt>
+          <dd>Open sky, wrist still, wait. A balcony under a roof is not open sky.</dd>
+        </div>
+        <div class="term">
+          <dt>The session never reaches the iPhone</dt>
+          <dd>Open CleanJibe on the iPhone and leave it in front of you for a minute, Bluetooth on, the watch next to it.</dd>
+        </div>
+        <div class="term">
+          <dt>CleanJibe is not offered in Apple&rsquo;s Watch app</dt>
+          <dd>Reinstall CleanJibe on the iPhone, then look again under <em>Available apps</em>.</dd>
+        </div>
+        <div class="term">
+          <dt>Garmin: CleanJibe is not in the activity list</dt>
+          <dd>Open Garmin Connect on the phone, let it sync, look again. The install can take a minute to reach the watch.</dd>
+        </div>
+        <div class="term">
+          <dt>Garmin: nothing arrives from intervals.icu</dt>
+          <dd>Check the activity is visible on intervals.icu first — the Garmin link can take a few minutes — then sync again.</dd>
+        </div>
+        <div class="term">
+          <dt>Garmin: the ZIP will not open in CleanJibe</dt>
+          <dd>Unzip it on the computer and AirDrop the .fit file inside instead.</dd>
+        </div>
+      </dl>
+    </details>
   </section>
 
   <section class="home-section" id="report">
@@ -619,269 +463,157 @@
 
 <!-- guide:end -->
 
-  <!-- ---------------------------------------------------------------- the bonus -->
-  <!-- The share card is the project's growth channel and the video export has, at the time
-       of writing, never been watched anywhere but a simulator. Both are optional, and both
-       are worth more from ten testers than from one developer. -->
-  <section class="home-section" id="bonus">
-    <h2>Bonus: the share card and the video</h2>
-    <p class="section-lede">
-      Optional, two minutes, and the part we can least test on our own.
-    </p>
-    <div class="claims">
-      <article class="panel claim">
-        <h3>The share card</h3>
-        <p>
-          On the session page, tap the share button (top right). The <strong>share
-          card</strong> is the picture with your track and your numbers on it. Send it to us
-          the way you would send it to a friend, and say whether it looks good and whether
-          anything on it is confusing.
-        </p>
-      </article>
-      <article class="panel claim">
-        <h3>Export video</h3>
-        <p>
-          In the same sheet: keep the 20&nbsp;s preset, wait for the bar, then share the clip.
-          Did the map draw itself smoothly? Did the end card look right? This one is new and
-          has only ever been watched on a simulator.
-        </p>
-      </article>
-    </div>
-  </section>
-
-  <!-- -------------------------------------------------------- what you should see -->
-  <section class="home-section" id="seen">
-    <h2>What you should see</h2>
-    <p class="section-lede">
-      Open the session in CleanJibe on the iPhone. Three things say the route worked — after a
-      session on the water you get the turn verdicts as well, which is the part only you can
-      check.
-    </p>
-    <dl class="terms">
-      <div class="term">
-        <dt>A map with your track on it</dt>
-        <dd>Teal where you were &ldquo;flying&rdquo; (fast), grey where you were not.</dd>
-      </div>
-      <div class="term">
-        <dt>Duration, distance and speeds at the top</dt>
-        <dd>Numbers that match roughly what you actually did.</dd>
-      </div>
-      <div class="term">
-        <dt>A speed chart under the map</dt>
-        <dd>It moves when you drag along it.</dd>
-      </div>
-      <div class="term">
-        <dt>Turns and jibes reading zero</dt>
-        <dd>
-          Expected on a bike or on foot: there is nothing to jibe. You are testing the watch
-          route here, not the wingfoil analysis.
-        </dd>
-      </div>
-    </dl>
-  </section>
 
   <!-- ------------------------------------------------------------- old sessions -->
   <!-- The test is the on-ramp; this is the reason to stay. Every session is analysed the
-       moment it lands, so a library import is the first time the app is worth opening. -->
+       moment it lands, so a library import is the first time the app is worth opening.
+
+       The four cards that stood here — Apple Watch, Garmin, Strava, anything else — became
+       one paragraph on 15 September 2026. The per-source detail (which workout types to
+       offer, where Garmin's own export lives on the web) is in the app's Help catalogue,
+       which is where a rider stands when they need it. What could not move is below. -->
   <section class="home-section" id="history">
     <h2>Your old sessions</h2>
     <p class="section-lede">
-      Once one test session has arrived, the interesting part is your real history. Everything
-      CleanJibe imports is analysed as it lands: open a session and swipe through Ride, Turns,
-      Takeoffs and Log, and Records and Trends fill up by themselves.
+      Once one session has arrived, the interesting part is your back catalogue. Everything
+      CleanJibe imports is analysed as it lands, so Records and Trends fill up by themselves.
+      One button, <code>+</code>, holds every door: <strong>Import from Health</strong> for an
+      Apple Watch, <strong>Sync intervals.icu</strong> or the <strong>Garmin export ZIP</strong>
+      — your whole history in one import — for a Garmin, <strong>Strava</strong> for anything
+      that reaches it, and <strong>FIT, GPX, TCX or ZIP</strong> for a Polar, a Suunto, a COROS
+      or any file at all.
     </p>
-    <div class="claims">
-      <article class="panel claim">
-        <h3>Apple Watch</h3>
-        <p>
-          <code>+</code> → <strong>Import from Health</strong> lists every Surfing and Water
-          Sports workout of the last two years. Tap <strong>Import all</strong>. Switch on the
-          automatic pickup on that screen and new workouts arrive on their own from then on.
-        </p>
-        <p>
-          Recorded old sessions under another type — Sailing, say? <em>Which workouts to
-          offer</em>, on the same screen, adds it.
-        </p>
-      </article>
-      <article class="panel claim">
-        <h3>Garmin</h3>
-        <p>
-          intervals.icu brings in what Garmin sends it from the day you connect the two, and
-          <strong>Sync intervals.icu</strong> takes everything it finds there — so recent
-          sessions come this way.
-        </p>
-        <!-- THE FOUR STEPS, and they are not this page's to word: docs/copy/icu-setup.json,
-             emitted from the kit's IcuSetupGuide — the one source Settings → intervals.icu
-             and the empty-library card both render. Until 15 September 2026 this page told
-             iPhone riders to copy an Athlete ID the app has never had a field for, and
-             called the button "the check button".
+    <p class="note">
+      Strava hands over positions rather than the speed your watch measured, so those
+      sessions&rsquo; speed records are marked <em>uncertified</em>; take the same afternoon
+      off intervals.icu instead where you can. And Strava lets a new app connect a limited
+      number of riders, which the app says plainly; if you are told the app is full, tell us.
+    </p>
 
-             OUTSIDE the generated guide block on purpose: the guide's Garmin route
-             compresses these four into one step ("Bridge it with intervals.icu"), so the
-             page had nowhere that named them. Do not move this inside the guide markers —
-             make_start.py would overwrite it, and verify_copy.py reads the four titles
-             from OUTSIDE that block on purpose. -->
-        <details class="note">
-          <summary>Not bridged yet? The four steps, once</summary>
-          <ol>
-            <li data-copy="icu-step">Create a free intervals.icu account</li>
-            <li data-copy="icu-step">Connect Garmin in intervals.icu</li>
-            <li data-copy="icu-step">Generate your personal API key</li>
-            <li data-copy="icu-step">Paste the key into CleanJibe</li>
-          </ol>
-          <p>
-            Step four ends on the app's own button — <strong data-copy="icu-save">Save &amp; check</strong> —
-            which verifies the key and says how many activities it can see. The iPhone asks
-            for one thing, your personal API key; the Athlete ID is the browser analyzer's.
-          </p>
-        </details>
-        <p>
-          For the years before: in Garmin Connect on the web, <em>Account → Export Your
-          Data</em>. Garmin mails you a ZIP; open it on the iPhone in CleanJibe
-          (<code>+</code> → <strong>Garmin export ZIP</strong>) and it imports every wingfoil
-          and windsurf session inside at once. A few hundred sessions take a few minutes.
-        </p>
-      </article>
-      <article class="panel claim">
-        <h3>Strava</h3>
-        <p>
-          <code>+</code> → <strong>Strava</strong> signs you in on Strava&rsquo;s own consent
-          page — read-only; CleanJibe writes nothing back — and lists your matching activities
-          of the last two years, with the ones already in your library marked. Tap the ones you
-          want, or <strong>Import all new</strong>. The one door that needs no Garmin account
-          and no intervals.icu.
-        </p>
-        <p>
-          Strava hands over positions rather than the speed your watch measured, so those
-          sessions&rsquo; speed records are marked <em>uncertified</em>. If the same afternoon
-          is on intervals.icu, take it from there instead. And Strava lets a new app connect a
-          limited number of riders, which the app says plainly; if you are told the app is
-          full, tell us.
-        </p>
-      </article>
-      <article class="panel claim">
-        <h3>Anything else</h3>
-        <p>
-          <code>+</code> → <strong>FIT, GPX, TCX or ZIP</strong>, or <strong>Open in
-          CleanJibe</strong> from the iOS share sheet in any app that can export a workout —
-          <code>.fit</code>, <code>.gpx</code> and <code>.tcx</code> all come in. That is the
-          route for a Polar, a Suunto or a COROS, and the table on
-          <a href="../watches/">Which watch</a> says what each format gives you.
-        </p>
-      </article>
-    </div>
+    <!-- THE FOUR STEPS, and they are not this page's to word: docs/copy/icu-setup.json,
+         emitted from the kit's IcuSetupGuide — the one source Settings → intervals.icu
+         and the empty-library card both render. Until 15 September 2026 this page told
+         iPhone riders to copy an Athlete ID the app has never had a field for, and
+         called the button "the check button".
+
+         OUTSIDE the generated guide block on purpose: the guide's Garmin route
+         compresses these four into one step ("Bridge it with intervals.icu"), so the
+         page had nowhere that named them. Do not move this inside the guide markers —
+         make_start.py would overwrite it, and verify_copy.py reads the four titles
+         from OUTSIDE that block on purpose. -->
+    <details class="note">
+      <summary>Not bridged to intervals.icu yet? The four steps, once</summary>
+      <ol>
+        <li data-copy="icu-step">Create a free intervals.icu account</li>
+        <li data-copy="icu-step">Connect Garmin in intervals.icu</li>
+        <li data-copy="icu-step">Generate your personal API key</li>
+        <li data-copy="icu-step">Paste the key into CleanJibe</li>
+      </ol>
+      <p>
+        Step four ends on the app's own button — <strong data-copy="icu-save">Save &amp; check</strong> —
+        which verifies the key and says how many activities it can see. The iPhone asks
+        for one thing, your personal API key; the Athlete ID is the browser analyzer's.
+      </p>
+    </details>
   </section>
+
 
   <!-- ------------------------------------------------------------------- feedback -->
-  <!-- Four doors, in the order of how much they cost the tester. THE APP'S OWN IS FIRST since
-       build 45: Menu -> Support writes the build, the phone, the iOS version, the watch and
+  <!-- Three doors, in the order of what they cost the tester. THE APP'S OWN IS FIRST since
+       build 45: Menu → Support writes the build, the phone, the iOS version, the watch and
        the library's shape into the mail itself, which is the half of a report nobody types
-       correctly from memory and the half that decides whether it can be acted on. The mail
-       link here still carries the route template in its body, for a tester who is writing
-       from a desk rather than from the app; TestFlight's own form attaches the build and the
-       device without anyone typing them; the store buttons are named last because they really
-       do reach the same developer and a page that listed only its own doors would imply
-       otherwise. -->
+       correctly from memory and the half that decides whether it can be acted on.
+
+       TestFlight's own form and the Connect IQ store's Contact Developer are NOT named here
+       any more. They are real doors and they reach the same person — /invite/#feedback says
+       so, in the same two paragraphs it always did, and that is their one home. -->
   <section class="home-section" id="tell">
     <h2>Tell us what you saw</h2>
+    <!-- Not a second copy of the report lede: that sentence is generated, two sections up,
+         out of docs/guide/getting-started.json. This section answers the other half of the
+         question — not what to say, but where to put it. -->
     <p class="section-lede">
-      One short message per route. A screenshot of the session page is worth more than a
-      paragraph, and &ldquo;this number looks wrong&rdquo; is a perfectly good report.
+      Three doors, all to the same person. What goes in the message is
+      <a href="#report">the checklist above</a>.
     </p>
 
     <div class="claims">
       <article class="panel claim">
-        <h3>From inside the app — Menu &rarr; Support &amp; ideas</h3>
-        <p>
-          The easiest door, and the one that arrives complete. Top left on the Sessions tab:
-          <strong>Menu &rarr; Support &amp; ideas</strong>. The same mail is behind
-          <em>Something off, or an idea? Send feedback</em> at the foot of every page, and
-          behind <em>Report a problem with this session&hellip;</em> on a
-          session&rsquo;s share sheet — that last one names the session and attaches its card.
-          Your build, your phone, your iOS version, your watch and the size of your library are
-          already typed in; you add what happened and press Send. Nothing leaves the phone
-          until you do.
-        </p>
-      </article>
-      <article class="panel claim">
-        <h3>Mail — the template is prefilled</h3>
-        <p>
-          <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
-             data-umami-event="start-feedback-mail">info@cleanjibe.org</a>
-          — the link opens a mail with the fields already in it. Attach the screenshot and
-          send.
-        </p>
-      </article>
-      <article class="panel claim">
-        <h3>TestFlight&rsquo;s own feedback</h3>
-        <p>
-          In the <strong>TestFlight</strong> app: CleanJibe → <strong>Send Beta
-          Feedback</strong>. Or take a screenshot anywhere inside CleanJibe and choose
-          <strong>Share Beta Feedback</strong>. Either way it reaches us with your device,
-          your iOS version and the exact build attached — nothing for you to look up.
-        </p>
-      </article>
-      <article class="panel claim">
-        <h3>Garmin, from the store listing</h3>
-        <p>
-          On
-          <a href="https://apps.garmin.com/apps/e77867b5-e972-4eb2-be1b-90077cfac806" rel="noopener"
-             data-umami-event="start-garmin-store">the CleanJibe listing</a>:
-          <strong>Contact Developer</strong> for a message and <strong>Report a Problem</strong>
-          for a bug, both of which land with the same person. A store review helps other
-          riders find it at all.
+        <h3>Three doors, cheapest first</h3>
+        <ul>
+          <li><strong>Menu &rarr; Support &amp; ideas</strong>, top left on the Sessions tab.
+              It fills in your build, your phone, the paired watch and how big your library
+              is; you add what happened and press Send, and nothing leaves the phone until
+              you do.</li>
+          <li>A <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener"
+                   data-umami-event="start-feedback-github">GitHub issue</a> for anything
+              bigger — it stays readable by the next rider with the same question.</li>
+          <li><a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
+                 data-umami-event="start-feedback-mail">info@cleanjibe.org</a>, which opens
+              with the template already in the body. Attach the <code>.fit</code> if a
+              session read wrong: with the file the detection can be re-run and fixed,
+              without it there is only guesswork.</li>
+        </ul>
+        <p class="note">
+          Both stores have a report button of their own, and both reach the same person:
+          <a href="../invite/#feedback">Get the beta</a> names them.
         </p>
       </article>
     </div>
 
-    <!-- `.pieces-foot` is the one class on the site for a lede that runs *after* a row
-         rather than before it; it contributes the top margin the section-lede rule has no
-         reason to carry, and the more specific rule keeps the bottom one. The checklist it
-         used to introduce is generated, and lives with the routes it is about. -->
-    <p class="section-lede pieces-foot">
-      What to put in it is <a href="#report">the checklist above</a>.
-    </p>
-
-    <p class="note">
-      Something bigger than a test report — a feature, a number you disagree with, a session
-      read wrong — is best as a
-      <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener"
-         data-umami-event="start-feedback-github">GitHub issue</a>, where the next rider with
-      the same question can read the answer. Attach the <code>.fit</code> file if a session
-      was read wrong: with the file the detection can be re-run and fixed, without it there is
-      only guesswork.
-    </p>
-
-    <!-- The shared block, in the same words as the homepage, /invite/, /watches/ and
-         /whats-new/. -->
-    <p class="note" id="tell-us" data-copy="feedback-invitation">
-      <strong>Tell us.</strong> Bugs, verdicts you disagree with, and — just as much — what
-      you would want this to do next. <strong>Ideas and wishes are as welcome as bugs.</strong> In the app,
-      <strong>Menu &rarr; Support &amp; ideas</strong> is the best door, because it prefills the
-      facts;
-      otherwise mail <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A">info@cleanjibe.org</a> or open a
-      <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">GitHub issue</a>.
-      Need something that is only in the beta? Tell us.
-    </p>
   </section>
+
 
 </main>
 
 <footer>
   <p>CleanJibe — open wingfoil tracking. Watch app, iPhone app, browser analyzer.</p>
+<!-- sitefoot:begin — COPIED VERBATIM ON ALL NINE PAGES, and compared byte for byte by
+     web/tools/verify_links.py exactly the way the site nav in the topbar is. Until
+     15 September 2026 every footer carried a different subset of the site — /privacy/ named
+     three pages, /impressum/ one, and the two doors a reader is actually looking for were
+     wherever the last edit left them. The footer is where a reader goes when the sticky bar
+     has scrolled past and when JavaScript never ran, so it names EVERY page, in the order
+     the site nav uses, with the two buttons as text links at the end of the row and Privacy
+     and Impressum last.
+
+     The hrefs are ROOT-RELATIVE for the same reason the site nav's are: one block has to
+     serve a page at the site root and a page a directory down.
+
+     The Tell us line is here rather than in <main>. It used to be a 55-word paragraph inside
+     the body of six pages, saying the same thing six times; the sentence itself is
+     docs/copy/feedback.json's `invitation` and is pinned by web/tools/verify_copy.py, so it
+     may move but it may not be reworded. The two real asks — /invite/#feedback and
+     /start/#tell — are where a tester with something to say is standing. -->
   <p>
-    <a href="../">About CleanJibe</a> ·
-    <a href="../invite/">Get the beta</a> ·
-    <a href="../watches/">Which watch</a> ·
-    <a href="../whats-new/">What&rsquo;s new</a> ·
-    <a href="../app/">Open the analyzer</a> ·
-    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">github.com/JanLahmann/WingFoil</a>
+    <a href="/">About CleanJibe</a> ·
+    <a href="/invite/">Get the beta</a> ·
+    <a href="/start/">Getting started</a> ·
+    <a href="/watches/">Which watch</a> ·
+    <a href="/learn/">What it measures</a> ·
+    <a href="/whats-new/">What&rsquo;s new</a> ·
+    <a href="/app/">Open the analyzer</a> ·
+    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">GitHub</a> ·
+    <a href="/privacy/">Privacy</a> ·
+    <a href="/impressum/">Impressum</a>
   </p>
+  <p data-copy="feedback-invitation">
+    A verdict you disagree with, or something you want this to do next?
+    <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
+       data-umami-event="footer-feedback-mail">info@cleanjibe.org</a>, or
+    <strong>Menu &rarr; Support &amp; ideas</strong> in the iPhone app, which fills the facts
+    in for you. Ideas and wishes are as welcome as bugs. An
+    <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">issue</a> works too,
+    and the next rider can read it.
+  </p>
+  <!-- The one measurement this site takes, said out loud rather than behind a banner: umami
+       is cookieless and stores no identifier that survives the visit, so there is nothing to
+       consent to. It does not weaken the analyzer's promise — a .fit file is read in the tab
+       and never leaves the device; what umami sees is that a page was opened. -->
   <p class="fineprint">
     Anonymous, cookie-free usage stats and feature counts by umami.
-    · <a href="../privacy/">Privacy</a>
-    · <a href="../impressum/">Impressum</a>
   </p>
+<!-- sitefoot:end -->
 </footer>
 
 <!-- The three moving parts of the page chrome, identical on every document here.

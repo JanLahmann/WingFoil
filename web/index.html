@@ -113,45 +113,20 @@
   <ul>
     <li><a href="/start/">Get started</a></li>
     <li><a href="/watches/">Which watch</a></li>
-    <li><a href="/learn/">How it works</a></li>
+    <li><a href="/learn/">What it measures</a></li>
     <li><a href="/whats-new/">What&rsquo;s new</a></li>
   </ul>
 </nav>
 <!-- sitenav:end -->
 </header>
 
-<!-- ------------------------------------------------------------ section nav -->
-<!-- Four entries now rather than seven. Jan, 14 Sep 2026: *"The entry web page is quite
-     long."* It was — six screens, and a stranger arriving with one question had to scroll
-     past five answers to somebody else's. The long half moved to /learn/ and this row is the
-     short half's table of contents: what comes out, the three names, which recording gives
-     you what, and what is coming. It is furniture, so it wears the eyebrow's mono rather
-     than the buttons' type, and the labels are the headings word for word.
-
-     Below 720 px the row would take two lines of a phone screen, so it collapses to one
-     `Jump to` select. The links stay in the markup and are what a reader without JavaScript
-     gets: the `js` class at the foot of this page is what hides them in favour of the
-     select, so the nav can never be a control that does nothing. -->
-<nav class="sectionnav" aria-label="On this page">
-  <div class="sectionnav-inner">
-    <ul>
-      <li><a href="#card">What comes out</a></li>
-      <li><a href="#pieces">The three pieces</a></li>
-      <li><a href="#need">What you need</a></li>
-      <li><a href="#coming">Coming in a future release</a></li>
-    </ul>
-    <label class="jump">
-      <span class="sr-only">On this page</span>
-      <select>
-        <option value="">On this page&hellip;</option>
-        <option value="#card">What comes out</option>
-        <option value="#pieces">The three pieces</option>
-        <option value="#need">What you need</option>
-        <option value="#coming">Coming in a future release</option>
-      </select>
-    </label>
-  </div>
-</nav>
+<!-- NO SECTION NAV HERE, and that is the decision rather than an oversight. This page is two
+     sections long and about 400 words; a table of contents is furniture for four screens
+     that no longer exist, and on a phone it sat between the topbar and the share card — the
+     one picture the whole page is built around. The rule, written down: a section nav is for
+     a page a reader scrolls through looking for their own question, and below about
+     700 words there is nothing to look for. /learn/, /watches/, /start/ and /privacy/ are
+     over that line and keep theirs. -->
 
 <main>
 
@@ -267,14 +242,9 @@
         Free. No account. The analyzer runs in your browser — the file is never uploaded.
       </span>
     </p>
-    <!-- The line that closes the gap /invite/ used to leave open: "installed" is not "this
-         works for me", and the watch route runs through three apps before a session shows
-         up. /start/ is the walkthrough, and the person who needs it has not scrolled yet. -->
-    <p class="lede">
-      <strong>Installed?</strong>
-      <a href="start/" data-umami-event="home-start">Start here: your first session on the
-      water</a> — charge, record, save, and what you should see on the phone afterwards.
-    </p>
+    <!-- The "Installed? Start here" line came out on 15 Sep 2026: the site nav's FIRST link
+         is "Get started", three centimetres above this paragraph on every page, and a
+         sentence that repeats a navigation row is a sentence the hero pays for twice. -->
     </div>
 
   </section>
@@ -289,7 +259,7 @@
     <p class="section-lede">
       The watch records and shows the live numbers; the phone and the browser do the full
       analysis afterwards. All three run the same analysis code, so a session means the same
-      thing wherever you read it. Use any one of them on its own.
+      thing wherever you read it.
     </p>
 
     <div class="pieces">
@@ -352,199 +322,83 @@
       release.
     </p>
 
-    <p class="section-lede pieces-foot">
-      <strong><a href="learn/" data-umami-event="learn-more">More about how it works</a></strong>
-      — what each piece does in full, the questions people actually ask, the numbers it counts,
-      and what it is built out of.
-    </p>
-  </section>
-
-  <!-- ------------------------------------------------------------ the classes -->
-  <!-- What a rider gets depends on what the recording carries, not on what he owns, and the
-       question arrives before the import rather than after it: "will this work with my
-       watch" is really "will this work with my file". Three classes, a, b and c, the same
-       three rows and the same three words the apps use (docs/channels.md; the analysis's own
-       `sourceClass` column is what decides it per session). Repeated in full on
-       /watches/#classes, because that is the other page the question is asked on. -->
-  <section class="home-section" id="need">
-    <h2>What you need, what you get</h2>
-    <p class="section-lede">
-      Everything reads a file, so what you get back depends on what the recording carries.
-      Three classes, and every session lands in one of them.
-    </p>
-
-    <div class="table-scroll">
-      <table class="stack-sm">
-        <thead>
-          <tr>
-            <th class="l">Class</th>
-            <th class="l">You record with</th>
-            <th class="l">What you get</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="l stack-lead" data-copy="class-name">Class A · Garmin watch app</td>
-            <td class="l" data-th="You record with">The CleanJibe watch app on a Garmin</td>
-            <td class="l" data-th="What you get" data-copy="class-line">Everything: foil time, flights, every turn verdict and clean jibe, certified speed records,
-                the wind axis, pump strokes and takeoff attempts.</td>
-          </tr>
-          <tr>
-            <td class="l stack-lead" data-copy="class-name">Class B · any speed-certified file</td>
-            <td class="l" data-th="You record with">Any other FIT with a measured speed channel
-                — Garmin&rsquo;s own Windsurf profile, another Connect IQ app</td>
-            <td class="l" data-th="What you get" data-copy="class-line">Everything except pump strokes and takeoff attempts, which need a wrist accelerometer nothing
-                else records. Speed records certify.</td>
-          </tr>
-          <tr>
-            <td class="l stack-lead" data-copy="class-name beta-door">Class B+ · Apple Watch app<span class="tag beta" data-copy="aside">beta</span></td>
-            <td class="l" data-th="You record with"><span data-copy="beta-door">The CleanJibe Apple Watch app: class&nbsp;B speed,
-                plus the 50&nbsp;Hz wrist accelerometer</span></td>
-            <td class="l" data-th="What you get" data-copy="class-line">Everything class B gets, and pump strokes and takeoff attempts too: the watch app records the
-                wrist at 50 Hz and the phone analyses it.</td>
-          </tr>
-          <tr>
-            <td class="l stack-lead" data-copy="class-name">Class C · positions only</td>
-            <td class="l" data-th="You record with">Positions only: Strava, a <code>.gpx</code>,
-                a <code>.tcx</code> without speed, a phone in a pocket</td>
-            <td class="l" data-th="What you get" data-copy="class-line">Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are
-                estimated from positions and marked uncertified, and there are no pump strokes or takeoff
-                attempts.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p class="beta-legend">
-      <span class="tag beta">beta</span> in the public beta today, not yet in the App Store
-      release.
-    </p>
-
+    <!-- ONE LINE WHERE THE CLASS TABLE WAS. The four recording classes live on
+         /watches/#classes and nowhere else since 15 Sep 2026: that is the page the question
+         "will my watch work" is actually asked on, the four rows there are the same pinned
+         cells this page used to print, and web/tools/verify_copy.py's page map was edited in
+         the same change so a second copy fails rather than drifts. -->
     <p class="note">
-      Which class a watch lands in, brand by brand, is on
-      <a href="watches/#classes">Which watch</a> — including the phone-only route, which is
-      class c and works. <strong>Take the FIT</strong> wherever an app offers you one: it
-      carries the speed your watch measured, which is the whole difference between b and c.
+      <strong>What you get back depends on what your file carries</strong>, not on the badge
+      on the strap. Which class your watch lands in is on
+      <a href="watches/#classes" data-umami-event="home-classes">Which watch</a>.
+    </p>
+
+    <!-- ONE LINE WHERE THE TWO CHANNEL LISTS WERE. docs/channels.md decides them,
+         docs/copy/channels.json carries them, and /invite/#coming is the one page that
+         prints them — one button away, read by somebody who has already decided. A dev list
+         on the front door is a promise to a stranger; the app keeps those rows behind
+         `#if BETA` for exactly that reason, and the site now matches. -->
+    <p class="note">
+      <strong>The App Store release is the steady half.</strong> Everything the beta has
+      today, and the ideas on the bench behind it, are on
+      <a href="invite/#coming" data-umami-event="beta-cta-coming">Get the beta</a>.
+    </p>
+    <p class="piece-foot">
+      <a class="btn ghost" href="invite/#coming" data-umami-event="beta-coming-button">See what is in the beta</a>
     </p>
   </section>
 
-  <!-- ------------------------------------------------------------- what is coming -->
-  <!-- Written from docs/channels.md and from nowhere else: that file decides which feature
-       is in which channel, and this list, the app's Beta section and the store texts are all
-       copies of it. Two lists, because there are two honest answers — the beta list is a
-       thing a reader can have today by installing the beta, and the bench is a thing nobody
-       outside a handful of testers can have at all. Saying so plainly is cheaper than a
-       roadmap nobody can hold us to. -->
-  <section class="home-section" id="coming">
-    <!-- The heading is the app's own, word for word: Settings → "Coming in a future
-         release" (docs/channels.md, "Feedback and channel furniture"). It was "Curious about
-         what is coming" here until 15 Sep 2026, which was a question about a room rather
-         than an answer to the rider's question — when do I get these. -->
-    <h2 data-copy="channels-title">Coming in a future release</h2>
-    <p class="section-lede">
-      The App Store release is the steady half of the app. Everything below is real and runs
-      today — the difference is who can get at it.
-    </p>
-    <div class="claims">
-      <article class="panel claim">
-        <h3>In the beta today<span class="tag beta">beta</span></h3>
-        <p>
-          Install the beta and you have all of it, this afternoon — there is no waiting list
-          and no second install:
-        </p>
-        <ul data-copy="channels-beta">
-          <li>.gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS opens straight
-              from Files.</li>
-          <li>Apple Health, both ways: what Apple's Workout app recorded is read in, and your sessions are
-              written back as workouts.</li>
-          <li>The CleanJibe Apple Watch app, which records on your wrist with live numbers and hands the
-              session to the phone.</li>
-          <li>Home-screen widgets and the watch complication.</li>
-          <li>The session video: your afternoon as a film rather than a card.</li>
-          <li>Grouping the library by month, year or spot, and filtering it.</li>
-        </ul>
-        <p class="piece-foot">
-          <a class="btn primary" href="invite/" data-umami-event="beta-cta-coming">Try the beta</a>
-        </p>
-      </article>
-      <article class="panel claim">
-        <h3>Ideas on the bench</h3>
-        <p>
-          Beyond the beta, these are what we could build next. None of them is in a public
-          build today. If one would matter to you, say so, and add your own ideas: what riders
-          ask for is what gets built first.
-        </p>
-        <ul data-copy="channels-dev">
-          <li>The Garmin link: a summary card from your watch the moment you stop, the map of your spot
-              and the wind direction sent back to it</li>
-          <li>Windsurf, foil and fin, with thresholds of its own</li>
-          <li>The tuning page: every analysis threshold on a slider, tried against your own sessions</li>
-          <li>iPad</li>
-          <li data-copy="extra">Your idea here.</li>
-        </ul>
-        <p>
-          <strong>Tell us what you would want</strong>, the order below. Every wish counts, and
-          the ones asked for most move first.
-        </p>
-      </article>
-    </div>
-
-    <!-- The one paragraph this whole site is asking for, in the same words on six pages:
-         a beta with no feedback is a private build with extra steps. Ideas are named first
-         among equals because bug reports arrive by themselves and wishes do not. -->
-    <p class="note" id="tell-us" data-copy="feedback-invitation">
-      <strong>Tell us.</strong> Bugs, verdicts you disagree with, and — just as much — what
-      you would want this to do next. <strong>Ideas and wishes are as welcome as bugs.</strong> In the app,
-      <strong>Menu &rarr; Support &amp; ideas</strong> is the best door, because it prefills the
-      facts;
-      otherwise mail <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A">info@cleanjibe.org</a> or open a
-      <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">GitHub issue</a>.
-      Need something that is only in the beta? Tell us.
-    </p>
-  </section>
 
 </main>
 
 <footer>
   <p>CleanJibe — open wingfoil tracking. Watch app, iPhone app, browser analyzer.</p>
-  <!-- Both betas are open now — the watch app from the Connect IQ store, the phone app
-       from a public TestFlight link — so the footer's job is the doors a stranger needs:
-       the long half of this page (/learn/), where the installs are (/invite/), and where a
-       report goes. -->
-  <p>
-    Source, issues and the detection thresholds:
-    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">github.com/JanLahmann/WingFoil</a>
-    (Apache-2.0; the CleanJibe name and mark are not part of the license)
-    · <a href="learn/">More about how it works</a>
-    · <a href="invite/">Get the beta</a>
-    · <a href="start/">Getting started</a>
-    · <a href="watches/">Which watch</a>
-    · <a href="whats-new/">What&rsquo;s new</a>
-  </p>
-  <!-- Issue first, mail second, the same order /invite/ puts them in: an issue is a report
-       the next rider can read, a mail is one only the developer ever sees. -->
-  <p>
-    Beta feedback and questions:
-    <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">open an issue</a>
-    — or mail <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A">info@cleanjibe.org</a>
-  </p>
-  <!-- The one measurement this site takes, said out loud. umami is cookieless and stores no
-       identifier, so there is no consent banner to show and nothing to opt out of; saying so
-       in a line is cheaper than a banner and more honest than silence. It does NOT weaken
-       the analyzer's promise — the .fit file is read in the browser tab and still never
-       leaves the device. What umami sees is that a page was opened.
+<!-- sitefoot:begin — COPIED VERBATIM ON ALL NINE PAGES, and compared byte for byte by
+     web/tools/verify_links.py exactly the way the site nav in the topbar is. Until
+     15 September 2026 every footer carried a different subset of the site — /privacy/ named
+     three pages, /impressum/ one, and the two doors a reader is actually looking for were
+     wherever the last edit left them. The footer is where a reader goes when the sticky bar
+     has scrolled past and when JavaScript never ran, so it names EVERY page, in the order
+     the site nav uses, with the two buttons as text links at the end of the row and Privacy
+     and Impressum last.
 
-       "and feature counts" earned its two words the day the buttons started counting: a
-       handful of named events (a CTA pressed, an analysis finished, a card made) with a
-       name and nothing else — no filename, no number off a session, nothing about a rider. -->
-  <!-- The privacy page is reached from the footer of every page, in the same place on each:
-       it is the line a reader goes looking for, and the fineprint line is already the one
-       that talks about measurement. -->
+     The hrefs are ROOT-RELATIVE for the same reason the site nav's are: one block has to
+     serve a page at the site root and a page a directory down.
+
+     The Tell us line is here rather than in <main>. It used to be a 55-word paragraph inside
+     the body of six pages, saying the same thing six times; the sentence itself is
+     docs/copy/feedback.json's `invitation` and is pinned by web/tools/verify_copy.py, so it
+     may move but it may not be reworded. The two real asks — /invite/#feedback and
+     /start/#tell — are where a tester with something to say is standing. -->
+  <p>
+    <a href="/">About CleanJibe</a> ·
+    <a href="/invite/">Get the beta</a> ·
+    <a href="/start/">Getting started</a> ·
+    <a href="/watches/">Which watch</a> ·
+    <a href="/learn/">What it measures</a> ·
+    <a href="/whats-new/">What&rsquo;s new</a> ·
+    <a href="/app/">Open the analyzer</a> ·
+    <a href="https://github.com/JanLahmann/WingFoil" rel="noopener" data-umami-event="github">GitHub</a> ·
+    <a href="/privacy/">Privacy</a> ·
+    <a href="/impressum/">Impressum</a>
+  </p>
+  <p data-copy="feedback-invitation">
+    A verdict you disagree with, or something you want this to do next?
+    <a href="mailto:info@cleanjibe.org?subject=CleanJibe%20feedback&amp;body=What%20happened%2C%20or%20what%20you%20would%20like%3A%0A%0A%0AWhat%20you%20expected%20instead%3A%0A%0A%0AWhich%20session%20%28date%2C%20spot%29%2C%20if%20it%20is%20about%20one%3A%0A%0AYour%20watch%20and%20phone%20%28model%2C%20software%20version%29%3A%0A%0ACleanJibe%20version%20%28Settings%2C%20About%29%3A%0A%0AIdeas%20and%20wishes%20are%20as%20welcome%20as%20bugs.%20Attach%20a%20screenshot%20or%20the%20session%27s%20.fit%20file%20if%20you%20can.%0A"
+       data-umami-event="footer-feedback-mail">info@cleanjibe.org</a>, or
+    <strong>Menu &rarr; Support &amp; ideas</strong> in the iPhone app, which fills the facts
+    in for you. Ideas and wishes are as welcome as bugs. An
+    <a href="https://github.com/JanLahmann/WingFoil/issues" rel="noopener">issue</a> works too,
+    and the next rider can read it.
+  </p>
+  <!-- The one measurement this site takes, said out loud rather than behind a banner: umami
+       is cookieless and stores no identifier that survives the visit, so there is nothing to
+       consent to. It does not weaken the analyzer's promise — a .fit file is read in the tab
+       and never leaves the device; what umami sees is that a page was opened. -->
   <p class="fineprint">
     Anonymous, cookie-free usage stats and feature counts by umami.
-    · <a href="privacy/">Privacy</a>
-    · <a href="impressum/">Impressum</a>
   </p>
+<!-- sitefoot:end -->
 </footer>
 
 <!-- The three moving parts of the page chrome, identical on every document here.

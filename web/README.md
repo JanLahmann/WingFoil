@@ -15,19 +15,25 @@ file — verified against all 15 corpus fixtures (see *Verification* below).
 
 ```
 web/
-├── index.html                  the PROJECT HOMEPAGE (cleanjibe.org/) — the SHORT half since
-│                               14 Sep 2026: the share card as the hero (with its map
-│                               background), the headline and the two doors, the three
-│                               pieces at one line each, the recording-class table, what is
-│                               coming, and the tell-us line. Nothing else. No JS but the
-│                               section nav's ten lines.
-├── learn/index.html            "MORE ABOUT HOW IT WORKS" (cleanjibe.org/learn/) — the LONG
-│                               half, split off the homepage the day Jan said the front door
-│                               was too long: the three pieces in full with their
-│                               screenshots, the FAQ, the vocabulary list with the track
-│                               motif, and the two build claims. Nothing here was rewritten
-│                               in the move. Precached (it is the front page's one outbound
-│                               link); same no-manifest, no-JS rules as /watches/.
+├── index.html                  the PROJECT HOMEPAGE (cleanjibe.org/) — TWO SECTIONS and
+│                               about 400 words since 15 Sep 2026: the share card as the
+│                               hero (with its map background), the headline, the pinned
+│                               promise and three doors; then the three pieces at one line
+│                               each, and two lines pointing at the pages that own the rest
+│                               — the recording classes (/watches/#classes) and the beta and
+│                               dev lists (/invite/#coming). NO SECTION NAV: below about 700
+│                               words there is nothing to look for, and on a phone it sat
+│                               between the topbar and the one picture the page is built
+│                               around. No JS but the topbar's eight lines.
+├── learn/index.html            "WHAT IT MEASURES" (cleanjibe.org/learn/) — the long half,
+│                               split off the homepage the day Jan said the front door was
+│                               too long, and reordered on 15 Sep 2026 so WHAT IT COUNTS
+│                               comes first: the track motif and the eleven pinned glossary
+│                               lines, then the three pieces in full with their screenshots,
+│                               FOUR questions (three were summaries of /watches/ and went
+│                               there), and the two build claims. Precached (it is the front
+│                               page's one outbound link); same no-manifest rules as
+│                               /watches/.
 ├── invite/index.html           the BETA PAGE (cleanjibe.org/invite/): both open-beta
 │                               installs — the Connect IQ store link and the public
 │                               TestFlight link — and where a tester sends what they find.
@@ -43,7 +49,10 @@ web/
 │                               analytics, nothing third-party anywhere near an
 │                               authorization code — noindex, and not in the sw.js precache.
 ├── watches/index.html          "WHICH WATCH" (cleanjibe.org/watches/): the one place the
-│                               question "will my watch work" is answered. The watch app's
+│                               question "will my watch work" is answered, and since
+│                               15 Sep 2026 the ONE place the four recording classes are
+│                               printed — the class table leads the page, because "will my
+│                               watch work" is really "what will my file carry". The watch app's
 │                               Connect IQ product list grouped into families, with the
 │                               honest third column — ridden on a real watch, or only
 │                               through the simulator's layout checks — and the second table
@@ -64,14 +73,18 @@ web/
 │                               only archive of the older builds' notes) and
 │                               `garmin/store/listing.md`. No JS, not precached.
 ├── start/index.html            the GETTING-STARTED PAGE (cleanjibe.org/start/): what
-│                               happens after the install — a 20-minute test on land, the
-│                               four watch routes (Apple Workout app, CleanJibe watch app,
-│                               Garmin via intervals.icu, and anything else through the
-│                               share sheet), what a working result looks like, and the
-│                               feedback doors — the app's own Menu -> Support first, then
-│                               the mail link with the report template prefilled. Same no-JS, no-precache rules
-│                               as /invite/; linked from it and printed in TestFlight's
-│                               "What to Test" and on the Connect IQ listing.
+│                               happens after the install. FIVE ROUTES + the 20-minute dry
+│                               run + the ask, one card each, with EACH CARD'S STEPS BEHIND
+│                               A <details> since 15 Sep 2026 — a rider takes exactly one
+│                               route and the other four are noise, which is what took the
+│                               page from 3400 words to ~820 visible without cutting a step.
+│                               Then the troubleshooting list (also folded), the report
+│                               checklist, your old sessions in one paragraph, and three
+│                               feedback doors — the app's own Menu -> Support first, then an
+│                               issue, then the mail link with the report template prefilled.
+│                               Same no-JS, no-precache rules as /invite/; linked from it and
+│                               printed in TestFlight's "What to Test" and on the Connect IQ
+│                               listing.
 ├── app/index.html              the ANALYZER (cleanjibe.org/app/): page shell, three views
 │                               (analyze / library / trends). Called "CleanJibe session
 │                               analyzer" on the page — "Lab" and the module name are gone
@@ -154,12 +167,15 @@ web/
 │   ├── FILES.json              load list for the worker (HTTP has no directory listing)
 │   └── MANIFEST.json           source hashes, for the staleness check
 ├── tools/verify_links.py       every internal link on the site resolves, every document
-│                               nests its tags, and the SITE NAV is byte-identical on all
-│                               nine pages (see "Site navigation" below): no browser, no
-│                               server, no dependency. Run it after touching any .html here.
-│                               It also runs make_start.py --check and make_devices.py
-│                               --check, so a stale /start/ or a stale product count fails
-│                               with the links
+│                               nests its tags, and the SITE NAV and the FOOTER block are
+│                               byte-identical on all nine pages (see "Site navigation"
+│                               below): no browser, no server, no dependency. Run it after
+│                               touching any .html here. It also runs make_start.py --check,
+│                               make_devices.py --check, verify_copy.py --brief and
+│                               verify_unique.py --brief, so a stale /start/, a stale product
+│                               count, a page that has drifted from docs/copy, a sentence
+│                               with two homes and a page over its word budget all fail with
+│                               the links
 ├── tools/make_devices.py       writes ../docs/copy/garmin-devices.json from
 │                               garmin/manifest.xml + -beta + -dev (asserting the three
 │                               product sets are identical), and rewrites the
@@ -172,12 +188,20 @@ web/
 │                               the card CTA and the caption offer (composed out of
 │                               cardstats.js's own parts), the Strava sentence and the five
 │                               phrases that may not accompany it, the Connect IQ listing
-│                               name, the beta and dev lists and the section title, the four
-│                               recording classes in both tables, the eight glossary
+│                               name, the beta and dev lists and the section title (on
+│                               /invite/ only), the four
+│                               recording classes in the ONE table that carries them
+│                               (/watches/), the glossary
 │                               entries, the three feedback prompts in every mailto: body,
 │                               and the intervals.icu steps. Reads the JSON, never retypes
 │                               a sentence. Run by verify_links.py; `--brief` is what it
 │                               runs. Stdlib only
+├── tools/verify_unique.py      the sentences NOBODY owns: no prose sentence of eight words
+│                               or more appears on two of the six reader-facing pages, and no
+│                               page is over its word budget (counted the way a reader meets
+│                               it — everything inside a <details> but its <summary> is left
+│                               out). Threshold zero, with an annotated ALLOW list printed on
+│                               every run. Run by verify_links.py. Stdlib only
 ├── tools/make_copy_js.py       writes js/copy.js from docs/copy/verdicts.json and
 │                               phrases.json — the four sentences the analyzer has to say at
 │                               run time. `--check` exits 1 if it is stale, and runs with
@@ -260,12 +284,12 @@ structural rather than named strings:
 | what | who decides it | how the site stays honest (and what pins it) |
 |---|---|---|
 | Garmin product count, watch app version | `garmin/manifest.xml` (+ `-beta`, `-dev`) | `docs/copy/garmin-devices.json`, written by `tools/make_devices.py`; the pages carry `<span data-copy="garmin-count">` / `garmin-version` and the script rewrites them. `--check` runs with `verify_links.py` |
-| which feature is in which channel | `docs/channels.md` → `docs/copy/channels.json` | the two `#coming` lists on `/` and `/invite/` are readings of it and of nothing else: `<ul data-copy="channels-beta">` and `channels-dev` carry the JSON's rows, verbatim, in its order, and the `<h2 data-copy="channels-title">` is the app's own section title. The **Garmin export ZIP is a release door** since 14 Sep 2026 and is on neither list — because it is on neither list in the JSON, and `verify_copy.py` would fail if a page put it back |
-| the three feedback prompts and the invitation sentence | `FeedbackReport.Prompt` and `FeedbackInvitation.sentence` in the kit → `docs/copy/feedback.json` | every `mailto:` body on the site uses the three prompts verbatim, and every *Tell us* block (`data-copy="feedback-invitation"`) says *Ideas and wishes are as welcome as bugs.* The two extra questions (watch and phone, app version) are web-only on purpose: the browser cannot fill them in and the app does not need to ask |
+| which feature is in which channel | `docs/channels.md` → `docs/copy/channels.json` | the `#coming` lists on **`/invite/` only** since 15 Sep 2026 are a reading of it and of nothing else (a dev list on the front door is a promise to a stranger; the app keeps those rows behind `#if BETA` for the same reason, and `verify_copy.py`'s page map was edited in the same change so a second copy fails rather than drifts): `<ul data-copy="channels-beta">` and `channels-dev` carry the JSON's rows, verbatim, in its order, and the `<h2 data-copy="channels-title">` is the app's own section title. The **Garmin export ZIP is a release door** since 14 Sep 2026 and is on neither list — because it is on neither list in the JSON, and `verify_copy.py` would fail if a page put it back |
+| the three feedback prompts and the invitation sentence | `FeedbackReport.Prompt` and `FeedbackInvitation.sentence` in the kit → `docs/copy/feedback.json` | every `mailto:` body on the site uses the three prompts verbatim, and the *Tell us* line in the **footer of every page** (`data-copy="feedback-invitation"`, inside the copied `sitefoot` block) says *Ideas and wishes are as welcome as bugs.* It was a 55-word paragraph inside `<main>` on six pages until 15 Sep 2026; the two real asks are `/invite/#feedback` and `/start/#tell`. The two extra questions (watch and phone, app version) are web-only on purpose: the browser cannot fill them in and the app does not need to ask |
 | what a rider is told about Strava | `docs/channels.md` → `phrases.json` | one sentence, everywhere: **"Strava lets a new app connect a limited number of riders"**, asserted present on `/learn/`, `/start/` and `/privacy/`, plus *tell us if you are told the app is full*. None of `stravaForbidden`'s five phrases may appear on any page — the app has not been reviewed, reviews the app, approves the app, not reviewed, single-rider. A dated release note corrects itself in brackets rather than rewriting its own history |
 | the Connect IQ listing's name | the live store | `<span data-copy="ciq-title">` on `/start/` and `/invite/`. It still prints *CleanJibe Wingfoil Tracker (Beta)* because that is what the store says today; `docs/channels.md` has decided the rename, and the span is so both places flip on the day the store does |
 | the promise, the card CTA and the caption offer | `WelcomeGuide.promise`, `Branding.callToAction`, `ShareCaption.offer` in the kit → `phrases.json` | the hero paragraph on `/` is `<p class="lede" data-copy="promise">` and is the JSON's sentence to the character. The card's two strings are **composed** in `js/cardstats.js` (`cta` and `site` are drawn on separate lines), so `verify_copy.py` reads the parts and re-does the composition rather than looking for the sentence |
-| the four recording classes | `RecordingClass.swift` → `docs/copy/recording-classes.json` | the class tables on `/` and `/watches/` carry the four `name` and four `line` strings in cells marked `data-copy="class-name"` / `class-line`. The three-column shape and the *You record with* column are the web's own; only the cell contents are pinned. `/watches/`'s second table keeps its own shape and may name no class the JSON does not have |
+| the four recording classes | `RecordingClass.swift` → `docs/copy/recording-classes.json` | the class table on **`/watches/#classes` only** since 15 Sep 2026 — it leads that page, and the front door prints one sentence and a link — carries the four `name` and four `line` strings in cells marked `data-copy="class-name"` / `class-line`. The three-column shape and the *You record with* column are the web's own; only the cell contents are pinned. `/watches/`'s second table keeps its own shape and may name no class the JSON does not have |
 | the eight metric one-liners | `MetricGlossary.swift` → `docs/copy/glossary.json` | `/learn/`'s `<dl data-copy="glossary">` carries the eight `term`/`line` pairs, in the JSON's order, before any `glossary-extra` of its own. The long explanations stay in the app's `HelpCatalog`: same terms, different depth |
 | the intervals.icu setup | `IcuSetupGuide.swift` → `docs/copy/icu-setup.json` | `/start/` names the four step titles (`data-copy="icu-step"`) and the app's own **Save & check** button (`icu-save`), *outside* the generated guide block. The iPhone asks for one thing, the personal API key; the Athlete ID is the browser analyzer's |
 | what a recording that is not a session is called | `NotASessionNote.swift` → `docs/copy/verdicts.json` | the analyzer's session view renders the tag and the line from `js/copy.js`, generated by `tools/make_copy_js.py`. `--check` runs with `verify_links.py` |
@@ -357,7 +381,7 @@ python3 -m http.server 8765
 > The site has one app and a family of documents around it. `/` is the project homepage;
 > `/invite/`, `/start/`, `/watches/`, `/whats-new/`, `/privacy/` and `/impressum/` are static
 > HTML with one extra stylesheet and **no JavaScript file of their own** — the only script on
-> them is the twelve inline lines that measure the topbar and drive the two nav selects (see
+> them is the twelve inline lines that measure the topbar and drive the section nav's select (see
 > *Site navigation*), and every one of those pages renders and navigates whole without it;
 > `/app/` is this analyzer.
 > (`/strava/callback/` is the exception to everything: self-contained, noindex, and for the
@@ -714,20 +738,27 @@ There is now **one navigation row in the topbar of all nine documents** — `/`,
 (`/strava/callback/` is excluded from this as from everything: it is self-contained, holds
 an authorization code and is on screen for a frame.)
 
-- **Five destinations**, in the order a stranger needs them: *Get started* (`/start/`),
-  *Which watch* (`/watches/`), *How it works* (`/learn/`), *What's new* (`/whats-new/`),
-  *Get the beta* (`/invite/`). **Privacy and Impressum are deliberately not on it** — they
-  are read once, and the footer of every page is where a reader goes looking for them.
+- **Four destinations**, in the order a stranger needs them: *Get started* (`/start/`),
+  *Which watch* (`/watches/`), *What it measures* (`/learn/`), *What's new* (`/whats-new/`).
+  *Get the beta* is not on the row — it is the ghost button directly above it on every page.
+  **Privacy and Impressum are not on it either** — they are read once, and the footer of
+  every page is where a reader goes looking for them.
+- ***How it works* became *What it measures* on 15 September 2026.** It was the vaguest label
+  on the row and pointed at the page furthest from any question a reader actually arrives
+  with; once *What it counts* moved to the top of `/learn/`, the new label is literally what
+  the page is. The page's own `<h1>` and `<title>` moved with it, so a reader who follows the
+  link lands on a heading that says what they pressed.
 - **The two CTAs did not move.** The nav is not a second button row: it wears the section
   nav's furniture (the eyebrow's mono, uppercase, `--ink-3`), because it is the same kind of
   thing one level up. One button may be the loud one, and it is still *Open the analyzer*.
 - **The current page is marked twice**, `aria-current="page"` for the accessibility tree and
   a 2 px rule in the link ink for the eye. Every colour is a token, so the light theme at the
   foot of `css/style.css` turns it with everything else.
-- **Below 720 px it collapses to one select**, the same swap the section nav makes and gated
-  on the same `js` class that the small script at the foot of every page sets. The links stay
-  in the markup: without JavaScript a select cannot navigate, so a reader whose script never
-  ran keeps five working links instead of a dead control.
+- **It stays a row at every width.** Four short items fit one line on a phone, and a
+  "Go to…" select above the section nav's "On this page…" read as two of the same thing. The
+  section nav is the one that collapses, gated on the `js` class the small script at the foot
+  of every page sets; its links stay in the markup, so a reader whose script never ran keeps
+  working links instead of a dead control.
 - **The hrefs are root-relative** (`/start/`, not `../start/`). That is what lets one block
   serve a page at the site root and a page a directory down — and one block is the point.
 
@@ -735,9 +766,27 @@ an authorization code and is on screen for a frame.)
 nowhere to put a partial, so the block lives nine times, between
 `<!-- sitenav:begin -->` and `<!-- sitenav:end -->`. `tools/verify_links.py` compares all
 nine byte for byte with `aria-current="page"` stripped and fails on any difference, so an
-edit to one is an edit to all nine or it is a red check. The same script sets `--topbar-h`
-(the sticky section nav has to sit exactly below a topbar that is now two rows tall and
-changes height at every breakpoint) and drives both selects.
+edit to one is an edit to all nine or it is a red check. The small script at the foot of
+every page sets `--topbar-h` (the sticky section nav has to sit exactly below a topbar that
+is two rows tall and changes height at every breakpoint) and drives the section nav's select.
+
+**The third topbar button is *GitHub* on all nine pages** since 15 September 2026. It used
+to be *About CleanJibe* on four of them and *GitHub* on the front door, which is backwards:
+the brand block in the top left is already the way home on every page but `/`, so a second
+one was a button spent on a door the reader already has.
+
+**The footer is one block too**, between `<!-- sitefoot:begin -->` and
+`<!-- sitefoot:end -->`, compared byte for byte the same way. Every page in the site nav's
+order, then the two buttons as text links, then GitHub, then Privacy and Impressum — plus
+the one-line *Tell us* offer (`data-copy="feedback-invitation"`) and the umami line. Until
+15 September 2026 every footer named a different subset: `/privacy/` three pages,
+`/impressum/` one. The hrefs are root-relative for the same reason the site nav's are.
+
+**A section nav is for a page a reader scrolls through looking for their own question.**
+Below about 700 words there is nothing to look for. So: `/learn/`, `/watches/`, `/start/`
+and `/privacy/` have one; `/`, `/invite/` and `/whats-new/` do not. `/privacy/` gained one on
+15 September 2026 — 3200 words and seven headings, and it was the one long page without —
+and `/` lost one the same day.
 
 ### Light theme
 
@@ -791,7 +840,7 @@ Icons live in `web/icons/`, copied from `brand/` (`icon-tile-*` for the normal i
 
 ## Verification
 
-Nine checks, none of which needs a browser:
+Ten checks, none of which needs a browser:
 
 ```bash
 cd /path/to/WingFoil
@@ -799,9 +848,9 @@ cd /path/to/WingFoil
 # 0. the bundle is not stale (exit 1 if lab/ moved on without it)
 python3 web/tools/bundle_lab.py --check
 
-# 0b. every internal link resolves, every document closes its tags, and the site nav is the
-#     same bytes on all nine pages (stdlib only, <1 s).
-#     It also runs checks 0c and 0d, so running this alone covers all three.
+# 0b. every internal link resolves, every document closes its tags, and the site nav AND
+#     the footer block are the same bytes on all nine pages (stdlib only, <1 s).
+#     It also runs 0c, 0d, 0e, 0f and 0h, so running this alone covers all six.
 python3 web/tools/verify_links.py
 
 # 0c. /start/ and the app's Getting started topic still match their one source,
@@ -819,6 +868,10 @@ python3 web/tools/verify_copy.py
 
 # 0f. web/js/copy.js is still the docs/copy strings the analyzer renders at run time
 python3 web/tools/make_copy_js.py --check
+
+# 0h. and the sentences nobody owns: no prose sentence of eight words or more is on two of
+#     the six reader-facing pages, and no page is over its word budget (stdlib only, instant)
+python3 web/tools/verify_unique.py
 
 # 0g. no release copy names a door the release lacks, on the two pages that speak for the
 #     product rather than for the beta
@@ -865,75 +918,94 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
 ### Manual browser test checklist
 
 0. **The homepage.** `cd web && python3 -m http.server 8765`, open
-   <http://127.0.0.1:8765/>. Static HTML, and **four sections long**: the hero, the three
-   pieces, the class table, what is coming. The hero is `img/share-card.png` **first** — in
-   the markup and on a phone, where it is the first thing on the screen — with its map
-   background under the track; from 761 px up it sits to the right of the copy (`order` in
-   home.css swaps them, the DOM order does not change). Then the brand mark at 64–84 px
-   beside the eyebrow, the headline, **two equal `.btn primary` doors** (*Get the beta* →
-   `/invite/`, *Try the analyzer* → `/app/`) with the example link in the note under them and
-   the *Installed?* line to `/start/` below that. Then the three cards at **one line each**
-   and no screenshots, the `beta` pill on the iPhone card with its legend under the row, the
-   **More about how it works** link to `/learn/`, the class table (`Class B+` carries a pill),
-   and the two channel lists. The card is never drawn wider than its 440 native pixels; hold a
-   phone camera to the QR at 1280 and it must open cleanjibe.org. Everything is named
-   **CleanJibe**. *An example session* lands on `/app/#example` and must **run the bundled
-   session on arrival**, not just show the drop zone. The footer carries the issue link before
-   the mail address, `/learn/` first among the page links, and one line naming umami.
+   <http://127.0.0.1:8765/>. Static HTML, **two sections and about 400 words**: the hero, and
+   the three pieces with two closing lines. **There is no section nav** — that row came off on
+   15 Sep 2026, because on a phone it sat between the topbar and the card. The hero is
+   `img/share-card.png` **first** — in the markup and on a phone, where it is the first thing
+   on the screen — with its map background under the track; from 761 px up it sits to the
+   right of the copy (`order` in home.css swaps them, the DOM order does not change). Under
+   the card, the caption's *Make a card of this* link must land on `/app/#example` and **run
+   the bundled session on arrival**. Then the brand mark at 64–84 px beside the eyebrow, the
+   headline, **two equal `.btn primary` doors** (*Get the beta* → `/invite/`, *Try the
+   analyzer* → `/app/`) with the ghost *See a real session* beside them and the free/no-account
+   note under them. Then the three cards at **one line each** and no screenshots, the `beta`
+   pill on the iPhone card with its legend under the row, and the two closing lines: the
+   recording classes → `/watches/#classes`, the beta and dev lists → `/invite/#coming` with
+   its ghost button. **Neither the class table nor either channel list is on this page any
+   more** — one copy each, on the pages that own them. The card is never drawn wider than its
+   440 native pixels; hold a phone camera to the QR at 1280 and it must open cleanjibe.org.
+   Everything is named **CleanJibe**. The footer is the same block as on every other page:
+   ten links, the *Tell us* line, the umami line.
 0-light. **Both themes.** Toggle the OS (or DevTools → Rendering → *Emulate CSS
    prefers-color-scheme*) on every page. Dark must be **byte-identical to what it always
    was**; light must keep the analyzer's two figures and the homepage motif on their own dark
    plate while everything around them turns. Check the sticky topbar, the site nav in it
    (its current-page rule must be visible in both themes) and the section nav, the
    panels, the pills in the turns table, the code spans, the tables' hairlines, the footer,
-   and the share-card dialog. `/strava/callback/` stays dark by design.
-0learn. **More about how it works.** <http://127.0.0.1:8765/learn/>. Everything the homepage
-   used to carry below its fold, unrewritten: the three pieces in full with their three
-   screenshots and their bullets, the FAQ (seven questions: watches, Android, another brand,
-   no watch, Strava, clean jibe, data), the vocabulary list with **the track motif and its
-   colour key above it**, and the two build claims. The `beta` pills on the iPhone card come
-   from docs/channels.md and the legend under the row says what the word means. Every link
-   back to the homepage's own anchors resolves (`../#card`, `../#need`) — `verify_links.py`
-   checks that, but the *pieces-foot* line is the one a reader actually presses.
+   **the disclosure triangles on `/start/`, `/watches/` and `/whats-new/`** (`.home-section
+   details > summary::before`, token-coloured, so it turns with everything else), and the
+   share-card dialog. `/strava/callback/` stays dark by design.
+0learn. **What it measures.** <http://127.0.0.1:8765/learn/>. The page is named after its
+   first section now: **What it counts comes first** — the track motif with its colour key,
+   then the eleven pinned glossary entries and the site's own *Pump & takeoff effort* after
+   them — then the three pieces in full with their three screenshots and their bullets, then
+   **four** questions (Android, Strava, what is a clean jibe, where does my data go), then the
+   two build claims. The three that went are on `/watches/`, which is one nav link away and is
+   literally named *Which watch*. The `beta` pills on the iPhone card come from
+   docs/channels.md and the legend under the row says what the word means. The `<h1>`, the
+   `<title>` and the site nav must all read **What it measures**.
 0a. **The beta page.** <http://127.0.0.1:8765/invite/>. Both installs read in order at both
    widths: the Connect IQ store link opens apps.garmin.com and the TestFlight link opens
-   testflight.apple.com. Nothing on the page asks anyone to request an invite — the one
-   surviving mention of the request code is the transitional note under the Garmin steps,
-   which comes out the day 0.9.4 clears review. The feedback section carries three doors **in
-   this order** — the app's own *Menu → Support* first (it prefills the build, the phone, the
-   watch and the library's shape), github.com/JanLahmann/WingFoil/issues second,
-   `info@cleanjibe.org` third — plus one line naming the stores' own channels (TestFlight's
-   screenshot form, Connect IQ's *Contact Developer*), because both really do reach the same
-   developer and a page that listed only its own doors would be implying otherwise. The
-   watches note names the version and the product count out of `docs/copy/garmin-devices.json`
-   (the two `data-copy` spans; `make_devices.py --check` proves them) and says out loud that
-   Venu, vívoactive, Instinct 3 AMOLED and the fenix 5 Plus family are untested on real
-   watches. Every mail address on the site
-   is `info@cleanjibe.org`; grepping the `.html` files for the old personal address must come
-   back empty.
-0a2. **The getting-started page.** <http://127.0.0.1:8765/start/>. The five routes read in
-   order at both widths and every internal link resolves — `../`, `../invite/`, `../app/`,
-   `../privacy/`, `../impressum/` — as do the two external ones (testflight.apple.com and
-   the Connect IQ listing `e77867b5-…`). The mail link must open a composer with the
-   **report template already in the body**: tap it on a phone rather than trusting the
-   `%0A`s. TestFlight's own feedback is named by the two strings the app actually shows,
-   *Send Beta Feedback* and *Share Beta Feedback*, and the Garmin door names *Contact
-   Developer* and *Report a Problem*. The page must load no JavaScript of its own and
-   register no service worker.
-0a3. **Which watch.** <http://127.0.0.1:8765/watches/>. Both tables are tabular above 760 px
-   and one card per row below it (`table.stack-sm` reads its labels from each `<td>`'s
-   `data-th`, so a missing one shows as an unlabelled row). The family list must sum to the
-   product count in `garmin/manifest.xml`, which is what `docs/copy/garmin-devices.json`
-   carries and what the two `data-copy` spans print — **42** at **0.9.11** — and the four
-   families nobody has ridden (Venu and vívoactive and Instinct 3 AMOLED from 0.9.10, the
-   fenix 5 Plus family from 0.9.11) must say so. Every internal link resolves: `../`, `../invite/`,
-   `../invite/#feedback`, `../start/`, `../app/`, `../whats-new/`, `../privacy/`,
-   `../impressum/`.
+   testflight.apple.com. Nothing on the page asks anyone to request an invite. **Step 1's note
+   is 26 words and no longer recites the product list** — it prints the two `data-copy` spans
+   and links to *Which watch*; `make_devices.py --check` still proves them here. The feedback
+   section carries three doors **in this order** — the app's own *Menu → Support & ideas*
+   first (it prefills the build, the phone, the watch and the library's shape),
+   github.com/JanLahmann/WingFoil/issues second, `info@cleanjibe.org` third — plus one line
+   naming the stores' own channels (TestFlight's *Send Beta Feedback*, Connect IQ's *Contact
+   Developer*), **which is their one home: `/start/` no longer names them**. `#coming` is the
+   only place on the site that prints the beta list and the dev list. Every mail address on
+   the site is `info@cleanjibe.org`; grepping the `.html` files for the old personal address
+   must come back empty.
+0a2. **The getting-started page.** <http://127.0.0.1:8765/start/>. **Five route cards, the
+   dry run and the ask, each with its steps behind a `<details>`** whose handle is the route's
+   own summary line — open one at a time and the steps read in order; shut, the page is about
+   820 words. The troubleshooting list is behind one fold too. **Nothing inside
+   `<!-- guide:begin --> … <!-- guide:end -->` is hand-edited**: change
+   `docs/guide/getting-started.json` or `make_start.py`'s `html_card`, and regenerate. Every
+   internal link resolves — `../`, `../invite/`, `../app/`, `../privacy/`, `../impressum/` —
+   as do the two external ones (testflight.apple.com and the Connect IQ listing
+   `e77867b5-…`). The mail link must open a composer with the **report template already in
+   the body**: tap it on a phone rather than trusting the `%0A`s. Route A step 2 carries the
+   two facts that used to live in the cut walkthrough — *charged watch and phone*, and the
+   mid-session *glance at the tally* — and the routes lede carries *go outside*. The page must
+   load no JavaScript of its own and register no service worker.
+0a3. **Which watch.** <http://127.0.0.1:8765/watches/>. **The class table is first**, and it
+   is the only copy of it on the site. Both tables are tabular above 760 px and one card per
+   row below it (`table.stack-sm` reads its labels from each `<td>`'s `data-th`, so a missing
+   one shows as an unlabelled row). The family list must sum to the product count in
+   `garmin/manifest.xml`, which is what `docs/copy/garmin-devices.json` carries and what the
+   two `data-copy` spans print — **42** at **0.9.11** — and the four families nobody has
+   ridden (Venu and vívoactive and Instinct 3 AMOLED from 0.9.10, the fenix 5 Plus family from
+   0.9.11) must say so **in the table's third column**; the prose under it is now one sentence
+   and an ask, and *Not on the list, and why* is behind a fold. Every internal link resolves:
+   `../`, `../invite/`, `../invite/#feedback`, `../start/`, `../app/`, `../whats-new/`,
+   `../privacy/`, `../impressum/`.
 0a4. **What's new.** <http://127.0.0.1:8765/whats-new/>. One `.panel .piece` card per release,
-   newest first, each with its date in the `.status` chip. The iOS entries come from
-   `ios/tools/testflight_publish.py`'s git history and the Garmin ones from
+   newest first, each with its date in the `.status` chip. **The three newest are open —
+   iPhone 53, iPhone 51, watch app 0.9.10 — and everything older is inside one `<details>`**
+   headed *Earlier builds*. Not one sentence inside any card changes when it moves: a dated
+   note says what was true on its day, and a correction goes in brackets inside the card
+   (build 41's Strava line is the pattern). When the collapsed set passes ten cards, the
+   oldest drop off the page to the two places the closing note already names. The iOS entries
+   come from `ios/tools/testflight_publish.py`'s git history and the Garmin ones from
    `garmin/store/listing.md`; when a build ships, the card goes in here in the same commit that
    edits `WHATS_NEW`.
+0a5. **Privacy.** <http://127.0.0.1:8765/privacy/>. Not one word of the policy changed on
+   15 Sep 2026; what it gained is **a section nav**, seven entries, sticky under the topbar and
+   a select below 720 px. It was the one long page without one. Every entry must land on its
+   own `<h2>` with both sticky bars cleared above it.
+
 0b. **The social card** (the link preview — not the rider's share card below). View source
    on both documents: `og:image` must be the absolute
    `https://cleanjibe.org/social-card.png`, with `og:image:width`/`:height` and

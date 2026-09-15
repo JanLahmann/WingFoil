@@ -371,6 +371,44 @@ h3 .tag.beta, td .tag.beta, dt .tag.beta, li .tag.beta { vertical-align: 2px; }
   .steps-flow > li::before { width: 24px; height: 24px; font-size: 12px; }
 }
 
+/* ------------------------------------------------------------------ the fold
+   ONE disclosure style for the whole document family, added 15 September 2026 with the
+   cut that made the pages short. Three places use it and the argument is the same in all
+   three: /start/ puts each route's steps behind one, because a rider takes exactly one
+   route and the other four are somebody else's instructions; /watches/ puts "not on the
+   list, and why" behind one, because its readers are a minority looking for one model;
+   /whats-new/ puts every card older than the three newest behind one, because nine
+   equal-weight cards make the newest look like an archive entry.
+
+   It is furniture, so it wears the section nav's ink and the eyebrow's restraint rather
+   than a button's type. The default triangle is replaced with a token-coloured one, which
+   is what lets the light theme at the foot of style.css turn it with everything else.
+   `list-style: none` plus the WebKit pseudo-element is both halves of hiding it; Safari
+   still needs the second. */
+.home-section details { margin: 14px 0 0; }
+.home-section details > summary {
+  cursor: pointer; list-style: none;
+  color: var(--ink-2); font-size: 13.5px; line-height: 1.55;
+  padding: 4px 0;
+}
+.home-section details > summary::-webkit-details-marker { display: none; }
+.home-section details > summary::before {
+  content: "\25B8"; color: var(--ink-3); font-size: 11px;
+  display: inline-block; width: 14px;
+}
+.home-section details[open] > summary::before { content: "\25BE"; }
+.home-section details > summary:hover { color: var(--ink); }
+.home-section details > summary:hover::before { color: var(--ink-2); }
+.home-section details > summary:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 2px; }
+/* Inside a route card the handle IS the summary line the card always printed, so it keeps
+   that line's size and colour; only the triangle is new. */
+.piece > details > summary.what { color: var(--ink-3); font-size: 12.5px; }
+.piece > details > summary.what:hover { color: var(--ink-2); }
+.home-section details > .steps-flow,
+.home-section details > .terms { margin-top: 10px; }
+/* /whats-new/: the collapsed cards keep the spacing they have when they are open. */
+.home-section details > .panel + .panel { margin-top: 14px; }
+
 /* ------------------------------------------------------------------- claims */
 
 .claims { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }

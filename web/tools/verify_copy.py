@@ -42,16 +42,17 @@ WHAT IS PINNED, and where it bites
                      outcome sentence get held together.
 
   channels.json
-    the beta <ul> and the dev <ul> on / and /invite/ carry exactly the JSON's rows, in the
-    JSON's order, verbatim; the section <h2> is `sectionTitle`; and no `forbiddenInRelease`
+    the beta <ul> and the dev <ul> on /invite/ — the one page that prints them — carry
+    exactly the JSON's rows, in the JSON's order, verbatim; the section <h2> is
+    `sectionTitle`; and no `forbiddenInRelease`
     word appears on / or /app/ outside those lists and the elements marked
     `data-copy="beta-door"`. The exemptions for that last rule are NOT written here: they
     live in `docs/copy/check_release_copy.py`'s own allow map for the same page, which is
     read below, so a door that is allowed is allowed once and printed on every run.
 
   recording-classes.json
-    the four `name` and four `line` strings, verbatim, in both class tables (/ and
-    /watches/), in the cells marked `data-copy="class-name"` / `data-copy="class-line"`.
+    the four `name` and four `line` strings, verbatim, in the one class table
+    (/watches/#classes), in the cells marked `data-copy="class-name"` / `class-line`.
     The /watches/ "What you ride with" table keeps its own shape; only its class LETTERS
     are checked against the names.
 
@@ -483,7 +484,12 @@ def pin_lexicon(site: Site, phrases: dict, report: Report):
 
 
 def pin_channels(site: Site, channels: dict, report: Report):
-    pages = ["index.html", "invite/index.html"]
+    # ONE HOME, and the page map is the written form of it. The two lists left the front
+    # door on 15 September 2026 (a dev list on a page a stranger meets is a promise to a
+    # stranger; the app keeps those rows behind `#if BETA` for the same reason), so
+    # /invite/#coming is the only page that prints them — and a second copy anywhere now
+    # fails this check rather than quietly drifting out of step with the first.
+    pages = ["invite/index.html"]
     for page in pages:
         for node in marked(site.tree[page], "channels-title"):
             got = text_of(node)
@@ -493,7 +499,7 @@ def pin_channels(site: Site, channels: dict, report: Report):
         if not marked(site.tree[page], "channels-title"):
             report.fail("web/" + page, "channels.sectionTitle",
                         'no heading marked data-copy="channels-title"')
-    report.ok('channels.sectionTitle → "%s" on / and /invite/' % channels["sectionTitle"])
+    report.ok('channels.sectionTitle → "%s" on /invite/' % channels["sectionTitle"])
 
     for kind in ("beta", "dev"):
         rows = [row["text"] for row in channels[kind]]
@@ -521,7 +527,7 @@ def pin_channels(site: Site, channels: dict, report: Report):
                 if got != want:
                     report.fail("web/%s:%d" % (page, node.line), "channels." + kind,
                                 "row is not the JSON's sentence", got)
-        report.ok("channels.%s → %d rows, in order, on / and /invite/" % (kind, len(rows)))
+        report.ok("channels.%s → %d rows, in order, on /invite/" % (kind, len(rows)))
 
     pin_forbidden_doors(site, channels, report)
 
@@ -579,7 +585,10 @@ def pin_forbidden_doors(site: Site, channels: dict, report: Report):
 
 def pin_classes(site: Site, classes: dict, report: Report):
     rows = classes["classes"]
-    for page in ("index.html", "watches/index.html"):
+    # /watches/#classes ONLY since 15 September 2026. The front door printed the same four
+    # rows above a link to this page; it now prints the link and one sentence, and the four
+    # pinned cells exist once on the site.
+    for page in ("watches/index.html",):
         names = marked(site.tree[page], "class-name")
         lines = marked(site.tree[page], "class-line")
         for kind, nodes, key in (("name", names, "name"), ("line", lines, "line")):
