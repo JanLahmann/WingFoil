@@ -30,6 +30,10 @@ class SessionController {
     // Activity.Info.elapsedTime and not from engine.timerS.
     var startEpochS as Number = 0;
     var elapsedS as Number = 0;
+    // Whether the last finishSave() actually wrote the FIT. The summary drew SAVED whatever
+    // save() returned until 0.9.11 (audit, 15 Sep 2026); a rider whose session did not land
+    // must be told on the wrist, because the phone will simply never receive it.
+    var lastSaveOk as Boolean = true;
 
     hidden var _session as ActivityRecording.Session?;
     hidden var _fit as FitFields?;
@@ -342,6 +346,7 @@ class SessionController {
         }
         _captureElapsed();
         var ok = _session.save();
+        lastSaveOk = ok;
         state = STATE_SAVED;
         _session = null;
         stopGps();
