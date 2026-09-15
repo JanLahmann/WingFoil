@@ -37,7 +37,14 @@ struct IcuSetupCard: View {
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 18))
+        // **A grouped token, because this card is a row of a grouped list.** It was
+        // `secondarySystemBackground`, which in light mode is the same #F2F2F7 as the
+        // grouped list background underneath it — a card with no edges, on the one screen a
+        // rider meets first. The grouped pair is white on #F2F2F7 in light and #1C1C1E on
+        // black in dark, which is a card in both. Same family of mistake as the key field
+        // inside it (`AppTextFieldChrome`): a semantic colour is only semantic against the
+        // background it was named for.
+        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 18))
         .sheet(item: $helpTopic) { HelpTopicSheet(id: $0) }
     }
 
@@ -82,7 +89,9 @@ struct IcuSetupCard: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.tertiarySystemBackground), in: .rect(cornerRadius: 12))
+        // The grouped tertiary for the same reason the card above uses the grouped
+        // secondary: this banner is inset inside that card, not on a plain background.
+        .background(Color(.tertiarySystemGroupedBackground), in: .rect(cornerRadius: 12))
     }
 
     private func stepRow(_ step: IcuSetupStep) -> some View {

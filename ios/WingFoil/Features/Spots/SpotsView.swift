@@ -5,21 +5,30 @@ import WingFoilKit
 /// each other are one spot; names come from reverse geocoding when the network allows and
 /// are otherwise placeholders the rider can overwrite — a rename is permanent and
 /// survives re-clustering.
+///
+/// **Reached from the spot filter on Records and Trends, and from nowhere else.** The Gear
+/// tab used to push this as a sub-page and now draws the same list inline (`GearView`); what
+/// is left here is the "Manage spots…" door inside the chip that filters by spot, which is
+/// the one place a rider is already thinking about the set of them.
 struct SpotsView: View {
     @Environment(SessionStore.self) private var store
 
     @State private var renaming: SpotRow?
     @State private var draft = ""
 
+    /// Same rule as the Gear tab's: a spot with no sessions under it is not a place the
+    /// rider has been, and it must not offer itself for renaming or for filtering.
+    private var spots: [SpotAggregate] { store.spots.filter { $0.sessions > 0 } }
+
     var body: some View {
         List {
-            if store.spots.isEmpty {
+            if spots.isEmpty {
                 ContentUnavailableView("No spots yet", systemImage: "mappin.slash",
                                        description: Text("Spots appear once sessions with GPS "
                                                          + "are in the library."))
             } else {
                 Section {
-                    ForEach(store.spots) { entry in
+                    ForEach(spots) { entry in
                         Button {
                             draft = entry.spot.name
                             renaming = entry.spot
@@ -38,7 +47,7 @@ struct SpotsView: View {
                 Button("Re-cluster spots") { Task { await store.reclusterSpots() } }
                     .disabled(store.sessions.isEmpty)
                 Button("Look up names again") { Task { await store.nameSpots() } }
-                    .disabled(!store.spots.contains { $0.spot.autoNamed })
+                    .disabled(!spots.contains { $0.spot.autoNamed })
             } footer: {
                 Text("Re-clustering rebuilds every spot from the session coordinates at a "
                      + "\(Int(SpotClusterer.defaultRadiusM)) m radius; names you typed are kept.")

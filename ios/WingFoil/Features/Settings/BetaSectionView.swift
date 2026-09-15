@@ -174,23 +174,32 @@ struct BetaSectionView: View {
 }
 #endif
 
-// MARK: - What is being tested
+// MARK: - Coming in a future release
 
-/// **"What is being tested"** — in Settings, and from the library menu in the release
-/// channel (docs/channels.md).
+/// **"Coming in a future release"** — in Settings, and only in Settings (docs/channels.md).
 ///
-/// It said *"Curious about what is coming"* until 14 September 2026. The App Store build is
-/// a finished app, and a row that opens with the app being curious about itself reads as an
-/// apology; what it actually points at is the place new things are ridden with first, so
-/// that is what it is called now.
+/// Two renamings and one move, both from what a rider actually reads. It said *"Curious
+/// about what is coming"* until 14 September 2026 — an App Store app that opens by being
+/// curious about itself reads as an apology — and then *"What is being tested"* until
+/// 15 September, which describes the *room* rather than the reader's question. What he is
+/// asking is when he gets these things, so the row answers that: they come in a future
+/// release, and the beta is where they can be had now.
+///
+/// It also had a row in the library menu in the release channel, and does not any more
+/// (Jan, build 58): the menu is for what a rider needs *now* — how to start, where the
+/// switches are, who to write to, what the app is, what its numbers mean — and a list of
+/// what this build does not have is none of those.
 struct ComingSoonSection: View {
+
+    /// One name, used by the row, the page title and docs/presentation.md.
+    static let title = "Coming in a future release"
 
     var body: some View {
         Section {
             NavigationLink {
                 ComingSoonPage()
             } label: {
-                Label("What is being tested", systemImage: "binoculars")
+                Label(Self.title, systemImage: "binoculars")
             }
         } footer: {
             Text(Self.footer)
@@ -203,8 +212,8 @@ struct ComingSoonSection: View {
         + "have behind it."
     #else
     private static let footer =
-        "The features still proving themselves in the public TestFlight beta. Joining takes "
-        + "one tap and your library comes with you."
+        "These functions are not in this app yet. Every one of them can be ridden today in "
+        + "the public beta — joining takes one tap, and your library comes with you."
     #endif
 }
 
@@ -219,6 +228,24 @@ struct ComingSoonPage: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+
+            #if !BETA
+            // **The way in, as a step rather than as a footnote.** It sat at the foot of
+            // the page under the lists, which is where a rider stops reading — and it is
+            // the one thing on the page he can act on today (Jan, build 58). So it is the
+            // first section, it says what the tap costs and what it keeps, and the link is
+            // a prominent button rather than a row of small blue text.
+            Section {
+                joinStep
+            } header: {
+                Text("How to join the beta")
+            } footer: {
+                Text("TestFlight is Apple's own app for trying a build before it ships. "
+                     + "CleanJibe's beta reads and writes the same library as this app, so "
+                     + "every session, spot and piece of gear you have comes with you — and "
+                     + "you can go back to the App Store version whenever you like.")
+            }
+            #endif
 
             Section {
                 ForEach(ChannelFeatures.beta, id: \.self) { row($0) }
@@ -244,28 +271,36 @@ struct ComingSoonPage: View {
             }
             #endif
 
-            #if !BETA
-            // Release only: in the beta this would point the reader at the build he is
-            // already holding (docs/channels.md).
-            Section {
-                Link(destination: ChannelFeatures.testFlight) {
-                    Label("Join the beta on TestFlight", systemImage: "arrow.up.forward.app")
-                }
-                Link(destination: ChannelFeatures.invite) {
-                    Label("cleanjibe.org/invite", systemImage: "link")
-                }
-            } footer: {
-                Text("TestFlight is Apple's own beta app. The beta reads and writes the same "
-                     + "library as this build, so switching keeps every session you have.")
-            }
-            #endif
-
             FeedbackFooter.section
         }
         .readableColumn()
-        .navigationTitle("What is being tested")
+        .navigationTitle(ComingSoonSection.title)
         .navigationBarTitleDisplayMode(.inline)
     }
+
+    #if !BETA
+    /// Release only: in the beta this would point the reader at the build he is already
+    /// holding (docs/channels.md).
+    private var joinStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("One tap. Your library is kept.")
+                .font(.subheadline.weight(.semibold))
+                .fixedSize(horizontal: false, vertical: true)
+            Link(destination: ChannelFeatures.testFlight) {
+                Label("Open TestFlight", systemImage: "arrow.up.forward.app")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            // The other way in, and the one that survives a full TestFlight group.
+            Link(destination: ChannelFeatures.invite) {
+                Label("cleanjibe.org/invite", systemImage: "link")
+                    .font(.footnote.weight(.semibold))
+            }
+        }
+        .padding(.vertical, 4)
+    }
+    #endif
 
     /// The paragraph the page opens with. It says what the list *is*: not a wish list and
     /// not an apology for something missing, but the room next door where a feature is
@@ -277,9 +312,10 @@ struct ComingSoonPage: View {
         + "moves into the App Store app once it has held up."
     #else
     private static let intro =
-        "CleanJibe grows in the open. Everything in this app is finished and ridden with; "
-        + "the features that are still proving themselves are tried in a public TestFlight "
-        + "beta first, and arrive here once they have held up."
+        "These functions come in a future release, and can be previewed now in the public "
+        + "beta. CleanJibe grows in the open: everything in this app is finished and ridden "
+        + "with, and the features that are still proving themselves are tried in the beta "
+        + "first, then arrive here once they have held up."
     #endif
 
     private func row(_ feature: String) -> some View {

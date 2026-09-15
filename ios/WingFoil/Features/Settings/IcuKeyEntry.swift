@@ -21,11 +21,15 @@ struct IcuKeyEntry: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            // `appTextFieldChrome` rather than `.roundedBorder`: that style fills itself
+            // with `systemBackground`, which is pure black in dark mode, and this field is
+            // drawn on the setup card's near-black `secondarySystemBackground` — the two
+            // together were a solid black bar with nothing in it to tap (Jan, build 58).
             SecureField("Personal API key", text: $draft)
                 .textContentType(.password)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
-                .textFieldStyle(.roundedBorder)
+                .appTextFieldChrome()
                 .disabled(store.apiKeyIsInjected)
 
             HStack(spacing: 12) {
