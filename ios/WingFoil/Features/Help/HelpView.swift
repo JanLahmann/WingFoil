@@ -21,7 +21,7 @@ struct HelpView: View {
                         Button("Done") { dismiss() }
                     }
                 }
-            // Sixty topics in nine sections, searchable — a screen, not a question. Same
+            // Forty-odd topics in ten sections, searchable — a screen, not a question. Same
             // trade as Settings: `.page` at regular width, the phone unchanged.
             .presentationSizing(.page)
         }
