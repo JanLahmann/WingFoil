@@ -45,6 +45,18 @@ BANNED_SHAPES = [
 ]
 EXEMPTIONS = REPO / "docs" / "copy" / "voice-exemptions.json"
 
+# Pattern C (16 Sep 2026): facts that go stale by construction. A date or a version number in
+# a rider sentence is wrong the day after it was typed unless a generator writes it. Generated
+# spans (data-copy="garmin-…") are stripped before the pages are read; dated release notes on
+# /whats-new are exempted by their page.
+STALE = re.compile(r"\b\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* 20\d\d\b|\b20\d\d-\d\d-\d\d\b|\b0\.9\.\d+\b|\bbuild \d{2,3}\b|\bsince 0\.\d")
+
+# Pattern 1 of the same day: paragraph length is ungoverned by the sentence rules. A rider
+# paragraph (one literal chain, one HTML paragraph) carries at most this many words. ADVISORY
+# until the second voice pass has brought the texts under it; then the flag flips.
+PARAGRAPH_MAX = 40
+PARAGRAPH_STRICT = False
+
 
 @dataclass
 class Target:
@@ -54,6 +66,8 @@ class Target:
     blocks: list[str] | None = None
     strip: tuple[str, ...] = ()
     advisory: bool = False
+    #: dated release notes are this page's purpose; the stale-fact rule does not apply
+    dated: bool = False
 
 
 TARGETS: list[Target] = [
@@ -69,13 +83,16 @@ TARGETS: list[Target] = [
     Target("web · /watches/", "web/watches/index.html", "html"),
     Target("web · /invite/", "web/invite/index.html", "html",
            strip=("channels-beta", "channels-dev")),
-    Target("web · /whats-new/", "web/whats-new/index.html", "html"),
+    Target("web · /whats-new/", "web/whats-new/index.html", "html", dated=True),
     Target("web · /app/", "web/app/index.html", "html"),
     Target("App Store · description", "ios/store/appstore.md", "md",
            blocks=["Promotional text", "Description"], advisory=True),
     Target("Connect IQ · description", "garmin/store/listing.md", "md",
            blocks=["Description (live text)"], advisory=True),
 ]
+
+#: data-copy marks a generator writes; their text is never judged (it cannot go stale by hand).
+GENERATED = ("garmin-version", "garmin-count", "ciq-title", "appstore-name")
 
 SKIP_LITERAL = re.compile(r"^(https?://|[\w.]+/|%|[A-Za-z]+\.[A-Za-z]+$|\\\()|→|\{[^}]*\}")
 SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9\"“(])")
@@ -111,7 +128,8 @@ def rider_literals(path: Path, kind: str) -> list[tuple[int, str]]:
     return out
 
 
-def judge(sentences: list[tuple[str, str]], exemptions: list[dict], relative: str):
+def judge(sentences: list[tuple[str, str]], exemptions: list[dict], relative: str,
+          dated: bool = False):
     """sentences: (where, sentence). Returns (failures, honoured, stats)."""
     failures, honoured = [], []
     lengths = []
@@ -131,6 +149,8 @@ def judge(sentences: list[tuple[str, str]], exemptions: list[dict], relative: st
         for shape in BANNED_SHAPES:
             if shape in low:
                 problems.append(f"\"{shape}\"")
+        if not dated and STALE.search(s):
+            problems.append("a date or version typed by hand")
         if not problems:
             continue
         why = next((e["why"] for e in exemptions
@@ -143,6 +163,15 @@ def judge(sentences: list[tuple[str, str]], exemptions: list[dict], relative: st
     return failures, honoured, (len(lengths), mean, max(lengths) if lengths else 0)
 
 
+PARAGRAPHS: dict[str, list[tuple[str, int]]] = {}
+
+
+def note_paragraph(label: str, where: str, text: str) -> None:
+    n = words(text)
+    if n > PARAGRAPH_MAX:
+        PARAGRAPHS.setdefault(label, []).append((where, n))
+
+
 def collect(target: Target) -> list[tuple[str, str]]:
     base = REPO / target.path
     out: list[tuple[str, str]] = []
@@ -152,17 +181,19 @@ def collect(target: Target) -> list[tuple[str, str]]:
         for f in files:
             rel = f.relative_to(REPO).as_posix()
             for number, literal in rider_literals(f, target.kind):
+                note_paragraph(target.label, f"{rel}:{number}", literal)
                 for s in sentences_of(literal):
                     out.append((f"{rel}:{number}", s))
     elif target.kind == "html":
         raw = base.read_text(encoding="utf-8")
         # the generated guide block is the JSON's, judged where the JSON is used (the kit)
         raw = re.sub(r"<!-- guide:begin.*?<!-- guide:end -->", "", raw, flags=re.S)
-        parser = _Text(target.strip)
+        parser = _Text(target.strip + GENERATED)
         parser.feed(raw)
         parser.close()
         text = "\n".join(parser.parts)
         for para in re.split(r"\n\s*\n", text):
+            note_paragraph(target.label, target.path, para)
             for s in sentences_of(para):
                 if words(s) >= 4:
                     out.append((target.path, s))
@@ -184,13 +215,20 @@ def main(argv: list[str] | None = None) -> int:
     honoured_all: list[str] = []
     for target in TARGETS:
         sentences = collect(target)
-        failures, honoured, (count, mean, longest) = judge(sentences, exemptions, target.path)
+        failures, honoured, (count, mean, longest) = judge(sentences, exemptions, target.path,
+                                                           target.dated)
         honoured_all += honoured
         over_mean = mean > MEAN_MAX
+        bad = bool(failures) or over_mean
+        long_paras = PARAGRAPHS.get(target.label, [])
+        if long_paras and PARAGRAPH_STRICT:
+            failures += [f"{w}: paragraph of {n} words (max {PARAGRAPH_MAX})" for w, n in long_paras]
         bad = bool(failures) or over_mean
         verdict = "PASS" if not bad else ("note" if (report or target.advisory) else "FAIL")
         print(f"{verdict}  {target.label}  ({target.path}) — {count} sentences, "
               f"mean {mean:.1f} words, longest {longest}, {len(failures)} problem(s)"
+              + (f", {len(long_paras)} paragraph(s) over {PARAGRAPH_MAX} words"
+                 + ("" if PARAGRAPH_STRICT else " [advisory]") if long_paras else "")
               + (" [advisory]" if target.advisory else ""))
         if bad and not report:
             for line in failures[:40]:
