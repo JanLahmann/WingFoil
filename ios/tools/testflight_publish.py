@@ -45,13 +45,14 @@ def app_id(app):
 
 WHATS_NEW = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-Beta build 71 — the voice.
+Beta build 73 — Jan's morning round.
 
-Every sentence the app says was rewritten to one rule: short, clear, one thought per sentence. Help, Settings, Import, the welcome, the empty states, the glossary. The website says the same things the same way.
+- The empty Sessions page shows the ways in, one row each: intervals.icu, the Apple Watch app, Strava, a file. The 4 intervals.icu steps live in Settings only.
+- Help → Share from your watch app names the brands plainly, Garmin first.
+- Getting started lists the Apple Watch routes right after Garmin. Routes have no letters; each says which class you get.
+- cleanjibe.org follows: routes without letters, the class table with a Route column, Apple Watch once on Which watch, "Show the steps" on every route card.
 
-Also: the Beta section in Settings keeps only its actions. The list of what the beta has lives once, on Coming in a future release.
-
-Everything in 69 otherwise. Please check: read any help page and tell us where it still sounds written rather than spoken.
+Please check: the empty Sessions page after Start over; Help → Share from your watch app; Menu → Getting started.
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
@@ -59,11 +60,14 @@ Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or
 # App Store one, so saying which one this is matters more than the release notes do.
 WHATS_NEW_INTERNAL = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
 
-CleanJibe Dev, build 70 — the voice, and the beta list once.
+CleanJibe Dev, build 72 — your morning round on 70.
 
-Every rider sentence in the app follows docs/voice.md now: short, verb first, no dashes, one thought per sentence. The Beta section in Settings is actions only; the list is on Coming in a future release.
+- Empty Sessions page: one card, the ways in, one row each, pointing at Settings. The 4-step card is gone.
+- Help → Share from your watch app: brands without dates, Garmin first.
+- Settings → Beta: the session-video ask under the actions. The dev list names the Apple Watch live view as an idea.
+- Getting started: Apple Watch routes after Garmin, no letters, class per route.
 
-Please check: Help pages, Settings footers, Import, the welcome after Start over. Say where a sentence still sounds written rather than spoken.
+Please check: Start over → the empty page; Help → Share from your watch app; Settings → Beta footer; Menu → Getting started.
 
 Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
