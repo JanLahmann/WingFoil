@@ -444,8 +444,9 @@ public enum HelpCatalog {
             related: [.sourceClass, .speedRecords, .icuSetup, .shareFromWatchApp, .whichWatch]),
 
         // The rider whose watch is neither a Garmin nor an Apple Watch. Every vendor path
-        // carries the date it was checked against that vendor's own help page, and the one
-        // app that cannot do it says so rather than being quietly left out.
+        // was checked against that vendor's own help page on the date in the comment above
+        // the items, and the one app that cannot do it says so in its first three words
+        // rather than being quietly left out.
         HelpTopic(
             id: .shareFromWatchApp, section: .setup,
             title: "Share from your watch app straight into CleanJibe",
@@ -462,37 +463,45 @@ public enum HelpCatalog {
                 "Garmin Connect's phone app has no export at all, so Garmin owners have two "
                 + "better routes: intervals.icu, or connect.garmin.com on a computer.",
             ],
+            // **Every path below was walked against that vendor's own help page on
+            // 13 September 2026.** The dates used to be part of the terms — "Suunto,
+            // verified 13 Sep 2026" — which is a fact about the author printed where the
+            // reader is looking for a brand (Jan, dev 70). The term is the brand now, the
+            // caveat opens the detail, and the date lives here. Re-walk the four paths
+            // before touching them and move this date with them.
             items: [
-                .init(term: "Suunto, verified 13 Sep 2026",
-                      detail: "Calendar → tap the workout → ⋯ top right → FIT. Then Save to "
-                          + "Files, or pick CleanJibe from the share sheet. GPX is offered "
-                          + "too. Take FIT."),
-                .init(term: "COROS, verified 13 Sep 2026",
-                      detail: "Activities → tap the activity → ⋯ top right → Export → "
-                          + "FIT. Older versions call it Export Data. Then choose how to "
-                          + "send it, which is the share sheet."),
-                .init(term: "Polar, verified 13 Sep 2026, but not on the phone",
-                      detail: "The Polar Flow app cannot export a file. flow.polar.com can: "
-                          + "Diary → click the session → Export → FIT. A computer is the "
-                          + "reliable way."),
-                .init(term: "Garmin, verified 13 Sep 2026: no phone export",
-                      detail: "Garmin Connect on the phone cannot export an activity file. "
-                          + "On a computer: connect.garmin.com → Activities → the activity → "
-                          + "gear icon → Export File."),
+                // Garmin first: it is the popular watch and the one answer a rider does
+                // not expect, so it goes above the three that work from the phone.
+                .init(term: "Garmin",
+                      detail: "No phone export. On a computer: connect.garmin.com → "
+                          + "Activities → the activity → gear icon → Export File."),
+                .init(term: "Suunto",
+                      detail: "On the phone: Calendar → tap the workout → ⋯ top right → "
+                          + "FIT. Then Save to Files, or pick CleanJibe from the share "
+                          + "sheet."),
+                .init(term: "COROS",
+                      detail: "On the phone: Activities → tap the activity → ⋯ top right → "
+                          + "Export → FIT. Older versions call it Export Data. Then use "
+                          + "the share sheet."),
+                .init(term: "Polar",
+                      detail: "Not on the phone. On flow.polar.com: Diary → click the "
+                          + "session → Export → FIT. A computer is the reliable way."),
                 .init(term: "Anything else",
                       detail: "If an app can produce a FIT, CleanJibe reads it. Take it "
                           + "from AirDrop, Mail or Files. A ZIP of recordings works too: "
                           + "Import → FIT or ZIP…."),
             ],
+            // In the items' own order, so a reader who has just read the Garmin path
+            // finds the Garmin page first.
             links: [
+                HelpLink(title: "Garmin: exporting data out of Garmin Connect",
+                         url: URL(string: "https://support.garmin.com/en-US/?faq=W1TvTPW8JZ6LfJSfK512Q8")!),
                 HelpLink(title: "Suunto: exporting a FIT from the phone app",
                          url: URL(string: "https://www.suunto.com/Support/faq-articles/suunto-app/how-do-i-download-a-.fit-file-from-suunto-app-for-ios")!),
                 HelpLink(title: "COROS: exporting workout data",
                          url: URL(string: "https://support.coros.com/hc/en-us/articles/360043975752-Exporting-Workout-Data-and-Uploading-to-3rd-Party-Apps")!),
                 HelpLink(title: "Polar: exporting a session from Flow",
                          url: URL(string: "https://support.polar.com/en/export-training-sessions-flow")!),
-                HelpLink(title: "Garmin: exporting data out of Garmin Connect",
-                         url: URL(string: "https://support.garmin.com/en-US/?faq=W1TvTPW8JZ6LfJSfK512Q8")!),
             ],
             related: [.whichWatch, .icuSetup, .stravaImport, .sourceClass, .phoneOnly,
                       .speedRecords]),

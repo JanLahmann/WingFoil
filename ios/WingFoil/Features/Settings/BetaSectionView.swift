@@ -92,10 +92,16 @@ struct BetaSectionView: View {
         let mails = "Request a feature opens a mail with this build already filled in. "
             + "Send usage report adds what this phone has counted. "
             + "Neither sends anything until you tap Send.\n\n"
+        // **The one test ask that had no home** (Jan, dev 70). It lived on /start, which
+        // was cut; a beta door's ask belongs beside the beta's own feedback doors
+        // (docs/channels.md, "Feedback and channel furniture"). One line, and it names the
+        // three things a tester gets wrong: the preset, the wait, the share.
+        let video = "Testing the session video: keep the 20 s preset, wait for the bar, "
+            + "then share the clip.\n\n"
         let startOver = "Start over removes your library, your settings, your "
             + "intervals.icu key and your Strava connection. "
             + "Deleting the app leaves the last two behind in the iOS keychain."
-        return coming + mails + startOver
+        return coming + mails + video + startOver
     }
 
     /// **Start over.** Red, last, and behind an alert that names everything it takes —

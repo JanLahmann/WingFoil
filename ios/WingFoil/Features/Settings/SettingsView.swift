@@ -106,8 +106,9 @@ struct SettingsView: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            // Typing the key and proving it works is one action, and it is the same view
-            // the first-run setup card embeds — one storage path, one verdict wording.
+            // Typing the key and proving it works is one action, and this is its one
+            // home: the first-run card that embedded the same view went on dev 70, so
+            // there is one storage path and one verdict wording and nowhere else to type.
             IcuKeyEntry()
                 .padding(.vertical, 4)
             // **"Sync now" is not here any more** (Jan, build 63: *Import does, Settings

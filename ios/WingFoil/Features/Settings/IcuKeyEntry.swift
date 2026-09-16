@@ -2,7 +2,7 @@ import SwiftUI
 import WingFoilKit
 
 /// The one place an intervals.icu API key is ever typed — Settings and the first-run
-/// setup card both embed this view.
+/// setup card both embedded this view; since dev 70 Settings is its one home.
 ///
 /// Saving and *proving* are one action here: a key that was accepted by the keychain but
 /// rejected by intervals.icu would otherwise look identical to a working one until the

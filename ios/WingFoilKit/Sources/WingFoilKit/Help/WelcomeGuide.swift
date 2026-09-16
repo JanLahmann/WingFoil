@@ -86,9 +86,10 @@ public enum WelcomeGuide {
         "10 real minutes on Lake Garda, already analysed. You get the track, the replay, "
         + "the turn outcomes and the share card. Nothing to connect first."
 
-    /// The real path. `IcuSetupCard` takes it from here, so this says only where it goes —
-    /// but it names intervals.icu *and* says why a third party is in the story at all. A
-    /// stranger's name on a first-run screen, with no reason beside it, reads as a catch.
+    /// The real path. The empty library's first row takes it from here, so this says only
+    /// where it goes — but it names intervals.icu *and* says why a third party is in the
+    /// story at all. A stranger's name on a first-run screen, with no reason beside it,
+    /// reads as a catch.
     ///
     /// **The title is the thing that happens** (15 Sep 2026). It said *"Connect your
     /// Garmin"*, and the button connects nothing: it closes the welcome screen, and the
@@ -100,8 +101,8 @@ public enum WelcomeGuide {
     public static let connectTitle = "Set up intervals.icu"
     public static let connectDetail =
         "Garmin has no open API, so CleanJibe collects your sessions through intervals.icu. "
-        + "It is free: 4 steps, about 5 minutes, once. This closes the welcome screen and "
-        + "leaves you on those 4 steps. Every session then arrives on its own."
+        + "It is free: 4 steps, about 5 minutes, once. This closes the welcome screen. "
+        + "The 4 steps are in Settings → intervals.icu. Every session then arrives on its own."
 
     /// The quiet way out. Not a hidden one: a rider who wants to import a file by hand has
     /// nothing to gain from either button above — but "Later" on its own does not tell him

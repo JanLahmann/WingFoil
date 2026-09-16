@@ -856,7 +856,7 @@ final class SessionStore {
 
     // MARK: - Example session
 
-    /// True once the bundled example is in the library — the setup card and Help both ask,
+    /// True once the bundled example is in the library — the empty library and Help ask,
     /// so neither offers to load something that is already there.
     var hasExampleSession: Bool { sessions.contains { $0.isExample } }
 
@@ -1851,7 +1851,7 @@ final class SessionStore {
         // Read *before* this sync overwrites it: "when did he last pull?" is the whole of the
         // re-add gate, and `lastSyncDate` is already exactly that fact — this method is the
         // only thing that writes it, and only pull-to-refresh, Import → "Sync
-        // intervals.icu", the setup card's "Sync now" and the empty library's own button
+        // intervals.icu", a pull on the list and the empty library's own button
         // reach this method. The background poller never does.
         let previousSync = lastSyncDate
         let startedAt = Date()
@@ -1867,7 +1867,7 @@ final class SessionStore {
             status = summary.shortDescription
             await offerReAddIfAsked(summary, previousSync: previousSync, startedAt: startedAt)
             // A sync can succeed and still leave the library empty (Garmin not connected
-            // in intervals.icu yet). That is a cause the setup card can name, not a crash.
+            // in intervals.icu yet). That is a cause the empty library names, not a crash.
             setProblem(IcuDiagnosis.describe(summary))
             if !summary.failed.isEmpty { errorMessage = summary.failed.joined(separator: "\n") }
             Usage.recordImport(.icu, sessions: summary.imported)
@@ -1876,7 +1876,7 @@ final class SessionStore {
             let problem = IcuDiagnosis.describe(error)
             setProblem(problem)
             status = nil
-            // On an empty library the setup card already carries this cause *and* its fix,
+            // On an empty library the problem note already carries this cause *and* its fix,
             // in place. A modal on top of it is the same sentence twice.
             if !sessions.isEmpty { errorMessage = problem.alertText }
         }

@@ -216,7 +216,10 @@ struct ImportView: View {
     /// button and close it in its picker.
     #if BETA
     private static let filePickerLabel = "FIT, GPX, TCX or ZIP…"
-    private static let importableTypes: [UTType] =
+    /// Not private: the empty library's "Import a file" row raises the same picker from
+    /// the Sessions screen (`LibraryView.waysInCard`), and two lists of openable types is
+    /// one list that goes stale.
+    static let importableTypes: [UTType] =
         [.fitActivity, .gpxTrack, .tcxTrack, .zip, .gzip]
     /// The picker offers GPX (engine 0.9.0) and TCX, so the next question is what they cost
     /// — answered here, before the rider imports one and wonders why the pump section is
@@ -237,7 +240,8 @@ struct ImportView: View {
         + "accelerometer. Pump strokes and takeoff effort are missing."
     #else
     private static let filePickerLabel = "FIT or ZIP…"
-    private static let importableTypes: [UTType] = [.fitActivity, .zip, .gzip]
+    /// Not private — see the beta branch above.
+    static let importableTypes: [UTType] = [.fitActivity, .zip, .gzip]
     /// No GPX or TCX sentence, because there is no GPX or TCX door — and no mention of the
     /// beta either: this screen is the App Store app, and an answer that names a build the
     /// reader does not have is not an answer. So the last line says which doors *this* app

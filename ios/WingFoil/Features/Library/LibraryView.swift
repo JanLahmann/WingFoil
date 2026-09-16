@@ -31,6 +31,10 @@ struct LibraryView: View {
     @AppStorage("library.groupBy.v1") private var groupByRaw = ""
     #endif
     @State private var filter = LibraryListFilter()
+    /// The empty library's fourth way in. The same picker the Import sheet raises, from the
+    /// screen a rider is already on: `ImportView.importableTypes` is the one list of what
+    /// this channel can read, so the row can never offer a file the binary cannot open.
+    @State private var showFileImporter = false
     /// Bumped by the menu's Support item; `feedbackMail(on:)` on the list does the rest.
     @State private var supportRequest = 0
     #if BETA
@@ -48,7 +52,7 @@ struct LibraryView: View {
         NavigationStack(path: $path) {
             ScrollViewReader { proxy in
             List {
-                // Above everything, including the setup card: it is the one row that is
+                // Above everything, including the empty state: it is the one row that is
                 // about the beta rather than about the library, and it is answered and
                 // gone in one tap either way (docs/channels.md).
                 #if BETA
@@ -188,6 +192,16 @@ struct LibraryView: View {
                 }
             }
             .sheet(item: $sheet) { librarySheet($0) }
+            // The empty library's "Import a file" row. The types are `ImportView`'s, which
+            // are also what this channel's Info.plist declares it can open: a picker that
+            // offered a fifth type would be a door onto an error message.
+            .fileImporter(isPresented: $showFileImporter,
+                          allowedContentTypes: ImportView.importableTypes,
+                          allowsMultipleSelection: true) { result in
+                if case .success(let urls) = result {
+                    Task { await store.importPicked(urls: urls) }
+                }
+            }
             // `stagesFallbackHook` moved here from Settings → Send feedback when that row
             // went back to being only a menu row (docs/presentation.md, "Settings"):
             // `UI_FEEDBACK=fallback` now answers on the Sessions screen, which is where the
@@ -265,8 +279,9 @@ struct LibraryView: View {
                 if ProcessInfo.processInfo.environment["UI_IMPORT_FIXTURES"] == "1" {
                     await store.importFixtures()
                 }
-                // `UI_LOAD_EXAMPLE=1` taps the setup card's example button for us, which
-                // is the only way to photograph the loaded state (simctl cannot tap).
+                // `UI_LOAD_EXAMPLE=1` makes the same call the empty library's example
+                // button makes, which is the only way to photograph the loaded state
+                // (simctl cannot tap).
                 if ProcessInfo.processInfo.environment["UI_LOAD_EXAMPLE"] == "1" {
                     await store.loadExampleSession()
                 }
@@ -478,23 +493,32 @@ struct LibraryView: View {
         }
     }
 
-    /// An empty library is either a first run (walk the intervals.icu setup inline) or a
-    /// configured one that has nothing yet (say why, if we know why).
+    /// An empty library is either a first run (the ways in, one row each) or a configured
+    /// one that has nothing yet (say why, if we know why).
     ///
-    /// **The setup card is never the first thing on the page** (Jan, build 58). A rider who
+    /// **The card is never the first thing on the page** (Jan, build 58). A rider who
     /// dismissed the welcome — or came back to an empty library later — was left facing
     /// four intervals.icu steps and a key field with no answer to *what does this thing
     /// do*. `whatCleanJibeDoesRow` puts the two ways back above it: the welcome screen
     /// again, and the one tap that fills every screen with a real session. The welcome
     /// cover sits in front of this on a genuine first launch, so on that run the row is
     /// simply what is underneath it.
+    ///
+    /// **And the four steps are not here at all any more** (Jan, dev 70: *"initial
+    /// sessions page mentions icu but not Strava"*, *"better refer to Settings than repeat
+    /// the setup"*). The first screen walked one account's setup inline and never named
+    /// the other three doors, so a rider who owns a Suunto, a Strava account or a single
+    /// FIT file read four steps about a service he does not use. `waysInCard` names every
+    /// way in instead, one row each, and the row that needs an account sends him to the
+    /// place that keeps accounts. `IcuSetupGuide`'s four steps stay in
+    /// Settings → intervals.icu, which is their one home.
     @ViewBuilder
     private var emptyState: some View {
         switch store.onboardingState {
         case .setup, .problem:
             VStack(alignment: .leading, spacing: 12) {
                 whatCleanJibeDoesRow
-                IcuSetupCard(state: store.onboardingState) { sheet = .importer }
+                waysInCard
             }
             .padding(.top, 8)
         case .waiting, .ready:
@@ -513,7 +537,7 @@ struct LibraryView: View {
     /// **"What CleanJibe does · Try the example session"** — one short row above the setup
     /// card, in the welcome screen's own words and leading to the welcome screen itself.
     ///
-    /// Deliberately two lines and two buttons rather than a second card: the setup card
+    /// Deliberately two lines and two buttons rather than a second card: the ways-in card
     /// under it is the thing to do, and this is the thing to read *first*. The example
     /// button is the same call the welcome's own first offer makes
     /// (`loadExampleSessionAndOpen`), so whichever door the rider takes he lands on the
@@ -552,6 +576,117 @@ struct LibraryView: View {
         // mode — a card you cannot see. This token is the one that means "a card on a
         // grouped list" and reads in both themes.
         .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 14))
+    }
+
+    /// **"How your sessions get in"** — one row per way in, and not one of them repeats a
+    /// setup (Jan, dev 70).
+    ///
+    /// Four rows in the beta, three in the App Store build, in the order a rider meets
+    /// them: the Garmin bridge, the Apple Watch, Strava, a file. They are the same doors
+    /// `GettingStartedGuide.routes` lists — `garmin`, `appleWatchApp`, `strava`, `fit` —
+    /// and the generated guide is reordered from the web side, so nothing here reads that
+    /// array by position or by index. What each row says is the *action*, because this is
+    /// a list of things to do and the guide is a list of things to read.
+    ///
+    /// **Two of the four end in Settings, and say so in their own label.** Settings is
+    /// where an account is kept (*Import does, Settings configures*, build 63), and the
+    /// sheet opens on intervals.icu and Strava — the first two sections of the form — so
+    /// there is nothing to scroll to and no anchor to miss. Both rows take the one action
+    /// the library hands down, `openIcuSettings`, which is the same door Import's
+    /// `SetUpInSettingsRow` and Help's *Open CleanJibe Settings* use.
+    private var waysInCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("How your sessions get in")
+                .font(.subheadline.weight(.semibold))
+                .fixedSize(horizontal: false, vertical: true)
+
+            // A failing key is the one thing a list of doors cannot say for itself: the
+            // rider has already walked the first row and it did not work. Cause and fix,
+            // in the kit's own words, above the doors rather than instead of them.
+            if case .problem(let problem) = store.onboardingState {
+                icuProblemNote(problem)
+            }
+
+            // 1 · Garmin, and every watch that syncs to intervals.icu. The label names
+            // Settings because that is where it ends, and the line under it carries the
+            // one *why* the voice allows here (docs/voice.md, rule 3).
+            WayInRow(icon: "link.circle.fill",
+                     label: "Set up intervals.icu in Settings",
+                     line: "Garmin has no open API. intervals.icu is the bridge.") {
+                openSettings()
+            }
+            // 2 · The Apple Watch, straight after the Garmin row: it is the other watch a
+            // rider is likely to be wearing. BETA, like the watch app itself
+            // (docs/channels.md), and the App Store build shows no row and no pill.
+            #if BETA
+            WayInRow(icon: "applewatch",
+                     label: "Record on your Apple Watch",
+                     line: "The session comes to the phone by itself.",
+                     isBeta: true) {
+                sheet = .helpTopic(.appleWatchApp)
+            }
+            #endif
+            // 3 · Strava. **Not labelled "Connect Strava"**: Strava's guidelines reserve
+            // the connect action for their own button and their own wording, *Connect with
+            // Strava* (`StravaBrand`), and that button lives in Settings → Strava. This row
+            // is the way to it, so it is named the way the intervals.icu row above it is.
+            //
+            // A build carrying no Strava keys shows no row: Settings would answer it with
+            // "Not available in this build", and a first screen does not offer a door onto
+            // that sentence (the same rule the filter menu keeps — a door that can bring
+            // nothing in is not offered).
+            if store.isStravaConfigured {
+                WayInRow(icon: "figure.wave",
+                         label: "Set up Strava in Settings",
+                         line: "Strava hands over positions. Records are uncertified.") {
+                    openSettings()
+                }
+            }
+            // 4 · The door that needs no account at all, and the only row that acts on this
+            // screen rather than opening another one.
+            WayInRow(icon: "doc.badge.plus",
+                     label: "Import a file",
+                     line: "A FIT from any watch. AirDrop and Files work.") {
+                showFileImporter = true
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        // The grouped token, for the reason the row above it uses one: this card sits on a
+        // grouped list background, and `secondarySystemBackground` is the same colour as
+        // that background in light mode.
+        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 14))
+    }
+
+    /// The mapped cause of the last intervals.icu failure — never a raw error, always a
+    /// cause and a fix, and a way to the page that lists what to check.
+    private func icuProblemNote(_ problem: IcuProblem) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label(problem.title, systemImage: problem.kind == .empty
+                  ? "exclamationmark.triangle.fill" : "xmark.octagon.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(problem.kind == .empty ? Color.orange : .red)
+            Text(problem.message)
+                .font(.caption)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(problem.fix)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Button("What to check") { sheet = .helpTopic(problem.helpTopic) }
+                .font(.caption.weight(.semibold))
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.tertiarySystemGroupedBackground), in: .rect(cornerRadius: 12))
+    }
+
+    /// Settings, from this screen. The same destination the `openIcuSettings` environment
+    /// action below hands to Import and to Help — and without their wait, because those
+    /// two are sheets that have to finish dismissing first and the empty library is not a
+    /// sheet at all. One named call, so both rows can never drift to two destinations.
+    private func openSettings() {
+        sheet = .settings
     }
 
     /// The Garmin export ZIP is a beta door (docs/channels.md), so only the beta's empty
@@ -680,6 +815,71 @@ struct LibraryView: View {
 /// Channel-gated cases rather than one universal list, so the release build compiles no
 /// `ComingSoonPage` presentation it will never reach and the dev-only tuning hook stays
 /// behind `TUNING` exactly as it was.
+/// **One way a session gets in**, as a row on the empty library: an icon, what to do, and
+/// one short line saying what that way gives you.
+///
+/// A row and not a step. The card it sits in is a list of doors a rider picks one of, in
+/// any order, and a numbered step implies the next one. The whole row is the button, so
+/// the tap target is the width of the card rather than the width of a label.
+private struct WayInRow: View {
+    let icon: String
+    /// The action, in the rider's words. Where it ends in Settings the label says so, in
+    /// the app's own path vocabulary.
+    let label: String
+    /// At most twelve words (docs/voice.md, register 1): what this way in gives you, or
+    /// the one *why* that changes what the rider does.
+    let line: String
+    /// Marks a door the App Store build does not have (docs/channels.md). Only a `#if
+    /// BETA` row ever passes true, so the pill can never appear in the release.
+    var isBeta = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: icon)
+                    .font(.body)
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 26)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(label)
+                            .font(.subheadline.weight(.semibold))
+                            .fixedSize(horizontal: false, vertical: true)
+                        if isBeta { BetaPill() }
+                    }
+                    Text(line)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .multilineTextAlignment(.leading)
+    }
+}
+
+/// The one-word mark on a door the App Store build has not got. Small, grey and beside the
+/// label rather than in it: it says which build this is, and the rider holding a beta is
+/// not being sold anything.
+private struct BetaPill: View {
+    var body: some View {
+        Text("BETA")
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(Capsule().fill(Color.secondary.opacity(0.14)))
+            .accessibilityLabel("Beta")
+    }
+}
+
 enum LibrarySheet: Identifiable, Hashable {
     case settings
     case importer

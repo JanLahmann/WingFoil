@@ -3,11 +3,12 @@ import WingFoilKit
 
 /// The first screen of a first launch: what this app is, and the two ways in.
 ///
-/// It sits *in front of* `IcuSetupCard`, which is still the setup path and still decides
-/// its own three faces. The card answers "how do I connect my watch"; nobody had answered
-/// "what is this for" — and a first run that opens on four intervals.icu steps asks for
-/// five minutes of work before it has earned any. So: one paragraph of what the app does,
-/// then the demo, then the setup, then a way past both.
+/// It sits *in front of* the empty library's own card of ways in
+/// (`LibraryView.waysInCard`). That card answers "how does a session get in"; nobody had
+/// answered "what is this for" — and a first run that opens on four intervals.icu steps
+/// asks for five minutes of work before it has earned any. So: one paragraph of what the
+/// app does, then the demo, then the ways in, then a way past both. The four steps
+/// themselves left the first screen on dev 70 and live in Settings → intervals.icu.
 ///
 /// Painted in the brand colours rather than the system ones — the only screen in the app
 /// that is. It is a deliberate committed look, and the reason is continuity: the launch

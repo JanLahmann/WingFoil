@@ -96,7 +96,7 @@ private struct HelpIndexList: View {
         .searchable(text: $query, prompt: "Search the metrics")
         .sheet(item: $selected) { HelpTopicSheet(id: $0) }
         .task {
-            // Deep link from a `?` or from the setup card: the topic sheet has to wait for
+            // Deep link from a `?` or from a card: the topic sheet has to wait for
             // the index's own presentation to finish, or UIKit drops the second one.
             guard let initialTopic, selected == nil else { return }
             try? await Task.sleep(for: .milliseconds(450))

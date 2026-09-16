@@ -496,11 +496,13 @@ whatever the enclosing card set. Two fields wear it — the **intervals.icu key*
 problem.
 
 **The same mistake one level out: a semantic colour is only semantic against the background
-it was named for.** `IcuSetupCard` painted itself `secondarySystemBackground`, which in light
-mode is the same #F2F2F7 as the *grouped* list it is a row of — a card with no edges, on the
-one screen a rider meets first. It and its problem banner use the **grouped** pair now
-(`secondarySystemGroupedBackground` / `tertiarySystemGroupedBackground`), white on #F2F2F7 in
-light and #1C1C1E on black in dark, and so does the "What CleanJibe does" row above it. The
+it was named for.** The empty library's setup card painted itself `secondarySystemBackground`,
+which in light mode is the same #F2F2F7 as the *grouped* list it is a row of — a card with no
+edges, on the one screen a rider meets first. That card is the **ways-in card** now
+(`LibraryView.waysInCard`, dev 70); it and its intervals.icu problem note use the **grouped**
+pair (`secondarySystemGroupedBackground` / `tertiarySystemGroupedBackground`), white on
+#F2F2F7 in light and #1C1C1E on black in dark, and so does the "What CleanJibe does" row
+above it. The
 plain `secondarySystemBackground` cards elsewhere — the key-metrics block, the summary grid,
 the HR card, the turn and takeoff tables, the scrubber, the help topic's glossary block, the
 share composer — all sit on `systemBackground` in a `ScrollView`, where that token is the
@@ -3108,19 +3110,70 @@ it, because on a genuine first run the four-step intervals.icu card is already t
 underneath. A first-run button whose only visible effect is that the screen disappears reads
 as a tap that failed. It is **`Set up intervals.icu`** now — the same name Settings and
 `GettingStartedGuide.settingsIcu` give the same thing — and its detail keeps the *why*
-(Garmin has no open API for a personal app) and adds the *what*: the screen closes and leaves
-you on those four steps. The flow is unchanged and deliberately so: the excursion into
+(Garmin has no open API for a personal app) and adds the *what*: the screen closes, and the
+4 steps are in Settings → intervals.icu, which the empty library's first row opens (reworded
+on dev 70, when the steps left the first screen). The flow is unchanged and deliberately so: the excursion into
 intervals.icu is intrinsic, honestly priced at *about five minutes, once*, and the
 chicken-and-egg it used to cause is already solved by the first offer.
 
 **And the empty library leads with the same two ways in.** When the library is empty and the
-welcome has been dismissed, the Sessions tab still shows the intervals.icu setup card — but
-not as the first thing on the page. Above it sits one short row: the welcome's own headline,
-*Every flight, every jibe, every swim.*, and two buttons, **What CleanJibe does** (the welcome
-screen again) and **Try the example session** (the same call the welcome's first offer makes,
-so both doors land on the same session). Deliberately a row and not a second card: the setup
-card under it is the thing to *do*, and this is the thing to read first. On a genuine first
-launch the welcome cover is in front of it, so on that run it is simply what is underneath.
+welcome has been dismissed, the Sessions tab shows one short row first: the welcome's own
+headline, *Every flight, every jibe, every swim.*, and two buttons, **What CleanJibe does**
+(the welcome screen again) and **Try the example session** (the same call the welcome's first
+offer makes, so both doors land on the same session). Deliberately a row and not a second
+card: the card under it is the thing to *do*, and this is the thing to read first. On a
+genuine first launch the welcome cover is in front of it, so on that run it is simply what is
+underneath.
+
+### The ways in — the empty library's one card (dev 70)
+
+Under that row sat the four-step intervals.icu card: the steps, the key field, the example
+offer and two help links. It was the first screen of a first launch and it named **one** way
+in. Jan, on dev 70: *"initial sessions page mentions icu but not Strava"*, and *"better refer
+to Settings than repeat the setup"*. A rider who owns a Suunto, a Strava account or a single
+FIT file read four steps about a service he does not use, and the one screen in the app that
+should say *there are four ways in* said *there is one, and here it is in full*.
+
+It is **one row per way in** now (`LibraryView.waysInCard`), under the heading *How your
+sessions get in*. Each row is an icon, the action, and one line of at most twelve words:
+
+| row | line under it | where it goes | channel |
+|---|---|---|---|
+| **Set up intervals.icu in Settings** | Garmin has no open API. intervals.icu is the bridge. | Settings | release |
+| **Record on your Apple Watch** `BETA` | The session comes to the phone by itself. | the help topic *Recording with the CleanJibe Apple Watch app* | beta |
+| **Set up Strava in Settings** | Strava hands over positions. Records are uncertified. | Settings | release, and only where the build carries Strava keys |
+| **Import a file** | A FIT from any watch. AirDrop and Files work. | the file picker, `ImportView.importableTypes` | release |
+
+Five rules hold that table together.
+
+* **The order is the order a rider meets a watch**, Apple straight after Garmin. They are the
+  same doors `GettingStartedGuide.routes` carries — `garmin`, `appleWatchApp`, `strava`,
+  `fit` — so the empty state, the Getting started topic and `/start` name the same four. The
+  generated guide is reordered from the web side, so nothing in the app reads that array by
+  position: the rows are declared here, and the route ids are the seam.
+* **The rows name the action, the routes name the door.** This is a list of things to *do*;
+  the guide is a list of things to read. *Set up intervals.icu in Settings* and
+  *Any watch that writes a .fit* are the same door said to two different readers.
+* **Two rows end in Settings and say so in the label** (*Import does, Settings configures*,
+  build 63). The sheet opens on intervals.icu and Strava, the form's first two sections, so
+  there is no anchor to scroll to and nothing to miss. Both take the one action the library
+  already hands down, `openIcuSettings` — the same door Import's `SetUpInSettingsRow` and
+  Help's *Open CleanJibe Settings* use.
+* **A build with no Strava keys shows no Strava row.** Settings would answer it with
+  *"Not available in this build"*, and the first screen a rider meets does not offer a door
+  onto that sentence — the same rule the filter menu keeps.
+* **The Strava row is not called "Connect Strava".** Strava's guidelines reserve the connect
+  action for their own button artwork and their own wording, *Connect with Strava*
+  (`StravaBrand`, rule 1), and that button lives in Settings → Strava. This row is the way to
+  it, so it is named the way the intervals.icu row above it is.
+
+**The four steps have one home**, and it is Settings → intervals.icu: the caption, the key
+field, *Get a key in 4 steps* and *Sync not working?*. `IcuSetupGuide` is still the one source
+both the Settings rows and the help topic render — nothing was deleted from Settings, and the
+first screen simply stopped repeating it. The intervals.icu **problem banner** came with the
+card rather than with the steps: a key that has been typed and refused is the one thing a list
+of doors cannot say for itself, so `.problem` still prints the cause, the fix and *What to
+check* above the rows.
 
 ## Gear & spots — one page of named things
 
@@ -3279,8 +3332,8 @@ your Strava account and import the sessions you pick…"* and now opens on *"Imp
 sessions you pick from your Strava account…"*, because the connecting is no longer on the
 screen the sentence is printed on. Nothing else in it changed. **"Sync now" is gone from
 Settings** for the same reason: fetching sessions is an import, and Import's *Sync
-intervals.icu*, a pull on the Sessions list and the first-run setup card's own *Sync now* are
-the three doors onto that one call.
+intervals.icu* and a pull on the Sessions list are the two doors onto that one call. There
+was a third, *Sync now* on the first-run setup card, and it went with the card on dev 70.
 
 ### The recording class opens every footer
 
@@ -3386,8 +3439,13 @@ flights, turns, the map, the wind axis — is identical either way.
 
 The paths below are the help topic *Share from your watch app straight into CleanJibe*
 (`HelpCatalog.shareFromWatchApp`), verified against the vendors' own current help pages on
-**13 September 2026**. Each is dated in the app itself, and anything that could not be
-confirmed is labelled unverified rather than dressed up:
+**13 September 2026**. The date is a **comment over the items** in the catalogue rather than
+part of what a rider reads (Jan, dev 70): a term that read *"Suunto, verified 13 Sep 2026"* is
+a fact about the author printed where the reader is scanning for his own watch. The term is
+the brand alone now — **Garmin, Suunto, COROS, Polar** — Garmin first because it is the
+popular watch and the one answer nobody expects, and each caveat opens its own detail:
+*"No phone export. On a computer: …"*, *"Not on the phone. On flow.polar.com: …"*. Anything
+that could not be confirmed is still labelled unverified rather than dressed up:
 
 | app | path | formats | verified |
 |---|---|---|---|
@@ -3666,7 +3724,7 @@ intervals.icu is the free bridge: connect your Garmin there once and every sessi
 here by itself."*, and `GettingStartedGuide.settingsStrava`, *"The route that needs no file:
 any watch that syncs to Strava. Positions only, so speed records are uncertified."* Both come
 from `docs/guide/getting-started.json`, so the switches and the Getting started guide say one
-thing; the longer intervals.icu version, for the setup card and the help topic, is still
+thing; the longer intervals.icu version, which the help topic prints, is still
 `IcuSetupGuide.rationale`. The footers under each section are unchanged and carry the detail —
 what is downloaded, what is never written, the connection cap.
 
@@ -3712,6 +3770,12 @@ line, *Start over* — under one short footer: what the page below lists, what t
 do and that neither sends anything until Send is tapped, and what Start over takes, in two
 sentences. The four paragraphs it carried are gone; what they said lives on that page, on the
 usage report's own card, and in the Start over alert, which names every item.
+
+**One test ask lives in that footer, between the two mails and Start over** (Jan, dev 70):
+*"Testing the session video: keep the 20 s preset, wait for the bar, then share the clip."*
+The session video is a beta door (docs/channels.md), and the ask used to be a step on
+`/start`, which was cut. A beta door's ask belongs beside the beta's own feedback doors, so it
+is one line here and not a section anywhere: the preset, the wait, the share.
 
 ## The status line — a toast, and toasts go away
 
@@ -3893,7 +3957,7 @@ back. The last answer is kept in `UserDefaults`, so the line is on the first fra
 launch rather than only on the one launch in twelve that falls after the 24 hours.
 
 **Two levels, and only two.** `remind` is one dismissable line at the top of the library, above
-the setup card and beside the usage ask, with the message, an *Update* link and a ✕. The ✕ is
+the empty state and beside the usage ask, with the message, an *Update* link and a ✕. The ✕ is
 remembered against that `minBuild` and not as a flag, so the next raise of the number asks
 again by itself; Settings still says a newer build is out. `insist` is one full screen with the
 message and an *Update* button, in front of the whole app and not dismissable — the third

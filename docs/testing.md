@@ -600,17 +600,17 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
      (column added, pre-v3 rows default to *not* an example) and the written copy.
    - `OnboardingTests` — the intervals.icu first run, which by definition is walked once
      per install and never again: `IcuSetupGuide` is four numbered, written steps (the Help
-     topic and the empty-library setup card render the *same* array, asserted, so the
-     manual and the wizard cannot drift); the failure→cause mapping behind every message
-     the card can show (401/403 ⇒ "regenerate the key", `URLError`/transport ⇒ network and
+     topic and Settings → intervals.icu render the *same* array, asserted, so the manual
+     and the walkthrough cannot drift; the empty library stopped rendering them on dev 70);
+     the failure→cause mapping behind every message the app can show (401/403 ⇒ "regenerate the key", `URLError`/transport ⇒ network and
      explicitly *not* the key, other HTTP ⇒ status only — **the response body never reaches
      the screen**, and no message, hint or crumb may contain the key itself); a sync that
      returned nothing ⇒ "connect Garmin in intervals.icu" rather than silence; the key
      check against a stubbed transport (counts activities *and* watersports, and a valid
      key with no watersports reports the caveat instead of claiming success); and
-     `IcuOnboarding.state` (empty + no key ⇒ setup card, key + stored problem ⇒ that cause,
+     `IcuOnboarding.state` (empty + no key ⇒ the ways in, key + stored problem ⇒ that cause,
      key + nothing yet ⇒ waiting, any session at all ⇒ never onboarding), with the problem
-     round-tripping through JSON so the card still names the cause after a relaunch.
+     round-tripping through JSON so the empty library still names the cause after a relaunch.
    - `WelcomeTests` — the screen in *front* of that card (`WelcomeView`, raised by
      `RootView`): that `WelcomeGuide` is actually written rather than stubbed, that it
      speaks the app's own vocabulary (foil, flight, touchdown, jibe, streak, record, and
@@ -733,8 +733,8 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    state — both keychain items, the whole defaults domain and the app group's, and
    everything in Application Support, Caches, tmp and Documents (database, FIT archive,
    replay-music copy, widget snapshot) — and `UI_ICU_KEY=…` seeds a key through the real
-   keychain path afterwards, so the first-run setup card and the "key stored, sync rejected"
-   card can both be captured without reinstalling. It runs in `WingFoilApp.init`, before the
+   keychain path afterwards, so the first-run empty library and the "key stored, sync
+   rejected" state can both be captured without reinstalling. It runs in `WingFoilApp.init`, before the
    store reads the keychain, and the wipe it runs is `StartOver.wipe` — the same one
    **Settings → Beta → Start over** runs, so there is one wipe and not two
    (docs/presentation.md, "Start over"). `UI_START_OVER=1` is its in-process twin: it waits
@@ -774,9 +774,13 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    anchor on an unselected section reaches nothing at all, silently, and produces a
    screenshot of the wrong screen; `PresentationTests.everyScrollAnchorResolvesToExactlyOneSection`
    is what stops an anchor being renamed out from under a hook.
-   `UI_LOAD_EXAMPLE=1` taps the setup card's "Load an example session first" button, and
-   `UI_SCROLL_TO=setup` parks the (screen-and-a-half tall) onboarding card on its bottom
-   edge — the only way to photograph that button, which lives below the key field.
+   `UI_LOAD_EXAMPLE=1` makes the same call the empty library's "Try the example session"
+   button makes, and `UI_SCROLL_TO=setup` parks the empty state — the promise row and the
+   ways-in card under it (`LibraryView.waysInCard`) — on its bottom edge. Both hooks
+   outlived the four-step setup card the empty library carried until dev 70: the example
+   hook never tapped anything, it called `loadExampleSession` directly, and the anchor is
+   still on the empty state itself. The empty state is now about a screen tall rather than
+   a screen and a half, so a plain launch with an empty library photographs most of it.
    `UI_WELCOME=1` raises the **welcome screen** (`WelcomeView`, the full-screen cover a
    first launch opens on) whatever the library and the `welcomeShown.v1` flag say — any
    machine that has ever run the app has already spent the one launch that shows it. It

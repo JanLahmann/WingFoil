@@ -177,28 +177,44 @@ import Testing
 
     /// The share-sheet topic exists for the rider whose watch is neither a Garmin nor an
     /// Apple Watch. Two things make it trustworthy rather than merely helpful: every vendor
-    /// path carries the date it was checked against that vendor's own help page, and the one
-    /// app that *cannot* do it says so rather than being quietly left out.
-    @Test func theShareSheetTopicDatesEveryVendorPathAndNamesTheOneThatCannot() {
+    /// path was walked against that vendor's own help page, and the one app that *cannot*
+    /// do it says so rather than being quietly left out.
+    ///
+    /// **The term is the brand, and nothing else** (Jan, dev 70). The four terms used to
+    /// read "Suunto, verified 13 Sep 2026" — a fact about the author, printed where the
+    /// reader is scanning for his own watch. The caveat opens the detail now and the
+    /// verification date is a comment over the items, so this test holds the shape rather
+    /// than the date: brand alone, Garmin first, and each caveat in the first words a
+    /// rider reads.
+    @Test func theShareSheetTopicNamesEveryBrandAndTheOneThatCannot() {
         let topic = HelpCatalog.topic(.shareFromWatchApp)
         #expect(topic.section == .setup)
         let terms = topic.items.map(\.term)
         for vendor in ["Suunto", "COROS", "Polar", "Garmin"] {
-            #expect(terms.contains { $0.hasPrefix(vendor) },
-                    "no path for \(vendor)")
+            #expect(terms.contains(vendor), "no path for \(vendor)")
         }
-        // Dated, every one of them — a menu path with no date on it rots silently.
-        #expect(terms.filter { $0.contains("2026") }.count == 4)
+        // The brand, bare. A date in a term rots in the reader's eye rather than silently.
+        #expect(terms.allSatisfy { !$0.contains("2026") })
+        // Garmin is the popular watch and the one answer nobody expects, so it is read
+        // first, and the two caveats are the first words of their own details.
+        #expect(terms.first == "Garmin")
+        let detail = { (term: String) in topic.items.first { $0.term == term }?.detail ?? "" }
+        #expect(detail("Garmin").hasPrefix("No phone export."))
+        #expect(detail("Polar").hasPrefix("Not on the phone."))
+        #expect(detail("Suunto").hasPrefix("On the phone:"))
+        #expect(detail("COROS").hasPrefix("On the phone:"))
         let prose = (topic.body + topic.items.map(\.detail)).joined(separator: " ").lowercased()
         // Garmin's phone app cannot export at all, and the rider is sent somewhere that works
         // rather than left hunting for a menu item that does not exist.
-        #expect(prose.contains("cannot export"))
+        #expect(prose.contains("no export at all"))
+        #expect(prose.contains("connect.garmin.com"))
         #expect(prose.contains("intervals.icu"))
         // FIT over GPX/TCX, and why.
         #expect(prose.contains("fit, every time"))
         #expect(prose.contains("uncertified"))
-        // Each vendor path links to the page it was verified against.
+        // Each vendor path links to the page it was verified against, in the items' order.
         #expect(topic.links.count == 4)
+        #expect(topic.links.first?.title.hasPrefix("Garmin") == true)
         #expect(topic.links.allSatisfy { $0.url.scheme == "https" })
     }
 
