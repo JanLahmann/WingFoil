@@ -64,5 +64,9 @@ public enum ChannelFeatures {
         "The tuning page: every analysis threshold on a slider, tried against your own "
             + "sessions",
         "iPad",
+        // An idea, not a build (Jan, 16 Sep 2026): the watch app records; the Garmin app also
+        // detects live. Listed so testers can ask for it first.
+        "A live view on the Apple Watch: foil state, flights, records and turn verdicts on "
+            + "the wrist, as the Garmin app shows them",
     ]
 }
