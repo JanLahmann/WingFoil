@@ -52,12 +52,16 @@ web/
 │                               question "will my watch work" is answered, and since
 │                               15 Sep 2026 the ONE place the four recording classes are
 │                               printed — the class table leads the page, because "will my
-│                               watch work" is really "what will my file carry". The watch app's
-│                               Connect IQ product list grouped into families, with the
-│                               honest third column — ridden on a real watch, or only
-│                               through the simulator's layout checks — and the second table
-│                               for every other brand (FIT certifies, GPX does not, pump
-│                               strokes need a CleanJibe watch app). The product COUNT and the
+│                               watch work" is really "what will my file carry". The class
+│                               table runs A, B+, B, C and its last column is the route: the
+│                               rule everywhere on this site is that Apple Watch comes right
+│                               after Garmin. The watch app's Connect IQ product list grouped
+│                               into families, with the honest third column — TESTED ON THE
+│                               WATER, three values and no version numbers — and the second
+│                               table for every other brand (FIT certifies, GPX does not, pump
+│                               strokes need a CleanJibe watch app); no Apple Watch in it,
+│                               because the Apple Watch section below owns both its routes.
+│                               The product COUNT and the
 │                               watch app's VERSION are no longer typed: they sit in
 │                               `<span data-copy="garmin-count">` / `garmin-version` and are
 │                               written by `tools/make_devices.py` out of the manifests. The
@@ -325,12 +329,12 @@ structural rather than named strings:
 | what a rider is told about Strava | `docs/channels.md` → `phrases.json` | one sentence, everywhere: **"Strava lets a new app connect a limited number of riders"**, asserted present on `/learn/`, `/start/` and `/privacy/`, plus *tell us if you are told the app is full*. None of `stravaForbidden`'s five phrases may appear on any page — the app has not been reviewed, reviews the app, approves the app, not reviewed, single-rider. A dated release note corrects itself in brackets rather than rewriting its own history |
 | the Connect IQ listing's name | the live store | `<span data-copy="ciq-title">` on `/start/` and `/invite/`. It still prints *CleanJibe Wingfoil Tracker (Beta)* because that is what the store says today; `docs/channels.md` has decided the rename, and the span is so both places flip on the day the store does |
 | the promise, the card CTA and the caption offer | `WelcomeGuide.promise`, `Branding.callToAction`, `ShareCaption.offer` in the kit → `phrases.json` | the hero paragraph on `/` is `<p class="lede" data-copy="promise">` and is the JSON's sentence to the character. The card's two strings are **composed** in `js/cardstats.js` (`cta` and `site` are drawn on separate lines), so `verify_copy.py` reads the parts and re-does the composition rather than looking for the sentence |
-| the four recording classes | `RecordingClass.swift` → `docs/copy/recording-classes.json` | the class table on **`/watches/#classes` only** since 15 Sep 2026 — it leads that page, and the front door prints one sentence and a link — carries the four `name` and four `line` strings in cells marked `data-copy="class-name"` / `class-line`. The three-column shape and the *You record with* column are the web's own; only the cell contents are pinned. `/watches/`'s second table keeps its own shape and may name no class the JSON does not have |
+| the four recording classes | `RecordingClass.swift` → `docs/copy/recording-classes.json` | the class table on **`/watches/#classes` only** since 15 Sep 2026 — it leads that page, and the front door prints one sentence and a link — carries the four `name` and four `line` strings in cells marked `data-copy="class-name"` / `class-line`. The four-column shape and the *You record with* and *Route* columns are the web's own; only the cell contents are pinned. **The table's ORDER is the web's own too**, since 16 Sep 2026: the JSON keeps the kit's order (a, b, bPlus, c) and the page prints **A, B+, B, C**, because Apple Watch comes right after Garmin wherever this site lists watches. `verify_copy.py` matches the four cells as a **set** and then checks that each name still carries its own line, so a dropped class, an invented fifth and a mismatched pair all still fail. `/watches/`'s second table keeps its own shape and may name no class the JSON does not have |
 | the eight metric one-liners | `MetricGlossary.swift` → `docs/copy/glossary.json` | `/learn/`'s `<dl data-copy="glossary">` carries the eight `term`/`line` pairs, in the JSON's order, before any `glossary-extra` of its own. The long explanations stay in the app's `HelpCatalog`: same terms, different depth |
 | the intervals.icu setup | `IcuSetupGuide.swift` → `docs/copy/icu-setup.json` | `/start/` names the four step titles (`data-copy="icu-step"`) and the app's own **Save & check** button (`icu-save`), *outside* the generated guide block. The iPhone asks for one thing, the personal API key; the Athlete ID is the browser analyzer's |
 | what a recording that is not a session is called | `NotASessionNote.swift` → `docs/copy/verdicts.json` | the analyzer's session view renders the tag and the line from `js/copy.js`, generated by `tools/make_copy_js.py`. `--check` runs with `verify_links.py` |
 | the rider vocabulary | `CLAUDE.md` → `phrases.json` → `lexicon.banned` | *flew through*, *clean*, *dry*; the streak is the **dry streak**. "carried", "no-fall streak", "clean-jibe percentage", "swim rate" and "success rate" appear in no page's visible text. **HTML only**: `web/js/*.js` is out of scope, because the kit's own exemption for "carried" (`phrases.json`, TurnAnalytics's "not clean · carried 18° past the axis", where the word is the ordinary verb) would have to be repeated here the day the analyzer draws that sentence. It does not today — the turn table prints the score as a number |
-| the route letters on `/start/` | `docs/guide/getting-started.json` | A Garmin · B any watch that writes a .fit · C Strava · D the CleanJibe Apple Watch app · E Apple's own Workout app. The cards are **generated** into the block between `<!-- guide:begin -->` and `<!-- guide:end -->`; a reference to a letter written *outside* that block is hand-kept and is exactly how the page contradicted itself on 14 September |
+| the routes on `/start/`, and the class each one yields | `docs/guide/getting-started.json` | **The routes lost their letters on 16 Sep 2026.** A route is named by what the rider holds — Garmin with the CleanJibe watch app · the CleanJibe Apple Watch app · Apple's own Workout app · any watch that writes a .fit · Strava — and what he gets back is the *class*, which is a different ladder with its own names. Each route carries a `class` (`a`, `bPlus`, `b`, `c`), `tools/make_start.py` reads `docs/copy/recording-classes.json` for the name, and the card prints a pill (*You get class B+*) linking to `/watches/#classes`. The Swift twin carries the same value as `GettingStartedRoute.classID`. The cards are **generated** into the block between `<!-- guide:begin -->` and `<!-- guide:end -->`; a reference to a route written *outside* that block is hand-kept and is exactly how the page contradicted itself on 14 September |
 
 Three rules follow from the table. **Never hand-edit inside `<!-- guide:begin --> … <!-- guide:end -->`** — edit `docs/guide/getting-started.json` and re-run `tools/make_start.py`; the same goes for **`js/copy.js`**, which `tools/make_copy_js.py` writes out of `docs/copy`.
 And **never type a Garmin product count into a page**; put a `data-copy` span there and let
@@ -791,7 +795,12 @@ an authorization code and is on screen for a frame.)
   a 2 px rule in the link ink for the eye. Every colour is a token, so the light theme at the
   foot of `css/style.css` turns it with everything else.
 - **It stays a row at every width.** Four short items fit one line on a phone, and a
-  "Go to…" select above the section nav's "On this page…" read as two of the same thing. The
+  "Go to…" select above the section nav's "On this page…" read as two of the same thing.
+  Under 720 px the row bleeds to both screen edges and scrolls sideways, and **the end gutter
+  is the last `<li>`'s own `padding-inline-end`** (16 Sep 2026): a scroll container's trailing
+  padding is not part of its scrollable overflow in every engine, so *What's new* sat flush
+  against the right edge of Jan's phone. On the item it is a box the layout has to make room
+  for, and it is the same `--pad-x` the topbar and `main` are padded with. The
   section nav is the one that collapses, gated on the `js` class the small script at the foot
   of every page sets; its links stay in the markup, so a reader whose script never ran keeps
   working links instead of a dead control.
@@ -823,6 +832,26 @@ Below about 700 words there is nothing to look for. So: `/learn/`, `/watches/`, 
 and `/privacy/` have one; `/`, `/invite/` and `/whats-new/` do not. `/privacy/` gained one on
 15 September 2026 — 3200 words and seven headings, and it was the one long page without —
 and `/` lost one the same day.
+
+### The *Tested on the water* column on `/watches/`
+
+The Garmin family table's third column was *Ridden on a real watch*, and every cell in it
+carried a version number: *Not by us: in the open beta since 0.9.4*, *No: new in 0.9.10,
+simulator only*. Jan, 16 September 2026: the number dates itself on every release and
+answers a question nobody asked. What a reader wants to know is whether anybody has ridden
+this watch.
+
+**Three values, no version numbers, and nothing else may appear in the column:**
+
+| value | what it means |
+|---|---|
+| **Yes, by us** | every release is ridden on one before it ships. The fenix 8 family today, and only that |
+| **By beta riders** | a rider who is not us has sent a session off this family and it read correctly. **Defined here, used nowhere yet** — the day a report arrives, that family's cell changes and nothing else does |
+| **Not yet** | no rider report. Every other family today, whether it has been through the simulator's layout checks or not — that distinction is a developer's, and it belongs in `garmin/store` |
+
+The version history stays where a release note belongs: `garmin/store/listing.md` and the
+`/whats-new/` cards. The ask under the table — *Ride a watch that says Not yet?* — is the
+one thing the table cannot do for itself.
 
 ### Light theme
 
@@ -984,8 +1013,9 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    (its current-page rule must be visible in both themes) and the section nav, the
    panels, the pills in the turns table, the code spans, the tables' hairlines, the footer,
    **the disclosure triangles on `/start/`, `/watches/` and `/whats-new/`** (`.home-section
-   details > summary::before`, token-coloured, so it turns with everything else), and the
-   share-card dialog. `/strava/callback/` stays dark by design.
+   details > summary::before`, token-coloured, so it turns with everything else) and the
+   route cards' own *Show the N steps* control with its turning chevron (`.what-more`), and
+   the share-card dialog. `/strava/callback/` stays dark by design.
 0learn. **What it measures.** <http://127.0.0.1:8765/learn/>. The page is named after its
    first section now: **What it counts comes first** — the track motif with its colour key,
    then the eleven pinned glossary entries and the site's own *Pump & takeoff effort* after
@@ -1008,30 +1038,47 @@ groups (**156 assertions**, all green at the time of writing — 30 / 8 / 31 / 4
    only place on the site that prints the beta list and the dev list. Every mail address on
    the site is `info@cleanjibe.org`; grepping the `.html` files for the old personal address
    must come back empty.
-0a2. **The getting-started page.** <http://127.0.0.1:8765/start/>. **Five route cards, the
-   dry run and the ask, each with its steps behind a `<details>`** whose handle is the route's
-   own summary line — open one at a time and the steps read in order; shut, the page is about
-   820 words. The troubleshooting list is behind one fold too. **Nothing inside
+0a2. **The getting-started page.** <http://127.0.0.1:8765/start/>. The `<h1>` is **Get
+   started** and the `<title>` **Get started · CleanJibe**; nothing in the hero calls the page
+   a beta protocol, because Garmin, any `.fit` and Strava are release routes. **Five route
+   cards in the order Garmin · the CleanJibe Apple Watch app · Apple's own Workout app · any
+   `.fit` · Strava**, then the dry run and the ask, each with its steps behind a `<details>`.
+   Every route card carries a class pill — *You get class A* — that opens `/watches/#classes`.
+   **The handle says what opening it costs**: the route's own summary line, then a full-width
+   control row reading *Show the 6 steps* with a chevron at the right that turns when the card
+   is open, and **the first card ships open** so the pattern is taught once. Open one at a time
+   and the steps read in order; shut, the page is about 870 words. The troubleshooting list is
+   behind one fold too. **Nothing inside
    `<!-- guide:begin --> … <!-- guide:end -->` is hand-edited**: change
    `docs/guide/getting-started.json` or `make_start.py`'s `html_card`, and regenerate. Every
    internal link resolves — `../`, `../invite/`, `../app/`, `../privacy/`, `../impressum/` —
    as do the two external ones (testflight.apple.com and the Connect IQ listing
    `e77867b5-…`). The mail link must open a composer with the **report template already in
-   the body**: tap it on a phone rather than trusting the `%0A`s. Route A step 2 carries the
-   two facts that used to live in the cut walkthrough — *charged watch and phone*, and the
-   mid-session *glance at the tally* — and the routes lede carries *go outside*. The page must
-   load no JavaScript of its own and register no service worker.
+   the body**: tap it on a phone rather than trusting the `%0A`s. The Garmin route's step 2
+   carries the two facts that used to live in the cut walkthrough — *charged watch and phone*,
+   and the mid-session *glance at the tally* — and the routes lede carries *go outside*. The
+   page must load no JavaScript of its own and register no service worker.
 0a3. **Which watch.** <http://127.0.0.1:8765/watches/>. **The class table is first**, and it
-   is the only copy of it on the site. Both tables are tabular above 760 px and one card per
-   row below it (`table.stack-sm` reads its labels from each `<td>`'s `data-th`, so a missing
-   one shows as an unlabelled row). The family list must sum to the product count in
-   `garmin/manifest.xml`, which is what `docs/copy/garmin-devices.json` carries and what the
-   two `data-copy` spans print — **42** at **0.9.11** — and the four families nobody has
-   ridden (Venu and vívoactive and Instinct 3 AMOLED from 0.9.10, the fenix 5 Plus family from
-   0.9.11) must say so **in the table's third column**; the prose under it is now one sentence
-   and an ask, and *Not on the list, and why* is behind a fold. Every internal link resolves:
-   `../`, `../invite/`, `../invite/#feedback`, `../start/`, `../app/`, `../whats-new/`,
-   `../privacy/`, `../impressum/`.
+   is the only copy of it on the site. It runs **A, B+, B, C** — Apple Watch right after
+   Garmin, the same rule `/start/` and docs/channels.md follow — and its last column is the
+   **Route**, one link per class into the matching `/start/#guide-…` card. Both tables are
+   tabular above 760 px and one card per row below it (`table.stack-sm` reads its labels from
+   each `<td>`'s `data-th`, so a missing one shows as an unlabelled row). The family list must
+   sum to the product count in `garmin/manifest.xml`, which is what
+   `docs/copy/garmin-devices.json` carries and what the two `data-copy` spans print — **42**
+   at **0.9.11** — and the third column is **Tested on the water** with **no version number in
+   any cell**: *Yes, by us* on fenix 8 and *Not yet* on every other family (the three values
+   are defined above). The prose under it is one sentence and an ask, and *Not on the list,
+   and why* is behind a fold. **The sections run What you need · Garmin · Apple Watch ·
+   Every other watch · No watch at all**, in both the nav row and the phone's select, because
+   Apple Watch comes right after Garmin. **An Apple Watch appears once outside the pinned
+   class row**: the *Apple Watch* section owns both routes, ours first, one short paragraph
+   each with a ghost button into `/start/`; the brand table names no Apple Watch at all and
+   says so in one line. `tools/verify_unique.py` is the check that keeps it at one. Every internal link
+   resolves: `../`, `../invite/`, `../invite/#feedback`, `../start/`,
+   `../start/#guide-garmin`, `../start/#guide-appleWatchApp`, `../start/#guide-appleWorkoutApp`,
+   `../start/#guide-fit`, `../start/#guide-strava`, `../app/`, `../whats-new/`, `../privacy/`,
+   `../impressum/`.
 0a4. **What's new.** <http://127.0.0.1:8765/whats-new/>. One `.panel .piece` card per release,
    newest first, each with its date in the `.status` chip. **The three newest are open —
    iPhone 53, iPhone 51, watch app 0.9.10 — and everything older is inside one `<details>`**

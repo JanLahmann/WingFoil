@@ -79,11 +79,16 @@ privacy page and has no open report.
 
 ## What you need, what you get — the three recording classes
 
+The order here is the order every rider-facing table prints, and it is the site's one
+rule for watches: **Apple Watch comes right after Garmin**. So a, b + wrist, b, c — on
+/watches, on /start and here. `docs/copy/recording-classes.json` keeps the kit's own
+order (`RecordingClass.allCases`) and is not reordered for a table.
+
 | class | you record with | you get | you do not get |
 |---|---|---|---|
 | a | the CleanJibe watch app on a Garmin | everything: foil time, flights, every turn verdict and clean jibe, certified speed records, wind axis, pump strokes and takeoff attempts | nothing missing |
-| b | any other FIT with a Doppler speed channel (Garmin's Windsurf profile, another Connect IQ app) | foil time, flights, turn verdicts and clean jibes, **certified** speed records, wind axis | pump strokes and takeoff attempts, shown as absent, never as zero |
 | b + wrist | the CleanJibe Apple Watch app: class b speed, plus the 50 Hz wrist accelerometer (ADR-016) | everything class b gets, and pump strokes and takeoff attempts analysed on the phone | nothing missing; the watch itself detects nothing live |
+| b | any other FIT with a Doppler speed channel (Garmin's Windsurf profile, another Connect IQ app) | foil time, flights, turn verdicts and clean jibes, **certified** speed records, wind axis | pump strokes and takeoff attempts, shown as absent, never as zero |
 | c | positions only (Strava, a GPX, a TCX without speed, a phone in a pocket) | foil time, flights, turn verdicts and clean jibes, wind axis, speed records **estimated from positions** and marked uncertified | certified records, pumps, takeoffs |
 
 Release: classes a and b through intervals.icu or a file, class c through Strava. Beta: class

@@ -160,14 +160,27 @@ a.brand:focus-visible { outline: 2px solid var(--series-1); outline-offset: 3px;
   outline: 2px solid var(--series-1); outline-offset: 3px; border-radius: 3px;
 }
 .sitenav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--series-1); }
+/* Under 720 px the row scrolls sideways, and it bleeds to both screen edges so that the
+   scroll looks like a scroll rather than like a clipped box.
+ *
+ * THE END GUTTER IS THE LAST ITEM'S OWN PADDING (Jan, 16 September 2026: "What's new" sat
+ * flush against the right edge of his phone). A scroll container's trailing `padding-inline`
+ * is not part of its scrollable overflow in every engine — Safari drops it, which is exactly
+ * where the photo came from — so the gutter cannot live on the `ul`. It lives on the last
+ * `li`, where it is a box the layout has to make room for, and it is the same `--pad-x` the
+ * topbar and `main` are padded with, so the row ends where every other line on the page
+ * ends. `scroll-padding-inline` keeps a keyboard scroll from parking an item under either
+ * edge. Padding on the `li` and not on the `a`: the link's 2 px underline marks the word. */
 @media (max-width: 720px) {
   .sitenav ul {
     flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
     -webkit-overflow-scrolling: touch; margin: 0 calc(-1 * var(--pad-x, 16px));
-    padding: 0 var(--pad-x, 16px);
+    padding: 0 0 0 var(--pad-x, 16px);
+    scroll-padding-inline: var(--pad-x, 16px);
   }
   .sitenav ul::-webkit-scrollbar { display: none; }
   .sitenav li { flex: 0 0 auto; }
+  .sitenav li:last-child { padding-inline-end: var(--pad-x, 16px); }
 }
 
 .chip {

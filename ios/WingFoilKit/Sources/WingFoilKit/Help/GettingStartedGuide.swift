@@ -32,16 +32,26 @@ public struct GettingStartedRoute: Sendable, Equatable, Identifiable {
     /// `HelpTopic.channel` means it: the two Apple routes are `.beta`, so an App Store
     /// build never names them and reaches them through the topic's `related` instead.
     public let channel: HelpChannel
+    /// **The recording class this route yields**, as a `RecordingClass` id: `a`, `bPlus`,
+    /// `b` or `c` (docs/copy/recording-classes.json). Empty on the two closing notes,
+    /// which are not routes.
+    ///
+    /// The routes lost their letters on 16 September 2026: a route is named by what the
+    /// rider holds, and what he gets back is this, which is a different ladder and has its
+    /// own names. cleanjibe.org/start prints it as a pill on the card, linking to the class
+    /// table; the app does not render it yet.
+    public let classID: String
     /// The one or two sentences the app shows under the route's title.
     public let summary: String
     /// The numbered steps the web page shows under that summary.
     public let steps: [GettingStartedStep]
 
-    public init(id: String, title: String, channel: HelpChannel,
+    public init(id: String, title: String, channel: HelpChannel, classID: String = "",
                 summary: String, steps: [GettingStartedStep]) {
         self.id = id
         self.title = title
         self.channel = channel
+        self.classID = classID
         self.summary = summary
         self.steps = steps
     }
@@ -73,6 +83,7 @@ public enum GettingStartedGuide {
             id: "garmin",
             title: "Garmin with the CleanJibe watch app",
             channel: .release,
+            classID: "a",
             summary: "Install it from Connect IQ, ride, save. Sessions sync through "
                 + "intervals.icu: Settings → intervals.icu, 4 steps, once.",
             steps: [
@@ -106,9 +117,70 @@ public enum GettingStartedGuide {
                           + "File**. AirDrop it to the iPhone, then Import → **FIT or ZIP…**."),
             ]),
         GettingStartedRoute(
+            id: "appleWatchApp",
+            title: "The CleanJibe Apple Watch app",
+            channel: .beta,
+            classID: "bPlus",
+            summary: "Record on your Apple Watch. The session comes to the phone by itself, "
+                + "with pump strokes and takeoff attempts included.",
+            steps: [
+                .init(number: 1,
+                      title: "Put it on the watch",
+                      detail: "It comes with the CleanJibe beta. On the iPhone open Apple's "
+                          + "**Watch** app, scroll to *Available apps*, and install "
+                          + "**CleanJibe** if it is missing."),
+                .init(number: 2,
+                      title: "Record",
+                      detail: "Open CleanJibe on the watch, allow Health and Location if it "
+                          + "asks, wait until NO GPS clears, press START. Then Stop, and "
+                          + "Done."),
+                .init(number: 3,
+                      title: "Let it arrive",
+                      detail: "Open CleanJibe on the iPhone. The session comes across on its "
+                          + "own while phone and watch are together. Give it a minute."),
+                .init(number: 4,
+                      title: "What you get",
+                      detail: "Speed off the watch's own receiver, so the records certify, and "
+                          + "the 50 Hz wrist, so pump strokes and takeoff attempts are "
+                          + "analysed."),
+            ]),
+        GettingStartedRoute(
+            id: "appleWorkoutApp",
+            title: "Apple's own Workout app",
+            channel: .beta,
+            classID: "b",
+            summary: "No extra app on the watch: record a Surfing workout and import it from "
+                + "Apple Health.",
+            steps: [
+                .init(number: 1,
+                      title: "Start a Surfing workout",
+                      detail: "On the watch open **Workout** and pick **Surfing**. *Water "
+                          + "Sports* works too. Apple Health has no wingfoil activity, so "
+                          + "pick the closest one."),
+                .init(number: 2,
+                      title: "Ride, then end the workout",
+                      detail: "End it on the watch and let it save. The route is written to "
+                          + "Health when the workout finishes, which can take a minute."),
+                .init(number: 3,
+                      title: "Import it on the iPhone",
+                      detail: "Import → **Apple Health**. Allow CleanJibe to read workouts and "
+                          + "routes. Switch every one on, or there is nothing to read. Then "
+                          + "pick yours."),
+                .init(number: 4,
+                      title: "Keep it automatic",
+                      detail: "Switch on *Import new Health workouts automatically* and the "
+                          + "next session is waiting when you open the app."),
+                .init(number: 5,
+                      title: "What you get",
+                      detail: "Speed comes off the watch's own receiver, so the records "
+                          + "certify. Nothing records your wrist, so there are no pump "
+                          + "strokes or takeoff attempts."),
+            ]),
+        GettingStartedRoute(
             id: "fit",
             title: "Any watch that writes a .fit",
             channel: .release,
+            classID: "b",
             summary: "Sync it through intervals.icu, or share the file into CleanJibe from "
                 + "Files, Mail, AirDrop or any share sheet.",
             steps: [
@@ -140,6 +212,7 @@ public enum GettingStartedGuide {
             id: "strava",
             title: "Strava",
             channel: .release,
+            classID: "c",
             summary: "Settings → Strava → Connect with Strava, then Import → Import from "
                 + "Strava…. Positions only, so speed records are uncertified.",
             steps: [
@@ -167,64 +240,6 @@ public enum GettingStartedGuide {
                       detail: "Strava lets a new app connect a limited number of riders. That "
                           + "is nothing to do with your account. Menu → Support & ideas says "
                           + "so."),
-            ]),
-        GettingStartedRoute(
-            id: "appleWatchApp",
-            title: "The CleanJibe Apple Watch app",
-            channel: .beta,
-            summary: "Record on your Apple Watch. The session comes to the phone by itself, "
-                + "with pump strokes and takeoff attempts included.",
-            steps: [
-                .init(number: 1,
-                      title: "Put it on the watch",
-                      detail: "It comes with the CleanJibe beta. On the iPhone open Apple's "
-                          + "**Watch** app, scroll to *Available apps*, and install "
-                          + "**CleanJibe** if it is missing."),
-                .init(number: 2,
-                      title: "Record",
-                      detail: "Open CleanJibe on the watch, allow Health and Location if it "
-                          + "asks, wait until NO GPS clears, press START. Then Stop, and "
-                          + "Done."),
-                .init(number: 3,
-                      title: "Let it arrive",
-                      detail: "Open CleanJibe on the iPhone. The session comes across on its "
-                          + "own while phone and watch are together. Give it a minute."),
-                .init(number: 4,
-                      title: "What you get",
-                      detail: "Speed off the watch's own receiver, so the records certify, and "
-                          + "the 50 Hz wrist, so pump strokes and takeoff attempts are "
-                          + "analysed."),
-            ]),
-        GettingStartedRoute(
-            id: "appleWorkoutApp",
-            title: "Apple's own Workout app",
-            channel: .beta,
-            summary: "No extra app on the watch: record a Surfing workout and import it from "
-                + "Apple Health.",
-            steps: [
-                .init(number: 1,
-                      title: "Start a Surfing workout",
-                      detail: "On the watch open **Workout** and pick **Surfing**. *Water "
-                          + "Sports* works too. Apple Health has no wingfoil activity, so "
-                          + "pick the closest one."),
-                .init(number: 2,
-                      title: "Ride, then end the workout",
-                      detail: "End it on the watch and let it save. The route is written to "
-                          + "Health when the workout finishes, which can take a minute."),
-                .init(number: 3,
-                      title: "Import it on the iPhone",
-                      detail: "Import → **Apple Health**. Allow CleanJibe to read workouts and "
-                          + "routes. Switch every one on, or there is nothing to read. Then "
-                          + "pick yours."),
-                .init(number: 4,
-                      title: "Keep it automatic",
-                      detail: "Switch on *Import new Health workouts automatically* and the "
-                          + "next session is waiting when you open the app."),
-                .init(number: 5,
-                      title: "What you get",
-                      detail: "Speed comes off the watch's own receiver, so the records "
-                          + "certify. Nothing records your wrist, so there are no pump "
-                          + "strokes or takeoff attempts."),
             ]),
     ]
 

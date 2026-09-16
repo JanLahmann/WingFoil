@@ -319,6 +319,8 @@ h3 .tag.beta, td .tag.beta, dt .tag.beta, li .tag.beta { vertical-align: 2px; }
   margin-top: 10px; font-size: 12.5px; color: var(--ink-3);
 }
 .beta-legend .tag.beta { margin-left: 0; margin-right: 6px; }
+/* The same pill LEADING a note instead of trailing a label: the margin swaps sides. */
+.note > .tag.beta:first-child { margin-left: 0; margin-right: 6px; }
 
 /* --------------------------------------------------------------- vocabulary */
 
@@ -401,9 +403,49 @@ h3 .tag.beta, td .tag.beta, dt .tag.beta, li .tag.beta { vertical-align: 2px; }
 .home-section details > summary:hover::before { color: var(--ink-2); }
 .home-section details > summary:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 2px; }
 /* Inside a route card the handle IS the summary line the card always printed, so it keeps
-   that line's size and colour; only the triangle is new. */
-.piece > details > summary.what { color: var(--ink-3); font-size: 12.5px; }
+   that line's size and colour.
+
+   THE TRIANGLE ALONE WAS NOT AN AFFORDANCE (Jan, 16 September 2026). A summary line with a
+   7 px glyph in front of it reads as a sentence, and a reader who does not know there are
+   steps under it does not go looking for them. So the handle is two rows: the route's own
+   summary, and a control line that says what opening it costs — *Show the 6 steps* — with a
+   chevron at the far right that turns when the card is open. The control is a full 44 px
+   row across the whole card, which is the tap target the rest of the site is built to
+   (--tap), and the first route card ships open so the pattern is taught once. No script:
+   `details[open]` is the only state there is. */
+.piece > details > summary.what {
+  color: var(--ink-3); font-size: 12.5px;
+  display: grid; gap: 4px; padding: 4px 0 0;
+}
+/* The generic triangle belongs to the one-line folds; this handle has its own chevron. */
+.piece > details > summary.what::before { content: none; }
 .piece > details > summary.what:hover { color: var(--ink-2); }
+.piece > details > summary.what .what-more {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: var(--tap);
+  font: 600 11px/1.5 var(--mono); letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--ink-2); border-top: 1px solid var(--line-soft);
+}
+.piece > details > summary.what .what-more::after {
+  content: "\25BE"; font-size: 12px; color: var(--ink-3);
+  transition: transform 140ms ease;
+}
+.piece > details[open] > summary.what .what-more::after { transform: rotate(180deg); }
+.piece > details > summary.what:hover .what-more { color: var(--ink); }
+.piece > details > summary.what:hover .what-more::after { color: var(--ink-2); }
+@media (prefers-reduced-motion: reduce) {
+  .piece > details > summary.what .what-more::after { transition: none; }
+}
+
+/* The class pill on a route card: what you get BACK, in docs/copy's own name for it, on a
+   card whose title says what you hold. Two ladders, so two labels — and the pill is a link
+   to the table that explains the four, because a letter on its own answers nothing. */
+.piece-class { margin: 0; }
+.tag.class-pill {
+  margin-left: 0; text-decoration: none; display: inline-block;
+  text-transform: none; letter-spacing: 0.02em;
+}
+.tag.class-pill:hover { color: var(--ink); border-color: var(--ink-3); }
 .home-section details > .steps-flow,
 .home-section details > .terms { margin-top: 10px; }
 /* /whats-new/: the collapsed cards keep the spacing they have when they are open. */

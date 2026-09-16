@@ -588,22 +588,39 @@ def pin_classes(site: Site, classes: dict, report: Report):
     # /watches/#classes ONLY since 15 September 2026. The front door printed the same four
     # rows above a link to this page; it now prints the link and one sentence, and the four
     # pinned cells exist once on the site.
+    # THE TABLE IS A SET, NOT A LIST, since 16 September 2026. docs/copy/recording-classes
+    # .json is the kit's file and keeps the kit's order (`RecordingClass.allCases`: a, b,
+    # bPlus, c); the page prints A, B+, B, C, because on this site Apple Watch comes right
+    # after Garmin wherever watches are listed. Both are right, and neither is the other's
+    # business — so what is pinned is that the four cells ARE the four rows, and that each
+    # name still carries its own line. A page that drops a class, invents a fifth or pairs
+    # the B+ name with the C sentence still fails.
+    line_of = {row["name"]: row["line"] for row in rows}
+    by_name = {row["name"]: row for row in rows}
     for page in ("watches/index.html",):
         names = marked(site.tree[page], "class-name")
         lines = marked(site.tree[page], "class-line")
-        for kind, nodes, key in (("name", names, "name"), ("line", lines, "line")):
+        for kind, nodes in (("name", names), ("line", lines)):
             if len(nodes) != len(rows):
                 report.fail("web/" + page, "recording-classes." + kind,
                             "%d cells marked data-copy=\"class-%s\", docs/copy has %d "
                             "classes" % (len(nodes), kind, len(rows)))
-                continue
-            for node, row in zip(nodes, rows):
-                got, want = text_of(node), row[key]
-                if got != want:
+        if len(names) == len(rows) and len(lines) == len(rows):
+            got_names = [text_of(node) for node in names]
+            if set(got_names) != set(line_of):
+                report.fail("web/" + page, "recording-classes.name",
+                            "the four cells are not the kit's four classes",
+                            "; ".join(sorted(set(got_names) ^ set(line_of))))
+            # The name cell and the line cell of one row are the i-th of each list, because
+            # a row prints its name before its line and the rows are read in page order.
+            for node, name in zip(lines, got_names):
+                want = line_of.get(name)
+                if want is not None and text_of(node) != want:
                     report.fail("web/%s:%d" % (page, node.line),
-                                "recording-classes.%s.%s" % (row["id"], kind),
-                                "the cell is not the kit's string", got)
-        report.ok("recording-classes → the four names and four lines in web/%s" % page)
+                                "recording-classes.%s.line" % by_name[name]["id"],
+                                "the cell is not the kit's string", text_of(node))
+        report.ok("recording-classes → the four names and four lines in web/%s, in the "
+                  "page's own order" % page)
 
     # The second /watches/ table ("What you ride with…") keeps its own shape and its own
     # columns; what it may not do is invent a class. Its Class cells — the ones the table

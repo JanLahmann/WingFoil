@@ -12,6 +12,16 @@
     "Budgets, the same ones HelpBudgetTests enforces: a summary, a step detail, a",
     "troubleshooting detail and a report detail are 30 words each; the framing is 45.",
     "",
+    "THE ORDER OF `routes` IS THE ORDER BOTH SURFACES PRINT, and it follows the site's one",
+    "rule for watches: Apple Watch comes right after Garmin. Garmin, the CleanJibe Apple",
+    "Watch app, Apple's Workout app, any .fit, Strava. The release hides the two Apple",
+    "routes, so an App Store build reads Garmin, .fit, Strava and the order still holds.",
+    "",
+    "`class` is a route's recording class, as an id of docs/copy/recording-classes.json:",
+    "a, bPlus, b, c. make_start.py reads that file for the name, so the pill on the web card",
+    "and the `classID` of the Swift twin say what the kit says. The two extras are notes",
+    "rather than routes and carry none.",
+    "",
     "`channels` lists the channels that HAVE the door a route describes (docs/channels.md).",
     "The two Apple routes are beta-only, so the App Store build never names them: it reaches",
     "them through the help topic's `related` topics instead.",
@@ -54,6 +64,7 @@
         "beta",
         "dev"
       ],
+      "class": "a",
       "summary": "Install it from Connect IQ, ride, save. Sessions sync through intervals.icu: Settings → intervals.icu, 4 steps, once.",
       "steps": [
         {
@@ -83,6 +94,68 @@
       ]
     },
     {
+      "id": "appleWatchApp",
+      "title": "The CleanJibe Apple Watch app",
+      "status": "Apple Watch · everything a Garmin gets",
+      "channels": [
+        "beta",
+        "dev"
+      ],
+      "class": "bPlus",
+      "summary": "Record on your Apple Watch. The session comes to the phone by itself, with pump strokes and takeoff attempts included.",
+      "steps": [
+        {
+          "title": "Put it on the watch",
+          "detail": "It comes with the CleanJibe beta. On the iPhone open Apple's **Watch** app, scroll to *Available apps*, and install **CleanJibe** if it is missing."
+        },
+        {
+          "title": "Record",
+          "detail": "Open CleanJibe on the watch, allow Health and Location if it asks, wait until NO GPS clears, press START. Then Stop, and Done."
+        },
+        {
+          "title": "Let it arrive",
+          "detail": "Open CleanJibe on the iPhone. The session comes across on its own while phone and watch are together. Give it a minute."
+        },
+        {
+          "title": "What you get",
+          "detail": "Speed off the watch's own receiver, so the records certify, and the 50 Hz wrist, so pump strokes and takeoff attempts are analysed."
+        }
+      ]
+    },
+    {
+      "id": "appleWorkoutApp",
+      "title": "Apple's own Workout app",
+      "status": "Apple Watch · nothing to install",
+      "channels": [
+        "beta",
+        "dev"
+      ],
+      "class": "b",
+      "summary": "No extra app on the watch: record a Surfing workout and import it from Apple Health.",
+      "steps": [
+        {
+          "title": "Start a Surfing workout",
+          "detail": "On the watch open **Workout** and pick **Surfing**. *Water Sports* works too. Apple Health has no wingfoil activity, so pick the closest one."
+        },
+        {
+          "title": "Ride, then end the workout",
+          "detail": "End it on the watch and let it save. The route is written to Health when the workout finishes, which can take a minute."
+        },
+        {
+          "title": "Import it on the iPhone",
+          "detail": "Import → **Apple Health**. Allow CleanJibe to read workouts and routes. Switch every one on, or there is nothing to read. Then pick yours."
+        },
+        {
+          "title": "Keep it automatic",
+          "detail": "Switch on *Import new Health workouts automatically* and the next session is waiting when you open the app."
+        },
+        {
+          "title": "What you get",
+          "detail": "Speed comes off the watch's own receiver, so the records certify. Nothing records your wrist, so there are no pump strokes or takeoff attempts."
+        }
+      ]
+    },
+    {
       "id": "fit",
       "title": "Any watch that writes a .fit",
       "status": "Polar, Suunto, COROS and everything else",
@@ -91,6 +164,7 @@
         "beta",
         "dev"
       ],
+      "class": "b",
       "summary": "Sync it through intervals.icu, or share the file into CleanJibe from Files, Mail, AirDrop or any share sheet.",
       "steps": [
         {
@@ -124,6 +198,7 @@
         "beta",
         "dev"
       ],
+      "class": "c",
       "summary": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Positions only, so speed records are uncertified.",
       "steps": [
         {
@@ -145,66 +220,6 @@
         {
           "title": "If connecting is refused",
           "detail": "Strava lets a new app connect a limited number of riders. That is nothing to do with your account. Menu → Support & ideas says so."
-        }
-      ]
-    },
-    {
-      "id": "appleWatchApp",
-      "title": "The CleanJibe Apple Watch app",
-      "status": "Apple Watch · everything a Garmin gets",
-      "channels": [
-        "beta",
-        "dev"
-      ],
-      "summary": "Record on your Apple Watch. The session comes to the phone by itself, with pump strokes and takeoff attempts included.",
-      "steps": [
-        {
-          "title": "Put it on the watch",
-          "detail": "It comes with the CleanJibe beta. On the iPhone open Apple's **Watch** app, scroll to *Available apps*, and install **CleanJibe** if it is missing."
-        },
-        {
-          "title": "Record",
-          "detail": "Open CleanJibe on the watch, allow Health and Location if it asks, wait until NO GPS clears, press START. Then Stop, and Done."
-        },
-        {
-          "title": "Let it arrive",
-          "detail": "Open CleanJibe on the iPhone. The session comes across on its own while phone and watch are together. Give it a minute."
-        },
-        {
-          "title": "What you get",
-          "detail": "Speed off the watch's own receiver, so the records certify, and the 50 Hz wrist, so pump strokes and takeoff attempts are analysed."
-        }
-      ]
-    },
-    {
-      "id": "appleWorkoutApp",
-      "title": "Apple's own Workout app",
-      "status": "Apple Watch · nothing to install",
-      "channels": [
-        "beta",
-        "dev"
-      ],
-      "summary": "No extra app on the watch: record a Surfing workout and import it from Apple Health.",
-      "steps": [
-        {
-          "title": "Start a Surfing workout",
-          "detail": "On the watch open **Workout** and pick **Surfing**. *Water Sports* works too. Apple Health has no wingfoil activity, so pick the closest one."
-        },
-        {
-          "title": "Ride, then end the workout",
-          "detail": "End it on the watch and let it save. The route is written to Health when the workout finishes, which can take a minute."
-        },
-        {
-          "title": "Import it on the iPhone",
-          "detail": "Import → **Apple Health**. Allow CleanJibe to read workouts and routes. Switch every one on, or there is nothing to read. Then pick yours."
-        },
-        {
-          "title": "Keep it automatic",
-          "detail": "Switch on *Import new Health workouts automatically* and the next session is waiting when you open the app."
-        },
-        {
-          "title": "What you get",
-          "detail": "Speed comes off the watch's own receiver, so the records certify. Nothing records your wrist, so there are no pump strokes or takeoff attempts."
         }
       ]
     }

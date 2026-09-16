@@ -104,8 +104,8 @@
     <ul>
       <li><a href="#classes">What you need</a></li>
       <li><a href="#garmin">Garmin</a></li>
-      <li><a href="#other">Every other watch</a></li>
       <li><a href="#apple">Apple Watch</a></li>
+      <li><a href="#other">Every other watch</a></li>
       <li><a href="#none">No watch at all</a></li>
     </ul>
     <label class="jump">
@@ -114,8 +114,8 @@
         <option value="">On this page&hellip;</option>
         <option value="#classes">What you need</option>
         <option value="#garmin">Garmin</option>
-        <option value="#other">Every other watch</option>
         <option value="#apple">Apple Watch</option>
+        <option value="#other">Every other watch</option>
         <option value="#none">No watch at all</option>
       </select>
     </label>
@@ -159,6 +159,14 @@
          which is the one sentence the front door now carries, once, above the link to
          here. If the heading and its lede say the same thing, the lede goes. -->
 
+    <!-- THE ORDER IS THE SITE'S ONE RULE FOR WATCHES: Apple Watch comes right after Garmin,
+         here and on /start/ and in docs/channels.md. So A, B+, B, C rather than the
+         alphabet. docs/copy/recording-classes.json keeps the kit's order and is not
+         reordered for a table; web/tools/verify_copy.py matches the four cells as a set.
+
+         The last column is the door. Each class is reached by one route, and the route has
+         its steps on /start/ — so the table answers "what will my file carry" and then says
+         where to go and do it, rather than making a reader find the same watch twice. -->
     <div class="table-scroll">
       <table class="stack-sm">
         <thead>
@@ -166,6 +174,7 @@
             <th class="l">Class</th>
             <th class="l">You record with</th>
             <th class="l">What you get</th>
+            <th class="l">Route</th>
           </tr>
         </thead>
         <tbody>
@@ -173,6 +182,13 @@
             <td class="l stack-lead" data-copy="class-name">Class A · Garmin watch app</td>
             <td class="l" data-th="You record with">The CleanJibe watch app on a Garmin</td>
             <td class="l" data-th="What you get" data-copy="class-line">Everything. Foil time, flights, every turn verdict and clean jibe, certified speed records, the wind axis. Pump strokes and takeoff attempts too.</td>
+            <td class="l" data-th="Route"><a href="../start/#guide-garmin">Garmin</a></td>
+          </tr>
+          <tr>
+            <td class="l stack-lead" data-copy="class-name beta-door">Class B+ · Apple Watch app<span class="tag beta" data-copy="aside">beta</span></td>
+            <td class="l" data-th="You record with"><span data-copy="beta-door">The CleanJibe Apple Watch app</span></td>
+            <td class="l" data-th="What you get" data-copy="class-line">Everything class B gets, plus pump strokes and takeoff attempts. The watch app records the wrist at 50 Hz. The phone analyses it.</td>
+            <td class="l" data-th="Route"><span data-copy="beta-door"><a href="../start/#guide-appleWatchApp">Apple Watch app</a></span></td>
           </tr>
           <tr>
             <td class="l stack-lead" data-copy="class-name">Class B · any speed-certified file</td>
@@ -180,12 +196,7 @@
                 Garmin&rsquo;s own Windsurf profile, or another Connect IQ app</td>
             <td class="l" data-th="What you get" data-copy="class-line">Everything except pump strokes and takeoff attempts, which need a wrist accelerometer nothing
                 else records. Speed records certify.</td>
-          </tr>
-          <tr>
-            <td class="l stack-lead" data-copy="class-name beta-door">Class B+ · Apple Watch app<span class="tag beta" data-copy="aside">beta</span></td>
-            <td class="l" data-th="You record with"><span data-copy="beta-door">The CleanJibe Apple Watch app: class&nbsp;B speed,
-                plus the 50&nbsp;Hz wrist accelerometer</span></td>
-            <td class="l" data-th="What you get" data-copy="class-line">Everything class B gets, plus pump strokes and takeoff attempts. The watch app records the wrist at 50 Hz. The phone analyses it.</td>
+            <td class="l" data-th="Route"><a href="../start/#guide-fit">Any .fit</a></td>
           </tr>
           <tr>
             <td class="l stack-lead" data-copy="class-name">Class C · positions only</td>
@@ -194,6 +205,7 @@
             <td class="l" data-th="What you get" data-copy="class-line">Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are
                 estimated from positions and marked uncertified, and there are no pump strokes or takeoff
                 attempts.</td>
+            <td class="l" data-th="Route"><a href="../start/#guide-strava">Strava</a></td>
           </tr>
         </tbody>
       </table>
@@ -226,81 +238,83 @@
           <tr>
             <th class="l">Family</th>
             <th class="l">Models</th>
-            <th class="l">Ridden on a real watch</th>
+            <th class="l">Tested on the water</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td class="l stack-lead">fenix 8</td>
             <td class="l" data-th="Models">43&nbsp;mm · 47&nbsp;mm · Solar 47&nbsp;mm · Solar 51&nbsp;mm · Pro 47&nbsp;mm</td>
-            <td class="l" data-th="Ridden on a real watch">Yes: every release is tested on one</td>
+            <td class="l" data-th="Tested on the water">Yes, by us</td>
           </tr>
           <tr>
             <td class="l stack-lead">fenix 7</td>
             <td class="l" data-th="Models">7 · 7S · 7X · 7 Pro · 7S Pro · 7X Pro. Also 7 Pro and 7X Pro without WiFi. The same product ids cover Enduro 2, tactix 7 and quatix 7X Solar</td>
-            <td class="l" data-th="Ridden on a real watch">Not by us: in the open beta since 0.9.4</td>
+            <td class="l" data-th="Tested on the water">Not yet</td>
           </tr>
           <tr>
             <td class="l stack-lead">fenix 5 Plus</td>
             <td class="l" data-th="Models">fenix 5 Plus · 5S Plus · 5X Plus. Connect IQ 3.3.3 from firmware 19.10, 1.3&nbsp;MB of app memory, a 240&nbsp;px MIP screen</td>
-            <td class="l" data-th="Ridden on a real watch"><strong>No</strong>: new in 0.9.11, simulator only</td>
+            <td class="l" data-th="Tested on the water">Not yet</td>
           </tr>
           <tr>
             <td class="l stack-lead">epix 2</td>
             <td class="l" data-th="Models">epix 2 · epix 2 Pro 42 / 47 / 51&nbsp;mm. The 51&nbsp;mm id also covers tactix 7 AMOLED and D2 Mach 1 Pro. The epix 2 id covers quatix 7 Sapphire</td>
-            <td class="l" data-th="Ridden on a real watch">Not by us: in the open beta since 0.9.4</td>
+            <td class="l" data-th="Tested on the water">Not yet</td>
           </tr>
           <tr>
             <td class="l stack-lead">Forerunner</td>
             <td class="l" data-th="Models">255 · 265 · 570 in 42 and 47&nbsp;mm · 955 · 965 · 970</td>
-            <td class="l" data-th="Ridden on a real watch">Not by us: in the open beta since 0.9.4</td>
+            <td class="l" data-th="Tested on the water">Not yet</td>
           </tr>
           <tr>
             <td class="l stack-lead">MARQ 2</td>
             <td class="l" data-th="Models">MARQ 2 · MARQ 2 Aviator</td>
-            <td class="l" data-th="Ridden on a real watch">Not by us: in the open beta since 0.9.4</td>
+            <td class="l" data-th="Tested on the water">Not yet</td>
           </tr>
           <tr>
             <td class="l stack-lead">Enduro</td>
             <td class="l" data-th="Models">Enduro 3. Enduro 2 comes in under the fenix 7X id</td>
-            <td class="l" data-th="Ridden on a real watch">Not by us: in the open beta since 0.9.4</td>
+            <td class="l" data-th="Tested on the water">Not yet</td>
           </tr>
           <tr>
             <td class="l stack-lead">D2</td>
             <td class="l" data-th="Models">D2 Mach 1 · D2 Mach 2</td>
-            <td class="l" data-th="Ridden on a real watch">Not by us: in the open beta since 0.9.4</td>
+            <td class="l" data-th="Tested on the water">Not yet</td>
           </tr>
           <tr>
             <td class="l stack-lead">Descent</td>
             <td class="l" data-th="Models">Descent Mk3 43&nbsp;mm</td>
-            <td class="l" data-th="Ridden on a real watch">Not by us: in the open beta since 0.9.4</td>
+            <td class="l" data-th="Tested on the water">Not yet</td>
           </tr>
           <tr>
             <td class="l stack-lead">Venu</td>
             <td class="l" data-th="Models">Venu 2 · 2S · 2 Plus · 3 · 3S</td>
-            <td class="l" data-th="Ridden on a real watch"><strong>No</strong>: new in 0.9.10, simulator only</td>
+            <td class="l" data-th="Tested on the water">Not yet</td>
           </tr>
           <tr>
             <td class="l stack-lead">vívoactive</td>
             <td class="l" data-th="Models">vívoactive 5 · vívoactive 6</td>
-            <td class="l" data-th="Ridden on a real watch"><strong>No</strong>: new in 0.9.10, simulator only</td>
+            <td class="l" data-th="Tested on the water">Not yet</td>
           </tr>
           <tr>
             <td class="l stack-lead">Instinct</td>
             <td class="l" data-th="Models">Instinct 3 AMOLED 45&nbsp;mm · 50&nbsp;mm</td>
-            <td class="l" data-th="Ridden on a real watch"><strong>No</strong>: new in 0.9.10, simulator only</td>
+            <td class="l" data-th="Tested on the water">Not yet</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <!-- The third column already prints "No — new in 0.9.10, simulator only" on all four
-         rows. Seventy-five words apologising for it underneath was the page re-arguing a
-         verdict it had just delivered plainly. What is left is the ask, which the table
-         cannot make. -->
+    <!-- THE COLUMN LOST ITS VERSION NUMBERS on 16 September 2026 (Jan). "Not by us: in the
+         open beta since 0.9.4" dated itself on every release and answered a question nobody
+         asked; what a reader wants to know is whether anybody has ridden this watch. Three
+         values, no numbers: "Yes, by us", "By beta riders" and "Not yet" — defined in
+         web/README.md, and the third is the honest answer everywhere but the fenix 8 today.
+         The version history stays in garmin/store, where a release note belongs. -->
     <p class="note">
-      <strong>Ride one of the four?</strong> That is the most useful report this beta can
-      get. <a href="../invite/#feedback">Where to send it</a>.
+      <strong>Ride a watch that says Not yet?</strong> That is the most useful report this
+      beta can get. <a href="../invite/#feedback">Where to send it</a>.
     </p>
 
     <!-- Behind a fold: its readers are a minority looking for one model, and they are
@@ -319,6 +333,46 @@
         for a decision.
       </p>
     </details>
+  </section>
+
+  <!-- ------------------------------------------------------------- apple watch -->
+  <!-- THE HOME OF THE TWO APPLE ROUTES, and the only place on this page that explains
+       either of them (Jan, 16 September 2026). The class table above prints the B+ row as
+       the kit words it and nothing more; the brand table names no Apple Watch at all. One
+       line per route here, and the steps are /start/'s, which is the one place they are
+       written. Ours is first, the way Apple Watch comes right after Garmin everywhere. -->
+  <section class="home-section" id="apple">
+    <h2>Apple Watch</h2>
+    <p class="section-lede">
+      Two routes, and the first one is ours. Both need the iPhone app. Neither needs a
+      Garmin anywhere.
+    </p>
+    <div class="claims">
+      <article class="panel claim">
+        <h3>The CleanJibe watch app<span class="tag beta">beta</span></h3>
+        <p>
+          It comes with the TestFlight install. It records straight to the phone. No Health
+          round trip, no file to move. It also records the
+          <strong>50&nbsp;Hz wrist accelerometer</strong>, so you get pump strokes and
+          takeoff attempts. That is <a href="#classes">class B+</a>.
+        </p>
+        <p class="piece-foot">
+          <a class="btn ghost" href="../start/#guide-appleWatchApp">The route, step by step</a>
+        </p>
+      </article>
+      <article class="panel claim">
+        <h3>Apple's own Workout app<span class="tag beta">beta</span></h3>
+        <p>
+          Record a <strong>Surfing</strong> workout the way you already do. Then use
+          Import &rarr; <strong>Apple Health</strong>. The speed is the watch&rsquo;s own, so
+          records from it certify. Nothing records your wrist. That is
+          <a href="#classes">class B</a>.
+        </p>
+        <p class="piece-foot">
+          <a class="btn ghost" href="../start/#guide-appleWorkoutApp">The route, step by step</a>
+        </p>
+      </article>
+    </div>
   </section>
 
   <!-- ------------------------------------------------------------------ other -->
@@ -368,20 +422,6 @@
             <td class="l" data-th="Pump &amp; takeoff effort">No</td>
           </tr>
           <tr>
-            <td class="l stack-lead">Apple Watch, Apple's Workout app</td>
-            <td class="l" data-th="Class">Class B</td>
-            <td class="l" data-th="How it gets in">Import &rarr; Apple Health<span class="tag beta">beta</span></td>
-            <td class="l" data-th="Speed records">Certified</td>
-            <td class="l" data-th="Pump &amp; takeoff effort">No</td>
-          </tr>
-          <tr>
-            <td class="l stack-lead">Apple Watch + the CleanJibe watch app<span class="tag beta">beta</span></td>
-            <td class="l" data-th="Class">Class B+</td>
-            <td class="l" data-th="How it gets in">Straight to the phone</td>
-            <td class="l" data-th="Speed records">Certified</td>
-            <td class="l" data-th="Pump &amp; takeoff effort">Yes</td>
-          </tr>
-          <tr>
             <td class="l stack-lead">Polar · Suunto · COROS</td>
             <td class="l" data-th="Class">Class B with a FIT, Class C with a GPX</td>
             <td class="l" data-th="How it gets in">intervals.icu, or the iOS share sheet from the vendor's app</td>
@@ -406,42 +446,13 @@
         </tbody>
       </table>
     </div>
-  </section>
-
-  <!-- ------------------------------------------------------------- apple watch -->
-  <section class="home-section" id="apple">
-    <h2>Apple Watch</h2>
-    <p class="section-lede">
-      Two routes, and the second one is ours. Both need the iPhone app. Neither needs a
-      Garmin anywhere.
+    <!-- The two Apple rows came out on 16 September 2026: an Apple Watch was in this table,
+         in the class table's B+ row and in its own section below, which is three homes for
+         one watch. The section below is the home. -->
+    <p class="note">
+      <strong>An Apple Watch is not in this table.</strong> It has
+      <a href="#apple">two routes of its own</a>, in the section above.
     </p>
-    <div class="claims">
-      <article class="panel claim">
-        <h3>Apple's own Workout app<span class="tag beta">beta</span></h3>
-        <p>
-          Record a <strong>Surfing</strong> or <em>Water Sports</em> workout the way you
-          already do. Then in CleanJibe use Import &rarr; <strong>Apple Health</strong>. It
-          reads the route and the heart rate, nothing else. The speed is the watch's own,
-          so records from it certify. Switch on the automatic pickup and later workouts
-          arrive by themselves.
-        </p>
-      </article>
-      <article class="panel claim">
-        <h3>The CleanJibe watch app<span class="tag beta">beta</span></h3>
-        <p>
-          CleanJibe&rsquo;s own Apple Watch app comes with the TestFlight install. There is
-          nothing else to download. It records straight to the phone. No Health round trip,
-          no file to move. The speed is the watch&rsquo;s own, so its records certify. It
-          also records the <strong>50&nbsp;Hz wrist accelerometer</strong>. That makes it the
-          one Apple Watch route with pump strokes and takeoff attempts. See
-          <a href="#classes">b&nbsp;+&nbsp;wrist</a>.
-        </p>
-      </article>
-      <!-- The "Which to use" card came out on 15 Sep 2026: the two cards above already say
-           which route gives pump strokes, and the ask — ride both and say which you would
-           rather keep — belongs in /start/'s report checklist, where a tester is standing
-           with a session in front of him. -->
-    </div>
   </section>
 
   <!-- --------------------------------------------------------------- no watch -->

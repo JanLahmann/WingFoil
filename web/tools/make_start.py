@@ -41,6 +41,9 @@ WEB = Path(__file__).resolve().parents[1]
 REPO = WEB.parent
 
 SOURCE = REPO / "docs" / "guide" / "getting-started.json"
+#: The four recording classes, kit-owned. Read here so that the pill a route card prints
+#: says the kit's own name for the class rather than a fifth spelling of it.
+CLASSES = REPO / "docs" / "copy" / "recording-classes.json"
 SWIFT_OUT = (REPO / "ios" / "WingFoilKit" / "Sources" / "WingFoilKit" / "Help"
              / "GettingStartedGuide.swift")
 PAGE = WEB / "start" / "index.html"
@@ -54,8 +57,11 @@ SUMMARY_BUDGET = 30
 STEP_BUDGET = 30
 FRAMING_BUDGET = 45
 
-# A · B · C … in reading order, the way the page has always lettered its routes.
-LETTERS = "ABCDEFGH"
+# THE ROUTES LOST THEIR LETTERS on 16 September 2026. "Route A · Garmin with the CleanJibe
+# watch app" lettered a thing a rider already holds, and the letter it printed was the card's
+# position rather than the class the recording gets — two ladders, one alphabet, and the
+# release channel hides two cards so the letters moved about. A route is named by what you
+# hold. The class is a pill, from `class` in the source and named by docs/copy.
 
 
 # --------------------------------------------------------------------------- budgets
@@ -71,8 +77,25 @@ def budget(problems: list[str], where: str, text: str, limit: int) -> None:
         problems.append(f"{where}: {n} words, budget {limit} — {text[:60]}…")
 
 
+def class_names() -> dict[str, str]:
+    """``{"bPlus": "Class B+"}`` — the kit's own name for each class, cut at the ``·``.
+
+    ``docs/copy/recording-classes.json`` writes every name as *the letter and the thing*
+    ("Class B+ · Apple Watch app"). A route card already says the thing, in its own title,
+    so the pill prints the letter half and links to the table that carries the rest.
+    """
+    rows = json.loads(CLASSES.read_text(encoding="utf-8"))["classes"]
+    return {row["id"]: row["name"].split(" · ")[0] for row in rows}
+
+
 def check_budgets(doc: dict) -> list[str]:
     problems: list[str] = []
+    known = class_names()
+    for route in doc["routes"]:
+        if route.get("class") not in known:
+            problems.append("%s.class: %r is not one of %s"
+                            % (route["id"], route.get("class"),
+                               ", ".join(sorted(known))))
     budget(problems, "framing", doc["framing"], FRAMING_BUDGET)
     for entry in doc["routes"] + doc["extras"]:
         where = entry["id"]
@@ -157,6 +180,11 @@ def swift_entry(entry: dict, indent: int) -> str:
         f'{pad}    id: "{entry["id"]}",',
         f"{pad}    title: {swift_literal(entry['title'], indent + 11, indent + 8)},",
         f"{pad}    channel: .{swift_channel(entry['channels'])},",
+    ]
+    # The two closing notes are not routes and carry no class, so they take the default.
+    if entry.get("class"):
+        lines.append(f'{pad}    classID: "{entry["class"]}",')
+    lines += [
         f"{pad}    summary: {swift_literal(entry['summary'], indent + 13, indent + 8)},",
         f"{pad}    steps: [",
         swift_steps(entry["steps"], indent + 8),
@@ -199,16 +227,26 @@ public struct GettingStartedRoute: Sendable, Equatable, Identifiable {
     /// `HelpTopic.channel` means it: the two Apple routes are `.beta`, so an App Store
     /// build never names them and reaches them through the topic's `related` instead.
     public let channel: HelpChannel
+    /// **The recording class this route yields**, as a `RecordingClass` id: `a`, `bPlus`,
+    /// `b` or `c` (docs/copy/recording-classes.json). Empty on the two closing notes,
+    /// which are not routes.
+    ///
+    /// The routes lost their letters on 16 September 2026: a route is named by what the
+    /// rider holds, and what he gets back is this, which is a different ladder and has its
+    /// own names. cleanjibe.org/start prints it as a pill on the card, linking to the class
+    /// table; the app does not render it yet.
+    public let classID: String
     /// The one or two sentences the app shows under the route's title.
     public let summary: String
     /// The numbered steps the web page shows under that summary.
     public let steps: [GettingStartedStep]
 
-    public init(id: String, title: String, channel: HelpChannel,
+    public init(id: String, title: String, channel: HelpChannel, classID: String = "",
                 summary: String, steps: [GettingStartedStep]) {
         self.id = id
         self.title = title
         self.channel = channel
+        self.classID = classID
         self.summary = summary
         self.steps = steps
     }
@@ -304,8 +342,8 @@ def html_text(text: str) -> str:
     return out
 
 
-def html_card(entry: dict, letter: str | None) -> list[str]:
-    """One card: the title, the status, and the summary as the handle on a disclosure.
+def html_card(entry: dict, names: dict[str, str], *, open_: bool = False) -> list[str]:
+    """One card: the title, the status, the class pill, and the fold with the steps in it.
 
     THE STEPS ARE BEHIND A FOLD, since 15 September 2026. A rider takes exactly one route;
     the other four are somebody else's instructions, and flat on the page they made /start/
@@ -314,11 +352,15 @@ def html_card(entry: dict, letter: str | None) -> list[str]:
     is what stays visible: `<summary>` carries it, and the `.what` class it always wore.
     Nothing in docs/guide/getting-started.json changes for this, and the app's Help topic,
     which shows title and summary and no steps at all, is untouched.
+
+    THE FOLD SAYS SO OUT LOUD, since 16 September 2026 (Jan): a summary line with a 7 px
+    triangle beside it reads as a sentence, not as a control, and a reader who does not
+    know there are steps under it does not look for them. So the handle carries the summary
+    AND a control line — *Show the 6 steps*, with a chevron that turns — and the first card
+    is open, which teaches the pattern once without opening five sets of instructions.
     """
     beta = "release" not in entry["channels"]
     head = html_text(entry["title"])
-    if letter:
-        head = f"Route {letter} &middot; {head}"
     if beta:
         head += '<span class="tag beta">beta</span>'
     lines = [
@@ -327,8 +369,22 @@ def html_card(entry: dict, letter: str | None) -> list[str]:
         f"        <h3>{head}</h3>",
         f'        <span class="status">{html_text(entry["status"])}</span>',
         "      </div>",
-        "      <details>",
-        f'        <summary class="what">{html_text(entry["summary"])}</summary>',
+    ]
+    # What you get back, in the kit's own name for it, linking to the table that explains
+    # the four. The two closing notes are not routes and have no class.
+    short = names.get(entry.get("class", ""))
+    if short:
+        lines += [
+            '      <p class="piece-class"><a class="tag class-pill" '
+            f'href="../watches/#classes">You get {short[0].lower()}{short[1:]}</a></p>',
+        ]
+    steps = len(entry["steps"])
+    lines += [
+        "      <details open>" if open_ else "      <details>",
+        '        <summary class="what">',
+        f'          <span class="what-line">{html_text(entry["summary"])}</span>',
+        f'          <span class="what-more">Show the {steps} steps</span>',
+        "        </summary>",
         '        <ol class="steps-flow">',
     ]
     for step in entry["steps"]:
@@ -376,10 +432,11 @@ def render_html(doc: dict) -> str:
         "    </p>",
         "",
     ]
-    for letter, route in zip(LETTERS, doc["routes"]):
-        lines += html_card(route, letter)
+    names = class_names()
+    for index, route in enumerate(doc["routes"]):
+        lines += html_card(route, names, open_=index == 0)
     for extra in doc["extras"]:
-        lines += html_card(extra, None)
+        lines += html_card(extra, names)
     lines += ["  </section>", ""]
 
     # Seven answers to seven things that go wrong, behind one fold. A reader who is stuck
