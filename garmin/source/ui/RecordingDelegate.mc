@@ -93,11 +93,19 @@ class StopMenuDelegate extends WatchUi.Menu2InputDelegate {
             WatchUi.switchToView(new SummaryView(), new SummaryDelegate(),
                 WatchUi.SLIDE_IMMEDIATE);
         } else if (id == :discard) {
-            // An hour of water time is one mis-scroll from gone (audit, 15 Sep 2026): the
-            // firmware's own yes/no dialog, and the session menu stays under it until the
-            // answer is yes.
-            WatchUi.pushView(new WatchUi.Confirmation("Discard session?"),
-                new DiscardConfirmDelegate(), WatchUi.SLIDE_UP);
+            // An hour of water time is one mis-scroll from gone (audit, 15 Sep 2026), so
+            // Discard asks once. It asked with WatchUi.Confirmation in 0.9.11 — and on a
+            // fenix 5 Plus (Connect IQ 3.3) the answer left the rider stuck in the app
+            // until a restart (report, 16 Sep 2026): the firmware pops the confirmation
+            // AFTER onResponse, so our own pop took the confirmation, switchToView replaced
+            // the menu with the start page, and the firmware's pop then removed the start
+            // page and left a recording view over a session that no longer existed. A
+            // second Menu2 has no such hidden pop — it is the shape the wind menu already
+            // uses (WindMenuDelegate(2)), and that one works on every glass we ship.
+            var ask = new WatchUi.Menu2({:title => "Discard session?"});
+            ask.addItem(new WatchUi.MenuItem("Keep", null, :keep, null));
+            ask.addItem(new WatchUi.MenuItem("Discard", null, :discard, null));
+            WatchUi.pushView(ask, new DiscardMenuDelegate(), WatchUi.SLIDE_UP);
         } else if (id == :wind) {
             // two pops on the way out: the wind menu, then this session menu, so a wind pick
             // puts the rider straight back on the water rather than one menu up from it
@@ -156,22 +164,28 @@ class WindMenuDelegate extends WatchUi.Menu2InputDelegate {
     }
 }
 
-// The Discard confirmation: yes ends the session and returns to the start page (the firmware
-// pops the dialog itself; the session menu is popped here); anything else leaves the rider in
-// the session menu, exactly where he was.
-class DiscardConfirmDelegate extends WatchUi.ConfirmationDelegate {
+// The Discard question, a menu of two: Discard ends the session and returns to the start
+// page (its own pop, then the session menu's, then the switch — the wind menu's shape);
+// Keep or BACK leaves the rider in the session menu, exactly where he was.
+class DiscardMenuDelegate extends WatchUi.Menu2InputDelegate {
 
     function initialize() {
-        ConfirmationDelegate.initialize();
+        Menu2InputDelegate.initialize();
     }
 
-    function onResponse(response as WatchUi.Confirm) as Boolean {
-        if (response == WatchUi.CONFIRM_YES) {
+    function onSelect(item as WatchUi.MenuItem) as Void {
+        if (item.getId() == :discard) {
             getApp().controller.finishDiscard();
+            WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
             WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
             WatchUi.switchToView(new StartView(), new StartDelegate(),
                 WatchUi.SLIDE_IMMEDIATE);
+        } else {
+            WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
         }
-        return true;
+    }
+
+    function onBack() as Void {
+        WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
     }
 }
