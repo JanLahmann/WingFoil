@@ -406,7 +406,7 @@ function tallyRowShedsContentNotSize(logger as Test.Logger) as Boolean {
     var cy = screenPx() / 2;
     var pageR = RecordingView.fitRadius(dc, false, false);
     var hC = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
-    var hN = RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
+    var hN = RecordingView.mainGiantBand(dc, PageModel.M_BEST_10S);
     var hD = RecordingView.stripBandH(dc);
     var hO = dc.getFontHeight(Graphics.FONT_LARGE);
     var hK = dc.getFontHeight(Graphics.FONT_MEDIUM);
@@ -3003,7 +3003,9 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     // 0.9.2: the clock's band is FONT_NUMBER_MILD (the rider asked for a bigger time of day)
     // and the giant's band is its INK height, which is where the 42 px came from.
     var hC = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
-    var hN = RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
+    // 0.9.13: the giant's band is its ink OR its two-line suffix block, whichever is taller
+    // (mainGiantBand) — the default slot's here, each slot's own in the loop below
+    var hN = RecordingView.mainGiantBand(dc, PageModel.M_BEST_10S);
     var hD = RecordingView.stripBandH(dc);
     var hO = dc.getFontHeight(Graphics.FONT_LARGE);
     var hK = dc.getFontHeight(Graphics.FONT_MEDIUM);
@@ -3033,8 +3035,12 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
     var inkC = RecordingView.inkH(dc, Graphics.FONT_NUMBER_MILD);
     var tops = ["23:59", PAUSED_TEXT];
     for (var i = 0; i < tops.size(); i++) {
-        var f = RecordingView.fitGiant(dc, tops[i],
-            3, RecordingView.rowBudget(radius, y0 - cy, inkC));
+        var budget0 = RecordingView.rowBudget(radius, y0 - cy, inkC);
+        // 0.9.13: the WORD never walks the number ladder (no letters there — the fenix 5
+        // Plus family drew six boxes), and it starts at the text rung whose ink fits hC
+        var f = i == 0 ? RecordingView.fitGiant(dc, tops[i], 3, budget0)
+            : RecordingView.fitFont(dc, TEXT_FONTS, RecordingView.textFontFrom(dc, hC),
+                tops[i], budget0);
         var r = cornerRadius(dc.getTextWidthInPixels(tops[i], f),
             RecordingView.inkH(dc, f), y0, cy);
         Test.assertMessage(r <= limit,
@@ -3066,24 +3072,34 @@ function mainPageFitsRoundDisplay(logger as Test.Logger) as Boolean {
             || m == PageModel.M_BEST_10S ? "km/h" : PageModel.unitOf(m);
         var cap = PageModel.caption(m);
         var sufW = RecordingView.giantSuffixWidth(dc, unit, cap);
-        var budget = RecordingView.rowBudget(radius, y1 - cy,
+        var hNm = RecordingView.mainGiantBand(dc, m);
+        var y1m = RecordingView.mainRowY(cy, hC, hNm, hD, hO, hK, 1);
+        var budget = RecordingView.rowBudget(radius, y1m - cy,
             RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM)) - sufW;
         var gf = RecordingView.fitGiant(dc, v, 2, budget);
         var w = dc.getTextWidthInPixels(v, gf) + sufW;
         if (budget < narrowest) { narrowest = budget; }
-        var r = cornerRadius(w, RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM), y1, cy);
+        var r = cornerRadius(w, RecordingView.inkH(dc, Graphics.FONT_NUMBER_MEDIUM), y1m, cy);
         Test.assertMessage(r <= limit, "main giant m" + m.toString() + " r="
             + r.format("%.0f") + " > " + limit);
         // a giant that has fallen to a label font is not a giant
         Test.assertMessage(dc.getFontHeight(gf) >= dc.getFontHeight(
             RecordingView.numberLadderIsSmall(dc) ? Graphics.FONT_NUMBER_MILD : Graphics.FONT_LARGE),
             "main giant m" + m.toString() + " fell to a label font");
-        // the suffix must sit inside the giant's own band, not spill into the strip below it
-        var sy = RecordingView.suffixLineY(dc, y1, gf, 1, 2);
-        Test.assertMessage(sy + dc.getFontHeight(Graphics.FONT_XTINY) / 2 <= y1 + hN / 2,
+        // the suffix must sit inside the giant's own band — neither into the strip below it
+        // nor (0.9.13, fenix 5 Plus) up into the clock row above it
+        var lines = (unit.equals("") ? 0 : 1) + (cap.equals("") ? 0 : 1);
+        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+        var sy = RecordingView.suffixLineY(dc, y1m, gf, 1, lines);
+        Test.assertMessage(sy + hT / 2 <= y1m + hNm / 2,
             "main giant caption m" + m.toString() + " spills out of the giant's band");
-        Test.assertMessage(RecordingView.suffixLineY(dc, y1, gf, 0, 2) < sy,
-            "the unit line is not above the caption line");
+        var uy = RecordingView.suffixLineY(dc, y1m, gf, 0, lines);
+        Test.assertMessage(uy - hT / 2 >= y1m - hNm / 2,
+            "main giant unit m" + m.toString() + " reaches up into the clock row: "
+                + (uy - hT / 2).toString() + " < " + (y1m - hNm / 2).toString());
+        if (lines == 2) {
+            Test.assertMessage(uy < sy, "the unit line is not above the caption line");
+        }
     }
     // the DEFAULT giant must stay in the NUMBER ladder: it is the page's hero, and stepping
     // out of it would mean the inline suffix cost more than the unit row it replaced
@@ -3268,17 +3284,30 @@ function summaryPagesFitRoundDisplay(logger as Test.Logger) as Boolean {
     Test.assertMessage(SummaryView.savedY(dc) + dc.getFontHeight(Graphics.FONT_XTINY) / 2
         < cy - dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT) / 2,
         "SAVED pill reaches the verdict giant");
+    // 0.9.13: ...and its cap line, which on the fenix 5 Plus family is 30 px higher than the
+    // yardstick above, where SAVED printed over the 56%
+    Test.assertMessage(SummaryView.savedY(dc) + dc.getFontHeight(Graphics.FONT_XTINY) / 2
+        < SummaryView.verdictDigitTop(dc),
+        "SAVED pill reaches the verdict digits: " + SummaryView.savedY(dc).toString()
+            + " vs cap line " + SummaryView.verdictDigitTop(dc).toString());
+    Test.assertMessage(SummaryView.verdictDigitTop(dc)
+        <= cy - dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT) / 2 + hN,
+        "the verdict cap line model is off the giant");
     // 0.9.5: the pill is a LOCKUP — the brand mark, a gap, the word — centred where the word
     // alone used to be. Both halves have to clear the arc (the mark is the taller box, the
     // word the further out, and which corner is binding changes with the glass), and the
     // mark, being the tallest thing on the top arc, has to stay clear of the giant.
-    Test.assertMessage(SummaryView.lockupFits(dc, Brand.badgeW(), Brand.badgeH(), savedW),
+    // ...where the arc has room for it. On the fenix 5 Plus family the eyebrow sits 20 px
+    // higher than elsewhere (savedY) and the lockup no longer fits the chord there, so the
+    // word rides alone — the pre-0.9.5 screen, not a broken one. Where it fits it must fit.
+    var lockup = SummaryView.lockupFits(dc, Brand.badgeW(), Brand.badgeH(), savedW);
+    Test.assertMessage(lockup || RecordingView.numberLadderIsSmall(dc),
         "the SAVED lockup (" + Brand.badgeW().toString() + "+"
             + SummaryView.savedGap(dc).toString() + "+" + savedW.toString()
             + ") does not fit the verdict page's top arc");
     // the badge is the taller half of the pair, so it is the half that has to clear the number
-    Test.assertMessage(SummaryView.savedY(dc) + Brand.badgeH() / 2
-        < cy - dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT) / 2,
+    Test.assertMessage(!lockup || SummaryView.savedY(dc) + Brand.badgeH() / 2
+        < SummaryView.verdictDigitTop(dc),
         "the brand badge reaches the verdict giant");
     Test.assertMessage(SummaryView.savedY(dc) - Brand.badgeH() / 2 >= 0,
         "the SAVED lockup runs off the top of the glass");
@@ -4220,3 +4249,66 @@ function strangersWordsFitOrFallBack(logger as Logger) as Boolean {
     return true;
 }
 
+
+// ---- 0.9.13: measured ink, and no word on the number ladder ----
+//
+// Leo's fenix 5X Plus (17 Sep 2026): the clock sat on the giant's unit, "best 2s" on its
+// record, SAVED on the verdict, and PAUSED was six empty boxes. One cause: every band was
+// stacked on "ink = 3/4 of the line", which holds where a number line carries leading and
+// not on the fenix 5 Plus family's Chronos fonts (ascent = line). The firmware's ascent is
+// the yardstick now, floored at the old 3/4 so no other glass moves.
+(:test)
+function inkNeverUnderTheAscent(logger as Test.Logger) as Boolean {
+    var dc = testDc();
+    var fonts = [Graphics.FONT_NUMBER_THAI_HOT, Graphics.FONT_NUMBER_HOT,
+        Graphics.FONT_NUMBER_MEDIUM, Graphics.FONT_NUMBER_MILD, Graphics.FONT_LARGE,
+        Graphics.FONT_MEDIUM, Graphics.FONT_SMALL, Graphics.FONT_TINY, Graphics.FONT_XTINY];
+    for (var i = 0; i < fonts.size(); i++) {
+        var f = fonts[i];
+        var ink = RecordingView.inkH(dc, f);
+        if (RecordingView.isNumberFont(f)) {
+            Test.assertMessage(ink >= Graphics.getFontAscent(f),
+                "font " + i.toString() + " ink " + ink.toString() + " under its ascent "
+                    + Graphics.getFontAscent(f).toString());
+        } else {
+            // a text row keeps the 3/4 rule: its ascent reserves accent room no row uses
+            Test.assertMessage(ink == dc.getFontHeight(f) * 3 / 4,
+                "text font " + i.toString() + " left the 3/4 rule");
+        }
+        Test.assertMessage(ink >= dc.getFontHeight(f) * 3 / 4,
+            "font " + i.toString() + " ink under the 3/4 floor");
+        Test.assertMessage(ink <= dc.getFontHeight(f),
+            "font " + i.toString() + " ink taller than its line");
+    }
+    logger.debug("THAI_HOT line " + dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT).toString()
+        + " ascent " + Graphics.getFontAscent(Graphics.FONT_NUMBER_THAI_HOT).toString()
+        + " ink " + RecordingView.inkH(dc, Graphics.FONT_NUMBER_THAI_HOT).toString());
+    return true;
+}
+
+(:test)
+function wordsNeverWalkTheNumberLadder(logger as Test.Logger) as Boolean {
+    var dc = testDc();
+    Test.assertMessage(RecordingView.hasLetters(PAUSED_TEXT), "PAUSED has no letters?");
+    Test.assertMessage(!RecordingView.hasLetters("23:59") && !RecordingView.hasLetters("99.9")
+        && !RecordingView.hasLetters("31/69") && !RecordingView.hasLetters("100%")
+        && !RecordingView.hasLetters("+19"), "a number reads as a word");
+    // a word through fitGiant lands in the TEXT ladder however wide the budget is
+    var f = RecordingView.fitGiant(dc, PAUSED_TEXT, 3, screenPx());
+    var inText = false;
+    for (var i = 0; i < TEXT_FONTS.size(); i++) {
+        if (f == TEXT_FONTS[i]) { inText = true; }
+    }
+    Test.assertMessage(inText, "PAUSED walked the number ladder");
+    // the clock does not
+    var cf = RecordingView.fitGiant(dc, "23:59", 3, screenPx());
+    Test.assertMessage(cf == Graphics.FONT_NUMBER_MILD, "the clock left the number ladder");
+    // the rung that fits a band never overflows it, and it is the first that does
+    var hC = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
+    var from = RecordingView.textFontFrom(dc, hC);
+    Test.assertMessage(RecordingView.inkH(dc, TEXT_FONTS[from]) <= hC,
+        "textFontFrom picked a rung taller than the band");
+    Test.assertMessage(from == 0 || RecordingView.inkH(dc, TEXT_FONTS[from - 1]) > hC,
+        "textFontFrom skipped a rung that fits");
+    return true;
+}

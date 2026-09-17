@@ -3,9 +3,10 @@
     <!-- Screenshot harness. Same app, different entry point. Never uploaded anywhere. -->
     <iq:application id="c2f0592d-88ca-4a70-b44e-29685f4cdcef" type="watch-app"
         name="@Strings.AppName" entry="ShotsApp" version="0.8.0"
-        launcherIcon="@Drawables.LauncherIcon" minApiLevel="5.0.0">
+        launcherIcon="@Drawables.LauncherIcon" minApiLevel="3.3.3">
         <iq:products>
             <iq:product id="fenix843mm"/>
+            <iq:product id="fenix5xplus"/>
             <iq:product id="fenix847mm"/>
         </iq:products>
         <iq:permissions>

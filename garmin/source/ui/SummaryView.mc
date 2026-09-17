@@ -376,7 +376,7 @@ class SummaryView extends WatchUi.View {
         if (y - badgeH / 2 < 0) {
             return false;
         }
-        if (y + badgeH / 2 >= cy - dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT) / 2) {
+        if (y + badgeH / 2 >= verdictDigitTop(dc)) {
             return false;
         }
         var limit = RecordingView.fitRadius(dc, false, true).toFloat();
@@ -390,8 +390,35 @@ class SummaryView extends WatchUi.View {
     // dot band, which on a 454 px glass is 6 px above the verdict's second sub-row — two
     // baselines overprinting each other on the exact page the rider lands on. The top of
     // that page is empty, and an acknowledgement reads fine as an eyebrow.
+    //
+    // 0.9.13: ...and never lower than the verdict giant's own cap line. On the fenix 5 Plus
+    // family the hero block, centred on the glass with its two sub-rows, starts 16 px above
+    // where this eyebrow used to sit and SAVED printed over the "56%". The eyebrow clears the
+    // digits by an eighth of its line, or moves up until it does; on a 454 px glass that is
+    // 4 px above where it was, which no eye sees.
     static function savedY(dc as Dc) as Number {
-        return dotBand(dc) + dc.getFontHeight(Graphics.FONT_XTINY);
+        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+        var y = dotBand(dc) + hT;
+        var limit = verdictDigitTop(dc) - hT / 8;
+        return y + hT / 2 > limit ? limit - hT / 2 : y;
+    }
+
+    // Where the verdict giant's DIGITS begin. The block is stacked on the ink band
+    // (`RecordingView.inkH`, the ascent on a number font), but a number line that carries
+    // leading sets its digits below the ascent's own top by half of that leading — on a
+    // fenix 8 the THAI_HOT line is 210 px, the ascent 153, and the cap line sits 28 px under
+    // the band's edge, which is exactly where the shipped eyebrow touches it. On the fenix 5
+    // Plus family (ascent = line) the band's edge IS the cap line. Shared with the layout test.
+    static function verdictDigitTop(dc as Dc) as Number {
+        var cy = dc.getHeight() / 2;
+        var hN = RecordingView.inkH(dc, Graphics.FONT_NUMBER_THAI_HOT);
+        var hT = dc.getFontHeight(Graphics.FONT_XTINY);
+        var hL = dc.getFontHeight(Graphics.FONT_LARGE);
+        var hM = dc.getFontHeight(Graphics.FONT_MEDIUM);
+        var yc = RecordingView.heroRowY(cy, hN, hT, hL, hM, 0, 2);
+        var line = dc.getFontHeight(Graphics.FONT_NUMBER_THAI_HOT);
+        var asc = Graphics.getFontAscent(Graphics.FONT_NUMBER_THAI_HOT);
+        return yc - hN / 2 + (line - asc) / 2;
     }
 
     static function dotBand(dc as Dc) as Number {

@@ -491,8 +491,35 @@ class RecordingView extends WatchUi.View {
     // uses the ink — about three quarters of it — because that is what the round glass
     // actually clips. Both numbers come from the same dc, so every variant gets its own.
 
+    // 0.9.13: measured, not assumed. Three quarters of the line was written for font sets
+    // where a number line carries a quarter of leading (fenix 8: THAI_HOT 210 px line,
+    // 153 px ascent; fenix 7S: 105 / 76). The fenix 5 Plus family's Chronos number fonts
+    // carry NONE — ascent 58 of a 58 px line, descent 0 — so every band stacked on 3/4 was a
+    // quarter of a number line short there: the clock sat on the giant's unit, "best 2s" on
+    // its record, SAVED on the verdict (Leo, fenix 5X Plus, 17 Sep 2026). The ascent is the
+    // firmware's own word for where the ink reaches; the 3/4 floor keeps every other glass
+    // exactly where it was (their ascents are a few px under it).
+    //
+    // Number fonts only. Digits fill the ascent (no descenders, cap-height glyphs); a text
+    // font's ascent leaves room for accents above a row of words that never uses it, and
+    // taking it would shrink every text chord on every glass by 2-3 px for nothing — the
+    // Turns page's port/starboard row on a fenix 8 fits its 302 px by 2.
     static function inkH(dc as Dc, font as Graphics.FontType) as Number {
-        return dc.getFontHeight(font) * 3 / 4;
+        var line = dc.getFontHeight(font) * 3 / 4;
+        if (!isNumberFont(font)) {
+            return line;
+        }
+        var asc = Graphics.getFontAscent(font);
+        return asc > line ? asc : line;
+    }
+
+    static function isNumberFont(font as Graphics.FontType) as Boolean {
+        for (var i = 0; i < NUMBER_FONTS.size(); i++) {
+            if (font == NUMBER_FONTS[i]) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Half the chord available to a box of ink height `h` whose centre is `dy` from the middle.
@@ -551,12 +578,42 @@ class RecordingView extends WatchUi.View {
     // number is readable, a clipped one is not, and the row's band is unchanged either way.
     static function fitGiant(dc as Dc, text as String, from as Number,
             maxW as Number) as Graphics.FontType {
+        // A WORD never walks the number ladder: the number fonts have no letters, and on a
+        // set where the ladder's bottom rung is narrow enough to "fit" PAUSED (fenix 5 Plus:
+        // MILD is 26 px) the rider got six empty boxes where the banner should be. The width
+        // test alone was the guard, and it held only where the number fonts are big.
+        if (hasLetters(text)) {
+            return fitFont(dc, TEXT_FONTS, 0, text, maxW);
+        }
         for (var i = from; i < NUMBER_FONTS.size(); i++) {
             if (dc.getTextWidthInPixels(text, NUMBER_FONTS[i]) <= maxW) {
                 return NUMBER_FONTS[i];
             }
         }
         return fitFont(dc, TEXT_FONTS, 0, text, maxW);
+    }
+
+    // The first TEXT_FONTS rung whose ink fits a band `h` tall — the last rung when none does.
+    static function textFontFrom(dc as Dc, h as Number) as Number {
+        for (var i = 0; i < TEXT_FONTS.size(); i++) {
+            if (inkH(dc, TEXT_FONTS[i]) <= h) {
+                return i;
+            }
+        }
+        return TEXT_FONTS.size() - 1;
+    }
+
+    // True when `text` carries a letter — anything a number font cannot draw. Shared with
+    // the layout test. Digits, ':', '.', '/', '%', '+' and '-' are the number ladder's own.
+    static function hasLetters(text as String) as Boolean {
+        var chars = text.toCharArray();
+        for (var i = 0; i < chars.size(); i++) {
+            var c = chars[i];
+            if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // A 454-authored bezel dimension on THIS glass, never below 1 px. Same treatment
@@ -666,7 +723,7 @@ class RecordingView extends WatchUi.View {
         var cy = dc.getHeight() / 2;
         var radius = fitRadius(dc, true, foilArc);
         var hC = dc.getFontHeight(Graphics.FONT_NUMBER_MILD);
-        var hN = inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
+        var hN = mainGiantBand(dc, mainGiantId(page));
         var hO = dc.getFontHeight(Graphics.FONT_LARGE);
         var hD = stripBandH(dc);
         var hK = dc.getFontHeight(Graphics.FONT_MEDIUM);
@@ -692,8 +749,14 @@ class RecordingView extends WatchUi.View {
             var top = paused ? PAUSED_TEXT : PageModel.clockString();
             dc.setColor(paused ? Graphics.COLOR_YELLOW : Graphics.COLOR_WHITE,
                 Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, y, fitGiant(dc, top, 3,
-                rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_NUMBER_MILD))), top, CV);
+            var budget = rowBudget(radius, y - cy, inkH(dc, Graphics.FONT_NUMBER_MILD));
+            // The word takes the text ladder from the rung that fits the clock's BAND: on
+            // the fenix 5 Plus family FONT_LARGE's ink (29 px) is taller than MILD's line
+            // (26), so PAUSED there is FONT_SMALL, and on every other glass it is FONT_LARGE
+            // as before. Shared with the layout test.
+            dc.drawText(cx, y, paused
+                ? fitFont(dc, TEXT_FONTS, textFontFrom(dc, hC), top, budget)
+                : fitGiant(dc, top, 3, budget), top, CV);
         }
 
         // row 1 — the giant, with its unit and caption inline behind the digits
@@ -720,12 +783,29 @@ class RecordingView extends WatchUi.View {
     // and its unit + caption as two XTINY lines wedged in beside the digits, bottom-aligned on
     // the digits' own baseline. The unit used to be a whole row of its own; inline it costs
     // nothing vertically and reads as part of the same number.
+    // The MAIN giant's slot: page 1's first cell, best 10 s when the rider emptied it.
+    static function mainGiantId(page as Number) as Number {
+        var id = PageModel.slotAt(page, 0);
+        return id == PageModel.M_NONE ? PageModel.M_BEST_10S : id;   // a page 1 with no giant is not a page 1
+    }
+
+    // The MAIN giant's band: its digits' ink, or the two XTINY suffix lines beside them when
+    // those are the taller box. On every glass since 0.9.2 the ink wins by a wide margin
+    // (fenix 8: 115 px against 74). On the fenix 5 Plus family it does not — MEDIUM's ink is
+    // 36 px and two XTINY lines are 52 — and a suffix block bottom-aligned on the digits'
+    // baseline reached 16 px above the ink, into the clock row (0.9.13). The block that is
+    // the taller box owns the band, and suffixLineY centres it there instead.
+    static function mainGiantBand(dc as Dc, id as Number) as Number {
+        var ink = inkH(dc, Graphics.FONT_NUMBER_MEDIUM);
+        var lines = (PageModel.unitOf(id).equals("") ? 0 : 1)
+            + (PageModel.caption(id).equals("") ? 0 : 1);
+        var block = lines * dc.getFontHeight(Graphics.FONT_XTINY);
+        return block > ink ? block : ink;
+    }
+
     hidden function drawMainGiant(dc as Dc, c as SessionController, page as Number,
             cx as Number, cy as Number, radius as Number, y as Number) as Void {
-        var id = PageModel.slotAt(page, 0);
-        if (id == PageModel.M_NONE) {
-            id = PageModel.M_BEST_10S;      // a page 1 with no giant is not a page 1
-        }
+        var id = mainGiantId(page);
         var v = PageModel.value(id, c);
         var unit = PageModel.unitOf(id);
         var cap = PageModel.caption(id);
@@ -761,10 +841,16 @@ class RecordingView extends WatchUi.View {
     // Ink centre of suffix line `line` (0 = unit, 1 = caption) of a `lines`-line block whose
     // bottom sits on the digits' baseline — approximated, as everywhere else in this file, by
     // the ink half-height below the row centre.
+    //
+    // Bottom-aligned on the baseline while the block is shorter than the digits; centred on
+    // the row when it is the taller box (fenix 5 Plus, see mainGiantBand), so it never leaves
+    // the band the row was stacked with.
     static function suffixLineY(dc as Dc, y as Number, f as Graphics.FontType, line as Number,
             lines as Number) as Number {
         var hT = dc.getFontHeight(Graphics.FONT_XTINY);
-        var base = y + inkH(dc, f) / 2 - hT / 2;
+        var ink = inkH(dc, f);
+        var block = lines * hT;
+        var base = y + (block > ink ? block : ink) / 2 - hT / 2;
         return lines == 2 && line == 0 ? base - hT : base;
     }
 
@@ -1324,7 +1410,10 @@ class RecordingView extends WatchUi.View {
         var halfR = pairHalfWidth(dc, texts[PAIR_RV], texts[PAIR_RC], f);
         var halfMax = halfL > halfR ? halfL : halfR;
         var valHalf = chordHalf(radius, pairRowY(dc, y, f, 1) - cy, inkH(dc, f));
-        return dx >= halfMax / 2 + 1 && dx + halfMax / 2 <= valHalf;
+        // The two halves keep the grid's own gutter between them (the layout test's rule
+        // since 0.9.11; the fitter asked only for a pixel, and on the fenix 5 Plus with
+        // 0.9.13's taller ink the caption row pulled the halves in until they touched).
+        return dx - halfMax / 2 >= CELL_GUTTER / 2 && dx + halfMax / 2 <= valHalf;
     }
 
     // Where the two halves sit, given what is in them: the 2x2's own column (pairColumn) —

@@ -9,3 +9,5 @@ base.resourcePath = ../resources
 base.barrelPath = ../barrel/WingFoilCore/barrel.jungle
 
 fenix843mm.resourcePath = $(fenix843mm.resourcePath);../resources-icon60
+base.excludeAnnotations = dev
+fenix5xplus.resourcePath = $(fenix5xplus.resourcePath);../resources-icon40

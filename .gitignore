@@ -53,3 +53,4 @@ fixtures/footage/**
 !fixtures/footage/*/truth.json
 !fixtures/footage/*/align.json
 ios/Strava.xcconfig
+garmin/screenshots/tools/winfo
