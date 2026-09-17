@@ -1083,6 +1083,24 @@ session, alpha with no qualifying loop): goldens serialize **0.0**, the Swift mo
    | `fr255` | 260 px MIP | the smallest memory tier (524 KB) **and** the Forerunner font set |
    | `venu3` | 454 px AMOLED, Venu font set | 0.9.10: the Venu / vivoactive / Instinct 3 AMOLED families — touch-first, two buttons, their own fonts. Their first run found the hero fitter's half-pixel rounding. Also worth a run: `venu2s` (360 px, the smallest AMOLED glass shipped) |
 
+   **Every family, photographed** (0.9.13). The unit suite asserts rows from font heights,
+   and a font set can break the assumption the rows were stacked on: the fenix 5 Plus
+   family's number fonts have no leading (ascent = line), so bands built on "ink is 3/4 of
+   the line" were a quarter of a number line short there — the clock on the giant's unit,
+   PAUSED as six empty boxes, SAVED on the verdict — and the suite was green (a store user
+   on a fenix 5X Plus found it, 17 Sep 2026). `RecordingView.inkH` is the firmware's ascent
+   for a number font now, floored at the old 3/4; but the rule that a layout is verified
+   only by looking at it stands. `garmin/screenshots/` is the harness: `ShotsApp.mc`
+   (throwaway, never committed) cycles the 17 screens on a real session every 3 s, and
+   `screenshots/tools/capture.sh <device> <outdir>` starts a fresh simulator, runs it,
+   photographs the device window once a second by its window id and tiles the distinct
+   frames into `<outdir>.png`. Compile the harness for the device first
+   (`monkeyc -f garmin/screenshots/monkey.jungle -d <device> -y garmin/developer_key.der
+   -o garmin/bin/shots-<device>.prg`; the harness manifest lists the products it may be built
+   for, add one per family). Run it once per family in the product list before a store upload
+   that touches a page, and read every sheet against the overlap list: clock/giant, caption/
+   digits, eyebrow/giant, pair halves, the PAUSED word.
+
    The layout suite reads its canvas from `System.getDeviceSettings().screenWidth`, so the same
    assertions are genuinely different measurements per device, and every finding that has ever
    come out of this suite came from the narrow ones — with one lesson added by Tier A: **the
