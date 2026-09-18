@@ -4,7 +4,8 @@ submit it for beta review.
 usage:
   uv run --with pyjwt --with cryptography --with requests \
       python ios/tools/testflight_publish.py <build-number> [--wait] \
-          [--group internal|external] [--app release|dev]
+          [--group internal|external] [--app release|dev] \
+          [--notes <file>] [--print-notes]
 
 `--group external` (the default, and everything this script did before) attaches the build to
 every external group and SUBMITS IT FOR BETA REVIEW. `--group internal` attaches it to the
@@ -17,13 +18,19 @@ the release channel's builds and the beta channel's. `dev` is the separate "Clea
 record (`de.lahmann.wingfoil.dev`). `CJ_DEV_APP_ID` in the environment overrides the id below,
 which is the one escape hatch if the record is ever recreated.
 
-Edit WHATS_NEW below before running. The API key file is read from ~/.appstoreconnect and is
-not in the repo. The one lesson this file exists to keep: attaching a build to an external
-group through the API does not submit it for beta review, and external testers never see a
-build that was not reviewed — builds 6-15 sat unreviewed for weeks while testers stayed on
-build 5. This script submits.
+The *What to Test* text is **not** written here any more. It comes from
+`docs/copy/whats-new.json`, the one source the website's /whats-new/ cards and the app's own
+What's new screen are also written from (`web/tools/make_whats_new.py`). This script takes
+the newest entry of the channel it is publishing to: `dev` for `--app dev`, `beta` for the
+release app's external groups. `--notes <file>` overrides it for the one-off case, and
+`--print-notes` shows what would be sent without touching App Store Connect.
+
+The API key file is read from ~/.appstoreconnect and is not in the repo. The one lesson this
+file exists to keep: attaching a build to an external group through the API does not submit
+it for beta review, and external testers never see a build that was not reviewed — builds
+6-15 sat unreviewed for weeks while testers stayed on build 5. This script submits.
 """
-import os, sys, time, json, requests, jwt
+import os, sys, time, json, pathlib, requests, jwt
 
 KEY_ID = "HZT9694JZ4"
 ISSUER = "b9e6ccaa-e24a-4d37-bc1d-87f5be210572"
@@ -43,33 +50,52 @@ def app_id(app):
         return APP_RELEASE
     return os.environ.get(DEV_APP_ID_ENV, "").strip() or APP_DEV
 
-WHATS_NEW = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
+# The frame around the notes, which is the same in every build and is therefore not a release
+# note: the door for a tester who has just joined, and the one for a tester with something to
+# say. The notes themselves come from docs/copy/whats-new.json.
+NOTES_SOURCE = pathlib.Path(__file__).resolve().parents[2] / "docs" / "copy" / "whats-new.json"
+INTRO = ("New here? cleanjibe.org/start — the routes from your watch to the app, and where to "
+         "send feedback.")
+OUTRO = ("Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or "
+         "info@cleanjibe.org.")
 
-Beta build 73 — Jan's morning round.
 
-- The empty Sessions page shows the ways in, one row each: intervals.icu, the Apple Watch app, Strava, a file. The 4 intervals.icu steps live in Settings only.
-- Help → Share from your watch app names the brands plainly, Garmin first.
-- Getting started lists the Apple Watch routes right after Garmin. Routes have no letters; each says which class you get.
-- cleanjibe.org follows: routes without letters, the class table with a Route column, Apple Watch once on Which watch, "Show the steps" on every route card.
+def notes_channel(app, internal):
+    """Which channel's notes this run is publishing (docs/channels.md).
 
-Please check: the empty Sessions page after Start over; Help → Share from your watch app; Menu → Getting started.
+    The dev record is a second app and only ever carries dev builds. The App Store record
+    carries both the release channel's build and the beta channel's; what goes to external
+    testers is the beta, which is what `--group external` on it means.
+    """
+    if app == "dev":
+        return "dev"
+    return "release" if internal else "beta"
 
-Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
 
-# What the dev app's testers are told instead. It is a second app ("CleanJibe Dev") beside the
-# App Store one, so saying which one this is matters more than the release notes do.
-WHATS_NEW_INTERNAL = """New here? cleanjibe.org/start — the routes from your watch to the app, and where to send feedback.
+def whats_new(app, internal, override=None):
+    """The *What to Test* text: the newest entry of this channel, in TestFlight's layout.
 
-CleanJibe Dev, build 72 — your morning round on 70.
-
-- Empty Sessions page: one card, the ways in, one row each, pointing at Settings. The 4-step card is gone.
-- Help → Share from your watch app: brands without dates, Garmin first.
-- Settings → Beta: the session-video ask under the actions. The dev list names the Apple Watch live view as an idea.
-- Getting started: Apple Watch routes after Garmin, no letters, class per route.
-
-Please check: Start over → the empty page; Help → Share from your watch app; Settings → Beta footer; Menu → Getting started.
-
-Ideas and wishes are as welcome as bugs: Menu → Support & ideas in the app, or info@cleanjibe.org."""
+    One source for three surfaces (docs/copy/README.md): the same JSON writes the cards on
+    cleanjibe.org/whats-new and the app's own What's new screen, so a tester, a reader and
+    the phone in his hand cannot be told three different things about one build.
+    """
+    if override:
+        return pathlib.Path(override).read_text(encoding="utf-8").strip()
+    channel = notes_channel(app, internal)
+    entries = json.loads(NOTES_SOURCE.read_text(encoding="utf-8"))["entries"]
+    entry = next((e for e in entries if e["channel"] == channel and e["build"] is not None),
+                 None)
+    if entry is None:
+        raise SystemExit(f"no {channel} entry with a build number in "
+                         f"{NOTES_SOURCE}. Add one, or pass --notes <file>")
+    if channel == "dev":
+        head = f"CleanJibe Dev, build {entry['build']}"
+    elif channel == "beta":
+        head = f"Beta build {entry['build']}"
+    else:
+        head = f"Build {entry['build']}"
+    body = "\n".join("- " + line for line in entry["lines"])
+    return f"{INTRO}\n\n{head} — {entry['title']}.\n\n{body}\n\n{OUTRO}"
 
 
 def tok():
@@ -94,11 +120,19 @@ def find_build(app, number):
 
 def parse_args(argv):
     number, wait, group, app = None, False, "external", "release"
+    notes, print_only = None, False
     i = 0
     while i < len(argv):
         a = argv[i]
         if a == "--wait":
             wait = True
+        elif a == "--print-notes":
+            print_only = True
+        elif a == "--notes":
+            i += 1
+            notes = argv[i] if i < len(argv) else ""
+        elif a.startswith("--notes="):
+            notes = a.split("=", 1)[1]
         elif a == "--group":
             i += 1
             group = argv[i] if i < len(argv) else ""
@@ -114,21 +148,28 @@ def parse_args(argv):
         else:
             number = a
         i += 1
-    if number is None:
+    if number is None and not print_only:
         raise SystemExit(__doc__)
     if group not in ("internal", "external"):
         raise SystemExit("--group takes 'internal' or 'external'")
     if app not in ("release", "dev"):
         raise SystemExit("--app takes 'release' or 'dev'")
-    return number, wait, group, app
+    return number, wait, group, app, notes, print_only
 
 
 def main():
-    number, wait, group, app = parse_args(sys.argv[1:])
+    number, wait, group, app, notes, print_only = parse_args(sys.argv[1:])
     APP = app_id(app)
     internal = group == "internal"
+    text = whats_new(app, internal, notes)
+    # Read before anything is attached, so a missing entry fails here rather than after the
+    # build is already in front of testers with the previous build's notes on it.
+    if print_only:
+        print(text)
+        return
     print("target app:", app, APP)
     print("target group:", group)
+    print("notes channel:", notes_channel(app, internal))
     while True:
         b = find_build(APP, number)
         state = b["attributes"]["processingState"] if b else None
@@ -161,14 +202,13 @@ def main():
         print("attached to", g["attributes"]["name"], "internal" if is_internal else "external")
     if not attached:
         print(f"WARNING: no {group} group found for app {APP} — nothing was attached")
-    whats_new = WHATS_NEW_INTERNAL if internal else WHATS_NEW
     locs = req(f"/builds/{bid}/betaBuildLocalizations")["data"]
     if locs:
         req(f"/betaBuildLocalizations/{locs[0]['id']}", "PATCH",
-            {"data": {"type": "betaBuildLocalizations", "id": locs[0]["id"], "attributes": {"whatsNew": whats_new}}})
+            {"data": {"type": "betaBuildLocalizations", "id": locs[0]["id"], "attributes": {"whatsNew": text}}})
     else:
         req("/betaBuildLocalizations", "POST",
-            {"data": {"type": "betaBuildLocalizations", "attributes": {"locale": "en-US", "whatsNew": whats_new},
+            {"data": {"type": "betaBuildLocalizations", "attributes": {"locale": "en-US", "whatsNew": text},
                       "relationships": {"build": {"data": {"type": "builds", "id": bid}}}}})
     print("what to test set")
     if internal:

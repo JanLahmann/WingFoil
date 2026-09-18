@@ -498,6 +498,12 @@ struct SettingsView: View {
             // report that comes back from TestFlight.
             LabeledContent("App", value: SessionStore.appVersion + Self.variantSuffix)
             LabeledContent("Analysis engine", value: AnalysisEngine.version)
+            // **What changed in the build those two numbers name.** The notes are kit data
+            // (`WhatsNew`, generated from docs/copy/whats-new.json), filtered by this
+            // build's channel, and the same screen the Help topic opens.
+            NavigationLink { WhatsNewPage() } label: {
+                Label("What's new", systemImage: "sparkles")
+            }
             // **The policy, reachable from inside the app** (15 September 2026). It was
             // not: docs/channels.md makes privacy-page coverage one of the four rules a
             // feature meets before it moves up a channel, and the App Store record carries

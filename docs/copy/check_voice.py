@@ -47,8 +47,9 @@ EXEMPTIONS = REPO / "docs" / "copy" / "voice-exemptions.json"
 
 # Pattern C (16 Sep 2026): facts that go stale by construction. A date or a version number in
 # a rider sentence is wrong the day after it was typed unless a generator writes it. Generated
-# spans (data-copy="garmin-…") are stripped before the pages are read; dated release notes on
-# /whats-new are exempted by their page.
+# spans (data-copy="garmin-…") are stripped before the pages are read; the release notes are
+# generated out of docs/copy/whats-new.json, so their two surfaces — /whats-new and the kit's
+# WhatsNew.swift — carry the `dated` flag instead of an exemption per sentence.
 STALE = re.compile(r"\b\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* 20\d\d\b|\b20\d\d-\d\d-\d\d\b|\b0\.9\.\d+\b|\bbuild \d{2,3}\b|\bsince 0\.\d")
 
 # Pattern 1 of the same day: paragraph length is ungoverned by the sentence rules. A rider
@@ -68,10 +69,26 @@ class Target:
     advisory: bool = False
     #: dated release notes are this page's purpose; the stale-fact rule does not apply
     dated: bool = False
+    #: files under `path` that a target of their own covers, as repo-relative paths. One
+    #: use so far: the generated release notes live inside the kit's Help/ and are the one
+    #: dated surface in it, so they are read by their own `dated` target below rather than
+    #: exempted sentence by sentence.
+    exclude: tuple[str, ...] = ()
 
+
+#: The generated release notes, read by their own target on the line below.
+WHATS_NEW_SWIFT = "ios/WingFoilKit/Sources/WingFoilKit/Help/WhatsNew.swift"
 
 TARGETS: list[Target] = [
-    Target("kit · Help", "ios/WingFoilKit/Sources/WingFoilKit/Help", "swift"),
+    Target("kit · Help", "ios/WingFoilKit/Sources/WingFoilKit/Help", "swift",
+           exclude=(WHATS_NEW_SWIFT,)),
+    # **The app's one dated surface**, and the web page's twin. A release note that does
+    # not say when it shipped is not a release note, and every date and build number in
+    # this file is written by web/tools/make_whats_new.py out of docs/copy/whats-new.json
+    # rather than typed — which is the condition the stale-fact rule is really about.
+    # Every other voice rule still applies, and the generator holds the same ones on the
+    # source so a bad line fails before it is written.
+    Target("kit · What's new", WHATS_NEW_SWIFT, "swift", dated=True),
     Target("kit · Presentation", "ios/WingFoilKit/Sources/WingFoilKit/Presentation", "swift"),
     Target("app · Features", "ios/WingFoil/Features", "swift"),
     Target("watch · pages", "garmin/source/ui", "mc"),
@@ -178,6 +195,8 @@ def collect(target: Target) -> list[tuple[str, str]]:
     if target.kind in ("swift", "mc", "xml"):
         files = [base] if base.is_file() else sorted(
             p for p in base.rglob("*") if p.suffix == {"swift": ".swift", "mc": ".mc", "xml": ".xml"}[target.kind])
+        files = [f for f in files
+                 if f.relative_to(REPO).as_posix() not in target.exclude]
         for f in files:
             rel = f.relative_to(REPO).as_posix()
             for number, literal in rider_literals(f, target.kind):

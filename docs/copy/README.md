@@ -202,6 +202,32 @@ kit-owned and not checked by `CopyContractTests`; the app names no count and no 
 purpose (`HelpCatalog.whichWatch`: "CleanJibe analyses a recording, not a brand"). See the
 web tooling for its schema.
 
+### `whats-new.json`
+
+**The release notes, and the one file here that no code authors.** Hand-written, newest
+first, one entry per shipped build:
+
+| key | shape | what it decides |
+|---|---|---|
+| `version` | string | the app's marketing version, or the watch app's Connect IQ version |
+| `build` | int, or `null` | the TestFlight build number. `null` means the **Garmin watch app**, which has no build number — that one field says which of the two products the entry is about |
+| `channel` | `release` \| `beta` \| `dev` | where the build went (docs/channels.md). The app filters on it; the website prints no `dev` entry at all |
+| `date` | `yyyy-mm-dd` | the day it shipped. Rendered into words by the generator, never typed |
+| `title` | string, ≤ 8 words | the card's one line |
+| `lines` | [string], ≤ 20 words each | register 1 of docs/voice.md, one thought per line |
+
+Three renderings, one source: `web/tools/make_whats_new.py` writes the cards of
+`web/whats-new/index.html` and the kit's `Help/WhatsNew.swift` (the app's *What's new*
+screen), and `ios/tools/testflight_publish.py` reads the newest entry of the channel it is
+publishing to as that build's *What to Test*. `make_whats_new.py --check` runs inside
+`web/tools/verify_links.py` and fails while either generated output is stale. The word
+rules are enforced on the source, so a long or dashed line fails at the generator.
+
+**Dates are allowed in these sentences and nowhere else in the app.** A release note that
+does not say when it shipped is not a release note; the condition is that a generator
+writes them, which is why `/whats-new/` and `WhatsNew.swift` are the two `dated` targets of
+`check_voice.py` rather than a list of exemptions.
+
 ## The process rule
 
 A kit change that moves a fact **fails the kit tests** until `docs/copy` catches up. That is
