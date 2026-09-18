@@ -63,7 +63,7 @@ public enum RecordingClass: String, Sendable, CaseIterable, Identifiable {
         case .c:
             "Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed "
             + "records are estimated from positions and marked uncertified, and there are "
-            + "no pump strokes or takeoff attempts. " + Copy.stravaFall
+            + "no pump strokes or takeoff attempts."
         }
     }
 

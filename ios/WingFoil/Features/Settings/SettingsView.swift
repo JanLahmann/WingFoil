@@ -425,11 +425,11 @@ struct SettingsView: View {
             // and this whole section is behind `#if TUNING`.
             Text("Tuning · dev")
         } footer: {
-            Text("Dev build only.\n\n"
-                 + "Puts the analysis thresholds on sliders, so a parameter can be tried "
-                 + "against your own sessions in a minute instead of a rebuild.\n\n"
-                 + "They apply on this phone only, and every screen showing a tuned "
-                 + "number says so.")
+            Text("Dev build only. Puts the analysis thresholds on sliders.\n\n"
+                 + "A parameter can be tried against your own sessions in a minute instead "
+                 + "of a rebuild.\n\n"
+                 + "They apply on this phone only. Every screen showing a tuned number "
+                 + "says so.")
         }
     }
     #endif
@@ -457,30 +457,28 @@ struct SettingsView: View {
         } header: {
             Text("Apple Health")
         } footer: {
-            Text(markdown: "Off by default. Each session is written as a **Surfing** "
-                 + "workout.\n\n"
-                 + "Apple Health has no wingfoil or windsurf activity, and Surfing is the "
-                 + "closest.\n\n"
-                 + "The discipline, foil share, flights and best 2 s ride in its "
-                 + "metadata.\n\n"
-                 + "Sessions you imported *from* Health are left alone, so a workout "
-                 + "never appears twice.")
+            settingFooter(HealthSwitch.write)
         }
 
-        if store.hasImportedFromHealth {
-            Section {
-                Toggle("Import new Health workouts automatically", isOn: Binding(
-                    get: { store.healthAutoImport },
-                    set: { store.healthAutoImport = $0 }))
-            } footer: {
-                Text("CleanJibe checks Apple Health when you open it and imports any new "
-                     + "workout of the types you chose on the Import screen.\n\n"
-                     + "Anything already in your library is recognised, and a workout you "
-                     + "imported and then deleted is not brought back.\n\n"
-                     + "iOS can also wake the app when a workout is saved. iOS decides "
-                     + "when, and that may be hours later.\n\n"
-                     + "It never happens with Background App Refresh off. "
-                     + Copy.openToPickUp)
+        Section {
+            Toggle(HealthSwitch.autoImport.title, isOn: Binding(
+                get: { store.healthAutoImport },
+                set: { store.healthAutoImport = $0 }))
+        } footer: {
+            settingFooter(HealthSwitch.autoImport)
+        }
+    }
+
+    /// **What you get, in one line, and the way to the page that says how** (pattern K and
+    /// pattern B). The footer stops explaining the mechanism; the help topic keeps it.
+    private func settingFooter(_ setting: HealthSwitch) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(setting.footer)
+                .fixedSize(horizontal: false, vertical: true)
+            Button { setupTopic = setting.helpTopic } label: {
+                Text(HelpCatalog.topic(setting.helpTopic,
+                                       channel: AppChannel.channel).title)
+                    .font(.footnote.weight(.semibold))
             }
             .buttonStyle(.plain)
             .foregroundStyle(Color.accentColor)

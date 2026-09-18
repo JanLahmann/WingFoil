@@ -213,8 +213,8 @@ public enum GettingStartedGuide {
             title: "Strava",
             channel: .release,
             classID: "c",
-            summary: "Settings → Strava → Connect, then Import → Import from Strava…. "
-                + "Positions only, so speed records are uncertified. Without the watch's own "
+            summary: "Settings → Strava → Connect with Strava, then Import → Import from "
+                + "Strava…. Positions only, records uncertified. Without the watch's own "
                 + "speed, a fall can read as a touchdown.",
             steps: [
                 .init(number: 1,

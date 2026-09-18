@@ -442,9 +442,8 @@ public enum HelpCatalog {
             summary: "Connect once, then pick the sessions you want. Positions only, so "
                 + "speed records are uncertified.",
             body: [
-                "If your sessions are already on Strava, CleanJibe can list them and import "
-                + "the ones you pick. CleanJibe only ever reads: it never writes, renames or "
-                + "posts anything to your account.",
+                "CleanJibe lists your Strava sessions and imports the ones you pick. It only "
+                + "reads. It never writes, renames or posts to your account.",
                 "A Strava session shows everything that comes from the track. Foil time, "
                 + "flights, every turn verdict, the wind axis, the map.",
                 "Strava hands over no speed channel, so the speed records are marked "
@@ -560,10 +559,10 @@ public enum HelpCatalog {
             summary: "No watch at all. A tracker app in a pouch. The session comes in "
                 + "through Strava or as a file.",
             body: [
-                "A phone records a GPS track as well as most watches do, and CleanJibe reads "
-                + "it the same way: foil time, flights, every turn verdict, clean jibes, the "
-                + "wind axis and the map.",
-                "It is " + RecordingClass.c.name + ". " + RecordingClass.c.line,
+                "A phone records a GPS track as well as most watches do. CleanJibe reads it "
+                + "the same way.",
+                "It is " + RecordingClass.c.name + ".",
+                RecordingClass.c.line,
                 "Where to put the phone: dry, still and pointing at the sky. A waterproof "
                 + "pouch on the upper arm or high on the chest works.",
                 "A pocket at hip height spends half the session underwater. Start the "
