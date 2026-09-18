@@ -3293,13 +3293,38 @@ iOS: `LibraryListing.swift` in the kit (`LibraryListFilter`, `LibraryGrouping`,
 `LibraryView`, the menu and the chips `LibraryFilterMenu.swift`. Not on the web session
 viewer, which has no library to group.
 
+## The session page: source, name, neighbours
+
+The header names where the recording came from in one line under the date
+(`SessionProvenance.line(importSource:)`: *Apple Watch · CleanJibe*, *intervals.icu*, *Strava*,
+*Apple Health*, *File*) — provenance used to live on the Log tab only, so an Apple Watch
+recording and a Health import looked alike. The title is a button: a tap opens a rename sheet
+writing the same `customTitle` the share composer's field writes, so renaming is not a
+side-effect of sharing. A swipe left or right moves to the next or previous session in the
+list's own order (`SessionStore.visibleSessionIDs`), with a greyed ‹ › pair beside the date at
+the ends; the drag needs a horizontal intent (dx over 2.5 × dy) so the inline map keeps its pan.
+
+The library row's track outline can sit on a map: Settings → Session list → *Map behind the
+track in the list*, off by default, an `MKMapSnapshotter` image per session cached beside the
+thumbnail and rebuilt with it. The app-wide menu (What CleanJibe does · Getting started ·
+Settings · Help · Support & ideas) is one `AppMenuButton` on all four tab roots (pattern M).
+
 ## Import — the doors a session comes in by
 
-The Import sheet is a list of doors, in the order a rider meets them: **Full history** (the
-Garmin GDPR ZIP), **Single sessions** (a picked FIT/GPX/ZIP, and the intervals.icu sync),
-**Apple Health**, **Strava**. Each section's footer answers the same two questions before the
-rider taps rather than after — *what does this door bring in*, and *what does it cost* — because
-a rider who discovers only afterwards that his speed records are marked has been told too late.
+The Import sheet is a list of doors in **one order, the getting-started order** (pattern J,
+docs/review-checklist.md): intervals.icu, the Apple Watch app, Apple's Workout app, a file,
+Strava, and the Garmin GDPR ZIP **last** — `ImportDoor.ordered(channel:)` in the kit, asserted
+against `GettingStartedGuide.routes` per channel. Every door is always drawn (pattern E/G): a
+Strava section without keys, a Health section before the first import, a sync row without a
+key all keep their row and change only their label and footer. Each footer says **what the
+door brings in, in one line** (pattern K, at most 25 words) with the recording class above it
+and a link to the help topic below; the *how* lives in the topic, not in the footer.
+
+Until 18 September 2026 the order was the ZIP first, the Strava and Health doors appeared only
+once used, and the footers explained the mechanism in four paragraphs. The three rules above
+replaced all of that at once; the doors' wording is `ImportDoor.footer(channel:)` and nowhere
+else, and Import → Apple Health carries the Apple Watch door's own sentence so a rider who
+recorded on the watch is told her session arrives by itself rather than left to look for it.
 
 ### Import does, Settings configures
 
