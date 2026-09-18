@@ -150,7 +150,7 @@ public enum ImportDoor: String, CaseIterable, Sendable, Identifiable {
             : "One FIT or ZIP from any watch. AirDrop and the share sheet land here too."
         case .strava:
             "The activities you pick from your Strava account. Positions only, so those "
-            + "speed records are marked uncertified."
+            + "speed records are marked uncertified. " + Copy.stravaFall
         case .garminZip:
             "Every original FIT your Garmin account holds. Ask for the ZIP under "
             + "Account → Export Your Data. Duplicates are skipped."

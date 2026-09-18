@@ -448,7 +448,8 @@ public enum HelpCatalog {
                 "A Strava session shows everything that comes from the track. Foil time, "
                 + "flights, every turn verdict, the wind axis, the map.",
                 "Strava hands over no speed channel, so the speed records are marked "
-                + "uncertified. Your wrist was not recorded, so there are no pump strokes.",
+                + "uncertified. " + Copy.stravaFall + " Your wrist was not recorded, so "
+                + "there are no pump strokes.",
                 "If the same afternoon is also on intervals.icu, import it from there "
                 + "instead: that is the original file off your watch, and those records "
                 + "certify. Importing both is harmless, because the same session is never "

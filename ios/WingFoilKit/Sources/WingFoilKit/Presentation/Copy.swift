@@ -19,6 +19,13 @@ import Foundation
 /// that file is the contract across *products*, this enum is the one inside the app.
 public enum Copy {
 
+    // MARK: - Strava (docs/copy/phrases.json `stravaFall`, pinned by CopyContractTests)
+
+    /// What a positions-only recording loses (docs/algorithms.md, "Positions-only
+    /// recordings and touchdowns"): the stop under a fall never shows in positional speed,
+    /// so the verdict reads touchdown. Said once, on every Strava setup surface.
+    public static let stravaFall = "Without the watch's own speed, a fall can read as a touchdown."
+
     // MARK: - The drawn track (the turn page and the flight-end page)
 
     /// The second numbers printed along a drawn track.

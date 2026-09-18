@@ -213,8 +213,9 @@ public enum GettingStartedGuide {
             title: "Strava",
             channel: .release,
             classID: "c",
-            summary: "Settings → Strava → Connect with Strava, then Import → Import from "
-                + "Strava…. Positions only, so speed records are uncertified.",
+            summary: "Settings → Strava → Connect, then Import → Import from Strava…. "
+                + "Positions only, so speed records are uncertified. Without the watch's own "
+                + "speed, a fall can read as a touchdown.",
             steps: [
                 .init(number: 1,
                       title: "Connect once",
@@ -322,8 +323,8 @@ public enum GettingStartedGuide {
     /// account is for, and what it costs. The footer under the button says the
     /// rest — what is read, what is never written, and the connection cap.
     public static let settingsStrava =
-        "The route that needs no file: any watch that syncs to Strava. Positions only, so "
-            + "speed records are uncertified."
+        "Any watch that syncs to Strava, no file needed. Positions only, so speed records are "
+            + "uncertified. Without the watch's own speed, a fall can read as a touchdown."
 
     /// The routes and notes a build on `channel` may name, as the help topic's items —
     /// title as the term, summary as the detail — with the web page named last.
