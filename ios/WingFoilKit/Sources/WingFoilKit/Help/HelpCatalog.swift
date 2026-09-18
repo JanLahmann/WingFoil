@@ -561,7 +561,8 @@ public enum HelpCatalog {
             body: [
                 "A phone records a GPS track as well as most watches do. CleanJibe reads it "
                 + "the same way.",
-                "It is " + RecordingClass.c.name + ".",
+                "It is " + RecordingClass.c.name + ". The speed is worked out from "
+                + "the positions.",
                 RecordingClass.c.line,
                 "Where to put the phone: dry, still and pointing at the sky. A waterproof "
                 + "pouch on the upper arm or high on the chest works.",
