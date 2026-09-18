@@ -136,6 +136,14 @@ public enum HelpAction: String, Sendable, Equatable {
     /// page the reader has to leave to use. The topic names the doors because they are what
     /// he will use next time; the button is the door he is standing in front of now.
     case sendFeedback
+    /// Opens the **What's new** screen — the release notes the kit carries in `WhatsNew`,
+    /// filtered by the channel the app is running.
+    ///
+    /// An action rather than a list of `items:`, because a release note is a paragraph of
+    /// its own shape — a version, a day, and the lines of that build — and a help item is a
+    /// term and a detail inside a 30-word budget. The topic says what the screen is; the
+    /// screen is the notes.
+    case openWhatsNew
 }
 
 /// **Which build is reading the catalogue** — the kit's half of docs/channels.md.
@@ -205,6 +213,9 @@ public enum HelpSection: String, CaseIterable, Sendable, Identifiable {
 /// Every explainable metric, as an enum so a `?` button cannot point at a missing topic.
 public enum HelpTopicID: String, CaseIterable, Sendable, Identifiable {
     case gettingStarted
+    /// The release notes, in the app at last. They had three homes and no source until
+    /// 18 September 2026, and the phone was the one place that carried none of them.
+    case whatsNew
     case icuSetup, exampleSession, sendingFeedback, appleWatchApp, appleWorkoutApp
     case icuTroubleshooting
     case icuPrivacy, privacy, libraryBackup
@@ -279,6 +290,38 @@ public enum HelpCatalog {
                              url: URL(string: Branding.siteURL + "/start")!)],
             related: [.icuSetup, .shareFromWatchApp, .stravaImport, .appleWatchApp,
                       .appleWorkoutApp, .exampleSession, .whichWatch, .sendingFeedback]),
+
+        // MARK: What's new
+        //
+        // **The release notes, in the app.** Until 18 September 2026 they had three homes
+        // and no source — two hand-typed strings in `ios/tools/testflight_publish.py`, a
+        // stack of hand-written cards on cleanjibe.org/whats-new, and nothing at all on the
+        // phone. A rider whose app changed under him on Tuesday had to go and find a
+        // website to learn what it now did.
+        //
+        // The notes themselves are `WhatsNew`, generated from `docs/copy/whats-new.json` by
+        // `web/tools/make_whats_new.py`, which writes the website's cards from the same
+        // file; `testflight_publish.py` reads it for the *What to Test* of the build it
+        // attaches. The topic carries an **action** rather than `items:` because a note is
+        // a version, a day and the lines of that build, which is not a term and a detail.
+        //
+        // `.release`, and the *entries* are what the channel filters: a release build reads
+        // the release notes, a beta build reads beta and release, the dev build reads the
+        // lot (`WhatsNew.entries(for:)`). So the topic is on every index and never names a
+        // build the reader could not have.
+        HelpTopic(
+            id: .whatsNew, section: .gettingStarted,
+            title: "What's new",
+            summary: "What changed in the build you are holding, newest first.",
+            body: [
+                "Every release, with the day it shipped. The iPhone app ships as TestFlight "
+                + "builds. The Garmin watch app ships as Connect IQ versions. The two number "
+                + "differently and land on different days.",
+            ],
+            links: [HelpLink(title: "Open \(Branding.site)/whats-new",
+                             url: URL(string: Branding.siteURL + "/whats-new")!)],
+            action: .openWhatsNew,
+            related: [.gettingStarted, .sendingFeedback]),
 
         // MARK: Getting set up
         //

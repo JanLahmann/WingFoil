@@ -247,6 +247,16 @@ if make_start.main(["--check"]) != 0:
     errors.append("web/start/index.html or GettingStartedGuide.swift is stale — "
                   "run `python3 web/tools/make_start.py`")
 
+# The release notes are the same kind of generated half, on /whats-new/: the cards, the
+# app's What's new screen and the TestFlight "What to Test" text are three renderings of
+# docs/copy/whats-new.json, and a page that has drifted from it is the changelog disagreeing
+# with the app the reader just installed.
+import make_whats_new                                                    # noqa: E402
+
+if make_whats_new.main(["--check"]) != 0:
+    errors.append("web/whats-new/index.html or WhatsNew.swift is stale — "
+                  "run `python3 web/tools/make_whats_new.py`")
+
 # Same argument for the Garmin product count and the watch app's version: five pages print
 # them, garmin/manifest.xml decides them, and a page that says 39 products at 0.9.10 when
 # the tree ships 42 at 0.9.11 is a link to a watch that will not install.

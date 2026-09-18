@@ -130,6 +130,10 @@ struct HelpTopicSheet: View {
     /// "see also" list is filtered by the channel alone, which is the filter that matters.
     @Environment(SessionStore.self) private var store: SessionStore?
     @State private var next: HelpTopicID?
+    /// The release notes, opened from the topic that describes them. No environment key
+    /// like the three actions below it: nobody has to hand this down, because the notes are
+    /// kit data and every screen that can show this sheet can show them.
+    @State private var showingWhatsNew = false
 
     /// **The page this build reads.** The catalogue is the same data in every channel, but
     /// one topic's *items* are the ways in (Getting started) and two of those are beta
@@ -260,6 +264,16 @@ struct HelpTopicSheet: View {
                                 .accessibilityHint("Opens the same mail as Menu → "
                                                    + "\(FeedbackDoors.menuRow)")
                             }
+                            // The one action nobody has to hand down: the notes are kit
+                            // data, so the button works wherever this sheet is drawn.
+                            if topic.action == .openWhatsNew {
+                                Button {
+                                    showingWhatsNew = true
+                                } label: {
+                                    Label("What's new", systemImage: "sparkles")
+                                        .font(.callout.weight(.semibold))
+                                }
+                            }
                         }
                         .padding(.top, 2)
                     }
@@ -301,6 +315,7 @@ struct HelpTopicSheet: View {
             // A "see also" opens on top rather than replacing: the reader can always get
             // back to the metric they started from.
             .sheet(item: $next) { HelpTopicSheet(id: $0) }
+            .sheet(isPresented: $showingWhatsNew) { WhatsNewSheet() }
             .presentationSizing(.page)
         }
     }
