@@ -76,10 +76,11 @@ struct HealthImportView: View {
             Text("Recorded with Apple's Workout app?")
         } footer: {
             Text("Record on an Apple Watch with Apple's own Workout app, under Surfing, "
-                 + "Water Sports or Sailing. The GPS track and heart rate are then in the "
-                 + "Health app. CleanJibe analyses them like any other recording. It reads "
-                 + "the workouts you pick and nothing else: no steps, no sleep, no weight. "
-                 + "Everything stays on this phone.")
+                 + "Water Sports or Sailing.\n\n"
+                 + "The GPS track and heart rate are then in the Health app.\n\n"
+                 + "CleanJibe analyses them like any other recording. It reads the workouts "
+                 + "you pick and nothing else.\n\n"
+                 + "No steps, no sleep, no weight. Everything stays on this phone.")
         }
     }
 
@@ -118,19 +119,10 @@ struct HealthImportView: View {
         } header: {
             Text("Workouts in Health")
         } footer: {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Tap to pick, or use Import all. " + importableLine
-                     + " The rest are already in your library. A workout with no GPS "
-                     + "route is skipped and counted.")
-                // **The sentence a tester went looking for and did not find** (18 Sep
-                // 2026): she recorded on her Apple Watch with CleanJibe and came here for
-                // the session. It is not here and never will be, so this screen says so
-                // rather than letting her conclude the recording was lost. The kit's own
-                // words for that door (`ImportDoor.appleWatchApp`), so Import's Apple
-                // Watch section and this page cannot drift apart.
-                Text(ImportDoor.appleWatchApp.footer(channel: AppChannel.channel))
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            Text("Tap to pick, or use Import all. " + importableLine
+                 + " The rest are already in your library.\n\n"
+                 + "A workout with no GPS route is skipped and counted. There is nothing "
+                 + "to analyse without one.")
         }
     }
 
@@ -142,7 +134,10 @@ struct HealthImportView: View {
                 get: { store.healthAutoImport },
                 set: { store.healthAutoImport = $0 }))
         } footer: {
-            Text(HealthSwitch.autoImport.footer)
+            Text("CleanJibe checks Health when you open the app and imports anything new "
+                 + "of the types below.\n\n"
+                 + "iOS also wakes apps for new workouts, but it decides when. "
+                 + Copy.openToPickUp)
         }
     }
 
@@ -163,9 +158,10 @@ struct HealthImportView: View {
             Text("Which workouts to offer")
         } footer: {
             Text("Apple Health has no wingfoil activity, so pick whichever one you record "
-                 + "under. Surfing and Water Sports are on by default. The Workout app "
-                 + "puts those two in front of you. Sailing is off, because for most "
-                 + "people that bucket holds boats.")
+                 + "under.\n\n"
+                 + "Surfing and Water Sports are on by default. The Workout app puts those "
+                 + "two in front of you.\n\n"
+                 + "Sailing is off, because for most people that bucket holds boats.")
         }
     }
 
@@ -187,10 +183,10 @@ struct HealthImportView: View {
         let opening = "Either there are no " + typeList
             + " workouts in Health from the last two years, or CleanJibe was not given "
             + "permission to read them."
-        let route = " Permission lives in the Health app: "
+        let route = "\n\nPermission lives in the Health app: "
             + "**Health → Sharing → Apps → CleanJibe**, or "
-            + "**Settings → Health → Data Access & Devices → CleanJibe**. "
-            + "Turn on Workouts, Workout Routes and Heart Rate."
+            + "**Settings → Health → Data Access & Devices → CleanJibe**."
+            + "\n\nTurn on Workouts, Workout Routes and Heart Rate."
         return opening + route
     }
 
