@@ -361,6 +361,14 @@ def pin_strava(site: Site, phrases: dict, report: Report):
                         nearest(site.text[page], sentence))
     if not report.failures:
         report.ok("phrases.strava → %s" % ", ".join("web/" + p for p in owed))
+    # what a positions-only recording loses, on the one page that sets Strava up
+    fall = phrases["stravaFall"]
+    if fall.replace("'", "\u2019") not in site.text["start/index.html"].replace("'", "\u2019"):
+        report.fail("web/start/index.html", "phrases.stravaFall",
+                    "the Strava fall sentence is not on this page",
+                    nearest(site.text["start/index.html"], fall))
+    else:
+        report.ok("phrases.stravaFall → web/start/index.html")
 
     hits = 0
     for page in PAGES:

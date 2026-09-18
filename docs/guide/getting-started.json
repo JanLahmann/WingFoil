@@ -199,7 +199,7 @@
         "dev"
       ],
       "class": "c",
-      "summary": "Settings → Strava → Connect with Strava, then Import → Import from Strava…. Positions only, so speed records are uncertified.",
+      "summary": "Settings → Strava → Connect, then Import → Import from Strava…. Positions only, so speed records are uncertified. Without the watch's own speed, a fall can read as a touchdown.",
       "steps": [
         {
           "title": "Connect once",
@@ -304,7 +304,7 @@
   "settings": {
     "_note": "One sentence each, at the top of the matching Settings section. The app reads them from GettingStartedGuide, so the help and the switches say the same thing.",
     "intervalsIcu": "Garmin has no open API, so intervals.icu is the bridge. Connect Garmin there once. Every session then arrives here by itself. Free.",
-    "strava": "The route that needs no file: any watch that syncs to Strava. Positions only, so speed records are uncertified."
+    "strava": "Any watch that syncs to Strava, no file needed. Positions only, so speed records are uncertified. Without the watch's own speed, a fall can read as a touchdown."
   },
   "troubleshooting": {
     "surfaces": [

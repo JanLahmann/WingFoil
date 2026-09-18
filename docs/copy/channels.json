@@ -1,5 +1,5 @@
 {
-  "_readme": [
+  "_readme" : [
     "WHICH FEATURE IS IN WHICH CHANNEL, IN THE RIDER'S WORDS.",
     "",
     "docs/channels.md is the author. This is its machine-readable twin: the same beta and",
@@ -16,55 +16,55 @@
     "`forbiddenInRelease` is the guard on the release copy, not a list of rows: no release",
     "text may contain any of these, case-insensitively, as a substring. See README.md."
   ],
-  "beta": [
+  "beta" : [
     {
-      "id": "gpxTcx",
-      "text": ".gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS opens straight from Files."
+      "id" : "gpxTcx",
+      "text" : ".gpx and .tcx files, so a session exported from a Polar, a Suunto or a COROS opens straight from Files."
     },
     {
-      "id": "appleHealth",
-      "text": "Apple Health, both ways: what Apple's Workout app recorded is read in, and your sessions are written back as workouts."
+      "id" : "appleHealth",
+      "text" : "Apple Health, both ways: what Apple's Workout app recorded is read in, and your sessions are written back as workouts."
     },
     {
-      "id": "appleWatchApp",
-      "text": "The CleanJibe Apple Watch app, which records on your wrist with live numbers and hands the session to the phone."
+      "id" : "appleWatchApp",
+      "text" : "The CleanJibe Apple Watch app, which records on your wrist with live numbers and hands the session to the phone."
     },
     {
-      "id": "widgets",
-      "text": "Home-screen widgets and the watch complication."
+      "id" : "widgets",
+      "text" : "Home-screen widgets and the watch complication."
     },
     {
-      "id": "sessionVideo",
-      "text": "The session video: your afternoon as a film rather than a card."
+      "id" : "sessionVideo",
+      "text" : "The session video: your afternoon as a film rather than a card."
     },
     {
-      "id": "grouping",
-      "text": "Grouping the library by month, year or spot, and filtering it."
+      "id" : "grouping",
+      "text" : "Grouping the library by month, year or spot, and filtering it."
     }
   ],
-  "dev": [
+  "dev" : [
     {
-      "id": "garminLink",
-      "text": "The Garmin link: a summary card from your watch the moment you stop, the map of your spot and the wind direction sent back to it"
+      "id" : "garminLink",
+      "text" : "The Garmin link: a summary card from your watch the moment you stop, the map of your spot and the wind direction sent back to it"
     },
     {
-      "id": "windsurf",
-      "text": "Windsurf, foil and fin, with thresholds of its own"
+      "id" : "windsurf",
+      "text" : "Windsurf, foil and fin, with thresholds of its own"
     },
     {
-      "id": "tuning",
-      "text": "The tuning page: every analysis threshold on a slider, tried against your own sessions"
+      "id" : "tuning",
+      "text" : "The tuning page: every analysis threshold on a slider, tried against your own sessions"
     },
     {
-      "id": "ipad",
-      "text": "iPad"
+      "id" : "ipad",
+      "text" : "iPad"
     },
     {
-      "id": "appleWatchLive",
-      "text": "A live view on the Apple Watch: foil state, flights, records and turn verdicts on the wrist, as the Garmin app shows them"
+      "id" : "appleWatchLive",
+      "text" : "A live view on the Apple Watch: foil state, flights, records and turn verdicts on the wrist, as the Garmin app shows them"
     }
   ],
-  "forbiddenInRelease": [
+  "forbiddenInRelease" : [
     "gpx",
     "tcx",
     "Apple Health",
@@ -79,5 +79,5 @@
     "windsurf",
     "tuning"
   ],
-  "sectionTitle": "Coming in a future release"
+  "sectionTitle" : "Coming in a future release"
 }

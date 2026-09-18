@@ -31,9 +31,9 @@
       "name" : "Class B+ · Apple Watch app"
     },
     {
-      "footerLine" : "Class C · positions only. Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are estimated from positions and marked uncertified, and there are no pump strokes or takeoff attempts.",
+      "footerLine" : "Class C · positions only. Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are estimated from positions and marked uncertified, and there are no pump strokes or takeoff attempts. Without the watch's own speed, a fall can read as a touchdown.",
       "id" : "c",
-      "line" : "Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are estimated from positions and marked uncertified, and there are no pump strokes or takeoff attempts.",
+      "line" : "Foil time, flights, every turn verdict and clean jibe, the wind axis. Speed records are estimated from positions and marked uncertified, and there are no pump strokes or takeoff attempts. Without the watch's own speed, a fall can read as a touchdown.",
       "name" : "Class C · positions only"
     }
   ]
