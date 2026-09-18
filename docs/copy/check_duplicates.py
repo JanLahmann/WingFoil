@@ -21,8 +21,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "docs" / "copy"))
-from check_release_copy import string_literals  # noqa: E402
-from check_voice import sentences_of, words  # noqa: E402
+from check_voice import rider_paragraphs, sentences_of, words  # noqa: E402
 
 DIRS = ["ios/WingFoilKit/Sources/WingFoilKit/Help", "ios/WingFoilKit/Sources/WingFoilKit/Presentation",
         "ios/WingFoil/Features"]
@@ -63,23 +62,15 @@ def main(argv=None) -> int:
     for d in DIRS:
         for f in sorted((REPO / d).rglob("*.swift")):
             rel = f.relative_to(REPO).as_posix()
-            chain = []
-            for line in f.read_text(encoding="utf-8").splitlines():
-                if line.strip().startswith("//"):
-                    continue
-                lits = string_literals(line)
-                if lits:
-                    chain.extend(lits)
-                    if not line.rstrip().endswith("+"):
-                        text = " ".join(chain)
-                        chain = []
-                        for s in sentences_of(text):
-                            if words(s) >= MIN_WORDS:
-                                key = norm(s)
-                                homes[key].add(rel)
-                                sample.setdefault(key, s)
-                else:
-                    chain = []
+            # One paragraph reader for both lints (`check_voice.rider_paragraphs`): a
+            # sentence that runs across three source lines is one sentence, and half of it
+            # is not a sentence that has two homes.
+            for _, paragraph in rider_paragraphs(f, "swift"):
+                for s in sentences_of(paragraph):
+                    if words(s) >= MIN_WORDS:
+                        key = norm(s)
+                        homes[key].add(rel)
+                        sample.setdefault(key, s)
     dups = [(k, sorted(v)) for k, v in homes.items() if len(v) > 1 and k not in shared]
     honoured, failures = [], []
     for k, files in sorted(dups):

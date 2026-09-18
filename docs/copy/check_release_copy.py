@@ -300,13 +300,20 @@ def copy_of(target: Target) -> tuple[str | None, list[str]]:
     return "\n".join(chunks), problems
 
 
+#: Escapes that carry text rather than punctuation. `\n` is a paragraph or line break a
+#: rider sees, so it survives as one: without it "…on this phone.\nOpen CleanJibe" reads as
+#: the single word "phone.nOpen" and neither the vocabulary nor the sentence rules can see
+#: the two sentences on either side of it.
+ESCAPED_TEXT = {"n": "\n", "t": " "}
+
+
 def string_literals(line: str) -> list[str]:
-    """Every "…" on a Swift line, escapes left alone."""
+    """Every "…" on a Swift line, escapes left alone but `\\n` kept as a line break."""
     out, current, inside, escaped = [], "", False, False
     for character in line:
         if escaped:
             if inside:
-                current += character
+                current += ESCAPED_TEXT.get(character, character)
             escaped = False
             continue
         if character == "\\":

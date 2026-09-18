@@ -51,11 +51,18 @@ EXEMPTIONS = REPO / "docs" / "copy" / "voice-exemptions.json"
 # /whats-new are exempted by their page.
 STALE = re.compile(r"\b\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* 20\d\d\b|\b20\d\d-\d\d-\d\d\b|\b0\.9\.\d+\b|\bbuild \d{2,3}\b|\bsince 0\.\d")
 
-# Pattern 1 of the same day: paragraph length is ungoverned by the sentence rules. A rider
-# paragraph (one literal chain, one HTML paragraph) carries at most this many words. ADVISORY
-# until the second voice pass has brought the texts under it; then the flag flips.
+# Pattern I of the same day: paragraph length is ungoverned by the sentence rules. A rider
+# paragraph is one authored block — a chain of `+`-joined literals, cut again at every line
+# break the rider sees — and carries at most this many words. A Settings or Import footer
+# says what you get and carries 25 (pattern K); a help summary carries 20 and is held by
+# `HelpBudgetTests` in the kit, where the summary is a field rather than a literal.
+#
+# Strict since the second voice pass: a paragraph over its budget FAILS. The way under it is
+# to split, never to compress — a fact that leaves a footer goes to the help body or to docs/
+# (rule 10 of docs/voice.md).
 PARAGRAPH_MAX = 40
-PARAGRAPH_STRICT = False
+FOOTER_MAX = 25
+PARAGRAPH_STRICT = True
 
 
 @dataclass
@@ -68,33 +75,56 @@ class Target:
     advisory: bool = False
     #: dated release notes are this page's purpose; the stale-fact rule does not apply
     dated: bool = False
+    #: words a single paragraph of this target may carry. `None` means the target has no
+    #: paragraph budget here: on a page a "paragraph" is what the text extractor rebuilt out
+    #: of the markup rather than a block an author wrote, and the site's own budget is
+    #: `web/tools/verify_unique.py` (a page's word count, and no sentence twice).
+    paragraph_max: int | None = PARAGRAPH_MAX
+    #: sub-paths of a directory target that belong to a target of their own
+    exclude: tuple[str, ...] = ()
 
 
 TARGETS: list[Target] = [
     Target("kit · Help", "ios/WingFoilKit/Sources/WingFoilKit/Help", "swift"),
     Target("kit · Presentation", "ios/WingFoilKit/Sources/WingFoilKit/Presentation", "swift"),
-    Target("app · Features", "ios/WingFoil/Features", "swift"),
+    Target("app · Features", "ios/WingFoil/Features", "swift",
+           exclude=("Settings", "Import")),
+    # The two screens that are mostly footers. A footer says what you get in one line and
+    # leaves the mechanism to a help link (pattern K), so its paragraph budget is 25.
+    Target("app · Settings", "ios/WingFoil/Features/Settings", "swift",
+           paragraph_max=FOOTER_MAX),
+    Target("app · Import", "ios/WingFoil/Features/Import", "swift",
+           paragraph_max=FOOTER_MAX),
     Target("watch · pages", "garmin/source/ui", "mc"),
     Target("watch · alerts", "garmin/source/alerts", "mc"),
     Target("watch · settings strings", "garmin/resources/strings/strings.xml", "xml"),
-    Target("web · /", "web/index.html", "html", strip=("channels-beta", "channels-dev")),
-    Target("web · /start/", "web/start/index.html", "html"),
-    Target("web · /learn/", "web/learn/index.html", "html"),
-    Target("web · /watches/", "web/watches/index.html", "html"),
+    # The pages keep the sentence rules. Their paragraph budget is verify_unique.py's, over
+    # the page: what the extractor here calls a paragraph is a run of visible text between
+    # two blank lines of markup, which is not the block the author typed.
+    Target("web · /", "web/index.html", "html", strip=("channels-beta", "channels-dev"),
+           paragraph_max=None),
+    Target("web · /start/", "web/start/index.html", "html", paragraph_max=None),
+    Target("web · /learn/", "web/learn/index.html", "html", paragraph_max=None),
+    Target("web · /watches/", "web/watches/index.html", "html", paragraph_max=None),
     Target("web · /invite/", "web/invite/index.html", "html",
-           strip=("channels-beta", "channels-dev")),
-    Target("web · /whats-new/", "web/whats-new/index.html", "html", dated=True),
-    Target("web · /app/", "web/app/index.html", "html"),
+           strip=("channels-beta", "channels-dev"), paragraph_max=None),
+    Target("web · /whats-new/", "web/whats-new/index.html", "html", dated=True,
+           paragraph_max=None),
+    Target("web · /app/", "web/app/index.html", "html", paragraph_max=None),
     Target("App Store · description", "ios/store/appstore.md", "md",
-           blocks=["Promotional text", "Description"], advisory=True),
+           blocks=["Promotional text", "Description"], advisory=True, paragraph_max=None),
     Target("Connect IQ · description", "garmin/store/listing.md", "md",
-           blocks=["Description (live text)"], advisory=True),
+           blocks=["Description (live text)"], advisory=True, paragraph_max=None),
 ]
 
 #: data-copy marks a generator writes; their text is never judged (it cannot go stale by hand).
 GENERATED = ("garmin-version", "garmin-count", "ciq-title", "appstore-name")
 
 SKIP_LITERAL = re.compile(r"^(https?://|[\w.]+/|%|[A-Za-z]+\.[A-Za-z]+$|\\\()|→|\{[^}]*\}")
+#: The same, for a whole paragraph. A path notation inside it (`Settings → Garmin watch`)
+#: is how the app names a route and does not stop the block being a paragraph a rider
+#: reads, so the arrow is not a reason to look away from its length.
+SKIP_PARAGRAPH = re.compile(r"^(https?://|[\w.]+/|%|[A-Za-z]+\.[A-Za-z]+$|\\\()|\{[^}]*\}")
 SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9\"“(])")
 
 
@@ -163,13 +193,83 @@ def judge(sentences: list[tuple[str, str]], exemptions: list[dict], relative: st
     return failures, honoured, (len(lengths), mean, max(lengths) if lengths else 0)
 
 
-PARAGRAPHS: dict[str, list[tuple[str, int]]] = {}
+def rider_paragraphs(path: Path, kind: str) -> list[tuple[int, str]]:
+    """(line, paragraph) pairs — the blocks a rider reads as one.
+
+    A paragraph is one authored string: a chain of literals joined by `+` across as many
+    lines as it takes, cut again at every line break inside it, because a blank line in a
+    footer is a new block on the screen. Judging one source line at a time (what the
+    sentence pass does) would measure the width of the editor, not the length of the text.
+    """
+    lines = path.read_text(encoding="utf-8").splitlines()
+
+    def is_comment(line: str) -> bool:
+        stripped = line.strip()
+        return stripped.startswith("//") or stripped.startswith("<!--")
+
+    def literals_of(line: str) -> list[str]:
+        if is_comment(line):
+            return []
+        if kind == "xml":
+            m = re.search(r"<string id=\"[^\"]+\">(.*?)</string>", line)
+            return [m.group(1)] if m else []
+        return string_literals(line)
+
+    def continues(index: int, line: str) -> bool:
+        """Does the chain go on after this line? `"a " + "b"`, or a `+` opening the next."""
+        if line.rstrip().endswith("+"):
+            return True
+        for following in lines[index + 1:]:
+            if not following.strip():
+                return False
+            if following.strip().startswith("//"):
+                continue
+            return following.strip().startswith("+")
+        return False
+
+    out: list[tuple[int, str]] = []
+    chain: list[str] = []
+    start = 0
+    for index, line in enumerate(lines):
+        # A comment between two halves of a `+` chain is the author talking to the next
+        # author. It does not end the paragraph the rider reads.
+        if is_comment(line):
+            continue
+        pieces = literals_of(line)
+        if not pieces:
+            if chain:
+                out.append((start, "".join(chain)))
+                chain = []
+            continue
+        if not chain:
+            start = index + 1
+        chain.extend(pieces)
+        if not continues(index, line):
+            out.append((start, "".join(chain)))
+            chain = []
+    if chain:
+        out.append((start, "".join(chain)))
+
+    paragraphs: list[tuple[int, str]] = []
+    for number, text in out:
+        for block in re.split(r"\n+", text):
+            block = block.strip()
+            if words(block) < 4 or SKIP_PARAGRAPH.search(block):
+                continue
+            paragraphs.append((number, block))
+    return paragraphs
 
 
-def note_paragraph(label: str, where: str, text: str) -> None:
+#: label → (where, words, text) for every paragraph over its target's budget.
+PARAGRAPHS: dict[str, list[tuple[str, int, str]]] = {}
+
+
+def note_paragraph(label: str, where: str, text: str, budget: int | None) -> None:
+    if budget is None:
+        return
     n = words(text)
-    if n > PARAGRAPH_MAX:
-        PARAGRAPHS.setdefault(label, []).append((where, n))
+    if n > budget:
+        PARAGRAPHS.setdefault(label, []).append((where, n, text))
 
 
 def collect(target: Target) -> list[tuple[str, str]]:
@@ -180,8 +280,11 @@ def collect(target: Target) -> list[tuple[str, str]]:
             p for p in base.rglob("*") if p.suffix == {"swift": ".swift", "mc": ".mc", "xml": ".xml"}[target.kind])
         for f in files:
             rel = f.relative_to(REPO).as_posix()
+            if any(part in target.exclude for part in f.relative_to(base).parts[:-1]):
+                continue
+            for number, paragraph in rider_paragraphs(f, target.kind):
+                note_paragraph(target.label, f"{rel}:{number}", paragraph, target.paragraph_max)
             for number, literal in rider_literals(f, target.kind):
-                note_paragraph(target.label, f"{rel}:{number}", literal)
                 for s in sentences_of(literal):
                     out.append((f"{rel}:{number}", s))
     elif target.kind == "html":
@@ -193,7 +296,7 @@ def collect(target: Target) -> list[tuple[str, str]]:
         parser.close()
         text = "\n".join(parser.parts)
         for para in re.split(r"\n\s*\n", text):
-            note_paragraph(target.label, target.path, para)
+            note_paragraph(target.label, target.path, para, target.paragraph_max)
             for s in sentences_of(para):
                 if words(s) >= 4:
                     out.append((target.path, s))
@@ -221,13 +324,25 @@ def main(argv: list[str] | None = None) -> int:
         over_mean = mean > MEAN_MAX
         bad = bool(failures) or over_mean
         long_paras = PARAGRAPHS.get(target.label, [])
+        # A paragraph carries the same exemptions a sentence does: the SVG path of the drawn
+        # wordmark is geometry in a literal, and its length says nothing about the voice.
+        kept = []
+        for where, n, text in long_paras:
+            why = next((e["why"] for e in exemptions
+                        if target.path.startswith(e["path"]) and e["text"] in text), None)
+            if why:
+                honoured_all.append(f"    allowed  {where}: paragraph of {n} words — {why}")
+            else:
+                kept.append((where, n, text))
+        long_paras = kept
         if long_paras and PARAGRAPH_STRICT:
-            failures += [f"{w}: paragraph of {n} words (max {PARAGRAPH_MAX})" for w, n in long_paras]
+            failures += [f"{w}: paragraph of {n} words (max {target.paragraph_max})"
+                         f" — \"{t[:70]}\"" for w, n, t in long_paras]
         bad = bool(failures) or over_mean
         verdict = "PASS" if not bad else ("note" if (report or target.advisory) else "FAIL")
         print(f"{verdict}  {target.label}  ({target.path}) — {count} sentences, "
               f"mean {mean:.1f} words, longest {longest}, {len(failures)} problem(s)"
-              + (f", {len(long_paras)} paragraph(s) over {PARAGRAPH_MAX} words"
+              + (f", {len(long_paras)} paragraph(s) over {target.paragraph_max} words"
                  + ("" if PARAGRAPH_STRICT else " [advisory]") if long_paras else "")
               + (" [advisory]" if target.advisory else ""))
         if bad and not report:

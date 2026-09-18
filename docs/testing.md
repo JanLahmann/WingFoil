@@ -493,6 +493,27 @@ mean under 14, none of the banned shapes. `--report` prints the numbers without 
 Exemptions live in `docs/copy/voice-exemptions.json` as `{path, text, why}` and are printed
 on every run.
 
+**Paragraph budgets are strict** since the second voice pass (pattern I). A paragraph is one
+authored block — a `+` chain of literals, cut again at every line break inside it — and
+carries 40 words, or 25 in a Settings or Import footer, which are targets of their own. A
+help summary's 20 and a help body's 120 stay in `HelpBudgetTests`, where the text is a field
+rather than a literal, and the two numbers match this lint's. The website keeps the sentence
+rules and no paragraph budget here: what the extractor calls a paragraph on a page is a run
+of visible text between two blank lines of markup, and the page's own budget is
+`verify_unique.py`'s. The way under a budget is to **split, never to compress** — every cut
+fact keeps a home (docs/voice.md, rule 10).
+
+**One sentence, one home, inside the app**: `python3 docs/copy/check_duplicates.py` (pattern
+F) splits the kit's `Help/` and `Presentation/` and the app's `Features/` into sentences and
+fails on any of eight words or more with two homes. `docs/copy/duplicate-exemptions.json` is
+empty on purpose. A line two screens both say lives in `WingFoilKit`'s `Copy` enum and is
+referenced from both; sentences `docs/copy/*.json` owns are the contract's and are skipped.
+
+Both lints run from three places, so neither can drift unnoticed: by hand, from
+`web/tools/verify_links.py` beside the web checks, and from `CopyLintTests` in the kit, which
+runs them from the repository root during `swift test` and skips with a message on a machine
+without python3.
+
 ## Tolerances (Swift & Python vs goldens)
 
 | quantity | tolerance |

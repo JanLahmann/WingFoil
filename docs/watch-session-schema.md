@@ -10,6 +10,12 @@ is worth more here than a tidier module graph.
 - `CONTAINER_VERSION`: **1** (the envelope — magic, header, stream table)
 - `SCHEMA`: **1** (the meaning of the fields, carried in `meta.schema`)
 - Extension: `.cjw` · `TrackFormat.watch` · archived as `original.cjw`
+- Filename: `yyyy-MM-dd-HHmm_wingfoil_<source>.cjw` in the recording device's own zone
+  (`WatchSessionContainer.filename`; the watch's source is `applewatch`, the Health
+  importer's is `health`). The phone keeps it as the session's `originalFilename` and
+  `SessionNaming.derivedTitle` reads the middle part as the title, so the name is the
+  sport word. It used to be the recording's UUID, which a tester read as a title.
+  The session id is in `meta.sessionId`, never in the name.
 - Endianness: **little-endian IEEE 754 throughout**, stated rather than inherited
 - Producer: `ios/WingFoilWatch/` · Consumer: `WingFoilKit/WatchImport/WatchSessionParser.swift`
 

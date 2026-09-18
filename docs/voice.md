@@ -98,6 +98,13 @@ retired for rider text. It lives on in code comments and in `docs/`, where it be
   parenthesis in a rider string; mean sentence length under 14 words, no sentence over 20;
   the banned shapes of rule 5 as a phrase list. Exemptions written down, printed on every run,
   like the lexicon's.
+- **Paragraph budgets, strict:** 40 words a paragraph, 25 in a Settings or Import footer, 20
+  a help summary. A paragraph over its budget is **split, never compressed** — rule 10 decides
+  where each fact goes.
+- **`docs/copy/check_duplicates.py`:** one sentence, one home inside the app. A line two
+  screens both say lives in `WingFoilKit`'s `Copy` enum and is referenced from both.
+- Both run from `web/tools/verify_links.py` and from the kit's `CopyLintTests`, so a drift
+  fails a web check and `swift test` alike.
 
 ## How to ask for text
 

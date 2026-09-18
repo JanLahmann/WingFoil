@@ -283,6 +283,23 @@ if verify_unique.main(["--brief"]) != 0:
     errors.append("a sentence has two homes, or a page is over its word budget — "
                   "run `python3 web/tools/verify_unique.py` for the list")
 
+# The same two questions, asked of the app rather than of the site: is every rider sentence
+# inside docs/voice.md (length, dashes, the banned shapes, a paragraph inside its budget),
+# and does any sentence have two homes in the kit and the app. They run here because this is
+# the one command a web change is checked with, and the app's copy and the site's are the
+# same product's words. `CopyLintTests` in ios/WingFoilKit runs both from the Swift side.
+sys.path.insert(0, os.path.join(os.path.dirname(ROOT), "docs", "copy"))
+import check_voice                                                       # noqa: E402
+import check_duplicates                                                  # noqa: E402
+
+if check_voice.main([]) != 0:
+    errors.append("a rider sentence is off the voice — "
+                  "run `python3 docs/copy/check_voice.py` for the list")
+
+if check_duplicates.main([]) != 0:
+    errors.append("a sentence has two homes in the app — "
+                  "run `python3 docs/copy/check_duplicates.py` for the list")
+
 if errors:
     print("\n%d PROBLEM(S):" % len(errors))
     for e in errors:
