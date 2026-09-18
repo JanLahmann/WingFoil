@@ -108,6 +108,8 @@ struct TrendsView: View {
                 }
             }
             .navigationTitle("Trends")
+            // The app menu, in the slot it occupies on all four tab roots (pattern M).
+            .appMenuHost()
             // Periods live one push from here rather than in a fifth tab: they are the same
             // question this screen asks — how is the season going — with the afternoons
             // grouped instead of drawn one by one, and a rider looking at a chart of the last

@@ -33,6 +33,7 @@ struct SettingsView: View {
                 WatchLinkSection()
                 #endif
                 analysisSection
+                sessionListSection
                 // Windsurf, and the per-discipline thresholds behind it: DEV.
                 #if DEV
                 windsurfSection
@@ -131,7 +132,7 @@ struct SettingsView: View {
             Text("intervals.icu")
         } footer: {
             Text("Downloads the original FIT of every windsurf, wing, kite, surf and SUP "
-                 + "activity in your intervals.icu account, going two years back.\n\n"
+                 + "activity in your intervals.icu account, going two years back. "
                  + "Activities already in the library are never downloaded again.")
         }
     }
@@ -182,15 +183,14 @@ struct SettingsView: View {
         } footer: {
             if store.isStravaConfigured {
                 Text(markdown: "Strava opens, you say yes, and CleanJibe can list your "
-                     + "activities on the Import screen.\n\n"
-                     + "CleanJibe only **reads** your Strava account. It never writes, "
-                     + "renames or posts anything.\n\n"
+                     + "activities on the Import screen. CleanJibe only **reads** your "
+                     + "Strava account. It never writes, renames or posts anything. "
                      + "Sessions imported this way are analysed from positions alone. "
                      + "Their speed records are marked uncertified.\n\n"
                      + "Strava lets a new app connect a limited number of riders. "
-                     + "Connecting is refused while CleanJibe is full.\n\n"
-                     + "That says nothing about your account. "
-                     + Copy.stravaAskForMore)
+                     + "Connecting is refused while CleanJibe is full. That says nothing "
+                     + "about your account. Tell us under Menu → Support & ideas, and "
+                     + "CleanJibe asks Strava for more.")
             } else {
                 Text("This build carries no Strava API keys, so the Strava source is not "
                      + "offered. Everything else works as usual.")
@@ -222,9 +222,9 @@ struct SettingsView: View {
                 Text("Deleted sessions")
             } footer: {
                 Text("Sessions you deleted stay deleted. Syncing intervals.icu leaves "
-                     + "them alone, by hand and in the background.\n\n"
-                     + "Restoring forgets that. The next sync brings back every one of "
-                     + "them that is still on intervals.icu.")
+                     + "them alone, by hand and in the background. Restoring forgets "
+                     + "that. The next sync brings back every one of them that is "
+                     + "still on intervals.icu.")
             }
         }
     }
@@ -267,9 +267,9 @@ struct SettingsView: View {
                 + "your account."
         }
         let ios = "iOS decides when a background app may run. It learns your habits and "
-            + "may hold a check back for hours.\n\n"
-            + "It never runs in Low Power Mode, or while Background App Refresh is off "
-            + "under Settings → General → Background App Refresh.\n\n"
+            + "may hold a check back for hours. It never runs in Low Power Mode, or "
+            + "while Background App Refresh is off under "
+            + "Settings → General → Background App Refresh. "
             + "Pull down on Sessions to sync now."
         return SettingsCopy.notifyExplanation + "\n\n" + ios
     }
@@ -332,19 +332,36 @@ struct SettingsView: View {
     /// question is the app talking to itself.
     private var analysisFooter: String {
         let rig = "Wingfoil is not a sport in Garmin, Strava, intervals.icu or Apple Health. "
-            + "A new session cannot say which rig you were on.\n\n"
-            + "What you mostly ride answers for it. CleanJibe asks you to confirm after "
-            + "each import.\n\n"
+            + "A new session cannot say which rig you were on. What you mostly ride "
+            + "answers for it. CleanJibe asks you to confirm after each import. "
             + "Sessions already in your library are not changed.\n\n"
         // The *why* behind the habit clause, kept out of the footer: flipping the wind
         // end for end turns every jibe into a tack, so the wrong end is not a small error.
         let wind = "Your track gives the wind axis as a *line*. Which end the wind blew "
-            + "from is the hard half.\n\n"
-            + "The no-go zone usually settles it. You can sail any downwind course, but "
-            + "none straight into the wind.\n\n"
-            + "When a session cannot settle it, your habit does.\n\n"
-            + "Sessions already in the library change only when you re-run the analysis."
+            + "from is the hard half. The no-go zone usually settles it. You can sail "
+            + "any downwind course, but none straight into the wind. When a session "
+            + "cannot settle it, your habit does. Sessions already in the library "
+            + "change only when you re-run the analysis."
         return store.windsurfEnabled ? rig + wind : wind
+    }
+
+    /// **The map behind a row's track** (item 6 of the 18 Sep 2026 round).
+    ///
+    /// Off by default, and it stays that way unless a rider asks: the plain outline is the
+    /// shape at a glance, and a snapshot per row costs a network round trip he did not ask
+    /// for. The ground is whatever the maps are already drawn on (`MapStyleChoice`), so
+    /// there is no second style choice to keep in step.
+    private var sessionListSection: some View {
+        Section {
+            Toggle("Map behind the track in the list", isOn: Binding(
+                get: { store.listMapBackdrop },
+                set: { store.listMapBackdrop = $0 }))
+        } header: {
+            Text("Session list")
+        } footer: {
+            Text("Each row draws its track over a map of the water it was ridden on. "
+                 + "The map style is the one your session maps use.")
+        }
     }
 
     #if DEV
@@ -405,11 +422,9 @@ struct SettingsView: View {
             // and this whole section is behind `#if TUNING`.
             Text("Tuning · dev")
         } footer: {
-            Text("Dev build only.\n\n"
-                 + "Puts the analysis thresholds on sliders, so a parameter can be tried "
-                 + "against your own sessions in a minute instead of a rebuild.\n\n"
-                 + "They apply on this phone only, and every screen showing a tuned "
-                 + "number says so.")
+            Text("Dev build only. Puts the analysis thresholds on sliders so a parameter can "
+                 + "be tried against your own sessions in a minute instead of a rebuild. They "
+                 + "apply on this phone only, and every screen showing a tuned number says so.")
         }
     }
     #endif
@@ -417,46 +432,53 @@ struct SettingsView: View {
     #if BETA
     /// Both directions, in one section, because the rider thinks of Health as one place.
     ///
-    /// The read toggle appears only once a session has actually arrived that way (ADR-017):
-    /// until then the door is on the Import screen where a first import belongs, and a switch
-    /// here would be a question about a source the rider has never used. The two directions
-    /// never meet — a session that came *out* of Health is excluded from what goes back in,
-    /// or importing a workout would be how you end up with two of them.
+    /// **Both switches are always here** (docs/review-checklist.md, pattern E/G). The
+    /// automatic pickup used to appear only once a workout had actually come in that way,
+    /// so a rider who wanted it armed before his first import was shown nothing and told
+    /// nothing. Visibility never depends on "has done X before": what he has done changes a
+    /// footer, never whether a control exists.
+    ///
+    /// The two directions never meet — a session that came *out* of Health is excluded from
+    /// what goes back in, or importing a workout would be how you end up with two of them.
+    ///
+    /// The titles and the footers are `HealthSwitch`'s, so the automatic pickup reads the
+    /// same here and on Import → Apple Health, which are two places showing one control.
     @ViewBuilder
     private var healthSection: some View {
         Section {
-            Toggle("Add sessions to Apple Health", isOn: Binding(
+            Toggle(HealthSwitch.write.title, isOn: Binding(
                 get: { store.healthWriteEnabled },
                 set: { store.healthWriteEnabled = $0 }))
         } header: {
             Text("Apple Health")
         } footer: {
-            Text(markdown: "Off by default. Each session is written as a **Surfing** "
-                 + "workout.\n\n"
-                 + "Apple Health has no wingfoil or windsurf activity, and Surfing is the "
-                 + "closest.\n\n"
-                 + "The discipline, foil share, flights and best 2 s ride in its "
-                 + "metadata.\n\n"
-                 + "Sessions you imported *from* Health are left alone, so a workout "
-                 + "never appears twice.")
+            settingFooter(HealthSwitch.write)
         }
 
-        if store.hasImportedFromHealth {
-            Section {
-                Toggle("Import new Health workouts automatically", isOn: Binding(
-                    get: { store.healthAutoImport },
-                    set: { store.healthAutoImport = $0 }))
-            } footer: {
-                Text("CleanJibe checks Apple Health when you open it and imports any new "
-                     + "workout of the types you chose on the Import screen.\n\n"
-                     + "Anything already in your library is recognised, and a workout you "
-                     + "imported and then deleted is not brought back.\n\n"
-                     + "iOS can also wake the app when a workout is saved. iOS decides "
-                     + "when, and that may be hours later.\n\n"
-                     + "It never happens with Background App Refresh off. "
-                     + Copy.openToPickUp)
-            }
+        Section {
+            Toggle(HealthSwitch.autoImport.title, isOn: Binding(
+                get: { store.healthAutoImport },
+                set: { store.healthAutoImport = $0 }))
+        } footer: {
+            settingFooter(HealthSwitch.autoImport)
         }
+    }
+
+    /// **What you get, in one line, and the way to the page that says how** (pattern K and
+    /// pattern B). The footer stops explaining the mechanism; the help topic keeps it.
+    private func settingFooter(_ setting: HealthSwitch) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(setting.footer)
+                .fixedSize(horizontal: false, vertical: true)
+            Button { setupTopic = setting.helpTopic } label: {
+                Text(HelpCatalog.topic(setting.helpTopic,
+                                       channel: AppChannel.channel).title)
+                    .font(.footnote.weight(.semibold))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.accentColor)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     #endif
 
@@ -506,12 +528,6 @@ struct SettingsView: View {
             // report that comes back from TestFlight.
             LabeledContent("App", value: SessionStore.appVersion + Self.variantSuffix)
             LabeledContent("Analysis engine", value: AnalysisEngine.version)
-            // **What changed in the build those two numbers name.** The notes are kit data
-            // (`WhatsNew`, generated from docs/copy/whats-new.json), filtered by this
-            // build's channel, and the same screen the Help topic opens.
-            NavigationLink { WhatsNewPage() } label: {
-                Label("What's new", systemImage: "sparkles")
-            }
             // **The policy, reachable from inside the app** (15 September 2026). It was
             // not: docs/channels.md makes privacy-page coverage one of the four rules a
             // feature meets before it moves up a channel, and the App Store record carries
@@ -558,10 +574,9 @@ enum SettingsCopy {
     /// What the switch does, in one paragraph. Used verbatim as the one-time offer's
     /// message, which is what "with the switch's own explanation" means.
     static let notifyExplanation =
-        "While the phone is idle, CleanJibe asks intervals.icu for new activity.\n\n"
-        + "It looks for windsurf, wing, kite, surf and SUP, from any watch that syncs "
-        + "there.\n\n"
-        + "You hear about the ones that are not in your library yet.\n\n"
-        + "The session is downloaded and analysed in the background, so tapping the "
+        "While the phone is idle, CleanJibe asks intervals.icu for new activity. It "
+        + "looks for windsurf, wing, kite, surf and SUP, from any watch that syncs "
+        + "there. You hear about the ones that are not in your library yet. The "
+        + "session is downloaded and analysed in the background, so tapping the "
         + "notification usually opens a finished analysis."
 }

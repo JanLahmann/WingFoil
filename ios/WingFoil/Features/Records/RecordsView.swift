@@ -122,6 +122,8 @@ struct RecordsView: View {
             // the knots and the afternoon they were ridden on opposite edges of the glass.
             .readableColumn()
             .navigationTitle("Records")
+            // The app menu, in the slot it occupies on all four tab roots (pattern M).
+            .appMenuHost()
             .navigationDestination(for: String.self) { SessionDetailView(sessionID: $0) }
             .refreshable { await reload() }
             .task(id: reloadKey) { await reload() }
